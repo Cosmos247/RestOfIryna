@@ -1,0 +1,50 @@
+# ROI Session Primer
+
+Read this first. Then check `TODO.md` for current progress and `.memory/sessions.md` for what happened last session.
+
+## What Is This
+
+**Rest Of Iryna (ROI)** — a multiplayer medieval text RPG Telegram bot in Swift. Players fight rabid beasts, manage estates, trade, and wage territory wars. All interaction via text + emoji + inline keyboards.
+
+## Stack
+
+Swift 6.2 | Hummingbird 2.22+ (HTTP) | Fluent 4.13+ / PostgreSQL 16 | swift-telegram-sdk 4.6+ (TG Bot) | AsyncHTTPClient | Lingo 4 (i18n) | SwiftDotenv
+
+## Architecture
+
+Router-controller state machine. Each user has a `routerName` in DB. Updates flow: `TGUpdate -> TGDispatcher (auth) -> SessionCache -> RouterStore -> Controller[routerName]`. Controllers transition by setting `routerName` + `saveAndCache()`.
+
+Source in `Swift/` (not `Sources/`). Controllers in `Swift/Controllers/`. Models in `Swift/Models/`. Router engine in `Swift/Telegram/Router/`.
+
+## What Works Now
+
+Registration (language pick) -> Main menu (greeting) -> Settings (language change). Global commands (/help, /settings, /buttons) work from any state. Session caching, auth (4 hardcoded TG IDs), EN+UK localization.
+
+## What's Next
+
+Check `TODO.md` — phases 1-10 cover the full GDD. Phase 1 = character system (class selection, stats, registration rework). Phase 2 = hunger + inventory. Phase 3 = exploration. Phase 4 = combat. And so on.
+
+## Key Files to Know
+
+| File | What |
+|------|------|
+| `CLAUDE.md` | Full reference: architecture, patterns, conventions, git rules |
+| `GDD.md` | Complete game design document |
+| `TODO.md` | Implementation phases with progress markers |
+| `.memory/INDEX.md` | Knowledge base index |
+| `.memory/status.md` | Implemented vs planned features |
+| `.memory/controller-pattern.md` | How to build controllers (code examples) |
+| `Swift/configure.swift` | App bootstrap (DB, bot, lingo, hardcoded path) |
+| `Swift/Controllers/AllControllers.swift` | Controller registry |
+| `Swift/Helpers/TGBot+Extensions.swift` | TGControllerBase, Context.session |
+
+## Rules
+
+- Read `.memory/sessions.md` for context on previous work
+- After significant work, update `.memory/sessions.md` and `TODO.md`
+- On task completion, ask user before committing
+- Commit messages: short, compact, no co-author line
+- Never push — that's manual/user-side only
+- New controllers follow the pattern in `.memory/controller-pattern.md`
+- New localization keys go in BOTH en.json and uk.json
+- Telegram callback_data max 64 bytes

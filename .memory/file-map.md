@@ -1,0 +1,62 @@
+# File Map
+
+```
+RestOfIryna/
+├── .env.example                    # Environment template (TG token, DB creds)
+├── .gitignore                      # Ignores .build, .env, .xcodeproj, etc.
+├── .memory/                        # Project-scoped AI memory (this system)
+├── Package.swift                   # SPM manifest, Swift 6.2, macOS 14+
+├── GDD.md                          # Game Design Document (full v1 vision)
+├── README.md                       # Project overview, arch, setup, dev notes
+├── CLAUDE.md                       # AI assistant instructions & project reference
+├── TODO.md                         # Phased progress tracker
+├── Prompt.me                       # New-session primer
+├── icon.png                        # Bot icon asset
+│
+├── Localizations/
+│   ├── en.json                     # English strings (~24 keys)
+│   └── uk.json                     # Ukrainian strings (~24 keys)
+│
+├── Public/
+│   └── favicon.ico                 # (if present)
+│
+├── PostgreSQL/                     # Docker volume mount for PG data
+│
+└── Swift/                          # All source code (SPM target root)
+    ├── entrypoint.swift            # @main, logging setup, calls configure()
+    ├── configure.swift             # App bootstrap: DB, Lingo, Bot, Hummingbird
+    ├── routes.swift                # RouterStore actor + Sendable conformance
+    │
+    ├── Controllers/
+    │   ├── AllControllers.swift     # Controller registry, attachAllHandlers()
+    │   ├── MainController.swift    # Post-registration hub, greeting, settings nav
+    │   ├── RegistrationController.swift  # First-contact: language selection
+    │   ├── SettingsController.swift      # Language change, back navigation
+    │   └── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
+    │
+    ├── Models/
+    │   └── User.swift              # Fluent model: telegram_id, routerName, locale, name
+    │
+    ├── Migrations/
+    │   └── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
+    │
+    ├── Telegram/
+    │   ├── Router/
+    │   │   ├── Router.swift        # Path-matching engine (command, content type, callback)
+    │   │   ├── Context.swift       # Request context: bot, db, lingo, update, session, args
+    │   │   ├── Command.swift       # Command name matcher (slash handling, case sensitivity)
+    │   │   ├── Commands.swift      # Commands enum (start, cancel, exit, settings, language)
+    │   │   ├── ContentType.swift   # Enum of all matchable Telegram content types
+    │   │   ├── Arguments.swift     # Scanner-based argument parser (words, ints, doubles)
+    │   │   └── Router+Helpers.swift # Subscript shortcuts for adding handlers
+    │   │
+    │   └── TGBot/
+    │       ├── TGDispatcher.swift   # Main dispatcher: auth + global cmds + router catch-all
+    │       └── HummingbirdTGClient.swift # TGClientPrtcl impl using AsyncHTTPClient
+    │
+    └── Helpers/
+        ├── TGBot+Extensions.swift  # TGControllerBase, Context.session, TGMessage helpers
+        ├── SessionCache.swift      # Actor-based user cache (5min TTL, auto-cleanup)
+        ├── Lingo+Locales.swift     # Lingo convenience: accept SupportedLocale enum
+        └── DotEnv+Env.swift        # Env helper: get env vars with fallback to .env file
+```

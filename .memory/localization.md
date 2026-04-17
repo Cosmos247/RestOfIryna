@@ -1,0 +1,58 @@
+# Localization
+
+## Setup
+- Lingo initialized from `Localizations/` directory with default locale "en"
+- JSON files: `en.json`, `uk.json`
+- Path configured in `configure.swift`: `"\(projectPath)/Localizations"`
+
+## SupportedLocale Enum (configure.swift)
+```swift
+public enum SupportedLocale: String, CaseIterable, Codable, Sendable {
+    case en = "en"
+    case ua = "uk"  // Note: enum case is .ua, raw value is "uk"
+    
+    func flag() -> String {
+        switch self {
+        case .en: return "🇬🇧"
+        case .ua: return "🇺🇦"
+        }
+    }
+}
+```
+
+## Usage Patterns
+
+### Basic localization
+```swift
+let text = lingo.localize("key", locale: session.locale)
+```
+
+### With interpolation
+```swift
+let text = lingo.localize("greeting.message", locale: session.locale, 
+                          interpolations: ["full-name": name])
+```
+JSON: `"greeting.message": "Hey %{full-name}"`
+
+### With SupportedLocale enum (via Lingo+Locales.swift extension)
+```swift
+let text = lingo.localize("key", locale: SupportedLocale.en)
+```
+
+## Current Keys (~24 per locale)
+- UI: yes, no, commands.start/cancel/exit/settings/language
+- Settings: settings.title, settings.language.prompt
+- Help: welcome, here.are.commands, help.*, how.to.*
+- Other: registration, lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
+
+## Adding a New Language
+1. Create `Localizations/<code>.json` with all keys
+2. Add case to `SupportedLocale` enum in `configure.swift`
+3. Provide flag emoji in `flag()` method
+
+## Multi-locale Button Registration
+Controllers register button handlers for ALL locales to handle text matching regardless of user language:
+```swift
+let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
+for button in cancelLocales { router[button.text] = onCancel }
+```
