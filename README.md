@@ -1,130 +1,126 @@
-# Rest Of Iryna 🤖
+# Rest Of Iryna (ROI) ⚔️🐺
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/Maxim-Lanskoy/GPTGram/actions)
 [![Swift](https://img.shields.io/badge/Swift-6.2-orange)](https://github.com/swiftlang/swift/releases/tag/swift-6.2-RELEASE)
 [![Hummingbird](https://img.shields.io/badge/Hummingbird-2.10-blue)](https://github.com/hummingbird-project/hummingbird)
 
-Telegram text RPG built with Swift, using a router-controller architecture, multiple languages, and database persistence.
+**ROI** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a kingdom plagued by an epidemic of rabies spreading through its wildlife, expanding their personal estates, battling mad beasts, and waging territorial wars against neighbors.
 
-<p align="center">[ <a href="https://docs.hummingbird.codes">Hummingbird Documentation</a> ]
-  [ <a href="https://docs.vapor.codes/fluent/overview/#fluent">Fluent ORM / PostgreSQL</a> ]
+> 📖 **Full game design lives in [GDD.md](./GDD.md).** This README covers the project, the stack, and how to run it.
+
+<p align="center">[ <a href="https://docs.hummingbird.codes">Hummingbird</a> ]
+  [ <a href="https://docs.vapor.codes/fluent/overview/#fluent">Fluent / PostgreSQL</a> ]
   [ <a href="https://core.telegram.org/bots/api">Telegram Bot API</a> ]
   [ <a href="https://github.com/nerzh/swift-telegram-sdk">Swift Telegram SDK</a> ]
 </p>
 
-## 🎯 Purpose
+---
 
-Repo provides a robust foundation for building Telegram games in Swift with:
-- **State-based navigation** using a router-controller pattern
-- **Multi-language support** with dynamic locale switching
-- **User session management** with PostgreSQL database persistence
-- **Modern Swift concurrency** with async/await
-- **Session caching** for improved performance
-- **Lightweight HTTP server** with Hummingbird for webhooks/health checks
+## 🎮 The Game in One Paragraph
 
-Perfect for creating bots that need to manage complex user interactions, multiple conversation states, and persistent data.
+The kingdom's forests have fallen to a rabies plague. Playing a **mage**, **warrior**, or **archer**, each player claims a 30×30 estate with a central manor, then ventures out to explore an infinite chain of wilderness rooms — finding resources, fighting rabid beasts, occasionally taming them, and diving into multi-player dungeons deep in the woods. Back home, they upgrade the manor, expand plots for farming / mining / livestock, craft gear and food, and — because land is finite — fight adjacent players for territory. The capital hosts markets, quests, guilds, and a PvP arena. See [GDD.md](./GDD.md) for the full system breakdown.
+
+---
 
 ## 🏗️ Architecture
 
-### Core Components
+ROI is built on a router–controller state machine. Each controller represents a "screen" — registration, main menu, exploration, combat, estate editor, market — and the router dispatches incoming Telegram updates to whichever controller the user is currently in.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     TGBot + Dispatcher                       │
-│         (Bot instance stored in AppState)                    │
+│              (stored in AppState, shared)                    │
 └─────────────────────────────────────────────────────────────┘
                                │
           ┌────────────────────┼────────────────────┐
           ▼                    ▼                    ▼
 ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
 │  Global Commands │ │   Router System  │ │  Session Cache   │
-│ (/help /settings)│ │ (State routing)  │ │ (Fast lookups)   │
+│ (/help /settings)│ │ (per-user state) │ │ (actor-based)    │
 └──────────────────┘ └──────────────────┘ └──────────────────┘
                                │
                     ┌──────────┴──────────┐
                     ▼                     ▼
         ┌─────────────────────┐   ┌───────────────────┐
-        │    Controllers      │   │   User Sessions   │
-        │ (Handle "UI" logic) │   │ (Persistent state)│
+        │  Game Controllers   │   │   User Sessions   │
+        │  (Explore, Combat,  │   │  (PostgreSQL +    │
+        │   Estate, Market…)  │   │    cache layer)   │
         └─────────────────────┘   └───────────────────┘
 ```
 
-### Router-Controller Pattern
+### Router–Controller Pattern
 
-Project implements a sophisticated state machine where each controller represents a different "screen" or interaction mode:
+1. **Router** — inspects each update and routes it to the right controller, based on the user's `routerName` (persisted in DB), command matching, and content type (text / callback / photo).
+2. **Controllers** — each encapsulates a discrete interaction flow. Current and planned controllers:
+   - `RegistrationController` — first-contact flow, class choice, language selection
+   - `MainController` — town hub / main menu
+   - `SettingsController` — language, preferences
+   - `ExplorationController` *(planned)* — the timed wilderness loop
+   - `CombatController` *(planned)* — round-based PvE & PvP battles
+   - `EstateController` *(planned)* — 30×30 grid editor and upgrades
+   - `MarketController` *(planned)* — trading with players and NPCs
+   - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
+3. **Context** — passed to every controller; holds the bot instance, DB handle, localization (Lingo), user session, and parsed command arguments.
 
-1. **Router**: Processes incoming Telegram updates and routes them to the appropriate controller based on:
-   - User's current state (stored in database)
-   - Command matching
-   - Content type (text, callback query, etc.)
-
-2. **Controllers**: Each controller encapsulates logic for a specific interaction flow:
-   - `RegistrationController`: Handles first-time user setup and language selection
-   - `MainController`: The main menu and home screen
-   - `SettingsController`: User preferences and configuration
-   - Custom controllers can be easily added for new features
-
-3. **Context**: Provides controllers with everything needed to handle requests:
-   - Bot instance for sending messages
-   - Database connection
-   - Localization (Lingo)
-   - User session data
-   - Parsed arguments from commands
+---
 
 ## 📁 Project Structure
 
 ```
 RestOfIryna/
 ├── Swift/
-│   ├── Controllers/              # Bot controllers (screens/states)
-│   │   ├── AllControllers.swift  # Controller registry
-│   │   ├── MainController.swift  # Main menu controller
+│   ├── Controllers/              # Bot controllers (game screens)
+│   │   ├── AllControllers.swift
+│   │   ├── MainController.swift
 │   │   ├── RegistrationController.swift
 │   │   ├── SettingsController.swift
-│   │   └── GlobalCommandsController.swift  # Global command handlers
+│   │   └── GlobalCommandsController.swift
 │   │
-│   ├── Models/                   # Database models (Fluent ORM)
-│   │   └── User.swift           # User session and preferences
+│   ├── Models/                   # Fluent ORM models
+│   │   └── User.swift
 │   │
-│   ├── Migrations/              # Database schema migrations
+│   ├── Migrations/
 │   │   └── CreateUser.swift
 │   │
 │   ├── Telegram/
-│   │   ├── Router/              # Routing system
-│   │   │   ├── Router.swift     # Main router logic
-│   │   │   ├── Context.swift    # Request context
-│   │   │   ├── Commands.swift   # Command definitions
-│   │   │   ├── ContentType.swift # Message content types
-│   │   │   ├── Arguments.swift  # Command argument parsing
+│   │   ├── Router/               # Routing system
+│   │   │   ├── Router.swift
+│   │   │   ├── Context.swift
+│   │   │   ├── Commands.swift
+│   │   │   ├── ContentType.swift
+│   │   │   ├── Arguments.swift
 │   │   │   └── Router+Helpers.swift
-│   │   │
-│   │   └── TGBot/               # Bot infrastructure
-│   │       ├── TGDispatcher.swift        # Unified dispatcher
-│   │       └── HummingbirdTGClient.swift # AsyncHTTPClient for TG API
+│   │   └── TGBot/
+│   │       ├── TGDispatcher.swift
+│   │       └── HummingbirdTGClient.swift
 │   │
 │   ├── Helpers/
-│   │   ├── TGBot+Extensions.swift # Convenience extensions
-│   │   ├── SessionCache.swift    # User session caching
-│   │   ├── Lingo+Locales.swift   # Locale type-safe extensions
-│   │   └── DotEnv+Env.swift      # Environment helpers
+│   │   ├── TGBot+Extensions.swift
+│   │   ├── SessionCache.swift
+│   │   ├── Lingo+Locales.swift
+│   │   └── DotEnv+Env.swift
 │   │
-│   ├── entrypoint.swift         # Application entry point
-│   ├── configure.swift          # Application configuration
-│   └── routes.swift             # Router store for controllers
+│   ├── entrypoint.swift
+│   ├── configure.swift
+│   └── routes.swift
 │
 ├── Resources/
-│   └── Localizations/           # Multi-language support
-│       ├── en.json              # English translations
-│       └── uk.json              # Ukrainian translations
+│   └── Localizations/
+│       ├── en.json
+│       └── uk.json
 │
-├── Public/                      # Static files for web routes
+├── Public/
 │   └── favicon.ico
 │
-├── Package.swift                # Swift Package Manager manifest
-├── Package.resolved             # Dependency lock file
-├── .env.example                 # Environment template
+├── GDD.md                        # Game design document — read this
+├── README.md
+├── Package.swift
+├── Package.resolved
+├── .env.example
 └── .gitignore
 ```
+
+---
 
 ## 🚀 Getting Started
 
@@ -137,21 +133,21 @@ RestOfIryna/
 
 ### Installation
 
-1. **Clone the repository**:
+1. **Clone**:
    ```bash
    git clone <repository-url>
    cd RestOfIryna
    ```
 
-2. **Start PostgreSQL with Docker**:
+2. **Start PostgreSQL**:
    ```bash
    docker run -d \
-     --name tgbot-postgres \
-     -e POSTGRES_USER=tgbot \
+     --name roi-postgres \
+     -e POSTGRES_USER=roi \
      -e POSTGRES_PASSWORD=your-secure-password \
-     -e POSTGRES_DB=tgbot_db \
+     -e POSTGRES_DB=roi_db \
      -p 5432:5432 \
-     -v tgbot_pgdata:/var/lib/postgresql/data \
+     -v roi_pgdata:/var/lib/postgresql/data \
      postgres:16-alpine
    ```
 
@@ -159,226 +155,154 @@ RestOfIryna/
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` with your settings:
    ```env
-   # Telegram Configuration
    TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE
-
-   # PostgreSQL Connection
    DB_HOST=localhost
    DB_PORT=5432
-   DB_USER=tgbot
+   DB_USER=roi
    DB_PASSWORD=your-secure-password
-   DB_NAME=tgbot_db
+   DB_NAME=roi_db
    ```
 
-4. **Update configuration**:
+4. **Update `Swift/configure.swift`**:
+   - `projectPath` — your absolute project path
+   - `@TGUserName` — your Telegram username in localizations
 
-   Edit `Swift/configure.swift` and replace the following:
-   - `projectPath`: Update to your actual project path
-   - `owner` and `helper`: Replace with your Telegram user IDs
-   - `@TGUserName`: Replace with your Telegram username in localizations
-
-5. **Build and run**:
+5. **Run**:
    ```bash
    swift build
    swift run
    ```
 
-### Docker Commands Reference
+### Docker Reference
 
 ```bash
-# Check if container is running
-docker ps
-
-# View logs
-docker logs tgbot-postgres
-
-# Stop container
-docker stop tgbot-postgres
-
-# Start existing container
-docker start tgbot-postgres
-
-# Remove container (data persists in volume)
-docker rm tgbot-postgres
-
-# Connect to psql shell
-docker exec -it tgbot-postgres psql -U tgbot -d tgbot_db
-
-# Remove volume (WARNING: deletes all data)
-docker volume rm tgbot_pgdata
+docker ps                                              # status
+docker logs roi-postgres                               # logs
+docker stop roi-postgres                               # stop
+docker start roi-postgres                              # resume
+docker exec -it roi-postgres psql -U roi -d roi_db     # psql shell
+docker volume rm roi_pgdata                            # wipe data ⚠️
 ```
 
 ### Finding Your Telegram User ID
 
-To get your Telegram user ID:
-1. Start a chat with [@ForwardInfoBot](https://t.me/ForwardInfoBot)
-2. The bot will reply with your user ID
-3. Add this ID to the `allowedUsers` array in `configure.swift`
+DM [@ForwardInfoBot](https://t.me/ForwardInfoBot) — it replies with your ID. Add it to `allowedUsers` in `configure.swift` for admin access.
 
-## 💡 How It Works
+---
 
-### User Flow
+## 💡 Development Notes
 
-1. **First Contact**: When a user messages the bot for the first time:
-   - `User.cachedSession()` creates a new user record (with caching)
-   - User is routed to `RegistrationController`
-   - Language selection is presented
-
-2. **State Management**: Each user has a `routerName` field that tracks their current controller:
-   - `"registration"` → Registration flow
-   - `"main"` → Main menu
-   - `"settings"` → Settings menu
-   - Custom states for your features
-
-3. **Message Processing**:
-   ```swift
-   Update arrives → RouterStore finds current controller →
-   Controller processes → Updates user state → Sends response
-   ```
-
-### Adding a New Feature
-
-1. **Create a new controller**:
-   ```swift
-   final class MyFeatureController: TGControllerBase {
-       override func attachHandlers(to bot: TGBot, lingo: Lingo) async {
-           let router = Router(bot: bot) { router in
-               router["/mycommand"] = onMyCommand
-               router.unmatched = unmatched
-           }
-           await processRouterForEachName(router)
-       }
-
-       func onMyCommand(context: Context) async throws -> Bool {
-           try await context.respond("Hello from my feature!")
-           return true
-       }
-   }
-   ```
-
-2. **Register the controller** in `AllControllers.swift`:
-   ```swift
-   static let myFeature = MyFeatureController(routerName: "myfeature")
-   static let all: [TGControllerBase] = [
-       registration, mainController, settingsController, myFeature
-   ]
-   ```
-
-3. **Add navigation** from another controller:
-   ```swift
-   context.session.routerName = "myfeature"
-   try await context.session.saveAndCache(in: context.db)
-   ```
-
-### Working with Keyboards
-
-Project provides sophisticated keyboard management:
+### Adding a New Controller
 
 ```swift
-// Reply keyboard (persistent buttons)
+final class MyFeatureController: TGControllerBase {
+    override func attachHandlers(to bot: TGBot, lingo: Lingo) async {
+        let router = Router(bot: bot) { router in
+            router["/mycommand"] = onMyCommand
+            router.unmatched = unmatched
+        }
+        await processRouterForEachName(router)
+    }
+
+    func onMyCommand(context: Context) async throws -> Bool {
+        try await context.respond("Hello from ROI!")
+        return true
+    }
+}
+```
+
+Register in `AllControllers.swift`:
+```swift
+static let myFeature = MyFeatureController(routerName: "myfeature")
+static let all: [TGControllerBase] = [
+    registration, mainController, settingsController, myFeature
+]
+```
+
+Transition into it from another controller:
+```swift
+context.session.routerName = "myfeature"
+try await context.session.saveAndCache(in: context.db)
+```
+
+### Session Caching
+
+```swift
+let session = try await User.cachedSession(for: tgUser, db: db)  // fetch or create
+try await session.saveAndCache(in: db)                            // persist + refresh cache
+await session.invalidateCache()                                   // drop cache entry
+```
+
+### Keyboards
+
+```swift
+// Persistent reply keyboard (main menu, combat actions)
 let markup = TGReplyKeyboardMarkup(keyboard: [
-    [TGKeyboardButton(text: "Button 1"), TGKeyboardButton(text: "Button 2")]
+    [TGKeyboardButton(text: "⚔️ Attack"), TGKeyboardButton(text: "🛡 Defend")],
+    [TGKeyboardButton(text: "🤖 Auto")]
 ], resizeKeyboard: true)
 
-// Inline keyboard (buttons under messages)
+// Inline keyboard (callbacks — exploration events, estate tiles)
 let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
-    [TGInlineKeyboardButton(text: "Click me", callbackData: "action:123")]
+    [TGInlineKeyboardButton(text: "Continue deeper", callbackData: "explore:continue")]
 ])
 ```
 
-## 🌐 Localization
+### Localization
 
-Project includes built-in multi-language support:
+```swift
+let text = lingo.localize("welcome", locale: user.locale)
+let greeting = lingo.localize("combat.hit", locale: user.locale,
+                              interpolations: ["damage": damage])
+```
 
-1. **Add translations** to `Localizations/*.json`
-2. **Use in code**:
-   ```swift
-   let welcomeText = lingo.localize("welcome", locale: user.locale)
-   let greeting = lingo.localize("greeting.message", locale: user.locale,
-                                  interpolations: ["full-name": user.name])
-   ```
+Add a new language by creating `Localizations/<code>.json` and adding a case to `SupportedLocale` in `configure.swift`.
 
-3. **Add new language**:
-   - Create new JSON file in `Localizations/`
-   - Add locale case to `SupportedLocale` enum in `configure.swift`
-   - Update language selection UI in registration/settings
+---
 
-## 🔧 Configuration Options
-
-### Environment Variables
+## 🔧 Configuration Reference
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather | Yes |
 | `DB_HOST` | PostgreSQL host | Yes |
-| `DB_PORT` | PostgreSQL port (default: 5432) | No |
+| `DB_PORT` | PostgreSQL port (default 5432) | No |
 | `DB_USER` | PostgreSQL username | Yes |
 | `DB_PASSWORD` | PostgreSQL password | Yes |
 | `DB_NAME` | PostgreSQL database name | Yes |
-| `PG_CONN_STR` | Full PostgreSQL connection URL (alternative) | No |
+| `PG_CONN_STR` | Full connection URL (alternative) | No |
 
-### Bot Settings
+Bot-level settings in `configure.swift`:
+- `allowedUsers` — authorized IDs (remove for public access)
+- `SupportedLocale` — enum of languages with flag emojis
 
-In `configure.swift`:
-- `owner`, `helper` - Admin user IDs
-- `allowedUsers` - Array of authorized user IDs (remove for public access)
-- `SupportedLocale` - Enum with available languages and their flags
+---
 
 ## 📚 Dependencies
 
-- **[Hummingbird](https://github.com/hummingbird-project/hummingbird)** - Lightweight Swift HTTP server
-- **[Fluent](https://docs.vapor.codes/fluent/overview/)** - ORM for database operations
-- **[FluentPostgresDriver](https://github.com/vapor/fluent-postgres-driver)** - PostgreSQL driver
-- **[AsyncHTTPClient](https://github.com/swift-server/async-http-client)** - HTTP client for Telegram API
-- **[SwiftTelegramBot](https://github.com/nerzh/swift-telegram-sdk)** - Telegram Bot API client
-- **[swift-dotenv](https://github.com/thebarndog/swift-dotenv)** - Environment file support
-- **[Lingo](https://github.com/miroslavkovac/Lingo)** - Localization support
+- **[Hummingbird](https://github.com/hummingbird-project/hummingbird)** — HTTP server (webhook / health endpoint)
+- **[Fluent](https://docs.vapor.codes/fluent/overview/)** — ORM
+- **[FluentPostgresDriver](https://github.com/vapor/fluent-postgres-driver)** — Postgres driver
+- **[AsyncHTTPClient](https://github.com/swift-server/async-http-client)** — HTTP client for Telegram API
+- **[swift-telegram-sdk](https://github.com/nerzh/swift-telegram-sdk)** — Telegram Bot API bindings
+- **[swift-dotenv](https://github.com/thebarndog/swift-dotenv)** — `.env` support
+- **[Lingo](https://github.com/miroslavkovac/Lingo)** — localization
 
-## 🛠️ Advanced Features
+---
 
-### Custom Routers
+## 🗺️ Roadmap
 
-Create specialized routers for complex command handling:
+ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 includes the full game vision: exploration, combat (PvE + PvP), estates, territorial wars, guilds, dungeons, taming, and the capital city with arena.
 
-```swift
-router.add(.photo) { context in
-    // Handle photo messages
-}
+See [**GDD.md**](./GDD.md) for systems detail, numeric tuning placeholders, and scope notes.
 
-router.add(.callback_query(data: "specific_action")) { context in
-    // Handle specific callback
-}
-```
-
-### Middleware-like Processing
-
-Use `GlobalCommandsController` for global command handling that works across all states:
-- `/help` - Always available
-- `/settings` - Accessible from anywhere
-- `/buttons` - Restore keyboard from any state
-
-### Session Caching
-
-The bot uses an actor-based cache for fast user session lookups:
-```swift
-// Get cached session (creates new user if needed)
-let session = try await User.cachedSession(for: tgUser, db: db)
-
-// Save and update cache after modifications
-try await session.saveAndCache(in: db)
-
-// Invalidate cache entry if needed
-await session.invalidateCache()
-```
-
-### Health Check Endpoint
-
-Hummingbird provides a health check endpoint at `http://localhost:8080/health` for monitoring.
+---
 
 ## 🙏 Acknowledgments
 
-- [Hummingbird](https://github.com/hummingbird-project/hummingbird) team for the excellent HTTP framework
-- [swift-telegram-sdk](https://github.com/nerzh/swift-telegram-sdk) for Telegram integration
-- Swift community for the amazing language and tooling
+- The [Hummingbird](https://github.com/hummingbird-project/hummingbird) team
+- [swift-telegram-sdk](https://github.com/nerzh/swift-telegram-sdk) by @nerzh
+- The Swift Server Work Group for the ecosystem
+
+*"Rest Of Iryna" is the working title; **ROI** is the persistent brand — the letters will find new meaning as the game grows.*

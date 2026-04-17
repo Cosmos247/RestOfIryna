@@ -58,7 +58,7 @@ public nonisolated(unsafe) var appState: AppState!
 // MARK: - Setting up Hummingbird Application.
 public func configure(logger: Logger) async throws {
 
-    let projectPath: String = "/Users/cosmos/RestOfIrina"
+    let projectPath: String = "/Users/cosmos/RestOfIryna"
     try Dotenv.configure(atPath: "\(projectPath)/.env", overwrite: false)
 
     // MARK: - Database Setup (Fluent + PostgreSQL)

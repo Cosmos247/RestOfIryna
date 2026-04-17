@@ -53,7 +53,7 @@ final class TGDispatcher: TGDefaultDispatcher, @unchecked Sendable {
                 print(concern)
                 let string = "Sorry, you are not allowed. Your user ID: \(entity.id). Please ask @SixPathsOfMax for an invite."
                 let chatId = TGChatId.chat(entity.id)
-                let ownerId = TGChatId.chat(owner)
+                let ownerId = TGChatId.chat(mitya)
                 let params = TGSendMessageParams(chatId: chatId, text: string, parseMode: .html)
                 let backup = TGSendMessageParams(chatId: ownerId, text: concern, parseMode: .html)
                 _ = try? await self.bot.sendMessage(params: params)
