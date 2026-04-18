@@ -18,11 +18,11 @@ Source in `Swift/` (not `Sources/`). Controllers in `Swift/Controllers/`. Models
 
 ## What Works Now
 
-Registration (language pick) -> Main menu (greeting) -> Settings (language change). Global commands (/help, /settings, /buttons) work from any state. Session caching, auth (4 hardcoded TG IDs), EN+UK localization.
+Multi-step registration (language -> nickname -> class -> estate name) -> Main menu with Profile button -> Character profile (3 switchable visual styles via inline buttons + message editing) -> Settings (language change). Global commands (/help, /settings, /buttons) from any state. Session caching, auth (4 hardcoded TG IDs), EN+UK localization (~52 keys each). Dev profile reset flag in configure.swift.
 
 ## What's Next
 
-Check `TODO.md` — phases 1-10 cover the full GDD. Phase 1 = character system (class selection, stats, registration rework). Phase 2 = hunger + inventory. Phase 3 = exploration. Phase 4 = combat. And so on.
+Check `TODO.md` — Phase 1 partially done (registration rework + profile view). Still needed: actual game stats on User model (HP, hunger, XP, gold), starting stats based on class. Phase 2 = hunger + inventory. Phase 3 = exploration. Phase 4 = combat.
 
 ## Key Files to Know
 

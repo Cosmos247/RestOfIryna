@@ -50,23 +50,25 @@
 ### 1.1 User Model Expansion
 - [ ] Add character stats fields (hp, max_hp, attack, defense, crit, dodge, accuracy)
 - [ ] Add level + XP fields
-- [ ] Add class field (warrior/archer/mage enum)
+- [x] Add class field (warrior/archer/mage enum)
 - [ ] Add hunger fields (current_hunger, max_hunger)
 - [ ] Add gold + crowns currency fields
-- [ ] Create migration for new User fields
+- [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle)
 - [ ] Update User model with computed properties (name, stat calculations)
 
 ### 1.2 Registration Rework
-- [ ] Add class selection step after language (warrior/archer/mage with descriptions)
+- [x] Add class selection step after language (warrior/archer/mage with descriptions)
 - [ ] Set starting stats based on class choice
-- [ ] Add name customization step (optional, defaults to TG name)
+- [x] Add nickname input step (2-20 chars)
+- [x] Add estate name input step (2-30 chars)
 - [ ] Create tutorial/onboarding message sequence
-- [ ] Add localization keys for class names, descriptions, registration flow
+- [x] Add localization keys for class names, descriptions, registration flow
 
 ### 1.3 Main Menu Rework
+- [x] Add Profile button to main menu keyboard
+- [x] Character profile view with 3 switchable display styles (inline buttons + message editing)
 - [ ] Show character status in main menu (HP, Hunger, Level, Gold)
-- [ ] Add navigation buttons: Explore, Estate, Capital, Profile
-- [ ] Add inline status bar (emoji-based HP/hunger bars)
+- [ ] Add navigation buttons: Explore, Estate, Capital
 
 ---
 

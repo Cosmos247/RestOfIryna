@@ -24,3 +24,23 @@
 - Session cache is well-implemented (actor, TTL, auto-cleanup)
 - Code quality is high, Swift 6.2 concurrency compliance is good
 - Main scaling concern: global mutable state (appState, store, sessionCache)
+
+## Session 2 — 2026-04-18 (Registration Rework + Profile)
+
+### What was done:
+- Multi-step registration: language -> nickname (2-20 chars) -> class (warrior/archer/mage) -> estate name (2-30 chars)
+- CharacterClass enum in configure.swift with icons
+- User model expanded: nickname, characterClass, estateName, registrationStep, profileStyle
+- Two new migrations: AddCharacterFields, AddProfileStyle
+- Profile view in MainController with 3 switchable visual styles (inline buttons, message editing)
+- Profile button added to main menu keyboard
+- Dev profile reset flag (resetDevProfile) for testing registration flow
+- Fixed: migrator calls now properly awaited (try await .get())
+- Fixed: databases.shutdown() in defer to prevent ConnectionPool assertion
+- Replaced dead onCancel with showCurrentStep for better UX on unexpected input during registration
+- ~28 new localization keys per locale (registration flow + profile stats)
+
+### Bugs fixed:
+- ConnectionPool.shutdown() assertion on app exit — added defer with DispatchQueue.global()
+- Migration not running (profile_style column missing) — changed `_ = migrator.prepareBatch()` to `try await migrator.prepareBatch().get()`
+- Duplicate greeting after registration — merged completion message into showMainMenu text param

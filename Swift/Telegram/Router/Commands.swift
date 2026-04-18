@@ -17,6 +17,7 @@ enum Commands: String, Codable, CaseIterable {
     case exit = "commands.exit"
     case settings = "commands.settings"
     case language = "commands.language"
+    case profile = "commands.profile"
     
     func button(for session: User, _ lingo: Lingo) -> TGKeyboardButton {
         let startText = lingo.localize(self.rawValue, locale: session.locale)

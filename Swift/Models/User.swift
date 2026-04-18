@@ -39,7 +39,22 @@ final public class User: Model, @unchecked Sendable {
     
     @Field(key: "locale")
     var locale: String
-        
+
+    @Field(key: "nickname")
+    var nickname: String?
+
+    @Field(key: "character_class")
+    var characterClass: String?
+
+    @Field(key: "estate_name")
+    var estateName: String?
+
+    @Field(key: "registration_step")
+    var registrationStep: Int
+
+    @Field(key: "profile_style")
+    var profileStyle: Int
+
     var name: String {
         if let firstName = firstName, let lastName = lastName {
             return "\(firstName) \(lastName)"
@@ -64,6 +79,8 @@ final public class User: Model, @unchecked Sendable {
         self.firstName = firstName
         self.lastName = lastName
         self.locale = locale
+        self.registrationStep = 0
+        self.profileStyle = 1
         self.createdAt = Date()
     }
     

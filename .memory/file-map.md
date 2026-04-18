@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~24 keys)
-│   └── uk.json                     # Ukrainian strings (~24 keys)
+│   ├── en.json                     # English strings (~52 keys)
+│   └── uk.json                     # Ukrainian strings (~52 keys)
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)
@@ -29,23 +29,25 @@ RestOfIryna/
     │
     ├── Controllers/
     │   ├── AllControllers.swift     # Controller registry, attachAllHandlers()
-    │   ├── MainController.swift    # Post-registration hub, greeting, settings nav
-    │   ├── RegistrationController.swift  # First-contact: language selection
+    │   ├── MainController.swift    # Main hub, profile view (3 styles), settings nav
+    │   ├── RegistrationController.swift  # Multi-step: language, nickname, class, estate
     │   ├── SettingsController.swift      # Language change, back navigation
     │   └── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
     │
     ├── Models/
-    │   └── User.swift              # Fluent model: telegram_id, routerName, locale, name
+    │   └── User.swift              # Fluent model: identity, class, nickname, estate, profile style
     │
     ├── Migrations/
-    │   └── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
+    │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
+    │   ├── AddCharacterFields.swift # nickname, character_class, estate_name, registration_step
+    │   └── AddProfileStyle.swift   # profile_style (1-3)
     │
     ├── Telegram/
     │   ├── Router/
     │   │   ├── Router.swift        # Path-matching engine (command, content type, callback)
     │   │   ├── Context.swift       # Request context: bot, db, lingo, update, session, args
     │   │   ├── Command.swift       # Command name matcher (slash handling, case sensitivity)
-    │   │   ├── Commands.swift      # Commands enum (start, cancel, exit, settings, language)
+    │   │   ├── Commands.swift      # Commands enum (start, cancel, exit, settings, language, profile)
     │   │   ├── ContentType.swift   # Enum of all matchable Telegram content types
     │   │   ├── Arguments.swift     # Scanner-based argument parser (words, ints, doubles)
     │   │   └── Router+Helpers.swift # Subscript shortcuts for adding handlers

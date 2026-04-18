@@ -8,6 +8,7 @@
 
 import FluentPostgresDriver
 import Fluent
+import Foundation
 import Hummingbird
 import Logging
 import AsyncHTTPClient
@@ -22,6 +23,24 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
+
+/// Reset dev profile on every launch (sets mitya back to registration)
+let resetDevProfile = false
+
+// MARK: - Character Classes
+public enum CharacterClass: String, CaseIterable, Codable, Sendable {
+    case warrior = "warrior"
+    case archer = "archer"
+    case mage = "mage"
+
+    func icon() -> String {
+        switch self {
+        case .warrior: return "⚔️"
+        case .archer: return "🏹"
+        case .mage: return "🔮"
+        }
+    }
+}
 
 // MARK: - Localization
 public enum SupportedLocale: String, CaseIterable, Codable, Sendable {
@@ -64,6 +83,10 @@ public func configure(logger: Logger) async throws {
     // MARK: - Database Setup (Fluent + PostgreSQL)
 
     let databases = Databases(threadPool: .singleton, on: MultiThreadedEventLoopGroup.singleton)
+    defer {
+        let databases = databases
+        DispatchQueue.global().async { databases.shutdown() }
+    }
 
     // Configure PostgreSQL connection
     let postgresConfig = SQLPostgresConfiguration(
@@ -82,10 +105,12 @@ public func configure(logger: Logger) async throws {
 
     let migrations = Migrations()
     migrations.add(CreateUser())
+    migrations.add(AddCharacterFields())
+    migrations.add(AddProfileStyle())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
-    _ = migrator.setupIfNeeded()
-    _ = migrator.prepareBatch()
+    try await migrator.setupIfNeeded().get()
+    try await migrator.prepareBatch().get()
 
     // MARK: - Localization
 
@@ -118,6 +143,19 @@ public func configure(logger: Logger) async throws {
 
     // Attach controller-specific handlers
     await Controllers.attachAllHandlers(for: appState.bot, lingo: lingo)
+
+    // MARK: - Dev Profile Reset
+    if resetDevProfile {
+        if let user = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first() {
+            user.routerName = "registration"
+            user.registrationStep = 0
+            user.nickname = nil
+            user.characterClass = nil
+            user.estateName = nil
+            try await user.saveAndCache(in: db)
+            logger.info("Dev profile reset for \(mitya)")
+        }
+    }
 
     // Start the bot
     try await appState.bot.start()

@@ -19,20 +19,29 @@
 - [x] Command system (Commands enum, Command class, ContentType matching)
 - [x] Arguments parser (Scanner-based: words, ints, doubles, rest-of-string)
 - [x] Session caching (actor-based, 5min TTL, auto-cleanup)
-- [x] User model + migration (telegram_id, routerName, locale, names)
+- [x] User model + migrations (identity, class, nickname, estate, profile style)
 - [x] Authorization (hardcoded allowedUsers list)
+- [x] Proper migration awaiting (try await migrator.prepareBatch().get())
+- [x] Database connection pool graceful shutdown (defer in configure)
 
 ### Controllers
-- [x] RegistrationController — language selection, transitions to main
-- [x] MainController — greeting with name, settings navigation
+- [x] RegistrationController — multi-step: language, nickname, class, estate name
+- [x] MainController — greeting, profile view (3 switchable styles), settings nav
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
 
+### Character System
+- [x] CharacterClass enum (warrior/archer/mage) with icons
+- [x] Multi-step registration (language -> nickname -> class -> estate name)
+- [x] Character profile display with 3 switchable visual styles
+- [x] Profile style preference saved per user
+- [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
+
 ### Localization
-- [x] English (en.json) — ~24 keys
-- [x] Ukrainian (uk.json) — ~24 keys
+- [x] English (en.json) — ~52 keys
+- [x] Ukrainian (uk.json) — ~52 keys
 - [x] Lingo integration with SupportedLocale enum
-- [x] Interpolation support (%{full-name})
+- [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 
 ## What's Planned (from GDD, not yet implemented)
 
@@ -58,7 +67,7 @@
 - [ ] Quest/achievement tracking
 
 ### Game Systems Needed
-- [ ] Class selection during registration (warrior/archer/mage)
+- [x] Class selection during registration (warrior/archer/mage)
 - [ ] Hunger system (drain, starvation, food)
 - [ ] XP/leveling system
 - [ ] Exploration loop (timed transitions, events, return prompts)
@@ -80,4 +89,4 @@
 
 ---
 
-*Last updated: 2026-04-17 (initial analysis)*
+*Last updated: 2026-04-18 (registration rework + profile view)*
