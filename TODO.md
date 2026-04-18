@@ -48,17 +48,17 @@
 ## Phase 1: Character System & Registration Rework
 
 ### 1.1 User Model Expansion
-- [ ] Add character stats fields (hp, max_hp, attack, defense, crit, dodge, accuracy)
-- [ ] Add level + XP fields
+- [x] Add character stats fields (hp, max_hp, attack, defense, crit, dodge, accuracy)
+- [x] Add level + XP fields
 - [x] Add class field (warrior/archer/mage enum)
-- [ ] Add hunger fields (current_hunger, max_hunger)
-- [ ] Add gold + crowns currency fields
-- [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle)
-- [ ] Update User model with computed properties (name, stat calculations)
+- [x] Add hunger fields (current_hunger, max_hunger)
+- [x] Add gold + crowns currency fields
+- [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle, AddGameStats)
+- [x] Update User model with applyStartingStats(for:) method
 
 ### 1.2 Registration Rework
 - [x] Add class selection step after language (warrior/archer/mage with descriptions)
-- [ ] Set starting stats based on class choice
+- [x] Set starting stats based on class choice
 - [x] Add nickname input step (2-20 chars)
 - [x] Add estate name input step (2-30 chars)
 - [ ] Create tutorial/onboarding message sequence

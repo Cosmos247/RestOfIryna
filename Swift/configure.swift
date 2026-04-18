@@ -23,9 +23,10 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
+let developerUsers: [Int64] = [mitya, maxim, irina]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = false
+let resetDevProfile = true
 
 // MARK: - Character Classes
 public enum CharacterClass: String, CaseIterable, Codable, Sendable {
@@ -38,6 +39,15 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
         case .warrior: return "⚔️"
         case .archer: return "🏹"
         case .mage: return "🔮"
+        }
+    }
+
+    /// Starting stats for level 1 (hp, atk, def, crit%, dodge, acc)
+    var startingStats: (hp: Int, attack: Int, defense: Int, crit: Int, dodge: Int, accuracy: Int) {
+        switch self {
+        case .warrior: return (hp: 120, attack: 10, defense: 12, crit: 5,  dodge: 5,  accuracy: 10)
+        case .archer:  return (hp: 90,  attack: 14, defense: 8,  crit: 10, dodge: 8,  accuracy: 14)
+        case .mage:    return (hp: 80,  attack: 15, defense: 6,  crit: 12, dodge: 6,  accuracy: 10)
         }
     }
 }
@@ -107,6 +117,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateUser())
     migrations.add(AddCharacterFields())
     migrations.add(AddProfileStyle())
+    migrations.add(AddGameStats())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -146,14 +157,30 @@ public func configure(logger: Logger) async throws {
 
     // MARK: - Dev Profile Reset
     if resetDevProfile {
-        if let user = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first() {
-            user.routerName = "registration"
-            user.registrationStep = 0
-            user.nickname = nil
-            user.characterClass = nil
-            user.estateName = nil
-            try await user.saveAndCache(in: db)
-            logger.info("Dev profile reset for \(mitya)")
+        for developer in developerUsers {
+            if let user = try await User.query(on: db).filter(\.$telegramId, .equal, developer).first() {
+                user.routerName = "registration"
+                user.registrationStep = 0
+                user.nickname = nil
+                user.characterClass = nil
+                user.estateName = nil
+                user.level = 1
+                user.xp = 0
+                user.hp = 100
+                user.maxHp = 100
+                user.hunger = 100
+                user.maxHunger = 100
+                user.attack = 10
+                user.defense = 10
+                user.crit = 5
+                user.dodge = 5
+                user.accuracy = 10
+                user.gold = 0
+                user.crowns = 0
+                try await user.saveAndCache(in: db)
+                let name = user.nickname ?? "\((user.telegramId))"
+                logger.info("Dev profile reset for \(name)")
+            }
         }
     }
 

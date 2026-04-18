@@ -44,3 +44,11 @@
 - ConnectionPool.shutdown() assertion on app exit — added defer with DispatchQueue.global()
 - Migration not running (profile_style column missing) — changed `_ = migrator.prepareBatch()` to `try await migrator.prepareBatch().get()`
 - Duplicate greeting after registration — merged completion message into showMainMenu text param
+
+### Game stats addition (same session):
+- AddGameStats migration: 13 fields (level, xp, hp, maxHp, hunger, maxHunger, attack, defense, crit, dodge, accuracy, gold, crowns)
+- User.applyStartingStats(for:) method — sets class-specific stats at registration
+- CharacterClass.startingStats computed property (warrior: hp120/def12, archer: atk14/crit10/acc14, mage: atk15/crit12/hp80)
+- Profile rendering now reads real User fields instead of hardcoded placeholders
+- XP curve: level * 100
+- Dev reset updated to clear all stat fields

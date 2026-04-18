@@ -55,7 +55,7 @@
 - [ ] PetController — taming, pet battles, assignments
 
 ### Models Needed
-- [ ] Character stats (HP, Attack, Defense, Crit, Dodge, Accuracy)
+- [x] Character stats (HP, Attack, Defense, Crit, Dodge, Accuracy) — on User model
 - [ ] Inventory system (items + quantities)
 - [ ] Equipment slots (helmet, chest, legs, boots, weapons, accessories)
 - [ ] Estate model (30x30 grid, manor layout, plots)

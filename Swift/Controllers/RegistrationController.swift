@@ -205,6 +205,9 @@ extension Registration {
         if data.starts(with: "set_class:") {
             let cls = data.replacingOccurrences(of: "set_class:", with: "")
             context.session.characterClass = cls
+            if let charClass = CharacterClass(rawValue: cls) {
+                context.session.applyStartingStats(for: charClass)
+            }
             context.session.registrationStep = 3
             try await context.session.saveAndCache(in: context.db)
             try await Controllers.registration.promptEstateName(context: context)

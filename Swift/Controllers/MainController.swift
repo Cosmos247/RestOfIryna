@@ -118,23 +118,19 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
         let estate = session.estateName ?? "?"
-        let level = 1
-        let xp = 0, xpMax = 100
-        let hp = 100, maxHp = 100
-        let hunger = 100, maxHunger = 100
-        let atk: Int, def: Int, crit: Int, dodge: Int, acc: Int
-        switch cls {
-        case .warrior: atk = 10; def = 12; crit = 5;  dodge = 5; acc = 10
-        case .archer:  atk = 14; def = 8;  crit = 10; dodge = 8; acc = 14
-        case .mage:    atk = 15; def = 6;  crit = 12; dodge = 6; acc = 10
-        }
-        let gold = 0, crowns = 0
+        let level = session.level
+        let xp = session.xp, xpMax = xpForNextLevel(level)
+        let hp = session.hp, maxHp = session.maxHp
+        let hunger = session.hunger, maxHunger = session.maxHunger
+        let atk = session.attack, def = session.defense
+        let crit = session.crit, dodge = session.dodge, acc = session.accuracy
+        let gold = session.gold, crowns = session.crowns
 
         switch style {
         case 2:
             return """
             \(cls.icon()) \(className)  «<b>\(nickname)</b>»  Lv.\(level)
-            ━━━━━━━━━━━━━━━━━━━━
+            ━━━━━━━━━━━━━━━━
 
             ❤️ \(bar(hp, maxHp)) \(hp)/\(maxHp)
             🍖 \(bar(hunger, maxHunger)) \(hunger)/\(maxHunger)
@@ -152,17 +148,17 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             \(cls.icon()) <b>\(nickname)</b> — \(className)
             ✨ \(l.localize("profile.level", locale: loc)) \(level) (\(xp)/\(xpMax) \(l.localize("profile.xp", locale: loc)))
 
-            ❤️ \(l.localize("profile.health", locale: loc)) 
-            \(emojiBar(hp, maxHp, fill: "🟥")) \(hp)/\(maxHp)
+            ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
+            \(emojiBar(hp, maxHp, fill: "🟥"))
             
-            🍖 \(l.localize("profile.hunger", locale: loc))  
-            \(emojiBar(hunger, maxHunger, fill: "🟧")) \(hunger)/\(maxHunger)
+            🍖 \(l.localize("profile.hunger", locale: loc)): \(hunger)/\(maxHunger) 
+            \(emojiBar(hunger, maxHunger, fill: "🟧"))
 
             ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
             🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
             💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
 
-            💰 \(gold) \(l.localize("profile.gold", locale: loc)) · 
+            💰 \(gold) \(l.localize("profile.gold", locale: loc))
             🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
             """
         default: // Style 1
@@ -191,6 +187,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     private func emojiBar(_ current: Int, _ max: Int, length: Int = 10, fill: String = "🟩", empty: String = "⬛") -> String {
         let filled = max > 0 ? Int(Double(current) / Double(max) * Double(length)) : 0
         return String(repeating: fill, count: filled) + String(repeating: empty, count: length - filled)
+    }
+
+    /// XP required to reach next level (simple curve: level * 100)
+    private func xpForNextLevel(_ level: Int) -> Int {
+        return level * 100
     }
 }
 

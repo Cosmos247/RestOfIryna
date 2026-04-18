@@ -38,8 +38,8 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. **Hardcoded project path.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
 - `Swift/Controllers/` — Game screen controllers
-- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, profile style)
-- `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle
+- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, currency)
+- `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle, AddGameStats
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
@@ -106,7 +106,7 @@ Required in `.env` (see `.env.example`):
 
 **Working:** Multi-step registration (language, nickname, class, estate name), main menu with profile button, character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Dev profile reset flag for testing.
 
-**Not started:** Game stats (HP, hunger, XP, gold), exploration, combat, estates, hunger system, crafting, pets, guilds, arena, market, territorial warfare.
+**Not started:** Exploration, combat, estates, hunger drain/starvation, crafting, pets, guilds, arena, market, territorial warfare. Game stats are on the User model but not yet consumed by gameplay systems.
 
 ## Instructions for AI Assistant
 

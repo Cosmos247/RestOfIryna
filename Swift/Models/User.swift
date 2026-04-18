@@ -55,6 +55,47 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "profile_style")
     var profileStyle: Int
 
+    // MARK: - Game Stats
+
+    @Field(key: "level")
+    var level: Int
+
+    @Field(key: "xp")
+    var xp: Int
+
+    @Field(key: "hp")
+    var hp: Int
+
+    @Field(key: "max_hp")
+    var maxHp: Int
+
+    @Field(key: "hunger")
+    var hunger: Int
+
+    @Field(key: "max_hunger")
+    var maxHunger: Int
+
+    @Field(key: "attack")
+    var attack: Int
+
+    @Field(key: "defense")
+    var defense: Int
+
+    @Field(key: "crit")
+    var crit: Int
+
+    @Field(key: "dodge")
+    var dodge: Int
+
+    @Field(key: "accuracy")
+    var accuracy: Int
+
+    @Field(key: "gold")
+    var gold: Int
+
+    @Field(key: "crowns")
+    var crowns: Int
+
     var name: String {
         if let firstName = firstName, let lastName = lastName {
             return "\(firstName) \(lastName)"
@@ -81,7 +122,32 @@ final public class User: Model, @unchecked Sendable {
         self.locale = locale
         self.registrationStep = 0
         self.profileStyle = 1
+        self.level = 1
+        self.xp = 0
+        self.hp = 100
+        self.maxHp = 100
+        self.hunger = 100
+        self.maxHunger = 100
+        self.attack = 10
+        self.defense = 10
+        self.crit = 5
+        self.dodge = 5
+        self.accuracy = 10
+        self.gold = 0
+        self.crowns = 0
         self.createdAt = Date()
+    }
+
+    /// Apply class-specific starting stats
+    func applyStartingStats(for characterClass: CharacterClass) {
+        let s = characterClass.startingStats
+        self.hp = s.hp
+        self.maxHp = s.hp
+        self.attack = s.attack
+        self.defense = s.defense
+        self.crit = s.crit
+        self.dodge = s.dodge
+        self.accuracy = s.accuracy
     }
     
     static func _session(for telegramId: Int64, locale: String = "en", db: any Database) async throws -> User {

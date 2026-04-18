@@ -40,7 +40,8 @@ RestOfIryna/
     ├── Migrations/
     │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
     │   ├── AddCharacterFields.swift # nickname, character_class, estate_name, registration_step
-    │   └── AddProfileStyle.swift   # profile_style (1-3)
+    │   ├── AddProfileStyle.swift   # profile_style (1-3)
+    │   └── AddGameStats.swift      # level, xp, hp, max_hp, hunger, max_hunger, atk/def/crit/dodge/acc, gold, crowns
     │
     ├── Telegram/
     │   ├── Router/
