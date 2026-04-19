@@ -52,3 +52,18 @@
 - Profile rendering now reads real User fields instead of hardcoded placeholders
 - XP curve: level * 100
 - Dev reset updated to clear all stat fields
+
+## Session 3 — 2026-04-19 (Main-menu navigation scaffold)
+
+### What was done:
+- Added three new Commands enum cases: `explore`, `estate`, `capital`
+- Created three stub controllers: ExplorationController, EstateController, CapitalController (all identical shape — show "coming soon" + back-to-main)
+- Registered new controllers in AllControllers.swift (routerNames: exploration / estate / capital)
+- MainController keyboard reshaped to 3 rows: [Explore] / [Estate, Capital] / [Profile, Settings]
+- MainController handlers (onExplore/onEstate/onCapital) transition user to the matching stub router
+- Added 4 new localization keys per locale: commands.explore/estate/capital + stub.coming_soon (EN + UK)
+- Build green (Swift 6.2, only pre-existing `crowns` unused-var warning)
+
+### User decisions captured in project memory:
+- Phase 1.2 tutorial/onboarding deferred until game lore is finalized
+- Phase 1.3 main-menu character status line skipped — stats remain in Profile view only

@@ -39,11 +39,14 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~24 per locale)
-- UI: yes, no, commands.start/cancel/exit/settings/language
+## Current Keys (~56 per locale)
+- UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
-- Other: registration, lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
+- Registration: registration.*, registration.nickname.*, registration.class.*, registration.estate.*, registration.complete
+- Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/crowns/estate
+- Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
+- Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
 
 ## Adding a New Language
 1. Create `Localizations/<code>.json` with all keys

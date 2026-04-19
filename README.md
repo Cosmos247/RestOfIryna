@@ -52,12 +52,13 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 1. **Router** — inspects each update and routes it to the right controller, based on the user's `routerName` (persisted in DB), command matching, and content type (text / callback / photo).
 2. **Controllers** — each encapsulates a discrete interaction flow. Current and planned controllers:
-   - `RegistrationController` — first-contact flow, class choice, language selection
-   - `MainController` — town hub / main menu
+   - `RegistrationController` — first-contact flow, language, nickname, class, estate name
+   - `MainController` — town hub / main menu with Explore / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
-   - `ExplorationController` *(planned)* — the timed wilderness loop
+   - `ExplorationController` *(stubbed)* — the timed wilderness loop
+   - `EstateController` *(stubbed)* — 30×30 grid editor and upgrades
+   - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `CombatController` *(planned)* — round-based PvE & PvP battles
-   - `EstateController` *(planned)* — 30×30 grid editor and upgrades
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
 3. **Context** — passed to every controller; holds the bot instance, DB handle, localization (Lingo), user session, and parsed command arguments.
@@ -74,13 +75,19 @@ RestOfIryna/
 │   │   ├── MainController.swift
 │   │   ├── RegistrationController.swift
 │   │   ├── SettingsController.swift
-│   │   └── GlobalCommandsController.swift
+│   │   ├── GlobalCommandsController.swift
+│   │   ├── ExplorationController.swift   # stub (Phase 3)
+│   │   ├── EstateController.swift        # stub (Phase 5)
+│   │   └── CapitalController.swift       # stub (Phase 6)
 │   │
 │   ├── Models/                   # Fluent ORM models
 │   │   └── User.swift
 │   │
 │   ├── Migrations/
-│   │   └── CreateUser.swift
+│   │   ├── CreateUser.swift
+│   │   ├── AddCharacterFields.swift
+│   │   ├── AddProfileStyle.swift
+│   │   └── AddGameStats.swift
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

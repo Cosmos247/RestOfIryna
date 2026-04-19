@@ -26,7 +26,7 @@ let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
 let developerUsers: [Int64] = [mitya, maxim, irina]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = true
+let resetDevProfile = false
 
 // MARK: - Character Classes
 public enum CharacterClass: String, CaseIterable, Codable, Sendable {

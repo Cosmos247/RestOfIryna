@@ -26,9 +26,12 @@
 
 ### Controllers
 - [x] RegistrationController — multi-step: language, nickname, class, estate name
-- [x] MainController — greeting, profile view (3 switchable styles), settings nav
+- [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Estate/Capital nav buttons
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
+- [x] ExplorationController — stub (coming-soon message + back), reserved for Phase 3
+- [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
+- [x] CapitalController — stub (coming-soon message + back), reserved for Phase 6
 
 ### Character System
 - [x] CharacterClass enum (warrior/archer/mage) with icons
@@ -38,17 +41,18 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~52 keys
-- [x] Ukrainian (uk.json) — ~52 keys
+- [x] English (en.json) — ~56 keys
+- [x] Ukrainian (uk.json) — ~56 keys
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 
 ## What's Planned (from GDD, not yet implemented)
 
 ### Controllers Needed
-- [ ] ExplorationController — timed room chain, events, dungeons
+- [~] ExplorationController — stub exists; needs timed room chain, events, dungeons
 - [ ] CombatController — round-based PvE & PvP
-- [ ] EstateController — 30x30 grid editor, manor rooms, plots
+- [~] EstateController — stub exists; needs 30x30 grid editor, manor rooms, plots
+- [~] CapitalController — stub exists; needs location menu, quests, stables, bank, chapel
 - [ ] MarketController — NPC stall + player bazaar
 - [ ] GuildController — guild management
 - [ ] ArenaController — PvP matchmaking
@@ -89,4 +93,4 @@
 
 ---
 
-*Last updated: 2026-04-18 (registration rework + profile view)*
+*Last updated: 2026-04-19 (main-menu nav buttons + stub controllers for Explore/Estate/Capital)*

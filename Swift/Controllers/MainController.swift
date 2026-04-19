@@ -20,6 +20,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             router[Commands.start.command()]     = onStart
             router[Commands.settings.command()]  = onSettings
             router[Commands.profile.command()]   = onProfile
+            router[Commands.explore.command()]   = onExplore
+            router[Commands.estate.command()]    = onEstate
+            router[Commands.capital.command()]   = onCapital
 
             let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
             for button in cancelLocales { router[button.text] = onCancel }
@@ -29,6 +32,15 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
             let profileLocales = Commands.profile.buttonsForAllLocales(lingo: lingo)
             for button in profileLocales { router[button.text] = onProfile }
+
+            let exploreLocales = Commands.explore.buttonsForAllLocales(lingo: lingo)
+            for button in exploreLocales { router[button.text] = onExplore }
+
+            let estateLocales = Commands.estate.buttonsForAllLocales(lingo: lingo)
+            for button in estateLocales { router[button.text] = onEstate }
+
+            let capitalLocales = Commands.capital.buttonsForAllLocales(lingo: lingo)
+            for button in capitalLocales { router[button.text] = onCapital }
 
             router.unmatched                     = unmatched
             router[.callback_query(data: nil)]   = MainController.onCallbackQuery
@@ -63,6 +75,30 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
+    private func onExplore(context: Context) async throws -> Bool {
+        let controller = Controllers.explorationController
+        try await controller.showStub(context: context)
+        context.session.routerName = controller.routerName
+        try await context.session.saveAndCache(in: context.db)
+        return true
+    }
+
+    private func onEstate(context: Context) async throws -> Bool {
+        let controller = Controllers.estateController
+        try await controller.showStub(context: context)
+        context.session.routerName = controller.routerName
+        try await context.session.saveAndCache(in: context.db)
+        return true
+    }
+
+    private func onCapital(context: Context) async throws -> Bool {
+        let controller = Controllers.capitalController
+        try await controller.showStub(context: context)
+        context.session.routerName = controller.routerName
+        try await context.session.saveAndCache(in: context.db)
+        return true
+    }
+
     public func showMainMenu(context: Context, text: String? = nil) async throws {
         let displayName = context.session.firstName ?? context.session.name
         let greeting = context.lingo.localize("greeting.message", locale: context.session.locale, interpolations: [
@@ -75,8 +111,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
         let markup = TGReplyKeyboardMarkup(keyboard: [
-            [ Commands.profile.button(for: session, lingo) ],
-            [ Commands.settings.button(for: session, lingo) ]
+            [ Commands.explore.button(for: session, lingo) ],
+            [ Commands.estate.button(for: session, lingo),
+              Commands.capital.button(for: session, lingo) ],
+            [ Commands.profile.button(for: session, lingo),
+              Commands.settings.button(for: session, lingo) ]
         ], resizeKeyboard: true)
         return TGReplyMarkup.replyKeyboardMarkup(markup)
     }

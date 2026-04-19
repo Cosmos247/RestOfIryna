@@ -47,5 +47,9 @@
     "registration.estate.prompt": "🏰 Назвіть свій маєток (2–30 символів):",
     "registration.estate.too_short": "❌ Занадто коротке — мінімум 2 символи.",
     "registration.estate.too_long": "❌ Занадто довге — максимум 30 символів.",
-    "registration.complete": "✅ Ласкаво просимо, <b>%{nickname}</b>!\n\nКлас: %{class}\nМаєток: <b>%{estate}</b>\n\nВаша пригода починається."
+    "registration.complete": "✅ Ласкаво просимо, <b>%{nickname}</b>!\n\nКлас: %{class}\nМаєток: <b>%{estate}</b>\n\nВаша пригода починається.",
+    "commands.explore": "🗺 Дослідити",
+    "commands.estate": "🏰 Маєток",
+    "commands.capital": "🏛 Столиця",
+    "stub.coming_soon": "🚧 <b>Скоро буде</b>\n\nЦей розділ ще в розробці."
 }

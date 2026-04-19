@@ -61,14 +61,14 @@
 - [x] Set starting stats based on class choice
 - [x] Add nickname input step (2-20 chars)
 - [x] Add estate name input step (2-30 chars)
-- [ ] Create tutorial/onboarding message sequence
+- [-] Create tutorial/onboarding message sequence — deferred until lore is finalized
 - [x] Add localization keys for class names, descriptions, registration flow
 
 ### 1.3 Main Menu Rework
 - [x] Add Profile button to main menu keyboard
 - [x] Character profile view with 3 switchable display styles (inline buttons + message editing)
-- [ ] Show character status in main menu (HP, Hunger, Level, Gold)
-- [ ] Add navigation buttons: Explore, Estate, Capital
+- [-] Show character status in main menu (HP, Hunger, Level, Gold) — deferred by user; stats shown in Profile view
+- [x] Add navigation buttons: Explore, Estate, Capital (stub controllers for future phases)
 
 ---
 

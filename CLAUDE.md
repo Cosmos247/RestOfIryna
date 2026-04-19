@@ -37,13 +37,13 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/entrypoint.swift` — `@main`, calls `configure()`
 - `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. **Hardcoded project path.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
-- `Swift/Controllers/` — Game screen controllers
+- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, stubs for Exploration/Estate/Capital)
 - `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, currency)
 - `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle, AddGameStats
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
-- `Localizations/` — `en.json`, `uk.json` (~52 keys each)
+- `Localizations/` — `en.json`, `uk.json` (~56 keys each)
 
 ## How to Add a New Controller
 
@@ -102,11 +102,13 @@ Required in `.env` (see `.env.example`):
 - `TELEGRAM_BOT_TOKEN` — from BotFather
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — PostgreSQL
 
-## Current State (as of 2026-04-18)
+## Current State (as of 2026-04-19)
 
-**Working:** Multi-step registration (language, nickname, class, estate name), main menu with profile button, character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Dev profile reset flag for testing.
+**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Dev profile reset flag for testing (currently `false`).
 
-**Not started:** Exploration, combat, estates, hunger drain/starvation, crafting, pets, guilds, arena, market, territorial warfare. Game stats are on the User model but not yet consumed by gameplay systems.
+**Stubbed (coming-soon placeholders wired into the router):** Exploration, Estate, Capital — each has its own controller that shows a localized "coming soon" message and a back button.
+
+**Not started:** Combat, hunger drain/starvation, crafting, pets, guilds, arena, market, territorial warfare. Game stats are on the User model but not yet consumed by gameplay systems.
 
 ## Instructions for AI Assistant
 

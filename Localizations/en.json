@@ -47,5 +47,9 @@
     "registration.estate.prompt": "🏰 Name your estate (2–30 characters):",
     "registration.estate.too_short": "❌ Too short — at least 2 characters.",
     "registration.estate.too_long": "❌ Too long — 30 characters max.",
-    "registration.complete": "✅ Welcome, <b>%{nickname}</b>!\n\nClass: %{class}\nEstate: <b>%{estate}</b>\n\nYour adventure begins now."
+    "registration.complete": "✅ Welcome, <b>%{nickname}</b>!\n\nClass: %{class}\nEstate: <b>%{estate}</b>\n\nYour adventure begins now.",
+    "commands.explore": "🗺 Explore",
+    "commands.estate": "🏰 Estate",
+    "commands.capital": "🏛 Capital",
+    "stub.coming_soon": "🚧 <b>Coming soon</b>\n\nThis feature is still in development."
 }
