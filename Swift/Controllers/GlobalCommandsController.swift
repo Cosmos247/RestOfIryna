@@ -38,6 +38,10 @@ final class GlobalCommandsController: @unchecked Sendable {
         await dispatcher.add(TGCommandHandler(commands: ["/buttons"]) { [weak self] update in
             try await self?.handleButtons(update: update)
         })
+
+        await dispatcher.add(TGCommandHandler(commands: ["/grant"]) { [weak self] update in
+            try await self?.handleGrant(update: update)
+        })
     }
 
     // MARK: - Command Handlers
@@ -82,6 +86,37 @@ final class GlobalCommandsController: @unchecked Sendable {
             let keyboardRestored = lingo.localize("keyboard.restored", locale: session.locale)
             try await bot.sendMessage(session: session, text: "⌨️ \(keyboardRestored).", replyMarkup: markup)
         }
+    }
+
+    /// Dev-only `/grant <item_id> <quantity>` — gives items to the caller.
+    /// Restricted to the mitya account (test profile).
+    private func handleGrant(update: TGUpdate) async throws {
+        guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
+        guard fromId.id == mitya else { return }
+        guard allowedUsers.contains(fromId.id) else { return }
+
+        let session = try await User.cachedSession(for: fromId, db: db)
+        let locale = session.locale
+        let text = update.message?.text ?? ""
+        let parts = text.components(separatedBy: " ").filter { !$0.isEmpty }
+
+        guard parts.count >= 3, let quantity = Int(parts[2]), quantity > 0 else {
+            let usage = lingo.localize("grant.usage", locale: locale)
+            try await bot.sendMessage(session: session, text: usage, parseMode: .html)
+            return
+        }
+
+        let itemId = parts[1]
+        guard let item = ItemCatalog.find(itemId) else {
+            let msg = lingo.localize("grant.unknown_item", locale: locale, interpolations: ["id": itemId])
+            try await bot.sendMessage(session: session, text: msg, parseMode: .html)
+            return
+        }
+
+        try await InventoryEntry.add(itemId, quantity: quantity, to: session, on: db)
+        let itemName = lingo.localize(item.nameKey, locale: locale)
+        let msg = lingo.localize("grant.success", locale: locale, interpolations: ["item": itemName, "qty": "\(quantity)"])
+        try await bot.sendMessage(session: session, text: msg, parseMode: .html)
     }
 
     // MARK: - Helper Methods

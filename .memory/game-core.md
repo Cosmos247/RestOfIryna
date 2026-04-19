@@ -60,10 +60,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Cooldown between challenges
 
 ### Economy
-- Resources: raw materials, biomass, flora, currency (gold/crowns), rare drops
+- Resources: raw materials, biomass, flora, currency (gold + TBD premium), rare drops
 - Crafting in manor rooms (recipe-based, tier-gated)
 - Market: NPC fixed prices + player free-market
 
 ### Monetization (TBD)
-- F2P, premium currency "crowns"
+- F2P with a premium currency (name TBD — was "crowns" in early draft, reserved until renamed)
 - Cosmetics, convenience, no exclusives

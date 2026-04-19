@@ -37,13 +37,15 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/entrypoint.swift` — `@main`, calls `configure()`
 - `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. **Hardcoded project path.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
-- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, stubs for Exploration/Estate/Capital)
-- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, currency)
-- `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle, AddGameStats
+- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory viewer; stubs for Exploration/Estate/Capital)
+- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, gold)
+- `Swift/Models/Item.swift` — static item catalog (ItemType / ItemEffect / Item / ItemCatalog) — code-based, not in DB
+- `Swift/Models/InventoryEntry.swift` — Fluent model (user_id, item_id, quantity) + add/remove/has/list helpers
+- `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle, AddGameStats, CreateInventory, RemoveCrownsField
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
-- `Localizations/` — `en.json`, `uk.json` (~56 keys each)
+- `Localizations/` — `en.json`, `uk.json` (~82 keys each)
 
 ## How to Add a New Controller
 
@@ -104,7 +106,7 @@ Required in `.env` (see `.env.example`):
 
 ## Current State (as of 2026-04-19)
 
-**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Dev profile reset flag for testing (currently `false`).
+**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory: data layer + read-only viewer (grouped by type with icons, empty state). Dev-only `/grant <item_id> <qty>` command restricted to mitya. Dev inventory seed on startup (mitya only, idempotent). Dev profile reset flag for testing (currently `false`).
 
 **Stubbed (coming-soon placeholders wired into the router):** Exploration, Estate, Capital — each has its own controller that shows a localized "coming soon" message and a back button.
 

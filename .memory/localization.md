@@ -39,13 +39,16 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~56 per locale)
-- UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital
+## Current Keys (~82 per locale)
+- UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
 - Registration: registration.*, registration.nickname.*, registration.class.*, registration.estate.*, registration.complete
-- Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/crowns/estate
+- Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
+- Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.recipe.*, item.artifact.* (display names for catalog entries)
+- Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/recipe/artifact
+- Dev commands: grant.usage, grant.unknown_item, grant.success (for `/grant`, mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
 
 ## Adding a New Language

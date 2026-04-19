@@ -52,7 +52,7 @@
 - [x] Add level + XP fields
 - [x] Add class field (warrior/archer/mage enum)
 - [x] Add hunger fields (current_hunger, max_hunger)
-- [x] Add gold + crowns currency fields
+- [x] Add gold currency field (premium currency name TBD — crowns removed until decided)
 - [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle, AddGameStats)
 - [x] Update User model with applyStartingStats(for:) method
 
@@ -75,11 +75,11 @@
 ## Phase 2: Hunger & Inventory Systems
 
 ### 2.1 Inventory Model
-- [ ] Design Item model (id, name, type, tier, stackable, effects)
-- [ ] Design Inventory model (user_id, item_id, quantity)
-- [ ] Create item type enum (food, material, gear, potion, recipe, artifact)
-- [ ] Create migrations for Item + Inventory tables
-- [ ] Implement inventory add/remove/check helpers
+- [x] Design Item model (id, name, type, tier, stackable, effects) — code-based catalog in `Swift/Models/Item.swift`
+- [x] Design Inventory model (user_id, item_id, quantity) — Fluent model in `Swift/Models/InventoryEntry.swift`
+- [x] Create item type enum (food, material, gear, potion, recipe, artifact)
+- [x] Create migrations for Inventory table (item catalog lives in code, not DB)
+- [x] Implement inventory add/remove/has/totalQuantity/list helpers
 
 ### 2.2 Hunger System
 - [ ] Implement hunger drain on actions (configurable rates)

@@ -53,11 +53,12 @@ ROI is built on a router–controller state machine. Each controller represents 
 1. **Router** — inspects each update and routes it to the right controller, based on the user's `routerName` (persisted in DB), command matching, and content type (text / callback / photo).
 2. **Controllers** — each encapsulates a discrete interaction flow. Current and planned controllers:
    - `RegistrationController` — first-contact flow, language, nickname, class, estate name
-   - `MainController` — town hub / main menu with Explore / Estate / Capital / Profile / Settings nav
+   - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
    - `EstateController` *(stubbed)* — 30×30 grid editor and upgrades
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
+   - `InventoryController` — read-only viewer grouped by item type (use/equip planned for Phase 2.2/2.3)
    - `CombatController` *(planned)* — round-based PvE & PvP battles
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
@@ -78,16 +79,21 @@ RestOfIryna/
 │   │   ├── GlobalCommandsController.swift
 │   │   ├── ExplorationController.swift   # stub (Phase 3)
 │   │   ├── EstateController.swift        # stub (Phase 5)
-│   │   └── CapitalController.swift       # stub (Phase 6)
+│   │   ├── CapitalController.swift       # stub (Phase 6)
+│   │   └── InventoryController.swift     # read-only viewer (use/equip TBD)
 │   │
-│   ├── Models/                   # Fluent ORM models
-│   │   └── User.swift
+│   ├── Models/                   # Fluent ORM models + code-based catalogs
+│   │   ├── User.swift
+│   │   ├── Item.swift            # static item catalog (code, not DB)
+│   │   └── InventoryEntry.swift  # per-user item stacks (DB) + helpers
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
 │   │   ├── AddCharacterFields.swift
 │   │   ├── AddProfileStyle.swift
-│   │   └── AddGameStats.swift
+│   │   ├── AddGameStats.swift
+│   │   ├── CreateInventory.swift
+│   │   └── RemoveCrownsField.swift
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system
@@ -111,10 +117,9 @@ RestOfIryna/
 │   ├── configure.swift
 │   └── routes.swift
 │
-├── Resources/
-│   └── Localizations/
-│       ├── en.json
-│       └── uk.json
+├── Localizations/
+│   ├── en.json
+│   └── uk.json
 │
 ├── Public/
 │   └── favicon.ico

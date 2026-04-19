@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~56 keys)
-│   └── uk.json                     # Ukrainian strings (~56 keys)
+│   ├── en.json                     # English strings (~82 keys)
+│   └── uk.json                     # Ukrainian strings (~82 keys)
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)
@@ -35,23 +35,28 @@ RestOfIryna/
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
     │   ├── ExplorationController.swift   # STUB (Phase 3): coming-soon + back to main
     │   ├── EstateController.swift        # STUB (Phase 5): coming-soon + back to main
-    │   └── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
+    │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
+    │   └── InventoryController.swift     # Read-only viewer: entries grouped by ItemType, empty state
     │
     ├── Models/
-    │   └── User.swift              # Fluent model: identity, class, nickname, estate, profile style
+    │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
+    │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, Item, ItemCatalog (code-based)
+    │   └── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity + add/remove/has/list helpers
     │
     ├── Migrations/
     │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
     │   ├── AddCharacterFields.swift # nickname, character_class, estate_name, registration_step
     │   ├── AddProfileStyle.swift   # profile_style (1-3)
-    │   └── AddGameStats.swift      # level, xp, hp, max_hp, hunger, max_hunger, atk/def/crit/dodge/acc, gold, crowns
+    │   ├── AddGameStats.swift      # level, xp, hp, max_hp, hunger, max_hunger, atk/def/crit/dodge/acc, gold (crowns originally here)
+    │   ├── CreateInventory.swift   # inventory table: user_id (FK, cascade), item_id, quantity, timestamps
+    │   └── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
     │
     ├── Telegram/
     │   ├── Router/
     │   │   ├── Router.swift        # Path-matching engine (command, content type, callback)
     │   │   ├── Context.swift       # Request context: bot, db, lingo, update, session, args
     │   │   ├── Command.swift       # Command name matcher (slash handling, case sensitivity)
-    │   │   ├── Commands.swift      # Commands enum (start, cancel, exit, settings, language, profile, explore, estate, capital)
+    │   │   ├── Commands.swift      # Commands enum (start, cancel, exit, settings, language, profile, explore, estate, capital, inventory)
     │   │   ├── ContentType.swift   # Enum of all matchable Telegram content types
     │   │   ├── Arguments.swift     # Scanner-based argument parser (words, ints, doubles)
     │   │   └── Router+Helpers.swift # Subscript shortcuts for adding handlers

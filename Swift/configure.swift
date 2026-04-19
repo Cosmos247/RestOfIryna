@@ -28,6 +28,9 @@ let developerUsers: [Int64] = [mitya, maxim, irina]
 /// Reset dev profile on every launch (sets mitya back to registration)
 let resetDevProfile = false
 
+/// Seed a starter inventory for the mitya test account on launch (idempotent — only runs when inventory is empty)
+let seedDevInventory = true
+
 // MARK: - Character Classes
 public enum CharacterClass: String, CaseIterable, Codable, Sendable {
     case warrior = "warrior"
@@ -118,6 +121,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddCharacterFields())
     migrations.add(AddProfileStyle())
     migrations.add(AddGameStats())
+    migrations.add(CreateInventory())
+    migrations.add(RemoveCrownsField())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -176,11 +181,31 @@ public func configure(logger: Logger) async throws {
                 user.dodge = 5
                 user.accuracy = 10
                 user.gold = 0
-                user.crowns = 0
                 try await user.saveAndCache(in: db)
                 let name = user.nickname ?? "\((user.telegramId))"
                 logger.info("Dev profile reset for \(name)")
             }
+        }
+    }
+
+    // MARK: - Dev Inventory Seed (mitya only, idempotent)
+    if seedDevInventory,
+       let mityaUser = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first() {
+        let existing = try await InventoryEntry.list(for: mityaUser, on: db)
+        if existing.isEmpty {
+            let seed: [(String, Int)] = [
+                ("food.bread", 3),
+                ("food.stew", 1),
+                ("mat.wood", 5),
+                ("mat.stone", 3),
+                ("potion.heal_small", 2),
+                ("gear.rusty_sword", 1),
+                ("recipe.stew", 1),
+            ]
+            for (itemId, qty) in seed {
+                try await InventoryEntry.add(itemId, quantity: qty, to: mityaUser, on: db)
+            }
+            logger.info("Dev inventory seeded for mitya: \(seed.count) stacks")
         }
     }
 

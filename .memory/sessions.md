@@ -67,3 +67,37 @@
 ### User decisions captured in project memory:
 - Phase 1.2 tutorial/onboarding deferred until game lore is finalized
 - Phase 1.3 main-menu character status line skipped — stats remain in Profile view only
+
+## Session 4 — 2026-04-19 (Inventory data layer, Phase 2.1)
+
+### What was done:
+- Designed Item model as a code-based catalog (not a DB table) — `Swift/Models/Item.swift`
+  - `ItemType` enum: food / material / gear / potion / recipe / artifact
+  - `ItemEffect` enum with associated values: `.restoreHunger(Int)` / `.restoreHP(Int)` (extendable)
+  - `Item` struct: id, nameKey, type, tier, stackable, effects
+  - `ItemCatalog` with 14 seed items spanning all types, plus `find(id)` + `items(of:type)` lookup
+- Created `InventoryEntry` Fluent model — one row per stack (user_id FK cascade, item_id, quantity, timestamps)
+- CreateInventory migration (indexed FK, no unique constraint; non-stackable gear gets one row per unit)
+- Inventory helpers as static methods: `add`, `remove` (returns false if insufficient), `has`, `totalQuantity`, `list`
+- 14 new localization keys per locale for seed item display names (EN + UK)
+- Build green (Swift 6.2, only pre-existing `crowns` warning)
+
+### Architectural decisions:
+- Item catalog in code (not DB): chosen for type-safe effects, compile-time safety, and because GDD expects a bounded set (~50–200 items) with diverse effect shapes. Trade-off: adding an item requires a deploy.
+- Normalized `inventory` table (not JSON blob on User): needed for future market / guild vault / trade / quest-prereq queries.
+- No unique constraint on (user_id, item_id): gear is non-stackable, would need per-instance rows. Stacking is enforced by helper logic instead.
+
+### Inventory nav button + real viewer (same session):
+- Added `Commands.inventory` case + main-menu keyboard reshape: row 1 is now 🗺 Explore | 🎒 Inventory
+- `InventoryController` is a real read-only viewer (not a stub): loads `InventoryEntry.list()`, groups by `ItemType` with icons (🍖🪨🧪🗡📜💎), shows empty-state when bag is empty
+- Added `ItemType.icon` property
+- Dev command `/grant <item_id> <quantity>` registered on TGDispatcher via GlobalCommandsController — restricted to mitya only; validates item exists, uses existing `InventoryEntry.add` helper
+- Dev inventory seed in configure.swift: mitya-only, idempotent (skips when inventory non-empty); controlled by `seedDevInventory` flag (default true). Seeds: bread×3, stew×1, wood×5, stone×3, heal_small×2, rusty_sword×1, recipe.stew×1
+- 12 new localization keys per locale: inventory.title/empty, inventory.type.* (6), grant.usage/unknown_item/success
+
+### Crowns removal (same session):
+- Removed `crowns` field from User model, init, dev reset, MainController profile rendering
+- Dropped `profile.crowns` localization key (EN + UK)
+- New migration `RemoveCrownsField` drops the `crowns` column from `users` (the original AddGameStats migration is untouched — it's already applied)
+- Motivation: user hasn't decided on the final premium-currency name yet; removing avoids stale references. Concept remains in GDD as "premium currency (name TBD)". When a name is picked, a new AddX migration will reintroduce the column.
+- Build clean — previous pre-existing `crowns` unused-var warning is gone too

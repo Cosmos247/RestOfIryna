@@ -21,6 +21,7 @@ enum Commands: String, Codable, CaseIterable {
     case explore = "commands.explore"
     case estate = "commands.estate"
     case capital = "commands.capital"
+    case inventory = "commands.inventory"
     
     func button(for session: User, _ lingo: Lingo) -> TGKeyboardButton {
         let startText = lingo.localize(self.rawValue, locale: session.locale)

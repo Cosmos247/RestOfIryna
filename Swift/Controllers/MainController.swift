@@ -23,6 +23,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             router[Commands.explore.command()]   = onExplore
             router[Commands.estate.command()]    = onEstate
             router[Commands.capital.command()]   = onCapital
+            router[Commands.inventory.command()] = onInventory
 
             let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
             for button in cancelLocales { router[button.text] = onCancel }
@@ -41,6 +42,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
             let capitalLocales = Commands.capital.buttonsForAllLocales(lingo: lingo)
             for button in capitalLocales { router[button.text] = onCapital }
+
+            let inventoryLocales = Commands.inventory.buttonsForAllLocales(lingo: lingo)
+            for button in inventoryLocales { router[button.text] = onInventory }
 
             router.unmatched                     = unmatched
             router[.callback_query(data: nil)]   = MainController.onCallbackQuery
@@ -99,6 +103,14 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
+    private func onInventory(context: Context) async throws -> Bool {
+        let controller = Controllers.inventoryController
+        try await controller.showInventory(context: context)
+        context.session.routerName = controller.routerName
+        try await context.session.saveAndCache(in: context.db)
+        return true
+    }
+
     public func showMainMenu(context: Context, text: String? = nil) async throws {
         let displayName = context.session.firstName ?? context.session.name
         let greeting = context.lingo.localize("greeting.message", locale: context.session.locale, interpolations: [
@@ -111,7 +123,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
         let markup = TGReplyKeyboardMarkup(keyboard: [
-            [ Commands.explore.button(for: session, lingo) ],
+            [ Commands.explore.button(for: session, lingo),
+              Commands.inventory.button(for: session, lingo) ],
             [ Commands.estate.button(for: session, lingo),
               Commands.capital.button(for: session, lingo) ],
             [ Commands.profile.button(for: session, lingo),
@@ -163,7 +176,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let hunger = session.hunger, maxHunger = session.maxHunger
         let atk = session.attack, def = session.defense
         let crit = session.crit, dodge = session.dodge, acc = session.accuracy
-        let gold = session.gold, crowns = session.crowns
+        let gold = session.gold
 
         switch style {
         case 2:

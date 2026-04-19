@@ -93,9 +93,6 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "gold")
     var gold: Int
 
-    @Field(key: "crowns")
-    var crowns: Int
-
     var name: String {
         if let firstName = firstName, let lastName = lastName {
             return "\(firstName) \(lastName)"
@@ -134,7 +131,6 @@ final public class User: Model, @unchecked Sendable {
         self.dodge = 5
         self.accuracy = 10
         self.gold = 0
-        self.crowns = 0
         self.createdAt = Date()
     }
 
