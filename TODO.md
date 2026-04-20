@@ -82,11 +82,11 @@
 - [x] Implement inventory add/remove/has/totalQuantity/list helpers
 
 ### 2.2 Hunger System
-- [ ] Implement hunger drain on actions (configurable rates)
-- [ ] Implement starvation penalties (stat reduction, HP drain, slow travel)
-- [ ] Implement food consumption (restore hunger from inventory)
-- [ ] Add hunger display to status messages
-- [ ] Add localization keys for hunger states and food use
+- [~] Implement hunger drain on actions (configurable rates) — `HungerService.drain(_:action:)` ready; callers wired when Exploration/Combat ship (Phase 3/4)
+- [~] Implement starvation penalties (stat reduction, HP drain, slow travel) — `effectiveAttack`/`effectiveDefense` apply −25% when starving; `applyStarvationHPLoss` ready; travel slowdown is Phase 3
+- [x] Implement food consumption (restore hunger from inventory) — inline Use buttons in InventoryController + `HungerService.consume`
+- [x] Add hunger display to status messages — profile shows 😵 Starving suffix when hunger is 0; effective ATK/DEF reflect penalty
+- [x] Add localization keys for hunger states and food use
 
 ### 2.3 Equipment System
 - [ ] Design Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory x2)

@@ -58,7 +58,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
    - `EstateController` *(stubbed)* — 30×30 grid editor and upgrades
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
-   - `InventoryController` — read-only viewer grouped by item type (use/equip planned for Phase 2.2/2.3)
+   - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action (🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use) on all non-Material rows. Food/potion consume via HungerService; gear/artifact placeholder until Phase 2.3+.
    - `CombatController` *(planned)* — round-based PvE & PvP battles
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
@@ -80,7 +80,7 @@ RestOfIryna/
 │   │   ├── ExplorationController.swift   # stub (Phase 3)
 │   │   ├── EstateController.swift        # stub (Phase 5)
 │   │   ├── CapitalController.swift       # stub (Phase 6)
-│   │   └── InventoryController.swift     # read-only viewer (use/equip TBD)
+│   │   └── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons
 │   │
 │   ├── Models/                   # Fluent ORM models + code-based catalogs
 │   │   ├── User.swift
@@ -94,6 +94,9 @@ RestOfIryna/
 │   │   ├── AddGameStats.swift
 │   │   ├── CreateInventory.swift
 │   │   └── RemoveCrownsField.swift
+│   │
+│   ├── Services/                 # Pure domain services, no DB writes
+│   │   └── HungerService.swift   # drain, consume, starvation penalty, HP loss
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

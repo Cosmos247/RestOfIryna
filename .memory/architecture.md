@@ -44,6 +44,15 @@ TGUpdate arrives via long polling
 - `sessionCache: SessionCache` — global actor, in-memory user cache (5min TTL)
 - `allowedUsers: [Int64]` — hardcoded authorized Telegram IDs
 
+## Service Layer
+
+Pure domain services live in `Swift/Services/`. They hold no state, do no DB writes, and mutate models in-place when needed. Callers (controllers) are responsible for persisting and for coordinating cross-entity flows.
+
+Why: keeps game logic testable, swap-able, and cheap to compose. Same function can be invoked from a controller (player action), a dev command (`/drain`), a scheduled job (future), or a migration-time seeder without code duplication.
+
+- `HungerService` (Phase 2.2) — drain per action, consume food/potion, compute starvation penalty on effective stats, apply per-room HP loss when starving.
+- Future: `ExplorationService`, `CombatService`, `CraftingService`, `EstateService`.
+
 ## Concurrency Model
 
 - Swift 6.2 strict concurrency

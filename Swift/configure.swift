@@ -188,24 +188,43 @@ public func configure(logger: Logger) async throws {
         }
     }
 
-    // MARK: - Dev Inventory Seed (mitya only, idempotent)
+    // MARK: - Dev Inventory Seed (mitya only)
+    // Top-up per item so the seed recovers gracefully after catalog changes: each
+    // seed entry is brought up to its target quantity (but never reduced). Rows that
+    // reference an item_id no longer in the catalog are cleaned up first.
     if seedDevInventory,
-       let mityaUser = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first() {
-        let existing = try await InventoryEntry.list(for: mityaUser, on: db)
-        if existing.isEmpty {
-            let seed: [(String, Int)] = [
-                ("food.bread", 3),
-                ("food.stew", 1),
-                ("mat.wood", 5),
-                ("mat.stone", 3),
-                ("potion.heal_small", 2),
-                ("gear.rusty_sword", 1),
-                ("recipe.stew", 1),
-            ]
-            for (itemId, qty) in seed {
-                try await InventoryEntry.add(itemId, quantity: qty, to: mityaUser, on: db)
+       let mityaUser = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first(),
+       let mityaId = mityaUser.id {
+
+        let allEntries = try await InventoryEntry.list(for: mityaUser, on: db)
+        var orphansDeleted = 0
+        for entry in allEntries where ItemCatalog.find(entry.itemId) == nil {
+            try await entry.delete(on: db)
+            orphansDeleted += 1
+        }
+        if orphansDeleted > 0 {
+            logger.info("Cleaned \(orphansDeleted) orphaned inventory row(s) for mitya")
+        }
+
+        let seed: [(String, Int)] = [
+            ("food.bread", 3),
+            ("food.stew", 1),
+            ("mat.wood", 5),
+            ("mat.stone", 3),
+            ("potion.heal_small", 2),
+            ("gear.rusty_sword", 1),
+            ("artifact.shrine_coin", 1),
+        ]
+        var grantedCount = 0
+        for (itemId, targetQty) in seed {
+            let have = try await InventoryEntry.totalQuantity(of: itemId, for: mityaId, on: db)
+            if have < targetQty {
+                try await InventoryEntry.add(itemId, quantity: targetQty - have, to: mityaUser, on: db)
+                grantedCount += 1
             }
-            logger.info("Dev inventory seeded for mitya: \(seed.count) stacks")
+        }
+        if grantedCount > 0 {
+            logger.info("Topped up mitya's inventory: \(grantedCount) item(s) seeded")
         }
     }
 

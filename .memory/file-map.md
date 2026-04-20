@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~82 keys)
-│   └── uk.json                     # Ukrainian strings (~82 keys)
+│   ├── en.json                     # English strings (~96 keys)
+│   └── uk.json                     # Ukrainian strings (~96 keys)
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)
@@ -36,7 +36,7 @@ RestOfIryna/
     │   ├── ExplorationController.swift   # STUB (Phase 3): coming-soon + back to main
     │   ├── EstateController.swift        # STUB (Phase 5): coming-soon + back to main
     │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
-    │   └── InventoryController.swift     # Read-only viewer: entries grouped by ItemType, empty state
+    │   └── InventoryController.swift     # Tree nav: root categories → drill-down with Use buttons for food/potion
     │
     ├── Models/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
@@ -50,6 +50,9 @@ RestOfIryna/
     │   ├── AddGameStats.swift      # level, xp, hp, max_hp, hunger, max_hunger, atk/def/crit/dodge/acc, gold (crowns originally here)
     │   ├── CreateInventory.swift   # inventory table: user_id (FK, cascade), item_id, quantity, timestamps
     │   └── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
+    │
+    ├── Services/
+    │   └── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension)
     │
     ├── Telegram/
     │   ├── Router/

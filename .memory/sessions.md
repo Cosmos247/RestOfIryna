@@ -101,3 +101,37 @@
 - New migration `RemoveCrownsField` drops the `crowns` column from `users` (the original AddGameStats migration is untouched — it's already applied)
 - Motivation: user hasn't decided on the final premium-currency name yet; removing avoids stale references. Concept remains in GDD as "premium currency (name TBD)". When a name is picked, a new AddX migration will reintroduce the column.
 - Build clean — previous pre-existing `crowns` unused-var warning is gone too
+
+## Session 5 — 2026-04-20 (Hunger system, Phase 2.2)
+
+### Architectural decisions:
+- Stats in DB are BASE values. Effective stats (after hunger / future gear / buffs) are computed via `user.effectiveAttack` / `user.effectiveDefense` computed properties. Callers (combat, UI) read effective values. Gear bonuses (Phase 2.3) and pet buffs layer into the same extension.
+- Service layer introduced in `Swift/Services/`. `HungerService` is pure — no DB writes, no actor state. Mutates user in-place when drain/consume are called; caller persists. This pattern will be reused by future services (Exploration, Combat, Crafting).
+- Drain hooks are written now but not yet wired, because Exploration (room transitions) and Combat (rounds) don't exist yet. `HungerService.drain(user, action:)` is ready to be called from those when they ship.
+
+### What was done:
+- New `Swift/Services/HungerService.swift`:
+  - `HungerAction` enum (walkRoom / walkRoomDoubleSpeed / combatRound / idle) with tunable cost constants (⚙️ TBD, GDD values)
+  - `drain(user, action:)` and `drain(user, amount:)` — clamp to 0
+  - `isStarving(user)` — hunger <= 0
+  - `consume(item, user) -> ConsumeResult?` — applies `restoreHunger` / `restoreHP` effects, returns nil if fully wasted (rejects consumption)
+  - `applyStarvationHPLoss(user) -> Int` — 5% max HP lost per room when starving (callers invoke per room)
+  - `isConsumable(item)` — true for food / potion
+  - Constants: `drainWalkRoom=2`, `drainWalkRoomDoubleSpeed=4`, `drainCombatRound=1`, `starvationStatPenalty=0.25`, `starvationHPDrainPercent=0.05`
+- User extension: `effectiveAttack`, `effectiveDefense` apply `-starvationStatPenalty` when starving (clamped to min 1)
+- `InventoryController` — single-message tree navigation:
+  - Root view: "🎒 Inventory" + category buttons for ALL 5 item types (2 per row, e.g. `🍖 Food (4)` · `💎 Artifacts (0)`). Empty categories show count (0) and reply with a toast "You have no items in this category" on tap instead of opening an empty drill-down. No Close button — player navigates away via main's reply keyboard, which stays visible throughout the inventory session.
+  - Category drill-down: every item is its own inline button (future-proofed — tapping will show per-item description). For all categories except Materials, each row is `[Item × N] [action]`; the action button label/emoji is type-specific via `ItemType.actionKey` → `inventory.action.<type>`: 🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use. Materials have no action button (they're crafting inputs, not usables).
+  - Navigation edits the same message in place (editMessageText).
+  - `inv:info:<id>` callback: placeholder toast "`<name> — description coming soon`" until per-item description view is built.
+  - `inv:use:<id>` callback: food/potion consume via HungerService (toast with "+X hunger" / "+Y HP"); gear/artifact reply with "🚧 Not yet available" toast until their systems ship (Phase 2.3 / TBD).
+  - Consume refreshes category view; auto-pops back to root when the category becomes empty.
+  - Rejects consumption if item's total effect would be zero (no wasted eating).
+  - Inventory router registers main-nav button-text handlers (Explore / Estate / Capital / Profile / Settings / Inventory) so main's reply keyboard clicks during inventory still navigate properly.
+- `MainController.renderProfile` — shows effective ATK/DEF (respect starvation penalty); appends `😵 Starving` suffix to hunger line in all 3 styles when hunger is 0
+- Dev command `/drain <amount>` in GlobalCommandsController — mitya-only; drains hunger by N (clamped); does not trigger starvation HP loss (that's a per-room effect)
+- Dev command `/revoke <item_id> <quantity>` — mitya-only; symmetric counterpart to `/grant`. Uses `InventoryEntry.remove`; responds "not enough" if player has fewer than requested (nothing partially removed in that case).
+- Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
+- `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
+- Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.
+- Build fully green

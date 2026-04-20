@@ -39,16 +39,18 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~82 per locale)
+## Current Keys (~96 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
 - Registration: registration.*, registration.nickname.*, registration.class.*, registration.estate.*, registration.complete
 - Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
-- Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.recipe.*, item.artifact.* (display names for catalog entries)
-- Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/recipe/artifact
-- Dev commands: grant.usage, grant.unknown_item, grant.success (for `/grant`, mitya-only)
+- Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)
+- Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/artifact, inventory.choose_category, inventory.back_root, inventory.info.placeholder, inventory.use.unavailable, inventory.category.empty (toast for tapping an empty category)
+- Inventory actions (per item type): inventory.action.food/potion/gear/artifact — each includes its emoji + verb ("🍴 Eat", "🍷 Use", "🛡 Equip", "✨ Use")
+- Hunger / consume: hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect
+- Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
 
 ## Adding a New Language

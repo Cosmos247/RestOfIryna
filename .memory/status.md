@@ -32,7 +32,7 @@
 - [x] ExplorationController — stub (coming-soon message + back), reserved for Phase 3
 - [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
 - [x] CapitalController — stub (coming-soon message + back), reserved for Phase 6
-- [x] InventoryController — read-only viewer (entries grouped by ItemType with icons; empty state); use/equip planned for Phase 2.2/2.3
+- [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button (future description view); `[🍽 Use]` shown for all types except Materials (food/potion consume; gear/recipe/artifact toast "not yet available"); main-nav button pass-through; equip planned for Phase 2.3
 
 ### Character System
 - [x] CharacterClass enum (warrior/archer/mage) with icons
@@ -42,8 +42,11 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~82 keys
-- [x] Ukrainian (uk.json) — ~82 keys
+- [x] English (en.json) — ~96 keys
+- [x] Ukrainian (uk.json) — ~96 keys
+
+### Services
+- [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 

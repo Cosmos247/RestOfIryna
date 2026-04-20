@@ -17,7 +17,6 @@ public enum ItemType: String, Codable, CaseIterable, Sendable {
     case material
     case gear
     case potion
-    case recipe
     case artifact
 
     public var icon: String {
@@ -26,9 +25,16 @@ public enum ItemType: String, Codable, CaseIterable, Sendable {
         case .material: return "🪨"
         case .potion:   return "🧪"
         case .gear:     return "🗡"
-        case .recipe:   return "📜"
         case .artifact: return "💎"
         }
+    }
+
+    /// Localization key for the action button next to each item row in the inventory
+    /// (e.g. "Eat" for food, "Equip" for gear). Nil for materials — they have no
+    /// player-facing action; they're consumed by crafting recipes instead.
+    public var actionKey: String? {
+        guard self != .material else { return nil }
+        return "inventory.action.\(rawValue)"
     }
 }
 
@@ -74,10 +80,7 @@ public enum ItemCatalog {
         Item(id: "gear.rusty_sword",    nameKey: "item.gear.rusty_sword",   type: .gear,     tier: 1, stackable: false, effects: []),
         Item(id: "gear.leather_vest",   nameKey: "item.gear.leather_vest",  type: .gear,     tier: 1, stackable: false, effects: []),
 
-        // Recipes
-        Item(id: "recipe.stew",         nameKey: "item.recipe.stew",        type: .recipe,   tier: 1, stackable: false, effects: []),
-
-        // Artifacts
+        // Artifacts (crafting recipes will become a separate system in Phase 5.3 — not an item type)
         Item(id: "artifact.shrine_coin", nameKey: "item.artifact.shrine_coin", type: .artifact, tier: 3, stackable: true, effects: []),
     ]
 

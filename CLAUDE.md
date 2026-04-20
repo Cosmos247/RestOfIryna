@@ -37,15 +37,16 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/entrypoint.swift` — `@main`, calls `configure()`
 - `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. **Hardcoded project path.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
-- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory viewer; stubs for Exploration/Estate/Capital)
-- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, gold)
+- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory tree nav; stubs for Exploration/Estate/Capital)
+- `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, gold) + effective-stat computed properties
 - `Swift/Models/Item.swift` — static item catalog (ItemType / ItemEffect / Item / ItemCatalog) — code-based, not in DB
 - `Swift/Models/InventoryEntry.swift` — Fluent model (user_id, item_id, quantity) + add/remove/has/list helpers
 - `Swift/Migrations/` — CreateUser, AddCharacterFields, AddProfileStyle, AddGameStats, CreateInventory, RemoveCrownsField
+- `Swift/Services/` — Pure domain services; no DB writes (callers persist). Currently: HungerService (drain / consume / effective-stat penalty / starvation HP loss)
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
-- `Localizations/` — `en.json`, `uk.json` (~82 keys each)
+- `Localizations/` — `en.json`, `uk.json` (~96 keys each)
 
 ## How to Add a New Controller
 
@@ -104,13 +105,13 @@ Required in `.env` (see `.env.example`):
 - `TELEGRAM_BOT_TOKEN` — from BotFather
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — PostgreSQL
 
-## Current State (as of 2026-04-19)
+## Current State (as of 2026-04-20)
 
-**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory: data layer + read-only viewer (grouped by type with icons, empty state). Dev-only `/grant <item_id> <qty>` command restricted to mitya. Dev inventory seed on startup (mitya only, idempotent). Dev profile reset flag for testing (currently `false`).
+**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing, shows effective ATK/DEF and 😵 Starving indicator), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory tree navigation: root always shows all 5 category buttons with live counts (empty categories show "(0)" and reply with a toast on tap); drill-down shows every item as its own inline button (future per-item description view) with a type-specific action button next to each row — 🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use — on every non-Material category. Food/potion consume via HungerService; gear/artifact reply with "🚧 Not yet available" toast until their systems ship. Hunger service (pure): drain, consume, effective-stat penalty, starvation HP loss — callers wire in when Exploration/Combat ship. Dev-only commands restricted to mitya: `/grant <item_id> <qty>`, `/revoke <item_id> <qty>`, `/drain <amount>`. Dev inventory seed on startup (mitya only) tops each seed entry up to its target quantity and cleans orphaned rows whose item_id is no longer in the catalog. Dev profile reset flag for testing (currently `false`).
 
 **Stubbed (coming-soon placeholders wired into the router):** Exploration, Estate, Capital — each has its own controller that shows a localized "coming soon" message and a back button.
 
-**Not started:** Combat, hunger drain/starvation, crafting, pets, guilds, arena, market, territorial warfare. Game stats are on the User model but not yet consumed by gameplay systems.
+**Not started:** Combat, gear equip / artifact activation, crafting, pets, guilds, arena, market, territorial warfare. The hunger system is implemented as a pure service but its drain/starvation hooks are not yet invoked — they wait for Exploration (room transitions) and Combat (rounds).
 
 ## Instructions for AI Assistant
 

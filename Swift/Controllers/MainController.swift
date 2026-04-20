@@ -174,9 +174,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let xp = session.xp, xpMax = xpForNextLevel(level)
         let hp = session.hp, maxHp = session.maxHp
         let hunger = session.hunger, maxHunger = session.maxHunger
-        let atk = session.attack, def = session.defense
+        let atk = session.effectiveAttack, def = session.effectiveDefense
         let crit = session.crit, dodge = session.dodge, acc = session.accuracy
         let gold = session.gold
+        let starvingSuffix = HungerService.isStarving(session) ? " · " + lingo.localize("hunger.starving", locale: session.locale) : ""
 
         switch style {
         case 2:
@@ -185,7 +186,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ━━━━━━━━━━━━━━━━
 
             ❤️ \(bar(hp, maxHp)) \(hp)/\(maxHp)
-            🍖 \(bar(hunger, maxHunger)) \(hunger)/\(maxHunger)
+            🍖 \(bar(hunger, maxHunger)) \(hunger)/\(maxHunger)\(starvingSuffix)
 
             ⚔️ \(atk)  🛡 \(def)  💥 \(crit)%
             🎯 \(acc)  💨 \(dodge)
@@ -203,7 +204,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
             \(emojiBar(hp, maxHp, fill: "🟥"))
             
-            🍖 \(l.localize("profile.hunger", locale: loc)): \(hunger)/\(maxHunger) 
+            🍖 \(l.localize("profile.hunger", locale: loc)): \(hunger)/\(maxHunger)\(starvingSuffix)
             \(emojiBar(hunger, maxHunger, fill: "🟧"))
 
             ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
@@ -218,7 +219,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             \(cls.icon()) <b>\(nickname)</b> · Lv.\(level)
             \(className)
 
-            ❤️ \(hp)/\(maxHp)  🍖 \(hunger)/\(maxHunger)
+            ❤️ \(hp)/\(maxHp)  🍖 \(hunger)/\(maxHunger)\(starvingSuffix)
 
             ⚔️\(atk)  🛡\(def)  🎯\(acc)
             💨\(dodge)  💥\(crit)%
