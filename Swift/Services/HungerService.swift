@@ -137,16 +137,20 @@ public enum HungerService {
 // MARK: - Effective stats on User
 
 extension User {
-    /// Attack after all active modifiers (currently: starvation).
-    /// Gear bonuses (Phase 2.3) and pet/spell buffs (later) will layer in here.
+    /// Attack after all active modifiers: base + equipped gear − starvation penalty.
     public var effectiveAttack: Int {
-        return Self.applyHungerPenalty(base: attack, user: self)
+        return Self.applyHungerPenalty(base: attack + gearAttackBonus, user: self)
     }
 
-    /// Defense after all active modifiers (currently: starvation).
+    /// Defense after all active modifiers: base + equipped gear − starvation penalty.
     public var effectiveDefense: Int {
-        return Self.applyHungerPenalty(base: defense, user: self)
+        return Self.applyHungerPenalty(base: defense + gearDefenseBonus, user: self)
     }
+
+    /// Crit / Dodge / Accuracy aren't affected by hunger in v1; gear still layers in.
+    public var effectiveCrit: Int     { return crit + gearCritBonus }
+    public var effectiveDodge: Int    { return dodge + gearDodgeBonus }
+    public var effectiveAccuracy: Int { return accuracy + gearAccuracyBonus }
 
     private static func applyHungerPenalty(base: Int, user: User) -> Int {
         guard HungerService.isStarving(user) else { return base }

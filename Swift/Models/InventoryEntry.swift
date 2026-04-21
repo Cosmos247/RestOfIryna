@@ -26,6 +26,11 @@ final public class InventoryEntry: Model, @unchecked Sendable {
     @Field(key: "quantity")
     public var quantity: Int
 
+    /// When non-nil, this stack is equipped to the named EquipmentSlot (raw value).
+    /// Nil means the item is just carried in the backpack.
+    @Field(key: "equipped_slot")
+    public var equippedSlot: String?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 

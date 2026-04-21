@@ -51,7 +51,7 @@
     "registration.to_estate": "🏰 Set out for the estate",
     "registration.journey_wolves": "The road to your new lands wound through twisted ravines and silent forests. As the silhouette of your manor's old tower appeared on the horizon, the path was suddenly blocked — by <i>them</i>.\n\nA <b>pack of rabid wolves</b> burst out from beneath the roots. Their fur is matted, foam drips from their jaws, and their eyes hold nothing but blind fury. They do not wait — they lunge at you all at once, scenting fresh blood and steel.",
     "registration.continue": "⚔️ Continue",
-    "registration.estate.prompt": "Above the entrance to the manor hangs an old plaque, untouched by human hands for ages. You wipe the dust and grime from it. Now that you have proved your claim to this land by the strength of arms, you must give this place a new name. From this day on, it shall be a symbol of Artania's rebirth.\n\n<i>Governor, what will you name your estate?</i>",
+    "registration.estate.prompt": "Above the entrance to the manor hangs an old plaque, untouched by human hands for ages. You wipe the dust and grime from it. Now that you have proved your claim to this land by the strength of arms, you must give this place a new name. From this day on, it shall be a symbol of Artania's rebirth.\n\n<b>%{name}</b>, <i>what will you name your estate?</i>",
     "registration.estate.too_short": "❌ Too short — at least 2 characters.",
     "registration.estate.too_long": "❌ Too long — 30 characters max.",
     "registration.complete": "✅ Welcome, <b>%{nickname}</b>!\n\nClass: %{class}\nEstate: <b>%{estate}</b>\n\n<i>May Artania rise again beneath your shield.</i>",
@@ -90,6 +90,7 @@
     "inventory.action.food": "🍴 Eat",
     "inventory.action.potion": "🍷 Use",
     "inventory.action.gear": "🛡 Equip",
+    "inventory.action.gear.unequip": "❌ Unequip",
     "inventory.action.artifact": "✨ Use",
     "inventory.info.placeholder": "%{name} — description coming soon",
     "inventory.use.unavailable": "🚧 Not yet available.",
@@ -104,5 +105,9 @@
     "revoke.usage": "Usage: <code>/revoke &lt;item_id&gt; &lt;quantity&gt;</code>",
     "revoke.unknown_item": "❌ Unknown item: <code>%{id}</code>",
     "revoke.not_enough": "❌ Not enough <b>%{item}</b> in inventory.",
-    "revoke.success": "✅ Removed <b>%{item}</b> × %{qty}"
+    "revoke.success": "✅ Removed <b>%{item}</b> × %{qty}",
+    "equip.success": "📍 Equipped: <b>%{item}</b>",
+    "unequip.success": "Unequipped: <b>%{item}</b>",
+    "profile.equipped.main_hand": "Main hand",
+    "profile.equipped.empty": "(empty)"
 }

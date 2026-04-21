@@ -89,10 +89,10 @@
 - [x] Add localization keys for hunger states and food use
 
 ### 2.3 Equipment System
-- [ ] Design Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory x2)
-- [ ] Add equipped gear fields to User or separate EquippedGear model
-- [ ] Implement equip/unequip logic with stat recalculation
-- [ ] Create EquipmentController or integrate into ProfileController
+- [x] Design Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory x2) — `EquipmentSlot` enum + `GearStats` struct + slot/gearStats attached to all 4 starter gear items
+- [x] Add equipped gear fields to User or separate EquippedGear model — `equipped_slot` column on `inventory` + 5 cached `gear_*_bonus` fields on `users`; migrations `AddEquipSlotToInventory` and `AddGearBonuses`; `recomputeGearBonuses` stub on User (real impl in 2.3.3)
+- [x] Implement equip/unequip logic with stat recalculation — `EquipmentService` (pure-ish: touches DB for atomic slot swap + user save); `User.effective*` now read `base + gearBonus − hunger penalty`; registration auto-equips starter weapon
+- [x] Create EquipmentController or integrate into ProfileController — integrated into `InventoryController` (gear-category rows toggle between 🛡 Equip and ❌ Unequip; each gear item carries a persistent per-item icon via `Item.icon`) + profile gets a "Main hand" line
 
 ---
 

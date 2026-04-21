@@ -42,11 +42,17 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~106 keys
-- [x] Ukrainian (uk.json) — ~106 keys
+- [x] English (en.json) — ~111 keys
+- [x] Ukrainian (uk.json) — ~111 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
+
+### Equipment (Phase 2.3 — done)
+- [x] 2.3.1 Slot design: `EquipmentSlot` enum (8 slots), `GearStats` struct, Item gains optional slot + gearStats. Starter gear wired: rusty_sword/simple_bow/wooden_staff → mainHand; leather_vest → chest.
+- [x] 2.3.2 Data layer: `equipped_slot: String?` on `inventory` + 5 cached `gear_*_bonus: Int` on `users`. Migrations `AddEquipSlotToInventory` + `AddGearBonuses`.
+- [x] 2.3.3 `EquipmentService` (equip / unequip / equipped(for:) / recomputeBonuses). Registration auto-equips the class starter weapon after the King's Oath. `User.effectiveAttack/Defense/Crit/Dodge/Accuracy` now read `base + gear − hunger penalty`.
+- [x] 2.3.4 Inventory UI toggle: gear rows carry a persistent per-item icon (`Item.icon` — ⚔️ / 🏹 / 🪄 / 🦺 ...) visible whether equipped or not; action button toggles between "🛡 Equip" and "❌ Unequip" (callbacks `inv:equip:<id>` / `inv:unequip:<id>`). Profile gains a "Main hand: <item>" line on all three styles.
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 

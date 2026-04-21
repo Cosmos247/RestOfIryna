@@ -186,34 +186,72 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     fileprivate func categoryKeyboard(type: ItemType, entries: [InventoryEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let rows: [[TGInlineKeyboardButton]]
+        if type == .gear {
+            rows = gearRows(entries: entries, lingo: lingo, locale: locale)
+        } else {
+            rows = genericRows(type: type, entries: entries, lingo: lingo, locale: locale)
+        }
+
+        let backLabel = lingo.localize("inventory.back_root", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows + [
+            [TGInlineKeyboardButton(text: backLabel, callbackData: "inv:root")]
+        ])
+    }
+
+    /// Gear rows — each item-id carries a persistent per-item icon (⚔️ / 🏹 / 🪄 / 🦺 ...)
+    /// regardless of equipped state, and the action button toggles between Equip and
+    /// Unequip. Food/potion/artifact use `inv:use:`; gear uses `inv:equip:` / `inv:unequip:`.
+    private func gearRows(entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
+        var byId: [String: (item: Item, quantity: Int, anyEquipped: Bool)] = [:]
+        for entry in entries {
+            guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { continue }
+            let prior = byId[item.id]
+            let equipped = (prior?.anyEquipped ?? false) || (entry.equippedSlot != nil)
+            let quantity = (prior?.quantity ?? 0) + entry.quantity
+            byId[item.id] = (item, quantity, equipped)
+        }
+        let sorted = byId.values.sorted { $0.item.id < $1.item.id }
+        let equipLabel = lingo.localize("inventory.action.gear", locale: locale)
+        let unequipLabel = lingo.localize("inventory.action.gear.unequip", locale: locale)
+
+        return sorted.map { entry in
+            let name = lingo.localize(entry.item.nameKey, locale: locale)
+            // Per-item glyph (⚔️ / 🏹 / 🪄 / 🦺 ...) is part of the item's identity
+            // — shown regardless of equipped state. Equip state is communicated
+            // by the action button toggling between Equip and Unequip.
+            let iconPrefix = entry.item.icon.map { "\($0) " } ?? ""
+            let itemLabel = "\(iconPrefix)\(name) × \(entry.quantity)"
+            let actionLabel = entry.anyEquipped ? unequipLabel : equipLabel
+            let actionPrefix = entry.anyEquipped ? "inv:unequip:" : "inv:equip:"
+            return [
+                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(entry.item.id)"),
+                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(entry.item.id)")
+            ]
+        }
+    }
+
+    /// Non-gear rows (food / material / potion / artifact). Materials have no action
+    /// button; the others get a type-specific Use button wired to `inv:use:<item_id>`.
+    private func genericRows(type: ItemType, entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
         var items: [(item: Item, quantity: Int)] = []
         for entry in entries {
             guard let item = ItemCatalog.find(entry.itemId), item.type == type else { continue }
             items.append((item, entry.quantity))
         }
         let merged = mergeForDisplay(items)
-
-        // Materials are raw crafting inputs — no action button. Every other type gets
-        // a type-specific action (Eat / Use / Equip). Food/potion are wired via
-        // HungerService; gear/artifact reply with a "not yet available" toast until
-        // their systems ship.
         let actionLabel = type.actionKey.map { lingo.localize($0, locale: locale) }
 
-        var rows: [[TGInlineKeyboardButton]] = []
-        for (item, qty) in merged {
+        return merged.map { (item, qty) in
             let name = lingo.localize(item.nameKey, locale: locale)
             let itemButton = TGInlineKeyboardButton(text: "\(name) × \(qty)", callbackData: "inv:info:\(item.id)")
             if let actionLabel = actionLabel {
                 let actionButton = TGInlineKeyboardButton(text: actionLabel, callbackData: "inv:use:\(item.id)")
-                rows.append([itemButton, actionButton])
+                return [itemButton, actionButton]
             } else {
-                rows.append([itemButton])
+                return [itemButton]
             }
         }
-
-        let backLabel = lingo.localize("inventory.back_root", locale: locale)
-        rows.append([TGInlineKeyboardButton(text: backLabel, callbackData: "inv:root")])
-        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     private func mergeForDisplay(_ items: [(item: Item, quantity: Int)]) -> [(item: Item, quantity: Int)] {
@@ -364,6 +402,74 @@ extension InventoryController {
             return true
         }
 
+        // Equip gear — finds the first unequipped row of the item and equips it via EquipmentService.
+        if data.starts(with: "inv:equip:") {
+            let itemId = String(data.dropFirst("inv:equip:".count))
+            guard let item = ItemCatalog.find(itemId), item.slot != nil,
+                  let userId = context.session.id else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            let rows = try await InventoryEntry.query(on: context.db)
+                .filter(\.$user.$id, .equal, userId)
+                .filter(\.$itemId, .equal, itemId)
+                .all()
+            guard let target = rows.first(where: { $0.equippedSlot == nil }) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            try await EquipmentService.equip(target, for: context.session, on: context.db)
+
+            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            let toast = context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+
+            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context)
+            return true
+        }
+
+        // Unequip gear — finds the equipped row of the item and unequips it.
+        if data.starts(with: "inv:unequip:") {
+            let itemId = String(data.dropFirst("inv:unequip:".count))
+            guard let item = ItemCatalog.find(itemId),
+                  let userId = context.session.id else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            let rows = try await InventoryEntry.query(on: context.db)
+                .filter(\.$user.$id, .equal, userId)
+                .filter(\.$itemId, .equal, itemId)
+                .all()
+            guard let target = rows.first(where: { $0.equippedSlot != nil }) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            try await EquipmentService.unequip(target, for: context.session, on: context.db)
+
+            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            let toast = context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+
+            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context)
+            return true
+        }
+
         return false
+    }
+
+    /// Re-render the given category view in place after an equip/unequip.
+    private static func refreshCategory(type: ItemType, chatId: TGChatId, messageId: Int, context: Context) async throws {
+        let ctrl = Controllers.inventoryController
+        let entries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let text = ctrl.renderCategory(type: type, lingo: context.lingo, locale: context.session.locale)
+        let inline = ctrl.categoryKeyboard(type: type, entries: entries, lingo: context.lingo, locale: context.session.locale)
+        let params = TGEditMessageTextParams(
+            chatId: chatId,
+            messageId: messageId,
+            text: text,
+            parseMode: .html,
+            replyMarkup: inline
+        )
+        _ = try? await context.bot.editMessageText(params: params)
     }
 }

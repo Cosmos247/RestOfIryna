@@ -146,6 +146,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddGameStats())
     migrations.add(CreateInventory())
     migrations.add(RemoveCrownsField())
+    migrations.add(AddEquipSlotToInventory())
+    migrations.add(AddGearBonuses())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -204,6 +206,11 @@ public func configure(logger: Logger) async throws {
                 user.dodge = 5
                 user.accuracy = 10
                 user.gold = 0
+                user.gearAttackBonus = 0
+                user.gearDefenseBonus = 0
+                user.gearCritBonus = 0
+                user.gearDodgeBonus = 0
+                user.gearAccuracyBonus = 0
                 try await user.saveAndCache(in: db)
 
                 // Also wipe inventory so registration-grants + seed start from scratch.

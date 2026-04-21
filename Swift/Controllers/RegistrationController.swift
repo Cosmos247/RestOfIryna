@@ -161,7 +161,22 @@ final class Registration: TGControllerBase, @unchecked Sendable {
             TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:to_estate")
         ]])
         let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+
+        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/registration/kings_charter.jpg")
+        if let imageData = try? Data(contentsOf: imageURL) {
+            let inputFile = TGInputFile(filename: "kings_charter.jpg", data: imageData, mimeType: "image/jpeg")
+            let params = TGSendPhotoParams(
+                chatId: .chat(context.session.telegramId),
+                photo: .file(inputFile),
+                caption: text,
+                parseMode: .html,
+                replyMarkup: markup
+            )
+            _ = try await context.bot.sendPhoto(params: params)
+        } else {
+            // Fallback: text-only if the artwork file is missing.
+            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        }
     }
 
     // MARK: - Step 4: Journey & Wolves
@@ -197,7 +212,8 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     // MARK: - Step 5: Estate Name
 
     func promptEstateName(context: Context) async throws {
-        let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale)
+        let nickname = context.session.nickname ?? "?"
+        let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale, interpolations: ["name": nickname])
         try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html)
     }
 
@@ -282,8 +298,15 @@ extension Registration {
             context.session.registrationStep = 3
             try await context.session.saveAndCache(in: context.db)
 
-            if let charClass = CharacterClass(rawValue: cls) {
+            if let charClass = CharacterClass(rawValue: cls), let userId = context.session.id {
                 try await InventoryEntry.add(charClass.starterWeaponId, quantity: 1, to: context.session, on: context.db)
+                // Auto-equip the starter weapon so the King's Oath isn't a lie.
+                if let weaponEntry = try await InventoryEntry.query(on: context.db)
+                    .filter(\.$user.$id, .equal, userId)
+                    .filter(\.$itemId, .equal, charClass.starterWeaponId)
+                    .first() {
+                    try await EquipmentService.equip(weaponEntry, for: context.session, on: context.db)
+                }
             }
 
             try await Controllers.registration.promptKingOath(context: context)

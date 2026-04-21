@@ -137,7 +137,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     func showProfile(context: Context, editMessageId: Int? = nil) async throws {
         let style = context.session.profileStyle
-        let text = renderProfile(session: context.session, lingo: context.lingo, style: style)
+        let equipped = try await EquipmentService.equipped(for: context.session, on: context.db)
+        let text = renderProfile(session: context.session, equipped: equipped, lingo: context.lingo, style: style)
         let keyboard = profileStyleKeyboard(currentStyle: style)
 
         if let msgId = editMessageId {
@@ -165,7 +166,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Profile Rendering
 
-    private func renderProfile(session: User, lingo: Lingo, style: Int) -> String {
+    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], lingo: Lingo, style: Int) -> String {
         let nickname = session.nickname ?? session.name
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
@@ -175,9 +176,19 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let hp = session.hp, maxHp = session.maxHp
         let hunger = session.hunger, maxHunger = session.maxHunger
         let atk = session.effectiveAttack, def = session.effectiveDefense
-        let crit = session.crit, dodge = session.dodge, acc = session.accuracy
+        let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
         let gold = session.gold
         let starvingSuffix = HungerService.isStarving(session) ? " · " + lingo.localize("hunger.starving", locale: session.locale) : ""
+
+        // Main-hand line — shown on every style. Empty string if nothing equipped.
+        let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
+        let mainHandName: String
+        if let entry = equipped[.mainHand], let item = ItemCatalog.find(entry.itemId) {
+            mainHandName = lingo.localize(item.nameKey, locale: session.locale)
+        } else {
+            mainHandName = lingo.localize("profile.equipped.empty", locale: session.locale)
+        }
+        let mainHandLine = "🗡 \(mainHandLabel): \(mainHandName)"
 
         switch style {
         case 2:
@@ -191,7 +202,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ⚔️ \(atk)  🛡 \(def)  💥 \(crit)%
             🎯 \(acc)  💨 \(dodge)
 
-            💰 \(gold)  
+            \(mainHandLine)
+            💰 \(gold)
             🏰 \(estate)
             """
         case 3:
@@ -211,6 +223,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
             💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
 
+            \(mainHandLine)
             💰 \(gold) \(l.localize("profile.gold", locale: loc))
             🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
             """
@@ -224,7 +237,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ⚔️\(atk)  🛡\(def)  🎯\(acc)
             💨\(dodge)  💥\(crit)%
 
-            💰 \(gold) 
+            \(mainHandLine)
+            💰 \(gold)
             🏰 \(estate)
             """
         }

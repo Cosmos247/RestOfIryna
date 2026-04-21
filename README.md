@@ -58,7 +58,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
    - `EstateController` *(stubbed)* — 30×30 grid editor and upgrades
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
-   - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action (🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use) on all non-Material rows. Food/potion consume via HungerService; gear/artifact placeholder until Phase 2.3+.
+   - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear toggles between 🛡 Equip and ❌ Unequip via EquipmentService (gear rows also carry a persistent per-item icon via `Item.icon`); artifact placeholder until TBD.
    - `CombatController` *(planned)* — round-based PvE & PvP battles
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
@@ -93,10 +93,13 @@ RestOfIryna/
 │   │   ├── AddProfileStyle.swift
 │   │   ├── AddGameStats.swift
 │   │   ├── CreateInventory.swift
-│   │   └── RemoveCrownsField.swift
+│   │   ├── RemoveCrownsField.swift
+│   │   ├── AddEquipSlotToInventory.swift
+│   │   └── AddGearBonuses.swift
 │   │
-│   ├── Services/                 # Pure domain services, no DB writes
-│   │   └── HungerService.swift   # drain, consume, starvation penalty, HP loss
+│   ├── Services/                 # Domain services
+│   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
+│   │   └── EquipmentService.swift # atomic equip/unequip, bonus recomputation
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system
@@ -125,10 +128,11 @@ RestOfIryna/
 │   └── uk.json
 │
 ├── Assets/
-│   └── registration/                # Class-specific artwork used during onboarding
-│       ├── warrior_estate.jpg
-│       ├── archer_estate.jpg
-│       └── mage_estate.jpg
+│   └── registration/                # Artwork used during onboarding
+│       ├── kings_charter.jpg        # Shown in the King's Oath step (all classes)
+│       ├── warrior_estate.jpg       # Wolves encounter (warrior)
+│       ├── archer_estate.jpg        # Wolves encounter (archer)
+│       └── mage_estate.jpg          # Wolves encounter (mage)
 │
 ├── Public/
 │   └── favicon.ico

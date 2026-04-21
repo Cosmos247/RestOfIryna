@@ -93,6 +93,26 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "gold")
     var gold: Int
 
+    // MARK: - Cached Gear Bonuses
+    // Sum of equipped gear's GearStats. Recomputed on every equip/unequip so
+    // readers (combat, profile) get effective stats synchronously without
+    // re-querying inventory. See EquipmentService (Phase 2.3.3).
+
+    @Field(key: "gear_attack_bonus")
+    var gearAttackBonus: Int
+
+    @Field(key: "gear_defense_bonus")
+    var gearDefenseBonus: Int
+
+    @Field(key: "gear_crit_bonus")
+    var gearCritBonus: Int
+
+    @Field(key: "gear_dodge_bonus")
+    var gearDodgeBonus: Int
+
+    @Field(key: "gear_accuracy_bonus")
+    var gearAccuracyBonus: Int
+
     var name: String {
         if let firstName = firstName, let lastName = lastName {
             return "\(firstName) \(lastName)"
@@ -131,6 +151,11 @@ final public class User: Model, @unchecked Sendable {
         self.dodge = 5
         self.accuracy = 10
         self.gold = 0
+        self.gearAttackBonus = 0
+        self.gearDefenseBonus = 0
+        self.gearCritBonus = 0
+        self.gearDodgeBonus = 0
+        self.gearAccuracyBonus = 0
         self.createdAt = Date()
     }
 

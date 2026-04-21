@@ -168,6 +168,72 @@
 - Previously the callback handler called `deleteMessage` on the source of each click, so only the opening "Welcome to Artania" and the final estate-naming prompt remained on screen. All narrative steps (class descriptions, King's Oath, wolves artwork) were erased.
 - Replaced the delete with `editMessageReplyMarkup` that swaps the inline keyboard for an empty one. Text, HTML, and attached artwork stay; only the buttons disappear so they can't be re-clicked.
 - This keeps the full registration arc scrollable in chat and is the groundwork for adding more class-specific artwork to other onboarding steps later.
+
+## Session 7 — 2026-04-21 (Equipment system scaffolding, Phase 2.3.1)
+
+### Plan
+Phase 2.3 is being split into four sub-commits matching the TODO subpoints:
+  - 2.3.1 — Slot design (types only, no behaviour change)
+  - 2.3.2 — Data layer (inventory.equipped_slot + users.gear*Bonus columns)
+  - 2.3.3 — EquipmentService + effective-stat integration + registration auto-equip
+  - 2.3.4 — Inventory UI toggle + profile "Equipped" line
+
+### Architectural choices
+- Equipped state will live as a column on `InventoryEntry` (`equipped_slot: String?`), not as a separate table and not as columns on User. Rationale: gear already occupies one row per unit in inventory; marking a row "equipped to X" is the minimal diff. Unequipping is nilling the slot; the item stays in inventory.
+- Gear bonuses (attack/defense/crit/dodge/accuracy) will be cached on the `User` row so combat/UI can read effective stats synchronously. Recomputed on every equip/unequip.
+- Equipment UI lives inside `InventoryController` — no new controller. The existing `🛡 Equip` button on gear rows will be wired to real logic, with the label toggling to `❌ Unequip` when the row is currently equipped.
+
+### What was done (2.3.1)
+- Added `EquipmentSlot` enum (8 cases: helmet/chest/legs/boots/mainHand/offHand/accessory1/accessory2). Raw values use snake_case for the DB column.
+- Added `GearStats` struct (attack/defense/crit/dodge/accuracy, each Int, default 0).
+- Extended `Item` with optional `slot: EquipmentSlot?` and `gearStats: GearStats?`. Custom public init with defaults so existing non-gear catalog entries don't need changes.
+- Wired stats onto the four starter gear items:
+  - gear.rusty_sword → mainHand, +2 atk
+  - gear.simple_bow → mainHand, +2 atk, +1 acc
+  - gear.wooden_staff → mainHand, +2 atk, +1 crit
+  - gear.leather_vest → chest, +2 def
+- No runtime behaviour change yet — this step only introduces the type vocabulary. Build clean.
+
+### What was done (2.3.2)
+- Two new migrations:
+  - `AddEquipSlotToInventory` — nullable `equipped_slot: String` column on `inventory`. When set, that inventory row is the equipped piece for the named slot (EquipmentSlot raw value, snake_case). When nil, the item is simply carried.
+  - `AddGearBonuses` — five new `Int` columns on `users` (`gear_attack_bonus`, `gear_defense_bonus`, `gear_crit_bonus`, `gear_dodge_bonus`, `gear_accuracy_bonus`), all `NOT NULL DEFAULT 0` so existing rows backfill cleanly.
+- `InventoryEntry.equippedSlot: String?` via `@Field`.
+- `User` gains the five cached gear-bonus fields + init zero-out; dev profile reset now also zeroes them.
+- `User.recomputeGearBonuses(on:)` is a zero-out stub for now — Phase 2.3.3 will sum equipped rows' GearStats through `EquipmentService`.
+- Migrations registered in `configure.swift` after `RemoveCrownsField`.
+- Still no runtime behaviour change — gear items can now be "marked equipped" in the DB, but nothing writes that flag yet. Build clean.
+
+### What was done (2.3.3 — equip / unequip logic)
+- New `Swift/Services/EquipmentService.swift`. Three entry points:
+  - `equip(entry, for: user, on: db)` — fetches all the user's inventory rows, unequips any previous occupant of the target slot, writes the new slot on the target row, calls `recomputeBonuses`, then `user.saveAndCache(in: db)` so the session cache is refreshed. The service owns the DB writes here (unlike HungerService which is purely in-memory) because the equip operation spans multiple rows and the caller would otherwise have to reimplement the swap every time.
+  - `unequip(entry, for: user, on: db)` — nils the slot, recomputes bonuses, saves user.
+  - `equipped(for: user, on: db) -> [EquipmentSlot: InventoryEntry]` — current loadout, keyed by slot. Used by the profile renderer.
+  - `recomputeBonuses(for: user, on: db)` — sums each equipped item's GearStats into the user's cached `gear_*_bonus` fields. Mutates user in place.
+- `User.recomputeGearBonuses` stub removed — EquipmentService is the single source of truth.
+- `User.effectiveAttack/Defense` now read `base + gearBonus − hunger penalty`. Added `effectiveCrit / effectiveDodge / effectiveAccuracy` (hunger doesn't penalize those per GDD — just layer in gear bonus).
+- `RegistrationController` set_class callback: after granting the starter weapon via `InventoryEntry.add`, it now looks the row up and calls `EquipmentService.equip` so the King's Oath isn't a lie — the weapon is actually in hand when the King describes it.
+
+### What was done (2.3.4 — UI)
+- `InventoryController.categoryKeyboard` split into `gearRows` + `genericRows`. Gear rows:
+  - Aggregated by item-id (so two Rusty Swords show as one row with count). A row is flagged "equipped" if any of the aggregated physical rows is equipped.
+  - Equipped rows get a leading `📍` and the action button toggles to "❌ Unequip" with callback prefix `inv:unequip:<item_id>`.
+  - Unequipped rows keep the original "🛡 Equip" label with callback prefix `inv:equip:<item_id>`.
+- New callback handlers `inv:equip:` and `inv:unequip:`:
+  - Equip: finds the first unequipped row of the item (via a filtered query) and hands it to `EquipmentService.equip`. Toast: "📍 Equipped: <item>".
+  - Unequip: finds the equipped row and calls `EquipmentService.unequip`. Toast: "Unequipped: <item>".
+  - Both re-render the gear category in place (new helper `refreshCategory(type:chatId:messageId:context:)`).
+- `MainController.showProfile` is now async-aware of equipment: it loads `EquipmentService.equipped(for:)` and passes the `[EquipmentSlot: InventoryEntry]` map to `renderProfile`. All three profile styles got a new line `🗡 Main hand: <item>` (or "(empty)") between the stats block and the gold line. Effective crit/dodge/accuracy now show with gear bonuses too.
+- Localization: 5 new keys per locale (`inventory.action.gear.unequip`, `equip.success`, `unequip.success`, `profile.equipped.main_hand`, `profile.equipped.empty`). Total: 111 keys per locale.
+- Build clean. EN/UK parity verified (111 = 111, no key drift).
+
+Phase 2.3 complete end-to-end: new character goes through registration → auto-equips starter weapon → King's Oath text matches inventory → profile shows effective stats (base + gear) → player can walk into inventory and swap gear with atomic slot handoff + bonus recomputation.
+
+### Polish (same session)
+- Knight's `rusty_sword` bumped from +2 to +3 ATK (knight's secondary stat is pure attack power — mirrors archer's +acc and mage's +crit).
+- Per-item inventory icons added via `Item.icon: String?`, set on all four starter gear pieces: ⚔️ (rusty_sword), 🏹 (simple_bow), 🪄 (wooden_staff), 🦺 (leather_vest). `InventoryController.gearRows` prepends the icon to the row label unconditionally — the glyph is part of the item's identity and stays visible whether the item is equipped or not. Equipped state is still conveyed by the Equip/Unequip button toggle (no more 📍 pin). Distinct from `ItemType.icon`, which is the type-level glyph used in the root-category buttons.
+- `registration.estate.prompt` no longer addresses the player as "Наміснику" / "Governor" — it now interpolates the nickname the player entered at step 1 ("<b>%{name}</b>, як ти назвеш свій маєток?"). `RegistrationController.promptEstateName` passes `context.session.nickname` into the localize call.
+- Added `Assets/registration/kings_charter.jpg` — a single piece of artwork shown for all classes during the King's Oath step. `promptKingOath` now uses `sendPhoto` with the narrative as caption and the inline "Set out for the estate" button as reply markup (falls back to text-only if the file is missing, same pattern as the wolves encounter). Caption fits comfortably under Telegram's 1024-char limit.
 - Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.

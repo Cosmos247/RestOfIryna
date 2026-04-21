@@ -14,14 +14,15 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~106 keys)
-│   └── uk.json                     # Ukrainian strings (~106 keys)
+│   ├── en.json                     # English strings (~111 keys)
+│   └── uk.json                     # Ukrainian strings (~111 keys)
 │
 ├── Assets/
-│   └── registration/               # Class-specific artwork for the onboarding narrative
-│       ├── warrior_estate.jpg      # Shown during "wolves encounter" step when class = warrior
-│       ├── archer_estate.jpg       # ... archer
-│       └── mage_estate.jpg         # ... mage
+│   └── registration/               # Artwork for the onboarding narrative
+│       ├── kings_charter.jpg       # Shown in the King's Oath step (same for every class)
+│       ├── warrior_estate.jpg      # Wolves encounter step, warrior variant
+│       ├── archer_estate.jpg      # ... archer
+│       └── mage_estate.jpg        # ... mage
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)
@@ -46,7 +47,7 @@ RestOfIryna/
     │
     ├── Models/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
-    │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, Item, ItemCatalog (code-based)
+    │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based)
     │   └── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity + add/remove/has/list helpers
     │
     ├── Migrations/
@@ -55,10 +56,13 @@ RestOfIryna/
     │   ├── AddProfileStyle.swift   # profile_style (1-3)
     │   ├── AddGameStats.swift      # level, xp, hp, max_hp, hunger, max_hunger, atk/def/crit/dodge/acc, gold (crowns originally here)
     │   ├── CreateInventory.swift   # inventory table: user_id (FK, cascade), item_id, quantity, timestamps
-    │   └── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
+    │   ├── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
+    │   ├── AddEquipSlotToInventory.swift # nullable equipped_slot column on inventory (Phase 2.3.2)
+    │   └── AddGearBonuses.swift    # 5 cached gear_*_bonus fields on users (Phase 2.3.2)
     │
     ├── Services/
-    │   └── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension)
+    │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses
+    │   └── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
     │
     ├── Telegram/
     │   ├── Router/

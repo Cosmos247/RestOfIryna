@@ -39,7 +39,7 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~106 per locale)
+## Current Keys (~111 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
@@ -48,7 +48,8 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)
 - Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/artifact, inventory.choose_category, inventory.back_root, inventory.info.placeholder, inventory.use.unavailable, inventory.category.empty (toast for tapping an empty category)
-- Inventory actions (per item type): inventory.action.food/potion/gear/artifact — each includes its emoji + verb ("🍴 Eat", "🍷 Use", "🛡 Equip", "✨ Use")
+- Inventory actions (per item type): inventory.action.food/potion/gear/artifact — each includes its emoji + verb ("🍴 Eat", "🍷 Use", "🛡 Equip", "✨ Use"). Gear also has `inventory.action.gear.unequip` ("❌ Unequip") used when the row is currently equipped.
+- Equipment: equip.success / unequip.success toasts; profile.equipped.main_hand label; profile.equipped.empty placeholder for an empty slot
 - Hunger / consume: hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect
 - Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
