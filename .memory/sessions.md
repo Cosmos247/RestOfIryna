@@ -234,6 +234,36 @@ Phase 2.3 complete end-to-end: new character goes through registration → auto-
 - Per-item inventory icons added via `Item.icon: String?`, set on all four starter gear pieces: ⚔️ (rusty_sword), 🏹 (simple_bow), 🪄 (wooden_staff), 🦺 (leather_vest). `InventoryController.gearRows` prepends the icon to the row label unconditionally — the glyph is part of the item's identity and stays visible whether the item is equipped or not. Equipped state is still conveyed by the Equip/Unequip button toggle (no more 📍 pin). Distinct from `ItemType.icon`, which is the type-level glyph used in the root-category buttons.
 - `registration.estate.prompt` no longer addresses the player as "Наміснику" / "Governor" — it now interpolates the nickname the player entered at step 1 ("<b>%{name}</b>, як ти назвеш свій маєток?"). `RegistrationController.promptEstateName` passes `context.session.nickname` into the localize call.
 - Added `Assets/registration/kings_charter.jpg` — a single piece of artwork shown for all classes during the King's Oath step. `promptKingOath` now uses `sendPhoto` with the narrative as caption and the inline "Set out for the estate" button as reply markup (falls back to text-only if the file is missing, same pattern as the wolves encounter). Caption fits comfortably under Telegram's 1024-char limit.
+
+## Session 8 — 2026-04-21 (Phase 5.0 — Estate navigation skeleton, Phase 3/4 paused)
+
+### Why out of order
+User asked to skip Phase 3 (Exploration) and Phase 4 (Combat) for now and start on Phase 5 (Estate). There's no hard dependency: the estate UI doesn't need exploration loot or combat drops — it needs inventory (already in place from Phase 2). Material-only flows can be tested with `/grant mat.* N` until the drop systems ship. The full grid/plot/crafting of 5.1–5.4 is deferred; this commit lays just the navigation skeleton that the rest will hang off of.
+
+### What was done
+- `User.estateLevel` is a computed property: `1 + max(0, level - 1) / 5`. Every 5 player levels bumps the estate tier by one. Not stored — always in sync with the player's level and cheap to read.
+- `EstateController` rewritten from a coming-soon stub into a tree nav controller:
+  - Root view — shows the estate name + current level + a short lore blurb + inline `[🏠 House] [🌾 Plot]`. If `Assets/estate/level_<N>.jpg` exists, the message is sent as a photo with that caption; otherwise falls back to plain text. User will drop in artwork as they're drawn.
+  - House view — inline `[🛠 Workshop]` / `[🍳 Kitchen]` / `[📦 Warehouse]` rows, plus `[🔙 Back to estate]`. Rooms themselves are coming-soon stubs (reuse `stub.coming_soon`) with a back-to-house button.
+  - Plot view — single "coming soon" stub + back-to-estate. Full tile-based plots are Phase 5.1.
+  - Callback dispatch edits the same message in place. Because the root may have been sent as a photo (caption message) or as plain text, the callback handler branches on `message.getMessage()?.photo != nil` and calls either `editMessageCaption` or `editMessageText` accordingly.
+  - Main-nav pass-through (Explore / Capital / Profile / Settings / Inventory / Estate re-tap) wired on the router, same pattern as InventoryController, so the persistent main reply keyboard continues to work while the player is inside Estate.
+- `MainController.onEstate` now calls `estateController.showEstate` instead of the old `showStub`.
+- `InventoryController.onEstate` pass-through also updated to call `showEstate`.
+- No DB migration. No new controller file. No changes to existing game state.
+- Locale: 11 new keys per locale → 122 total (EN/UK parity verified).
+- Build clean, no warnings.
+
+### Out of scope (future subtasks of Phase 5)
+- 5.1 — Estate Fluent model, 30×30 tile grid, Plot model, grid renderer
+- 5.2 — Plot management UI, production timers, resource harvesting
+- 5.3 — Recipe model, Workshop/Kitchen flows, blueprint learning
+- 5.4 — Global estate placement, adjacency queries, frontier rules
+- Level-image assets (user will drop JPEGs into `Assets/estate/level_<N>.jpg` as they are drawn)
+
+### Polish (same session)
+- `estate.back_root` shortened from "🔙 До маєтку" / "🔙 Back to estate" to just "🔙 Назад" / "🔙 Back". The other back button (`estate.back_home` = "🔙 До дому" / "🔙 Back to the house") is kept intact — per the user's literal ask to change only the "До маєтку" buttons.
+- Added the first three estate artwork files: `Assets/estate/level_1.jpg` / `level_2.jpg` / `level_3.jpg`. Root view now shows the actual painted manor for players at estate tier 1/2/3. Higher tiers still fall back to text-only until their artwork is drawn.
 - Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.

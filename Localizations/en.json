@@ -109,5 +109,16 @@
     "equip.success": "📍 Equipped: <b>%{item}</b>",
     "unequip.success": "Unequipped: <b>%{item}</b>",
     "profile.equipped.main_hand": "Main hand",
-    "profile.equipped.empty": "(empty)"
+    "profile.equipped.empty": "(empty)",
+    "estate.title": "Estate",
+    "estate.description": "<i>Your holding — the seed from which Artania will grow back.</i>",
+    "estate.level_label": "Estate level",
+    "estate.home": "🏠 House",
+    "estate.plot": "🌾 Plot",
+    "estate.home.description": "<i>Inside the manor walls. Choose a room:</i>",
+    "estate.workshop": "🛠 Workshop",
+    "estate.kitchen": "🍳 Kitchen",
+    "estate.warehouse": "📦 Warehouse",
+    "estate.back_root": "🔙 Back",
+    "estate.back_home": "🔙 Back to the house"
 }

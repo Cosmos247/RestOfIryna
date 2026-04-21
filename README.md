@@ -56,7 +56,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
-   - `EstateController` *(stubbed)* — 30×30 grid editor and upgrades
+   - `EstateController` — tree nav: Root (level-specific artwork optional) → House (Workshop / Kitchen / Warehouse stubs) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear toggles between 🛡 Equip and ❌ Unequip via EquipmentService (gear rows also carry a persistent per-item icon via `Item.icon`); artifact placeholder until TBD.
    - `CombatController` *(planned)* — round-based PvE & PvP battles
@@ -78,7 +78,7 @@ RestOfIryna/
 │   │   ├── SettingsController.swift
 │   │   ├── GlobalCommandsController.swift
 │   │   ├── ExplorationController.swift   # stub (Phase 3)
-│   │   ├── EstateController.swift        # stub (Phase 5)
+│   │   ├── EstateController.swift        # Phase 5.0 skeleton: Root → House (room stubs) / Plot stub; per-level artwork
 │   │   ├── CapitalController.swift       # stub (Phase 6)
 │   │   └── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons
 │   │
@@ -128,11 +128,13 @@ RestOfIryna/
 │   └── uk.json
 │
 ├── Assets/
-│   └── registration/                # Artwork used during onboarding
-│       ├── kings_charter.jpg        # Shown in the King's Oath step (all classes)
-│       ├── warrior_estate.jpg       # Wolves encounter (warrior)
-│       ├── archer_estate.jpg        # Wolves encounter (archer)
-│       └── mage_estate.jpg          # Wolves encounter (mage)
+│   ├── registration/                # Artwork used during onboarding
+│   │   ├── kings_charter.jpg        # Shown in the King's Oath step (all classes)
+│   │   ├── warrior_estate.jpg       # Wolves encounter (warrior)
+│   │   ├── archer_estate.jpg        # Wolves encounter (archer)
+│   │   └── mage_estate.jpg          # Wolves encounter (mage)
+│   └── estate/                      # Per-level estate artwork (optional; added as drawn)
+│       └── level_<N>.jpg            # e.g. level_1.jpg, level_2.jpg …
 │
 ├── Public/
 │   └── favicon.ico

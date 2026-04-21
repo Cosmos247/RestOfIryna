@@ -159,6 +159,13 @@ final public class User: Model, @unchecked Sendable {
         self.createdAt = Date()
     }
 
+    /// Estate level derived from the player's level. Every 5 player levels raises
+    /// the estate by one tier — player lv 1–5 → estate lv 1, lv 6–10 → 2, and so on.
+    /// Drives per-level artwork and unlocked locations (Phase 5 scaffolding).
+    var estateLevel: Int {
+        return 1 + max(0, (level - 1)) / 5
+    }
+
     /// Apply class-specific starting stats
     func applyStartingStats(for characterClass: CharacterClass) {
         let s = characterClass.startingStats

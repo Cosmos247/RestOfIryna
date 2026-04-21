@@ -96,6 +96,16 @@
 
 ---
 
+## Phase 5: Estates & Crafting *(started out of order — Phase 3/4 skipped for now)*
+
+### 5.0 Estate navigation skeleton *(landed)*
+- [x] Estate level computed from `user.level` (every 5 player levels → +1 estate level)
+- [x] `EstateController` tree nav: Root (image placeholder + text + level) → [🏠 House] / [🌾 Plot]
+- [x] House drill-down with stubs for [🛠 Workshop] [🍳 Kitchen] [📦 Warehouse]
+- [x] Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback)
+- [x] Photo/text edit-mode switch in callback handler (editMessageCaption vs editMessageText)
+- [x] Main-nav pass-through on EstateController's router (main reply keyboard stays reachable)
+
 ## Phase 3: Exploration System
 
 ### 3.1 Exploration State

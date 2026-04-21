@@ -32,6 +32,7 @@
 - [x] ExplorationController — stub (coming-soon message + back), reserved for Phase 3
 - [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
 - [x] CapitalController — stub (coming-soon message + back), reserved for Phase 6
+- [x] EstateController — tree nav (Phase 5.0 scaffolding): Root (estate name + level + optional per-level artwork) → [🏠 House] drilldown with Workshop/Kitchen/Warehouse stubs / [🌾 Plot] stub; main-nav pass-through; switches between editMessageText and editMessageCaption based on whether the root rendered as text or photo.
 - [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button (future description view); `[🍽 Use]` shown for all types except Materials (food/potion consume; gear/recipe/artifact toast "not yet available"); main-nav button pass-through; equip planned for Phase 2.3
 
 ### Character System
@@ -42,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~111 keys
-- [x] Ukrainian (uk.json) — ~111 keys
+- [x] English (en.json) — ~122 keys
+- [x] Ukrainian (uk.json) — ~122 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
@@ -53,6 +54,13 @@
 - [x] 2.3.2 Data layer: `equipped_slot: String?` on `inventory` + 5 cached `gear_*_bonus: Int` on `users`. Migrations `AddEquipSlotToInventory` + `AddGearBonuses`.
 - [x] 2.3.3 `EquipmentService` (equip / unequip / equipped(for:) / recomputeBonuses). Registration auto-equips the class starter weapon after the King's Oath. `User.effectiveAttack/Defense/Crit/Dodge/Accuracy` now read `base + gear − hunger penalty`.
 - [x] 2.3.4 Inventory UI toggle: gear rows carry a persistent per-item icon (`Item.icon` — ⚔️ / 🏹 / 🪄 / 🦺 ...) visible whether equipped or not; action button toggles between "🛡 Equip" and "❌ Unequip" (callbacks `inv:equip:<id>` / `inv:unequip:<id>`). Profile gains a "Main hand: <item>" line on all three styles.
+
+### Estate (Phase 5 — scaffolding, started out of order while Phase 3/4 are paused)
+- [x] 5.0 Navigation skeleton: `User.estateLevel` computed from player level (every 5 levels → +1 tier). `EstateController` tree nav with Root → House → room stubs / Plot stub. Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback). `MainController.onEstate` now calls `showEstate` instead of the old `showStub`; `InventoryController.onEstate` pass-through updated too.
+- [ ] 5.1 30×30 grid + Plot model (real tile-based land management)
+- [ ] 5.2 EstateController grid view + plot management + production timers
+- [ ] 5.3 Crafting (Recipe model, workshop/kitchen flows, blueprint learning)
+- [ ] 5.4 Global estate placement + adjacency
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 
@@ -61,7 +69,7 @@
 ### Controllers Needed
 - [~] ExplorationController — stub exists; needs timed room chain, events, dungeons
 - [ ] CombatController — round-based PvE & PvP
-- [~] EstateController — stub exists; needs 30x30 grid editor, manor rooms, plots
+- [~] EstateController — Phase 5.0 navigation skeleton landed (Root → House + Plot stubs); still needs 30x30 grid editor, manor rooms' real logic, crafting flows
 - [~] CapitalController — stub exists; needs location menu, quests, stables, bank, chapel
 - [ ] MarketController — NPC stall + player bazaar
 - [ ] GuildController — guild management
@@ -71,7 +79,7 @@
 ### Models Needed
 - [x] Character stats (HP, Attack, Defense, Crit, Dodge, Accuracy) — on User model
 - [x] Inventory system (items + quantities) — code-based Item catalog + `inventory` table with InventoryEntry; helpers for add/remove/has/list
-- [ ] Equipment slots (helmet, chest, legs, boots, weapons, accessories)
+- [x] Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory ×2) — `EquipmentSlot` enum + `equipped_slot` column + `EquipmentService`
 - [ ] Estate model (30x30 grid, manor layout, plots)
 - [ ] Exploration state (current km, timer, accumulated loot)
 - [ ] Combat state (opponent, round, actions)

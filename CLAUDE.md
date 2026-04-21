@@ -37,7 +37,7 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/entrypoint.swift` — `@main`, calls `configure()`
 - `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. Exposes `projectPath` as a public global so controllers can load assets. **Path is hardcoded to the dev machine.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
-- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory tree nav; stubs for Exploration/Estate/Capital)
+- `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory tree nav, Estate tree nav; stubs for Exploration/Capital)
 - `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, gold) + effective-stat computed properties
 - `Swift/Models/Item.swift` — static item catalog (ItemType / ItemEffect / EquipmentSlot / GearStats / Item / ItemCatalog) — code-based, not in DB
 - `Swift/Models/InventoryEntry.swift` — Fluent model (user_id, item_id, quantity) + add/remove/has/list helpers
@@ -46,8 +46,8 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
-- `Localizations/` — `en.json`, `uk.json` (~111 keys each)
-- `Assets/` — static binary assets loaded by bot. `Assets/registration/kings_charter.jpg` for the King's Oath step, `Assets/registration/<class>_estate.jpg` for the wolves encounter.
+- `Localizations/` — `en.json`, `uk.json` (~122 keys each)
+- `Assets/` — static binary assets loaded by bot. `Assets/registration/kings_charter.jpg` for the King's Oath step, `Assets/registration/<class>_estate.jpg` for the wolves encounter, `Assets/estate/level_<N>.jpg` (optional, user-supplied) for per-level estate artwork.
 
 ## How to Add a New Controller
 
@@ -110,7 +110,9 @@ Required in `.env` (see `.env.example`):
 
 **Working:** Lore-driven 6-step registration (Artanian welcome → name → class selection with descriptions → King's Oath with class-specific starter weapon grant, automatically equipped → wolf encounter on the road with class-specific artwork sent via `sendPhoto` + caption + Continue button; combat itself is a stub → estate naming). Equipment system: `EquipmentSlot` enum (8 slots), `GearStats` on Item, cached `gear_*_bonus` fields on User, `EquipmentService` for atomic equip/unequip with auto-swap of slot occupant; starter weapons grant +3 ATK (sword), +2 ATK/+1 ACC (bow), +2 ATK/+1 CRIT (staff). Effective stats (`effectiveAttack/Defense/Crit/Dodge/Accuracy` on User) = base + gear − hunger penalty. Main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing, shows effective ATK/DEF and 😵 Starving indicator), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory tree navigation: root always shows all 5 category buttons with live counts (empty categories show "(0)" and reply with a toast on tap); drill-down shows every item as its own inline button (future per-item description view) with a type-specific action button next to each row — 🍴 Eat / 🍷 Use (potion) / 🛡 Equip ↔ ❌ Unequip (gear) / ✨ Use (artifact). Gear rows carry a persistent per-item icon (⚔️ / 🏹 / 🪄 / 🦺 ...) via `Item.icon`, visible whether equipped or not. Food/potion consume via HungerService; gear equips/unequips via EquipmentService; artifacts still reply with "🚧 Not yet available" toast until their activation flow ships. Hunger service (pure): drain, consume, effective-stat penalty, starvation HP loss — callers wire in when Exploration/Combat ship. Dev-only commands restricted to mitya: `/grant <item_id> <qty>`, `/revoke <item_id> <qty>`, `/drain <amount>`. Dev inventory seed on startup (mitya only) tops each seed entry up to its target quantity and cleans orphaned rows whose item_id is no longer in the catalog. Dev profile reset flag (currently on for testing) also wipes inventory so the starter-weapon grant on registration starts clean.
 
-**Stubbed (coming-soon placeholders wired into the router):** Exploration, Estate, Capital — each has its own controller that shows a localized "coming soon" message and a back button.
+**Stubbed (coming-soon placeholders wired into the router):** Exploration, Capital — each has its own controller that shows a localized "coming soon" message and a back button. Estate now has a real skeleton controller (Phase 5 scaffolding) — tree nav with Root → House (Workshop / Kitchen / Warehouse stubs) / Plot stub; per-level artwork loaded from `Assets/estate/level_<N>.jpg` when the file exists.
+
+Estate level is derived from `user.level` via `User.estateLevel` (every 5 player levels → +1 estate tier).
 
 **Not started:** Combat, artifact activation, crafting, pets, guilds, arena, market, territorial warfare. The hunger system is implemented as a pure service but its drain/starvation hooks are not yet invoked — they wait for Exploration (room transitions) and Combat (rounds).
 

@@ -89,7 +89,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     private func onEstate(context: Context) async throws -> Bool {
         let controller = Controllers.estateController
-        try await controller.showStub(context: context)
+        try await controller.showEstate(context: context)
         context.session.routerName = controller.routerName
         try await context.session.saveAndCache(in: context.db)
         return true

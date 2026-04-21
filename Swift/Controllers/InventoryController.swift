@@ -88,7 +88,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     private func onEstate(context: Context) async throws -> Bool {
         let ctrl = Controllers.estateController
-        try await ctrl.showStub(context: context)
+        try await ctrl.showEstate(context: context)
         context.session.routerName = ctrl.routerName
         try await context.session.saveAndCache(in: context.db)
         return true

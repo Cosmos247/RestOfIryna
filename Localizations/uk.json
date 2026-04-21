@@ -109,5 +109,16 @@
     "equip.success": "📍 Одягнено: <b>%{item}</b>",
     "unequip.success": "Знято: <b>%{item}</b>",
     "profile.equipped.main_hand": "Основна рука",
-    "profile.equipped.empty": "(порожньо)"
+    "profile.equipped.empty": "(порожньо)",
+    "estate.title": "Маєток",
+    "estate.description": "<i>Твоє володіння — зерно, з якого Артанія проросте знову.</i>",
+    "estate.level_label": "Рівень маєтку",
+    "estate.home": "🏠 Дім",
+    "estate.plot": "🌾 Ділянка",
+    "estate.home.description": "<i>У стінах маєтку. Оберіть приміщення:</i>",
+    "estate.workshop": "🛠 Майстерня",
+    "estate.kitchen": "🍳 Кухня",
+    "estate.warehouse": "📦 Склад",
+    "estate.back_root": "🔙 Назад",
+    "estate.back_home": "🔙 До дому"
 }

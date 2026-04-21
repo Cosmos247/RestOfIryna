@@ -14,15 +14,17 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~111 keys)
-│   └── uk.json                     # Ukrainian strings (~111 keys)
+│   ├── en.json                     # English strings (~122 keys)
+│   └── uk.json                     # Ukrainian strings (~122 keys)
 │
 ├── Assets/
-│   └── registration/               # Artwork for the onboarding narrative
-│       ├── kings_charter.jpg       # Shown in the King's Oath step (same for every class)
-│       ├── warrior_estate.jpg      # Wolves encounter step, warrior variant
-│       ├── archer_estate.jpg      # ... archer
-│       └── mage_estate.jpg        # ... mage
+│   ├── registration/               # Artwork for the onboarding narrative
+│   │   ├── kings_charter.jpg       # Shown in the King's Oath step (same for every class)
+│   │   ├── warrior_estate.jpg      # Wolves encounter step, warrior variant
+│   │   ├── archer_estate.jpg       # ... archer
+│   │   └── mage_estate.jpg         # ... mage
+│   └── estate/                     # Per-level estate artwork (optional — empty until user adds files)
+│       └── level_<N>.jpg           # e.g. level_1.jpg, level_2.jpg — filename = estate level index
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)
@@ -41,7 +43,7 @@ RestOfIryna/
     │   ├── SettingsController.swift      # Language change, back navigation
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
     │   ├── ExplorationController.swift   # STUB (Phase 3): coming-soon + back to main
-    │   ├── EstateController.swift        # STUB (Phase 5): coming-soon + back to main
+    │   ├── EstateController.swift        # Tree nav: Root → House (Workshop/Kitchen/Warehouse stubs) / Plot stub. Per-level artwork loader. Main-nav pass-through.
     │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
     │   └── InventoryController.swift     # Tree nav: root categories → drill-down with Use buttons for food/potion
     │

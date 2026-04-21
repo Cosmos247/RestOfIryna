@@ -27,7 +27,7 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
-let developerUsers: [Int64] = [mitya, irina]
+let developerUsers: [Int64] = [irina]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
 let resetDevProfile = true
