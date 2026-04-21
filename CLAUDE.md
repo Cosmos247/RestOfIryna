@@ -35,7 +35,7 @@ Each user has a `routerName` field. Updates route to the controller registered u
 All Swift code lives in `Swift/` (not `Sources/`).
 
 - `Swift/entrypoint.swift` — `@main`, calls `configure()`
-- `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. **Hardcoded project path.**
+- `Swift/configure.swift` — Bootstrap: DB, Lingo, Bot, Hummingbird. Exposes `projectPath` as a public global so controllers can load assets. **Path is hardcoded to the dev machine.**
 - `Swift/routes.swift` — `RouterStore` actor (router registry)
 - `Swift/Controllers/` — Game screen controllers (Main, Registration, Settings, GlobalCommands, Inventory tree nav; stubs for Exploration/Estate/Capital)
 - `Swift/Models/User.swift` — User model (identity, class, nickname, estate, stats, gold) + effective-stat computed properties
@@ -46,7 +46,8 @@ All Swift code lives in `Swift/` (not `Sources/`).
 - `Swift/Telegram/Router/` — Router engine (command matching, content types, context, args)
 - `Swift/Telegram/TGBot/` — TGDispatcher + HummingbirdTGClient
 - `Swift/Helpers/` — TGControllerBase, SessionCache, Lingo extension, Env helper
-- `Localizations/` — `en.json`, `uk.json` (~96 keys each)
+- `Localizations/` — `en.json`, `uk.json` (~106 keys each)
+- `Assets/` — static binary assets loaded by bot (currently `Assets/registration/<class>_estate.jpg` for the wolves encounter artwork)
 
 ## How to Add a New Controller
 
@@ -105,9 +106,9 @@ Required in `.env` (see `.env.example`):
 - `TELEGRAM_BOT_TOKEN` — from BotFather
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — PostgreSQL
 
-## Current State (as of 2026-04-20)
+## Current State (as of 2026-04-21)
 
-**Working:** Multi-step registration (language, nickname, class, estate name), main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing, shows effective ATK/DEF and 😵 Starving indicator), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory tree navigation: root always shows all 5 category buttons with live counts (empty categories show "(0)" and reply with a toast on tap); drill-down shows every item as its own inline button (future per-item description view) with a type-specific action button next to each row — 🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use — on every non-Material category. Food/potion consume via HungerService; gear/artifact reply with "🚧 Not yet available" toast until their systems ship. Hunger service (pure): drain, consume, effective-stat penalty, starvation HP loss — callers wire in when Exploration/Combat ship. Dev-only commands restricted to mitya: `/grant <item_id> <qty>`, `/revoke <item_id> <qty>`, `/drain <amount>`. Dev inventory seed on startup (mitya only) tops each seed entry up to its target quantity and cleans orphaned rows whose item_id is no longer in the catalog. Dev profile reset flag for testing (currently `false`).
+**Working:** Lore-driven 6-step registration (Artanian welcome → name → class selection with descriptions → King's Oath with class-specific starter weapon grant → wolf encounter on the road with class-specific artwork sent via `sendPhoto` + caption + Continue button; combat itself is a stub → estate naming). Main menu with 3-row keyboard (Explore + Inventory / Estate + Capital / Profile + Settings), character profile view (3 switchable styles via inline buttons + message editing, shows effective ATK/DEF and 😵 Starving indicator), settings, language switching, session caching, auth, localization (EN/UK), health endpoint. Inventory tree navigation: root always shows all 5 category buttons with live counts (empty categories show "(0)" and reply with a toast on tap); drill-down shows every item as its own inline button (future per-item description view) with a type-specific action button next to each row — 🍴 Eat / 🍷 Use / 🛡 Equip / ✨ Use — on every non-Material category. Food/potion consume via HungerService; gear/artifact reply with "🚧 Not yet available" toast until their systems ship. Hunger service (pure): drain, consume, effective-stat penalty, starvation HP loss — callers wire in when Exploration/Combat ship. Dev-only commands restricted to mitya: `/grant <item_id> <qty>`, `/revoke <item_id> <qty>`, `/drain <amount>`. Dev inventory seed on startup (mitya only) tops each seed entry up to its target quantity and cleans orphaned rows whose item_id is no longer in the catalog. Dev profile reset flag (currently on for testing) also wipes inventory so the starter-weapon grant on registration starts clean.
 
 **Stubbed (coming-soon placeholders wired into the router):** Exploration, Estate, Capital — each has its own controller that shows a localized "coming soon" message and a back button.
 

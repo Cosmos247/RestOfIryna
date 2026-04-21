@@ -5,13 +5,21 @@
 //  Created by Maxim Lanskoy on 13.06.2025.
 //  Maintained by Dmytro Ihnatyuhin from 17.04.2026.
 //
+//  Registration is a 6-step lore-driven flow:
+//    0 — language selection
+//    1 — Artanian welcome + name prompt (text input)
+//    2 — class selection (inline buttons; class choice also grants starter weapon)
+//    3 — King's Oath narrative (inline button "Set out for the estate")
+//    4 — wolf encounter on the road (inline button "Continue" — combat stub for now)
+//    5 — estate naming (text input)
+//    6 — done (user is on the main controller)
+//
 
 import Foundation
 @preconcurrency import Lingo
 import SwiftTelegramBot
 
 // MARK: - Registration Controller Logic
-// Steps: 0 = language, 1 = nickname, 2 = class, 3 = estate name
 final class Registration: TGControllerBase, @unchecked Sendable {
     typealias T = Registration
 
@@ -40,7 +48,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         switch context.session.registrationStep {
         case 1:
             return try await handleNicknameInput(context: context, text: text)
-        case 3:
+        case 5:
             return try await handleEstateNameInput(context: context, text: text)
         default:
             return try await showCurrentStep(context: context)
@@ -55,6 +63,10 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         case 2:
             try await promptClassSelection(context: context)
         case 3:
+            try await promptKingOath(context: context)
+        case 4:
+            try await promptJourneyWolves(context: context)
+        case 5:
             try await promptEstateName(context: context)
         default:
             try await showLanguageSelection(context: context)
@@ -82,10 +94,10 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         try await context.bot.sendMessage(session: context.session, text: greeting, parseMode: .html, replyMarkup: markup)
     }
 
-    // MARK: - Step 1: Nickname
+    // MARK: - Step 1: Nickname (Artanian welcome)
 
     func promptNickname(context: Context) async throws {
-        let prompt = context.lingo.localize("registration.nickname.prompt", locale: context.session.locale)
+        let prompt = context.lingo.localize("registration.welcome", locale: context.session.locale)
         try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html)
     }
 
@@ -114,9 +126,12 @@ final class Registration: TGControllerBase, @unchecked Sendable {
 
     private func promptClassSelection(context: Context) async throws {
         let locale = context.session.locale
+        let nickname = context.session.nickname ?? "?"
+
+        let intro = context.lingo.localize("registration.name_accepted", locale: locale, interpolations: ["name": nickname])
         let prompt = context.lingo.localize("registration.class.prompt", locale: locale)
 
-        var text = "\(prompt)\n"
+        var text = intro + "\n"
         var inlineKeyboard: [[TGInlineKeyboardButton]] = []
 
         for cls in CharacterClass.allCases {
@@ -127,11 +142,59 @@ final class Registration: TGControllerBase, @unchecked Sendable {
             inlineKeyboard.append([button])
         }
 
+        text += "\n\n\(prompt)"
+
         let markup = TGReplyMarkup.inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: inlineKeyboard))
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
-    // MARK: - Step 3: Estate Name
+    // MARK: - Step 3: King's Oath
+
+    func promptKingOath(context: Context) async throws {
+        let locale = context.session.locale
+        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        let weapon = context.lingo.localize("registration.weapon.\(cls.rawValue)", locale: locale)
+        let text = context.lingo.localize("registration.king_oath", locale: locale, interpolations: ["weapon": weapon])
+
+        let buttonLabel = context.lingo.localize("registration.to_estate", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:to_estate")
+        ]])
+        let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+    }
+
+    // MARK: - Step 4: Journey & Wolves
+
+    func promptJourneyWolves(context: Context) async throws {
+        let locale = context.session.locale
+        let text = context.lingo.localize("registration.journey_wolves", locale: locale)
+        let buttonLabel = context.lingo.localize("registration.continue", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:continue")
+        ]])
+        let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
+
+        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/registration/\(cls.journeyImageName)")
+
+        if let imageData = try? Data(contentsOf: imageURL) {
+            let inputFile = TGInputFile(filename: cls.journeyImageName, data: imageData, mimeType: "image/jpeg")
+            let params = TGSendPhotoParams(
+                chatId: .chat(context.session.telegramId),
+                photo: .file(inputFile),
+                caption: text,
+                parseMode: .html,
+                replyMarkup: markup
+            )
+            _ = try await context.bot.sendPhoto(params: params)
+        } else {
+            // Fallback: text-only if the artwork file is missing for some reason.
+            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        }
+    }
+
+    // MARK: - Step 5: Estate Name
 
     func promptEstateName(context: Context) async throws {
         let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale)
@@ -174,7 +237,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
 
         let mainController = Controllers.mainController
         context.session.routerName = mainController.routerName
-        context.session.registrationStep = 4
+        context.session.registrationStep = 6
         try await context.session.saveAndCache(in: context.db)
         try await mainController.showMainMenu(context: context, text: complete)
     }
@@ -187,11 +250,19 @@ extension Registration {
         guard let message = query.message else { return false }
         guard let data = query.data else { return false }
 
+        // Strip the inline keyboard from the source message so its buttons can't be
+        // re-clicked, but keep the message (text + artwork) in chat history — the
+        // whole Artanian narrative should read as a scroll.
         let chatId = TGChatId.chat(message.chat.id)
-        let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
-        try await context.bot.deleteMessage(params: deleteParams)
+        let emptyMarkup = TGInlineKeyboardMarkup(inlineKeyboard: [])
+        let editParams = TGEditMessageReplyMarkupParams(
+            chatId: chatId,
+            messageId: message.messageId,
+            replyMarkup: emptyMarkup
+        )
+        _ = try? await context.bot.editMessageReplyMarkup(params: editParams)
 
-        // Language selection callback
+        // Language selection (step 0 → 1)
         if data.starts(with: "set_lang:") {
             let locale = data.replacingOccurrences(of: "set_lang:", with: "")
             context.session.locale = locale
@@ -201,7 +272,7 @@ extension Registration {
             return true
         }
 
-        // Class selection callback
+        // Class selection (step 2 → 3): applies stats + grants the class's starter weapon
         if data.starts(with: "set_class:") {
             let cls = data.replacingOccurrences(of: "set_class:", with: "")
             context.session.characterClass = cls
@@ -209,6 +280,27 @@ extension Registration {
                 context.session.applyStartingStats(for: charClass)
             }
             context.session.registrationStep = 3
+            try await context.session.saveAndCache(in: context.db)
+
+            if let charClass = CharacterClass(rawValue: cls) {
+                try await InventoryEntry.add(charClass.starterWeaponId, quantity: 1, to: context.session, on: context.db)
+            }
+
+            try await Controllers.registration.promptKingOath(context: context)
+            return true
+        }
+
+        // King's Oath → Set out for the estate (step 3 → 4)
+        if data == "reg:to_estate" {
+            context.session.registrationStep = 4
+            try await context.session.saveAndCache(in: context.db)
+            try await Controllers.registration.promptJourneyWolves(context: context)
+            return true
+        }
+
+        // Wolves encounter → Continue (combat stub) (step 4 → 5)
+        if data == "reg:continue" {
+            context.session.registrationStep = 5
             try await context.session.saveAndCache(in: context.db)
             try await Controllers.registration.promptEstateName(context: context)
             return true

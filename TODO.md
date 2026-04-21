@@ -61,7 +61,7 @@
 - [x] Set starting stats based on class choice
 - [x] Add nickname input step (2-20 chars)
 - [x] Add estate name input step (2-30 chars)
-- [-] Create tutorial/onboarding message sequence — deferred until lore is finalized
+- [x] Create tutorial/onboarding message sequence — lore-driven 6-step registration (Artanian welcome → name → class → King's Oath → wolf encounter → estate naming)
 - [x] Add localization keys for class names, descriptions, registration flow
 
 ### 1.3 Main Menu Rework

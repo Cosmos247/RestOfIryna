@@ -131,6 +131,43 @@
 - `MainController.renderProfile` — shows effective ATK/DEF (respect starvation penalty); appends `😵 Starving` suffix to hunger line in all 3 styles when hunger is 0
 - Dev command `/drain <amount>` in GlobalCommandsController — mitya-only; drains hunger by N (clamped); does not trigger starvation HP loss (that's a per-room effect)
 - Dev command `/revoke <item_id> <quantity>` — mitya-only; symmetric counterpart to `/grant`. Uses `InventoryEntry.remove`; responds "not enough" if player has fewer than requested (nothing partially removed in that case).
+
+## Session 6 — 2026-04-20 (Lore-driven registration — Artania narrative)
+
+### What was done:
+- Registration reworked from 4 mechanical steps into a 6-step lore flow driven by the Artanian narrative the user authored:
+  - Step 0: language
+  - Step 1: Artanian welcome (King's realm, Beastfever plague) + name prompt
+  - Step 2: name acknowledged + class descriptions (Knight/Archer/Mage) + class selection buttons
+  - Step 3: King's Oath narrative — charter granted, class-specific starter weapon bestowed; inline "🏰 Set out for the estate" button
+  - Step 4: road ambush by a pack of rabid wolves (combat stub for now) + inline "⚔️ Continue" button
+  - Step 5: arrival at the derelict manor — player names the estate
+  - Step 6: complete, transition to main controller
+- UK class name for `.warrior` renamed "Воїн" → "Лицар"; EN renamed "Warrior" → "Knight" to match medieval tone
+- Added `CharacterClass.starterWeaponId`: warrior → gear.rusty_sword, archer → gear.simple_bow, mage → gear.wooden_staff
+- Added two new catalog items: `gear.simple_bow`, `gear.wooden_staff`
+- On class selection, `RegistrationController` grants the matching starter weapon via `InventoryEntry.add`
+- King's Oath text uses `%{weapon}` interpolation — localized to "клинок/лук/посох" (UK) / "sword/bow/staff" (EN)
+- Dev profile reset now wipes the user's inventory too (so the class-weapon grant starts clean on replay)
+- Dev seed no longer ships `gear.rusty_sword` (registration handles class weapons instead)
+- Phase 1.2 "Create tutorial/onboarding message sequence" marked done — this narrative IS the onboarding
+- 10 net new localization keys per locale (96 → 106): registration.welcome, registration.name_accepted, registration.king_oath, registration.weapon.{warrior,archer,mage}, registration.to_estate, registration.journey_wolves, registration.continue, item.gear.simple_bow, item.gear.wooden_staff. Removed `registration.nickname.prompt` (replaced by `registration.welcome`).
+- Rewrote class descriptions (registration.class.*.desc) in lore style: Лицар незламний щит / Лучник зірке око / Маг володар стародавніх сил
+- Rewrote `registration.estate.prompt` into the plaque-naming lore text
+- Rewrote `registration.complete` into a short Artanian benediction
+- Build clean.
+
+### Follow-up (same session): class-specific artwork for the wolves step
+- Added three illustrations under `Assets/registration/<class>_estate.jpg` (warrior/archer/mage). Each shows the Governor approaching the derelict manor with rabid wolves closing in, art styled per class.
+- `CharacterClass.journeyImageName` returns the matching filename.
+- `RegistrationController.promptJourneyWolves` now reads the file and sends it via `TGSendPhotoParams` with the narrative text as caption and the Continue button as inline keyboard. Falls back to text-only if the file is missing.
+- Promoted `projectPath` from a local variable inside `configure()` to a public global constant so controllers can use it for asset loading.
+- Note: no file_id caching yet — each registration re-uploads the JPEG via multipart. Fine for dev; move to file_id cache (or remote URL hosting) before public launch.
+
+### Follow-up: keep onboarding messages in chat history
+- Previously the callback handler called `deleteMessage` on the source of each click, so only the opening "Welcome to Artania" and the final estate-naming prompt remained on screen. All narrative steps (class descriptions, King's Oath, wolves artwork) were erased.
+- Replaced the delete with `editMessageReplyMarkup` that swaps the inline keyboard for an empty one. Text, HTML, and attached artwork stay; only the buttons disappear so they can't be re-clicked.
+- This keeps the full registration arc scrollable in chat and is the groundwork for adding more class-specific artwork to other onboarding steps later.
 - Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.

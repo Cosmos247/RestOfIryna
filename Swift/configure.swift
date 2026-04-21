@@ -18,15 +18,19 @@ import SwiftTelegramBot
 
 let store = RouterStore()
 
+/// Root path of the project on disk. Used to locate `Localizations/`, `Assets/`, etc.
+/// Hardcoded to the dev machine for now; move to env/config when deploying.
+public let projectPath: String = "/Users/cosmos/RestOfIryna"
+
 let maxim: Int64 = 327887608
 let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
-let developerUsers: [Int64] = [mitya, maxim, irina]
+let developerUsers: [Int64] = [mitya, irina]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = false
+let resetDevProfile = true
 
 /// Seed a starter inventory for the mitya test account on launch (idempotent — only runs when inventory is empty)
 let seedDevInventory = true
@@ -51,6 +55,26 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
         case .warrior: return (hp: 120, attack: 10, defense: 12, crit: 5,  dodge: 5,  accuracy: 10)
         case .archer:  return (hp: 90,  attack: 14, defense: 8,  crit: 10, dodge: 8,  accuracy: 14)
         case .mage:    return (hp: 80,  attack: 15, defense: 6,  crit: 12, dodge: 6,  accuracy: 10)
+        }
+    }
+
+    /// Starter weapon granted on registration when this class is chosen.
+    /// Must reference an entry in ItemCatalog.
+    var starterWeaponId: String {
+        switch self {
+        case .warrior: return "gear.rusty_sword"
+        case .archer:  return "gear.simple_bow"
+        case .mage:    return "gear.wooden_staff"
+        }
+    }
+
+    /// Filename under `Assets/registration/` for the class-specific "approaching the estate"
+    /// artwork shown during the wolves encounter step.
+    var journeyImageName: String {
+        switch self {
+        case .warrior: return "warrior_estate.jpg"
+        case .archer:  return "archer_estate.jpg"
+        case .mage:    return "mage_estate.jpg"
         }
     }
 }
@@ -90,7 +114,6 @@ public nonisolated(unsafe) var appState: AppState!
 // MARK: - Setting up Hummingbird Application.
 public func configure(logger: Logger) async throws {
 
-    let projectPath: String = "/Users/cosmos/RestOfIryna"
     try Dotenv.configure(atPath: "\(projectPath)/.env", overwrite: false)
 
     // MARK: - Database Setup (Fluent + PostgreSQL)
@@ -182,8 +205,15 @@ public func configure(logger: Logger) async throws {
                 user.accuracy = 10
                 user.gold = 0
                 try await user.saveAndCache(in: db)
+
+                // Also wipe inventory so registration-grants + seed start from scratch.
+                let existingEntries = try await InventoryEntry.list(for: user, on: db)
+                for entry in existingEntries {
+                    try await entry.delete(on: db)
+                }
+
                 let name = user.nickname ?? "\((user.telegramId))"
-                logger.info("Dev profile reset for \(name)")
+                logger.info("Dev profile reset for \(name) (wiped \(existingEntries.count) inventory row(s))")
             }
         }
     }
@@ -206,13 +236,13 @@ public func configure(logger: Logger) async throws {
             logger.info("Cleaned \(orphansDeleted) orphaned inventory row(s) for mitya")
         }
 
+        // Starter class weapon comes from registration — not re-seeded here to avoid duplication.
         let seed: [(String, Int)] = [
             ("food.bread", 3),
             ("food.stew", 1),
             ("mat.wood", 5),
             ("mat.stone", 3),
             ("potion.heal_small", 2),
-            ("gear.rusty_sword", 1),
             ("artifact.shrine_coin", 1),
         ]
         var grantedCount = 0

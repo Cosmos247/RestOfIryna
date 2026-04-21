@@ -52,7 +52,7 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 1. **Router** — inspects each update and routes it to the right controller, based on the user's `routerName` (persisted in DB), command matching, and content type (text / callback / photo).
 2. **Controllers** — each encapsulates a discrete interaction flow. Current and planned controllers:
-   - `RegistrationController` — first-contact flow, language, nickname, class, estate name
+   - `RegistrationController` — lore-driven 6-step onboarding: language → Artanian welcome + name → class descriptions → King's Oath (grants class starter weapon) → wolf encounter with class-specific artwork (combat stub) → estate naming
    - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
@@ -123,6 +123,12 @@ RestOfIryna/
 ├── Localizations/
 │   ├── en.json
 │   └── uk.json
+│
+├── Assets/
+│   └── registration/                # Class-specific artwork used during onboarding
+│       ├── warrior_estate.jpg
+│       ├── archer_estate.jpg
+│       └── mage_estate.jpg
 │
 ├── Public/
 │   └── favicon.ico

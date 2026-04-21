@@ -14,8 +14,14 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~96 keys)
-│   └── uk.json                     # Ukrainian strings (~96 keys)
+│   ├── en.json                     # English strings (~106 keys)
+│   └── uk.json                     # Ukrainian strings (~106 keys)
+│
+├── Assets/
+│   └── registration/               # Class-specific artwork for the onboarding narrative
+│       ├── warrior_estate.jpg      # Shown during "wolves encounter" step when class = warrior
+│       ├── archer_estate.jpg       # ... archer
+│       └── mage_estate.jpg         # ... mage
 │
 ├── Public/
 │   └── favicon.ico                 # (if present)

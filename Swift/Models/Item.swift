@@ -78,6 +78,8 @@ public enum ItemCatalog {
 
         // Gear (stats to be attached in Phase 2.3; placeholder entries for now)
         Item(id: "gear.rusty_sword",    nameKey: "item.gear.rusty_sword",   type: .gear,     tier: 1, stackable: false, effects: []),
+        Item(id: "gear.simple_bow",     nameKey: "item.gear.simple_bow",    type: .gear,     tier: 1, stackable: false, effects: []),
+        Item(id: "gear.wooden_staff",   nameKey: "item.gear.wooden_staff",  type: .gear,     tier: 1, stackable: false, effects: []),
         Item(id: "gear.leather_vest",   nameKey: "item.gear.leather_vest",  type: .gear,     tier: 1, stackable: false, effects: []),
 
         // Artifacts (crafting recipes will become a separate system in Phase 5.3 — not an item type)

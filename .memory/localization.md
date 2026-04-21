@@ -39,11 +39,11 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~96 per locale)
+## Current Keys (~106 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
-- Registration: registration.*, registration.nickname.*, registration.class.*, registration.estate.*, registration.complete
+- Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long, registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_wolves, registration.continue, registration.estate.prompt/too_short/too_long, registration.complete
 - Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)

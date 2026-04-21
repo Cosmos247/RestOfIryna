@@ -25,7 +25,7 @@
 - [x] Database connection pool graceful shutdown (defer in configure)
 
 ### Controllers
-- [x] RegistrationController — multi-step: language, nickname, class, estate name
+- [x] RegistrationController — lore-driven 6-step flow: language → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming
 - [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Inventory/Estate/Capital nav buttons
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
@@ -36,14 +36,14 @@
 
 ### Character System
 - [x] CharacterClass enum (warrior/archer/mage) with icons
-- [x] Multi-step registration (language -> nickname -> class -> estate name)
+- [x] Lore-driven 6-step registration (language → welcome + name → class → King's Oath → wolves → estate naming)
 - [x] Character profile display with 3 switchable visual styles
 - [x] Profile style preference saved per user
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~96 keys
-- [x] Ukrainian (uk.json) — ~96 keys
+- [x] English (en.json) — ~106 keys
+- [x] Ukrainian (uk.json) — ~106 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
