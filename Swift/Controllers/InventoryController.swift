@@ -199,34 +199,38 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         ])
     }
 
-    /// Gear rows — each item-id carries a persistent per-item icon (⚔️ / 🏹 / 🪄 / 🦺 ...)
-    /// regardless of equipped state, and the action button toggles between Equip and
-    /// Unequip. Food/potion/artifact use `inv:use:`; gear uses `inv:equip:` / `inv:unequip:`.
+    /// Gear rows — gear is non-stackable, so every unit is its own physical row
+    /// (InventoryEntry). Each row renders as a separate button pair — no `× N`
+    /// aggregate since that's always `× 1` anyway. Two unequipped rusty swords
+    /// therefore show as two identical buttons. Callbacks stay itemId-based:
+    /// the server picks "first matching row" which, for visually identical
+    /// gear, is indistinguishable from targeting a specific one.
     private func gearRows(entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
-        var byId: [String: (item: Item, quantity: Int, anyEquipped: Bool)] = [:]
-        for entry in entries {
-            guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { continue }
-            let prior = byId[item.id]
-            let equipped = (prior?.anyEquipped ?? false) || (entry.equippedSlot != nil)
-            let quantity = (prior?.quantity ?? 0) + entry.quantity
-            byId[item.id] = (item, quantity, equipped)
+        let pairs: [(entry: InventoryEntry, item: Item)] = entries.compactMap { entry in
+            guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
+            return (entry, item)
         }
-        let sorted = byId.values.sorted { $0.item.id < $1.item.id }
+        // Equipped rows first, then alphabetical by item id for stability across refreshes.
+        let sorted = pairs.sorted { lhs, rhs in
+            let lhsEquipped = lhs.entry.equippedSlot != nil
+            let rhsEquipped = rhs.entry.equippedSlot != nil
+            if lhsEquipped != rhsEquipped { return lhsEquipped }
+            return lhs.item.id < rhs.item.id
+        }
+
         let equipLabel = lingo.localize("inventory.action.gear", locale: locale)
         let unequipLabel = lingo.localize("inventory.action.gear.unequip", locale: locale)
 
-        return sorted.map { entry in
-            let name = lingo.localize(entry.item.nameKey, locale: locale)
-            // Per-item glyph (⚔️ / 🏹 / 🪄 / 🦺 ...) is part of the item's identity
-            // — shown regardless of equipped state. Equip state is communicated
-            // by the action button toggling between Equip and Unequip.
-            let iconPrefix = entry.item.icon.map { "\($0) " } ?? ""
-            let itemLabel = "\(iconPrefix)\(name) × \(entry.quantity)"
-            let actionLabel = entry.anyEquipped ? unequipLabel : equipLabel
-            let actionPrefix = entry.anyEquipped ? "inv:unequip:" : "inv:equip:"
+        return sorted.map { pair in
+            let name = lingo.localize(pair.item.nameKey, locale: locale)
+            let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+            let itemLabel = "\(iconPrefix)\(name)"
+            let isEquipped = pair.entry.equippedSlot != nil
+            let actionLabel = isEquipped ? unequipLabel : equipLabel
+            let actionPrefix = isEquipped ? "inv:unequip:" : "inv:equip:"
             return [
-                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(entry.item.id)"),
-                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(entry.item.id)")
+                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(pair.item.id)"),
+                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(pair.item.id)")
             ]
         }
     }

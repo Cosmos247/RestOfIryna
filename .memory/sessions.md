@@ -264,6 +264,42 @@ User asked to skip Phase 3 (Exploration) and Phase 4 (Combat) for now and start 
 ### Polish (same session)
 - `estate.back_root` shortened from "🔙 До маєтку" / "🔙 Back to estate" to just "🔙 Назад" / "🔙 Back". The other back button (`estate.back_home` = "🔙 До дому" / "🔙 Back to the house") is kept intact — per the user's literal ask to change only the "До маєтку" buttons.
 - Added the first three estate artwork files: `Assets/estate/level_1.jpg` / `level_2.jpg` / `level_3.jpg`. Root view now shows the actual painted manor for players at estate tier 1/2/3. Higher tiers still fall back to text-only until their artwork is drawn.
+
+### Warehouse — real storage backing (same session, follow-on)
+- Added `Swift/Models/WarehouseEntry.swift` — a Fluent model that mirrors InventoryEntry's shape (user_id FK cascade, item_id, quantity, timestamps) but for the estate warehouse. Separate table keeps the backpack/warehouse concerns cleanly split — equipment, consumption, and inventory helpers don't have to learn about a location column.
+- Migration `CreateWarehouse` adds the `warehouse` table.
+- Helpers on `WarehouseEntry`: `add` (stackable-aware), `list`, `totalQuantity`. No remove/has yet — deposit/withdraw is a later step.
+- Dev profile reset now also wipes warehouse rows. The mitya dev seed block does a matching pile for warehouse (same six items as the inventory seed), same top-up + orphan-cleanup semantics.
+- `EstateController` — the Warehouse room is no longer a "coming soon" stub. `estate:home:warehouse` shows a category grid with live per-type counts (🍖 Food (N), 🪨 Materials (N), 🧪 Potions (N), 🗡 Gear (N), 💎 Artifacts (N)). Clicking a category (`estate:wh:<type>`) drills down to a text list of every stored item in that category, with per-item icons. Back button returns to the warehouse root.
+- 2 new locale keys: `estate.warehouse.description` (root intro), `estate.warehouse.empty` (shown when a category is empty).
+- Deposit / withdraw flows and a proper `WarehouseService` are deliberately deferred — this commit just makes the warehouse legible.
+
+### Warehouse deposit / withdraw (same session, follow-on)
+- New `Swift/Services/WarehouseService.swift`: `deposit(itemId:for:on:) -> Bool` and `withdraw(itemId:for:on:) -> Bool`. Both move one unit per call. Deposit picks the first UNEQUIPPED inventory row of the item (equipped gear is not transferable). Stackable items decrement/increment quantities; non-stackable rows are deleted/created as a whole.
+- `EstateController` warehouse category drill-down rewritten:
+  - Computes a `WarehouseCategoryRow` array — the union of inventory + warehouse items of the requested type. Inventory counts skip equipped rows. Rows with 0 on both sides are dropped.
+  - Each item renders as a 3-button row: `[🎒 Name] [N ⬆️] [M ⬇️]`. The name button is reserved for a future description view (right now it shows the shared `inventory.info.placeholder` toast). The arrow buttons dispatch `estate:wh:deposit:<id>` / `estate:wh:withdraw:<id>`.
+  - After a transfer: toast with the localized result ("⬆️ moved to warehouse", "⬇️ taken from warehouse", or "nothing to deposit/withdraw"), then the category view is rebuilt in place from fresh `InventoryEntry.list` + `WarehouseEntry.list` data.
+- 4 new locale keys per locale: `estate.warehouse.deposited/withdrawn/nothing_to_deposit/nothing_to_withdraw`. EN/UK parity 128/128 verified.
+- Gear note: because equipped gear is excluded from the transferable inventory count, a sword currently equipped won't appear in the warehouse Gear category at all. Player has to unequip via Inventory → Gear → Unequip first, then the row appears in warehouse view with `1 ⬆️`.
+
+### Polish: transfer button icons + Lingo leading-emoji interpolation bug
+- Added inventory/warehouse emojis to the transfer buttons: `[🎒 N ⬆️]` for deposit (from backpack), `[📦 M ⬇️]` for withdraw (from storage). Visually connects the direction to the source container.
+- Found and worked around a Lingo interpolation bug: `StringInterpolator` in the miroslavkovac/Lingo dependency builds its scan range from `rawString.count` (grapheme count) but NSRegularExpression interprets ranges in UTF-16 code units. Strings that start with a multi-UTF-16-unit emoji (e.g. "⬆️ %{item} ..." where ⬆️ is U+2B06 + U+FE0F = 2 UTF-16 units, 1 grapheme) get a range that's short by the extra units, which both moves the extracted match off by one char and can drop the closing `}` out of the scan range. Net effect for callers: `%{item}` stays literal in the output, so the user sees the placeholder instead of the actual item name.
+- Fixed by rearranging the affected keys so `%{item}` is at the start (no multi-UTF-16 prefix): `estate.warehouse.deposited/withdrawn` and `equip.success`. Also patched `equip.success` proactively — it had the same leading 📍 issue but hadn't been hit yet because the player auto-equips the starter weapon during registration and hasn't clicked Equip manually.
+- Safe prefixes for future keys with interpolation: plain ASCII or single-BMP-code-unit characters (e.g. ✅ is one UTF-16 unit and is fine). Avoid leading 📍 🎒 ⬆️ ⬇️ 📦 etc. before an interpolation placeholder, or put the placeholder first.
+
+### Polish: per-row gear display in inventory + warehouse
+- Gear is non-stackable — every unit is its own DB row. Previously the UI aggregated rows by item_id and rendered `Rusty Sword × 2` as a single button. Reworked so each gear row is its own button, with no `× N` suffix (it's always implicit 1). Two unequipped rusty swords now show as two identical button rows.
+- `InventoryController.gearRows` — iterates InventoryEntry rows directly (no item_id grouping). Sort order: equipped first, then by item id. Each row renders as `[Icon Name] [🛡 Equip / ❌ Unequip]` based on its own `equippedSlot`. Callbacks stay itemId-based — server picks "first matching row" which is indistinguishable from targeting a specific one since identical gear has no per-instance state yet.
+- `EstateController.warehouseCategoryKeyboard` — branches by ItemType. For gear: iterates inventory rows (skipping equipped) then warehouse rows, each rendered as `[Icon Name] [🎒 ⬆️]` or `[Icon Name] [📦 ⬇️]`. Single-direction button per row since each physical unit is either in the backpack or in storage — never both. For non-gear: unchanged aggregate with bidirectional `[🎒 N ⬆️] [📦 M ⬇️]` buttons.
+- `renderWarehouseCategory` now takes `invEntries` + `whEntries` directly (dropped the pre-computed rows arg) so empty-state detection can branch on type without the caller having to know the logic.
+- Both callers of the keyboard/render functions (open-category + post-transfer refresh) updated.
+
+### Dev seed: fan out across all developerUsers
+- Previously the inventory/warehouse seed was hardcoded to mitya. Now it iterates the `developerUsers` array — every account listed there gets the same starter backpack + warehouse contents at launch (same top-up + orphan-cleanup semantics as before).
+- If the developer row isn't found in the users table or has a nil id, that user is simply skipped (first /start populates them).
+- This means changing `developerUsers` in configure.swift is the single place to turn dev-seeding on for a new tester — no need to add a second mitya-specific hardcoded block.
 - Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.

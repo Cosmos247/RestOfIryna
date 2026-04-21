@@ -26,13 +26,14 @@ let maxim: Int64 = 327887608
 let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
-let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
-let developerUsers: [Int64] = [irina]
+let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
+let developerUsers: [Int64] = [mitya, irina, maxim]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
 let resetDevProfile = true
 
-/// Seed a starter inventory for the mitya test account on launch (idempotent — only runs when inventory is empty)
+/// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
+/// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
 let seedDevInventory = true
 
 // MARK: - Character Classes
@@ -148,6 +149,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(RemoveCrownsField())
     migrations.add(AddEquipSlotToInventory())
     migrations.add(AddGearBonuses())
+    migrations.add(CreateWarehouse())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -213,37 +215,29 @@ public func configure(logger: Logger) async throws {
                 user.gearAccuracyBonus = 0
                 try await user.saveAndCache(in: db)
 
-                // Also wipe inventory so registration-grants + seed start from scratch.
+                // Also wipe inventory + warehouse so registration-grants + seeds start from scratch.
                 let existingEntries = try await InventoryEntry.list(for: user, on: db)
                 for entry in existingEntries {
                     try await entry.delete(on: db)
                 }
+                let existingWarehouse = try await WarehouseEntry.list(for: user, on: db)
+                for entry in existingWarehouse {
+                    try await entry.delete(on: db)
+                }
 
                 let name = user.nickname ?? "\((user.telegramId))"
-                logger.info("Dev profile reset for \(name) (wiped \(existingEntries.count) inventory row(s))")
+                logger.info("Dev profile reset for \(name) (wiped \(existingEntries.count) inventory + \(existingWarehouse.count) warehouse row(s))")
             }
         }
     }
 
-    // MARK: - Dev Inventory Seed (mitya only)
-    // Top-up per item so the seed recovers gracefully after catalog changes: each
-    // seed entry is brought up to its target quantity (but never reduced). Rows that
-    // reference an item_id no longer in the catalog are cleaned up first.
-    if seedDevInventory,
-       let mityaUser = try await User.query(on: db).filter(\.$telegramId, .equal, mitya).first(),
-       let mityaId = mityaUser.id {
-
-        let allEntries = try await InventoryEntry.list(for: mityaUser, on: db)
-        var orphansDeleted = 0
-        for entry in allEntries where ItemCatalog.find(entry.itemId) == nil {
-            try await entry.delete(on: db)
-            orphansDeleted += 1
-        }
-        if orphansDeleted > 0 {
-            logger.info("Cleaned \(orphansDeleted) orphaned inventory row(s) for mitya")
-        }
-
-        // Starter class weapon comes from registration — not re-seeded here to avoid duplication.
+    // MARK: - Dev Inventory + Warehouse Seed (developerUsers)
+    // Each developer user's backpack + warehouse is brought up to the target
+    // quantities below. Per-item top-up so the seed recovers gracefully from
+    // catalog changes: quantities are never reduced, and rows that reference an
+    // item_id no longer in the catalog are cleaned up first. Starter class weapons
+    // come from registration, so they're deliberately left out of this list.
+    if seedDevInventory {
         let seed: [(String, Int)] = [
             ("food.bread", 3),
             ("food.stew", 1),
@@ -252,16 +246,55 @@ public func configure(logger: Logger) async throws {
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
         ]
-        var grantedCount = 0
-        for (itemId, targetQty) in seed {
-            let have = try await InventoryEntry.totalQuantity(of: itemId, for: mityaId, on: db)
-            if have < targetQty {
-                try await InventoryEntry.add(itemId, quantity: targetQty - have, to: mityaUser, on: db)
-                grantedCount += 1
+
+        for developer in developerUsers {
+            guard let devUser = try await User.query(on: db).filter(\.$telegramId, .equal, developer).first(),
+                  let devId = devUser.id else { continue }
+            let label = devUser.nickname ?? "\(developer)"
+
+            // Inventory: orphan cleanup + top-up.
+            let allEntries = try await InventoryEntry.list(for: devUser, on: db)
+            var orphansDeleted = 0
+            for entry in allEntries where ItemCatalog.find(entry.itemId) == nil {
+                try await entry.delete(on: db)
+                orphansDeleted += 1
             }
-        }
-        if grantedCount > 0 {
-            logger.info("Topped up mitya's inventory: \(grantedCount) item(s) seeded")
+            if orphansDeleted > 0 {
+                logger.info("Cleaned \(orphansDeleted) orphaned inventory row(s) for \(label)")
+            }
+            var grantedCount = 0
+            for (itemId, targetQty) in seed {
+                let have = try await InventoryEntry.totalQuantity(of: itemId, for: devId, on: db)
+                if have < targetQty {
+                    try await InventoryEntry.add(itemId, quantity: targetQty - have, to: devUser, on: db)
+                    grantedCount += 1
+                }
+            }
+            if grantedCount > 0 {
+                logger.info("Topped up \(label)'s inventory: \(grantedCount) item(s) seeded")
+            }
+
+            // Warehouse: same shape as inventory so the estate UI shows a stockpile.
+            let allWH = try await WarehouseEntry.list(for: devUser, on: db)
+            var whOrphansDeleted = 0
+            for entry in allWH where ItemCatalog.find(entry.itemId) == nil {
+                try await entry.delete(on: db)
+                whOrphansDeleted += 1
+            }
+            if whOrphansDeleted > 0 {
+                logger.info("Cleaned \(whOrphansDeleted) orphaned warehouse row(s) for \(label)")
+            }
+            var whGrantedCount = 0
+            for (itemId, targetQty) in seed {
+                let have = try await WarehouseEntry.totalQuantity(of: itemId, for: devId, on: db)
+                if have < targetQty {
+                    try await WarehouseEntry.add(itemId, quantity: targetQty - have, to: devUser, on: db)
+                    whGrantedCount += 1
+                }
+            }
+            if whGrantedCount > 0 {
+                logger.info("Topped up \(label)'s warehouse: \(whGrantedCount) item(s) seeded")
+            }
         }
     }
 

@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~122 keys)
-│   └── uk.json                     # Ukrainian strings (~122 keys)
+│   ├── en.json                     # English strings (~128 keys)
+│   └── uk.json                     # Ukrainian strings (~128 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -50,7 +50,8 @@ RestOfIryna/
     ├── Models/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
     │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based)
-    │   └── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity + add/remove/has/list helpers
+    │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list helpers (backpack)
+    │   └── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
     │
     ├── Migrations/
     │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
@@ -60,11 +61,13 @@ RestOfIryna/
     │   ├── CreateInventory.swift   # inventory table: user_id (FK, cascade), item_id, quantity, timestamps
     │   ├── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
     │   ├── AddEquipSlotToInventory.swift # nullable equipped_slot column on inventory (Phase 2.3.2)
-    │   └── AddGearBonuses.swift    # 5 cached gear_*_bonus fields on users (Phase 2.3.2)
+    │   ├── AddGearBonuses.swift    # 5 cached gear_*_bonus fields on users (Phase 2.3.2)
+    │   └── CreateWarehouse.swift   # warehouse table (Phase 5 — estate storage, separate from inventory)
     │
     ├── Services/
     │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses
-    │   └── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
+    │   ├── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
+    │   └── WarehouseService.swift # deposit(itemId,for,on) / withdraw(itemId,for,on) — moves one unit between InventoryEntry and WarehouseEntry; deposits skip equipped rows
     │
     ├── Telegram/
     │   ├── Router/

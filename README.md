@@ -56,9 +56,9 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
    - `ExplorationController` *(stubbed)* — the timed wilderness loop
-   - `EstateController` — tree nav: Root (level-specific artwork optional) → House (Workshop / Kitchen / Warehouse stubs) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
+   - `EstateController` — tree nav: Root (per-level artwork, tiers 1–3 drawn) → House (Workshop / Kitchen stubs; Warehouse with real deposit/withdraw via `WarehouseService` — stackable types aggregate per item_id with counts on both sides, gear renders per physical row with a single-direction arrow) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
-   - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear toggles between 🛡 Equip and ❌ Unequip via EquipmentService (gear rows also carry a persistent per-item icon via `Item.icon`); artifact placeholder until TBD.
+   - `InventoryController` — tree navigation; root always shows all 5 category buttons with counts; drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear is shown per-row (each physical unit is its own button, no `× N` aggregation) and toggles between 🛡 Equip / ❌ Unequip via EquipmentService, with a persistent per-item icon via `Item.icon`; artifact placeholder until TBD.
    - `CombatController` *(planned)* — round-based PvE & PvP battles
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
@@ -85,7 +85,8 @@ RestOfIryna/
 │   ├── Models/                   # Fluent ORM models + code-based catalogs
 │   │   ├── User.swift
 │   │   ├── Item.swift            # static item catalog (code, not DB)
-│   │   └── InventoryEntry.swift  # per-user item stacks (DB) + helpers
+│   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers
+│   │   └── WarehouseEntry.swift  # per-user estate storage (separate table from inventory)
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
@@ -95,11 +96,13 @@ RestOfIryna/
 │   │   ├── CreateInventory.swift
 │   │   ├── RemoveCrownsField.swift
 │   │   ├── AddEquipSlotToInventory.swift
-│   │   └── AddGearBonuses.swift
+│   │   ├── AddGearBonuses.swift
+│   │   └── CreateWarehouse.swift
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
-│   │   └── EquipmentService.swift # atomic equip/unequip, bonus recomputation
+│   │   ├── EquipmentService.swift # atomic equip/unequip, bonus recomputation
+│   │   └── WarehouseService.swift # deposit/withdraw between inventory and warehouse
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

@@ -206,6 +206,159 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return "<b>\(title)</b>\n\n\(msg)"
     }
 
+    // MARK: - Warehouse views
+
+    fileprivate func renderWarehouseRoot(lingo: Lingo, locale: String) -> String {
+        let title = lingo.localize("estate.warehouse", locale: locale)
+        let description = lingo.localize("estate.warehouse.description", locale: locale)
+        return "<b>\(title)</b>\n\n\(description)"
+    }
+
+    /// Category grid mirroring the inventory's root layout — all five ItemType
+    /// categories, each a button with a live count of what's in the warehouse.
+    fileprivate func warehouseRootKeyboard(entries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var countsByType: [ItemType: Int] = [:]
+        for entry in entries {
+            guard let item = ItemCatalog.find(entry.itemId) else { continue }
+            countsByType[item.type, default: 0] += entry.quantity
+        }
+
+        let typeOrder: [ItemType] = [.food, .material, .potion, .gear, .artifact]
+        var rows: [[TGInlineKeyboardButton]] = []
+        var currentRow: [TGInlineKeyboardButton] = []
+
+        for type in typeOrder {
+            let count = countsByType[type, default: 0]
+            let name = lingo.localize("inventory.type.\(type.rawValue)", locale: locale)
+            let label = "\(type.icon) \(name) (\(count))"
+            currentRow.append(TGInlineKeyboardButton(text: label, callbackData: "estate:wh:\(type.rawValue)"))
+            if currentRow.count == 2 {
+                rows.append(currentRow)
+                currentRow = []
+            }
+        }
+        if !currentRow.isEmpty { rows.append(currentRow) }
+
+        let backToHouse = lingo.localize("estate.back_home", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: backToHouse, callbackData: "estate:home")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    /// Category drill-down: text header only. The real content lives in the inline
+    /// keyboard. Empty-state check is type-aware because gear uses per-row display
+    /// while other types use aggregate rows.
+    fileprivate func renderWarehouseCategory(type: ItemType, invEntries: [InventoryEntry], whEntries: [WarehouseEntry], lingo: Lingo, locale: String) -> String {
+        let warehouse = lingo.localize("estate.warehouse", locale: locale)
+        let category = lingo.localize("inventory.type.\(type.rawValue)", locale: locale)
+        let header = "<b>\(warehouse) / \(type.icon) \(category)</b>"
+
+        let empty: Bool
+        if type == .gear {
+            let invHasGear = invEntries.contains {
+                ItemCatalog.find($0.itemId)?.type == .gear && $0.equippedSlot == nil
+            }
+            let whHasGear = whEntries.contains {
+                ItemCatalog.find($0.itemId)?.type == .gear
+            }
+            empty = !(invHasGear || whHasGear)
+        } else {
+            empty = EstateController.warehouseCategoryRows(type: type, inventory: invEntries, warehouse: whEntries).isEmpty
+        }
+
+        if empty {
+            let emptyText = lingo.localize("estate.warehouse.empty", locale: locale)
+            return "\(header)\n\n\(emptyText)"
+        }
+        return header
+    }
+
+    /// Gear (non-stackable): one button row per physical unit, single-direction action.
+    /// Everything else (stackable): one aggregated row per item_id with bidirectional
+    /// `🎒 N ⬆️` / `📦 M ⬇️` buttons.
+    fileprivate func warehouseCategoryKeyboard(type: ItemType, invEntries: [InventoryEntry], whEntries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var keyboard: [[TGInlineKeyboardButton]] = []
+
+        if type == .gear {
+            let invGear: [(entry: InventoryEntry, item: Item)] = invEntries.compactMap { entry in
+                guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
+                guard entry.equippedSlot == nil else { return nil }
+                return (entry, item)
+            }.sorted { $0.item.id < $1.item.id }
+
+            let whGear: [(entry: WarehouseEntry, item: Item)] = whEntries.compactMap { entry in
+                guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
+                return (entry, item)
+            }.sorted { $0.item.id < $1.item.id }
+
+            for pair in invGear {
+                let name = lingo.localize(pair.item.nameKey, locale: locale)
+                let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+                keyboard.append([
+                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(pair.item.id)"),
+                    TGInlineKeyboardButton(text: "🎒 ⬆️", callbackData: "estate:wh:deposit:\(pair.item.id)")
+                ])
+            }
+            for pair in whGear {
+                let name = lingo.localize(pair.item.nameKey, locale: locale)
+                let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+                keyboard.append([
+                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(pair.item.id)"),
+                    TGInlineKeyboardButton(text: "📦 ⬇️", callbackData: "estate:wh:withdraw:\(pair.item.id)")
+                ])
+            }
+        } else {
+            let rows = EstateController.warehouseCategoryRows(type: type, inventory: invEntries, warehouse: whEntries)
+            for row in rows {
+                let name = lingo.localize(row.item.nameKey, locale: locale)
+                let iconPrefix = row.item.icon.map { "\($0) " } ?? ""
+                keyboard.append([
+                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(row.item.id)"),
+                    TGInlineKeyboardButton(text: "🎒 \(row.inventoryCount) ⬆️", callbackData: "estate:wh:deposit:\(row.item.id)"),
+                    TGInlineKeyboardButton(text: "📦 \(row.warehouseCount) ⬇️", callbackData: "estate:wh:withdraw:\(row.item.id)")
+                ])
+            }
+        }
+
+        let back = lingo.localize("estate.back_root", locale: locale)
+        keyboard.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:warehouse")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: keyboard)
+    }
+
+    /// Combine backpack + warehouse rows into a per-item-id summary. Only the
+    /// requested `type` is kept. Inventory count excludes equipped rows because
+    /// they can't be deposited. Items with zero on both sides are dropped.
+    fileprivate static func warehouseCategoryRows(
+        type: ItemType,
+        inventory: [InventoryEntry],
+        warehouse: [WarehouseEntry]
+    ) -> [WarehouseCategoryRow] {
+        var invCounts: [String: Int] = [:]
+        var whCounts: [String: Int] = [:]
+        var items: [String: Item] = [:]
+
+        for row in inventory {
+            guard let item = ItemCatalog.find(row.itemId), item.type == type else { continue }
+            guard row.equippedSlot == nil else { continue }
+            invCounts[item.id, default: 0] += row.quantity
+            items[item.id] = item
+        }
+        for row in warehouse {
+            guard let item = ItemCatalog.find(row.itemId), item.type == type else { continue }
+            whCounts[item.id, default: 0] += row.quantity
+            items[item.id] = item
+        }
+
+        let ids = Set(invCounts.keys).union(whCounts.keys)
+        return ids.sorted().compactMap { id in
+            guard let item = items[id] else { return nil }
+            return WarehouseCategoryRow(
+                item: item,
+                inventoryCount: invCounts[id, default: 0],
+                warehouseCount: whCounts[id, default: 0]
+            )
+        }
+    }
+
     fileprivate func backToRootKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let back = lingo.localize("estate.back_root", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [[
@@ -219,6 +372,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             TGInlineKeyboardButton(text: back, callbackData: "estate:home")
         ]])
     }
+}
+
+/// Summary row for a single item in the warehouse category drill-down.
+fileprivate struct WarehouseCategoryRow {
+    let item: Item
+    let inventoryCount: Int
+    let warehouseCount: Int
 }
 
 // MARK: - Callback Queries
@@ -235,28 +395,59 @@ extension EstateController {
         let text: String
         let inline: TGInlineKeyboardMarkup
 
-        switch data {
-        case "estate:root":
-            text = ctrl.renderRoot(session: context.session, lingo: context.lingo)
-            inline = ctrl.rootKeyboard(lingo: context.lingo, locale: locale)
-        case "estate:home":
-            text = ctrl.renderHome(lingo: context.lingo, locale: locale)
-            inline = ctrl.homeKeyboard(lingo: context.lingo, locale: locale)
-        case "estate:plot":
-            text = ctrl.renderStub(titleKey: "estate.plot", lingo: context.lingo, locale: locale)
-            inline = ctrl.backToRootKeyboard(lingo: context.lingo, locale: locale)
-        case "estate:home:workshop":
-            text = ctrl.renderStub(titleKey: "estate.workshop", lingo: context.lingo, locale: locale)
-            inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
-        case "estate:home:kitchen":
-            text = ctrl.renderStub(titleKey: "estate.kitchen", lingo: context.lingo, locale: locale)
-            inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
-        case "estate:home:warehouse":
-            text = ctrl.renderStub(titleKey: "estate.warehouse", lingo: context.lingo, locale: locale)
-            inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
-        default:
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        // Warehouse item actions — show description placeholder, or transfer one unit.
+        if data.hasPrefix("estate:wh:info:") {
+            let itemId = String(data.dropFirst("estate:wh:info:".count))
+            if let item = ItemCatalog.find(itemId) {
+                let itemName = context.lingo.localize(item.nameKey, locale: locale)
+                let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            } else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            }
             return true
+        }
+
+        if data.hasPrefix("estate:wh:deposit:") || data.hasPrefix("estate:wh:withdraw:") {
+            return try await handleWarehouseTransfer(data: data, query: query, message: message, context: context)
+        }
+
+        if data.hasPrefix("estate:wh:") {
+            // Warehouse category drill-down (e.g. estate:wh:food).
+            let typeRaw = String(data.dropFirst("estate:wh:".count))
+            guard let type = ItemType(rawValue: typeRaw) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+            let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+            text = ctrl.renderWarehouseCategory(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+            inline = ctrl.warehouseCategoryKeyboard(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        } else {
+            switch data {
+            case "estate:root":
+                text = ctrl.renderRoot(session: context.session, lingo: context.lingo)
+                inline = ctrl.rootKeyboard(lingo: context.lingo, locale: locale)
+            case "estate:home":
+                text = ctrl.renderHome(lingo: context.lingo, locale: locale)
+                inline = ctrl.homeKeyboard(lingo: context.lingo, locale: locale)
+            case "estate:plot":
+                text = ctrl.renderStub(titleKey: "estate.plot", lingo: context.lingo, locale: locale)
+                inline = ctrl.backToRootKeyboard(lingo: context.lingo, locale: locale)
+            case "estate:home:workshop":
+                text = ctrl.renderStub(titleKey: "estate.workshop", lingo: context.lingo, locale: locale)
+                inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
+            case "estate:home:kitchen":
+                text = ctrl.renderStub(titleKey: "estate.kitchen", lingo: context.lingo, locale: locale)
+                inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
+            case "estate:home:warehouse":
+                let entries = try await WarehouseEntry.list(for: context.session, on: context.db)
+                text = ctrl.renderWarehouseRoot(lingo: context.lingo, locale: locale)
+                inline = ctrl.warehouseRootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+            default:
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
         }
 
         // If the source message is a photo (level artwork at root), editing the text
@@ -284,6 +475,72 @@ extension EstateController {
             _ = try? await context.bot.editMessageText(params: params)
         }
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        return true
+    }
+
+    /// Perform one deposit/withdraw and refresh the current category drill-down
+    /// in place. Callback data is either `estate:wh:deposit:<item_id>` or
+    /// `estate:wh:withdraw:<item_id>`.
+    static func handleWarehouseTransfer(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let isDeposit = data.hasPrefix("estate:wh:deposit:")
+        let prefix = isDeposit ? "estate:wh:deposit:" : "estate:wh:withdraw:"
+        let itemId = String(data.dropFirst(prefix.count))
+
+        guard let item = ItemCatalog.find(itemId) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        let moved: Bool
+        if isDeposit {
+            moved = try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db)
+        } else {
+            moved = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
+        }
+
+        let itemName = context.lingo.localize(item.nameKey, locale: locale)
+        let toastKey: String
+        if moved {
+            toastKey = isDeposit ? "estate.warehouse.deposited" : "estate.warehouse.withdrawn"
+        } else {
+            toastKey = isDeposit ? "estate.warehouse.nothing_to_deposit" : "estate.warehouse.nothing_to_withdraw"
+        }
+        let toast = context.lingo.localize(toastKey, locale: locale, interpolations: ["item": itemName])
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+
+        // Refresh the currently-open category in place.
+        let ctrl = Controllers.estateController
+        let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+        let text = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+
+        let chatId = TGChatId.chat(message.chat.id)
+        if message.getMessage()?.photo != nil {
+            let params = TGEditMessageCaptionParams(
+                chatId: chatId,
+                messageId: message.messageId,
+                caption: text,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageCaption(params: params)
+        } else {
+            let params = TGEditMessageTextParams(
+                chatId: chatId,
+                messageId: message.messageId,
+                text: text,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageText(params: params)
+        }
         return true
     }
 }

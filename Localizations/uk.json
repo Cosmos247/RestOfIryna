@@ -37,7 +37,7 @@
     "registration.nickname.too_short": "❌ Занадто коротке — мінімум 2 символи.",
     "registration.nickname.too_long": "❌ Занадто довге — максимум 20 символів.",
     "registration.name_accepted": "Вітаю, <b>%{name}</b>! Тепер твоє ім'я вписане до королівського реєстру Артанії.\n\nКоролівство Артанія, що колись славилося своїми мирними слободами, тепер занепадає через Звірячий Сказ, який перетворює лісових мешканців на лютих потвор. Твій обов'язок як Намісника — відбудувати занедбаний маєток та очистити землю від цієї напасті, щоб повернути життя у спустошені краї.\n\n<i>Для виконання цієї місії ти маєш обрати свій шлях:</i>",
-    "registration.class.prompt": "<i>Яку клас ти обираєш для свого намісництва?</i>",
+    "registration.class.prompt": "<i>Який клас ти обираєш для свого намісництва?</i>",
     "registration.class.warrior": "Лицар",
     "registration.class.warrior.desc": "незламний щит королівства. Ви покладаєтесь на важку броню та міцну сталь, щоб зустрічати скажених звірів обличчям до обличчя та захищати свій маєток у ближньому бою.",
     "registration.class.archer": "Лучник",
@@ -106,7 +106,7 @@
     "revoke.unknown_item": "❌ Невідомий предмет: <code>%{id}</code>",
     "revoke.not_enough": "❌ Недостатньо <b>%{item}</b> в інвентарі.",
     "revoke.success": "✅ Видалено <b>%{item}</b> × %{qty}",
-    "equip.success": "📍 Одягнено: <b>%{item}</b>",
+    "equip.success": "<b>%{item}</b> — одягнено 📍",
     "unequip.success": "Знято: <b>%{item}</b>",
     "profile.equipped.main_hand": "Основна рука",
     "profile.equipped.empty": "(порожньо)",
@@ -119,6 +119,12 @@
     "estate.workshop": "🛠 Майстерня",
     "estate.kitchen": "🍳 Кухня",
     "estate.warehouse": "📦 Склад",
+    "estate.warehouse.description": "<i>Тут зберігаються твої ресурси. Оберіть категорію:</i>",
+    "estate.warehouse.empty": "<i>Порожньо.</i>",
+    "estate.warehouse.deposited": "%{item} — перенесено на склад ⬆️",
+    "estate.warehouse.withdrawn": "%{item} — забрано зі складу ⬇️",
+    "estate.warehouse.nothing_to_deposit": "Нема чого покласти.",
+    "estate.warehouse.nothing_to_withdraw": "Нема чого забрати.",
     "estate.back_root": "🔙 Назад",
-    "estate.back_home": "🔙 До дому"
+    "estate.back_home": "🔙 Назад"
 }

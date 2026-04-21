@@ -106,7 +106,7 @@
     "revoke.unknown_item": "❌ Unknown item: <code>%{id}</code>",
     "revoke.not_enough": "❌ Not enough <b>%{item}</b> in inventory.",
     "revoke.success": "✅ Removed <b>%{item}</b> × %{qty}",
-    "equip.success": "📍 Equipped: <b>%{item}</b>",
+    "equip.success": "<b>%{item}</b> — equipped 📍",
     "unequip.success": "Unequipped: <b>%{item}</b>",
     "profile.equipped.main_hand": "Main hand",
     "profile.equipped.empty": "(empty)",
@@ -119,6 +119,12 @@
     "estate.workshop": "🛠 Workshop",
     "estate.kitchen": "🍳 Kitchen",
     "estate.warehouse": "📦 Warehouse",
+    "estate.warehouse.description": "<i>Where your resources are stored. Pick a category:</i>",
+    "estate.warehouse.empty": "<i>Empty.</i>",
+    "estate.warehouse.deposited": "%{item} — moved to warehouse ⬆️",
+    "estate.warehouse.withdrawn": "%{item} — taken from warehouse ⬇️",
+    "estate.warehouse.nothing_to_deposit": "Nothing to deposit.",
+    "estate.warehouse.nothing_to_withdraw": "Nothing to withdraw.",
     "estate.back_root": "🔙 Back",
-    "estate.back_home": "🔙 Back to the house"
+    "estate.back_home": "🔙 Back"
 }

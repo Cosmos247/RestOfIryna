@@ -105,6 +105,8 @@
 - [x] Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback)
 - [x] Photo/text edit-mode switch in callback handler (editMessageCaption vs editMessageText)
 - [x] Main-nav pass-through on EstateController's router (main reply keyboard stays reachable)
+- [x] Warehouse: real storage — `WarehouseEntry` Fluent model (separate table from `inventory`), category root with live counts, per-category drill-down with item list. Dev seed mirrors the inventory seed set.
+- [x] Warehouse deposit/withdraw: `WarehouseService` moves one unit per tap. Category drill-down renders each distinct item as `[Name] [N ⬆️] [M ⬇️]` — deposit from inventory / withdraw to inventory. Union of inventory + warehouse items; equipped gear is excluded from transferable inventory count. Toast feedback, in-place refresh.
 
 ## Phase 3: Exploration System
 
