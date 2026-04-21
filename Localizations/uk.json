@@ -95,6 +95,8 @@
     "inventory.info.placeholder": "%{name} — опис скоро буде",
     "inventory.use.unavailable": "🚧 Ще не доступно.",
     "inventory.category.empty": "У вас немає предметів з цього розділу.",
+    "inventory.full": "🎒 Сумка повна. Спочатку відкладіть щось на склад.",
+    "inventory.slots_label": "слотів",
     "hunger.restored": "+%{amount} голоду",
     "hp.restored": "+%{amount} HP",
     "hunger.starving": "😵 Голодний",

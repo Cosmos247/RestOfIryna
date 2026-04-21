@@ -146,10 +146,13 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     fileprivate func renderRoot(entries: [InventoryEntry], lingo: Lingo, locale: String) -> String {
         let title = lingo.localize("inventory.title", locale: locale)
+        let slotsUsed = entries.filter { $0.equippedSlot == nil }.count
+        let slotsLabel = lingo.localize("inventory.slots_label", locale: locale)
+        let header = "<b>\(title)</b>  <i>\(slotsUsed)/\(InventoryEntry.slotCap) \(slotsLabel)</i>"
         if entries.isEmpty {
-            return "<b>\(title)</b>\n\n" + lingo.localize("inventory.empty", locale: locale)
+            return "\(header)\n\n" + lingo.localize("inventory.empty", locale: locale)
         }
-        return "<b>\(title)</b>\n\n" + lingo.localize("inventory.choose_category", locale: locale)
+        return "\(header)\n\n" + lingo.localize("inventory.choose_category", locale: locale)
     }
 
     fileprivate func rootKeyboard(entries: [InventoryEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {

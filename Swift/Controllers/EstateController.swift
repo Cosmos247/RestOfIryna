@@ -497,19 +497,21 @@ extension EstateController {
             return true
         }
 
-        let moved: Bool
-        if isDeposit {
-            moved = try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db)
-        } else {
-            moved = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
-        }
-
         let itemName = context.lingo.localize(item.nameKey, locale: locale)
         let toastKey: String
-        if moved {
-            toastKey = isDeposit ? "estate.warehouse.deposited" : "estate.warehouse.withdrawn"
+        if isDeposit {
+            let result = try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db)
+            switch result {
+            case .success:           toastKey = "estate.warehouse.deposited"
+            case .nothingToDeposit:  toastKey = "estate.warehouse.nothing_to_deposit"
+            }
         } else {
-            toastKey = isDeposit ? "estate.warehouse.nothing_to_deposit" : "estate.warehouse.nothing_to_withdraw"
+            let result = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
+            switch result {
+            case .success:           toastKey = "estate.warehouse.withdrawn"
+            case .nothingToWithdraw: toastKey = "estate.warehouse.nothing_to_withdraw"
+            case .inventoryFull:     toastKey = "inventory.full"
+            }
         }
         let toast = context.lingo.localize(toastKey, locale: locale, interpolations: ["item": itemName])
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))

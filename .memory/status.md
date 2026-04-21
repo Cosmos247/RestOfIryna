@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~128 keys
-- [x] Ukrainian (uk.json) — ~128 keys
+- [x] English (en.json) — ~130 keys
+- [x] Ukrainian (uk.json) — ~130 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
@@ -61,8 +61,15 @@
 - [x] 5.0 Navigation skeleton: `User.estateLevel` computed from player level (every 5 levels → +1 tier). `EstateController` tree nav with Root → House → room stubs / Plot stub. Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback). `MainController.onEstate` now calls `showEstate` instead of the old `showStub`; `InventoryController.onEstate` pass-through updated too. Warehouse room gets a real category browser (separate `WarehouseEntry` Fluent model + `CreateWarehouse` migration), live counts per category, drill-down item list; deposit/withdraw flows still pending.
 - [ ] 5.1 30×30 grid + Plot model (real tile-based land management)
 - [ ] 5.2 EstateController grid view + plot management + production timers
-- [ ] 5.3 Crafting (Recipe model, workshop/kitchen flows, blueprint learning)
+- [ ] 5.3 Crafting (Recipe model, workshop/kitchen flows, blueprint learning) — will also raise backpack slot cap via upgrade
 - [ ] 5.4 Global estate placement + adjacency
+
+### Exploration (Phase 3 — started)
+- [x] 3.0 Backpack slot cap — `InventoryEntry.slotCap = 50` (non-equipped rows only). `add` throws `inventoryFull`; `canAccept` preflight. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/50 slots`.
+- [ ] 3.1 Active exploration MVP (ExplorationState model, step/return UI, autobattle stub for encounters)
+- [ ] 3.2 Return path with visited-rooms state + depth-decay "already explored"
+- [ ] 3.3 Passive expedition (timed simulation, daily 2h budget, prep via current inventory)
+- [ ] 3.4 Mode exclusivity (active vs passive, main menu shows busy state)
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 

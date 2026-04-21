@@ -95,6 +95,8 @@
     "inventory.info.placeholder": "%{name} — description coming soon",
     "inventory.use.unavailable": "🚧 Not yet available.",
     "inventory.category.empty": "You have no items in this category.",
+    "inventory.full": "🎒 Backpack is full. Deposit something to the warehouse first.",
+    "inventory.slots_label": "slots",
     "hunger.restored": "+%{amount} hunger",
     "hp.restored": "+%{amount} HP",
     "hunger.starving": "😵 Starving",

@@ -121,10 +121,15 @@ final class GlobalCommandsController: @unchecked Sendable {
             return
         }
 
-        try await InventoryEntry.add(itemId, quantity: quantity, to: session, on: db)
         let itemName = lingo.localize(item.nameKey, locale: locale)
-        let msg = lingo.localize("grant.success", locale: locale, interpolations: ["item": itemName, "qty": "\(quantity)"])
-        try await bot.sendMessage(session: session, text: msg, parseMode: .html)
+        do {
+            try await InventoryEntry.add(itemId, quantity: quantity, to: session, on: db)
+            let msg = lingo.localize("grant.success", locale: locale, interpolations: ["item": itemName, "qty": "\(quantity)"])
+            try await bot.sendMessage(session: session, text: msg, parseMode: .html)
+        } catch InventoryError.inventoryFull {
+            let msg = lingo.localize("inventory.full", locale: locale)
+            try await bot.sendMessage(session: session, text: msg, parseMode: .html)
+        }
     }
 
     /// Dev-only `/drain <amount>` — drops the caller's hunger by N, clamped to 0.

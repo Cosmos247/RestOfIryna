@@ -51,13 +51,49 @@ final public class InventoryEntry: Model, @unchecked Sendable {
 public enum InventoryError: Error, Sendable {
     case unknownItem(String)
     case userNotPersisted
+    case inventoryFull
 }
 
 // MARK: - Helpers (add / remove / has / list)
 
 extension InventoryEntry {
+    /// Fixed backpack slot cap. One inventory row = one slot, regardless of the stack's
+    /// quantity (so `bread × 50` is 1 slot). Equipped gear rows don't count — they're
+    /// "on the body" rather than in the bag. Raised later by Workshop upgrades (5.3).
+    public static let slotCap = 50
+
+    /// Count of non-equipped rows the user currently carries in their backpack.
+    public static func slotsUsed(for user: User, on db: any Database) async throws -> Int {
+        guard let userId = user.id else { return 0 }
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .all()
+        return rows.filter { $0.equippedSlot == nil }.count
+    }
+
+    /// True if adding `quantity` units of the item would fit. Stackable items merge into
+    /// an existing row when present (no new slot); non-stackable always take N new slots.
+    public static func canAccept(_ itemId: String, quantity: Int = 1, for user: User, on db: any Database) async throws -> Bool {
+        guard quantity > 0 else { return true }
+        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return false }
+
+        let used = try await slotsUsed(for: user, on: db)
+
+        if item.stackable {
+            let existing = try await InventoryEntry.query(on: db)
+                .filter(\.$user.$id, .equal, userId)
+                .filter(\.$itemId, .equal, itemId)
+                .first()
+            if existing != nil { return true }
+            return used + 1 <= slotCap
+        } else {
+            return used + quantity <= slotCap
+        }
+    }
+
     /// Add an item to a user's inventory. Stackable items merge into an existing row;
-    /// non-stackable items create a new row per unit.
+    /// non-stackable items create a new row per unit. Throws `InventoryError.inventoryFull`
+    /// if the slot cap would be exceeded — caller must surface that to the UI.
     public static func add(_ itemId: String, quantity: Int = 1, to user: User, on db: any Database) async throws {
         guard quantity > 0 else { return }
         guard let item = ItemCatalog.find(itemId) else {
@@ -66,6 +102,8 @@ extension InventoryEntry {
         guard let userId = user.id else {
             throw InventoryError.userNotPersisted
         }
+
+        let used = try await slotsUsed(for: user, on: db)
 
         if item.stackable {
             if let existing = try await InventoryEntry.query(on: db)
@@ -76,8 +114,12 @@ extension InventoryEntry {
                 try await existing.save(on: db)
                 return
             }
+            // New stackable row — needs 1 fresh slot.
+            guard used + 1 <= slotCap else { throw InventoryError.inventoryFull }
             try await InventoryEntry(userID: userId, itemId: itemId, quantity: quantity).save(on: db)
         } else {
+            // Non-stackable — each unit is its own row.
+            guard used + quantity <= slotCap else { throw InventoryError.inventoryFull }
             for _ in 0..<quantity {
                 try await InventoryEntry(userID: userId, itemId: itemId, quantity: 1).save(on: db)
             }

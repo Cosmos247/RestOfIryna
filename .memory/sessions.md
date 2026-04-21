@@ -300,6 +300,30 @@ User asked to skip Phase 3 (Exploration) and Phase 4 (Combat) for now and start 
 - Previously the inventory/warehouse seed was hardcoded to mitya. Now it iterates the `developerUsers` array — every account listed there gets the same starter backpack + warehouse contents at launch (same top-up + orphan-cleanup semantics as before).
 - If the developer row isn't found in the users table or has a nil id, that user is simply skipped (first /start populates them).
 - This means changing `developerUsers` in configure.swift is the single place to turn dev-seeding on for a new tester — no need to add a second mitya-specific hardcoded block.
+
+## Session 9 — 2026-04-21 (Phase 3.0 — backpack slot cap, groundwork for exploration)
+
+Starting on Phase 3 (Exploration) — skipping 3 and 4 into a hybrid exploration system per the user's design spec: two modes (active purchase-by-step, passive timed expedition), inventory = expedition bag, death wipes non-equipped inventory, 2-hour daily passive budget. This is just 3.0 — the backpack slot cap that the rest of the exploration loop depends on.
+
+### What was done
+- `InventoryEntry.slotCap = 50` constant. A "slot" is one row, regardless of that row's `quantity` (so `bread × 50` is one slot, matching typical RPG convention). Equipped gear rows don't count — they're "on the body" not in the bag.
+- New helpers:
+  - `slotsUsed(for:on:)` — count of non-equipped rows for a user
+  - `canAccept(itemId:quantity:for:on:)` — preflight check, tells callers whether an add would fit. For stackable items with an existing row: always yes (merge). For stackable with no existing row: needs 1 free slot. For non-stackable (gear): needs N free slots for N units.
+- `InventoryEntry.add` now throws `InventoryError.inventoryFull` when the cap would be exceeded.
+- `WarehouseService.deposit` / `withdraw` switched from `Bool` to typed result enums (`DepositResult.success | .nothingToDeposit`, `WithdrawResult.success | .nothingToWithdraw | .inventoryFull`). Withdraw preflights inventory space before removing from warehouse so we never leak items on a half-failed transfer.
+- `EstateController.handleWarehouseTransfer` now dispatches on the enum and surfaces distinct toasts per failure mode. `inventory.full` toast is shared with the `/grant` command and will be reused by exploration loot pickup later.
+- `/grant` dev command catches `inventoryFull` and tells the user instead of propagating the error.
+- `InventoryController.renderRoot` gains a fullness indicator next to the title: `🎒 Інвентар  3/50 слотів`. Gives the player immediate feedback before they pick up new loot.
+- Dev seed wrapped in `do/catch InventoryError.inventoryFull` — on a fresh/wiped dev user it never triggers, but keeps startup robust if ever called on a populated account.
+- 2 new locale keys per locale (130 total): `inventory.full`, `inventory.slots_label`.
+- Build clean. EN/UK parity verified.
+
+### Next steps
+- 3.1 — ExplorationController (active mode MVP), with HungerService drain hooks finally firing, autobattle stub for encounters, death penalty wiping non-equipped inventory.
+- 3.2 — return-path visited-rooms memory + depth-decay "already explored" rolls.
+- 3.3 — passive timed expeditions with 2h/day budget.
+- 3.4 — mode exclusivity (can't be in both at once).
 - Localization changes per locale (EN + UK): added inventory.choose_category, inventory.back_root, inventory.action.food/potion/gear/artifact, inventory.info.placeholder, inventory.use.unavailable, hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect, drain.usage, drain.success. Removed inventory.type.recipe, inventory.action.recipe, item.recipe.stew (recipe as an item type was folded away — blueprints will reappear as a separate concept in Phase 5.3 crafting).
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.

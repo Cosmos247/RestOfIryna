@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~128 keys)
-│   └── uk.json                     # Ukrainian strings (~128 keys)
+│   ├── en.json                     # English strings (~130 keys)
+│   └── uk.json                     # Ukrainian strings (~130 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -50,7 +50,7 @@ RestOfIryna/
     ├── Models/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
     │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based)
-    │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list helpers (backpack)
+    │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list/canAccept/slotsUsed helpers; 50-slot cap (equipped doesn't count)
     │   └── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
     │
     ├── Migrations/
@@ -67,7 +67,7 @@ RestOfIryna/
     ├── Services/
     │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses
     │   ├── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
-    │   └── WarehouseService.swift # deposit(itemId,for,on) / withdraw(itemId,for,on) — moves one unit between InventoryEntry and WarehouseEntry; deposits skip equipped rows
+    │   └── WarehouseService.swift # deposit / withdraw — moves one unit between InventoryEntry and WarehouseEntry; returns typed enum (success / nothingToTransfer / inventoryFull); deposits skip equipped rows; withdraw preflights backpack space
     │
     ├── Telegram/
     │   ├── Router/

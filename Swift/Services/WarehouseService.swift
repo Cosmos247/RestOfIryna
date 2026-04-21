@@ -17,12 +17,23 @@ import Foundation
 
 public enum WarehouseService {
 
+    public enum DepositResult: Sendable {
+        case success
+        case nothingToDeposit
+    }
+
+    public enum WithdrawResult: Sendable {
+        case success
+        case nothingToWithdraw
+        case inventoryFull
+    }
+
     /// Move one unit of the item from the player's backpack to the warehouse.
-    /// Returns `true` on success, `false` if nothing depositable was available
-    /// (e.g. zero in inventory, or every row of a gear item is currently equipped).
+    /// Returns `.nothingToDeposit` if there's no unequipped row to take from.
+    /// Warehouse has no slot cap, so it can never refuse.
     @discardableResult
-    public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> Bool {
-        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return false }
+    public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
+        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return .nothingToDeposit }
 
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
@@ -30,7 +41,7 @@ public enum WarehouseService {
             .all()
 
         // Pick the first unequipped row — equipped gear is not transferable.
-        guard let source = rows.first(where: { $0.equippedSlot == nil }) else { return false }
+        guard let source = rows.first(where: { $0.equippedSlot == nil }) else { return .nothingToDeposit }
 
         if item.stackable {
             if source.quantity <= 1 {
@@ -44,21 +55,28 @@ public enum WarehouseService {
         }
 
         try await WarehouseEntry.add(itemId, quantity: 1, to: user, on: db)
-        return true
+        return .success
     }
 
-    /// Move one unit of the item from the warehouse back to the player's backpack.
-    /// Returns `false` if the warehouse has zero of that item.
+    /// Move one unit of the item from the warehouse to the player's backpack.
+    /// `.nothingToWithdraw` if the warehouse has zero of it; `.inventoryFull` if
+    /// the backpack can't fit another row. Both failure modes leave state unchanged —
+    /// the source row is only touched after the inventory side is pre-flighted.
     @discardableResult
-    public static func withdraw(itemId: String, for user: User, on db: any Database) async throws -> Bool {
-        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return false }
+    public static func withdraw(itemId: String, for user: User, on db: any Database) async throws -> WithdrawResult {
+        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return .nothingToWithdraw }
+
+        // Preflight: make sure the backpack can accept one more.
+        guard try await InventoryEntry.canAccept(itemId, quantity: 1, for: user, on: db) else {
+            return .inventoryFull
+        }
 
         let rows = try await WarehouseEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .filter(\.$itemId, .equal, itemId)
             .all()
 
-        guard let source = rows.first else { return false }
+        guard let source = rows.first else { return .nothingToWithdraw }
 
         if item.stackable {
             if source.quantity <= 1 {
@@ -73,6 +91,6 @@ public enum WarehouseService {
 
         // Withdrawn items land in the backpack unequipped — player must go equip them.
         try await InventoryEntry.add(itemId, quantity: 1, to: user, on: db)
-        return true
+        return .success
     }
 }

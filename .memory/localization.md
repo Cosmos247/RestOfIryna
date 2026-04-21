@@ -39,7 +39,7 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~128 per locale)
+## Current Keys (~130 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
@@ -47,7 +47,7 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)
-- Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/artifact, inventory.choose_category, inventory.back_root, inventory.info.placeholder, inventory.use.unavailable, inventory.category.empty (toast for tapping an empty category)
+- Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/artifact, inventory.choose_category, inventory.back_root, inventory.info.placeholder, inventory.use.unavailable, inventory.category.empty (toast for tapping an empty category), inventory.full (backpack cap toast), inventory.slots_label (for the X/50 header indicator)
 - Inventory actions (per item type): inventory.action.food/potion/gear/artifact — each includes its emoji + verb ("🍴 Eat", "🍷 Use", "🛡 Equip", "✨ Use"). Gear also has `inventory.action.gear.unequip` ("❌ Unequip") used when the row is currently equipped.
 - Equipment: equip.success / unequip.success toasts; profile.equipped.main_hand label; profile.equipped.empty placeholder for an empty slot
 - Estate (Phase 5 scaffolding): estate.title, estate.description (placeholder lore), estate.level_label, estate.home, estate.plot (both also used as titles in drilldown), estate.home.description, estate.workshop, estate.kitchen, estate.warehouse, estate.warehouse.description, estate.warehouse.empty, estate.warehouse.deposited / withdrawn / nothing_to_deposit / nothing_to_withdraw (transfer toasts), estate.back_root, estate.back_home

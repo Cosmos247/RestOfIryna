@@ -266,8 +266,12 @@ public func configure(logger: Logger) async throws {
             for (itemId, targetQty) in seed {
                 let have = try await InventoryEntry.totalQuantity(of: itemId, for: devId, on: db)
                 if have < targetQty {
-                    try await InventoryEntry.add(itemId, quantity: targetQty - have, to: devUser, on: db)
-                    grantedCount += 1
+                    do {
+                        try await InventoryEntry.add(itemId, quantity: targetQty - have, to: devUser, on: db)
+                        grantedCount += 1
+                    } catch InventoryError.inventoryFull {
+                        logger.warning("Dev seed: \(label)'s backpack full — skipped \(itemId)")
+                    }
                 }
             }
             if grantedCount > 0 {

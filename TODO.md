@@ -110,6 +110,15 @@
 
 ## Phase 3: Exploration System
 
+### 3.0 Inventory slot limit *(landed)*
+- [x] Fixed 50-slot cap on `InventoryEntry` (equipped gear doesn't count; Workshop will raise it later)
+- [x] `slotsUsed` / `canAccept` helpers; `add` throws `InventoryError.inventoryFull`
+- [x] `WarehouseService.deposit/withdraw` return typed enum results (success / nothingToTransfer / inventoryFull on withdraw)
+- [x] `EstateController.handleWarehouseTransfer` shows precise toast per failure mode (e.g. "backpack is full")
+- [x] `/grant` dev cmd catches `.inventoryFull` and reports
+- [x] Inventory root header shows `X/50 slots` indicator
+- [x] 2 new locale keys per locale: `inventory.full`, `inventory.slots_label`
+
 ### 3.1 Exploration State
 - [ ] Design ExplorationState model (user_id, current_km, next_room_at, loot_bag)
 - [ ] Create migration
