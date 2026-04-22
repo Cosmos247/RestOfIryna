@@ -113,7 +113,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
             if state.isPassive {
                 if state.hasReadyReport {
-                    try await deliverPassiveReport(context: context, state: state)
+                    // Snapshot the report payload and wipe the state row FIRST.
+                    // If we render before deleting and the delete then fails or
+                    // is skipped, the player would see a duplicate report on
+                    // the next Explore tap.
+                    let reportJSON = state.reportJSON
+                    try await state.delete(on: context.db)
+                    try await deliverPassiveReport(context: context, reportJSON: reportJSON)
                 } else {
                     try await showPassiveCountdown(context: context, state: state)
                 }
@@ -243,14 +249,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         )
     }
 
-    /// Send the stored `PassiveReport` text, delete the state row, and drop
-    /// back to main. Used when the player opens exploration *after* the
-    /// scheduler finished the simulation.
-    fileprivate func deliverPassiveReport(context: Context, state: ExplorationState) async throws {
+    /// Send the stored `PassiveReport` text and drop back to main. Takes
+    /// the raw report JSON rather than the state row — the caller is
+    /// responsible for having already deleted the state so even if this
+    /// method throws, the state doesn't linger and cause a duplicate
+    /// delivery on the next Explore tap.
+    fileprivate func deliverPassiveReport(context: Context, reportJSON: String?) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
 
-        if let json = state.reportJSON,
+        if let json = reportJSON,
            let data = json.data(using: .utf8),
            let report = try? JSONDecoder().decode(PassiveReport.self, from: data) {
             let text = PassiveExpeditionService.renderReport(report, lingo: lingo, locale: locale)
@@ -266,14 +274,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             )
         }
 
-        try await state.delete(on: context.db)
-
-        // Drop back to main and send a fresh greeting so the reply keyboard
-        // rebuilds (an expedition run that ended with active's Step-keyboard
-        // still showing would otherwise leave that keyboard visible).
+        // Drop back to main with the "back at the estate" text so the
+        // cycle closes with a consistent signal whether the player clicks
+        // Close on the pushed inline or re-opens via the Explore button.
         context.session.routerName = Controllers.mainController.routerName
         try await context.session.saveAndCache(in: context.db)
-        try await Controllers.mainController.showMainMenu(context: context)
+        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
+        try await Controllers.mainController.showMainMenu(context: context, text: homeText)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -583,19 +590,21 @@ extension ExplorationController {
         // Close-report button on the delivered passive expedition message.
         // Removes the inline report, drops any lingering state row (the
         // scheduler push leaves the row in place so we can re-deliver on
-        // failure), and sends a fresh main menu message.
+        // failure), and sends a "back at the estate" main menu so the
+        // player knows the expedition cycle is closed.
         if data == "explore:passive:close" {
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            if let state = try await ExplorationState.current(for: context.session, on: context.db) {
-                try await state.delete(on: context.db)
-            }
+            // Unconditional wipe — `.end` is a no-op if there's no row.
+            try await ExplorationState.end(for: context.session, on: context.db)
+
             context.session.routerName = Controllers.mainController.routerName
             try await context.session.saveAndCache(in: context.db)
 
-            try await Controllers.mainController.showMainMenu(context: context)
+            let homeText = context.lingo.localize("exploration.passive.closed_home", locale: locale)
+            try await Controllers.mainController.showMainMenu(context: context, text: homeText)
             return true
         }
 

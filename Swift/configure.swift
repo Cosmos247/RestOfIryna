@@ -27,10 +27,10 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
-let developerUsers: [Int64] = [mitya, irina, maxim]
+let developerUsers: [Int64] = [mitya]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = false
+let resetDevProfile = true
 
 /// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
 /// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
@@ -228,6 +228,11 @@ public func configure(logger: Logger) async throws {
                 for entry in existingWarehouse {
                     try await entry.delete(on: db)
                 }
+
+                // Wipe any stale ExplorationState row so a passive report from
+                // a previous session can't resurface on the first Explore tap
+                // after registration. `.end` is a no-op if no row exists.
+                try await ExplorationState.end(for: user, on: db)
 
                 let name = user.nickname ?? "\((user.telegramId))"
                 logger.info("Dev profile reset for \(name) (wiped \(existingEntries.count) inventory + \(existingWarehouse.count) warehouse row(s))")

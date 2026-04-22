@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~182 keys)
-│   └── uk.json                     # Ukrainian strings (~182 keys)
+│   ├── en.json                     # English strings (~183 keys)
+│   └── uk.json                     # Ukrainian strings (~183 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -76,7 +76,7 @@ RestOfIryna/
     │   ├── WarehouseService.swift # deposit / withdraw — moves one unit between InventoryEntry and WarehouseEntry; returns typed enum (success / nothingToTransfer / inventoryFull); deposits skip equipped rows; withdraw preflights backpack space
     │   ├── ExplorationService.swift # Phase 3.1/3.2: rollStep with `priorVisits:Int` three-tier weight table (fresh 20/40/30/10 → reduced 50/20/20/10 → bare 100/0/0/0), autobattle stub, loot drop rolls, hunger/starvation integration. StepOutcome enum captures every path (nothing/loot/trip/encounterWon/encounterLost/starvationOnly).
     │   ├── HealingService.swift # Phase 3.2 polish: lazy-compute passive HP regen (5%·maxHp per minute) while player is NOT on any expedition (active or passive) and hp < maxHp. `tick(_:inExpedition:on:)` is called from RouterStore.process on every interaction — RouterStore queries ExplorationState presence to derive `inExpedition`. Pins `user.lastHpTickAt` at full HP and clears it during expedition to prevent banked regen.
-    │   └── PassiveExpeditionService.swift # Phase 3.3: passive expedition. PassiveDuration (30/60/90 units), testMode flag (seconds vs minutes), start() arms a Task.detached + Task.sleep, simulate() runs rollStep N times at priorVisits=0, PassiveReport Codable blob stored in exploration_state.report_json, rescheduleInflight() runs on bot startup via configure.swift. Completion pushes a rendered report message to the player's chat.
+    │   └── PassiveExpeditionService.swift # Phase 3.3: passive expedition. PassiveDuration (30/60/90 units), testMode flag (seconds vs minutes), start() arms a Task.detached running runLive (live per-step loop with Task.sleep between each step + absolute-fire-time catch-up after restart). Early exit on death pushes the report immediately. Progress tracked via state.stepsDeep so restart resumes at the right step. PassiveReport Codable blob stored in exploration_state.report_json. rescheduleInflight() runs on bot startup via configure.swift.
     │
     ├── Telegram/
     │   ├── Router/

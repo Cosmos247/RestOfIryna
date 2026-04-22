@@ -112,10 +112,21 @@ public enum PassiveExpeditionService {
 
     // MARK: Scheduler
 
-    /// Spawn a detached task that sleeps until `endsAt` and then runs
-    /// `completeIfDue`. `stateId` lets us re-fetch the state fresh at
-    /// completion time (and confirm the expedition wasn't cancelled or
-    /// force-ended out from under us).
+    /// How many "duration units" a single simulated step costs. A 30-unit
+    /// expedition therefore resolves in 6 steps — same count in test mode
+    /// (secondsPerUnit = 1 → 5 s/step) and prod (secondsPerUnit = 60 →
+    /// 300 s/step).
+    private static let unitsPerStep: Int = 5
+
+    /// Real-world wall-clock seconds per simulated step.
+    private static var stepDurationSeconds: TimeInterval {
+        return Double(unitsPerStep) * secondsPerUnit
+    }
+
+    /// Spawn a detached background task that runs the expedition step by
+    /// step. Each step rolls one event, persists progress via `stepsDeep`,
+    /// and either sleeps until the next step's scheduled fire time or
+    /// finalizes early if the governor died mid-walk.
     public static func scheduleCompletion(
         stateId: UUID?,
         endsAt: Date,
@@ -124,25 +135,16 @@ public enum PassiveExpeditionService {
         lingo: Lingo
     ) {
         guard let stateId = stateId else { return }
-        let delay = max(0, endsAt.timeIntervalSinceNow)
-
         Task.detached {
-            if delay > 0 {
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            }
-            do {
-                try await completeIfDue(stateId: stateId, on: db, bot: bot, lingo: lingo)
-            } catch {
-                // Background task — log via global logger if available, else swallow.
-                // Don't rethrow; the scheduler has nowhere to propagate to.
-                appState?.logger.error("Passive expedition completion failed for \(stateId): \(error)")
-            }
+            await runLive(stateId: stateId, db: db, bot: bot, lingo: lingo)
         }
     }
 
-    /// Startup-time sweep: for every in-flight passive state, either deliver
-    /// the report immediately (if the endsAt already passed during downtime)
-    /// or re-arm a Task.sleep for whatever's left.
+    /// Startup-time sweep: spawn a fresh live task for every in-flight
+    /// passive state. Each task reads `stepsDeep` to know how many steps
+    /// already completed before the last bot shutdown and resumes from
+    /// there — any scheduled step times that fell during downtime are
+    /// executed back-to-back without sleeping (catch-up).
     public static func rescheduleInflight(
         on db: any Database,
         bot: TGBot,
@@ -151,108 +153,148 @@ public enum PassiveExpeditionService {
         let passive = try await ExplorationState.allPassive(on: db)
         for state in passive {
             guard let stateId = state.id, let endsAt = state.endsAt else { continue }
-            if state.reportJSON != nil {
-                // Already-completed passive whose player hasn't opened the report
-                // yet. Leave it alone — the controller delivers on next open.
-                continue
-            }
+            // Already-completed passive whose player hasn't opened the report
+            // yet. Leave it alone — the controller delivers on next open.
+            if state.reportJSON != nil { continue }
             scheduleCompletion(stateId: stateId, endsAt: endsAt, db: db, bot: bot, lingo: lingo)
         }
     }
 
-    // MARK: Completion
+    // MARK: Live simulation loop
 
-    /// Run simulation + push report, but only if the state still exists, is
-    /// still passive, and hasn't already been completed. Idempotent — safe
-    /// to invoke from multiple scheduled tasks (e.g. rescheduler + original).
-    public static func completeIfDue(
+    /// Per-step runner. Exits early on death (pushes the report immediately
+    /// instead of waiting out the remaining timer), on expedition cancellation
+    /// by the player (state row gone), or on error.
+    ///
+    /// Progress is tracked in `state.stepsDeep` so a bot restart mid-run
+    /// resumes from the right step. Outcome counters and loot totals are
+    /// NOT persisted between restarts — a crash mid-simulation means the
+    /// final report only reflects post-restart events. Acceptable MVP
+    /// tradeoff; restarts during a passive expedition should be rare.
+    private static func runLive(
         stateId: UUID,
-        on db: any Database,
+        db: any Database,
         bot: TGBot,
         lingo: Lingo
-    ) async throws {
-        guard let state = try await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else {
-            return
-        }
-        guard state.isPassive, state.reportJSON == nil else { return }
-
-        // Load the user so we can mutate hp/hunger and add loot.
-        try await state.$user.load(on: db)
-        let user = state.user
-
-        let report = try await simulate(state: state, user: user, on: db)
-
-        // Encode report and persist on the state row.
-        let data = try JSONEncoder().encode(report)
-        state.reportJSON = String(data: data, encoding: .utf8)
-
-        // Persist user changes (hp / hunger delta from simulation + inventory
-        // was already written step-by-step by rollStep).
-        try await user.saveAndCache(in: db)
-        try await state.save(on: db)
-
-        // Push notification to the player.
-        try await pushReportNotification(state: state, user: user, bot: bot, lingo: lingo)
-    }
-
-    // MARK: Simulation
-
-    /// Run `duration.stepCount` `rollStep` calls at increasing depths. Each
-    /// step uses `priorVisits: 0` (passive treks fresh ground). Mutates the
-    /// user's hp/hunger directly; loot is added to inventory on pickup.
-    /// Breaks early if hp hits 0 (governor died mid-expedition).
-    public static func simulate(state: ExplorationState, user: User, on db: any Database) async throws -> PassiveReport {
-        // Derive step count from elapsed timer so time-stretched runs (e.g. a
-        // 30-min expedition finalized after a 40-min downtime) still produce
-        // the right number of rolls.
-        let stepCount = derivedStepCount(for: state)
-
-        let hpBefore = user.hp
-        let hungerBefore = user.hunger
-
+    ) async {
         var outcomeCounts: [String: Int] = [:]
         var lootPicked: [String: Int] = [:]
         var lootDropped: [String: Int] = [:]
-        var died = false
-        var deathDepth: Int? = nil
-        var finalDepth = 0
-        var stepsTaken = 0
+        var hpBefore: Int = 0
+        var hungerBefore: Int = 0
+        var hasCapturedBefore = false
 
-        for i in 1...max(1, stepCount) {
-            stepsTaken += 1
-            finalDepth = i
+        while true {
+            // Reload fresh at the start of each iteration — state may have
+            // been deleted (cancel), or user may have mutated hp/hunger (eat
+            // food, regen, etc. — regen is paused during expedition, but
+            // we stay defensive).
+            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
+            guard state.isPassive, state.reportJSON == nil else { return }
 
+            let totalSteps = derivedStepCount(for: state)
+            let completed = state.stepsDeep
+
+            if completed >= totalSteps {
+                // All steps done — finalize normally.
+                try? await state.$user.load(on: db)
+                await finalizeAndPush(
+                    state: state, user: state.user,
+                    outcomeCounts: outcomeCounts,
+                    lootPicked: lootPicked, lootDropped: lootDropped,
+                    hpBefore: hasCapturedBefore ? hpBefore : state.user.hp,
+                    hungerBefore: hasCapturedBefore ? hungerBefore : state.user.hunger,
+                    died: false, deathDepth: nil,
+                    on: db, bot: bot, lingo: lingo
+                )
+                return
+            }
+
+            let nextStep = completed + 1
+            guard let createdAt = state.createdAt else { return }
+            let stepFireAt = createdAt.addingTimeInterval(Double(nextStep) * stepDurationSeconds)
+            let waitSeconds = max(0, stepFireAt.timeIntervalSinceNow)
+
+            if waitSeconds > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(waitSeconds * 1_000_000_000))
+            }
+
+            // Reload state + user after the wait (state may have been deleted
+            // via cancel, player may have interacted in ways that affect user
+            // fields).
+            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
+            guard state.isPassive, state.reportJSON == nil else { return }
+            try? await state.$user.load(on: db)
+            let user = state.user
+
+            if !hasCapturedBefore {
+                hpBefore = user.hp
+                hungerBefore = user.hunger
+                hasCapturedBefore = true
+            }
+
+            // Roll one step.
             let outcome: StepOutcome
             do {
                 outcome = try await ExplorationService.rollStep(
                     for: user,
-                    kmDepth: i,
+                    kmDepth: nextStep,
                     priorVisits: 0,
                     on: db
                 )
             } catch {
-                // Surface through the report but don't cascade.
-                appState?.logger.warning("Passive simulation step \(i) threw: \(error)")
-                break
+                appState?.logger.warning("Passive live step \(nextStep) threw: \(error)")
+                return
             }
 
             recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped)
 
+            state.stepsDeep = nextStep
+            try? await state.save(on: db)
+            try? await user.saveAndCache(in: db)
+
             if user.hp <= 0 {
-                died = true
-                deathDepth = i
-                break
+                // Early death — finalize immediately, don't wait out the rest.
+                do {
+                    try await applyDeath(to: user, on: db)
+                    try await user.saveAndCache(in: db)
+                } catch {
+                    appState?.logger.warning("applyDeath threw: \(error)")
+                }
+                await finalizeAndPush(
+                    state: state, user: user,
+                    outcomeCounts: outcomeCounts,
+                    lootPicked: lootPicked, lootDropped: lootDropped,
+                    hpBefore: hpBefore, hungerBefore: hungerBefore,
+                    died: true, deathDepth: nextStep,
+                    on: db, bot: bot, lingo: lingo
+                )
+                return
             }
         }
+    }
 
-        if died {
-            try await applyDeath(to: user, on: db)
-        }
-
+    /// Build the report, persist it on the state row, and push the
+    /// completion message. Both the end-of-run (success) and early-death
+    /// paths share this tail.
+    private static func finalizeAndPush(
+        state: ExplorationState,
+        user: User,
+        outcomeCounts: [String: Int],
+        lootPicked: [String: Int],
+        lootDropped: [String: Int],
+        hpBefore: Int,
+        hungerBefore: Int,
+        died: Bool,
+        deathDepth: Int?,
+        on db: any Database,
+        bot: TGBot,
+        lingo: Lingo
+    ) async {
         // If the governor died, the bag stays with the corpse — the report
         // must not claim "brought back" anything. `applyDeath` already wiped
         // the non-equipped inventory rows in the DB; zero the report's loot
-        // list to match so the player sees the honest outcome.
+        // list to match.
         let loot: [PassiveReport.LootEntry]
         if died {
             loot = []
@@ -266,9 +308,9 @@ public enum PassiveExpeditionService {
             }
         }
 
-        return PassiveReport(
-            stepsTaken: stepsTaken,
-            finalDepth: finalDepth,
+        let report = PassiveReport(
+            stepsTaken: state.stepsDeep,
+            finalDepth: state.stepsDeep,
             hpBefore: hpBefore,
             hpAfter: user.hp,
             hungerBefore: hungerBefore,
@@ -278,14 +320,31 @@ public enum PassiveExpeditionService {
             outcomeCounts: outcomeCounts,
             loot: loot
         )
+
+        do {
+            let data = try JSONEncoder().encode(report)
+            state.reportJSON = String(data: data, encoding: .utf8)
+            try await state.save(on: db)
+        } catch {
+            appState?.logger.warning("Failed to encode/save passive report: \(error)")
+            return
+        }
+
+        do {
+            try await pushReportNotification(state: state, user: user, bot: bot, lingo: lingo)
+        } catch {
+            appState?.logger.warning("Passive report push failed: \(error)")
+        }
     }
 
+    /// Total number of steps this expedition covers. Derived from the
+    /// configured duration (endsAt − createdAt), so the same helper works
+    /// for freshly-started and in-flight rows.
     private static func derivedStepCount(for state: ExplorationState) -> Int {
         guard let endsAt = state.endsAt, let createdAt = state.createdAt else { return 6 }
         let seconds = max(0, endsAt.timeIntervalSince(createdAt))
         let units = seconds / secondsPerUnit
-        // 1 step per 5 units — same ratio as PassiveDuration.stepCount.
-        return max(1, Int(units / 5.0))
+        return max(1, Int(units) / unitsPerStep)
     }
 
     private static func recordOutcome(

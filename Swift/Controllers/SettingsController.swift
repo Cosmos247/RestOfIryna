@@ -97,10 +97,20 @@ extension SettingsController {
     static func onCallbackQuery(context: Context) async throws -> Bool {
         guard let query = context.update.callbackQuery else { return false }
         guard let message = query.message else { return false }
+        guard let data = query.data else { return false }
+
+        // Exploration callbacks (e.g. a scheduler-pushed passive report's
+        // Close button) can land here if the player was viewing settings
+        // when the expedition completed. Forward before the set_lang delete
+        // below so the report's inline message reaches ExplorationController.
+        if data.hasPrefix("explore:") {
+            return try await ExplorationController.onCallbackQuery(context: context)
+        }
+
         let chatId = TGChatId.chat(message.chat.id)
         let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
         try await context.bot.deleteMessage(params: deleteParams)
-        guard let data = query.data, data.starts(with: "set_lang:") else { return false }
+        guard data.starts(with: "set_lang:") else { return false }
         let locale = data.replacingOccurrences(of: "set_lang:", with: "")
         context.session.locale = locale
         try await context.session.saveAndCache(in: context.db)

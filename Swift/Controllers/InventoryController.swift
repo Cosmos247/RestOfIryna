@@ -274,6 +274,14 @@ extension InventoryController {
         guard let message = query.message else { return false }
         guard let data = query.data else { return false }
 
+        // Exploration callbacks (e.g. a scheduler-pushed passive report's
+        // Close button) can land here if the player was viewing their bag
+        // when the expedition completed. Forward to ExplorationController
+        // so its full cleanup runs instead of falling through unhandled.
+        if data.hasPrefix("explore:") {
+            return try await ExplorationController.onCallbackQuery(context: context)
+        }
+
         let ctrl = Controllers.inventoryController
         let locale = context.session.locale
 

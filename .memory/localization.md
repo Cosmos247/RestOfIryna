@@ -34,12 +34,26 @@ let text = lingo.localize("greeting.message", locale: session.locale,
 ```
 JSON: `"greeting.message": "Hey %{full-name}"`
 
+### ⚠️ Lingo interpolation bug with multi-UTF-16 emoji
+
+**Rule:** `%{placeholder}` must appear BEFORE any multi-UTF-16 emoji (🏕 📏 ❤️ 🍖 🪨 etc. — anything from a surrogate-pair code point) in the localized string. If an emoji comes first, the interpolation after it will not substitute and the raw `%{name}` renders literally.
+
+Observed cases:
+- `"HP: %{before} → %{after} ❤️"` — works (placeholder before emoji)
+- `"❤️ HP: %{before} → %{after}"` — BROKEN (emoji before placeholder)
+- `"Очікуваний час повернення: %{time}. Намісник вирушив у похід 🏕."` — works (placeholder before any emoji)
+- `"Намісник вирушив у похід 🏕. Очікуваний час повернення: %{time}."` — BROKEN (🏕 before `%{time}`)
+
+Single-UTF-16 chars (`❤` without the VS16 variation selector, `+`, Cyrillic/Latin letters) before a placeholder are FINE — only surrogate-pair emoji cause the issue.
+
+Fix pattern: rewrite so `%{...}` is the first dynamic token, with emoji/decoration trailing.
+
 ### With SupportedLocale enum (via Lingo+Locales.swift extension)
 ```swift
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~182 per locale)
+## Current Keys (~183 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*

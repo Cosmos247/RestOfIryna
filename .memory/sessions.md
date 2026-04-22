@@ -550,3 +550,23 @@ Kept (still valuable regardless of label strategy):
 - Estate + Capital guards during any expedition
 - Idempotency guards on mode/duration picker callbacks
 - `goToMainMenu` / `deliverPassiveReport` / passive-close callback still send a fresh main menu after cleanup so the reply keyboard from an active expedition (step/back/bag) is replaced by the main reply keyboard.
+
+### Live per-step passive simulation (same session)
+User pointed out that dying on step 2 out of 18 still made them wait the full timer for the report — the earlier implementation ran all N steps at once at `endsAt` and only then pushed the result. Rewrote the scheduler:
+- `scheduleCompletion` now spawns a `Task.detached` running `runLive` instead of `completeIfDue`. The one-shot `simulate()` + `completeIfDue()` helpers were deleted.
+- `runLive` is a per-step loop. Each iteration: sleeps until the step's absolute fire time (`createdAt + K * stepDurationSeconds`), reloads state + user from the DB, calls `rollStep` for one km, persists `state.stepsDeep`, checks for death. On death it calls `applyDeath` (wipe non-equipped inventory, hp = 1) and jumps straight to `finalizeAndPush` — no more waiting out the remaining timer.
+- Step duration is `secondsPerUnit * unitsPerStep` (5 units/step). Test mode = 5 s/step, prod = 300 s/step. Same total step count as before (6/12/18), just now spread over real time.
+- Progress is tracked via `state.stepsDeep` (previously unused for passive rows). `rescheduleInflight` on bot startup just spawns a fresh runLive task per in-flight state; runLive reads `stepsDeep` to know where to resume. Any step whose scheduled fire time fell during downtime runs without sleep ("catch-up") so the expedition can't be stretched by bot outages.
+- Outcome counters / loot totals are NOT persisted across restarts (Swift locals in the Task). If the bot crashes mid-simulation the final report only reflects post-restart events. Acceptable MVP tradeoff — passive expeditions are short; crashes should be rare.
+- The `finalizeAndPush` helper is shared by both the normal end-of-run path and the early-death path. It writes the JSON, saves the state, and pushes the report message.
+
+### Post-live-scheduler fixes (same session)
+Three bugs surfaced while playtesting the new per-step scheduler:
+
+1. **Stale `exploration_state` row across `resetDevProfile = true` restarts.** When dev mode wipes user fields + inventory + warehouse but leaves `exploration_state` intact, a passive row from a previous session can re-fire `deliverPassiveReport` on the next Explore tap. Fixed by adding `try await ExplorationState.end(for: user, on: db)` to the dev-reset block in `configure.swift`.
+
+2. **Lingo interpolation fails when a surrogate-pair emoji appears BEFORE the `%{placeholder}` in the source string.** Our earlier memory note called it "leading emoji breaks interpolation" but the real rule is stricter: any multi-UTF-16 emoji *anywhere before* a `%{name}` token in the localized string prevents it from substituting. Single-UTF-16 chars (+, Cyrillic, Latin) before the placeholder are fine. Rewrote the affected passive-mode strings so placeholders precede every emoji in the string, e.g. `"Expected return in %{time}. Your governor has set off on an expedition 🏕."` instead of `"🏕 Your governor ... %{time}"`. Added the precise rule to `.memory/localization.md`.
+
+3. **Close button on the scheduler-pushed report did nothing visible (and state wasn't cleaned up).** The scheduler pushes the report inline message while the player's `routerName` is `main` (or `inventory` / `settings` if they navigated). Tapping Close there went through that controller's `onCallbackQuery`, which didn't recognise `explore:passive:close` and fell into a generic "delete message" fallback. `ExplorationController`'s full cleanup (delete state row, send "back at the estate" greeting) never ran, so the next Explore tap hit `deliverPassiveReport` again and re-showed the report. Fixed by forwarding any `explore:`-prefixed callback from `MainController` / `InventoryController` / `SettingsController` to `ExplorationController.onCallbackQuery` at the top of their handlers. Also decoupled `showExploration`'s passive-report branch so the state row is deleted *before* the render call, preventing a future duplicate from a stuck state row.
+
+Also renamed `deliverPassiveReport`'s signature from `(context, state: ExplorationState)` to `(context, reportJSON: String?)` — the caller now snapshots the JSON and deletes the state row first, then hands only the serialized payload to the renderer, so even a thrown exception during render leaves no state to re-deliver.

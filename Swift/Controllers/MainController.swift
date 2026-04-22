@@ -288,6 +288,17 @@ extension MainController {
             return true
         }
 
+        // Exploration-related callbacks can land in main's router when the
+        // passive-expedition scheduler pushes a report while the player is
+        // viewing the main menu (routerName = "main" at that point). Forward
+        // them to the exploration controller so its full cleanup runs —
+        // otherwise the default below would just nuke the inline message and
+        // leave the state row behind, causing a duplicate delivery on the
+        // next Explore tap.
+        if data.hasPrefix("explore:") {
+            return try await ExplorationController.onCallbackQuery(context: context)
+        }
+
         // Default: delete inline message
         let chatId = TGChatId.chat(message.chat.id)
         let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
