@@ -129,10 +129,10 @@ public enum ExplorationService {
 
     private static func rollLoot(for user: User, kmDepth: Int, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
         // Depth-aware loot pool. Shallow forest: berries, herbs, wood. Deeper: iron, hides.
-        let shallow = ["food.berry", "mat.wood", "mat.stone"]
-        let medium  = ["mat.hide", "mat.iron_ore", "food.berry"]
+        let shallow = ["food.forest_berries", "food.forest_nuts", "mat.pine_lumber", "mat.river_pebble"]
+        let medium  = ["mat.hide", "mat.old_iron", "mat.clay", "food.duck_egg", "food.raw_meat"]
         let pool = kmDepth <= 2 ? shallow : (kmDepth <= 5 ? shallow + medium : medium)
-        let itemId = pool.randomElement() ?? "mat.wood"
+        let itemId = pool.randomElement() ?? "mat.pine_lumber"
         let quantity = 1
 
         // Apply any starvation HP loss first.

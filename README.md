@@ -103,7 +103,9 @@ RestOfIryna/
 │   │   ├── CreateExplorationState.swift
 │   │   ├── AddExplorationReturnState.swift
 │   │   ├── AddHpRegenTick.swift
-│   │   └── AddPassiveExpeditionFields.swift
+│   │   ├── AddPassiveExpeditionFields.swift
+│   │   ├── RenameMaterialIds.swift
+│   │   └── RenameFoodIds.swift
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)

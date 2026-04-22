@@ -570,3 +570,38 @@ Three bugs surfaced while playtesting the new per-step scheduler:
 3. **Close button on the scheduler-pushed report did nothing visible (and state wasn't cleaned up).** The scheduler pushes the report inline message while the player's `routerName` is `main` (or `inventory` / `settings` if they navigated). Tapping Close there went through that controller's `onCallbackQuery`, which didn't recognise `explore:passive:close` and fell into a generic "delete message" fallback. `ExplorationController`'s full cleanup (delete state row, send "back at the estate" greeting) never ran, so the next Explore tap hit `deliverPassiveReport` again and re-showed the report. Fixed by forwarding any `explore:`-prefixed callback from `MainController` / `InventoryController` / `SettingsController` to `ExplorationController.onCallbackQuery` at the top of their handlers. Also decoupled `showExploration`'s passive-report branch so the state row is deleted *before* the render call, preventing a future duplicate from a stuck state row.
 
 Also renamed `deliverPassiveReport`'s signature from `(context, state: ExplorationState)` to `(context, reportJSON: String?)` — the caller now snapshots the JSON and deletes the state row first, then hands only the serialized payload to the renderer, so even a thrown exception during render leaves no state to re-deliver.
+
+### Material catalog rework (same session)
+Player-defined content pass — replaced the placeholder materials with lore-flavoured resources:
+- `mat.wood` → `mat.pine_lumber` 🌲 "Pine Lumber"
+- `mat.stone` → `mat.river_pebble` 🪨 "River Pebble"
+- `mat.iron_ore` → `mat.old_iron` ⛓ "Old Iron"
+- `mat.hide` 🟫 stays (name unchanged, icon + description added)
+- NEW: `mat.clay` 🧱 "Wild Clay"
+
+Implementation:
+- `Item` struct gained `descriptionKey: String?` — optional locale key for the lore blurb shown as a modal alert (`answerCallbackQuery(text: description, showAlert: true)`) when the player taps the item's info button. Nil falls back to the existing "description coming soon" toast.
+- `ItemCatalog` — replaced 3 material entries + added 1. Each now carries `icon:` (per-item emoji) and `descriptionKey:` pointing at a `.desc` locale key.
+- `Item.icon` is now rendered for non-gear rows too (`InventoryController.genericRows`, `ExplorationController.renderBag`, `EstateController` warehouse) — previously only gear used it.
+- Info callbacks updated in three controllers (inv / explore / estate) — unified pattern: modal alert on description present, placeholder toast otherwise.
+- Migration `RenameMaterialIds` rewrites `inventory` + `warehouse` rows via `.set(\.$itemId, to: new).update()` so existing stockpiles carry forward after the rename.
+- Side-effects: `ExplorationService.rollLoot` shallow/medium pools, `EnemyCatalog` rabid_wolf loot table, and `configure.swift` dev seed all updated to new IDs (plus `mat.clay` / `mat.old_iron` added to the seed).
+- 6 new locale keys per locale (EN + UK): 4 new names (pine_lumber, river_pebble, clay, old_iron) + 5 descriptions (`...desc` keys for every material including existing hide). Total 189 per locale.
+
+### Food catalog rework (same session)
+Mirrors the material pass — replaced the placeholder bread/stew/roast/berry lineup with a lore-flavoured raw-food family:
+- `food.berry` → `food.forest_berries` 🫐 (+15 hunger)
+- NEW `food.forest_nuts` 🌰 (+20 hunger)
+- NEW `food.potato` 🥔 (effects: [] — strategic ingredient, not raw-edible)
+- NEW `food.duck_egg` 🥚 (+25 hunger)
+- NEW `food.raw_meat` 🥩 (+30 hunger)
+- Removed: `food.bread`, `food.stew`, `food.roast` (cooked variants come back via Kitchen in Phase 5.3)
+
+Implementation:
+- `ItemCatalog` food section rewritten with icon + descriptionKey per entry.
+- `Item.effects` kept as `[]` for potato — conveyed through a new `consume.not_raw_edible` toast (new locale key): "You can't eat %{name} raw — it needs cooking." Both `InventoryController.inv:use` and `ExplorationController.explore:eat` now check `item.effects.isEmpty` before calling `HungerService.consume` so the player doesn't get the misleading "no effect — already fully restored" fallback.
+- `ExplorationService.rollLoot` pools: shallow forages forest_berries/forest_nuts + lumber/pebble; medium adds duck_egg/raw_meat (alongside hide/old_iron/clay).
+- `EnemyCatalog` rabid_hare now drops raw_meat instead of berries (semantically: meat from a kill, not foraged berries).
+- `configure.swift` dev seed refreshed: forest_berries × 3, forest_nuts × 2, duck_egg × 1, raw_meat × 1, potato × 2. Bread/stew removed from seed.
+- Migration `RenameFoodIds` renames berry → forest_berries in `inventory` + `warehouse`, and DELETEs bread/stew/roast rows (no replacement mapping; orphan cleanup via dev seed handles the dev side but the explicit delete covers any non-dev DB rows too). Registered right after `RenameMaterialIds`.
+- 11 new locale keys per locale (EN + UK): 5 new names (forest_berries, forest_nuts, potato, duck_egg, raw_meat) + 5 descriptions + `consume.not_raw_edible` with `%{name}` interpolation. Total 196 per locale.

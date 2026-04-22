@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~183 keys)
-│   └── uk.json                     # Ukrainian strings (~183 keys)
+│   ├── en.json                     # English strings (~196 keys)
+│   └── uk.json                     # Ukrainian strings (~196 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -68,7 +68,9 @@ RestOfIryna/
     │   ├── CreateExplorationState.swift # exploration_state table (Phase 3.1): per-user stepsDeep, unique on user_id, cascades on user delete
     │   ├── AddExplorationReturnState.swift # (Phase 3.2): adds `visited_rooms` TEXT (JSON dict km → visit count) and a dormant `returning` Bool to exploration_state
     │   ├── AddHpRegenTick.swift    # (Phase 3.2 polish): adds `last_hp_tick_at` nullable Date to users
-    │   └── AddPassiveExpeditionFields.swift # (Phase 3.3): adds nullable `mode`, `ends_at`, `report_json` to exploration_state
+    │   ├── AddPassiveExpeditionFields.swift # (Phase 3.3): adds nullable `mode`, `ends_at`, `report_json` to exploration_state
+    │   ├── RenameMaterialIds.swift # Data migration: mat.wood→mat.pine_lumber, mat.stone→mat.river_pebble, mat.iron_ore→mat.old_iron (inventory + warehouse)
+    │   └── RenameFoodIds.swift    # Data migration: food.berry→food.forest_berries; bread/stew/roast rows deleted outright
     │
     ├── Services/
     │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses

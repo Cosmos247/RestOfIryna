@@ -27,7 +27,7 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
-let developerUsers: [Int64] = [mitya]
+let developerUsers: [Int64] = [mitya, irina]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
 let resetDevProfile = true
@@ -154,6 +154,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddExplorationReturnState())
     migrations.add(AddHpRegenTick())
     migrations.add(AddPassiveExpeditionFields())
+    migrations.add(RenameMaterialIds())
+    migrations.add(RenameFoodIds())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -248,10 +250,16 @@ public func configure(logger: Logger) async throws {
     // come from registration, so they're deliberately left out of this list.
     if seedDevInventory {
         let seed: [(String, Int)] = [
-            ("food.bread", 3),
-            ("food.stew", 1),
-            ("mat.wood", 5),
-            ("mat.stone", 3),
+            ("food.forest_berries", 3),
+            ("food.forest_nuts", 2),
+            ("food.duck_egg", 1),
+            ("food.raw_meat", 1),
+            ("food.potato", 2),
+            ("mat.pine_lumber", 5),
+            ("mat.river_pebble", 3),
+            ("mat.clay", 2),
+            ("mat.old_iron", 1),
+            ("mat.hide", 1),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
         ]

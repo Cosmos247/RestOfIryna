@@ -92,10 +92,14 @@ public struct Item: Sendable {
     /// Set only for gear items — bonuses applied while equipped.
     public let gearStats: GearStats?
     /// Per-item display glyph shown next to the name in the inventory list
-    /// (e.g. ⚔️ for a sword, 🏹 for a bow). Shown regardless of whether the item
-    /// is equipped. Distinct from `ItemType.icon`, which is the type-level header
-    /// glyph used in the root-category buttons.
+    /// (e.g. ⚔️ for a sword, 🏹 for a bow, 🌲 for pine lumber). Shown regardless
+    /// of whether the item is equipped. Distinct from `ItemType.icon`, which is
+    /// the type-level header glyph used in the root-category buttons.
     public let icon: String?
+    /// Optional localization key for the lore blurb shown when the player
+    /// taps the item's info button. Nil = fall back to the generic
+    /// "%{name} — description coming soon" placeholder.
+    public let descriptionKey: String?
 
     public init(
         id: String,
@@ -106,7 +110,8 @@ public struct Item: Sendable {
         effects: [ItemEffect],
         slot: EquipmentSlot? = nil,
         gearStats: GearStats? = nil,
-        icon: String? = nil
+        icon: String? = nil,
+        descriptionKey: String? = nil
     ) {
         self.id = id
         self.nameKey = nameKey
@@ -117,6 +122,7 @@ public struct Item: Sendable {
         self.slot = slot
         self.gearStats = gearStats
         self.icon = icon
+        self.descriptionKey = descriptionKey
     }
 }
 
@@ -124,17 +130,32 @@ public struct Item: Sendable {
 
 public enum ItemCatalog {
     public static let all: [Item] = [
-        // Food
-        Item(id: "food.berry",          nameKey: "item.food.berry",         type: .food,     tier: 1, stackable: true,  effects: [.restoreHunger(15)]),
-        Item(id: "food.bread",          nameKey: "item.food.bread",         type: .food,     tier: 1, stackable: true,  effects: [.restoreHunger(20)]),
-        Item(id: "food.stew",           nameKey: "item.food.stew",          type: .food,     tier: 2, stackable: true,  effects: [.restoreHunger(40)]),
-        Item(id: "food.roast",          nameKey: "item.food.roast",         type: .food,     tier: 3, stackable: true,  effects: [.restoreHunger(80)]),
+        // Food — raw foragables + kill drops. Cooked variants will come from
+        // the Kitchen (Phase 5.3). Potato is the one strategic ingredient:
+        // inedible raw, only useful once cooking lands.
+        Item(id: "food.forest_berries", nameKey: "item.food.forest_berries", type: .food, tier: 1, stackable: true,
+             effects: [.restoreHunger(15)], icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
+        Item(id: "food.forest_nuts",    nameKey: "item.food.forest_nuts",    type: .food, tier: 1, stackable: true,
+             effects: [.restoreHunger(20)], icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
+        Item(id: "food.potato",         nameKey: "item.food.potato",         type: .food, tier: 1, stackable: true,
+             effects: [],                   icon: "🥔", descriptionKey: "item.food.potato.desc"),
+        Item(id: "food.duck_egg",       nameKey: "item.food.duck_egg",       type: .food, tier: 1, stackable: true,
+             effects: [.restoreHunger(25)], icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
+        Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
+             effects: [.restoreHunger(30)], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
 
-        // Materials
-        Item(id: "mat.wood",            nameKey: "item.mat.wood",           type: .material, tier: 1, stackable: true,  effects: []),
-        Item(id: "mat.stone",           nameKey: "item.mat.stone",          type: .material, tier: 1, stackable: true,  effects: []),
-        Item(id: "mat.iron_ore",        nameKey: "item.mat.iron_ore",       type: .material, tier: 2, stackable: true,  effects: []),
-        Item(id: "mat.hide",            nameKey: "item.mat.hide",           type: .material, tier: 1, stackable: true,  effects: []),
+        // Materials — estate-upgrade resources. Icons + descriptions show
+        // on the inventory info-button modal.
+        Item(id: "mat.pine_lumber",     nameKey: "item.mat.pine_lumber",    type: .material, tier: 1, stackable: true,  effects: [],
+             icon: "🌲", descriptionKey: "item.mat.pine_lumber.desc"),
+        Item(id: "mat.river_pebble",    nameKey: "item.mat.river_pebble",   type: .material, tier: 1, stackable: true,  effects: [],
+             icon: "🪨", descriptionKey: "item.mat.river_pebble.desc"),
+        Item(id: "mat.clay",            nameKey: "item.mat.clay",           type: .material, tier: 1, stackable: true,  effects: [],
+             icon: "🧱", descriptionKey: "item.mat.clay.desc"),
+        Item(id: "mat.old_iron",        nameKey: "item.mat.old_iron",       type: .material, tier: 2, stackable: true,  effects: [],
+             icon: "⛓",  descriptionKey: "item.mat.old_iron.desc"),
+        Item(id: "mat.hide",            nameKey: "item.mat.hide",           type: .material, tier: 1, stackable: true,  effects: [],
+             icon: "🟫", descriptionKey: "item.mat.hide.desc"),
 
         // Potions
         Item(id: "potion.heal_small",   nameKey: "item.potion.heal_small",  type: .potion,   tier: 1, stackable: true,  effects: [.restoreHP(30)]),

@@ -243,7 +243,8 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
         return merged.map { (item, qty) in
             let name = lingo.localize(item.nameKey, locale: locale)
-            let itemButton = TGInlineKeyboardButton(text: "\(name) × \(qty)", callbackData: "inv:info:\(item.id)")
+            let iconPrefix = item.icon.map { "\($0) " } ?? ""
+            let itemButton = TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(qty)", callbackData: "inv:info:\(item.id)")
             if let actionLabel = actionLabel {
                 let actionButton = TGInlineKeyboardButton(text: actionLabel, callbackData: "inv:use:\(item.id)")
                 return [itemButton, actionButton]
@@ -333,16 +334,25 @@ extension InventoryController {
             return true
         }
 
-        // Item info — placeholder toast for now; full description view planned later.
+        // Item info — if the item has a lore description, show it as a modal
+        // alert (readable, dismissable). Otherwise fall back to the generic
+        // "description coming soon" toast.
         if data.starts(with: "inv:info:") {
             let itemId = String(data.dropFirst("inv:info:".count))
             guard let item = ItemCatalog.find(itemId) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
-            let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            let answer: TGAnswerCallbackQueryParams
+            if let descKey = item.descriptionKey {
+                let description = context.lingo.localize(descKey, locale: locale)
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
+            } else {
+                let itemName = context.lingo.localize(item.nameKey, locale: locale)
+                let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false)
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
         }
 
@@ -358,6 +368,15 @@ extension InventoryController {
 
             if !HungerService.isConsumable(item) {
                 let text = context.lingo.localize("inventory.use.unavailable", locale: locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
+                return true
+            }
+
+            // Consumable type but no effects — e.g. raw potato, a cooking
+            // ingredient that can't be eaten as-is.
+            if item.effects.isEmpty {
+                let itemName = context.lingo.localize(item.nameKey, locale: locale)
+                let text = context.lingo.localize("consume.not_raw_edible", locale: locale, interpolations: ["name": itemName])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
                 return true
             }

@@ -76,7 +76,7 @@ public enum EnemyCatalog {
             depthRange: 1...3,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide",   chance: 0.5),
-                EnemyLootDrop(itemId: "food.berry", chance: 0.3)
+                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.4)
             ],
             icon: "🐇"
         ),
@@ -98,7 +98,7 @@ public enum EnemyCatalog {
             depthRange: 3...6,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide",     chance: 0.8),
-                EnemyLootDrop(itemId: "mat.iron_ore", chance: 0.2)
+                EnemyLootDrop(itemId: "mat.old_iron", chance: 0.2)
             ],
             icon: "🐺"
         ),

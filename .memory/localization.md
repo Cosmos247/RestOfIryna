@@ -53,7 +53,7 @@ Fix pattern: rewrite so `%{...}` is the first dynamic token, with emoji/decorati
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~183 per locale)
+## Current Keys (~196 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*

@@ -409,16 +409,24 @@ extension EstateController {
         let text: String
         let inline: TGInlineKeyboardMarkup
 
-        // Warehouse item actions — show description placeholder, or transfer one unit.
+        // Warehouse item info — lore modal if the item has a description,
+        // placeholder toast otherwise. Same convention as InventoryController.
         if data.hasPrefix("estate:wh:info:") {
             let itemId = String(data.dropFirst("estate:wh:info:".count))
-            if let item = ItemCatalog.find(itemId) {
+            guard let item = ItemCatalog.find(itemId) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            let answer: TGAnswerCallbackQueryParams
+            if let descKey = item.descriptionKey {
+                let description = context.lingo.localize(descKey, locale: locale)
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
+            } else {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
-            } else {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false)
             }
+            _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
         }
 

@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~183 keys
-- [x] Ukrainian (uk.json) — ~183 keys
+- [x] English (en.json) — ~196 keys
+- [x] Ukrainian (uk.json) — ~196 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
