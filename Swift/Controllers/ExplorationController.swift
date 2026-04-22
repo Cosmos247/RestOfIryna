@@ -269,10 +269,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await state.delete(on: context.db)
 
         // Drop back to main — active reply keyboard wasn't shown during
-        // passive, but make sure routerName + busy-flag are sane.
+        // passive, but make sure routerName + busy-flag are sane, and send
+        // a fresh main menu so the reply keyboard swaps back to the normal
+        // Explore label in this same response.
         context.session.routerName = Controllers.mainController.routerName
         context.session.transientInExpedition = false
         try await context.session.saveAndCache(in: context.db)
+        try await Controllers.mainController.showMainMenu(context: context)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -588,10 +591,24 @@ extension ExplorationController {
         }
 
         // Close-report button on the delivered passive expedition message.
+        // Does the full cleanup: remove the inline report, drop any lingering
+        // state row (the scheduler push leaves the state in place so we can
+        // re-deliver on failure), reset the busy flag, and send a fresh main
+        // menu so the reply keyboard swaps "🕒 On expedition" → "🗺 Explore"
+        // in the same response.
         if data == "explore:passive:close" {
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            if let state = try await ExplorationState.current(for: context.session, on: context.db) {
+                try await state.delete(on: context.db)
+            }
+            context.session.transientInExpedition = false
+            context.session.routerName = Controllers.mainController.routerName
+            try await context.session.saveAndCache(in: context.db)
+
+            try await Controllers.mainController.showMainMenu(context: context)
             return true
         }
 

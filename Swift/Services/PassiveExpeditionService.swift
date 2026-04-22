@@ -249,12 +249,21 @@ public enum PassiveExpeditionService {
             try await applyDeath(to: user, on: db)
         }
 
-        let loot: [PassiveReport.LootEntry] = Set(lootPicked.keys).union(lootDropped.keys).sorted().map { id in
-            PassiveReport.LootEntry(
-                itemId: id,
-                pickedQuantity: lootPicked[id, default: 0],
-                droppedQuantity: lootDropped[id, default: 0]
-            )
+        // If the governor died, the bag stays with the corpse — the report
+        // must not claim "brought back" anything. `applyDeath` already wiped
+        // the non-equipped inventory rows in the DB; zero the report's loot
+        // list to match so the player sees the honest outcome.
+        let loot: [PassiveReport.LootEntry]
+        if died {
+            loot = []
+        } else {
+            loot = Set(lootPicked.keys).union(lootDropped.keys).sorted().map { id in
+                PassiveReport.LootEntry(
+                    itemId: id,
+                    pickedQuantity: lootPicked[id, default: 0],
+                    droppedQuantity: lootDropped[id, default: 0]
+                )
+            }
         }
 
         return PassiveReport(
@@ -399,19 +408,24 @@ public enum PassiveExpeditionService {
             lines.append(parts.joined(separator: " · "))
         }
 
-        lines.append("")
-        lines.append(lingo.localize("exploration.passive.report.loot_header", locale: locale))
-        if report.loot.isEmpty {
-            lines.append(lingo.localize("exploration.passive.report.no_loot", locale: locale))
-        } else {
-            for entry in report.loot {
-                let itemName = ItemCatalog.find(entry.itemId)
-                    .map { lingo.localize($0.nameKey, locale: locale) } ?? entry.itemId
-                var line = "• \(itemName) × \(entry.pickedQuantity)"
-                if entry.droppedQuantity > 0 {
-                    line += lingo.localize("exploration.passive.report.loot_partial", locale: locale, interpolations: ["dropped": "\(entry.droppedQuantity)"])
+        // Loot section is skipped entirely when the governor died — the
+        // death line at the top already communicates that everything was
+        // lost, and repeating "empty-handed" below would be noise.
+        if !report.died {
+            lines.append("")
+            lines.append(lingo.localize("exploration.passive.report.loot_header", locale: locale))
+            if report.loot.isEmpty {
+                lines.append(lingo.localize("exploration.passive.report.no_loot", locale: locale))
+            } else {
+                for entry in report.loot {
+                    let itemName = ItemCatalog.find(entry.itemId)
+                        .map { lingo.localize($0.nameKey, locale: locale) } ?? entry.itemId
+                    var line = "• \(itemName) × \(entry.pickedQuantity)"
+                    if entry.droppedQuantity > 0 {
+                        line += lingo.localize("exploration.passive.report.loot_partial", locale: locale, interpolations: ["dropped": "\(entry.droppedQuantity)"])
+                    }
+                    lines.append(line)
                 }
-                lines.append(line)
             }
         }
 
