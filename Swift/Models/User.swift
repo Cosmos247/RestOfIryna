@@ -113,6 +113,13 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "gear_accuracy_bonus")
     var gearAccuracyBonus: Int
 
+    // MARK: - Passive Regen
+    /// Last wall-clock tick used by `HealingService.tick`. Nil = needs priming on
+    /// next interaction. Pinned to `now` while at full HP or during an active
+    /// expedition so idle time doesn't accumulate into banked regen.
+    @OptionalField(key: "last_hp_tick_at")
+    var lastHpTickAt: Date?
+
     var name: String {
         if let firstName = firstName, let lastName = lastName {
             return "\(firstName) \(lastName)"

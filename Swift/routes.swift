@@ -28,6 +28,10 @@ actor RouterStore {
         var hydrated: [String: User] = [:]
         for (k, v) in properties {
             let user = try await sessionCache.getOrFetch(tgId: v, db: db)
+            // Apply passive HP regen before the controller sees the user.
+            // Service is a no-op during expedition / at full HP; cheap enough
+            // to call on every interaction.
+            _ = try await HealingService.tick(user, on: db)
             hydrated[k] = user
         }
         try await router.process(update: update, properties: hydrated, db: db, lingo: lingo)

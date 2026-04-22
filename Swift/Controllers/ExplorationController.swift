@@ -4,21 +4,26 @@
 //
 //  Created by Dmytro Ihnatyuhin on 19.04.2026.
 //
-//  Active-mode exploration (Phase 3.1 MVP).
+//  Active-mode exploration (Phase 3.1 MVP, 3.2 with per-room visit decay).
 //
 //  Flow:
-//    Entry       — `showExploration` resumes existing ExplorationState or begins
-//                  a fresh one at km 0. Sends a narrative + status card and sets
-//                  the expedition reply keyboard: [🚶 Step] [🎒 Bag] [🔙 Return].
-//    Step        — increment stepsDeep, call ExplorationService.rollStep, save,
-//                  send a narrative card for the rolled outcome. If the rolled
-//                  outcome drops HP to 0, divert to death flow.
-//    Bag         — inline consumables list (food + potion only). One-tap eat/use
-//                  refreshes the message in place. Other item types are managed
-//                  from the estate after return.
-//    Return      — end ExplorationState, back to main menu with a farewell line.
-//    Death       — wipe non-equipped inventory, respawn at HP = 1 (hunger kept),
-//                  end state, drop back to main with a death screen.
+//    Entry       — `showExploration` resumes existing ExplorationState or
+//                  begins a fresh one at km 0. Sends a narrative + status card
+//                  and sets the expedition reply keyboard:
+//                    [🚶 Step fwd]  [🔙 Step back]
+//                    [🎒 Bag]
+//    Step fwd    — stepsDeep += 1. Roll an event at the new km with the room's
+//                  prior visit count (tier 0 fresh → 1 reduced → 2+ bare).
+//                  Record the visit. Save, render.
+//    Step back   — stepsDeep -= 1. At km 0 pre-step: end expedition (never
+//                  even entered). At km 1 pre-step: clean arrival home, no
+//                  event roll. At km >= 2 pre-step: decrement, roll at the new
+//                  km with prior visits, record the visit, render.
+//    Bag         — inline consumables list (food + potion only). One-tap
+//                  eat/use refreshes the message in place.
+//    Death       — wipe non-equipped inventory, respawn at HP = 1 (hunger
+//                  kept), end state, drop back to main with a death screen.
+//    /start      — force-end without walking back (dev escape hatch).
 //
 
 import Fluent
@@ -32,9 +37,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     typealias T = ExplorationController
 
     // Localization keys for the expedition reply keyboard.
-    private static let stepKey   = "exploration.button.step"
-    private static let bagKey    = "exploration.button.bag"
-    private static let returnKey = "exploration.button.return"
+    private static let stepKey     = "exploration.button.step"
+    private static let stepBackKey = "exploration.button.step_back"
+    private static let bagKey      = "exploration.button.bag"
 
     // MARK: - Controller Lifecycle
 
@@ -48,13 +53,15 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             // Expedition keyboard buttons — register every supported locale text.
             for locale in SupportedLocale.allCases {
                 let loc = locale.rawValue
-                router[lingo.localize(Self.stepKey,   locale: loc)] = onStep
-                router[lingo.localize(Self.bagKey,    locale: loc)] = onBag
-                router[lingo.localize(Self.returnKey, locale: loc)] = onReturnHome
+                router[lingo.localize(Self.stepKey,     locale: loc)] = onStepForward
+                router[lingo.localize(Self.stepBackKey, locale: loc)] = onStepBack
+                router[lingo.localize(Self.bagKey,      locale: loc)] = onBag
             }
 
+            // A stray Cancel press (from another controller's keyboard) is a
+            // hard exit — force-end the expedition rather than taking a step.
             let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
-            for button in cancelLocales { router[button.text] = onReturnHome }
+            for button in cancelLocales { router[button.text] = onForceEnd }
 
             router.unmatched = unmatched
             router[.callback_query(data: nil)] = ExplorationController.onCallbackQuery
@@ -63,8 +70,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     public func onStart(context: Context) async throws -> Bool {
-        // /start exits the expedition and returns to the manor.
-        return try await onReturnHome(context: context)
+        // /start force-exits the expedition and returns to the manor. It does
+        // NOT walk back — it's an escape hatch for dev / stuck-player cases.
+        return try await onForceEnd(context: context)
     }
 
     private func onSettings(context: Context) async throws -> Bool {
@@ -115,26 +123,26 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         let intro = lingo.localize(introKey, locale: locale)
-        let body = "\(intro)\n\n\(renderStatusCard(user: context.session, depth: state.stepsDeep, lingo: lingo, locale: locale))"
+        let body = "\(intro)\n\n\(renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale))"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: markup)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
         let locale = session.locale
-        let step = TGKeyboardButton(text: lingo.localize(Self.stepKey,   locale: locale))
-        let bag  = TGKeyboardButton(text: lingo.localize(Self.bagKey,    locale: locale))
-        let back = TGKeyboardButton(text: lingo.localize(Self.returnKey, locale: locale))
+        let forward  = TGKeyboardButton(text: lingo.localize(Self.stepKey,     locale: locale))
+        let backward = TGKeyboardButton(text: lingo.localize(Self.stepBackKey, locale: locale))
+        let bag      = TGKeyboardButton(text: lingo.localize(Self.bagKey,      locale: locale))
         let markup = TGReplyKeyboardMarkup(
-            keyboard: [[step], [bag, back]],
+            keyboard: [[forward, backward], [bag]],
             resizeKeyboard: true
         )
         return .replyKeyboardMarkup(markup)
     }
 
-    // MARK: - Step
+    // MARK: - Step Forward
 
-    private func onStep(context: Context) async throws -> Bool {
+    private func onStepForward(context: Context) async throws -> Bool {
         guard let state = try await ExplorationState.current(for: context.session, on: context.db) else {
             // Shouldn't happen — expedition ended out-of-band. Re-enter.
             try await showExploration(context: context)
@@ -142,13 +150,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         }
 
         state.stepsDeep += 1
-        try await state.save(on: context.db)
+        let priorVisits = state.visitCount(state.stepsDeep)
 
         let outcome = try await ExplorationService.rollStep(
             for: context.session,
             kmDepth: state.stepsDeep,
+            priorVisits: priorVisits,
             on: context.db
         )
+        state.recordVisit(state.stepsDeep)
+        try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
         if context.session.hp <= 0 {
@@ -156,15 +167,56 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        try await renderOutcome(context: context, outcome: outcome, depth: state.stepsDeep)
+        try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
         return true
     }
 
-    private func renderOutcome(context: Context, outcome: StepOutcome, depth: Int) async throws {
+    // MARK: - Step Back
+
+    /// Step Back:
+    /// - km 0 → never left the estate: end expedition immediately (no roll).
+    /// - km 1 → arrival at the estate door: end expedition, no roll.
+    /// - km ≥ 2 → decrement and roll at the new km with prior visit count.
+    private func onStepBack(context: Context) async throws -> Bool {
+        guard let state = try await ExplorationState.current(for: context.session, on: context.db) else {
+            try await showExploration(context: context)
+            return true
+        }
+
+        if state.stepsDeep <= 1 {
+            try await handleHomeReached(context: context, state: state)
+            return true
+        }
+
+        state.stepsDeep -= 1
+        let priorVisits = state.visitCount(state.stepsDeep)
+
+        let outcome = try await ExplorationService.rollStep(
+            for: context.session,
+            kmDepth: state.stepsDeep,
+            priorVisits: priorVisits,
+            on: context.db
+        )
+        state.recordVisit(state.stepsDeep)
+        try await state.save(on: context.db)
+        try await context.session.saveAndCache(in: context.db)
+
+        if context.session.hp <= 0 {
+            try await handleDeath(context: context, outcome: outcome)
+            return true
+        }
+
+        try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
+        return true
+    }
+
+    // MARK: - Outcome rendering
+
+    private func renderOutcome(context: Context, outcome: StepOutcome, state: ExplorationState, priorVisits: Int) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let narrative = narrateOutcome(outcome, lingo: lingo, locale: locale)
-        let status = renderStatusCard(user: context.session, depth: depth, lingo: lingo, locale: locale)
+        let narrative = narrateOutcome(outcome, priorVisits: priorVisits, lingo: lingo, locale: locale)
+        let status = renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale)
         let text = "\(narrative)\n\n\(status)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
@@ -229,16 +281,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         return ("🎒 <b>\(title)</b>", TGInlineKeyboardMarkup(inlineKeyboard: rows))
     }
 
-    // MARK: - Return / Death
+    // MARK: - End / Death
 
-    private func onReturnHome(context: Context) async throws -> Bool {
+    /// Force-end the expedition without walking back (e.g. /start or a stray
+    /// Cancel button press from another controller's keyboard).
+    private func onForceEnd(context: Context) async throws -> Bool {
         try await ExplorationState.end(for: context.session, on: context.db)
-        let text = context.lingo.localize("exploration.returned", locale: context.session.locale)
+        try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+        return true
+    }
+
+    /// Clean arrival at the estate after Step Back from km 0 or km 1.
+    /// Deletes the ExplorationState row and drops to main menu.
+    private func handleHomeReached(context: Context, state: ExplorationState) async throws {
+        try await state.delete(on: context.db)
+        try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+    }
+
+    private func goToMainMenu(context: Context, text: String) async throws {
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: text)
         context.session.routerName = mainCtrl.routerName
         try await context.session.saveAndCache(in: context.db)
-        return true
     }
 
     /// Hard respawn: wipe every non-equipped inventory row (equipped gear survives),
@@ -247,7 +311,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     private func handleDeath(context: Context, outcome: StepOutcome) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let cause = narrateOutcome(outcome, lingo: lingo, locale: locale)
+        let cause = narrateOutcome(outcome, priorVisits: 0, lingo: lingo, locale: locale)
 
         if let userId = context.session.id {
             let rows = try await InventoryEntry.query(on: context.db)
@@ -270,21 +334,30 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Rendering helpers
 
-    fileprivate func renderStatusCard(user: User, depth: Int, lingo: Lingo, locale: String) -> String {
+    fileprivate func renderStatusCard(user: User, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let depthLabel = lingo.localize("exploration.depth_label", locale: locale)
         let starving = HungerService.isStarving(user)
             ? " · " + lingo.localize("hunger.starving", locale: locale)
             : ""
         return """
-        🌲 <b>\(depthLabel): \(depth) km</b>
+        🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
         ❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.hunger)/\(user.maxHunger)\(starving)
         """
     }
 
-    fileprivate func narrateOutcome(_ outcome: StepOutcome, lingo: Lingo, locale: String) -> String {
+    /// Render the narrative for a rolled outcome. `.nothing` picks between
+    /// three flavor variants based on the room's prior visit count (fresh /
+    /// thinned / bare). Every other outcome uses a single narrative.
+    fileprivate func narrateOutcome(_ outcome: StepOutcome, priorVisits: Int, lingo: Lingo, locale: String) -> String {
         switch outcome {
         case .nothing:
-            return lingo.localize("exploration.outcome.nothing", locale: locale)
+            let key: String
+            switch priorVisits {
+            case 0:  key = "exploration.outcome.nothing"
+            case 1:  key = "exploration.outcome.nothing.revisited"
+            default: key = "exploration.outcome.nothing.bare"
+            }
+            return lingo.localize(key, locale: locale)
 
         case .loot(let itemId, let quantity, let picked):
             let itemName = itemNameOrId(itemId, lingo: lingo, locale: locale)

@@ -118,14 +118,21 @@
 - [x] Main/Inventory/Estate onExplore wired to `showExploration` (resume or begin)
 - [x] ~20 new locale keys per locale (EN + UK) — expedition UI, outcome narratives, enemy names
 
-### 3.2 Return path with room memory
-- [ ] Persist visited rooms in ExplorationState (step index → event snapshot)
-- [ ] On return direction, each previously-visited room rolls with "already explored" depth-decay bias
-- [ ] Depth-decay formula for loot/encounter chance
+### 3.2 Return path with per-room visit decay *(landed, reworked)*
+- [x] `visited_rooms` JSON dict on `ExplorationState` (km → visit count) via migration `AddExplorationReturnState`
+- [x] `ExplorationService.rollStep` takes `priorVisits: Int` and picks a three-tier weight table: fresh (20/40/30/10) → reduced (50/20/20/10) → bare (100/0/0/0 — only .nothing / .starvationOnly can fire)
+- [x] Passive HP regen at estate (5%·maxHp per minute) via `HealingService.tick` fired on every interaction from `RouterStore.process`; `User.lastHpTickAt` pins the clock during expeditions and at full HP to prevent banked regen
+- [x] Expedition reply keyboard: `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` (no direction state)
+- [x] Step Back decrements `stepsDeep`; at km 0 or 1 ends expedition with clean arrival (no event)
+- [x] Each step records the entered room's visit; repeated entries escalate the decay tier
+- [x] Three `.nothing` narrative variants (fresh / thinned / bare) keyed on prior visit count
+- [x] `/start` + stray Cancel button = force-end (no walk-back) — dev escape hatch
+- [ ] Event-snapshot per room (future: remember *what* happened in each room for richer return narration)
 
-### 3.3 Passive timed expeditions
+### 3.3 Passive timed expeditions *(only mode with a real-time gate)*
+Design note: the 5-min room transition is **passive-mode-only**. Active reconnaissance (3.1/3.2) is fully tap-driven — no timer, no gating.
 - [ ] Per-user daily expedition budget (2h, rolls over at server midnight)
-- [ ] Passive mode: start, stop, query-in-progress
+- [ ] Passive mode: start (duration picker 30 min / 1 h / 1.5 h), stop, query-in-progress
 - [ ] Timed room transitions (5 min prod / 10 sec test mode, feature-flagged)
 - [ ] Lazy compute on interaction + push notification scheduler for completion events
 - [ ] Early-death notification (immediate push)

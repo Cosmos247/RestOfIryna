@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~130 keys
-- [x] Ukrainian (uk.json) — ~130 keys
+- [x] English (en.json) — ~153 keys
+- [x] Ukrainian (uk.json) — ~153 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
@@ -68,7 +68,8 @@
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — `InventoryEntry.slotCap = 50` (non-equipped rows only). `add` throws `inventoryFull`; `canAccept` preflight. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/50 slots`.
 - [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (3 tier-1 enemies: rabid hare / fox / wolf with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + hunger/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
-- [ ] 3.2 Return path with visited-rooms state + depth-decay "already explored"
+- [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table: fresh (20/40/30/10), reduced (50/20/20/10), bare (100/0/0/0 — only .nothing / .starvationOnly). Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
+- [x] Passive HP regen at the estate — 5% of maxHp per minute while `routerName != "exploration"` and hp < maxHp. `HealingService.tick` is called from `RouterStore.process` on every interaction (lazy compute, no background scheduler). `User.lastHpTickAt` column via `AddHpRegenTick` migration. Clock is cleared during expeditions and pinned to now at full HP, so banked regen never accumulates against future damage.
 - [ ] 3.3 Passive expedition (timed simulation, daily 2h budget, prep via current inventory)
 - [ ] 3.4 Mode exclusivity (active vs passive, main menu shows busy state)
 - [x] Lingo integration with SupportedLocale enum
@@ -91,7 +92,7 @@
 - [x] Inventory system (items + quantities) — code-based Item catalog + `inventory` table with InventoryEntry; helpers for add/remove/has/list
 - [x] Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory ×2) — `EquipmentSlot` enum + `equipped_slot` column + `EquipmentService`
 - [ ] Estate model (30x30 grid, manor layout, plots)
-- [~] Exploration state — active mode: ExplorationState (user_id + stepsDeep). Still needs timer + visited-rooms for passive mode.
+- [~] Exploration state — active mode: ExplorationState (user_id + stepsDeep + visited_rooms JSON map). Still needs timer for passive mode + per-room event snapshots for richer re-entry narration.
 - [ ] Combat state (opponent, round, actions)
 - [ ] Pet model (stats, species, bond, role)
 - [ ] Guild model
@@ -102,7 +103,7 @@
 - [x] Class selection during registration (warrior/archer/mage)
 - [ ] Hunger system (drain, starvation, food)
 - [ ] XP/leveling system
-- [~] Exploration loop — active-mode step/outcome/return/death wired (3.1). Still needs timed transitions (3.3 passive), return-path decay (3.2), mode exclusivity (3.4).
+- [~] Exploration loop — active-mode step/outcome/return/death wired (3.1); return path with visited-rooms + decayed weights wired (3.2). Still needs timed transitions (3.3 passive), mode exclusivity (3.4).
 - [ ] Combat engine (damage formula, round resolution)
 - [ ] Estate management (grid rendering, plot upgrades, production timers)
 - [ ] Crafting system (recipes, room tiers)
@@ -121,4 +122,4 @@
 
 ---
 
-*Last updated: 2026-04-22 (Phase 3.1 active-exploration MVP: ExplorationState model, EnemyCatalog, ExplorationService, real ExplorationController with step/bag/return/death flow)*
+*Last updated: 2026-04-22 (Phase 3.2 return-path with visited rooms and decayed weights)*

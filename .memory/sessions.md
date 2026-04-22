@@ -360,3 +360,107 @@ The first playable expedition loop. Hunger finally drains, starvation actually h
 - 3.3 — Passive timed expeditions with 2h/day budget.
 - 3.4 — Mode exclusivity enforcement (active vs passive).
 - Phase 4 — real combat UI replacing the autobattle stub.
+
+## Session 11 — 2026-04-22 (Phase 3.2 — Return path with visited rooms)
+
+The one-way expedition from 3.1 becomes a round trip: players walk back through the same rooms, which now roll events with reduced "already explored" weights.
+
+### What was done
+- **Schema** — new migration `AddExplorationReturnState` adds two nullable columns to `exploration_state`: `returning` (Bool) and `visited_rooms` (TEXT — JSON array of ints). Nullable was deliberate: existing 3.1 rows still load; the model resolves nil to `outward` + empty set. Registered in configure.swift right after `CreateExplorationState`.
+- **Model** — `ExplorationState` gains `@OptionalField` for both columns plus computed wrappers that hide the Optional: `isReturning: Bool` (nil → false) and `visitedRooms: Set<Int>` (JSON encode/decode). Added `markVisited(_:)` and `isVisited(_:) -> Bool` helpers so controller code reads/writes the set declaratively.
+- **Service** — `ExplorationService.rollStep` gained an `alreadyExplored: Bool = false` parameter. New parallel weight constants for the decayed table (`weightNothingDecayed 70 / weightLootDecayed 10 / weightEncounterDecayed 15 / weightTripDecayed 5`, sum = 100 — same total so the existing roll logic still works). When `alreadyExplored == true` the service uses the decayed weights; otherwise fresh. Hunger drain and starvation HP tick still fire on every step regardless of direction (walking back still costs food and a starving player still bleeds HP).
+- **Controller** — biggest rework since 3.1:
+  - `onStep` now dispatches to `stepOutward` or `stepReturning` based on `state.isReturning`.
+  - `stepOutward` — increments stepsDeep, rolls with fresh weights, marks the reached km in `visited_rooms`. Same save-user + death-check + render flow as 3.1.
+  - `stepReturning` — if `stepsDeep <= 1`, the next step is the arrival at the estate door: skip the event roll, set stepsDeep to 0, invoke `handleHomeReached` (delete state + drop to main menu with "returned" text). Otherwise decrement stepsDeep and roll with `alreadyExplored: state.isVisited(newDepth)`. Because linear return walks are always over visited km, this will always be true in practice — the `isVisited` check is kept for future partial-backtracking scenarios.
+  - `onReturnHome` renamed and split:
+    - `onReturnButton` — handles the Return reply-keyboard button press. At km 0 it ends the expedition immediately (nothing to walk back). At km > 0 it toggles `state.isReturning` — turning around is free (no hunger drain, no event roll). Sends a narrative + updated status card.
+    - `onForceEnd` — new handler for /start and stray Cancel-button presses from other controllers' keyboards. Hard-ends the expedition without walking back, for dev escape / stuck-player cases.
+  - Status card (`renderStatusCard`) signature changed from `depth: Int` to `state: ExplorationState` so it can show a "↩️ returning" suffix when the direction is reversed.
+  - `narrateOutcome` gained `revisited: Bool = false` — only affects the `.nothing` case, swapping in the "grove is bare" flavor line. Other outcomes reuse the same narratives (mechanical rarity already signals decay).
+- **Localization** — 4 new keys per locale (EN + UK), 155 total each: `exploration.turn_around` (outward → returning narrative), `exploration.turn_forward` (returning → outward — "you change your mind"), `exploration.direction.returning` (status-card suffix "↩️ returning" / "↩️ назад"), `exploration.outcome.nothing.revisited` (bare-grove flavor for revisited silence).
+
+### Design decisions to remember
+- **Return is mandatory** except via the /start / Cancel escape hatches. No instant-teleport home from the Return button when km > 0 — you walk. This makes deep expeditions genuinely risky: picking up 5 km worth of loot means committing to 5 km of return steps with their own hunger + starvation cost.
+- **Turn-around is free** — no hunger drain, no event roll, no stepsDeep change. Just a direction flip. Keeps the UX forgiving: no punishment for scouting ahead then changing your mind.
+- **Arrival step skips the roll** — the km 1 → 0 walk is a narrative beat, not a gameplay beat. No final starvation tick, no final event, just "🏰 You return home." This keeps the end-of-expedition feel clean (player wouldn't want to die from starvation on the literal doorstep).
+- **Flat decay for MVP** — every revisited room uses the same reduced weights regardless of how deep or how long ago it was visited. Future refinement (3.2-polish) could make deeper rooms less decayed or add time-based regeneration, but the flat table ships now with a single pair of weight constants.
+- **Visited rooms persist in JSON, not a relation** — `Set<Int>` encoded as sorted JSON array in a TEXT column. Simple, portable, no extra table, no per-room-event-snapshot storage (deferred). The model's computed `visitedRooms` var hides the encoding entirely.
+- **`alreadyExplored` parameter, not two entrypoints** — `rollStep` stays a single function with a default-false parameter. Cleaner than fork-by-function for such a small branch-point.
+
+### Next steps
+- 3.3 — Passive timed expeditions. Duration picker (30m / 1h / 1.5h), first real scheduled-background task in the codebase (cron-like simulation on timer completion), report rendering.
+- 3.4 — Mode exclusivity. `User.expeditionEndsAt` field + check in `MainController.onExplore`; main menu replaces [🗺 Explore] with "🕒 Out exploring — X min left" while passive is running.
+- Future polish: per-room event snapshots for richer return narration; tuning decay weights; depth-proportional decay curve.
+
+## Session 12 — 2026-04-22 (Phase 3.2 — Step Back rework with per-room visit decay)
+
+Replaced the direction-toggle model from earlier 3.2 with an explicit Step Back button and a three-tier visit-count weight table. Simpler UX, more expressive mechanic.
+
+### What was done
+- **Keyboard redesign** — no more "Return" button. New expedition keyboard: `[🚶 Step fwd] [🔙 Step back]` on row 1, `[🎒 Bag]` on row 2. Direction is encoded in the button pressed, not in a state flag.
+- **Visit counter** — `visited_rooms` changed from a `Set<Int>` (was visited y/n) to a `Dictionary<Int, Int>` (km → visit count). Same DB column (TEXT), different JSON payload (`{"1": 2, "2": 1}` instead of `[1, 2]`). Old 3.2 array-format rows fail to decode as dict and fall back to empty map — harmless since they'd just get fresh-tier rolls.
+- **Model cleanup** — removed the `returningFlag` / `isReturning` computed wrappers; the `returning` column stays on the schema but isn't mapped by the model anymore. Renamed helpers: `markVisited/isVisited` → `recordVisit/visitCount`.
+- **Service: three-tier weights** — `ExplorationService.rollStep` takes `priorVisits: Int` instead of `alreadyExplored: Bool`. Tier 0 (fresh, priorVisits == 0) = 40/30/25/5. Tier 1 (reduced, priorVisits == 1) = 70/10/15/5. Tier 2+ (bare, priorVisits ≥ 2) = 100/0/0/0 — only `.nothing` or `.starvationOnly` can fire. Trip hazard goes to zero at tier 2+ too, keeping the "room is picked clean" feel consistent.
+- **Controller rewrite** — removed every direction-toggle code path (`onReturnButton`, `stepReturning`, `stepOutward`, `turnAround`, direction hint in status card). Replaced with `onStepForward` (always increments + rolls + records) and `onStepBack` (decrements + rolls at km ≥ 2, arrives home at km ≤ 1). Both step handlers pass `priorVisits = state.visitCount(newDepth)` to the service and call `state.recordVisit(newDepth)` after the roll. Step Back at km 0 or 1 ends the expedition cleanly with no roll.
+- **Three-variant `.nothing` narrative** — `narrateOutcome` now takes `priorVisits: Int` and picks between `exploration.outcome.nothing` (fresh), `.revisited` (thinned — visit 2), `.bare` (visit 3+). Other outcomes reuse their single narrative since the mechanical depletion at tier 2+ already communicates the "picked clean" feel.
+- **Locale keys** — renamed `exploration.button.return` → `exploration.button.step_back`, removed now-unused `exploration.turn_around` / `exploration.turn_forward` / `exploration.direction.returning`, added `exploration.outcome.nothing.bare`. Net change: 154 keys per locale (EN + UK).
+
+### Why reworked
+The earlier direction-toggle model conflated two orthogonal concerns — which way you walk and whether the room is depleted. Splitting them gives:
+- Cleaner UX: two distinct buttons, no invisible state.
+- More expressive mechanic: oscillating between two rooms burns them out in 2-3 cycles, which encourages going deeper rather than camping a single room. The three-tier table makes the second visit "still worth something" and the third+ visit "fully tapped", matching typical foraging-RPG intuitions.
+- Less code: no direction flag on the model, no `isReturning` conditional branches, no turn-around narrative paths. The model now has one meaningful field (`visited_rooms`); the old `returning` column lies dormant.
+
+### Design notes
+- **km 0 and km 1 both end the expedition** on Step Back — one is "never left", the other is "walked all the way back". Same narrative key (`exploration.returned`) because the narrative distinction is minor and adding a second key wasn't worth it for MVP.
+- **Record AFTER the roll** — `priorVisits` needs to be the count *before* this step, so the counter is bumped after `rollStep` returns. On failure/throw, neither the new count nor the state save persists — safe retry.
+- **Dormant `returning` column** — intentional trade-off. Dropping it would require a new migration, and the column is harmless. A future cleanup pass could add `RemoveExplorationReturningField` if the schema ever gets noisy.
+
+### Next steps
+- 3.3 — Passive timed expeditions. Duration picker + scheduled simulation + report rendering.
+- 3.4 — Mode exclusivity: `User.expeditionEndsAt` + main-menu busy state.
+- Balance: playtest visit-decay weights; consider depth-proportional adjustments.
+
+## Session 13 — 2026-04-22 (Weight retuning + passive estate regen)
+
+Two small follow-ups after playtesting 3.2:
+
+### Weight retuning
+Fresh-tier had `nothing` at 40% which felt too empty — every other step was silence. Retuned:
+- Fresh (priorVisits = 0): `nothing 40 / loot 30 / encounter 25 / trip 5` → **`20 / 40 / 30 / 10`**
+- Reduced (priorVisits = 1): `70 / 10 / 15 / 5` → **`50 / 20 / 20 / 10`**
+- Bare (priorVisits ≥ 2): unchanged at `100 / 0 / 0 / 0`
+
+Every step now has an 80% chance of *something* on first visit (vs 60% before), still 50% on second visit, zero on third+. Trip doubled from 5 → 10 to make damage more present before encounters come out. Numbers are gameplay-driven, easy to tune later.
+
+### Passive HP regen at the estate
+First properly lazy-computed idle mechanic in the codebase. Needed:
+- **Migration** `AddHpRegenTick` — adds nullable `last_hp_tick_at: Date?` column on `users`.
+- **Model** `User.lastHpTickAt` via `@OptionalField`. Initialized nil; `HealingService` primes it on first damaged observation.
+- **Service** `HealingService.tick(_:on:)` — pure enum namespace. Rate is `regenPerMinute = 0.05` (5% of maxHp), capped at `maxIdleMinutes = 1440` (24h) to prevent absurd offline top-ups. Returns the amount restored; caller can log / ignore. Handles four cases:
+  1. `routerName == "exploration"` → clear the clock (suspend regen during expedition).
+  2. `hp >= maxHp` → pin clock to now (prevents banked regen accruing against future damage).
+  3. `lastHpTickAt == nil` → prime clock to now, no regen yet.
+  4. Otherwise → compute `floor(maxHp · 5% · minutes)`, apply, advance clock.
+  Saves via `user.saveAndCache(in: db)` inside each case that mutates, so the caller doesn't need to remember to.
+- **Wire-in** `RouterStore.process` — after hydrating the user from the session cache, calls `HealingService.tick` before dispatching to the router. Every interaction goes through `RouterStore.process` already, so this is the single choke point. `HealingService.tick` is a no-op when the user is exploring or at full HP, so the overhead on those paths is just a routerName + hp compare.
+
+### Why the pin-on-full-HP matters
+Without pinning: a player at full HP with `lastHpTickAt` from Monday walks into the forest Friday, takes damage, walks home. On their next interaction, `tick` sees `lastHpTickAt` from Monday, computes four days of elapsed time (capped at 24h), and instantly refills them. Pinning at every full-HP tick bounds the banked regen window to ≈ one interaction interval.
+
+### Design notes
+- **Lazy vs scheduled**: opted for lazy compute because user interactions are sparse (text-bot cadence) and the alternative needs a background loop. Scheduled mechanics start landing in 3.3 (passive expeditions); HP regen didn't justify it alone.
+- **Capped idle**: 24h cap is a soft anti-abuse measure. Also saves us from pathological clock-skew situations.
+- **Routerame as proxy for "at estate"**: any non-`exploration` controller counts as "resting". Registration, settings, inventory, estate, capital — all accrue regen. Simple and matches intuition.
+
+### Next steps (unchanged)
+- 3.3 — Passive timed expeditions. Duration picker + scheduled simulation + report rendering. First real background scheduler.
+- 3.4 — Mode exclusivity: `User.expeditionEndsAt` + main-menu busy state.
+
+### Clarification (later same session)
+User confirmed the two-mode split and explicitly pinned down timing:
+- **Active reconnaissance (розвідка)** — fully tap-driven, no transition timer. This already matches the 3.1/3.2 implementation; GDD and game-core had carryover language from an earlier draft that implied a timer in both modes. Edited GDD §5 and `.memory/game-core.md` to scope the 5-min room transition to **passive expedition only**.
+- **Passive expedition (експедиція)** — stays timer-gated (5 min prod / 10 sec test), still the Phase 3.3 target.
+
+No code changes needed — active mode's ExplorationController already has zero time-gates. The only "tick" in the codebase now is `HealingService.tick` for passive HP regen at the estate, which is lazy-compute and doesn't gate gameplay.

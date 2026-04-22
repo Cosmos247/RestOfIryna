@@ -44,40 +44,81 @@ public struct AutobattleResult: Sendable {
 public enum ExplorationService {
 
     // Event weights for a step (sum = 100). GDD §5 starting values, trimmed for MVP.
-    static let weightNothing:   Int = 40
-    static let weightLoot:      Int = 30
-    static let weightEncounter: Int = 25
-    static let weightTrip:      Int = 5
+    // Phase 3.2 uses a three-tier table keyed on the room's prior visit count:
+    //   tier 0 (fresh)   — first entry ever during this expedition
+    //   tier 1 (reduced) — second entry, most of the room's events already fired
+    //   tier 2+ (bare)   — third+ entry, the room is picked clean
+    // Trip risk shares a small tier-invariant chance at tiers 0 and 1 because
+    // roots don't "learn" — it drops to zero at tier 2+ alongside every other
+    // interesting outcome. Starvation HP still ticks on every step.
+    static let weightNothing:   Int = 20
+    static let weightLoot:      Int = 40
+    static let weightEncounter: Int = 30
+    static let weightTrip:      Int = 10
     static let weightTotal:     Int = 100
+
+    static let weightNothingReduced:   Int = 50
+    static let weightLootReduced:      Int = 20
+    static let weightEncounterReduced: Int = 20
+    static let weightTripReduced:      Int = 10
 
     // Trip damage (% of max HP).
     static let tripDamagePercent: Double = 0.05
 
     // MARK: - Rolling a step
 
-    /// Roll one forward step: drain hunger, apply starvation HP if starving,
-    /// then produce an outcome. Caller applies the outcome to DB / UI separately
+    /// Roll one step: drain hunger, apply starvation HP if starving, then
+    /// produce an outcome. Caller applies the outcome to DB / UI separately
     /// (loot is already added to inventory by this function though).
-    public static func rollStep(for user: User, kmDepth: Int, on db: any Database) async throws -> StepOutcome {
+    ///
+    /// `priorVisits` picks the weight tier: 0 = fresh, 1 = reduced, 2+ = bare
+    /// (only `.nothing` / `.starvationOnly` can fire). The controller passes
+    /// the room's current visit count *before* incrementing it for this step.
+    public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, on db: any Database) async throws -> StepOutcome {
         // Hunger drain for the walk itself.
         _ = HungerService.drain(user, action: .walkRoom)
 
         // Starvation HP tick happens every room when hunger is already at 0.
         let starvationLoss = HungerService.applyStarvationHPLoss(user)
 
+        // Pick weights by tier.
+        let wNothing: Int
+        let wLoot: Int
+        let wEncounter: Int
+        let wTrip: Int
+        switch priorVisits {
+        case 0:
+            wNothing   = weightNothing
+            wLoot      = weightLoot
+            wEncounter = weightEncounter
+            wTrip      = weightTrip
+        case 1:
+            wNothing   = weightNothingReduced
+            wLoot      = weightLootReduced
+            wEncounter = weightEncounterReduced
+            wTrip      = weightTripReduced
+        default:
+            // 2+ prior visits — room is picked clean. No loot, no predators,
+            // no trip hazards. Starvation still applies (that's physiology).
+            wNothing   = weightTotal
+            wLoot      = 0
+            wEncounter = 0
+            wTrip      = 0
+        }
+
         // Pick the event bucket.
         let roll = Int.random(in: 0..<weightTotal)
-        if roll < weightNothing {
+        if roll < wNothing {
             if starvationLoss > 0 { return .starvationOnly(hpLost: starvationLoss) }
             return .nothing
         }
-        if roll < weightNothing + weightLoot {
+        if roll < wNothing + wLoot {
             return try await rollLoot(for: user, kmDepth: kmDepth, on: db, extraStarvation: starvationLoss)
         }
-        if roll < weightNothing + weightLoot + weightEncounter {
+        if roll < wNothing + wLoot + wEncounter {
             return try await rollEncounter(for: user, kmDepth: kmDepth, on: db, extraStarvation: starvationLoss)
         }
-        // Trip
+        _ = wTrip
         let tripDmg = max(1, Int((Double(user.maxHp) * tripDamagePercent).rounded()))
         let totalHp = tripDmg + starvationLoss
         user.hp = max(0, user.hp - totalHp)
