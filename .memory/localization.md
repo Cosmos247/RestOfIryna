@@ -39,7 +39,7 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~153 per locale)
+## Current Keys (~181 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
@@ -54,6 +54,7 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Hunger / consume: hunger.restored, hp.restored, hunger.starving, consume.not_consumable, consume.no_effect
 - Exploration (Phase 3.1 + 3.2): exploration.button.step / exploration.button.step_back / exploration.button.bag (reply keyboard), exploration.started/resumed (entry intro), exploration.depth_label, exploration.outcome.loot.picked/loot.full/trip/encounter.won/encounter.lost/starvation (step narratives), exploration.returned (main-menu farewell), exploration.death (with %{cause}), exploration.bag.title/empty/back
 - Exploration visit-decay variants (Phase 3.2): three `.nothing` narratives — exploration.outcome.nothing (fresh, prior visits = 0), exploration.outcome.nothing.revisited (thinned, prior visits = 1), exploration.outcome.nothing.bare (depleted, prior visits ≥ 2)
+- Passive expedition (Phase 3.3): exploration.mode.prompt/active/passive (mode picker), exploration.duration.prompt/30m/1h/1h30m/back (duration picker), exploration.passive.started/inflight (confirmation + countdown, with %{time} interpolation), exploration.passive.test_mode_hint, exploration.passive.report.title/depth/hp/hunger/events_header/loot_header/no_loot/loot_partial/death/close (report rendering), exploration.passive.outcome.nothing/loot/encounter_won/encounter_lost/trip/starvation (one-word labels for outcome histogram)
 - Enemies (Phase 3.1): enemy.rabid_hare, enemy.rabid_fox, enemy.rabid_wolf
 - Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite

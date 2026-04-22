@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~153 keys)
-│   └── uk.json                     # Ukrainian strings (~153 keys)
+│   ├── en.json                     # English strings (~181 keys)
+│   └── uk.json                     # Ukrainian strings (~181 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -42,7 +42,7 @@ RestOfIryna/
     │   ├── RegistrationController.swift  # Multi-step: language, nickname, class, estate
     │   ├── SettingsController.swift      # Language change, back navigation
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
-    │   ├── ExplorationController.swift   # Phase 3.1 active exploration + 3.2 visit-decay return path: Step Forward increments & rolls at new km with prior visit count; Step Back decrements & rolls (km ≥ 2) or arrives home (km ≤ 1). Each room entry bumps its counter, so oscillations deplete rooms fast. Reply keyboard [🚶 Step fwd] [🔙 Step back] / [🎒 Bag]; `explore:` inline callbacks for bag view; /start + stray Cancel = force-end escape hatch.
+    │   ├── ExplorationController.swift   # Phase 3.1 active + 3.2 visit-decay return + 3.3 passive mode. Entry shows mode picker [🏃 Розвідка / 🏕 Експедиція] when no state; passive branches into countdown status (in-flight) or report delivery (completed). Active: Step Forward increments & rolls with prior visit count; Step Back decrements & rolls (km ≥ 2) or arrives home (km ≤ 1). Reply keyboard [🚶 Step fwd] [🔙 Step back] / [🎒 Bag] only during active. Inline `explore:` callbacks for bag, mode-picker, duration-picker, passive-report close.
     │   ├── EstateController.swift        # Tree nav: Root → House (Workshop/Kitchen/Warehouse stubs) / Plot stub. Per-level artwork loader. Main-nav pass-through.
     │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
     │   └── InventoryController.swift     # Tree nav: root categories → drill-down with Use buttons for food/potion
@@ -52,7 +52,7 @@ RestOfIryna/
     │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based)
     │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list/canAccept/slotsUsed helpers; 50-slot cap (equipped doesn't count)
     │   ├── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
-    │   ├── ExplorationState.swift  # Fluent model: one row per active expedition (user_id unique, stepsDeep, visited_rooms JSON dict of km → count). Presence = "exploring"; begin/current/end helpers; recordVisit/visitCount + visitedRooms computed wrapper. The `returning` column exists on the schema but is not mapped here (dormant from an earlier 3.2 design pass).
+    │   ├── ExplorationState.swift  # Fluent model: one row per active or passive expedition (user_id unique, stepsDeep, visited_rooms JSON dict, mode, ends_at, report_json). Presence = "exploring"; begin/beginPassive/current/end/allPassive helpers; recordVisit/visitCount + visitedRooms computed wrapper; isPassive/hasReadyReport/secondsRemaining queries; ExplorationMode enum (active / passive). The `returning` column still exists on the schema but isn't mapped here (dormant from an earlier 3.2 design pass).
     │   └── Enemy.swift             # Static bestiary (EnemyLootDrop + Enemy struct + EnemyCatalog). Code-based like ItemCatalog. Phase 3.1 ships 3 tier-1 enemies (rabid hare/fox/wolf).
     │
     ├── Migrations/
@@ -67,14 +67,16 @@ RestOfIryna/
     │   ├── CreateWarehouse.swift   # warehouse table (Phase 5 — estate storage, separate from inventory)
     │   ├── CreateExplorationState.swift # exploration_state table (Phase 3.1): per-user stepsDeep, unique on user_id, cascades on user delete
     │   ├── AddExplorationReturnState.swift # (Phase 3.2): adds `visited_rooms` TEXT (JSON dict km → visit count) and a dormant `returning` Bool to exploration_state
-    │   └── AddHpRegenTick.swift    # (Phase 3.2 polish): adds `last_hp_tick_at` nullable Date to users
+    │   ├── AddHpRegenTick.swift    # (Phase 3.2 polish): adds `last_hp_tick_at` nullable Date to users
+    │   └── AddPassiveExpeditionFields.swift # (Phase 3.3): adds nullable `mode`, `ends_at`, `report_json` to exploration_state
     │
     ├── Services/
     │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses
     │   ├── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
     │   ├── WarehouseService.swift # deposit / withdraw — moves one unit between InventoryEntry and WarehouseEntry; returns typed enum (success / nothingToTransfer / inventoryFull); deposits skip equipped rows; withdraw preflights backpack space
     │   ├── ExplorationService.swift # Phase 3.1/3.2: rollStep with `priorVisits:Int` three-tier weight table (fresh 20/40/30/10 → reduced 50/20/20/10 → bare 100/0/0/0), autobattle stub, loot drop rolls, hunger/starvation integration. StepOutcome enum captures every path (nothing/loot/trip/encounterWon/encounterLost/starvationOnly).
-    │   └── HealingService.swift # Phase 3.2 polish: lazy-compute passive HP regen (5%·maxHp per minute) while player is at estate (routerName != "exploration") and hp < maxHp. `tick(_:on:)` is called from RouterStore.process on every interaction. Pins `user.lastHpTickAt` at full HP and clears it during expedition to prevent banked regen.
+    │   ├── HealingService.swift # Phase 3.2 polish: lazy-compute passive HP regen (5%·maxHp per minute) while player is NOT on any expedition (active or passive) and hp < maxHp. `tick(_:inExpedition:on:)` is called from RouterStore.process on every interaction — RouterStore queries ExplorationState presence to derive `inExpedition`. Pins `user.lastHpTickAt` at full HP and clears it during expedition to prevent banked regen.
+    │   └── PassiveExpeditionService.swift # Phase 3.3: passive expedition. PassiveDuration (30/60/90 units), testMode flag (seconds vs minutes), start() arms a Task.detached + Task.sleep, simulate() runs rollStep N times at priorVisits=0, PassiveReport Codable blob stored in exploration_state.report_json, rescheduleInflight() runs on bot startup via configure.swift. Completion pushes a rendered report message to the player's chat.
     │
     ├── Telegram/
     │   ├── Router/

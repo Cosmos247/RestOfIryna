@@ -102,30 +102,176 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Public entry
 
-    /// Resume the active expedition (if an ExplorationState row exists) or begin a
-    /// fresh one at km 0. Caller handles routerName transition — this method sets
-    /// it to `exploration` itself so main/inventory pass-throughs can just call it.
+    /// Branching entry into the exploration flow:
+    ///   - Passive state with a ready report → deliver + delete state, player
+    ///     lands back at main with the report message above them.
+    ///   - Passive state still in flight → countdown status in the chat;
+    ///     routerName stays at main so regen + nav keep working normally.
+    ///   - Active state → resume with the expedition reply keyboard.
+    ///   - No state → show the mode picker (active vs passive).
     public func showExploration(context: Context) async throws {
-        let lingo = context.lingo
-        let locale = context.session.locale
-
-        let introKey: String
-        let state: ExplorationState
-        if let existing = try await ExplorationState.current(for: context.session, on: context.db) {
-            state = existing
-            introKey = "exploration.resumed"
-        } else {
-            state = try await ExplorationState.begin(for: context.session, on: context.db)
-            introKey = "exploration.started"
+        if let state = try await ExplorationState.current(for: context.session, on: context.db) {
+            if state.isPassive {
+                if state.hasReadyReport {
+                    try await deliverPassiveReport(context: context, state: state)
+                } else {
+                    try await showPassiveCountdown(context: context, state: state)
+                }
+                return
+            }
+            try await resumeActive(context: context, state: state)
+            return
         }
 
+        try await showModePicker(context: context)
+    }
+
+    /// Send the expedition reply keyboard and a status card for an existing
+    /// active expedition. Used when the player re-enters exploration after
+    /// checking the bag, opening the estate, etc.
+    private func resumeActive(context: Context, state: ExplorationState) async throws {
         context.session.routerName = routerName
         try await context.session.saveAndCache(in: context.db)
 
-        let intro = lingo.localize(introKey, locale: locale)
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let intro = lingo.localize("exploration.resumed", locale: locale)
         let body = "\(intro)\n\n\(renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale))"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: markup)
+    }
+
+    /// Start a fresh active expedition at km 0. Called from the mode picker
+    /// when the player chooses reconnaissance.
+    private func beginActive(context: Context) async throws {
+        let state = try await ExplorationState.begin(for: context.session, on: context.db)
+        context.session.routerName = routerName
+        try await context.session.saveAndCache(in: context.db)
+
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let intro = lingo.localize("exploration.started", locale: locale)
+        let body = "\(intro)\n\n\(renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale))"
+        let markup = generateControllerKB(session: context.session, lingo: lingo)
+        try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: markup)
+    }
+
+    /// Mode picker: inline keyboard with [Reconnaissance] / [Expedition].
+    /// Reply keyboard stays whatever the player had (usually main's) so they
+    /// can still navigate away. Callbacks land on this controller because we
+    /// set routerName = "exploration".
+    fileprivate func showModePicker(context: Context) async throws {
+        context.session.routerName = routerName
+        try await context.session.saveAndCache(in: context.db)
+
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
+        let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
+        let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
+            [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
+        ])
+        try await context.bot.sendMessage(
+            session: context.session,
+            text: prompt,
+            parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(inline)
+        )
+    }
+
+    /// Duration picker edits the mode-picker message in place (same inline
+    /// message, keyboard swapped). Three choices plus a Back that returns
+    /// to the mode picker.
+    fileprivate func editToDurationPicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
+        let locale = session.locale
+        let prompt = lingo.localize("exploration.duration.prompt", locale: locale)
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for duration in PassiveDuration.allCases {
+            let label = lingo.localize(duration.localeKey, locale: locale)
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "explore:dur:\(duration.rawValue)")])
+        }
+        let backLabel = lingo.localize("exploration.duration.back", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: backLabel, callbackData: "explore:mode:pick")])
+
+        let params = TGEditMessageTextParams(
+            chatId: chatId,
+            messageId: messageId,
+            text: prompt,
+            parseMode: .html,
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: rows)
+        )
+        _ = try? await bot.editMessageText(params: params)
+    }
+
+    fileprivate func editToModePicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
+        let locale = session.locale
+        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
+        let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
+        let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
+            [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
+        ])
+        let params = TGEditMessageTextParams(
+            chatId: chatId,
+            messageId: messageId,
+            text: prompt,
+            parseMode: .html,
+            replyMarkup: inline
+        )
+        _ = try? await bot.editMessageText(params: params)
+    }
+
+    /// Countdown status shown when the player re-opens exploration while a
+    /// passive expedition is still running. Routername stays at whatever the
+    /// player is currently at — the bot will push a report when the timer
+    /// fires regardless of where the player is.
+    fileprivate func showPassiveCountdown(context: Context, state: ExplorationState) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let remaining = state.secondsRemaining() ?? 0
+        let time = PassiveExpeditionService.formatCountdown(remaining)
+        let text = lingo.localize("exploration.passive.inflight", locale: locale, interpolations: ["time": time])
+        try await context.bot.sendMessage(
+            session: context.session,
+            text: text,
+            parseMode: .html,
+            replyMarkup: nil
+        )
+    }
+
+    /// Send the stored `PassiveReport` text, delete the state row, and drop
+    /// back to main. Used when the player opens exploration *after* the
+    /// scheduler finished the simulation.
+    fileprivate func deliverPassiveReport(context: Context, state: ExplorationState) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+
+        if let json = state.reportJSON,
+           let data = json.data(using: .utf8),
+           let report = try? JSONDecoder().decode(PassiveReport.self, from: data) {
+            let text = PassiveExpeditionService.renderReport(report, lingo: lingo, locale: locale)
+            let closeLabel = lingo.localize("exploration.passive.report.close", locale: locale)
+            let markup = TGInlineKeyboardMarkup(inlineKeyboard: [[
+                TGInlineKeyboardButton(text: closeLabel, callbackData: "explore:passive:close")
+            ]])
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: text,
+                parseMode: .html,
+                replyMarkup: .inlineKeyboardMarkup(markup)
+            )
+        }
+
+        try await state.delete(on: context.db)
+
+        // Drop back to main — active reply keyboard wasn't shown during
+        // passive, but make sure routerName is sane.
+        context.session.routerName = Controllers.mainController.routerName
+        try await context.session.saveAndCache(in: context.db)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -429,6 +575,84 @@ extension ExplorationController {
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        // Close-report button on the delivered passive expedition message.
+        if data == "explore:passive:close" {
+            let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+            _ = try? await context.bot.deleteMessage(params: deleteParams)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        // Mode picker → Active reconnaissance: begin a fresh active expedition.
+        if data == "explore:mode:active" {
+            let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+            _ = try? await context.bot.deleteMessage(params: deleteParams)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.beginActive(context: context)
+            return true
+        }
+
+        // Mode picker → Passive expedition: edit message in place to show
+        // the duration picker.
+        if data == "explore:mode:passive" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot, session: context.session, lingo: context.lingo)
+            return true
+        }
+
+        // Duration picker Back button → edit message back to mode picker.
+        if data == "explore:mode:pick" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToModePicker(chatId: chatId, messageId: message.messageId, bot: context.bot, session: context.session, lingo: context.lingo)
+            return true
+        }
+
+        // Duration pick → start passive expedition.
+        if data.hasPrefix("explore:dur:") {
+            let raw = String(data.dropFirst("explore:dur:".count))
+            guard let rawInt = Int(raw), let duration = PassiveDuration(rawValue: rawInt) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            _ = try await PassiveExpeditionService.start(
+                for: context.session,
+                duration: duration,
+                on: context.db,
+                bot: context.bot,
+                lingo: context.lingo
+            )
+
+            // Player stays at the estate while the expedition runs; routerName
+            // flips to main so the main reply keyboard is authoritative again.
+            context.session.routerName = Controllers.mainController.routerName
+            try await context.session.saveAndCache(in: context.db)
+
+            let timeText = PassiveExpeditionService.formatDuration(duration)
+            let confirmation = context.lingo.localize("exploration.passive.started", locale: locale, interpolations: ["time": timeText])
+            let editParams = TGEditMessageTextParams(
+                chatId: chatId,
+                messageId: message.messageId,
+                text: confirmation,
+                parseMode: .html,
+                replyMarkup: nil
+            )
+            _ = try? await context.bot.editMessageText(params: editParams)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            // Send a fresh main-menu message so the reply keyboard is restored
+            // (the previous one was expedition's step/back/bag if the player
+            // just finished an active run).
+            let mainCtrl = Controllers.mainController
+            let replyKb = mainCtrl.generateControllerKB(session: context.session, lingo: context.lingo)
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: "🏰",
+                parseMode: .html,
+                replyMarkup: replyKb
+            )
             return true
         }
 

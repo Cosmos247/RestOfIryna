@@ -464,3 +464,47 @@ User confirmed the two-mode split and explicitly pinned down timing:
 - **Passive expedition (експедиція)** — stays timer-gated (5 min prod / 10 sec test), still the Phase 3.3 target.
 
 No code changes needed — active mode's ExplorationController already has zero time-gates. The only "tick" in the codebase now is `HealingService.tick` for passive HP regen at the estate, which is lazy-compute and doesn't gate gameplay.
+
+## Session 14 — 2026-04-22 (Phase 3.3 — Passive expedition MVP in test mode)
+
+First truly background-running code in the project. The passive expedition flow sits behind a new mode-picker and fires a rendered report when its Task.sleep elapses.
+
+### What was done
+- **Schema** — new migration `AddPassiveExpeditionFields` adds three nullable columns to `exploration_state`: `mode` (TEXT), `ends_at` (TIMESTAMP), `report_json` (TEXT). One table covers both active and passive runs; active rows leave all three nil.
+- **Model** — `ExplorationState` gains `@OptionalField` mappings plus an `ExplorationMode` enum (active/passive), `isPassive` / `hasReadyReport` / `secondsRemaining(now:)` queries, and a `beginPassive(for:endsAt:on:)` factory alongside the existing `begin`. `allPassive(on:)` helper used by the startup rescheduler.
+- **Service** — `PassiveExpeditionService`:
+  - `PassiveDuration` enum (short=30 / medium=60 / long=90 *units*). `testMode: Bool = true` flag governs whether a "unit" is one second (test) or one minute (prod). Step count is `rawValue / 5` — same 6 / 12 / 18 step count in both modes, only the wall clock changes.
+  - `start(for:duration:on:bot:lingo:)` creates the state row then calls `scheduleCompletion(stateId:endsAt:db:bot:lingo:)`, which spawns a `Task.detached` that sleeps until `endsAt` and invokes `completeIfDue`.
+  - `completeIfDue` re-fetches the state fresh, confirms it's still passive + unreported, loads the user via `$user.load(on:)`, runs `simulate`, encodes the `PassiveReport`, saves user + state, pushes the report message, and deletes the state on successful push.
+  - `simulate` runs N `ExplorationService.rollStep` calls with `priorVisits: 0` (passive treks fresh ground). Mutates the real user (hp/hunger/inventory) directly. Aggregates outcome counts + picked/dropped loot into a `PassiveReport` Codable blob. Breaks early if hp hits 0; applies the same death penalty as active mode (wipe non-equipped inventory, hp = 1).
+  - `rescheduleInflight(on:bot:lingo:)` — called from `configure.swift` right after `bot.start()`. Scans all passive states; for each, either delivers immediately (endsAt already passed during downtime) or re-arms a `Task.sleep` for the remainder. Idempotent — `completeIfDue` checks `reportJSON != nil` and skips if already done.
+  - `renderReport` builds the multi-line HTML message from the `PassiveReport`. Shows reached depth, HP/hunger before/after, an outcome histogram (🕊 silence × 5 · ✨ find × 3 · ⚔️ victory × 2 · …), and the loot list (with partial-drop footnote if the bag overflowed). Death path swaps the opening line.
+- **Controller** — `showExploration` branches:
+  1. Passive state with a ready report → deliver report + delete state + drop back to main.
+  2. Passive state in flight → send countdown text; routerName stays where it is so HP regen + nav keep working.
+  3. Active state → existing resume flow.
+  4. No state → mode picker.
+  New picker flow: `explore:mode:active` → `beginActive`; `explore:mode:passive` → edits the message to the duration picker; `explore:dur:<raw>` → `PassiveExpeditionService.start` + confirmation message + fresh main-reply-keyboard message. `explore:passive:close` dismisses the delivered report.
+- **Startup rescheduler** — `configure.swift` calls `PassiveExpeditionService.rescheduleInflight(on:bot:lingo:)` right after `appState.bot.start()`. Bot restarts no longer orphan passive expeditions.
+- **Locale keys (EN + UK, 27 new per locale, 180 total)** — mode picker (prompt / active / passive), duration picker (prompt / 30m / 1h / 1h30m / back), passive status (started / inflight / test_mode_hint), report rendering (title / depth / hp / hunger / events_header / loot_header / no_loot / loot_partial / death / close), and six outcome labels (nothing / loot / encounter_won / encounter_lost / trip / starvation) used in the histogram line.
+
+### Design decisions to remember
+- **Test mode toggle, not separate constants.** `testMode: Bool` flips the unit-to-seconds ratio. Same duration numbers (30/60/90), just interpreted differently. Flipping to prod is a one-line change when we're ready.
+- **One expedition table, two modes.** Didn't split into a `PassiveExpedition` table because the exclusivity rule ("one expedition at a time") is naturally expressed by a single row per user. `mode` column discriminates.
+- **Simulation mutates the real user.** Loot goes straight into inventory; hp/hunger change directly. Relied-upon by `HealingService.tick`: while the passive timer counts down, the player's routerName is NOT "exploration" (they're at estate), so HP regen runs normally. When the simulation fires, user's hp is whatever the regen brought them to — that's the "fresh" pool the simulation damages.
+- **Delete state after successful push.** The background push pings the player's chat; on success the row is gone so `showExploration` next goes to mode picker. On push failure the row stays (with reportJSON); `showExploration` delivers on next open. Either way, the player sees the report exactly once.
+- **Detached task, no cancellation handle stored.** If the player somehow triggers the same expedition twice (shouldn't happen), `completeIfDue` is idempotent — it no-ops when `reportJSON != nil`.
+- **Routername convention.** Active mode still sets routerName = "exploration" because its reply keyboard needs to be distinct. Passive keeps routerName at main so the player can browse estate / inventory / profile normally during the wait, and HP regen works.
+- **No 3.4 exclusivity yet.** The player *could* currently start an active mode while a passive is in flight — the mode picker doesn't check. 3.4 will add the guard (+ the "🕒 Out on expedition, X min left" main-menu indicator).
+
+### Next steps
+- Test the flow end-to-end in the bot (restart with fresh binary to pick up new migrations + code).
+- 3.4 — mode exclusivity: main-menu busy state + guard on Explore entry.
+- Flip `testMode` to `false` once UX is validated.
+- Daily 2h budget. Early-cancel for in-flight passive.
+- Phase 4 — real combat UI replacing the autobattle stub (used by both modes).
+
+### Mini fix (same session): "governor is away" guarantees
+Small but important: during passive expedition the governor is in the forest, not at the estate. Two fixes so the mental model matches:
+- **HP regen pauses during passive too.** `HealingService.tick` signature changed from `(user, db)` to `(user, inExpedition, db)` — the `routerName == "exploration"` check was a proxy that only caught active mode. `RouterStore.process` now queries `ExplorationState.current` once per interaction and passes the presence as `inExpedition`. Both active and passive correctly suspend regen.
+- **Estate entry blocked while any ExplorationState row exists.** `EstateController.showEstate` gained a guard at the top — if an expedition row exists, it sends `estate.blocked_by_expedition` notice and returns without transitioning routerName. Callers (MainController.onEstate, InventoryController.onEstate) were also simplified: they no longer set routerName themselves, `showEstate` owns that transition so it can abort cleanly when blocked. Added one locale key in EN + UK (total 181 per locale).

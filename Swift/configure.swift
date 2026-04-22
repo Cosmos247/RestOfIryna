@@ -153,6 +153,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateExplorationState())
     migrations.add(AddExplorationReturnState())
     migrations.add(AddHpRegenTick())
+    migrations.add(AddPassiveExpeditionFields())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -307,6 +308,12 @@ public func configure(logger: Logger) async throws {
 
     // Start the bot
     try await appState.bot.start()
+
+    // MARK: - Passive expedition rescheduler
+    // Pick up any passive expeditions that were mid-flight when the bot last
+    // stopped. Each one either delivers immediately (if its endsAt already
+    // passed during downtime) or re-arms a Task.sleep until its endsAt.
+    try await PassiveExpeditionService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
     for user in allowedUsers {

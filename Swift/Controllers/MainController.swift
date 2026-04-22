@@ -86,10 +86,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onEstate(context: Context) async throws -> Bool {
-        let controller = Controllers.estateController
-        try await controller.showEstate(context: context)
-        context.session.routerName = controller.routerName
-        try await context.session.saveAndCache(in: context.db)
+        // showEstate owns the routerName transition so it can bail out with
+        // a "governor away" notice without leaving routerName in the wrong
+        // state.
+        try await Controllers.estateController.showEstate(context: context)
         return true
     }
 

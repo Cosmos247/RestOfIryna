@@ -126,6 +126,25 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     // MARK: - Public entry
 
     public func showEstate(context: Context) async throws {
+        // Guard: estate is inaccessible while the governor is in the field.
+        // Same rule for active and passive — if an ExplorationState row
+        // exists, the manor is locked until the expedition ends.
+        if try await ExplorationState.current(for: context.session, on: context.db) != nil {
+            let notice = context.lingo.localize("estate.blocked_by_expedition", locale: context.session.locale)
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: notice,
+                parseMode: .html,
+                replyMarkup: nil
+            )
+            return
+        }
+
+        // Entering estate — own the routerName transition so callers don't
+        // have to (and can't mis-transition when we bail out above).
+        context.session.routerName = routerName
+        try await context.session.saveAndCache(in: context.db)
+
         let text = renderRoot(session: context.session, lingo: context.lingo)
         let inline = rootKeyboard(lingo: context.lingo, locale: context.session.locale)
 

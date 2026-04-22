@@ -129,13 +129,17 @@
 - [x] `/start` + stray Cancel button = force-end (no walk-back) — dev escape hatch
 - [ ] Event-snapshot per room (future: remember *what* happened in each room for richer return narration)
 
-### 3.3 Passive timed expeditions *(only mode with a real-time gate)*
+### 3.3 Passive timed expeditions *(MVP landed in test mode)*
 Design note: the 5-min room transition is **passive-mode-only**. Active reconnaissance (3.1/3.2) is fully tap-driven — no timer, no gating.
+- [x] `AddPassiveExpeditionFields` migration adds `mode` / `ends_at` / `report_json` to `exploration_state`
+- [x] `ExplorationMode` enum + helpers on `ExplorationState` (isPassive / hasReadyReport / secondsRemaining)
+- [x] `PassiveExpeditionService` — duration enum (30/60/90 units), `testMode` flag (seconds vs minutes), `start` + detached `Task.sleep` scheduler, `simulate` reusing `ExplorationService.rollStep` with priorVisits=0, `PassiveReport` JSON blob, full report rendering, startup `rescheduleInflight`
+- [x] `ExplorationController` mode picker [🏃 Розвідка / 🏕 Експедиція] as first screen when no state; duration picker edits message in place; countdown status for inflight; report delivery on re-open
+- [x] Background push — the detached task sends the report message directly to the player's chat when the timer fires
+- [x] Startup rescheduler in `configure.swift` picks up in-flight passive expeditions across bot restarts
+- [ ] Flip `testMode` to `false` once balance + UX validated (swap units from seconds to minutes)
 - [ ] Per-user daily expedition budget (2h, rolls over at server midnight)
-- [ ] Passive mode: start (duration picker 30 min / 1 h / 1.5 h), stop, query-in-progress
-- [ ] Timed room transitions (5 min prod / 10 sec test mode, feature-flagged)
-- [ ] Lazy compute on interaction + push notification scheduler for completion events
-- [ ] Early-death notification (immediate push)
+- [ ] Early-cancel button for in-flight passive
 
 ### 3.4 Mode exclusivity
 - [ ] Main menu shows busy state when passive expedition is running

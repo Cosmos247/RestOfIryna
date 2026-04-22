@@ -5,15 +5,16 @@
 //  Created by Dmytro Ihnatyuhin on 22.04.2026.
 //
 //  Lazy passive HP regeneration (5% of maxHp per minute) while the player is
-//  at the estate — outside any active expedition and below max HP. Computed
-//  on interaction rather than by a background tick: `tick(user:on:)` is called
-//  from `RouterStore.process` before every controller dispatch, so the user
-//  always sees up-to-date HP in profile / status cards.
+//  at the estate — outside any expedition (active or passive) and below max
+//  HP. Computed on interaction rather than by a background tick: `tick` is
+//  called from `RouterStore.process` before every controller dispatch, so
+//  the user always sees up-to-date HP in profile / status cards.
 //
-//  Regen is explicitly PAUSED during expeditions: the `last_hp_tick_at`
-//  column is cleared while `routerName == "exploration"`, so idle time from
-//  before the expedition can't cascade into free healing once the player
-//  returns home.
+//  Regen is explicitly PAUSED whenever an `ExplorationState` row exists for
+//  the user (either active-mode in progress or passive-mode in flight). The
+//  governor is physically in the forest at that point, so no resting-at-home
+//  healing should accrue. The caller queries the row once and passes the
+//  presence as `inExpedition` to avoid a second DB round-trip per tick.
 //
 //  At max HP the clock is pinned to `now` on every tick — without that, if
 //  the player took damage hours after reaching full HP, we'd mistakenly
@@ -35,13 +36,17 @@ public enum HealingService {
     /// whenever a field is touched. Returns amount of HP restored (0 if the
     /// player is exploring, already full, or not enough minutes have elapsed
     /// to round to a whole HP).
+    ///
+    /// `inExpedition` — true when the user has an `ExplorationState` row
+    /// (active or passive). Regen is fully suspended in that case because
+    /// the governor is out in the wilderness, not resting at the manor.
     @discardableResult
-    public static func tick(_ user: User, on db: any Database) async throws -> Int {
+    public static func tick(_ user: User, inExpedition: Bool, on db: any Database) async throws -> Int {
         let now = Date()
 
         // Suspend regen during expedition — clear the clock so banked idle
         // time from before the expedition can't leak through.
-        if user.routerName == "exploration" {
+        if inExpedition {
             if user.lastHpTickAt != nil {
                 user.lastHpTickAt = nil
                 try await user.saveAndCache(in: db)

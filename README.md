@@ -55,7 +55,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `RegistrationController` — lore-driven 6-step onboarding: language → Artanian welcome + name → class descriptions → King's Oath (grants class starter weapon) → wolf encounter with class-specific artwork (combat stub) → estate naming
    - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
-   - `ExplorationController` — Phase 3.1 active-mode MVP + 3.2 per-room visit decay: step-forward / step-back / bag / death flow. Reply keyboard `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]`. Step Forward increments `stepsDeep`, rolls an event at the new km with the room's prior visit count (three tiers: fresh → reduced → bare), then bumps the counter. Step Back at km ≥ 2 decrements + rolls with the same tier logic; at km ≤ 1 it ends the expedition with a clean arrival (no event). Oscillating between two rooms depletes them fast — tier 2+ rooms fire only silence / starvation outcomes. Death wipes non-equipped inventory and respawns at HP=1 (hunger preserved). Passive timed mode lands in 3.3.
+   - `ExplorationController` — Phase 3.1/3.2/3.3. Tapping 🗺 Explore opens a **mode picker** `[🏃 Reconnaissance]` (active) / `[🏕 Expedition]` (passive). **Active**: step-forward / step-back / bag / death, reply keyboard `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]`, three-tier visit-decay weights (fresh → reduced → bare). **Passive**: duration picker (30/60/90 units, seconds in test mode / minutes in prod), `PassiveExpeditionService` arms a Task.detached + Task.sleep, simulates rollStep N times when the timer fires, pushes a `PassiveReport` message to the player's chat. Startup rescheduler in `configure.swift` re-arms any in-flight passive expeditions across bot restarts. Death (in either mode) wipes non-equipped inventory and respawns at HP=1 (hunger preserved).
    - `EstateController` — tree nav: Root (per-level artwork, tiers 1–3 drawn) → House (Workshop / Kitchen stubs; Warehouse with real deposit/withdraw via `WarehouseService` — stackable types aggregate per item_id with counts on both sides, gear renders per physical row with a single-direction arrow) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `InventoryController` — tree navigation; root shows all 5 category buttons with counts plus a fullness indicator (X/50 slots); drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear is shown per-row (each physical unit is its own button, no `× N` aggregation) and toggles between 🛡 Equip / ❌ Unequip via EquipmentService, with a persistent per-item icon via `Item.icon`; artifact placeholder until TBD. Backpack is capped at 50 non-equipped slots — future exploration / warehouse withdraw respect this.
@@ -87,7 +87,7 @@ RestOfIryna/
 │   │   ├── Item.swift            # static item catalog (code, not DB)
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory)
-│   │   ├── ExplorationState.swift # one row per active expedition (user_id unique, stepsDeep)
+│   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, visited_rooms)
 │   │   └── Enemy.swift           # code-based bestiary (EnemyCatalog) — 3 tier-1 enemies
 │   │
 │   ├── Migrations/
@@ -102,14 +102,16 @@ RestOfIryna/
 │   │   ├── CreateWarehouse.swift
 │   │   ├── CreateExplorationState.swift
 │   │   ├── AddExplorationReturnState.swift
-│   │   └── AddHpRegenTick.swift
+│   │   ├── AddHpRegenTick.swift
+│   │   └── AddPassiveExpeditionFields.swift
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
 │   │   ├── EquipmentService.swift # atomic equip/unequip, bonus recomputation
 │   │   ├── WarehouseService.swift # deposit/withdraw between inventory and warehouse
 │   │   ├── ExplorationService.swift # step outcome roll + autobattle stub + loot drops
-│   │   └── HealingService.swift  # passive HP regen (5%·maxHp/min) while at estate
+│   │   ├── HealingService.swift  # passive HP regen (5%·maxHp/min) while at estate
+│   │   └── PassiveExpeditionService.swift # passive-mode duration picker + Task.sleep scheduler + simulation + report push
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system
