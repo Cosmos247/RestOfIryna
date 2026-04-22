@@ -268,12 +268,10 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         try await state.delete(on: context.db)
 
-        // Drop back to main — active reply keyboard wasn't shown during
-        // passive, but make sure routerName + busy-flag are sane, and send
-        // a fresh main menu so the reply keyboard swaps back to the normal
-        // Explore label in this same response.
+        // Drop back to main and send a fresh greeting so the reply keyboard
+        // rebuilds (an expedition run that ended with active's Step-keyboard
+        // still showing would otherwise leave that keyboard visible).
         context.session.routerName = Controllers.mainController.routerName
-        context.session.transientInExpedition = false
         try await context.session.saveAndCache(in: context.db)
         try await Controllers.mainController.showMainMenu(context: context)
     }
@@ -449,11 +447,6 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     private func goToMainMenu(context: Context, text: String) async throws {
-        // Reset the transient flag so the main-menu reply keyboard we build
-        // right now uses the normal Explore label (not the busy indicator).
-        // RouterStore refreshes the flag on the next dispatch regardless, but
-        // without this the keyboard we send *now* would still show "busy".
-        context.session.transientInExpedition = false
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: text)
         context.session.routerName = mainCtrl.routerName
@@ -479,9 +472,6 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
-        // Expedition is gone — flip the transient flag so the death screen's
-        // main-menu reply keyboard rebuilds with the normal Explore label.
-        context.session.transientInExpedition = false
 
         let deathText = lingo.localize("exploration.death", locale: locale, interpolations: ["cause": cause])
         let mainCtrl = Controllers.mainController
@@ -591,11 +581,9 @@ extension ExplorationController {
         }
 
         // Close-report button on the delivered passive expedition message.
-        // Does the full cleanup: remove the inline report, drop any lingering
-        // state row (the scheduler push leaves the state in place so we can
-        // re-deliver on failure), reset the busy flag, and send a fresh main
-        // menu so the reply keyboard swaps "🕒 On expedition" → "🗺 Explore"
-        // in the same response.
+        // Removes the inline report, drops any lingering state row (the
+        // scheduler push leaves the row in place so we can re-deliver on
+        // failure), and sends a fresh main menu message.
         if data == "explore:passive:close" {
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
@@ -604,7 +592,6 @@ extension ExplorationController {
             if let state = try await ExplorationState.current(for: context.session, on: context.db) {
                 try await state.delete(on: context.db)
             }
-            context.session.transientInExpedition = false
             context.session.routerName = Controllers.mainController.routerName
             try await context.session.saveAndCache(in: context.db)
 
@@ -680,10 +667,7 @@ extension ExplorationController {
 
             // Player stays at the estate while the expedition runs; routerName
             // flips to main so the main reply keyboard is authoritative again.
-            // Refresh the transient flag so the freshly built main keyboard
-            // picks the busy label.
             context.session.routerName = Controllers.mainController.routerName
-            context.session.transientInExpedition = true
             try await context.session.saveAndCache(in: context.db)
 
             let timeText = PassiveExpeditionService.formatDuration(duration)

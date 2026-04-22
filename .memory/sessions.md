@@ -536,3 +536,17 @@ Final Phase 3 piece. Surfaces the expedition-in-progress state in the main reply
 Two bugs surfaced during playtest:
 - **Close-report left "🕒 On expedition" keyboard stale.** The `explore:passive:close` callback only deleted the inline message; the reply keyboard from an earlier message still showed the busy label, and the state row (with `report_json`) lingered, so `transientInExpedition` would flip back to `true` on the next dispatch. Fixed by doing the full cleanup in the close handler — delete state if present, reset the transient flag, save, and send a fresh `MainController.showMainMenu` message so the reply keyboard rebuilds with the normal "🗺 Explore" label. `deliverPassiveReport` (the re-open path) was updated to do the same trailing main-menu send.
 - **Passive death report claimed loot that was already wiped.** `applyDeath` inside `simulate` correctly wiped non-equipped inventory rows when HP hit 0, but the `PassiveReport` was still being populated with the picked/dropped list gathered during the loop. Players saw "Brought back: Berry × 3" while the DB showed an empty backpack. Fixed by zeroing `report.loot` in `simulate` when `died == true`, and updating `renderReport` to skip the loot section entirely when `report.died` (the death line at the top already communicates full loss).
+
+### Revert: dynamic busy-label on the main keyboard
+During playtest the "🕒 On expedition" reply-keyboard label didn't reliably revert after closing the passive report — Telegram only redraws reply keyboards when a fresh message carries a new `replyMarkup`, and hitting every edge case (close button, scheduler push, deliver-on-reopen, restart) was adding complexity for a feature the user deprioritized. Simplified per user's direction: the Explore button label is now static. The gating is done purely at `showExploration` entry via the passive-countdown branch — tapping Explore during an active passive run now sends the exact message the user requested: "Ти вже в експедиції. Очікуваний час прибуття: MM:SS".
+
+Removed in this pass:
+- `User.transientInExpedition` (field + all write sites in RouterStore and ExplorationController end-paths / start callback)
+- Busy-label registrations in Main / Estate / Inventory attachHandlers
+- `commands.explore.busy` locale key (EN + UK, back to 182 per locale)
+- Dynamic branch in `MainController.generateControllerKB`
+
+Kept (still valuable regardless of label strategy):
+- Estate + Capital guards during any expedition
+- Idempotency guards on mode/duration picker callbacks
+- `goToMainMenu` / `deliverPassiveReport` / passive-close callback still send a fresh main menu after cleanup so the reply keyboard from an active expedition (step/back/bag) is replaced by the main reply keyboard.

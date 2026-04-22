@@ -36,12 +36,6 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
             let exploreLocales = Commands.explore.buttonsForAllLocales(lingo: lingo)
             for button in exploreLocales { router[button.text] = onExplore }
-            // Also route the "🕒 On expedition" busy label to onExplore so
-            // the player can tap it and see the countdown / report.
-            for locale in SupportedLocale.allCases {
-                let busyText = lingo.localize("commands.explore.busy", locale: locale.rawValue)
-                router[busyText] = onExplore
-            }
 
             let estateLocales = Commands.estate.buttonsForAllLocales(lingo: lingo)
             for button in estateLocales { router[button.text] = onEstate }
@@ -126,15 +120,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
-        // The Explore button morphs into a busy indicator whenever an
-        // ExplorationState row exists (active or passive). RouterStore
-        // refreshes `transientInExpedition` on every dispatch so the label
-        // stays in sync with the true expedition state.
-        let exploreLabelKey = session.transientInExpedition ? "commands.explore.busy" : "commands.explore"
-        let exploreButton = TGKeyboardButton(text: lingo.localize(exploreLabelKey, locale: session.locale))
-
+        // The Explore button label is static. When tapped during an
+        // expedition, `ExplorationController.showExploration` branches into
+        // a countdown or report view — no need to mutate the keyboard.
         let markup = TGReplyKeyboardMarkup(keyboard: [
-            [ exploreButton,
+            [ Commands.explore.button(for: session, lingo),
               Commands.inventory.button(for: session, lingo) ],
             [ Commands.estate.button(for: session, lingo),
               Commands.capital.button(for: session, lingo) ],

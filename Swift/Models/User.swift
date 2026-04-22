@@ -120,13 +120,6 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_hp_tick_at")
     var lastHpTickAt: Date?
 
-    // MARK: - Transient (in-memory only)
-
-    /// Non-persisted flag refreshed by `RouterStore.process` on every dispatch,
-    /// reflecting whether an `ExplorationState` row exists for this user. Lets
-    /// controllers pick expedition-aware UI (e.g. the main-menu Explore button
-    /// swaps to a "🕒 Out on expedition" label) without re-querying the DB.
-    public var transientInExpedition: Bool = false
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
