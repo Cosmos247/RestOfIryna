@@ -28,10 +28,13 @@ actor RouterStore {
         var hydrated: [String: User] = [:]
         for (k, v) in properties {
             let user = try await sessionCache.getOrFetch(tgId: v, db: db)
-            // Query expedition presence once — both HealingService (to know
-            // whether to pause regen) and future gates want this signal.
-            // Cheap lookup: user_id is indexed on exploration_state.
+            // Query expedition presence once — HealingService (to decide
+            // whether to pause regen), the main-menu keyboard (to swap the
+            // Explore label to the busy indicator), and the Estate/Capital
+            // guards all share this signal. Cheap lookup: user_id is indexed
+            // on exploration_state.
             let inExpedition = try await ExplorationState.current(for: user, on: db) != nil
+            user.transientInExpedition = inExpedition
             _ = try await HealingService.tick(user, inExpedition: inExpedition, on: db)
             hydrated[k] = user
         }

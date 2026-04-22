@@ -269,8 +269,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await state.delete(on: context.db)
 
         // Drop back to main — active reply keyboard wasn't shown during
-        // passive, but make sure routerName is sane.
+        // passive, but make sure routerName + busy-flag are sane.
         context.session.routerName = Controllers.mainController.routerName
+        context.session.transientInExpedition = false
         try await context.session.saveAndCache(in: context.db)
     }
 
@@ -445,6 +446,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     private func goToMainMenu(context: Context, text: String) async throws {
+        // Reset the transient flag so the main-menu reply keyboard we build
+        // right now uses the normal Explore label (not the busy indicator).
+        // RouterStore refreshes the flag on the next dispatch regardless, but
+        // without this the keyboard we send *now* would still show "busy".
+        context.session.transientInExpedition = false
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: text)
         context.session.routerName = mainCtrl.routerName
@@ -470,6 +476,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
+        // Expedition is gone — flip the transient flag so the death screen's
+        // main-menu reply keyboard rebuilds with the normal Explore label.
+        context.session.transientInExpedition = false
 
         let deathText = lingo.localize("exploration.death", locale: locale, interpolations: ["cause": cause])
         let mainCtrl = Controllers.mainController
@@ -588,6 +597,16 @@ extension ExplorationController {
 
         // Mode picker → Active reconnaissance: begin a fresh active expedition.
         if data == "explore:mode:active" {
+            // Idempotency guard — if an expedition row already exists (stale
+            // picker tap, or a race with the passive scheduler), bail out to
+            // showExploration so we never silently delete active progress.
+            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+                _ = try? await context.bot.deleteMessage(params: deleteParams)
+                try await ctrl.showExploration(context: context)
+                return true
+            }
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -598,6 +617,14 @@ extension ExplorationController {
         // Mode picker → Passive expedition: edit message in place to show
         // the duration picker.
         if data == "explore:mode:passive" {
+            // Idempotency guard — see note on explore:mode:active above.
+            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+                _ = try? await context.bot.deleteMessage(params: deleteParams)
+                try await ctrl.showExploration(context: context)
+                return true
+            }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot, session: context.session, lingo: context.lingo)
             return true
@@ -612,6 +639,15 @@ extension ExplorationController {
 
         // Duration pick → start passive expedition.
         if data.hasPrefix("explore:dur:") {
+            // Idempotency guard — stale picker tap after an expedition
+            // already started (e.g. via a concurrent dispatch).
+            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+                _ = try? await context.bot.deleteMessage(params: deleteParams)
+                try await ctrl.showExploration(context: context)
+                return true
+            }
             let raw = String(data.dropFirst("explore:dur:".count))
             guard let rawInt = Int(raw), let duration = PassiveDuration(rawValue: rawInt) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -627,7 +663,10 @@ extension ExplorationController {
 
             // Player stays at the estate while the expedition runs; routerName
             // flips to main so the main reply keyboard is authoritative again.
+            // Refresh the transient flag so the freshly built main keyboard
+            // picks the busy label.
             context.session.routerName = Controllers.mainController.routerName
+            context.session.transientInExpedition = true
             try await context.session.saveAndCache(in: context.db)
 
             let timeText = PassiveExpeditionService.formatDuration(duration)

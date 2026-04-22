@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~181 keys
-- [x] Ukrainian (uk.json) — ~181 keys
+- [x] English (en.json) — ~183 keys
+- [x] Ukrainian (uk.json) — ~183 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
@@ -71,14 +71,14 @@
 - [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table: fresh (20/40/30/10), reduced (50/20/20/10), bare (100/0/0/0 — only .nothing / .starvationOnly). Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
 - [x] Passive HP regen at the estate — 5% of maxHp per minute while the player is not on ANY expedition (active or passive) and hp < maxHp. `HealingService.tick(user:inExpedition:on:)` is called from `RouterStore.process` on every interaction (lazy compute, no background scheduler). `RouterStore` queries `ExplorationState.current` once per dispatch to derive `inExpedition`. `User.lastHpTickAt` column via `AddHpRegenTick` migration. Clock is cleared during expeditions and pinned to now at full HP, so banked regen never accumulates against future damage.
 - [x] 3.3 Passive expedition MVP (test-mode) — `AddPassiveExpeditionFields` migration adds `mode` / `ends_at` / `report_json` columns. `PassiveExpeditionService` handles duration picker (30/60/90 units — test mode = seconds, prod = minutes), starts via Task.detached + Task.sleep, simulates with rollStep (priorVisits=0), serializes a `PassiveReport` JSON, pushes the completion message to the player's chat, and re-arms itself on bot restart via `rescheduleInflight` called from `configure.swift`. ExplorationController entry now shows a mode picker [🏃 Розвідка / 🏕 Експедиція] when no state is present; countdown status for inflight; report delivery + state cleanup on re-open. Daily 2h budget and early-cancel still pending. `testMode` constant on the service — flip to prod before shipping.
-- [ ] 3.4 Mode exclusivity (active vs passive, main menu shows busy state)
+- [x] 3.4 Mode exclusivity — data-layer exclusivity from unique(user_id) on exploration_state, `showExploration` branches by state, Main reply keyboard swaps `🗺 Explore` → `🕒 On expedition` via `User.transientInExpedition` (set by RouterStore every dispatch, reset explicitly on expedition end-paths). Busy label registered in Main/Estate/Inventory routers. Estate and Capital are both blocked during any expedition (governor is away). Idempotency guards on `explore:mode:*` / `explore:dur:*` callbacks prevent stale picker taps from silently overwriting an existing expedition.
 - [x] Lingo integration with SupportedLocale enum
 - [x] Interpolation support (%{full-name}, %{nickname}, %{class}, %{estate})
 
 ## What's Planned (from GDD, not yet implemented)
 
 ### Controllers Needed
-- [~] ExplorationController — active-mode MVP landed (3.1); still needs passive-mode timed expedition (3.3), visited-rooms state with depth-decay "already explored" on the return path (3.2), mode exclusivity (3.4), dungeons (later phase)
+- [x] ExplorationController — all of Phase 3 (3.0-3.4) landed. Still pending: dungeons (later phase), content expansion (3.5), flip testMode to prod.
 - [ ] CombatController — round-based PvE & PvP
 - [~] EstateController — Phase 5.0 navigation skeleton landed (Root → House + Plot stubs); still needs 30x30 grid editor, manor rooms' real logic, crafting flows
 - [~] CapitalController — stub exists; needs location menu, quests, stables, bank, chapel
@@ -103,7 +103,7 @@
 - [x] Class selection during registration (warrior/archer/mage)
 - [ ] Hunger system (drain, starvation, food)
 - [ ] XP/leveling system
-- [~] Exploration loop — active-mode step/outcome/return/death wired (3.1); return path with visited-rooms + decayed weights wired (3.2); passive timed expeditions with duration picker + background simulation + report delivery wired (3.3 test mode). Still needs mode exclusivity in main-menu UI (3.4) and a flip to prod-mode durations.
+- [x] Exploration loop — active (3.1) + return path with visited-room decay (3.2) + passive with background scheduler + report (3.3) + mode exclusivity UI/guards (3.4) all landed. Still on deck: flip `PassiveExpeditionService.testMode` to prod, add optional daily budget + early cancel, content expansion (3.5).
 - [ ] Combat engine (damage formula, round resolution)
 - [ ] Estate management (grid rendering, plot upgrades, production timers)
 - [ ] Crafting system (recipes, room tiers)
@@ -122,4 +122,4 @@
 
 ---
 
-*Last updated: 2026-04-22 (Phase 3.3 passive expedition MVP landed in test mode — mode picker, duration picker, background scheduler, report delivery)*
+*Last updated: 2026-04-22 (Phase 3.4 mode exclusivity landed — busy-label main keyboard, picker idempotency, capital blocked during expedition)*

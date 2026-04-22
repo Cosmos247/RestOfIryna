@@ -508,3 +508,26 @@ First truly background-running code in the project. The passive expedition flow 
 Small but important: during passive expedition the governor is in the forest, not at the estate. Two fixes so the mental model matches:
 - **HP regen pauses during passive too.** `HealingService.tick` signature changed from `(user, db)` to `(user, inExpedition, db)` — the `routerName == "exploration"` check was a proxy that only caught active mode. `RouterStore.process` now queries `ExplorationState.current` once per interaction and passes the presence as `inExpedition`. Both active and passive correctly suspend regen.
 - **Estate entry blocked while any ExplorationState row exists.** `EstateController.showEstate` gained a guard at the top — if an expedition row exists, it sends `estate.blocked_by_expedition` notice and returns without transitioning routerName. Callers (MainController.onEstate, InventoryController.onEstate) were also simplified: they no longer set routerName themselves, `showEstate` owns that transition so it can abort cleanly when blocked. Added one locale key in EN + UK (total 181 per locale).
+
+## Session 15 — 2026-04-22 (Phase 3.4 — mode exclusivity)
+
+Final Phase 3 piece. Surfaces the expedition-in-progress state in the main reply keyboard, blocks both city screens, and closes remaining race windows around the mode picker.
+
+### What was done
+- **`User.transientInExpedition: Bool`** — non-persisted stored property on the User class. Refreshed by `RouterStore.process` on every dispatch from the same `ExplorationState.current` query that drives HealingService. Controllers read it synchronously — no extra DB round-trips.
+- **Busy-label main keyboard** — `MainController.generateControllerKB` picks `commands.explore.busy` ("🕒 On expedition" / "🕒 У поході") instead of the normal label when `session.transientInExpedition == true`. Tap still routes to `onExplore` → `showExploration`, which branches to passive countdown / active resume / report delivery as before.
+- **Busy label registered everywhere that passes through Explore** — MainController, EstateController, InventoryController each add a second pass of locale-iterated registrations for the busy label so a tap from inside any of those controllers still reaches `onExplore`.
+- **Picker idempotency** — `explore:mode:active` / `explore:mode:passive` / `explore:dur:*` each re-check `ExplorationState.current` at the top. If a state already exists (stale picker from a previous screen, a race with the passive scheduler), the handler dismisses the inline message and redirects to `showExploration` so active progress / in-flight passive isn't silently wiped.
+- **Capital blocked during expedition** — `CapitalController.showStub` got the same guard pattern as `EstateController.showEstate`: check for `ExplorationState.current`, send `capital.blocked_by_expedition` notice, bail out without changing routerName. Callers (MainController.onCapital, InventoryController.onCapital, EstateController.onCapital) simplified to trust `showStub` for the transition. `CapitalController` now imports Fluent.
+- **Explicit flag resets at expedition end-paths** — `goToMainMenu` (shared helper used by home-reached, force-end, and the passive-report's close-to-main flow) now sets `transientInExpedition = false` before calling `mainCtrl.showMainMenu`. Same reset at the top of `handleDeath` and at the end of `deliverPassiveReport`. Without this, the reply keyboard in the very same response message would still show the busy label (RouterStore only refreshes on the *next* dispatch).
+- **Flag set to `true` after `PassiveExpeditionService.start`** — so the main-menu keyboard sent from the duration-pick callback uses the busy label immediately.
+- **Locale keys (+2 per locale, 183 total)**: `commands.explore.busy` and `capital.blocked_by_expedition`.
+
+### Design decisions
+- **Transient flag instead of async keyboards.** Making `generateControllerKB` async / db-aware was the clean alternative but touches every call site. A single cached flag read synchronously keeps existing signatures intact.
+- **Static busy label, no live countdown in the keyboard.** Reply keyboards only update when a new message sends them; live countdowns would flood the chat. The label is a static "🕒 On expedition" — tapping it opens the countdown message with precise MM:SS.
+- **Both rural (Estate) and urban (Capital) locations blocked.** Inventory intentionally stays accessible — the bag is a meta concept the player can always peek at, and forcing it closed during expedition would be annoying.
+- **Idempotency on mutating callbacks only.** The `explore:mode:pick` back button and bag callbacks don't mutate state, so they don't need guards.
+
+### Phase 3 closure
+3.0 (slot cap) → 3.1 (active MVP) → 3.2 (visit-decay return path + passive HP regen) → 3.3 (passive expedition with background scheduler) → 3.4 (mode exclusivity / UX guards) all landed. Remaining backlog on the exploration track: flip `PassiveExpeditionService.testMode` to `false` for prod durations, 3.5 content expansion (more enemies / richer events), and eventually Phase 4's real combat UI replacing the autobattle stub.

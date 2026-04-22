@@ -141,10 +141,14 @@ Design note: the 5-min room transition is **passive-mode-only**. Active reconnai
 - [ ] Per-user daily expedition budget (2h, rolls over at server midnight)
 - [ ] Early-cancel button for in-flight passive
 
-### 3.4 Mode exclusivity
-- [ ] Main menu shows busy state when passive expedition is running
-- [ ] Can't start active while passive is running, and vice versa
-- [ ] Handle clean cancellation of one mode to enter the other
+### 3.4 Mode exclusivity *(landed)*
+- [x] Data-layer exclusivity inherited from `exploration_state` unique(user_id) — one row per player regardless of mode
+- [x] `showExploration` branches (passive in-flight → countdown; passive with report → deliver; active → resume; none → mode picker) — UI can't offer mode picker while a state exists
+- [x] Main menu reply keyboard swaps `🗺 Explore` → `🕒 On expedition` via `User.transientInExpedition` (refreshed by `RouterStore.process` every dispatch). Tapping the busy label still leads to `showExploration` which shows the countdown/report.
+- [x] Busy label registered in Main / Estate / Inventory routers so pass-through works from any screen
+- [x] Idempotency guards on `explore:mode:active` / `explore:mode:passive` / `explore:dur:*` — stale picker taps redirect to `showExploration` instead of silently overwriting an existing expedition
+- [x] Estate + Capital entry guarded — "governor is away" notice, no routerName transition. Both controllers now own their routerName transition so blocking is clean.
+- [x] Explicit flag resets in end-paths (home-reached / force-end / death / passive report delivery) so the reply keyboard rebuilds with the normal label in that same response
 
 ### 3.5 Content expansion (post-MVP)
 - [ ] Expanded event pool ("hidden cache / shrine", "dungeon entrance every 7th room", rare events)

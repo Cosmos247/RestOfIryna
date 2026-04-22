@@ -5,6 +5,7 @@
 //  Created by Dmytro Ihnatyuhin on 19.04.2026.
 //
 
+import Fluent
 import Foundation
 @preconcurrency import Lingo
 import SwiftTelegramBot
@@ -45,6 +46,24 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     public func showStub(context: Context) async throws {
+        // Guard: the capital is two days' ride — the governor can't reach it
+        // while they're out on expedition. Same rule for active and passive.
+        if try await ExplorationState.current(for: context.session, on: context.db) != nil {
+            let notice = context.lingo.localize("capital.blocked_by_expedition", locale: context.session.locale)
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: notice,
+                parseMode: .html,
+                replyMarkup: nil
+            )
+            return
+        }
+
+        // Entering capital — own the routerName transition so callers don't
+        // have to (and can't mis-transition when the guard above bails out).
+        context.session.routerName = routerName
+        try await context.session.saveAndCache(in: context.db)
+
         let text = context.lingo.localize("stub.coming_soon", locale: context.session.locale)
         let markup = generateControllerKB(session: context.session, lingo: context.lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)

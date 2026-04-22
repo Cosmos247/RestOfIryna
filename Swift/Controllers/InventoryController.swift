@@ -36,6 +36,11 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // Main-nav pass-through: reply-keyboard clicks while in inventory should navigate.
             let exploreLocales = Commands.explore.buttonsForAllLocales(lingo: lingo)
             for button in exploreLocales { router[button.text] = onExplore }
+            // Busy-state Explore label.
+            for locale in SupportedLocale.allCases {
+                let busyText = lingo.localize("commands.explore.busy", locale: locale.rawValue)
+                router[busyText] = onExplore
+            }
 
             let estateLocales = Commands.estate.buttonsForAllLocales(lingo: lingo)
             for button in estateLocales { router[button.text] = onEstate }
@@ -90,10 +95,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onCapital(context: Context) async throws -> Bool {
-        let ctrl = Controllers.capitalController
-        try await ctrl.showStub(context: context)
-        context.session.routerName = ctrl.routerName
-        try await context.session.saveAndCache(in: context.db)
+        try await Controllers.capitalController.showStub(context: context)
         return true
     }
 
