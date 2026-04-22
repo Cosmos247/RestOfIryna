@@ -42,7 +42,7 @@ RestOfIryna/
     │   ├── RegistrationController.swift  # Multi-step: language, nickname, class, estate
     │   ├── SettingsController.swift      # Language change, back navigation
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
-    │   ├── ExplorationController.swift   # STUB (Phase 3): coming-soon + back to main
+    │   ├── ExplorationController.swift   # Phase 3.1 active exploration: step/bag/return/death flow; reply keyboard [🚶 Step] [🎒 Bag] [🔙 Return]; uses ExplorationState + ExplorationService; `explore:` callbacks for bag view
     │   ├── EstateController.swift        # Tree nav: Root → House (Workshop/Kitchen/Warehouse stubs) / Plot stub. Per-level artwork loader. Main-nav pass-through.
     │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
     │   └── InventoryController.swift     # Tree nav: root categories → drill-down with Use buttons for food/potion
@@ -51,7 +51,9 @@ RestOfIryna/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
     │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based)
     │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list/canAccept/slotsUsed helpers; 50-slot cap (equipped doesn't count)
-    │   └── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
+    │   ├── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
+    │   ├── ExplorationState.swift  # Fluent model: one row per active expedition (user_id unique, stepsDeep). Presence = "exploring"; begin/current/end helpers.
+    │   └── Enemy.swift             # Static bestiary (EnemyLootDrop + Enemy struct + EnemyCatalog). Code-based like ItemCatalog. Phase 3.1 ships 3 tier-1 enemies (rabid hare/fox/wolf).
     │
     ├── Migrations/
     │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names
@@ -62,12 +64,14 @@ RestOfIryna/
     │   ├── RemoveCrownsField.swift # drops crowns column; premium currency name TBD
     │   ├── AddEquipSlotToInventory.swift # nullable equipped_slot column on inventory (Phase 2.3.2)
     │   ├── AddGearBonuses.swift    # 5 cached gear_*_bonus fields on users (Phase 2.3.2)
-    │   └── CreateWarehouse.swift   # warehouse table (Phase 5 — estate storage, separate from inventory)
+    │   ├── CreateWarehouse.swift   # warehouse table (Phase 5 — estate storage, separate from inventory)
+    │   └── CreateExplorationState.swift # exploration_state table (Phase 3.1): per-user stepsDeep, unique on user_id, cascades on user delete
     │
     ├── Services/
     │   ├── HungerService.swift    # Pure: HungerAction enum, drain, consume, isStarving, applyStarvationHPLoss, starvation penalty on effective ATK/DEF (on User via extension); effective-stat extension also includes crit/dodge/accuracy + gear bonuses
     │   ├── EquipmentService.swift # equip (atomic slot swap), unequip, equipped(for:), recomputeBonuses (writes cached gear_*_bonus on User)
-    │   └── WarehouseService.swift # deposit / withdraw — moves one unit between InventoryEntry and WarehouseEntry; returns typed enum (success / nothingToTransfer / inventoryFull); deposits skip equipped rows; withdraw preflights backpack space
+    │   ├── WarehouseService.swift # deposit / withdraw — moves one unit between InventoryEntry and WarehouseEntry; returns typed enum (success / nothingToTransfer / inventoryFull); deposits skip equipped rows; withdraw preflights backpack space
+    │   └── ExplorationService.swift # Phase 3.1: rollStep (event weights 40/30/25/5), autobattle stub, loot drop rolls, hunger/starvation integration. StepOutcome enum captures every path (nothing/loot/trip/encounterWon/encounterLost/starvationOnly).
     │
     ├── Telegram/
     │   ├── Router/

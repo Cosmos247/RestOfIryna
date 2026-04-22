@@ -81,9 +81,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     private func onExplore(context: Context) async throws -> Bool {
         let controller = Controllers.explorationController
-        try await controller.showStub(context: context)
-        context.session.routerName = controller.routerName
-        try await context.session.saveAndCache(in: context.db)
+        try await controller.showExploration(context: context)
         return true
     }
 

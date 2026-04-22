@@ -96,18 +96,6 @@
 
 ---
 
-## Phase 5: Estates & Crafting *(started out of order — Phase 3/4 skipped for now)*
-
-### 5.0 Estate navigation skeleton *(landed)*
-- [x] Estate level computed from `user.level` (every 5 player levels → +1 estate level)
-- [x] `EstateController` tree nav: Root (image placeholder + text + level) → [🏠 House] / [🌾 Plot]
-- [x] House drill-down with stubs for [🛠 Workshop] [🍳 Kitchen] [📦 Warehouse]
-- [x] Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback)
-- [x] Photo/text edit-mode switch in callback handler (editMessageCaption vs editMessageText)
-- [x] Main-nav pass-through on EstateController's router (main reply keyboard stays reachable)
-- [x] Warehouse: real storage — `WarehouseEntry` Fluent model (separate table from `inventory`), category root with live counts, per-category drill-down with item list. Dev seed mirrors the inventory seed set.
-- [x] Warehouse deposit/withdraw: `WarehouseService` moves one unit per tap. Category drill-down renders each distinct item as `[Name] [N ⬆️] [M ⬇️]` — deposit from inventory / withdraw to inventory. Union of inventory + warehouse items; equipped gear is excluded from transferable inventory count. Toast feedback, in-place refresh.
-
 ## Phase 3: Exploration System
 
 ### 3.0 Inventory slot limit *(landed)*
@@ -119,34 +107,38 @@
 - [x] Inventory root header shows `X/50 slots` indicator
 - [x] 2 new locale keys per locale: `inventory.full`, `inventory.slots_label`
 
-### 3.1 Exploration State
-- [ ] Design ExplorationState model (user_id, current_km, next_room_at, loot_bag)
-- [ ] Create migration
-- [ ] Implement timed room transitions (5 min prod / 10 sec test mode)
-- [ ] Add feature flag for test mode timing
+### 3.1 Active exploration MVP *(landed)*
+- [x] ExplorationState model + migration (user_id unique, stepsDeep)
+- [x] Enemy bestiary (code-based EnemyCatalog, 3 tier-1 enemies with depth ranges + loot tables)
+- [x] ExplorationService.rollStep — weighted events (nothing 40 / loot 30 / encounter 25 / trip 5), depth-aware loot, autobattle stub for encounters, hunger/starvation integration
+- [x] ExplorationController rewritten: step / bag (scoped to consumables) / return / death
+- [x] Reply keyboard [🚶 Step] [🎒 Bag] [🔙 Return] while expedition is active
+- [x] Death flow: wipe non-equipped inventory, respawn at HP=1, hunger preserved, end ExplorationState
+- [x] Return flow: end ExplorationState, back to main with farewell message
+- [x] Main/Inventory/Estate onExplore wired to `showExploration` (resume or begin)
+- [x] ~20 new locale keys per locale (EN + UK) — expedition UI, outcome narratives, enemy names
 
-### 3.2 ExplorationController
-- [ ] Create controller with router registration
-- [ ] Implement "start exploration" from main menu
-- [ ] Implement room transition logic (timer check on interaction)
-- [ ] Implement event rolling (weighted random from event table)
-- [ ] Implement 5-km return prompt (HP/Hunger display + Continue/Return buttons)
-- [ ] Implement double-speed travel (2x hunger cost, half time)
-- [ ] Implement voluntary return (bank loot, return to main)
-- [ ] Implement death handling (respawn, lose expedition loot)
+### 3.2 Return path with room memory
+- [ ] Persist visited rooms in ExplorationState (step index → event snapshot)
+- [ ] On return direction, each previously-visited room rolls with "already explored" depth-decay bias
+- [ ] Depth-decay formula for loot/encounter chance
 
-### 3.3 Exploration Events
-- [ ] "Nothing of note" — flavor text pool
-- [ ] "Found item" — mushroom, herb, resource (depth-aware)
-- [ ] "Tripped" — small HP loss (depth-gated)
-- [ ] "Hidden cache / shrine" — rare currency or buff
-- [ ] "Rabid animal encounter" — transition to combat
-- [ ] "Dungeon entrance" — guaranteed every 7th room
+### 3.3 Passive timed expeditions
+- [ ] Per-user daily expedition budget (2h, rolls over at server midnight)
+- [ ] Passive mode: start, stop, query-in-progress
+- [ ] Timed room transitions (5 min prod / 10 sec test mode, feature-flagged)
+- [ ] Lazy compute on interaction + push notification scheduler for completion events
+- [ ] Early-death notification (immediate push)
 
-### 3.4 Timed Action System
-- [ ] Design hybrid approach: lazy compute on interaction + push notification scheduler
-- [ ] Implement "you've arrived" notification for room completion
-- [ ] Handle edge cases (user offline, multiple pending transitions)
+### 3.4 Mode exclusivity
+- [ ] Main menu shows busy state when passive expedition is running
+- [ ] Can't start active while passive is running, and vice versa
+- [ ] Handle clean cancellation of one mode to enter the other
+
+### 3.5 Content expansion (post-MVP)
+- [ ] Expanded event pool ("hidden cache / shrine", "dungeon entrance every 7th room", rare events)
+- [ ] More enemy tiers (T2-T4 + Boss) and biome variety
+- [ ] Flavor text pools per outcome
 
 ---
 
@@ -181,7 +173,17 @@
 
 ---
 
-## Phase 5: Estates & Crafting
+## Phase 5: Estates & Crafting *(started out of order — while Phase 3/4 were paused)*
+
+### 5.0 Estate navigation skeleton *(landed)*
+- [x] Estate level computed from `user.level` (every 5 player levels → +1 estate level)
+- [x] `EstateController` tree nav: Root (image placeholder + text + level) → [🏠 House] / [🌾 Plot]
+- [x] House drill-down with stubs for [🛠 Workshop] [🍳 Kitchen] [📦 Warehouse]
+- [x] Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback)
+- [x] Photo/text edit-mode switch in callback handler (editMessageCaption vs editMessageText)
+- [x] Main-nav pass-through on EstateController's router (main reply keyboard stays reachable)
+- [x] Warehouse: real storage — `WarehouseEntry` Fluent model (separate table from `inventory`), category root with live counts, per-category drill-down with item list. Dev seed mirrors the inventory seed set.
+- [x] Warehouse deposit/withdraw: `WarehouseService` moves one unit per tap. Category drill-down renders each distinct item as `[Name] [N ⬆️] [M ⬇️]` — deposit from inventory / withdraw to inventory. Union of inventory + warehouse items; equipped gear is excluded from transferable inventory count. Toast feedback, in-place refresh.
 
 ### 5.1 Estate Model
 - [ ] Design Estate model (30x30 grid as JSON/binary blob)
@@ -326,4 +328,4 @@
 
 ---
 
-*Last updated: 2026-04-17 — Phase 0 complete, all subsequent phases pending.*
+*Last updated: 2026-04-22 — Phases 0-1 complete; Phase 2 done; Phase 3.0 + 3.1 done; Phase 5 scaffolding done; combat + passive expedition pending.*

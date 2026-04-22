@@ -328,3 +328,35 @@ Starting on Phase 3 (Exploration) — skipping 3 and 4 into a hybrid exploration
 - `ItemType.recipe` removed from the catalog/enum (only 5 types now: food, material, potion, gear, artifact). Seed replaces `recipe.stew × 1` with `artifact.shrine_coin × 1`.
 - Dev inventory seed upgraded from "run once when empty" to "top-up per item + orphan cleanup": every startup cleans rows whose `item_id` is no longer in the catalog, then tops each seed entry up to its target quantity (never reduces). Rationale: after catalog changes (like removing recipes), stale DB rows linger and the old all-or-nothing seed never refills the new item. Per-item top-up also means consumed test items (e.g., eaten bread) come back on restart — handy for dev.
 - Build fully green
+
+## Session 10 — 2026-04-22 (Phase 3.1 — Active Exploration MVP)
+
+The first playable expedition loop. Hunger finally drains, starvation actually hurts, encounters resolve, death has a cost. Designed against the dual-mode spec (active now, passive later in 3.3).
+
+### What was done
+- **Data layer**
+  - `Models/ExplorationState.swift` + `Migrations/CreateExplorationState.swift` — Fluent model + migration. One row per active expedition, unique on `user_id`, `stepsDeep` tracks the current km. Presence of a row = "currently out exploring", absence = "at the estate". Helpers `current(for:on:)`, `begin(for:on:)` (deletes stale rows defensively), `end(for:on:)` (no-op if absent). Registered in configure.swift.
+  - `Models/Enemy.swift` — static code-based bestiary mirroring `ItemCatalog`. `Enemy` struct (id, nameKey, tier, hp/atk/def, depthRange, lootTable, icon) + `EnemyLootDrop` (itemId, chance 0…1, quantity). MVP bestiary: rabid hare / fox / wolf — tiers 1–2, depth ranges 1–3 and 3–6. `EnemyCatalog.pickFor(kmDepth:)` filters by eligibility and picks randomly.
+- **Service**
+  - `Services/ExplorationService.swift` — pure-ish service with three entry points. `rollStep(for:kmDepth:on:)` drives a single forward step: drains walk-room hunger, applies a starvation HP tick if hunger is already 0, then rolls an event from the weighted bucket (nothing 40 / loot 30 / encounter 25 / trip 5). Loot pool is depth-aware (shallow forest vs medium forest). Encounter goes through the stub `resolveAutobattle` (alternating strikes, ±10% variance, safety cap 50 rounds, one hunger drained per round). Win rolls the enemy's loot table; each drop preflights inventory space with `InventoryEntry.canAccept` so full-bag drops come back as `picked: false`. `StepOutcome` enum carries every path back to the caller (nothing / loot / trip / encounterWon / encounterLost / starvationOnly).
+  - Design note left in the file header: the autobattle is a Phase-4 placeholder. Phase 4's round-based `CombatController` will replace it with a real dodge/accuracy/crit-aware engine; shape of `resolveAutobattle` is kept intentionally narrow so the swap is just a function replacement.
+- **Controller rewrite**
+  - `Controllers/ExplorationController.swift` — replaced the stub entirely. Public entry `showExploration(context:)` resumes an existing state or begins a new one, sends a narrative + status card, and sets a dedicated reply keyboard `[🚶 Step] [🎒 Bag] [🔙 Return]`. Step handler increments `stepsDeep`, calls `ExplorationService.rollStep`, saves the user, renders the outcome narrative and an updated status card in a fresh message (scrolling narrative log). HP ≤ 0 diverts to the death flow.
+  - Bag flow is scoped to consumables only — food and potions. Non-consumable types (materials/gear/artifacts) are managed back at the estate, keeping the expedition UI focused on what actually matters mid-walk (eating to avoid starvation, healing). One-tap eat/use refreshes the bag view in place via `editMessageText`; `explore:back` deletes the bag message.
+  - Death: wipes every non-equipped `InventoryEntry` row directly (equipped gear survives — per design), sets `hp = 1`, leaves `hunger` as-is (per user's spec: "Hunger stays the same as at death"), ends the exploration state, and drops back to main menu with a dramatic death screen that includes the cause narrative.
+  - Return (voluntary): ends the state and shows a short "you returned home" line through `MainController.showMainMenu(context:text:)`.
+  - Main-nav integration: `MainController.onExplore` / `InventoryController.onExplore` / `EstateController.onExplore` now all call `showExploration` instead of the old `showStub`. Since `showExploration` sets `routerName` itself, callers no longer duplicate that — removed the pass-through `saveAndCache` block in all three callers.
+- **Locale keys (EN + UK)** — ~20 new per locale: expedition keyboard buttons, started/resumed intros, depth label, every outcome narrative (nothing / loot picked / loot full / trip / encounter won / encounter lost / starvation), returned line, death screen with `%{cause}` slot, bag title/empty/back, three enemy names (rabid_hare / rabid_fox / rabid_wolf).
+
+### Design choices to remember
+- **Status card on every step**: each step posts a fresh message (not in-place edit), so the expedition reads as a scrolling narrative log. Old cards stay visible with their buttons; tapping a stale button just acts on current state, which is harmless.
+- **Bag view scoped to consumables**: deliberate. Mid-expedition the player can only usefully interact with food/potions. Gear/materials/artifacts flows live back at the estate. Full-inventory management during a run was explicitly rejected as overscope for 3.1.
+- **Resume on re-entry**: player can tap Explore from main menu (even after opening inventory from inside the expedition via the Bag button + stepping out). `showExploration` detects the existing `ExplorationState` row and resumes at the same `stepsDeep`. Only a deliberate 🔙 Return or death ends the expedition.
+- **Event weights are placeholders**: 40/30/25/5. User flagged they will tune these later. They're class constants at the top of `ExplorationService` for easy editing.
+- **Autobattle is intentionally dumb**: no dodge/accuracy/crit yet. Phase 4's real combat UI will replace `resolveAutobattle`; the `AutobattleResult` struct has the shape we'll need (playerWon, rounds, hpLost, hungerLost).
+
+### Next steps
+- 3.2 — Return-path visited-rooms memory + depth-decay "already explored" rolls.
+- 3.3 — Passive timed expeditions with 2h/day budget.
+- 3.4 — Mode exclusivity enforcement (active vs passive).
+- Phase 4 — real combat UI replacing the autobattle stub.

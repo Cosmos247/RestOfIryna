@@ -29,7 +29,7 @@
 - [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Inventory/Estate/Capital nav buttons
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
-- [x] ExplorationController — stub (coming-soon message + back), reserved for Phase 3
+- [x] ExplorationController — Phase 3.1 active-mode MVP: step → outcome narrative (nothing / loot / trip / encounter / starvation) with depth+HP+hunger status card, in-expedition bag view (scoped to consumables) with one-tap eat/use + in-place refresh, return-home button that ends ExplorationState, death flow that wipes non-equipped inventory and respawns at HP=1 (hunger preserved). Reply keyboard is [🚶 Step] [🎒 Bag] [🔙 Return] while expedition is active. Main/Inventory/Estate onExplore now call showExploration — resumes current ExplorationState (stepsDeep preserved across bag trips) or begins a fresh one at km 0.
 - [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
 - [x] CapitalController — stub (coming-soon message + back), reserved for Phase 6
 - [x] EstateController — tree nav (Phase 5.0 scaffolding): Root (estate name + level + optional per-level artwork) → [🏠 House] drilldown with Workshop/Kitchen/Warehouse stubs / [🌾 Plot] stub; main-nav pass-through; switches between editMessageText and editMessageCaption based on whether the root rendered as text or photo.
@@ -47,9 +47,10 @@
 - [x] Ukrainian (uk.json) — ~130 keys
 
 ### Services
-- [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist
+- [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
 - [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit)
+- [x] ExplorationService — rollStep (nothing / loot / trip / encounter / starvationOnly outcome), depth-aware loot pool (shallow vs medium), resolveAutobattle stub (alternating strikes, ±10% variance, safety cap 50 rounds) — Phase 4 CombatController will replace the autobattle with round-based UI. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
 
 ### Equipment (Phase 2.3 — done)
 - [x] 2.3.1 Slot design: `EquipmentSlot` enum (8 slots), `GearStats` struct, Item gains optional slot + gearStats. Starter gear wired: rusty_sword/simple_bow/wooden_staff → mainHand; leather_vest → chest.
@@ -66,7 +67,7 @@
 
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — `InventoryEntry.slotCap = 50` (non-equipped rows only). `add` throws `inventoryFull`; `canAccept` preflight. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/50 slots`.
-- [ ] 3.1 Active exploration MVP (ExplorationState model, step/return UI, autobattle stub for encounters)
+- [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (3 tier-1 enemies: rabid hare / fox / wolf with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + hunger/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
 - [ ] 3.2 Return path with visited-rooms state + depth-decay "already explored"
 - [ ] 3.3 Passive expedition (timed simulation, daily 2h budget, prep via current inventory)
 - [ ] 3.4 Mode exclusivity (active vs passive, main menu shows busy state)
@@ -76,7 +77,7 @@
 ## What's Planned (from GDD, not yet implemented)
 
 ### Controllers Needed
-- [~] ExplorationController — stub exists; needs timed room chain, events, dungeons
+- [~] ExplorationController — active-mode MVP landed (3.1); still needs passive-mode timed expedition (3.3), visited-rooms state with depth-decay "already explored" on the return path (3.2), mode exclusivity (3.4), dungeons (later phase)
 - [ ] CombatController — round-based PvE & PvP
 - [~] EstateController — Phase 5.0 navigation skeleton landed (Root → House + Plot stubs); still needs 30x30 grid editor, manor rooms' real logic, crafting flows
 - [~] CapitalController — stub exists; needs location menu, quests, stables, bank, chapel
@@ -90,7 +91,7 @@
 - [x] Inventory system (items + quantities) — code-based Item catalog + `inventory` table with InventoryEntry; helpers for add/remove/has/list
 - [x] Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory ×2) — `EquipmentSlot` enum + `equipped_slot` column + `EquipmentService`
 - [ ] Estate model (30x30 grid, manor layout, plots)
-- [ ] Exploration state (current km, timer, accumulated loot)
+- [~] Exploration state — active mode: ExplorationState (user_id + stepsDeep). Still needs timer + visited-rooms for passive mode.
 - [ ] Combat state (opponent, round, actions)
 - [ ] Pet model (stats, species, bond, role)
 - [ ] Guild model
@@ -101,7 +102,7 @@
 - [x] Class selection during registration (warrior/archer/mage)
 - [ ] Hunger system (drain, starvation, food)
 - [ ] XP/leveling system
-- [ ] Exploration loop (timed transitions, events, return prompts)
+- [~] Exploration loop — active-mode step/outcome/return/death wired (3.1). Still needs timed transitions (3.3 passive), return-path decay (3.2), mode exclusivity (3.4).
 - [ ] Combat engine (damage formula, round resolution)
 - [ ] Estate management (grid rendering, plot upgrades, production timers)
 - [ ] Crafting system (recipes, room tiers)
@@ -112,7 +113,7 @@
 - [ ] Tutorial/onboarding quest
 
 ### Content Needed
-- [ ] Bestiary (enemy types, stats, loot tables)
+- [~] Bestiary — 3 tier-1 enemies in code-based EnemyCatalog (rabid hare/fox/wolf) with depth ranges + loot tables. Needs more tiers + biome variety.
 - [ ] Recipe book (crafting recipes per tier)
 - [ ] Tuning curves (XP per level, hunger scaling, stat curves)
 - [ ] Quest definitions
@@ -120,4 +121,4 @@
 
 ---
 
-*Last updated: 2026-04-19 (main-menu nav buttons + stub controllers for Explore/Estate/Capital)*
+*Last updated: 2026-04-22 (Phase 3.1 active-exploration MVP: ExplorationState model, EnemyCatalog, ExplorationService, real ExplorationController with step/bag/return/death flow)*

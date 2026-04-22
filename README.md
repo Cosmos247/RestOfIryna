@@ -55,7 +55,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `RegistrationController` — lore-driven 6-step onboarding: language → Artanian welcome + name → class descriptions → King's Oath (grants class starter weapon) → wolf encounter with class-specific artwork (combat stub) → estate naming
    - `MainController` — town hub / main menu with Explore / Inventory / Estate / Capital / Profile / Settings nav
    - `SettingsController` — language, preferences
-   - `ExplorationController` *(stubbed)* — the timed wilderness loop
+   - `ExplorationController` — Phase 3.1 active-mode MVP: step/bag/return/death flow. Tapping 🗺 Explore enters a dedicated expedition UI with a reply keyboard `[🚶 Step] [🎒 Bag] [🔙 Return]`. Each step increments `stepsDeep`, drives `ExplorationService.rollStep` (weighted events: nothing / loot / encounter / trip), drains hunger + applies starvation HP on empty stomach, and narrates the outcome. Death wipes non-equipped inventory and respawns at HP=1 (hunger preserved). Passive timed mode lands in 3.3.
    - `EstateController` — tree nav: Root (per-level artwork, tiers 1–3 drawn) → House (Workshop / Kitchen stubs; Warehouse with real deposit/withdraw via `WarehouseService` — stackable types aggregate per item_id with counts on both sides, gear renders per physical row with a single-direction arrow) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `InventoryController` — tree navigation; root shows all 5 category buttons with counts plus a fullness indicator (X/50 slots); drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear is shown per-row (each physical unit is its own button, no `× N` aggregation) and toggles between 🛡 Equip / ❌ Unequip via EquipmentService, with a persistent per-item icon via `Item.icon`; artifact placeholder until TBD. Backpack is capped at 50 non-equipped slots — future exploration / warehouse withdraw respect this.
@@ -77,7 +77,7 @@ RestOfIryna/
 │   │   ├── RegistrationController.swift
 │   │   ├── SettingsController.swift
 │   │   ├── GlobalCommandsController.swift
-│   │   ├── ExplorationController.swift   # stub (Phase 3)
+│   │   ├── ExplorationController.swift   # Phase 3.1 active exploration (step/bag/return/death)
 │   │   ├── EstateController.swift        # Phase 5.0 skeleton: Root → House (room stubs) / Plot stub; per-level artwork
 │   │   ├── CapitalController.swift       # stub (Phase 6)
 │   │   └── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons
@@ -86,7 +86,9 @@ RestOfIryna/
 │   │   ├── User.swift
 │   │   ├── Item.swift            # static item catalog (code, not DB)
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers
-│   │   └── WarehouseEntry.swift  # per-user estate storage (separate table from inventory)
+│   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory)
+│   │   ├── ExplorationState.swift # one row per active expedition (user_id unique, stepsDeep)
+│   │   └── Enemy.swift           # code-based bestiary (EnemyCatalog) — 3 tier-1 enemies
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
@@ -97,12 +99,14 @@ RestOfIryna/
 │   │   ├── RemoveCrownsField.swift
 │   │   ├── AddEquipSlotToInventory.swift
 │   │   ├── AddGearBonuses.swift
-│   │   └── CreateWarehouse.swift
+│   │   ├── CreateWarehouse.swift
+│   │   └── CreateExplorationState.swift
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
 │   │   ├── EquipmentService.swift # atomic equip/unequip, bonus recomputation
-│   │   └── WarehouseService.swift # deposit/withdraw between inventory and warehouse
+│   │   ├── WarehouseService.swift # deposit/withdraw between inventory and warehouse
+│   │   └── ExplorationService.swift # step outcome roll + autobattle stub + loot drops
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system
