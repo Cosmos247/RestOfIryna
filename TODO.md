@@ -109,7 +109,7 @@
 
 ### 3.1 Active exploration MVP *(landed)*
 - [x] ExplorationState model + migration (user_id unique, stepsDeep)
-- [x] Enemy bestiary (code-based EnemyCatalog, 3 tier-1 enemies with depth ranges + loot tables)
+- [x] Enemy bestiary (code-based EnemyCatalog, 5 animals across 4 tiers — wild family: boar/moose/buffalo drops meat+hide; rabid family: lynx/wolf drops hide only)
 - [x] ExplorationService.rollStep — weighted events (nothing 40 / loot 30 / encounter 25 / trip 5), depth-aware loot, autobattle stub for encounters, hunger/starvation integration
 - [x] ExplorationController rewritten: step / bag (scoped to consumables) / return / death
 - [x] Reply keyboard [🚶 Step] [🎒 Bag] [🔙 Return] while expedition is active

@@ -284,15 +284,20 @@ Mechanically identical — same action set, same round structure. Differences:
 - **PvE:** opponent AI picks actions from a simple policy (aggression scaled by enemy type).
 - **PvP:** both players must act within a **30-second per-round timer** (`⚙️ TBD`). Timeout = Defend. Mutual 🤖 Auto resolves immediately.
 
-### Rabid Animals (initial bestiary stub)
+### Bestiary (current implementation)
 
-| Tier   | Examples                       | Depth range | Notes |
-|--------|--------------------------------|-------------|-------|
-| T1     | Rabid hare, rabid fox          | km 1–2      | Tutorial-tier, low damage |
-| T2     | Rabid wolf, rabid boar         | km 2–5      | Common, drops hides |
-| T3     | Rabid bear, rabid lynx         | km 5–7      | Tough, rare drops |
-| T4     | Plague-stag, dire wolf alpha   | km 7+       | Mini-boss, chance to tame |
-| Boss   | (Dungeon-only named beasts)    | dungeon     | Unique rewards |
+Two thematic families across a 20-km depth span. Wild animals are killable + cookable (drop raw meat + hide). Rabid animals are dangerous but their meat is poisoned by the plague — loot tables yield hide only.
+
+| Tier   | Animal                    | Family | Depth range | HP / ATK / DEF | Drops                 |
+|--------|---------------------------|--------|-------------|----------------|-----------------------|
+| T1     | 🐗 Wild Boar              | wild   | km 1–10     | 18 / 5 / 1     | raw meat + hide       |
+| T2     | 🫎 Wild Moose             | wild   | km 6–15     | 32 / 8 / 2     | raw meat ×2 + hide    |
+| T3     | 🦬 Wild Buffalo           | wild   | km 11–20    | 55 / 11 / 4    | raw meat ×2 + hide    |
+| T3     | 🐈‍⬛ Rabid Lynx            | rabid  | km 11–20    | 45 / 13 / 2    | hide (glass cannon)   |
+| T4     | 🐺 Rabid Wolf             | rabid  | km 16–20    | 70 / 15 / 4    | hide (top hostile)    |
+| Boss   | (Dungeon-only named beasts) | —    | dungeon     | TBD            | Unique rewards        |
+
+Full bestiary lives in code at `Swift/Models/Enemy.swift` (`EnemyCatalog`).
 
 Full bestiary to live in `content/bestiary.md` (to be created).
 
@@ -506,7 +511,7 @@ Guild members or mutually agreed pairs can form **non-aggression pacts** that di
 ### The First Hour
 
 1. Pick class & language.
-2. Tutorial quest from an NPC — walk to km 1, fight a rabid hare, come back.
+2. Tutorial quest from an NPC — walk to km 1, fight a wild boar, come back.
 3. Unlock first plot.
 4. Craft first food.
 5. Walk to km 3, return.

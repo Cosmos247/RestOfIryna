@@ -88,7 +88,7 @@ RestOfIryna/
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory)
 │   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, visited_rooms)
-│   │   └── Enemy.swift           # code-based bestiary (EnemyCatalog) — 3 tier-1 enemies
+│   │   └── Enemy.swift           # code-based bestiary (EnemyCatalog) — 5 animals across 4 tiers (wild + rabid families)
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift

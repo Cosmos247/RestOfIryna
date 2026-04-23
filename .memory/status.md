@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~205 keys
-- [x] Ukrainian (uk.json) — ~205 keys
+- [x] English (en.json) — ~207 keys
+- [x] Ukrainian (uk.json) — ~207 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
@@ -67,7 +67,7 @@
 
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — `InventoryEntry.slotCap = 50` (non-equipped rows only). `add` throws `inventoryFull`; `canAccept` preflight. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/50 slots`.
-- [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (3 tier-1 enemies: rabid hare / fox / wolf with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + hunger/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
+- [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (5 animals across 4 tiers: wild boar / moose / buffalo + rabid lynx / wolf, with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + hunger/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
 - [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table: fresh (20/40/30/10), reduced (50/20/20/10), bare (100/0/0/0 — only .nothing / .starvationOnly). Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
 - [x] Passive HP regen at the estate — 5% of maxHp per minute while the player is not on ANY expedition (active or passive) and hp < maxHp. `HealingService.tick(user:inExpedition:on:)` is called from `RouterStore.process` on every interaction (lazy compute, no background scheduler). `RouterStore` queries `ExplorationState.current` once per dispatch to derive `inExpedition`. `User.lastHpTickAt` column via `AddHpRegenTick` migration. Clock is cleared during expeditions and pinned to now at full HP, so banked regen never accumulates against future damage.
 - [x] 3.3 Passive expedition MVP (test-mode) — `AddPassiveExpeditionFields` migration adds `mode` / `ends_at` / `report_json` columns. `PassiveExpeditionService` handles duration picker (30/60/90 units — test mode = seconds, prod = minutes), starts via Task.detached running `runLive` (live per-step loop that sleeps between steps, tracks progress via `state.stepsDeep`, and exits early on death so the report pushes immediately instead of waiting the full timer), serializes a `PassiveReport` JSON on the state row, pushes the completion message to the player's chat, and re-arms itself on bot restart via `rescheduleInflight` (catches up any steps that fell during downtime). ExplorationController entry shows a mode picker [🏃 Розвідка / 🏕 Експедиція] when no state is present; countdown status for inflight; report delivery + state cleanup on re-open. Daily 2h budget and early-cancel still pending. `testMode` constant on the service — flip to prod before shipping.
@@ -114,7 +114,7 @@
 - [ ] Tutorial/onboarding quest
 
 ### Content Needed
-- [~] Bestiary — 3 tier-1 enemies in code-based EnemyCatalog (rabid hare/fox/wolf) with depth ranges + loot tables. Needs more tiers + biome variety.
+- [~] Bestiary — 5 animals across 4 tiers in code-based EnemyCatalog. Wild family (🐗 boar / 🫎 moose / 🦬 buffalo) drops raw meat + hide; rabid family (🐈‍⬛ lynx / 🐺 wolf) drops hide only. Depth ranges span 5-km tiers 1–20. Needs biome variety + more diverse drops later.
 - [ ] Recipe book (crafting recipes per tier)
 - [ ] Tuning curves (XP per level, hunger scaling, stat curves)
 - [ ] Quest definitions

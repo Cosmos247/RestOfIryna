@@ -10,6 +10,11 @@
 //  Auto) arrives in Phase 4; until then enemies die to the stub resolver in
 //  `ExplorationService.resolveAutobattle`.
 //
+//  Roster (2026-04-23): 5 animals across 4 tiers.
+//   - Wild family (🐗 🫎 🦬): killable + cookable; drop raw meat + hide.
+//   - Rabid family (🐈‍⬛ 🐺): dangerous; meat is spoiled by the plague,
+//     loot tables only yield hide.
+//
 
 import Foundation
 
@@ -67,38 +72,73 @@ public struct Enemy: Sendable {
 // MARK: - Catalog
 
 public enum EnemyCatalog {
+    // Tiers map to 5-km depth bands:
+    //   T1 = km 1–5  · T2 = km 6–10 · T3 = km 11–15 · T4 = km 16–20
+    // Each animal spans 1–2 consecutive tiers via `depthRange`.
+    //
+    // Two families:
+    //   - Wild (🐗 🫎 🦬): killable + cookable; drop raw meat + hide.
+    //   - Rabid (🐈‍⬛ 🐺): dangerous; meat is poisoned by disease, so
+    //     loot tables only include hide.
+    //
+    // Stats scale weakest → strongest in this order:
+    //   wild_boar → wild_moose → wild_buffalo → rabid_lynx → rabid_wolf.
     public static let all: [Enemy] = [
-        // Tier 1 — shallow forest (km 1–3)
+        // Wild Boar — first big game (T1–T2). Reliable meat + hide source.
         Enemy(
-            id: "enemy.rabid_hare",
-            nameKey: "enemy.rabid_hare",
-            tier: 1, hp: 15, attack: 4, defense: 1,
-            depthRange: 1...3,
+            id: "enemy.wild_boar",
+            nameKey: "enemy.wild_boar",
+            tier: 1, hp: 18, attack: 5, defense: 1,
+            depthRange: 1...10,
             lootTable: [
-                EnemyLootDrop(itemId: "mat.hide",   chance: 0.5),
-                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.4)
+                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.7, quantity: 1),
+                EnemyLootDrop(itemId: "mat.hide",      chance: 0.8, quantity: 1)
             ],
-            icon: "🐇"
+            icon: "🐗"
         ),
+        // Wild Moose — tier 2–3 forest mid-game.
         Enemy(
-            id: "enemy.rabid_fox",
-            nameKey: "enemy.rabid_fox",
-            tier: 1, hp: 22, attack: 6, defense: 2,
-            depthRange: 1...3,
+            id: "enemy.wild_moose",
+            nameKey: "enemy.wild_moose",
+            tier: 2, hp: 32, attack: 8, defense: 2,
+            depthRange: 6...15,
             lootTable: [
-                EnemyLootDrop(itemId: "mat.hide", chance: 0.7)
+                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
+                EnemyLootDrop(itemId: "mat.hide",      chance: 0.7, quantity: 1)
             ],
-            icon: "🦊"
+            icon: "🫎"
         ),
-        // Tier 2 — deeper forest (km 3–6)
+        // Wild Buffalo — tier 3–4 heavy game, high defense.
+        Enemy(
+            id: "enemy.wild_buffalo",
+            nameKey: "enemy.wild_buffalo",
+            tier: 3, hp: 55, attack: 11, defense: 4,
+            depthRange: 11...20,
+            lootTable: [
+                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
+                EnemyLootDrop(itemId: "mat.hide",      chance: 0.9, quantity: 1)
+            ],
+            icon: "🦬"
+        ),
+        // Rabid Lynx — tier 3–4 fast predator. Meat inedible (rabies).
+        Enemy(
+            id: "enemy.rabid_lynx",
+            nameKey: "enemy.rabid_lynx",
+            tier: 3, hp: 45, attack: 13, defense: 2,
+            depthRange: 11...20,
+            lootTable: [
+                EnemyLootDrop(itemId: "mat.hide", chance: 0.7, quantity: 1)
+            ],
+            icon: "🐈‍⬛"
+        ),
+        // Rabid Wolf — tier 4 top hostile. Meat inedible (rabies).
         Enemy(
             id: "enemy.rabid_wolf",
             nameKey: "enemy.rabid_wolf",
-            tier: 2, hp: 35, attack: 10, defense: 3,
-            depthRange: 3...6,
+            tier: 4, hp: 70, attack: 15, defense: 4,
+            depthRange: 16...20,
             lootTable: [
-                EnemyLootDrop(itemId: "mat.hide",     chance: 0.8),
-                EnemyLootDrop(itemId: "mat.old_iron", chance: 0.2)
+                EnemyLootDrop(itemId: "mat.hide", chance: 0.8, quantity: 1)
             ],
             icon: "🐺"
         ),

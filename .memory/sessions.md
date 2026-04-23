@@ -614,3 +614,36 @@ Active-mode loot narration upgraded from one-line-fits-all to per-item lore:
 - Foraging pool tightened to match the 8-item flavor list: shallow = forest_berries / forest_nuts / pine_lumber / river_pebble; medium = potato / duck_egg / clay / old_iron. `mat.hide` and `food.raw_meat` removed from the pool — both are now exclusively enemy-kill drops (semantically consistent with their lore descriptions).
 - Encounter loot (`.encounterWon` drops from enemy kill tables) still uses the plain `exploration.outcome.loot.picked/full` template since those aren't "foraging finds".
 - 9 new locale keys per locale (EN + UK, 205 total).
+
+### Bestiary expansion (same session)
+Pre-combat content pass — reshaped the roster around two thematic families:
+- **Wild animals** (killable + cookable): 🐗 wild_boar / 🫎 wild_moose / 🦬 wild_buffalo — drop `food.raw_meat` + `mat.hide`
+- **Rabid animals** (meat inedible, only hide): 🐈‍⬛ rabid_lynx / 🐺 rabid_wolf — drop `mat.hide` only
+
+Removed: `enemy.rabid_hare` and `enemy.rabid_fox` (not in the user's new spec). Tier distribution maps to 5-km bands:
+- T1 (km 1-5): boar
+- T2 (km 6-10): boar + moose
+- T3 (km 11-15): moose + buffalo + lynx
+- T4 (km 16-20): buffalo + lynx + wolf
+
+Stats ordered weakest → strongest: boar (hp 18 / atk 5 / def 1) → moose (32/8/2) → buffalo (55/11/4) → lynx (45/13/2 — glass cannon) → wolf (70/15/4 — top hostile). Each animal covers one or two consecutive tiers via its `depthRange`; wolf only spawns at tier 4. `mat.old_iron` was dropped from the wolf loot table to keep rabid drops hide-only per design.
+
+Also updated the file header comment and 4 new/renamed locale keys per locale (enemy.wild_boar / wild_moose / wild_buffalo / rabid_lynx added, rabid_hare / rabid_fox removed, wolf unchanged). Total 207 per locale.
+
+### Exploration outcome emoji → leading position (same session, 2026-04-23)
+Cosmetic pass on 5 exploration narration keys to put decorative emoji at the START without breaking Lingo interpolation. New rule refinement uncovered during the fix:
+
+**Lingo interpolation bug extends to BMP+VS16** (variation selector U+FE0F), not just surrogate-pair emoji. ⚔️ = ⚔ (U+2694) + VS16 = 2 UTF-16 units → breaks interpolation after it. ⚔ alone = 1 UTF-16 → SAFE. Single-UTF-16 BMP emojis (✨ ⚡ ❗ ❌ ⏳ ⭐ ⛔ ⛺ etc.) can all safely lead a string with placeholders. See `.memory/localization.md` for the refined rule + verified-safe set.
+
+Changes applied:
+- `exploration.outcome.trip`: trailing 🪨 → leading ❗
+- `exploration.outcome.encounter.won`: trailing ⚔️ → leading ⚔ (no VS16, single UTF-16)
+- `exploration.outcome.encounter.lost`: trailing 💀 → leading ❌
+- `exploration.outcome.starvation`: trailing 🥀 → leading ⏳
+- `exploration.death`: mid-message 💀 → leading ❌
+
+User confirmed ⚔ without VS16 renders as colour emoji on iOS/Android/Telegram Web; only macOS Telegram shows it text-style — acceptable tradeoff. Surrogate-pair originals (🪨 💀 🥀) had no single-UTF-16 equivalent so were swapped to thematic single-UTF-16 alternatives rather than preserved at end.
+
+Also flipped `resetDevProfile` back to `false` in `configure.swift` (dev profile state persists across restarts again).
+
+No locale count change (207/207). No code changes — cosmetic strings only.

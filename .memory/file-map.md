@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~205 keys)
-│   └── uk.json                     # Ukrainian strings (~205 keys)
+│   ├── en.json                     # English strings (~207 keys)
+│   └── uk.json                     # Ukrainian strings (~207 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -53,7 +53,7 @@ RestOfIryna/
     │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list/canAccept/slotsUsed helpers; 50-slot cap (equipped doesn't count)
     │   ├── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity helpers
     │   ├── ExplorationState.swift  # Fluent model: one row per active or passive expedition (user_id unique, stepsDeep, visited_rooms JSON dict, mode, ends_at, report_json). Presence = "exploring"; begin/beginPassive/current/end/allPassive helpers; recordVisit/visitCount + visitedRooms computed wrapper; isPassive/hasReadyReport/secondsRemaining queries; ExplorationMode enum (active / passive). The `returning` column still exists on the schema but isn't mapped here (dormant from an earlier 3.2 design pass).
-    │   └── Enemy.swift             # Static bestiary (EnemyLootDrop + Enemy struct + EnemyCatalog). Code-based like ItemCatalog. Phase 3.1 ships 3 tier-1 enemies (rabid hare/fox/wolf).
+    │   └── Enemy.swift             # Static bestiary (EnemyLootDrop + Enemy struct + EnemyCatalog). Code-based like ItemCatalog. 5 animals across 4 tiers: wild family (🐗 boar / 🫎 moose / 🦬 buffalo) drops meat+hide; rabid family (🐈‍⬛ lynx / 🐺 wolf) drops hide only.
     │
     ├── Migrations/
     │   ├── CreateUser.swift        # users table: id, telegram_id, router_name, locale, names

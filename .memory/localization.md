@@ -36,24 +36,35 @@ JSON: `"greeting.message": "Hey %{full-name}"`
 
 ### ⚠️ Lingo interpolation bug with multi-UTF-16 emoji
 
-**Rule:** `%{placeholder}` must appear BEFORE any multi-UTF-16 emoji (🏕 📏 ❤️ 🍖 🪨 etc. — anything from a surrogate-pair code point) in the localized string. If an emoji comes first, the interpolation after it will not substitute and the raw `%{name}` renders literally.
+**Rule:** Any character that is **more than one UTF-16 code unit** placed BEFORE a `%{placeholder}` in the source string breaks that (and every subsequent) interpolation — the raw `%{name}` renders literally.
 
-Observed cases:
+"Multi-UTF-16" covers two cases:
+1. **Surrogate-pair emoji** (supplementary plane, U+10000+): 🏕 📏 🍖 🪨 💀 🥀 🥩 🔥 etc. Count as 2 UTF-16 units each.
+2. **BMP character + VS16 variation selector (U+FE0F)**: ❤️ (U+2764 U+FE0F), ⚔️ (U+2694 U+FE0F), ⚠️ (U+26A0 U+FE0F). The VS16 forces colour emoji rendering but adds a second UTF-16 unit.
+
+Single-UTF-16 BMP emoji (default emoji presentation, no VS16) are **SAFE** before placeholders. Verified safe set: ✨ ⚡ ⭐ ✅ ❌ ❎ ❗ ❕ ❓ ❔ ⏳ ⌛ ⌚ ⏰ ⏩ ⏪ ⏫ ⏬ ➕ ➖ ➗ ➰ ➿ ⛔ ⛺ ⛲ ⛪ ⛵ ⛽ ⛅ ⛄ ⚓ ⚽ ⚾ ⚪ ⚫ ⭕ ☔ ☕ ⚔ (no VS16, see caveat below).
+
+Caveat on BMP-default chars like `⚔` / `☠` / `✂`: some have *text* presentation by default on certain platforms — on macOS the rendering can look monochrome/text-like, while iOS/Android/Web Telegram show the colour emoji. Test on target platforms if unsure; fallback is to swap to a `default_emoji_presentation` char (e.g. ⚡).
+
+Observed failure cases:
 - `"HP: %{before} → %{after} ❤️"` — works (placeholder before emoji)
-- `"❤️ HP: %{before} → %{after}"` — BROKEN (emoji before placeholder)
-- `"Очікуваний час повернення: %{time}. Намісник вирушив у похід 🏕."` — works (placeholder before any emoji)
-- `"Намісник вирушив у похід 🏕. Очікуваний час повернення: %{time}."` — BROKEN (🏕 before `%{time}`)
+- `"❤️ HP: %{before} → %{after}"` — BROKEN (BMP+VS16 before placeholder)
+- `"🏕 Очікуваний час повернення: %{time}."` — BROKEN (surrogate pair before `%{time}`)
+- `"⚔️ You defeated %{enemy}..."` — BROKEN (⚔ + VS16 before placeholder)
+- `"⚔ You defeated %{enemy}..."` — works (⚔ WITHOUT VS16, single UTF-16)
 
-Single-UTF-16 chars (`❤` without the VS16 variation selector, `+`, Cyrillic/Latin letters) before a placeholder are FINE — only surrogate-pair emoji cause the issue.
+**Current ROI convention** (exploration outcome keys): decorative emoji goes at the START using the safe set:
+- `trip` → `❗` · `encounter.won` → `⚔` (no VS16) · `encounter.lost` / `death` → `❌` · `starvation` → `⏳`
+- Surrogate-pair emoji stays trailing when it can't be swapped (`🏰`, `🎒`).
 
-Fix pattern: rewrite so `%{...}` is the first dynamic token, with emoji/decoration trailing.
+Fix pattern: either swap the leading emoji for a safe single-UTF-16 equivalent, or move it to the end so `%{...}` is the first dynamic token.
 
 ### With SupportedLocale enum (via Lingo+Locales.swift extension)
 ```swift
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~205 per locale)
+## Current Keys (~207 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
@@ -70,7 +81,7 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Exploration visit-decay variants (Phase 3.2): three `.nothing` narratives — exploration.outcome.nothing (fresh, prior visits = 0), exploration.outcome.nothing.revisited (thinned, prior visits = 1), exploration.outcome.nothing.bare (depleted, prior visits ≥ 2)
 - Passive expedition (Phase 3.3): exploration.mode.prompt/active/passive (mode picker), exploration.duration.prompt/30m/1h/1h30m/back (duration picker), exploration.passive.started/inflight (confirmation + countdown, with %{time} interpolation), exploration.passive.test_mode_hint, exploration.passive.report.title/depth/hp/hunger/events_header/loot_header/no_loot/loot_partial/death/close (report rendering), exploration.passive.outcome.nothing/loot/encounter_won/encounter_lost/trip/starvation (one-word labels for outcome histogram)
 - Mode exclusivity (Phase 3.4): capital.blocked_by_expedition (capital entry guard notice). The Explore keyboard label is static — gating happens at entry via showExploration's passive-countdown branch.
-- Enemies (Phase 3.1): enemy.rabid_hare, enemy.rabid_fox, enemy.rabid_wolf
+- Enemies: enemy.wild_boar, enemy.wild_moose, enemy.wild_buffalo, enemy.rabid_lynx, enemy.rabid_wolf (Phase 3.5 bestiary — 5 animals across 4 tiers)
 - Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
 
