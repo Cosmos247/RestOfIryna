@@ -53,11 +53,33 @@ Observed failure cases:
 - `"⚔️ You defeated %{enemy}..."` — BROKEN (⚔ + VS16 before placeholder)
 - `"⚔ You defeated %{enemy}..."` — works (⚔ WITHOUT VS16, single UTF-16)
 
-**Current ROI convention** (exploration outcome keys): decorative emoji goes at the START using the safe set:
-- `trip` → `❗` · `encounter.won` → `⚔` (no VS16) · `encounter.lost` / `death` → `❌` · `starvation` → `⏳`
-- Surrogate-pair emoji stays trailing when it can't be swapped (`🏰`, `🎒`).
+### 🟢 Preferred pattern for decorative emoji + interpolation (GO-FORWARD RULE)
 
-Fix pattern: either swap the leading emoji for a safe single-UTF-16 equivalent, or move it to the end so `%{...}` is the first dynamic token.
+**Any localized string with `%{...}` interpolations should NOT have a leading emoji in its Lingo template.** Put the emoji in Swift code, prepended after `lingo.localize(...)` returns:
+
+```swift
+// ❌ DON'T — ⚔️ in template breaks %{enemy} / %{rounds} / %{hp} / %{hunger}
+"exploration.outcome.encounter.won": "⚔️ You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{hunger} hunger"
+let text = lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [...])
+
+// ✅ DO — emoji prepended in code
+"exploration.outcome.encounter.won": "You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{hunger} hunger"
+let text = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [...])
+```
+
+This bypasses the Lingo bug entirely — Lingo sees a clean placeholder-only template, interpolation works, and Swift handles the visual decoration with any emoji (surrogate-pair, BMP+VS16, or single BMP). No audit needed, no trap for new emoji swaps.
+
+**Applied in ROI at (2026-04-23):**
+- `ExplorationController.narrateOutcome`: `.trip` → `🪨 `, `.encounterWon` → `⚔️ `, `.encounterLost` → `💀 `, `.starvationOnly` → `🥀 `
+- `ExplorationController.handleDeath`: `"💀 " + lingo.localize("exploration.death", ...)`
+
+**For non-interpolated keys** (plain `"🏰 Ти повертаєшся додому."` with no `%{...}`), emoji can live anywhere in the template — the bug only fires when interpolation is involved. But if you ever ADD a placeholder to an existing key that starts with a multi-UTF-16 emoji, move the emoji to the Swift call site at the same time.
+
+### Legacy fix options (when you can't touch Swift)
+
+If you must keep the emoji in the template for some reason:
+1. Use a safe single-UTF-16 BMP emoji (see verified-safe set above).
+2. Move the emoji to the END so `%{...}` is the first dynamic token.
 
 ### With SupportedLocale enum (via Lingo+Locales.swift extension)
 ```swift

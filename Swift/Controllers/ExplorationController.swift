@@ -163,11 +163,18 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Mode picker: inline keyboard with [Reconnaissance] / [Expedition].
-    /// Reply keyboard stays whatever the player had (usually main's) so they
-    /// can still navigate away. Callbacks land on this controller because we
-    /// set routerName = "exploration".
+    /// Player stays in MainController's routerName so tapping any main-menu
+    /// button (Profile, Estate, Capital, Inventory, Settings) works
+    /// natively — those handlers call `dismissPendingPicker` at the top,
+    /// which deletes this message from chat. The picker's `explore:mode:*`
+    /// inline callbacks still land here because MainController.onCallbackQuery
+    /// forwards every `explore:*`-prefixed callback to ExplorationController.
     fileprivate func showModePicker(context: Context) async throws {
-        context.session.routerName = routerName
+        // Clean up any previously shown picker (user re-tapped Explore
+        // without committing to a mode) so we never have two pickers live.
+        await dismissPendingPicker(context: context)
+
+        context.session.routerName = Controllers.mainController.routerName
         try await context.session.saveAndCache(in: context.db)
 
         let lingo = context.lingo
@@ -179,11 +186,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
             [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
         ])
-        try await context.bot.sendMessage(
-            session: context.session,
+        let params = TGSendMessageParams(
+            chatId: .chat(context.session.telegramId),
             text: prompt,
             parseMode: .html,
             replyMarkup: .inlineKeyboardMarkup(inline)
+        )
+        let sent = try await context.bot.sendMessage(params: params)
+        await EphemeralChatState.shared.setPicker(
+            telegramId: context.session.telegramId,
+            messageId: sent.messageId
         )
     }
 
@@ -254,33 +266,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// responsible for having already deleted the state so even if this
     /// method throws, the state doesn't linger and cause a duplicate
     /// delivery on the next Explore tap.
+    ///
+    /// Rendered as a single combined message (home-again line + report body)
+    /// with the main reply keyboard so Estate / Capital etc. are usable
+    /// right away. Same shape as the scheduler push.
     fileprivate func deliverPassiveReport(context: Context, reportJSON: String?) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
 
+        context.session.routerName = Controllers.mainController.routerName
+        try await context.session.saveAndCache(in: context.db)
+
+        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
+        let text: String
         if let json = reportJSON,
            let data = json.data(using: .utf8),
            let report = try? JSONDecoder().decode(PassiveReport.self, from: data) {
-            let text = PassiveExpeditionService.renderReport(report, lingo: lingo, locale: locale)
-            let closeLabel = lingo.localize("exploration.passive.report.close", locale: locale)
-            let markup = TGInlineKeyboardMarkup(inlineKeyboard: [[
-                TGInlineKeyboardButton(text: closeLabel, callbackData: "explore:passive:close")
-            ]])
-            try await context.bot.sendMessage(
-                session: context.session,
-                text: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(markup)
-            )
+            let reportText = PassiveExpeditionService.renderReport(report, lingo: lingo, locale: locale)
+            text = "\(homeText)\n\n\(reportText)"
+        } else {
+            text = homeText
         }
-
-        // Drop back to main with the "back at the estate" text so the
-        // cycle closes with a consistent signal whether the player clicks
-        // Close on the pushed inline or re-opens via the Explore button.
-        context.session.routerName = Controllers.mainController.routerName
-        try await context.session.saveAndCache(in: context.db)
-        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
-        try await Controllers.mainController.showMainMenu(context: context, text: homeText)
+        try await Controllers.mainController.showMainMenu(context: context, text: text)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -481,7 +488,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
 
-        let deathText = lingo.localize("exploration.death", locale: locale, interpolations: ["cause": cause])
+        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": cause])
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
@@ -539,18 +546,21 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             }
 
         case .trip(let hpLost):
-            return lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
+            // Leading 🦵 is prepended here (post-interpolation) because Lingo
+            // drops interpolations after a multi-UTF-16 emoji in the template.
+            return "🦵 " + lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
                 "hp": "\(hpLost)"
             ])
 
         case .encounterWon(let enemy, let rounds, let hpLost, let hungerLost, let loot):
             let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
-            var parts = [lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [
+            let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)",
                 "hp": "\(hpLost)",
                 "hunger": "\(hungerLost)"
-            ])]
+            ])
+            var parts = [header]
             for drop in loot {
                 let label = itemLabelWithIcon(drop.itemId, lingo: lingo, locale: locale)
                 let key = drop.picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
@@ -563,13 +573,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         case .encounterLost(let enemy, let rounds, _, _):
             let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
-            return lingo.localize("exploration.outcome.encounter.lost", locale: locale, interpolations: [
+            return "💀 " + lingo.localize("exploration.outcome.encounter.lost", locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)"
             ])
 
         case .starvationOnly(let hpLost):
-            return lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
+            return "🥀 " + lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
                 "hp": "\(hpLost)"
             ])
         }
@@ -582,8 +592,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         return itemId
     }
 
-    /// Prepend the item's glyph (e.g. 🌲 for pine lumber) to its localized
-    /// name so loot lines read as "+2 🌲 Pine Lumber". Returns the bare
+    /// Prepend the item's glyph (e.g. 🪵 for pine lumber) to its localized
+    /// name so loot lines read as "+2 🪵 Pine Lumber". Returns the bare
     /// name if the item has no icon or isn't in the catalog.
     private func itemLabelWithIcon(_ itemId: String, lingo: Lingo, locale: String) -> String {
         guard let item = ItemCatalog.find(itemId) else { return itemId }
@@ -718,18 +728,9 @@ extension ExplorationController {
             )
             _ = try? await context.bot.editMessageText(params: editParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-
-            // Send a fresh main-menu message so the reply keyboard is restored
-            // (the previous one was expedition's step/back/bag if the player
-            // just finished an active run).
-            let mainCtrl = Controllers.mainController
-            let replyKb = mainCtrl.generateControllerKB(session: context.session, lingo: context.lingo)
-            try await context.bot.sendMessage(
-                session: context.session,
-                text: "🏰",
-                parseMode: .html,
-                replyMarkup: replyKb
-            )
+            // No extra keyboard-restoring message: the player came from the
+            // main menu (picker never swapped the reply keyboard) so the
+            // main keyboard is still in place.
             return true
         }
 

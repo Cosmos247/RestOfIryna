@@ -647,3 +647,27 @@ User confirmed ⚔ without VS16 renders as colour emoji on iOS/Android/Telegram 
 Also flipped `resetDevProfile` back to `false` in `configure.swift` (dev profile state persists across restarts again).
 
 No locale count change (207/207). No code changes — cosmetic strings only.
+
+### UX bug-fix pass (2026-04-23)
+Cluster of six user-reported UX fixes + catalog tweaks, unified under one commit theme.
+
+**1. Mode-picker no longer traps main-menu buttons.** Previously `showModePicker` set `routerName = "exploration"`, so tapping Profile / Estate / Capital / Inventory / Settings while the picker was visible fell through to `ExplorationController.unmatched` → re-rendered the picker. Now the picker keeps `routerName = "main"` (callbacks still reach ExplorationController via the existing `explore:*` callback forwarding in MainController.onCallbackQuery). Added `Swift/Helpers/EphemeralChatState.swift` — in-memory actor caching transient picker message IDs per user — and a `dismissPendingPicker(context:)` helper on `TGControllerBase`. Every MainController main-menu handler (`onStart`, `onSettings`, `onProfile`, `onEstate`, `onCapital`, `onInventory`) calls `dismissPendingPicker` at the top, which deletes the cached picker via `deleteMessage`. No migration — in-memory is enough since stale pickers in chat history after a bot restart just behave like a live picker if tapped (harmless).
+
+**2. Passive expedition completion delivers as one message, no Close button, state auto-cleared.** Previously `pushReportNotification` sent the report with a `[🔙 Close]` inline button and left the state row in DB until the user tapped Close — players were forgetting to tap it, keeping Estate / Capital locked. Now the scheduler push sends a **single combined message** (home-again line + report body, no inline keyboard) and calls `ExplorationState.end` immediately on success. If either send throws, state is preserved and `deliverPassiveReport` retries on the next Explore tap. Same treatment in `deliverPassiveReport` for the controller-delivered path. The `explore:passive:close` callback handler is kept for backwards compat with any Close button in pre-fix chat history but is no longer reachable via new messages. The `exploration.passive.report.close` locale key is dead but kept (small; easier to restore a Close button later if needed).
+
+**3. Loot lines in the report now include per-item icons.** `PassiveExpeditionService.renderReport` prepends `Item.icon` to each loot entry name — `🥔 Картопля × 3` / `🪵 Сосновий брус × 1`. Icon is prepended in Swift (not inside the `%{dropped}` Lingo template) so surrogate-pair emoji don't break interpolation. Same safety pattern is documented in `.memory/localization.md` as the go-forward rule.
+
+**4. Redundant bare "🏰" send removed.** After starting a passive expedition (`explore:dur:*` callback), a standalone `"🏰"` message was being sent to restore the main reply keyboard. With fix #1, `routerName` stays at main during the picker + duration picker, so the reply keyboard never gets swapped and the "🏰" message was pure noise. Removed.
+
+**5. Catalog emoji swaps + raw-meat made inedible.**
+- `Item.swift` — `mat.pine_lumber` icon: 🌲 → 🪵 (processed lumber vs. the tree; 🌲 stays in the flavor text for the discovery moment).
+- `ExplorationController.narrateOutcome.trip` + `exploration.passive.outcome.trip` (both locales): prefix 🪨 → 🦵 (tripping is a leg thing, not a rock thing; 🪨 stays as `river_pebble`'s icon and `material` category icon).
+- `Item.swift` — `food.raw_meat.effects: []` (was `[.restoreHunger(30)]`). Raw meat now needs to be cooked in the Kitchen before it's edible, same pattern as `food.potato`. Both share the `consume.not_raw_edible` toast. Active mode's Eat button + Inventory's Use button both check `item.effects.isEmpty` before calling `HungerService.consume`. Kitchen cooking will come in Phase 5.
+
+**6. Foraging flavor emoji moved to sentence start in all 8 `exploration.find.*` keys.** Previously emoji was at the end or mid-sentence ("Ви знайшли повалену сосну 🌲, ..."). Now it's the first character ("🌲 Ви знайшли повалену сосну, ..."). Safe because these keys have no `%{...}` interpolations. Same pattern for both locales (16 string edits total).
+
+**7. Passive-expedition `.inflight` string rephrased.** uk "Очікуваний час повернення: %{time}" / "Очікуваний час прибуття: %{time}" (colon) → "через %{time}" (preposition). Matching en update: "Expected return: %{time}" → "Expected arrival in %{time}. Your governor is still on expedition 🏕."
+
+**8. Leading emoji on exploration narration reverted to original surrogate-pair glyphs via code prefix.** Earlier in the session we had swapped `🪨/⚔️/💀/🥀` for safe single-UTF-16 equivalents (`❗/⚔/❌/⏳/❌`) in the JSON templates. User preferred the original colourful surrogate-pair glyphs. Final approach: Lingo template stays placeholder-first (no leading emoji), Swift prepends the original `🪨/⚔️/💀/🥀/💀` (for trip / encounter.won / encounter.lost / starvation / death) after `lingo.localize(...)`. This is the GO-FORWARD rule documented in `.memory/localization.md` — any localized string with interpolations should not have a leading emoji in its Lingo template; put decoration in Swift.
+
+No locale count change (still 207/207). `.memory/localization.md` expanded with the go-forward rule + verified-safe single-UTF-16 BMP emoji allowlist. New file: `Swift/Helpers/EphemeralChatState.swift`.

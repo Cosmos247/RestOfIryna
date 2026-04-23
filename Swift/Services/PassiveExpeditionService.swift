@@ -331,7 +331,7 @@ public enum PassiveExpeditionService {
         }
 
         do {
-            try await pushReportNotification(state: state, user: user, bot: bot, lingo: lingo)
+            try await pushReportNotification(state: state, user: user, bot: bot, lingo: lingo, db: db)
         } catch {
             appState?.logger.warning("Passive report push failed: \(error)")
         }
@@ -399,11 +399,19 @@ public enum PassiveExpeditionService {
     /// Send the completion message directly to the user's chat. Called from
     /// the background task, so we don't have a Context — pull the bot from
     /// `appState` and locale from the user row.
+    ///
+    /// Two messages, in order: a "back at the estate" line (unlocks the
+    /// player's perception of being home again) then the report itself as
+    /// plain text. No Close button — we delete the state row immediately so
+    /// Estate / Capital unblock the instant the expedition ends, without
+    /// waiting for a user tap. The report lives in chat history as a
+    /// reference.
     private static func pushReportNotification(
         state: ExplorationState,
         user: User,
         bot: TGBot,
-        lingo: Lingo
+        lingo: Lingo,
+        db: any Database
     ) async throws {
         guard let reportJSON = state.reportJSON,
               let data = reportJSON.data(using: .utf8),
@@ -411,20 +419,22 @@ public enum PassiveExpeditionService {
             return
         }
         let locale = user.locale
-        let text = renderReport(report, lingo: lingo, locale: locale)
+        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
+        let reportText = renderReport(report, lingo: lingo, locale: locale)
 
-        let closeLabel = lingo.localize("exploration.passive.report.close", locale: locale)
-        let markup = TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: closeLabel, callbackData: "explore:passive:close")
-        ]])
-
-        let params = TGSendMessageParams(
+        // Single combined message — home-again line first, report body below.
+        // Let send errors propagate so `finalizeAndPush` logs + skips the
+        // state delete below (controller will retry via `deliverPassiveReport`
+        // on the next Explore tap).
+        _ = try await bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(user.telegramId),
-            text: text,
-            parseMode: .html,
-            replyMarkup: .inlineKeyboardMarkup(markup)
-        )
-        _ = try? await bot.sendMessage(params: params)
+            text: "\(homeText)\n\n\(reportText)",
+            parseMode: .html
+        ))
+
+        // Auto-close the expedition cycle — delete state so the next Explore
+        // tap shows a fresh mode picker and nav buttons unlock immediately.
+        try? await ExplorationState.end(for: user, on: db)
     }
 
     // MARK: Report rendering
@@ -477,9 +487,14 @@ public enum PassiveExpeditionService {
                 lines.append(lingo.localize("exploration.passive.report.no_loot", locale: locale))
             } else {
                 for entry in report.loot {
-                    let itemName = ItemCatalog.find(entry.itemId)
-                        .map { lingo.localize($0.nameKey, locale: locale) } ?? entry.itemId
-                    var line = "• \(itemName) × \(entry.pickedQuantity)"
+                    // Icon is prepended in Swift code (not inside the Lingo
+                    // template) so surrogate-pair emoji on items like 🥔 🥩 🪨
+                    // don't break the `%{dropped}` interpolation on partial
+                    // pickups. See `.memory/localization.md`.
+                    let item = ItemCatalog.find(entry.itemId)
+                    let itemName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? entry.itemId
+                    let label = item?.icon.map { "\($0) \(itemName)" } ?? itemName
+                    var line = "• \(label) × \(entry.pickedQuantity)"
                     if entry.droppedQuantity > 0 {
                         line += lingo.localize("exploration.passive.report.loot_partial", locale: locale, interpolations: ["dropped": "\(entry.droppedQuantity)"])
                     }

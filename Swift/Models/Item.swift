@@ -92,7 +92,7 @@ public struct Item: Sendable {
     /// Set only for gear items — bonuses applied while equipped.
     public let gearStats: GearStats?
     /// Per-item display glyph shown next to the name in the inventory list
-    /// (e.g. ⚔️ for a sword, 🏹 for a bow, 🌲 for pine lumber). Shown regardless
+    /// (e.g. ⚔️ for a sword, 🏹 for a bow, 🪵 for pine lumber). Shown regardless
     /// of whether the item is equipped. Distinct from `ItemType.icon`, which is
     /// the type-level header glyph used in the root-category buttons.
     public let icon: String?
@@ -142,12 +142,12 @@ public enum ItemCatalog {
         Item(id: "food.duck_egg",       nameKey: "item.food.duck_egg",       type: .food, tier: 1, stackable: true,
              effects: [.restoreHunger(25)], icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
         Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(30)], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
+             effects: [], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
 
         // Materials — estate-upgrade resources. Icons + descriptions show
         // on the inventory info-button modal.
         Item(id: "mat.pine_lumber",     nameKey: "item.mat.pine_lumber",    type: .material, tier: 1, stackable: true,  effects: [],
-             icon: "🌲", descriptionKey: "item.mat.pine_lumber.desc"),
+             icon: "🪵", descriptionKey: "item.mat.pine_lumber.desc"),
         Item(id: "mat.river_pebble",    nameKey: "item.mat.river_pebble",   type: .material, tier: 1, stackable: true,  effects: [],
              icon: "🪨", descriptionKey: "item.mat.river_pebble.desc"),
         Item(id: "mat.clay",            nameKey: "item.mat.clay",           type: .material, tier: 1, stackable: true,  effects: [],

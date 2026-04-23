@@ -95,8 +95,9 @@ RestOfIryna/
     │       └── HummingbirdTGClient.swift # TGClientPrtcl impl using AsyncHTTPClient
     │
     └── Helpers/
-        ├── TGBot+Extensions.swift  # TGControllerBase, Context.session, TGMessage helpers
+        ├── TGBot+Extensions.swift  # TGControllerBase (+ dismissPendingPicker), Context.session, TGMessage helpers
         ├── SessionCache.swift      # Actor-based user cache (5min TTL, auto-cleanup)
         ├── Lingo+Locales.swift     # Lingo convenience: accept SupportedLocale enum
+        ├── EphemeralChatState.swift # Actor — in-memory cache of transient message IDs (mode-picker → auto-delete on navigation)
         └── DotEnv+Env.swift        # Env helper: get env vars with fallback to .env file
 ```

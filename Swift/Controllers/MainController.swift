@@ -53,6 +53,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     public func onStart(context: Context) async throws -> Bool {
+        await dismissPendingPicker(context: context)
         try await showMainMenu(context: context)
         return true
     }
@@ -67,6 +68,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onSettings(context: Context) async throws -> Bool {
+        await dismissPendingPicker(context: context)
         let settingsController = Controllers.settingsController
         try await settingsController.showSettingsMenu(context: context)
         context.session.routerName = settingsController.routerName
@@ -75,6 +77,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onProfile(context: Context) async throws -> Bool {
+        await dismissPendingPicker(context: context)
         try await showProfile(context: context)
         return true
     }
@@ -89,6 +92,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // showEstate owns the routerName transition so it can bail out with
         // a "governor away" notice without leaving routerName in the wrong
         // state.
+        await dismissPendingPicker(context: context)
         try await Controllers.estateController.showEstate(context: context)
         return true
     }
@@ -97,11 +101,13 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // showStub owns the routerName transition so it can bail out with a
         // "governor away" notice without leaving routerName in the wrong
         // state.
+        await dismissPendingPicker(context: context)
         try await Controllers.capitalController.showStub(context: context)
         return true
     }
 
     private func onInventory(context: Context) async throws -> Bool {
+        await dismissPendingPicker(context: context)
         let controller = Controllers.inventoryController
         try await controller.showInventory(context: context)
         context.session.routerName = controller.routerName

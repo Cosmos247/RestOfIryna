@@ -49,6 +49,17 @@ public class TGControllerBase: @unchecked Sendable {
         await store.set(router, forKey: routerName)
         // }
     }
+
+    /// If a stale Exploration mode picker is still in chat, delete it.
+    /// Called at the top of main-menu handlers so that tapping e.g. Profile
+    /// while the picker is open cleanly removes the picker rather than
+    /// leaving it as a ghost with live buttons.
+    internal func dismissPendingPicker(context: Context) async {
+        let telegramId = context.session.telegramId
+        guard let messageId = await EphemeralChatState.shared.takePicker(telegramId: telegramId) else { return }
+        let params = TGDeleteMessageParams(chatId: .chat(telegramId), messageId: messageId)
+        _ = try? await context.bot.deleteMessage(params: params)
+    }
 }
 
 extension TGMaybeInaccessibleMessage {
