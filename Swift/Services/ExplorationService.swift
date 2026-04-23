@@ -128,12 +128,16 @@ public enum ExplorationService {
     // MARK: - Private rolls
 
     private static func rollLoot(for user: User, kmDepth: Int, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
-        // Depth-aware loot pool. Shallow forest: berries, herbs, wood. Deeper: iron, hides.
+        // Depth-aware FORAGING pool — only items the governor can physically
+        // find on the trail. Hide / raw meat are deliberately NOT here; they
+        // drop exclusively from enemy kills via EnemyCatalog loot tables.
+        // Each itemId listed here has a matching `exploration.find.<id>`
+        // locale key with a per-item flavor line.
         let shallow = ["food.forest_berries", "food.forest_nuts", "mat.pine_lumber", "mat.river_pebble"]
-        let medium  = ["mat.hide", "mat.old_iron", "mat.clay", "food.duck_egg", "food.raw_meat"]
+        let medium  = ["food.potato", "food.duck_egg", "mat.clay", "mat.old_iron"]
         let pool = kmDepth <= 2 ? shallow : (kmDepth <= 5 ? shallow + medium : medium)
         let itemId = pool.randomElement() ?? "mat.pine_lumber"
-        let quantity = 1
+        let quantity = Int.random(in: 1...2)
 
         // Apply any starvation HP loss first.
         if extraStarvation > 0 {

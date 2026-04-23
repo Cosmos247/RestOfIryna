@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~196 keys)
-│   └── uk.json                     # Ukrainian strings (~196 keys)
+│   ├── en.json                     # English strings (~205 keys)
+│   └── uk.json                     # Ukrainian strings (~205 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative

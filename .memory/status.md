@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~196 keys
-- [x] Ukrainian (uk.json) — ~196 keys
+- [x] English (en.json) — ~205 keys
+- [x] Ukrainian (uk.json) — ~205 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
@@ -122,4 +122,4 @@
 
 ---
 
-*Last updated: 2026-04-22 (Phase 3.4 mode exclusivity landed — busy-label main keyboard, picker idempotency, capital blocked during expedition)*
+*Last updated: 2026-04-23 (per-item foraging flavor + icons in loot lines; random 1-2 stacks)*

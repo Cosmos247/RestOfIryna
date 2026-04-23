@@ -605,3 +605,12 @@ Implementation:
 - `configure.swift` dev seed refreshed: forest_berries × 3, forest_nuts × 2, duck_egg × 1, raw_meat × 1, potato × 2. Bread/stew removed from seed.
 - Migration `RenameFoodIds` renames berry → forest_berries in `inventory` + `warehouse`, and DELETEs bread/stew/roast rows (no replacement mapping; orphan cleanup via dev seed handles the dev side but the explicit delete covers any non-dev DB rows too). Registered right after `RenameMaterialIds`.
 - 11 new locale keys per locale (EN + UK): 5 new names (forest_berries, forest_nuts, potato, duck_egg, raw_meat) + 5 descriptions + `consume.not_raw_edible` with `%{name}` interpolation. Total 196 per locale.
+
+### Per-item foraging flavor (same session, 2026-04-23)
+Active-mode loot narration upgraded from one-line-fits-all to per-item lore:
+- 8 new `exploration.find.<item_id>` keys per locale — one flavor sentence per foraging item. E.g. "Ви знайшли повалену сосну 🌲, ідеально придатну для обробки." for `mat.pine_lumber`.
+- `ExplorationController.narrateOutcome` `.loot` case now picks the per-item flavor when present (Lingo returns the key verbatim on miss — we detect that and fall back to the pre-existing generic `exploration.outcome.loot.picked/full` template). When found, renders `<flavor>\n<b>+N ItemName</b>` for pickups and appends `<i>Сумка повна — лишається на землі.</i>` (new `exploration.outcome.loot.bag_full` key) for full-bag drops.
+- Quantity is now `Int.random(in: 1...2)` — foraged stacks come in 1s or 2s rather than always 1.
+- Foraging pool tightened to match the 8-item flavor list: shallow = forest_berries / forest_nuts / pine_lumber / river_pebble; medium = potato / duck_egg / clay / old_iron. `mat.hide` and `food.raw_meat` removed from the pool — both are now exclusively enemy-kill drops (semantically consistent with their lore descriptions).
+- Encounter loot (`.encounterWon` drops from enemy kill tables) still uses the plain `exploration.outcome.loot.picked/full` template since those aren't "foraging finds".
+- 9 new locale keys per locale (EN + UK, 205 total).

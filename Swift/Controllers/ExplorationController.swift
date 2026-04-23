@@ -516,12 +516,27 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return lingo.localize(key, locale: locale)
 
         case .loot(let itemId, let quantity, let picked):
-            let itemName = itemNameOrId(itemId, lingo: lingo, locale: locale)
-            let key = picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
-            return lingo.localize(key, locale: locale, interpolations: [
-                "item": itemName,
-                "qty": "\(quantity)"
-            ])
+            let label = itemLabelWithIcon(itemId, lingo: lingo, locale: locale)
+            // Per-item foraging flavor text if one exists; Lingo returns the
+            // key verbatim when no translation is registered, which we
+            // detect and fall back to the generic loot.picked/full template.
+            let findKey = "exploration.find.\(itemId)"
+            let flavor = lingo.localize(findKey, locale: locale)
+            if flavor != findKey {
+                let qtyLine = "<b>+\(quantity) \(label)</b>"
+                if picked {
+                    return "\(flavor)\n\(qtyLine)"
+                } else {
+                    let bagFull = lingo.localize("exploration.outcome.loot.bag_full", locale: locale)
+                    return "\(flavor)\n\(qtyLine)\n<i>\(bagFull)</i>"
+                }
+            } else {
+                let fallbackKey = picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
+                return lingo.localize(fallbackKey, locale: locale, interpolations: [
+                    "item": label,
+                    "qty": "\(quantity)"
+                ])
+            }
 
         case .trip(let hpLost):
             return lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
@@ -537,10 +552,10 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "hunger": "\(hungerLost)"
             ])]
             for drop in loot {
-                let itemName = itemNameOrId(drop.itemId, lingo: lingo, locale: locale)
+                let label = itemLabelWithIcon(drop.itemId, lingo: lingo, locale: locale)
                 let key = drop.picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
                 parts.append(lingo.localize(key, locale: locale, interpolations: [
-                    "item": itemName,
+                    "item": label,
                     "qty": "\(drop.quantity)"
                 ]))
             }
@@ -565,6 +580,18 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return lingo.localize(item.nameKey, locale: locale)
         }
         return itemId
+    }
+
+    /// Prepend the item's glyph (e.g. 🌲 for pine lumber) to its localized
+    /// name so loot lines read as "+2 🌲 Pine Lumber". Returns the bare
+    /// name if the item has no icon or isn't in the catalog.
+    private func itemLabelWithIcon(_ itemId: String, lingo: Lingo, locale: String) -> String {
+        guard let item = ItemCatalog.find(itemId) else { return itemId }
+        let name = lingo.localize(item.nameKey, locale: locale)
+        if let icon = item.icon {
+            return "\(icon) \(name)"
+        }
+        return name
     }
 }
 
