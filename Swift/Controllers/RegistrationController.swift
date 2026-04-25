@@ -23,6 +23,34 @@ import SwiftTelegramBot
 final class Registration: TGControllerBase, @unchecked Sendable {
     typealias T = Registration
 
+    // Allowed character sets for nicknames and estate names. Anything outside
+    // these three buckets (emoji, punctuation, symbols, button labels…) is
+    // rejected so players can't submit weird or button-sourced names.
+    private static let nameDigits: Set<Character> = Set("0123456789")
+    private static let nameLatin: Set<Character> = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    private static let nameUkrainian: Set<Character> = Set("АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя")
+
+    private enum NameValidationError {
+        case edgeSpace
+        case consecutiveSpaces
+        case tooShort
+        case tooLong
+        case invalidCharacters
+    }
+
+    private static func validateName(_ text: String, minLength: Int, maxLength: Int) -> NameValidationError? {
+        if text.first?.isWhitespace == true || text.last?.isWhitespace == true { return .edgeSpace }
+        if text.contains("  ") { return .consecutiveSpaces }
+        if text.count < minLength { return .tooShort }
+        if text.count > maxLength { return .tooLong }
+        for ch in text {
+            if ch == " " { continue }
+            if nameDigits.contains(ch) || nameLatin.contains(ch) || nameUkrainian.contains(ch) { continue }
+            return .invalidCharacters
+        }
+        return nil
+    }
+
     // MARK: - Controller Lifecycle
     override public func attachHandlers(to bot: TGBot, lingo: Lingo) async {
         let router = Router(bot: bot) { router in
@@ -82,16 +110,22 @@ final class Registration: TGControllerBase, @unchecked Sendable {
 
     private func showLanguageSelection(context: Context) async throws {
         let tgName = context.session.firstName ?? context.session.name
-        var greeting = "👋 Welcome, \(tgName)!\n"
+        // Strip any leftover reply keyboard so button labels can't be typed as
+        // nicknames or estate names later in the flow.
+        let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
+        try await context.bot.sendMessage(session: context.session, text: "👋 Welcome, \(tgName)!", parseMode: .html, replyMarkup: removeKB)
+
+        var prompt = ""
         var inlineKeyboard: [[TGInlineKeyboardButton]] = []
         for locale in SupportedLocale.allCases {
-            greeting.append("\n- \(context.lingo.localize("registration", locale: locale))")
+            if !prompt.isEmpty { prompt.append("\n") }
+            prompt.append("- \(context.lingo.localize("registration", locale: locale))")
             let langName = context.lingo.localize("lang.name", locale: locale)
             let button = TGInlineKeyboardButton(text: "\(locale.flag()) \(langName)", callbackData: "set_lang:\(locale.rawValue)")
             inlineKeyboard.append([button])
         }
         let markup = TGReplyMarkup.inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: inlineKeyboard))
-        try await context.bot.sendMessage(session: context.session, text: greeting, parseMode: .html, replyMarkup: markup)
+        try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html, replyMarkup: markup)
     }
 
     // MARK: - Step 1: Nickname (Artanian welcome)
@@ -102,20 +136,21 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     }
 
     private func handleNicknameInput(context: Context, text: String) async throws -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if trimmed.count < 2 {
-            let error = context.lingo.localize("registration.nickname.too_short", locale: context.session.locale)
-            try await context.bot.sendMessage(session: context.session, text: error)
+        if let err = Self.validateName(text, minLength: 2, maxLength: 20) {
+            let key: String
+            switch err {
+            case .edgeSpace:          key = "registration.nickname.edge_space"
+            case .consecutiveSpaces:  key = "registration.nickname.consecutive_spaces"
+            case .tooShort:           key = "registration.nickname.too_short"
+            case .tooLong:            key = "registration.nickname.too_long"
+            case .invalidCharacters:  key = "registration.nickname.invalid_chars"
+            }
+            let message = context.lingo.localize(key, locale: context.session.locale)
+            try await context.bot.sendMessage(session: context.session, text: message)
             return true
         }
-        if trimmed.count > 20 {
-            let error = context.lingo.localize("registration.nickname.too_long", locale: context.session.locale)
-            try await context.bot.sendMessage(session: context.session, text: error)
-            return true
-        }
 
-        context.session.nickname = trimmed
+        context.session.nickname = text
         context.session.registrationStep = 2
         try await context.session.saveAndCache(in: context.db)
         try await promptClassSelection(context: context)
@@ -218,20 +253,21 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     }
 
     private func handleEstateNameInput(context: Context, text: String) async throws -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if trimmed.count < 2 {
-            let error = context.lingo.localize("registration.estate.too_short", locale: context.session.locale)
-            try await context.bot.sendMessage(session: context.session, text: error)
+        if let err = Self.validateName(text, minLength: 2, maxLength: 30) {
+            let key: String
+            switch err {
+            case .edgeSpace:          key = "registration.estate.edge_space"
+            case .consecutiveSpaces:  key = "registration.estate.consecutive_spaces"
+            case .tooShort:           key = "registration.estate.too_short"
+            case .tooLong:            key = "registration.estate.too_long"
+            case .invalidCharacters:  key = "registration.estate.invalid_chars"
+            }
+            let message = context.lingo.localize(key, locale: context.session.locale)
+            try await context.bot.sendMessage(session: context.session, text: message)
             return true
         }
-        if trimmed.count > 30 {
-            let error = context.lingo.localize("registration.estate.too_long", locale: context.session.locale)
-            try await context.bot.sendMessage(session: context.session, text: error)
-            return true
-        }
 
-        context.session.estateName = trimmed
+        context.session.estateName = text
         try await completeRegistration(context: context)
         return true
     }

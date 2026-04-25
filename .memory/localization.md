@@ -70,8 +70,19 @@ let text = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", local
 This bypasses the Lingo bug entirely — Lingo sees a clean placeholder-only template, interpolation works, and Swift handles the visual decoration with any emoji (surrogate-pair, BMP+VS16, or single BMP). No audit needed, no trap for new emoji swaps.
 
 **Applied in ROI at (2026-04-23):**
-- `ExplorationController.narrateOutcome`: `.trip` → `🪨 `, `.encounterWon` → `⚔️ `, `.encounterLost` → `💀 `, `.starvationOnly` → `🥀 `
+- `ExplorationController.narrateOutcome`: `.trip` → `🦵 `, `.encounterWon` → `⚔️ `, `.encounterLost` → `💀 `, `.starvationOnly` → `🥀 `
 - `ExplorationController.handleDeath`: `"💀 " + lingo.localize("exploration.death", ...)`
+
+**Updated 2026-04-25 — emoji inside interpolation values is also safe.** The Lingo bug only fires when an emoji is in the *template* before a placeholder. Emojis inside the *substituted value* are post-hoc string concatenation and don't affect placeholder discovery. So a multi-UTF-16 emoji can be packed into the value to keep emoji-as-icon next to its number:
+
+```swift
+// Template: "<b>%{hp} HP, %{hunger} голоду</b>"   ← clean, no emoji in template
+"hp": "❤️ −\(hpLost)",
+"hunger": "🍖 −\(hungerLost)"
+// → "<b>❤️ −1 HP, 🍖 −2 голоду</b>"
+```
+
+ROI uses this for the trip / encounter.won / starvationOnly outcomes — the leading `🦵 / ⚔️ / 🥀` is still prepended in Swift after `localize(...)`, but the inline `❤️` / `🍖` ride inside the interpolation values.
 
 **For non-interpolated keys** (plain `"🏰 Ти повертаєшся додому."` with no `%{...}`), emoji can live anywhere in the template — the bug only fires when interpolation is involved. But if you ever ADD a placeholder to an existing key that starts with a multi-UTF-16 emoji, move the emoji to the Swift call site at the same time.
 
@@ -86,11 +97,12 @@ If you must keep the emoji in the template for some reason:
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~207 per locale)
+## Current Keys (~214 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
-- Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long, registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_wolves, registration.continue, registration.estate.prompt/too_short/too_long, registration.complete
+- Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long/edge_space/consecutive_spaces/invalid_chars (validation toasts), registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_wolves, registration.continue, registration.estate.prompt/too_short/too_long/edge_space/consecutive_spaces/invalid_chars, registration.complete
+- Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on bot startup with a `/start` reply-keyboard button)
 - Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)

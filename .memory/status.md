@@ -13,7 +13,7 @@
 
 ### Core Systems
 - [x] Router-Controller state machine (full implementation)
-- [x] RouterStore actor (thread-safe router dispatch)
+- [x] RouterStore actor (thread-safe router dispatch + per-user dispatch serialization via token-keyed Task chain — prevents spam-tap races on cached User / ExplorationState)
 - [x] TGDispatcher (auth + global commands + router catch-all)
 - [x] Context object (bot, db, lingo, update, session, args)
 - [x] Command system (Commands enum, Command class, ContentType matching)
@@ -25,7 +25,7 @@
 - [x] Database connection pool graceful shutdown (defer in configure)
 
 ### Controllers
-- [x] RegistrationController — lore-driven 6-step flow: language → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming
+- [x] RegistrationController — lore-driven 6-step flow: language → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming. First message strips any leftover reply keyboard via `ReplyKeyboardRemove`. Nickname + estate-name inputs are validated against three character allow-lists (digits / Latin / Ukrainian) with separate error toasts for too short, too long, edge whitespace, consecutive spaces, and invalid characters; single internal spaces are permitted so two-word names work.
 - [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Inventory/Estate/Capital nav buttons
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
@@ -43,8 +43,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~207 keys
-- [x] Ukrainian (uk.json) — ~207 keys
+- [x] English (en.json) — ~214 keys
+- [x] Ukrainian (uk.json) — ~214 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
@@ -122,4 +122,4 @@
 
 ---
 
-*Last updated: 2026-04-23 (per-item foraging flavor + icons in loot lines; random 1-2 stacks)*
+*Last updated: 2026-04-25 (friend-playtest UX bug-fix pass: input validation, per-user dispatch serialization, HP/hunger emoji in step outcomes, lore-flavoured restart greeting with /start button)*

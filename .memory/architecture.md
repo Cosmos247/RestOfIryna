@@ -37,6 +37,16 @@ TGUpdate arrives via long polling
 - The Router matches the update against registered paths (commands, text, callbacks)
 - Controllers transition between each other by setting `session.routerName` and saving
 
+### Per-user dispatch serialization
+
+`RouterStore.process` serializes updates per Telegram user via a token-keyed `Task` chain (`inflightByUser: [Int64: (token, Task)]`). Each call:
+1. Reads the previous in-flight task for that user (if any).
+2. Allocates a monotonic dispatch token, builds a fresh `Task` whose body awaits the previous task before calling the actual `dispatch(...)` helper.
+3. Stores `(token, task)` under the user ID, then awaits its own task's value.
+4. On completion the entry is cleared only if our token is still the latest (otherwise a later call already replaced it and is responsible).
+
+Why: actor reentrancy means concurrent updates from the same Telegram user could otherwise interleave between awaits. Real symptom seen: spam-tapping "Step Forward" both rolled events at the same `stepsDeep` (duplicate loot, single hunger drain) because both dispatches read the same `ExplorationState` row before either had written. The chain forces tap N+1 to start only after tap N has fully written its mutations and refreshed `sessionCache`. Dispatches for *different* users still run concurrently — only same-user calls are serialized.
+
 ## Global State
 
 - `appState: AppState!` — global, holds bot/db/lingo/logger/httpClient
@@ -57,7 +67,7 @@ Why: keeps game logic testable, swap-able, and cheap to compose. Same function c
 
 - Swift 6.2 strict concurrency
 - `SessionCache` is an actor (thread-safe)
-- `RouterStore` is an actor (thread-safe)
+- `RouterStore` is an actor (thread-safe) **and** serializes dispatches per Telegram user via an internal token-keyed task chain — see the "Per-user dispatch serialization" section above for the why and the symptom it prevents.
 - Controllers marked `@unchecked Sendable` (intentional — safe due to no mutable state)
 - `Router` extended with `@unchecked Sendable` conformance
 - `AppState` is `Sendable` with `nonisolated(unsafe)` for bot (set once during init)

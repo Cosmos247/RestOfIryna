@@ -27,10 +27,10 @@ let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
 let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
-let developerUsers: [Int64] = [mitya, irina]
+let developerUsers: [Int64] = [mitya, irina, maxim]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = false
+let resetDevProfile = true
 
 /// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
 /// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
@@ -329,10 +329,16 @@ public func configure(logger: Logger) async throws {
     try await PassiveExpeditionService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
-    for user in allowedUsers {
-        let chatId = TGChatId.chat(user)
-        let text = "📟 Bot started."
-        let params = TGSendMessageParams(chatId: chatId, text: text, disableNotification: true)
+    let startKB = TGReplyMarkup.replyKeyboardMarkup(TGReplyKeyboardMarkup(
+        keyboard: [[TGKeyboardButton(text: "/start")]],
+        resizeKeyboard: true,
+        oneTimeKeyboard: true
+    ))
+    for tgId in allowedUsers {
+        let chatId = TGChatId.chat(tgId)
+        let locale = (try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first())?.locale ?? "uk"
+        let text = lingo.localize("bot.restarted", locale: locale)
+        let params = TGSendMessageParams(chatId: chatId, text: text, parseMode: .html, disableNotification: true, replyMarkup: startKB)
         _ = try? await appState.bot.sendMessage(params: params)
     }
 

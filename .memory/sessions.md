@@ -671,3 +671,43 @@ Cluster of six user-reported UX fixes + catalog tweaks, unified under one commit
 **8. Leading emoji on exploration narration reverted to original surrogate-pair glyphs via code prefix.** Earlier in the session we had swapped `🪨/⚔️/💀/🥀` for safe single-UTF-16 equivalents (`❗/⚔/❌/⏳/❌`) in the JSON templates. User preferred the original colourful surrogate-pair glyphs. Final approach: Lingo template stays placeholder-first (no leading emoji), Swift prepends the original `🪨/⚔️/💀/🥀/💀` (for trip / encounter.won / encounter.lost / starvation / death) after `lingo.localize(...)`. This is the GO-FORWARD rule documented in `.memory/localization.md` — any localized string with interpolations should not have a leading emoji in its Lingo template; put decoration in Swift.
 
 No locale count change (still 207/207). `.memory/localization.md` expanded with the go-forward rule + verified-safe single-UTF-16 BMP emoji allowlist. New file: `Swift/Helpers/EphemeralChatState.swift`.
+
+## Session — 2026-04-25 (Friend-playtest UX bug-fix pass)
+
+User handed the build to a friend and collected concrete UX bugs. Fixes applied across registration, exploration narration, race conditions, and the bot-startup admin notification. No new files.
+
+**1. First registration message clears the reply keyboard.** `Registration.showLanguageSelection` now sends a tiny "👋 Welcome, <name>!" preamble with `ReplyKeyboardRemove` *before* the language picker. Telegram only accepts one `replyMarkup` per message, so the picker (with its inline buttons) is sent as a follow-up. Without this strip, players who arrived from a prior bot session with a leftover reply keyboard could tap a button label and that text was accepted as their nickname / estate name.
+
+**2. Nickname + estate-name input validation** — shared helper on `Registration`:
+```swift
+private static let nameDigits      = Set("0123456789")
+private static let nameLatin       = Set("abc…XYZ")
+private static let nameUkrainian   = Set("АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя")
+private enum NameValidationError { case edgeSpace, consecutiveSpaces, tooShort, tooLong, invalidCharacters }
+```
+Order of checks: edge-whitespace (any kind) → two consecutive spaces → length → per-character allow-list (single space `' '` is permitted, anything else outside the three buckets is rejected). Five distinct locale keys per field (`registration.nickname.*` and `registration.estate.*`) → 6 new keys per locale. Also dropped the previous `.trimmingCharacters(...)` step since edge-space rejection replaces it; the raw text is stored on success. Two-word names like "Two Words" pass; trailing space, leading space, double space, emoji, punctuation, and tabs all fail with their own error toast.
+
+**3. Em-dash + minus pair removed.** The starvation outcome string read `"… зсередини — <b>−%{hp} HP</b>"` which renders as `… зсередини — −5 HP` (em-dash followed by minus). Replaced the em-dash with a period to match the encounter.won pattern. Other strings were programmatically scanned for the same `[—–][optional<b>][−-]` adjacency — only the starvation line in each locale was affected.
+
+**4. Encounter.won line wraps to two lines.** With enemy emoji + name + round count + HP/hunger losses on one line, the message overflowed. Inserted `\n` before the loss segment so the second line stands alone (`⚔️ Ти подолав 🐗 Дикий кабан за 2 раунд(ів).\n❤️ −1 HP, 🍖 −2 голоду`).
+
+**5. ❤️ / 🍖 now ride inside interpolation values.** New finding: while emojis in the *template* before a `%{}` placeholder break Lingo interpolation (the surrogate-pair / VS16 bug we already documented), emojis inside the *substituted value* are safe — Lingo finishes scanning placeholders before substituting, so post-substitution emoji content can't affect placeholder discovery. Used this for `.trip`, `.encounterWon`, `.starvationOnly` outcomes — the leading `🦵 / ⚔️ / 🥀` is still prepended in Swift after `localize(...)`, but `❤️ −\(hpLost)` and `🍖 −\(hungerLost)` are passed as interpolation values so the icon sits right next to its number. Also dropped the leading `−` from the templates since the value now carries it. Updated `.memory/localization.md` with the refined rule.
+
+**6. Per-user dispatch serialization in `RouterStore`.** Real bug seen by playtester: spam-tapping "Step Forward" rolled events at the same `stepsDeep` (duplicate loot; hunger drained only once because both dispatches saved over each other on the cached User instance). Root cause was actor reentrancy — `RouterStore.process` awaits DB calls inside `dispatch`, and during those awaits another `process` call for the same user could run concurrently. Fix: `RouterStore` now keeps `inflightByUser: [Int64: (token: UInt64, task: Task<Void, any Error>)]` and a monotonic `nextDispatchToken`. Each call:
+1. Reads the previous in-flight task for that Telegram ID (if any).
+2. Allocates a fresh token, builds a `Task` whose body awaits the previous task's value before invoking the actual `dispatch(...)`.
+3. Stores `(token, task)` under the user ID, then awaits its own task's value.
+4. On completion the entry is cleared only if our token is still latest (otherwise a later call already replaced it).
+
+Tasks aren't reference types so identity comparison via `===` is impossible — hence the token-keyed approach. Cross-user dispatches still run concurrently; only same-user updates are serialized. Bug #8 (eggs surviving death) is a downstream symptom of the same race and resolves automatically with this fix.
+
+**7. Bot-startup admin notification rewritten.** Old: `"📟 Bot started."` plain English, no markup. New: per-admin localized greeting (`bot.restarted` key in EN + UK with a lore wrapper — "Artania awakens…" / "Артанія прокидається…") plus a `[/start]` reply-keyboard button (`oneTimeKeyboard: true`) so the admin can re-enter the game with one tap. Locale per admin is read from the User row; if the admin hasn't registered, falls back to `uk`.
+
+**8. ❤️ added to trip + starvation HP-loss line for symmetry with encounter.won.** Same interpolation-value pattern: `"hp": "❤️ −\(hpLost)"` for `.trip` and `.starvationOnly`, with the trailing `−` removed from the templates.
+
+**Side changes during this session:**
+- `developerUsers = [mitya, irina, maxim]` (added maxim).
+- `resetDevProfile = true` (was false) — registration is now exercised end-to-end on every dev launch. CLAUDE.md "currently off" note updated.
+- Locale count: 207 → 214 per locale (6 new validation keys + 1 new `bot.restarted`).
+
+No dead code introduced. The `explore:passive:close` callback handler on `ExplorationController` remains intentionally for backwards-compat with chat history that pre-dates the auto-cleanup fix (sessions log from 2026-04-23). Build is clean (`swift build` succeeds).

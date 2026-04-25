@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~207 keys)
-│   └── uk.json                     # Ukrainian strings (~207 keys)
+│   ├── en.json                     # English strings (~214 keys)
+│   └── uk.json                     # Ukrainian strings (~214 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -34,12 +34,12 @@ RestOfIryna/
 └── Swift/                          # All source code (SPM target root)
     ├── entrypoint.swift            # @main, logging setup, calls configure()
     ├── configure.swift             # App bootstrap: DB, Lingo, Bot, Hummingbird
-    ├── routes.swift                # RouterStore actor + Sendable conformance
+    ├── routes.swift                # RouterStore actor + Sendable conformance + per-user dispatch serialization (token-keyed Task chain)
     │
     ├── Controllers/
     │   ├── AllControllers.swift     # Controller registry, attachAllHandlers()
     │   ├── MainController.swift    # Main hub, profile view (3 styles), Explore/Estate/Capital/Profile/Settings nav
-    │   ├── RegistrationController.swift  # Multi-step: language, nickname, class, estate
+    │   ├── RegistrationController.swift  # Multi-step: language, nickname, class, estate. First message ships ReplyKeyboardRemove. Shared validateName helper: allow-lists (digits/Latin/Ukrainian), edge-space + consecutive-space + invalid-char rejection with five distinct error toasts per field.
     │   ├── SettingsController.swift      # Language change, back navigation
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
     │   ├── ExplorationController.swift   # Phase 3.1 active + 3.2 visit-decay return + 3.3 passive mode. Entry shows mode picker [🏃 Розвідка / 🏕 Експедиція] when no state; passive branches into countdown status (in-flight) or report delivery (completed). Active: Step Forward increments & rolls with prior visit count; Step Back decrements & rolls (km ≥ 2) or arrives home (km ≤ 1). Reply keyboard [🚶 Step fwd] [🔙 Step back] / [🎒 Bag] only during active. Inline `explore:` callbacks for bag, mode-picker, duration-picker, passive-report close.

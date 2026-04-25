@@ -548,17 +548,21 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         case .trip(let hpLost):
             // Leading 🦵 is prepended here (post-interpolation) because Lingo
             // drops interpolations after a multi-UTF-16 emoji in the template.
+            // ❤️ rides inside the `hp` interpolation value for the same reason.
             return "🦵 " + lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
-                "hp": "\(hpLost)"
+                "hp": "❤️ −\(hpLost)"
             ])
 
         case .encounterWon(let enemy, let rounds, let hpLost, let hungerLost, let loot):
             let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+            // ❤️ / 🍖 are passed as interpolation values rather than placed in
+            // the template — Lingo drops `%{}` placeholders that follow a
+            // multi-UTF-16 emoji in the template itself.
             let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)",
-                "hp": "\(hpLost)",
-                "hunger": "\(hungerLost)"
+                "hp": "❤️ −\(hpLost)",
+                "hunger": "🍖 −\(hungerLost)"
             ])
             var parts = [header]
             for drop in loot {
@@ -580,7 +584,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         case .starvationOnly(let hpLost):
             return "🥀 " + lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
-                "hp": "\(hpLost)"
+                "hp": "❤️ −\(hpLost)"
             ])
         }
     }
