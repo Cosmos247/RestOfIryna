@@ -750,3 +750,39 @@ User-led design discussion → agreed combat MVP scope, locked five mechanic con
 - `resetDevProfile` flipped `false → true → false` during the session — final state is `false` (dev profile state persists across restarts so combat tests survive bot restarts). CLAUDE.md "currently **on**" → "currently **off**".
 
 No dead code introduced. The `@unchecked Sendable` notes etc. all carry over. Build is clean (`swift build` → "Build complete!"). Locale count unchanged (still 214/214 — combat keys come next session).
+
+## Session — 2026-04-25 (Phase 4.1 combat MVP — controller + registration tutorial fight)
+
+Built on top of last session's CombatService foundation. Wired the active-mode encounter hand-off, shipped the controller, made the registration wolves encounter a real fight you have to win to reach the estate.
+
+**Key landings:**
+
+1. **`StepOutcome.encounterStarted(Enemy)` — mode-aware encounter resolution.** `ExplorationService.rollStep(mode:)` gained a `mode` parameter; active mode returns `.encounterStarted` (no HP / hunger spent on the encounter yet, just the walk-room drain) and ExplorationController takes over. Passive mode keeps running `resolveAutobattle` and emits `.encounterWon` / `.encounterLost` as before — passive can't prompt the player from a `Task.detached`. `awardEncounterDrops` extracted as a public hook so CombatController's victory path mirrors the autobattle's drop step. PassiveExpeditionService's outcome switch handles `.encounterStarted` with a no-op `break` (passive never actually receives it; switch must be exhaustive).
+
+2. **`CombatController.swift`** — new file. Reply keyboard `[Attack] [Defend] / [Flee]` with class-flavoured labels via `combat.button.<action>.<class>`. Same handler fires regardless of which class label was tapped; class is inferred from `session.characterClass` at render time. Round flow:
+   - **Attack** (−2 hunger): `applyAttack(player→enemy)` then `applyAttack(enemy→player)` — full effectiveDodge on the player's incoming hit.
+   - **Defend** (−1 hunger): `chipDamage` to enemy (30% of base, no crit, no miss — flavour: parry-counter / shadow shot / barrier wave); incoming hit rolls against doubled `effectiveDefense`.
+   - **Flee** (−3 hunger): 50% flat. Success → clear combat fields, `stepsDeep -= 1`, hand back to ExplorationController. Fail → enemy lands a guaranteed full-damage hit "in the back" (no dodge, no crit roll), fight continues. If the forced hit kills the player, treat as defeat.
+   - **Victory**: `ExplorationService.awardEncounterDrops` adds loot to inventory, send "🏆 falls" + loot lines, clear combat fields, hand back to ExplorationController at the same km. Encounter is consumed; the room's visit count was already recorded by the step that triggered it, so re-entry uses visit-decay weights.
+   - **Defeat**: `ExplorationController.handleDeath(causeNarrative:)` — extracted as a static helper this session so CombatController could reuse the wipe + respawn flow without duplicating the inventory query / HP reset.
+
+3. **HungerAction got per-action combat costs.** `combatRound` (1 hunger) is kept for passive autobattle. Three new cases — `combatAttack` (2), `combatDefend` (1), `combatFlee` (3) — power the active controller's per-tap drain.
+
+4. **EnemyCatalog gained `find(_:String) -> Enemy?`** so CombatController can rehydrate the fight from the persisted `combat_enemy_id` between taps.
+
+5. **Registration wolves fight (step 4 → real combat).** Replaced the stub Continue button with `[⚔️ Stand and fight]` / `[⚔️ Прийняти бій]` (`reg:fight_wolves` callback). On tap, `Registration.startWolvesFight` creates an `ExplorationState` row at km 0 with combat fields stamped against `enemy.rabid_wolf` and transitions `routerName = "combat"`. CombatController detects the registration context via `session.registrationStep < 6` and routes every end condition (victory / defeat / flee / `/start`) to `Registration.handleCombatEnd(won:)`:
+   - Won → registrationStep = 5, prompt estate name.
+   - Lost → full HP heal (so the player can actually retry), step stays at 4, send "🩸 you scrambled away — but the wolves still bar the path. Steel yourself and try again." preamble, re-show the wolves photo with the Fight button.
+   The state row is deleted entirely on registration end (it's not a real expedition). Inventory is **not** wiped on registration defeat — this is a tutorial gate, not the standard death path.
+
+6. **Reply-keyboard cleanup on registration transitions.** `promptEstateName` and the `wolves_retry` preamble both ship `ReplyKeyboardRemove`. Without this the combat reply keyboard (`[Рубати мечем] [Парирувати] [Відступити]`) stayed visible while the bot prompted for the estate name, and the player could submit a button label as the estate name — `validateName` would reject the emoji prefix but two-word labels like "Магічний бар'єр" would pass the digit/Latin/Cyrillic + single-space allow-list. Removing the keyboard at the source kills the vector entirely.
+
+**Files added:** `Swift/Controllers/CombatController.swift`. **Files modified:** `Swift/Controllers/AllControllers.swift` (registry), `ExplorationController.swift` (encounter hand-off + handleDeath split into static helper), `RegistrationController.swift` (fight_wolves callback + handleCombatEnd bridge + ReplyKeyboardRemove on prompts), `Swift/Models/Enemy.swift` (find helper), `Swift/Services/ExplorationService.swift` (mode-aware rollStep + awardEncounterDrops public hook), `HungerService.swift` (3 new combat HungerAction cases), `PassiveExpeditionService.swift` (mode: .passive on rollStep call + new `.encounterStarted` switch arm), Localizations en/uk (+22 net keys: 9 buttons + 12 narratives + fight_wolves + wolves_retry, dropped the now-unused `registration.continue`).
+
+**Locale count: 214 → 236 per locale (en/uk parity verified).** Build clean.
+
+**Side changes during this session (config tuning, not code logic):**
+- `developerUsers` reduced to `[mitya]` (was `[mitya, irina, maxim]`) — testing convenience.
+- `resetDevProfile` flipped back to `true` — registration is exercised end-to-end on every dev launch while the new combat hand-off is being playtested.
+
+**Phase 4.2 / 4.3 deferrals (carried forward in TODO.md):** class-specific Defend / Flee mechanics, edit-in-place combat UX, XP grant on victory, per-enemy AI hooks (aggression / fleeResist), status effects (rabies). All deliberate post-MVP scope.

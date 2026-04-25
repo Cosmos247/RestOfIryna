@@ -148,4 +148,10 @@ public enum EnemyCatalog {
         let eligible = all.filter { $0.depthRange.contains(max(1, kmDepth)) }
         return eligible.randomElement() ?? all.first
     }
+
+    /// Look up an enemy by id. Used by CombatController to rehydrate the
+    /// fight from the persisted `combat_enemy_id` between taps.
+    public static func find(_ id: String) -> Enemy? {
+        return all.first(where: { $0.id == id })
+    }
 }

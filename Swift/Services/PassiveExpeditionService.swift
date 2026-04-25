@@ -240,6 +240,7 @@ public enum PassiveExpeditionService {
                     for: user,
                     kmDepth: nextStep,
                     priorVisits: 0,
+                    mode: .passive,
                     on: db
                 )
             } catch {
@@ -378,6 +379,10 @@ public enum PassiveExpeditionService {
             }
         case .encounterLost:
             counts["encounter_lost", default: 0] += 1
+        case .encounterStarted:
+            // Passive simulation never receives this — `rollStep` only emits
+            // it for `mode: .active`. Listed here only for switch exhaustiveness.
+            break
         }
     }
 

@@ -318,6 +318,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             for: context.session,
             kmDepth: state.stepsDeep,
             priorVisits: priorVisits,
+            mode: .active,
             on: context.db
         )
         state.recordVisit(state.stepsDeep)
@@ -326,6 +327,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         if context.session.hp <= 0 {
             try await handleDeath(context: context, outcome: outcome)
+            return true
+        }
+
+        if case .encounterStarted(let enemy) = outcome {
+            try await handOffToCombat(context: context, state: state, enemy: enemy)
             return true
         }
 
@@ -357,6 +363,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             for: context.session,
             kmDepth: state.stepsDeep,
             priorVisits: priorVisits,
+            mode: .active,
             on: context.db
         )
         state.recordVisit(state.stepsDeep)
@@ -368,8 +375,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
+        if case .encounterStarted(let enemy) = outcome {
+            try await handOffToCombat(context: context, state: state, enemy: enemy)
+            return true
+        }
+
         try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
         return true
+    }
+
+    /// Stamp combat fields on the expedition row, transition the player into
+    /// CombatController, and send the intro screen with the class-flavoured
+    /// keyboard. Called from the step handlers when `rollStep` rolls an
+    /// encounter in active mode.
+    private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy) async throws {
+        state.beginCombat(enemyId: enemy.id, hp: enemy.hp)
+        try await state.save(on: context.db)
+
+        let combatCtrl = Controllers.combatController
+        context.session.routerName = combatCtrl.routerName
+        try await context.session.saveAndCache(in: context.db)
+
+        try await combatCtrl.showCombat(context: context, state: state, enemy: enemy, intro: true)
     }
 
     // MARK: - Outcome rendering
@@ -472,9 +499,15 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// set HP to 1 (hunger stays — per design), end the exploration state, and send
     /// a death screen as the main-menu text override.
     private func handleDeath(context: Context, outcome: StepOutcome) async throws {
+        let cause = narrateOutcome(outcome, priorVisits: 0, lingo: context.lingo, locale: context.session.locale)
+        try await Self.handleDeath(context: context, causeNarrative: cause)
+    }
+
+    /// Static death helper so CombatController can reuse the wipe + respawn
+    /// flow without duplicating the inventory query / HP reset.
+    static func handleDeath(context: Context, causeNarrative: String) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let cause = narrateOutcome(outcome, priorVisits: 0, lingo: lingo, locale: locale)
 
         if let userId = context.session.id {
             let rows = try await InventoryEntry.query(on: context.db)
@@ -488,7 +521,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
 
-        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": cause])
+        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": causeNarrative])
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
@@ -585,6 +618,15 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         case .starvationOnly(let hpLost):
             return "🥀 " + lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
                 "hp": "❤️ −\(hpLost)"
+            ])
+
+        case .encounterStarted(let enemy):
+            // Step handlers transition to CombatController before reaching
+            // narrateOutcome, so this branch is only used when the encounter
+            // is rendered as a generic line (e.g. in a future activity log).
+            let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+            return "⚔️ " + lingo.localize("combat.encounter.intro", locale: locale, interpolations: [
+                "enemy": enemyName
             ])
         }
     }

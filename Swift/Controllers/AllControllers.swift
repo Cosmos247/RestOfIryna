@@ -16,6 +16,7 @@ struct Controllers {
     static let mainController        = MainController       (routerName: "main" )
     static let settingsController    = SettingsController   (routerName: "settings")
     static let explorationController = ExplorationController(routerName: "exploration")
+    static let combatController      = CombatController     (routerName: "combat")
     static let estateController      = EstateController     (routerName: "estate")
     static let capitalController     = CapitalController    (routerName: "capital")
     static let inventoryController   = InventoryController  (routerName: "inventory")
@@ -25,6 +26,7 @@ struct Controllers {
         mainController,
         settingsController,
         explorationController,
+        combatController,
         estateController,
         capitalController,
         inventoryController

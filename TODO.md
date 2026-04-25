@@ -159,27 +159,18 @@ Design note: the 5-min room transition is **passive-mode-only**. Active reconnai
 
 ## Phase 4: Combat System
 
-### 4.1 Interactive PvE combat MVP *(in progress)*
+### 4.1 Interactive PvE combat MVP *(landed)*
 
 Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encounter. Passive expeditions keep using `ExplorationService.resolveAutobattle`. Class identity comes from existing stat differences + class-flavoured button labels (mechanics are identical; class-specific techniques are deferred to 4.2).
 
-- [ ] Migration `AddCombatFields` — nullable `combat_enemy_id: String` + `combat_enemy_hp: Int` columns on `exploration_state`. Embedded model: combat lives inside an active expedition row; both columns null = not in combat.
-- [ ] Map combat fields on `ExplorationState` Fluent model + helpers (`isInCombat`, `beginCombat(enemyId:hp:)`, `endCombat()`).
-- [ ] `CombatService.applyAttack(attackerATK:attackerCrit:attackerAcc:defenderDEF:defenderDodge:) -> AttackOutcome` (`miss / hit(damage) / crit(damage)`):
-  - `hitChance = clamp(70 + acc − dodge, 10, 95)%`
-  - On hit: `critChance = crit %`; crit multiplier ×1.5
-  - Damage: `max(1, (atk − def) * variance[0.9..1.1] * critMult)`
-  - Refactor `ExplorationService.resolveAutobattle` to call this helper — passive autobattle gains crit / dodge / accuracy semantics for free.
-- [ ] New `StepOutcome.encounterStarted(Enemy)` case. Active `rollStep` returns it instead of running autobattle. `ExplorationController` catches → writes combat fields → transitions `routerName = "combat"` → renders intro. Passive `runLive` keeps the existing `.encounterWon / .encounterLost` autobattle path.
-- [ ] `CombatController.swift`:
-  - Reply keyboard `[Attack] [Defend] [Flee]` with class-flavoured labels via `combat.button.<action>.<class>` locale keys.
-  - **Attack** (−2 hunger): `applyAttack(player → enemy)` then `applyAttack(enemy → player)`.
-  - **Defend** (−1 hunger): player deals 30% of `applyAttack`'s damage (no crit, no miss — chip damage from a parry / shadow shot / barrier wave); incoming hit rolls `applyAttack(enemy → player)` with player's `effectiveDefense × 2` for that round only.
-  - **Flee** (−3 hunger): 50% flat success → clear combat state, `stepsDeep -= 1`, transition back to exploration with success message. Failure → enemy lands a guaranteed full-damage hit "in the back" (no dodge), combat continues.
-  - End conditions: enemy HP ≤ 0 → loot via existing `rollLootDrops`, encounter.won message, clear combat state, `routerName = "exploration"`. Player HP ≤ 0 → existing `handleDeath` (wipes inventory, hp = 1, back to estate).
-  - Register in `AllControllers`.
-- [ ] Locale keys (~30 per locale): 9 button labels (3 actions × 3 classes) + ~12 narrative keys (`combat.encounter.intro`, `combat.you.{hit,crit,miss}`, `combat.enemy.{hit,crit,miss}`, `combat.defend.absorbed`, `combat.flee.{success,fail}`, `combat.victory`, `combat.status_card`).
-- [ ] `swift build` clean; en/uk key counts match.
+- [x] Migration `AddCombatFields` — nullable `combat_enemy_id: String` + `combat_enemy_hp: Int` on `exploration_state`. Embedded: combat lives inside the active expedition row; both columns null = not in combat.
+- [x] `ExplorationState` Fluent fields + helpers (`isInCombat`, `beginCombat(enemyId:hp:)`, `endCombat()`).
+- [x] `CombatService.applyAttack(...)` returning `AttackOutcome (miss / hit / crit)`. `hitChance = clamp(70 + acc − dodge, 10, 95)%`; on hit `critChance = crit %`, ×1.5 crit multiplier; damage `max(1, (atk − def) * variance[0.9..1.1] * critMult)`. `chipDamage` for Defend's 30%-of-base parry-counter (always lands, no crit). `resolveAutobattle` refactored onto the same primitives so passive autobattle gains crit / dodge / accuracy semantics for free.
+- [x] `StepOutcome.encounterStarted(Enemy)` + `rollStep(mode:)`. Active `rollStep` returns it; `ExplorationController.handOffToCombat` stamps the combat fields, flips `routerName = "combat"`, calls `CombatController.showCombat`. Passive `runLive` passes `mode: .passive` so it keeps the autobattle path.
+- [x] `CombatController.swift` with class-flavoured `[Attack] [Defend] / [Flee]` keyboard, hunger costs (2 / 1 / 3), DEF×2 on Defend, 50/50 flee with forced full-damage counter on fail, victory loot via `awardEncounterDrops`, defeat via shared static `ExplorationController.handleDeath(causeNarrative:)`. `EnemyCatalog.find(_:)` helper for rehydration. `HungerAction` gained `combatAttack / combatDefend / combatFlee` cases (kept `combatRound` for autobattle).
+- [x] Registration wolves fight (step 4) routes through CombatController too — `Registration.handleCombatEnd(won:)` is the registration-specific end path. Soft retry on defeat / flee / `/start` (full HP heal, re-show wolves prompt). Victory advances to estate naming. Estate-name prompt and the wolves-retry preamble both ship `ReplyKeyboardRemove` so combat-button labels can't be entered as the estate name.
+- [x] Locale keys: 9 button labels (3 actions × 3 classes) + 11 narratives (encounter.intro, you.{hit,crit,miss}, enemy.{hit,crit,miss}, defend.absorbed, flee.{success,fail}, victory, defeat) + 2 registration keys (fight_wolves, wolves_retry). 214 → 236 per locale.
+- [x] Build clean, en/uk parity.
 
 ### 4.2 Class-specific techniques *(post-MVP)*
 - [ ] Knight Parry: 30% block + 25% counter chance (½ damage)

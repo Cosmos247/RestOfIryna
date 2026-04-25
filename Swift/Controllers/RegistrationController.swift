@@ -219,9 +219,9 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     func promptJourneyWolves(context: Context) async throws {
         let locale = context.session.locale
         let text = context.lingo.localize("registration.journey_wolves", locale: locale)
-        let buttonLabel = context.lingo.localize("registration.continue", locale: locale)
+        let buttonLabel = context.lingo.localize("registration.fight_wolves", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:continue")
+            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:fight_wolves")
         ]])
         let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
 
@@ -249,7 +249,10 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     func promptEstateName(context: Context) async throws {
         let nickname = context.session.nickname ?? "?"
         let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale, interpolations: ["name": nickname])
-        try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html)
+        // Strip any leftover reply keyboard (combat buttons after the wolves
+        // fight) so the player can't tap a button label as their estate name.
+        let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
+        try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html, replyMarkup: removeKB)
     }
 
     private func handleEstateNameInput(context: Context, text: String) async throws -> Bool {
@@ -357,14 +360,69 @@ extension Registration {
             return true
         }
 
-        // Wolves encounter → Continue (combat stub) (step 4 → 5)
-        if data == "reg:continue" {
-            context.session.registrationStep = 5
-            try await context.session.saveAndCache(in: context.db)
-            try await Controllers.registration.promptEstateName(context: context)
+        // Wolves encounter → Fight! Hand off to CombatController against
+        // a rabid wolf. Player stays at registrationStep = 4 until victory;
+        // soft-retry on defeat / successful flee. Step → 5 happens inside
+        // `Registration.handleCombatEnd(won: true)` after the fight.
+        if data == "reg:fight_wolves" {
+            try await Controllers.registration.startWolvesFight(context: context)
             return true
         }
 
         return false
+    }
+}
+
+// MARK: - Wolves Fight Bridge
+
+extension Registration {
+    /// Begin the registration-step-4 combat against a rabid wolf. The fight
+    /// rides on the same `ExplorationState` row we use for normal expeditions
+    /// (with `stepsDeep = 0`, combat fields populated) — `CombatController`
+    /// detects the registration context via `session.registrationStep < 6`
+    /// and routes back here on every end condition instead of falling into
+    /// the exploration handoff.
+    func startWolvesFight(context: Context) async throws {
+        guard let wolf = EnemyCatalog.find("enemy.rabid_wolf") else { return }
+
+        // Defensive: clear any leftover state row before stamping a fresh one.
+        try await ExplorationState.end(for: context.session, on: context.db)
+
+        let state = try await ExplorationState.begin(for: context.session, on: context.db)
+        state.beginCombat(enemyId: wolf.id, hp: wolf.hp)
+        try await state.save(on: context.db)
+
+        let combatCtrl = Controllers.combatController
+        context.session.routerName = combatCtrl.routerName
+        try await context.session.saveAndCache(in: context.db)
+
+        try await combatCtrl.showCombat(context: context, state: state, enemy: wolf, intro: true)
+    }
+
+    /// Called by `CombatController` once the registration-step-4 fight
+    /// resolves. Victory advances to estate naming; defeat / flee soft-retries
+    /// the wolves prompt with full HP. The state row is deleted by the
+    /// CombatController before this is invoked.
+    static func handleCombatEnd(context: Context, won: Bool) async throws {
+        let registration = Controllers.registration
+        if won {
+            context.session.registrationStep = 5
+            context.session.routerName = registration.routerName
+            try await context.session.saveAndCache(in: context.db)
+            try await registration.promptEstateName(context: context)
+        } else {
+            // Soft retry — full heal, re-show the wolves prompt at step 4.
+            context.session.hp = context.session.maxHp
+            context.session.registrationStep = 4
+            context.session.routerName = registration.routerName
+            try await context.session.saveAndCache(in: context.db)
+            let retryText = context.lingo.localize("registration.wolves_retry", locale: context.session.locale)
+            // Clear the combat reply keyboard before the wolves photo
+            // (the photo carries an inline button, so it can't also carry
+            // ReplyKeyboardRemove on the same message).
+            let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
+            try await context.bot.sendMessage(session: context.session, text: retryText, parseMode: .html, replyMarkup: removeKB)
+            try await registration.promptJourneyWolves(context: context)
+        }
     }
 }

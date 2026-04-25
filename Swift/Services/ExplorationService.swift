@@ -28,6 +28,12 @@ public enum StepOutcome: Sendable {
     case nothing
     case loot(itemId: String, quantity: Int, picked: Bool)        // picked=false → bag full
     case trip(hpLost: Int)
+    /// Active mode: an enemy is in front of the player and the controller
+    /// should hand off to CombatController. The fight isn't resolved yet —
+    /// no HP / hunger has been spent on the encounter itself (only the
+    /// walk-room drain for the step). Caller persists `combatEnemyId` /
+    /// `combatEnemyHP` on the ExplorationState row.
+    case encounterStarted(enemy: Enemy)
     case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, hungerLost: Int, loot: [(itemId: String, quantity: Int, picked: Bool)])
     case encounterLost(enemy: Enemy, rounds: Int, hpLost: Int, hungerLost: Int)
     case starvationOnly(hpLost: Int)
@@ -75,7 +81,7 @@ public enum ExplorationService {
     /// `priorVisits` picks the weight tier: 0 = fresh, 1 = reduced, 2+ = bare
     /// (only `.nothing` / `.starvationOnly` can fire). The controller passes
     /// the room's current visit count *before* incrementing it for this step.
-    public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, on db: any Database) async throws -> StepOutcome {
+    public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, mode: ExplorationMode = .active, on db: any Database) async throws -> StepOutcome {
         // Hunger drain for the walk itself.
         _ = HungerService.drain(user, action: .walkRoom)
 
@@ -117,7 +123,7 @@ public enum ExplorationService {
             return try await rollLoot(for: user, kmDepth: kmDepth, on: db, extraStarvation: starvationLoss)
         }
         if roll < wNothing + wLoot + wEncounter {
-            return try await rollEncounter(for: user, kmDepth: kmDepth, on: db, extraStarvation: starvationLoss)
+            return try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db, extraStarvation: starvationLoss)
         }
         _ = wTrip
         let tripDmg = max(1, Int((Double(user.maxHp) * tripDamagePercent).rounded()))
@@ -154,7 +160,7 @@ public enum ExplorationService {
         }
     }
 
-    private static func rollEncounter(for user: User, kmDepth: Int, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
+    private static func rollEncounter(for user: User, kmDepth: Int, mode: ExplorationMode, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
         if extraStarvation > 0 {
             user.hp = max(0, user.hp - extraStarvation)
             if user.hp <= 0 {
@@ -166,6 +172,13 @@ public enum ExplorationService {
 
         guard let enemy = EnemyCatalog.pickFor(kmDepth: kmDepth) else {
             return .nothing
+        }
+
+        // Active mode hands off to CombatController — no HP/hunger spent on the
+        // encounter itself yet. Passive mode resolves it on the spot via
+        // autobattle since there's no UI to prompt the player from a Task.
+        if mode == .active {
+            return .encounterStarted(enemy: enemy)
         }
 
         let hpBefore = user.hp
@@ -190,6 +203,24 @@ public enum ExplorationService {
         } else {
             return .encounterLost(enemy: enemy, rounds: result.rounds, hpLost: hpLost, hungerLost: hungerLost)
         }
+    }
+
+    /// Public hook for CombatController — mirrors the loot-drop step that
+    /// `rollEncounter` runs after autobattle, so the active controller can
+    /// share the same drop logic at victory time.
+    public static func awardEncounterDrops(for user: User, enemy: Enemy, on db: any Database) async throws -> [(itemId: String, quantity: Int, picked: Bool)] {
+        let drops = rollLootDrops(for: enemy)
+        var picked: [(itemId: String, quantity: Int, picked: Bool)] = []
+        for drop in drops {
+            let canFit = try await InventoryEntry.canAccept(drop.itemId, quantity: drop.quantity, for: user, on: db)
+            if canFit {
+                try await InventoryEntry.add(drop.itemId, quantity: drop.quantity, to: user, on: db)
+                picked.append((drop.itemId, drop.quantity, true))
+            } else {
+                picked.append((drop.itemId, drop.quantity, false))
+            }
+        }
+        return picked
     }
 
     // MARK: - Autobattle (passive mode)

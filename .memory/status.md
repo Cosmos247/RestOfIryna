@@ -43,15 +43,15 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — ~214 keys
-- [x] Ukrainian (uk.json) — ~214 keys
+- [x] English (en.json) — ~236 keys
+- [x] Ukrainian (uk.json) — ~236 keys
 
 ### Services
 - [x] HungerService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when hunger == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
 - [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit)
 - [x] ExplorationService — rollStep (nothing / loot / trip / encounter / starvationOnly outcome), depth-aware loot pool (shallow vs medium), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
-- [x] CombatService (Phase 4.1 foundation) — shared damage primitives. `applyAttack(attackerATK,attackerCrit,attackerAcc,defenderDEF,defenderDodge) -> AttackOutcome (miss / hit / crit)` with clamp(70+acc-dodge, 10, 95)% hit chance, ×1.5 crit on roll vs `attackerCrit %`, ±10% variance. `chipDamage` for Defend's 30%-of-base parry-counter (no crit, always lands). Used by `resolveAutobattle` already; the active CombatController hook + new StepOutcome.encounterStarted case + ~30 locale keys are still pending.
+- [x] CombatService (Phase 4.1) — shared damage primitives used by both active CombatController and passive autobattle. `applyAttack(attackerATK,attackerCrit,attackerAcc,defenderDEF,defenderDodge) -> AttackOutcome (miss / hit / crit)` with clamp(70+acc-dodge, 10, 95)% hit chance, ×1.5 crit on roll vs `attackerCrit %`, ±10% variance. `chipDamage` for Defend's 30%-of-base parry-counter (no crit, always lands). Tuning constants exported (baseHitChance / critMultiplier / defendChipFraction / varianceRange) so both consumers stay in sync.
 
 ### Equipment (Phase 2.3 — done)
 - [x] 2.3.1 Slot design: `EquipmentSlot` enum (8 slots), `GearStats` struct, Item gains optional slot + gearStats. Starter gear wired: rusty_sword/simple_bow/wooden_staff → mainHand; leather_vest → chest.
@@ -80,7 +80,7 @@
 
 ### Controllers Needed
 - [x] ExplorationController — all of Phase 3 (3.0-3.4) landed. Still pending: dungeons (later phase), content expansion (3.5), flip testMode to prod.
-- [~] CombatController — Phase 4.1 in flight. Foundation landed: AddCombatFields migration (combat_enemy_id / combat_enemy_hp on exploration_state), ExplorationState helpers (isInCombat / beginCombat / endCombat), CombatService.applyAttack + chipDamage primitives, resolveAutobattle refactored onto the same primitives. Pending: StepOutcome.encounterStarted hook, the controller itself with class-flavoured Attack/Defend/Flee buttons, ~30 locale keys.
+- [x] CombatController — Phase 4.1 MVP landed. Active-mode encounters trigger `StepOutcome.encounterStarted(enemy)`; ExplorationController stamps combat fields on the expedition row, transitions routerName, hands off to CombatController. Reply keyboard `[Attack] [Defend] / [Flee]` with class-flavoured labels via `combat.button.<action>.<class>`. Attack (−2 hunger): full applyAttack both directions. Defend (−1): chipDamage to enemy + applyAttack with effectiveDEF×2 incoming. Flee (−3): 50% flat — success returns to exploration at km-1; fail = forced full-damage counter, fight continues. Victory awards loot via `awardEncounterDrops`, hands back to ExplorationController; defeat shares `ExplorationController.handleDeath(causeNarrative:)`. The same controller drives the registration wolves fight at step 4 — `Registration.handleCombatEnd(won:)` routes back into the registration flow when `session.registrationStep < 6`. Class-specific Defend/Flee mechanics, edit-in-place message UX, XP, per-enemy AI hooks, and status effects are deferred to 4.2/4.3.
 - [~] EstateController — Phase 5.0 navigation skeleton landed (Root → House + Plot stubs); still needs 30x30 grid editor, manor rooms' real logic, crafting flows
 - [~] CapitalController — stub exists; needs location menu, quests, stables, bank, chapel
 - [ ] MarketController — NPC stall + player bazaar
@@ -123,4 +123,4 @@
 
 ---
 
-*Last updated: 2026-04-25 (Phase 4.1 combat foundation: AddCombatFields migration + ExplorationState helpers + CombatService.applyAttack/chipDamage + resolveAutobattle refactor onto shared primitives; controller + locales still pending)*
+*Last updated: 2026-04-25 (Phase 4.1 MVP: CombatController with class-flavoured Attack/Defend/Flee handlers + active-mode encounter hand-off + registration wolves fight as the new tutorial gate to estate naming)*

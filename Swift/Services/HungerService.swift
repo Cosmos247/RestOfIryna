@@ -18,7 +18,13 @@ import Foundation
 public enum HungerAction: Sendable {
     case walkRoom
     case walkRoomDoubleSpeed
+    /// Used by passive autobattle where each round costs one flat unit
+    /// (the player isn't picking actions; the simulation just resolves).
     case combatRound
+    /// Active CombatController per-action costs (Phase 4.1).
+    case combatAttack
+    case combatDefend
+    case combatFlee
     case idle
 }
 
@@ -37,6 +43,9 @@ public enum HungerService {
     public static let drainWalkRoom: Int = 2
     public static let drainWalkRoomDoubleSpeed: Int = 4
     public static let drainCombatRound: Int = 1
+    public static let drainCombatAttack: Int = 2
+    public static let drainCombatDefend: Int = 1
+    public static let drainCombatFlee: Int = 3
 
     // Starvation penalties (⚙️ TBD — values from GDD §4)
     /// Fraction subtracted from Attack and Defense while starving (0.25 = -25%).
@@ -56,6 +65,9 @@ public enum HungerService {
         case .walkRoom:             return drainWalkRoom
         case .walkRoomDoubleSpeed:  return drainWalkRoomDoubleSpeed
         case .combatRound:          return drainCombatRound
+        case .combatAttack:         return drainCombatAttack
+        case .combatDefend:         return drainCombatDefend
+        case .combatFlee:           return drainCombatFlee
         case .idle:                 return 0
         }
     }
