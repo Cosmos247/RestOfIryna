@@ -61,7 +61,8 @@ Pure domain services live in `Swift/Services/`. They hold no state, do no DB wri
 Why: keeps game logic testable, swap-able, and cheap to compose. Same function can be invoked from a controller (player action), a dev command (`/drain`), a scheduled job (future), or a migration-time seeder without code duplication.
 
 - `HungerService` (Phase 2.2) — drain per action, consume food/potion, compute starvation penalty on effective stats, apply per-room HP loss when starving.
-- Future: `ExplorationService`, `CombatService`, `CraftingService`, `EstateService`.
+- `CombatService` (Phase 4.1) — shared damage primitives. `applyAttack` returns hit/miss/crit; `chipDamage` returns the parry-counter chip for Defend. Both `ExplorationService.resolveAutobattle` (passive) and the upcoming active CombatController call into the same primitives so a fight resolves with the same odds in either mode. Single source of truth for combat math; tuning constants (`baseHitChance`, `critMultiplier`, `defendChipFraction`, `varianceRange`) are exported so both consumers stay in sync.
+- Future: `CraftingService`, `EstateService`.
 
 ## Concurrency Model
 

@@ -711,3 +711,42 @@ Tasks aren't reference types so identity comparison via `===` is impossible — 
 - Locale count: 207 → 214 per locale (6 new validation keys + 1 new `bot.restarted`).
 
 No dead code introduced. The `explore:passive:close` callback handler on `ExplorationController` remains intentionally for backwards-compat with chat history that pre-dates the auto-cleanup fix (sessions log from 2026-04-23). Build is clean (`swift build` succeeds).
+
+## Session — 2026-04-25 (Phase 4.1 combat foundation)
+
+User-led design discussion → agreed combat MVP scope, locked five mechanic constants, then wrote the foundation (no UI yet — controller, locale keys, and the encounterStarted hook follow next session).
+
+**Design decisions (locked for MVP, post-MVP listed in TODO 4.2/4.3):**
+1. Classes mechanically identical at MVP — identity comes from existing stat differences (warrior 10/12 atk/def, archer 14/8 with +acc, mage 15/6 with +crit) and starter-weapon `gearStats`. Class-specific Defend/Flee variations deferred.
+2. Reuse existing `User.effective*` stats — no arbitrary numbers in damage formulas.
+3. One Telegram message per round at MVP — edit-in-place deferred.
+4. Crit/dodge/accuracy from existing User stats. Single shared `CombatService.applyAttack` hook fires for both passive autobattle and the upcoming active controller.
+5. Per-enemy AI (aggression / fleeResist), rabies status, XP grant on victory — all deferred.
+6. Interactive combat = active mode only. Passive `runLive` keeps using autobattle (no UI possible from a detached background task).
+
+**Locked numbers:**
+- Base hit chance: 70%, clamped to [10, 95] after `± (acc − dodge)` shift.
+- Crit multiplier: ×1.5 (lands on roll vs `attackerCrit %`).
+- Damage variance: ±10%.
+- Attack costs −2 hunger; Defend costs −1; Flee costs −3.
+- Defend doubles `effectiveDefense` for the round AND deals chip damage = 30% of a clean hit (no crit, no miss — flavour: parry-counter / shadow shot / barrier wave).
+- Flee = 50% flat. Failure → enemy lands a guaranteed full-damage hit "in the back" (no dodge possible). Success → `stepsDeep -= 1`, back to exploration.
+- State model: combat fields embedded in `exploration_state` (combat in v1 only happens during exploration, single-row-per-user invariant gives "no concurrent fights" for free).
+
+**Foundation landed this session:**
+- `Swift/Migrations/AddCombatFields.swift` — adds nullable `combat_enemy_id: String` + `combat_enemy_hp: Int`. Registered after `RenameFoodIds`.
+- `Swift/Models/ExplorationState.swift` — two new `@OptionalField` columns + `isInCombat` / `beginCombat(enemyId:hp:)` / `endCombat()` helpers. Init nils both fields.
+- `Swift/Services/CombatService.swift` (new) — `AttackOutcome { miss / hit(damage) / crit(damage) }` enum + `applyAttack` + `chipDamage`. Constants exported (`baseHitChance = 70`, `critMultiplier = 1.5`, `defendChipFraction = 0.3`, `varianceRange = 0.9...1.1`) so both consumers stay in sync.
+- `Swift/Services/ExplorationService.swift` — `resolveAutobattle` rewritten to call `applyAttack` for both player and enemy strikes. Enemies don't have crit/dodge/accuracy stats yet, so they pass 0 for all three; the player gets full `effectiveCrit / effectiveAccuracy / effectiveDodge`. Side effect: passive autobattle now misses occasionally and crits occasionally — fight outcomes have more variance than before.
+- `TODO.md` Phase 4.1 expanded into a detailed checklist with the locked numbers.
+
+**Still pending (next session):**
+- New `StepOutcome.encounterStarted(Enemy)` case. Active `rollStep` returns this instead of running autobattle directly. ExplorationController catches → writes combat fields → transitions `routerName = "combat"`.
+- `Swift/Controllers/CombatController.swift` with Attack / Defend / Flee handlers, class-flavoured reply keyboard via `combat.button.<action>.<class>` locale keys, victory / defeat / flee end-conditions, AllControllers registry entry.
+- ~30 locale keys per locale (9 button labels + ~12 narrative strings + status card line).
+- Final `swift build` + locale-count parity check.
+
+**Side change picked up this session:**
+- `resetDevProfile` flipped `false → true → false` during the session — final state is `false` (dev profile state persists across restarts so combat tests survive bot restarts). CLAUDE.md "currently **on**" → "currently **off**".
+
+No dead code introduced. The `@unchecked Sendable` notes etc. all carry over. Build is clean (`swift build` → "Build complete!"). Locale count unchanged (still 214/214 — combat keys come next session).

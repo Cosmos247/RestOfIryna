@@ -105,7 +105,8 @@ RestOfIryna/
 │   │   ├── AddHpRegenTick.swift
 │   │   ├── AddPassiveExpeditionFields.swift
 │   │   ├── RenameMaterialIds.swift
-│   │   └── RenameFoodIds.swift
+│   │   ├── RenameFoodIds.swift
+│   │   └── AddCombatFields.swift
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
@@ -113,7 +114,8 @@ RestOfIryna/
 │   │   ├── WarehouseService.swift # deposit/withdraw between inventory and warehouse
 │   │   ├── ExplorationService.swift # step outcome roll + autobattle stub + loot drops
 │   │   ├── HealingService.swift  # passive HP regen (5%·maxHp/min) while at estate
-│   │   └── PassiveExpeditionService.swift # passive-mode duration picker + Task.sleep scheduler + simulation + report push
+│   │   ├── PassiveExpeditionService.swift # passive-mode duration picker + Task.sleep scheduler + simulation + report push
+│   │   └── CombatService.swift   # Phase 4.1 shared damage primitives (applyAttack hit/miss/crit + chipDamage for Defend)
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

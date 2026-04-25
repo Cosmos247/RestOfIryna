@@ -159,31 +159,50 @@ Design note: the 5-min room transition is **passive-mode-only**. Active reconnai
 
 ## Phase 4: Combat System
 
-### 4.1 Combat Engine
-- [ ] Design CombatState model (participants, round, hp, actions, log)
-- [ ] Implement damage formula (accuracy vs dodge, base damage, crit, defend multiplier)
-- [ ] Implement simultaneous round resolution
-- [ ] Implement combat log generation (readable on mobile)
-- [ ] Add variance and clamp to damage calculations
+### 4.1 Interactive PvE combat MVP *(in progress)*
 
-### 4.2 CombatController (PvE)
-- [ ] Create controller with 3-button UI (Attack, Defend, Auto)
-- [ ] Implement auto-combat (server resolves rounds until end/stop)
-- [ ] Implement extra action row (potions, food, spells — conditional)
-- [ ] Implement enemy AI (aggression based on type)
-- [ ] Handle combat end: victory (loot + XP) or defeat (death -> respawn)
-- [ ] Message editing for combat rounds (avoid spam)
+Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encounter. Passive expeditions keep using `ExplorationService.resolveAutobattle`. Class identity comes from existing stat differences + class-flavoured button labels (mechanics are identical; class-specific techniques are deferred to 4.2).
 
-### 4.3 Bestiary
-- [ ] Design Enemy model (species, tier, stats, loot table, depth range)
-- [ ] Create T1-T4 enemy definitions + Boss tier
-- [ ] Implement depth-aware enemy selection
+- [ ] Migration `AddCombatFields` — nullable `combat_enemy_id: String` + `combat_enemy_hp: Int` columns on `exploration_state`. Embedded model: combat lives inside an active expedition row; both columns null = not in combat.
+- [ ] Map combat fields on `ExplorationState` Fluent model + helpers (`isInCombat`, `beginCombat(enemyId:hp:)`, `endCombat()`).
+- [ ] `CombatService.applyAttack(attackerATK:attackerCrit:attackerAcc:defenderDEF:defenderDodge:) -> AttackOutcome` (`miss / hit(damage) / crit(damage)`):
+  - `hitChance = clamp(70 + acc − dodge, 10, 95)%`
+  - On hit: `critChance = crit %`; crit multiplier ×1.5
+  - Damage: `max(1, (atk − def) * variance[0.9..1.1] * critMult)`
+  - Refactor `ExplorationService.resolveAutobattle` to call this helper — passive autobattle gains crit / dodge / accuracy semantics for free.
+- [ ] New `StepOutcome.encounterStarted(Enemy)` case. Active `rollStep` returns it instead of running autobattle. `ExplorationController` catches → writes combat fields → transitions `routerName = "combat"` → renders intro. Passive `runLive` keeps the existing `.encounterWon / .encounterLost` autobattle path.
+- [ ] `CombatController.swift`:
+  - Reply keyboard `[Attack] [Defend] [Flee]` with class-flavoured labels via `combat.button.<action>.<class>` locale keys.
+  - **Attack** (−2 hunger): `applyAttack(player → enemy)` then `applyAttack(enemy → player)`.
+  - **Defend** (−1 hunger): player deals 30% of `applyAttack`'s damage (no crit, no miss — chip damage from a parry / shadow shot / barrier wave); incoming hit rolls `applyAttack(enemy → player)` with player's `effectiveDefense × 2` for that round only.
+  - **Flee** (−3 hunger): 50% flat success → clear combat state, `stepsDeep -= 1`, transition back to exploration with success message. Failure → enemy lands a guaranteed full-damage hit "in the back" (no dodge), combat continues.
+  - End conditions: enemy HP ≤ 0 → loot via existing `rollLootDrops`, encounter.won message, clear combat state, `routerName = "exploration"`. Player HP ≤ 0 → existing `handleDeath` (wipes inventory, hp = 1, back to estate).
+  - Register in `AllControllers`.
+- [ ] Locale keys (~30 per locale): 9 button labels (3 actions × 3 classes) + ~12 narrative keys (`combat.encounter.intro`, `combat.you.{hit,crit,miss}`, `combat.enemy.{hit,crit,miss}`, `combat.defend.absorbed`, `combat.flee.{success,fail}`, `combat.victory`, `combat.status_card`).
+- [ ] `swift build` clean; en/uk key counts match.
+
+### 4.2 Class-specific techniques *(post-MVP)*
+- [ ] Knight Parry: 30% block + 25% counter chance (½ damage)
+- [ ] Archer Hide: 100% block but next-attack accuracy penalty
+- [ ] Mage Barrier: 100% block but costs more hunger or HP
+- [ ] Class-specific Flee chances (knight 40 / archer 70 / mage 90 + cost)
+
+### 4.3 Combat polish *(post-MVP)*
+- [ ] Edit single message in-place per round (vs. one message per round)
+- [ ] XP grant on victory
+- [ ] Per-enemy AI hooks (aggression, fleeResist) on `Enemy`
+- [ ] Status effects — flagship: rabies from rabid family, cured at chapel (Phase 6)
+- [ ] Combat log persistence + replay
+
+### 4.4 Bestiary expansion *(landed in 3.5 prep — already in code)*
+- [x] T1–T4 enemy roster (5 animals, wild + rabid families) — see `Swift/Models/Enemy.swift`
+- [ ] Add T5 boss tier
 - [ ] Create `content/bestiary.md` reference document
 
-### 4.4 PvP Combat
-- [ ] Implement PvP challenge system
-- [ ] Add 30-second per-round timer (timeout = Defend)
-- [ ] Handle mutual Auto (instant resolution)
+### 4.5 PvP combat *(later phase)*
+- [ ] Challenge system
+- [ ] 30-second per-round timer (timeout = Defend)
+- [ ] Mutual Auto = instant resolution
 - [ ] Arena integration (separate from territorial PvP)
 
 ---

@@ -8,8 +8,9 @@
 //
 //  Responsibilities:
 //    - Roll the outcome of a step (nothing / loot / encounter / trip).
-//    - Resolve combat via a stub autobattle — Phase 4 replaces this with a real
-//      round-based controller.
+//    - Resolve combat via autobattle (passive expeditions) on top of
+//      `CombatService.applyAttack` — the active CombatController shares the
+//      same primitives so a fight resolves with the same odds in either mode.
 //    - Drain hunger and apply starvation HP loss on room transitions.
 //
 //  The service mutates the `User` model in place; callers persist via
@@ -191,11 +192,15 @@ public enum ExplorationService {
         }
     }
 
-    // MARK: - Autobattle stub (Phase 4 replaces this)
+    // MARK: - Autobattle (passive mode)
 
     /// Simulate rounds until one side dies or a safety cap hits. Mutates
-    /// `player.hp` / `player.hunger` directly. Damage formula is intentionally
-    /// basic here — Phase 4's CombatController will layer in dodge/accuracy/crit.
+    /// `player.hp` / `player.hunger` directly. Shares hit / miss / crit
+    /// primitives with the active CombatController via `CombatService.applyAttack`,
+    /// so the same fight resolves with the same odds in both modes. Enemies
+    /// don't carry crit/dodge/accuracy stats yet, so we pass 0 for the enemy
+    /// side — the player gets effectiveDodge against incoming hits and crits
+    /// against the enemy.
     public static func resolveAutobattle(player: User, enemy: Enemy) -> AutobattleResult {
         var enemyHP = enemy.hp
         var rounds = 0
@@ -203,21 +208,35 @@ public enum ExplorationService {
 
         let playerAtk = player.effectiveAttack
         let playerDef = player.effectiveDefense
+        let playerCrit = player.effectiveCrit
+        let playerAcc  = player.effectiveAccuracy
+        let playerDodge = player.effectiveDodge
         let hpBefore = player.hp
 
         while player.hp > 0 && enemyHP > 0 && rounds < maxRounds {
             rounds += 1
             _ = HungerService.drain(player, action: .combatRound)
 
-            // Player strikes first — simple auto-attack with ±10% variance.
-            let playerRaw = Double(max(1, playerAtk - enemy.defense))
-            let playerDmg = max(1, Int((playerRaw * Double.random(in: 0.9...1.1)).rounded()))
-            enemyHP -= playerDmg
+            // Player strikes first.
+            let playerHit = CombatService.applyAttack(
+                attackerATK: playerAtk, attackerCrit: playerCrit, attackerAcc: playerAcc,
+                defenderDEF: enemy.defense, defenderDodge: 0
+            )
+            switch playerHit {
+            case .miss: break
+            case .hit(let d), .crit(let d): enemyHP -= d
+            }
             if enemyHP <= 0 { break }
 
-            let enemyRaw = Double(max(1, enemy.attack - playerDef))
-            let enemyDmg = max(1, Int((enemyRaw * Double.random(in: 0.9...1.1)).rounded()))
-            player.hp = max(0, player.hp - enemyDmg)
+            // Enemy counter — no crit/accuracy stats on Enemy yet, so pass 0.
+            let enemyHit = CombatService.applyAttack(
+                attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
+                defenderDEF: playerDef, defenderDodge: playerDodge
+            )
+            switch enemyHit {
+            case .miss: break
+            case .hit(let d), .crit(let d): player.hp = max(0, player.hp - d)
+            }
         }
 
         return AutobattleResult(

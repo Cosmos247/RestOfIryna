@@ -65,6 +65,19 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "report_json")
     public var reportJSON: String?
 
+    // MARK: - Phase 4.1 combat fields
+
+    /// ID of the enemy the player is currently fighting. Non-null on both
+    /// `combatEnemyId` AND `combatEnemyHP` = active combat. Both null = no
+    /// combat (the expedition row itself stays put across combats).
+    @OptionalField(key: "combat_enemy_id")
+    public var combatEnemyId: String?
+
+    /// Remaining HP of the enemy currently being fought. See `combatEnemyId`
+    /// for the live-combat invariant.
+    @OptionalField(key: "combat_enemy_hp")
+    public var combatEnemyHP: Int?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -80,6 +93,8 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.modeRaw = ExplorationMode.active.rawValue
         self.endsAt = nil
         self.reportJSON = nil
+        self.combatEnemyId = nil
+        self.combatEnemyHP = nil
     }
 }
 
@@ -215,5 +230,26 @@ extension ExplorationState {
         if let state = try await current(for: user, on: db) {
             try await state.delete(on: db)
         }
+    }
+}
+
+// MARK: - Combat helpers
+
+extension ExplorationState {
+    /// True when the row encodes a live combat (both combat fields populated).
+    public var isInCombat: Bool {
+        return combatEnemyId != nil && combatEnemyHP != nil
+    }
+
+    /// Stamp the combat fields. Caller saves the row.
+    public func beginCombat(enemyId: String, hp: Int) {
+        self.combatEnemyId = enemyId
+        self.combatEnemyHP = hp
+    }
+
+    /// Clear the combat fields without touching the rest of the row. Caller saves.
+    public func endCombat() {
+        self.combatEnemyId = nil
+        self.combatEnemyHP = nil
     }
 }

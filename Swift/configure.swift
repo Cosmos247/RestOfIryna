@@ -30,7 +30,7 @@ let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
 let developerUsers: [Int64] = [mitya, irina, maxim]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = true
+let resetDevProfile = false
 
 /// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
 /// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
@@ -156,6 +156,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddPassiveExpeditionFields())
     migrations.add(RenameMaterialIds())
     migrations.add(RenameFoodIds())
+    migrations.add(AddCombatFields())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
