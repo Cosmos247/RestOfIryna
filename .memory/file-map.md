@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~214 keys)
-│   └── uk.json                     # Ukrainian strings (~214 keys)
+│   ├── en.json                     # English strings (~237 keys)
+│   └── uk.json                     # Ukrainian strings (~237 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -43,7 +43,7 @@ RestOfIryna/
     │   ├── SettingsController.swift      # Language change, back navigation
     │   ├── GlobalCommandsController.swift # /help, /settings, /buttons (any state)
     │   ├── ExplorationController.swift   # Phase 3.1 active + 3.2 visit-decay return + 3.3 passive mode. Entry shows mode picker [🏃 Розвідка / 🏕 Експедиція] when no state; passive branches into countdown status (in-flight) or report delivery (completed). Active: Step Forward increments & rolls with prior visit count; Step Back decrements & rolls (km ≥ 2) or arrives home (km ≤ 1). Reply keyboard [🚶 Step fwd] [🔙 Step back] / [🎒 Bag] only during active. Inline `explore:` callbacks for bag, mode-picker, duration-picker, passive-report close. Encounters in active mode hand off to CombatController via `handOffToCombat` (stamps combat fields on state row, transitions routerName). `handleDeath(causeNarrative:)` is now a static helper so CombatController can reuse the wipe + respawn flow.
-    │   ├── CombatController.swift        # Phase 4.1 turn-based PvE duel. Reply keyboard [Attack] [Defend] / [Flee] with class-flavoured labels via combat.button.<action>.<class>. Attack/Defend/Flee handlers call CombatService primitives, persist enemy HP on the state row across taps, render round narrative + status. Victory awards loot, hands back to ExplorationController; defeat shares ExplorationController.handleDeath; flee 50/50 with forced full-damage counter on fail. Registration wolves fight at step 4 routes through here too — Registration.handleCombatEnd(won:) is the registration-specific end path for victory / defeat / flee / /start, detected via session.registrationStep < 6.
+    │   ├── CombatController.swift        # Phase 4.1 turn-based PvE duel. Inline buttons [Attack][Defend] / [Flee] (combat:attack/defend/flee callbacks) with class-flavoured labels via combat.button.<action>.<class>. generateControllerKB returns nil — the previous reply keyboard (exploration's, or none in registration) stays visible but inert. Any non-combat input mid-fight (old reply-keyboard taps, free text, stale inline buttons) triggers a one-line "you're in combat with X" nudge via combat.in_progress. Attack/Defend/Flee handlers call CombatService primitives, persist enemy HP on the state row across taps, render round narrative + status. Victory awards loot, hands back to ExplorationController; defeat shares ExplorationController.handleDeath; flee 50/50 with forced full-damage counter on fail. Registration wolves fight at step 4 routes through here too — Registration.handleCombatEnd(won:) is the registration-specific end path for victory / defeat / flee / /start, detected via session.registrationStep < 6.
     │   ├── EstateController.swift        # Tree nav: Root → House (Workshop/Kitchen/Warehouse stubs) / Plot stub. Per-level artwork loader. Main-nav pass-through.
     │   ├── CapitalController.swift       # STUB (Phase 6): coming-soon + back to main
     │   └── InventoryController.swift     # Tree nav: root categories → drill-down with Use buttons for food/potion

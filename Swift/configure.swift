@@ -30,7 +30,7 @@ let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
 let developerUsers: [Int64] = [mitya]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
-let resetDevProfile = true
+let resetDevProfile = false
 
 /// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
 /// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
@@ -330,6 +330,12 @@ public func configure(logger: Logger) async throws {
     try await PassiveExpeditionService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
+    // Restored players keep whatever reply keyboard their current controller
+    // owns — no one-time `/start` button forced on top of it. Unregistered
+    // users (no row yet, or still mid-registration) get the `/start` button
+    // so they have an obvious entry point. Combat has no reply keyboard of
+    // its own (inline only) so we fall back to the exploration keyboard,
+    // since combat is always nested inside an active expedition.
     let startKB = TGReplyMarkup.replyKeyboardMarkup(TGReplyKeyboardMarkup(
         keyboard: [[TGKeyboardButton(text: "/start")]],
         resizeKeyboard: true,
@@ -337,9 +343,25 @@ public func configure(logger: Logger) async throws {
     ))
     for tgId in allowedUsers {
         let chatId = TGChatId.chat(tgId)
-        let locale = (try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first())?.locale ?? "uk"
+        let user = try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first()
+        let locale = user?.locale ?? "uk"
         let text = lingo.localize("bot.restarted", locale: locale)
-        let params = TGSendMessageParams(chatId: chatId, text: text, parseMode: .html, disableNotification: true, replyMarkup: startKB)
+
+        let markup: TGReplyMarkup
+        if let user = user, user.registrationStep >= 6 {
+            let activeCtrl = Controllers.all.first { $0.routerName == user.routerName }
+            let kbCtrl: TGControllerBase
+            if activeCtrl?.routerName == Controllers.combatController.routerName {
+                kbCtrl = Controllers.explorationController
+            } else {
+                kbCtrl = activeCtrl ?? Controllers.mainController
+            }
+            markup = kbCtrl.generateControllerKB(session: user, lingo: lingo) ?? startKB
+        } else {
+            markup = startKB
+        }
+
+        let params = TGSendMessageParams(chatId: chatId, text: text, parseMode: .html, disableNotification: true, replyMarkup: markup)
         _ = try? await appState.bot.sendMessage(params: params)
     }
 

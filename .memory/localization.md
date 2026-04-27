@@ -97,13 +97,13 @@ If you must keep the emoji in the template for some reason:
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~236 per locale)
+## Current Keys (~237 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
 - Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long/edge_space/consecutive_spaces/invalid_chars (validation toasts), registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_wolves, registration.continue, registration.estate.prompt/too_short/too_long/edge_space/consecutive_spaces/invalid_chars, registration.complete
-- Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on bot startup with a `/start` reply-keyboard button)
-- Combat (Phase 4.1): combat.button.<action>.<class> — 9 button labels (Attack/Defend/Flee × warrior/archer/mage). combat.encounter.intro for the round-1 framing line. combat.you.{hit,crit,miss} / combat.enemy.{hit,crit,miss} for round narration (each interpolates `%{enemy}` and `%{damage}` where applicable). combat.defend.absorbed for the parry-counter chip line. combat.flee.{success,fail} for retreat outcomes. combat.victory / combat.defeat for end-of-fight headers. registration.fight_wolves (Stand and fight button) and registration.wolves_retry (soft-retry preamble after defeat / flee at the registration tutorial fight).
+- Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on startup with the player's controller-specific reply keyboard for registered users, or a one-time `/start` button for unregistered ones — message text no longer hard-codes the `/start` hint since registered players see their normal nav)
+- Combat (Phase 4.1): combat.button.<action>.<class> — 9 inline-button labels (Attack/Defend/Flee × warrior/archer/mage). combat.encounter.intro for the round-1 framing line. combat.you.{hit,crit,miss} / combat.enemy.{hit,crit,miss} for round narration (each interpolates `%{enemy}` and `%{damage}` where applicable). combat.defend.absorbed for the parry-counter chip line. combat.flee.{success,fail} for retreat outcomes. combat.victory / combat.defeat for end-of-fight headers. combat.in_progress — one-line nudge ("you're locked in combat with X — finish the fight first") sent when the player taps anything outside the inline action buttons mid-fight. registration.fight_wolves (Stand and fight button) and registration.wolves_retry (soft-retry preamble after defeat / flee at the registration tutorial fight).
 - Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)

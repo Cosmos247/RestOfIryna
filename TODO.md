@@ -172,11 +172,33 @@ Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encoun
 - [x] Locale keys: 9 button labels (3 actions × 3 classes) + 11 narratives (encounter.intro, you.{hit,crit,miss}, enemy.{hit,crit,miss}, defend.absorbed, flee.{success,fail}, victory, defeat) + 2 registration keys (fight_wolves, wolves_retry). 214 → 236 per locale.
 - [x] Build clean, en/uk parity.
 
-### 4.2 Class-specific techniques *(post-MVP)*
-- [ ] Knight Parry: 30% block + 25% counter chance (½ damage)
-- [ ] Archer Hide: 100% block but next-attack accuracy penalty
-- [ ] Mage Barrier: 100% block but costs more hunger or HP
-- [ ] Class-specific Flee chances (knight 40 / archer 70 / mage 90 + cost)
+### 4.2 Class-specific techniques *(planned — concept locked 2026-04-27)*
+
+Each class gets three signature techniques: an Attack, a Defense, and a Super (stance buff that boosts both ATK and DEF for 2-3 rounds). Concrete unlock-by-level wiring is designed in a later pass — for now we land the mechanics + UI assuming all techniques are available.
+
+#### Warrior (Knight)
+- [ ] **Розкол** *(Cleave)* — Attack. Heavy two-handed strike that ignores a % of enemy DEF ("splits the shield"). Higher hunger cost, lower hit chance — high-risk, high-reward swing.
+- [ ] **Залізна стіна** *(Iron Bulwark)* — Defense. Full block this round + ½-damage counter + applies a short DEF debuff on the enemy for the next round (sets up the next Cleave / Slash).
+- [ ] **Кровна жага** *(Bloodlust)* — Super stance, 2-3 rounds. +ATK and +DEF, but hunger drain doubles while active.
+
+#### Archer
+- [ ] **Влучний постріл** *(Vital Shot)* — Attack. Cannot miss, multiplied crit chance, fully ignores DEF (arrow finds the gap). Tradeoff: player gets no dodge this round (long aim).
+- [ ] **Тінь лісу** *(Shadow Veil)* — Defense. 100% dodge this round + lingering +50% dodge next round. Buys two rounds of mobility — usually used to set up Vital Shot.
+- [ ] **Око сокола** *(Hawk's Eye)* — Super stance, 2-3 rounds. +crit, +accuracy, +dodge simultaneously. Hyper-focused sniper mode.
+
+#### Mage
+- [ ] **Полум'я душі** *(Soulfire)* — Attack. Magical beam that bypasses DEF entirely. Large flat base damage independent of weapon variance. High hunger cost (magic feeds on the caster's vitality).
+- [ ] **Дзеркальний щит** *(Mirror Ward)* — Defense. 100% block this round + 50% of the would-be damage reflects back at the enemy.
+- [ ] **Магічний резонанс** *(Arcane Resonance)* — Super stance, 2-3 rounds. +50% magical attack damage and a magical DEF buff against incoming hits. Hefty hunger cost on activation (concentration burn).
+
+#### Shared infrastructure
+- [ ] Migration: `combat_stance: String?` + `combat_stance_rounds_left: Int?` columns on `exploration_state` for the Super-stance lifecycle
+- [ ] Stance lifecycle in `CombatController` — apply on activation, decrement each round, expire with a clean narrative
+- [ ] Per-technique locale keys: button label + activation narrative + ongoing-effect tick + expiry line (~3 strings × 9 techniques ≈ 27 keys per locale)
+- [ ] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra hunger for the teleport)
+- [ ] Unlock-by-level wiring *(deferred — designed once the leveling system lands)*
+
+Build clean + en/uk parity at the end of each technique's PR.
 
 ### 4.3 Combat polish *(post-MVP)*
 - [ ] Edit single message in-place per round (vs. one message per round)
@@ -353,4 +375,4 @@ Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encoun
 
 ---
 
-*Last updated: 2026-04-22 — Phases 0-1 complete; Phase 2 done; Phase 3.0 + 3.1 done; Phase 5 scaffolding done; combat + passive expedition pending.*
+*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + tutorial wolves fight done; Phase 5.0 estate skeleton + warehouse done. Next: Phase 4.2 class-specific Defend/Flee techniques.*

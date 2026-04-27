@@ -786,3 +786,33 @@ Built on top of last session's CombatService foundation. Wired the active-mode e
 - `resetDevProfile` flipped back to `true` — registration is exercised end-to-end on every dev launch while the new combat hand-off is being playtested.
 
 **Phase 4.2 / 4.3 deferrals (carried forward in TODO.md):** class-specific Defend / Flee mechanics, edit-in-place combat UX, XP grant on victory, per-enemy AI hooks (aggression / fleeResist), status effects (rabies). All deliberate post-MVP scope.
+
+## Session — 2026-04-27 (Combat UX polish + bot-restart keyboard fix + Phase 4.2 concept lock)
+
+Pre-Phase 4.2 prep session: locked the design for class-specific techniques in TODO.md, then fixed two combat-adjacent UX issues that would have made it worse to land 4.2 on top of.
+
+**Phase 4.2 concept locked (TODO.md only — no code).** Each class will get three signature techniques: an Attack, a Defense, and a Super (stance buff that boosts both ATK and DEF for 2-3 rounds). User picked the names interactively:
+- Warrior — **Розкол** (Cleave) / **Залізна стіна** (Iron Bulwark) / **Кровна жага** (Bloodlust)
+- Archer — **Влучний постріл** (Vital Shot) / **Тінь лісу** (Shadow Veil) / **Око сокола** (Hawk's Eye)
+- Mage — **Полум'я душі** (Soulfire) / **Дзеркальний щит** (Mirror Ward) / **Магічний резонанс** (Arcane Resonance)
+Plus class-specific Flee chances (knight 40 / archer 70 / mage 90 + extra mage hunger cost). Unlock-by-level wiring deferred until the leveling system lands. TODO.md Phase 4.2 section rewritten with the full checklist + shared-infrastructure notes (new `combat_stance` + `combat_stance_rounds_left` columns, ~27 locale keys, Flee tuning).
+
+**Combat actions converted from reply keyboard → inline buttons.** Driver: the user wanted the player's "main" keyboard to stay put during combat (so they can see what they'd come back to) and to get a "you're in combat" nudge if they tap one of those buttons by mistake. Code changes:
+- `CombatController.attachHandlers` no longer registers 18 per-class text labels; instead it registers `router[.callback_query(data: nil)] = T.onCallbackQuery` and the unmatched fallback.
+- New `combatInlineKeyboard(session:lingo:)` builds `[⚔️ Slash][🛡 Parry] / [🏃 Retreat]` (or class-flavoured equivalent) as inline buttons with `combat:attack` / `combat:defend` / `combat:flee` callbacks. `showCombat` and `finishRound` now use it instead of the old reply keyboard.
+- `generateControllerKB` returns nil — combat owns no reply keyboard, so whatever was visible before combat (exploration's `[Step fwd][Step back]/[Bag]`, or none in registration) stays put.
+- New static `onCallbackQuery` dispatcher routes the three combat callbacks to existing handlers; unknown callbacks (stale Estate / Inventory inline buttons) fall through to `sendInCombatNotice`.
+- New `sendInCombatNotice(context:)` sends a single line via `combat.in_progress` ("Ти зараз у бою з 🐗 Дикий кабан. Спочатку заверши сутичку.") — first iteration also re-rendered the status card + buttons but the user (correctly) flagged that as duplicate noise; trimmed back to the bare nudge. The previous combat message above still has the live inline buttons.
+- `unmatched` now calls `sendInCombatNotice` instead of re-rendering combat — same one-line nudge for any text input, including taps on the previous reply keyboard.
+- New locale key: `combat.in_progress` in en/uk. Locale count 236 → 237.
+
+**Side effect — registration `ReplyKeyboardRemove` defenses are now redundant but harmless.** They were originally there because the combat reply keyboard could be typed as the estate name (combat-button labels would pass `validateName`'s digits/Latin/Cyrillic + single-space allow-list). With combat now inline, no labels can be typed. Kept the `ReplyKeyboardRemove` calls as defensive (no-op during the registration flow, which already uses ReplyKeyboardRemove globally).
+
+**Bot-restart greeting now restores the player's normal keyboard.** Driver: user reported that on bot restart, even fully-registered players got the one-time `/start` button instead of their main 6-button keyboard. The greeting message text was also updated — removed the "Tap /start to return to the realm" tail since registered players don't need the hint.
+- `configure.swift` per-user loop now does: look up User row → if `registrationStep >= 6`, find their controller via `Controllers.all.first { $0.routerName == user.routerName }`, call its `generateControllerKB`. Combat case (which returns nil) explicitly falls back to `Controllers.explorationController.generateControllerKB` since combat is always nested in an expedition. Unregistered users (no row, or step < 6) keep the one-time `[/start]` button.
+- en/uk `bot.restarted` strings stripped of the `/start` hint.
+- Added a CLAUDE.md / `.memory/controller-pattern.md` note that controllers can deliberately return nil from `generateControllerKB` and that callers needing a fallback should pick the parent context's keyboard explicitly.
+
+**Side change picked up this session:** `resetDevProfile` flipped back to `false` — combat refactor playtesting wants registered state to survive across launches.
+
+**Files modified:** `Swift/Controllers/CombatController.swift` (combat-action callbacks, removed reply-keyboard plumbing), `Swift/configure.swift` (context-aware bot-restart keyboard + resetDevProfile flip), `Localizations/en.json` + `uk.json` (combat.in_progress added; bot.restarted hint trimmed), `TODO.md` (Phase 4.2 concept lock-in checklist + footer summary), `CLAUDE.md` / `README.md` / `.memory/{file-map,status,localization,controller-pattern}.md` (doc sync). Build clean.

@@ -59,7 +59,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `EstateController` — tree nav: Root (per-level artwork, tiers 1–3 drawn) → House (Workshop / Kitchen stubs; Warehouse with real deposit/withdraw via `WarehouseService` — stackable types aggregate per item_id with counts on both sides, gear renders per physical row with a single-direction arrow) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `InventoryController` — tree navigation; root shows all 5 category buttons with counts plus a fullness indicator (X/50 slots); drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear is shown per-row (each physical unit is its own button, no `× N` aggregation) and toggles between 🛡 Equip / ❌ Unequip via EquipmentService, with a persistent per-item icon via `Item.icon`; artifact placeholder until TBD. Backpack is capped at 50 non-equipped slots — future exploration / warehouse withdraw respect this.
-   - `CombatController` — Phase 4.1 turn-based PvE duel triggered when active-mode `rollStep` rolls an encounter. Reply keyboard `[Attack] [Defend] / [Flee]` with class-flavoured labels (warrior = Slash / Parry / Retreat; archer = Arrow / Hide / Maneuver; mage = Magic / Barrier / Teleport). Attack (−2 hunger) runs `CombatService.applyAttack` both directions; Defend (−1) chip-damages the enemy and doubles effective DEF for the round; Flee (−3) is 50/50 with a forced full-damage counter on fail. Victory awards loot via `ExplorationService.awardEncounterDrops` and hands the player back to ExplorationController at the same km; defeat shares `handleDeath`. The same controller also drives the registration wolves fight at step 4 — `Registration.handleCombatEnd(won:)` routes back into the registration flow when `session.registrationStep < 6`. Class-specific Defend/Flee mechanics, XP, edit-in-place UX, and status effects are deferred to 4.2/4.3.
+   - `CombatController` — Phase 4.1 turn-based PvE duel triggered when active-mode `rollStep` rolls an encounter. Actions are **inline buttons** on each round message (`combat:attack` / `combat:defend` / `combat:flee` callbacks) with class-flavoured labels (warrior = Slash / Parry / Retreat; archer = Arrow / Hide / Maneuver; mage = Magic / Barrier / Teleport); the controller owns no reply keyboard so the previous one (exploration's, or none during registration) stays visible but inert. Tapping anything outside the inline buttons mid-fight produces a one-line "you're in combat with X" nudge — the live buttons are still on the previous message above. Attack (−2 hunger) runs `CombatService.applyAttack` both directions; Defend (−1) chip-damages the enemy and doubles effective DEF for the round; Flee (−3) is 50/50 with a forced full-damage counter on fail. Victory awards loot via `ExplorationService.awardEncounterDrops` and hands the player back to ExplorationController at the same km; defeat shares `handleDeath`. The same controller also drives the registration wolves fight at step 4 — `Registration.handleCombatEnd(won:)` routes back into the registration flow when `session.registrationStep < 6`. Class-specific Defend/Flee mechanics, XP, edit-in-place UX, and status effects are deferred to 4.2/4.3.
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
 3. **Context** — passed to every controller; holds the bot instance, DB handle, localization (Lingo), user session, and parsed command arguments.
@@ -282,13 +282,13 @@ await session.invalidateCache()                                   // drop cache 
 ### Keyboards
 
 ```swift
-// Persistent reply keyboard (main menu, combat actions)
+// Persistent reply keyboard (main menu, exploration nav)
 let markup = TGReplyKeyboardMarkup(keyboard: [
-    [TGKeyboardButton(text: "⚔️ Attack"), TGKeyboardButton(text: "🛡 Defend")],
-    [TGKeyboardButton(text: "🤖 Auto")]
+    [TGKeyboardButton(text: "🚶 Step fwd"), TGKeyboardButton(text: "🔙 Step back")],
+    [TGKeyboardButton(text: "🎒 Bag")]
 ], resizeKeyboard: true)
 
-// Inline keyboard (callbacks — exploration events, estate tiles)
+// Inline keyboard (callbacks — exploration events, estate tiles, combat actions)
 let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
     [TGInlineKeyboardButton(text: "Continue deeper", callbackData: "explore:continue")]
 ])
