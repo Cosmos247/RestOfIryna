@@ -424,7 +424,7 @@ extension EstateController {
             } else {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false)
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
             }
             _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
@@ -520,29 +520,44 @@ extension EstateController {
         }
 
         let itemName = context.lingo.localize(item.nameKey, locale: locale)
+        // Classify the outcome: successes get an inline status line in the
+        // refreshed view; failures (nothing to move, backpack full) get a
+        // modal alert via showAlert: true so the player can't miss the
+        // reason their tap did nothing.
         let toastKey: String
+        let isSuccess: Bool
         if isDeposit {
             let result = try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db)
             switch result {
-            case .success:           toastKey = "estate.warehouse.deposited"
-            case .nothingToDeposit:  toastKey = "estate.warehouse.nothing_to_deposit"
+            case .success:           toastKey = "estate.warehouse.deposited";          isSuccess = true
+            case .nothingToDeposit:  toastKey = "estate.warehouse.nothing_to_deposit";  isSuccess = false
             }
         } else {
             let result = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
             switch result {
-            case .success:           toastKey = "estate.warehouse.withdrawn"
-            case .nothingToWithdraw: toastKey = "estate.warehouse.nothing_to_withdraw"
-            case .inventoryFull:     toastKey = "inventory.full"
+            case .success:           toastKey = "estate.warehouse.withdrawn";           isSuccess = true
+            case .nothingToWithdraw: toastKey = "estate.warehouse.nothing_to_withdraw"; isSuccess = false
+            case .inventoryFull:     toastKey = "inventory.full";                       isSuccess = false
             }
         }
         let toast = context.lingo.localize(toastKey, locale: locale, interpolations: ["item": itemName])
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
 
-        // Refresh the currently-open category in place.
+        if isSuccess {
+            // Silent ack — the inline status line carries the message instead.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        } else {
+            // Modal alert for warnings — player taps OK to dismiss.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+        }
+
+        // Refresh the currently-open category in place. On success prepend
+        // the status line; on failure leave the body unchanged (data didn't
+        // move, the modal alert already explains why).
         let ctrl = Controllers.estateController
         let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
         let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
-        let text = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let body = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let text = isSuccess ? "✅ \(toast)\n\n\(body)" : body
         let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
 
         let chatId = TGChatId.chat(message.chat.id)

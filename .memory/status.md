@@ -33,7 +33,7 @@
 - [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
 - [x] CapitalController — stub (coming-soon message + back), reserved for Phase 6
 - [x] EstateController — tree nav (Phase 5.0 scaffolding): Root (estate name + level + optional per-level artwork) → [🏠 House] drilldown with Workshop/Kitchen/Warehouse stubs / [🌾 Plot] stub; main-nav pass-through; switches between editMessageText and editMessageCaption based on whether the root rendered as text or photo.
-- [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button (future description view); `[🍽 Use]` shown for all types except Materials (food/potion consume; gear/recipe/artifact toast "not yet available"); main-nav button pass-through; equip planned for Phase 2.3
+- [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button with item-info modal showing the lore description on tap. Action acks (eat, equip, unequip) appear as an inline `✅ ...` status line above the refreshed view; warnings (raw food, no_effect, empty category, use_unavailable) appear as Telegram modal alerts via `showAlert: true`. Eat status appends current/max pool indicator ("+15 голоду (20/100)"). No top-strip toasts.
 
 ### Character System
 - [x] CharacterClass enum (warrior/archer/mage) with icons
@@ -115,7 +115,7 @@
 - [ ] Tutorial/onboarding quest
 
 ### Content Needed
-- [~] Bestiary — 5 animals across 4 tiers in code-based EnemyCatalog. Wild family (🐗 boar / 🫎 moose / 🦬 buffalo) drops raw meat + hide; rabid family (🐈‍⬛ lynx / 🐺 wolf) drops hide only. Depth ranges span 5-km tiers 1–20. Needs biome variety + more diverse drops later.
+- [x] Bestiary — 7 animals across 6 tiers in code-based EnemyCatalog. Wild family (🐗 boar km 1-10 / 🫎 moose 6-15 / 🦬 buffalo 11-20 / 🐻 wild_bear 21-30) drops raw meat + hide; rabid family (🐈‍⬛ lynx 11-20 / 🐺 wolf 16-25 / 🐻‍❄️ rabid_bear 25-35) drops hide only. Three deep-zone overlaps stack: rabid_wolf↔wild_bear at 21-25, wild_bear↔rabid_bear at 25-30. Reference doc at `content/bestiary.md`. T5+ currently only has regular mobs; the dedicated boss is reserved for Phase 3.5.
 - [ ] Recipe book (crafting recipes per tier)
 - [ ] Tuning curves (XP per level, hunger scaling, stat curves)
 - [ ] Quest definitions
@@ -123,4 +123,4 @@
 
 ---
 
-*Last updated: 2026-04-27 (Phase 4.3.1 — class-specific Flee chances landed: warrior 40 / archer 70 / mage 90, with mage paying +2 hunger teleport tax. New `Flee` namespace + lookups in CombatService consumed by `onFlee`. TODO.md restructured: Phase 4.3.2 (edit-in-place) + 4.3.3 (XP grant) deferred by user; remaining 4.3 items moved to a new top-level `Future / Backlog` section reviewed near release. Phase 5 gained an XP-to-Estate redesign note replacing the current `User.estateLevel` derivation from player level.)*
+*Last updated: 2026-04-27 (Phase 4.4 bestiary closed — wild_bear (T5, km 21-30) + rabid_bear (T6, km 25-35) added with rabid_wolf range extended to 16-25; `content/bestiary.md` reference doc created. Callback-toast UX overhauled across all 11 sites: 6 success cases now show inline `✅ ...` status banner above the refreshed view, 5 warning cases (raw food, no-effect, empty category, full backpack, etc.) use modal alerts via `showAlert: true`; HTML stripped from toast-bound locale keys. Eat-success status indicators interpolate current/max pool, e.g. "+15 голоду (20/100)".)*

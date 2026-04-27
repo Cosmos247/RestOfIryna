@@ -212,10 +212,12 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 - Per-enemy AI hooks (aggression, fleeResist) — *moved to Future / Backlog*
 - Combat log persistence + replay — *moved to Future / Backlog (Arena dependency)*
 
-### 4.4 Bestiary expansion *(landed in 3.5 prep — already in code)*
+### 4.4 Bestiary expansion *(landed)*
 - [x] T1–T4 enemy roster (5 animals, wild + rabid families) — see `Swift/Models/Enemy.swift`
-- [ ] Add T5 boss tier
-- [ ] Create `content/bestiary.md` reference document
+- [x] T5 regular mob added: **wild_bear** 🐻 (km 21–30; rabid_wolf range extended to 16–25 so the families share the 21–25 overlap; HP 95 / ATK 17 / DEF 5, drops meat ×2 + hide ×1)
+- [x] T6 regular mob added: **rabid_bear** 🐻‍❄️ (km 25–35; overlaps with wild_bear at 25–30, alone at 31–35; HP 120 / ATK 22 / DEF 4 — rabid family pattern, drops hide ×2 only)
+- [-] T5 *boss* tier — *deferred to Phase 3.5* once the boss-fight mechanics are designed (separate from regular mobs)
+- [x] Create `content/bestiary.md` reference document
 
 ### 4.5 PvP combat *(later phase)*
 - [ ] Challenge system

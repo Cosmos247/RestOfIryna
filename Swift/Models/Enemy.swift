@@ -10,10 +10,14 @@
 //  Auto) arrives in Phase 4; until then enemies die to the stub resolver in
 //  `ExplorationService.resolveAutobattle`.
 //
-//  Roster (2026-04-23): 5 animals across 4 tiers.
-//   - Wild family (🐗 🫎 🦬): killable + cookable; drop raw meat + hide.
-//   - Rabid family (🐈‍⬛ 🐺): dangerous; meat is spoiled by the plague,
+//  Roster (2026-04-27): 7 animals across 6 tiers.
+//   - Wild family (🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
+//   - Rabid family (🐈‍⬛ 🐺 🐻‍❄️): dangerous; meat is spoiled by the plague,
 //     loot tables only yield hide.
+//
+//  Deep wilderness (km 21+) currently has only regular mobs — wild_bear at
+//  21–30 and rabid_bear at 25–35. The dedicated boss encounter is reserved
+//  for Phase 3.5 once the boss-fight mechanics are designed.
 //
 
 import Foundation
@@ -73,16 +77,20 @@ public struct Enemy: Sendable {
 
 public enum EnemyCatalog {
     // Tiers map to 5-km depth bands:
-    //   T1 = km 1–5  · T2 = km 6–10 · T3 = km 11–15 · T4 = km 16–20
-    // Each animal spans 1–2 consecutive tiers via `depthRange`.
+    //   T1 = km 1–5  · T2 = km 6–10 · T3 = km 11–15 · T4 = km 16–20 ·
+    //   T5 = km 21–30 · T6 = km 26–35
+    // Each animal spans 1–2 consecutive bands via `depthRange`. Three deep
+    // overlaps stack: rabid_wolf (16–25) ↔ wild_bear (21–30) ↔ rabid_bear
+    // (25–35), giving each transition zone a mix of two species.
     //
     // Two families:
-    //   - Wild (🐗 🫎 🦬): killable + cookable; drop raw meat + hide.
-    //   - Rabid (🐈‍⬛ 🐺): dangerous; meat is poisoned by disease, so
+    //   - Wild (🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
+    //   - Rabid (🐈‍⬛ 🐺 🐻‍❄️): dangerous; meat is poisoned by disease, so
     //     loot tables only include hide.
     //
     // Stats scale weakest → strongest in this order:
-    //   wild_boar → wild_moose → wild_buffalo → rabid_lynx → rabid_wolf.
+    //   wild_boar → wild_moose → wild_buffalo → rabid_lynx → rabid_wolf →
+    //   wild_bear → rabid_bear.
     public static let all: [Enemy] = [
         // Wild Boar — first big game (T1–T2). Reliable meat + hide source.
         Enemy(
@@ -132,15 +140,50 @@ public enum EnemyCatalog {
             icon: "🐈‍⬛"
         ),
         // Rabid Wolf — tier 4 top hostile. Meat inedible (rabies).
+        // Range extended to km 16–25 so the rabid family bleeds into the T5
+        // band, overlapping with wild_bear at 21–25.
         Enemy(
             id: "enemy.rabid_wolf",
             nameKey: "enemy.rabid_wolf",
             tier: 4, hp: 70, attack: 15, defense: 4,
-            depthRange: 16...20,
+            depthRange: 16...25,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.8, quantity: 1)
             ],
             icon: "🐺"
+        ),
+        // Wild Bear — tier 5 deep-wilderness mob. Master of the forest:
+        // huge HP pool, hard-hitting, but a wild animal — drops meat + hide.
+        // Range km 21–30; the first 5 km (21–25) overlap with rabid_wolf,
+        // the deeper 5 km (26–30) overlap with rabid_bear. The dedicated
+        // boss for the deep wilderness is reserved for Phase 3.5 once the
+        // boss-fight mechanics are designed.
+        Enemy(
+            id: "enemy.wild_bear",
+            nameKey: "enemy.wild_bear",
+            tier: 5, hp: 95, attack: 17, defense: 5,
+            depthRange: 21...30,
+            lootTable: [
+                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.85, quantity: 2),
+                EnemyLootDrop(itemId: "mat.hide",      chance: 0.9,  quantity: 1)
+            ],
+            icon: "🐻"
+        ),
+        // Rabid Bear — tier 6 deepest hostile. Beastfever has bleached the
+        // fur and stripped the discipline; what's left is a hard-hitting
+        // monster that follows the rabid family pattern (high ATK, lower
+        // DEF, hide-only loot since the meat is plague-tainted). Range
+        // km 25–35: overlaps with wild_bear at 25–30 and reigns alone at
+        // 31–35.
+        Enemy(
+            id: "enemy.rabid_bear",
+            nameKey: "enemy.rabid_bear",
+            tier: 6, hp: 120, attack: 22, defense: 4,
+            depthRange: 25...35,
+            lootTable: [
+                EnemyLootDrop(itemId: "mat.hide", chance: 0.9, quantity: 2)
+            ],
+            icon: "🐻‍❄️"
         ),
     ]
 

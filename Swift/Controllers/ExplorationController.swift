@@ -795,7 +795,7 @@ extension ExplorationController {
             } else {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false)
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
             }
             _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
@@ -814,7 +814,7 @@ extension ExplorationController {
             if item.effects.isEmpty {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let toast = context.lingo.localize("consume.not_raw_edible", locale: locale, interpolations: ["name": itemName])
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
                 return true
             }
             guard try await InventoryEntry.has(itemId, user: context.session, on: context.db) else {
@@ -823,24 +823,37 @@ extension ExplorationController {
             }
             guard let result = HungerService.consume(item, user: context.session) else {
                 let toast = context.lingo.localize("consume.no_effect", locale: locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
                 return true
             }
             try await InventoryEntry.remove(itemId, quantity: 1, from: context.session, on: context.db)
             try await context.session.saveAndCache(in: context.db)
 
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            // Build the inline status line shown atop the refreshed bag.
+            // Each restored stat shows the new (current/max) total in parens
+            // so the player sees both the gain and the pool state at a glance.
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             var parts: [String] = []
             if result.hungerRestored > 0 {
-                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: ["amount": "\(result.hungerRestored)"]))
+                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.hungerRestored)",
+                    "current": "\(context.session.hunger)",
+                    "max":     "\(context.session.maxHunger)"
+                ]))
             }
             if result.hpRestored > 0 {
-                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: ["amount": "\(result.hpRestored)"]))
+                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.hpRestored)",
+                    "current": "\(context.session.hp)",
+                    "max":     "\(context.session.maxHp)"
+                ]))
             }
-            let toast = "\(itemName) — " + parts.joined(separator: ", ")
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 
-            let (text, inline) = try await ctrl.renderBag(context: context)
+            let (body, inline) = try await ctrl.renderBag(context: context)
+            let text = "\(statusLine)\n\n\(body)"
             let editParams = TGEditMessageTextParams(
                 chatId: chatId,
                 messageId: message.messageId,

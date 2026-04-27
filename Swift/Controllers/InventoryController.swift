@@ -316,7 +316,7 @@ extension InventoryController {
             let hasItems = entries.contains { ItemCatalog.find($0.itemId)?.type == type }
             if !hasItems {
                 let text = context.lingo.localize("inventory.category.empty", locale: locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
             }
 
@@ -350,7 +350,7 @@ extension InventoryController {
             } else {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false)
+                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
             }
             _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
@@ -368,7 +368,7 @@ extension InventoryController {
 
             if !HungerService.isConsumable(item) {
                 let text = context.lingo.localize("inventory.use.unavailable", locale: locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
             }
 
@@ -377,7 +377,7 @@ extension InventoryController {
             if item.effects.isEmpty {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
                 let text = context.lingo.localize("consume.not_raw_edible", locale: locale, interpolations: ["name": itemName])
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
             }
 
@@ -387,36 +387,48 @@ extension InventoryController {
             }
             guard let result = HungerService.consume(item, user: context.session) else {
                 let text = context.lingo.localize("consume.no_effect", locale: locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: false))
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
             }
             try await InventoryEntry.remove(itemId, quantity: 1, from: context.session, on: context.db)
             try await context.session.saveAndCache(in: context.db)
 
-            // Toast
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            // Build the inline status line shown atop the refreshed view.
+            // Each restored stat shows the new (current/max) total in parens
+            // so the player sees both the gain and the pool state at a glance.
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             var parts: [String] = []
             if result.hungerRestored > 0 {
-                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: ["amount": "\(result.hungerRestored)"]))
+                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.hungerRestored)",
+                    "current": "\(context.session.hunger)",
+                    "max":     "\(context.session.maxHunger)"
+                ]))
             }
             if result.hpRestored > 0 {
-                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: ["amount": "\(result.hpRestored)"]))
+                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.hpRestored)",
+                    "current": "\(context.session.hp)",
+                    "max":     "\(context.session.maxHp)"
+                ]))
             }
-            let toast = "\(itemName) — " + parts.joined(separator: ", ")
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 
             // Refresh: stay in category if items remain, else pop back to root.
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
             let stillInCategory = entries.contains { ItemCatalog.find($0.itemId)?.type == item.type }
-            let refreshedText: String
+            let refreshedBody: String
             let refreshedInline: TGInlineKeyboardMarkup
             if stillInCategory {
-                refreshedText = ctrl.renderCategory(type: item.type, lingo: context.lingo, locale: locale)
+                refreshedBody = ctrl.renderCategory(type: item.type, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.categoryKeyboard(type: item.type, entries: entries, lingo: context.lingo, locale: locale)
             } else {
-                refreshedText = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
+                refreshedBody = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             }
+            let refreshedText = "\(statusLine)\n\n\(refreshedBody)"
             let editParams = TGEditMessageTextParams(
                 chatId: .chat(message.chat.id),
                 messageId: message.messageId,
@@ -446,11 +458,11 @@ extension InventoryController {
             }
             try await EquipmentService.equip(target, for: context.session, on: context.db)
 
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
-            let toast = context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context)
+            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
+            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
             return true
         }
 
@@ -472,11 +484,11 @@ extension InventoryController {
             }
             try await EquipmentService.unequip(target, for: context.session, on: context.db)
 
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
-            let toast = context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: false))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context)
+            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            let statusLine = "✅ " + context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
+            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
             return true
         }
 
@@ -484,11 +496,12 @@ extension InventoryController {
     }
 
     /// Re-render the given category view in place after an equip/unequip.
-    private static func refreshCategory(type: ItemType, chatId: TGChatId, messageId: Int, context: Context) async throws {
+    private static func refreshCategory(type: ItemType, chatId: TGChatId, messageId: Int, context: Context, statusLine: String? = nil) async throws {
         let ctrl = Controllers.inventoryController
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
-        let text = ctrl.renderCategory(type: type, lingo: context.lingo, locale: context.session.locale)
+        let body = ctrl.renderCategory(type: type, lingo: context.lingo, locale: context.session.locale)
         let inline = ctrl.categoryKeyboard(type: type, entries: entries, lingo: context.lingo, locale: context.session.locale)
+        let text = statusLine.map { "\($0)\n\n\(body)" } ?? body
         let params = TGEditMessageTextParams(
             chatId: chatId,
             messageId: messageId,

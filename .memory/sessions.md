@@ -858,3 +858,32 @@ Small follow-up to the big 4.2 commit. Two threads:
 - 4.3.4 (per-enemy AI hooks), 4.3.5 (rabies status effects), 4.3.6 (combat log persistence): all moved to a new top-level `## Future / Backlog` section at the bottom of TODO.md. User will review pre-release; new ideas will accumulate there over time.
 
 **Files modified:** `Swift/Services/CombatService.swift` (+36 lines — Flee namespace + lookups), `Swift/Controllers/CombatController.swift` (+13 lines — class lookup in onFlee + extra-hunger branch), `TODO.md` (+31 lines — Phase 4.3 section rewritten, Phase 5 XP-to-Estate note, new `Future / Backlog` section), `CLAUDE.md` / `README.md` / `.memory/{file-map,status}.md` (doc sync). Build clean. Locale parity unchanged (269/269).
+
+## Session — 2026-04-27 (Phase 4.4 bestiary closed + callback-toast UX overhaul)
+
+Two related themes landed in this session: bestiary expansion (closing Phase 4.4) and a chat-UX revamp around how the bot acknowledges callback taps.
+
+**4.4 Bestiary expansion landed.**
+- **wild_bear** (T5, km 21–30, HP 95 / ATK 17 / DEF 5; wild family — meat ×2 + hide ×1) added at the user's request as a regular mob, not a boss. Master-of-the-forest flavour; 🐻 icon.
+- rabid_wolf range extended from 16–20 to **16–25** so the rabid family bleeds into T5; the families now share the 21–25 band.
+- **rabid_bear** (T6, km 25–35, HP 120 / ATK 22 / DEF 4; rabid family — hide ×2 only) added as a deeper escalation. 🐻‍❄️ icon — "Beastfever has bleached the fur." Higher ATK, lower DEF: classic rabid trade.
+- Three deep-zone overlaps now stack: rabid_wolf↔wild_bear at 21–25, wild_bear↔rabid_bear at 25–30; only rabid_bear from 31–35.
+- New `content/bestiary.md` reference doc with the full roster table, tier summary, family overview, stat-scaling note, and a "how to add a new enemy" recipe.
+- T5+ has only regular mobs by design; the dedicated boss is reserved for Phase 3.5 once the boss-fight mechanics are designed (the user wants to spec the boss later).
+- Two new locale keys per locale (`enemy.wild_bear` / `enemy.rabid_bear` in en + uk).
+- Comments in `Enemy.swift` updated to reflect the new tier map and overlapping bands.
+
+**Callback-toast UX overhaul.** Driver: user reported the narrow top-strip banner showing literal `<b>...</b>` tags after equip/unequip — Telegram's `answerCallbackQuery(text:)` is plain text only and doesn't render HTML. Plus the user wanted a different presentation entirely so the chat doesn't feel hijacked by transient banners.
+- Audited all 11 toast call sites; classified into 6 successes (data changed, view refreshes) and 5 warnings (data unchanged, action rejected).
+- **Successes** (equip / unequip / eat in inventory / eat in bag / warehouse deposit / warehouse withdraw): silent `answerCallbackQuery` (no `text:`), with the message refresh prepending an inline `✅ ...` status line above the body. `InventoryController.refreshCategory(...)` gained an optional `statusLine: String?` parameter; the same pattern is inlined in EstateController warehouse and ExplorationController bag refresh paths.
+- **Warnings** (raw food, no_effect, full backpack, empty category, use_unavailable, nothing-to-deposit/withdraw, item-info placeholder): `answerCallbackQuery(text:, showAlert: true)` — Telegram modal popup with an OK button. Plain text only, no HTML.
+- Stripped HTML from `equip.success` and `unequip.success` locale keys (they used to have `<b>%{item}</b>` which rendered literally in the toast). The other toast-bound keys were already plain text.
+- Eat-success status line now interpolates current/max pool: `hunger.restored` and `hp.restored` keys gained `%{current}` and `%{max}` placeholders alongside the existing `%{amount}`. Sample render: "✅ Лісові ягоди — +15 голоду (20/100), +2 HP (90/120)".
+- Item info-button placeholders (when an item lacks a `descriptionKey`) flipped from narrow toast to modal alert for consistency with the description-bearing case (which already used showAlert: true).
+
+**Audits run as part of the session.**
+- Supplementary-plane leading-emoji check across both locale files (the Lingo `%{var}` parser bug): 64 interpolated keys total, **zero** keys with leading multi-UTF-16 emoji.
+- HTML coverage check: every send/edit-message callsite that references an HTML-tagged locale key has `parseMode: .html` in scope; no inline HTML literals without parseMode either.
+- These checks are now documented in `.memory/localization.md` with sample audit logic so future PRs can re-run them.
+
+**Files modified:** `Swift/Models/Enemy.swift` (+~50 lines — wild_bear, rabid_bear, header / tier comments), `Swift/Controllers/InventoryController.swift` (refreshCategory statusLine, eat-success refactor, modal alerts), `Swift/Controllers/ExplorationController.swift` (bag eat-success statusLine + modal alerts), `Swift/Controllers/EstateController.swift` (warehouse handler split into success ↔ warning), `Localizations/en.json` + `uk.json` (+2 enemies, equip/unequip plain text, hunger/hp restored interpolations; locale count 269 → 271), `TODO.md` (4.4 closed with both bears + bestiary.md note). New file: `content/bestiary.md`. `CLAUDE.md` / `README.md` / `.memory/{file-map,status,localization}.md` doc sync. Build clean (locale parity 271/271).
