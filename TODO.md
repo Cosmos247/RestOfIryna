@@ -200,15 +200,17 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 - [x] `HungerService.drain(_:action:multiplier:)` accepts optional multiplier so stance buffs scale per-action drain
 - [x] 32 new locale keys per locale (techniques submenu + 3 supers + 3 special atks + 3 special defs + status indicators + no-uses toast); `combat.special_def.archer.no_target` removed (unused)
 - [x] Lingo emoji-prefix gotcha — every Phase 4.2 narrative string stored emoji-free; CombatController prepends class-flavoured icons in Swift
-- [ ] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra hunger for the teleport) — *deferred to 4.3*
+- [x] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra +2 hunger for the teleport, layered on top of the stance multiplier) — *landed 4.3.1*
 - [ ] Unlock-by-level wiring — *deferred until the leveling system lands*
 
-### 4.3 Combat polish *(post-MVP)*
-- [ ] Edit single message in-place per round (vs. one message per round)
-- [ ] XP grant on victory
-- [ ] Per-enemy AI hooks (aggression, fleeResist) on `Enemy`
-- [ ] Status effects — flagship: rabies from rabid family, cured at chapel (Phase 6)
-- [ ] Combat log persistence + replay
+### 4.3 Combat polish
+
+- [x] **4.3.1 Class-specific Flee chances** — landed. `CombatService.fleeChance(forClass:)` + `fleeHungerExtra(forClass:)`; warrior 40 / archer 70 / mage 90; mage pays +2 hunger.
+- [-] **4.3.2 Edit single message in-place per round** — *deferred by user; preference is to keep all combat logs visible as separate messages*
+- [-] **4.3.3 XP grant on victory** — *deferred; XP system will be re-designed during Phase 5 to feed estate progression directly (player XP → estate level), not character level. Phase 5.0's "estate level computed from `user.level`" derivation will be replaced once the new XP-to-Estate model lands.*
+- Status effects (rabies from rabid family, cured at chapel) — *moved to Future / Backlog (Phase 6 dependency)*
+- Per-enemy AI hooks (aggression, fleeResist) — *moved to Future / Backlog*
+- Combat log persistence + replay — *moved to Future / Backlog (Arena dependency)*
 
 ### 4.4 Bestiary expansion *(landed in 3.5 prep — already in code)*
 - [x] T1–T4 enemy roster (5 animals, wild + rabid families) — see `Swift/Models/Enemy.swift`
@@ -224,6 +226,8 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 ---
 
 ## Phase 5: Estates & Crafting *(started out of order — while Phase 3/4 were paused)*
+
+> **XP-to-Estate redesign (planned during Phase 5.x):** the current `User.estateLevel` derivation (every 5 player levels → +1 estate level) will be replaced. New direction: combat / exploration XP feeds the **estate** progression directly instead of a character level. The `User.level` / `User.xp` fields stay (or get repurposed) but stop being the source of truth for estate tier. Concrete migration path will be locked once estate plot/crafting needs are clearer.
 
 ### 5.0 Estate navigation skeleton *(landed)*
 - [x] Estate level computed from `user.level` (every 5 player levels → +1 estate level)
@@ -378,4 +382,15 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 
 ---
 
-*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + Phase 4.2 class techniques (9 across all classes — Super stances, Special Attacks, Special Defenses + per-fight budget) all landed; Phase 5.0 estate skeleton + warehouse done. Next: Phase 4.3 polish (class-specific Flee chances, edit-in-place per-round UX, XP grant on victory, status effects).*
+## Future / Backlog *(reviewed before / after release)*
+
+A parking lot for "interesting but not critical" ideas — collected as the project grows, revisited just before launch (or right after, depending on signal). Items here are not on the active roadmap; they will be promoted into a phase if/when they make sense.
+
+- **Per-enemy AI hooks** *(was 4.3.4)* — add `aggression: Int` (0–100, biases enemies toward Attack vs Defend) and `fleeResist: Int` (0–100, makes the fail roll on Flee harsher) to `Enemy`. Threaded into passive autobattle and active combat's Flee resolution. Cheap once the data is in `EnemyCatalog`; main work is per-tier tuning.
+- **Status effects (rabies)** *(was 4.3.5)* — bites from the rabid family (`enemy.rabid_lynx`, `enemy.rabid_wolf`) carry a chance to infect. Effect ticks over time (HP drain, stat penalty, hunger drain — TBD), persists across expeditions, cured at the Capital Chapel (Phase 6 dependency). Needs a generic status-effect system on `User` or a new model.
+- **Combat log persistence + replay** *(was 4.3.6)* — record round-by-round combat events (damage rolls, hit/miss, technique uses, stance state) into a Codable blob; expose a "view replay" surface. Mostly useful once the Arena (Phase 8) lands, since solo PvE replays have low replay value.
+- *(more items will be added by user as the project grows)*
+
+---
+
+*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + Phase 4.2 class techniques (9 across all classes — Super stances, Special Attacks, Special Defenses + per-fight budget) + Phase 4.3.1 class-specific Flee chances all landed; Phase 5.0 estate skeleton + warehouse done. Phase 4.3.2 (edit-in-place) and 4.3.3 (XP grant) deferred by user; remaining 4.3 items moved to Future / Backlog. Next: continue with Estate progression (Phase 5.1+) where the XP-to-Estate redesign will land.*

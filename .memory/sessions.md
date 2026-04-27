@@ -844,3 +844,17 @@ Massive landing session: implemented all 9 class techniques (Super × 3, Special
 **Files added:** `Swift/Migrations/AddCombatStanceFields.swift`, `AddCombatDefenseFields.swift`, `AddCombatTechniqueUses.swift`. **Files modified:** `Swift/Controllers/CombatController.swift` (~330 line growth — new handlers, new submenu, emoji helpers, modifier composition), `Swift/Models/ExplorationState.swift` (~120 line growth — fields + helpers for stance, defense effects, technique uses), `Swift/Services/CombatService.swift` (~170 line growth — AttackModifiers, StanceModifiers, SpecialAttack / SpecialDefense namespaces, lookup helpers), `Swift/Services/HungerService.swift` (drain multiplier), `Swift/configure.swift` (3 new migrations registered), `Localizations/en.json` + `uk.json` (32 new keys per locale; locale count 237 → 269 after the unused archer.no_target removal). Build clean.
 
 **Phase 4.3 carryforwards (in TODO.md):** class-specific Flee chances (knight 40% / archer 70% / mage 90% + extra mage hunger), edit-in-place per-round message UX, XP grant on victory, per-enemy AI hooks, status effects (rabies). Unlock-by-level wiring also still deferred until the leveling system lands.
+
+## Session — 2026-04-27 (Phase 4.3.1 Flee tuning + Future/Backlog reorg)
+
+Small follow-up to the big 4.2 commit. Two threads:
+
+**4.3.1 Class-specific Flee chances landed.** New `CombatService.Flee` namespace (warriorChance 40 / archerChance 70 / mageChance 90 / mageHungerExtra 2) + `fleeChance(forClass:)` + `fleeHungerExtra(forClass:)`. `CombatController.onFlee` now reads the player's class once, drains base flee hunger via the existing multiplier-aware path, and layers the mage's +2 teleport tax on top (also scaled by the stance multiplier, so an Arcane-Resonance mage still pays the toll). The success roll uses per-class chance instead of the old flat 50%. Failed-flee counter logic unchanged. No locale keys touched — narrative is class-agnostic; only the odds and hunger costs differ.
+
+**TODO.md restructure based on user feedback.**
+- 4.3.1: marked landed.
+- 4.3.2 (edit-in-place per-round message): deferred by user — preference is to keep all combat logs visible as separate messages.
+- 4.3.3 (XP grant on victory): deferred until Phase 5.x. **Important design pivot:** XP will be re-targeted to feed estate progression directly instead of character level. `User.estateLevel`'s current derivation (every 5 player levels → +1 estate tier) will be replaced. Added a callout note under Phase 5 in TODO.md so future-me notices.
+- 4.3.4 (per-enemy AI hooks), 4.3.5 (rabies status effects), 4.3.6 (combat log persistence): all moved to a new top-level `## Future / Backlog` section at the bottom of TODO.md. User will review pre-release; new ideas will accumulate there over time.
+
+**Files modified:** `Swift/Services/CombatService.swift` (+36 lines — Flee namespace + lookups), `Swift/Controllers/CombatController.swift` (+13 lines — class lookup in onFlee + extra-hunger branch), `TODO.md` (+31 lines — Phase 4.3 section rewritten, Phase 5 XP-to-Estate note, new `Future / Backlog` section), `CLAUDE.md` / `README.md` / `.memory/{file-map,status}.md` (doc sync). Build clean. Locale parity unchanged (269/269).

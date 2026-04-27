@@ -273,4 +273,40 @@ public enum CombatService {
         case .mage:    return SpecialDefense.mirrorWardHunger
         }
     }
+
+    // MARK: - Phase 4.3 class-specific Flee
+
+    /// Phase 4.3 replaces the flat 50% flee chance with a per-class tuning
+    /// that maps to the class fantasy: warriors are heavy and lumbering,
+    /// archers are mobile, mages flat-out teleport. The mage premium is
+    /// paid in hunger (`fleeHungerExtra`) — a teleport isn't free.
+    public enum Flee {
+        public static let warriorChance: Int = 40
+        public static let archerChance:  Int = 70
+        public static let mageChance:    Int = 90
+
+        /// Extra hunger drained on top of the base `combatFlee` cost when a
+        /// mage attempts to teleport away. Layers on after the stance hunger
+        /// multiplier so an Arcane-Resonance mage still pays the teleport tax.
+        public static let mageHungerExtra: Int = 2
+    }
+
+    /// Per-class success chance for a Flee attempt (1–100). Failure still
+    /// triggers the existing forced full-damage counter.
+    public static func fleeChance(forClass cls: CharacterClass) -> Int {
+        switch cls {
+        case .warrior: return Flee.warriorChance
+        case .archer:  return Flee.archerChance
+        case .mage:    return Flee.mageChance
+        }
+    }
+
+    /// Extra flat hunger drained beyond the base Flee cost — non-zero only
+    /// for the mage (teleport tax).
+    public static func fleeHungerExtra(forClass cls: CharacterClass) -> Int {
+        switch cls {
+        case .mage: return Flee.mageHungerExtra
+        default:    return 0
+        }
+    }
 }

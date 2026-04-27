@@ -353,15 +353,22 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func onFlee(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
 
-        let mods = CombatService.stanceModifiers(for: state.combatStance)
-        _ = HungerService.drain(context.session, action: .combatFlee, multiplier: mods.hungerMultiplier)
-
         let player = context.session
+        let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
+        let mods = CombatService.stanceModifiers(for: state.combatStance)
+        _ = HungerService.drain(player, action: .combatFlee, multiplier: mods.hungerMultiplier)
+        // Per-class extra hunger (mage teleport tax) layers on top, scaled by
+        // the same stance multiplier so Arcane Resonance still pays the toll.
+        let extra = CombatService.fleeHungerExtra(forClass: cls)
+        if extra > 0 {
+            HungerService.drain(player, amount: Int((Double(extra) * mods.hungerMultiplier).rounded()))
+        }
+
         let lingo = context.lingo
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
 
-        let success = Int.random(in: 1...100) <= 50
+        let success = Int.random(in: 1...100) <= CombatService.fleeChance(forClass: cls)
         if success {
             let line = "💨 " + lingo.localize("combat.flee.success", locale: locale, interpolations: [
                 "enemy": enemyName
