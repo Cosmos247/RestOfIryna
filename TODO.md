@@ -172,33 +172,36 @@ Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encoun
 - [x] Locale keys: 9 button labels (3 actions × 3 classes) + 11 narratives (encounter.intro, you.{hit,crit,miss}, enemy.{hit,crit,miss}, defend.absorbed, flee.{success,fail}, victory, defeat) + 2 registration keys (fight_wolves, wolves_retry). 214 → 236 per locale.
 - [x] Build clean, en/uk parity.
 
-### 4.2 Class-specific techniques *(planned — concept locked 2026-04-27)*
+### 4.2 Class-specific techniques *(landed 2026-04-27)*
 
-Each class gets three signature techniques: an Attack, a Defense, and a Super (stance buff that boosts both ATK and DEF for 2-3 rounds). Concrete unlock-by-level wiring is designed in a later pass — for now we land the mechanics + UI assuming all techniques are available.
+All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight budget, persistent effects, and stance/special-attack/special-defense composition all working.
 
 #### Warrior (Knight)
-- [ ] **Розкол** *(Cleave)* — Attack. Heavy two-handed strike that ignores a % of enemy DEF ("splits the shield"). Higher hunger cost, lower hit chance — high-risk, high-reward swing.
-- [ ] **Залізна стіна** *(Iron Bulwark)* — Defense. Full block this round + ½-damage counter + applies a short DEF debuff on the enemy for the next round (sets up the next Cleave / Slash).
-- [ ] **Кровна жага** *(Bloodlust)* — Super stance, 2-3 rounds. +ATK and +DEF, but hunger drain doubles while active.
+- [x] **Розкол** *(Cleave)* — Special Attack. −10% hit chance, ignores enemy DEF entirely, +12 flat damage, +20 crit. Risky high-impact swing. 4 hunger.
+- [x] **Залізна стіна** *(Iron Bulwark)* — Special Defense. Full block + 50%-of-clean-hit chip damage + persistent armor-split debuff that zeroes enemy DEF for the next swing. 3 hunger.
+- [x] **Кровна жага** *(Bloodlust)* — Super stance, 3 rounds. +5 ATK, +3 DEF, ×2 hunger drain while active. 4 hunger to activate.
 
 #### Archer
-- [ ] **Влучний постріл** *(Vital Shot)* — Attack. Cannot miss, multiplied crit chance, fully ignores DEF (arrow finds the gap). Tradeoff: player gets no dodge this round (long aim).
-- [ ] **Тінь лісу** *(Shadow Veil)* — Defense. 100% dodge this round + lingering +50% dodge next round. Buys two rounds of mobility — usually used to set up Vital Shot.
-- [ ] **Око сокола** *(Hawk's Eye)* — Super stance, 2-3 rounds. +crit, +accuracy, +dodge simultaneously. Hyper-focused sniper mode.
+- [x] **Влучний постріл** *(Vital Shot)* — Special Attack. Cannot miss, +20 crit, ignores DEF. Tradeoff: long aim zeroes player dodge for the enemy counter. 4 hunger.
+- [x] **Тінь лісу** *(Shadow Veil)* — Special Defense. Full dodge this round + lingering +50 dodge next round. 3 hunger.
+- [x] **Око сокола** *(Hawk's Eye)* — Super stance, 3 rounds. +15 crit, +10 accuracy, +10 dodge. 4 hunger.
 
 #### Mage
-- [ ] **Полум'я душі** *(Soulfire)* — Attack. Magical beam that bypasses DEF entirely. Large flat base damage independent of weapon variance. High hunger cost (magic feeds on the caster's vitality).
-- [ ] **Дзеркальний щит** *(Mirror Ward)* — Defense. 100% block this round + 50% of the would-be damage reflects back at the enemy.
-- [ ] **Магічний резонанс** *(Arcane Resonance)* — Super stance, 2-3 rounds. +50% magical attack damage and a magical DEF buff against incoming hits. Hefty hunger cost on activation (concentration burn).
+- [x] **Полум'я душі** *(Soulfire)* — Special Attack. Cannot miss, ignores DEF, +5 flat damage. 5 hunger.
+- [x] **Дзеркальний щит** *(Mirror Ward)* — Special Defense. Full block + reflects 50% of would-be enemy damage back at them. 4 hunger.
+- [x] **Магічний резонанс** *(Arcane Resonance)* — Super stance, 3 rounds. ATK ×1.5, +5 DEF. 5 hunger to activate (concentration burn).
 
 #### Shared infrastructure
-- [ ] Migration: `combat_stance: String?` + `combat_stance_rounds_left: Int?` columns on `exploration_state` for the Super-stance lifecycle
-- [ ] Stance lifecycle in `CombatController` — apply on activation, decrement each round, expire with a clean narrative
-- [ ] Per-technique locale keys: button label + activation narrative + ongoing-effect tick + expiry line (~3 strings × 9 techniques ≈ 27 keys per locale)
-- [ ] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra hunger for the teleport)
-- [ ] Unlock-by-level wiring *(deferred — designed once the leveling system lands)*
-
-Build clean + en/uk parity at the end of each technique's PR.
+- [x] Migration `AddCombatStanceFields` — `combat_stance` + `combat_stance_rounds_left`
+- [x] Migration `AddCombatDefenseFields` — `combat_enemy_def_debuff` + `combat_player_dodge_buff`
+- [x] Migration `AddCombatTechniqueUses` — `combat_special_atk_uses` (max 2) + `combat_special_def_uses` (max 2) + `combat_super_uses` (max 1)
+- [x] `[🪄 Techniques]` submenu opens edit-in-place via `editMessageReplyMarkup`; rebuilds from live state so spent buttons hide and remaining show " × N" suffix
+- [x] `CombatService` extended with `AttackModifiers` (folded into `applyAttack`), `StanceModifiers`, `SpecialAttack` / `SpecialDefense` namespaces
+- [x] `HungerService.drain(_:action:multiplier:)` accepts optional multiplier so stance buffs scale per-action drain
+- [x] 32 new locale keys per locale (techniques submenu + 3 supers + 3 special atks + 3 special defs + status indicators + no-uses toast); `combat.special_def.archer.no_target` removed (unused)
+- [x] Lingo emoji-prefix gotcha — every Phase 4.2 narrative string stored emoji-free; CombatController prepends class-flavoured icons in Swift
+- [ ] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra hunger for the teleport) — *deferred to 4.3*
+- [ ] Unlock-by-level wiring — *deferred until the leveling system lands*
 
 ### 4.3 Combat polish *(post-MVP)*
 - [ ] Edit single message in-place per round (vs. one message per round)
@@ -375,4 +378,4 @@ Build clean + en/uk parity at the end of each technique's PR.
 
 ---
 
-*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + tutorial wolves fight done; Phase 5.0 estate skeleton + warehouse done. Next: Phase 4.2 class-specific Defend/Flee techniques.*
+*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + Phase 4.2 class techniques (9 across all classes — Super stances, Special Attacks, Special Defenses + per-fight budget) all landed; Phase 5.0 estate skeleton + warehouse done. Next: Phase 4.3 polish (class-specific Flee chances, edit-in-place per-round UX, XP grant on victory, status effects).*

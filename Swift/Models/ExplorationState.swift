@@ -78,6 +78,51 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_enemy_hp")
     public var combatEnemyHP: Int?
 
+    // MARK: - Phase 4.2 stance fields
+
+    /// Active Super-technique stance ID (`bloodlust` / `hawks_eye` /
+    /// `arcane_resonance`). Non-null on both `combatStance` AND
+    /// `combatStanceRoundsLeft` = stance currently buffing the player.
+    @OptionalField(key: "combat_stance")
+    public var combatStance: String?
+
+    /// Rounds remaining on the active stance — decremented at the end of each
+    /// player action. When it reaches zero the controller clears both stance
+    /// fields and emits an "expire" narrative.
+    @OptionalField(key: "combat_stance_rounds_left")
+    public var combatStanceRoundsLeft: Int?
+
+    // MARK: - Phase 4.2.3 special defense effects
+
+    /// Rounds remaining where the player's swings treat enemy DEF as 0.
+    /// Set by warrior's Iron Bulwark to "split armor" for the next attack.
+    /// Decremented at the end of each player action via tickDefenseEffects.
+    @OptionalField(key: "combat_enemy_def_debuff")
+    public var combatEnemyDefDebuff: Int?
+
+    /// Rounds remaining where the player gets a flat +50 dodge against
+    /// incoming hits. Set by archer's Shadow Veil. Decremented at end of
+    /// each player action.
+    @OptionalField(key: "combat_player_dodge_buff")
+    public var combatPlayerDodgeBuff: Int?
+
+    // MARK: - Phase 4.2 per-fight technique budget
+
+    /// Special Attack uses left in this fight (max 2; set on beginCombat,
+    /// decremented on each tap, hides the button at 0).
+    @OptionalField(key: "combat_special_atk_uses")
+    public var combatSpecialAtkUses: Int?
+
+    /// Special Defense uses left (max 2).
+    @OptionalField(key: "combat_special_def_uses")
+    public var combatSpecialDefUses: Int?
+
+    /// Super uses left (max 1). Independent of stance lifecycle — once spent,
+    /// the player can't activate another Super even if the previous stance has
+    /// already expired.
+    @OptionalField(key: "combat_super_uses")
+    public var combatSuperUses: Int?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -95,6 +140,13 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.reportJSON = nil
         self.combatEnemyId = nil
         self.combatEnemyHP = nil
+        self.combatStance = nil
+        self.combatStanceRoundsLeft = nil
+        self.combatEnemyDefDebuff = nil
+        self.combatPlayerDodgeBuff = nil
+        self.combatSpecialAtkUses = nil
+        self.combatSpecialDefUses = nil
+        self.combatSuperUses = nil
     }
 }
 
@@ -241,15 +293,117 @@ extension ExplorationState {
         return combatEnemyId != nil && combatEnemyHP != nil
     }
 
-    /// Stamp the combat fields. Caller saves the row.
+    /// Stamp the combat fields and initialise the per-fight technique
+    /// budget (Special Atk / Special Def / Super = 2 / 2 / 1). Caller saves.
     public func beginCombat(enemyId: String, hp: Int) {
         self.combatEnemyId = enemyId
         self.combatEnemyHP = hp
+        self.combatSpecialAtkUses = 2
+        self.combatSpecialDefUses = 2
+        self.combatSuperUses = 1
     }
 
-    /// Clear the combat fields without touching the rest of the row. Caller saves.
+    /// Clear the combat fields without touching the rest of the row. Also
+    /// clears any active stance, short-lived defense effects, and the
+    /// per-fight technique budget — they're all scoped to the fight.
     public func endCombat() {
         self.combatEnemyId = nil
         self.combatEnemyHP = nil
+        self.combatStance = nil
+        self.combatStanceRoundsLeft = nil
+        self.combatEnemyDefDebuff = nil
+        self.combatPlayerDodgeBuff = nil
+        self.combatSpecialAtkUses = nil
+        self.combatSpecialDefUses = nil
+        self.combatSuperUses = nil
+    }
+
+    /// True when the row encodes a live Super-technique stance.
+    public var hasActiveStance: Bool {
+        guard let rounds = combatStanceRoundsLeft else { return false }
+        return combatStance != nil && rounds > 0
+    }
+
+    /// Stamp the stance fields. Caller saves.
+    public func beginStance(_ stanceId: String, rounds: Int) {
+        self.combatStance = stanceId
+        self.combatStanceRoundsLeft = rounds
+    }
+
+    /// Decrement the stance counter. Returns `true` if the stance just expired
+    /// on this tick (so the controller can render an expiry narrative). Clears
+    /// both fields on expiry.
+    public func tickStance() -> Bool {
+        guard let rounds = combatStanceRoundsLeft, combatStance != nil else { return false }
+        let next = rounds - 1
+        if next <= 0 {
+            self.combatStance = nil
+            self.combatStanceRoundsLeft = nil
+            return true
+        }
+        self.combatStanceRoundsLeft = next
+        return false
+    }
+
+    /// True when the warrior's Iron Bulwark "armor split" debuff is active —
+    /// the player's next swing treats enemy DEF as 0.
+    public var hasEnemyDefDebuff: Bool {
+        return (combatEnemyDefDebuff ?? 0) > 0
+    }
+
+    /// True when the archer's Shadow Veil "lingering shadow" buff is active —
+    /// the player gets +50 dodge on the incoming counter this round.
+    public var hasPlayerDodgeBuff: Bool {
+        return (combatPlayerDodgeBuff ?? 0) > 0
+    }
+
+    /// Set the enemy DEF debuff for `rounds` upcoming player actions.
+    public func applyEnemyDefDebuff(rounds: Int) {
+        self.combatEnemyDefDebuff = max(0, rounds)
+    }
+
+    /// Set the player dodge buff for `rounds` upcoming player actions.
+    public func applyPlayerDodgeBuff(rounds: Int) {
+        self.combatPlayerDodgeBuff = max(0, rounds)
+    }
+
+    /// Decrement both defense-effect counters at the end of a player action.
+    /// Clears the column when it reaches 0 so `hasX` queries stay sharp.
+    public func tickDefenseEffects() {
+        if let rounds = combatEnemyDefDebuff {
+            let next = rounds - 1
+            self.combatEnemyDefDebuff = next > 0 ? next : nil
+        }
+        if let rounds = combatPlayerDodgeBuff {
+            let next = rounds - 1
+            self.combatPlayerDodgeBuff = next > 0 ? next : nil
+        }
+    }
+
+    public var hasSpecialAtkUse: Bool { return (combatSpecialAtkUses ?? 0) > 0 }
+    public var hasSpecialDefUse: Bool { return (combatSpecialDefUses ?? 0) > 0 }
+    public var hasSuperUse:      Bool { return (combatSuperUses      ?? 0) > 0 }
+
+    /// Decrement the Special Attack counter. Clears the field at 0 so
+    /// `hasSpecialAtkUse` queries stay sharp.
+    public func consumeSpecialAtk() {
+        if let uses = combatSpecialAtkUses {
+            let next = uses - 1
+            self.combatSpecialAtkUses = next > 0 ? next : nil
+        }
+    }
+
+    public func consumeSpecialDef() {
+        if let uses = combatSpecialDefUses {
+            let next = uses - 1
+            self.combatSpecialDefUses = next > 0 ? next : nil
+        }
+    }
+
+    public func consumeSuper() {
+        if let uses = combatSuperUses {
+            let next = uses - 1
+            self.combatSuperUses = next > 0 ? next : nil
+        }
     }
 }

@@ -59,7 +59,7 @@ ROI is built on a router–controller state machine. Each controller represents 
    - `EstateController` — tree nav: Root (per-level artwork, tiers 1–3 drawn) → House (Workshop / Kitchen stubs; Warehouse with real deposit/withdraw via `WarehouseService` — stackable types aggregate per item_id with counts on both sides, gear renders per physical row with a single-direction arrow) / Plot stub. Estate level is derived from `user.level` — every 5 player levels bumps it by one.
    - `CapitalController` *(stubbed)* — capital hub: market, quests, bank, arena
    - `InventoryController` — tree navigation; root shows all 5 category buttons with counts plus a fullness indicator (X/50 slots); drill-down renders each item as an inline button (future per-item description) plus a type-specific action. Food/potion consume via HungerService; gear is shown per-row (each physical unit is its own button, no `× N` aggregation) and toggles between 🛡 Equip / ❌ Unequip via EquipmentService, with a persistent per-item icon via `Item.icon`; artifact placeholder until TBD. Backpack is capped at 50 non-equipped slots — future exploration / warehouse withdraw respect this.
-   - `CombatController` — Phase 4.1 turn-based PvE duel triggered when active-mode `rollStep` rolls an encounter. Actions are **inline buttons** on each round message (`combat:attack` / `combat:defend` / `combat:flee` callbacks) with class-flavoured labels (warrior = Slash / Parry / Retreat; archer = Arrow / Hide / Maneuver; mage = Magic / Barrier / Teleport); the controller owns no reply keyboard so the previous one (exploration's, or none during registration) stays visible but inert. Tapping anything outside the inline buttons mid-fight produces a one-line "you're in combat with X" nudge — the live buttons are still on the previous message above. Attack (−2 hunger) runs `CombatService.applyAttack` both directions; Defend (−1) chip-damages the enemy and doubles effective DEF for the round; Flee (−3) is 50/50 with a forced full-damage counter on fail. Victory awards loot via `ExplorationService.awardEncounterDrops` and hands the player back to ExplorationController at the same km; defeat shares `handleDeath`. The same controller also drives the registration wolves fight at step 4 — `Registration.handleCombatEnd(won:)` routes back into the registration flow when `session.registrationStep < 6`. Class-specific Defend/Flee mechanics, XP, edit-in-place UX, and status effects are deferred to 4.2/4.3.
+   - `CombatController` — Phase 4.1 + 4.2 turn-based PvE duel triggered when active-mode `rollStep` rolls an encounter. Main keyboard is `[Attack][Defend] / [🪄 Techniques][Flee]` as inline buttons (`combat:attack/defend/flee` + `combat:tech:menu` callbacks) with class-flavoured labels (warrior = Slash / Parry / Retreat; archer = Arrow / Hide / Maneuver; mage = Magic / Barrier / Teleport). The controller owns no reply keyboard, so the player's previous one (exploration's, or none during registration) stays visible but inert; taps on it produce a one-line `combat.in_progress` nudge. Tapping `[🪄 Techniques]` edits the current message in-place to a class-flavoured submenu — Special Attack / Special Defense / Super stance — with a per-fight budget (2 / 2 / 1 uses) shown as " × N" suffixes; spent buttons hide. Phase 4.2 techniques: warrior (🪓 Cleave / 🏰 Iron Bulwark / 🩸 Bloodlust), archer (🎯 Vital Shot / 🌑 Shadow Veil / 🦅 Hawk's Eye), mage (🔥 Soulfire / 🪞 Mirror Ward / ✨ Arcane Resonance). Stance + special-atk + special-def modifiers all compose into the same `CombatService.applyAttack` primitive; hunger drains scale by stance multiplier; persistent effects (Iron Bulwark armor-split next swing, Shadow Veil lingering +50 dodge) tick down via `tickDefenseEffects()`. Basic Attack (−2 hunger) runs `applyAttack` both directions; Defend (−1) chip-damages the enemy and doubles effective DEF for the round; Flee (−3) is 50/50 with a forced full-damage counter on fail. Victory awards loot via `ExplorationService.awardEncounterDrops` and hands the player back to ExplorationController at the same km; defeat shares `handleDeath`. The same controller also drives the registration wolves fight at step 4 — `Registration.handleCombatEnd(won:)` routes back into the registration flow when `session.registrationStep < 6`. Class-specific Flee chances, XP, edit-in-place UX, and status effects are deferred to 4.3.
    - `MarketController` *(planned)* — trading with players and NPCs
    - `GlobalCommandsController` — `/help`, `/settings`, `/buttons` (works from any state)
 3. **Context** — passed to every controller; holds the bot instance, DB handle, localization (Lingo), user session, and parsed command arguments.
@@ -78,7 +78,7 @@ RestOfIryna/
 │   │   ├── SettingsController.swift
 │   │   ├── GlobalCommandsController.swift
 │   │   ├── ExplorationController.swift   # Phase 3.1 active exploration (step/bag/return/death) — encounters now hand off to CombatController
-│   │   ├── CombatController.swift        # Phase 4.1 turn-based PvE duel (Attack/Defend/Flee, class-flavoured labels, registration wolves fight)
+│   │   ├── CombatController.swift        # Phase 4.1 + 4.2 turn-based PvE duel — Attack/Defend/Flee + [🪄 Techniques] submenu (Special Atk / Special Def / Super) with per-fight budget; registration wolves fight
 │   │   ├── EstateController.swift        # Phase 5.0 skeleton: Root → House (room stubs) / Plot stub; per-level artwork
 │   │   ├── CapitalController.swift       # stub (Phase 6)
 │   │   └── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons
@@ -107,7 +107,10 @@ RestOfIryna/
 │   │   ├── AddPassiveExpeditionFields.swift
 │   │   ├── RenameMaterialIds.swift
 │   │   ├── RenameFoodIds.swift
-│   │   └── AddCombatFields.swift
+│   │   ├── AddCombatFields.swift
+│   │   ├── AddCombatStanceFields.swift     # Phase 4.2.1 — combat_stance + combat_stance_rounds_left
+│   │   ├── AddCombatDefenseFields.swift    # Phase 4.2.3 — combat_enemy_def_debuff + combat_player_dodge_buff
+│   │   └── AddCombatTechniqueUses.swift    # Phase 4.2 polish — per-fight budget counters
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── HungerService.swift   # drain, consume, starvation penalty, HP loss (pure)
@@ -116,7 +119,7 @@ RestOfIryna/
 │   │   ├── ExplorationService.swift # step outcome roll + autobattle stub + loot drops
 │   │   ├── HealingService.swift  # passive HP regen (5%·maxHp/min) while at estate
 │   │   ├── PassiveExpeditionService.swift # passive-mode duration picker + Task.sleep scheduler + simulation + report push
-│   │   └── CombatService.swift   # Phase 4.1 shared damage primitives (applyAttack hit/miss/crit + chipDamage for Defend)
+│   │   └── CombatService.swift   # Phase 4.1 + 4.2 — applyAttack hit/miss/crit + chipDamage for Defend; AttackModifiers / StanceModifiers; per-class special-attack tunings; SpecialDefense tunings; stance lookup helpers
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

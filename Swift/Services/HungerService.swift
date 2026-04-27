@@ -75,10 +75,13 @@ public enum HungerService {
     // MARK: - Drain
 
     /// Drain hunger on the user for a given action. Clamps to 0. Mutates — caller must save.
-    /// Returns the amount actually drained.
+    /// Returns the amount actually drained. The optional `multiplier` is used by
+    /// stance buffs (e.g. Bloodlust ×2) — the action's base cost is scaled and
+    /// rounded before the actual drain is applied.
     @discardableResult
-    public static func drain(_ user: User, action: HungerAction) -> Int {
-        return drain(user, amount: cost(of: action))
+    public static func drain(_ user: User, action: HungerAction, multiplier: Double = 1.0) -> Int {
+        let scaled = Double(cost(of: action)) * max(0.0, multiplier)
+        return drain(user, amount: Int(scaled.rounded()))
     }
 
     /// Drain an explicit amount. Used by dev tools (/drain) and any caller that wants

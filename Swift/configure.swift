@@ -157,6 +157,9 @@ public func configure(logger: Logger) async throws {
     migrations.add(RenameMaterialIds())
     migrations.add(RenameFoodIds())
     migrations.add(AddCombatFields())
+    migrations.add(AddCombatStanceFields())
+    migrations.add(AddCombatDefenseFields())
+    migrations.add(AddCombatTechniqueUses())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()

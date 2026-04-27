@@ -41,9 +41,42 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     typealias T = CombatController
 
     // Locale key prefixes — combined with `<class>` to get the actual key.
-    private static let attackKeyPrefix = "combat.button.attack."
-    private static let defendKeyPrefix = "combat.button.defend."
-    private static let fleeKeyPrefix   = "combat.button.flee."
+    private static let attackKeyPrefix     = "combat.button.attack."
+    private static let defendKeyPrefix     = "combat.button.defend."
+    private static let fleeKeyPrefix       = "combat.button.flee."
+    private static let superKeyPrefix      = "combat.button.super."
+    private static let specialAtkKeyPrefix = "combat.button.special_atk."
+    private static let specialDefKeyPrefix = "combat.button.special_def."
+
+    // MARK: - Class-flavoured emoji prefixes
+    //
+    // Lingo's `%{var}` parser breaks if the localised string LEADS with an
+    // emoji (UTF-16 surrogate pair messes up its index walk), so we keep
+    // every interpolated narrative emoji-free and prepend the icon here.
+
+    private static func superEmoji(for cls: CharacterClass) -> String {
+        switch cls {
+        case .warrior: return "🩸"
+        case .archer:  return "🦅"
+        case .mage:    return "✨"
+        }
+    }
+
+    private static func specialAtkHitEmoji(for cls: CharacterClass) -> String {
+        switch cls {
+        case .warrior: return "🪓"
+        case .archer:  return "🎯"
+        case .mage:    return "🔥"
+        }
+    }
+
+    private static func specialDefEmoji(for cls: CharacterClass) -> String {
+        switch cls {
+        case .warrior: return "🏰"
+        case .archer:  return "🌑"
+        case .mage:    return "🪞"
+        }
+    }
 
     // MARK: - Lifecycle
 
@@ -94,16 +127,56 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return nil
     }
 
-    /// Inline keyboard with class-flavoured Attack / Defend / Flee buttons.
-    /// Same handler fires regardless of which class label was tapped; class
-    /// is inferred from session at render time.
-    private func combatInlineKeyboard(session: User, lingo: Lingo) -> TGReplyMarkup {
+    /// Main combat inline keyboard: Attack / Defend on top row, Techniques /
+    /// Flee on the bottom. Class identity is inferred from session — Attack
+    /// / Defend / Flee are class-flavoured, Techniques is a single static
+    /// label that opens a submenu (`combat:tech:menu`) with class-specific
+    /// special techniques. Same handler fires for each callback regardless
+    /// of who tapped it.
+    private func combatMainMarkup(session: User, lingo: Lingo) -> TGInlineKeyboardMarkup {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let locale = session.locale
         let attack = TGInlineKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:attack")
         let defend = TGInlineKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:defend")
+        let tech   = TGInlineKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale), callbackData: "combat:tech:menu")
         let flee   = TGInlineKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix   + cls.rawValue, locale: locale), callbackData: "combat:flee")
-        return .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[attack, defend], [flee]]))
+        return TGInlineKeyboardMarkup(inlineKeyboard: [[attack, defend], [tech, flee]])
+    }
+
+    /// Wrapper for sendMessage callers that want a full TGReplyMarkup.
+    private func combatInlineKeyboard(session: User, lingo: Lingo) -> TGReplyMarkup {
+        return .inlineKeyboardMarkup(combatMainMarkup(session: session, lingo: lingo))
+    }
+
+    /// Submenu shown when the player taps `[🪄 Techniques]`. Per-fight budget
+    /// gates each button: Special Atk and Special Def get 2 uses each, Super
+    /// gets 1. When a counter reaches 0 the button is hidden — players see
+    /// only the techniques they can still spend, plus Back. Labels carry a
+    /// "× N" suffix showing remaining uses for clarity. Edit-in-place via
+    /// `editMessageReplyMarkup` keeps the round narrative intact.
+    private func combatTechniquesMarkup(session: User, state: ExplorationState, lingo: Lingo) -> TGInlineKeyboardMarkup {
+        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
+        let locale = session.locale
+        var rows: [[TGInlineKeyboardButton]] = []
+
+        var techRow: [TGInlineKeyboardButton] = []
+        if let uses = state.combatSpecialAtkUses, uses > 0 {
+            let label = lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+            techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_attack"))
+        }
+        if let uses = state.combatSpecialDefUses, uses > 0 {
+            let label = lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+            techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_defense"))
+        }
+        if !techRow.isEmpty {
+            rows.append(techRow)
+        }
+        if let uses = state.combatSuperUses, uses > 0 {
+            let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "combat:super")])
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("combat.tech.back", locale: locale), callbackData: "combat:tech:back")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     // MARK: - Public entry
@@ -123,7 +196,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 "enemy": enemyName
             ]))
         }
-        lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, lingo: lingo, locale: locale))
+        lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale))
         let text = lines.joined(separator: "\n\n")
 
         let markup = combatInlineKeyboard(session: context.session, lingo: lingo)
@@ -139,13 +212,28 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         guard let data = context.update.callbackQuery?.data else { return false }
         let ctrl = Controllers.combatController
         switch data {
-        case "combat:attack": return try await ctrl.onAttack(context: context)
-        case "combat:defend": return try await ctrl.onDefend(context: context)
-        case "combat:flee":   return try await ctrl.onFlee(context: context)
+        case "combat:attack":               return try await ctrl.onAttack(context: context)
+        case "combat:defend":               return try await ctrl.onDefend(context: context)
+        case "combat:flee":                 return try await ctrl.onFlee(context: context)
+        case "combat:tech:menu":            return try await ctrl.onTechMenu(context: context)
+        case "combat:tech:back":            return try await ctrl.onTechBack(context: context)
+        case "combat:tech:special_attack":  return try await ctrl.onSpecialAttack(context: context)
+        case "combat:tech:special_defense": return try await ctrl.onSpecialDefense(context: context)
+        case "combat:super":                return try await ctrl.onSuper(context: context)
         default:
             try await ctrl.sendInCombatNotice(context: context)
             return true
         }
+    }
+
+    /// Defensive toast for the case where a stale callback (from an older
+    /// message whose submenu still showed a now-spent technique button)
+    /// fires after the per-fight budget for that technique is exhausted.
+    /// Live submenus rebuild from state so the buttons are hidden — this
+    /// only catches stale-message taps.
+    private func sendNoUsesLeftToast(context: Context) async throws {
+        let text = "🚫 " + context.lingo.localize("combat.tech.no_uses_left", locale: context.session.locale)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
     }
 
     /// Sent in response to anything that isn't a valid combat action while
@@ -176,15 +264,19 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func onAttack(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
 
-        _ = HungerService.drain(context.session, action: .combatAttack)
+        let mods = CombatService.stanceModifiers(for: state.combatStance)
+        _ = HungerService.drain(context.session, action: .combatAttack, multiplier: mods.hungerMultiplier)
 
-        // Player strikes.
+        // Player strikes — stance modifiers folded into ATK / Crit / Acc.
+        // Iron Bulwark's "armor split" debuff (if active) zeroes enemy DEF.
         let player = context.session
+        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
+        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
         let playerHit = CombatService.applyAttack(
-            attackerATK: player.effectiveAttack,
-            attackerCrit: player.effectiveCrit,
-            attackerAcc: player.effectiveAccuracy,
-            defenderDEF: enemy.defense,
+            attackerATK: buffedATK,
+            attackerCrit: player.effectiveCrit + mods.critBonus,
+            attackerAcc: player.effectiveAccuracy + mods.accuracyBonus,
+            defenderDEF: effectiveEnemyDEF,
             defenderDodge: 0
         )
         var enemyHP = state.combatEnemyHP ?? enemy.hp
@@ -198,11 +290,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Enemy counter — no crit/accuracy stats on enemies yet, so 0/0.
+        // Enemy counter — DEF / Dodge get the stance buffs, plus Shadow Veil
+        // lingering dodge buff if active.
+        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
-            defenderDEF: player.effectiveDefense,
-            defenderDodge: player.effectiveDodge
+            defenderDEF: player.effectiveDefense + mods.defenseBonus,
+            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge
         )
         let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
         switch enemyHit {
@@ -217,11 +311,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func onDefend(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
 
-        _ = HungerService.drain(context.session, action: .combatDefend)
+        let mods = CombatService.stanceModifiers(for: state.combatStance)
+        _ = HungerService.drain(context.session, action: .combatDefend, multiplier: mods.hungerMultiplier)
 
-        // Defend chip damage — always lands, no crit, scaled to 30% of base.
+        // Defend chip damage — buffed ATK from stance still feeds it (always
+        // lands, no crit). Defend doubles effective DEF for the round.
+        // Iron Bulwark's armor-split debuff (if active) is consumed by chip.
         let player = context.session
-        let chip = CombatService.chipDamage(attackerATK: player.effectiveAttack, defenderDEF: enemy.defense)
+        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
+        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
+        let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF)
         let enemyHP = max(0, (state.combatEnemyHP ?? enemy.hp) - chip)
         let playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
             "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
@@ -233,11 +332,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Enemy strikes against doubled effective DEF for this round only.
+        // Enemy strikes against doubled (effective DEF + stance bonus) for
+        // this round only. Stance dodge bonus + Shadow Veil also apply.
+        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
-            defenderDEF: player.effectiveDefense * 2,
-            defenderDodge: player.effectiveDodge
+            defenderDEF: (player.effectiveDefense + mods.defenseBonus) * 2,
+            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge
         )
         let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
         switch enemyHit {
@@ -252,7 +353,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func onFlee(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
 
-        _ = HungerService.drain(context.session, action: .combatFlee)
+        let mods = CombatService.stanceModifiers(for: state.combatStance)
+        _ = HungerService.drain(context.session, action: .combatFlee, multiplier: mods.hungerMultiplier)
 
         let player = context.session
         let lingo = context.lingo
@@ -287,8 +389,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
 
         // Failed — enemy lands a forced full-damage hit "in the back" (no
-        // dodge, no crit roll), combat continues.
-        let damage = max(1, Int((Double(max(1, enemy.attack - player.effectiveDefense)) * Double.random(in: CombatService.varianceRange)).rounded()))
+        // dodge, no crit roll), combat continues. Stance DEF buff still
+        // helps reduce the bite. (Shadow Veil's lingering dodge can't save
+        // a failed flee — the spec is "guaranteed hit".)
+        let buffedDEF = player.effectiveDefense + mods.defenseBonus
+        let damage = max(1, Int((Double(max(1, enemy.attack - buffedDEF)) * Double.random(in: CombatService.varianceRange)).rounded()))
         player.hp = max(0, player.hp - damage)
 
         let line = "❌ " + lingo.localize("combat.flee.fail", locale: locale, interpolations: [
@@ -301,11 +406,278 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
+    /// Open the Techniques submenu by editing the current message's inline
+    /// keyboard (round narrative + status card stay put). Stale taps from an
+    /// older message just edit that older message — the live combat is
+    /// unaffected. The submenu rebuilds from the live state so already-spent
+    /// techniques stay hidden.
+    private func onTechMenu(context: Context) async throws -> Bool {
+        guard let message = context.update.callbackQuery?.message else { return false }
+        guard let state = try await ExplorationState.current(for: context.session, on: context.db),
+              state.isInCombat else {
+            // No live combat — the original notice path will handle this.
+            try await sendInCombatNotice(context: context)
+            return true
+        }
+        let markup = combatTechniquesMarkup(session: context.session, state: state, lingo: context.lingo)
+        let params = TGEditMessageReplyMarkupParams(
+            chatId: TGChatId.chat(message.chat.id),
+            messageId: message.messageId,
+            replyMarkup: markup
+        )
+        _ = try? await context.bot.editMessageReplyMarkup(params: params)
+        return true
+    }
+
+    /// Close the Techniques submenu — flip the keyboard back to the main
+    /// combat layout.
+    private func onTechBack(context: Context) async throws -> Bool {
+        guard let message = context.update.callbackQuery?.message else { return false }
+        let markup = combatMainMarkup(session: context.session, lingo: context.lingo)
+        let params = TGEditMessageReplyMarkupParams(
+            chatId: TGChatId.chat(message.chat.id),
+            messageId: message.messageId,
+            replyMarkup: markup
+        )
+        _ = try? await context.bot.editMessageReplyMarkup(params: params)
+        return true
+    }
+
+    /// Phase 4.2.3 class Special Defense — Iron Bulwark (warrior) / Shadow
+    /// Veil (archer) / Mirror Ward (mage). All three skip the regular enemy
+    /// counter (full block / dodge / reflect). Iron Bulwark and Shadow Veil
+    /// also apply a 1-round persistent effect that the next player action
+    /// will consume (armor-split DEF debuff / lingering dodge buff).
+    private func onSpecialDefense(context: Context) async throws -> Bool {
+        guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        guard state.hasSpecialDefUse else {
+            try await sendNoUsesLeftToast(context: context)
+            return true
+        }
+        state.consumeSpecialDef()
+
+        let player = context.session
+        let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
+        let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
+
+        // Hunger drain — base special-defense cost × stance hunger multiplier.
+        let baseHunger = CombatService.specialDefenseHunger(forClass: cls)
+        let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
+        HungerService.drain(player, amount: actualDrain)
+
+        let lingo = context.lingo
+        let locale = player.locale
+        let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+
+        var enemyHP = state.combatEnemyHP ?? enemy.hp
+        let activateLine: String
+
+        switch cls {
+        case .warrior:
+            // Iron Bulwark: 100% block + heavier chip damage to enemy + apply
+            // 1-round armor-split debuff for the follow-up swing.
+            let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
+            let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: enemy.defense)
+            // The basic chipDamage uses 30% of base — Iron Bulwark scales it
+            // up to 50% (defendChipFraction = 0.3, ironBulwarkChipFraction = 0.5).
+            let scaledChip = max(1, Int((Double(chip) * (CombatService.SpecialDefense.ironBulwarkChipFraction / CombatService.defendChipFraction)).rounded()))
+            enemyHP = max(0, enemyHP - scaledChip)
+            // Apply armor-split for the next swing (after the tick).
+            state.applyEnemyDefDebuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
+            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.warrior.activate", locale: locale, interpolations: [
+                "enemy": enemyName,
+                "damage": "\(scaledChip)"
+            ])
+
+        case .archer:
+            // Shadow Veil: full dodge this round (no enemy counter), apply
+            // lingering dodge buff for the next round.
+            state.applyPlayerDodgeBuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
+            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", locale: locale, interpolations: [
+                "enemy": enemyName
+            ])
+
+        case .mage:
+            // Mirror Ward: roll the would-be enemy hit, reflect a fraction
+            // back at them. Player takes 0.
+            let wouldBeHit = CombatService.applyAttack(
+                attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
+                defenderDEF: player.effectiveDefense + stanceMods.defenseBonus,
+                defenderDodge: 0
+            )
+            let raw: Int
+            switch wouldBeHit {
+            case .miss:               raw = 0
+            case .hit(let d):         raw = d
+            case .crit(let d):        raw = d
+            }
+            if raw > 0 {
+                let reflected = max(1, Int((Double(raw) * CombatService.SpecialDefense.mirrorWardReflectFraction).rounded()))
+                enemyHP = max(0, enemyHP - reflected)
+                activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.mage.activate", locale: locale, interpolations: [
+                    "enemy": enemyName,
+                    "damage": "\(reflected)"
+                ])
+            } else {
+                activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.mage.no_damage", locale: locale, interpolations: [
+                    "enemy": enemyName
+                ])
+            }
+        }
+
+        if enemyHP <= 0 {
+            try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [activateLine])
+            return true
+        }
+
+        // The "rounds" we set above is +1 to compensate for the immediate
+        // tick in finishRound. After tick: warrior debuff = 1, archer buff = 1.
+        // Next round consumes them; the round after that they're at 0.
+        try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [activateLine])
+        return true
+    }
+
+    /// Phase 4.2.2 class Special Attack — Cleave (warrior) / Vital Shot
+    /// (archer) / Soulfire (mage). Resolves a full round (player swing +
+    /// enemy counter), composing per-class `AttackModifiers` with the active
+    /// stance's `StanceModifiers` so e.g. Bloodlust's +ATK still feeds
+    /// Cleave's armor-piercing damage. Vital Shot zeroes the player's dodge
+    /// for the counter — long aim leaves them open.
+    private func onSpecialAttack(context: Context) async throws -> Bool {
+        guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        guard state.hasSpecialAtkUse else {
+            try await sendNoUsesLeftToast(context: context)
+            return true
+        }
+        state.consumeSpecialAtk()
+
+        let player = context.session
+        let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
+        let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
+
+        // Hunger drain — base special-attack cost × stance hunger multiplier.
+        let baseHunger = CombatService.specialAttackHunger(forClass: cls)
+        let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
+        HungerService.drain(player, amount: actualDrain)
+
+        // Player swing — stance buffs + special-attack modifiers compose.
+        // Iron Bulwark's armor-split debuff (if active) zeroes enemy DEF here too.
+        let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
+        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
+        let playerHit = CombatService.applyAttack(
+            attackerATK: buffedATK,
+            attackerCrit: player.effectiveCrit + stanceMods.critBonus,
+            attackerAcc: player.effectiveAccuracy + stanceMods.accuracyBonus,
+            defenderDEF: effectiveEnemyDEF,
+            defenderDodge: 0,
+            modifiers: CombatService.specialAttackModifiers(forClass: cls)
+        )
+
+        let lingo = context.lingo
+        let locale = player.locale
+        let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+        let keyPrefix = "combat.special_atk.\(cls.rawValue)"
+
+        var enemyHP = state.combatEnemyHP ?? enemy.hp
+        let playerLine: String
+        switch playerHit {
+        case .miss:
+            playerLine = "💨 " + lingo.localize("\(keyPrefix).miss", locale: locale, interpolations: ["enemy": enemyName])
+        case .hit(let d):
+            enemyHP = max(0, enemyHP - d)
+            playerLine = "\(Self.specialAtkHitEmoji(for: cls)) " + lingo.localize("\(keyPrefix).hit", locale: locale, interpolations: ["enemy": enemyName, "damage": "\(d)"])
+        case .crit(let d):
+            enemyHP = max(0, enemyHP - d)
+            playerLine = "💥 " + lingo.localize("\(keyPrefix).crit", locale: locale, interpolations: ["enemy": enemyName, "damage": "\(d)"])
+        }
+
+        if enemyHP <= 0 {
+            try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
+            return true
+        }
+
+        // Enemy counter — Vital Shot's "long aim" zeroes player dodge.
+        // Shadow Veil lingering buff still applies (even Vital Shot benefits
+        // from it as a base; the long-aim penalty still wins to 0 if active).
+        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
+        let dodgeForCounter = CombatService.specialAttackZeroesDodge(forClass: cls)
+            ? 0
+            : (player.effectiveDodge + stanceMods.dodgeBonus + extraDodge)
+        let enemyHit = CombatService.applyAttack(
+            attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
+            defenderDEF: player.effectiveDefense + stanceMods.defenseBonus,
+            defenderDodge: dodgeForCounter
+        )
+        let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: lingo, locale: locale)
+        switch enemyHit {
+        case .miss: break
+        case .hit(let d), .crit(let d): player.hp = max(0, player.hp - d)
+        }
+
+        try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine, enemyLine])
+        return true
+    }
+
+    /// Phase 4.2 Super-technique activation. Drains the activation hunger,
+    /// stamps the stance fields on the expedition row, and re-renders the
+    /// combat screen with the activate narrative + buff status. The enemy
+    /// does NOT strike on activation — Super is a free action by design.
+    /// Tapping Super while a stance is already active is a no-op + toast.
+    private func onSuper(context: Context) async throws -> Bool {
+        guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        guard state.hasSuperUse else {
+            try await sendNoUsesLeftToast(context: context)
+            return true
+        }
+        let lingo = context.lingo
+        let locale = context.session.locale
+
+        if state.hasActiveStance {
+            let text = "🌀 " + lingo.localize("combat.super.already_active", locale: locale)
+            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
+            return true
+        }
+
+        state.consumeSuper()
+
+        let player = context.session
+        let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
+        let stanceId = CombatService.stanceId(forClass: cls)
+        HungerService.drain(player, amount: CombatService.stanceActivationHunger(for: stanceId))
+        state.beginStance(stanceId, rounds: CombatService.stanceDurationRounds)
+        try await state.save(on: context.db)
+        try await player.saveAndCache(in: context.db)
+
+        let activate = "\(Self.superEmoji(for: cls)) " + lingo.localize("combat.super.\(cls.rawValue).activate", locale: locale, interpolations: [
+            "rounds": "\(CombatService.stanceDurationRounds)"
+        ])
+        let status = renderStatusCard(user: player, enemy: enemy, enemyHP: state.combatEnemyHP ?? enemy.hp, state: state, lingo: lingo, locale: locale)
+        let text = "\(activate)\n\n\(status)"
+        let markup = combatInlineKeyboard(session: player, lingo: lingo)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        return true
+    }
+
     // MARK: - Round helpers
 
-    /// Persist round results, check for player death, render the round screen.
+    /// Persist round results, tick the active stance + defense effects (if
+    /// any), check for player death, render the round screen. Stance ticks
+    /// happen AFTER the round resolves with the buff still active — so a
+    /// 3-round stance powers exactly 3 actions, with the expire narrative
+    /// emitted on the 3rd round's tick. Defense effects (Iron Bulwark armor
+    /// split, Shadow Veil dodge) tick the same way: the action that
+    /// triggered them is the activation round; the next action consumes
+    /// them; the action after that finds them gone.
     private func finishRound(context: Context, state: ExplorationState, enemy: Enemy, enemyHP: Int, lines: [String]) async throws {
         state.combatEnemyHP = enemyHP
+
+        var allLines = lines
+        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        if state.tickStance() {
+            allLines.append("\(Self.superEmoji(for: cls)) " + context.lingo.localize("combat.super.\(cls.rawValue).expire", locale: context.session.locale))
+        }
+        state.tickDefenseEffects()
+
         try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
@@ -316,8 +688,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         let lingo = context.lingo
         let locale = context.session.locale
-        let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, lingo: lingo, locale: locale)
-        let text = (lines + [status]).joined(separator: "\n\n")
+        let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale)
+        let text = (allLines + [status]).joined(separator: "\n\n")
         let markup = combatInlineKeyboard(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
@@ -438,15 +810,27 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Rendering
 
-    private func renderStatusCard(user: User, enemy: Enemy, enemyHP: Int, lingo: Lingo, locale: String) -> String {
+    private func renderStatusCard(user: User, enemy: Enemy, enemyHP: Int, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
         let starving = HungerService.isStarving(user)
             ? " · " + lingo.localize("hunger.starving", locale: locale)
             : ""
-        return """
-        \(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)
-        ❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.hunger)/\(user.maxHunger)\(starving)
-        """
+        var lines: [String] = [
+            "\(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)",
+            "❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.hunger)/\(user.maxHunger)\(starving)"
+        ]
+        if let rounds = state.combatStanceRoundsLeft, state.combatStance != nil, rounds > 0 {
+            let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior
+            let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)
+            lines.append("\(label) — \(rounds)")
+        }
+        if let rounds = state.combatEnemyDefDebuff, rounds > 0 {
+            lines.append("🛡 " + lingo.localize("combat.effect.armor_split", locale: locale, interpolations: ["rounds": "\(rounds)"]))
+        }
+        if let rounds = state.combatPlayerDodgeBuff, rounds > 0 {
+            lines.append("🌑 " + lingo.localize("combat.effect.shadow_veil", locale: locale, interpolations: ["rounds": "\(rounds)"]))
+        }
+        return lines.joined(separator: "\n")
     }
 
     /// Convert a player AttackOutcome into a localized round line. The closure
