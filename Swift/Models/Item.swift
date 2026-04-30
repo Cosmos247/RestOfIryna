@@ -152,8 +152,15 @@ public enum ItemCatalog {
              icon: "🪨", descriptionKey: "item.mat.river_pebble.desc"),
         Item(id: "mat.clay",            nameKey: "item.mat.clay",           type: .material, tier: 1, stackable: true,  effects: [],
              icon: "🧱", descriptionKey: "item.mat.clay.desc"),
-        Item(id: "mat.old_iron",        nameKey: "item.mat.old_iron",       type: .material, tier: 2, stackable: true,  effects: [],
-             icon: "⛓",  descriptionKey: "item.mat.old_iron.desc"),
+        // `mat.iron` is the RAW resource — a lump pulled from the rock.
+        // Found rarely in exploration foraging and trickled out by the Mine
+        // plot. The crafted Iron Ingot (`mat.iron_ingot`, below) is the
+        // refined form used by Workshop recipes; the planned recipe is
+        // 10 lumps → 1 ingot.
+        Item(id: "mat.iron",            nameKey: "item.mat.iron",           type: .material, tier: 2, stackable: true,  effects: [],
+             icon: "🔩", descriptionKey: "item.mat.iron.desc"),
+        Item(id: "mat.iron_ingot",      nameKey: "item.mat.iron_ingot",     type: .material, tier: 3, stackable: true,  effects: [],
+             icon: "🔳", descriptionKey: "item.mat.iron_ingot.desc"),
         Item(id: "mat.hide",            nameKey: "item.mat.hide",           type: .material, tier: 1, stackable: true,  effects: [],
              icon: "🟫", descriptionKey: "item.mat.hide.desc"),
 

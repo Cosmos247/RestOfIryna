@@ -127,25 +127,47 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return nil
     }
 
-    /// Main combat inline keyboard: Attack / Defend on top row, Techniques /
+    /// True if the active combat is a Training Ground session. Detected by
+    /// the persisted enemy id; flipped on by EstateController when the
+    /// player taps the training plot.
+    static func isTraining(_ state: ExplorationState) -> Bool {
+        return state.combatEnemyId == CombatService.trainingDummyEnemyId
+    }
+
+    /// Enemy DEF the player's swing should subtract. In training mode this
+    /// is forced to 0 so the player sees their raw ATK damage with no
+    /// reduction; outside training the regular Iron-Bulwark armor-split
+    /// debuff still applies.
+    static func playerSwingEnemyDEF(_ enemy: Enemy, state: ExplorationState) -> Int {
+        if isTraining(state) { return 0 }
+        return state.hasEnemyDefDebuff ? 0 : enemy.defense
+    }
+
+    /// Main combat inline keyboard: Attack / Defend on top row, Techniques +
     /// Flee on the bottom. Class identity is inferred from session — Attack
     /// / Defend / Flee are class-flavoured, Techniques is a single static
-    /// label that opens a submenu (`combat:tech:menu`) with class-specific
-    /// special techniques. Same handler fires for each callback regardless
-    /// of who tapped it.
-    private func combatMainMarkup(session: User, lingo: Lingo) -> TGInlineKeyboardMarkup {
+    /// label that opens a submenu. In training mode the Flee slot is
+    /// replaced with a Back button that exits cleanly to the Plot list.
+    private func combatMainMarkup(session: User, state: ExplorationState?, lingo: Lingo) -> TGInlineKeyboardMarkup {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let locale = session.locale
         let attack = TGInlineKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:attack")
         let defend = TGInlineKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:defend")
         let tech   = TGInlineKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale), callbackData: "combat:tech:menu")
-        let flee   = TGInlineKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix   + cls.rawValue, locale: locale), callbackData: "combat:flee")
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[attack, defend], [tech, flee]])
+        let trailing: TGInlineKeyboardButton
+        if let state = state, Self.isTraining(state) {
+            trailing = TGInlineKeyboardButton(text: lingo.localize("combat.button.training_exit", locale: locale), callbackData: "combat:training:exit")
+        } else {
+            trailing = TGInlineKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:flee")
+        }
+        return TGInlineKeyboardMarkup(inlineKeyboard: [[attack, defend], [tech, trailing]])
     }
 
     /// Wrapper for sendMessage callers that want a full TGReplyMarkup.
-    private func combatInlineKeyboard(session: User, lingo: Lingo) -> TGReplyMarkup {
-        return .inlineKeyboardMarkup(combatMainMarkup(session: session, lingo: lingo))
+    /// State threaded through so the training-mode branch can swap Flee for
+    /// a Back button (see `combatMainMarkup`).
+    private func combatInlineKeyboard(session: User, state: ExplorationState?, lingo: Lingo) -> TGReplyMarkup {
+        return .inlineKeyboardMarkup(combatMainMarkup(session: session, state: state, lingo: lingo))
     }
 
     /// Submenu shown when the player taps `[🪄 Techniques]`. Per-fight budget
@@ -199,7 +221,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale))
         let text = lines.joined(separator: "\n\n")
 
-        let markup = combatInlineKeyboard(session: context.session, lingo: lingo)
+        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
@@ -220,6 +242,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case "combat:tech:special_attack":  return try await ctrl.onSpecialAttack(context: context)
         case "combat:tech:special_defense": return try await ctrl.onSpecialDefense(context: context)
         case "combat:super":                return try await ctrl.onSuper(context: context)
+        case "combat:training:exit":        return try await ctrl.onTrainingExit(context: context)
         default:
             try await ctrl.sendInCombatNotice(context: context)
             return true
@@ -263,21 +286,30 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func onAttack(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        let isTraining = Self.isTraining(state)
 
         let mods = CombatService.stanceModifiers(for: state.combatStance)
-        _ = HungerService.drain(context.session, action: .combatAttack, multiplier: mods.hungerMultiplier)
+        // Training mode is consequence-free: no hunger drain, no enemy counter.
+        if !isTraining {
+            _ = HungerService.drain(context.session, action: .combatAttack, multiplier: mods.hungerMultiplier)
+        }
 
         // Player strikes — stance modifiers folded into ATK / Crit / Acc.
         // Iron Bulwark's "armor split" debuff (if active) zeroes enemy DEF.
+        // Training mode forces a clean hit (no miss, no DEF reduction) so
+        // the player can read their raw damage off the dummy.
         let player = context.session
         let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
-        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
+        let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
+        var swingMods = CombatService.AttackModifiers()
+        if isTraining { swingMods.cannotMiss = true }
         let playerHit = CombatService.applyAttack(
             attackerATK: buffedATK,
             attackerCrit: player.effectiveCrit + mods.critBonus,
             attackerAcc: player.effectiveAccuracy + mods.accuracyBonus,
             defenderDEF: effectiveEnemyDEF,
-            defenderDodge: 0
+            defenderDodge: 0,
+            modifiers: swingMods
         )
         var enemyHP = state.combatEnemyHP ?? enemy.hp
         let playerLine = renderPlayerHit(playerHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale, enemyHPAfter: { d in
@@ -287,6 +319,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         if enemyHP <= 0 {
             try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
+            return true
+        }
+
+        if isTraining {
+            // Skip the enemy counter entirely — dummy never strikes back.
+            try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine])
             return true
         }
 
@@ -310,16 +348,20 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func onDefend(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        let isTraining = Self.isTraining(state)
 
         let mods = CombatService.stanceModifiers(for: state.combatStance)
-        _ = HungerService.drain(context.session, action: .combatDefend, multiplier: mods.hungerMultiplier)
+        if !isTraining {
+            _ = HungerService.drain(context.session, action: .combatDefend, multiplier: mods.hungerMultiplier)
+        }
 
         // Defend chip damage — buffed ATK from stance still feeds it (always
         // lands, no crit). Defend doubles effective DEF for the round.
         // Iron Bulwark's armor-split debuff (if active) is consumed by chip.
+        // Training mode forces enemy DEF to 0 for a clean chip number.
         let player = context.session
         let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
-        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
+        let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
         let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF)
         let enemyHP = max(0, (state.combatEnemyHP ?? enemy.hp) - chip)
         let playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
@@ -329,6 +371,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         if enemyHP <= 0 {
             try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
+            return true
+        }
+
+        if isTraining {
+            try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine])
             return true
         }
 
@@ -352,6 +399,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func onFlee(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        // Defensive — Flee button is replaced by Back in training mode, so
+        // a stale callback is the only way this fires. Bail without effect.
+        if Self.isTraining(state) {
+            return true
+        }
 
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
@@ -440,13 +492,38 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// combat layout.
     private func onTechBack(context: Context) async throws -> Bool {
         guard let message = context.update.callbackQuery?.message else { return false }
-        let markup = combatMainMarkup(session: context.session, lingo: context.lingo)
+        // Read the live state so the main layout can correctly pick Flee vs.
+        // Back (training mode) for the trailing button.
+        let state = try await ExplorationState.current(for: context.session, on: context.db)
+        let markup = combatMainMarkup(session: context.session, state: state, lingo: context.lingo)
         let params = TGEditMessageReplyMarkupParams(
             chatId: TGChatId.chat(message.chat.id),
             messageId: message.messageId,
             replyMarkup: markup
         )
         _ = try? await context.bot.editMessageReplyMarkup(params: params)
+        return true
+    }
+
+    /// Phase 5.1: clean exit from a Training Ground session. Wipes the
+    /// ExplorationState row that was holding the dummy fight and re-renders
+    /// the plot list so the Training Ground row is visible again. The
+    /// player's routerName never changed (training keeps them in `estate`
+    /// so the reply keyboard stays unblocked), so no transition is needed.
+    /// No HP / hunger / inventory changes — training is consequence-free.
+    private func onTrainingExit(context: Context) async throws -> Bool {
+        if let state = try await ExplorationState.current(for: context.session, on: context.db) {
+            try await state.delete(on: context.db)
+        }
+        let estate = Controllers.estateController
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let prefix = "🥋 " + lingo.localize("estate.plot.alert.training_exited", locale: locale)
+        let plots = try await Plot.list(for: context.session, on: context.db)
+        let body = estate.renderPlotList(plots: plots, session: context.session, lingo: lingo, locale: locale)
+        let text = "\(prefix)\n\n\(body)"
+        let markup = estate.plotListKeyboard(plots: plots, session: context.session, lingo: lingo, locale: locale)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
         return true
     }
 
@@ -462,15 +539,19 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
         state.consumeSpecialDef()
+        let isTraining = Self.isTraining(state)
 
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
         // Hunger drain — base special-defense cost × stance hunger multiplier.
-        let baseHunger = CombatService.specialDefenseHunger(forClass: cls)
-        let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
-        HungerService.drain(player, amount: actualDrain)
+        // Skipped in training mode.
+        if !isTraining {
+            let baseHunger = CombatService.specialDefenseHunger(forClass: cls)
+            let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
+            HungerService.drain(player, amount: actualDrain)
+        }
 
         let lingo = context.lingo
         let locale = player.locale
@@ -482,9 +563,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         switch cls {
         case .warrior:
             // Iron Bulwark: 100% block + heavier chip damage to enemy + apply
-            // 1-round armor-split debuff for the follow-up swing.
+            // 1-round armor-split debuff for the follow-up swing. Training
+            // mode zeroes the dummy's DEF for a clean chip-damage readout.
             let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
-            let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: enemy.defense)
+            let bulwarkEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
+            let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: bulwarkEnemyDEF)
             // The basic chipDamage uses 30% of base — Iron Bulwark scales it
             // up to 50% (defendChipFraction = 0.3, ironBulwarkChipFraction = 0.5).
             let scaledChip = max(1, Int((Double(chip) * (CombatService.SpecialDefense.ironBulwarkChipFraction / CombatService.defendChipFraction)).rounded()))
@@ -557,27 +640,38 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
         state.consumeSpecialAtk()
+        let isTraining = Self.isTraining(state)
 
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
         // Hunger drain — base special-attack cost × stance hunger multiplier.
-        let baseHunger = CombatService.specialAttackHunger(forClass: cls)
-        let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
-        HungerService.drain(player, amount: actualDrain)
+        // Skipped in training mode (consequence-free practice).
+        if !isTraining {
+            let baseHunger = CombatService.specialAttackHunger(forClass: cls)
+            let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
+            HungerService.drain(player, amount: actualDrain)
+        }
 
         // Player swing — stance buffs + special-attack modifiers compose.
         // Iron Bulwark's armor-split debuff (if active) zeroes enemy DEF here too.
+        // Training mode also forces cannotMiss so even Cleave's −10 hit
+        // penalty never produces a miss against the dummy.
         let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
-        let effectiveEnemyDEF = state.hasEnemyDefDebuff ? 0 : enemy.defense
+        let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
+        var swingMods = CombatService.specialAttackModifiers(forClass: cls)
+        if isTraining {
+            swingMods.cannotMiss = true
+            swingMods.hitChanceModifier = 0  // override Cleave's penalty
+        }
         let playerHit = CombatService.applyAttack(
             attackerATK: buffedATK,
             attackerCrit: player.effectiveCrit + stanceMods.critBonus,
             attackerAcc: player.effectiveAccuracy + stanceMods.accuracyBonus,
             defenderDEF: effectiveEnemyDEF,
             defenderDodge: 0,
-            modifiers: CombatService.specialAttackModifiers(forClass: cls)
+            modifiers: swingMods
         )
 
         let lingo = context.lingo
@@ -600,6 +694,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         if enemyHP <= 0 {
             try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
+            return true
+        }
+
+        if isTraining {
+            try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine])
             return true
         }
 
@@ -650,7 +749,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceId = CombatService.stanceId(forClass: cls)
-        HungerService.drain(player, amount: CombatService.stanceActivationHunger(for: stanceId))
+        // Activation hunger skipped in training mode (consequence-free practice).
+        if !Self.isTraining(state) {
+            HungerService.drain(player, amount: CombatService.stanceActivationHunger(for: stanceId))
+        }
         state.beginStance(stanceId, rounds: CombatService.stanceDurationRounds)
         try await state.save(on: context.db)
         try await player.saveAndCache(in: context.db)
@@ -660,7 +762,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         ])
         let status = renderStatusCard(user: player, enemy: enemy, enemyHP: state.combatEnemyHP ?? enemy.hp, state: state, lingo: lingo, locale: locale)
         let text = "\(activate)\n\n\(status)"
-        let markup = combatInlineKeyboard(session: player, lingo: lingo)
+        let markup = combatInlineKeyboard(session: player, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
         return true
     }
@@ -697,7 +799,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale)
         let text = (allLines + [status]).joined(separator: "\n\n")
-        let markup = combatInlineKeyboard(session: context.session, lingo: lingo)
+        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
@@ -706,8 +808,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// has been "consumed" — the room's visit count is still recorded so
     /// re-entry uses the visit-decay tier. During registration the same
     /// flow is used but the row is deleted (no expedition follows) and we
-    /// hand off to `Registration.handleCombatEnd`.
+    /// hand off to `Registration.handleCombatEnd`. In training mode the
+    /// dummy auto-revives instead — see `reviveTrainingDummy`.
     private func finishVictory(context: Context, state: ExplorationState, enemy: Enemy, headerLines: [String]) async throws {
+        if Self.isTraining(state) {
+            try await reviveTrainingDummy(context: context, state: state, enemy: enemy, headerLines: headerLines)
+            return
+        }
         let lingo = context.lingo
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
@@ -743,6 +850,29 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         try await handBackToExploration(context: context, prefix: prefix)
+    }
+
+    /// Training Ground branch of `finishVictory`. Resets the dummy's HP to
+    /// full and re-renders the combat screen with a "dummy restored" notice
+    /// — the player keeps training without any "victory" UX (no loot, no
+    /// hand-off back to exploration). Per-fight technique budget is NOT
+    /// reset here; the player has to tap Back and re-enter to refresh it.
+    private func reviveTrainingDummy(context: Context, state: ExplorationState, enemy: Enemy, headerLines: [String]) async throws {
+        state.combatEnemyHP = enemy.hp
+        try await state.save(on: context.db)
+        try await context.session.saveAndCache(in: context.db)
+
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+        var lines = headerLines
+        lines.append("🥋 " + lingo.localize("combat.training.dummy_revived", locale: locale, interpolations: [
+            "enemy": enemyName
+        ]))
+        lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemy.hp, state: state, lingo: lingo, locale: locale))
+        let text = lines.joined(separator: "\n\n")
+        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
     /// Defeat handler — shares the inventory wipe + HP reset with

@@ -139,11 +139,23 @@ public enum ExplorationService {
         // find on the trail. Hide / raw meat are deliberately NOT here; they
         // drop exclusively from enemy kills via EnemyCatalog loot tables.
         // Each itemId listed here has a matching `exploration.find.<id>`
-        // locale key with a per-item flavor line.
-        let shallow = ["food.forest_berries", "food.forest_nuts", "mat.pine_lumber", "mat.river_pebble"]
-        let medium  = ["food.potato", "food.duck_egg", "mat.clay", "mat.old_iron"]
-        let pool = kmDepth <= 2 ? shallow : (kmDepth <= 5 ? shallow + medium : medium)
-        let itemId = pool.randomElement() ?? "mat.pine_lumber"
+        // locale key with a per-item flavor line. Pairs are (id, weight) —
+        // higher weight = more common. `mat.iron` is the rare drop at the
+        // medium tier, weighted ~1/5 of the staples so it's a notable find.
+        let shallow: [(String, Int)] = [
+            ("food.forest_berries", 10),
+            ("food.forest_nuts",    10),
+            ("mat.pine_lumber",     10),
+            ("mat.river_pebble",    10)
+        ]
+        let medium: [(String, Int)] = [
+            ("food.potato",   10),
+            ("food.duck_egg", 10),
+            ("mat.clay",      10),
+            ("mat.iron",       2)   // rare — replaces the retired `mat.old_iron`
+        ]
+        let pool: [(String, Int)] = kmDepth <= 2 ? shallow : (kmDepth <= 5 ? shallow + medium : medium)
+        let itemId = pickWeighted(pool) ?? "mat.pine_lumber"
         let quantity = Int.random(in: 1...2)
 
         // Apply any starvation HP loss first.
@@ -288,5 +300,21 @@ public enum ExplorationService {
             }
         }
         return drops
+    }
+
+    /// Pick a `T` from a (T, weight) list with weights as plain integers —
+    /// roll one random integer in `1...sum(weights)` and walk the list. Used
+    /// by the foraging pool so rare items can sit alongside staples in the
+    /// same `[(id, weight)]` array without bumping their share to even.
+    private static func pickWeighted<T>(_ items: [(T, Int)]) -> T? {
+        let total = items.reduce(0) { $0 + max(0, $1.1) }
+        guard total > 0 else { return nil }
+        var roll = Int.random(in: 1...total)
+        for (item, weight) in items {
+            let w = max(0, weight)
+            if roll <= w { return item }
+            roll -= w
+        }
+        return items.last?.0
     }
 }

@@ -241,31 +241,43 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 - [x] Warehouse: real storage — `WarehouseEntry` Fluent model (separate table from `inventory`), category root with live counts, per-category drill-down with item list. Dev seed mirrors the inventory seed set.
 - [x] Warehouse deposit/withdraw: `WarehouseService` moves one unit per tap. Category drill-down renders each distinct item as `[Name] [N ⬆️] [M ⬇️]` — deposit from inventory / withdraw to inventory. Union of inventory + warehouse items; equipped gear is excluded from transferable inventory count. Toast feedback, in-place refresh.
 
-### 5.1 Estate Model
-- [ ] Design Estate model (30x30 grid as JSON/binary blob)
-- [ ] Design Manor model (7x7 interior rooms)
-- [ ] Design Plot model (type, tier, production timer, position)
-- [ ] Create migrations
-- [ ] Implement grid rendering as emoji tilemap
+### 5.1 Plot system *(landed 2026-04-30)*
 
-### 5.2 EstateController
-- [ ] Create controller with grid view
-- [ ] Implement manor room management (view, upgrade)
-- [ ] Implement plot management (buy, assign type, upgrade)
-- [ ] Implement production timers (lazy compute on visit)
-- [ ] Implement resource harvesting from plots
+Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; that's deferred to Phase 7 territorial PvP design). Plus a Training Ground non-producing plot that opens a sparring fight with a dummy.
 
-### 5.3 Crafting System
-- [ ] Design Recipe model (room requirement, materials, output, duration)
-- [ ] Implement crafting UI in manor rooms
-- [ ] Create initial recipe set per class
-- [ ] Implement blueprint learning (drops, purchases)
-- [ ] Create `content/recipes.md` reference document
+- [x] `Plot` Fluent model + `CreatePlots` migration (user_id FK, slot_index, plot_type, tier, last_harvested_at, notified_full)
+- [x] `PlotCatalog` code-based config (5 types: Farm 🌾 / Lumberyard 🪚 / Mine ⛏ / Coop 🐔 / Training Ground 🥋); `PlotTuning` with optional `bonusOutput` for Mine's iron-alongside-pebble drop
+- [x] `PlotService` helpers (lazy `accumulated` / `bonusAccumulated`, `harvest` deposits to **WarehouseEntry**, `claim` validates slot allowance, `slotsForLevel` — currently flat 5 override pending XP-to-Estate)
+- [x] `PlotProductionService` background ticker (single Task.detached, 60s test / 300s prod, pushes "🌾 ready to harvest" message when cap reached, `notified_full` flag suppresses repeats)
+- [x] EstateController plot drill-down (slot list, claim picker, harvest, training entry); inline status banners on harvest with current/cap on both primary and bonus
+- [x] Training Ground combat mode (clean damage, no hunger drain, no enemy counter, dummy auto-revives, routerName stays at "estate" so reply-keyboard nav unblocked, `combat:*` callback forwarding from Main / Inventory / Estate / Settings)
+- [x] Initial farm grant at registration completion (slot 0 = farm)
+- [x] Iron resource overhaul: `mat.iron` (Iron Lump 🔩, raw — foraging + Mine bonus) + `mat.iron_ingot` (Iron Ingot 🔳, placeholder for Phase 5.x Workshop crafting); legacy `mat.old_iron` retired with `RemoveOldIron` data migration
+- [x] Foraging pool → weighted (`pickWeighted` helper); iron weight 2 vs 10 staples = ~5% medium-zone drop
+- [-] 30×30 spatial estate grid — *deferred until Phase 7 territorial PvP design*
+- [-] Manor 7×7 interior rooms — *deferred; current model uses abstract House nav*
+- [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 
-### 5.4 Estate Placement
-- [ ] Design global estate grid (coordinate system)
-- [ ] Implement frontier-based placement for new players
-- [ ] Implement adjacency queries (8-neighbor lookup)
+### 5.2 Workshop crafting *(planned)*
+- [ ] First recipe: `mat.iron × 10 → mat.iron_ingot × 1`
+- [ ] `Recipe` code-based catalog (room requirement, inputs, output, optional duration)
+- [ ] Workshop UI in EstateController (replaces current stub)
+- [ ] Kitchen cooking parallel: `food.potato` / `food.raw_meat` → cooked variants with hunger / HP effects
+- [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
+- [ ] Create `content/recipes.md` reference doc
+
+### 5.3 XP-to-Estate progression *(planned)*
+- [ ] Replace `User.estateLevel = User.level / 5` derivation with a real model — combat / exploration awards estate XP directly (not character level)
+- [ ] Decide: keep `User.xp` / `User.level` as the source of truth (renamed conceptually) or add a new `Estate` model with its own xp/level
+- [ ] Wire estate-XP grants from combat victory + exploration completions
+- [ ] Tune the level-up curve once the basic loop is in
+- [ ] Restore `PlotService.slotsForLevel` to use the logarithmic table (currently flat 5)
+- [ ] Hook unlock-by-level for Phase 4.2 techniques (currently all available from start)
+
+### 5.4 Estate Placement *(deferred)*
+- [-] 30×30 spatial estate grid — *deferred; needed for territorial PvP design in Phase 7+*
+- [-] Frontier-based placement for new players — *same*
+- [-] 8-neighbor adjacency queries — *same*
 
 ---
 
@@ -395,4 +407,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-04-27 — Phases 0-2 complete; Phase 3 (3.0–3.4) MVP done (passive still in test mode, daily budget + early-cancel pending); Phase 4.1 combat MVP + Phase 4.2 class techniques (9 across all classes — Super stances, Special Attacks, Special Defenses + per-fight budget) + Phase 4.3.1 class-specific Flee chances all landed; Phase 5.0 estate skeleton + warehouse done. Phase 4.3.2 (edit-in-place) and 4.3.3 (XP grant) deferred by user; remaining 4.3 items moved to Future / Backlog. Next: continue with Estate progression (Phase 5.1+) where the XP-to-Estate redesign will land.*
+*Last updated: 2026-04-30 — Phases 0-2 complete; Phase 3 MVP done; Phase 4.1+4.2+4.3.1+4.4 combat done (4.3.2/4.3.3 deferred, 4.3.4-6 in Future Backlog); Phase 5.0 estate skeleton + warehouse + Phase 5.1 plot system + Training Ground + iron resource overhaul all landed. Spatial 30×30 grid (5.4) deferred to Phase 7 PvP. Next: Phase 5.2 Workshop / Kitchen crafting (first recipe `mat.iron × 10 → mat.iron_ingot × 1`); Phase 5.3 XP-to-Estate progression (replaces current `User.estateLevel = User.level / 5` derivation).*

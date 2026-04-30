@@ -160,6 +160,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddCombatStanceFields())
     migrations.add(AddCombatDefenseFields())
     migrations.add(AddCombatTechniqueUses())
+    migrations.add(CreatePlots())
+    migrations.add(RemoveOldIron())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -262,7 +264,6 @@ public func configure(logger: Logger) async throws {
             ("mat.pine_lumber", 5),
             ("mat.river_pebble", 3),
             ("mat.clay", 2),
-            ("mat.old_iron", 1),
             ("mat.hide", 1),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
@@ -331,6 +332,13 @@ public func configure(logger: Logger) async throws {
     // stopped. Each one either delivers immediately (if its endsAt already
     // passed during downtime) or re-arms a Task.sleep until its endsAt.
     try await PassiveExpeditionService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
+
+    // MARK: - Plot production ticker
+    // Single long-running Task.detached that wakes every PlotProductionService
+    // .tickInterval and pushes "ready to harvest" notifications when a plot
+    // crosses its cap. Production amount is computed lazily on visit, the
+    // ticker only handles notifications.
+    PlotProductionService.startTicker(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
     // Restored players keep whatever reply keyboard their current controller

@@ -169,6 +169,20 @@ public enum EnemyCatalog {
             ],
             icon: "🐻"
         ),
+        // Training Dummy — Phase 5.1 estate-side training plot. ATK = 0 so
+        // it never deals damage in return; DEF = 1 so the player sees a
+        // non-trivial damage number (vs. exactly the raw ATK). HP is set
+        // generously and CombatController auto-revives the dummy when it
+        // hits 0 — training is meant to be open-ended, not a fight to win.
+        // No depthRange (this enemy is never rolled by exploration), no loot.
+        Enemy(
+            id: "enemy.training_dummy",
+            nameKey: "enemy.training_dummy",
+            tier: 0, hp: 200, attack: 0, defense: 1,
+            depthRange: 0...0,
+            lootTable: [],
+            icon: "🥋"
+        ),
         // Rabid Bear — tier 6 deepest hostile. Beastfever has bleached the
         // fur and stripped the discipline; what's left is a hard-hitting
         // monster that follows the rabid family pattern (high ATK, lower

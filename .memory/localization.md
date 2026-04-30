@@ -101,7 +101,7 @@ If you must keep the emoji in the template for some reason:
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~271 per locale)
+## Current Keys (~308 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
@@ -121,7 +121,9 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Exploration visit-decay variants (Phase 3.2): three `.nothing` narratives — exploration.outcome.nothing (fresh, prior visits = 0), exploration.outcome.nothing.revisited (thinned, prior visits = 1), exploration.outcome.nothing.bare (depleted, prior visits ≥ 2)
 - Passive expedition (Phase 3.3): exploration.mode.prompt/active/passive (mode picker), exploration.duration.prompt/30m/1h/1h30m/back (duration picker), exploration.passive.started/inflight (confirmation + countdown, with %{time} interpolation), exploration.passive.test_mode_hint, exploration.passive.report.title/depth/hp/hunger/events_header/loot_header/no_loot/loot_partial/death/close (report rendering), exploration.passive.outcome.nothing/loot/encounter_won/encounter_lost/trip/starvation (one-word labels for outcome histogram)
 - Mode exclusivity (Phase 3.4): capital.blocked_by_expedition (capital entry guard notice). The Explore keyboard label is static — gating happens at entry via showExploration's passive-countdown branch.
-- Enemies: enemy.wild_boar, enemy.wild_moose, enemy.wild_buffalo, enemy.rabid_lynx, enemy.rabid_wolf, enemy.wild_bear, enemy.rabid_bear (7 animals across 6 tiers; reference doc at `content/bestiary.md`)
+- Enemies: enemy.wild_boar, enemy.wild_moose, enemy.wild_buffalo, enemy.rabid_lynx, enemy.rabid_wolf, enemy.wild_bear, enemy.rabid_bear (7 wilderness animals across 6 tiers; reference doc at `content/bestiary.md`) + enemy.training_dummy (Phase 5.1 sparring target — only spawned by the Training Ground plot, never by exploration).
+- Iron resources (Phase 5.1): item.mat.iron (Iron Lump 🔩 — raw, gathered) + item.mat.iron_ingot (Iron Ingot 🔳 — crafted, planned Workshop recipe). The legacy `mat.old_iron` was retired and its locale keys removed; DB rows wiped via `RemoveOldIron` migration.
+- Plots (Phase 5.1): plot.type.{farm,forest,mine,coop,training_ground}.{name,desc} (the 5 plot types; `forest` is locale-named "Lumberyard" / "Лісопилка" — raw value retained for DB compat). plot.ready.notification (push when a plot's primary accumulator hits cap). estate.plot.list.title ("Estate grounds" / "Ділянка"), estate.plot.list.header (slots-used line), estate.plot.row.{claimed,empty,training} row formats, estate.plot.button.{harvest,claim,train} (emoji prepended in Swift since `🚜` / `🥋` are supplementary-plane), estate.plot.picker.{header,back}, estate.plot.rate.{per_hour,per_minute}, estate.plot.alert.{slot_out_of_range,slot_taken,slot_empty,harvest_empty,claimed,harvested,harvested_multi,training_exited}, estate.plot.ready_mark (currently empty per user pref). combat.button.training_exit ("🔙 Back" — replaces Flee in training), combat.training.dummy_revived (auto-revive narrative).
 - Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
 - Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
 

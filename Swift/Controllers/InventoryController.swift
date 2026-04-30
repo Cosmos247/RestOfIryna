@@ -282,6 +282,11 @@ extension InventoryController {
         if data.hasPrefix("explore:") {
             return try await ExplorationController.onCallbackQuery(context: context)
         }
+        // Forward combat callbacks (Training Ground keeps routerName at the
+        // pre-combat router so reply-keyboard nav stays unblocked).
+        if data.hasPrefix("combat:") {
+            return try await CombatController.onCallbackQuery(context: context)
+        }
 
         let ctrl = Controllers.inventoryController
         let locale = context.session.locale

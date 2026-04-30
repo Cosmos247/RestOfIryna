@@ -304,6 +304,13 @@ extension MainController {
         if data.hasPrefix("explore:") {
             return try await ExplorationController.onCallbackQuery(context: context)
         }
+        // Phase 5.1: training mode keeps routerName at whatever the player
+        // was in (typically "main" or "estate") so reply-keyboard nav stays
+        // unblocked. The combat inline buttons fire `combat:*` callbacks that
+        // need to reach `CombatController.onCallbackQuery` from any router.
+        if data.hasPrefix("combat:") {
+            return try await CombatController.onCallbackQuery(context: context)
+        }
 
         // Default: delete inline message
         let chatId = TGChatId.chat(message.chat.id)

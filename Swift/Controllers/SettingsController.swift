@@ -106,6 +106,11 @@ extension SettingsController {
         if data.hasPrefix("explore:") {
             return try await ExplorationController.onCallbackQuery(context: context)
         }
+        // Combat callbacks may also arrive here if the player tapped a
+        // training-fight inline button while routerName was settings.
+        if data.hasPrefix("combat:") {
+            return try await CombatController.onCallbackQuery(context: context)
+        }
 
         let chatId = TGChatId.chat(message.chat.id)
         let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)

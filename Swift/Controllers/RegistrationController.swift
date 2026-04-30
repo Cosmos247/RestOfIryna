@@ -294,6 +294,14 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         context.session.routerName = mainController.routerName
         context.session.registrationStep = 6
         try await context.session.saveAndCache(in: context.db)
+
+        // Phase 5.1: grant a starter farm at slot 0 if the player has no
+        // plots yet. This gives them a producing plot the first time they
+        // open Estate, so the system isn't an empty void on first contact.
+        if try await PlotService.hasAnyPlot(for: context.session, on: context.db) == false {
+            _ = try await PlotService.claim(slot: 0, type: .farm, for: context.session, on: context.db)
+        }
+
         try await mainController.showMainMenu(context: context, text: complete)
     }
 }

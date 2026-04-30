@@ -380,6 +380,144 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         ]])
     }
 
+    // MARK: - Plot drill-down (Phase 5.1)
+
+    /// Body of the plot drill-down — header + one line per slot. Each
+    /// claimed slot shows its current accumulation; empty slots are tagged.
+    /// Keyboard `plotListKeyboard` carries the action buttons. Internal
+    /// (not fileprivate) so CombatController's training-exit can refresh
+    /// the same view after a Back tap.
+    func renderPlotList(plots: [Plot], session: User, lingo: Lingo, locale: String) -> String {
+        let slotsAllowance = PlotService.slotsForLevel(session.estateLevel)
+        let title = lingo.localize("estate.plot.list.title", locale: locale)
+        let header = lingo.localize("estate.plot.list.header", locale: locale, interpolations: [
+            "claimed":   "\(plots.count)",
+            "allowance": "\(slotsAllowance)"
+        ])
+        var lines: [String] = ["🌾 <b>\(title)</b>", header, ""]
+        let plotsBySlot = Dictionary(uniqueKeysWithValues: plots.map { ($0.slotIndex, $0) })
+        for slot in 0..<slotsAllowance {
+            if let plot = plotsBySlot[slot], let type = PlotType(rawValue: plot.plotType) {
+                let icon = PlotCatalog.icon(for: type)
+                let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+                if let tuning = PlotCatalog.tuning(for: type, tier: plot.tier) {
+                    // Production plot — show accumulated count and ready-mark.
+                    let amount = PlotService.accumulated(for: plot)
+                    let itemIcon = ItemCatalog.find(tuning.producedItemId)?.icon ?? ""
+                    let readyMark = amount >= tuning.capacity ? lingo.localize("estate.plot.ready_mark", locale: locale) : ""
+                    // Bonus output (e.g. Mine → iron) shown right after the
+                    // primary count: " · <b>3/5</b> 🔩". Empty for plots
+                    // with no `bonusOutput` so the row stays clean.
+                    var bonusSegment = ""
+                    if let bonus = tuning.bonusOutput {
+                        let bonusAmount = PlotService.bonusAccumulated(for: plot)
+                        let bonusIcon = ItemCatalog.find(bonus.producedItemId)?.icon ?? ""
+                        bonusSegment = " · <b>\(bonusAmount)/\(bonus.capacity)</b> \(bonusIcon)"
+                    }
+                    lines.append(lingo.localize("estate.plot.row.claimed", locale: locale, interpolations: [
+                        "icon":  icon,
+                        "slot":  "\(slot + 1)",
+                        "type":  typeName,
+                        "amount": "\(amount)",
+                        "cap":   "\(tuning.capacity)",
+                        "item":  itemIcon,
+                        "bonus": bonusSegment,
+                        "ready": readyMark
+                    ]))
+                } else {
+                    // Non-producing plot (Training Ground et al.) — flat row.
+                    lines.append(lingo.localize("estate.plot.row.training", locale: locale, interpolations: [
+                        "icon": icon,
+                        "slot": "\(slot + 1)",
+                        "type": typeName
+                    ]))
+                }
+            } else {
+                lines.append(lingo.localize("estate.plot.row.empty", locale: locale, interpolations: [
+                    "slot": "\(slot + 1)"
+                ]))
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Keyboard for the plot list: one button per slot (Harvest for claimed,
+    /// Claim for empty), paired in rows of 2 to keep the keyboard compact,
+    /// plus a Back row at the bottom. Internal so CombatController's
+    /// training-exit can rebuild the keyboard.
+    func plotListKeyboard(plots: [Plot], session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let slotsAllowance = PlotService.slotsForLevel(session.estateLevel)
+        let plotsBySlot = Dictionary(uniqueKeysWithValues: plots.map { ($0.slotIndex, $0) })
+        var buttons: [TGInlineKeyboardButton] = []
+        for slot in 0..<slotsAllowance {
+            if let plot = plotsBySlot[slot], let type = PlotType(rawValue: plot.plotType) {
+                if PlotCatalog.tuning(for: type) == nil {
+                    // Training plot — leads to combat instead of harvest.
+                    let label = "🥋 " + lingo.localize("estate.plot.button.train", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+                    buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:train:\(slot)"))
+                } else {
+                    // Production plot — harvest. Emoji prepended in Swift —
+                    // Lingo's `%{var}` parser breaks on leading supplementary-
+                    // plane emoji (🚜 is U+1F69C).
+                    let label = "🚜 " + lingo.localize("estate.plot.button.harvest", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+                    buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:harvest:\(slot)"))
+                }
+            } else {
+                let label = lingo.localize("estate.plot.button.claim", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+                buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:claim:\(slot)"))
+            }
+        }
+        var rows: [[TGInlineKeyboardButton]] = stride(from: 0, to: buttons.count, by: 2).map {
+            Array(buttons[$0..<min($0 + 2, buttons.count)])
+        }
+        let back = lingo.localize("estate.back_root", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:root")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    /// Body of the plot-type picker shown after the player taps "Claim slot N".
+    fileprivate func renderPlotPicker(slot: Int, lingo: Lingo, locale: String) -> String {
+        let header = lingo.localize("estate.plot.picker.header", locale: locale, interpolations: [
+            "slot": "\(slot + 1)"
+        ])
+        var lines: [String] = ["<b>\(header)</b>", ""]
+        for type in PlotType.allCases {
+            let icon = PlotCatalog.icon(for: type)
+            let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+            if let tuning = PlotCatalog.tuning(for: type) {
+                // Production plot — show item, rate, cap.
+                let itemName = ItemCatalog.find(tuning.producedItemId).map { lingo.localize($0.nameKey, locale: locale) } ?? tuning.producedItemId
+                let intervalLabel = lingo.localize(PlotCatalog.testMode ? "estate.plot.rate.per_minute" : "estate.plot.rate.per_hour", locale: locale)
+                lines.append("\(icon) <b>\(typeName)</b> — \(itemName), \(tuning.ratePerInterval) \(intervalLabel), cap \(tuning.capacity)")
+            } else {
+                // Non-producing plot (Training Ground) — show its lore blurb.
+                let desc = lingo.localize(PlotCatalog.descriptionKey(for: type), locale: locale)
+                lines.append("\(icon) <b>\(typeName)</b> — \(desc)")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Picker keyboard — one button per plot type + Back to plot list.
+    fileprivate func plotPickerKeyboard(slot: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        var pair: [TGInlineKeyboardButton] = []
+        for type in PlotType.allCases {
+            let icon = PlotCatalog.icon(for: type)
+            let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+            let label = "\(icon) \(typeName)"
+            pair.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:type:\(slot):\(type.rawValue)"))
+            if pair.count == 2 {
+                rows.append(pair)
+                pair = []
+            }
+        }
+        if !pair.isEmpty { rows.append(pair) }
+        let back = lingo.localize("estate.plot.picker.back", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:plot")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
     fileprivate func backToHomeKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let back = lingo.localize("estate.back_home", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [[
@@ -401,7 +539,14 @@ extension EstateController {
     static func onCallbackQuery(context: Context) async throws -> Bool {
         guard let query = context.update.callbackQuery else { return false }
         guard let message = query.message else { return false }
-        guard let data = query.data, data.hasPrefix("estate:") else { return false }
+        guard let data = query.data else { return false }
+        // Phase 5.1: training mode keeps routerName at "estate" so the player
+        // can navigate the main reply-keyboard while sparring with the dummy.
+        // Combat inline-button callbacks need to forward to CombatController.
+        if data.hasPrefix("combat:") {
+            return try await CombatController.onCallbackQuery(context: context)
+        }
+        guard data.hasPrefix("estate:") else { return false }
 
         let ctrl = Controllers.estateController
         let locale = context.session.locale
@@ -434,6 +579,22 @@ extension EstateController {
             return try await handleWarehouseTransfer(data: data, query: query, message: message, context: context)
         }
 
+        // Phase 5.1 plot actions: claim a slot, pick a type, or harvest. The
+        // claim/type/harvest handlers do their own messaging (modal alerts on
+        // failure, inline status banner on success) and return early.
+        if data.hasPrefix("estate:plot:claim:") {
+            return try await handlePlotClaimPicker(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:plot:type:") {
+            return try await handlePlotTypeChosen(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:plot:harvest:") {
+            return try await handlePlotHarvest(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:plot:train:") {
+            return try await handlePlotTraining(data: data, query: query, message: message, context: context)
+        }
+
         if data.hasPrefix("estate:wh:") {
             // Warehouse category drill-down (e.g. estate:wh:food).
             let typeRaw = String(data.dropFirst("estate:wh:".count))
@@ -454,8 +615,9 @@ extension EstateController {
                 text = ctrl.renderHome(lingo: context.lingo, locale: locale)
                 inline = ctrl.homeKeyboard(lingo: context.lingo, locale: locale)
             case "estate:plot":
-                text = ctrl.renderStub(titleKey: "estate.plot", lingo: context.lingo, locale: locale)
-                inline = ctrl.backToRootKeyboard(lingo: context.lingo, locale: locale)
+                let plots = try await Plot.list(for: context.session, on: context.db)
+                text = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
+                inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             case "estate:home:workshop":
                 text = ctrl.renderStub(titleKey: "estate.workshop", lingo: context.lingo, locale: locale)
                 inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
@@ -581,5 +743,185 @@ extension EstateController {
             _ = try? await context.bot.editMessageText(params: params)
         }
         return true
+    }
+
+    // MARK: - Plot drill-down handlers (Phase 5.1)
+
+    /// `estate:plot:claim:<slot>` — opens the plot-type picker for the given
+    /// empty slot. Refuses if the slot is out of allowance or already taken.
+    static func handlePlotClaimPicker(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let slot = Int(String(data.dropFirst("estate:plot:claim:".count))) ?? -1
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+        let allowance = PlotService.slotsForLevel(context.session.estateLevel)
+        guard slot >= 0, slot < allowance else {
+            let toast = context.lingo.localize("estate.plot.alert.slot_out_of_range", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        if let _ = try await Plot.find(slot: slot, for: context.session, on: context.db) {
+            let toast = context.lingo.localize("estate.plot.alert.slot_taken", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let body = ctrl.renderPlotPicker(slot: slot, lingo: context.lingo, locale: locale)
+        let inline = ctrl.plotPickerKeyboard(slot: slot, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `estate:plot:type:<slot>:<typeRaw>` — claim the slot with the chosen
+    /// type, then refresh the plot list with an inline `✅` status line.
+    static func handlePlotTypeChosen(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let parts = data.dropFirst("estate:plot:type:".count).split(separator: ":")
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+        guard parts.count == 2,
+              let slot = Int(parts[0]),
+              let type = PlotType(rawValue: String(parts[1])) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+        let result = try await PlotService.claim(slot: slot, type: type, for: context.session, on: context.db)
+        switch result {
+        case .slotOutOfRange:
+            let toast = context.lingo.localize("estate.plot.alert.slot_out_of_range", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        case .slotTaken:
+            let toast = context.lingo.localize("estate.plot.alert.slot_taken", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        case .success:
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let typeName = context.lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+            let icon = PlotCatalog.icon(for: type)
+            let statusLine = "✅ " + context.lingo.localize("estate.plot.alert.claimed", locale: locale, interpolations: [
+                "icon": icon,
+                "type": typeName,
+                "slot": "\(slot + 1)"
+            ])
+            let plots = try await Plot.list(for: context.session, on: context.db)
+            let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
+            let text = "\(statusLine)\n\n\(body)"
+            let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
+            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            return true
+        }
+    }
+
+    /// `estate:plot:harvest:<slot>` — moves accumulated yield to the bag,
+    /// shows inline status on success, modal alert on empty / bag-full.
+    static func handlePlotHarvest(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let slot = Int(String(data.dropFirst("estate:plot:harvest:".count))) ?? -1
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+        guard let plot = try await Plot.find(slot: slot, for: context.session, on: context.db) else {
+            let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        let result = try await PlotService.harvest(plot, for: context.session, on: context.db)
+        switch result {
+        case .empty:
+            // 💤 prepended in Swift since Lingo bug fires on leading
+            // supplementary-plane emoji + interpolation.
+            let toast = "💤 " + context.lingo.localize("estate.plot.alert.harvest_empty", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        case .success(let primary, let bonus):
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            // Format each yield as "+N <icon> <name>" and join with comma.
+            // Bonus is appended only when present (e.g. Mine → iron).
+            func formatYield(_ y: PlotService.HarvestYield) -> String {
+                let item = ItemCatalog.find(y.itemId)
+                let icon = item?.icon ?? ""
+                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? y.itemId
+                return "+\(y.amount) \(icon) \(name)"
+            }
+            var pieces: [String] = []
+            if primary.amount > 0 { pieces.append(formatYield(primary)) }
+            if let bonus = bonus, bonus.amount > 0 { pieces.append(formatYield(bonus)) }
+            let yieldsText = pieces.joined(separator: ", ")
+            let statusLine = "✅ " + context.lingo.localize("estate.plot.alert.harvested_multi", locale: locale, interpolations: [
+                "slot":   "\(slot + 1)",
+                "yields": yieldsText
+            ])
+            let plots = try await Plot.list(for: context.session, on: context.db)
+            let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
+            let text = "\(statusLine)\n\n\(body)"
+            let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
+            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            return true
+        }
+    }
+
+    /// `estate:plot:train:<slot>` — opens combat against a Training Dummy.
+    /// Hooks into the existing CombatController by stamping the `enemy.training_dummy`
+    /// id on a fresh ExplorationState row. CombatController detects the
+    /// training context by enemy id and swaps Flee for a Back button that
+    /// returns the player to this plot list.
+    static func handlePlotTraining(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let slot = Int(String(data.dropFirst("estate:plot:train:".count))) ?? -1
+        let locale = context.session.locale
+        guard let plot = try await Plot.find(slot: slot, for: context.session, on: context.db),
+              let type = PlotType(rawValue: plot.plotType),
+              type == .trainingGround else {
+            let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        guard let dummy = EnemyCatalog.find(CombatService.trainingDummyEnemyId),
+              let userId = context.session.id else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+        // Spin up a fresh ExplorationState row holding the training fight.
+        // Estate is locked during real expeditions (`showEstate` guard), so
+        // there's no concurrent state to clash with.
+        // **Note:** unlike real combat, we do NOT flip `routerName` to
+        // "combat" — the player should be free to navigate the main
+        // reply-keyboard (Profile / Inventory / Estate / Capital / Settings)
+        // while training. The combat inline-button callbacks reach
+        // `CombatController.onCallbackQuery` via the `combat:*` forwarding
+        // installed in every other controller's onCallbackQuery handler.
+        let state = ExplorationState(userID: userId, stepsDeep: 0)
+        state.beginCombat(enemyId: dummy.id, hp: dummy.hp)
+        try await state.save(on: context.db)
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+        // Hand off to CombatController. `intro: true` shows the encounter
+        // banner — flavoured by `combat.encounter.intro` interpolating the
+        // dummy's name.
+        try await Controllers.combatController.showCombat(context: context, state: state, enemy: dummy, intro: true)
+        return true
+    }
+
+    /// Edit the source message in place — text or caption depending on
+    /// whether the message is a photo (estate root may be artwork).
+    fileprivate static func editEstateMessage(message: TGMaybeInaccessibleMessage, text: String, inline: TGInlineKeyboardMarkup, context: Context) async throws {
+        let chatId = TGChatId.chat(message.chat.id)
+        let isPhoto = (message.getMessage()?.photo) != nil
+        if isPhoto {
+            let params = TGEditMessageCaptionParams(
+                chatId: chatId,
+                messageId: message.messageId,
+                caption: text,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageCaption(params: params)
+        } else {
+            let params = TGEditMessageTextParams(
+                chatId: chatId,
+                messageId: message.messageId,
+                text: text,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageText(params: params)
+        }
     }
 }

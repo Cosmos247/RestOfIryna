@@ -887,3 +887,49 @@ Two related themes landed in this session: bestiary expansion (closing Phase 4.4
 - These checks are now documented in `.memory/localization.md` with sample audit logic so future PRs can re-run them.
 
 **Files modified:** `Swift/Models/Enemy.swift` (+~50 lines — wild_bear, rabid_bear, header / tier comments), `Swift/Controllers/InventoryController.swift` (refreshCategory statusLine, eat-success refactor, modal alerts), `Swift/Controllers/ExplorationController.swift` (bag eat-success statusLine + modal alerts), `Swift/Controllers/EstateController.swift` (warehouse handler split into success ↔ warning), `Localizations/en.json` + `uk.json` (+2 enemies, equip/unequip plain text, hunger/hp restored interpolations; locale count 269 → 271), `TODO.md` (4.4 closed with both bears + bestiary.md note). New file: `content/bestiary.md`. `CLAUDE.md` / `README.md` / `.memory/{file-map,status,localization}.md` doc sync. Build clean (locale parity 271/271).
+
+## Session — 2026-04-30 (Phase 5.1 plot system + Training Ground + iron resource overhaul)
+
+Largest single-day session of the project: full estate plot system, training ground combat mode, iron resource model, callback-toast warehouse routing for plot harvest. Roughly 5 new files, 13 modified, +680 / −47 lines.
+
+**Plot system (Phase 5.1).**
+- New `Plot` Fluent model (user_id FK, slot_index, plot_type, tier, last_harvested_at, notified_full). Production amount lazily computed from `lastHarvestedAt + ratePerSecond × elapsed`, capped — no stored accumulator, no drift.
+- New `PlotCatalog` code-based config: `PlotType` enum (farm / forest / mine / coop / trainingGround), `PlotTuning` (producedItemId / ratePerInterval / capacity / optional `bonusOutput`), `PlotBonusOutput` for secondary yields. Mine carries iron as bonus output (1/interval, cap 20) alongside river_pebble (8/interval, cap 40). `testMode` flag scales rates per-minute (test) vs. per-hour (prod).
+- New `PlotService` pure helpers: `accumulated` / `bonusAccumulated` lazy compute, `harvest(_:for:on:)` → `HarvestResult.success(primary:bonus:)` deposits into **WarehouseEntry** (not the bag — warehouse has no slot cap, so no `.bagFull` failure mode). `claim(slot:type:for:)` validates slot allowance via `slotsForLevel(_:)` (currently flat 5 — temporary override, the logarithmic table is preserved in code for the post-XP-to-Estate world).
+- New `PlotProductionService` background ticker — single Task.detached started from `configure.swift` after `bot.start`. Wakes every 60s in test / 300s in prod, walks `Plot.allUnfull(on:)`, pushes a "🌾 ready to harvest" message when a plot's primary accumulator hits cap, flips `notified_full = true` to suppress repeats. Harvest resets the flag.
+- `EstateController` Plot drill-down replaced the old stub: `renderPlotList` / `plotListKeyboard` (internal — CombatController.onTrainingExit re-uses them), three handlers (`handlePlotClaimPicker` → 5-type picker → `handlePlotTypeChosen` claims via `PlotService.claim`, `handlePlotHarvest` deposits to Warehouse, `handlePlotTraining` spawns the dummy fight). Mine plot row renders both primary + bonus inline: `⛏ Slot N · Mine — 40/40 🪨 · 12/20 🔩`.
+- Initial farm grant at registration completion: `Registration.promptEstateName` calls `PlotService.claim(slot: 0, type: .farm, ...)` so a brand-new player has something already producing.
+
+**Training Ground combat mode (Phase 5.1).**
+- New `enemy.training_dummy` (HP 200, ATK 0, DEF 1, no loot, depthRange 0...0 so exploration never picks it).
+- New `PlotType.trainingGround` — `PlotCatalog.tuning(for:)` returns nil (non-producing) so EstateController routes a tap to `handlePlotTraining` instead of harvest.
+- `CombatController` extensions: `isTraining(_:)` helper checks `state.combatEnemyId == CombatService.trainingDummyEnemyId`; `combatMainMarkup` swaps `[Flee]` for `[🔙 Back]` (`combat:training:exit`) when training; `onTrainingExit` deletes the state row and re-renders the plot list with a `🥋 You step away` status banner. Each combat handler (`onAttack`, `onDefend`, `onSpecialAttack`, `onSpecialDefense`, `onSuper`) now skips hunger drain in training, uses the `playerSwingEnemyDEF` helper that returns 0 in training, forces `cannotMiss = true` on swing modifiers, and skips the entire enemy counter block (no `combat.enemy.{hit,crit,miss}` line). `finishVictory` reroutes to `reviveTrainingDummy` when training — resets dummy HP to full, emits a "🥋 dummy rights itself" line, keeps the player going.
+- Crucially, `handlePlotTraining` does **NOT** flip `routerName` to `"combat"` — it stays at `"estate"` so the player's reply-keyboard nav (Profile / Inventory / Estate / Capital / Settings) remains usable. The combat inline-button callbacks reach `CombatController.onCallbackQuery` from any router via `combat:*` forwarding installed in MainController / InventoryController / EstateController / SettingsController. Real combat (exploration + registration) still flips routerName as before; the difference is keyed on enemy id.
+- Per-fight technique budget (Special Atk + Def + Super = 2/2/1) **does** deplete in training — that's the player's whole reason to spar. Budget refreshes on `endCombat` (fired by Back tap → `state.delete`), so a quick Back + re-enter cycle resets it.
+
+**Iron resource overhaul (Phase 5.1).**
+- New `mat.iron` (Iron Lump 🔩) — raw, found rarely in foraging + Mine bonus output. Locale narrative emphasises "small, fingertip-sized nugget" since 10 are needed for crafting.
+- New `mat.iron_ingot` (Iron Ingot 🔳) — placeholder for Phase 5.x Workshop crafting (planned recipe `mat.iron × 10 → mat.iron_ingot × 1`). Tier 3 material; not in any pool until the Workshop ships.
+- Legacy `mat.old_iron` retired entirely: catalog entry, locale keys, foraging pool entry, and dev seed all removed. New `RemoveOldIron` migration runs `DELETE FROM inventory/warehouse WHERE item_id = 'mat.old_iron'` to wipe stale rows on next bot startup. The historical `RenameMaterialIds` migration (which created `mat.old_iron` from `mat.iron_ore` long ago) is left untouched.
+- Foraging pool refactored: new `pickWeighted<T>` helper in `ExplorationService`, pool changed from `[String]` (uniform) to `[(String, Int)]` (weighted). Medium pool currently: potato / duck_egg / clay (weight 10 each) + iron (weight 2) → ~5% chance per medium-zone loot.
+- Plot harvest narrative updated to say "added to Warehouse 📦" since plots no longer drop into the bag.
+
+**UX polish in this session.**
+- Forest plot renamed to "Lumberyard" / "Лісопилка" with new icon 🪚 (raw `forest` value kept for DB compat).
+- Plot list title renamed: "Plots of land" / "Земельні наділи" → "Estate grounds" / "Ділянка" (per user preference).
+- Plot row's full-mark `✨` removed per user request (locale `estate.plot.ready_mark` now empty).
+- Slot count temporarily flat 5 (override on `slotsForLevel`) so the Training Ground is reachable for testing; logarithmic table will be restored once XP-to-Estate ships.
+- Iron lump narrative emphasises smallness ("a small lump… no bigger than a thumbnail" / "не більший за ніготь") per user note that the crafting recipe assumes small lumps.
+- Iron ingot icon: tried ⬛ → ⬜ → 🔳 (final, "white square in a frame" per user spec) — closest available BMP-friendly approximation to a polished metal ingot.
+
+**Audits run.**
+- Lingo supplementary-plane leading-emoji audit on all interpolated keys: 0 issues. Two new keys carrying `🚜` / `💤` had emoji moved into Swift (button label + harvest-empty toast respectively).
+- Toast/callback-answer plain-text audit: 0 issues.
+- HTML/parseMode coverage audit: 0 issues.
+- Locale parity: 308/308.
+
+**Files added (5):** `Swift/Models/Plot.swift`, `Swift/Models/PlotCatalog.swift`, `Swift/Services/PlotService.swift`, `Swift/Services/PlotProductionService.swift`, `Swift/Migrations/CreatePlots.swift`, `Swift/Migrations/RemoveOldIron.swift`.
+
+**Files modified (13):** `Swift/Controllers/{Combat,Estate,Inventory,Main,Registration,Settings}Controller.swift`, `Swift/Models/{Enemy,Item}.swift`, `Swift/Services/{Combat,Exploration}Service.swift`, `Swift/configure.swift`, `Localizations/en.json` + `uk.json` (271 → 308 keys per locale).
+
+**Phase 5.x carryforwards:** Workshop crafting (first recipe: `mat.iron × 10 → mat.iron_ingot × 1`), Kitchen cooking (raw food → cooked variants), XP-to-Estate progression model (replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.

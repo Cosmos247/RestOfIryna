@@ -309,4 +309,12 @@ public enum CombatService {
         default:    return 0
         }
     }
+
+    // MARK: - Phase 5.1 training mode
+
+    /// Enemy id used by the Training Ground plot. CombatController checks
+    /// `state.combatEnemyId == trainingDummyEnemyId` to flip into training
+    /// mode (Back button instead of Flee, no death/victory flow, dummy
+    /// auto-revives when its HP hits 0).
+    public static let trainingDummyEnemyId: String = "enemy.training_dummy"
 }
