@@ -1165,7 +1165,7 @@ extension EstateController {
             let item = ItemCatalog.find(outputItemId)
             let icon = item?.icon ?? ""
             let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? outputItemId
-            let statusLine = "✅ " + context.lingo.localize("workshop.alert.crafted", locale: locale, interpolations: [
+            let statusLine = "✅ " + context.lingo.localize(recipe.category.craftedAlertKey, locale: locale, interpolations: [
                 "qty":  "\(qty)",
                 "icon": icon,
                 "name": name

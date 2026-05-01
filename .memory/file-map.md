@@ -14,8 +14,8 @@ RestOfIryna/
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/
-│   ├── en.json                     # English strings (~367 keys)
-│   └── uk.json                     # Ukrainian strings (~367 keys)
+│   ├── en.json                     # English strings (~368 keys)
+│   └── uk.json                     # Ukrainian strings (~368 keys)
 │
 ├── Assets/
 │   ├── registration/               # Artwork for the onboarding narrative
@@ -54,7 +54,7 @@ RestOfIryna/
     ├── Models/
     │   ├── User.swift              # Fluent model: identity, class, nickname, estate, profile style, game stats
     │   ├── Item.swift              # Static item catalog: ItemType, ItemEffect, EquipmentSlot (8), GearStats, Item, ItemCatalog (code-based). Phase 5.2: Forester's leather set (hood / jerkin / breeches / boots) added; placeholder `gear.leather_vest` retired into `gear.forester_jerkin` via RenameLeatherVest. Phase 5.2.1: `Item.teachesRecipe: String?` field — when set on an artifact, the inventory action button switches from "✨ Use" to "📖 Learn"; 7 cooked dishes (food.baked_potato / roasted_meat / foragers_omelette / hunters_stew / meat_ragout / berry_tart / governors_feast) + 5 recipe scrolls (artifact.recipe.<dish_id>, non-stackable, no scrolls for the always-available starters baked_potato + roasted_meat) added.
-    │   ├── Recipe.swift            # Static crafting catalog (RecipeCategory enum forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog). Code-based like ItemCatalog/EnemyCatalog. RecipeCategory carries helpers (`requiresLearning` / `backCallbackData` / `actionButtonKey`) so Workshop and Kitchen share the same renderer + handler. `RecipeCatalog.starterRecipeIds: Set<String>` lists the always-available kitchen recipes (recipe.baked_potato, recipe.roasted_meat) — every player cooks these from day one without a LearnedRecipe row.
+    │   ├── Recipe.swift            # Static crafting catalog (RecipeCategory enum forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog). Code-based like ItemCatalog/EnemyCatalog. RecipeCategory carries helpers (`requiresLearning` / `backCallbackData` / `actionButtonKey` / `craftedAlertKey`) so Workshop and Kitchen share the same renderer + handler while differing on action verb (Craft vs Cook), back target, and success banner ("Crafted ..." vs "Cooked ..."). `RecipeCatalog.starterRecipeIds: Set<String>` lists the always-available kitchen recipes (recipe.baked_potato, recipe.roasted_meat) — every player cooks these from day one without a LearnedRecipe row. Every kitchen recipe also burns 1× 🪵 mat.pine_lumber for the cooking fire.
     │   ├── LearnedRecipe.swift     # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id FK cascade, recipe_id, learned_at). Helpers: `has(_:for:on:)`, `add(_:for:on:)` (idempotent — returns false on duplicate), `allIds(for:on:) -> Set<String>`. Stores only scroll-learned recipes; always-available starters are gated through `RecipeCatalog.starterRecipeIds` instead.
     │   ├── InventoryEntry.swift    # Fluent model: user_id, item_id, quantity, equipped_slot + add/remove/has/list/canAccept/slotsUsed helpers; 50-slot cap (equipped doesn't count)
     │   ├── WarehouseEntry.swift    # Fluent model: estate storage, separate table; add/list/totalQuantity/remove helpers (remove added in Phase 5.2 to mirror InventoryEntry, used by CraftingService)

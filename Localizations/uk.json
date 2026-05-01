@@ -205,6 +205,7 @@
     "kitchen.empty": "🍳 Тут поки тихо. Знайди свій перший рецепт у пущі чи в столиці, щоб почати готувати.",
     "kitchen.detail.button.cook": "🍳 Готувати",
     "kitchen.alert.not_learned": "📖 Ти ще не вивчив цей рецепт.",
+    "kitchen.alert.cooked": "Приготовано %{qty}× %{icon} %{name} — у сумку 🎒",
     "workshop.alert.short_header": "🚧 Не вистачає матеріалів:",
     "workshop.alert.short_row": "• %{icon} %{name} — треба ще %{needed} (%{have}/%{need})",
     "workshop.alert.bag_full": "🎒 Сумка повна. Звільни слот перед крафтом.",

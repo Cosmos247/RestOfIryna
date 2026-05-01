@@ -266,7 +266,7 @@ public func configure(logger: Logger) async throws {
             ("food.duck_egg", 5),
             ("food.raw_meat", 5),
             ("food.potato", 5),
-            ("mat.pine_lumber", 5),
+            ("mat.pine_lumber", 15),
             ("mat.river_pebble", 3),
             ("mat.clay", 2),
             ("mat.iron", 10),

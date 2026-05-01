@@ -35,15 +35,17 @@ Recipes in this category are **gated by `LearnedRecipe`** — they only appear i
 
 Hunger / HP effects scale with ingredient count: 1-ingredient dishes restore hunger only; 3+ ingredient dishes also restore some HP. The biggest dish stays below the Small Healing Potion (+30 HP) so food doesn't displace potions.
 
+**Every kitchen recipe burns 1× 🪵 Pine Lumber for the cooking fire** — both for narrative authenticity (cooking on flame needs firewood) and as a soft cap on farm-cooking. Pine lumber comes from the Lumberyard plot or shallow-zone foraging.
+
 | Recipe id | Inputs | Output | Hunger | HP | Unlock |
 |---|---|---|---|---|---|
-| `recipe.baked_potato`       | 2× 🥔 Potato | 🍠 Baked Potato (`food.baked_potato`)             | +9  | — | ✅ always available |
-| `recipe.roasted_meat`       | 2× 🥩 Raw Meat | 🍗 Roasted Meat (`food.roasted_meat`)           | +12 | — | ✅ always available |
-| `recipe.foragers_omelette`  | 2× 🥚 Egg + 2× 🌰 Nuts + 1× 🫐 Berries | 🍳 Forager's Omelette (`food.foragers_omelette`) | +16 | +3 | scroll |
-| `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg | 🍲 Hunter's Stew (`food.hunters_stew`)           | +20 | +5 | scroll |
-| `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts | 🥘 Meat Ragout (`food.meat_ragout`)             | +18 | +4 | scroll |
-| `recipe.berry_tart`         | 4× 🫐 Berries + 2× 🌰 Nuts + 1× 🥚 Egg | 🥧 Forest Berry Tart (`food.berry_tart`)        | +16 | +6 | scroll |
-| `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts | 🍽 Governor's Feast (`food.governors_feast`) | +35 | +10 | scroll |
+| `recipe.baked_potato`       | 1× 🥔 Potato + 1× 🪵 Pine Lumber | 🍠 Baked Potato (`food.baked_potato`)             | +9  | — | ✅ always available |
+| `recipe.roasted_meat`       | 1× 🥩 Raw Meat + 1× 🪵 Pine Lumber | 🍗 Roasted Meat (`food.roasted_meat`)           | +12 | — | ✅ always available |
+| `recipe.foragers_omelette`  | 2× 🥚 Egg + 2× 🌰 Nuts + 1× 🫐 Berries + 1× 🪵 Lumber | 🍳 Forager's Omelette (`food.foragers_omelette`) | +16 | +3 | scroll |
+| `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg + 1× 🪵 Lumber | 🍲 Hunter's Stew (`food.hunters_stew`)           | +20 | +5 | scroll |
+| `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts + 1× 🪵 Lumber | 🥘 Meat Ragout (`food.meat_ragout`)             | +18 | +4 | scroll |
+| `recipe.berry_tart`         | 4× 🫐 Berries + 2× 🌰 Nuts + 1× 🥚 Egg + 1× 🪵 Lumber | 🥧 Forest Berry Tart (`food.berry_tart`)        | +16 | +6 | scroll |
+| `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts + 1× 🪵 Lumber | 🍽 Governor's Feast (`food.governors_feast`) | +35 | +10 | scroll |
 
 Raw ingredients (eaten as-is, foraged in the wilds):
 - 🫐 Forest Berries — +4 hunger

@@ -69,6 +69,16 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         case .kitchen:         return "kitchen.detail.button.cook"
         }
     }
+
+    /// Locale key for the success status banner shown after a successful
+    /// craft. "Crafted ..." for Workshop, "Cooked ..." for Kitchen — "forged"
+    /// reads strangely for a kitchen pot, so the verb tracks the room.
+    public var craftedAlertKey: String {
+        switch self {
+        case .forge, .tannery: return "workshop.alert.crafted"
+        case .kitchen:         return "kitchen.alert.cooked"
+        }
+    }
 }
 
 // MARK: - Ingredient / Output
@@ -151,20 +161,31 @@ public enum RecipeCatalog {
 
         // 🍳 Kitchen — cooked food. Costs and effects scale with the
         // ingredient count: 1-ingredient dishes restore hunger only, 3+
-        // ingredient dishes also restore some HP. Players unlock recipes
-        // through scrolls (artifact.recipe.<dish_id>); the two starter
-        // dishes (baked_potato, roasted_meat) are auto-learned at
-        // registration so a fresh player has something to cook on day one.
+        // ingredient dishes also restore some HP. Every kitchen recipe
+        // also burns 1× 🪵 pine_lumber for the cooking fire — adds
+        // authenticity (cooking on flame needs firewood) and prevents
+        // trivial farming of cooked food without lumberyard investment.
+        // Players unlock the four richer recipes through scrolls
+        // (artifact.recipe.<dish_id>); the two starter dishes
+        // (baked_potato, roasted_meat) are always-available via
+        // RecipeCatalog.starterRecipeIds so a fresh player has something
+        // to cook on day one.
         Recipe(
             id: "recipe.baked_potato",
             category: .kitchen,
-            inputs: [RecipeIngredient("food.potato", 2)],
+            inputs: [
+                RecipeIngredient("food.potato", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
+            ],
             output: RecipeOutput("food.baked_potato", 1)
         ),
         Recipe(
             id: "recipe.roasted_meat",
             category: .kitchen,
-            inputs: [RecipeIngredient("food.raw_meat", 2)],
+            inputs: [
+                RecipeIngredient("food.raw_meat", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
+            ],
             output: RecipeOutput("food.roasted_meat", 1)
         ),
         Recipe(
@@ -173,7 +194,8 @@ public enum RecipeCatalog {
             inputs: [
                 RecipeIngredient("food.duck_egg", 2),
                 RecipeIngredient("food.forest_nuts", 2),
-                RecipeIngredient("food.forest_berries", 1)
+                RecipeIngredient("food.forest_berries", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
             ],
             output: RecipeOutput("food.foragers_omelette", 1)
         ),
@@ -183,7 +205,8 @@ public enum RecipeCatalog {
             inputs: [
                 RecipeIngredient("food.raw_meat", 2),
                 RecipeIngredient("food.potato", 2),
-                RecipeIngredient("food.duck_egg", 1)
+                RecipeIngredient("food.duck_egg", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
             ],
             output: RecipeOutput("food.hunters_stew", 1)
         ),
@@ -193,7 +216,8 @@ public enum RecipeCatalog {
             inputs: [
                 RecipeIngredient("food.raw_meat", 2),
                 RecipeIngredient("food.potato", 2),
-                RecipeIngredient("food.forest_nuts", 1)
+                RecipeIngredient("food.forest_nuts", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
             ],
             output: RecipeOutput("food.meat_ragout", 1)
         ),
@@ -203,7 +227,8 @@ public enum RecipeCatalog {
             inputs: [
                 RecipeIngredient("food.forest_berries", 4),
                 RecipeIngredient("food.forest_nuts", 2),
-                RecipeIngredient("food.duck_egg", 1)
+                RecipeIngredient("food.duck_egg", 1),
+                RecipeIngredient("mat.pine_lumber", 1)
             ],
             output: RecipeOutput("food.berry_tart", 1)
         ),
@@ -215,7 +240,8 @@ public enum RecipeCatalog {
                 RecipeIngredient("food.potato", 3),
                 RecipeIngredient("food.duck_egg", 2),
                 RecipeIngredient("food.forest_berries", 2),
-                RecipeIngredient("food.forest_nuts", 2)
+                RecipeIngredient("food.forest_nuts", 2),
+                RecipeIngredient("mat.pine_lumber", 1)
             ],
             output: RecipeOutput("food.governors_feast", 1)
         )

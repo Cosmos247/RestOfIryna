@@ -272,7 +272,8 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] `RenameLeatherVest` migration — remaps existing `gear.leather_vest` rows in inventory + warehouse to `gear.forester_jerkin`
 - [x] **Phase 5.2.1 — Kitchen cooking** (seven dishes spanning 1-5 ingredients, two starters always-available, five unlocked via recipe scrolls)
   - `RecipeCategory.kitchen` (3rd category) gated by per-user `LearnedRecipe` set; Forge / Tannery still always available
-  - 7 dishes added to `ItemCatalog` (Baked Potato / Roasted Meat = 1 ingredient, Forager's Omelette / Hunter's Stew / Meat Ragout / Forest Berry Tart = 3 ingredients, Governor's Feast = 5 ingredients)
+  - 7 dishes added to `ItemCatalog` (Baked Potato / Roasted Meat = 1 food ingredient, Forager's Omelette / Hunter's Stew / Meat Ragout / Forest Berry Tart = 3, Governor's Feast = 5). **Every kitchen recipe also burns 1× 🪵 pine_lumber for the cooking fire** — authenticity + soft farm-cooking cap; lumber sourced from Lumberyard plot or shallow-zone foraging
+  - Kitchen-specific success banner ("Cooked ..." / "Приготовано ...") via `RecipeCategory.craftedAlertKey` — Workshop keeps "Crafted ..." / "Викувано ..."
   - 5 recipe scrolls added for the non-starter dishes (`artifact.recipe.<dish_id>`, non-stackable, `📜` icon, lore description); using one teaches the recipe via the new "📖 Learn" action button (replaces "✨ Use" when `item.teachesRecipe != nil`)
   - **Baked Potato + Roasted Meat have no scrolls** — they're always-available starters listed in `RecipeCatalog.starterRecipeIds` (a `Set<String>`); the Kitchen UI unions this with the player's learned set so every player can cook them from day one with no DB row needed
   - New `LearnedRecipe` Fluent model + `CreateLearnedRecipes` migration (per-user known-recipe set, unique on user_id+recipe_id) for the five scroll-locked recipes

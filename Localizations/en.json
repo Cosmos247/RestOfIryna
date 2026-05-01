@@ -205,6 +205,7 @@
     "kitchen.empty": "🍳 Quiet for now. Find your first recipe in the wilds or in the capital to start cooking.",
     "kitchen.detail.button.cook": "🍳 Cook",
     "kitchen.alert.not_learned": "📖 You haven't learned this recipe yet.",
+    "kitchen.alert.cooked": "Cooked %{qty}× %{icon} %{name} — added to backpack 🎒",
     "workshop.alert.short_header": "🚧 Not enough materials:",
     "workshop.alert.short_row": "• %{icon} %{name} — need %{needed} more (%{have}/%{need})",
     "workshop.alert.bag_full": "🎒 Backpack is full. Free a slot before crafting.",
