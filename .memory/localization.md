@@ -101,7 +101,7 @@ If you must keep the emoji in the template for some reason:
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## Current Keys (~308 per locale)
+## Current Keys (~334 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*

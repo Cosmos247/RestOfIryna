@@ -19,6 +19,7 @@
 //
 
 import Foundation
+import Fluent
 @preconcurrency import Lingo
 import SwiftTelegramBot
 
@@ -524,6 +525,102 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             TGInlineKeyboardButton(text: back, callbackData: "estate:home")
         ]])
     }
+
+    // MARK: - Workshop (Phase 5.2)
+
+    /// Compact workshop list — title + atmospheric description. Recipes only
+    /// appear as inline buttons; tapping one opens its detail screen
+    /// (`craft:detail:<recipe.id>`). Buttons stay grouped by category through
+    /// their declaration order in `RecipeCatalog.all`.
+    fileprivate func renderWorkshop(lingo: Lingo, locale: String) -> String {
+        let title = lingo.localize("estate.workshop", locale: locale)
+        let intro = lingo.localize("workshop.description", locale: locale)
+        return "<b>\(title)</b>\n\(intro)"
+    }
+
+    /// Workshop keyboard — one `[<icon> <name>]` button per recipe (opens detail)
+    /// + Back. Buttons are grouped visually by category via their declaration
+    /// order in `RecipeCatalog.all`.
+    fileprivate func workshopKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        for recipe in RecipeCatalog.all {
+            let outputItem = ItemCatalog.find(recipe.output.itemId)
+            let outputIcon = outputItem?.icon ?? ""
+            let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
+            let iconSegment = outputIcon.isEmpty ? "" : "\(outputIcon) "
+            let label = "\(iconSegment)\(outputName)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "craft:detail:\(recipe.id)")])
+        }
+        let back = lingo.localize("estate.back_home", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    /// Recipe detail body — output header, lore description (when set), recipe
+    /// inputs, and stat bonuses (when the output is gear). Used both for the
+    /// initial detail view and for the in-place refresh after a successful craft
+    /// (the `✅ Crafted ...` banner is appended to the bottom by the caller so
+    /// it's visible without scrolling past a tall recipe list).
+    fileprivate func renderRecipeDetail(recipe: Recipe, lingo: Lingo, locale: String) -> String {
+        let outputItem = ItemCatalog.find(recipe.output.itemId)
+        let outputIcon = outputItem?.icon ?? ""
+        let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
+
+        var lines: [String] = ["\(outputIcon) <b>\(outputName)</b>"]
+
+        if let descKey = outputItem?.descriptionKey {
+            let desc = lingo.localize(descKey, locale: locale)
+            lines.append("")
+            lines.append("<i>\(desc)</i>")
+        }
+
+        // Recipe section.
+        lines.append("")
+        lines.append("<b>" + lingo.localize("workshop.detail.recipe", locale: locale) + "</b>")
+        for input in recipe.inputs {
+            let item = ItemCatalog.find(input.itemId)
+            let icon = item?.icon ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
+            lines.append("   \(input.quantity)× \(icon) \(name)")
+        }
+
+        // Stats section — gear only.
+        if let stats = outputItem?.gearStats {
+            var statLines: [String] = []
+            if stats.attack != 0 {
+                statLines.append("   +\(stats.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))")
+            }
+            if stats.defense != 0 {
+                statLines.append("   +\(stats.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))")
+            }
+            if stats.crit != 0 {
+                statLines.append("   +\(stats.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))")
+            }
+            if stats.dodge != 0 {
+                statLines.append("   +\(stats.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))")
+            }
+            if stats.accuracy != 0 {
+                statLines.append("   +\(stats.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))")
+            }
+            if !statLines.isEmpty {
+                lines.append("")
+                lines.append("<b>" + lingo.localize("workshop.detail.stats", locale: locale) + "</b>")
+                lines.append(contentsOf: statLines)
+            }
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Detail-screen keyboard — Craft + Back-to-workshop.
+    fileprivate func recipeDetailKeyboard(recipe: Recipe, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let craft = lingo.localize("workshop.detail.button.craft", locale: locale)
+        let back = lingo.localize("workshop.detail.button.back", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: craft, callbackData: "craft:\(recipe.id)")],
+            [TGInlineKeyboardButton(text: back,  callbackData: "estate:home:workshop")]
+        ])
+    }
 }
 
 /// Summary row for a single item in the warehouse category drill-down.
@@ -545,6 +642,17 @@ extension EstateController {
         // Combat inline-button callbacks need to forward to CombatController.
         if data.hasPrefix("combat:") {
             return try await CombatController.onCallbackQuery(context: context)
+        }
+        // Phase 5.2 Workshop crafting. Two callbacks live outside the `estate:`
+        // namespace so they must be matched BEFORE the prefix guard below:
+        //   craft:detail:<recipe.id>  — opens the recipe's detail screen
+        //   craft:<recipe.id>         — performs the craft (issued from the
+        //                               detail screen's [🔨 Craft] button)
+        if data.hasPrefix("craft:detail:") {
+            return try await handleCraftDetail(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("craft:") {
+            return try await handleCraft(data: data, query: query, message: message, context: context)
         }
         guard data.hasPrefix("estate:") else { return false }
 
@@ -619,8 +727,8 @@ extension EstateController {
                 text = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
                 inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             case "estate:home:workshop":
-                text = ctrl.renderStub(titleKey: "estate.workshop", lingo: context.lingo, locale: locale)
-                inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
+                text = ctrl.renderWorkshop(lingo: context.lingo, locale: locale)
+                inline = ctrl.workshopKeyboard(lingo: context.lingo, locale: locale)
             case "estate:home:kitchen":
                 text = ctrl.renderStub(titleKey: "estate.kitchen", lingo: context.lingo, locale: locale)
                 inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
@@ -897,6 +1005,100 @@ extension EstateController {
         // dummy's name.
         try await Controllers.combatController.showCombat(context: context, state: state, enemy: dummy, intro: true)
         return true
+    }
+
+    // MARK: - Workshop crafting (Phase 5.2)
+
+    /// `craft:detail:<recipe.id>` — opens the recipe detail screen (description,
+    /// recipe ingredients, stats, Craft + Back buttons). Replaces the workshop
+    /// list message in place.
+    static func handleCraftDetail(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let recipeId = String(data.dropFirst("craft:detail:".count))
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        guard let recipe = RecipeCatalog.find(recipeId) else {
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let body = ctrl.renderRecipeDetail(recipe: recipe, lingo: context.lingo, locale: locale)
+        let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `craft:<recipe.id>` — performs the craft and refreshes the detail screen
+    /// with a status banner at the BOTTOM of the body (so the player sees the
+    /// "✅ Crafted ..." line without scrolling past the recipe + stats).
+    /// Failures (missing materials / inventory full) raise a modal alert and
+    /// leave the screen unchanged.
+    static func handleCraft(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let recipeId = String(data.dropFirst("craft:".count))
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        guard let recipe = RecipeCatalog.find(recipeId) else {
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        let result = try await CraftingService.craft(recipe, for: context.session, on: context.db)
+
+        switch result {
+        case .unknownRecipe, .unknownItem:
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .missingMaterials(let shortages):
+            // Compose a single multi-line alert: header + one row per missing input.
+            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
+            let rows: [String] = shortages.map { shortage in
+                let item = ItemCatalog.find(shortage.itemId)
+                let icon = item?.icon ?? ""
+                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
+                let needed = max(0, shortage.need - shortage.have)
+                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
+                    "icon":   icon,
+                    "name":   name,
+                    "needed": "\(needed)",
+                    "have":   "\(shortage.have)",
+                    "need":   "\(shortage.need)"
+                ])
+            }
+            let toast = ([header] + rows).joined(separator: "\n")
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .inventoryFull:
+            let toast = context.lingo.localize("workshop.alert.bag_full", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .success(let outputItemId, let qty):
+            let item = ItemCatalog.find(outputItemId)
+            let icon = item?.icon ?? ""
+            let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? outputItemId
+            let statusLine = "✅ " + context.lingo.localize("workshop.alert.crafted", locale: locale, interpolations: [
+                "qty":  "\(qty)",
+                "icon": icon,
+                "name": name
+            ])
+            // Silent ack — the inline banner carries the message.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            // Stay on the detail screen; banner appended at the BOTTOM so the
+            // player sees it without scrolling past the recipe + stats sections.
+            let body = ctrl.renderRecipeDetail(recipe: recipe, lingo: context.lingo, locale: locale)
+            let text = "\(body)\n\n\(statusLine)"
+            let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
+            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            return true
+        }
     }
 
     /// Edit the source message in place — text or caption depending on

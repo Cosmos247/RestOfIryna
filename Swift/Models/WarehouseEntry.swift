@@ -100,4 +100,36 @@ extension WarehouseEntry {
             .all()
         return rows.reduce(0) { $0 + $1.quantity }
     }
+
+    /// Remove `quantity` of an item from the warehouse. Returns `false` if the user
+    /// doesn't have enough — in that case nothing is changed. Mirrors the
+    /// `InventoryEntry.remove` semantics for the crafting service.
+    @discardableResult
+    public static func remove(_ itemId: String, quantity: Int = 1, from user: User, on db: any Database) async throws -> Bool {
+        guard quantity > 0 else { return true }
+        guard let userId = user.id else { return false }
+
+        let available = try await totalQuantity(of: itemId, for: userId, on: db)
+        guard available >= quantity else { return false }
+
+        var remaining = quantity
+        let rows = try await WarehouseEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$itemId, .equal, itemId)
+            .sort(\.$createdAt, .ascending)
+            .all()
+
+        for row in rows {
+            if remaining == 0 { break }
+            if row.quantity <= remaining {
+                remaining -= row.quantity
+                try await row.delete(on: db)
+            } else {
+                row.quantity -= remaining
+                remaining = 0
+                try await row.save(on: db)
+            }
+        }
+        return true
+    }
 }

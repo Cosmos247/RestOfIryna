@@ -258,13 +258,22 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [-] Manor 7×7 interior rooms — *deferred; current model uses abstract House nav*
 - [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 
-### 5.2 Workshop crafting *(planned)*
-- [ ] First recipe: `mat.iron × 10 → mat.iron_ingot × 1`
-- [ ] `Recipe` code-based catalog (room requirement, inputs, output, optional duration)
-- [ ] Workshop UI in EstateController (replaces current stub)
+### 5.2 Workshop crafting *(in progress)*
+- [x] `Recipe` code-based catalog (id, category, inputs, output) — `Swift/Models/Recipe.swift`. Two categories shipped: 🔥 Forge (smelting) + 🧵 Tannery (leather armor)
+- [x] `CraftingService.craft(...)` — pure: pulls inputs from inventory + warehouse pool (inventory first to free slots), output lands in inventory; `CraftResult` enum (success / missingMaterials / inventoryFull / unknownRecipe / unknownItem); post-drain slot accept-check so a craft never refuses spuriously
+- [x] First recipe: `mat.iron × 10 → mat.iron_ingot × 1` (Forge)
+- [x] Forester's leather set (Tannery) — 4 pieces consuming hide only:
+  - 🪖 Forester's Hood (helmet, +1 DEF) — 2× hide
+  - 🦺 Forester's Jerkin (chest, +3 DEF) — 6× hide *(replaces retired `gear.leather_vest` via `RenameLeatherVest` migration)*
+  - 👖 Forester's Breeches (legs, +2 DEF) — 5× hide
+  - 🥾 Forester's Boots (boots, +1 DEF, +1 dodge) — 3× hide
+  Full set = 16 hide for +7 DEF / +1 dodge
+- [x] Workshop UI in EstateController (replaces stub) — section header per category, recipe block with `🎒 inv + 📦 wh = total/need ✅|❌` per ingredient, one `[🔨 RecipeName]` button per recipe; success → inline status banner above refreshed view, shortages → modal alert listing missing inputs, bag full → modal alert
+- [x] `RenameLeatherVest` migration — remaps existing `gear.leather_vest` rows in inventory + warehouse to `gear.forester_jerkin`
 - [ ] Kitchen cooking parallel: `food.potato` / `food.raw_meat` → cooked variants with hunger / HP effects
+- [ ] Weapon upgrade flow (Phase 5.2.2) — modify existing weapon vs craft new one
 - [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
-- [ ] Create `content/recipes.md` reference doc
+- [x] Create `content/recipes.md` reference doc
 
 ### 5.3 XP-to-Estate progression *(planned)*
 - [ ] Replace `User.estateLevel = User.level / 5` derivation with a real model — combat / exploration awards estate XP directly (not character level)

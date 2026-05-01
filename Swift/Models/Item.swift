@@ -175,8 +175,18 @@ public enum ItemCatalog {
              slot: .mainHand, gearStats: GearStats(attack: 2, accuracy: 1), icon: "🏹"),
         Item(id: "gear.wooden_staff",   nameKey: "item.gear.wooden_staff",  type: .gear,     tier: 1, stackable: false, effects: [],
              slot: .mainHand, gearStats: GearStats(attack: 2, crit: 1), icon: "🪄"),
-        Item(id: "gear.leather_vest",   nameKey: "item.gear.leather_vest",  type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .chest, gearStats: GearStats(defense: 2), icon: "🦺"),
+        // Forester's set — first craftable armor (Phase 5.2 Workshop / Tannery).
+        // `gear.forester_jerkin` succeeds the retired `gear.leather_vest`; old DB
+        // rows are remapped by `RenameLeatherVest`. Set total = 16 hide for full
+        // suit (+7 DEF / +1 dodge), tunable as new gear tiers come online.
+        Item(id: "gear.forester_hood",     nameKey: "item.gear.forester_hood",     type: .gear, tier: 1, stackable: false, effects: [],
+             slot: .helmet, gearStats: GearStats(defense: 1), icon: "🪖", descriptionKey: "item.gear.forester_hood.desc"),
+        Item(id: "gear.forester_jerkin",   nameKey: "item.gear.forester_jerkin",   type: .gear, tier: 1, stackable: false, effects: [],
+             slot: .chest,  gearStats: GearStats(defense: 3), icon: "🦺", descriptionKey: "item.gear.forester_jerkin.desc"),
+        Item(id: "gear.forester_breeches", nameKey: "item.gear.forester_breeches", type: .gear, tier: 1, stackable: false, effects: [],
+             slot: .legs,   gearStats: GearStats(defense: 2), icon: "👖", descriptionKey: "item.gear.forester_breeches.desc"),
+        Item(id: "gear.forester_boots",    nameKey: "item.gear.forester_boots",    type: .gear, tier: 1, stackable: false, effects: [],
+             slot: .boots,  gearStats: GearStats(defense: 1, dodge: 1), icon: "🥾", descriptionKey: "item.gear.forester_boots.desc"),
 
         // Artifacts (crafting recipes will become a separate system in Phase 5.3 — not an item type)
         Item(id: "artifact.shrine_coin", nameKey: "item.artifact.shrine_coin", type: .artifact, tier: 3, stackable: true, effects: []),

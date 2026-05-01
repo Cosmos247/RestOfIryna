@@ -162,6 +162,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddCombatTechniqueUses())
     migrations.add(CreatePlots())
     migrations.add(RemoveOldIron())
+    migrations.add(RenameLeatherVest())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -264,7 +265,8 @@ public func configure(logger: Logger) async throws {
             ("mat.pine_lumber", 5),
             ("mat.river_pebble", 3),
             ("mat.clay", 2),
-            ("mat.hide", 1),
+            ("mat.iron", 10),
+            ("mat.hide", 16),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
         ]

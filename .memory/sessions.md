@@ -933,3 +933,46 @@ Largest single-day session of the project: full estate plot system, training gro
 **Files modified (13):** `Swift/Controllers/{Combat,Estate,Inventory,Main,Registration,Settings}Controller.swift`, `Swift/Models/{Enemy,Item}.swift`, `Swift/Services/{Combat,Exploration}Service.swift`, `Swift/configure.swift`, `Localizations/en.json` + `uk.json` (271 → 308 keys per locale).
 
 **Phase 5.x carryforwards:** Workshop crafting (first recipe: `mat.iron × 10 → mat.iron_ingot × 1`), Kitchen cooking (raw food → cooked variants), XP-to-Estate progression model (replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.
+
+## Session — 2026-05-01 (Phase 5.2 Workshop crafting MVP)
+
+**Phase 5.2 Workshop landed.** EstateController's Workshop replaces the old "coming soon" stub with a real two-screen flow:
+- **Outer list** — `[🛠 Workshop]` from House opens a compact view: title + atmospheric description, with one inline button per recipe (`<icon> <name>`, e.g. `🔳 Iron Ingot` / `🪖 Forester's Hood`). No category headers in the body — recipes are visually grouped through their declaration order in `RecipeCatalog.all` (Forge first, Tannery second).
+- **Detail screen** — tapping a recipe button (`craft:detail:<recipe.id>`) opens a per-recipe page: output icon + name, lore description (from `descriptionKey`), `📜 Recipe` section listing inputs as `N× <icon> <name>`, and — for gear outputs — `📊 Stats` listing only non-zero stat bonuses (Attack ⚔️ / Defense 🛡 / Crit 💥 / Dodge 💨 / Accuracy 🎯, with per-stat icons prepended in Swift to dodge the Lingo emoji-prefix bug). Keyboard is `[🔨 Craft]` + `[🔙 Back]`.
+- **Craft action** — tapping `[🔨 Craft]` (`craft:<recipe.id>`) calls `CraftingService.craft`, refreshes the detail in place with a `✅ Crafted ...` banner appended **at the bottom** of the body. Banner placement was deliberately chosen — an earlier prepend-at-top design pushed the banner offscreen on long screens, so user feedback drove the move.
+- **Failures** — `missingMaterials` lists each shortage as `• <icon> <name> — need N more (have/need)` in a modal alert; `inventoryFull` asks the player to free a slot. Both leave the screen unchanged.
+- **Dispatch fix** — `craft:detail:` and `craft:` callbacks must be matched **before** the `estate:` prefix guard in `EstateController.onCallbackQuery`; otherwise the dispatcher returns false and Telegram surfaces "Unsupported content type." (caught and fixed during the first round of user testing).
+
+**New code-based catalog: `Swift/Models/Recipe.swift`.** `RecipeCategory` enum (`forge` / `tannery`), `RecipeIngredient`, `RecipeOutput`, `Recipe`, `RecipeCatalog`. Five recipes ship in v1:
+- 🔥 **Forge** — Iron Ingot: 10× 🔩 Iron Lump → 1× 🔳 Iron Ingot.
+- 🧵 **Tannery** — Forester's leather set: Hood (2× hide → +1 DEF), Boots (3× hide → +1 DEF, +1 Dodge), Breeches (5× hide → +2 DEF), Jerkin (6× hide → +3 DEF). Full suit = 16 hide for +7 DEF / +1 dodge.
+
+**New service: `Swift/Services/CraftingService.swift`.** Pure. `craft(_:for:on:)` drains inputs from the **combined inventory + warehouse pool** — inventory first (frees backpack slots that the gear output may need), warehouse second (bulk-storage fallback). Output always goes to inventory so the player can see and equip the new piece immediately. `CraftResult` enum (success / missingMaterials / inventoryFull / unknownRecipe / unknownItem) + `Shortage` struct. Post-drain slot accept-check: predicts how many inventory slots will be freed by the input drain so a craft never refuses spuriously when a 50/50 bag would have made room. No DB-transaction wrapping (same pattern as WarehouseService).
+
+**Item catalog updates (`Swift/Models/Item.swift`).** Four new gear pieces (`gear.forester_hood` / `gear.forester_jerkin` / `gear.forester_breeches` / `gear.forester_boots`) with per-item icons (🪖 / 🦺 / 👖 / 🥾), descriptions, and `gearStats`. The placeholder `gear.leather_vest` (+2 DEF) was retired — no orphan rows are left because the `RenameLeatherVest` migration remaps existing inventory + warehouse rows in place.
+
+**`WarehouseEntry.remove(...)`** helper added (mirrors `InventoryEntry.remove` semantics) so `CraftingService` can drain warehouse stockpiles cleanly.
+
+**New migration: `Swift/Migrations/RenameLeatherVest.swift`.** Pure data migration — `UPDATE inventory/warehouse SET item_id = 'gear.forester_jerkin' WHERE item_id = 'gear.leather_vest'`. Schema unchanged. Existing rows (worn, in bag, in warehouse) carry over automatically with the new +3 DEF stats.
+
+**Dev seed bumped (`Swift/configure.swift`).** `mat.hide` 1→16, `mat.iron` added at 10. On next launch every developer profile gets enough materials to craft one full Forester's set + one Iron Ingot for testing.
+
+**Locale changes.** Added `workshop.*` namespace (description, category labels, detail-screen `📜 Recipe` / `📊 Stats` headers, Craft / Back button labels, stat names, alert + banner keys) plus 8 new item keys (4 names + 4 lore descriptions). Renamed `commands.inventory` and `inventory.title` from "Інвентар" → "Сумка" in `uk.json` so the term matches usage everywhere else (en stays "Inventory"). Locale parity audited: 334/334.
+
+**UX iteration arc (driven by user feedback over multiple rounds).** Each step here was a course-correction from screenshots:
+1. **Initial UI was too dense** — recipe blocks listed inputs + arrow + output + `🎒 N + 📦 M = T/need ✅|❌` per ingredient. User: "Lingo's emoji-prefix bug shows literal `%{inv}` placeholders, and the player doesn't need this calculation anyway — just pull from the bag first then warehouse silently." → removed all availability lines + the related locale key + the `availability(of:for:on:)` method on `CraftingService` + the `Availability` struct.
+2. **"Unsupported content type" on every Craft tap** — `craft:` callbacks were caught inside the `guard data.hasPrefix("estate:")` block, so they never matched. Moved both `craft:detail:` and `craft:` checks above the guard. Caught during first user playtest.
+3. **List view too long** — initial design had a recipe header + ingredients line per recipe inline. User: "Make it more concise; show stats per item; maybe move the details to separate screens." → refactored into the two-screen flow (compact list → detail screen with description + recipe + stats).
+4. **Banner placement** — original design prepended the `✅ Crafted ...` line above the recipe list, which scrolled offscreen. User: "Add the message at the bottom — through the long menu it's not immediately visible that you crafted something." → moved banner to body bottom; with the new compact two-screen design this is also where it stays visible without scrolling.
+5. **Category headers in the list view** — initial compact design still had `🔥 Forge` / `🧵 Tannery` section headers in the body. User: "Don't need them at all." → removed; recipes still group visually through the keyboard's row order.
+6. **"Скрафтити" → "Створити"** — user wanted a more natural Ukrainian verb (less calque from English).
+7. **"Інвентар" → "Сумка"** — user noticed the main keyboard label diverged from how the bag is referred to everywhere else; renamed.
+8. **Workshop intro polish** — wrote three flowery atmospheric variants, user landed on a more grounded one ("the manor's work corner: an anvil beside the forge, a tailor's bench close by…") after a brief multi-option round.
+
+**Reference doc.** New `content/recipes.md` with the recipe table + source-pool rules + migration history.
+
+**Files added (4):** `Swift/Models/Recipe.swift`, `Swift/Services/CraftingService.swift`, `Swift/Migrations/RenameLeatherVest.swift`, `content/recipes.md`.
+
+**Files modified (8):** `Swift/Controllers/EstateController.swift` (Workshop UI + dispatch + handlers), `Swift/Models/Item.swift` (Forester's set + leather_vest retirement), `Swift/Models/WarehouseEntry.swift` (remove helper), `Swift/configure.swift` (RenameLeatherVest migration registration + dev-seed bump), `Localizations/en.json` + `uk.json` (workshop.* + Forester item keys + sumka rename), `TODO.md` (Phase 5.2 progress markers + 5.2.2 weapon-upgrade entry), `.memory/file-map.md` + `.memory/status.md` (Phase 5.2 sync).
+
+**Phase 5.x carryforwards (refreshed):** Kitchen cooking (5.2.1 — raw food → cooked variants with hunger / HP effects), weapon-upgrade flow (5.2.2 — modify existing weapon vs craft a new one), XP-to-Estate progression model (5.3 — replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.
