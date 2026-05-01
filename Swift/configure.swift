@@ -273,14 +273,12 @@ public func configure(logger: Logger) async throws {
             ("mat.hide", 16),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
-            // Phase 5.2.1: every recipe scroll so dev can test the Learn
-            // flow end-to-end. The two starters (baked_potato + roasted_meat)
-            // are also auto-learned at registration; tapping their scrolls
-            // surfaces the "already known" modal — useful test path.
-            ("artifact.recipe.baked_potato", 1),
-            ("artifact.recipe.roasted_meat", 1),
+            // Phase 5.2.1: every Kitchen scroll so dev can test the Learn
+            // flow end-to-end. Baked Potato + Roasted Meat have no scrolls —
+            // they're always-available starters cookable from day one.
             ("artifact.recipe.foragers_omelette", 1),
             ("artifact.recipe.hunters_stew", 1),
+            ("artifact.recipe.meat_ragout", 1),
             ("artifact.recipe.berry_tart", 1),
             ("artifact.recipe.governors_feast", 1),
         ]
@@ -338,11 +336,6 @@ public func configure(logger: Logger) async throws {
                 logger.info("Topped up \(label)'s warehouse: \(whGrantedCount) item(s) seeded")
             }
 
-            // Phase 5.2.1: ensure starter Kitchen recipes are learned for
-            // already-registered dev profiles (registration auto-grants
-            // these for fresh players, but existing accounts predate the
-            // call site and would otherwise need a reset to learn them).
-            try await LearnedRecipe.ensureStarters(for: devUser, on: db)
         }
     }
 

@@ -302,10 +302,9 @@ final class Registration: TGControllerBase, @unchecked Sendable {
             _ = try await PlotService.claim(slot: 0, type: .farm, for: context.session, on: context.db)
         }
 
-        // Phase 5.2.1: auto-grant the two starter Kitchen recipes (Baked
-        // Potato + Roasted Meat) so Kitchen is never empty on day one.
-        // Idempotent — subsequent calls won't duplicate rows.
-        try await LearnedRecipe.ensureStarters(for: context.session, on: context.db)
+        // Phase 5.2.1: starter Kitchen recipes (Baked Potato + Roasted Meat)
+        // are always-available — gated through `RecipeCatalog.starterRecipeIds`
+        // rather than via a `LearnedRecipe` row, so no per-player setup needed.
 
         try await mainController.showMainMenu(context: context, text: complete)
     }

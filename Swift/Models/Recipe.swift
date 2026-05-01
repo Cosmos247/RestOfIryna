@@ -188,6 +188,16 @@ public enum RecipeCatalog {
             output: RecipeOutput("food.hunters_stew", 1)
         ),
         Recipe(
+            id: "recipe.meat_ragout",
+            category: .kitchen,
+            inputs: [
+                RecipeIngredient("food.raw_meat", 2),
+                RecipeIngredient("food.potato", 2),
+                RecipeIngredient("food.forest_nuts", 1)
+            ],
+            output: RecipeOutput("food.meat_ragout", 1)
+        ),
+        Recipe(
             id: "recipe.berry_tart",
             category: .kitchen,
             inputs: [
@@ -211,9 +221,11 @@ public enum RecipeCatalog {
         )
     ]
 
-    /// Recipe ids auto-granted to every player at registration so the Kitchen
-    /// is never empty on day one. Kept in sync with the Kitchen category.
-    public static let starterRecipeIds: [String] = [
+    /// Kitchen recipes that are **always available** — no scroll, no learning,
+    /// no `LearnedRecipe` row required. Every player can cook these from day
+    /// one. The kitchen UI unions this set with the player's learned recipes
+    /// when deciding which dishes to show.
+    public static let starterRecipeIds: Set<String> = [
         "recipe.baked_potato",
         "recipe.roasted_meat"
     ]

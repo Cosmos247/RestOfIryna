@@ -65,20 +65,13 @@ extension LearnedRecipe {
     }
 
     /// Set of all recipe ids the user has learned. Used by the Kitchen UI to
-    /// gate the recipe list.
+    /// gate the recipe list (combined with `RecipeCatalog.starterRecipeIds`,
+    /// which are always available regardless of what's in this table).
     public static func allIds(for user: User, on db: any Database) async throws -> Set<String> {
         guard let userId = user.id else { return [] }
         let rows = try await LearnedRecipe.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
         return Set(rows.map { $0.recipeId })
-    }
-
-    /// Auto-grant the starter recipe set. Idempotent — safe to call on every
-    /// registration completion and on dev seed for already-registered profiles.
-    public static func ensureStarters(for user: User, on db: any Database) async throws {
-        for recipeId in RecipeCatalog.starterRecipeIds {
-            try await add(recipeId, for: user, on: db)
-        }
     }
 }

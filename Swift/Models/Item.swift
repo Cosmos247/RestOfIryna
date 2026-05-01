@@ -141,13 +141,13 @@ public enum ItemCatalog {
         // the Kitchen (Phase 5.3). Potato is the one strategic ingredient:
         // inedible raw, only useful once cooking lands.
         Item(id: "food.forest_berries", nameKey: "item.food.forest_berries", type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(15)], icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
+             effects: [.restoreHunger(4)],  icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
         Item(id: "food.forest_nuts",    nameKey: "item.food.forest_nuts",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(20)], icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
+             effects: [.restoreHunger(5)],  icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
         Item(id: "food.potato",         nameKey: "item.food.potato",         type: .food, tier: 1, stackable: true,
              effects: [],                   icon: "🥔", descriptionKey: "item.food.potato.desc"),
         Item(id: "food.duck_egg",       nameKey: "item.food.duck_egg",       type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(25)], icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
+             effects: [.restoreHunger(7)],  icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
         Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
              effects: [], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
 
@@ -156,17 +156,19 @@ public enum ItemCatalog {
         // but stay below the small healing potion (+30 HP) on the HP side
         // so food doesn't displace potions.
         Item(id: "food.baked_potato",    nameKey: "item.food.baked_potato",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(20)], icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
+             effects: [.restoreHunger(9)],  icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
         Item(id: "food.roasted_meat",    nameKey: "item.food.roasted_meat",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(25)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
+             effects: [.restoreHunger(12)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
         Item(id: "food.foragers_omelette", nameKey: "item.food.foragers_omelette", type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(35), .restoreHP(5)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
+             effects: [.restoreHunger(16), .restoreHP(3)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
         Item(id: "food.hunters_stew",    nameKey: "item.food.hunters_stew",    type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(45), .restoreHP(10)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
+             effects: [.restoreHunger(20), .restoreHP(5)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
+        Item(id: "food.meat_ragout",     nameKey: "item.food.meat_ragout",     type: .food, tier: 2, stackable: true,
+             effects: [.restoreHunger(18), .restoreHP(4)], icon: "🥘", descriptionKey: "item.food.meat_ragout.desc"),
         Item(id: "food.berry_tart",      nameKey: "item.food.berry_tart",      type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(35), .restoreHP(12)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
+             effects: [.restoreHunger(16), .restoreHP(6)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
         Item(id: "food.governors_feast", nameKey: "item.food.governors_feast", type: .food, tier: 3, stackable: true,
-             effects: [.restoreHunger(70), .restoreHP(20)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
+             effects: [.restoreHunger(35), .restoreHP(10)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
 
         // Materials — estate-upgrade resources. Icons + descriptions show
         // on the inventory info-button modal.
@@ -218,14 +220,15 @@ public enum ItemCatalog {
         // and removes the scroll. Non-stackable so each scroll is a
         // distinct row — duplicates can be traded once the market opens.
         Item(id: "artifact.shrine_coin", nameKey: "item.artifact.shrine_coin", type: .artifact, tier: 3, stackable: true, effects: []),
-        Item(id: "artifact.recipe.baked_potato", nameKey: "item.artifact.recipe.baked_potato", type: .artifact, tier: 1, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.baked_potato.desc", teachesRecipe: "recipe.baked_potato"),
-        Item(id: "artifact.recipe.roasted_meat", nameKey: "item.artifact.recipe.roasted_meat", type: .artifact, tier: 1, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.roasted_meat.desc", teachesRecipe: "recipe.roasted_meat"),
+        // Baked Potato + Roasted Meat have no scroll — they're starter dishes
+        // every player can cook from day one (gated as always-available via
+        // `RecipeCatalog.starterRecipeIds`, no LearnedRecipe row required).
         Item(id: "artifact.recipe.foragers_omelette", nameKey: "item.artifact.recipe.foragers_omelette", type: .artifact, tier: 2, stackable: false,
              effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.foragers_omelette.desc", teachesRecipe: "recipe.foragers_omelette"),
         Item(id: "artifact.recipe.hunters_stew", nameKey: "item.artifact.recipe.hunters_stew", type: .artifact, tier: 2, stackable: false,
              effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.hunters_stew.desc", teachesRecipe: "recipe.hunters_stew"),
+        Item(id: "artifact.recipe.meat_ragout", nameKey: "item.artifact.recipe.meat_ragout", type: .artifact, tier: 2, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.meat_ragout.desc", teachesRecipe: "recipe.meat_ragout"),
         Item(id: "artifact.recipe.berry_tart", nameKey: "item.artifact.recipe.berry_tart", type: .artifact, tier: 2, stackable: false,
              effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.berry_tart.desc", teachesRecipe: "recipe.berry_tart"),
         Item(id: "artifact.recipe.governors_feast", nameKey: "item.artifact.recipe.governors_feast", type: .artifact, tier: 3, stackable: false,

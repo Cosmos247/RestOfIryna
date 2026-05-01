@@ -270,14 +270,14 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
   Full set = 16 hide for +7 DEF / +1 dodge
 - [x] Workshop UI in EstateController (replaces stub) — section header per category, recipe block with `🎒 inv + 📦 wh = total/need ✅|❌` per ingredient, one `[🔨 RecipeName]` button per recipe; success → inline status banner above refreshed view, shortages → modal alert listing missing inputs, bag full → modal alert
 - [x] `RenameLeatherVest` migration — remaps existing `gear.leather_vest` rows in inventory + warehouse to `gear.forester_jerkin`
-- [x] **Phase 5.2.1 — Kitchen cooking** (six dishes spanning 1-5 ingredients, two starter recipes auto-learned at registration, recipe scrolls as artifacts with the Learn flow)
+- [x] **Phase 5.2.1 — Kitchen cooking** (seven dishes spanning 1-5 ingredients, two starters always-available, five unlocked via recipe scrolls)
   - `RecipeCategory.kitchen` (3rd category) gated by per-user `LearnedRecipe` set; Forge / Tannery still always available
-  - 6 dishes added to `ItemCatalog` (Baked Potato / Roasted Meat = 1 ingredient, Forager's Omelette / Hunter's Stew / Forest Berry Tart = 3 ingredients, Governor's Feast = 5 ingredients)
-  - 6 recipe scrolls added (`artifact.recipe.<dish_id>`, non-stackable, `📜` icon, lore description); using one teaches the recipe via the new "📖 Learn" action button (replaces "✨ Use" when `item.teachesRecipe != nil`)
-  - New `LearnedRecipe` Fluent model + `CreateLearnedRecipes` migration (per-user known-recipe set, unique on user_id+recipe_id)
-  - Kitchen UI in EstateController mirrors Workshop (compact list → detail screen with Recipe + Effects sections + `[🍳 Cook]` / `[🔙 Back]`); empty-state hint when nothing learned yet
-  - Starter recipes (Baked Potato + Roasted Meat) auto-learned at registration so the Kitchen is never empty on day one; `LearnedRecipe.ensureStarters` is idempotent and also runs in dev seed for already-registered profiles
-  - Dev seed bumped (5× of every cooking ingredient, all 6 scrolls)
+  - 7 dishes added to `ItemCatalog` (Baked Potato / Roasted Meat = 1 ingredient, Forager's Omelette / Hunter's Stew / Meat Ragout / Forest Berry Tart = 3 ingredients, Governor's Feast = 5 ingredients)
+  - 5 recipe scrolls added for the non-starter dishes (`artifact.recipe.<dish_id>`, non-stackable, `📜` icon, lore description); using one teaches the recipe via the new "📖 Learn" action button (replaces "✨ Use" when `item.teachesRecipe != nil`)
+  - **Baked Potato + Roasted Meat have no scrolls** — they're always-available starters listed in `RecipeCatalog.starterRecipeIds` (a `Set<String>`); the Kitchen UI unions this with the player's learned set so every player can cook them from day one with no DB row needed
+  - New `LearnedRecipe` Fluent model + `CreateLearnedRecipes` migration (per-user known-recipe set, unique on user_id+recipe_id) for the five scroll-locked recipes
+  - Kitchen UI in EstateController mirrors Workshop (compact list → detail screen with Recipe + Effects sections + `[🍳 Cook]` / `[🔙 Back]`)
+  - Dev seed bumped (5× of every cooking ingredient, all 5 scroll-locked recipes)
 - [ ] Weapon upgrade flow (Phase 5.2.2) — modify existing weapon vs craft new one
 - [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
 - [x] Create `content/recipes.md` reference doc

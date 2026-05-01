@@ -787,9 +787,11 @@ extension EstateController {
                 inline = ctrl.workshopKeyboard(lingo: context.lingo, locale: locale)
             case "estate:home:kitchen":
                 let learnedIds = try await LearnedRecipe.allIds(for: context.session, on: context.db)
-                let learnedKitchen = RecipeCatalog.recipes(in: .kitchen).filter { learnedIds.contains($0.id) }.count
-                text = ctrl.renderKitchen(learnedKitchenCount: learnedKitchen, lingo: context.lingo, locale: locale)
-                inline = ctrl.kitchenKeyboard(learnedRecipeIds: learnedIds, lingo: context.lingo, locale: locale)
+                // Always-available starters union with player-learned recipes.
+                let availableIds = learnedIds.union(RecipeCatalog.starterRecipeIds)
+                let availableKitchen = RecipeCatalog.recipes(in: .kitchen).filter { availableIds.contains($0.id) }.count
+                text = ctrl.renderKitchen(learnedKitchenCount: availableKitchen, lingo: context.lingo, locale: locale)
+                inline = ctrl.kitchenKeyboard(learnedRecipeIds: availableIds, lingo: context.lingo, locale: locale)
             case "estate:home:warehouse":
                 let entries = try await WarehouseEntry.list(for: context.session, on: context.db)
                 text = ctrl.renderWarehouseRoot(lingo: context.lingo, locale: locale)
@@ -1082,7 +1084,7 @@ extension EstateController {
             return true
         }
 
-        if recipe.category.requiresLearning {
+        if recipe.category.requiresLearning, !RecipeCatalog.starterRecipeIds.contains(recipeId) {
             let known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
             if !known {
                 let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
@@ -1114,9 +1116,10 @@ extension EstateController {
             return true
         }
 
-        // Kitchen-recipe gate: refuse if the recipe hasn't been learned
-        // (defense against stale callbacks left in chat after a wipe).
-        if recipe.category.requiresLearning {
+        // Kitchen-recipe gate: refuse if the recipe hasn't been learned and
+        // isn't an always-available starter. Defense against stale callbacks
+        // left in chat after a wipe.
+        if recipe.category.requiresLearning, !RecipeCatalog.starterRecipeIds.contains(recipeId) {
             let known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
             if !known {
                 let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)

@@ -1022,3 +1022,38 @@ That polymorphism let me share `renderRecipeDetail` + `recipeDetailKeyboard` + `
 **Files modified (10):** `Swift/Controllers/{Estate,Inventory,Registration}Controller.swift`, `Swift/Models/{Item,Recipe}.swift`, `Swift/configure.swift`, `Localizations/en.json` + `uk.json`, `TODO.md`, `content/recipes.md`, `CLAUDE.md`, `README.md`, `Prompt.me`, `.memory/{file-map,localization,status,sessions}.md`.
 
 **Phase 5.x carryforwards:** Weapon-upgrade flow (5.2.2 — modify existing weapon vs craft a new one), recipe scrolls as Capital quest rewards (Phase 6.x), XP-to-Estate progression model (5.3 — replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.
+
+### Phase 5.2.1 follow-up (same day, post-playtest tuning)
+
+**Hunger numbers retuned ×3 deeper.** Initial Phase 5.2.1 numbers were ~70% of the original Phase 5.2.1 proposal; user feedback "ріж ще більше" cut them again to roughly half of even those. Final values:
+
+| Item | Original (5.2.1) | Final |
+|---|---|---|
+| 🫐 Berries | +15 | +4 |
+| 🌰 Nuts | +20 | +5 |
+| 🥚 Egg | +25 | +7 |
+| 🍠 Baked Potato | +20 | +9 |
+| 🍗 Roasted Meat | +25 | +12 |
+| 🍳 Omelette | +35 / +5 HP | +16 / +3 HP |
+| 🍲 Stew | +45 / +10 HP | +20 / +5 HP |
+| 🥧 Berry Tart | +35 / +12 HP | +16 / +6 HP |
+| 🍽 Governor's Feast | +70 / +20 HP | +35 / +10 HP |
+
+Drain context: typical session burns ~50-100 hunger (walk + combat). Berry refills 4% — a snack. Stew 20%. Feast 35%. Player needs to plan eating, not snack constantly.
+
+**Starter recipes refactored.** The original 5.2.1 design auto-learned Baked Potato + Roasted Meat into `LearnedRecipe` rows at registration via a now-deleted `LearnedRecipe.ensureStarters` helper, with corresponding scroll artifacts (`artifact.recipe.baked_potato` + `artifact.recipe.roasted_meat`) that were redundant — using one would always hit the "already known" modal.
+
+User correctly flagged this as messy: "видали рецепт печеної картоплі та смаженого мʼяса; це гравець може зробити на кухні одразу". Refactor:
+
+- Removed both starter scrolls from `ItemCatalog` and dev seed.
+- Removed the four locale keys for those scrolls (en + uk).
+- Removed `LearnedRecipe.ensureStarters` and its callers in `RegistrationController.promptEstateName` + the dev seed loop.
+- `RecipeCatalog.starterRecipeIds` switched from `[String]` to `Set<String>` and now serves as the canonical "always-available kitchen recipes" — no DB row needed, every player cooks these from day one.
+- Kitchen UI's `kitchenKeyboard` filter became `learnedIds.union(starterRecipeIds)`.
+- Both `handleCraftDetail` and `handleCraft` gates allow the call when the recipe id is in `starterRecipeIds` regardless of `LearnedRecipe` state.
+
+Net result: same player-facing behaviour ("can cook potato/meat from day one"), but cleaner data model (no useless DB rows, no redundant scroll items, fewer locale keys, less code in the registration / dev-seed paths).
+
+**Seventh dish added: 🥘 Meat Ragout.** User asked for an additional scroll-locked dish using meat + potato + nuts. Tuned at +18 hunger / +4 HP — sits between Forager's Omelette (+16/+3) and Hunter's Stew (+20/+5) on the heartiness scale. Recipe id `recipe.meat_ragout`, item id `food.meat_ragout`, scroll `artifact.recipe.meat_ragout`. Inputs: 2× 🥩 + 2× 🥔 + 1× 🌰. Distinct from Hunter's Stew (which uses egg) — earthy nut-and-meat profile. Locale parity bumped: 367/367.
+
+**Carryforward to commit:** the refactor (starter cleanup + retune + Meat Ragout) is small and self-contained; it lands as a follow-up commit on top of the Phase 5.2.1 commit `8e55ef1`.

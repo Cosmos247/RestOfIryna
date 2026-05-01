@@ -31,18 +31,26 @@ The **Forester's** set — first craftable armor. Uses hide drops from wild kill
 
 ### 🍳 Kitchen — cooked food (Phase 5.2.1)
 
-Recipes in this category are **gated by `LearnedRecipe`** — they only appear in the Kitchen UI if the player has learned them via a recipe-scroll artifact (`artifact.recipe.<dish_id>`, non-stackable, used through the "📖 Learn" button in the inventory). Two starter recipes (Baked Potato + Roasted Meat) are auto-granted at registration so the Kitchen is never empty for new players.
+Recipes in this category are **gated by `LearnedRecipe`** — they only appear in the Kitchen UI if the player has learned them via a recipe-scroll artifact (`artifact.recipe.<dish_id>`, non-stackable, used through the "📖 Learn" button in the inventory), with one exception: **Baked Potato and Roasted Meat are always available** (gated through `RecipeCatalog.starterRecipeIds` rather than a learned-set row, no scroll exists for them). Every player can cook these two from day one — the Kitchen UI unions the always-available set with whatever the player has learned via scrolls.
 
 Hunger / HP effects scale with ingredient count: 1-ingredient dishes restore hunger only; 3+ ingredient dishes also restore some HP. The biggest dish stays below the Small Healing Potion (+30 HP) so food doesn't displace potions.
 
-| Recipe id | Inputs | Output | Hunger | HP | Auto-learned? |
+| Recipe id | Inputs | Output | Hunger | HP | Unlock |
 |---|---|---|---|---|---|
-| `recipe.baked_potato`       | 2× 🥔 Potato | 🍠 Baked Potato (`food.baked_potato`)             | +20 | — | ✅ starter |
-| `recipe.roasted_meat`       | 2× 🥩 Raw Meat | 🍗 Roasted Meat (`food.roasted_meat`)           | +25 | — | ✅ starter |
-| `recipe.foragers_omelette`  | 2× 🥚 Egg + 2× 🌰 Nuts + 1× 🫐 Berries | 🍳 Forager's Omelette (`food.foragers_omelette`) | +35 | +5 | scroll |
-| `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg | 🍲 Hunter's Stew (`food.hunters_stew`)           | +45 | +10 | scroll |
-| `recipe.berry_tart`         | 4× 🫐 Berries + 2× 🌰 Nuts + 1× 🥚 Egg | 🥧 Forest Berry Tart (`food.berry_tart`)        | +35 | +12 | scroll |
-| `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts | 🍽 Governor's Feast (`food.governors_feast`) | +70 | +20 | scroll |
+| `recipe.baked_potato`       | 2× 🥔 Potato | 🍠 Baked Potato (`food.baked_potato`)             | +9  | — | ✅ always available |
+| `recipe.roasted_meat`       | 2× 🥩 Raw Meat | 🍗 Roasted Meat (`food.roasted_meat`)           | +12 | — | ✅ always available |
+| `recipe.foragers_omelette`  | 2× 🥚 Egg + 2× 🌰 Nuts + 1× 🫐 Berries | 🍳 Forager's Omelette (`food.foragers_omelette`) | +16 | +3 | scroll |
+| `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg | 🍲 Hunter's Stew (`food.hunters_stew`)           | +20 | +5 | scroll |
+| `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts | 🥘 Meat Ragout (`food.meat_ragout`)             | +18 | +4 | scroll |
+| `recipe.berry_tart`         | 4× 🫐 Berries + 2× 🌰 Nuts + 1× 🥚 Egg | 🥧 Forest Berry Tart (`food.berry_tart`)        | +16 | +6 | scroll |
+| `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts | 🍽 Governor's Feast (`food.governors_feast`) | +35 | +10 | scroll |
+
+Raw ingredients (eaten as-is, foraged in the wilds):
+- 🫐 Forest Berries — +4 hunger
+- 🌰 Forest Nuts — +5 hunger
+- 🥚 Duck Egg — +7 hunger
+- 🥔 Potato — inedible raw, must be cooked
+- 🥩 Raw Meat — inedible raw, must be cooked
 
 #### Learn flow
 
