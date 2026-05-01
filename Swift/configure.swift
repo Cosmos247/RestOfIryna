@@ -163,6 +163,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreatePlots())
     migrations.add(RemoveOldIron())
     migrations.add(RenameLeatherVest())
+    migrations.add(CreateLearnedRecipes())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -257,11 +258,14 @@ public func configure(logger: Logger) async throws {
     // come from registration, so they're deliberately left out of this list.
     if seedDevInventory {
         let seed: [(String, Int)] = [
-            ("food.forest_berries", 3),
-            ("food.forest_nuts", 2),
-            ("food.duck_egg", 1),
-            ("food.raw_meat", 1),
-            ("food.potato", 2),
+            // Cooking ingredients — bumped so dev can craft every Kitchen
+            // recipe at least once on first launch (Governor's Feast needs
+            // 3 meat + 3 potato + 2 egg + 2 berries + 2 nuts).
+            ("food.forest_berries", 6),
+            ("food.forest_nuts", 6),
+            ("food.duck_egg", 5),
+            ("food.raw_meat", 5),
+            ("food.potato", 5),
             ("mat.pine_lumber", 5),
             ("mat.river_pebble", 3),
             ("mat.clay", 2),
@@ -269,6 +273,16 @@ public func configure(logger: Logger) async throws {
             ("mat.hide", 16),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
+            // Phase 5.2.1: every recipe scroll so dev can test the Learn
+            // flow end-to-end. The two starters (baked_potato + roasted_meat)
+            // are also auto-learned at registration; tapping their scrolls
+            // surfaces the "already known" modal — useful test path.
+            ("artifact.recipe.baked_potato", 1),
+            ("artifact.recipe.roasted_meat", 1),
+            ("artifact.recipe.foragers_omelette", 1),
+            ("artifact.recipe.hunters_stew", 1),
+            ("artifact.recipe.berry_tart", 1),
+            ("artifact.recipe.governors_feast", 1),
         ]
 
         for developer in developerUsers {
@@ -323,6 +337,12 @@ public func configure(logger: Logger) async throws {
             if whGrantedCount > 0 {
                 logger.info("Topped up \(label)'s warehouse: \(whGrantedCount) item(s) seeded")
             }
+
+            // Phase 5.2.1: ensure starter Kitchen recipes are learned for
+            // already-registered dev profiles (registration auto-grants
+            // these for fresh players, but existing accounts predate the
+            // call site and would otherwise need a reset to learn them).
+            try await LearnedRecipe.ensureStarters(for: devUser, on: db)
         }
     }
 

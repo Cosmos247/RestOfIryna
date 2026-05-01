@@ -7,13 +7,18 @@
 //  Static crafting catalog used by the Workshop (Phase 5.2). Recipes live in
 //  code, not the DB — same convention as `ItemCatalog` and `EnemyCatalog`.
 //
-//  v1 ships two categories:
+//  v1 ships three categories:
 //    🔥 Forge   — smelting / metalwork (Iron Lump → Iron Ingot)
 //    🧵 Tannery — leather armor (Forester's Hood / Jerkin / Breeches / Boots)
+//    🍳 Kitchen — cooked food (Phase 5.2.1, gated by per-user learned set)
 //
 //  All recipes pull inputs from the player's inventory + warehouse pool
 //  (inventory drained first to free slots) and deposit the output into the
-//  inventory so the player can equip it immediately. See `CraftingService`.
+//  inventory. See `CraftingService`.
+//
+//  Forge + Tannery recipes are always available. Kitchen recipes are gated
+//  by `LearnedRecipe` — players unlock them by using a recipe-scroll artifact
+//  found in the world (or auto-learn the two starter dishes at registration).
 //
 
 import Foundation
@@ -23,17 +28,46 @@ import Foundation
 public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     case forge      // Smelting and metalwork
     case tannery    // Leather and hide
+    case kitchen    // Cooked food (Phase 5.2.1, gated by LearnedRecipe)
 
     public var icon: String {
         switch self {
         case .forge:   return "🔥"
         case .tannery: return "🧵"
+        case .kitchen: return "🍳"
         }
     }
 
     /// Localization key for the section header in the workshop view.
     public var nameKey: String {
         return "workshop.category.\(rawValue)"
+    }
+
+    /// Recipes in this category require the player to learn them first
+    /// (via a recipe-scroll artifact) before they show up in the cooking UI.
+    public var requiresLearning: Bool {
+        switch self {
+        case .forge, .tannery: return false
+        case .kitchen:         return true
+        }
+    }
+
+    /// Callback data for the "Back" button on a recipe-detail screen — sends
+    /// the player back to the list view of the right room (Workshop or Kitchen).
+    public var backCallbackData: String {
+        switch self {
+        case .forge, .tannery: return "estate:home:workshop"
+        case .kitchen:         return "estate:home:kitchen"
+        }
+    }
+
+    /// Locale key for the action verb on the detail screen's primary button —
+    /// "Craft" in the Workshop, "Cook" in the Kitchen.
+    public var actionButtonKey: String {
+        switch self {
+        case .forge, .tannery: return "workshop.detail.button.craft"
+        case .kitchen:         return "kitchen.detail.button.cook"
+        }
     }
 }
 
@@ -113,7 +147,75 @@ public enum RecipeCatalog {
             category: .tannery,
             inputs: [RecipeIngredient("mat.hide", 3)],
             output: RecipeOutput("gear.forester_boots", 1)
+        ),
+
+        // 🍳 Kitchen — cooked food. Costs and effects scale with the
+        // ingredient count: 1-ingredient dishes restore hunger only, 3+
+        // ingredient dishes also restore some HP. Players unlock recipes
+        // through scrolls (artifact.recipe.<dish_id>); the two starter
+        // dishes (baked_potato, roasted_meat) are auto-learned at
+        // registration so a fresh player has something to cook on day one.
+        Recipe(
+            id: "recipe.baked_potato",
+            category: .kitchen,
+            inputs: [RecipeIngredient("food.potato", 2)],
+            output: RecipeOutput("food.baked_potato", 1)
+        ),
+        Recipe(
+            id: "recipe.roasted_meat",
+            category: .kitchen,
+            inputs: [RecipeIngredient("food.raw_meat", 2)],
+            output: RecipeOutput("food.roasted_meat", 1)
+        ),
+        Recipe(
+            id: "recipe.foragers_omelette",
+            category: .kitchen,
+            inputs: [
+                RecipeIngredient("food.duck_egg", 2),
+                RecipeIngredient("food.forest_nuts", 2),
+                RecipeIngredient("food.forest_berries", 1)
+            ],
+            output: RecipeOutput("food.foragers_omelette", 1)
+        ),
+        Recipe(
+            id: "recipe.hunters_stew",
+            category: .kitchen,
+            inputs: [
+                RecipeIngredient("food.raw_meat", 2),
+                RecipeIngredient("food.potato", 2),
+                RecipeIngredient("food.duck_egg", 1)
+            ],
+            output: RecipeOutput("food.hunters_stew", 1)
+        ),
+        Recipe(
+            id: "recipe.berry_tart",
+            category: .kitchen,
+            inputs: [
+                RecipeIngredient("food.forest_berries", 4),
+                RecipeIngredient("food.forest_nuts", 2),
+                RecipeIngredient("food.duck_egg", 1)
+            ],
+            output: RecipeOutput("food.berry_tart", 1)
+        ),
+        Recipe(
+            id: "recipe.governors_feast",
+            category: .kitchen,
+            inputs: [
+                RecipeIngredient("food.raw_meat", 3),
+                RecipeIngredient("food.potato", 3),
+                RecipeIngredient("food.duck_egg", 2),
+                RecipeIngredient("food.forest_berries", 2),
+                RecipeIngredient("food.forest_nuts", 2)
+            ],
+            output: RecipeOutput("food.governors_feast", 1)
         )
+    ]
+
+    /// Recipe ids auto-granted to every player at registration so the Kitchen
+    /// is never empty on day one. Kept in sync with the Kitchen category.
+    public static let starterRecipeIds: [String] = [
+        "recipe.baked_potato",
+        "recipe.roasted_meat"
     ]
 
     private static let lookup: [String: Recipe] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })

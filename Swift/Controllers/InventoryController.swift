@@ -232,6 +232,8 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     /// Non-gear rows (food / material / potion / artifact). Materials have no action
     /// button; the others get a type-specific Use button wired to `inv:use:<item_id>`.
+    /// Recipe-scroll artifacts (`item.teachesRecipe != nil`) override the type label
+    /// with "📖 Learn" — same `inv:use:` callback, the handler branches on the field.
     private func genericRows(type: ItemType, entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
         var items: [(item: Item, quantity: Int)] = []
         for entry in entries {
@@ -239,12 +241,18 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             items.append((item, entry.quantity))
         }
         let merged = mergeForDisplay(items)
-        let actionLabel = type.actionKey.map { lingo.localize($0, locale: locale) }
+        let defaultActionLabel = type.actionKey.map { lingo.localize($0, locale: locale) }
 
         return merged.map { (item, qty) in
             let name = lingo.localize(item.nameKey, locale: locale)
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
             let itemButton = TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(qty)", callbackData: "inv:info:\(item.id)")
+            let actionLabel: String?
+            if item.teachesRecipe != nil {
+                actionLabel = lingo.localize("inventory.action.learn", locale: locale)
+            } else {
+                actionLabel = defaultActionLabel
+            }
             if let actionLabel = actionLabel {
                 let actionButton = TGInlineKeyboardButton(text: actionLabel, callbackData: "inv:use:\(item.id)")
                 return [itemButton, actionButton]
@@ -361,14 +369,20 @@ extension InventoryController {
             return true
         }
 
-        // Use — food/potion consume via HungerService; others show "not yet available"
-        // until their systems ship (gear = equip Phase 2.3, artifact = activate TBD).
+        // Use — food/potion consume via HungerService; recipe-scroll artifacts
+        // route to the Learn flow (Phase 5.2.1); others show "not yet available"
+        // until their systems ship (gear = equip Phase 2.3, generic artifact = activate TBD).
         if data.starts(with: "inv:use:") {
             let itemId = String(data.dropFirst("inv:use:".count))
 
             guard let item = ItemCatalog.find(itemId) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
+            }
+
+            // Recipe scrolls — Learn flow.
+            if let recipeId = item.teachesRecipe {
+                return try await handleLearnRecipe(itemId: itemId, recipeId: recipeId, item: item, query: query, message: message, context: context)
             }
 
             if !HungerService.isConsumable(item) {
@@ -498,6 +512,87 @@ extension InventoryController {
         }
 
         return false
+    }
+
+    /// Handle a tap on `📖 Learn` for a recipe-scroll artifact (Phase 5.2.1).
+    /// On a fresh learn the scroll row is deleted and the Artifacts category
+    /// is refreshed in place with a `✅ Learned: <recipe>` status line. If the
+    /// player already knows the recipe, the scroll is left in the bag and a
+    /// modal alert explains why nothing happened.
+    private static func handleLearnRecipe(
+        itemId: String,
+        recipeId: String,
+        item: Item,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+
+        // Already known → modal, leave scroll in inventory.
+        if try await LearnedRecipe.has(recipeId, for: context.session, on: context.db) {
+            let toast = context.lingo.localize("learn.already_known", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        // Find the scroll row (non-stackable, so any matching row is fine).
+        guard let userId = context.session.id else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+        let rows = try await InventoryEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$itemId, .equal, itemId)
+            .all()
+        guard let scrollRow = rows.first else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        // Add to learned set, then delete the scroll.
+        _ = try await LearnedRecipe.add(recipeId, for: context.session, on: context.db)
+        try await scrollRow.delete(on: context.db)
+
+        // Build the inline status banner — show the **recipe output's**
+        // name so the player sees what they just unlocked, not the scroll's
+        // name (which is just "Recipe: X" anyway). Falls back to the scroll's
+        // name if the recipe lookup somehow misses.
+        let recipeName: String
+        if let recipe = RecipeCatalog.find(recipeId),
+           let outputItem = ItemCatalog.find(recipe.output.itemId) {
+            recipeName = context.lingo.localize(outputItem.nameKey, locale: locale)
+        } else {
+            recipeName = context.lingo.localize(item.nameKey, locale: locale)
+        }
+        let outputIcon = RecipeCatalog.find(recipeId).flatMap { ItemCatalog.find($0.output.itemId)?.icon } ?? ""
+        let statusLine = "✅ " + context.lingo.localize("learn.success", locale: locale, interpolations: [
+            "icon": outputIcon,
+            "name": recipeName
+        ])
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+        // Refresh: stay in Artifacts if any rows remain, else pop to root.
+        let entries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let stillInCategory = entries.contains { ItemCatalog.find($0.itemId)?.type == .artifact }
+        if stillInCategory {
+            try await refreshCategory(type: .artifact, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
+        } else {
+            let ctrl = Controllers.inventoryController
+            let body = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
+            let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
+            let text = "\(statusLine)\n\n\(body)"
+            let params = TGEditMessageTextParams(
+                chatId: .chat(message.chat.id),
+                messageId: message.messageId,
+                text: text,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageText(params: params)
+        }
+        return true
     }
 
     /// Re-render the given category view in place after an equip/unequip.

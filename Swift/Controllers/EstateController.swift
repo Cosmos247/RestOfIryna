@@ -584,7 +584,8 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             lines.append("   \(input.quantity)× \(icon) \(name)")
         }
 
-        // Stats section — gear only.
+        // Stats section — gear (gearStats). Mutually exclusive with effects
+        // in v1 (no current item is both equippable and consumable).
         if let stats = outputItem?.gearStats {
             var statLines: [String] = []
             if stats.attack != 0 {
@@ -609,17 +610,72 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             }
         }
 
+        // Effects section — consumables (food/potion). Each `ItemEffect` is
+        // rendered as a single line with a per-effect icon.
+        if let effects = outputItem?.effects, !effects.isEmpty {
+            var effectLines: [String] = []
+            for effect in effects {
+                switch effect {
+                case .restoreHunger(let n):
+                    effectLines.append("   +\(n) 🍖 \(lingo.localize("workshop.effect.hunger", locale: locale))")
+                case .restoreHP(let n):
+                    effectLines.append("   +\(n) ❤️ \(lingo.localize("workshop.effect.hp", locale: locale))")
+                }
+            }
+            if !effectLines.isEmpty {
+                lines.append("")
+                lines.append("<b>" + lingo.localize("workshop.detail.effects", locale: locale) + "</b>")
+                lines.append(contentsOf: effectLines)
+            }
+        }
+
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard — Craft + Back-to-workshop.
+    /// Detail-screen keyboard — primary action (Craft / Cook) + Back-to-room.
+    /// Action verb and back target both come from `recipe.category` so the
+    /// same keyboard works for Workshop and Kitchen.
     fileprivate func recipeDetailKeyboard(recipe: Recipe, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let craft = lingo.localize("workshop.detail.button.craft", locale: locale)
+        let action = lingo.localize(recipe.category.actionButtonKey, locale: locale)
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: craft, callbackData: "craft:\(recipe.id)")],
-            [TGInlineKeyboardButton(text: back,  callbackData: "estate:home:workshop")]
+            [TGInlineKeyboardButton(text: action, callbackData: "craft:\(recipe.id)")],
+            [TGInlineKeyboardButton(text: back,   callbackData: recipe.category.backCallbackData)]
         ])
+    }
+
+    // MARK: - Kitchen (Phase 5.2.1)
+
+    /// Compact kitchen list — title + atmospheric description. Recipes appear
+    /// only as inline buttons via `kitchenKeyboard`. If the player has not
+    /// learned any kitchen recipes yet, the empty-state hint is shown
+    /// instead so the room never looks broken.
+    fileprivate func renderKitchen(learnedKitchenCount: Int, lingo: Lingo, locale: String) -> String {
+        let title = lingo.localize("estate.kitchen", locale: locale)
+        let intro = lingo.localize("kitchen.description", locale: locale)
+        var body = "<b>\(title)</b>\n\(intro)"
+        if learnedKitchenCount == 0 {
+            body += "\n\n" + lingo.localize("kitchen.empty", locale: locale)
+        }
+        return body
+    }
+
+    /// Kitchen keyboard — one `[<icon> <name>]` button per **learned** kitchen
+    /// recipe + Back. Empty list (no learned kitchen recipes) just shows the
+    /// Back button.
+    fileprivate func kitchenKeyboard(learnedRecipeIds: Set<String>, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        for recipe in RecipeCatalog.recipes(in: .kitchen) where learnedRecipeIds.contains(recipe.id) {
+            let outputItem = ItemCatalog.find(recipe.output.itemId)
+            let outputIcon = outputItem?.icon ?? ""
+            let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
+            let iconSegment = outputIcon.isEmpty ? "" : "\(outputIcon) "
+            let label = "\(iconSegment)\(outputName)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "craft:detail:\(recipe.id)")])
+        }
+        let back = lingo.localize("estate.back_home", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 }
 
@@ -730,8 +786,10 @@ extension EstateController {
                 text = ctrl.renderWorkshop(lingo: context.lingo, locale: locale)
                 inline = ctrl.workshopKeyboard(lingo: context.lingo, locale: locale)
             case "estate:home:kitchen":
-                text = ctrl.renderStub(titleKey: "estate.kitchen", lingo: context.lingo, locale: locale)
-                inline = ctrl.backToHomeKeyboard(lingo: context.lingo, locale: locale)
+                let learnedIds = try await LearnedRecipe.allIds(for: context.session, on: context.db)
+                let learnedKitchen = RecipeCatalog.recipes(in: .kitchen).filter { learnedIds.contains($0.id) }.count
+                text = ctrl.renderKitchen(learnedKitchenCount: learnedKitchen, lingo: context.lingo, locale: locale)
+                inline = ctrl.kitchenKeyboard(learnedRecipeIds: learnedIds, lingo: context.lingo, locale: locale)
             case "estate:home:warehouse":
                 let entries = try await WarehouseEntry.list(for: context.session, on: context.db)
                 text = ctrl.renderWarehouseRoot(lingo: context.lingo, locale: locale)
@@ -1010,8 +1068,9 @@ extension EstateController {
     // MARK: - Workshop crafting (Phase 5.2)
 
     /// `craft:detail:<recipe.id>` — opens the recipe detail screen (description,
-    /// recipe ingredients, stats, Craft + Back buttons). Replaces the workshop
-    /// list message in place.
+    /// recipe ingredients, stats / effects, action + Back buttons). Kitchen
+    /// recipes are gated by `LearnedRecipe` — opening a stale-callback detail
+    /// for an unlearned dish surfaces a modal alert and stays put.
     static func handleCraftDetail(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let recipeId = String(data.dropFirst("craft:detail:".count))
         let locale = context.session.locale
@@ -1021,6 +1080,15 @@ extension EstateController {
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
+        }
+
+        if recipe.category.requiresLearning {
+            let known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
+            if !known {
+                let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+                return true
+            }
         }
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1044,6 +1112,17 @@ extension EstateController {
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
+        }
+
+        // Kitchen-recipe gate: refuse if the recipe hasn't been learned
+        // (defense against stale callbacks left in chat after a wipe).
+        if recipe.category.requiresLearning {
+            let known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
+            if !known {
+                let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+                return true
+            }
         }
 
         let result = try await CraftingService.craft(recipe, for: context.session, on: context.db)

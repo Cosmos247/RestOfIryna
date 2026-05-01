@@ -100,6 +100,11 @@ public struct Item: Sendable {
     /// taps the item's info button. Nil = fall back to the generic
     /// "%{name} — description coming soon" placeholder.
     public let descriptionKey: String?
+    /// Set on artifacts that act as recipe scrolls — using the artifact
+    /// teaches the named recipe via `LearnedRecipe.add` and consumes the
+    /// scroll. The inventory action button switches from "✨ Use" to
+    /// "📖 Learn" whenever this is non-nil. Phase 5.2.1.
+    public let teachesRecipe: String?
 
     public init(
         id: String,
@@ -111,7 +116,8 @@ public struct Item: Sendable {
         slot: EquipmentSlot? = nil,
         gearStats: GearStats? = nil,
         icon: String? = nil,
-        descriptionKey: String? = nil
+        descriptionKey: String? = nil,
+        teachesRecipe: String? = nil
     ) {
         self.id = id
         self.nameKey = nameKey
@@ -123,6 +129,7 @@ public struct Item: Sendable {
         self.gearStats = gearStats
         self.icon = icon
         self.descriptionKey = descriptionKey
+        self.teachesRecipe = teachesRecipe
     }
 }
 
@@ -143,6 +150,23 @@ public enum ItemCatalog {
              effects: [.restoreHunger(25)], icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
         Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
              effects: [], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
+
+        // Cooked food — Kitchen recipes (Phase 5.2.1). Tuning intent: cooked
+        // dishes give meaningfully more hunger than raw foragables (15-25)
+        // but stay below the small healing potion (+30 HP) on the HP side
+        // so food doesn't displace potions.
+        Item(id: "food.baked_potato",    nameKey: "item.food.baked_potato",    type: .food, tier: 1, stackable: true,
+             effects: [.restoreHunger(20)], icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
+        Item(id: "food.roasted_meat",    nameKey: "item.food.roasted_meat",    type: .food, tier: 1, stackable: true,
+             effects: [.restoreHunger(25)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
+        Item(id: "food.foragers_omelette", nameKey: "item.food.foragers_omelette", type: .food, tier: 2, stackable: true,
+             effects: [.restoreHunger(35), .restoreHP(5)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
+        Item(id: "food.hunters_stew",    nameKey: "item.food.hunters_stew",    type: .food, tier: 2, stackable: true,
+             effects: [.restoreHunger(45), .restoreHP(10)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
+        Item(id: "food.berry_tart",      nameKey: "item.food.berry_tart",      type: .food, tier: 2, stackable: true,
+             effects: [.restoreHunger(35), .restoreHP(12)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
+        Item(id: "food.governors_feast", nameKey: "item.food.governors_feast", type: .food, tier: 3, stackable: true,
+             effects: [.restoreHunger(70), .restoreHP(20)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
 
         // Materials — estate-upgrade resources. Icons + descriptions show
         // on the inventory info-button modal.
@@ -188,8 +212,24 @@ public enum ItemCatalog {
         Item(id: "gear.forester_boots",    nameKey: "item.gear.forester_boots",    type: .gear, tier: 1, stackable: false, effects: [],
              slot: .boots,  gearStats: GearStats(defense: 1, dodge: 1), icon: "🥾", descriptionKey: "item.gear.forester_boots.desc"),
 
-        // Artifacts (crafting recipes will become a separate system in Phase 5.3 — not an item type)
+        // Artifacts. Recipe scrolls (Phase 5.2.1): each carries a
+        // `teachesRecipe` link to the dish recipe it unlocks. Tapping
+        // "📖 Learn" in the inventory adds an entry to `learned_recipes`
+        // and removes the scroll. Non-stackable so each scroll is a
+        // distinct row — duplicates can be traded once the market opens.
         Item(id: "artifact.shrine_coin", nameKey: "item.artifact.shrine_coin", type: .artifact, tier: 3, stackable: true, effects: []),
+        Item(id: "artifact.recipe.baked_potato", nameKey: "item.artifact.recipe.baked_potato", type: .artifact, tier: 1, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.baked_potato.desc", teachesRecipe: "recipe.baked_potato"),
+        Item(id: "artifact.recipe.roasted_meat", nameKey: "item.artifact.recipe.roasted_meat", type: .artifact, tier: 1, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.roasted_meat.desc", teachesRecipe: "recipe.roasted_meat"),
+        Item(id: "artifact.recipe.foragers_omelette", nameKey: "item.artifact.recipe.foragers_omelette", type: .artifact, tier: 2, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.foragers_omelette.desc", teachesRecipe: "recipe.foragers_omelette"),
+        Item(id: "artifact.recipe.hunters_stew", nameKey: "item.artifact.recipe.hunters_stew", type: .artifact, tier: 2, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.hunters_stew.desc", teachesRecipe: "recipe.hunters_stew"),
+        Item(id: "artifact.recipe.berry_tart", nameKey: "item.artifact.recipe.berry_tart", type: .artifact, tier: 2, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.berry_tart.desc", teachesRecipe: "recipe.berry_tart"),
+        Item(id: "artifact.recipe.governors_feast", nameKey: "item.artifact.recipe.governors_feast", type: .artifact, tier: 3, stackable: false,
+             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.governors_feast.desc", teachesRecipe: "recipe.governors_feast"),
     ]
 
     private static let lookup: [String: Item] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })

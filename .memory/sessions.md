@@ -976,3 +976,49 @@ Largest single-day session of the project: full estate plot system, training gro
 **Files modified (8):** `Swift/Controllers/EstateController.swift` (Workshop UI + dispatch + handlers), `Swift/Models/Item.swift` (Forester's set + leather_vest retirement), `Swift/Models/WarehouseEntry.swift` (remove helper), `Swift/configure.swift` (RenameLeatherVest migration registration + dev-seed bump), `Localizations/en.json` + `uk.json` (workshop.* + Forester item keys + sumka rename), `TODO.md` (Phase 5.2 progress markers + 5.2.2 weapon-upgrade entry), `.memory/file-map.md` + `.memory/status.md` (Phase 5.2 sync).
 
 **Phase 5.x carryforwards (refreshed):** Kitchen cooking (5.2.1 — raw food → cooked variants with hunger / HP effects), weapon-upgrade flow (5.2.2 — modify existing weapon vs craft a new one), XP-to-Estate progression model (5.3 — replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.
+
+## Session — 2026-05-02 (Phase 5.2.1 — Kitchen cooking + recipe-learning flow)
+
+**Phase 5.2.1 Kitchen landed.** Kitchen replaces the EstateController stub with a real cooking room. Six dishes ship, gated behind a per-user "learned recipe" set; players unlock dishes by using a recipe-scroll artifact. Two starters are auto-granted at registration so the room is never empty on day one.
+
+**The dishes** (tuned so cooked food sits meaningfully above raw foragables but below potions on the HP side):
+
+| Dish | Inputs | Hunger | HP | Notes |
+|---|---|---|---|---|
+| 🍠 Baked Potato       | 2× 🥔 potato                                                  | +20 | —   | starter (auto-learned) |
+| 🍗 Roasted Meat       | 2× 🥩 raw_meat                                                 | +25 | —   | starter (auto-learned) |
+| 🍳 Forager's Omelette | 2× 🥚 + 2× 🌰 + 1× 🫐                                          | +35 | +5  | scroll-locked |
+| 🍲 Hunter's Stew      | 2× 🥩 + 2× 🥔 + 1× 🥚                                          | +45 | +10 | scroll-locked |
+| 🥧 Forest Berry Tart  | 4× 🫐 + 2× 🌰 + 1× 🥚                                          | +35 | +12 | scroll-locked, sweet HP-skewed |
+| 🍽 Governor's Feast   | 3× 🥩 + 3× 🥔 + 2× 🥚 + 2× 🫐 + 2× 🌰                          | +70 | +20 | full-pantry feast (renamed from "Royal Feast" per user) |
+
+**New code-based catalog entries (`Swift/Models/Recipe.swift`).** Added `RecipeCategory.kitchen` as the third category alongside Forge and Tannery. Six new kitchen recipes appended to `RecipeCatalog.all`. New `RecipeCategory` helpers carry the per-category view/handler glue:
+- `requiresLearning: Bool` — true for Kitchen, false for Forge/Tannery.
+- `backCallbackData: String` — `estate:home:workshop` for Forge/Tannery, `estate:home:kitchen` for Kitchen.
+- `actionButtonKey: String` — `workshop.detail.button.craft` vs `kitchen.detail.button.cook`.
+
+That polymorphism let me share `renderRecipeDetail` + `recipeDetailKeyboard` + `handleCraftDetail` + `handleCraft` between Workshop and Kitchen — no parallel handler tree. New `RecipeCatalog.starterRecipeIds` lists the two recipes auto-granted at registration.
+
+**New persistence (`Swift/Models/LearnedRecipe.swift` + `Swift/Migrations/CreateLearnedRecipes.swift`).** Per-user known-recipe set. Fluent model with `user_id` (FK cascade), `recipe_id`, `learned_at`; unique on (user_id, recipe_id). Helpers: `has(_:for:on:)`, `add(_:for:on:)` (idempotent — returns false on duplicate), `allIds(for:on:) -> Set<String>`, `ensureStarters(for:on:)` (idempotent helper that grants `RecipeCatalog.starterRecipeIds`).
+
+**Item catalog growth (`Swift/Models/Item.swift`).** New `Item.teachesRecipe: String?` field — when set on an artifact, the inventory action button switches from "✨ Use" to "📖 Learn". Six cooked dishes added to ItemCatalog (`food.baked_potato` … `food.governors_feast`) with `restoreHunger` / `restoreHP` effects + per-item icons + lore descriptions. Six recipe scrolls added (`artifact.recipe.<dish_id>`, non-stackable, 📜 icon) — each carries its `teachesRecipe` link to the matching `recipe.<dish_id>`.
+
+**Inventory Learn flow (`Swift/Controllers/InventoryController.swift`).** Two changes:
+1. `genericRows` checks `item.teachesRecipe` per-row and overrides the action label from `inventory.action.<type>` to `inventory.action.learn` ("📖 Learn") when the field is non-nil.
+2. The existing `inv:use:<itemId>` callback dispatcher branches: if `item.teachesRecipe != nil`, route to a new `handleLearnRecipe` static handler. That handler calls `LearnedRecipe.add`, deletes the scroll row on a fresh learn, and refreshes Artifacts (or pops to root if Artifacts is now empty) with an inline `✅ <Dish> — recipe learned` banner. Already-known recipes leave the scroll alone and surface a `📖 You already know this recipe.` modal alert (so duplicate scrolls become tradeable inventory once the market ships).
+
+**Kitchen UI (`Swift/Controllers/EstateController.swift`).** New `renderKitchen` + `kitchenKeyboard` build the compact outer list — title + atmospheric description + one inline button per **learned** kitchen recipe + Back. Empty-state hint shown when nothing is learned (defensive; in practice the auto-grant means it almost never fires). The detail screen reuses Workshop's `renderRecipeDetail` — extended with a new `📊 Effects` section that lists each `ItemEffect` with a per-effect icon (🍖 Hunger / ❤️ HP), used for food outputs the way `📊 Stats` is used for gear. The `recipeDetailKeyboard` was parameterized to read its action verb and back target from `recipe.category`. Both `handleCraftDetail` and `handleCraft` enforce the learn-set on every kitchen recipe id (defense against stale callbacks left in chat after a wipe).
+
+**Registration auto-learn (`Swift/Controllers/RegistrationController.swift`).** `promptEstateName` now calls `LearnedRecipe.ensureStarters` right next to the existing farm-plot auto-grant — same place a fresh player crosses into `registrationStep = 6`. The starter set ships with two simple dishes (Baked Potato + Roasted Meat) so cooking is reachable immediately.
+
+**Dev seed (`Swift/configure.swift`).** Bumped cooking ingredients (5× of each — enough for one Governor's Feast plus extra). All six recipe scrolls added to the seed list. The dev-seed loop also calls `LearnedRecipe.ensureStarters` for every existing dev profile so already-registered accounts pick up the starters without needing a registration reset (the registration auto-grant only fires on a fresh registration).
+
+**Locale changes.** Added `kitchen.*` namespace (description / empty-state / cook button / not-learned alert), extended `workshop.detail.*` with `effects` (food header) + `effect.hunger` + `effect.hp` shared between gear/food outputs, added `inventory.action.learn` + `learn.success` + `learn.already_known` for the Learn flow, added `workshop.category.kitchen` for completeness, plus 12 item names + 12 lore descriptions for the dishes and scrolls. Locale parity audited: 367/367.
+
+**Audits.** Lingo emoji-prefix check — all interpolated keys safe (status banner builds the icon prefix in Swift, locale templates start with letters). Build clean on first try after the round of LSP staleness diagnostics that always trail new files. No dead code.
+
+**Files added (3):** `Swift/Models/LearnedRecipe.swift`, `Swift/Migrations/CreateLearnedRecipes.swift`. (Note: `content/recipes.md` extended in-place rather than a new file.)
+
+**Files modified (10):** `Swift/Controllers/{Estate,Inventory,Registration}Controller.swift`, `Swift/Models/{Item,Recipe}.swift`, `Swift/configure.swift`, `Localizations/en.json` + `uk.json`, `TODO.md`, `content/recipes.md`, `CLAUDE.md`, `README.md`, `Prompt.me`, `.memory/{file-map,localization,status,sessions}.md`.
+
+**Phase 5.x carryforwards:** Weapon-upgrade flow (5.2.2 — modify existing weapon vs craft a new one), recipe scrolls as Capital quest rewards (Phase 6.x), XP-to-Estate progression model (5.3 — replace `User.estateLevel = User.level / 5` derivation), unlock-by-level wiring for Phase 4.2 techniques, slot count formula switch from flat 5 back to the logarithmic table.
