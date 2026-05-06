@@ -74,6 +74,20 @@ public struct PassiveReport: Codable, Sendable {
     }
 }
 
+/// Per-step running snapshot persisted on `ExplorationState.runningReportJSON`
+/// so a bot restart resumes with the full event history. Updated alongside
+/// `stepsDeep` after every simulated step in `runLive`. The two HP/vigor
+/// fields are captured in `start()` from the user model — that's the moment
+/// the player committed to the expedition, so the report's "started with X"
+/// reads naturally even if the bot crashes before the first step fires.
+public struct RunningPassiveReport: Codable, Sendable {
+    public var hpBefore: Int
+    public var vigorBefore: Int
+    public var outcomeCounts: [String: Int]
+    public var lootPicked: [String: Int]
+    public var lootDropped: [String: Int]
+}
+
 // MARK: - Service
 
 public enum PassiveExpeditionService {
@@ -106,8 +120,42 @@ public enum PassiveExpeditionService {
         let endsAt = now.addingTimeInterval(seconds)
 
         let state = try await ExplorationState.beginPassive(for: user, endsAt: endsAt, on: db)
+
+        // Snapshot HP / vigor at expedition start so the final report reads
+        // "started with X HP, Y vigor" regardless of when the simulation
+        // actually finalizes (could be moments after start, could be after a
+        // bot restart catches up). Empty counters/loot — the per-step writes
+        // in `runLive` fill them in.
+        let initialReport = RunningPassiveReport(
+            hpBefore: user.hp,
+            vigorBefore: user.vigor,
+            outcomeCounts: [:],
+            lootPicked: [:],
+            lootDropped: [:]
+        )
+        if let blob = encodeRunningReport(initialReport) {
+            state.runningReportJSON = blob
+            try? await state.save(on: db)
+        }
+
         scheduleCompletion(stateId: state.id, endsAt: endsAt, db: db, bot: bot, lingo: lingo)
         return state
+    }
+
+    /// Serialize a running report for persistence. Returns nil only on
+    /// encoder failure (effectively impossible for `Codable` values built
+    /// from primitives, but the call site stays defensive).
+    private static func encodeRunningReport(_ report: RunningPassiveReport) -> String? {
+        guard let data = try? JSONEncoder().encode(report) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Decode a running report from persistence. Returns nil for legacy
+    /// rows (no JSON yet), corrupt blobs, or active expeditions (no
+    /// running report by design).
+    private static func decodeRunningReport(_ blob: String?) -> RunningPassiveReport? {
+        guard let blob = blob, let data = blob.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(RunningPassiveReport.self, from: data)
     }
 
     // MARK: Scheduler
@@ -167,10 +215,12 @@ public enum PassiveExpeditionService {
     /// by the player (state row gone), or on error.
     ///
     /// Progress is tracked in `state.stepsDeep` so a bot restart mid-run
-    /// resumes from the right step. Outcome counters and loot totals are
-    /// NOT persisted between restarts — a crash mid-simulation means the
-    /// final report only reflects post-restart events. Acceptable MVP
-    /// tradeoff; restarts during a passive expedition should be rare.
+    /// resumes from the right step. The accumulated outcome counters, loot
+    /// totals, and HP/vigor-at-start values are persisted on
+    /// `state.runningReportJSON` after every step in the same save as
+    /// `stepsDeep`, so the final report stays complete across restarts.
+    /// Legacy passive rows (created before AddPassiveRunningReport) fall
+    /// back to lazy capture on the first step iteration.
     private static func runLive(
         stateId: UUID,
         db: any Database,
@@ -191,6 +241,17 @@ public enum PassiveExpeditionService {
             // we stay defensive).
             guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
             guard state.isPassive, state.reportJSON == nil else { return }
+
+            // Restore running totals from DB if the column carries a snapshot.
+            // Legacy rows skip this and fall through to lazy-capture below.
+            if !hasCapturedBefore, let restored = decodeRunningReport(state.runningReportJSON) {
+                outcomeCounts = restored.outcomeCounts
+                lootPicked    = restored.lootPicked
+                lootDropped   = restored.lootDropped
+                hpBefore      = restored.hpBefore
+                vigorBefore   = restored.vigorBefore
+                hasCapturedBefore = true
+            }
 
             let totalSteps = derivedStepCount(for: state)
             let completed = state.stepsDeep
@@ -227,6 +288,10 @@ public enum PassiveExpeditionService {
             try? await state.$user.load(on: db)
             let user = state.user
 
+            // Legacy fallback: if no persisted snapshot existed (pre-migration
+            // row that started before this code shipped), lazy-capture the
+            // before values now from the live user. Post-migration rows have
+            // already been seeded by `start()` and the restore branch above.
             if !hasCapturedBefore {
                 hpBefore = user.hp
                 vigorBefore = user.vigor
@@ -250,6 +315,17 @@ public enum PassiveExpeditionService {
 
             recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped)
 
+            // Persist the post-step running totals on the state row alongside
+            // `stepsDeep` — single save, both fields together. Survives any
+            // restart from this point onward.
+            let snapshot = RunningPassiveReport(
+                hpBefore: hpBefore,
+                vigorBefore: vigorBefore,
+                outcomeCounts: outcomeCounts,
+                lootPicked: lootPicked,
+                lootDropped: lootDropped
+            )
+            state.runningReportJSON = encodeRunningReport(snapshot)
             state.stepsDeep = nextStep
             try? await state.save(on: db)
             try? await user.saveAndCache(in: db)

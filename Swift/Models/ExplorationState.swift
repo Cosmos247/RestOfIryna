@@ -65,6 +65,15 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "report_json")
     public var reportJSON: String?
 
+    /// JSON-encoded `RunningPassiveReport` snapshot updated after every
+    /// simulated step. Holds the running outcome counters, loot totals, and
+    /// HP/vigor at expedition start. Restored by `runLive` after a bot
+    /// restart so the final report is complete even when the simulation
+    /// was interrupted mid-way. Nil for active rows and for legacy passive
+    /// rows created before the AddPassiveRunningReport migration.
+    @OptionalField(key: "running_report_json")
+    public var runningReportJSON: String?
+
     // MARK: - Phase 4.1 combat fields
 
     /// ID of the enemy the player is currently fighting. Non-null on both
@@ -138,6 +147,7 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.modeRaw = ExplorationMode.active.rawValue
         self.endsAt = nil
         self.reportJSON = nil
+        self.runningReportJSON = nil
         self.combatEnemyId = nil
         self.combatEnemyHP = nil
         self.combatStance = nil

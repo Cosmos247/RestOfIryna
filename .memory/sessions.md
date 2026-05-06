@@ -1131,3 +1131,55 @@ The "Hunger" meter was conceptually inverted: it counts up when you eat (food.re
 **Modified (~20)**: `Swift/Controllers/{Combat,Estate,Exploration,GlobalCommands,Inventory,Main}Controller.swift`, `Swift/Migrations/AddCombatStanceFields.swift`, `Swift/Models/{Item,Recipe,User}.swift`, `Swift/Services/{Combat,Equipment,Exploration,Passive,Warehouse}Service.swift`, `Swift/configure.swift`, `Localizations/{en,uk}.json`, `CLAUDE.md`, `README.md`, `TODO.md`, `content/recipes.md`, `.memory/{INDEX,architecture,file-map,game-core,localization,status}.md`, `.memory/sessions.md` (this entry).
 
 **Carryforwards**: nothing left over from this session — all three pieces shipped together.
+
+## Session — 2026-05-06 part 2 (Passive expedition restart-safe reports)
+
+User asked a sharp diagnostic question: "if the player is mid-expedition and the server restarts, what happens?". Walked through every mode (active / passive / combat / training) and surfaced one real flaw: passive expedition reports were partially incomplete after a restart because `outcomeCounts`, `lootPicked`, `lootDropped`, and the lazy `hpBefore` / `vigorBefore` lived only in the `runLive` Swift locals — restarting the bot reset those dicts to empty, and the final report only reflected events from the resumed run. Their friend's advice ("write the expedition state to DB instead of RAM") was exactly the right fix.
+
+### Design
+
+New nullable column `running_report_json` on `exploration_state`, holding a Codable `RunningPassiveReport` blob:
+
+```swift
+public struct RunningPassiveReport: Codable, Sendable {
+    public var hpBefore: Int
+    public var vigorBefore: Int
+    public var outcomeCounts: [String: Int]
+    public var lootPicked: [String: Int]
+    public var lootDropped: [String: Int]
+}
+```
+
+Lifecycle:
+
+1. **`start()`** — right after `beginPassive`, snapshot `user.hp` + `user.vigor` and persist a `RunningPassiveReport` with empty counters. This also fixes a pre-existing edge case: the old code lazy-captured before-values on first step iteration, so a crash before the first step would have read post-restart HP/vigor as "starting" values.
+2. **`runLive` first iteration** — try to decode `state.runningReportJSON`; if present, seed in-memory dicts from it. Legacy passive rows (created before the migration) skip this and fall through to the existing lazy-capture branch.
+3. **`runLive` post-step** — after `recordOutcome`, build a fresh `RunningPassiveReport`, encode, set `state.runningReportJSON` and `state.stepsDeep`, single `state.save(...)`.
+4. **`finalizeAndPush`** — unchanged; takes the now-complete dicts as parameters.
+
+Cost: one extra small UPDATE per step (the `state.save()` already happened for `stepsDeep`; only the payload grows). At 1000 concurrent passives in test mode (5-second steps): ~200 UPDATEs/sec — trivial. In prod (5-min steps): ~3 UPDATEs/sec across the whole concurrent fleet.
+
+Deliberately did NOT clear `runningReportJSON` separately — the row gets deleted at expedition end (via `pushReportNotification`'s `ExplorationState.end(...)` or via `beginPassive`'s clean-slate sweep on a fresh start), so leftover blobs can't accumulate.
+
+### What restart now does, by mode
+
+| Scenario | Before restart | After restart | Loss |
+|---|---|---|---|
+| Active expedition | (no scheduler — taps drive it) | Player taps anything → `RouterStore` sees `routerName="exploration"` → `showExploration` → `resumeActive` re-renders status card | None |
+| Passive expedition | `Task.detached`-driven, in-memory dicts | `rescheduleInflight` spawns fresh runLive; first iteration reads `running_report_json` and continues with full history | None now (was: outcome counters + loot totals from the pre-crash slice) |
+| Active combat / Training | Combat fields on `exploration_state`; inline buttons in chat are still tappable | Player taps inline button → `combat:*` callback → `routerName="combat"` (or `"estate"` for training) routes to CombatController | None |
+
+### Code added
+
+- `Swift/Migrations/AddPassiveRunningReport.swift` — pure schema add, nullable column, no backfill needed.
+- `RunningPassiveReport` Codable struct + private `encodeRunningReport(_:)` / `decodeRunningReport(_:)` helpers in PassiveExpeditionService.
+- `runningReportJSON` field on `ExplorationState` + `nil` initialization in the constructor.
+- Restored from DB at the start of every `runLive` iteration (gated on `hasCapturedBefore` flag so it only seeds once).
+
+### Files
+
+**Added (1)**: `Swift/Migrations/AddPassiveRunningReport.swift`.
+**Modified (3)**: `Swift/Models/ExplorationState.swift`, `Swift/Services/PassiveExpeditionService.swift`, `Swift/configure.swift`.
+**Doc updates**: CLAUDE.md (ExplorationState description, migrations list, Phase 3.3 paragraph, services description), README.md (file tree under Models + Migrations, Phase 3.3 paragraph), `.memory/file-map.md` (ExplorationState row, migration list, PassiveExpeditionService description), `.memory/status.md` (Phase 3.3 line + ExplorationState fields list), `.memory/sessions.md` (this entry).
+
+**Carryforwards**: nothing — fix is fully self-contained.
