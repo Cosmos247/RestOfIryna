@@ -549,6 +549,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// order in `RecipeCatalog.all`.
     fileprivate func workshopKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
+        // Phase 5.2.2 weapon-upgrade entry. One universal button at the top —
+        // the player has only one upgradable weapon (their class starter),
+        // so the detail screen resolves it dynamically; no class-specific
+        // labels needed here.
+        let upgradeLabel = lingo.localize("weapon.upgrade.button", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: upgradeLabel, callbackData: "weapon:upgrade:detail")])
+
         for recipe in RecipeCatalog.all {
             let outputItem = ItemCatalog.find(recipe.output.itemId)
             let outputIcon = outputItem?.icon ?? ""
@@ -716,6 +723,17 @@ extension EstateController {
         if data.hasPrefix("craft:") {
             return try await handleCraft(data: data, query: query, message: message, context: context)
         }
+        // Phase 5.2.2 weapon upgrade — also lives outside the `estate:` namespace.
+        //   weapon:upgrade:detail   — open the upgrade detail screen for the
+        //                             player's current weapon
+        //   weapon:upgrade:confirm  — perform one upgrade step (issued by the
+        //                             [🔨 Upgrade] button on the detail screen)
+        if data == "weapon:upgrade:detail" {
+            return try await handleWeaponUpgradeDetail(query: query, message: message, context: context)
+        }
+        if data == "weapon:upgrade:confirm" {
+            return try await handleWeaponUpgradeConfirm(query: query, message: message, context: context)
+        }
         guard data.hasPrefix("estate:") else { return false }
 
         let ctrl = Controllers.estateController
@@ -874,6 +892,7 @@ extension EstateController {
             switch result {
             case .success:           toastKey = "estate.warehouse.deposited";          isSuccess = true
             case .nothingToDeposit:  toastKey = "estate.warehouse.nothing_to_deposit";  isSuccess = false
+            case .notTransferable:   toastKey = "estate.warehouse.not_transferable";    isSuccess = false
             }
         } else {
             let result = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
@@ -1237,6 +1256,308 @@ extension EstateController {
             try await editEstateMessage(message: message, text: text, inline: inline, context: context)
             return true
         }
+    }
+
+    // MARK: - Weapon upgrade callback handlers (Phase 5.2.2)
+
+    /// `weapon:upgrade:detail` — open / refresh the weapon upgrade screen.
+    /// Resolves the player's equipped main-hand row, takes a snapshot of
+    /// inventory + warehouse availability for the next-tier inputs (so the
+    /// "have/need" suffix is accurate), and renders.
+    static func handleWeaponUpgradeDetail(
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        let snapshot = try await weaponUpgradeSnapshot(context: context)
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let body = ctrl.renderWeaponUpgrade(
+            weaponEntry: snapshot.weaponEntry,
+            weaponItem: snapshot.weaponItem,
+            userId: context.session.id,
+            estateLevel: context.session.estateLevel,
+            invSnapshot: snapshot.invHaves,
+            whSnapshot: snapshot.whHaves,
+            lingo: context.lingo, locale: locale
+        )
+        let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `weapon:upgrade:confirm` — perform one upgrade step. Failure modes
+    /// (missing materials / estate-level too low / max tier / no weapon)
+    /// surface as modal alerts and leave the screen unchanged. On success
+    /// the screen refreshes with a `✅ Upgraded ...` banner appended below
+    /// the body, mirroring the `craft:` handler's banner placement.
+    static func handleWeaponUpgradeConfirm(
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        let result = try await WeaponUpgradeService.upgrade(for: context.session, on: context.db)
+
+        switch result {
+        case .noWeaponEquipped:
+            let toast = context.lingo.localize("weapon.upgrade.no_weapon", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .maxTierReached:
+            let toast = context.lingo.localize("weapon.upgrade.max_tier", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .estateLevelTooLow(let required, let current):
+            let toast = context.lingo.localize("weapon.upgrade.estate_too_low", locale: locale, interpolations: [
+                "required": "\(required)",
+                "current":  "\(current)"
+            ])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .missingMaterials(let shortages):
+            // Mirror the craft handler: a multi-line modal that lists every
+            // input the player still needs.
+            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
+            let rows: [String] = shortages.map { shortage in
+                let item = ItemCatalog.find(shortage.itemId)
+                let icon = item?.icon ?? ""
+                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
+                let needed = max(0, shortage.need - shortage.have)
+                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
+                    "icon":   icon,
+                    "name":   name,
+                    "needed": "\(needed)",
+                    "have":   "\(shortage.have)",
+                    "need":   "\(shortage.need)"
+                ])
+            }
+            let toast = ([header] + rows).joined(separator: "\n")
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .success(let newTier, let outputItemId):
+            // Silent ack — the inline banner carries the message.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+            let item = ItemCatalog.find(outputItemId)
+            let icon = item?.icon ?? ""
+            let newName = item.map { context.lingo.localize(ItemDisplay.nameKey(for: $0, tier: newTier), locale: locale) } ?? outputItemId
+            let banner = "✅ " + context.lingo.localize("weapon.upgrade.banner.success", locale: locale, interpolations: [
+                "icon": icon,
+                "name": newName,
+                "tier": "\(newTier)"
+            ])
+
+            // Re-fetch fresh snapshot so the body shows the new "current" tier.
+            let snapshot = try await weaponUpgradeSnapshot(context: context)
+            let body = ctrl.renderWeaponUpgrade(
+                weaponEntry: snapshot.weaponEntry,
+                weaponItem: snapshot.weaponItem,
+                userId: context.session.id,
+                estateLevel: context.session.estateLevel,
+                invSnapshot: snapshot.invHaves,
+                whSnapshot: snapshot.whHaves,
+                lingo: context.lingo, locale: locale
+            )
+            let text = "\(body)\n\n\(banner)"
+            let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, lingo: context.lingo, locale: locale)
+            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            return true
+        }
+    }
+
+    /// Bundle of derived state used by both upgrade callbacks. Keeps the
+    /// detail render and confirm handler in sync without re-running queries.
+    private struct WeaponUpgradeSnapshot {
+        let weaponEntry: InventoryEntry?
+        let weaponItem: Item?
+        let invHaves: [String: Int]
+        let whHaves: [String: Int]
+        /// True when the player has a weapon, it's below max tier, and the
+        /// catalog has a defined next step. Estate-level gate and material
+        /// shortfalls are validated by the service on confirm — the button
+        /// stays visible so the player can read the modal alert telling them
+        /// exactly what's missing.
+        let canUpgrade: Bool
+    }
+
+    private static func weaponUpgradeSnapshot(context: Context) async throws -> WeaponUpgradeSnapshot {
+        guard let userId = context.session.id else {
+            return WeaponUpgradeSnapshot(weaponEntry: nil, weaponItem: nil, invHaves: [:], whHaves: [:], canUpgrade: false)
+        }
+
+        let equippedRows = try await InventoryEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$equippedSlot, .equal, EquipmentSlot.mainHand.rawValue)
+            .all()
+        let weapon = equippedRows.first
+        let weaponItem = weapon.flatMap { ItemCatalog.find($0.itemId) }
+
+        var invHaves: [String: Int] = [:]
+        var whHaves:  [String: Int] = [:]
+        var canUpgrade = false
+
+        if let weapon = weapon, let item = weaponItem,
+           let maxTier = WeaponUpgradeCatalog.maxTier(for: item.id) {
+            if weapon.tier < maxTier,
+               let nextStep = WeaponUpgradeCatalog.step(for: item.id, tier: weapon.tier + 1) {
+                canUpgrade = true
+                for input in nextStep.inputs {
+                    invHaves[input.itemId] = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+                    whHaves[input.itemId]  = try await WarehouseEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+                }
+            }
+        }
+
+        return WeaponUpgradeSnapshot(
+            weaponEntry: weapon, weaponItem: weaponItem,
+            invHaves: invHaves, whHaves: whHaves,
+            canUpgrade: canUpgrade
+        )
+    }
+
+    // MARK: - Weapon upgrade (Phase 5.2.2)
+
+    /// Detail screen body for the weapon upgrade flow. Shows the player's
+    /// current weapon (icon + tier-N name + current stats), the next tier
+    /// (icon + tier-(N+1) name + stats with deltas), required materials,
+    /// and the estate-level requirement (with availability indicator). At
+    /// max tier, falls back to a "fully upgraded" page.
+    fileprivate func renderWeaponUpgrade(
+        weaponEntry: InventoryEntry?,
+        weaponItem: Item?,
+        userId: UUID?,
+        estateLevel: Int,
+        invSnapshot: [String: Int],
+        whSnapshot: [String: Int],
+        lingo: Lingo,
+        locale: String
+    ) -> String {
+        let title = lingo.localize("weapon.upgrade.title", locale: locale)
+
+        guard let entry = weaponEntry, let item = weaponItem else {
+            let none = lingo.localize("weapon.upgrade.no_weapon", locale: locale)
+            return "<b>\(title)</b>\n\n\(none)"
+        }
+        guard let maxTier = WeaponUpgradeCatalog.maxTier(for: item.id),
+              let currentStep = WeaponUpgradeCatalog.step(for: item.id, tier: entry.tier) else {
+            // Equipped weapon isn't in the catalog at all — render a clean
+            // "no upgrade path" page instead of crashing.
+            let none = lingo.localize("weapon.upgrade.no_weapon", locale: locale)
+            return "<b>\(title)</b>\n\n\(none)"
+        }
+
+        let icon = item.icon ?? ""
+        let currentName = lingo.localize(ItemDisplay.nameKey(for: item, tier: entry.tier), locale: locale)
+        let currentHeader = "\(icon) <b>\(currentName)</b>"
+
+        var lines: [String] = ["<b>\(title)</b>", "", currentHeader]
+
+        // Current-tier stats block.
+        let currentStatLines = formatStatLines(stats: currentStep.stats, lingo: lingo, locale: locale, prefix: "   ")
+        if !currentStatLines.isEmpty {
+            lines.append(contentsOf: currentStatLines)
+        }
+
+        // Already at max tier — show "fully upgraded" message and stop here.
+        if entry.tier >= maxTier {
+            lines.append("")
+            lines.append(lingo.localize("weapon.upgrade.max_tier", locale: locale))
+            return lines.joined(separator: "\n")
+        }
+
+        // Next-tier preview.
+        let nextTier = entry.tier + 1
+        guard let nextStep = WeaponUpgradeCatalog.step(for: item.id, tier: nextTier) else {
+            lines.append("")
+            lines.append(lingo.localize("weapon.upgrade.max_tier", locale: locale))
+            return lines.joined(separator: "\n")
+        }
+        let nextName = lingo.localize(ItemDisplay.nameKey(for: item, tier: nextTier), locale: locale)
+        let arrow = lingo.localize("weapon.upgrade.delta_arrow", locale: locale)
+        lines.append("")
+        lines.append("\(arrow) \(icon) <b>\(nextName)</b>")
+        let deltaLines = formatStatDeltas(from: currentStep.stats, to: nextStep.stats, lingo: lingo, locale: locale, prefix: "   ")
+        lines.append(contentsOf: deltaLines)
+
+        // Materials.
+        lines.append("")
+        lines.append("<b>" + lingo.localize("weapon.upgrade.recipe_header", locale: locale) + "</b>")
+        for input in nextStep.inputs {
+            let inputItem = ItemCatalog.find(input.itemId)
+            let inputIcon = inputItem?.icon ?? ""
+            let inputName = inputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
+            let have = (invSnapshot[input.itemId, default: 0]) + (whSnapshot[input.itemId, default: 0])
+            lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
+        }
+
+        // Estate-level gate.
+        let gateOK = estateLevel >= nextTier
+        let mark = gateOK ? "✅" : "⛔"
+        lines.append("")
+        lines.append("\(mark) " + lingo.localize("weapon.upgrade.estate_required", locale: locale, interpolations: [
+            "required": "\(nextTier)",
+            "current":  "\(estateLevel)"
+        ]))
+
+        _ = userId  // currently unused but kept for symmetry with future per-user gates
+        return lines.joined(separator: "\n")
+    }
+
+    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🔨 Upgrade]
+    /// + Back. The Upgrade button is always shown — the handler validates
+    /// estate level and materials and surfaces a modal alert on failure (so
+    /// the player can read exactly what's missing instead of guessing why
+    /// the button is greyed out).
+    fileprivate func weaponUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        if canUpgrade {
+            let upgrade = lingo.localize("weapon.upgrade.button.confirm", locale: locale)
+            rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "weapon:upgrade:confirm")])
+        }
+        let back = lingo.localize("workshop.detail.button.back", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    /// Render only the non-zero stat fields of a `GearStats` value as
+    /// "+N <icon> <name>" lines. Used for the current-tier block on the
+    /// upgrade detail screen.
+    private func formatStatLines(stats: GearStats, lingo: Lingo, locale: String, prefix: String) -> [String] {
+        var out: [String] = []
+        if stats.attack != 0   { out.append("\(prefix)+\(stats.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
+        if stats.defense != 0  { out.append("\(prefix)+\(stats.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
+        if stats.crit != 0     { out.append("\(prefix)+\(stats.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
+        if stats.dodge != 0    { out.append("\(prefix)+\(stats.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
+        if stats.accuracy != 0 { out.append("\(prefix)+\(stats.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
+        return out
+    }
+
+    /// Render stat deltas from `from` to `to` as "+N → +M (↑+K) <icon> <name>"
+    /// lines. Used for the next-tier preview on the upgrade detail screen.
+    private func formatStatDeltas(from: GearStats, to: GearStats, lingo: Lingo, locale: String, prefix: String) -> [String] {
+        func line(_ a: Int, _ b: Int, _ unit: String, _ iconLabel: String) -> String? {
+            guard a != 0 || b != 0 else { return nil }
+            let delta = b - a
+            let deltaPart = delta == 0 ? "" : (delta > 0 ? "  (↑+\(delta))" : "  (↓\(delta))")
+            return "\(prefix)+\(a)\(unit) → +\(b)\(unit)\(deltaPart) \(iconLabel)"
+        }
+        var out: [String] = []
+        if let l = line(from.attack,   to.attack,   "",  "⚔️ \(lingo.localize("workshop.stats.attack",   locale: locale))") { out.append(l) }
+        if let l = line(from.defense,  to.defense,  "",  "🛡 \(lingo.localize("workshop.stats.defense",  locale: locale))") { out.append(l) }
+        if let l = line(from.crit,     to.crit,     "%", "💥 \(lingo.localize("workshop.stats.crit",     locale: locale))") { out.append(l) }
+        if let l = line(from.dodge,    to.dodge,    "",  "💨 \(lingo.localize("workshop.stats.dodge",    locale: locale))") { out.append(l) }
+        if let l = line(from.accuracy, to.accuracy, "",  "🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") { out.append(l) }
+        return out
     }
 
     /// Edit the source message in place — text or caption depending on

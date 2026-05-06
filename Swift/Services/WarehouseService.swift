@@ -20,6 +20,11 @@ public enum WarehouseService {
     public enum DepositResult: Sendable {
         case success
         case nothingToDeposit
+        /// Item is in `WeaponUpgradeCatalog` — depositing it would lose the
+        /// per-instance tier (warehouse rows don't track tier). Returned so
+        /// the UI can surface a clean "weapons stay with you" alert instead
+        /// of silently downgrading the player's progress.
+        case notTransferable
     }
 
     public enum WithdrawResult: Sendable {
@@ -34,6 +39,13 @@ public enum WarehouseService {
     @discardableResult
     public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
         guard let item = ItemCatalog.find(itemId), let userId = user.id else { return .nothingToDeposit }
+
+        // Tiered weapons can't be warehoused — `WarehouseEntry` doesn't carry
+        // the tier column, so storing one would silently demote a T5 sword to
+        // T1 on withdraw. By design these weapons stay with the player anyway.
+        if WeaponUpgradeCatalog.isUpgradable(itemId) {
+            return .notTransferable
+        }
 
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
@@ -75,6 +87,8 @@ public enum WarehouseService {
         for row in rows {
             guard let item = ItemCatalog.find(row.itemId), item.type == category else { continue }
             guard row.equippedSlot == nil else { continue }
+            // Tiered weapons stay with the player — see `deposit` for the why.
+            if WeaponUpgradeCatalog.isUpgradable(row.itemId) { continue }
 
             let qty = row.quantity
             try await row.delete(on: db)

@@ -279,7 +279,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
   - New `LearnedRecipe` Fluent model + `CreateLearnedRecipes` migration (per-user known-recipe set, unique on user_id+recipe_id) for the five scroll-locked recipes
   - Kitchen UI in EstateController mirrors Workshop (compact list → detail screen with Recipe + Effects sections + `[🍳 Cook]` / `[🔙 Back]`)
   - Dev seed bumped (5× of every cooking ingredient, all 5 scroll-locked recipes)
-- [ ] Weapon upgrade flow (Phase 5.2.2) — modify existing weapon vs craft new one
+- [x] Weapon upgrade flow (Phase 5.2.2) — Workshop button `[⚔️ Upgrade weapon]` advances the player's class starter weapon one tier at a time. Three weapons × 5 tiers (Rusty Sword → Knight's Sword / Simple Bow → Hunter's Longbow / Wooden Staff → Archmage's Scepter). Stats + materials live in `WeaponUpgradeCatalog`; T1 stats match legacy `Item.gearStats`. Tier persisted on `InventoryEntry.tier` (`AddInventoryTier` migration, default 1). Estate-level gate (tier N requires estate ≥ N), no skip-ahead — sequential progression. `WeaponUpgradeService.upgrade(for:on:)` drains materials from combined inventory + warehouse pool, bumps tier in place (item id never changes). Tier-aware display names via `ItemDisplay.nameKey(for:tier:)`. Tiered weapons can't be warehoused (new `notTransferable` result on WarehouseService.deposit).
 - [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
 - [x] Create `content/recipes.md` reference doc
 

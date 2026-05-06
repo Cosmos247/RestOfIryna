@@ -31,6 +31,13 @@ final public class InventoryEntry: Model, @unchecked Sendable {
     @Field(key: "equipped_slot")
     public var equippedSlot: String?
 
+    /// Upgrade tier for items that participate in `WeaponUpgradeCatalog` —
+    /// the three class starter weapons. Defaults to 1 for every row, so
+    /// non-tiered items just ignore the column. Bumped by `WeaponUpgradeService`
+    /// when the player upgrades the weapon at the Workshop.
+    @Field(key: "tier")
+    public var tier: Int
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -43,6 +50,7 @@ final public class InventoryEntry: Model, @unchecked Sendable {
         self.$user.id = userID
         self.itemId = itemId
         self.quantity = quantity
+        self.tier = 1
     }
 }
 

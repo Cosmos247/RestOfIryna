@@ -195,12 +195,17 @@ public enum ItemCatalog {
         Item(id: "potion.heal_medium",  nameKey: "item.potion.heal_medium", type: .potion,   tier: 2, stackable: true,  effects: [.restoreHP(60)]),
 
         // Gear — starter loadouts. Slot + gearStats wired in Phase 2.3.1.
+        // Class starter weapons — granted by the King at registration. Stats are
+        // the T1 baseline from `WeaponUpgradeCatalog`; subsequent tiers are
+        // applied via `InventoryEntry.tier` and `EquipmentService.recomputeBonuses`,
+        // which prefer the catalog over `gearStats` when the item is upgradable.
+        // Display name / description keys resolve through `ItemDisplay.nameKey(for:tier:)`.
         Item(id: "gear.rusty_sword",    nameKey: "item.gear.rusty_sword",   type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 3), icon: "⚔️"),
+             slot: .mainHand, gearStats: GearStats(attack: 3), icon: "⚔️", descriptionKey: "item.gear.rusty_sword.desc"),
         Item(id: "gear.simple_bow",     nameKey: "item.gear.simple_bow",    type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 2, accuracy: 1), icon: "🏹"),
+             slot: .mainHand, gearStats: GearStats(attack: 2, accuracy: 1), icon: "🏹", descriptionKey: "item.gear.simple_bow.desc"),
         Item(id: "gear.wooden_staff",   nameKey: "item.gear.wooden_staff",  type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 2, crit: 1), icon: "🪄"),
+             slot: .mainHand, gearStats: GearStats(attack: 2, crit: 1), icon: "🪄", descriptionKey: "item.gear.wooden_staff.desc"),
         // Forester's set — first craftable armor (Phase 5.2 Workshop / Tannery).
         // `gear.forester_jerkin` succeeds the retired `gear.leather_vest`; old DB
         // rows are remapped by `RenameLeatherVest`. Set total = 16 hide for full
@@ -243,5 +248,30 @@ public enum ItemCatalog {
 
     public static func items(of type: ItemType) -> [Item] {
         return all.filter { $0.type == type }
+    }
+}
+
+// MARK: - Tier-aware display helpers (Phase 5.2.2)
+
+/// One namespace for "what locale key shows this row's name / description?"
+/// — answers depend on whether the item is a tiered weapon and what the
+/// row's current tier is. Non-tiered items fall through to `Item.nameKey` /
+/// `Item.descriptionKey` unchanged.
+public enum ItemDisplay {
+    /// Locale key for the row's display name. Tiered weapons resolve to
+    /// `<base.nameKey>.t<tier>` (e.g. `item.gear.rusty_sword.t3`); other
+    /// items return the item's static `nameKey`.
+    public static func nameKey(for item: Item, tier: Int) -> String {
+        guard WeaponUpgradeCatalog.isUpgradable(item.id) else { return item.nameKey }
+        return "\(item.nameKey).t\(tier)"
+    }
+
+    /// Locale key for the row's lore blurb. Same tier rule, applied to the
+    /// item's `descriptionKey`. Returns nil if the item itself has no
+    /// description key (caller falls back to the placeholder modal).
+    public static func descriptionKey(for item: Item, tier: Int) -> String? {
+        guard let baseDesc = item.descriptionKey else { return nil }
+        guard WeaponUpgradeCatalog.isUpgradable(item.id) else { return baseDesc }
+        return "\(baseDesc).t\(tier)"
     }
 }

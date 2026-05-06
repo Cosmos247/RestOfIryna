@@ -1183,3 +1183,83 @@ Deliberately did NOT clear `runningReportJSON` separately — the row gets delet
 **Doc updates**: CLAUDE.md (ExplorationState description, migrations list, Phase 3.3 paragraph, services description), README.md (file tree under Models + Migrations, Phase 3.3 paragraph), `.memory/file-map.md` (ExplorationState row, migration list, PassiveExpeditionService description), `.memory/status.md` (Phase 3.3 line + ExplorationState fields list), `.memory/sessions.md` (this entry).
 
 **Carryforwards**: nothing — fix is fully self-contained.
+
+## Session — 2026-05-06 part 3 (Phase 5.2.2 weapon upgrade)
+
+User's new design pillar: each class gets ONE weapon from the King at registration that **cannot be replaced — only upgraded**. Workshop becomes the place where iron is refined, edges are honed, and limbs are layered. Five-tier ladder per class, narrative naming (rust scrubbed → blade sharpened → spine reforged → master-tempered), gated by estate level (T2 = estate lv 2 ... T5 = estate lv 5). No skip-ahead — sequential progression.
+
+### Stat tables (after the user's "крит з T2, більше з кожним рівнем" tweak on the sword)
+
+| Tier | Sword (warrior) | Bow (archer) | Staff/Rod (mage) |
+|---|---|---|---|
+| T1 | +3 ATK | +2 ATK / +1 ACC | +2 ATK / +1 CRIT |
+| T2 | +5 ATK / **+3% crit** | +4 ATK / +3 ACC | +4 ATK / +3% crit |
+| T3 | +8 ATK / **+6% crit** | +6 ATK / +5 ACC / +3% crit | +6 ATK / +6% crit / +2 ACC |
+| T4 | +12 ATK / **+10% crit** / +1 DEF | +9 ATK / +7 ACC / +6% crit | +9 ATK / +10% crit / +4 ACC |
+| T5 | +16 ATK / **+15% crit** / +3 DEF | +12 ATK / +10 ACC / +10% crit | +12 ATK / +14% crit / +6 ACC |
+
+T1 stats are intentionally identical to the legacy `Item.gearStats` for the three starter weapons — every existing equipped weapon survives the migration with the exact same numbers. Only T2+ adds anything new.
+
+### Materials (per upgrade step, drained from combined inventory + warehouse pool)
+
+Sword (iron-heavy):
+- T1→T2: 3× 🪨 river_pebble (rust-scrubbing)
+- T2→T3: 5× 🪨 + 2× 🔩 iron
+- T3→T4: 1× 🔳 iron_ingot + 5× 🔩 iron + 3× 🪵 lumber (forge fire)
+- T4→T5: 3× 🔳 + 10× 🔩 + 5× 🪵
+
+Bow (lumber + sinew):
+- T1→T2: 5× 🪵 lumber + 1× 🦴 hide (string)
+- T2→T3: 5× 🪵 + 3× 🦴 (sinew)
+- T3→T4: 10× 🪵 + 5× 🦴 + 1× 🔳 (arrowhead)
+- T4→T5: 15× 🪵 + 8× 🦴 + 3× 🔳
+
+Staff (rune-stone + crystal):
+- T1→T2: 5× 🪵 + 3× 🪨 (rune-grinding)
+- T2→T3: 5× 🪵 + 5× 🪨 + 3× 🟫 clay (crystal mount)
+- T3→T4: 5× 🪵 + 8× 🪨 + 1× 🔳 (arcane wire)
+- T4→T5: 8× 🪵 + 10× 🪨 + 3× 🔳 + 5× 🦴 (binding)
+
+Per user spec: no new materials, scale within the existing 6-item palette. Each class' early tiers stay thematic (sword = stone/iron, bow = wood/sinew, staff = wood/stone), late tiers (T4-T5) pull a "foreign" material as a master-class flourish.
+
+### Architecture decisions
+
+User picked option **A** (single item-id + tier on InventoryEntry, dynamic stats) over option **B** (separate items per tier). Cleanest for the player perception "this is the same blade, refined" — and the data model only needs one new column instead of 15 new items. The DB column defaults to 1 so no backfill is needed; the migration is a single nullable-default ADD COLUMN.
+
+Display names ARE tier-specific even though the item id isn't, via the new `ItemDisplay.nameKey(for:tier:)` helper: returns `<base.nameKey>.t<tier>` for items in `WeaponUpgradeCatalog`, falls through to `item.nameKey` otherwise. Same shape for descriptions. Three places use it: profile main-hand line, inventory gear rows, and the upgrade detail screen.
+
+### Files
+
+**Added (3)**:
+- `Swift/Migrations/AddInventoryTier.swift` — `ALTER TABLE inventory ADD COLUMN tier INT NOT NULL DEFAULT 1`. Trivial, no backfill.
+- `Swift/Models/WeaponUpgradeCatalog.swift` — static catalog of `[itemId: [WeaponUpgradeStep]]` with helpers `step(for:tier:)`, `stats(for:tier:)`, `maxTier(for:)`, `isUpgradable(_:)`. The single source of truth for both stats and materials.
+- `Swift/Services/WeaponUpgradeService.swift` — pure service, `upgrade(for:on:) -> UpgradeResult`. Mirror of `CraftingService.craft`'s drain policy, but the output is a tier bump on the SAME row (no new inventory entry created).
+
+**Modified (8)**:
+- `Swift/Models/InventoryEntry.swift` — added `@Field(key: "tier") var tier: Int`, init to 1 in the constructor.
+- `Swift/Models/Item.swift` — added `descriptionKey` to the three starter weapons (was nil) so tier-specific descriptions can compose; added `ItemDisplay` namespace at the bottom with `nameKey(for:tier:)` and `descriptionKey(for:tier:)` helpers.
+- `Swift/Services/EquipmentService.swift` — `recomputeBonuses` now consults `WeaponUpgradeCatalog.stats(for:tier:)` first, falls back to `Item.gearStats`. T1 stats match the legacy values so the swap is invisible to current players.
+- `Swift/Services/WarehouseService.swift` — added `notTransferable` result + check on `deposit` and skip in `depositAll` so tiered weapons can't be warehoused (the warehouse table has no tier column and would silently demote them).
+- `Swift/Controllers/EstateController.swift` — workshop list adds `[⚔️ Upgrade weapon]` at the top; new `renderWeaponUpgrade` body + `weaponUpgradeKeyboard` + two callback handlers (`handleWeaponUpgradeDetail` / `handleWeaponUpgradeConfirm`). Helpers `formatStatLines` / `formatStatDeltas` render the current-tier block and the per-stat deltas. Stale-deposit `notTransferable` case wired in `handleWarehouseTransfer`.
+- `Swift/Controllers/MainController.swift` — profile main-hand line now uses `ItemDisplay.nameKey(for:tier:)` so an upgraded sword reads "Sharpened Sword" instead of "Rusty Sword".
+- `Swift/Controllers/InventoryController.swift` — gear rows use the tier-aware name; the info-modal handler resolves the description via `ItemDisplay.descriptionKey(for:tier:)` (queries the player's row to know which tier).
+- `Swift/configure.swift` — registered `AddInventoryTier()` migration.
+
+**Locales (en + uk parity 412/412)**:
+- 30 weapon keys per locale (3 weapons × 5 tiers × 2 [name + desc])
+- 11 `weapon.upgrade.*` UI keys (button label, title, no-weapon, max-tier, estate-too-low / -required, recipe-header, delta-arrow, button.confirm, banner.success)
+- 1 `estate.warehouse.not_transferable` modal-alert key
+
+### Edge cases closed
+
+- Migration-time backwards compat: `tier` defaults to 1, T1 stats == legacy stats → existing equipped weapons see zero numerical drift.
+- Tiered weapon in warehouse: now refused at the service layer (`notTransferable`). The UI surfaces a clean modal alert instead of silently downgrading on withdraw.
+- Player without an equipped weapon: upgrade screen shows "no weapon" message, button hidden. Confirm callback also returns `noWeaponEquipped` if state somehow drifts.
+- Player at max tier (T5): detail screen flips to "fully upgraded" body, no Upgrade button. Confirm returns `maxTierReached` if a stale callback fires.
+- Skip-ahead forbidden by design: `WeaponUpgradeService.upgrade` always advances by exactly one tier, so a T1 → T5 jump-ahead is impossible without sequentially crafting through T2, T3, T4.
+
+### Carryforwards
+
+- **`content/weapons.md`** — was discussed as a possible reference doc, deferred. Not strictly needed yet; the catalog itself is the source of truth.
+- **Dev shortcut for testing** (e.g. `/wpntier <N>`): not added. Dev can grind through normally for now; if it gets tedious during 5.x playtesting, add it as a one-line GlobalCommandsController route.
+- **Pacing tuning** (estate-level mapping vs material costs): user explicitly deferred this until XP system lands. The current numbers are a starting point.

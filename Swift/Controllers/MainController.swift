@@ -191,7 +191,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
         let mainHandName: String
         if let entry = equipped[.mainHand], let item = ItemCatalog.find(entry.itemId) {
-            mainHandName = lingo.localize(item.nameKey, locale: session.locale)
+            // Tiered weapons resolve through ItemDisplay so the profile shows
+            // "Sharpened Sword" etc. once the player upgrades.
+            mainHandName = lingo.localize(ItemDisplay.nameKey(for: item, tier: entry.tier), locale: session.locale)
         } else {
             mainHandName = lingo.localize("profile.equipped.empty", locale: session.locale)
         }

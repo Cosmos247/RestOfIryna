@@ -85,12 +85,24 @@ public enum EquipmentService {
 
         var atk = 0, def = 0, crit = 0, dodge = 0, acc = 0
         for row in rows where row.equippedSlot != nil {
-            guard let item = ItemCatalog.find(row.itemId), let stats = item.gearStats else { continue }
-            atk   += stats.attack
-            def   += stats.defense
-            crit  += stats.crit
-            dodge += stats.dodge
-            acc   += stats.accuracy
+            guard let item = ItemCatalog.find(row.itemId) else { continue }
+            // Tiered weapons (the three class starters in WeaponUpgradeCatalog)
+            // pull stats from the per-tier table; everything else falls back
+            // to the static `Item.gearStats`. T1 stats match the legacy values
+            // exactly, so existing equipped weapons see no numeric change
+            // until the player upgrades.
+            let stats: GearStats?
+            if let tierStats = WeaponUpgradeCatalog.stats(for: item.id, tier: row.tier) {
+                stats = tierStats
+            } else {
+                stats = item.gearStats
+            }
+            guard let s = stats else { continue }
+            atk   += s.attack
+            def   += s.defense
+            crit  += s.crit
+            dodge += s.dodge
+            acc   += s.accuracy
         }
         user.gearAttackBonus   = atk
         user.gearDefenseBonus  = def

@@ -217,7 +217,9 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         let unequipLabel = lingo.localize("inventory.action.gear.unequip", locale: locale)
 
         return sorted.map { pair in
-            let name = lingo.localize(pair.item.nameKey, locale: locale)
+            // Tier-aware name so an upgraded weapon shows e.g. "Sharpened Sword"
+            // instead of always "Rusty Sword". Non-tiered gear falls through.
+            let name = lingo.localize(ItemDisplay.nameKey(for: pair.item, tier: pair.entry.tier), locale: locale)
             let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
             let itemLabel = "\(iconPrefix)\(name)"
             let isEquipped = pair.entry.equippedSlot != nil
@@ -356,12 +358,26 @@ extension InventoryController {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
+            // For tiered weapons (3 starter weapons in WeaponUpgradeCatalog) the
+            // lore changes per tier — fetch the player's row to know which tier
+            // description to render. Non-tiered items just use their static key.
+            var resolvedDescKey: String? = item.descriptionKey
+            var resolvedNameKey: String = item.nameKey
+            if WeaponUpgradeCatalog.isUpgradable(item.id), let userId = context.session.id {
+                let row = try await InventoryEntry.query(on: context.db)
+                    .filter(\.$user.$id, .equal, userId)
+                    .filter(\.$itemId, .equal, item.id)
+                    .first()
+                let tier = row?.tier ?? 1
+                resolvedDescKey = ItemDisplay.descriptionKey(for: item, tier: tier)
+                resolvedNameKey = ItemDisplay.nameKey(for: item, tier: tier)
+            }
             let answer: TGAnswerCallbackQueryParams
-            if let descKey = item.descriptionKey {
+            if let descKey = resolvedDescKey {
                 let description = context.lingo.localize(descKey, locale: locale)
                 answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
             } else {
-                let itemName = context.lingo.localize(item.nameKey, locale: locale)
+                let itemName = context.lingo.localize(resolvedNameKey, locale: locale)
                 let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
                 answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
             }
