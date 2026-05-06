@@ -8,7 +8,7 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 - [File Map](file-map.md) — Source tree with purpose annotations per file
 
 ## Game Design
-- [Game Core](game-core.md) — GDD summary: classes, hunger, exploration, combat, estates
+- [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates
 - [Implemented vs Planned](status.md) — What exists now vs what GDD describes
 
 ## Patterns & Conventions

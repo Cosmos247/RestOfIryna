@@ -58,6 +58,32 @@ public enum WarehouseService {
         return .success
     }
 
+    /// Move every unequipped unit of the given category from the backpack to the
+    /// warehouse in one shot. Equipped gear is skipped — to dump worn armor the
+    /// player must unequip it first. Returns the total number of units moved
+    /// (sum of stack quantities), so the caller can render
+    /// "✅ Moved N items to warehouse".
+    @discardableResult
+    public static func depositAll(category: ItemType, for user: User, on db: any Database) async throws -> Int {
+        guard let userId = user.id else { return 0 }
+
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .all()
+
+        var movedUnits = 0
+        for row in rows {
+            guard let item = ItemCatalog.find(row.itemId), item.type == category else { continue }
+            guard row.equippedSlot == nil else { continue }
+
+            let qty = row.quantity
+            try await row.delete(on: db)
+            try await WarehouseEntry.add(row.itemId, quantity: qty, to: user, on: db)
+            movedUnits += qty
+        }
+        return movedUnits
+    }
+
     /// Move one unit of the item from the warehouse to the player's backpack.
     /// `.nothingToWithdraw` if the warehouse has zero of it; `.inventoryFull` if
     /// the backpack can't fit another row. Both failure modes leave state unchanged —

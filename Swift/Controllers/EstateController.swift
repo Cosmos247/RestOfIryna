@@ -334,6 +334,12 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             }
         }
 
+        // Bulk action: deposit every unequipped unit of this category in one tap.
+        // Equipped gear is filtered out by the service. Sits below all per-item
+        // rows so it doesn't push individual transfers off the screen.
+        let depositAllLabel = lingo.localize("estate.warehouse.button.deposit_all", locale: locale)
+        keyboard.append([TGInlineKeyboardButton(text: depositAllLabel, callbackData: "estate:wh:depositall:\(type.rawValue)")])
+
         let back = lingo.localize("estate.back_root", locale: locale)
         keyboard.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:warehouse")])
         return TGInlineKeyboardMarkup(inlineKeyboard: keyboard)
@@ -616,8 +622,8 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             var effectLines: [String] = []
             for effect in effects {
                 switch effect {
-                case .restoreHunger(let n):
-                    effectLines.append("   +\(n) 🍖 \(lingo.localize("workshop.effect.hunger", locale: locale))")
+                case .restoreVigor(let n):
+                    effectLines.append("   +\(n) 🍖 \(lingo.localize("workshop.effect.vigor", locale: locale))")
                 case .restoreHP(let n):
                     effectLines.append("   +\(n) ❤️ \(lingo.localize("workshop.effect.hp", locale: locale))")
                 }
@@ -737,6 +743,13 @@ extension EstateController {
             }
             _ = try? await context.bot.answerCallbackQuery(params: answer)
             return true
+        }
+
+        // Bulk deposit — must be matched before the per-item `deposit:` /
+        // `withdraw:` prefixes since "depositall" technically starts with
+        // "deposit". Order keeps the routing unambiguous.
+        if data.hasPrefix("estate:wh:depositall:") {
+            return try await handleWarehouseDepositAll(data: data, query: query, message: message, context: context)
         }
 
         if data.hasPrefix("estate:wh:deposit:") || data.hasPrefix("estate:wh:withdraw:") {
@@ -910,6 +923,49 @@ extension EstateController {
             )
             _ = try? await context.bot.editMessageText(params: params)
         }
+        return true
+    }
+
+    /// `estate:wh:depositall:<type>` — bulk-deposit every unequipped row of the
+    /// given category from the bag to the warehouse. On success refreshes the
+    /// category view with an inline banner showing how many units moved; if
+    /// nothing was movable (empty bag for that type, or only equipped gear),
+    /// surfaces a modal alert and leaves the screen unchanged.
+    static func handleWarehouseDepositAll(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let typeRaw = String(data.dropFirst("estate:wh:depositall:".count))
+        guard let type = ItemType(rawValue: typeRaw) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        let moved = try await WarehouseService.depositAll(category: type, for: context.session, on: context.db)
+
+        if moved == 0 {
+            let toast = context.lingo.localize("estate.warehouse.deposit_all.nothing", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        // Silent ack — the inline status line carries the success message.
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+        let banner = "✅ " + context.lingo.localize("estate.warehouse.deposit_all.success", locale: locale, interpolations: [
+            "count": "\(moved)"
+        ])
+
+        let ctrl = Controllers.estateController
+        let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+        let body = ctrl.renderWarehouseCategory(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let text = "\(banner)\n\n\(body)"
+        let inline = ctrl.warehouseCategoryKeyboard(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: text, inline: inline, context: context)
         return true
     }
 

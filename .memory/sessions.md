@@ -1065,3 +1065,69 @@ Net result: same player-facing behaviour ("can cook potato/meat from day one"), 
 **Starter recipe ratios fixed: 1:1.** `recipe.baked_potato` and `recipe.roasted_meat` originally consumed 2× food + 1× lumber to produce 1× cooked. User flagged the asymmetry: 1 potato should make 1 baked potato (and the lumber is already a meaningful cost). Both reduced to 1× food + 1× lumber → 1× cooked. The richer multi-ingredient dishes (Omelette / Stew / Ragout / Tart / Feast) keep their 3-5 input piles since combining many ingredients into one portion is intuitive.
 
 **Locale parity bumped to 368/368** (one new key: `kitchen.alert.cooked` in both en + uk).
+
+## Session — 2026-05-06 (Warehouse polish + dev seed sanity + Hunger → Vigor rename)
+
+Three small landing pieces, one big terminology refactor, one shared commit.
+
+### 1. Per-category "Deposit all" button on the Warehouse
+
+User feedback: returning from a long expedition fills the bag with materials and food, and dumping it row-by-row was tedious. Withdrawing-all was rejected as an explicit request because crafting already auto-pulls from the warehouse pool — the only thing the player actually wants back from storage is **food before an expedition**, which fits the existing per-row ⬇️ buttons fine.
+
+**Solution**: a single `[📦 Deposit all]` button per warehouse category. Sits **below** the per-item rows (above only the Back button) so it doesn't push the per-item arrows off the screen. Standard Telegram-blue styling — no green accent (rejected during the HTML preview round).
+
+- New `WarehouseService.depositAll(category:for:on:)` — drains every unequipped `InventoryEntry` row of the given `ItemType` into `WarehouseEntry` in one shot. Equipped gear is skipped (same rule as the per-item `deposit`). Returns total units moved.
+- New callback `estate:wh:depositall:<type>` matched **before** the existing `estate:wh:deposit:` / `withdraw:` handler in the dispatcher. Refreshes the category in place with a `✅ Moved N items to warehouse ⬆️` banner on success; modal alert "Nothing of this type in your bag." when nothing was movable (empty for that category, or only equipped gear).
+- 3 new locale keys per locale: `estate.warehouse.button.deposit_all`, `estate.warehouse.deposit_all.success` (with `%{count}` interpolation), `estate.warehouse.deposit_all.nothing`.
+
+User initially considered batch ×5 / ×10 buttons per row (Variant C2 in the design doc) but dropped the idea after the HTML preview showed how cluttered the layout would get on a phone-width inline keyboard. Stuck with the single deposit-all button per category.
+
+### 2. Dev seed: skip recipe scrolls for already-learned recipes
+
+Quality-of-life fix for the dev. The startup seed in `configure.swift` was top-up logic — every relaunch it would notice `LearnedRecipe.has(...)` had eaten the scroll and re-grant a new one. Three relaunches, three duplicate Forager's Omelette scrolls in the bag, etc.
+
+**Fix** (`configure.swift:286-303`): before the inventory + warehouse top-up loops, build a per-developer `skipItems: Set<String>` of any seed entry whose `Item.teachesRecipe` recipe is already in the developer's `LearnedRecipe`. Both loops `continue` past those item ids. Side-effect logger line `"Dev seed: \(label) already knows \(skipItems.count) recipe(s); skipping their scrolls"` so the suppression is visible at startup.
+
+`resetDevProfile = true` still wipes `learned_recipes` along with everything else, so a clean-slate run repopulates all scrolls — the skip only kicks in on the persistent path.
+
+### 3. Hunger → Vigor terminology refactor (largest piece)
+
+The "Hunger" meter was conceptually inverted: it counts up when you eat (food.restoreHunger gives +N), so calling it "hunger" is backwards — it's really a satiety meter. User picked **Снага / Vigor** (atmospheric Slavic word for vigour / vital force) over the more literal Satiety or RPG-canon Stamina because it sits well in a medieval setting and doesn't pre-claim a Stamina meter for future systems.
+
+**Strategy**: rename Swift identifiers, locale keys, narrative text — but **keep the DB column name `hunger` / `max_hunger`** to avoid a destructive rename migration. Achieved via `@Field(key: "hunger") var vigor: Int` on the User model. No migration needed; existing data carries over with new code.
+
+**Negative-state framing kept as-is** per user instruction: the "😵 Голодний" / "😵 Starving" indicator stays — even though the meter is named Vigor, the *low-state* is still framed as hunger (the player is hungry when their vigor is depleted). Same treatment for `exploration.outcome.starvation` ("Hunger gnaws at you. / Голод точить тебе зсередини."), `exploration.passive.outcome.starvation` ("🥀 hunger" / "🥀 голод"), and the Ukrainian `forest_berries.desc` lore line that mentions "втамовує голод". These are narrative / state-naming, not meter labels, so they don't conflict.
+
+**Swift renames (all callsites swept)**:
+- `HungerService.swift` → `VigorService.swift` (file renamed; `HungerService.swift` deleted)
+- `HungerService` → `VigorService`, `HungerAction` → `VigorAction`
+- `User.hunger` → `User.vigor`, `User.maxHunger` → `User.maxVigor` (DB column references via `@Field(key: "hunger")`)
+- `ItemEffect.restoreHunger(Int)` → `.restoreVigor(Int)` (catalog + 11 cooked-dish call sites)
+- `ConsumeResult.hungerRestored` → `.vigorRestored`
+- All combat tunings: `cleaveHunger` / `vitalShotHunger` / `soulfireHunger` → `*Vigor`, same for Special Defense (`ironBulwarkHunger` etc.) and `mageHungerExtra` / `fleeHungerExtra` / `stanceActivationHunger` / `specialAttackHunger` / `specialDefenseHunger` / `hungerMultiplier`
+- Method `applyHungerPenalty` (private on User extension) → `applyVigorPenalty`
+
+**Locale changes (en + uk parity preserved)**:
+- Renamed keys: `profile.hunger` → `profile.vigor`, `hunger.restored` → `vigor.restored`, `hunger.starving` → `vigor.starving`, `workshop.effect.hunger` → `workshop.effect.vigor`, `exploration.passive.report.hunger` → `vigor`
+- Renamed interpolation variable in `exploration.outcome.encounter.won`: `%{hunger}` → `%{vigor}`
+- Updated values where the meter is named: "Hunger"→"Vigor" / "Голод"→"Снага"; "hunger" (genitive context)→"vigor" / "голоду"→"снаги"
+- `combat.super.warrior.activate` Ukrainian rewritten because "×2 голод" doesn't translate cleanly — now "снага витрачається вдвічі на N раундів"
+- Kept literally: "😵 Starving" / "😵 Голодний" (as `vigor.starving` value), all `exploration.outcome.starvation` and `exploration.passive.outcome.starvation` text, `forest_berries.desc` lore (UK), the wordplay "blade hungers" inside Bloodlust's English narrative
+
+**Replace strategy**: per-file `replace_all` for "Hunger" / "hunger" was safe because no Swift file has another word containing the substring. Only User.swift, AddGameStats.swift, AddCombatStanceFields.swift, and the new VigorService.swift retain the literal "hunger" — all in `@Field(key: "hunger")` references or comments documenting the DB-column-name preservation.
+
+**Doc sync**: CLAUDE.md, README.md, TODO.md, content/recipes.md, and the entire .memory bank (status / architecture / file-map / game-core / localization / INDEX) all swept the same way. Historic session entries above this one **kept** as-is — they describe what was true at the time of writing.
+
+### What I checked before commit
+
+- `swift build` clean both after the warehouse change and after the rename pass.
+- `grep -rn "hunger\|Hunger" Swift/` returns only the intentional residual (DB column names + the explanatory comments next to them). `grep -rn "Голод\|голод" Localizations/` returns only the kept narrative strings.
+- Locale parity audit: 371 / 371 (3 new deposit-all keys per locale).
+- No dead code: removed `HungerService.swift`; no orphan `restoreHunger` cases left.
+
+### Files
+
+**Added (1)**: `Swift/Services/VigorService.swift` (replaces deleted `HungerService.swift`).
+**Modified (~20)**: `Swift/Controllers/{Combat,Estate,Exploration,GlobalCommands,Inventory,Main}Controller.swift`, `Swift/Migrations/AddCombatStanceFields.swift`, `Swift/Models/{Item,Recipe,User}.swift`, `Swift/Services/{Combat,Equipment,Exploration,Passive,Warehouse}Service.swift`, `Swift/configure.swift`, `Localizations/{en,uk}.json`, `CLAUDE.md`, `README.md`, `TODO.md`, `content/recipes.md`, `.memory/{INDEX,architecture,file-map,game-core,localization,status}.md`, `.memory/sessions.md` (this entry).
+
+**Carryforwards**: nothing left over from this session — all three pieces shipped together.

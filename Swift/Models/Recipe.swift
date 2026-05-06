@@ -160,7 +160,7 @@ public enum RecipeCatalog {
         ),
 
         // 🍳 Kitchen — cooked food. Costs and effects scale with the
-        // ingredient count: 1-ingredient dishes restore hunger only, 3+
+        // ingredient count: 1-ingredient dishes restore vigor only, 3+
         // ingredient dishes also restore some HP. Every kitchen recipe
         // also burns 1× 🪵 pine_lumber for the cooking fire — adds
         // authenticity (cooking on flame needs firewood) and prevents

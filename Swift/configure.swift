@@ -214,8 +214,8 @@ public func configure(logger: Logger) async throws {
                 user.xp = 0
                 user.hp = 100
                 user.maxHp = 100
-                user.hunger = 100
-                user.maxHunger = 100
+                user.vigor = 100
+                user.maxVigor = 100
                 user.attack = 10
                 user.defense = 10
                 user.crit = 5
@@ -288,6 +288,22 @@ public func configure(logger: Logger) async throws {
                   let devId = devUser.id else { continue }
             let label = devUser.nickname ?? "\(developer)"
 
+            // Recipe-scroll skip set: any seed entry that teaches a recipe
+            // already in `learned_recipes` is dropped from this run, both for
+            // inventory and warehouse. Without this the dev keeps getting the
+            // same scroll back on every relaunch even after Learn deletes it.
+            var skipItems: Set<String> = []
+            for (itemId, _) in seed {
+                guard let item = ItemCatalog.find(itemId),
+                      let recipeId = item.teachesRecipe else { continue }
+                if try await LearnedRecipe.has(recipeId, for: devUser, on: db) {
+                    skipItems.insert(itemId)
+                }
+            }
+            if !skipItems.isEmpty {
+                logger.info("Dev seed: \(label) already knows \(skipItems.count) recipe(s); skipping their scrolls")
+            }
+
             // Inventory: orphan cleanup + top-up.
             let allEntries = try await InventoryEntry.list(for: devUser, on: db)
             var orphansDeleted = 0
@@ -300,6 +316,7 @@ public func configure(logger: Logger) async throws {
             }
             var grantedCount = 0
             for (itemId, targetQty) in seed {
+                if skipItems.contains(itemId) { continue }
                 let have = try await InventoryEntry.totalQuantity(of: itemId, for: devId, on: db)
                 if have < targetQty {
                     do {
@@ -326,6 +343,7 @@ public func configure(logger: Logger) async throws {
             }
             var whGrantedCount = 0
             for (itemId, targetQty) in seed {
+                if skipItems.contains(itemId) { continue }
                 let have = try await WarehouseEntry.totalQuantity(of: itemId, for: devId, on: db)
                 if have < targetQty {
                     try await WarehouseEntry.add(itemId, quantity: targetQty - have, to: devUser, on: db)

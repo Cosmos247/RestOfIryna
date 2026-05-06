@@ -19,7 +19,7 @@
 //  The simulation reuses `ExplorationService.rollStep` with `priorVisits: 0`
 //  — passive expeditions always head into fresh territory. Loot lands in the
 //  player's inventory as it would in active mode (with full-bag fallback);
-//  HP/hunger mutate on the real user model so resting-at-estate regen before
+//  HP/vigor mutate on the real user model so resting-at-estate regen before
 //  the timer expires is naturally reflected in the simulated pool.
 //
 
@@ -60,8 +60,8 @@ public struct PassiveReport: Codable, Sendable {
     public let finalDepth: Int
     public let hpBefore: Int
     public let hpAfter: Int
-    public let hungerBefore: Int
-    public let hungerAfter: Int
+    public let vigorBefore: Int
+    public let vigorAfter: Int
     public let died: Bool
     public let deathDepth: Int?
     public let outcomeCounts: [String: Int]
@@ -181,12 +181,12 @@ public enum PassiveExpeditionService {
         var lootPicked: [String: Int] = [:]
         var lootDropped: [String: Int] = [:]
         var hpBefore: Int = 0
-        var hungerBefore: Int = 0
+        var vigorBefore: Int = 0
         var hasCapturedBefore = false
 
         while true {
             // Reload fresh at the start of each iteration — state may have
-            // been deleted (cancel), or user may have mutated hp/hunger (eat
+            // been deleted (cancel), or user may have mutated hp/vigor (eat
             // food, regen, etc. — regen is paused during expedition, but
             // we stay defensive).
             guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
@@ -203,7 +203,7 @@ public enum PassiveExpeditionService {
                     outcomeCounts: outcomeCounts,
                     lootPicked: lootPicked, lootDropped: lootDropped,
                     hpBefore: hasCapturedBefore ? hpBefore : state.user.hp,
-                    hungerBefore: hasCapturedBefore ? hungerBefore : state.user.hunger,
+                    vigorBefore: hasCapturedBefore ? vigorBefore : state.user.vigor,
                     died: false, deathDepth: nil,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -229,7 +229,7 @@ public enum PassiveExpeditionService {
 
             if !hasCapturedBefore {
                 hpBefore = user.hp
-                hungerBefore = user.hunger
+                vigorBefore = user.vigor
                 hasCapturedBefore = true
             }
 
@@ -266,7 +266,7 @@ public enum PassiveExpeditionService {
                     state: state, user: user,
                     outcomeCounts: outcomeCounts,
                     lootPicked: lootPicked, lootDropped: lootDropped,
-                    hpBefore: hpBefore, hungerBefore: hungerBefore,
+                    hpBefore: hpBefore, vigorBefore: vigorBefore,
                     died: true, deathDepth: nextStep,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -285,7 +285,7 @@ public enum PassiveExpeditionService {
         lootPicked: [String: Int],
         lootDropped: [String: Int],
         hpBefore: Int,
-        hungerBefore: Int,
+        vigorBefore: Int,
         died: Bool,
         deathDepth: Int?,
         on db: any Database,
@@ -314,8 +314,8 @@ public enum PassiveExpeditionService {
             finalDepth: state.stepsDeep,
             hpBefore: hpBefore,
             hpAfter: user.hp,
-            hungerBefore: hungerBefore,
-            hungerAfter: user.hunger,
+            vigorBefore: vigorBefore,
+            vigorAfter: user.vigor,
             died: died,
             deathDepth: deathDepth,
             outcomeCounts: outcomeCounts,
@@ -387,7 +387,7 @@ public enum PassiveExpeditionService {
     }
 
     /// On simulated death: wipe non-equipped inventory, respawn at HP = 1
-    /// (same rules as active-mode death). Hunger is preserved per design.
+    /// (same rules as active-mode death). Vigor is preserved per design.
     private static func applyDeath(to user: User, on db: any Database) async throws {
         guard let userId = user.id else { return }
         let rows = try await InventoryEntry.query(on: db)
@@ -462,9 +462,9 @@ public enum PassiveExpeditionService {
             "before": "\(report.hpBefore)",
             "after": "\(report.hpAfter)"
         ]))
-        lines.append(lingo.localize("exploration.passive.report.hunger", locale: locale, interpolations: [
-            "before": "\(report.hungerBefore)",
-            "after": "\(report.hungerAfter)"
+        lines.append(lingo.localize("exploration.passive.report.vigor", locale: locale, interpolations: [
+            "before": "\(report.vigorBefore)",
+            "after": "\(report.vigorAfter)"
         ]))
 
         let totalEvents = report.outcomeCounts.values.reduce(0, +)

@@ -21,7 +21,7 @@
 //                  km with prior visits, record the visit, render.
 //    Bag         — inline consumables list (food + potion only). One-tap
 //                  eat/use refreshes the message in place.
-//    Death       — wipe non-equipped inventory, respawn at HP = 1 (hunger
+//    Death       — wipe non-equipped inventory, respawn at HP = 1 (vigor
 //                  kept), end state, drop back to main with a death screen.
 //    /start      — force-end without walking back (dev escape hatch).
 //
@@ -496,7 +496,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Hard respawn: wipe every non-equipped inventory row (equipped gear survives),
-    /// set HP to 1 (hunger stays — per design), end the exploration state, and send
+    /// set HP to 1 (vigor stays — per design), end the exploration state, and send
     /// a death screen as the main-menu text override.
     private func handleDeath(context: Context, outcome: StepOutcome) async throws {
         let cause = narrateOutcome(outcome, priorVisits: 0, lingo: context.lingo, locale: context.session.locale)
@@ -532,12 +532,12 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     fileprivate func renderStatusCard(user: User, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let depthLabel = lingo.localize("exploration.depth_label", locale: locale)
-        let starving = HungerService.isStarving(user)
-            ? " · " + lingo.localize("hunger.starving", locale: locale)
+        let starving = VigorService.isStarving(user)
+            ? " · " + lingo.localize("vigor.starving", locale: locale)
             : ""
         return """
         🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
-        ❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.hunger)/\(user.maxHunger)\(starving)
+        ❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)
         """
     }
 
@@ -586,7 +586,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "hp": "❤️ −\(hpLost)"
             ])
 
-        case .encounterWon(let enemy, let rounds, let hpLost, let hungerLost, let loot):
+        case .encounterWon(let enemy, let rounds, let hpLost, let vigorLost, let loot):
             let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
             // ❤️ / 🍖 are passed as interpolation values rather than placed in
             // the template — Lingo drops `%{}` placeholders that follow a
@@ -595,7 +595,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "enemy": enemyName,
                 "rounds": "\(rounds)",
                 "hp": "❤️ −\(hpLost)",
-                "hunger": "🍖 −\(hungerLost)"
+                "vigor": "🍖 −\(vigorLost)"
             ])
             var parts = [header]
             for drop in loot {
@@ -804,12 +804,12 @@ extension ExplorationController {
         // Consume one food/potion and refresh the bag view in place.
         if data.hasPrefix("explore:eat:") {
             let itemId = String(data.dropFirst("explore:eat:".count))
-            guard let item = ItemCatalog.find(itemId), HungerService.isConsumable(item) else {
+            guard let item = ItemCatalog.find(itemId), VigorService.isConsumable(item) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
             // Raw-only ingredient (e.g. potato) — consumable type but no
-            // hunger/HP effects until cooked. Surface a clearer toast than
+            // vigor/HP effects until cooked. Surface a clearer toast than
             // the generic "no effect" fallback below.
             if item.effects.isEmpty {
                 let itemName = context.lingo.localize(item.nameKey, locale: locale)
@@ -821,7 +821,7 @@ extension ExplorationController {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
-            guard let result = HungerService.consume(item, user: context.session) else {
+            guard let result = VigorService.consume(item, user: context.session) else {
                 let toast = context.lingo.localize("consume.no_effect", locale: locale)
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
                 return true
@@ -836,11 +836,11 @@ extension ExplorationController {
             // so the player sees both the gain and the pool state at a glance.
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             var parts: [String] = []
-            if result.hungerRestored > 0 {
-                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.hungerRestored)",
-                    "current": "\(context.session.hunger)",
-                    "max":     "\(context.session.maxHunger)"
+            if result.vigorRestored > 0 {
+                parts.append(context.lingo.localize("vigor.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.vigorRestored)",
+                    "current": "\(context.session.vigor)",
+                    "max":     "\(context.session.maxVigor)"
                 ]))
             }
             if result.hpRestored > 0 {

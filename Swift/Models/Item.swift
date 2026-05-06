@@ -41,7 +41,7 @@ public enum ItemType: String, Codable, CaseIterable, Sendable {
 // MARK: - Item Effect
 
 public enum ItemEffect: Sendable {
-    case restoreHunger(Int)
+    case restoreVigor(Int)
     case restoreHP(Int)
 }
 
@@ -141,34 +141,34 @@ public enum ItemCatalog {
         // the Kitchen (Phase 5.3). Potato is the one strategic ingredient:
         // inedible raw, only useful once cooking lands.
         Item(id: "food.forest_berries", nameKey: "item.food.forest_berries", type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(4)],  icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
+             effects: [.restoreVigor(4)],  icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
         Item(id: "food.forest_nuts",    nameKey: "item.food.forest_nuts",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(5)],  icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
+             effects: [.restoreVigor(5)],  icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
         Item(id: "food.potato",         nameKey: "item.food.potato",         type: .food, tier: 1, stackable: true,
              effects: [],                   icon: "🥔", descriptionKey: "item.food.potato.desc"),
         Item(id: "food.duck_egg",       nameKey: "item.food.duck_egg",       type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(7)],  icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
+             effects: [.restoreVigor(7)],  icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
         Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
              effects: [], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
 
         // Cooked food — Kitchen recipes (Phase 5.2.1). Tuning intent: cooked
-        // dishes give meaningfully more hunger than raw foragables (15-25)
+        // dishes give meaningfully more vigor than raw foragables (15-25)
         // but stay below the small healing potion (+30 HP) on the HP side
         // so food doesn't displace potions.
         Item(id: "food.baked_potato",    nameKey: "item.food.baked_potato",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(9)],  icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
+             effects: [.restoreVigor(9)],  icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
         Item(id: "food.roasted_meat",    nameKey: "item.food.roasted_meat",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreHunger(12)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
+             effects: [.restoreVigor(12)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
         Item(id: "food.foragers_omelette", nameKey: "item.food.foragers_omelette", type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(16), .restoreHP(3)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
+             effects: [.restoreVigor(16), .restoreHP(3)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
         Item(id: "food.hunters_stew",    nameKey: "item.food.hunters_stew",    type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(20), .restoreHP(5)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
+             effects: [.restoreVigor(20), .restoreHP(5)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
         Item(id: "food.meat_ragout",     nameKey: "item.food.meat_ragout",     type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(18), .restoreHP(4)], icon: "🥘", descriptionKey: "item.food.meat_ragout.desc"),
+             effects: [.restoreVigor(18), .restoreHP(4)], icon: "🥘", descriptionKey: "item.food.meat_ragout.desc"),
         Item(id: "food.berry_tart",      nameKey: "item.food.berry_tart",      type: .food, tier: 2, stackable: true,
-             effects: [.restoreHunger(16), .restoreHP(6)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
+             effects: [.restoreVigor(16), .restoreHP(6)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
         Item(id: "food.governors_feast", nameKey: "item.food.governors_feast", type: .food, tier: 3, stackable: true,
-             effects: [.restoreHunger(35), .restoreHP(10)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
+             effects: [.restoreVigor(35), .restoreHP(10)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
 
         // Materials — estate-upgrade resources. Icons + descriptions show
         // on the inventory info-button modal.

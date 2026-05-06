@@ -4,7 +4,7 @@
 //
 //  Created by Dmytro Ihnatyuhin on 21.04.2026.
 //
-//  Pure service for equip / unequip flows. Unlike HungerService, this one does
+//  Pure service for equip / unequip flows. Unlike VigorService, this one does
 //  touch the DB — an equip operation spans multiple rows (unequip the previous
 //  occupant of a slot, flip the new one, recompute cached bonuses on User) —
 //  so the service owns those writes atomically per-step. Callers still drive

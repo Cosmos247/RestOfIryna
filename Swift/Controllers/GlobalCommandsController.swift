@@ -132,7 +132,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         }
     }
 
-    /// Dev-only `/drain <amount>` — drops the caller's hunger by N, clamped to 0.
+    /// Dev-only `/drain <amount>` — drops the caller's vigor by N, clamped to 0.
     /// Restricted to the mitya account (test profile). Does not trigger starvation
     /// HP loss (that is a per-room transition effect, not a raw drain).
     private func handleDrain(update: TGUpdate) async throws {
@@ -151,13 +151,13 @@ final class GlobalCommandsController: @unchecked Sendable {
             return
         }
 
-        let drained = HungerService.drain(session, amount: amount)
+        let drained = VigorService.drain(session, amount: amount)
         try await session.saveAndCache(in: db)
 
         let msg = lingo.localize("drain.success", locale: locale, interpolations: [
             "amount": "\(drained)",
-            "current": "\(session.hunger)",
-            "max": "\(session.maxHunger)"
+            "current": "\(session.vigor)",
+            "max": "\(session.maxVigor)"
         ])
         try await bot.sendMessage(session: session, text: msg, parseMode: .html)
     }

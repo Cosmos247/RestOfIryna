@@ -45,7 +45,7 @@ TGUpdate arrives via long polling
 3. Stores `(token, task)` under the user ID, then awaits its own task's value.
 4. On completion the entry is cleared only if our token is still the latest (otherwise a later call already replaced it and is responsible).
 
-Why: actor reentrancy means concurrent updates from the same Telegram user could otherwise interleave between awaits. Real symptom seen: spam-tapping "Step Forward" both rolled events at the same `stepsDeep` (duplicate loot, single hunger drain) because both dispatches read the same `ExplorationState` row before either had written. The chain forces tap N+1 to start only after tap N has fully written its mutations and refreshed `sessionCache`. Dispatches for *different* users still run concurrently — only same-user calls are serialized.
+Why: actor reentrancy means concurrent updates from the same Telegram user could otherwise interleave between awaits. Real symptom seen: spam-tapping "Step Forward" both rolled events at the same `stepsDeep` (duplicate loot, single vigor drain) because both dispatches read the same `ExplorationState` row before either had written. The chain forces tap N+1 to start only after tap N has fully written its mutations and refreshed `sessionCache`. Dispatches for *different* users still run concurrently — only same-user calls are serialized.
 
 ## Global State
 
@@ -60,7 +60,7 @@ Pure domain services live in `Swift/Services/`. They hold no state, do no DB wri
 
 Why: keeps game logic testable, swap-able, and cheap to compose. Same function can be invoked from a controller (player action), a dev command (`/drain`), a scheduled job (future), or a migration-time seeder without code duplication.
 
-- `HungerService` (Phase 2.2) — drain per action, consume food/potion, compute starvation penalty on effective stats, apply per-room HP loss when starving.
+- `VigorService` (Phase 2.2) — drain per action, consume food/potion, compute starvation penalty on effective stats, apply per-room HP loss when starving.
 - `CombatService` (Phase 4.1) — shared damage primitives. `applyAttack` returns hit/miss/crit; `chipDamage` returns the parry-counter chip for Defend. Both `ExplorationService.resolveAutobattle` (passive) and `CombatController` (active) call into the same primitives so a fight resolves with the same odds in either mode. Single source of truth for combat math; tuning constants (`baseHitChance`, `critMultiplier`, `defendChipFraction`, `varianceRange`) are exported so both consumers stay in sync. Active mode hands off via `StepOutcome.encounterStarted` — `ExplorationService.rollStep(mode:)` short-circuits the autobattle, the ExplorationController stamps `combat_enemy_id` / `combat_enemy_hp` on the expedition row, and CombatController takes over.
 - Future: `CraftingService`, `EstateService`.
 

@@ -181,11 +181,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let level = session.level
         let xp = session.xp, xpMax = xpForNextLevel(level)
         let hp = session.hp, maxHp = session.maxHp
-        let hunger = session.hunger, maxHunger = session.maxHunger
+        let vigor = session.vigor, maxVigor = session.maxVigor
         let atk = session.effectiveAttack, def = session.effectiveDefense
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
         let gold = session.gold
-        let starvingSuffix = HungerService.isStarving(session) ? " · " + lingo.localize("hunger.starving", locale: session.locale) : ""
+        let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
 
         // Main-hand line — shown on every style. Empty string if nothing equipped.
         let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
@@ -204,7 +204,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ━━━━━━━━━━━━━━━━
 
             ❤️ \(bar(hp, maxHp)) \(hp)/\(maxHp)
-            🍖 \(bar(hunger, maxHunger)) \(hunger)/\(maxHunger)\(starvingSuffix)
+            🍖 \(bar(vigor, maxVigor)) \(vigor)/\(maxVigor)\(starvingSuffix)
 
             ⚔️ \(atk)  🛡 \(def)  💥 \(crit)%
             🎯 \(acc)  💨 \(dodge)
@@ -223,8 +223,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
             \(emojiBar(hp, maxHp, fill: "🟥"))
             
-            🍖 \(l.localize("profile.hunger", locale: loc)): \(hunger)/\(maxHunger)\(starvingSuffix)
-            \(emojiBar(hunger, maxHunger, fill: "🟧"))
+            🍖 \(l.localize("profile.vigor", locale: loc)): \(vigor)/\(maxVigor)\(starvingSuffix)
+            \(emojiBar(vigor, maxVigor, fill: "🟧"))
 
             ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
             🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
@@ -239,7 +239,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             \(cls.icon()) <b>\(nickname)</b> · Lv.\(level)
             \(className)
 
-            ❤️ \(hp)/\(maxHp)  🍖 \(hunger)/\(maxHunger)\(starvingSuffix)
+            ❤️ \(hp)/\(maxHp)  🍖 \(vigor)/\(maxVigor)\(starvingSuffix)
 
             ⚔️\(atk)  🛡\(def)  🎯\(acc)
             💨\(dodge)  💥\(crit)%

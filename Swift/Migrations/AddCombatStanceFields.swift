@@ -6,7 +6,7 @@
 //
 //  Phase 4.2: extend `exploration_state` with a "stance" — a class-specific
 //  Super technique buff that lasts a small number of rounds and modifies
-//  damage / hunger / accuracy / dodge. Both columns are nullable; non-null on
+//  damage / vigor / accuracy / dodge. Both columns are nullable; non-null on
 //  both = a stance is currently active and `combat_stance_rounds_left` ticks
 //  down at the end of each player action. When the counter reaches zero the
 //  controller nulls the columns and emits an "expire" narrative.

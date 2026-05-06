@@ -11,7 +11,7 @@
 //    - Resolve combat via autobattle (passive expeditions) on top of
 //      `CombatService.applyAttack` — the active CombatController shares the
 //      same primitives so a fight resolves with the same odds in either mode.
-//    - Drain hunger and apply starvation HP loss on room transitions.
+//    - Drain vigor and apply starvation HP loss on room transitions.
 //
 //  The service mutates the `User` model in place; callers persist via
 //  `saveAndCache`. Loot drops are added directly to the player's inventory
@@ -30,12 +30,12 @@ public enum StepOutcome: Sendable {
     case trip(hpLost: Int)
     /// Active mode: an enemy is in front of the player and the controller
     /// should hand off to CombatController. The fight isn't resolved yet —
-    /// no HP / hunger has been spent on the encounter itself (only the
+    /// no HP / vigor has been spent on the encounter itself (only the
     /// walk-room drain for the step). Caller persists `combatEnemyId` /
     /// `combatEnemyHP` on the ExplorationState row.
     case encounterStarted(enemy: Enemy)
-    case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, hungerLost: Int, loot: [(itemId: String, quantity: Int, picked: Bool)])
-    case encounterLost(enemy: Enemy, rounds: Int, hpLost: Int, hungerLost: Int)
+    case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int, loot: [(itemId: String, quantity: Int, picked: Bool)])
+    case encounterLost(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int)
     case starvationOnly(hpLost: Int)
 }
 
@@ -45,7 +45,7 @@ public struct AutobattleResult: Sendable {
     public let playerWon: Bool
     public let rounds: Int
     public let playerHPLost: Int
-    public let playerHungerLost: Int
+    public let playerVigorLost: Int
 }
 
 public enum ExplorationService {
@@ -74,7 +74,7 @@ public enum ExplorationService {
 
     // MARK: - Rolling a step
 
-    /// Roll one step: drain hunger, apply starvation HP if starving, then
+    /// Roll one step: drain vigor, apply starvation HP if starving, then
     /// produce an outcome. Caller applies the outcome to DB / UI separately
     /// (loot is already added to inventory by this function though).
     ///
@@ -82,11 +82,11 @@ public enum ExplorationService {
     /// (only `.nothing` / `.starvationOnly` can fire). The controller passes
     /// the room's current visit count *before* incrementing it for this step.
     public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, mode: ExplorationMode = .active, on db: any Database) async throws -> StepOutcome {
-        // Hunger drain for the walk itself.
-        _ = HungerService.drain(user, action: .walkRoom)
+        // Vigor drain for the walk itself.
+        _ = VigorService.drain(user, action: .walkRoom)
 
-        // Starvation HP tick happens every room when hunger is already at 0.
-        let starvationLoss = HungerService.applyStarvationHPLoss(user)
+        // Starvation HP tick happens every room when vigor is already at 0.
+        let starvationLoss = VigorService.applyStarvationHPLoss(user)
 
         // Pick weights by tier.
         let wNothing: Int
@@ -178,7 +178,7 @@ public enum ExplorationService {
             if user.hp <= 0 {
                 // Died from starvation on the step — skip the fight; callers handle death.
                 let any = EnemyCatalog.pickFor(kmDepth: kmDepth) ?? EnemyCatalog.all[0]
-                return .encounterLost(enemy: any, rounds: 0, hpLost: extraStarvation, hungerLost: 0)
+                return .encounterLost(enemy: any, rounds: 0, hpLost: extraStarvation, vigorLost: 0)
             }
         }
 
@@ -186,7 +186,7 @@ public enum ExplorationService {
             return .nothing
         }
 
-        // Active mode hands off to CombatController — no HP/hunger spent on the
+        // Active mode hands off to CombatController — no HP/vigor spent on the
         // encounter itself yet. Passive mode resolves it on the spot via
         // autobattle since there's no UI to prompt the player from a Task.
         if mode == .active {
@@ -194,10 +194,10 @@ public enum ExplorationService {
         }
 
         let hpBefore = user.hp
-        let hungerBefore = user.hunger
+        let vigorBefore = user.vigor
         let result = resolveAutobattle(player: user, enemy: enemy)
         let hpLost = max(0, hpBefore - user.hp)
-        let hungerLost = max(0, hungerBefore - user.hunger)
+        let vigorLost = max(0, vigorBefore - user.vigor)
 
         if result.playerWon {
             let drops = rollLootDrops(for: enemy)
@@ -211,9 +211,9 @@ public enum ExplorationService {
                     picked.append((drop.itemId, drop.quantity, false))
                 }
             }
-            return .encounterWon(enemy: enemy, rounds: result.rounds, hpLost: hpLost, hungerLost: hungerLost, loot: picked)
+            return .encounterWon(enemy: enemy, rounds: result.rounds, hpLost: hpLost, vigorLost: vigorLost, loot: picked)
         } else {
-            return .encounterLost(enemy: enemy, rounds: result.rounds, hpLost: hpLost, hungerLost: hungerLost)
+            return .encounterLost(enemy: enemy, rounds: result.rounds, hpLost: hpLost, vigorLost: vigorLost)
         }
     }
 
@@ -238,7 +238,7 @@ public enum ExplorationService {
     // MARK: - Autobattle (passive mode)
 
     /// Simulate rounds until one side dies or a safety cap hits. Mutates
-    /// `player.hp` / `player.hunger` directly. Shares hit / miss / crit
+    /// `player.hp` / `player.vigor` directly. Shares hit / miss / crit
     /// primitives with the active CombatController via `CombatService.applyAttack`,
     /// so the same fight resolves with the same odds in both modes. Enemies
     /// don't carry crit/dodge/accuracy stats yet, so we pass 0 for the enemy
@@ -258,7 +258,7 @@ public enum ExplorationService {
 
         while player.hp > 0 && enemyHP > 0 && rounds < maxRounds {
             rounds += 1
-            _ = HungerService.drain(player, action: .combatRound)
+            _ = VigorService.drain(player, action: .combatRound)
 
             // Player strikes first.
             let playerHit = CombatService.applyAttack(
@@ -286,7 +286,7 @@ public enum ExplorationService {
             playerWon: enemyHP <= 0 && player.hp > 0,
             rounds: rounds,
             playerHPLost: max(0, hpBefore - player.hp),
-            playerHungerLost: rounds  // one hunger per round
+            playerVigorLost: rounds  // one vigor per round
         )
     }
 

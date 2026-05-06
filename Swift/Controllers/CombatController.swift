@@ -10,7 +10,7 @@
 //  flips `routerName = "combat"`, then calls `showCombat`.
 //
 //  Round flow:
-//    Player taps Attack / Defend / Flee → drain hunger for the action,
+//    Player taps Attack / Defend / Flee → drain vigor for the action,
 //    resolve via CombatService.applyAttack (or chipDamage / direct hit for
 //    Defend / failed Flee respectively), update enemy HP on the state row
 //    and player HP on the User, render narrative + status + same keyboard.
@@ -289,9 +289,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let isTraining = Self.isTraining(state)
 
         let mods = CombatService.stanceModifiers(for: state.combatStance)
-        // Training mode is consequence-free: no hunger drain, no enemy counter.
+        // Training mode is consequence-free: no vigor drain, no enemy counter.
         if !isTraining {
-            _ = HungerService.drain(context.session, action: .combatAttack, multiplier: mods.hungerMultiplier)
+            _ = VigorService.drain(context.session, action: .combatAttack, multiplier: mods.vigorMultiplier)
         }
 
         // Player strikes — stance modifiers folded into ATK / Crit / Acc.
@@ -352,7 +352,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         let mods = CombatService.stanceModifiers(for: state.combatStance)
         if !isTraining {
-            _ = HungerService.drain(context.session, action: .combatDefend, multiplier: mods.hungerMultiplier)
+            _ = VigorService.drain(context.session, action: .combatDefend, multiplier: mods.vigorMultiplier)
         }
 
         // Defend chip damage — buffed ATK from stance still feeds it (always
@@ -408,12 +408,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let mods = CombatService.stanceModifiers(for: state.combatStance)
-        _ = HungerService.drain(player, action: .combatFlee, multiplier: mods.hungerMultiplier)
-        // Per-class extra hunger (mage teleport tax) layers on top, scaled by
+        _ = VigorService.drain(player, action: .combatFlee, multiplier: mods.vigorMultiplier)
+        // Per-class extra vigor (mage teleport tax) layers on top, scaled by
         // the same stance multiplier so Arcane Resonance still pays the toll.
-        let extra = CombatService.fleeHungerExtra(forClass: cls)
+        let extra = CombatService.fleeVigorExtra(forClass: cls)
         if extra > 0 {
-            HungerService.drain(player, amount: Int((Double(extra) * mods.hungerMultiplier).rounded()))
+            VigorService.drain(player, amount: Int((Double(extra) * mods.vigorMultiplier).rounded()))
         }
 
         let lingo = context.lingo
@@ -510,7 +510,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// the plot list so the Training Ground row is visible again. The
     /// player's routerName never changed (training keeps them in `estate`
     /// so the reply keyboard stays unblocked), so no transition is needed.
-    /// No HP / hunger / inventory changes — training is consequence-free.
+    /// No HP / vigor / inventory changes — training is consequence-free.
     private func onTrainingExit(context: Context) async throws -> Bool {
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
             try await state.delete(on: context.db)
@@ -545,12 +545,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
-        // Hunger drain — base special-defense cost × stance hunger multiplier.
+        // Vigor drain — base special-defense cost × stance vigor multiplier.
         // Skipped in training mode.
         if !isTraining {
-            let baseHunger = CombatService.specialDefenseHunger(forClass: cls)
-            let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
-            HungerService.drain(player, amount: actualDrain)
+            let baseVigor = CombatService.specialDefenseVigor(forClass: cls)
+            let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
+            VigorService.drain(player, amount: actualDrain)
         }
 
         let lingo = context.lingo
@@ -646,12 +646,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
-        // Hunger drain — base special-attack cost × stance hunger multiplier.
+        // Vigor drain — base special-attack cost × stance vigor multiplier.
         // Skipped in training mode (consequence-free practice).
         if !isTraining {
-            let baseHunger = CombatService.specialAttackHunger(forClass: cls)
-            let actualDrain = Int((Double(baseHunger) * stanceMods.hungerMultiplier).rounded())
-            HungerService.drain(player, amount: actualDrain)
+            let baseVigor = CombatService.specialAttackVigor(forClass: cls)
+            let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
+            VigorService.drain(player, amount: actualDrain)
         }
 
         // Player swing — stance buffs + special-attack modifiers compose.
@@ -724,7 +724,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
-    /// Phase 4.2 Super-technique activation. Drains the activation hunger,
+    /// Phase 4.2 Super-technique activation. Drains the activation vigor,
     /// stamps the stance fields on the expedition row, and re-renders the
     /// combat screen with the activate narrative + buff status. The enemy
     /// does NOT strike on activation — Super is a free action by design.
@@ -749,9 +749,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceId = CombatService.stanceId(forClass: cls)
-        // Activation hunger skipped in training mode (consequence-free practice).
+        // Activation vigor skipped in training mode (consequence-free practice).
         if !Self.isTraining(state) {
-            HungerService.drain(player, amount: CombatService.stanceActivationHunger(for: stanceId))
+            VigorService.drain(player, amount: CombatService.stanceActivationVigor(for: stanceId))
         }
         state.beginStance(stanceId, rounds: CombatService.stanceDurationRounds)
         try await state.save(on: context.db)
@@ -915,12 +915,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
 
         let depthLabel = lingo.localize("exploration.depth_label", locale: locale)
-        let starving = HungerService.isStarving(context.session)
-            ? " · " + lingo.localize("hunger.starving", locale: locale)
+        let starving = VigorService.isStarving(context.session)
+            ? " · " + lingo.localize("vigor.starving", locale: locale)
             : ""
         let status = """
         🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
-        ❤️ \(context.session.hp)/\(context.session.maxHp)  🍖 \(context.session.hunger)/\(context.session.maxHunger)\(starving)
+        ❤️ \(context.session.hp)/\(context.session.maxHp)  🍖 \(context.session.vigor)/\(context.session.maxVigor)\(starving)
         """
         let text = "\(prefix)\n\n\(status)"
         let markup = exploration.generateControllerKB(session: context.session, lingo: lingo)
@@ -949,12 +949,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func renderStatusCard(user: User, enemy: Enemy, enemyHP: Int, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
-        let starving = HungerService.isStarving(user)
-            ? " · " + lingo.localize("hunger.starving", locale: locale)
+        let starving = VigorService.isStarving(user)
+            ? " · " + lingo.localize("vigor.starving", locale: locale)
             : ""
         var lines: [String] = [
             "\(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)",
-            "❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.hunger)/\(user.maxHunger)\(starving)"
+            "❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
         ]
         if let rounds = state.combatStanceRoundsLeft, state.combatStance != nil, rounds > 0 {
             let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior

@@ -58,12 +58,12 @@ Observed failure cases:
 **Any localized string with `%{...}` interpolations should NOT have a leading emoji in its Lingo template.** Put the emoji in Swift code, prepended after `lingo.localize(...)` returns:
 
 ```swift
-// ❌ DON'T — ⚔️ in template breaks %{enemy} / %{rounds} / %{hp} / %{hunger}
-"exploration.outcome.encounter.won": "⚔️ You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{hunger} hunger"
+// ❌ DON'T — ⚔️ in template breaks %{enemy} / %{rounds} / %{hp} / %{vigor}
+"exploration.outcome.encounter.won": "⚔️ You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{vigor} vigor"
 let text = lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [...])
 
 // ✅ DO — emoji prepended in code
-"exploration.outcome.encounter.won": "You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{hunger} hunger"
+"exploration.outcome.encounter.won": "You defeated %{enemy} in %{rounds} round(s). −%{hp} HP, −%{vigor} vigor"
 let text = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [...])
 ```
 
@@ -76,10 +76,10 @@ This bypasses the Lingo bug entirely — Lingo sees a clean placeholder-only tem
 **Updated 2026-04-25 — emoji inside interpolation values is also safe.** The Lingo bug only fires when an emoji is in the *template* before a placeholder. Emojis inside the *substituted value* are post-hoc string concatenation and don't affect placeholder discovery. So a multi-UTF-16 emoji can be packed into the value to keep emoji-as-icon next to its number:
 
 ```swift
-// Template: "<b>%{hp} HP, %{hunger} голоду</b>"   ← clean, no emoji in template
+// Template: "<b>%{hp} HP, %{vigor} снаги</b>"   ← clean, no emoji in template
 "hp": "❤️ −\(hpLost)",
-"hunger": "🍖 −\(hungerLost)"
-// → "<b>❤️ −1 HP, 🍖 −2 голоду</b>"
+"vigor": "🍖 −\(vigorLost)"
+// → "<b>❤️ −1 HP, 🍖 −2 снаги</b>"
 ```
 
 ROI uses this for the trip / encounter.won / starvationOnly outcomes — the leading `🦵 / ⚔️ / 🥀` is still prepended in Swift after `localize(...)`, but the inline `❤️` / `🍖` ride inside the interpolation values.
@@ -94,7 +94,7 @@ If you must keep the emoji in the template for some reason:
 
 ### ⚠️ Callback-toast keys must be plain text (no HTML)
 
-`answerCallbackQuery(text:)` (both the narrow top-strip toast AND the modal `showAlert: true` popup) renders the `text:` field as **plain text only** — Telegram does not parse HTML / Markdown there. Locale keys that feed callback-answer text must therefore be HTML-free. Affected keys today: `equip.success`, `unequip.success`, `inventory.full`, `inventory.use.unavailable`, `inventory.category.empty`, `inventory.info.placeholder`, `consume.not_raw_edible`, `consume.no_effect`, `estate.warehouse.{deposited,withdrawn,nothing_to_deposit,nothing_to_withdraw}`, `hunger.restored`, `hp.restored`. If a key is shared between a sendMessage-style render (where HTML is OK) and a callback-answer (where HTML is not), prefer plain text — the few extra emoji or numeric formatting can be added in Swift before passing to sendMessage. An audit script (Python over both `.json` files) can verify all interpolated keys are emoji-free at the start AND that every send/edit-message callsite that references an HTML-tagged key has `parseMode: .html` in scope.
+`answerCallbackQuery(text:)` (both the narrow top-strip toast AND the modal `showAlert: true` popup) renders the `text:` field as **plain text only** — Telegram does not parse HTML / Markdown there. Locale keys that feed callback-answer text must therefore be HTML-free. Affected keys today: `equip.success`, `unequip.success`, `inventory.full`, `inventory.use.unavailable`, `inventory.category.empty`, `inventory.info.placeholder`, `consume.not_raw_edible`, `consume.no_effect`, `estate.warehouse.{deposited,withdrawn,nothing_to_deposit,nothing_to_withdraw}`, `vigor.restored`, `hp.restored`. If a key is shared between a sendMessage-style render (where HTML is OK) and a callback-answer (where HTML is not), prefer plain text — the few extra emoji or numeric formatting can be added in Swift before passing to sendMessage. An audit script (Python over both `.json` files) can verify all interpolated keys are emoji-free at the start AND that every send/edit-message callsite that references an HTML-tagged key has `parseMode: .html` in scope.
 
 ### With SupportedLocale enum (via Lingo+Locales.swift extension)
 ```swift
@@ -109,17 +109,17 @@ let text = lingo.localize("key", locale: SupportedLocale.en)
 - Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on startup with the player's controller-specific reply keyboard for registered users, or a one-time `/start` button for unregistered ones — message text no longer hard-codes the `/start` hint since registered players see their normal nav)
 - Combat (Phase 4.1): combat.button.<action>.<class> — 9 inline-button labels (Attack/Defend/Flee × warrior/archer/mage). combat.encounter.intro for the round-1 framing line. combat.you.{hit,crit,miss} / combat.enemy.{hit,crit,miss} for round narration (each interpolates `%{enemy}` and `%{damage}` where applicable). combat.defend.absorbed for the parry-counter chip line. combat.flee.{success,fail} for retreat outcomes. combat.victory / combat.defeat for end-of-fight headers. combat.in_progress — one-line nudge ("you're locked in combat with X — finish the fight first") sent when the player taps anything outside the inline action buttons mid-fight. registration.fight_wolves (Stand and fight button) and registration.wolves_retry (soft-retry preamble after defeat / flee at the registration tutorial fight).
 - Combat (Phase 4.2): submenu opener combat.button.techniques + combat.tech.back + combat.tech.no_uses_left (defensive toast for stale-message taps after a technique counter went to 0). Super stances: combat.button.super.<class> + combat.super.<class>.activate (interpolates `%{rounds}`) + combat.super.<class>.expire + combat.super.already_active. Special Attacks: combat.button.special_atk.<class> + combat.special_atk.<class>.{hit,crit} for archer/mage, plus combat.special_atk.warrior.miss for Cleave. Special Defenses: combat.button.special_def.<class> + combat.special_def.<class>.activate, plus combat.special_def.mage.no_damage for the Mirror Ward "wouldn't have hit anyway" branch. Persistent-effect status indicators: combat.effect.armor_split / combat.effect.shadow_veil (each interpolates `%{rounds}`). All Phase 4.2 narrative strings are stored emoji-free — Lingo's `%{var}` parser breaks on leading UTF-16 surrogate pairs, so CombatController prepends class-flavoured icons (🩸/🦅/✨ Super, 🪓/🎯/🔥 Special Atk hits, 🏰/🌑/🪞 Special Def, plus universal 💥 crit / 💨 miss / 🛡 / 🌑 indicators) at render time via static helpers.
-- Profile: profile.level/xp/health/hunger/attack/defense/accuracy/dodge/crit/gold/estate
+- Profile: profile.level/xp/health/vigor/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)
 - Items: item.food.*, item.mat.*, item.potion.*, item.gear.*, item.artifact.* (display names for catalog entries)
 - Inventory UI: inventory.title, inventory.empty, inventory.type.food/material/potion/gear/artifact, inventory.choose_category, inventory.back_root, inventory.info.placeholder, inventory.use.unavailable, inventory.category.empty (toast for tapping an empty category), inventory.full (backpack cap toast), inventory.slots_label (for the X/50 header indicator)
 - Inventory actions (per item type): inventory.action.food/potion/gear/artifact — each includes its emoji + verb ("🍴 Eat", "🍷 Use", "🛡 Equip", "✨ Use"). Gear also has `inventory.action.gear.unequip` ("❌ Unequip") used when the row is currently equipped.
 - Equipment: equip.success / unequip.success — **plain text** (no HTML, no leading emoji) since they're rendered as inline status lines in InventoryController via the refreshCategory `statusLine` parameter. profile.equipped.main_hand label; profile.equipped.empty placeholder for an empty slot.
 - Estate (Phase 5 scaffolding): estate.title, estate.description (placeholder lore), estate.level_label, estate.home, estate.plot (both also used as titles in drilldown), estate.home.description, estate.workshop, estate.kitchen, estate.warehouse, estate.warehouse.description, estate.warehouse.empty, estate.warehouse.deposited / withdrawn / nothing_to_deposit / nothing_to_withdraw (transfer toasts), estate.back_root, estate.back_home
-- Hunger / consume: hunger.restored / hp.restored — interpolate `%{amount}` (gain), `%{current}`, `%{max}` so eat-success status reads "+15 hunger (20/100)". hunger.starving, consume.not_consumable, consume.no_effect, consume.not_raw_edible (used as modal-alert text via showAlert: true; plain text only).
+- Vigor / consume: vigor.restored / hp.restored — interpolate `%{amount}` (gain), `%{current}`, `%{max}` so eat-success status reads "+15 vigor (20/100)". vigor.starving, consume.not_consumable, consume.no_effect, consume.not_raw_edible (used as modal-alert text via showAlert: true; plain text only).
 - Exploration (Phase 3.1 + 3.2): exploration.button.step / exploration.button.step_back / exploration.button.bag (reply keyboard), exploration.started/resumed (entry intro), exploration.depth_label, exploration.outcome.loot.picked/loot.full/trip/encounter.won/encounter.lost/starvation (step narratives), exploration.returned (main-menu farewell), exploration.death (with %{cause}), exploration.bag.title/empty/back
 - Exploration visit-decay variants (Phase 3.2): three `.nothing` narratives — exploration.outcome.nothing (fresh, prior visits = 0), exploration.outcome.nothing.revisited (thinned, prior visits = 1), exploration.outcome.nothing.bare (depleted, prior visits ≥ 2)
-- Passive expedition (Phase 3.3): exploration.mode.prompt/active/passive (mode picker), exploration.duration.prompt/30m/1h/1h30m/back (duration picker), exploration.passive.started/inflight (confirmation + countdown, with %{time} interpolation), exploration.passive.test_mode_hint, exploration.passive.report.title/depth/hp/hunger/events_header/loot_header/no_loot/loot_partial/death/close (report rendering), exploration.passive.outcome.nothing/loot/encounter_won/encounter_lost/trip/starvation (one-word labels for outcome histogram)
+- Passive expedition (Phase 3.3): exploration.mode.prompt/active/passive (mode picker), exploration.duration.prompt/30m/1h/1h30m/back (duration picker), exploration.passive.started/inflight (confirmation + countdown, with %{time} interpolation), exploration.passive.test_mode_hint, exploration.passive.report.title/depth/hp/vigor/events_header/loot_header/no_loot/loot_partial/death/close (report rendering), exploration.passive.outcome.nothing/loot/encounter_won/encounter_lost/trip/starvation (one-word labels for outcome histogram)
 - Mode exclusivity (Phase 3.4): capital.blocked_by_expedition (capital entry guard notice). The Explore keyboard label is static — gating happens at entry via showExploration's passive-countdown branch.
 - Enemies: enemy.wild_boar, enemy.wild_moose, enemy.wild_buffalo, enemy.rabid_lynx, enemy.rabid_wolf, enemy.wild_bear, enemy.rabid_bear (7 wilderness animals across 6 tiers; reference doc at `content/bestiary.md`) + enemy.training_dummy (Phase 5.1 sparring target — only spawned by the Training Ground plot, never by exploration).
 - Iron resources (Phase 5.1): item.mat.iron (Iron Lump 🔩 — raw, gathered) + item.mat.iron_ingot (Iron Ingot 🔳 — crafted, planned Workshop recipe). The legacy `mat.old_iron` was retired and its locale keys removed; DB rows wiped via `RemoveOldIron` migration.

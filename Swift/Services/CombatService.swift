@@ -107,7 +107,7 @@ public enum CombatService {
     /// Per-round modifiers applied while a Super-technique stance is active.
     /// Composed by the caller on top of the player's effective stats:
     /// `buffedATK = effectiveATK * attackMultiplier + attackBonus` etc.
-    /// `hungerMultiplier` scales the hunger drain on each combat action.
+    /// `vigorMultiplier` scales the vigor drain on each combat action.
     public struct StanceModifiers: Sendable {
         public var attackMultiplier: Double = 1.0
         public var attackBonus: Int = 0
@@ -115,7 +115,7 @@ public enum CombatService {
         public var critBonus: Int = 0
         public var accuracyBonus: Int = 0
         public var dodgeBonus: Int = 0
-        public var hungerMultiplier: Double = 1.0
+        public var vigorMultiplier: Double = 1.0
 
         public static let none = StanceModifiers()
     }
@@ -129,11 +129,11 @@ public enum CombatService {
         public static let arcaneResonance    = "arcane_resonance"    // mage
     }
 
-    /// Activation hunger costs per stance — the price the player pays the
+    /// Activation vigor costs per stance — the price the player pays the
     /// moment they tap Super, on top of the round's regular drain. Mage
     /// "concentration burn" is more expensive than the warrior / archer
     /// supers (per Phase 4.2 spec).
-    public static func stanceActivationHunger(for stanceId: String) -> Int {
+    public static func stanceActivationVigor(for stanceId: String) -> Int {
         switch stanceId {
         case StanceId.arcaneResonance: return 5
         default: return 4
@@ -148,11 +148,11 @@ public enum CombatService {
     public static func stanceModifiers(for stanceId: String?) -> StanceModifiers {
         switch stanceId {
         case StanceId.bloodlust:
-            // Warrior — physical frenzy. Higher ATK, sturdier, but burns hunger fast.
+            // Warrior — physical frenzy. Higher ATK, sturdier, but burns vigor fast.
             var m = StanceModifiers()
             m.attackBonus = 5
             m.defenseBonus = 3
-            m.hungerMultiplier = 2.0
+            m.vigorMultiplier = 2.0
             return m
         case StanceId.hawksEye:
             // Archer — hyper-focus. Buffs precision (crit / accuracy) and mobility (dodge).
@@ -188,18 +188,18 @@ public enum CombatService {
     /// technique (Cleave / Vital Shot / Soulfire). Wrapped in a single
     /// helper so the controller stays narrative-only.
     public enum SpecialAttack {
-        // Hunger costs (paid on every tap; stance hunger multiplier composes).
-        public static let cleaveHunger:    Int = 4
-        public static let vitalShotHunger: Int = 4
-        public static let soulfireHunger:  Int = 5
+        // Vigor costs (paid on every tap; stance vigor multiplier composes).
+        public static let cleaveVigor:    Int = 4
+        public static let vitalShotVigor: Int = 4
+        public static let soulfireVigor:  Int = 5
     }
 
-    /// Hunger cost for a class's Special Attack.
-    public static func specialAttackHunger(forClass cls: CharacterClass) -> Int {
+    /// Vigor cost for a class's Special Attack.
+    public static func specialAttackVigor(forClass cls: CharacterClass) -> Int {
         switch cls {
-        case .warrior: return SpecialAttack.cleaveHunger
-        case .archer:  return SpecialAttack.vitalShotHunger
-        case .mage:    return SpecialAttack.soulfireHunger
+        case .warrior: return SpecialAttack.cleaveVigor
+        case .archer:  return SpecialAttack.vitalShotVigor
+        case .mage:    return SpecialAttack.soulfireVigor
         }
     }
 
@@ -212,7 +212,7 @@ public enum CombatService {
     ///   Reliable damage, but the long aim zeroes the player's dodge for
     ///   the enemy counter (handled by `specialAttackZeroesDodge`).
     /// - Mage (Soulfire): cannot miss, ignores DEF, +5 flat damage. Most
-    ///   reliable of the three but costs 5 hunger instead of 4.
+    ///   reliable of the three but costs 5 vigor instead of 4.
     public static func specialAttackModifiers(forClass cls: CharacterClass) -> AttackModifiers {
         var m = AttackModifiers()
         switch cls {
@@ -244,10 +244,10 @@ public enum CombatService {
 
     /// Tunings for the per-class Special Defense technique.
     public enum SpecialDefense {
-        // Hunger costs.
-        public static let ironBulwarkHunger:    Int = 3
-        public static let shadowVeilHunger:     Int = 3
-        public static let mirrorWardHunger:     Int = 4
+        // Vigor costs.
+        public static let ironBulwarkVigor:    Int = 3
+        public static let shadowVeilVigor:     Int = 3
+        public static let mirrorWardVigor:     Int = 4
 
         /// Iron Bulwark's parry-counter chip damage as a fraction of a clean
         /// hit. Bigger than the basic Defend's 30% — this is a heavier counter.
@@ -265,12 +265,12 @@ public enum CombatService {
         public static let effectPersistRounds: Int = 1
     }
 
-    /// Hunger cost for a class's Special Defense.
-    public static func specialDefenseHunger(forClass cls: CharacterClass) -> Int {
+    /// Vigor cost for a class's Special Defense.
+    public static func specialDefenseVigor(forClass cls: CharacterClass) -> Int {
         switch cls {
-        case .warrior: return SpecialDefense.ironBulwarkHunger
-        case .archer:  return SpecialDefense.shadowVeilHunger
-        case .mage:    return SpecialDefense.mirrorWardHunger
+        case .warrior: return SpecialDefense.ironBulwarkVigor
+        case .archer:  return SpecialDefense.shadowVeilVigor
+        case .mage:    return SpecialDefense.mirrorWardVigor
         }
     }
 
@@ -279,16 +279,16 @@ public enum CombatService {
     /// Phase 4.3 replaces the flat 50% flee chance with a per-class tuning
     /// that maps to the class fantasy: warriors are heavy and lumbering,
     /// archers are mobile, mages flat-out teleport. The mage premium is
-    /// paid in hunger (`fleeHungerExtra`) — a teleport isn't free.
+    /// paid in vigor (`fleeVigorExtra`) — a teleport isn't free.
     public enum Flee {
         public static let warriorChance: Int = 40
         public static let archerChance:  Int = 70
         public static let mageChance:    Int = 90
 
-        /// Extra hunger drained on top of the base `combatFlee` cost when a
-        /// mage attempts to teleport away. Layers on after the stance hunger
+        /// Extra vigor drained on top of the base `combatFlee` cost when a
+        /// mage attempts to teleport away. Layers on after the stance vigor
         /// multiplier so an Arcane-Resonance mage still pays the teleport tax.
-        public static let mageHungerExtra: Int = 2
+        public static let mageVigorExtra: Int = 2
     }
 
     /// Per-class success chance for a Flee attempt (1–100). Failure still
@@ -301,11 +301,11 @@ public enum CombatService {
         }
     }
 
-    /// Extra flat hunger drained beyond the base Flee cost — non-zero only
+    /// Extra flat vigor drained beyond the base Flee cost — non-zero only
     /// for the mage (teleport tax).
-    public static func fleeHungerExtra(forClass cls: CharacterClass) -> Int {
+    public static func fleeVigorExtra(forClass cls: CharacterClass) -> Int {
         switch cls {
-        case .mage: return Flee.mageHungerExtra
+        case .mage: return Flee.mageVigorExtra
         default:    return 0
         }
     }

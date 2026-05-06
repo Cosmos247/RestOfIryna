@@ -69,11 +69,13 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "max_hp")
     var maxHp: Int
 
+    /// Vigor — the "satiety" meter. DB column is still named `hunger` to avoid
+    /// a destructive rename migration; only the Swift identifier is rebranded.
     @Field(key: "hunger")
-    var hunger: Int
+    var vigor: Int
 
     @Field(key: "max_hunger")
-    var maxHunger: Int
+    var maxVigor: Int
 
     @Field(key: "attack")
     var attack: Int
@@ -151,8 +153,8 @@ final public class User: Model, @unchecked Sendable {
         self.xp = 0
         self.hp = 100
         self.maxHp = 100
-        self.hunger = 100
-        self.maxHunger = 100
+        self.vigor = 100
+        self.maxVigor = 100
         self.attack = 10
         self.defense = 10
         self.crit = 5

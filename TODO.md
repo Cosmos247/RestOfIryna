@@ -51,7 +51,7 @@
 - [x] Add character stats fields (hp, max_hp, attack, defense, crit, dodge, accuracy)
 - [x] Add level + XP fields
 - [x] Add class field (warrior/archer/mage enum)
-- [x] Add hunger fields (current_hunger, max_hunger)
+- [x] Add vigor fields (current_vigor, max_vigor)
 - [x] Add gold currency field (premium currency name TBD — crowns removed until decided)
 - [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle, AddGameStats)
 - [x] Update User model with applyStartingStats(for:) method
@@ -67,12 +67,12 @@
 ### 1.3 Main Menu Rework
 - [x] Add Profile button to main menu keyboard
 - [x] Character profile view with 3 switchable display styles (inline buttons + message editing)
-- [-] Show character status in main menu (HP, Hunger, Level, Gold) — deferred by user; stats shown in Profile view
+- [-] Show character status in main menu (HP, Vigor, Level, Gold) — deferred by user; stats shown in Profile view
 - [x] Add navigation buttons: Explore, Estate, Capital (stub controllers for future phases)
 
 ---
 
-## Phase 2: Hunger & Inventory Systems
+## Phase 2: Vigor & Inventory Systems
 
 ### 2.1 Inventory Model
 - [x] Design Item model (id, name, type, tier, stackable, effects) — code-based catalog in `Swift/Models/Item.swift`
@@ -81,17 +81,17 @@
 - [x] Create migrations for Inventory table (item catalog lives in code, not DB)
 - [x] Implement inventory add/remove/has/totalQuantity/list helpers
 
-### 2.2 Hunger System
-- [~] Implement hunger drain on actions (configurable rates) — `HungerService.drain(_:action:)` ready; callers wired when Exploration/Combat ship (Phase 3/4)
+### 2.2 Vigor System
+- [~] Implement vigor drain on actions (configurable rates) — `VigorService.drain(_:action:)` ready; callers wired when Exploration/Combat ship (Phase 3/4)
 - [~] Implement starvation penalties (stat reduction, HP drain, slow travel) — `effectiveAttack`/`effectiveDefense` apply −25% when starving; `applyStarvationHPLoss` ready; travel slowdown is Phase 3
-- [x] Implement food consumption (restore hunger from inventory) — inline Use buttons in InventoryController + `HungerService.consume`
-- [x] Add hunger display to status messages — profile shows 😵 Starving suffix when hunger is 0; effective ATK/DEF reflect penalty
-- [x] Add localization keys for hunger states and food use
+- [x] Implement food consumption (restore vigor from inventory) — inline Use buttons in InventoryController + `VigorService.consume`
+- [x] Add vigor display to status messages — profile shows 😵 Starving suffix when vigor is 0; effective ATK/DEF reflect penalty
+- [x] Add localization keys for vigor states and food use
 
 ### 2.3 Equipment System
 - [x] Design Equipment slots (helmet, chest, legs, boots, main-hand, off-hand, accessory x2) — `EquipmentSlot` enum + `GearStats` struct + slot/gearStats attached to all 4 starter gear items
 - [x] Add equipped gear fields to User or separate EquippedGear model — `equipped_slot` column on `inventory` + 5 cached `gear_*_bonus` fields on `users`; migrations `AddEquipSlotToInventory` and `AddGearBonuses`; `recomputeGearBonuses` stub on User (real impl in 2.3.3)
-- [x] Implement equip/unequip logic with stat recalculation — `EquipmentService` (pure-ish: touches DB for atomic slot swap + user save); `User.effective*` now read `base + gearBonus − hunger penalty`; registration auto-equips starter weapon
+- [x] Implement equip/unequip logic with stat recalculation — `EquipmentService` (pure-ish: touches DB for atomic slot swap + user save); `User.effective*` now read `base + gearBonus − vigor penalty`; registration auto-equips starter weapon
 - [x] Create EquipmentController or integrate into ProfileController — integrated into `InventoryController` (gear-category rows toggle between 🛡 Equip and ❌ Unequip; each gear item carries a persistent per-item icon via `Item.icon`) + profile gets a "Main hand" line
 
 ---
@@ -110,10 +110,10 @@
 ### 3.1 Active exploration MVP *(landed)*
 - [x] ExplorationState model + migration (user_id unique, stepsDeep)
 - [x] Enemy bestiary (code-based EnemyCatalog, 5 animals across 4 tiers — wild family: boar/moose/buffalo drops meat+hide; rabid family: lynx/wolf drops hide only)
-- [x] ExplorationService.rollStep — weighted events (nothing 40 / loot 30 / encounter 25 / trip 5), depth-aware loot, autobattle stub for encounters, hunger/starvation integration
+- [x] ExplorationService.rollStep — weighted events (nothing 40 / loot 30 / encounter 25 / trip 5), depth-aware loot, autobattle stub for encounters, vigor/starvation integration
 - [x] ExplorationController rewritten: step / bag (scoped to consumables) / return / death
 - [x] Reply keyboard [🚶 Step] [🎒 Bag] [🔙 Return] while expedition is active
-- [x] Death flow: wipe non-equipped inventory, respawn at HP=1, hunger preserved, end ExplorationState
+- [x] Death flow: wipe non-equipped inventory, respawn at HP=1, vigor preserved, end ExplorationState
 - [x] Return flow: end ExplorationState, back to main with farewell message
 - [x] Main/Inventory/Estate onExplore wired to `showExploration` (resume or begin)
 - [x] ~20 new locale keys per locale (EN + UK) — expedition UI, outcome narratives, enemy names
@@ -167,7 +167,7 @@ Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encoun
 - [x] `ExplorationState` Fluent fields + helpers (`isInCombat`, `beginCombat(enemyId:hp:)`, `endCombat()`).
 - [x] `CombatService.applyAttack(...)` returning `AttackOutcome (miss / hit / crit)`. `hitChance = clamp(70 + acc − dodge, 10, 95)%`; on hit `critChance = crit %`, ×1.5 crit multiplier; damage `max(1, (atk − def) * variance[0.9..1.1] * critMult)`. `chipDamage` for Defend's 30%-of-base parry-counter (always lands, no crit). `resolveAutobattle` refactored onto the same primitives so passive autobattle gains crit / dodge / accuracy semantics for free.
 - [x] `StepOutcome.encounterStarted(Enemy)` + `rollStep(mode:)`. Active `rollStep` returns it; `ExplorationController.handOffToCombat` stamps the combat fields, flips `routerName = "combat"`, calls `CombatController.showCombat`. Passive `runLive` passes `mode: .passive` so it keeps the autobattle path.
-- [x] `CombatController.swift` with class-flavoured `[Attack] [Defend] / [Flee]` keyboard, hunger costs (2 / 1 / 3), DEF×2 on Defend, 50/50 flee with forced full-damage counter on fail, victory loot via `awardEncounterDrops`, defeat via shared static `ExplorationController.handleDeath(causeNarrative:)`. `EnemyCatalog.find(_:)` helper for rehydration. `HungerAction` gained `combatAttack / combatDefend / combatFlee` cases (kept `combatRound` for autobattle).
+- [x] `CombatController.swift` with class-flavoured `[Attack] [Defend] / [Flee]` keyboard, vigor costs (2 / 1 / 3), DEF×2 on Defend, 50/50 flee with forced full-damage counter on fail, victory loot via `awardEncounterDrops`, defeat via shared static `ExplorationController.handleDeath(causeNarrative:)`. `EnemyCatalog.find(_:)` helper for rehydration. `VigorAction` gained `combatAttack / combatDefend / combatFlee` cases (kept `combatRound` for autobattle).
 - [x] Registration wolves fight (step 4) routes through CombatController too — `Registration.handleCombatEnd(won:)` is the registration-specific end path. Soft retry on defeat / flee / `/start` (full HP heal, re-show wolves prompt). Victory advances to estate naming. Estate-name prompt and the wolves-retry preamble both ship `ReplyKeyboardRemove` so combat-button labels can't be entered as the estate name.
 - [x] Locale keys: 9 button labels (3 actions × 3 classes) + 11 narratives (encounter.intro, you.{hit,crit,miss}, enemy.{hit,crit,miss}, defend.absorbed, flee.{success,fail}, victory, defeat) + 2 registration keys (fight_wolves, wolves_retry). 214 → 236 per locale.
 - [x] Build clean, en/uk parity.
@@ -177,19 +177,19 @@ Turn-based "Standoff" duel triggered when active-mode `rollStep` rolls an encoun
 All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight budget, persistent effects, and stance/special-attack/special-defense composition all working.
 
 #### Warrior (Knight)
-- [x] **Розкол** *(Cleave)* — Special Attack. −10% hit chance, ignores enemy DEF entirely, +12 flat damage, +20 crit. Risky high-impact swing. 4 hunger.
-- [x] **Залізна стіна** *(Iron Bulwark)* — Special Defense. Full block + 50%-of-clean-hit chip damage + persistent armor-split debuff that zeroes enemy DEF for the next swing. 3 hunger.
-- [x] **Кровна жага** *(Bloodlust)* — Super stance, 3 rounds. +5 ATK, +3 DEF, ×2 hunger drain while active. 4 hunger to activate.
+- [x] **Розкол** *(Cleave)* — Special Attack. −10% hit chance, ignores enemy DEF entirely, +12 flat damage, +20 crit. Risky high-impact swing. 4 vigor.
+- [x] **Залізна стіна** *(Iron Bulwark)* — Special Defense. Full block + 50%-of-clean-hit chip damage + persistent armor-split debuff that zeroes enemy DEF for the next swing. 3 vigor.
+- [x] **Кровна жага** *(Bloodlust)* — Super stance, 3 rounds. +5 ATK, +3 DEF, ×2 vigor drain while active. 4 vigor to activate.
 
 #### Archer
-- [x] **Влучний постріл** *(Vital Shot)* — Special Attack. Cannot miss, +20 crit, ignores DEF. Tradeoff: long aim zeroes player dodge for the enemy counter. 4 hunger.
-- [x] **Тінь лісу** *(Shadow Veil)* — Special Defense. Full dodge this round + lingering +50 dodge next round. 3 hunger.
-- [x] **Око сокола** *(Hawk's Eye)* — Super stance, 3 rounds. +15 crit, +10 accuracy, +10 dodge. 4 hunger.
+- [x] **Влучний постріл** *(Vital Shot)* — Special Attack. Cannot miss, +20 crit, ignores DEF. Tradeoff: long aim zeroes player dodge for the enemy counter. 4 vigor.
+- [x] **Тінь лісу** *(Shadow Veil)* — Special Defense. Full dodge this round + lingering +50 dodge next round. 3 vigor.
+- [x] **Око сокола** *(Hawk's Eye)* — Super stance, 3 rounds. +15 crit, +10 accuracy, +10 dodge. 4 vigor.
 
 #### Mage
-- [x] **Полум'я душі** *(Soulfire)* — Special Attack. Cannot miss, ignores DEF, +5 flat damage. 5 hunger.
-- [x] **Дзеркальний щит** *(Mirror Ward)* — Special Defense. Full block + reflects 50% of would-be enemy damage back at them. 4 hunger.
-- [x] **Магічний резонанс** *(Arcane Resonance)* — Super stance, 3 rounds. ATK ×1.5, +5 DEF. 5 hunger to activate (concentration burn).
+- [x] **Полум'я душі** *(Soulfire)* — Special Attack. Cannot miss, ignores DEF, +5 flat damage. 5 vigor.
+- [x] **Дзеркальний щит** *(Mirror Ward)* — Special Defense. Full block + reflects 50% of would-be enemy damage back at them. 4 vigor.
+- [x] **Магічний резонанс** *(Arcane Resonance)* — Super stance, 3 rounds. ATK ×1.5, +5 DEF. 5 vigor to activate (concentration burn).
 
 #### Shared infrastructure
 - [x] Migration `AddCombatStanceFields` — `combat_stance` + `combat_stance_rounds_left`
@@ -197,15 +197,15 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 - [x] Migration `AddCombatTechniqueUses` — `combat_special_atk_uses` (max 2) + `combat_special_def_uses` (max 2) + `combat_super_uses` (max 1)
 - [x] `[🪄 Techniques]` submenu opens edit-in-place via `editMessageReplyMarkup`; rebuilds from live state so spent buttons hide and remaining show " × N" suffix
 - [x] `CombatService` extended with `AttackModifiers` (folded into `applyAttack`), `StanceModifiers`, `SpecialAttack` / `SpecialDefense` namespaces
-- [x] `HungerService.drain(_:action:multiplier:)` accepts optional multiplier so stance buffs scale per-action drain
+- [x] `VigorService.drain(_:action:multiplier:)` accepts optional multiplier so stance buffs scale per-action drain
 - [x] 32 new locale keys per locale (techniques submenu + 3 supers + 3 special atks + 3 special defs + status indicators + no-uses toast); `combat.special_def.archer.no_target` removed (unused)
 - [x] Lingo emoji-prefix gotcha — every Phase 4.2 narrative string stored emoji-free; CombatController prepends class-flavoured icons in Swift
-- [x] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra +2 hunger for the teleport, layered on top of the stance multiplier) — *landed 4.3.1*
+- [x] Class-specific Flee chances: knight 40% / archer 70% / mage 90% (mage pays extra +2 vigor for the teleport, layered on top of the stance multiplier) — *landed 4.3.1*
 - [ ] Unlock-by-level wiring — *deferred until the leveling system lands*
 
 ### 4.3 Combat polish
 
-- [x] **4.3.1 Class-specific Flee chances** — landed. `CombatService.fleeChance(forClass:)` + `fleeHungerExtra(forClass:)`; warrior 40 / archer 70 / mage 90; mage pays +2 hunger.
+- [x] **4.3.1 Class-specific Flee chances** — landed. `CombatService.fleeChance(forClass:)` + `fleeVigorExtra(forClass:)`; warrior 40 / archer 70 / mage 90; mage pays +2 vigor.
 - [-] **4.3.2 Edit single message in-place per round** — *deferred by user; preference is to keep all combat logs visible as separate messages*
 - [-] **4.3.3 XP grant on victory** — *deferred; XP system will be re-designed during Phase 5 to feed estate progression directly (player XP → estate level), not character level. Phase 5.0's "estate level computed from `user.level`" derivation will be replaced once the new XP-to-Estate model lands.*
 - Status effects (rabies from rabid family, cured at chapel) — *moved to Future / Backlog (Phase 6 dependency)*
@@ -250,7 +250,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] `PlotService` helpers (lazy `accumulated` / `bonusAccumulated`, `harvest` deposits to **WarehouseEntry**, `claim` validates slot allowance, `slotsForLevel` — currently flat 5 override pending XP-to-Estate)
 - [x] `PlotProductionService` background ticker (single Task.detached, 60s test / 300s prod, pushes "🌾 ready to harvest" message when cap reached, `notified_full` flag suppresses repeats)
 - [x] EstateController plot drill-down (slot list, claim picker, harvest, training entry); inline status banners on harvest with current/cap on both primary and bonus
-- [x] Training Ground combat mode (clean damage, no hunger drain, no enemy counter, dummy auto-revives, routerName stays at "estate" so reply-keyboard nav unblocked, `combat:*` callback forwarding from Main / Inventory / Estate / Settings)
+- [x] Training Ground combat mode (clean damage, no vigor drain, no enemy counter, dummy auto-revives, routerName stays at "estate" so reply-keyboard nav unblocked, `combat:*` callback forwarding from Main / Inventory / Estate / Settings)
 - [x] Initial farm grant at registration completion (slot 0 = farm)
 - [x] Iron resource overhaul: `mat.iron` (Iron Lump 🔩, raw — foraging + Mine bonus) + `mat.iron_ingot` (Iron Ingot 🔳, placeholder for Phase 5.x Workshop crafting); legacy `mat.old_iron` retired with `RemoveOldIron` data migration
 - [x] Foraging pool → weighted (`pickWeighted` helper); iron weight 2 vs 10 staples = ~5% medium-zone drop
@@ -368,10 +368,10 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 ## Phase 9: Content & Polish
 
 ### 9.1 Tuning & Balance
-- [ ] Create `content/tuning.md` — XP curves, hunger scaling, stat growth
+- [ ] Create `content/tuning.md` — XP curves, vigor scaling, stat growth
 - [ ] Balance damage formula through playtesting
 - [ ] Tune exploration event weights per depth
-- [ ] Tune hunger drain vs food availability
+- [ ] Tune vigor drain vs food availability
 - [ ] Balance economy (gold sinks vs sources)
 
 ### 9.2 Content Authoring
@@ -418,7 +418,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 A parking lot for "interesting but not critical" ideas — collected as the project grows, revisited just before launch (or right after, depending on signal). Items here are not on the active roadmap; they will be promoted into a phase if/when they make sense.
 
 - **Per-enemy AI hooks** *(was 4.3.4)* — add `aggression: Int` (0–100, biases enemies toward Attack vs Defend) and `fleeResist: Int` (0–100, makes the fail roll on Flee harsher) to `Enemy`. Threaded into passive autobattle and active combat's Flee resolution. Cheap once the data is in `EnemyCatalog`; main work is per-tier tuning.
-- **Status effects (rabies)** *(was 4.3.5)* — bites from the rabid family (`enemy.rabid_lynx`, `enemy.rabid_wolf`) carry a chance to infect. Effect ticks over time (HP drain, stat penalty, hunger drain — TBD), persists across expeditions, cured at the Capital Chapel (Phase 6 dependency). Needs a generic status-effect system on `User` or a new model.
+- **Status effects (rabies)** *(was 4.3.5)* — bites from the rabid family (`enemy.rabid_lynx`, `enemy.rabid_wolf`) carry a chance to infect. Effect ticks over time (HP drain, stat penalty, vigor drain — TBD), persists across expeditions, cured at the Capital Chapel (Phase 6 dependency). Needs a generic status-effect system on `User` or a new model.
 - **Combat log persistence + replay** *(was 4.3.6)* — record round-by-round combat events (damage rolls, hit/miss, technique uses, stance state) into a Codable blob; expose a "view replay" surface. Mostly useful once the Arena (Phase 8) lands, since solo PvE replays have low replay value.
 - *(more items will be added by user as the project grows)*
 

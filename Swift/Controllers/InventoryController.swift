@@ -369,7 +369,7 @@ extension InventoryController {
             return true
         }
 
-        // Use — food/potion consume via HungerService; recipe-scroll artifacts
+        // Use — food/potion consume via VigorService; recipe-scroll artifacts
         // route to the Learn flow (Phase 5.2.1); others show "not yet available"
         // until their systems ship (gear = equip Phase 2.3, generic artifact = activate TBD).
         if data.starts(with: "inv:use:") {
@@ -385,7 +385,7 @@ extension InventoryController {
                 return try await handleLearnRecipe(itemId: itemId, recipeId: recipeId, item: item, query: query, message: message, context: context)
             }
 
-            if !HungerService.isConsumable(item) {
+            if !VigorService.isConsumable(item) {
                 let text = context.lingo.localize("inventory.use.unavailable", locale: locale)
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
@@ -404,7 +404,7 @@ extension InventoryController {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
-            guard let result = HungerService.consume(item, user: context.session) else {
+            guard let result = VigorService.consume(item, user: context.session) else {
                 let text = context.lingo.localize("consume.no_effect", locale: locale)
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
                 return true
@@ -419,11 +419,11 @@ extension InventoryController {
             // so the player sees both the gain and the pool state at a glance.
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             var parts: [String] = []
-            if result.hungerRestored > 0 {
-                parts.append(context.lingo.localize("hunger.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.hungerRestored)",
-                    "current": "\(context.session.hunger)",
-                    "max":     "\(context.session.maxHunger)"
+            if result.vigorRestored > 0 {
+                parts.append(context.lingo.localize("vigor.restored", locale: locale, interpolations: [
+                    "amount":  "\(result.vigorRestored)",
+                    "current": "\(context.session.vigor)",
+                    "max":     "\(context.session.maxVigor)"
                 ]))
             }
             if result.hpRestored > 0 {
