@@ -1263,3 +1263,19 @@ Display names ARE tier-specific even though the item id isn't, via the new `Item
 - **`content/weapons.md`** — was discussed as a possible reference doc, deferred. Not strictly needed yet; the catalog itself is the source of truth.
 - **Dev shortcut for testing** (e.g. `/wpntier <N>`): not added. Dev can grind through normally for now; if it gets tedious during 5.x playtesting, add it as a one-line GlobalCommandsController route.
 - **Pacing tuning** (estate-level mapping vs material costs): user explicitly deferred this until XP system lands. The current numbers are a starting point.
+
+## Session — 2026-05-08 (CLAUDE.md trim)
+
+### What was done:
+- Trimmed `CLAUDE.md` from 218 → 143 lines (–34%) by collapsing two redundant blocks into pointers:
+  - **Source Layout**: ~25 lines of per-file paragraphs replaced with a compact `Swift/` tree + pointer to `.memory/file-map.md` (canonical, kept in sync per session, ~27 KB of detail).
+  - **Current State (as of 2026-04-23)**: ~70 lines of phase-by-phase status replaced with a one-line pointer to `.memory/status.md` (last updated 2026-05-06, strictly newer + more detailed than the CLAUDE.md block was).
+
+### Why:
+- Both blocks were duplicating content already in `.memory/`. Verified before removing: the more detailed copy lives in `.memory/`, and the CLAUDE.md text was older (2026-04-23 stamp) than the canonical sources (2026-05-06).
+- `CLAUDE.md` is loaded into every session, so trimming reduces always-on context cost. Retained sections are real always-on patterns: architecture diagram, controller-add steps (incl. the register-buttons-for-all-locales footgun), key code snippets (Session access, sendMessage, callback_data 64-byte limit, Lingo), env vars, and the AI-assistant instructions block (memory rules, git workflow, code conventions).
+- No code changes; pure documentation hygiene. README.md left as-is — different audience (project visitors), doesn't reference the trimmed sections.
+
+### Decision rule for future trims:
+- If a CLAUDE.md block duplicates `.memory/file-map.md` or `.memory/status.md` content, replace with a one-line pointer. Those two files are the canonical sources and are the ones kept fresh.
+- If it's a pattern/snippet that doesn't drift (architecture, sendMessage signature, callback_data byte limit, locale-button footgun), keep it inline in CLAUDE.md.
