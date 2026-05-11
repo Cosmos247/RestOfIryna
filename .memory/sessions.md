@@ -1,5 +1,33 @@
 # Session History
 
+## Session N+4 — 2026-05-11 part 5 (Phase 5.3d craftable bag upgrades)
+
+### What was done:
+Bag now starts smaller (20 slots vs the previous flat 50) and grows via crafted upgrades at the Workshop, mirroring the weapon upgrade pattern.
+
+**Architecture:**
+- `User.bagTier: Int` (default 1) on the User row + `AddUserBagTier` migration (`bag_tier INT NOT NULL DEFAULT 1` on users).
+- `BagCatalog` (`Swift/Models/BagCatalog.swift`): 5 tiers (20/30/40/55/75 slots), each `BagUpgradeStep` carries `toTier` / `capacity` / `requiredEstateLevel` / `inputs`. Estate-tier gates: T2 needs estate T3 (Workshop just unlocked), T3 needs T4, T4 needs T5, T5 needs T6. Materials are hide + iron only — no gold cost on the bag track (gold sinks live on the estate track).
+- `BagUpgradeService.upgrade(for:on:)` (`Swift/Services/BagUpgradeService.swift`): mirrors `WeaponUpgradeService` shape. Validates max-tier → estate-gate → material snapshot → drains from combined inventory+warehouse pool (inventory first) → bumps `user.bagTier` + saveAndCache. Result enum: success(newTier, newCapacity)/maxTierReached/estateLevelTooLow/missingMaterials.
+- `InventoryEntry.slotCap` converted from `static let = 50` to `static func slotCap(for user: User) -> Int` reading `BagCatalog.capForTier(user.bagTier)`. All call sites updated: `CraftingService` output-fits check, `InventoryController.renderRoot` (signature gained `session: User`), internal `canAccept` / `add`.
+
+**UI:**
+- Workshop keyboard gains a second universal button `[🎒 Upgrade bag]` immediately after `[⚔️ Upgrade weapon]`. Same "always visible, even at max tier" pattern — the detail screen renders the "fully upgraded" message when applicable instead of hiding the button.
+- Detail screen mirrors the weapon upgrade flow. `bag.upgrade.current_header` shows "Now: tier 2 — Leather Bag · 30 slots". `bag.upgrade.next_header` shows the preview with `+delta` slots: "Tier 3 — Reinforced Backpack · 40 slots (+10)". Estate-tier gate with ✅/⛔ marker. `📜 Materials` block with have/need pulled from the combined pool. `[🧵 Sew]` confirm button.
+- All failure modes → modal alert (max tier, estate too low, multi-row missing materials). Success → in-place refresh + `✅ Bag upgraded to tier N — Name · K slots` banner appended at the bottom.
+
+**Localization:**
+- 15 new keys × 2 locales:
+  - 5 tier names: `bag.tier.1.name` … `5.name` (Linen Sack → Leather Bag → Reinforced Backpack → Hunter's Pack → Master's Knapsack)
+  - 10 UI keys: `bag.upgrade.button` / `.button.confirm` / `.title` / `.current_header` / `.next_header` / `.estate_required` / `.recipe_header` / `.max_tier` / `.estate_too_low` / `.banner.success`
+- Parity 457/457.
+
+**Migration impact on existing players:**
+- All existing players land at `bagTier = 1` (20 slots). Rows already in their bag stay (cap blocks new inserts only — same policy as the warehouse cap from 5.3c).
+- Dev grants via Postico for testing higher tiers (`UPDATE users SET bag_tier = N`).
+
+Build clean. Next: 5.3e — technique gates by player level + Learn-at-Training-Ground flow + per-fight uses growth on L17/20/21.
+
 ## Session N+3 — 2026-05-11 part 4 (Phase 5.3c gold polish)
 
 ### What was done:

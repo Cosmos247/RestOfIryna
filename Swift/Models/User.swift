@@ -130,6 +130,13 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "estate_level")
     var estateLevel: Int
 
+    /// Phase 5.3d — backpack tier. T1 starts at 20 slots; later tiers
+    /// (crafted at the Workshop via `BagUpgradeService`) raise the cap up
+    /// to 75 at T5. Existing rows in the bag stay regardless of cap; the
+    /// limit only blocks new inserts past it, same as the warehouse policy.
+    @Field(key: "bag_tier")
+    var bagTier: Int
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -175,6 +182,7 @@ final public class User: Model, @unchecked Sendable {
         self.gearDodgeBonus = 0
         self.gearAccuracyBonus = 0
         self.estateLevel = 1
+        self.bagTier = 1
         self.createdAt = Date()
     }
 

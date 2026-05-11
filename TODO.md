@@ -314,10 +314,13 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] 7 tier names per locale (Wooden Hut → Settler's House → Forester's Lodge → Manor → Knight's Manor → Baron's Estate → Lord's Holdings). Locale parity 442/442 (+19 keys total — 17 base 5.3c + 2 gold)
 - [x] `XPGrantResult.estateLeveledUp` is now structurally always false (XP grants no longer change estate); inert banner branches kept as forward-compat hooks
 
-#### 5.3d Bag size / starter rebalance + craftable bag upgrades *(planned)*
-- [ ] Starter bag drops 50 → 20 slots (warehouse stays generous so safe storage > carry capacity makes narrative sense)
-- [ ] Bag becomes upgradable in Workshop (parallel to weapon upgrade): T1 Linen Sack 20 → T2 Leather Bag 30 (5× hide + 2× iron, est T3+) → T3 Reinforced 40 (10× hide + 3× ingot, est T4+) → T4 Hunter's Pack 55 (15× hide + 5× ingot, est T5+) → T5 Master's Knapsack 75 (20× hide + 8× ingot, est T6+)
-- [ ] Mirror `WeaponUpgradeService` architecture (`BagUpgradeService` + `BagCatalog`); new `User.bagTier` field + migration
+#### 5.3d Bag size / starter rebalance + craftable bag upgrades *(landed 2026-05-11 part 5)*
+- [x] Starter bag drops 50 → 20 slots (`User.bagTier = 1` default). Warehouse stays generous so safe storage > carry capacity makes narrative sense.
+- [x] Bag becomes upgradable in Workshop via `BagUpgradeService` (parallel to weapon upgrade): T1 Linen Sack 20 → T2 Leather Bag 30 (5× hide + 2× iron, est T3+) → T3 Reinforced Backpack 40 (10× hide + 3× ingot, est T4+) → T4 Hunter's Pack 55 (15× hide + 5× ingot, est T5+) → T5 Master's Knapsack 75 (20× hide + 8× ingot, est T6+). Materials only — no gold cost.
+- [x] `User.bagTier` Int field (default 1) + `AddUserBagTier` migration. `BagCatalog` (5 tiers + per-step materials + estate gates) and `BagUpgradeService` (mirrors `WeaponUpgradeService` pattern).
+- [x] `InventoryEntry.slotCap` converted from `static let = 50` to `static func slotCap(for user: User) -> Int` reading `BagCatalog.capForTier(user.bagTier)`. All call sites updated (`CraftingService`, `InventoryController.renderRoot`, internal `canAccept` / `add`).
+- [x] Workshop UI: second universal button `[🎒 Upgrade bag]` after the weapon button. Detail screen mirrors weapon flow with capacity delta (`+10 slots`), estate-tier gate (✅/⛔), materials with have/need, `[🧵 Sew]` confirm. Failures → modal alert; success → in-place refresh + `✅ Bag upgraded to tier N — Name · K slots` banner.
+- [x] 15 new locale keys × 2 locales (5 tier names + 10 UI keys); parity 457/457.
 
 #### 5.3e Technique gates + "learn at Training Ground" flow *(planned)*
 - [ ] Hook unlock-by-level for the 9 Phase 4.2 techniques (currently all available from start)
@@ -462,4 +465,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-05-11 part 4 — Phase 5.3a + 5.3b + 5.3c (with manual estate upgrade + gold sink for T3+) all landed. Next: 5.3d smaller starter bag + craftable bag upgrades in Workshop.*
+*Last updated: 2026-05-11 part 5 — Phase 5.3a + 5.3b + 5.3c + 5.3d all landed. Next: 5.3e technique gates by player level + "Learn at Training Ground" flow + per-fight uses growth.*

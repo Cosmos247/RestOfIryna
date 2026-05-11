@@ -98,9 +98,9 @@ public enum CraftingService {
                 .filter(\.$user.$id, .equal, userId)
                 .filter(\.$itemId, .equal, recipe.output.itemId)
                 .first()
-            outputFits = (existing != nil) || (postDrainUsed + 1 <= InventoryEntry.slotCap)
+            outputFits = (existing != nil) || (postDrainUsed + 1 <= InventoryEntry.slotCap(for: user))
         } else {
-            outputFits = (postDrainUsed + recipe.output.quantity) <= InventoryEntry.slotCap
+            outputFits = (postDrainUsed + recipe.output.quantity) <= InventoryEntry.slotCap(for: user)
         }
         guard outputFits else { return .inventoryFull }
 

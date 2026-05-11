@@ -676,6 +676,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let upgradeLabel = lingo.localize("weapon.upgrade.button", locale: locale)
         rows.append([TGInlineKeyboardButton(text: upgradeLabel, callbackData: "weapon:upgrade:detail")])
 
+        // Phase 5.3d bag-upgrade entry. Same universal-button pattern; the
+        // detail screen reads `User.bagTier` dynamically. The button stays
+        // visible at max tier so the detail screen can render the "fully
+        // upgraded" message.
+        let bagUpgradeLabel = lingo.localize("bag.upgrade.button", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: bagUpgradeLabel, callbackData: "bag:upgrade:detail")])
+
         for recipe in RecipeCatalog.all {
             // Kitchen recipes belong to the Kitchen view, not the Workshop.
             if recipe.category == .kitchen { continue }
@@ -864,6 +871,13 @@ extension EstateController {
         }
         if data == "estate:upgrade:confirm" {
             return try await handleEstateUpgradeConfirm(query: query, message: message, context: context)
+        }
+        // Phase 5.3d bag upgrade — same shape as the weapon/estate upgrades.
+        if data == "bag:upgrade:detail" {
+            return try await handleBagUpgradeDetail(query: query, message: message, context: context)
+        }
+        if data == "bag:upgrade:confirm" {
+            return try await handleBagUpgradeConfirm(query: query, message: message, context: context)
         }
         guard data.hasPrefix("estate:") else { return false }
 
@@ -1659,6 +1673,116 @@ extension EstateController {
         return (invHaves, whHaves)
     }
 
+    // MARK: - Bag upgrade callback handlers (Phase 5.3d)
+
+    /// `bag:upgrade:detail` — open / refresh the bag upgrade screen.
+    static func handleBagUpgradeDetail(
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        let (inv, wh) = try await bagUpgradeSnapshot(context: context)
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let body = ctrl.renderBagUpgrade(
+            session: context.session,
+            invSnapshot: inv,
+            whSnapshot: wh,
+            lingo: context.lingo, locale: locale
+        )
+        let canUpgrade = BagCatalog.canUpgrade(from: context.session.bagTier)
+        let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `bag:upgrade:confirm` — perform one tier upgrade. Failure modes
+    /// (maxTier / estateLevelTooLow / missingMaterials) surface as modal
+    /// alerts; success refreshes the screen + appends a `✅` banner.
+    static func handleBagUpgradeConfirm(
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let ctrl = Controllers.estateController
+
+        let result = try await BagUpgradeService.upgrade(for: context.session, on: context.db)
+
+        switch result {
+        case .maxTierReached:
+            let toast = context.lingo.localize("bag.upgrade.max_tier", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .estateLevelTooLow(let required, let current):
+            let toast = context.lingo.localize("bag.upgrade.estate_too_low", locale: locale, interpolations: [
+                "required": "\(required)",
+                "current":  "\(current)"
+            ])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .missingMaterials(let shortages):
+            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
+            let rows: [String] = shortages.map { shortage in
+                let item = ItemCatalog.find(shortage.itemId)
+                let icon = item?.icon ?? ""
+                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
+                let needed = max(0, shortage.need - shortage.have)
+                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
+                    "icon":   icon,
+                    "name":   name,
+                    "needed": "\(needed)",
+                    "have":   "\(shortage.have)",
+                    "need":   "\(shortage.need)"
+                ])
+            }
+            let toast = ([header] + rows).joined(separator: "\n")
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .success(let newTier, let newCapacity):
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let newName = context.lingo.localize("bag.tier.\(newTier).name", locale: locale)
+            let banner = "✅ " + context.lingo.localize("bag.upgrade.banner.success", locale: locale, interpolations: [
+                "tier":     "\(newTier)",
+                "name":     newName,
+                "capacity": "\(newCapacity)"
+            ])
+            let (inv, wh) = try await bagUpgradeSnapshot(context: context)
+            let body = ctrl.renderBagUpgrade(
+                session: context.session,
+                invSnapshot: inv,
+                whSnapshot: wh,
+                lingo: context.lingo, locale: locale
+            )
+            let canUpgrade = BagCatalog.canUpgrade(from: context.session.bagTier)
+            let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
+            let text = "\(body)\n\n\(banner)"
+            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            return true
+        }
+    }
+
+    /// Per-input availability snapshot from the combined inventory + warehouse
+    /// pool for the bag upgrade. Empty maps when at max tier.
+    private static func bagUpgradeSnapshot(context: Context) async throws -> (inv: [String: Int], wh: [String: Int]) {
+        guard let userId = context.session.id,
+              let nextStep = BagCatalog.nextStep(from: context.session.bagTier) else {
+            return ([:], [:])
+        }
+        var invHaves: [String: Int] = [:]
+        var whHaves: [String: Int] = [:]
+        for input in nextStep.inputs {
+            invHaves[input.itemId] = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+            whHaves[input.itemId]  = try await WarehouseEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+        }
+        return (invHaves, whHaves)
+    }
+
     /// Bundle of derived state used by both upgrade callbacks. Keeps the
     /// detail render and confirm handler in sync without re-running queries.
     private struct WeaponUpgradeSnapshot {
@@ -1807,6 +1931,84 @@ extension EstateController {
         if canUpgrade {
             let upgrade = lingo.localize("weapon.upgrade.button.confirm", locale: locale)
             rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "weapon:upgrade:confirm")])
+        }
+        let back = lingo.localize("workshop.detail.button.back", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    // MARK: - Bag upgrade views (Phase 5.3d)
+
+    /// Detail body for the `[🎒 Upgrade bag]` button. Shows the current bag
+    /// tier name + capacity, then the next-tier preview block: tier name,
+    /// capacity delta, estate-tier requirement, and a `📜 Materials` list
+    /// pulled from the combined inventory + warehouse pool.
+    fileprivate func renderBagUpgrade(
+        session: User,
+        invSnapshot: [String: Int],
+        whSnapshot: [String: Int],
+        lingo: Lingo,
+        locale: String
+    ) -> String {
+        let title = lingo.localize("bag.upgrade.title", locale: locale)
+        let currentTier = session.bagTier
+        let currentName = lingo.localize("bag.tier.\(currentTier).name", locale: locale)
+        let currentCapacity = BagCatalog.capForTier(currentTier)
+
+        var lines: [String] = ["<b>\(title)</b>", "", lingo.localize("bag.upgrade.current_header", locale: locale, interpolations: [
+            "tier": "\(currentTier)",
+            "name": currentName,
+            "capacity": "\(currentCapacity)"
+        ])]
+
+        guard let nextStep = BagCatalog.nextStep(from: currentTier) else {
+            lines.append("")
+            lines.append(lingo.localize("bag.upgrade.max_tier", locale: locale))
+            return lines.joined(separator: "\n")
+        }
+
+        // Next-tier preview.
+        let nextName = lingo.localize("bag.tier.\(nextStep.toTier).name", locale: locale)
+        let arrow = lingo.localize("weapon.upgrade.delta_arrow", locale: locale)
+        let delta = nextStep.capacity - currentCapacity
+        lines.append("")
+        lines.append("\(arrow) " + lingo.localize("bag.upgrade.next_header", locale: locale, interpolations: [
+            "tier": "\(nextStep.toTier)",
+            "name": nextName,
+            "capacity": "\(nextStep.capacity)",
+            "delta": "\(delta)"
+        ]))
+
+        // Estate-tier requirement.
+        let gateOK = session.estateLevel >= nextStep.requiredEstateLevel
+        let mark = gateOK ? "✅" : "⛔"
+        lines.append("")
+        lines.append("\(mark) " + lingo.localize("bag.upgrade.estate_required", locale: locale, interpolations: [
+            "required": "\(nextStep.requiredEstateLevel)",
+            "current":  "\(session.estateLevel)"
+        ]))
+
+        // Materials list.
+        lines.append("")
+        lines.append("<b>" + lingo.localize("bag.upgrade.recipe_header", locale: locale) + "</b>")
+        for input in nextStep.inputs {
+            let inputItem = ItemCatalog.find(input.itemId)
+            let inputIcon = inputItem?.icon ?? ""
+            let inputName = inputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
+            let have = (invSnapshot[input.itemId, default: 0]) + (whSnapshot[input.itemId, default: 0])
+            lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🧵 Sew]
+    /// + Back. Same pattern as the weapon/estate upgrade screens.
+    fileprivate func bagUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        if canUpgrade {
+            let upgrade = lingo.localize("bag.upgrade.button.confirm", locale: locale)
+            rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "bag:upgrade:confirm")])
         }
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])

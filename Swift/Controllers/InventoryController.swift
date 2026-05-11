@@ -119,7 +119,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     public func showInventory(context: Context) async throws {
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
-        let text = renderRoot(entries: entries, lingo: context.lingo, locale: context.session.locale)
+        let text = renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: context.session.locale)
         let inline = rootKeyboard(entries: entries, lingo: context.lingo, locale: context.session.locale)
         try await context.bot.sendMessage(
             session: context.session,
@@ -136,11 +136,12 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Rendering
 
-    fileprivate func renderRoot(entries: [InventoryEntry], lingo: Lingo, locale: String) -> String {
+    fileprivate func renderRoot(entries: [InventoryEntry], session: User, lingo: Lingo, locale: String) -> String {
         let title = lingo.localize("inventory.title", locale: locale)
         let slotsUsed = entries.filter { $0.equippedSlot == nil }.count
         let slotsLabel = lingo.localize("inventory.slots_label", locale: locale)
-        let header = "<b>\(title)</b>  <i>\(slotsUsed)/\(InventoryEntry.slotCap) \(slotsLabel)</i>"
+        let cap = InventoryEntry.slotCap(for: session)
+        let header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel)</i>"
         if entries.isEmpty {
             return "\(header)\n\n" + lingo.localize("inventory.empty", locale: locale)
         }
@@ -304,7 +305,7 @@ extension InventoryController {
         // Back to root
         if data == "inv:root" {
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
-            let text = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
+            let text = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             let params = TGEditMessageTextParams(
                 chatId: .chat(message.chat.id),
@@ -460,7 +461,7 @@ extension InventoryController {
                 refreshedBody = ctrl.renderCategory(type: item.type, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.categoryKeyboard(type: item.type, entries: entries, lingo: context.lingo, locale: locale)
             } else {
-                refreshedBody = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
+                refreshedBody = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             }
             let refreshedText = "\(statusLine)\n\n\(refreshedBody)"
@@ -596,7 +597,7 @@ extension InventoryController {
             try await refreshCategory(type: .artifact, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
         } else {
             let ctrl = Controllers.inventoryController
-            let body = ctrl.renderRoot(entries: entries, lingo: context.lingo, locale: locale)
+            let body = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             let text = "\(statusLine)\n\n\(body)"
             let params = TGEditMessageTextParams(

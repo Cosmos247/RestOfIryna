@@ -65,10 +65,13 @@ public enum InventoryError: Error, Sendable {
 // MARK: - Helpers (add / remove / has / list)
 
 extension InventoryEntry {
-    /// Fixed backpack slot cap. One inventory row = one slot, regardless of the stack's
-    /// quantity (so `bread × 50` is 1 slot). Equipped gear rows don't count — they're
-    /// "on the body" rather than in the bag. Raised later by Workshop upgrades (5.3).
-    public static let slotCap = 50
+    /// Per-user backpack slot cap. Driven by `User.bagTier` via `BagCatalog`
+    /// — T1 starts at 20, T5 caps at 75. One inventory row = one slot
+    /// regardless of stack quantity (`bread × 50` is 1 slot). Equipped gear
+    /// rows don't count — they're "on the body" rather than in the bag.
+    public static func slotCap(for user: User) -> Int {
+        return BagCatalog.capForTier(user.bagTier)
+    }
 
     /// Count of non-equipped rows the user currently carries in their backpack.
     public static func slotsUsed(for user: User, on db: any Database) async throws -> Int {
@@ -93,9 +96,9 @@ extension InventoryEntry {
                 .filter(\.$itemId, .equal, itemId)
                 .first()
             if existing != nil { return true }
-            return used + 1 <= slotCap
+            return used + 1 <= slotCap(for: user)
         } else {
-            return used + quantity <= slotCap
+            return used + quantity <= slotCap(for: user)
         }
     }
 
@@ -123,11 +126,11 @@ extension InventoryEntry {
                 return
             }
             // New stackable row — needs 1 fresh slot.
-            guard used + 1 <= slotCap else { throw InventoryError.inventoryFull }
+            guard used + 1 <= slotCap(for: user) else { throw InventoryError.inventoryFull }
             try await InventoryEntry(userID: userId, itemId: itemId, quantity: quantity).save(on: db)
         } else {
             // Non-stackable — each unit is its own row.
-            guard used + quantity <= slotCap else { throw InventoryError.inventoryFull }
+            guard used + quantity <= slotCap(for: user) else { throw InventoryError.inventoryFull }
             for _ in 0..<quantity {
                 try await InventoryEntry(userID: userId, itemId: itemId, quantity: 1).save(on: db)
             }
