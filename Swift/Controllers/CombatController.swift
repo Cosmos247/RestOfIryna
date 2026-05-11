@@ -176,25 +176,50 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// only the techniques they can still spend, plus Back. Labels carry a
     /// "× N" suffix showing remaining uses for clarity. Edit-in-place via
     /// `editMessageReplyMarkup` keeps the round narrative intact.
-    private func combatTechniquesMarkup(session: User, state: ExplorationState, lingo: Lingo) -> TGInlineKeyboardMarkup {
+    /// Submenu. Phase 5.3e gates each kind behind `LearnedTechnique`:
+    ///   - Learned + uses > 0 → normal `<name> × N` button
+    ///   - Learned + uses == 0 → button hidden (already spent this fight)
+    ///   - Unlearned → `🔒 <name>` button with the same callback; the
+    ///     execution handler checks the learned-set and replies with a
+    ///     "learn at Training Ground" modal instead of executing.
+    private func combatTechniquesMarkup(session: User, state: ExplorationState, learned: Set<String>, lingo: Lingo) -> TGInlineKeyboardMarkup {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let locale = session.locale
         var rows: [[TGInlineKeyboardButton]] = []
 
+        let atkLearned = learned.contains(CombatService.TechniqueKind.specialAtk.rawValue)
+        let defLearned = learned.contains(CombatService.TechniqueKind.specialDef.rawValue)
+        let supLearned = learned.contains(CombatService.TechniqueKind.super.rawValue)
+
         var techRow: [TGInlineKeyboardButton] = []
-        if let uses = state.combatSpecialAtkUses, uses > 0 {
-            let label = lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+        if atkLearned {
+            if let uses = state.combatSpecialAtkUses, uses > 0 {
+                let label = lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+                techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_attack"))
+            }
+        } else {
+            let label = "🔒 " + lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale)
             techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_attack"))
         }
-        if let uses = state.combatSpecialDefUses, uses > 0 {
-            let label = lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+        if defLearned {
+            if let uses = state.combatSpecialDefUses, uses > 0 {
+                let label = lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+                techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_defense"))
+            }
+        } else {
+            let label = "🔒 " + lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale)
             techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_defense"))
         }
         if !techRow.isEmpty {
             rows.append(techRow)
         }
-        if let uses = state.combatSuperUses, uses > 0 {
-            let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+        if supLearned {
+            if let uses = state.combatSuperUses, uses > 0 {
+                let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
+                rows.append([TGInlineKeyboardButton(text: label, callbackData: "combat:super")])
+            }
+        } else {
+            let label = "🔒 " + lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "combat:super")])
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("combat.tech.back", locale: locale), callbackData: "combat:tech:back")])
@@ -257,6 +282,25 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func sendNoUsesLeftToast(context: Context) async throws {
         let text = "🚫 " + context.lingo.localize("combat.tech.no_uses_left", locale: context.session.locale)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
+    }
+
+    /// Phase 5.3e — if the player hasn't learned the given technique kind,
+    /// show a modal alert pointing them at the Training Ground and return
+    /// `true` so the caller bails out before executing. Returns `false`
+    /// when the technique is learned (caller continues normally).
+    private func sendLockedToastIfUnlearned(kind: CombatService.TechniqueKind, context: Context) async throws -> Bool {
+        if try await LearnedTechnique.has(kind.rawValue, for: context.session, on: context.db) {
+            return false
+        }
+        guard let query = context.update.callbackQuery else { return true }
+        let required = CombatService.requiredLevel(for: kind)
+        let text = context.lingo.localize("combat.tech.locked", locale: context.session.locale, interpolations: [
+            "level": "\(required)"
+        ])
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+            callbackQueryId: query.id, text: text, showAlert: true
+        ))
+        return true
     }
 
     /// Sent in response to anything that isn't a valid combat action while
@@ -478,7 +522,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             try await sendInCombatNotice(context: context)
             return true
         }
-        let markup = combatTechniquesMarkup(session: context.session, state: state, lingo: context.lingo)
+        let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
+        let markup = combatTechniquesMarkup(session: context.session, state: state, learned: learned, lingo: context.lingo)
         let params = TGEditMessageReplyMarkupParams(
             chatId: TGChatId.chat(message.chat.id),
             messageId: message.messageId,
@@ -534,6 +579,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// will consume (armor-split DEF debuff / lingering dodge buff).
     private func onSpecialDefense(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        if try await sendLockedToastIfUnlearned(kind: .specialDef, context: context) { return true }
         guard state.hasSpecialDefUse else {
             try await sendNoUsesLeftToast(context: context)
             return true
@@ -635,6 +681,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// for the counter — long aim leaves them open.
     private func onSpecialAttack(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        if try await sendLockedToastIfUnlearned(kind: .specialAtk, context: context) { return true }
         guard state.hasSpecialAtkUse else {
             try await sendNoUsesLeftToast(context: context)
             return true
@@ -731,6 +778,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// Tapping Super while a stance is already active is a no-op + toast.
     private func onSuper(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        if try await sendLockedToastIfUnlearned(kind: .super, context: context) { return true }
         guard state.hasSuperUse else {
             try await sendNoUsesLeftToast(context: context)
             return true

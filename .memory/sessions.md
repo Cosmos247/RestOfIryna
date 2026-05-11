@@ -1,5 +1,39 @@
 # Session History
 
+## Session N+5 — 2026-05-11 part 7 (Phase 5.3e — Technique gates + Training Ground learn flow)
+
+### What was done:
+Last sub-phase of the Phase 5.3 progression series. The 9 Phase 4.2 combat techniques (3 kinds × 3 classes) were unlocked from L1 prior to this; now they gate on player level and explicit Training Ground visits.
+
+**Architecture:**
+- `CombatService.TechniqueKind` enum (specialAtk / specialDef / super; class-agnostic IDs because each class has exactly one of each, resolved via `User.characterClass`)
+- `CombatService.requiredLevel(for: TechniqueKind) -> Int` — L8 / L11 / L14 thresholds
+- `CombatService.initialUses(for:playerLevel:) -> Int` — per-fight budget growth: 1 → 2 at L17 (atk) / L20 (def) / L21 (super). Wraps via `initialUsesForUser(_)` helper.
+- `LearnedTechnique` Fluent model + `CreateLearnedTechniques` migration (per-user, technique_id string, unique on user+id; mirrors `LearnedRecipe` shape exactly)
+- `ExplorationState.beginCombat` now takes `specialAtkUses / specialDefUses / superUses` as parameters. Three call sites updated: registration wolves fight, training-dummy spawn, active-mode encounter handoff. Each derives values via `CombatService.initialUsesForUser(context.session)`.
+
+**Combat submenu (Variant 2 — locked techniques show with 🔒):**
+- Learned + uses > 0 → normal `<name> × N` button (unchanged)
+- Learned + 0 uses → button hidden (unchanged — already-spent buttons hide so the menu stays compact)
+- Unlearned → `🔒 <name>` button with the **same** callback as learned. Execution handlers (`onSpecialAttack`, `onSpecialDefense`, `onSuper`) call new `sendLockedToastIfUnlearned(kind:context:)` first — if `LearnedTechnique.has` returns false, the handler sends a modal alert via `combat.tech.locked` ("Visit the Training Ground at level X") and bails.
+- `combatTechniquesMarkup` signature gained `learned: Set<String>` parameter; the only caller (`onTechMenu`) fetches the set once per submenu render.
+
+**Training Ground UI (replaces direct-to-spar):**
+- `handlePlotTraining` no longer jumps into the dummy fight. It now renders a Training Ground screen with three per-kind lines:
+  - ✅ `<name>` — already learned
+  - 📖 `<name>` — ready to learn (paired with a `[📖 Learn X]` button)
+  - 🔒 `<name>` — unlocks at level Y (no button)
+- Keyboard: one `[📖 Learn X]` per learnable-and-not-yet-known kind, then `[🥋 Spar]` and `[🔙 Back]`.
+- `handleTrainingLearn` validates the level gate defensively (so stale callbacks fail cleanly), writes `LearnedTechnique.add`, refreshes the screen with `✅ Learned X` (or `📖 You already know X` on idempotent re-tap).
+- `handleTrainingSpar` carries forward the pre-5.3e dummy-spawn logic. The `[🔙 Back]` button uses the existing `estate:plot` callback to return to plot list.
+- Class-specific technique names resolved via `EstateController.techniqueNameKey(kind:class:)` — same `combat.button.special_atk.<class>` / `.special_def.<class>` / `.super.<class>` keys used by the combat submenu, so the displayed names stay consistent across the two screens.
+
+**Locale parity 468/468** — 11 new keys × 2 locales (`combat.tech.locked` + `estate.training.{title, description, kind.{learned, learnable, locked}, button.{learn, spar, back}, banner.{learned, already_known}}`).
+
+**Phase 5.3 series complete.** All five sub-phases (a/b/c/d/e) shipped over 2026-05-11. Phase 5.4 abandoned earlier. Phase 5 is closed; next up is Phase 6 (economy / capital / market / first gold sources via quests).
+
+Build clean.
+
 ## Session N+4 — 2026-05-11 part 5 (Phase 5.3d craftable bag upgrades)
 
 ### What was done:

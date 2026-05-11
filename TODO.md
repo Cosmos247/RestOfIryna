@@ -283,7 +283,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] Create `content/recipes.md` reference doc
 - [-] Blueprint learning (recipe unlocks via drops / purchases) — *moved to Phase 6.3 Capital Hub, where Quest Board will hand out recipe scrolls as rewards*
 
-### 5.3 Player XP / level → estate-tier derivation + per-level unlocks *(in progress — 5.3a/b/c/d landed; 5.3e pending)*
+### 5.3 Player XP / level → estate-tier derivation + per-level unlocks *(landed — 5.3a/b/c/d/e all shipped)*
 
 Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (Strategy A); estate level is derived as `(level - 1) / 3 + 1`. 21 player levels → 7 estate tiers. Two-track unlocks: estate-tier (every 3 levels) for structural unlocks (rooms, plot slots, weapon tiers), player-level (each level) for personal unlocks (techniques, stat growth, bag size).
 
@@ -322,11 +322,16 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] Workshop UI: second universal button `[🎒 Upgrade bag]` after the weapon button. Detail screen mirrors weapon flow with capacity delta (`+10 slots`), estate-tier gate (✅/⛔), materials with have/need, `[🧵 Sew]` confirm. Failures → modal alert; success → in-place refresh + `✅ Bag upgraded to tier N — Name · K slots` banner.
 - [x] 15 new locale keys × 2 locales (5 tier names + 10 UI keys); parity 457/457.
 
-#### 5.3e Technique gates + "learn at Training Ground" flow *(planned)*
-- [ ] Hook unlock-by-level for the 9 Phase 4.2 techniques (currently all available from start)
-- [ ] First Special Attack at L8, first Special Defense at L11, first Super stance at L14
-- [ ] Per-fight uses growth: Special Atk 2/fight at L17, Special Def 2/fight at L20, Super 2/fight at L21
-- [ ] "Learn this technique" interaction at the Training Ground — explicit unlock requires Training Ground built AND player level threshold; in-combat hint when locked
+#### 5.3e Technique gates + "learn at Training Ground" flow *(landed 2026-05-11 part 7)*
+- [x] Unlock-by-level gating for the 3 class-bound technique slots (Special Atk / Special Def / Super) — each player has exactly one of each, resolved by `User.characterClass`. Class-agnostic IDs `special_atk` / `special_def` / `super` stored in `LearnedTechnique`.
+- [x] Player-level thresholds: Special Atk @ L8, Special Def @ L11, Super @ L14 (via `CombatService.requiredLevel(for:)`)
+- [x] Per-fight uses growth: 1/1/1 initial → 2 at L17 (atk) / L20 (def) / L21 (super) via `CombatService.initialUses(for:playerLevel:)`. `ExplorationState.beginCombat` takes uses as parameters; all 3 call sites updated (active encounter, training dummy, registration wolves)
+- [x] Combat submenu (Variant 2): learned + uses → "<name> × N"; spent learned → hidden; unlearned → "🔒 <name>" (same callback). Handlers call `sendLockedToastIfUnlearned` first; locked tap → modal alert via `combat.tech.locked` with required-level interpolation
+- [x] Training Ground screen replaces direct-to-spar: per-kind status lines (✅ learned / 📖 learnable / 🔒 locked) + `[📖 Learn X]` buttons (only shown for learnable kinds) + `[🥋 Spar]` + `[🔙 Back]`. Learn handler defensively re-checks level gate. Spar reuses the existing dummy combat flow.
+- [x] `LearnedTechnique` Fluent model + `CreateLearnedTechniques` migration (unique on user_id+technique_id, mirrors LearnedRecipe shape)
+- [x] 11 new locale keys × 2 locales (combat.tech.locked + estate.training.{title,description,kind.{learned,learnable,locked},button.{learn,spar,back},banner.{learned,already_known}}); parity 468/468
+
+**Phase 5.3 series complete.** All sub-phases (a/b/c/d/e) landed. Next: Phase 6.
 
 #### 5.3 — Future / deferred
 - [ ] L21 max-level perk (TBD — large stat boost, cosmetic, or unique skin)

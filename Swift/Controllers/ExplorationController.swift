@@ -389,7 +389,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// keyboard. Called from the step handlers when `rollStep` rolls an
     /// encounter in active mode.
     private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy) async throws {
-        state.beginCombat(enemyId: enemy.id, hp: enemy.hp)
+        let uses = CombatService.initialUsesForUser(context.session)
+        state.beginCombat(enemyId: enemy.id, hp: enemy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
         try await state.save(on: context.db)
 
         let combatCtrl = Controllers.combatController

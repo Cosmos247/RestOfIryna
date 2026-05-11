@@ -304,13 +304,16 @@ extension ExplorationState {
     }
 
     /// Stamp the combat fields and initialise the per-fight technique
-    /// budget (Special Atk / Special Def / Super = 2 / 2 / 1). Caller saves.
-    public func beginCombat(enemyId: String, hp: Int) {
+    /// budget. Phase 5.3e: caller supplies use counts derived from the
+    /// player's level via `CombatService.initialUses(for:playerLevel:)`,
+    /// so the budget grows organically with progression (1/1/1 early,
+    /// 2/2/2 at the L17/L20/L21 thresholds).
+    public func beginCombat(enemyId: String, hp: Int, specialAtkUses: Int, specialDefUses: Int, superUses: Int) {
         self.combatEnemyId = enemyId
         self.combatEnemyHP = hp
-        self.combatSpecialAtkUses = 2
-        self.combatSpecialDefUses = 2
-        self.combatSuperUses = 1
+        self.combatSpecialAtkUses = specialAtkUses
+        self.combatSpecialDefUses = specialDefUses
+        self.combatSuperUses = superUses
     }
 
     /// Clear the combat fields without touching the rest of the row. Also

@@ -23,6 +23,52 @@ public enum AttackOutcome: Sendable {
 }
 
 public enum CombatService {
+
+    // MARK: - Phase 5.3e — Technique unlock gates
+
+    /// The three class-bound technique slots. Each player has exactly one
+    /// of each (resolved by `characterClass`). Stored in `LearnedTechnique`
+    /// by `rawValue` once the player visits the Training Ground at the
+    /// required level.
+    public enum TechniqueKind: String, CaseIterable, Sendable {
+        case specialAtk = "special_atk"
+        case specialDef = "special_def"
+        case `super`    = "super"
+    }
+
+    /// Player level required to learn the technique kind.
+    /// Special Atk at L8, Special Def at L11, Super at L14.
+    public static func requiredLevel(for kind: TechniqueKind) -> Int {
+        switch kind {
+        case .specialAtk: return 8
+        case .specialDef: return 11
+        case .super:      return 14
+        }
+    }
+
+    /// Per-fight uses budget for the kind at the given player level.
+    /// Phase 5.3e starts everyone at 1 use per kind, then bumps to 2 at
+    /// L17 / L20 / L21 respectively (the "use-count growth" perks of the
+    /// upper levels in the Phase 5.3 unlock map).
+    public static func initialUses(for kind: TechniqueKind, playerLevel: Int) -> Int {
+        switch kind {
+        case .specialAtk: return playerLevel >= 17 ? 2 : 1
+        case .specialDef: return playerLevel >= 20 ? 2 : 1
+        case .super:      return playerLevel >= 21 ? 2 : 1
+        }
+    }
+
+    /// Tuple of per-fight uses for a user — called by every `beginCombat`
+    /// caller (active exploration, training dummy, registration wolves) so
+    /// the budget always tracks the user's current level.
+    public static func initialUsesForUser(_ user: User) -> (atk: Int, def: Int, sup: Int) {
+        return (
+            initialUses(for: .specialAtk, playerLevel: user.level),
+            initialUses(for: .specialDef, playerLevel: user.level),
+            initialUses(for: .super,      playerLevel: user.level)
+        )
+    }
+
     /// Base hit chance before accuracy/dodge modifiers (percent).
     public static let baseHitChance: Int = 70
     /// Floor and ceiling on hit chance so even a heavily out-statted side can

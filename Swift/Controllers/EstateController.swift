@@ -934,6 +934,13 @@ extension EstateController {
         if data.hasPrefix("estate:plot:train:") {
             return try await handlePlotTraining(data: data, query: query, message: message, context: context)
         }
+        // Phase 5.3e Training Ground learn / spar callbacks.
+        if data.hasPrefix("estate:training:learn:") {
+            return try await handleTrainingLearn(data: data, query: query, message: message, context: context)
+        }
+        if data == "estate:training:spar" {
+            return try await handleTrainingSpar(query: query, message: message, context: context)
+        }
 
         if data.hasPrefix("estate:wh:") {
             // Warehouse category drill-down (e.g. estate:wh:food).
@@ -1275,11 +1282,11 @@ extension EstateController {
         }
     }
 
-    /// `estate:plot:train:<slot>` — opens combat against a Training Dummy.
-    /// Hooks into the existing CombatController by stamping the `enemy.training_dummy`
-    /// id on a fresh ExplorationState row. CombatController detects the
-    /// training context by enemy id and swaps Flee for a Back button that
-    /// returns the player to this plot list.
+    /// `estate:plot:train:<slot>` — opens the Training Ground screen for
+    /// the given plot. Phase 5.3e: this no longer enters combat directly.
+    /// Instead the player sees per-kind technique status (✅ learned /
+    /// 📖 learnable button / 🔒 locked w/ level hint) plus a `[🥋 Spar]`
+    /// button that spawns the dummy fight and a `[🔙 Back]` button.
     static func handlePlotTraining(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let slot = Int(String(data.dropFirst("estate:plot:train:".count))) ?? -1
         let locale = context.session.locale
@@ -1290,6 +1297,61 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+        let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
+        let ctrl = Controllers.estateController
+        let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
+        let inline = ctrl.trainingGroundKeyboard(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `estate:training:learn:<kind>` — record the technique as learned for
+    /// the user and refresh the Training Ground screen with a `✅ Learned X`
+    /// banner. Defensive: re-checks the player-level gate even though the
+    /// button only renders when the gate passes (so stale callbacks fail
+    /// cleanly instead of granting underage techniques).
+    static func handleTrainingLearn(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let raw = String(data.dropFirst("estate:training:learn:".count))
+        let locale = context.session.locale
+        guard let kind = CombatService.TechniqueKind(rawValue: raw) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+        let required = CombatService.requiredLevel(for: kind)
+        if context.session.level < required {
+            let toast = context.lingo.localize("combat.tech.locked", locale: locale, interpolations: ["level": "\(required)"])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        let added = try await LearnedTechnique.add(kind.rawValue, for: context.session, on: context.db)
+
+        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        let techName = context.lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
+        let banner: String
+        if added {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            banner = "✅ " + context.lingo.localize("estate.training.banner.learned", locale: locale, interpolations: ["name": techName])
+        } else {
+            // Already learned — silent ack, refresh anyway (idempotent).
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            banner = "📖 " + context.lingo.localize("estate.training.banner.already_known", locale: locale, interpolations: ["name": techName])
+        }
+
+        let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
+        let ctrl = Controllers.estateController
+        let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
+        let text = "\(banner)\n\n\(body)"
+        let inline = ctrl.trainingGroundKeyboard(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+        return true
+    }
+
+    /// `estate:training:spar` — spawn the dummy fight, identical to the
+    /// pre-5.3e behaviour. CombatController's training-mode UX takes over.
+    static func handleTrainingSpar(query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         guard let dummy = EnemyCatalog.find(CombatService.trainingDummyEnemyId),
               let userId = context.session.id else {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1297,24 +1359,80 @@ extension EstateController {
         }
         // Spin up a fresh ExplorationState row holding the training fight.
         // Estate is locked during real expeditions (`showEstate` guard), so
-        // there's no concurrent state to clash with.
-        // **Note:** unlike real combat, we do NOT flip `routerName` to
-        // "combat" — the player should be free to navigate the main
-        // reply-keyboard (Profile / Inventory / Estate / Capital / Settings)
-        // while training. The combat inline-button callbacks reach
-        // `CombatController.onCallbackQuery` via the `combat:*` forwarding
-        // installed in every other controller's onCallbackQuery handler.
+        // there's no concurrent state to clash with. **Note:** unlike real
+        // combat, we do NOT flip `routerName` to "combat" — the player
+        // should be free to navigate the main reply-keyboard while
+        // training. The combat callbacks reach `CombatController` via the
+        // `combat:*` forwarding installed in every other controller.
         let state = ExplorationState(userID: userId, stepsDeep: 0)
-        state.beginCombat(enemyId: dummy.id, hp: dummy.hp)
+        let uses = CombatService.initialUsesForUser(context.session)
+        state.beginCombat(enemyId: dummy.id, hp: dummy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
         try await state.save(on: context.db)
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-
-        // Hand off to CombatController. `intro: true` shows the encounter
-        // banner — flavoured by `combat.encounter.intro` interpolating the
-        // dummy's name.
         try await Controllers.combatController.showCombat(context: context, state: state, enemy: dummy, intro: true)
         return true
+    }
+
+    /// Localization key for the player's class-specific technique name —
+    /// reused both in the combat submenu and the Training Ground screen so
+    /// the displayed names stay consistent.
+    fileprivate static func techniqueNameKey(kind: CombatService.TechniqueKind, class cls: CharacterClass) -> String {
+        switch kind {
+        case .specialAtk: return "combat.button.special_atk.\(cls.rawValue)"
+        case .specialDef: return "combat.button.special_def.\(cls.rawValue)"
+        case .super:      return "combat.button.super.\(cls.rawValue)"
+        }
+    }
+
+    /// Body of the Training Ground screen. Three per-kind lines that
+    /// either confirm the technique is known, invite the player to learn
+    /// (handled by the keyboard's `📖 Learn X` button), or note the level
+    /// at which it unlocks.
+    fileprivate func renderTrainingGround(session: User, learned: Set<String>, lingo: Lingo, locale: String) -> String {
+        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
+        let title = lingo.localize("estate.training.title", locale: locale)
+        let intro = lingo.localize("estate.training.description", locale: locale)
+        var lines: [String] = ["<b>\(title)</b>", "", intro, ""]
+
+        for kind in CombatService.TechniqueKind.allCases {
+            let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
+            let isLearned = learned.contains(kind.rawValue)
+            let required = CombatService.requiredLevel(for: kind)
+            if isLearned {
+                lines.append(lingo.localize("estate.training.kind.learned", locale: locale, interpolations: ["name": name]))
+            } else if session.level >= required {
+                lines.append(lingo.localize("estate.training.kind.learnable", locale: locale, interpolations: ["name": name]))
+            } else {
+                lines.append(lingo.localize("estate.training.kind.locked", locale: locale, interpolations: [
+                    "name": name,
+                    "level": "\(required)"
+                ]))
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Keyboard for the Training Ground screen. One `📖 Learn X` button per
+    /// kind the player can learn right now (gate passed and not yet known),
+    /// then `[🥋 Spar]` and `[🔙 Back]` rows.
+    fileprivate func trainingGroundKeyboard(session: User, learned: Set<String>, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
+        var rows: [[TGInlineKeyboardButton]] = []
+
+        for kind in CombatService.TechniqueKind.allCases {
+            if learned.contains(kind.rawValue) { continue }
+            if session.level < CombatService.requiredLevel(for: kind) { continue }
+            let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
+            let label = lingo.localize("estate.training.button.learn", locale: locale, interpolations: ["name": name])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "estate:training:learn:\(kind.rawValue)")])
+        }
+
+        let spar = lingo.localize("estate.training.button.spar", locale: locale)
+        let back = lingo.localize("estate.training.button.back", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: spar, callbackData: "estate:training:spar")])
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:plot")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     // MARK: - Workshop crafting (Phase 5.2)
