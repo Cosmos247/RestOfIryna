@@ -41,11 +41,11 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Starvation: travel time doubles, stats -25%, HP drain per room
 - Food tiers: T1 (15) -> T4 (150)
 
-### Estates (30x30 grid)
-- Manor: 7x7 center (rooms: bedroom, kitchen, workshop + unlockable)
-- Plots: farm, orchard, pasture, mine, lumber yard, hunting range, garden
-- Real-time production timers
-- Placed in global shared grid, adjacency matters
+### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*
+- Manor: per-tier rooms (Warehouse → +Kitchen → +Workshop unlock as the estate tier grows; see Phase 5.3c for the actual gating). Workshop hosts Forge + Tannery + weapon-upgrade + bag-upgrade flows; Kitchen hosts cooking
+- Plots: abstract list (no spatial layout), slot count grows with estate tier `[0,1,2,3,4,5,6]`. Types: Farm / Lumberyard / Mine / Coop / Training Ground
+- Real-time production timers (PlotProductionService)
+- ~~Placed in global shared grid, adjacency matters~~ — the 30×30 grid + frontier-placement + 8-neighbor design (originally Phase 5.4) is no longer planned
 
 ### Capital
 - Main Square, Market (NPC + player bazaar), Quest Board, Stables, Guildhall, Arena, Chapel, Bank
@@ -55,11 +55,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Pet stats mirror player stats + Level, Species, Bond
 - Roles: combat pets, buff pets, worker pets
 
-### Territorial Warfare
-- Adjacent estates only, standard PvP combat
-- 10 consecutive losses to same attacker = lose 1 border tile
-- Counter resets on defender win
-- Cooldown between challenges
+### Territorial Warfare *(design pivoted 2026-05-11 — adjacency-based model abandoned)*
+- Original GDD plan: adjacent-estate-only PvP, 10-loss-streak loses a border tile, cooldowns between challenges. **Discarded** along with the 30×30 grid.
+- Replacement: a different estate-attack PvP mechanic — design TBD. Lives in Phase 7+ as a clean-sheet effort once the rest of Phase 5/6 is solid.
 
 ### Economy
 - Resources: raw materials, biomass, flora, currency (gold + TBD premium), rare drops

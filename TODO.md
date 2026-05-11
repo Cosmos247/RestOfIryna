@@ -258,7 +258,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [-] Manor 7×7 interior rooms — *deferred; current model uses abstract House nav*
 - [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 
-### 5.2 Workshop crafting *(in progress)*
+### 5.2 Workshop crafting *(landed — Forge + Tannery + 5.2.1 Kitchen + 5.2.2 Weapon upgrade; bag upgrade lives in 5.3d)*
 - [x] `Recipe` code-based catalog (id, category, inputs, output) — `Swift/Models/Recipe.swift`. Two categories shipped: 🔥 Forge (smelting) + 🧵 Tannery (leather armor)
 - [x] `CraftingService.craft(...)` — pure: pulls inputs from inventory + warehouse pool (inventory first to free slots), output lands in inventory; `CraftResult` enum (success / missingMaterials / inventoryFull / unknownRecipe / unknownItem); post-drain slot accept-check so a craft never refuses spuriously
 - [x] First recipe: `mat.iron × 10 → mat.iron_ingot × 1` (Forge)
@@ -280,10 +280,10 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
   - Kitchen UI in EstateController mirrors Workshop (compact list → detail screen with Recipe + Effects sections + `[🍳 Cook]` / `[🔙 Back]`)
   - Dev seed bumped (5× of every cooking ingredient, all 5 scroll-locked recipes)
 - [x] Weapon upgrade flow (Phase 5.2.2) — Workshop button `[⚔️ Upgrade weapon]` advances the player's class starter weapon one tier at a time. Three weapons × 5 tiers (Rusty Sword → Knight's Sword / Simple Bow → Hunter's Longbow / Wooden Staff → Archmage's Scepter). Stats + materials live in `WeaponUpgradeCatalog`; T1 stats match legacy `Item.gearStats`. Tier persisted on `InventoryEntry.tier` (`AddInventoryTier` migration, default 1). Estate-level gate (tier N requires estate ≥ N), no skip-ahead — sequential progression. `WeaponUpgradeService.upgrade(for:on:)` drains materials from combined inventory + warehouse pool, bumps tier in place (item id never changes). Tier-aware display names via `ItemDisplay.nameKey(for:tier:)`. Tiered weapons can't be warehoused (new `notTransferable` result on WarehouseService.deposit).
-- [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
 - [x] Create `content/recipes.md` reference doc
+- [-] Blueprint learning (recipe unlocks via drops / purchases) — *moved to Phase 6.3 Capital Hub, where Quest Board will hand out recipe scrolls as rewards*
 
-### 5.3 Player XP / level → estate-tier derivation + per-level unlocks *(in progress)*
+### 5.3 Player XP / level → estate-tier derivation + per-level unlocks *(in progress — 5.3a/b/c/d landed; 5.3e pending)*
 
 Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (Strategy A); estate level is derived as `(level - 1) / 3 + 1`. 21 player levels → 7 estate tiers. Two-track unlocks: estate-tier (every 3 levels) for structural unlocks (rooms, plot slots, weapon tiers), player-level (each level) for personal unlocks (techniques, stat growth, bag size).
 
@@ -332,10 +332,8 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [ ] L21 max-level perk (TBD — large stat boost, cosmetic, or unique skin)
 - [ ] Granular per-stat curve tuning (ATK/DEF growth rates may need rebalance after playtesting)
 
-### 5.4 Estate Placement *(deferred)*
-- [-] 30×30 spatial estate grid — *deferred; needed for territorial PvP design in Phase 7+*
-- [-] Frontier-based placement for new players — *same*
-- [-] 8-neighbor adjacency queries — *same*
+### 5.4 Estate Placement *(abandoned 2026-05-11)*
+- [-] **30×30 spatial estate grid + frontier placement + 8-neighbor adjacency** — replaced by a different PvP-on-estate attack mechanic (TBD, lives in Phase 7+ as a clean-sheet design). The original GDD plan around adjacency-gated territorial wars is no longer the direction; do not resurrect this approach.
 
 ---
 
@@ -354,7 +352,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 
 ### 6.3 Capital Hub
 - [ ] Create CapitalController with location menu
-- [ ] Implement Quest Board (daily/weekly quests)
+- [ ] Implement Quest Board (daily/weekly quests) — **first source of gold** (currently no in-game gold drop; estate upgrades T3+ already gate on `User.gold`) and **recipe-scroll rewards** (blueprint learning for Workshop / Kitchen recipes, moved here from 5.2)
 - [ ] Implement Stables (fast travel, gold cost)
 - [ ] Implement Bank (personal vault, transfers)
 - [ ] Implement Chapel (respec, name change)

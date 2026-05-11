@@ -18,7 +18,7 @@
 
 ## 🎮 The Game in One Paragraph
 
-The kingdom's forests have fallen to a rabies plague. Playing a **mage**, **warrior**, or **archer**, each player claims a 30×30 estate with a central manor, then ventures out to explore an infinite chain of wilderness rooms — finding resources, fighting rabid beasts, occasionally taming them, and diving into multi-player dungeons deep in the woods. Back home, they upgrade the manor, expand plots for farming / mining / livestock, craft gear and food, and — because land is finite — fight adjacent players for territory. The capital hosts markets, quests, guilds, and a PvP arena. See [GDD.md](./GDD.md) for the full system breakdown.
+The kingdom's forests have fallen to a rabies plague. Playing a **mage**, **warrior**, or **archer**, each player claims a personal estate with a central manor, then ventures out to explore an infinite chain of wilderness rooms — finding resources, fighting rabid beasts, occasionally taming them, and diving into multi-player dungeons deep in the woods. Back home, they upgrade the manor through 7 tiers (Wooden Hut → Lord's Holdings), expand plots for farming / mining / livestock, craft gear and food at the Workshop and Kitchen, and clash with rival estates through estate-attack PvP. The capital hosts markets, quests, guilds, and a PvP arena. See [GDD.md](./GDD.md) for the full system breakdown.
 
 ---
 
