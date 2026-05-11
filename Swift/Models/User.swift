@@ -169,11 +169,87 @@ final public class User: Model, @unchecked Sendable {
         self.createdAt = Date()
     }
 
-    /// Estate level derived from the player's level. Every 5 player levels raises
-    /// the estate by one tier — player lv 1–5 → estate lv 1, lv 6–10 → 2, and so on.
-    /// Drives per-level artwork and unlocked locations (Phase 5 scaffolding).
+    /// Estate level derived from the player's level. Every 3 player levels raises
+    /// the estate by one tier — player lv 1–3 → estate 1, lv 4–6 → 2, …, lv 19–21 → 7.
+    /// Drives per-level artwork, unlocked rooms, plot slot allowance, and weapon
+    /// upgrade gates. Replaces the legacy `/5` derivation in Phase 5.3a.
     var estateLevel: Int {
-        return 1 + max(0, (level - 1)) / 5
+        return 1 + max(0, (level - 1)) / 3
+    }
+
+    // MARK: - Phase 5.3a — Player XP / level
+
+    /// Hard cap on player level. Reaching `maxLevel` freezes XP at zero and
+    /// `xpToNextLevel` returns `Int.max` so progress bars render as full.
+    public static let maxLevel: Int = 21
+
+    /// XP required to advance from `forLevel` → `forLevel + 1`. Softcap curve:
+    ///   - L1→L5: pure doubling — 100, 200, 400, 800, 1600
+    ///   - L5+:   `prev * 1.4`, rounded — 2240, 3136, 4390, …
+    /// Returns `Int.max` past `maxLevel` so callers can treat "no more XP needed"
+    /// uniformly.
+    public static func xpRequiredToReach(_ nextLevel: Int) -> Int {
+        // nextLevel is the level the player would reach by spending the XP.
+        // I.e. the cost of L1→L2 is xpRequiredToReach(2).
+        guard nextLevel >= 2, nextLevel <= maxLevel else { return Int.max }
+        var cost = 100
+        var lvl = 2
+        while lvl < nextLevel {
+            if lvl <= 5 {
+                cost *= 2
+            } else {
+                cost = Int((Double(cost) * 1.4).rounded())
+            }
+            lvl += 1
+        }
+        return cost
+    }
+
+    /// XP cost of the current pending level-up. `Int.max` once at max level.
+    var xpToNextLevel: Int {
+        return User.xpRequiredToReach(level + 1)
+    }
+
+    /// Result of a `grantXP` call. UI banners read these to decide what to show.
+    public struct XPGrantResult: Sendable {
+        public let xpAwarded: Int
+        public let levelsGained: Int
+        public let estateLeveledUp: Bool
+        public let newLevel: Int
+        public let newEstateLevel: Int
+    }
+
+    /// Add XP and process level-ups in a loop. Returns a result describing how
+    /// many levels were gained and whether the estate tier crossed a threshold.
+    /// Callers persist the user via `saveAndCache`. Stat-growth on level-up
+    /// lands in Phase 5.3b — for now this only mutates `level` and `xp`.
+    @discardableResult
+    func grantXP(_ amount: Int) -> XPGrantResult {
+        let oldLevel = level
+        let oldEstate = estateLevel
+        guard amount > 0, level < User.maxLevel else {
+            return XPGrantResult(
+                xpAwarded: 0, levelsGained: 0, estateLeveledUp: false,
+                newLevel: level, newEstateLevel: estateLevel
+            )
+        }
+        xp += amount
+        while level < User.maxLevel, xp >= xpToNextLevel {
+            xp -= xpToNextLevel
+            level += 1
+        }
+        if level >= User.maxLevel {
+            // Pin XP to 0 at cap so the profile doesn't keep accumulating
+            // dead XP after the player can no longer spend it.
+            xp = 0
+        }
+        return XPGrantResult(
+            xpAwarded: amount,
+            levelsGained: level - oldLevel,
+            estateLeveledUp: estateLevel > oldEstate,
+            newLevel: level,
+            newEstateLevel: estateLevel
+        )
     }
 
     /// Apply class-specific starting stats

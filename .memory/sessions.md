@@ -1,5 +1,32 @@
 # Session History
 
+## Session N — 2026-05-11 (Phase 5.3a — XP/level base system)
+
+### What was done:
+Designed the full Phase 5.3 progression plan with the user (interactive, multi-round), then landed Phase 5.3a (the base XP/level layer) with **no gates yet** — everything is still open, only XP and levels exist.
+
+**Design decisions captured:**
+- Two-track progression: estate-tier (every 3 player levels) for structural unlocks, player-level (each level) for personal/combat unlocks
+- Estate level formula: `(level - 1) / 3 + 1` (was `/5 + 1`) — 21 player levels → 7 estate tiers (T1 L1-3 / T2 L4-6 / … / T7 L19-21)
+- XP curve with softcap: pure doubling L1→L5 (100/200/400/800/1600), then ×1.4 from L5+ (~870K total to L21, ~5K T6 kills)
+- Per-tier XP rewards: T1=5, T2=12, T3=25, T4=50, T5=100, T6=175, training_dummy=0
+- Full sub-phase split: 5.3a (base), 5.3b (stat growth on L2/3/5/6/9/12/15/18), 5.3c (room/category/plot-type gates + plot-slot table), 5.3d (smaller starter bag + craftable bag upgrades in Workshop), 5.3e (technique gates + "learn at Training Ground" flow + per-fight uses growth)
+- Carved-out unlock map L1→L21 with concrete contents per level (kept in conversation log; will be referenced when implementing later sub-phases)
+
+**Implementation (5.3a only):**
+- `Enemy.xpReward: Int` field + populated all 7 enemies (5/12/25/50/100/175/0 for dummy)
+- `User.maxLevel = 21`, `User.xpRequiredToReach(_)` softcap helper, `User.xpToNextLevel` computed, `User.grantXP(_) -> XPGrantResult` that processes level-ups in a loop and reports both `levelsGained` and `estateLeveledUp`
+- `User.estateLevel` formula updated to `(level-1)/3+1`
+- `CombatController.finishVictory` grants XP after victory drops; appends `📊 +N XP` / `🎉 Level N!` / `🏰 Estate tier N!` banners to the victory message; skips registration tutorial fight (still narrative-only) and training dummy (xpReward = 0 makes it a natural no-op)
+- `PassiveExpeditionService` — `RunningPassiveReport` and `PassiveReport` gain `xpEarned` (with backwards-compat custom decoder for in-flight pre-5.3a rows). `runLive` accumulates XP from each `.encounterWon` outcome via `enemy.xpReward`. `finalizeAndPush` calls `user.grantXP(xpEarned)` and `saveAndCache` before serializing the final report. `renderReport` adds an XP line (with level-up suffix when `levelsGained > 0`)
+- Profile (all 3 styles in MainController) gained an XP fragment. Style 1 (compact): `📊 XP 250/400`. Style 2 (text bar): `📊 ████░░░░░░ 250/400`. Style 3 (verbose with emoji bar): full block with emoji bar + numeric. At max level all three styles render `Max` instead of progress
+- Removed dead `MainController.xpForNextLevel(_:)` (was `level * 100`); profile now reads `User.xpToNextLevel` directly
+- 6 new locale keys × 2 locales: `profile.xp.max`, `combat.victory.xp`, `level_up.banner`, `estate_up.banner`, `exploration.passive.report.xp`, `exploration.passive.report.xp_with_levelup`. Locale parity 418/418
+
+**No gates yet:** weapon-upgrade still uses estate-level (now reachable), Kitchen / Workshop / Plot all still open from L1, plot slots still flat 5, techniques still all open. Those land in 5.3b–5.3e.
+
+**Build:** clean. Existing players (everyone at L1) keep their current open access — they only start gaining XP on the next combat / passive expedition.
+
 ## Session 1 — 2026-04-17 (Initial Setup)
 
 ### What was done:

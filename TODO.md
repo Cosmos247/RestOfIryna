@@ -283,13 +283,46 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [ ] Future: blueprint learning (recipe unlocks via drops / purchases) — defer until base crafting is solid
 - [x] Create `content/recipes.md` reference doc
 
-### 5.3 XP-to-Estate progression *(planned)*
-- [ ] Replace `User.estateLevel = User.level / 5` derivation with a real model — combat / exploration awards estate XP directly (not character level)
-- [ ] Decide: keep `User.xp` / `User.level` as the source of truth (renamed conceptually) or add a new `Estate` model with its own xp/level
-- [ ] Wire estate-XP grants from combat victory + exploration completions
-- [ ] Tune the level-up curve once the basic loop is in
-- [ ] Restore `PlotService.slotsForLevel` to use the logarithmic table (currently flat 5)
-- [ ] Hook unlock-by-level for Phase 4.2 techniques (currently all available from start)
+### 5.3 Player XP / level → estate-tier derivation + per-level unlocks *(in progress)*
+
+Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (Strategy A); estate level is derived as `(level - 1) / 3 + 1`. 21 player levels → 7 estate tiers. Two-track unlocks: estate-tier (every 3 levels) for structural unlocks (rooms, plot slots, weapon tiers), player-level (each level) for personal unlocks (techniques, stat growth, bag size).
+
+#### 5.3a Base XP/level system *(landed 2026-05-11)*
+- [x] `Enemy.xpReward: Int` per-tier (T1=5 / T2=12 / T3=25 / T4=50 / T5=100 / T6=175 / dummy=0)
+- [x] `User.maxLevel = 21`, `User.xpRequiredToReach(_)` softcap helper (×2 to L5, ×1.4 after), `User.xpToNextLevel`, `User.grantXP(_) -> XPGrantResult` (returns `levelsGained` + `estateLeveledUp` + `newLevel` + `newEstateLevel`)
+- [x] `User.estateLevel` formula `(level - 1) / 3 + 1` replaces `/5 + 1`
+- [x] `CombatController.finishVictory` grants XP + appends `📊 +N XP` / `🎉 Level N!` / `🏰 Estate tier N!` banners (skipped during registration tutorial; training dummy is xpReward=0 natural no-op)
+- [x] `PassiveExpeditionService` accumulates XP via `RunningPassiveReport.xpEarned`, grants at `finalizeAndPush`, surfaces in report (`PassiveReport` gains `xpEarned` / `levelsGained` / `newLevel` with backwards-compat Codable)
+- [x] Profile XP visualization in all 3 styles (compact / text-bar / emoji-bar); `Max` label at L21
+- [x] 6 new locale keys × 2 locales; parity 418/418
+
+#### 5.3b Stat growth on level-up *(next)*
+- [ ] On level-up, grant +5 maxHP / +1 ATK / +1 DEF at L2, L3, L5, L6, L9, L12, L15, L18 (8 boosts total → +40 maxHP / +8 ATK / +8 DEF by L21)
+- [ ] maxVigor stays 100 always — no growth (per design)
+- [ ] Surface in level-up banner: "🎉 Level N! +5 maxHP +1 ATK +1 DEF"
+
+#### 5.3c Room / plot-type / plot-slot gates *(planned)*
+- [ ] Kitchen unlocks at estate T2 (player L4)
+- [ ] Workshop unlocks at estate T3 (player L7); Tannery sub-category at estate T4 (L10)
+- [ ] Training Ground plot-type unlocks at estate T3 (L7); other 4 types (Farm/Lumber/Mine/Coop) available from estate T2 (L4)
+- [ ] First plot slot unlocks at estate T2 (L4); plot slot count grows: T1=0, T2=1, T3=2, T4=3, T5=4, T6=5, T7=6 — restore `PlotService.slotsForLevel` table from current flat 5
+- [ ] Warehouse cap grows with estate tier: T1=50, T2=100, T3=150, T4=200, T5=300, T6=400, T7=500 (currently unlimited; new feature)
+- [ ] Existing players (L1) keep their already-claimed plots even if over the new allowance — only new claims are gated
+
+#### 5.3d Bag size / starter rebalance + craftable bag upgrades *(planned)*
+- [ ] Starter bag drops 50 → 20 slots (warehouse stays generous so safe storage > carry capacity makes narrative sense)
+- [ ] Bag becomes upgradable in Workshop (parallel to weapon upgrade): T1 Linen Sack 20 → T2 Leather Bag 30 (5× hide + 2× iron, est T3+) → T3 Reinforced 40 (10× hide + 3× ingot, est T4+) → T4 Hunter's Pack 55 (15× hide + 5× ingot, est T5+) → T5 Master's Knapsack 75 (20× hide + 8× ingot, est T6+)
+- [ ] Mirror `WeaponUpgradeService` architecture (`BagUpgradeService` + `BagCatalog`); new `User.bagTier` field + migration
+
+#### 5.3e Technique gates + "learn at Training Ground" flow *(planned)*
+- [ ] Hook unlock-by-level for the 9 Phase 4.2 techniques (currently all available from start)
+- [ ] First Special Attack at L8, first Special Defense at L11, first Super stance at L14
+- [ ] Per-fight uses growth: Special Atk 2/fight at L17, Special Def 2/fight at L20, Super 2/fight at L21
+- [ ] "Learn this technique" interaction at the Training Ground — explicit unlock requires Training Ground built AND player level threshold; in-combat hint when locked
+
+#### 5.3 — Future / deferred
+- [ ] L21 max-level perk (TBD — large stat boost, cosmetic, or unique skin)
+- [ ] Granular per-stat curve tuning (ATK/DEF growth rates may need rebalance after playtesting)
 
 ### 5.4 Estate Placement *(deferred)*
 - [-] 30×30 spatial estate grid — *deferred; needed for territorial PvP design in Phase 7+*
@@ -424,4 +457,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-04-30 — Phases 0-2 complete; Phase 3 MVP done; Phase 4.1+4.2+4.3.1+4.4 combat done (4.3.2/4.3.3 deferred, 4.3.4-6 in Future Backlog); Phase 5.0 estate skeleton + warehouse + Phase 5.1 plot system + Training Ground + iron resource overhaul all landed. Spatial 30×30 grid (5.4) deferred to Phase 7 PvP. Next: Phase 5.2 Workshop / Kitchen crafting (first recipe `mat.iron × 10 → mat.iron_ingot × 1`); Phase 5.3 XP-to-Estate progression (replaces current `User.estateLevel = User.level / 5` derivation).*
+*Last updated: 2026-05-11 — Phase 5.3a base XP/level layer landed (combat + passive grants, profile XP bar, estateLevel formula `(level-1)/3+1`, softcap curve, level-up + estate-up banners). No gates yet — Kitchen/Workshop/Plot/techniques all still open. Next: 5.3b stat growth on level-up.*

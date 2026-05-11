@@ -179,13 +179,21 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
         let estate = session.estateName ?? "?"
         let level = session.level
-        let xp = session.xp, xpMax = xpForNextLevel(level)
+        let xp = session.xp
+        let xpMax = session.xpToNextLevel
+        let isMaxLevel = level >= User.maxLevel
         let hp = session.hp, maxHp = session.maxHp
         let vigor = session.vigor, maxVigor = session.maxVigor
         let atk = session.effectiveAttack, def = session.effectiveDefense
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
         let gold = session.gold
         let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
+
+        // Phase 5.3a — compact XP fragment shown in every profile style. At max
+        // level the progress numbers are replaced with a "max" label.
+        let xpFragment: String = isMaxLevel
+            ? lingo.localize("profile.xp.max", locale: session.locale)
+            : "\(xp)/\(xpMax)"
 
         // Main-hand line — shown on every style. Empty string if nothing equipped.
         let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
@@ -201,12 +209,17 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
         switch style {
         case 2:
+            let xpBar = isMaxLevel ? "" : bar(xp, xpMax)
+            let xpLine = isMaxLevel
+                ? "📊 \(lingo.localize("profile.xp.max", locale: session.locale))"
+                : "📊 \(xpBar) \(xpFragment)"
             return """
             \(cls.icon()) \(className)  «<b>\(nickname)</b>»  Lv.\(level)
             ━━━━━━━━━━━━━━━━
 
             ❤️ \(bar(hp, maxHp)) \(hp)/\(maxHp)
             🍖 \(bar(vigor, maxVigor)) \(vigor)/\(maxVigor)\(starvingSuffix)
+            \(xpLine)
 
             ⚔️ \(atk)  🛡 \(def)  💥 \(crit)%
             🎯 \(acc)  💨 \(dodge)
@@ -218,13 +231,24 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         case 3:
             let l = lingo
             let loc = session.locale
+            let xpBlock: String
+            if isMaxLevel {
+                xpBlock = "📊 \(l.localize("profile.xp", locale: loc)): \(l.localize("profile.xp.max", locale: loc))"
+            } else {
+                xpBlock = """
+                📊 \(l.localize("profile.xp", locale: loc)): \(xp)/\(xpMax)
+                \(emojiBar(xp, xpMax, fill: "🟦"))
+                """
+            }
             return """
             \(cls.icon()) <b>\(nickname)</b> — \(className)
-            ✨ \(l.localize("profile.level", locale: loc)) \(level) (\(xp)/\(xpMax) \(l.localize("profile.xp", locale: loc)))
+            ✨ \(l.localize("profile.level", locale: loc)) \(level)
+
+            \(xpBlock)
 
             ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
             \(emojiBar(hp, maxHp, fill: "🟥"))
-            
+
             🍖 \(l.localize("profile.vigor", locale: loc)): \(vigor)/\(maxVigor)\(starvingSuffix)
             \(emojiBar(vigor, maxVigor, fill: "🟧"))
 
@@ -242,6 +266,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             \(className)
 
             ❤️ \(hp)/\(maxHp)  🍖 \(vigor)/\(maxVigor)\(starvingSuffix)
+            📊 XP \(xpFragment)
 
             ⚔️\(atk)  🛡\(def)  🎯\(acc)
             💨\(dodge)  💥\(crit)%
@@ -263,11 +288,6 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     private func emojiBar(_ current: Int, _ max: Int, length: Int = 10, fill: String = "🟩", empty: String = "⬛") -> String {
         let filled = max > 0 ? Int(Double(current) / Double(max) * Double(length)) : 0
         return String(repeating: fill, count: filled) + String(repeating: empty, count: length - filled)
-    }
-
-    /// XP required to reach next level (simple curve: level * 100)
-    private func xpForNextLevel(_ level: Int) -> Int {
-        return level * 100
     }
 }
 

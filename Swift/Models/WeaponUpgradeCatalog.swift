@@ -11,8 +11,8 @@
 //  name, gear bonuses, upgrade cost) is derived from this catalog.
 //
 //  Estate level gates progression: tier N needs estate level >= N. The
-//  derivation `User.estateLevel` (every 5 player levels = +1 tier)
-//  paces the upgrade ladder against natural play time.
+//  derivation `User.estateLevel` (every 3 player levels = +1 tier — Phase
+//  5.3a) paces the upgrade ladder against natural play time.
 //
 //  T1 stats are intentionally identical to the pre-existing
 //  `Item.gearStats` for each weapon, so existing players see no numeric

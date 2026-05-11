@@ -11,9 +11,10 @@
 //  `notifiedFull` flag so the background ticker can pick the plot up again.
 //
 //  The `slotsForLevel(_:)` table is logarithmic: 2 / 3 / 4 / 5 / 5 / 6 / 6 …
-//  with +1 every 4 levels past the explicit table. Estate level itself is
-//  derived from `User.estateLevel` (`User.level / 5`) at MVP; will switch to
-//  the new XP-to-Estate model once Phase 5.x lands.
+//  with +1 every 4 levels past the explicit table. Estate level is derived
+//  from `User.estateLevel` (`(User.level - 1) / 3 + 1` since Phase 5.3a).
+//  The slot table is currently overridden to a flat 5 — restored as part
+//  of Phase 5.3c.
 //
 
 import Fluent

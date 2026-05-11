@@ -66,11 +66,66 @@ public struct PassiveReport: Codable, Sendable {
     public let deathDepth: Int?
     public let outcomeCounts: [String: Int]
     public let loot: [LootEntry]
+    /// Phase 5.3a — XP awarded at expedition end (sum of every win's
+    /// `enemy.xpReward`). Levels gained / new level captured separately so
+    /// renderer can show "📊 +N XP (Lv. M → M+L)" without re-deriving.
+    /// Optional in storage for backwards compat with pre-5.3a reports.
+    public let xpEarned: Int
+    public let levelsGained: Int
+    public let newLevel: Int
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
         public let pickedQuantity: Int
         public let droppedQuantity: Int
+    }
+
+    public init(
+        stepsTaken: Int, finalDepth: Int,
+        hpBefore: Int, hpAfter: Int,
+        vigorBefore: Int, vigorAfter: Int,
+        died: Bool, deathDepth: Int?,
+        outcomeCounts: [String: Int],
+        loot: [LootEntry],
+        xpEarned: Int = 0,
+        levelsGained: Int = 0,
+        newLevel: Int = 1
+    ) {
+        self.stepsTaken = stepsTaken
+        self.finalDepth = finalDepth
+        self.hpBefore = hpBefore
+        self.hpAfter = hpAfter
+        self.vigorBefore = vigorBefore
+        self.vigorAfter = vigorAfter
+        self.died = died
+        self.deathDepth = deathDepth
+        self.outcomeCounts = outcomeCounts
+        self.loot = loot
+        self.xpEarned = xpEarned
+        self.levelsGained = levelsGained
+        self.newLevel = newLevel
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
+        case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        stepsTaken = try c.decode(Int.self, forKey: .stepsTaken)
+        finalDepth = try c.decode(Int.self, forKey: .finalDepth)
+        hpBefore = try c.decode(Int.self, forKey: .hpBefore)
+        hpAfter = try c.decode(Int.self, forKey: .hpAfter)
+        vigorBefore = try c.decode(Int.self, forKey: .vigorBefore)
+        vigorAfter = try c.decode(Int.self, forKey: .vigorAfter)
+        died = try c.decode(Bool.self, forKey: .died)
+        deathDepth = try c.decodeIfPresent(Int.self, forKey: .deathDepth)
+        outcomeCounts = try c.decode([String: Int].self, forKey: .outcomeCounts)
+        loot = try c.decode([LootEntry].self, forKey: .loot)
+        xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
+        levelsGained = (try? c.decode(Int.self, forKey: .levelsGained)) ?? 0
+        newLevel = (try? c.decode(Int.self, forKey: .newLevel)) ?? 1
     }
 }
 
@@ -86,6 +141,38 @@ public struct RunningPassiveReport: Codable, Sendable {
     public var outcomeCounts: [String: Int]
     public var lootPicked: [String: Int]
     public var lootDropped: [String: Int]
+    /// Phase 5.3a — accumulator for XP earned across the expedition. Granted
+    /// in one call at finalize time. Optional in storage for backwards
+    /// compatibility with pre-5.3a in-flight rows.
+    public var xpEarned: Int
+
+    public init(
+        hpBefore: Int, vigorBefore: Int,
+        outcomeCounts: [String: Int],
+        lootPicked: [String: Int], lootDropped: [String: Int],
+        xpEarned: Int = 0
+    ) {
+        self.hpBefore = hpBefore
+        self.vigorBefore = vigorBefore
+        self.outcomeCounts = outcomeCounts
+        self.lootPicked = lootPicked
+        self.lootDropped = lootDropped
+        self.xpEarned = xpEarned
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case hpBefore, vigorBefore, outcomeCounts, lootPicked, lootDropped, xpEarned
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hpBefore = try c.decode(Int.self, forKey: .hpBefore)
+        vigorBefore = try c.decode(Int.self, forKey: .vigorBefore)
+        outcomeCounts = try c.decode([String: Int].self, forKey: .outcomeCounts)
+        lootPicked = try c.decode([String: Int].self, forKey: .lootPicked)
+        lootDropped = try c.decode([String: Int].self, forKey: .lootDropped)
+        xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
+    }
 }
 
 // MARK: - Service
@@ -232,6 +319,7 @@ public enum PassiveExpeditionService {
         var lootDropped: [String: Int] = [:]
         var hpBefore: Int = 0
         var vigorBefore: Int = 0
+        var xpEarned: Int = 0
         var hasCapturedBefore = false
 
         while true {
@@ -250,6 +338,7 @@ public enum PassiveExpeditionService {
                 lootDropped   = restored.lootDropped
                 hpBefore      = restored.hpBefore
                 vigorBefore   = restored.vigorBefore
+                xpEarned      = restored.xpEarned
                 hasCapturedBefore = true
             }
 
@@ -265,6 +354,7 @@ public enum PassiveExpeditionService {
                     lootPicked: lootPicked, lootDropped: lootDropped,
                     hpBefore: hasCapturedBefore ? hpBefore : state.user.hp,
                     vigorBefore: hasCapturedBefore ? vigorBefore : state.user.vigor,
+                    xpEarned: xpEarned,
                     died: false, deathDepth: nil,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -313,7 +403,7 @@ public enum PassiveExpeditionService {
                 return
             }
 
-            recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped)
+            recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped, xpEarned: &xpEarned)
 
             // Persist the post-step running totals on the state row alongside
             // `stepsDeep` — single save, both fields together. Survives any
@@ -323,7 +413,8 @@ public enum PassiveExpeditionService {
                 vigorBefore: vigorBefore,
                 outcomeCounts: outcomeCounts,
                 lootPicked: lootPicked,
-                lootDropped: lootDropped
+                lootDropped: lootDropped,
+                xpEarned: xpEarned
             )
             state.runningReportJSON = encodeRunningReport(snapshot)
             state.stepsDeep = nextStep
@@ -343,6 +434,7 @@ public enum PassiveExpeditionService {
                     outcomeCounts: outcomeCounts,
                     lootPicked: lootPicked, lootDropped: lootDropped,
                     hpBefore: hpBefore, vigorBefore: vigorBefore,
+                    xpEarned: xpEarned,
                     died: true, deathDepth: nextStep,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -362,6 +454,7 @@ public enum PassiveExpeditionService {
         lootDropped: [String: Int],
         hpBefore: Int,
         vigorBefore: Int,
+        xpEarned: Int,
         died: Bool,
         deathDepth: Int?,
         on db: any Database,
@@ -385,6 +478,15 @@ public enum PassiveExpeditionService {
             }
         }
 
+        // Phase 5.3a — grant accumulated XP. Even on death the player keeps
+        // the XP earned from kills before they fell (XP isn't in inventory,
+        // so applyDeath's wipe doesn't touch it). Persist the user separately
+        // afterwards so the level-up survives.
+        let xpResult = user.grantXP(xpEarned)
+        if xpResult.xpAwarded > 0 {
+            try? await user.saveAndCache(in: db)
+        }
+
         let report = PassiveReport(
             stepsTaken: state.stepsDeep,
             finalDepth: state.stepsDeep,
@@ -395,7 +497,10 @@ public enum PassiveExpeditionService {
             died: died,
             deathDepth: deathDepth,
             outcomeCounts: outcomeCounts,
-            loot: loot
+            loot: loot,
+            xpEarned: xpResult.xpAwarded,
+            levelsGained: xpResult.levelsGained,
+            newLevel: xpResult.newLevel
         )
 
         do {
@@ -428,7 +533,8 @@ public enum PassiveExpeditionService {
         _ outcome: StepOutcome,
         counts: inout [String: Int],
         picked: inout [String: Int],
-        dropped: inout [String: Int]
+        dropped: inout [String: Int],
+        xpEarned: inout Int
     ) {
         switch outcome {
         case .nothing:
@@ -444,8 +550,9 @@ public enum PassiveExpeditionService {
             } else {
                 dropped[itemId, default: 0] += quantity
             }
-        case .encounterWon(_, _, _, _, let drops):
+        case .encounterWon(let enemy, _, _, _, let drops):
             counts["encounter_won", default: 0] += 1
+            xpEarned += enemy.xpReward
             for drop in drops {
                 if drop.picked {
                     picked[drop.itemId, default: 0] += drop.quantity
@@ -542,6 +649,22 @@ public enum PassiveExpeditionService {
             "before": "\(report.vigorBefore)",
             "after": "\(report.vigorAfter)"
         ]))
+
+        // Phase 5.3a — XP line. Shown whenever the player earned any XP, even
+        // if the expedition ended in death (kills before death still count).
+        if report.xpEarned > 0 {
+            lines.append("")
+            if report.levelsGained > 0 {
+                lines.append(lingo.localize("exploration.passive.report.xp_with_levelup", locale: locale, interpolations: [
+                    "xp": "\(report.xpEarned)",
+                    "level": "\(report.newLevel)"
+                ]))
+            } else {
+                lines.append(lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
+                    "xp": "\(report.xpEarned)"
+                ]))
+            }
+        }
 
         let totalEvents = report.outcomeCounts.values.reduce(0, +)
         if totalEvents > 0 {

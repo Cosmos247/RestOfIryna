@@ -49,6 +49,10 @@ public struct Enemy: Sendable {
     public let depthRange: ClosedRange<Int>
     public let lootTable: [EnemyLootDrop]
     public let icon: String
+    /// XP awarded to the player on victory. Phase 5.3a tuning per tier:
+    /// T1=5, T2=12, T3=25, T4=50, T5=100, T6=175. Training dummy = 0 (no
+    /// progression from sparring).
+    public let xpReward: Int
 
     public init(
         id: String,
@@ -59,7 +63,8 @@ public struct Enemy: Sendable {
         defense: Int,
         depthRange: ClosedRange<Int>,
         lootTable: [EnemyLootDrop],
-        icon: String
+        icon: String,
+        xpReward: Int
     ) {
         self.id = id
         self.nameKey = nameKey
@@ -70,6 +75,7 @@ public struct Enemy: Sendable {
         self.depthRange = depthRange
         self.lootTable = lootTable
         self.icon = icon
+        self.xpReward = xpReward
     }
 }
 
@@ -102,7 +108,8 @@ public enum EnemyCatalog {
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.7, quantity: 1),
                 EnemyLootDrop(itemId: "mat.hide",      chance: 0.8, quantity: 1)
             ],
-            icon: "🐗"
+            icon: "🐗",
+            xpReward: 5
         ),
         // Wild Moose — tier 2–3 forest mid-game.
         Enemy(
@@ -114,7 +121,8 @@ public enum EnemyCatalog {
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
                 EnemyLootDrop(itemId: "mat.hide",      chance: 0.7, quantity: 1)
             ],
-            icon: "🫎"
+            icon: "🫎",
+            xpReward: 12
         ),
         // Wild Buffalo — tier 3–4 heavy game, high defense.
         Enemy(
@@ -126,7 +134,8 @@ public enum EnemyCatalog {
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
                 EnemyLootDrop(itemId: "mat.hide",      chance: 0.9, quantity: 1)
             ],
-            icon: "🦬"
+            icon: "🦬",
+            xpReward: 25
         ),
         // Rabid Lynx — tier 3–4 fast predator. Meat inedible (rabies).
         Enemy(
@@ -137,7 +146,8 @@ public enum EnemyCatalog {
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.7, quantity: 1)
             ],
-            icon: "🐈‍⬛"
+            icon: "🐈‍⬛",
+            xpReward: 25
         ),
         // Rabid Wolf — tier 4 top hostile. Meat inedible (rabies).
         // Range extended to km 16–25 so the rabid family bleeds into the T5
@@ -150,7 +160,8 @@ public enum EnemyCatalog {
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.8, quantity: 1)
             ],
-            icon: "🐺"
+            icon: "🐺",
+            xpReward: 50
         ),
         // Wild Bear — tier 5 deep-wilderness mob. Master of the forest:
         // huge HP pool, hard-hitting, but a wild animal — drops meat + hide.
@@ -167,7 +178,8 @@ public enum EnemyCatalog {
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.85, quantity: 2),
                 EnemyLootDrop(itemId: "mat.hide",      chance: 0.9,  quantity: 1)
             ],
-            icon: "🐻"
+            icon: "🐻",
+            xpReward: 100
         ),
         // Training Dummy — Phase 5.1 estate-side training plot. ATK = 0 so
         // it never deals damage in return; DEF = 1 so the player sees a
@@ -181,7 +193,8 @@ public enum EnemyCatalog {
             tier: 0, hp: 200, attack: 0, defense: 1,
             depthRange: 0...0,
             lootTable: [],
-            icon: "🥋"
+            icon: "🥋",
+            xpReward: 0
         ),
         // Rabid Bear — tier 6 deepest hostile. Beastfever has bleached the
         // fur and stripped the discipline; what's left is a hard-hitting
@@ -197,7 +210,8 @@ public enum EnemyCatalog {
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.9, quantity: 2)
             ],
-            icon: "🐻‍❄️"
+            icon: "🐻‍❄️",
+            xpReward: 175
         ),
     ]
 

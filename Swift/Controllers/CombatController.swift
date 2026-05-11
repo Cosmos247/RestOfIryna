@@ -838,6 +838,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         if context.session.registrationStep < 6 {
             // Registration tutorial fight — delete the row entirely (it's not
             // a real expedition), send the result, then bounce to estate naming.
+            // No XP grant: tutorial wolves stay narrative-only.
             try await state.delete(on: context.db)
             try await context.session.saveAndCache(in: context.db)
             try await context.bot.sendMessage(session: context.session, text: prefix, parseMode: .html)
@@ -845,11 +846,34 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return
         }
 
+        // Phase 5.3a: grant XP from the kill, append level-up + estate-up
+        // banners to the victory message. Training dummies have xpReward = 0
+        // so they're naturally a no-op (and never reach this branch anyway —
+        // training bails at the top of finishVictory).
+        let xpResult = context.session.grantXP(enemy.xpReward)
+        var withXP = parts
+        if xpResult.xpAwarded > 0 {
+            withXP.append("📊 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
+                "xp": "\(xpResult.xpAwarded)"
+            ]))
+        }
+        if xpResult.levelsGained > 0 {
+            withXP.append("🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
+                "level": "\(xpResult.newLevel)"
+            ]))
+        }
+        if xpResult.estateLeveledUp {
+            withXP.append("🏰 " + lingo.localize("estate_up.banner", locale: locale, interpolations: [
+                "tier": "\(xpResult.newEstateLevel)"
+            ]))
+        }
+        let finalPrefix = withXP.joined(separator: "\n")
+
         state.endCombat()
         try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
-        try await handBackToExploration(context: context, prefix: prefix)
+        try await handBackToExploration(context: context, prefix: finalPrefix)
     }
 
     /// Training Ground branch of `finishVictory`. Resets the dummy's HP to
