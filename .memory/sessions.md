@@ -1,5 +1,33 @@
 # Session History
 
+## Session N+2 — 2026-05-11 part 3 (Phase 5.3c — Estate gates + manual upgrade)
+
+### What was done:
+Originally scoped as just "gating": Kitchen at T2, Workshop at T3, Tannery at T4, Training Ground plot type at T3, plot slot table, warehouse cap with growth. After implementing gating but before commit, user observed the gates would trigger automatically with player level — no agency, no resource sink. Pivoted to combined commit: gates + manual estate upgrade flow.
+
+**Gating pieces:**
+- House drilldown buttons filtered by `estateLevel` (T1→Warehouse only, T2→+Kitchen, T3→+Workshop). Stale-callback defensive alerts via `estate.locked.room`.
+- Workshop recipe list filters out tannery recipes when `estateLevel < 4`; also stops accidentally surfacing kitchen recipes here (was unintended pre-5.3c — `RecipeCatalog.all` contains all categories).
+- Plot picker hides Training Ground type when `estateLevel < 3`. `handlePlotTypeChosen` defends with modal alert via `estate.plot.type_locked`.
+- `PlotService.slotsForLevel` restored: now `[0, 1, 2, 3, 4, 5, 6]` indexed by tier-1 (was flat 5).
+- Dropped registration auto-grant of Farm at slot 0 — T1 has 0 plot slots by design (wooden hut hasn't cleared land yet). `PlotService.hasAnyPlot` deleted since it had only one caller.
+- `WarehouseService` capacity by tier: T1=50, T2=100, T3=150, T4=200, T5=300, T6=400, T7=500. New `slotsUsed(for:on:)` helper + `capForLevel(_)` + new `DepositResult.warehouseFull` case. Deposit gates: only blocks when creating a new row; stackable merges into existing rows always succeed. `depositAll` tracks running usage so it doesn't blow past cap.
+- Warehouse root UI shows `📦 Storage: X/Y slots` capacity line.
+
+**Pivot: manual estate upgrade (replaces auto-derivation):**
+- `User.estateLevel` converted from computed `(level-1)/3+1` to stored `@Field(key: "estate_level") var estateLevel: Int` (default 1). Migration `AddEstateLevel`.
+- New `EstateUpgradeCatalog` (`Swift/Models/EstateUpgradeCatalog.swift`): 6 tier transitions (T1→T2 ... T6→T7), each with `requiredPlayerLevel` (4/7/10/13/16/19) + materials list. Materials scale with tier — lumber/pebble base, iron/ingot/hide/clay scaling. T1→T2 ~33 units (cheap onramp), T6→T7 ~313 units (endgame milestone).
+- New `EstateUpgradeService` (mirrors `WeaponUpgradeService` pattern): `upgrade(for:on:)` validates max-tier, player-level gate, then drains materials from combined inventory + warehouse pool (inventory first), bumps `estateLevel`, `saveAndCache`. Result enum: success/maxTierReached/playerLevelTooLow/missingMaterials.
+- EstateController UI: `[🏠 Upgrade estate]` button on root (hidden at max tier). Detail screen shows current tier + name, next tier preview, player-level requirement (green/red), `📜 Materials` list with per-input have/need (combined pool). `[🏗 Upgrade]` confirm button. Every failure mode → modal alert (max tier / level too low / multi-row missing materials list). Success → in-place refresh + `✅ Estate raised to tier N — Name` banner.
+- 7 tier names per locale (`estate.tier.1.name` … `.7.name`): Wooden Hut → Settler's House → Forester's Lodge → Manor → Knight's Manor → Baron's Estate → Lord's Holdings.
+- `XPGrantResult.estateLeveledUp` is now structurally always false (XP grants no longer change estate); kept the field + the conditional banner branches in CombatController + PassiveReport as inert hooks for future "quest grants estate XP" possibilities. Not dead, just inactive.
+
+**Files added:** `Swift/Migrations/AddEstateLevel.swift`, `Swift/Models/EstateUpgradeCatalog.swift`, `Swift/Services/EstateUpgradeService.swift`. Migration registered in `configure.swift`.
+
+Locale parity 440/440 (+17 keys: 7 tier names + 10 upgrade-flow keys). Build clean.
+
+**Carryforwards for 5.3 sub-phases:** 5.3d (smaller starter bag → craftable bag upgrades in Workshop), 5.3e (technique gates + Training Ground "Learn" flow + per-fight uses growth).
+
 ## Session N+1 — 2026-05-11 part 2 (Phase 5.3b — Stat growth on level-up)
 
 ### What was done:

@@ -303,13 +303,15 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] maxVigor stays 100 always — no growth (per design)
 - [x] Banner suffix: combat → "🎉 Level N! 💪 +H maxHP +A ATK +D DEF"; passive report rebuilt from 3 composable fragments behind separate locale keys (shared `level_up.stat_boost`)
 
-#### 5.3c Room / plot-type / plot-slot gates *(planned)*
-- [ ] Kitchen unlocks at estate T2 (player L4)
-- [ ] Workshop unlocks at estate T3 (player L7); Tannery sub-category at estate T4 (L10)
-- [ ] Training Ground plot-type unlocks at estate T3 (L7); other 4 types (Farm/Lumber/Mine/Coop) available from estate T2 (L4)
-- [ ] First plot slot unlocks at estate T2 (L4); plot slot count grows: T1=0, T2=1, T3=2, T4=3, T5=4, T6=5, T7=6 — restore `PlotService.slotsForLevel` table from current flat 5
-- [ ] Warehouse cap grows with estate tier: T1=50, T2=100, T3=150, T4=200, T5=300, T6=400, T7=500 (currently unlimited; new feature)
-- [ ] Existing players (L1) keep their already-claimed plots even if over the new allowance — only new claims are gated
+#### 5.3c Room / plot-type / plot-slot gates + manual estate upgrade *(landed 2026-05-11 part 3)*
+- [x] Kitchen unlocks at estate T2; Workshop at T3; Tannery sub-category in Workshop at T4
+- [x] Training Ground plot type unlocks at estate T3 (other 4 types available from T2 with the first plot slot)
+- [x] First plot slot at T2; slot count `[0,1,2,3,4,5,6]` by tier — restored from flat 5; registration auto-Farm grant dropped
+- [x] `WarehouseService` capacity by tier: T1=50, T2=100, T3=150, T4=200, T5=300, T6=400, T7=500. New `.warehouseFull` only blocks creating new rows (stackable merges always succeed). Warehouse root UI shows `📦 X/Y slots`
+- [x] Stale-callback defensive alerts: `estate.locked.room`, `estate.plot.type_locked`, `estate.warehouse.full`
+- [x] **Manual estate upgrade pivot:** `User.estateLevel` converted from computed `(level-1)/3+1` to stored `@Field` (default 1) via `AddEstateLevel` migration. New `EstateUpgradeCatalog` (6 transitions: T1→T2 ... T6→T7, each with `requiredPlayerLevel` 4/7/10/13/16/19 + materials list scaling from ~33 units to ~313 units). New `EstateUpgradeService` mirrors `WeaponUpgradeService`. EstateController gains `[🏠 Upgrade estate]` root button + detail screen with current+next tier names, player-level gate (✅/⛔), materials with have/need, `[🏗 Upgrade]` confirm. Result enum: success/maxTierReached/playerLevelTooLow/missingMaterials — all failures → modal alert, success → in-place refresh + banner.
+- [x] 7 tier names per locale (Wooden Hut → Settler's House → Forester's Lodge → Manor → Knight's Manor → Baron's Estate → Lord's Holdings). Locale parity 440/440
+- [x] `XPGrantResult.estateLeveledUp` is now structurally always false (XP grants no longer change estate); inert banner branches kept as forward-compat hooks
 
 #### 5.3d Bag size / starter rebalance + craftable bag upgrades *(planned)*
 - [ ] Starter bag drops 50 → 20 slots (warehouse stays generous so safe storage > carry capacity makes narrative sense)
@@ -459,4 +461,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-05-11 part 2 — Phase 5.3a base XP/level layer + Phase 5.3b stat-growth-on-level-up both landed. Next: 5.3c room/category/plot-type gates + plot slot table.*
+*Last updated: 2026-05-11 part 3 — Phase 5.3a + 5.3b + 5.3c all landed. 5.3c expanded mid-flight: scope grew from "gates" to "gates + manual estate upgrade" after user pointed out auto-leveling estate has no agency or resource sink. Next: 5.3d smaller starter bag + craftable bag upgrades.*

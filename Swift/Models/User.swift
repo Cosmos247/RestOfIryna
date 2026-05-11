@@ -122,6 +122,14 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_hp_tick_at")
     var lastHpTickAt: Date?
 
+    /// Phase 5.3c — estate tier is now player-controlled, not derived. Starts
+    /// at 1 (the wooden hut from the King's grant) and only grows when the
+    /// player spends materials at the Estate root via `EstateUpgradeService`.
+    /// Each tier unlocks rooms, plot slots, recipe categories, and weapon
+    /// upgrade gates per the Phase 5.3 unlock map.
+    @Field(key: "estate_level")
+    var estateLevel: Int
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -166,15 +174,8 @@ final public class User: Model, @unchecked Sendable {
         self.gearCritBonus = 0
         self.gearDodgeBonus = 0
         self.gearAccuracyBonus = 0
+        self.estateLevel = 1
         self.createdAt = Date()
-    }
-
-    /// Estate level derived from the player's level. Every 3 player levels raises
-    /// the estate by one tier — player lv 1–3 → estate 1, lv 4–6 → 2, …, lv 19–21 → 7.
-    /// Drives per-level artwork, unlocked rooms, plot slot allowance, and weapon
-    /// upgrade gates. Replaces the legacy `/5` derivation in Phase 5.3a.
-    var estateLevel: Int {
-        return 1 + max(0, (level - 1)) / 3
     }
 
     // MARK: - Phase 5.3a — Player XP / level

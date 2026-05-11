@@ -166,6 +166,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateLearnedRecipes())
     migrations.add(AddPassiveRunningReport())
     migrations.add(AddInventoryTier())
+    migrations.add(AddEstateLevel())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()

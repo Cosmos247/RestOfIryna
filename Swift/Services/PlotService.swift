@@ -24,19 +24,22 @@ public enum PlotService {
 
     // MARK: - Slot count
 
-    /// Hardcoded logarithmic slot table: index = estate level - 1.
-    /// Past the table's last entry, +1 slot every 4 estate levels.
-    /// Currently OVERRIDDEN below to a flat 5 slots while estate-progression
-    /// design is in flux — restore the table once the level system lands.
-    private static let slotTable: [Int] = [2, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11]
+    /// Phase 5.3c — slot count by estate tier. T1 has zero plots (the wooden
+    /// hut hasn't cleared any land yet); the first slot opens at T2 (player
+    /// L4), and one more opens with each subsequent tier. T7 caps at 6
+    /// plots, matching the planned unlock map.
+    /// Index = estate level - 1.
+    private static let slotTable: [Int] = [0, 1, 2, 3, 4, 5, 6]
 
-    /// How many plot slots are unlocked at the given estate level.
-    /// **Temporary:** every player has 5 slots open from estate level 1 so
-    /// the full plot roster (incl. Training Ground) is reachable for testing.
-    /// Final formula will follow `slotTable` once XP-to-Estate progression
-    /// lands in Phase 5.x.
+    /// How many plot slots are unlocked at the given estate level. Estates
+    /// past the table's last entry get the maximum (6) — keeps the function
+    /// total in case the tier ladder ever extends past T7. Existing players
+    /// who have already claimed plots beyond their current allowance keep
+    /// them: the allowance only gates *new* claims via `claim(...)`, not the
+    /// list returned by `Plot.list(...)`.
     public static func slotsForLevel(_ estateLevel: Int) -> Int {
-        return 5
+        let idx = max(0, estateLevel - 1)
+        return slotTable[min(idx, slotTable.count - 1)]
     }
 
     // MARK: - Production math
@@ -141,11 +144,4 @@ public enum PlotService {
         return .success(plot)
     }
 
-    /// Convenience — does the user have any plots? Used by the registration
-    /// flow to decide whether to auto-grant a starter farm.
-    public static func hasAnyPlot(for user: User, on db: any Database) async throws -> Bool {
-        guard let userId = user.id else { return false }
-        let count = try await Plot.query(on: db).filter(\.$user.$id, .equal, userId).count()
-        return count > 0
-    }
 }
