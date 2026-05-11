@@ -271,6 +271,8 @@
     "estate.upgrade.recipe_header": "📜 Materials",
     "estate.upgrade.max_tier": "🏛 Your estate has reached its highest tier. There's nowhere left to grow.",
     "estate.upgrade.level_too_low": "🚧 You need player level %{required} to grow the estate further. You're at level %{current}.",
+    "estate.upgrade.gold_required": "💰 %{required} gold (%{have}/%{required})",
+    "estate.upgrade.gold_too_low": "💰 Not enough gold — you need %{required}, you have %{current}. Earn more before laying down the next stone.",
     "estate.upgrade.banner.success": "Estate raised to <b>tier %{tier} — %{name}</b>",
     "estate.warehouse.full": "📦 The warehouse is full. Withdraw something or upgrade your estate to make more room.",
     "estate.warehouse.capacity": "📦 Storage: <b>%{used}/%{cap}</b> slots",

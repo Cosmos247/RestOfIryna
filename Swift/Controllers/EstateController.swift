@@ -262,6 +262,19 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
         }
 
+        // Phase 5.3c — gold cost line. Hidden when the step is gold-free
+        // (early transitions). Drawn outside the materials block so the
+        // player sees the wallet check as a separate gate.
+        if nextStep.goldCost > 0 {
+            let goldOK = session.gold >= nextStep.goldCost
+            let goldMark = goldOK ? "✅" : "⛔"
+            lines.append("")
+            lines.append("\(goldMark) " + lingo.localize("estate.upgrade.gold_required", locale: locale, interpolations: [
+                "required": "\(nextStep.goldCost)",
+                "have":     "\(session.gold)"
+            ]))
+        }
+
         return lines.joined(separator: "\n")
     }
 
@@ -1572,6 +1585,14 @@ extension EstateController {
 
         case .playerLevelTooLow(let required, let current):
             let toast = context.lingo.localize("estate.upgrade.level_too_low", locale: locale, interpolations: [
+                "required": "\(required)",
+                "current":  "\(current)"
+            ])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .insufficientGold(let required, let current):
+            let toast = context.lingo.localize("estate.upgrade.gold_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])

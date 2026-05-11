@@ -1,5 +1,20 @@
 # Session History
 
+## Session N+3 — 2026-05-11 part 4 (Phase 5.3c gold polish)
+
+### What was done:
+Follow-up polish on the 5.3c manual estate upgrade: gold sink for T3+ transitions. User wanted gold to gate later upgrades but **not** appear in the inventory ("матеріали в сумці") since slot pressure already matters — gold stays a User-level field surfaced only in the profile.
+
+- `EstateUpgradeStep.goldCost: Int` (default 0 for backwards-compat). Catalog: T1→T2 + T2→T3 = 0g (free onramp), T3→T4 = 50g, T4→T5 = 150g, T5→T6 = 400g, T6→T7 = 1000g. Cumulative endgame spend ~1600g.
+- Gold drained directly from `User.gold` — never an item id, never a `WarehouseEntry` / `InventoryEntry` row. Designed deliberately so the bag stays uncluttered.
+- New `EstateUpgradeService.UpgradeResult.insufficientGold(required, current)` case. Service order is now: max-tier → player-level → **gold** → materials → drain. Gold sits before materials so a cash-short player gets a clean "💰 Not enough gold" alert instead of a noisy materials breakdown that might look fine on its own.
+- `EstateController.renderEstateUpgrade` appends a `⛔ 💰 50 gold (30/50)` line (with ✅/⛔ matching the player-level gate style) outside the `📜 Materials` block when goldCost > 0. `handleEstateUpgradeConfirm` handles the new case with a modal alert via `estate.upgrade.gold_too_low`.
+- 2 new locale keys × 2 locales (`estate.upgrade.gold_required`, `estate.upgrade.gold_too_low`); parity 442/442.
+
+**Source of gold:** quest rewards in Phase 6+ (Capital). Explicitly NOT dropped from mobs ("поки не треба додавати дроп золота з мобів"). Dev grants gold via Postico for testing.
+
+Build clean. 5.3c is now fully landed (gates + manual upgrade + gold sink). Next: 5.3d (smaller starter bag + craftable bag upgrade in Workshop).
+
 ## Session N+2 — 2026-05-11 part 3 (Phase 5.3c — Estate gates + manual upgrade)
 
 ### What was done:

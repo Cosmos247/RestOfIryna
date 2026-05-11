@@ -27,6 +27,10 @@ public enum EstateUpgradeService {
         /// Player hasn't hit the player-level requirement for the next tier
         /// yet — go fight more before pouring lumber into walls.
         case playerLevelTooLow(required: Int, current: Int)
+        /// `User.gold` is below the step's `goldCost`. Gold isn't an inventory
+        /// item (lives on the User row), so it's reported separately rather
+        /// than folded into `missingMaterials`.
+        case insufficientGold(required: Int, current: Int)
         /// Combined inventory + warehouse pool can't cover the next tier's
         /// cost. Each missing input is reported individually so the UI can
         /// surface a precise shortage list.
@@ -56,7 +60,14 @@ public enum EstateUpgradeService {
             return .playerLevelTooLow(required: nextStep.requiredPlayerLevel, current: user.level)
         }
 
-        // 3. Availability snapshot.
+        // 3. Gold gate. Checked before material snapshot so a player who's
+        // short on cash gets the cleaner "💰 not enough gold" alert instead
+        // of a noisy materials breakdown that might also look fine.
+        if nextStep.goldCost > 0, user.gold < nextStep.goldCost {
+            return .insufficientGold(required: nextStep.goldCost, current: user.gold)
+        }
+
+        // 4. Material availability snapshot.
         var shortages: [CraftingService.Shortage] = []
         var snapshot: [String: (inv: Int, wh: Int)] = [:]
         for input in nextStep.inputs {
@@ -72,7 +83,7 @@ public enum EstateUpgradeService {
             return .missingMaterials(shortages: shortages)
         }
 
-        // 4. Drain — inventory first, warehouse for the shortfall.
+        // 5. Drain materials — inventory first, warehouse for the shortfall.
         for input in nextStep.inputs {
             let (invQty, _) = snapshot[input.itemId] ?? (0, 0)
             let fromInv = min(input.quantity, invQty)
@@ -85,7 +96,10 @@ public enum EstateUpgradeService {
             }
         }
 
-        // 5. Bump the tier and persist.
+        // 6. Drain gold and bump the tier in the same persist call.
+        if nextStep.goldCost > 0 {
+            user.gold -= nextStep.goldCost
+        }
         user.estateLevel = nextStep.toTier
         try await user.saveAndCache(in: db)
 

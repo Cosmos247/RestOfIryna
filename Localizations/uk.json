@@ -271,6 +271,8 @@
     "estate.upgrade.recipe_header": "📜 Матеріали",
     "estate.upgrade.max_tier": "🏛 Маєток досяг свого найвищого тиру. Розбудовуватись далі немає куди.",
     "estate.upgrade.level_too_low": "🚧 Щоб розбудувати маєток далі, потрібен %{required}-й рівень гравця. У тебе %{current}-й.",
+    "estate.upgrade.gold_required": "💰 %{required} золотих (%{have}/%{required})",
+    "estate.upgrade.gold_too_low": "💰 Бракує золота — треба %{required}, у тебе %{current}. Заробляй ще, перш ніж закладати наступний камінь.",
     "estate.upgrade.banner.success": "Маєток піднято до <b>%{tier}-го тиру — %{name}</b>",
     "estate.warehouse.full": "📦 Склад заповнений. Забери щось у сумку або підніми тир маєтку, щоб з'явилося місце.",
     "estate.warehouse.capacity": "📦 Сховище: <b>%{used}/%{cap}</b> місць",
