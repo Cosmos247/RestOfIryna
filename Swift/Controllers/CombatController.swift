@@ -858,9 +858,17 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             ]))
         }
         if xpResult.levelsGained > 0 {
-            withXP.append("🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
+            var line = "🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
                 "level": "\(xpResult.newLevel)"
-            ]))
+            ])
+            if xpResult.maxHpGained > 0 {
+                line += " " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
+                    "hp": "\(xpResult.maxHpGained)",
+                    "atk": "\(xpResult.attackGained)",
+                    "def": "\(xpResult.defenseGained)"
+                ])
+            }
+            withXP.append(line)
         }
         if xpResult.estateLeveledUp {
             withXP.append("🏰 " + lingo.localize("estate_up.banner", locale: locale, interpolations: [

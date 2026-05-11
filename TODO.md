@@ -296,10 +296,12 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] Profile XP visualization in all 3 styles (compact / text-bar / emoji-bar); `Max` label at L21
 - [x] 6 new locale keys × 2 locales; parity 418/418
 
-#### 5.3b Stat growth on level-up *(next)*
-- [ ] On level-up, grant +5 maxHP / +1 ATK / +1 DEF at L2, L3, L5, L6, L9, L12, L15, L18 (8 boosts total → +40 maxHP / +8 ATK / +8 DEF by L21)
-- [ ] maxVigor stays 100 always — no growth (per design)
-- [ ] Surface in level-up banner: "🎉 Level N! +5 maxHP +1 ATK +1 DEF"
+#### 5.3b Stat growth on level-up *(landed 2026-05-11 part 2)*
+- [x] On level-up, grant +5 maxHP / +1 ATK / +1 DEF at L2, L3, L5, L6, L9, L12, L15, L18 (8 boosts total → +40 maxHP / +8 ATK / +8 DEF by L21)
+- [x] Current HP bumps alongside maxHP (RPG-standard "you feel stronger" cadence)
+- [x] `User.statGrowthLevels` Set + per-stat constants; `XPGrantResult` extended with `maxHpGained` / `attackGained` / `defenseGained` totals
+- [x] maxVigor stays 100 always — no growth (per design)
+- [x] Banner suffix: combat → "🎉 Level N! 💪 +H maxHP +A ATK +D DEF"; passive report rebuilt from 3 composable fragments behind separate locale keys (shared `level_up.stat_boost`)
 
 #### 5.3c Room / plot-type / plot-slot gates *(planned)*
 - [ ] Kitchen unlocks at estate T2 (player L4)
@@ -457,4 +459,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-05-11 — Phase 5.3a base XP/level layer landed (combat + passive grants, profile XP bar, estateLevel formula `(level-1)/3+1`, softcap curve, level-up + estate-up banners). No gates yet — Kitchen/Workshop/Plot/techniques all still open. Next: 5.3b stat growth on level-up.*
+*Last updated: 2026-05-11 part 2 — Phase 5.3a base XP/level layer + Phase 5.3b stat-growth-on-level-up both landed. Next: 5.3c room/category/plot-type gates + plot slot table.*

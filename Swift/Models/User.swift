@@ -210,6 +210,16 @@ final public class User: Model, @unchecked Sendable {
         return User.xpRequiredToReach(level + 1)
     }
 
+    /// Phase 5.3b — levels that grant the +HP / +ATK / +DEF boost. Mid-tier
+    /// levels only (not the estate-tier-up levels: 4 / 7 / 10 / 13 / 16 / 19,
+    /// which already feel rewarding from the structural unlocks they bring).
+    /// 8 boosts total → +40 maxHP, +8 ATK, +8 DEF by L21.
+    public static let statGrowthLevels: Set<Int> = [2, 3, 5, 6, 9, 12, 15, 18]
+
+    public static let statGrowthMaxHp: Int = 5
+    public static let statGrowthAttack: Int = 1
+    public static let statGrowthDefense: Int = 1
+
     /// Result of a `grantXP` call. UI banners read these to decide what to show.
     public struct XPGrantResult: Sendable {
         public let xpAwarded: Int
@@ -217,12 +227,18 @@ final public class User: Model, @unchecked Sendable {
         public let estateLeveledUp: Bool
         public let newLevel: Int
         public let newEstateLevel: Int
+        /// Phase 5.3b — total stat growth from this grant. Zero when no
+        /// stat-growth level was crossed (either no level-up at all, or only
+        /// estate-tier-up levels were crossed).
+        public let maxHpGained: Int
+        public let attackGained: Int
+        public let defenseGained: Int
     }
 
     /// Add XP and process level-ups in a loop. Returns a result describing how
-    /// many levels were gained and whether the estate tier crossed a threshold.
-    /// Callers persist the user via `saveAndCache`. Stat-growth on level-up
-    /// lands in Phase 5.3b — for now this only mutates `level` and `xp`.
+    /// many levels were gained, whether the estate tier crossed a threshold,
+    /// and any stat growth applied (Phase 5.3b — +5 maxHP / +1 ATK / +1 DEF
+    /// at L2/3/5/6/9/12/15/18). Callers persist the user via `saveAndCache`.
     @discardableResult
     func grantXP(_ amount: Int) -> XPGrantResult {
         let oldLevel = level
@@ -230,13 +246,29 @@ final public class User: Model, @unchecked Sendable {
         guard amount > 0, level < User.maxLevel else {
             return XPGrantResult(
                 xpAwarded: 0, levelsGained: 0, estateLeveledUp: false,
-                newLevel: level, newEstateLevel: estateLevel
+                newLevel: level, newEstateLevel: estateLevel,
+                maxHpGained: 0, attackGained: 0, defenseGained: 0
             )
         }
         xp += amount
+        var maxHpGained = 0
+        var attackGained = 0
+        var defenseGained = 0
         while level < User.maxLevel, xp >= xpToNextLevel {
             xp -= xpToNextLevel
             level += 1
+            // Phase 5.3b — apply stat growth on configured levels. Bump current
+            // HP alongside maxHp so the player visibly benefits right away
+            // (RPG-standard "you feel stronger" cadence).
+            if User.statGrowthLevels.contains(level) {
+                maxHp += User.statGrowthMaxHp
+                hp += User.statGrowthMaxHp
+                attack += User.statGrowthAttack
+                defense += User.statGrowthDefense
+                maxHpGained += User.statGrowthMaxHp
+                attackGained += User.statGrowthAttack
+                defenseGained += User.statGrowthDefense
+            }
         }
         if level >= User.maxLevel {
             // Pin XP to 0 at cap so the profile doesn't keep accumulating
@@ -248,7 +280,10 @@ final public class User: Model, @unchecked Sendable {
             levelsGained: level - oldLevel,
             estateLeveledUp: estateLevel > oldEstate,
             newLevel: level,
-            newEstateLevel: estateLevel
+            newEstateLevel: estateLevel,
+            maxHpGained: maxHpGained,
+            attackGained: attackGained,
+            defenseGained: defenseGained
         )
     }
 

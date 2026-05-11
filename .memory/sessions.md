@@ -1,5 +1,23 @@
 # Session History
 
+## Session N+1 — 2026-05-11 part 2 (Phase 5.3b — Stat growth on level-up)
+
+### What was done:
+Implemented stat-growth-on-level-up per the Phase 5.3 plan.
+
+- `User.statGrowthLevels: Set<Int> = [2, 3, 5, 6, 9, 12, 15, 18]` (8 levels chosen to fall between estate-tier-up levels, avoiding L4/7/10/13/16/19 which already get structural rewards)
+- `User.statGrowthMaxHp = 5`, `User.statGrowthAttack = 1`, `User.statGrowthDefense = 1` constants
+- `grantXP` loop now applies the boost when reaching a configured level: `maxHp += 5`, `hp += 5` (current HP also bumps so player feels stronger immediately), `attack += 1`, `defense += 1`
+- `XPGrantResult` gained `maxHpGained` / `attackGained` / `defenseGained` totals (zero when no stat-growth level was crossed)
+- `CombatController.finishVictory` appends `💪 +H maxHP +A ATK +D DEF` suffix to the `🎉 Level N!` banner when stats grew this victory
+- `PassiveReport` extended with `maxHpGained` / `attackGained` / `defenseGained` (backwards-compat Codable defaults to 0); `renderReport` rebuilt the XP line from 3 composable fragments — base XP / level-up segment / stat-boost segment — so each lives behind its own locale key
+- Dropped now-orphan `exploration.passive.report.xp_with_levelup` key, added `exploration.passive.report.levelup` (level-up fragment alone) + shared `level_up.stat_boost` key (reused by both combat banner and passive report)
+- Locale parity 419/419
+
+Total stat growth across L1→L21: +40 maxHP / +8 ATK / +8 DEF (8 boosts × +5/+1/+1).
+
+Build clean. No gates landed yet — those are 5.3c.
+
 ## Session N — 2026-05-11 (Phase 5.3a — XP/level base system)
 
 ### What was done:

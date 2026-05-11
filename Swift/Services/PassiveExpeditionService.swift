@@ -73,6 +73,11 @@ public struct PassiveReport: Codable, Sendable {
     public let xpEarned: Int
     public let levelsGained: Int
     public let newLevel: Int
+    /// Phase 5.3b — stat growth totals from the XP grant. Zero unless the
+    /// expedition's level-ups crossed at least one stat-growth level.
+    public let maxHpGained: Int
+    public let attackGained: Int
+    public let defenseGained: Int
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
@@ -89,7 +94,10 @@ public struct PassiveReport: Codable, Sendable {
         loot: [LootEntry],
         xpEarned: Int = 0,
         levelsGained: Int = 0,
-        newLevel: Int = 1
+        newLevel: Int = 1,
+        maxHpGained: Int = 0,
+        attackGained: Int = 0,
+        defenseGained: Int = 0
     ) {
         self.stepsTaken = stepsTaken
         self.finalDepth = finalDepth
@@ -104,11 +112,15 @@ public struct PassiveReport: Codable, Sendable {
         self.xpEarned = xpEarned
         self.levelsGained = levelsGained
         self.newLevel = newLevel
+        self.maxHpGained = maxHpGained
+        self.attackGained = attackGained
+        self.defenseGained = defenseGained
     }
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
         case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
+        case maxHpGained, attackGained, defenseGained
     }
 
     public init(from decoder: any Decoder) throws {
@@ -126,6 +138,9 @@ public struct PassiveReport: Codable, Sendable {
         xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
         levelsGained = (try? c.decode(Int.self, forKey: .levelsGained)) ?? 0
         newLevel = (try? c.decode(Int.self, forKey: .newLevel)) ?? 1
+        maxHpGained = (try? c.decode(Int.self, forKey: .maxHpGained)) ?? 0
+        attackGained = (try? c.decode(Int.self, forKey: .attackGained)) ?? 0
+        defenseGained = (try? c.decode(Int.self, forKey: .defenseGained)) ?? 0
     }
 }
 
@@ -500,7 +515,10 @@ public enum PassiveExpeditionService {
             loot: loot,
             xpEarned: xpResult.xpAwarded,
             levelsGained: xpResult.levelsGained,
-            newLevel: xpResult.newLevel
+            newLevel: xpResult.newLevel,
+            maxHpGained: xpResult.maxHpGained,
+            attackGained: xpResult.attackGained,
+            defenseGained: xpResult.defenseGained
         )
 
         do {
@@ -650,20 +668,29 @@ public enum PassiveExpeditionService {
             "after": "\(report.vigorAfter)"
         ]))
 
-        // Phase 5.3a — XP line. Shown whenever the player earned any XP, even
-        // if the expedition ended in death (kills before death still count).
+        // Phase 5.3a + 5.3b — XP line. Shown whenever the player earned any
+        // XP (even on death — kills before falling still count). Built from
+        // three composable fragments: base XP, optional level-up segment,
+        // optional stat-boost segment. Each fragment is its own locale key
+        // so translators can reorder cleanly.
         if report.xpEarned > 0 {
             lines.append("")
+            var xpLine = lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
+                "xp": "\(report.xpEarned)"
+            ])
             if report.levelsGained > 0 {
-                lines.append(lingo.localize("exploration.passive.report.xp_with_levelup", locale: locale, interpolations: [
-                    "xp": "\(report.xpEarned)",
+                xpLine += " " + lingo.localize("exploration.passive.report.levelup", locale: locale, interpolations: [
                     "level": "\(report.newLevel)"
-                ]))
-            } else {
-                lines.append(lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
-                    "xp": "\(report.xpEarned)"
-                ]))
+                ])
+                if report.maxHpGained > 0 {
+                    xpLine += " " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
+                        "hp": "\(report.maxHpGained)",
+                        "atk": "\(report.attackGained)",
+                        "def": "\(report.defenseGained)"
+                    ])
+                }
             }
+            lines.append(xpLine)
         }
 
         let totalEvents = report.outcomeCounts.values.reduce(0, +)
