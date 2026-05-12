@@ -329,6 +329,18 @@ final public class User: Model, @unchecked Sendable {
     }
 }
 
+// MARK: - Developer flag
+
+extension User {
+    /// True if this user's Telegram id is listed in `developerUsers`. Used to
+    /// bypass enforcement-only caps (bag / warehouse) while keeping counts
+    /// visible in the UI. Per-developer convenience, not a permission gate —
+    /// gating for dev commands stays on `allowedUsers`.
+    var isDeveloper: Bool {
+        return developerUsers.contains(self.telegramId)
+    }
+}
+
 // MARK: - Cache Integration
 
 extension User {

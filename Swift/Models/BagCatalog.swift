@@ -4,10 +4,12 @@
 //
 //  Created by Dmytro Ihnatyuhin on 11.05.2026.
 //
-//  Phase 5.3d: backpack tier progression. 5 tiers from a 20-slot linen sack
-//  to a 75-slot master's knapsack. Player's current bag tier lives on
+//  Phase 5.3d: backpack tier progression. 6 tiers from a 25-slot linen sack
+//  to an 85-slot grandmaster's pack. Player's current bag tier lives on
 //  `User.bagTier`; the cap is read through `BagCatalog.capForTier(_)` and
-//  drives `InventoryEntry.slotCap(for:)`.
+//  drives `InventoryEntry.slotCap(for:)`. As of 2026-05-12 inventory uses
+//  per-unit slot accounting (each item unit is one slot), so these capacities
+//  represent total carried units, not stack rows.
 //
 //  Mirrors the `WeaponUpgradeCatalog` pattern — pure data, no DB writes. The
 //  upgrade itself is performed by `BagUpgradeService` from the Workshop.
@@ -55,12 +57,14 @@ public struct BagUpgradeStep: Sendable {
 public enum BagCatalog {
 
     /// Hard cap on bag tier.
-    public static let maxTier: Int = 5
+    public static let maxTier: Int = 6
 
-    /// Slot capacity by tier. Index = tier - 1. T1 starts at 20 slots — a
-    /// deliberate downgrade from the legacy flat 50 so the bag actually
-    /// pressures choice in the early game.
-    public static let capacities: [Int] = [20, 30, 40, 55, 75]
+    /// Slot capacity by tier. Index = tier - 1. T1 starts at 25 slots
+    /// (deliberate downgrade from the legacy flat 50 so the bag actually
+    /// pressures choice in the early game, but +5 over the original 20
+    /// once per-unit accounting landed). T6 is the post-endgame craft
+    /// added 2026-05-12 — symbolic +5 capstone over the master tier.
+    public static let capacities: [Int] = [25, 35, 45, 60, 80, 85]
 
     /// Returns the slot cap for the given tier. Tiers outside the table
     /// clamp to the nearest endpoint so the function stays total even if a
@@ -79,7 +83,7 @@ public enum BagCatalog {
         // unlocks alongside the Workshop itself at estate T3.
         BagUpgradeStep(
             toTier: 2,
-            capacity: 30,
+            capacity: 35,
             requiredEstateLevel: 3,
             inputs: [
                 BagUpgradeInput("mat.hide", 5),
@@ -92,7 +96,7 @@ public enum BagCatalog {
         // which fits the "leather guild's workshop" feel.
         BagUpgradeStep(
             toTier: 3,
-            capacity: 40,
+            capacity: 45,
             requiredEstateLevel: 4,
             inputs: [
                 BagUpgradeInput("mat.hide", 10),
@@ -105,7 +109,7 @@ public enum BagCatalog {
         // workshop floor (estate T5) to lay out the cuts.
         BagUpgradeStep(
             toTier: 4,
-            capacity: 55,
+            capacity: 60,
             requiredEstateLevel: 5,
             inputs: [
                 BagUpgradeInput("mat.hide", 15),
@@ -113,16 +117,30 @@ public enum BagCatalog {
             ]
         ),
 
-        // T4 → T5 (Майстерський заплічник): the final tier — a baron's
-        // craft, no further upgrades available. Reflects the endgame
-        // estate (T6) where the workshop is at its largest.
+        // T4 → T5 (Майстерський заплічник): the baron's craft. Reflects the
+        // endgame estate where the workshop is at its largest; T6 is the
+        // grand-master capstone added later.
         BagUpgradeStep(
             toTier: 5,
-            capacity: 75,
+            capacity: 80,
             requiredEstateLevel: 6,
             inputs: [
                 BagUpgradeInput("mat.hide", 20),
                 BagUpgradeInput("mat.iron_ingot", 8)
+            ]
+        ),
+
+        // T5 → T6 (Грандмайстерський сак): the final +5 capstone (2026-05-12).
+        // Requires the lord's-holdings workshop at estate T7 — the ceiling.
+        // Materials scale to match the prestige of being the only player in
+        // Artania carrying the grand-master pack.
+        BagUpgradeStep(
+            toTier: 6,
+            capacity: 85,
+            requiredEstateLevel: 7,
+            inputs: [
+                BagUpgradeInput("mat.hide", 25),
+                BagUpgradeInput("mat.iron_ingot", 12)
             ]
         )
     ]

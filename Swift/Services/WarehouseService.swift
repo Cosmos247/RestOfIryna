@@ -19,24 +19,26 @@ public enum WarehouseService {
 
     // MARK: - Phase 5.3c — capacity by estate tier
 
-    /// How many distinct rows the warehouse can hold at the given estate
-    /// level. Stackable items count as one slot per item id; non-stackable
-    /// gear counts as one slot per physical row. Estates past the table cap
-    /// at the maximum (500) — keeps the function total even if the tier
-    /// ladder ever extends past T7. Existing rows beyond the new cap stay
-    /// readable; only deposits refuse until the player frees up space.
-    private static let capTable: [Int] = [50, 100, 150, 200, 300, 400, 500]
+    /// How many TOTAL UNITS the warehouse can hold at the given estate level
+    /// (per-unit accounting since 2026-05-12 — was per-row before, which
+    /// turned the warehouse into an infinite buffer per item id). Scaled
+    /// ×4 from the original [50,100,…,500] table because the old numbers
+    /// only made sense when one entry was an arbitrary stack. Estates past
+    /// the table cap at the top tier (T7=2000). Existing rows beyond the
+    /// new cap stay readable; only deposits refuse until space is freed.
+    private static let capTable: [Int] = [200, 400, 600, 800, 1200, 1600, 2000]
 
     public static func capForLevel(_ estateLevel: Int) -> Int {
         let idx = max(0, estateLevel - 1)
         return capTable[min(idx, capTable.count - 1)]
     }
 
-    /// Distinct-row count, used to enforce the cap. Counts both stackable
-    /// items (one row per item id) and non-stackable gear (one row each).
+    /// Total units in the warehouse (sum of `quantity` across all rows).
+    /// Per-unit accounting symmetric with `InventoryEntry.slotsUsed`.
     public static func slotsUsed(for user: User, on db: any Database) async throws -> Int {
         guard let userId = user.id else { return 0 }
-        return try await WarehouseEntry.query(on: db).filter(\.$user.$id, .equal, userId).count()
+        let rows = try await WarehouseEntry.query(on: db).filter(\.$user.$id, .equal, userId).all()
+        return rows.reduce(0) { $0 + $1.quantity }
     }
 
     public enum DepositResult: Sendable {
@@ -62,11 +64,11 @@ public enum WarehouseService {
 
     /// Move one unit of the item from the player's backpack to the warehouse.
     /// Returns `.nothingToDeposit` if there's no unequipped row to take from,
-    /// `.warehouseFull` if the deposit would create a new row past the
-    /// estate-tier cap (stackable merges into an existing row are unaffected).
+    /// `.warehouseFull` if the warehouse is at unit cap. Developer accounts
+    /// bypass the cap entirely (still recorded — UI just shows overflow).
     @discardableResult
     public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
-        guard let item = ItemCatalog.find(itemId), let userId = user.id else { return .nothingToDeposit }
+        guard ItemCatalog.find(itemId) != nil, let userId = user.id else { return .nothingToDeposit }
 
         // Tiered weapons can't be warehoused — `WarehouseEntry` doesn't carry
         // the tier column, so storing one would silently demote a T5 sword to
@@ -83,27 +85,16 @@ public enum WarehouseService {
         // Pick the first unequipped row — equipped gear is not transferable.
         guard let source = rows.first(where: { $0.equippedSlot == nil }) else { return .nothingToDeposit }
 
-        // Phase 5.3c — capacity check. Only enforced when the deposit would
-        // CREATE a new warehouse row: stackable items merging into an
-        // existing row don't bump the slot count, so they stay legal even
-        // at cap. Non-stackable gear always creates a new row.
-        let needsNewRow: Bool
-        if item.stackable {
-            let existing = try await WarehouseEntry.query(on: db)
-                .filter(\.$user.$id, .equal, userId)
-                .filter(\.$itemId, .equal, itemId)
-                .first()
-            needsNewRow = (existing == nil)
-        } else {
-            needsNewRow = true
-        }
-        if needsNewRow {
+        // Per-unit cap check (2026-05-12). Stackable merges no longer get a
+        // free pass — every deposited unit eats one slot. Devs bypass.
+        if !user.isDeveloper {
             let used = try await slotsUsed(for: user, on: db)
             if used >= capForLevel(user.estateLevel) {
                 return .warehouseFull
             }
         }
 
+        let item = ItemCatalog.find(itemId)!
         if item.stackable {
             if source.quantity <= 1 {
                 try await source.delete(on: db)
@@ -132,11 +123,13 @@ public enum WarehouseService {
             .filter(\.$user.$id, .equal, userId)
             .all()
 
-        // Phase 5.3c — track slot usage as we go so we don't blow past the
-        // estate cap when many items would each create a new warehouse row.
-        // Items that can merge into an existing stack are exempt.
+        // Per-unit usage tracker (2026-05-12). On a non-dev account we
+        // partially fill the last allowed stack instead of skipping it,
+        // so a 10-unit hide row hitting a 6-unit free cap dumps 6 and
+        // leaves 4 behind. Devs deposit everything.
         var used = try await slotsUsed(for: user, on: db)
         let cap = capForLevel(user.estateLevel)
+        let bypass = user.isDeveloper
 
         var movedUnits = 0
         for row in rows {
@@ -145,23 +138,30 @@ public enum WarehouseService {
             // Tiered weapons stay with the player — see `deposit` for the why.
             if WeaponUpgradeCatalog.isUpgradable(row.itemId) { continue }
 
-            let needsNewRow: Bool
-            if item.stackable {
-                let existing = try await WarehouseEntry.query(on: db)
-                    .filter(\.$user.$id, .equal, userId)
-                    .filter(\.$itemId, .equal, row.itemId)
-                    .first()
-                needsNewRow = (existing == nil)
-            } else {
-                needsNewRow = true
-            }
-            if needsNewRow, used >= cap { continue }
-            if needsNewRow { used += 1 }
-
             let qty = row.quantity
-            try await row.delete(on: db)
-            try await WarehouseEntry.add(row.itemId, quantity: qty, to: user, on: db)
-            movedUnits += qty
+            let canMove: Int
+            if bypass {
+                canMove = qty
+            } else {
+                let headroom = max(0, cap - used)
+                canMove = min(qty, headroom)
+            }
+            guard canMove > 0 else { continue }
+
+            // Drain the source row by canMove (delete if fully drained).
+            if canMove >= qty {
+                try await row.delete(on: db)
+            } else {
+                row.quantity = qty - canMove
+                try await row.save(on: db)
+            }
+
+            // Non-stackable categories (gear) ALWAYS produce one warehouse
+            // row per unit through `WarehouseEntry.add` (it's already
+            // stackable-aware). We just pass the moved count.
+            try await WarehouseEntry.add(row.itemId, quantity: canMove, to: user, on: db)
+            used += canMove
+            movedUnits += canMove
         }
         return movedUnits
     }

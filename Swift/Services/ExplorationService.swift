@@ -58,16 +58,33 @@ public enum ExplorationService {
     // Trip risk shares a small tier-invariant chance at tiers 0 and 1 because
     // roots don't "learn" — it drops to zero at tier 2+ alongside every other
     // interesting outcome. Starvation HP still ticks on every step.
-    static let weightNothing:   Int = 20
-    static let weightLoot:      Int = 40
+    // Fresh-room tuning (2026-05-12): halved "nothing" (20 → 10) and shifted
+    // the 10 points into loot (40 → 50). User feedback — the wilderness felt
+    // too quiet; encounters and trips already produce drops via mob loot
+    // tables, so the easiest dial is the nothing/loot split.
+    static let weightNothing:   Int = 10
+    static let weightLoot:      Int = 50
     static let weightEncounter: Int = 30
     static let weightTrip:      Int = 10
     static let weightTotal:     Int = 100
 
-    static let weightNothingReduced:   Int = 50
-    static let weightLootReduced:      Int = 20
+    // Revisit tier (2026-05-12 second pass): step-back through visited rooms
+    // showed too many "🍂 Сліди витоптані" in a row. Pulled nothing down to
+    // 20 and bumped loot to 50 so the return trip has the same loot odds as
+    // a fresh room — encounter/trip stay reduced (thinned predator density,
+    // but berries and pebbles still grow back enough to find).
+    static let weightNothingReduced:   Int = 20
+    static let weightLootReduced:      Int = 50
     static let weightEncounterReduced: Int = 20
     static let weightTripReduced:      Int = 10
+
+    // Bare tier (2026-05-12 second pass): the room is heavily walked-over,
+    // but a 1-in-5 chance of stumbling on something keeps the trek alive.
+    // Encounter/trip stay at zero — beasts have learned to avoid the path.
+    static let weightNothingBare:   Int = 80
+    static let weightLootBare:      Int = 20
+    static let weightEncounterBare: Int = 0
+    static let weightTripBare:      Int = 0
 
     // Trip damage (% of max HP).
     static let tripDamagePercent: Double = 0.05
@@ -105,12 +122,13 @@ public enum ExplorationService {
             wEncounter = weightEncounterReduced
             wTrip      = weightTripReduced
         default:
-            // 2+ prior visits — room is picked clean. No loot, no predators,
-            // no trip hazards. Starvation still applies (that's physiology).
-            wNothing   = weightTotal
-            wLoot      = 0
-            wEncounter = 0
-            wTrip      = 0
+            // 2+ prior visits — room is picked clean of beasts and hazards,
+            // but a small chance of finding overlooked forage remains. No
+            // encounter, no trip; starvation still applies (that's physiology).
+            wNothing   = weightNothingBare
+            wLoot      = weightLootBare
+            wEncounter = weightEncounterBare
+            wTrip      = weightTripBare
         }
 
         // Pick the event bucket.

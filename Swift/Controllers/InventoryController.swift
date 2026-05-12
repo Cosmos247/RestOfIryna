@@ -138,7 +138,8 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     fileprivate func renderRoot(entries: [InventoryEntry], session: User, lingo: Lingo, locale: String) -> String {
         let title = lingo.localize("inventory.title", locale: locale)
-        let slotsUsed = entries.filter { $0.equippedSlot == nil }.count
+        // Per-unit (2026-05-12): sum quantities across all non-equipped rows.
+        let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
         let slotsLabel = lingo.localize("inventory.slots_label", locale: locale)
         let cap = InventoryEntry.slotCap(for: session)
         let header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel)</i>"

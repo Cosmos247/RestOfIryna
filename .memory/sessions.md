@@ -1,5 +1,46 @@
 # Session History
 
+## Session N+6 — 2026-05-12 (Post-5.3 polish: bug fixes + per-unit inventory pivot)
+
+### Goal
+A "last set of fixes before a big commit" sweep, gathered from live testing of the 5.3e build. Six discrete fixes shipped in one branch.
+
+### What was done
+
+**1. Lingo emoji-leading-template audit + sweep.** Wrote `/tmp/lingo_audit.py` to enumerate every interpolated locale key with a leading multi-UTF-16 emoji (supplementary-plane OR BMP+VS16). Audit found 11 broken keys × 2 locales: `weapon.upgrade.estate_too_low` (🏰), `bag.upgrade.estate_too_low` (🚧), `estate.locked.room` (🔒), `estate.plot.type_locked` (🔒), `level_up.stat_boost` (💪), `combat.tech.locked` (🔒), `estate.training.kind.learnable` (📖), `estate.training.kind.locked` (🔒), `estate.training.button.learn` (📖), `exploration.passive.report.xp` (📊), `exploration.passive.report.levelup` (🎉). Stripped the leading emoji from every template; prepended in Swift at each call site (EstateController × 5 sites, CombatController × 2, PassiveExpeditionService × 3, InventoryController already clean). User reproed first via the estate-upgrade `level_too_low` alert ("потрібен %{required}-й рівень") and bag `estate_too_low` ("потрібен %{required}-й тир"); the audit caught the rest before they could fire. Script lives at `/tmp/lingo_audit.py` — re-run before any locale commit.
+
+**2. HTML in callback-toast keys.** A separate audit (`/tmp/callback_html_audit.py`) found 3 keys still carrying `<b>...</b>` while reaching the user only through `answerCallbackQuery(text:)` (plain-text only): `combat.tech.locked`, `estate.locked.room`, `estate.plot.type_locked`. User reported the literal `<b>8-го рівня</b>` in the tech-locked modal. Stripped the tags from all three keys in both locales. Other 94 HTML-tagged keys are fine — they only reach the user through `sendMessage`/`editMessageText` with `parseMode: .html`.
+
+**3. Stale combat callback fix.** After combat ends, the player's router flips back to "exploration", but the old combat inline message in chat scrollback still carries `combat:attack`/`defend`/`flee`/... buttons. Tapping any of them landed in the generic Router fallback ("Unsupported content type.") because `ExplorationController.onCallbackQuery` only matched `explore:*` prefixes. Two-part fix: `ExplorationController.onCallbackQuery` now forwards `combat:*` to `CombatController.onCallbackQuery` (mirrors Main/Estate/Inventory/Settings forwarding); `CombatController.loadCombat` no longer redirects to the exploration view when combat state is gone — instead it surfaces a clean `combat.ended` modal alert (`combat.ended` is a new locale key — EN: "The fight is already over. Return to the wilds when you're ready to face another beast." / UK: "Бій уже завершено. Відправляйся до нетрів, коли будеш готовий зустріти нового звіра."). Old behavior was disorienting because the player may have already walked back / returned home — the toast leaves the current screen untouched.
+
+**4. Exploration weight rebalance (two passes).** First pass dropped fresh-tier `nothing` from 20 to 10 (loot 40 → 50), reduced-tier from 50 to 30 (loot 20 → 40), since user reported "the wilderness felt too quiet." Second pass after step-back testing showed too many "🍂 Сліди витоптані" messages in a row: reduced-tier dropped further (`nothing 30 → 20`, `loot 40 → 50`), and the bare tier (priorVisits≥2) opened up from `100/0/0/0` to `80/20/0/0` so even a depleted room has a 1-in-5 chance of forage. Encounter/trip stay zero at bare — beasts learn to avoid the path. Constants: `weightNothing/Loot/Encounter/Trip` (fresh), `weightNothingReduced/...` (revisit), `weightNothingBare/...` (bare).
+
+**5. Plot picker confusion clarified.** User saw "Слотів зайнято: 5/1" with a Coop on slot 0 and asked why a Coop was auto-added. Read the code — `handlePlotTypeChosen` is the only `PlotService.claim` call site, and it sits behind the picker. The Coop was leftover DB data from a session predating Phase 5.3c (when slot allowance was flat 5). With estate T2 now showing only 1 slot, the rendered list shows just slot 0 and the header counts all 5 existing rows. No code change — communicated the situation to the user and recommended `DELETE FROM plots WHERE user_id=$UID` in Postico to reset.
+
+**6. Per-unit slot accounting (big mechanical pivot).** Inventory + warehouse used to count distinct *stack rows* against the cap — `bread × 50` was 1 slot. Switched to per-unit (`flour × 8` = 8 slots), bumped all bag tiers +5, added a T6 capstone (+5 over T5), scaled the warehouse cap ×4 to keep it a meaningful buffer, and added a `User.isDeveloper` bypass.
+- `User.isDeveloper`: new extension — `developerUsers.contains(self.telegramId)`. Used by inventory + warehouse cap checks; counts still surface in the UI.
+- `InventoryEntry.slotsUsed`: `count` → `reduce(0){ $0 + $1.quantity }`.
+- `InventoryEntry.canAccept` / `.add`: collapsed the stackable/non-stackable branches into a single `used + quantity <= cap` check, with dev-bypass at the top.
+- `BagCatalog`: capacities `[20, 30, 40, 55, 75]` → `[25, 35, 45, 60, 80, 85]`. `maxTier` 5 → 6. New `BagUpgradeStep` at T5→T6: 25 hide + 12 iron_ingot, requires estate T7 (Lord's Holdings — endgame craft).
+- `bag.tier.6.name`: EN "Grandmaster's Pack" / UK "Грандмайстерський сак".
+- `WarehouseService.capTable`: `[50, 100, 150, 200, 300, 400, 500]` → `[200, 400, 600, 800, 1200, 1600, 2000]`.
+- `WarehouseService.slotsUsed`: same `reduce(0){ + quantity }` pattern.
+- `WarehouseService.deposit`: dropped the `needsNewRow` shortcut (used to skip cap check when merging into an existing stack row — incompatible with per-unit). Dev-bypass at the top.
+- `WarehouseService.depositAll`: now partial-fills instead of skipping — a 10-unit hide row hitting a 6-unit free cap dumps 6 and leaves 4 behind. Dev-bypass at the top.
+- `InventoryController.renderRoot` + `EstateController.renderWarehouseRoot` call site: changed inline `.count` to `reduce(0){ + quantity }` for the header `X/Y slots` display.
+
+Migration impact: existing players keep all their items — over-cap rows stay readable, cap only blocks new inserts (same policy as 5.3c warehouse cap rollout). Recipe costs unchanged — but they now bite a lot harder against the new bag (a Forester's Jerkin needs 6 hide = 6 slots of a 25-slot bag).
+
+**Other notes:**
+- `configure.swift`: `seedDevInventory` was flipped `true → false` locally during user testing. Carrying the change in this commit since it's a one-line dev config the user set deliberately.
+- Locale parity: 470/470 EN/UK after the round.
+- Build: clean.
+- Both audit scripts pass with 0 hits after the sweep.
+
+### What's queued next
+- User-triggered post-commit testing of the new bag/warehouse pressure. Recipe input numbers may need rebalancing if the new cap proves too tight in real play.
+- Phase 6 (Capital — first gold sources via quests) is the next planned milestone now that Phase 5.3 series + this polish are landed.
+
 ## Session N+5 — 2026-05-11 part 7 (Phase 5.3e — Technique gates + Training Ground learn flow)
 
 ### What was done:

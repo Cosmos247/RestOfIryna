@@ -294,7 +294,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
         guard let query = context.update.callbackQuery else { return true }
         let required = CombatService.requiredLevel(for: kind)
-        let text = context.lingo.localize("combat.tech.locked", locale: context.session.locale, interpolations: [
+        // 🔒 prepended in Swift — leading supplementary-plane emoji breaks
+        // Lingo's `%{var}` parser (see .memory/localization.md).
+        let text = "🔒 " + context.lingo.localize("combat.tech.locked", locale: context.session.locale, interpolations: [
             "level": "\(required)"
         ])
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
@@ -910,7 +912,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 "level": "\(xpResult.newLevel)"
             ])
             if xpResult.maxHpGained > 0 {
-                line += " " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
+                // 💪 prepended in Swift — same Lingo emoji-leading-template bug.
+                line += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
                     "hp": "\(xpResult.maxHpGained)",
                     "atk": "\(xpResult.attackGained)",
                     "def": "\(xpResult.defenseGained)"
@@ -1017,9 +1020,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
               state.isInCombat,
               let enemyId = state.combatEnemyId,
               let enemy = EnemyCatalog.find(enemyId) else {
-            context.session.routerName = Controllers.explorationController.routerName
-            try await context.session.saveAndCache(in: context.db)
-            try await Controllers.explorationController.showExploration(context: context)
+            // Stale callback: combat already ended (victory / defeat / flee).
+            // Tell the player via a modal alert and leave their current screen
+            // untouched — rebuilding the exploration UI here was disorienting
+            // because the player may have already walked back / returned home.
+            if let query = context.update.callbackQuery {
+                let toast = context.lingo.localize("combat.ended", locale: context.session.locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                    callbackQueryId: query.id, text: toast, showAlert: true
+                ))
+            }
             return nil
         }
         return (state, enemy)

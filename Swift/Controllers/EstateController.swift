@@ -269,7 +269,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             let goldOK = session.gold >= nextStep.goldCost
             let goldMark = goldOK ? "✅" : "⛔"
             lines.append("")
-            lines.append("\(goldMark) " + lingo.localize("estate.upgrade.gold_required", locale: locale, interpolations: [
+            // 💰 prepended in Swift — Lingo's `%{var}` parser breaks on
+            // a leading supplementary-plane emoji in the template.
+            lines.append("\(goldMark) 💰 " + lingo.localize("estate.upgrade.gold_required", locale: locale, interpolations: [
                 "required": "\(nextStep.goldCost)",
                 "have":     "\(session.gold)"
             ]))
@@ -336,7 +338,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // Phase 5.3c — show capacity. Cap grows with estate tier; existing
         // over-cap warehouses still render the actual count even past the
         // limit so the player sees the full picture.
-        let capLine = lingo.localize("estate.warehouse.capacity", locale: locale, interpolations: [
+        // 📦 prepended in Swift — Lingo's `%{var}` parser breaks on leading
+        // surrogate-pair emoji in the template (see .memory/localization.md).
+        let capLine = "📦 " + lingo.localize("estate.warehouse.capacity", locale: locale, interpolations: [
             "used": "\(slotsUsed)",
             "cap": "\(slotsCap)"
         ])
@@ -963,8 +967,9 @@ extension EstateController {
                 inline = ctrl.homeKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: locale)
             case "estate:home:workshop" where context.session.estateLevel < 3:
                 // Stale callback: room not unlocked yet. Surface a clean alert
-                // and leave the screen as-is.
-                let alert = context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
+                // and leave the screen as-is. 🔒 prepended in Swift — leading
+                // supplementary-plane emoji breaks Lingo's `%{var}` parser.
+                let alert = "🔒 " + context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
                     "tier": "3"
                 ])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
@@ -972,7 +977,7 @@ extension EstateController {
                 ))
                 return true
             case "estate:home:kitchen" where context.session.estateLevel < 2:
-                let alert = context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
+                let alert = "🔒 " + context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
                     "tier": "2"
                 ])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
@@ -996,7 +1001,9 @@ extension EstateController {
             case "estate:home:warehouse":
                 let entries = try await WarehouseEntry.list(for: context.session, on: context.db)
                 let cap = WarehouseService.capForLevel(context.session.estateLevel)
-                text = ctrl.renderWarehouseRoot(slotsUsed: entries.count, slotsCap: cap, lingo: context.lingo, locale: locale)
+                // Per-unit (2026-05-12): sum quantities, not row count.
+                let usedUnits = entries.reduce(0) { $0 + $1.quantity }
+                text = ctrl.renderWarehouseRoot(slotsUsed: usedUnits, slotsCap: cap, lingo: context.lingo, locale: locale)
                 inline = ctrl.warehouseRootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             default:
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1202,7 +1209,7 @@ extension EstateController {
         // Phase 5.3c — defensive: stale callback could carry trainingGround
         // before the player hits estate T3. Surface a clean alert.
         if type == .trainingGround, context.session.estateLevel < 3 {
-            let alert = context.lingo.localize("estate.plot.type_locked", locale: locale, interpolations: [
+            let alert = "🔒 " + context.lingo.localize("estate.plot.type_locked", locale: locale, interpolations: [
                 "tier": "3"
             ])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: alert, showAlert: true))
@@ -1322,7 +1329,7 @@ extension EstateController {
         }
         let required = CombatService.requiredLevel(for: kind)
         if context.session.level < required {
-            let toast = context.lingo.localize("combat.tech.locked", locale: locale, interpolations: ["level": "\(required)"])
+            let toast = "🔒 " + context.lingo.localize("combat.tech.locked", locale: locale, interpolations: ["level": "\(required)"])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
@@ -1399,12 +1406,15 @@ extension EstateController {
             let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
             let isLearned = learned.contains(kind.rawValue)
             let required = CombatService.requiredLevel(for: kind)
+            // 📖 / 🔒 prepended in Swift — leading supplementary-plane emoji
+            // breaks Lingo's `%{var}` parser. ✅ (BMP, no VS16) is safe to
+            // keep in the template for the learned branch.
             if isLearned {
                 lines.append(lingo.localize("estate.training.kind.learned", locale: locale, interpolations: ["name": name]))
             } else if session.level >= required {
-                lines.append(lingo.localize("estate.training.kind.learnable", locale: locale, interpolations: ["name": name]))
+                lines.append("📖 " + lingo.localize("estate.training.kind.learnable", locale: locale, interpolations: ["name": name]))
             } else {
-                lines.append(lingo.localize("estate.training.kind.locked", locale: locale, interpolations: [
+                lines.append("🔒 " + lingo.localize("estate.training.kind.locked", locale: locale, interpolations: [
                     "name": name,
                     "level": "\(required)"
                 ]))
@@ -1424,7 +1434,8 @@ extension EstateController {
             if learned.contains(kind.rawValue) { continue }
             if session.level < CombatService.requiredLevel(for: kind) { continue }
             let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
-            let label = lingo.localize("estate.training.button.learn", locale: locale, interpolations: ["name": name])
+            // 📖 prepended in Swift — same Lingo emoji-leading-template bug.
+            let label = "📖 " + lingo.localize("estate.training.button.learn", locale: locale, interpolations: ["name": name])
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "estate:training:learn:\(kind.rawValue)")])
         }
 
@@ -1609,7 +1620,7 @@ extension EstateController {
             return true
 
         case .estateLevelTooLow(let required, let current):
-            let toast = context.lingo.localize("weapon.upgrade.estate_too_low", locale: locale, interpolations: [
+            let toast = "🏰 " + context.lingo.localize("weapon.upgrade.estate_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])
@@ -1716,7 +1727,9 @@ extension EstateController {
             return true
 
         case .playerLevelTooLow(let required, let current):
-            let toast = context.lingo.localize("estate.upgrade.level_too_low", locale: locale, interpolations: [
+            // 🚧 prepended in Swift — leading supplementary-plane emoji
+            // breaks Lingo's `%{var}` parser (see .memory/localization.md).
+            let toast = "🚧 " + context.lingo.localize("estate.upgrade.level_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])
@@ -1724,7 +1737,8 @@ extension EstateController {
             return true
 
         case .insufficientGold(let required, let current):
-            let toast = context.lingo.localize("estate.upgrade.gold_too_low", locale: locale, interpolations: [
+            // 💰 prepended in Swift — same Lingo emoji-leading-template bug.
+            let toast = "💰 " + context.lingo.localize("estate.upgrade.gold_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])
@@ -1836,7 +1850,7 @@ extension EstateController {
             return true
 
         case .estateLevelTooLow(let required, let current):
-            let toast = context.lingo.localize("bag.upgrade.estate_too_low", locale: locale, interpolations: [
+            let toast = "🚧 " + context.lingo.localize("bag.upgrade.estate_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])

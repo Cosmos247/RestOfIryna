@@ -675,15 +675,17 @@ public enum PassiveExpeditionService {
         // so translators can reorder cleanly.
         if report.xpEarned > 0 {
             lines.append("")
-            var xpLine = lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
+            // 📊 / 🎉 / 💪 prepended in Swift — leading supplementary-plane
+            // emoji breaks Lingo's `%{var}` parser (see .memory/localization.md).
+            var xpLine = "📊 " + lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
                 "xp": "\(report.xpEarned)"
             ])
             if report.levelsGained > 0 {
-                xpLine += " " + lingo.localize("exploration.passive.report.levelup", locale: locale, interpolations: [
+                xpLine += " 🎉 " + lingo.localize("exploration.passive.report.levelup", locale: locale, interpolations: [
                     "level": "\(report.newLevel)"
                 ])
                 if report.maxHpGained > 0 {
-                    xpLine += " " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
+                    xpLine += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
                         "hp": "\(report.maxHpGained)",
                         "atk": "\(report.attackGained)",
                         "def": "\(report.defenseGained)"

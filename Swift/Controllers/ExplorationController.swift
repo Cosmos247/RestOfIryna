@@ -658,7 +658,18 @@ extension ExplorationController {
     static func onCallbackQuery(context: Context) async throws -> Bool {
         guard let query = context.update.callbackQuery else { return false }
         guard let message = query.message else { return false }
-        guard let data = query.data, data.hasPrefix("explore:") else { return false }
+        guard let data = query.data else { return false }
+
+        // Stale `combat:*` buttons (e.g. the inline keyboard left on the
+        // last round's message after combat ended) land here once routerName
+        // flips back to "exploration". Forward to CombatController so it can
+        // surface a clean "combat is over" toast instead of the generic
+        // router fallback.
+        if data.hasPrefix("combat:") {
+            return try await CombatController.onCallbackQuery(context: context)
+        }
+
+        guard data.hasPrefix("explore:") else { return false }
 
         let ctrl = Controllers.explorationController
         let locale = context.session.locale

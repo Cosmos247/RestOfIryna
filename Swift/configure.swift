@@ -34,7 +34,7 @@ let resetDevProfile = false
 
 /// Seed a starter inventory + warehouse for every `developerUsers` account on launch.
 /// Per-item top-up (never reduces), so it recovers gracefully from catalog changes.
-let seedDevInventory = true
+let seedDevInventory = false
 
 // MARK: - Character Classes
 public enum CharacterClass: String, CaseIterable, Codable, Sendable {
