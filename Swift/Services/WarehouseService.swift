@@ -62,6 +62,29 @@ public enum WarehouseService {
         case inventoryFull
     }
 
+    /// Outcome of a bulk-withdraw. Carries the limiting value so the UI can
+    /// surface specific messaging ("Not enough. You have N", "Won't fit —
+    /// room for K"). Symmetric: both failure cases tell the player exactly
+    /// what's blocking the transfer without a follow-up query.
+    public enum WithdrawNResult: Sendable {
+        case success
+        case notEnoughInWarehouse(available: Int)
+        case inventoryFull(free: Int)
+    }
+
+    /// Outcome of a bulk-deposit. Mirrors `WithdrawNResult` but flipped —
+    /// source is the bag, destination is the warehouse.
+    public enum DepositNResult: Sendable {
+        case success
+        case notEnoughInBag(available: Int)
+        case warehouseFull(free: Int)
+        /// Item lives in `WeaponUpgradeCatalog` (per-instance tier) and can't
+        /// be warehoused — same restriction the single-unit `deposit` returns
+        /// as `notTransferable`. The `[✏️ N]` flow only renders for stackable
+        /// items so this case is defensive; surface as a modal alert if hit.
+        case notTransferable
+    }
+
     /// Move one unit of the item from the player's backpack to the warehouse.
     /// Returns `.nothingToDeposit` if there's no unequipped row to take from,
     /// `.warehouseFull` if the warehouse is at unit cap. Developer accounts
@@ -199,6 +222,101 @@ public enum WarehouseService {
 
         // Withdrawn items land in the backpack unequipped — player must go equip them.
         try await InventoryEntry.add(itemId, quantity: 1, to: user, on: db)
+        return .success
+    }
+
+    /// Move `quantity` units of the item from the warehouse to the backpack
+    /// in one shot. Fails atomically if the warehouse doesn't have enough or
+    /// the backpack can't fit — both failure cases carry the limiting number
+    /// so the caller can render a precise message. Caller is responsible for
+    /// ensuring `quantity > 0`; the function treats `<= 0` as a no-op success.
+    @discardableResult
+    public static func withdrawN(itemId: String, quantity: Int, for user: User, on db: any Database) async throws -> WithdrawNResult {
+        guard quantity > 0 else { return .success }
+        guard ItemCatalog.find(itemId) != nil, let userId = user.id else {
+            return .notEnoughInWarehouse(available: 0)
+        }
+
+        // Source preflight — refuse if warehouse can't cover the request.
+        let available = try await WarehouseEntry.totalQuantity(of: itemId, for: userId, on: db)
+        guard available >= quantity else {
+            return .notEnoughInWarehouse(available: available)
+        }
+
+        // Destination preflight — refuse if backpack can't fit. Dev accounts
+        // bypass the cap, mirroring `InventoryEntry.add` semantics.
+        let cap = InventoryEntry.slotCap(for: user)
+        let used = try await InventoryEntry.slotsUsed(for: user, on: db)
+        let free = user.isDeveloper ? Int.max : max(0, cap - used)
+        guard free >= quantity else {
+            return .inventoryFull(free: free)
+        }
+
+        // Both sides cleared — perform the transfer. `remove` already returns
+        // `false` only when the available count drops below the request, but
+        // we've already preflighted so a `false` here would be a race we can't
+        // realistically resolve; treat it as the same insufficiency.
+        let removed = try await WarehouseEntry.remove(itemId, quantity: quantity, from: user, on: db)
+        guard removed else {
+            let afterRace = try await WarehouseEntry.totalQuantity(of: itemId, for: userId, on: db)
+            return .notEnoughInWarehouse(available: afterRace)
+        }
+        try await InventoryEntry.add(itemId, quantity: quantity, to: user, on: db)
+        return .success
+    }
+
+    /// Move `quantity` units of the item from the backpack to the warehouse
+    /// in one shot. Mirror of `withdrawN`. Atomic preflight: bag has at least
+    /// `quantity` (counting only unequipped rows — equipped gear is "on the
+    /// body" and not transferable, same rule as single-unit `deposit`), and
+    /// warehouse has free slots for `quantity` units. Dev accounts bypass
+    /// the warehouse cap.
+    @discardableResult
+    public static func depositN(itemId: String, quantity: Int, for user: User, on db: any Database) async throws -> DepositNResult {
+        guard quantity > 0 else { return .success }
+        guard ItemCatalog.find(itemId) != nil, let userId = user.id else {
+            return .notEnoughInBag(available: 0)
+        }
+
+        // Tiered weapons can't ride the warehouse table (no tier column).
+        // The N-flow button only renders on stackable items so this is a
+        // defensive guard — keeps the service honest if a stale callback
+        // ever reaches it.
+        if WeaponUpgradeCatalog.isUpgradable(itemId) {
+            return .notTransferable
+        }
+
+        // Source preflight — count only unequipped rows (gear that's worn
+        // can't be deposited even if stackable in theory; safer to scope to
+        // unequipped, matching single-unit `deposit` behaviour).
+        let bagRows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$itemId, .equal, itemId)
+            .all()
+        let available = bagRows.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
+        guard available >= quantity else {
+            return .notEnoughInBag(available: available)
+        }
+
+        // Destination preflight — refuse if the warehouse would overflow its
+        // per-tier cap. Dev accounts bypass; the warehouse may show overflow
+        // in the UI but never refuses an insert.
+        let cap = capForLevel(user.estateLevel)
+        let used = try await slotsUsed(for: user, on: db)
+        let free = user.isDeveloper ? Int.max : max(0, cap - used)
+        guard free >= quantity else {
+            return .warehouseFull(free: free)
+        }
+
+        // Both sides cleared — drain the bag, fill the warehouse. Same race
+        // caveat as `withdrawN`: if a parallel update drains the bag between
+        // preflight and `remove`, we report the post-race count.
+        let removed = try await InventoryEntry.remove(itemId, quantity: quantity, from: user, on: db)
+        guard removed else {
+            let afterRace = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: db)
+            return .notEnoughInBag(available: afterRace)
+        }
+        try await WarehouseEntry.add(itemId, quantity: quantity, to: user, on: db)
         return .success
     }
 }

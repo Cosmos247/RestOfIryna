@@ -75,6 +75,18 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
 
     override func unmatched(context: Context) async throws -> Bool {
         guard try await super.unmatched(context: context) else { return false }
+        // Custom-quantity transfer is mid-flight: the player tapped [✏️ N]
+        // and the next text update is their answer. Consume it BEFORE the
+        // generic showEstate fallback so a typed number doesn't bounce them
+        // back to the estate root. Only treat the text as a quantity once
+        // the player has actually picked a direction — in the direction-
+        // picker stage we ignore typed text and let the showEstate fallback
+        // handle it.
+        if let pending = await EphemeralChatState.shared.peekPendingWarehouseTransfer(telegramId: context.session.telegramId),
+           pending.direction != nil {
+            try await EstateController.handleWarehouseTransferNText(pending: pending, context: context)
+            return true
+        }
         try await showEstate(context: context)
         return true
     }
@@ -406,8 +418,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Gear (non-stackable): one button row per physical unit, single-direction action.
-    /// Everything else (stackable): one aggregated row per item_id with bidirectional
-    /// `🎒 N ⬆️` / `📦 M ⬇️` buttons.
+    /// Everything else (stackable): two rows per item — an info row showing the name
+    /// + bag/warehouse counters, then an action row `[⬆️ +1] [⬇️ +1] [✏️ N]` where
+    /// `✏️ N` opens a chat prompt for a custom withdraw quantity.
     fileprivate func warehouseCategoryKeyboard(type: ItemType, invEntries: [InventoryEntry], whEntries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var keyboard: [[TGInlineKeyboardButton]] = []
 
@@ -444,10 +457,14 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             for row in rows {
                 let name = lingo.localize(row.item.nameKey, locale: locale)
                 let iconPrefix = row.item.icon.map { "\($0) " } ?? ""
+                let infoLabel = "\(iconPrefix)\(name) · 🎒\(row.inventoryCount) / 📦\(row.warehouseCount)"
                 keyboard.append([
-                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(row.item.id)"),
-                    TGInlineKeyboardButton(text: "🎒 \(row.inventoryCount) ⬆️", callbackData: "estate:wh:deposit:\(row.item.id)"),
-                    TGInlineKeyboardButton(text: "📦 \(row.warehouseCount) ⬇️", callbackData: "estate:wh:withdraw:\(row.item.id)")
+                    TGInlineKeyboardButton(text: infoLabel, callbackData: "estate:wh:info:\(row.item.id)")
+                ])
+                keyboard.append([
+                    TGInlineKeyboardButton(text: "⬆️ +1", callbackData: "estate:wh:deposit:\(row.item.id)"),
+                    TGInlineKeyboardButton(text: "⬇️ +1", callbackData: "estate:wh:withdraw:\(row.item.id)"),
+                    TGInlineKeyboardButton(text: "✏️ N", callbackData: "estate:wh:transferN:\(row.item.id)")
                 ])
             }
         }
@@ -919,6 +936,22 @@ extension EstateController {
             return try await handleWarehouseDepositAll(data: data, query: query, message: message, context: context)
         }
 
+        // Custom-quantity transfer flow — two-stage prompt. Must be matched
+        // before the per-item `withdraw:` prefix since "transferN" technically
+        // doesn't overlap, but we group all `transfer*` checks first for
+        // routing clarity. Direction-choice callbacks (`transferPut:` /
+        // `transferTake:`) edit the prompt in place and stamp direction onto
+        // the pending entry; the cancel callback works in either stage.
+        if data.hasPrefix("estate:wh:transferN:") {
+            return try await handleWarehouseTransferNEntry(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:wh:transferPut:") || data.hasPrefix("estate:wh:transferTake:") {
+            return try await handleWarehouseTransferDirection(data: data, query: query, message: message, context: context)
+        }
+        if data == "estate:wh:cancelN" {
+            return try await handleWarehouseTransferNCancel(query: query, message: message, context: context)
+        }
+
         if data.hasPrefix("estate:wh:deposit:") || data.hasPrefix("estate:wh:withdraw:") {
             return try await handleWarehouseTransfer(data: data, query: query, message: message, context: context)
         }
@@ -1091,14 +1124,15 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
         }
 
-        // Refresh the currently-open category in place. On success prepend
-        // the status line; on failure leave the body unchanged (data didn't
-        // move, the modal alert already explains why).
+        // Refresh the currently-open category in place; on success the status
+        // line is published as a separate banner below the inline keyboard.
+        // Failure path leaves the body unchanged — the modal alert already
+        // explains why, and the body content didn't move.
         let ctrl = Controllers.estateController
         let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
         let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
         let body = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
-        let text = isSuccess ? "✅ \(toast)\n\n\(body)" : body
+        let text = body
         let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
 
         let chatId = TGChatId.chat(message.chat.id)
@@ -1120,6 +1154,9 @@ extension EstateController {
                 replyMarkup: inline
             )
             _ = try? await context.bot.editMessageText(params: params)
+        }
+        if isSuccess {
+            await ctrl.postStatusBanner("✅ \(toast)", context: context)
         }
         return true
     }
@@ -1161,10 +1198,268 @@ extension EstateController {
         let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
         let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
         let body = ctrl.renderWarehouseCategory(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
-        let text = "\(banner)\n\n\(body)"
         let inline = ctrl.warehouseCategoryKeyboard(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
-        try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        await ctrl.postStatusBanner(banner, context: context)
         return true
+    }
+
+    /// `estate:wh:transferN:<itemId>` — entry point for the custom-quantity
+    /// transfer flow. Sends a NEW message below the warehouse with a
+    /// direction picker (`[⬆️ To warehouse] [⬇️ To bag] [❌ Cancel]`) and
+    /// records the pending state with `direction == nil`. The direction
+    /// callbacks (`transferPut:` / `transferTake:`) bump the direction and
+    /// edit the prompt into a quantity question; the player's next text
+    /// message is then consumed by `unmatched` → `handleWarehouseTransferNText`.
+    /// Warehouse screen is left untouched so the player can still see the
+    /// counters while choosing.
+    static func handleWarehouseTransferNEntry(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let itemId = String(data.dropFirst("estate:wh:transferN:".count))
+        guard ItemCatalog.find(itemId) != nil else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        let prompt = context.lingo.localize("estate.warehouse.transfer_n.where_prompt", locale: locale)
+        let dirPutLabel = context.lingo.localize("estate.warehouse.transfer_n.dir_put", locale: locale)
+        let dirTakeLabel = context.lingo.localize("estate.warehouse.transfer_n.dir_take", locale: locale)
+        let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [
+                TGInlineKeyboardButton(text: dirPutLabel, callbackData: "estate:wh:transferPut:\(itemId)"),
+                TGInlineKeyboardButton(text: dirTakeLabel, callbackData: "estate:wh:transferTake:\(itemId)")
+            ],
+            [TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")]
+        ])
+
+        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(message.chat.id),
+            text: prompt,
+            parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(inline)
+        ))
+
+        await EphemeralChatState.shared.setPendingWarehouseTransfer(
+            telegramId: context.session.telegramId,
+            itemId: itemId,
+            promptMessageId: sent.messageId,
+            warehouseMessageId: message.messageId,
+            direction: nil
+        )
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        return true
+    }
+
+    /// `estate:wh:transferPut:<itemId>` / `estate:wh:transferTake:<itemId>` —
+    /// player picked a direction on the open prompt. Updates the pending
+    /// entry's direction, then edits the prompt into the matching quantity
+    /// question with just `[❌ Cancel]` left on the keyboard. A stale tap
+    /// (no pending entry) silently acks.
+    static func handleWarehouseTransferDirection(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let locale = context.session.locale
+        let telegramId = context.session.telegramId
+
+        let direction: EphemeralChatState.PendingWarehouseTransfer.Direction
+        let promptKey: String
+        if data.hasPrefix("estate:wh:transferPut:") {
+            direction = .put
+            promptKey = "estate.warehouse.deposit_n.prompt"
+        } else {
+            direction = .take
+            promptKey = "estate.warehouse.withdraw_n.prompt"
+        }
+
+        // Guard against a stale tap on a cancelled prompt — the pending entry
+        // may already be gone if the player double-cancelled or the state
+        // was cleared by some other flow.
+        guard let pending = await EphemeralChatState.shared.peekPendingWarehouseTransfer(telegramId: telegramId) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+
+        await EphemeralChatState.shared.setPendingWarehouseTransferDirection(
+            telegramId: telegramId,
+            direction: direction
+        )
+
+        let promptText = context.lingo.localize(promptKey, locale: locale)
+        let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
+        ]])
+
+        let edit = TGEditMessageTextParams(
+            chatId: .chat(message.chat.id),
+            messageId: pending.promptMessageId,
+            text: promptText,
+            parseMode: .html,
+            replyMarkup: inline
+        )
+        _ = try? await context.bot.editMessageText(params: edit)
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        return true
+    }
+
+    /// `estate:wh:cancelN` — works in either stage (direction picker or
+    /// quantity input). Clears the pending entry, deletes the prompt message,
+    /// and acks with a "Cancelled" toast. Warehouse view stays as-is since it
+    /// was never touched by this flow.
+    static func handleWarehouseTransferNCancel(
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let telegramId = context.session.telegramId
+        _ = await EphemeralChatState.shared.takePendingWarehouseTransfer(telegramId: telegramId)
+
+        let deleteParams = TGDeleteMessageParams(chatId: .chat(message.chat.id), messageId: message.messageId)
+        _ = try? await context.bot.deleteMessage(params: deleteParams)
+
+        let toast = context.lingo.localize("estate.warehouse.withdraw_n.cancelled", locale: context.session.locale)
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+            callbackQueryId: query.id, text: toast
+        ))
+        return true
+    }
+
+    /// Consume the player's text reply to a pending transfer prompt. Caller
+    /// (the `unmatched` override) guarantees `pending.direction != nil` —
+    /// the direction-picker stage ignores typed text. Three branches:
+    ///
+    ///   • not a positive integer — edit the prompt in place with an error,
+    ///     keep pending so the next message tries again.
+    ///   • bag/warehouse rejects the number — delete the prompt, refresh the
+    ///     warehouse screen, post a standalone `❌ …` banner explaining the
+    ///     limit, clear pending so a fresh tap is needed.
+    ///   • success — delete the prompt, refresh the warehouse screen, post a
+    ///     standalone `✅ …` banner showing what moved, clear pending.
+    static func handleWarehouseTransferNText(
+        pending: EphemeralChatState.PendingWarehouseTransfer,
+        context: Context
+    ) async throws {
+        guard let message = context.update.message,
+              let rawText = message.text,
+              let direction = pending.direction else { return }
+        let locale = context.session.locale
+        let telegramId = context.session.telegramId
+        let chatId = TGChatId.chat(telegramId)
+
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parsed = Int(trimmed), parsed > 0 else {
+            // Bad input — edit the prompt to nudge the player. Pending stays
+            // so the next message they send is interpreted the same way.
+            let errorText = context.lingo.localize("estate.warehouse.withdraw_n.invalid", locale: locale)
+            let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
+            let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
+                TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
+            ]])
+            let edit = TGEditMessageTextParams(
+                chatId: chatId,
+                messageId: pending.promptMessageId,
+                text: errorText,
+                parseMode: .html,
+                replyMarkup: inline
+            )
+            _ = try? await context.bot.editMessageText(params: edit)
+            return
+        }
+
+        guard let item = ItemCatalog.find(pending.itemId) else {
+            // Stale itemId (catalog change between prompt and reply). Clean up.
+            _ = await EphemeralChatState.shared.takePendingWarehouseTransfer(telegramId: telegramId)
+            let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: pending.promptMessageId)
+            _ = try? await context.bot.deleteMessage(params: deleteParams)
+            return
+        }
+
+        let itemName = context.lingo.localize(item.nameKey, locale: locale)
+        let banner: String
+        switch direction {
+        case .take:
+            let result = try await WarehouseService.withdrawN(
+                itemId: pending.itemId,
+                quantity: parsed,
+                for: context.session,
+                on: context.db
+            )
+            switch result {
+            case .success:
+                banner = "✅ " + context.lingo.localize("estate.warehouse.withdraw_n.success", locale: locale, interpolations: [
+                    "item": itemName,
+                    "n": "\(parsed)"
+                ]) + " ⬇️"
+            case .notEnoughInWarehouse(let available):
+                banner = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.not_enough", locale: locale, interpolations: [
+                    "have": "\(available)"
+                ])
+            case .inventoryFull(let free):
+                banner = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.bag_full", locale: locale, interpolations: [
+                    "free": "\(free)"
+                ])
+            }
+        case .put:
+            let result = try await WarehouseService.depositN(
+                itemId: pending.itemId,
+                quantity: parsed,
+                for: context.session,
+                on: context.db
+            )
+            switch result {
+            case .success:
+                banner = "✅ " + context.lingo.localize("estate.warehouse.deposit_n.success", locale: locale, interpolations: [
+                    "item": itemName,
+                    "n": "\(parsed)"
+                ]) + " ⬆️"
+            case .notEnoughInBag(let available):
+                banner = "❌ " + context.lingo.localize("estate.warehouse.deposit_n.not_enough", locale: locale, interpolations: [
+                    "have": "\(available)"
+                ])
+            case .warehouseFull(let free):
+                banner = "❌ " + context.lingo.localize("estate.warehouse.deposit_n.warehouse_full", locale: locale, interpolations: [
+                    "free": "\(free)"
+                ])
+            case .notTransferable:
+                banner = "❌ " + context.lingo.localize("estate.warehouse.not_transferable", locale: locale)
+            }
+        }
+
+        // Either outcome (success or insufficiency) clears the pending entry
+        // and drops the prompt — the player gets a fresh tap if they want to
+        // retry with a different number / direction.
+        _ = await EphemeralChatState.shared.takePendingWarehouseTransfer(telegramId: telegramId)
+        let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: pending.promptMessageId)
+        _ = try? await context.bot.deleteMessage(params: deleteParams)
+
+        // Refresh the warehouse view in place — same category the player
+        // started from — and emit the outcome as a standalone banner under
+        // the inline keyboard so it can't be missed.
+        let ctrl = Controllers.estateController
+        let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+        let body = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+
+        let edit = TGEditMessageTextParams(
+            chatId: chatId,
+            messageId: pending.warehouseMessageId,
+            text: body,
+            parseMode: .html,
+            replyMarkup: inline
+        )
+        _ = try? await context.bot.editMessageText(params: edit)
+        await ctrl.postStatusBanner(banner, context: context)
     }
 
     // MARK: - Plot drill-down handlers (Phase 5.1)
@@ -1236,9 +1531,9 @@ extension EstateController {
             ])
             let plots = try await Plot.list(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            let text = "\(statusLine)\n\n\(body)"
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
     }
@@ -1282,9 +1577,9 @@ extension EstateController {
             ])
             let plots = try await Plot.list(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            let text = "\(statusLine)\n\n\(body)"
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
     }
@@ -1350,9 +1645,9 @@ extension EstateController {
         let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
         let ctrl = Controllers.estateController
         let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
-        let text = "\(banner)\n\n\(body)"
         let inline = ctrl.trainingGroundKeyboard(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
-        try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        await ctrl.postStatusBanner(banner, context: context)
         return true
     }
 
@@ -1552,12 +1847,12 @@ extension EstateController {
             // Silent ack — the inline banner carries the message.
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            // Stay on the detail screen; banner appended at the BOTTOM so the
-            // player sees it without scrolling past the recipe + stats sections.
+            // Stay on the detail screen; banner published as a standalone
+            // message under the inline keyboard so it can't be missed.
             let body = ctrl.renderRecipeDetail(recipe: recipe, lingo: context.lingo, locale: locale)
-            let text = "\(body)\n\n\(statusLine)"
             let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
     }
@@ -1672,9 +1967,9 @@ extension EstateController {
                 whSnapshot: snapshot.whHaves,
                 lingo: context.lingo, locale: locale
             )
-            let text = "\(body)\n\n\(banner)"
             let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(banner, context: context)
             return true
         }
     }
@@ -1782,8 +2077,8 @@ extension EstateController {
             )
             let canUpgrade = EstateUpgradeCatalog.canUpgrade(from: context.session.estateLevel)
             let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
-            let text = "\(body)\n\n\(banner)"
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(banner, context: context)
             return true
         }
     }
@@ -1893,8 +2188,8 @@ extension EstateController {
             )
             let canUpgrade = BagCatalog.canUpgrade(from: context.session.bagTier)
             let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
-            let text = "\(body)\n\n\(banner)"
-            try await editEstateMessage(message: message, text: text, inline: inline, context: context)
+            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            await ctrl.postStatusBanner(banner, context: context)
             return true
         }
     }

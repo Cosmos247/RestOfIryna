@@ -4,16 +4,21 @@
 //
 //  Created by Dmytro Ihnatyuhin on 23.04.2026.
 //
-//  In-memory bookkeeping for transient bot messages whose ID we want to be
-//  able to delete later — currently the Exploration mode picker (shown on
-//  the first Explore tap, with inline [Reconnaissance] / [Expedition]
-//  buttons). When the player taps a main-menu button instead of one of
-//  those inline choices, we want the picker message to disappear so it
-//  can't be tapped again out of context.
+//  In-memory bookkeeping for transient bot state we want to track between
+//  updates but never persist:
 //
-//  Intentionally NOT persisted. If the bot restarts, any stale picker in
-//  chat history still has live buttons — tapping would start an
-//  expedition normally (same as if the player had stayed on the picker).
+//    • Exploration picker — message ID of the inline picker shown on the
+//      first Explore tap so we can delete it when the player navigates away.
+//
+//    • Warehouse withdraw-N — when the player taps the [✏️ N] button on a
+//      warehouse row, we record (itemId + prompt message ID + warehouse
+//      screen message ID). The very next text update is then interpreted
+//      as the quantity to withdraw; cancel or completion clears the entry.
+//
+//  Intentionally NOT persisted. If the bot restarts mid-flow, any stale
+//  prompt in the chat history is harmless — its inline [Cancel] button is
+//  the only live affordance, and the controller treats a missing pending
+//  entry as a no-op.
 //
 
 import Foundation
@@ -29,5 +34,81 @@ public actor EphemeralChatState {
 
     public func takePicker(telegramId: Int64) -> Int? {
         pendingPickers.removeValue(forKey: telegramId)
+    }
+
+    // MARK: - Warehouse transfer-N (two-stage prompt)
+    //
+    // The `[✏️ N]` button opens a direction picker first (`Where? → To bag /
+    // To warehouse`); the bot edits that same prompt into a quantity question
+    // once direction is chosen, then awaits the player's typed number. Both
+    // stages share one pending record per user, with `direction == nil`
+    // representing the direction-picker stage and a set direction
+    // representing the awaiting-number stage. Cancel works identically in
+    // either stage — clear the entry and delete the prompt.
+
+    public struct PendingWarehouseTransfer: Sendable {
+        public enum Direction: String, Sendable { case put, take }
+        public let itemId: String
+        public let promptMessageId: Int
+        public let warehouseMessageId: Int
+        public var direction: Direction?
+    }
+
+    private var pendingWarehouseTransfers: [Int64: PendingWarehouseTransfer] = [:]
+
+    public func setPendingWarehouseTransfer(
+        telegramId: Int64,
+        itemId: String,
+        promptMessageId: Int,
+        warehouseMessageId: Int,
+        direction: PendingWarehouseTransfer.Direction? = nil
+    ) {
+        pendingWarehouseTransfers[telegramId] = PendingWarehouseTransfer(
+            itemId: itemId,
+            promptMessageId: promptMessageId,
+            warehouseMessageId: warehouseMessageId,
+            direction: direction
+        )
+    }
+
+    /// Bump direction on the existing pending entry (called when the player
+    /// taps `[⬆️ To warehouse]` / `[⬇️ To bag]`). No-op if no pending entry
+    /// exists — guards against stale callbacks where the state has already
+    /// been cleared by a parallel cancel.
+    public func setPendingWarehouseTransferDirection(
+        telegramId: Int64,
+        direction: PendingWarehouseTransfer.Direction
+    ) {
+        guard var current = pendingWarehouseTransfers[telegramId] else { return }
+        current.direction = direction
+        pendingWarehouseTransfers[telegramId] = current
+    }
+
+    public func peekPendingWarehouseTransfer(telegramId: Int64) -> PendingWarehouseTransfer? {
+        pendingWarehouseTransfers[telegramId]
+    }
+
+    public func takePendingWarehouseTransfer(telegramId: Int64) -> PendingWarehouseTransfer? {
+        pendingWarehouseTransfers.removeValue(forKey: telegramId)
+    }
+
+    // MARK: - Status banners (separate-message UX, 2026-05-15)
+    //
+    // Status confirmations (`✅ Crafted ...`, `❌ Not enough ...`, etc.) used
+    // to live INSIDE the body of the screen they refreshed. The user reported
+    // those banners as easy to miss — buried at the top (or bottom) of a long
+    // item list, well above the inline keyboard where their eye sits. We now
+    // emit them as standalone messages BELOW the inline-keyboard message and
+    // track the latest one per user so a new banner deletes the stale one
+    // instead of letting them stack up in chat history.
+
+    private var lastStatusBanners: [Int64: Int] = [:]
+
+    public func setLastStatusBanner(telegramId: Int64, messageId: Int) {
+        lastStatusBanners[telegramId] = messageId
+    }
+
+    public func takeLastStatusBanner(telegramId: Int64) -> Int? {
+        lastStatusBanners.removeValue(forKey: telegramId)
     }
 }

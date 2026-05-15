@@ -1,5 +1,64 @@
 # Session History
 
+## Session N+7 — 2026-05-15 (Warehouse custom-quantity bidirectional transfer)
+
+### Goal
+Replace the warehouse row layout to support transferring an arbitrary quantity in either direction (bag ↔ warehouse). Old row was a single line `[name] [🎒N ⬆️] [📦M ⬇️]` — every action moved exactly 1 unit. New row uses two lines: an info button with both counters, then `[⬆️ +1] [⬇️ +1] [✏️ N]`. The `✏️ N` button opens a two-stage prompt: first picks direction (`[⬆️ To warehouse] [⬇️ To bag]`), then edits in place into a quantity question; the player types a number and the bot validates + transfers. No presets, no multipliers — just two taps then keyboard input. Gear (non-stackable) rows are unchanged: each instance is unique, quantity doesn't apply.
+
+### What was done
+- **`EphemeralChatState`**: added a `pendingWarehouseTransfers: [Int64: PendingWarehouseTransfer]` map alongside the existing exploration picker. The struct carries `itemId`, `promptMessageId` (so we can edit/delete the prompt), `warehouseMessageId` (so we can refresh the warehouse view in place after the transfer), and a nullable `direction: Direction?` (`.put` / `.take`). Two-stage state: `direction == nil` during the direction picker, set once the player taps `[⬆️ To warehouse]` / `[⬇️ To bag]`. API: `setPendingWarehouseTransfer`, `setPendingWarehouseTransferDirection` (mutates direction on the existing entry, no-op on stale state), `peekPendingWarehouseTransfer`, `takePendingWarehouseTransfer`.
+- **`WarehouseService.withdrawN(itemId, quantity, for:, on:)`** + `WithdrawNResult` (`.success` / `.notEnoughInWarehouse(available:)` / `.inventoryFull(free:)`) — bag ← warehouse direction. **`WarehouseService.depositN(itemId, quantity, for:, on:)`** + `DepositNResult` (`.success` / `.notEnoughInBag(available:)` / `.warehouseFull(free:)` / `.notTransferable`) — bag → warehouse direction, mirror of `withdrawN` flipped. Both share the same shape: every failure case carries the limiting number so the UI renders specific messages without a follow-up query. Atomic preflight (source has ≥ quantity AND destination free ≥ quantity, dev bypass via `user.isDeveloper`); on success, `Entry.remove` + `Entry.add` across the two tables. `depositN` counts only unequipped bag rows (matching single-unit `deposit` semantics) and returns `.notTransferable` for tiered weapons defensively — the `[✏️ N]` button only renders on stackable items so this shouldn't fire in practice.
+- **`EstateController.warehouseCategoryKeyboard`**: stackable branch now emits 2 rows per item — row 1 is `[icon name · 🎒N / 📦M]` with the existing `estate:wh:info:<itemId>` callback (description modal); row 2 is `[⬆️ +1] [⬇️ +1] [✏️ N]` with `estate:wh:deposit:<id>` / `estate:wh:withdraw:<id>` / **`estate:wh:transferN:<id>`** (entry to the two-stage flow). Gear branch left untouched (one row per physical unit, single-direction action).
+- **Four callback handlers** (after `handleWarehouseDepositAll`):
+  - `handleWarehouseTransferNEntry` — sends a NEW message under the warehouse: "Where?" + `[⬆️ To warehouse] [⬇️ To bag]` on row 1, `[❌ Cancel]` on row 2. Records pending with `direction = nil`. Warehouse view untouched.
+  - `handleWarehouseTransferDirection` — handles `estate:wh:transferPut:<id>` / `estate:wh:transferTake:<id>` taps. Bumps the pending entry's direction, then edits the prompt in place into the matching quantity question (`deposit_n.prompt` or `withdraw_n.prompt`) with just `[❌ Cancel]` left on the keyboard.
+  - `handleWarehouseTransferNCancel` — works in either stage. Clears pending, deletes the prompt message, toast-acks "Cancelled".
+  - `handleWarehouseTransferNText` — called from `unmatched()` only when `pending.direction != nil` (text in the direction-picker stage falls through to the normal showEstate fallback). Branches on direction: `.take` → `WarehouseService.withdrawN`, `.put` → `WarehouseService.depositN`. Validation errors edit the prompt in place with `withdraw_n.invalid`; success and quota-failure paths delete the prompt, refresh the warehouse view, and emit the outcome as a standalone banner via `postStatusBanner`.
+- **`unmatched()` in EstateController**: peeks `EphemeralChatState` BEFORE the showEstate fallback. Only treats the text as a quantity once `pending.direction != nil` — typed text during the direction-picker stage is ignored and falls through.
+- **Callback dispatch ordering in `onCallbackQuery`**: `transferN:` / `transferPut:` / `transferTake:` and `cancelN` are grouped first, before `deposit:` / `withdraw:`, to keep routing unambiguous.
+- **Locale keys** (en + uk, 14 new total — 7 for take-side, 7 for put-side):
+  - `estate.warehouse.withdraw_n.{prompt, invalid, not_enough, bag_full, success, cancel_button, cancelled}` — shared between both directions for the generic strings; the take-side prompt/success/failure also live here.
+  - `estate.warehouse.transfer_n.{where_prompt, dir_put, dir_take}` — direction-picker UI.
+  - `estate.warehouse.deposit_n.{prompt, not_enough, warehouse_full, success}` — put-side variants.
+  - All `%{...}` interpolations have no leading multi-UTF-16 emoji in the template, per the Lingo bug rule; `❌` and `✅` banners are prepended in Swift at the call site. Inline button labels `⬆️ +1` / `⬇️ +1` / `✏️ N` and the row-1 info label format (`%{icon} %{name} · 🎒%{bag} / 📦%{wh}`) are composed in Swift, matching the existing pattern for `🎒 N ⬆️` button text.
+
+### Design rationale (from a long iterative chat with the user)
+Considered and rejected: global multiplier toggles (`×1 / ×10 / ×100 / All`), preset buttons in the prompt (`[1] [10] [100] [Усе]`), replacing the controller reply keyboard with `ReplyKeyboardRemove + [Cancel]` reply-kb button, splitting the third button into two (`[✏️ ⬆️ N] [✏️ ⬇️ N]`), and stacking action rows two-deep per item. The user wanted minimal screen real estate (single button on row 2), no presets ("just type the number"), an inline cancel button, and a way to deposit arbitrary quantities — which forced the two-stage prompt (direction first, then quantity) to keep the button count at three. The single-message prompt with inline `[❌ Cancel]` leaves the controller reply keyboard intact — when the player taps the message input, the device keyboard naturally covers the reply kb during typing. Functionally identical to the explicit-replacement variant, with one less message in chat.
+
+### Mid-session UX fix — status banner placement (two iterations)
+User playtested the new `❌ Не вистачає. У вас 88.` flow and reported the banner was easy to miss because it sat ABOVE the category header / item list, well above the inline buttons. First fix: moved banner to the BOTTOM of the body string across 10 sites. User playtested again and still missed it — the banner was now below the body text but STILL above the inline keyboard buttons, and on long item lists scrolled out of view. Final rule: **status banners are standalone messages, not embedded in the body at all.** Added `EphemeralChatState.lastStatusBanner` (latest banner message ID per user) and `TGControllerBase.postStatusBanner(_:context:)` helper that deletes the previous banner before sending a new one so chat history carries only the latest. Refactored 14 sites across 4 controllers: `EstateController` × 9 (handleWarehouseTransfer / handleWarehouseDepositAll / handleWarehouseWithdrawNText / plot claim+type+harvest / training learn / workshop craft / weapon upgrade / estate upgrade / bag upgrade), `InventoryController` × 3 (eat/use, learn-recipe, refreshCategory equip/unequip), `ExplorationController` × 1 (use-item from bag), `CombatController` × 1 (onTrainingExit). Workshop / weapon-upgrade / estate-upgrade / bag-upgrade banners that previously lived "at the bottom of the body" (an earlier band-aid for the same issue, see file-map entry) are now also standalone. Saved as user-level feedback memory [[feedback-status-banner-placement]] — every future action handler should call `postStatusBanner` instead of composing banners into body strings.
+
+### Mid-session combat rebalance — enemy damage pass
+User reported in playtest that even a wild boar dealt only **1 HP** of damage at the start of a journey, and the same numbers showed up later in the bestiary — i.e. enemies never threatened. Diagnosed via CombatService.applyAttack: `raw = max(1, ATK - DEF)` with ±10% variance. T1 boar ATK 5 vs L1 Warrior DEF 12 → 5−12 = −7, floored to 1; same story for almost every T1-T4 enemy vs a fresh warrior. Failed flee uses the same formula → also 1 damage, so fleeing was mechanically safe.
+
+Two paired changes, both data tunings (no formula change — the floor stays at 1, DEF still subtracts directly on regular hits):
+
+**1. Bestiary ATK bump** (Swift/Models/Enemy.swift) — explored two passes, reverted to the first. Pass 2 (boar 11 / moose 15 / buffalo 21 / lynx 23 / wolf 27 / bear 31 / rabid_bear 37) softened the curve asymmetrically because the original L1 mage/archer experience felt too rough on paper (boar 14 = 7-9 per hit = ~10% mage HP/turn). After playtest discussion the user chose to revert to the harder Pass 1 numbers — they want early game to feel dangerous, not safe. Final numbers (Pass 1):
+| Enemy | Tier | Was | **New** |
+|-------|------|-----|---------|
+| wild_boar | 1 | 5 | **14** |
+| wild_moose | 2 | 8 | **18** |
+| wild_buffalo | 3 | 11 | **23** |
+| rabid_lynx | 3 | 13 | **25** |
+| rabid_wolf | 4 | 15 | **28** |
+| wild_bear | 5 | 17 | **32** |
+| rabid_bear | 6 | 22 | **38** |
+
+Resulting per-hit damage profile (when hit, ignoring dodge/crit) at L1:
+- Boar: Warrior 2-3 (~2% HP) / Archer 5-7 (~7%) / Mage 7-9 (~10%)
+- Rabid bear: Warrior 23-29 (~22%) / Archer 27-33 (~33%) / Mage 29-35 (~40%)
+
+Class identity preserved — warrior is genuine tank, mage glass cannon. At L21 with full stat growth (+8 DEF, +40 HP) a rabid bear still bites the warrior for ~11% per hit, so end-game enemies remain threatening but not one-shotty. Training dummy (enemy.training_dummy) intentionally untouched — ATK stays 0.
+
+**2. Flee fail damage uses halved DEF** (CombatController.onFlee around line 500): the player's effective DEF is divided by 2 *before* the stance defenseBonus is added, modeling "you turned your back / dropped your guard." Replaces `let buffedDEF = player.effectiveDefense + mods.defenseBonus` with `let halvedDEF = player.effectiveDefense / 2; let buffedDEF = halvedDEF + mods.defenseBonus`. Concrete: L1 Warrior failing flee from a boar now eats `max(1, 14 - 6) = 8` (~7% HP) instead of the old 1; from a rabid bear, `max(1, 38 - 6) = 32` (~27% HP). Floor still 1 (formula unchanged otherwise); crit and dodge remain off for the flee-fail hit per the original spec.
+
+No locale changes, no migrations, no UI changes — pure data + one-line formula tweak in the flee handler. Build clean.
+
+### What's queued next
+- Manual playtest of the new `✏️ N` flow once the user pulls and runs the build: bad input cases (negative, zero, non-numeric, blank), boundary conditions (exactly at storage limit, exactly at bag-free limit, dev bypass), and concurrent edits (storage drained by another tab between prompt open and number submit — service preflight catches this as `.notEnoughInWarehouse(available:)`).
+- Playtest the rebalance: verify damage feels right per class (warrior tanky, archer mid, mage fragile) and that flee-fail now actually stings. If T1 boar feels too brutal for a brand-new L1 mage (~10% per hit), can soften to ATK 12. If late-game still feels easy with leveled gear, can bump T5-T6 further.
+- Phase 6 (Capital — first gold sources via quests) remains the next planned milestone.
+
 ## Session N+6 — 2026-05-12 (Post-5.3 polish: bug fixes + per-unit inventory pivot)
 
 ### Goal

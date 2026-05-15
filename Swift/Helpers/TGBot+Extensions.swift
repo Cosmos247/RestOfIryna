@@ -60,6 +60,35 @@ public class TGControllerBase: @unchecked Sendable {
         let params = TGDeleteMessageParams(chatId: .chat(telegramId), messageId: messageId)
         _ = try? await context.bot.deleteMessage(params: params)
     }
+
+    /// Emit a status banner (`✅ Crafted ...`, `❌ Not enough ...`, etc.) as
+    /// a STANDALONE message under the current inline-keyboard screen, never
+    /// inside its body. Replaces any prior banner from the same user — the
+    /// previous banner is deleted before the new one is sent, so chat history
+    /// only carries the latest status, not a growing log. Player-visible
+    /// position is right above their text input field, where their attention
+    /// already lives.
+    ///
+    /// Returns immediately on send failure (e.g. message permission revoked)
+    /// — banners are advisory, not critical, so callers don't branch on the
+    /// outcome.
+    public func postStatusBanner(_ text: String, context: Context) async {
+        let telegramId = context.session.telegramId
+        let chatId = TGChatId.chat(telegramId)
+
+        if let prev = await EphemeralChatState.shared.takeLastStatusBanner(telegramId: telegramId) {
+            let params = TGDeleteMessageParams(chatId: chatId, messageId: prev)
+            _ = try? await context.bot.deleteMessage(params: params)
+        }
+
+        let params = TGSendMessageParams(
+            chatId: chatId,
+            text: text,
+            parseMode: .html
+        )
+        guard let sent = try? await context.bot.sendMessage(params: params) else { return }
+        await EphemeralChatState.shared.setLastStatusBanner(telegramId: telegramId, messageId: sent.messageId)
+    }
 }
 
 extension TGMaybeInaccessibleMessage {

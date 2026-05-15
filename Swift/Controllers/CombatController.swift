@@ -568,9 +568,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let prefix = "🥋 " + lingo.localize("estate.plot.alert.training_exited", locale: locale)
         let plots = try await Plot.list(for: context.session, on: context.db)
         let body = estate.renderPlotList(plots: plots, session: context.session, lingo: lingo, locale: locale)
-        let text = "\(prefix)\n\n\(body)"
         let markup = estate.plotListKeyboard(plots: plots, session: context.session, lingo: lingo, locale: locale)
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
+        try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
+        await estate.postStatusBanner(prefix, context: context)
         return true
     }
 

@@ -465,15 +465,15 @@ extension InventoryController {
                 refreshedBody = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             }
-            let refreshedText = "\(statusLine)\n\n\(refreshedBody)"
             let editParams = TGEditMessageTextParams(
                 chatId: .chat(message.chat.id),
                 messageId: message.messageId,
-                text: refreshedText,
+                text: refreshedBody,
                 parseMode: .html,
                 replyMarkup: refreshedInline
             )
             _ = try? await context.bot.editMessageText(params: editParams)
+            await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
 
@@ -594,39 +594,43 @@ extension InventoryController {
         // Refresh: stay in Artifacts if any rows remain, else pop to root.
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
         let stillInCategory = entries.contains { ItemCatalog.find($0.itemId)?.type == .artifact }
+        let ctrl = Controllers.inventoryController
         if stillInCategory {
             try await refreshCategory(type: .artifact, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
         } else {
-            let ctrl = Controllers.inventoryController
             let body = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
-            let text = "\(statusLine)\n\n\(body)"
             let params = TGEditMessageTextParams(
                 chatId: .chat(message.chat.id),
                 messageId: message.messageId,
-                text: text,
+                text: body,
                 parseMode: .html,
                 replyMarkup: inline
             )
             _ = try? await context.bot.editMessageText(params: params)
+            await ctrl.postStatusBanner(statusLine, context: context)
         }
         return true
     }
 
     /// Re-render the given category view in place after an equip/unequip.
+    /// `statusLine` is published as a separate banner under the inline
+    /// keyboard rather than embedded in the body — see `postStatusBanner`.
     private static func refreshCategory(type: ItemType, chatId: TGChatId, messageId: Int, context: Context, statusLine: String? = nil) async throws {
         let ctrl = Controllers.inventoryController
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
         let body = ctrl.renderCategory(type: type, lingo: context.lingo, locale: context.session.locale)
         let inline = ctrl.categoryKeyboard(type: type, entries: entries, lingo: context.lingo, locale: context.session.locale)
-        let text = statusLine.map { "\($0)\n\n\(body)" } ?? body
         let params = TGEditMessageTextParams(
             chatId: chatId,
             messageId: messageId,
-            text: text,
+            text: body,
             parseMode: .html,
             replyMarkup: inline
         )
         _ = try? await context.bot.editMessageText(params: params)
+        if let statusLine {
+            await ctrl.postStatusBanner(statusLine, context: context)
+        }
     }
 }

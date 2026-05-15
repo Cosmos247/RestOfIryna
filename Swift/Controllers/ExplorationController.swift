@@ -865,15 +865,15 @@ extension ExplorationController {
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 
             let (body, inline) = try await ctrl.renderBag(context: context)
-            let text = "\(statusLine)\n\n\(body)"
             let editParams = TGEditMessageTextParams(
                 chatId: chatId,
                 messageId: message.messageId,
-                text: text,
+                text: body,
                 parseMode: .html,
                 replyMarkup: inline
             )
             _ = try? await context.bot.editMessageText(params: editParams)
+            await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
 
