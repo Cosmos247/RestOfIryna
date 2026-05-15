@@ -140,11 +140,13 @@ public enum CombatService {
     }
 
     /// Defend-mode chip damage. Always lands, never crits, scaled to
-    /// `defendChipFraction` of a clean hit. Variance still applies so the
-    /// number isn't pure deterministic.
-    public static func chipDamage(attackerATK: Int, defenderDEF: Int) -> Int {
+    /// `defendChipFraction × extraMultiplier` of a clean hit. Variance still
+    /// applies so the number isn't pure deterministic. `extraMultiplier`
+    /// defaults to 1.0 (warrior); the archer's "plinks while hiding" Defend
+    /// passes 0.5 to halve the chip.
+    public static func chipDamage(attackerATK: Int, defenderDEF: Int, extraMultiplier: Double = 1.0) -> Int {
         let raw = Double(max(1, attackerATK - defenderDEF))
-        let varied = raw * Double.random(in: varianceRange) * defendChipFraction
+        let varied = raw * Double.random(in: varianceRange) * defendChipFraction * extraMultiplier
         return max(1, Int(varied.rounded()))
     }
 
@@ -354,6 +356,28 @@ public enum CombatService {
         case .mage: return Flee.mageVigorExtra
         default:    return 0
         }
+    }
+
+    // MARK: - Per-class Defend tunings (2026-05-15)
+    //
+    // Basic Defend used to share one mechanic across all classes: chip damage
+    // back + doubled DEF for the round. Thematically that only matched the
+    // warrior's "Parry". 2026-05-15 split it three ways:
+    //
+    //   • Warrior — chip 30% × ATK + 2× DEF (unchanged, the canonical block).
+    //   • Archer  — chip 15% × ATK ("plinks a knife while melting into shadow")
+    //               + flat +30 dodge for the round; DEF stays single.
+    //   • Mage    — no chip ("the barrier is passive") + 60% damage reduction
+    //               on the landed enemy hit (raw goes through DEF + dodge
+    //               normally, then the final landed damage is multiplied by
+    //               `mageBarrierDamageFraction`). Stronger mitigation than
+    //               warrior to compensate for zero return damage — a Defend
+    //               turn should feel roughly equal in value across classes.
+    public enum Defend {
+        public static let archerChipMultiplier: Double = 0.5  // 0.3 * 0.5 = 15% of raw
+        public static let archerDodgeBonus:     Int    = 30
+        /// Fraction of incoming damage the mage actually takes. 0.4 = 60% off.
+        public static let mageBarrierDamageFraction: Double = 0.4
     }
 
     // MARK: - Phase 5.1 training mode

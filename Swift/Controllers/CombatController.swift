@@ -401,19 +401,43 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             _ = VigorService.drain(context.session, action: .combatDefend, multiplier: mods.vigorMultiplier)
         }
 
-        // Defend chip damage — buffed ATK from stance still feeds it (always
-        // lands, no crit). Defend doubles effective DEF for the round.
-        // Iron Bulwark's armor-split debuff (if active) is consumed by chip.
-        // Training mode forces enemy DEF to 0 for a clean chip number.
+        // Per-class basic Defend (2026-05-15):
+        //   • Warrior — chip 30% × ATK + 2× DEF for the round (the canonical
+        //     parry: tags the enemy with the shield, eats most of the swing).
+        //   • Archer  — chip 15% × ATK (knife flick while melting into cover)
+        //               + flat +30 dodge for the round; DEF stays single
+        //               since the fantasy is evasion, not armor.
+        //   • Mage    — no chip (barrier is purely passive); enemy attack
+        //               rolls normally through single DEF + dodge, then the
+        //               landed damage is multiplied by 0.4 (60% off) before
+        //               being applied to HP.
+        // Iron Bulwark's armor-split debuff (if active) is consumed by chip;
+        // training mode forces enemy DEF to 0 for a clean chip number.
         let player = context.session
+        let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
         let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
-        let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF)
+
+        let chip: Int
+        switch cls {
+        case .warrior:
+            chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF)
+        case .archer:
+            chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF, extraMultiplier: CombatService.Defend.archerChipMultiplier)
+        case .mage:
+            chip = 0
+        }
         let enemyHP = max(0, (state.combatEnemyHP ?? enemy.hp) - chip)
-        let playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
-            "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
-            "damage": "\(chip)"
-        ])
+        let playerLine: String
+        if chip > 0 {
+            playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
+                "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
+                "damage": "\(chip)"
+            ])
+        } else {
+            // Mage barrier — no chip line, just the brace stance.
+            playerLine = "🌀 " + context.lingo.localize("combat.defend.barrier", locale: context.session.locale)
+        }
 
         if enemyHP <= 0 {
             try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
@@ -425,16 +449,46 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Enemy strikes against doubled (effective DEF + stance bonus) for
-        // this round only. Stance dodge bonus + Shadow Veil also apply.
+        // Enemy strikes back. Per-class mitigation:
+        //   • Warrior: defender DEF is doubled this round (existing behavior).
+        //   • Archer:  defender DEF stays normal, but dodge gets +30.
+        //   • Mage:    defender DEF + dodge stay normal; final landed damage
+        //              is multiplied by `Defend.mageBarrierDamageFraction`
+        //              after the applyAttack roll.
         let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
+        let defenderDEF: Int
+        let extraDefendDodge: Int
+        switch cls {
+        case .warrior:
+            defenderDEF = (player.effectiveDefense + mods.defenseBonus) * 2
+            extraDefendDodge = 0
+        case .archer:
+            defenderDEF = player.effectiveDefense + mods.defenseBonus
+            extraDefendDodge = CombatService.Defend.archerDodgeBonus
+        case .mage:
+            defenderDEF = player.effectiveDefense + mods.defenseBonus
+            extraDefendDodge = 0
+        }
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
-            defenderDEF: (player.effectiveDefense + mods.defenseBonus) * 2,
-            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge
+            defenderDEF: defenderDEF,
+            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge + extraDefendDodge
         )
-        let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
-        switch enemyHit {
+        let mitigatedHit: AttackOutcome
+        if cls == .mage {
+            switch enemyHit {
+            case .miss:
+                mitigatedHit = .miss
+            case .hit(let d):
+                mitigatedHit = .hit(damage: max(1, Int((Double(d) * CombatService.Defend.mageBarrierDamageFraction).rounded())))
+            case .crit(let d):
+                mitigatedHit = .crit(damage: max(1, Int((Double(d) * CombatService.Defend.mageBarrierDamageFraction).rounded())))
+            }
+        } else {
+            mitigatedHit = enemyHit
+        }
+        let enemyLine = renderEnemyHit(mitigatedHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
+        switch mitigatedHit {
         case .miss: break
         case .hit(let d), .crit(let d): player.hp = max(0, player.hp - d)
         }

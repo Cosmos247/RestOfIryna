@@ -1,5 +1,49 @@
 # Session History
 
+## Session N+8 — 2026-05-15 (Per-class basic Defend rebalance)
+
+### Goal
+Basic Defend used to share one mechanic across all three classes — chip damage (30% × ATK − enemy DEF) back to the enemy + doubled effective DEF for the round. Thematically only the warrior's "Parry" actually felt like that. Archer's "Hide in shadow" parried like a knight, mage's "Magic barrier" likewise. Split the mechanic three ways so the basic Defend matches the class fantasy and the offensive-vs-defensive trade-off stays balanced ("value per Defend turn" roughly equal across classes).
+
+### What was done
+- **`CombatService.Defend` namespace** (new): `archerChipMultiplier = 0.5` (halves the warrior chip → 15% of clean hit), `archerDodgeBonus = 30` (flat dodge bonus for the round), `mageBarrierDamageFraction = 0.4` (60% damage reduction on the landed enemy hit). Constants only — no formula change, the existing `applyAttack` + `chipDamage` primitives are reused.
+- **`CombatService.chipDamage`** gained an `extraMultiplier: Double = 1.0` parameter. Default keeps the warrior call site unchanged; archer passes `0.5`.
+- **`CombatController.onDefend`** branches by `player.characterClass`:
+  - **Warrior (unchanged)** — chip via `chipDamage(...)`, enemy attacks against `(effectiveDefense + stance) × 2`, regular dodge. Canonical parry: tags the enemy with shield, eats most of the swing.
+  - **Archer** — chip via `chipDamage(..., extraMultiplier: 0.5)` (knife flick while melting into cover), enemy attacks against single DEF + `effectiveDodge + 30` extra dodge. Fantasy is evasion, not armor — enemy frequently swings at empty air.
+  - **Mage** — no chip (barrier is passive); enemy attack rolls normally through single DEF + dodge, then the landed damage is multiplied by `0.4` before being applied to HP. Stronger mitigation than warrior to compensate for zero return damage.
+- **Locale key (new)**: `combat.defend.barrier` — "A magic barrier shimmers around you." / "Магічний бар'єр мерехтить навколо тебе." Used by the mage branch when chip = 0 (the `combat.defend.absorbed` template requires a damage interpolation, so we render a different line for the chip-less variant).
+- **Stance buffs / Shadow Veil dodge / Iron Bulwark armor-split** all still compose correctly: stance ATK feeds the chip (when classes that do chip), stance dodge adds to the archer dodge bonus, Shadow Veil's lingering dodge adds on top of everything. Armor-split is consumed by the warrior chip but not by mage's no-chip Defend — by design, the debuff is "next swing eats the DEF reduction" and the mage simply doesn't swing.
+
+### Balance math (when hit, ignoring crit/variance)
+At L1 vs boar (ATK 14):
+- Warrior (DEF 12, HP 120): hit = `max(1, 14 - 24) = 1`, chip ~3 → net favorable
+- Archer (DEF 8, HP 90): 68% miss rate (`70 + 0 - (8 + 30) = 32%` hit chance), full damage if hit, small chip ~1
+- Mage (DEF 6, HP 80): `(14 - 6) × 0.4 = 3.2 HP` (vs 8 raw without barrier), no chip
+
+At L1 vs rabid_bear (ATK 38):
+- Warrior: `max(1, 38 - 24) = 14`, chip ~3 → soaks well
+- Archer: 32% hit chance, on hit takes full 30 damage
+- Mage: `(38 - 6) × 0.4 = 12.8 HP` (vs 32 raw)
+
+Late-game (L21, warrior DEF 20 / archer DEF 16 / mage DEF 14):
+- Warrior vs rabid_bear: `max(1, 38 - 40) = 1` HP — almost full block
+- Archer vs rabid_bear: 32% hit chance, 22 HP on hit (~7 HP avg)
+- Mage vs rabid_bear: `(38 - 14) × 0.4 = 9.6 HP`
+
+Roughly equal "damage prevented per Defend turn" across classes; the warrior's chip is the offensive bonus that compensates for the archer's huge miss rate and the mage's bigger flat reduction. Special Defense techniques (Iron Bulwark / Shadow Veil / Mirror Ward) remain the burst per-fight upgrades.
+
+### Archer button-label swap (Defend ↔ Flee)
+The shadow theme on archer's old Defend label (`🌑 Hide in shadow` / `🌑 Сховатись у тіні`) thematically described an escape, not an evasion — and clashed with the Special Defense technique `🌑 Shadow Veil` / `🌑 Тінь лісу`. With the new mechanic emphasizing dodge for archer Defend, swapped the two basic-button labels:
+- `combat.button.defend.archer`: `🌑 Hide in shadow` → `💨 Quick maneuver` (`🌑 Сховатись у тіні` → `💨 Швидкий маневр`)
+- `combat.button.flee.archer`: `💨 Quick maneuver` → `🌑 Hide in shadow` (`💨 Швидкий маневр` → `🌑 Сховатись у тіні`)
+
+Now archer reads `Loose arrow / Quick maneuver / Hide in shadow` (Attack / Defend / Flee) — evasion on Defend, vanishing on Flee. Distinct from the burst Shadow Veil technique. Pure locale change, no code touched.
+
+### What's queued next
+- Manual playtest of the per-class Defend across each class against early-game and late-game mobs. Tune the constants (`archerDodgeBonus`, `mageBarrierDamageFraction`) if any class's Defend feels objectively better/worse than the others.
+- Phase 6 (Capital — first gold sources via quests) remains the next planned milestone.
+
 ## Session N+7 — 2026-05-15 (Warehouse custom-quantity bidirectional transfer)
 
 ### Goal
