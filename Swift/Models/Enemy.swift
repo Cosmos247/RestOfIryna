@@ -102,7 +102,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.wild_boar",
             nameKey: "enemy.wild_boar",
-            tier: 1, hp: 18, attack: 5, defense: 1,
+            tier: 1, hp: 18, attack: 14, defense: 1,
             depthRange: 1...10,
             lootTable: [
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.7, quantity: 1),
@@ -115,7 +115,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.wild_moose",
             nameKey: "enemy.wild_moose",
-            tier: 2, hp: 32, attack: 8, defense: 2,
+            tier: 2, hp: 32, attack: 18, defense: 2,
             depthRange: 6...15,
             lootTable: [
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
@@ -128,7 +128,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.wild_buffalo",
             nameKey: "enemy.wild_buffalo",
-            tier: 3, hp: 55, attack: 11, defense: 4,
+            tier: 3, hp: 55, attack: 23, defense: 4,
             depthRange: 11...20,
             lootTable: [
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
@@ -141,7 +141,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.rabid_lynx",
             nameKey: "enemy.rabid_lynx",
-            tier: 3, hp: 45, attack: 13, defense: 2,
+            tier: 3, hp: 45, attack: 25, defense: 2,
             depthRange: 11...20,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.7, quantity: 1)
@@ -155,7 +155,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.rabid_wolf",
             nameKey: "enemy.rabid_wolf",
-            tier: 4, hp: 70, attack: 15, defense: 4,
+            tier: 4, hp: 70, attack: 28, defense: 4,
             depthRange: 16...25,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.8, quantity: 1)
@@ -172,7 +172,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.wild_bear",
             nameKey: "enemy.wild_bear",
-            tier: 5, hp: 95, attack: 17, defense: 5,
+            tier: 5, hp: 95, attack: 32, defense: 5,
             depthRange: 21...30,
             lootTable: [
                 EnemyLootDrop(itemId: "food.raw_meat", chance: 0.85, quantity: 2),
@@ -205,7 +205,7 @@ public enum EnemyCatalog {
         Enemy(
             id: "enemy.rabid_bear",
             nameKey: "enemy.rabid_bear",
-            tier: 6, hp: 120, attack: 22, defense: 4,
+            tier: 6, hp: 120, attack: 38, defense: 4,
             depthRange: 25...35,
             lootTable: [
                 EnemyLootDrop(itemId: "mat.hide", chance: 0.9, quantity: 2)

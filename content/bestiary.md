@@ -15,13 +15,15 @@ Tier maps to a 5-km depth band (T1 = km 1–5, T2 = 6–10, T3 = 11–15, T4 = 1
 
 | ID | Name | Tier | Family | HP | ATK | DEF | Depth | Loot | Icon |
 |----|------|------|--------|----|-----|-----|-------|------|------|
-| `enemy.wild_boar` | Wild Boar | 1 | Wild | 18 | 5 | 1 | 1–10 | meat ×1 @ 0.7 · hide ×1 @ 0.8 | 🐗 |
-| `enemy.wild_moose` | Wild Moose | 2 | Wild | 32 | 8 | 2 | 6–15 | meat ×2 @ 0.8 · hide ×1 @ 0.7 | 🫎 |
-| `enemy.wild_buffalo` | Wild Buffalo | 3 | Wild | 55 | 11 | 4 | 11–20 | meat ×2 @ 0.8 · hide ×1 @ 0.9 | 🦬 |
-| `enemy.rabid_lynx` | Rabid Lynx | 3 | Rabid | 45 | 13 | 2 | 11–20 | hide ×1 @ 0.7 | 🐈‍⬛ |
-| `enemy.rabid_wolf` | Rabid Wolf | 4 | Rabid | 70 | 15 | 4 | 16–25 | hide ×1 @ 0.8 | 🐺 |
-| `enemy.wild_bear` | Wild Bear | 5 | Wild | 95 | 17 | 5 | 21–30 | meat ×2 @ 0.85 · hide ×1 @ 0.9 | 🐻 |
-| `enemy.rabid_bear` | Rabid Bear | 6 | Rabid | 120 | 22 | 4 | 25–35 | hide ×2 @ 0.9 | 🐻‍❄️ |
+| `enemy.wild_boar` | Wild Boar | 1 | Wild | 18 | 14 | 1 | 1–10 | meat ×1 @ 0.7 · hide ×1 @ 0.8 | 🐗 |
+| `enemy.wild_moose` | Wild Moose | 2 | Wild | 32 | 18 | 2 | 6–15 | meat ×2 @ 0.8 · hide ×1 @ 0.7 | 🫎 |
+| `enemy.wild_buffalo` | Wild Buffalo | 3 | Wild | 55 | 23 | 4 | 11–20 | meat ×2 @ 0.8 · hide ×1 @ 0.9 | 🦬 |
+| `enemy.rabid_lynx` | Rabid Lynx | 3 | Rabid | 45 | 25 | 2 | 11–20 | hide ×1 @ 0.7 | 🐈‍⬛ |
+| `enemy.rabid_wolf` | Rabid Wolf | 4 | Rabid | 70 | 28 | 4 | 16–25 | hide ×1 @ 0.8 | 🐺 |
+| `enemy.wild_bear` | Wild Bear | 5 | Wild | 95 | 32 | 5 | 21–30 | meat ×2 @ 0.85 · hide ×1 @ 0.9 | 🐻 |
+| `enemy.rabid_bear` | Rabid Bear | 6 | Rabid | 120 | 38 | 4 | 25–35 | hide ×2 @ 0.9 | 🐻‍❄️ |
+
+> **ATK rebalance (2026-05-15)**: bestiary ATK roughly doubled across all tiers (T1 5 → 14, T6 22 → 38). Old numbers were tuned before the player's effective DEF stabilized — a fresh L1 Warrior (DEF 12) used to take 1 HP from the boar (`max(1, 5-12)`), making early combat trivial and flee-fail penalty meaningless. New numbers put per-hit damage at 2-3% HP for the warrior vs T1 enemies and ~10% for the mage, scaling up to ~22% / ~40% at T6. Flee-fail now uses the player's effective DEF at 50% (`halvedDEF = player.effectiveDefense / 2`) to model "turned your back" — see `CombatController.onFlee`.
 
 ## Tier summary
 

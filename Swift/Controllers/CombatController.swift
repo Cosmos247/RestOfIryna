@@ -495,9 +495,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         // Failed — enemy lands a forced full-damage hit "in the back" (no
         // dodge, no crit roll), combat continues. Stance DEF buff still
-        // helps reduce the bite. (Shadow Veil's lingering dodge can't save
-        // a failed flee — the spec is "guaranteed hit".)
-        let buffedDEF = player.effectiveDefense + mods.defenseBonus
+        // helps reduce the bite, but the player's own armor is halved —
+        // turning to run means dropping your guard, so DEF only counts at
+        // 50%. (Shadow Veil's lingering dodge can't save a failed flee —
+        // the spec is "guaranteed hit".)
+        let halvedDEF = player.effectiveDefense / 2
+        let buffedDEF = halvedDEF + mods.defenseBonus
         let damage = max(1, Int((Double(max(1, enemy.attack - buffedDEF)) * Double.random(in: CombatService.varianceRange)).rounded()))
         player.hp = max(0, player.hp - damage)
 
