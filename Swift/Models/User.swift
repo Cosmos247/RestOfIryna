@@ -137,6 +137,14 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "bag_tier")
     var bagTier: Int
 
+    /// Phase 6.0 — where the player is right now. "estate" (default) or
+    /// "capital". Flips only when a `TravelState` timer elapses; never set
+    /// directly from a controller. Used by `MainController` / `EstateController`
+    /// / `ExplorationController` to gate nav and decide whether tapping the
+    /// Capital button starts a trip or jumps straight into the capital screen.
+    @Field(key: "location")
+    var location: String
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -183,6 +191,7 @@ final public class User: Model, @unchecked Sendable {
         self.gearAccuracyBonus = 0
         self.estateLevel = 1
         self.bagTier = 1
+        self.location = "estate"
         self.createdAt = Date()
     }
 

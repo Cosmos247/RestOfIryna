@@ -110,7 +110,7 @@ Required in `.env` (see `.env.example`):
 
 ## Current State
 
-For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — kept in sync per session, covers all phases (registration, equipment, exploration, combat techniques, estate plots, workshop/kitchen, weapon upgrade, training mode) plus what's planned next. `TODO.md` has the phased roadmap with progress markers.
+For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — kept in sync per session, covers all phases (registration, equipment, exploration, combat techniques, estate plots, workshop/kitchen, weapon upgrade, training mode, capital travel + trader + tavern) plus what's planned next. `TODO.md` has the phased roadmap with progress markers.
 
 ## Instructions for AI Assistant
 

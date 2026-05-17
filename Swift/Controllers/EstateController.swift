@@ -100,7 +100,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onCapital(context: Context) async throws -> Bool {
-        try await Controllers.capitalController.showStub(context: context)
+        try await Controllers.capitalController.showCapital(context: context)
         return true
     }
 
@@ -147,6 +147,19 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 parseMode: .html,
                 replyMarkup: nil
             )
+            return
+        }
+
+        // Phase 6.0: travel + location guards. If the player is already on
+        // the road, just show the countdown. If they're physically in the
+        // capital, tapping Estate starts the return trip (rather than
+        // pretending the manor is accessible from across the kingdom).
+        if let trip = try await TravelState.current(for: context.session, on: context.db) {
+            try await CapitalController.showTravelInProgress(context: context, trip: trip)
+            return
+        }
+        if context.session.location == "capital" {
+            try await CapitalController.beginTrip(destination: .estate, context: context)
             return
         }
 

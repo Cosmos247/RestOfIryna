@@ -83,6 +83,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onExplore(context: Context) async throws -> Bool {
+        if try await guardedByTravel(context: context) { return true }
         let controller = Controllers.explorationController
         try await controller.showExploration(context: context)
         return true
@@ -93,16 +94,28 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // a "governor away" notice without leaving routerName in the wrong
         // state.
         await dismissPendingPicker(context: context)
+        if try await guardedByTravel(context: context) { return true }
         try await Controllers.estateController.showEstate(context: context)
         return true
     }
 
     private func onCapital(context: Context) async throws -> Bool {
-        // showStub owns the routerName transition so it can bail out with a
-        // "governor away" notice without leaving routerName in the wrong
+        // showCapital owns the routerName transition so it can bail out with
+        // a "governor away" notice without leaving routerName in the wrong
         // state.
         await dismissPendingPicker(context: context)
-        try await Controllers.capitalController.showStub(context: context)
+        if try await guardedByTravel(context: context) { return true }
+        try await Controllers.capitalController.showCapital(context: context)
+        return true
+    }
+
+    /// Returns `true` and posts the countdown banner if the player is
+    /// currently on the road between estate and capital. Callers should
+    /// short-circuit their own logic when this returns true — the player
+    /// can't enter Estate / Capital / Explore while traveling.
+    private func guardedByTravel(context: Context) async throws -> Bool {
+        guard let trip = try await TravelState.current(for: context.session, on: context.db) else { return false }
+        try await CapitalController.showTravelInProgress(context: context, trip: trip)
         return true
     }
 

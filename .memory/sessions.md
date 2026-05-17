@@ -1,5 +1,127 @@
 # Session History
 
+## Session N+10 — 2026-05-17 (Phase 6.1 Trader + 6.2 Tavern + economy v2 rebase)
+
+### Goal
+Fill in the first two capital locations with real subsystems and rebase the gold economy on a "1 pebble = 1 gold" anchor so the numbers stop feeling fractional. Crammed three iterations into one session because each built on the previous: Trader first, then Tavern (food + dice + darts), then a full economy re-tier, then bulk-N polish on the Trader.
+
+### What was done
+
+**Phase 6.1 — Crамар (Trader)**
+- New `TraderCatalog` + `TraderService`. 11 listings cover every foraging/beast drop + iron + iron_ingot. Trader uses asymmetric packets `(sellPacketQty, sellPacketGold)` / `(buyPacketQty, buyPacketGold)` so cheap items could trade in 5-unit packs back when pricing was fractional. After the v2 rebase (below) every packetQty = 1.
+- Initial pricing: Option B "utility-weighted" (5 tiers), then re-anchored at pebble = 1g/unit. Final per-unit table:
+  - Tier 1 (1g/2g): 🪨 pebble · 🫐 berries · 🌰 nuts
+  - Tier 2 (2g/4g): 🌲 lumber · 🧱 clay
+  - Tier 3 (3g/6g): 🥔 potato · 🥚 duck_egg · 🦴 hide
+  - Tier 4 (5g/10g): 🥩 raw_meat
+  - Tier 5 (10g/20g): 🔩 iron
+  - Crafted (100g/200g): 🔳 iron_ingot
+  - 2× sell:buy spread is flat across the catalogue.
+- `TraderService` API ended at `sell(itemId, quantity, ...)` / `buy(itemId, quantity, ...)` (`sellAll` was added then dropped — the `[✏️ N]` prompt covered the case). Typed result enums (`SellResult.success / .notEnoughInBag(have:need:) / .unknownListing`; `BuyResult.success / .notEnoughGold(have:need:) / .inventoryFull(free:need:) / .unknownListing`) drive precise UI banners. Atomic preflight: failed buy never half-applies gold debit + add.
+- Trader UI is two-step:
+  - Entry menu (photo + `Assets/capital/trader.jpg` + lore caption) with `[💰 Купити][💸 Продати]`
+  - Buy / Sell lists edited in place (`editMessageCaption` since the host is a photo) — info-label row `[🪨 Pebble · 🎒N · 1g]` (tap opens item description modal via `trader:info:`) above an action row `[💸 ×1] [✏️ N]` (sell — extra `[💸 ×All]` button was added then removed per user feedback as "looks unneeded")
+  - Sell list is filtered to items the player has any of (qty ≥ 1) so no dead-tap rows
+  - `[✏️ N]` opens a `EphemeralChatState.PendingTraderTransfer` flow (warehouse-style): bot sends prompt "Скільки X купити/продати?" + `[❌ Скасувати]`, `unmatched` intercepts the next text update and parses it. Invalid input (non-numeric/≤0) edits the prompt in place with "❌ Введи додатне число" and keeps pending; validation failure (not enough / bag full / not enough gold) deletes prompt + ❌ banner + refreshes the list; success deletes prompt + ✅ banner + refreshes.
+- `inv:*` callbacks forwarded from `CapitalController.onCallbackQuery` to `InventoryController` after a bugfix — entering inventory from capital previously flipped routerName to "inventory" and locked the player out of capital nav. Fix: keep routerName at "capital" + forward inventory callbacks. Same pattern as MainController's existing `explore:*`/`combat:*` forwarding.
+
+**Phase 6.2 — Шинок (Tavern)**
+- New `TavernCatalog` + `TavernService`. 7 dishes (all RecipeCatalog kitchen recipes, no scroll-gate — tavern bypasses recipe learning). Final prices (post-rebase): 20/30/50/60/80/100/200g. Tavern food sold via gold→inventory; bag-full surfaces as `❌ Сумка повна`.
+- Dice + darts gambling. After two iterations (manual emoji panel — then bot-driven per user feedback "Telegram doesn't let bots author messages as the player"), settled on **button-driven bot-rolls-all** with text labels for attribution:
+  - Wager tap → edit caption to "Ставка X. Готовий?" + `[🎲 Кинути кубік]` + `[❌ Скасувати]`. Gold not debited yet — Cancel before Roll is free.
+  - Roll tap → debit + `runRound`: sends "Ти кидаєш..." text → bot sends N dice (2 for dice, 1 for darts) via `sendDice(emoji: "🎲"|"🎯")` (Telegram returns 1-6) → sleeps 4 s → sends "Шинкар кидає..." → bot sends N more dice → sleeps 4 s → result message with replay/back inline buttons. Per-user dispatch is serialised so the ~10 s round only blocks the playing player.
+  - Outcomes: higher sum wins (+1× wager net gain), lower loses (debit kept), tie refunds. Pure helper `TavernService.resolveWager(playerScore:houseScore:)` returns `WagerOutcome (.win / .lose / .tie)`.
+  - Result message buttons: `[🔄 Зіграти ще раз]` (same wager, runs another round on the same text host) + `[🔙 До шинка]` (sends fresh photo entry since text→photo edit would lose the image).
+  - Wager tiers `TavernCatalog.wagerTiers = [10, 25, 50]` (post-v2-rebase; were 1/3/5 pre-rebase).
+- Tavern entry photo (`Assets/capital/tavern.jpg`) + atmospheric lore "Шинок «Королівська печатка»...". Menu / Dice / Darts sub-screens all edit the SAME message caption (image persists across the whole tavern flow) via shared `editTraderScreen(messageId:isPhoto:...)` helper which picks `editMessageCaption` for photo hosts and `editMessageText` otherwise.
+
+**Phase 6.0 polish landed in the same session**
+- Capital welcome rewritten + `Assets/capital/welcome.jpg` artwork. Arrival from `TravelService.pushArrival` now sends the full welcome (photo + caption + capital reply-keyboard) instead of a separate "you've arrived" line — the screen showing up communicates the arrival.
+- Trader: `Assets/capital/trader.jpg` + the full merchant lore in `capital.trader.intro` (italic-quoted closing line embedded in the template, not wrapped in Swift, so other render sites can drop it as-is).
+- Tavern: `Assets/capital/tavern.jpg` + atmospheric body text. `renderLocation` now auto-loads `Assets/capital/<location-id>.jpg` for any of the 6 locations — drop a JPG in and it picks up automatically. Future market/arena/fortune/master art just needs the file.
+- UK renames: Торговець → Крамар, Гадалка → Ворожка, Таверна → Шинок (button + location title + all stable banners). EN unchanged.
+- Bugfix: `🐎` leading emoji + `%{remaining}` interpolation in `travel.*` templates broke Lingo's `%{var}` parser. Moved 🐎 prefix to Swift call sites in `CapitalController.renderTripStarted` and `renderTravelInProgress`. Standing convention: leading supplementary-plane emoji + %{var} = prepend emoji in Swift.
+
+**Economy v2 rebase (mid-session pivot)**
+- User: "Currently pebble sells 5-for-1g. Let me re-anchor at 1 pebble = 1g and rescale everything." Picked Option B "clear ladder" — each tier visibly doubles its sell price; iron lands at 10× pebble (was 5× under fractional pricing) to reward true rarity (weight 2 vs staples 10).
+- Side effect: all packetQty values dropped to 1 (no more "must accumulate 5 to sell" friction). UI labels adapt: shows just `Xg` when packet = 1, falls back to `qty·Xg` for legacy multi-unit packets (kept for forward compat, currently unused).
+- Tavern food rescaled (~5× old prices): 3/4/7/9/10/12/25 → 20/30/50/60/80/100/200g. Wagers 1/3/5 → 10/25/50g.
+
+### Design decisions (with user)
+- **Trader UX two-step (menu → buy/sell list)**: chose over single-list-with-both-buttons because the single-list version cluttered every row with redundant info. User: "After tap of Crамар, inline buttons Buy/Sell appear. Then Buy = price list, Sell = only what player has." Implemented exactly that.
+- **Trader sell list filter**: only items with bag qty ≥ 1 shown. Dead rows would add visual noise without value.
+- **Trader Sell-All button removed**: added per Option D (Hybrid) initially, removed when user said "looks unneeded — `[✏️ N]` covers the bulk case". Saved a button slot per row.
+- **Tavern gambling = bot-rolls + labels** (not player-sends-own-dice): Telegram's Bot API doesn't allow bots to send messages on behalf of users — `sendDice` always renders left-side from the bot. User accepted this limit and went with text labels ("Ти кидаєш..." / "Шинкар кидає...") for attribution + button-driven roll for agency.
+- **Tavern wager not debited until Roll button tapped**: gives players a free Cancel between wager and roll. Discovered during the iteration on the manual-dice approach.
+- **Darts = 1 throw per side** (not 2): user request — "the dart command is 1 time". Reflected in `runRound` via `throwCount = emoji == "🎲" ? 2 : 1`. Score-line locale split into `.score_line_pair` (dice) and `.score_line_single` (darts).
+- **Economy Variant B over C**: clear doubling ladder, iron at 10× pebble. Other variants offered: A (faithful 5× scale, tier-2/tier-1 collapsed to same price) and C (premium scale with bigger numbers, breaks pebble baseline).
+- **Photo persists across all trader/tavern sub-screens**: `editMessageCaption` keeps the merchant/innkeeper face as a constant visual header for the whole interaction.
+
+### Bugs fixed
+- **Inventory-from-capital locked the player out of capital nav**: `CapitalController.onInventory` was flipping `session.routerName = "inventory"` after `showInventory`, so capital reply-keyboard taps routed to `InventoryController`'s unmatched (which re-rendered inventory). Fix: drop the routerName flip (keep it at "capital") + forward `inv:*` inline callbacks via `CapitalController.onCallbackQuery`. Same cross-controller-callback pattern that MainController already uses for `explore:*`/`combat:*`.
+- **`%{remaining}` interpolation broke in 3 travel templates**: leading 🐎 surrogate-pair emoji + `%{var}` in the template. Audit caught only those 3 (the other ~22 new keys without interpolation are safe). Convention reinforced in `.memory/localization.md` (referenced from many code comments).
+
+### Files touched
+- New: `Swift/Models/TraderCatalog.swift`, `Swift/Models/TavernCatalog.swift`, `Swift/Services/TraderService.swift`, `Swift/Services/TavernService.swift`, `Assets/capital/welcome.jpg`, `Assets/capital/trader.jpg`, `Assets/capital/tavern.jpg`.
+- Modified: `Swift/Controllers/CapitalController.swift` (massive — trader UI + tavern UI + gambling + bulk-N prompt flow + callback dispatch + inventory-forward bugfix). Localizations +76 keys per locale.
+
+### Build / tests
+- `swift build` clean throughout (every iteration).
+- Locale parity ends at 561/561 (was 515 at session start).
+- Live dogfooded by user across all 4 iterations — trader buy/sell, tavern menu/dice/darts, bulk-N prompts, ✏️ N cancel, inventory-from-capital fix.
+
+### Open items / next steps
+- Flip `TravelService.testMode = false` before shipping (still 2 s).
+- 4 capital locations still stubs: Market (player marketplace), Arena (PvP), Fortune Teller (daily blessings / hint quests), Master (weapon repair / reforge / enchant). Master is the natural next addition since it's a gold sink that closes the loop (gold → upgrade-related convenience).
+- Tavern stays as-is for V1 — gambling games could grow class-accuracy bonuses (archer favored at darts) and varying house edge.
+- No tutorial prompt directs the player to the capital yet — currently they discover it by tapping the existing main-menu button.
+
+---
+
+## Session N+9 — 2026-05-16 (Phase 6.0 Capital MVP — travel + nav skeleton)
+
+### Goal
+Stand up the capital as a real second hub. Travel from estate takes 2 min (placeholder); inside the capital, six MVP locations on a reply-keyboard: Market, PvP Arena, Trader, Fortune Teller, Master, Tavern. All locations are atmospheric stubs for now — the point of this patch is the navigation skeleton + travel timer plumbing, so subsequent Phase 6.x patches can fill in one location at a time without touching infrastructure.
+
+### What was done
+- **New `TravelState` Fluent model** + `CreateTravelState` migration. One row per in-flight trip; unique per user, cascade-deletes with the user, fields `destination` ("capital" | "estate") + `ends_at`. Helpers (`current` / `begin` / `end` / `allInflight`) mirror `ExplorationState`.
+- **New `TravelService`** (Task.detached + Task.sleep pattern, mirrors `PassiveExpeditionService`). `start(user, destination, ...)` validates guards (`StartFailure` enum: `dead` / `starving` / `onExpedition` / `alreadyTraveling` / `alreadyAtDestination`), persists the trip, arms the timer. On arrival: flips `user.location`, sets `user.routerName` to the matching controller (capital ctrl on arrival in capital, main ctrl on arrival at estate), deletes the trip row, pushes the arrival message with the destination's reply-keyboard. `rescheduleInflight` on bot startup re-arms every in-flight trip. `testMode = true` (2 s per minute = 2-second trip); flip before shipping.
+- **New `User.location` stored field** + `AddUserLocation` migration. Default "estate". Flipped only by TravelService — never by a controller. Drives the location-aware branches in Estate / Capital / Exploration entry points.
+- **CapitalController rewritten** (from stub). Reply-keyboard with 6 location buttons (4 rows × 2 cols + utility row [Inventory] [Profile] + leave row [🏡 До маєтку]). `Location` enum drives buttons + localization keys. Each location handler (`onMarket` / `onArena` / ...) calls `renderLocation(_)` — sends an atmospheric stub body with the same reply-keyboard kept intact, so hopping between locations is one tap. `showCapital(context)` is the single public entry: branches expedition→block / travel→countdown / at-estate→start trip / at-capital→render welcome. Static `beginTrip(destination:context:)` is the shared trip-start orchestrator (TravelService call + routerName flip + render + per-error banner) used by `showCapital`, `onLeave`, and `EstateController.showEstate`. Static `showTravelInProgress(context:trip:)` is the shared countdown banner used by Main / Estate / Exploration travel guards.
+- **MainController updates**: `onEstate` / `onCapital` / `onExplore` all call `guardedByTravel(context:)` first → shows countdown banner + returns true if in flight. `onCapital` calls `showCapital` instead of the old `showStub`. Same for `EstateController.onCapital` + `InventoryController.onCapital`.
+- **EstateController.showEstate** adds two new branches before the existing flow: travel→countdown, location=="capital"→`CapitalController.beginTrip(.estate, context:)` (return trip).
+- **ExplorationController.showExploration** adds two new branches at the top: travel→countdown, location=="capital"→block with "wilderness only borders the estate" notice. Hunting from the capital is explicitly disallowed.
+- **configure.swift**: registered both new migrations after `CreateLearnedTechniques`; added `TravelService.rescheduleInflight` call after `PassiveExpeditionService.rescheduleInflight`; added `user.location = "estate"` + `TravelState.end(for: user, ...)` to the resetDevProfile block.
+- **45 new locale keys × 2 locales** (parity 515/515): `capital.welcome`, 6× `capital.button.{market|arena|trader|fortune|master|tavern}`, 6× `capital.location.<id>.title` + `.body`, `capital.button.leave`, `travel.to_capital.started` + `travel.to_estate.started` (interpolate `%{remaining}`), `travel.arrived.capital` + `travel.arrived.estate`, `travel.in_progress` (interpolates `%{destination}` + `%{remaining}`), `travel.destination.capital` + `.estate` (for the `%{destination}` slot), `travel.cannot_start.no_hp` + `.no_vigor`, `exploration.blocked_in_capital`.
+
+### Design decisions (with user)
+- **2-minute trip duration** is the placeholder; will tune later. `testMode = true` makes it 2 s for dogfooding.
+- **No cancel** — once you've set out, you wait it out. Decided via AskUserQuestion early in the session ("чесно з точки зору гри"); avoids the "speedrun by tap-tap-tap-tap" anti-pattern.
+- **Guards on start**: HP > 0 AND vigor > 0. Death + starvation both block setting out (matches the "you can't even walk to the gates" fantasy).
+- **Reply-keyboard nav, not inline** for the 6 locations. User asked mid-session ("Кнопки в столиці повинні бути не інлайн кнопками, а заміняти основні"). Original plan was inline buttons; refactored before any code shipped.
+- **No 6-button "drilldown" hierarchy** — each location is a peer. Tapping any location swaps the message body; the keyboard never changes. No "back to capital root" — every location button is one tap away.
+- **Utility buttons** (Inventory + Profile) kept on the capital keyboard so the player isn't forced back to main for them. Settings stays reachable via `/settings` but not promoted as a button (rare action).
+- **Estate / Capital / Explore taps during travel** all show the same countdown banner. Inventory / Profile / Settings keep working (no narrative reason to block them).
+- **/start always lands in main** regardless of location. Player can re-enter capital from main; `showCapital` detects `location == "capital"` and skips the timer.
+- **Arrival flips routerName** so the player lands in the right reply-keyboard automatically (no extra tap needed).
+
+### Files touched
+- New: `Swift/Models/TravelState.swift`, `Swift/Services/TravelService.swift`, `Swift/Migrations/AddUserLocation.swift`, `Swift/Migrations/CreateTravelState.swift`.
+- Modified: `Swift/Controllers/CapitalController.swift` (full rewrite from stub), `Swift/Controllers/MainController.swift` (3 guards + onCapital wiring), `Swift/Controllers/EstateController.swift` (2 guards in showEstate + onCapital wiring), `Swift/Controllers/ExplorationController.swift` (2 guards in showExploration), `Swift/Controllers/InventoryController.swift` (onCapital wiring), `Swift/Models/User.swift` (location field + init default), `Swift/configure.swift` (migrations + rescheduler + dev reset), `Localizations/en.json` + `Localizations/uk.json` (+45 keys each).
+
+### Build / tests
+- `swift build` clean, 0 warnings, 0 errors.
+- Locale parity 515/515.
+- Live dogfood pending — user will test in chat next session.
+
+### Open items / next steps
+- Flip `TravelService.testMode = false` before shipping (2 min real).
+- Six per-location controllers / models are the natural Phase 6.x patches (Market: player marketplace; Trader: NPC vendor with rotating inventory; Arena: PvP matchmaking; Fortune Teller: daily blessings / hint quests; Master: weapon repair + reforge / enchant; Tavern: NPC quests + party recruiting).
+- Tutorial flagging "you can travel to the capital" once estate hits some tier (T2? T3?) — currently no in-game prompt directs the player there.
+- Question for later: should travel cost vigor? (Currently the trip is free; only the start guard checks vigor > 0.)
+
+---
+
 ## Session N+8 — 2026-05-15 (Per-class basic Defend rebalance)
 
 ### Goal

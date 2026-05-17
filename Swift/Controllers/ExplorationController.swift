@@ -110,6 +110,25 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     ///   - Active state → resume with the expedition reply keyboard.
     ///   - No state → show the mode picker (active vs passive).
     public func showExploration(context: Context) async throws {
+        // Phase 6.0: travel + capital guards. The wilderness only borders the
+        // estate — the player can't head out from the capital without
+        // returning home first. Travel countdown takes precedence so the
+        // banner explains why the action is blocked.
+        if let trip = try await TravelState.current(for: context.session, on: context.db) {
+            try await CapitalController.showTravelInProgress(context: context, trip: trip)
+            return
+        }
+        if context.session.location == "capital" {
+            let notice = context.lingo.localize("exploration.blocked_in_capital", locale: context.session.locale)
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: notice,
+                parseMode: .html,
+                replyMarkup: nil
+            )
+            return
+        }
+
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
             if state.isPassive {
                 if state.hasReadyReport {

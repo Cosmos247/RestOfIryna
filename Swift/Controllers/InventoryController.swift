@@ -90,7 +90,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onCapital(context: Context) async throws -> Bool {
-        try await Controllers.capitalController.showStub(context: context)
+        try await Controllers.capitalController.showCapital(context: context)
         return true
     }
 

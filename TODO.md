@@ -344,23 +344,39 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 
 ## Phase 6: Economy & Capital
 
-### 6.1 Market System
-- [ ] Design MarketListing model (seller, item, price, quantity, expiry)
-- [ ] Implement NPC stall (fixed prices, buy/sell)
-- [ ] Implement player bazaar (listing, purchasing, expiry)
-- [ ] Implement listing fee (gold sink)
+### 6.0 Capital travel + nav skeleton *(landed)*
+- [x] `TravelState` Fluent model + `CreateTravelState` migration (per-user, unique, destination + ends_at)
+- [x] `User.location` stored field + `AddUserLocation` migration (default "estate")
+- [x] `TravelService` (Task.detached + Task.sleep, `rescheduleInflight` on bot start, flips location + routerName on arrival, pushes welcome screen)
+- [x] `CapitalController` rewritten — reply-keyboard with 6 location buttons + utility row [Inventory] [Profile] + 🏡 Back-to-estate
+- [x] `Assets/capital/welcome.jpg` + atmospheric lore + auto-loader (`renderLocation` picks up `Assets/capital/<id>.jpg` if present)
+- [x] Cross-controller guards: travel countdown in Main / Estate / Exploration; explore-from-capital blocked; estate-from-capital starts return trip
+- [x] Bugfix: inventory-from-capital no longer flips routerName (preserves capital nav); `inv:*` callbacks forwarded from CapitalController
+- [ ] Flip `TravelService.testMode = false` before shipping (currently 2 s per minute)
 
-### 6.2 MarketController
-- [ ] Create controller with browse/search/buy/sell UI
-- [ ] Implement NPC vs Player stall navigation
-- [ ] Implement purchase flow with confirmation
+### 6.1 Trader (Crамар) *(landed)*
+- [x] `TraderCatalog` static catalog — 11 listings, asymmetric (sell/buy) packets, per-tier pricing
+- [x] `TraderService.sell(qty) / buy(qty)` — quantity-aware with atomic preflight; typed result enums
+- [x] Two-step UI in CapitalController — Menu (Buy/Sell choice) → list (edit-in-place over the merchant photo `Assets/capital/trader.jpg`)
+- [x] Per-row 2-line layout: info-label (description modal) + action row `[💸/💰 ×1] [✏️ N]`
+- [x] `[✏️ N]` flow — bot prompt + `[❌ Cancel]`, `EphemeralChatState.PendingTraderTransfer`, `unmatched` text intercept, invalid-input keeps prompt, validation-failure clears + banner, success clears + banner
+- [x] Sell list filtered to items the player has (qty ≥ 1) — no dead-tap rows
+- [x] **Economy v2 rebase (2026-05-17)**: pebble anchored at 1 unit = 1g, all tiers doubled per-unit sell price (1/2/3/5/10g across T1-T5, ingot 100g), packets all = 1 unit, UI labels collapse `1·Xg` → just `Xg`
 
-### 6.3 Capital Hub
-- [ ] Create CapitalController with location menu
-- [ ] Implement Quest Board (daily/weekly quests) — **first source of gold** (currently no in-game gold drop; estate upgrades T3+ already gate on `User.gold`) and **recipe-scroll rewards** (blueprint learning for Workshop / Kitchen recipes, moved here from 5.2)
-- [ ] Implement Stables (fast travel, gold cost)
-- [ ] Implement Bank (personal vault, transfers)
-- [ ] Implement Chapel (respec, name change)
+### 6.2 Tavern (Шинок) *(landed)*
+- [x] `TavernCatalog` — 7 cooked-dish prices (20-200g, ~5× old scale) + shared wager tiers [10, 25, 50]
+- [x] `TavernService.buyDish` (atomic, mirrors trader buy) + pure `resolveWager(playerScore:houseScore:) → WagerOutcome`
+- [x] Tavern entry screen — `Assets/capital/tavern.jpg` + lore + `[🍲 Меню][🎲 Кості][🎯 Влучанка]` inline buttons
+- [x] Menu sub-screen — sells all 7 dishes bypassing recipe scrolls (no scroll-gate, tavern's value prop)
+- [x] Dice + darts gambling — button-driven (bot-rolls model since Telegram doesn't let bots author messages as the player); wager tap → "Готовий?" confirm + `[🎲 Кинути][❌ Скасувати]` (no debit yet, free cancel), Roll tap debits + sequences (player label + N×sendDice → sleep → house label + N×sendDice → sleep → result + replay/back). Dice = 2 throws each, darts = 1.
+- [x] Result message has `[🔄 Зіграти ще раз][🔙 До шинка]` — replay edits text in place at same wager, back sends fresh photo tavern entry
+
+### 6.3 Capital Hub (remaining)
+- [ ] **Market** — player-to-player marketplace (or auction house); needs `MarketListing` model + matching controller
+- [ ] **PvP Arena** — async duels (snapshot opponent stats, bot autobattles, ladder)
+- [ ] **Fortune Teller** — daily blessing (random buff), risk readings, lucky-direction hints
+- [ ] **Master** — weapon repair / reforge / enchant (first true gold sink to close the loop)
+- [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 
 ---
 

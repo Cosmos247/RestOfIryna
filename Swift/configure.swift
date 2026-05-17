@@ -169,6 +169,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddEstateLevel())
     migrations.add(AddUserBagTier())
     migrations.add(CreateLearnedTechniques())
+    migrations.add(AddUserLocation())
+    migrations.add(CreateTravelState())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -232,7 +234,12 @@ public func configure(logger: Logger) async throws {
                 user.gearCritBonus = 0
                 user.gearDodgeBonus = 0
                 user.gearAccuracyBonus = 0
+                user.location = "estate"
                 try await user.saveAndCache(in: db)
+
+                // Wipe any in-flight travel row so a stale trip from a
+                // previous session doesn't block the freshly-reset profile.
+                try await TravelState.end(for: user, on: db)
 
                 // Also wipe inventory + warehouse so registration-grants + seeds start from scratch.
                 let existingEntries = try await InventoryEntry.list(for: user, on: db)
@@ -370,6 +377,12 @@ public func configure(logger: Logger) async throws {
     // stopped. Each one either delivers immediately (if its endsAt already
     // passed during downtime) or re-arms a Task.sleep until its endsAt.
     try await PassiveExpeditionService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
+
+    // MARK: - Travel rescheduler
+    // Phase 6.0 — same idea as passive: any in-flight trip from estate to
+    // capital (or back) gets a fresh Task.sleep until its endsAt. Trips
+    // whose timer already elapsed during downtime fire immediately.
+    try await TravelService.rescheduleInflight(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Plot production ticker
     // Single long-running Task.detached that wakes every PlotProductionService

@@ -111,4 +111,37 @@ public actor EphemeralChatState {
     public func takeLastStatusBanner(telegramId: Int64) -> Int? {
         lastStatusBanners.removeValue(forKey: telegramId)
     }
+
+    // MARK: - Trader bulk-N (Phase 6.1 polish)
+    //
+    // Tap of `[✏️ N]` on a trader buy/sell row opens a prompt asking for
+    // a quantity. The next text update from this user is interpreted as
+    // that number. Mirrors the warehouse withdraw-N / deposit-N flow:
+    // invalid input (non-numeric / ≤0) edits the prompt in place and
+    // keeps pending; cancel / successful trade / validation failure all
+    // clear the entry.
+
+    public struct PendingTraderTransfer: Sendable {
+        public enum Direction: String, Sendable { case buy, sell }
+        public let itemId: String
+        public let direction: Direction
+        public let promptMessageId: Int
+        public let traderScreenMessageId: Int
+        public let isPhoto: Bool
+    }
+
+    private var pendingTraderTransfers: [Int64: PendingTraderTransfer] = [:]
+
+    public func setPendingTraderTransfer(telegramId: Int64, transfer: PendingTraderTransfer) {
+        pendingTraderTransfers[telegramId] = transfer
+    }
+
+    public func peekPendingTraderTransfer(telegramId: Int64) -> PendingTraderTransfer? {
+        pendingTraderTransfers[telegramId]
+    }
+
+    public func takePendingTraderTransfer(telegramId: Int64) -> PendingTraderTransfer? {
+        pendingTraderTransfers.removeValue(forKey: telegramId)
+    }
+
 }
