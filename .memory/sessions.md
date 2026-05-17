@@ -1,5 +1,86 @@
 # Session History
 
+## Session N+12 — 2026-05-17 (Phase 6.4 Fortune Teller — 22 Major Arcana, 6h buff / 24h cooldown)
+
+### Goal
+Land the third capital subsystem — the Ворожка (fortune teller). Player pays gold, draws one of 22 tarot Major Arcana cards (real artwork supplied by user), gets a buff or debuff for 6 hours. Cooldown between draws is 24 hours, so up to 1 draw/day. Card meaning + buff description shown under the card on reveal. Active card line surfaces in the profile.
+
+### What was done
+
+**Models & state**
+- New `Swift/Models/FortuneCatalog.swift` — `FortuneEffect` struct (single struct with 14 optional fields covers stat bonuses, multipliers, one-shots, Wheel-style random) + `FortuneCard` (id / nameKey / meaningKey / buffDescKey / effect) + `FortuneCatalog` (22 entries, `drawPrice=10g`, `buffDurationSeconds=6h`, `cooldownSeconds=24h`).
+- New `Swift/Services/FortuneService.swift` — `draw(for:on:) -> DrawResult` (success / onCooldown / notEnoughGold). Cooldown check via `lastFortuneDrawAt`; debits 10g; uniform random pick; applies one-shot effects (gold delta with min-clamp, Wheel 50/50 roll, XP via `user.grantXP`, HP/Vigor restore); stamps `activeFortuneCardId` + `activeFortuneExpiresAt` (now + 6h) + `lastFortuneDrawAt` (now). `OneShotApplied` snapshot returned for UI reveal text.
+- New `Swift/Migrations/AddFortuneFields.swift` — adds `active_fortune_card_id` + `active_fortune_expires_at` to users.
+- New `Swift/Migrations/AddFortuneCooldownField.swift` — adds `last_fortune_draw_at` to users (separates the 24h cooldown from the 6h buff window — added after the design call to split them; both migrations registered in `configure.swift`).
+- `User.swift`: 3 new fields + init defaults + `activeFortuneEffect` computed (nil after expiry, returns the catalog effect otherwise) + `fortuneSecondsRemaining(now:)` (buff timer) + `fortuneCooldownRemaining(now:)` (draw timer).
+
+**Effect hooks (5 sites)**
+- `User.effectiveAttack/Defense/Crit/Dodge/Accuracy` — add fortune additive bonuses on top of base + gear − vigor penalty.
+- `User.grantXP(_)` — multiply incoming amount by `activeFortuneEffect?.xpMultiplier ?? 1.0` before processing level-ups + stat growth.
+- `ExplorationService.rollStep` — apply `lootChanceMultiplier`: shift loot weight by the multiplier, compensate from `nothing` bucket so total = 100 (encounter/trip untouched — Fool's luck doesn't summon a bear).
+- `VigorService.drain(user:action:multiplier:)` — multiply stance multiplier by `vigorDrainMultiplier` so Chariot's −25% / Hanged Man's −50% / Devil's ×1.5 compose with existing stance buffs.
+
+**UI**
+- `CapitalController.showFortune` replaces `renderLocation(.fortune)`. Three render states: can-draw (price + balance + `[🔮 Тягнути карту]`), cooldown-with-buff (`Активна: <name> · ефект ще HH:MM / Нова карта через: HH:MM`), cooldown-only (`Карти втомились. Нова карта через: HH:MM`). `[🔙 До столиці]` always visible — never lets the player get stuck on the screen (e.g. zero gold).
+- `renderFortuneReveal` — `sendScenicPhoto` with the drawn card's PNG + caption (🔮 + name + italic meaning + buff description + one-shot deltas like "+30 gold · balance 145" / "HP and Vigor restored" / "+75 XP" + 6h countdown for duration cards) + `[🔙 До столиці]` button.
+- Callback dispatch: `fortune:draw` runs `handleFortuneDraw`; `capital:back` (renamed from `fortune:back`, aliased for backward compatibility) calls `showCapital`.
+- Profile fortune line (`🔮 <Card> · HH:MM`) added to all 3 profile styles in `MainController.renderProfile`. Appears only when buff is still active (uses `fortuneSecondsRemaining`); 🔮 prepended in Swift to dodge Lingo's leading-emoji + `%{var}` parser bug.
+
+**Bugfix: "Unsupported content type" when switching profile style from capital**
+- `CapitalController.onCallbackQuery` was returning `false` for unknown callback prefixes (`pstyle:`, stale `explore:`/`combat:` from old messages), which fell through to `Router.unsupportedContentType` ("Unsupported content type."). Now forwards everything unknown to `MainController.onCallbackQuery` which handles those prefixes and has a default "delete stale inline message" branch — quiet failure instead of shouting at the player.
+
+**Reply-keyboard insurance (Telegram client UX quirk)**
+- After a chain of inline-button messages, some Telegram clients (mobile especially) collapse the persistent reply keyboard — bot can't prevent this server-side. Mitigation: inline `[🔙 До столиці]` button added to tavern entry, trader Menu screen, and fortune entry. Tap calls `showCapital` → `sendWelcome` → sends scenic photo WITH `generateControllerKB` reply-keyboard markup → re-attaches the keyboard. Acts as a manual "show keyboard" reset.
+- Unified locale key: `capital.button.back_to_capital` (replaces fortune-specific `capital.fortune.button.back`).
+
+**PhotoCache PNG support**
+- `sendScenicPhoto` now auto-detects MIME from the asset path's extension (.png → image/png, otherwise image/jpeg). Tarot cards ship as PNG (preserve sharp linework), other scenery as JPG. Telegram handles both fine; passing correct MIME lets the client pick a faster decode path.
+
+**Assets**
+- 22 tarot card PNGs in `Assets/capital/fortune/<id>.png` (e.g. `0_fool.png`, `1_magician.png`, ..., `21_world.png`) — each ~3MB original; Telegram client downscales to ~200KB jpeg on display; PhotoCache reuses file_id after first upload so byte transfer is one-time.
+- `Assets/capital/fortune.jpg` — entry-screen portrait of the fortune teller.
+- `Assets/capital/tavern.jpg` — replaced with new artwork (innkeeper portrait variant).
+
+**Lore (user-supplied + my designed buffs)**
+- Card names + one-line meaning per card per locale (from user's dict, kept verbatim in UK). 22 × 2 × 3 keys (name / meaning / buff_desc) = 132 card locale entries.
+- Fortune teller intro: full atmospheric prose from user + in-character quote ("«Сідай, наміснику. Карти знають твоє ім'я ще з ранку...»").
+- Tavern body: existing atmospheric prose + new innkeeper quote ("«Заходь, наміснику! Кухоль еля чекає...»").
+- UK: 4 instances "мандрівнику" → "наміснику" (Шинок + Ворожка, x2 each).
+- EN: 4 instances "traveller" → "Governor" (same locations).
+
+**Effect distribution (22 cards)**
+- 7 pure 24h-window buffs (1 Magician, 3 Empress, 7 Chariot, 8 Strength, 14 Temperance, 17 Star, 19 Sun)
+- 3 pure 24h-window debuffs (13 Death, 15 Devil, 18 Moon)
+- 7 mixed 24h (good + bad, trickster pulls: 0 Fool, 2 Priestess, 4 Emperor, 5 Hierophant, 9 Hermit, 11 Justice, 12 Hanged Man)
+- 2 positive one-shots (6 Lovers, 21 World)
+- 2 mixed one-shots (10 Wheel, 20 Judgement)
+- 1 negative one-shot (16 Tower)
+- Outcome: 41% guaranteed-positive draws, 18% pure-bad, 41% trade-off. Tarot as cosmic balance, not casino tilted in player's favour.
+
+### Design decisions (with user)
+- **Effect duration vs cooldown**: started at 4h for both, then user said lore should say 6h. Then realised cooldown and buff should be different — bumped cooldown to 24h (one card per day, dramatic) while buff stays 6h (impactful over an active session, not a full day's lock).
+- **Variant B for effect mix** (clear ladder, 3 trickster + 7 mixed) over Variant A (heavy buffs, casino-style daily blessing) and C (massive variance). User specifically asked to lean more toward debuffs/mixed.
+- **One-shot vs duration handling unified into one struct** (FortuneEffect with optional fields) — cards set only their slice; UI uses `hasDurationEffect` to decide whether to render the countdown line.
+- **Reply-keyboard insurance via inline Back button** (not via re-sending the keyboard on every scenic photo) — the latter would add a second message per scenery send (Telegram only allows ONE reply_markup type per message). Inline Back is cleaner and double-duty: navigation + reply-keyboard reattach on tap.
+- **`capital:back` unified callback** (was `fortune:back`-specific) so trader and tavern entries reuse the same handler.
+- **Profile fortune line at the bottom of every style** (1/2/3) — last line so the ephemeral "today's card" stands out from structural stats. Skipped entirely when no active buff (cooldown without buff = nothing shown).
+
+### Files touched
+- New: `Swift/Models/FortuneCatalog.swift`, `Swift/Services/FortuneService.swift`, `Swift/Migrations/AddFortuneFields.swift`, `Swift/Migrations/AddFortuneCooldownField.swift`, `Assets/capital/fortune.jpg`, 22× `Assets/capital/fortune/<id>.png`.
+- Modified: `Swift/Models/User.swift` (3 fields + init + 2 computed helpers + grantXP hook + activeFortuneEffect extension), `Swift/Services/ExplorationService.swift` (loot weight multiplier hook), `Swift/Services/VigorService.swift` (effective-stat fortune hook + vigor-drain composition), `Swift/Controllers/MainController.swift` (profile fortune line), `Swift/Controllers/CapitalController.swift` (massive — showFortune + 3-state render + reveal + callback dispatch + onCallbackQuery forwarding fix + back-button insurance for trader/tavern), `Swift/Helpers/PhotoCache.swift` (PNG MIME), `Swift/configure.swift` (2 migrations + dev reset includes fortune fields), `Localizations/en.json` + `Localizations/uk.json` (+82 keys per locale: 13 UI + 22 × 3 card keys + 1 generic back-button), `Assets/capital/tavern.jpg` (replaced).
+
+### Build / tests
+- `swift build` clean.
+- Locale parity 642/642 (was 561 at session start).
+- Live dogfooded by user across multiple iterations — drew cards in chat, switched profile style from capital (verified bug fix), navigated tavern/trader/fortune with inline Back buttons.
+
+### Open items / next steps
+- Flip `TravelService.testMode = false` before shipping (still 2 s per minute).
+- 3 capital locations still stubs: Market (player-to-player), Arena (PvP), Master (weapon repair / reforge / enchant — natural next as the gold sink that closes the loop).
+- Question for later: should we add Estate / Inventory same `onCallbackQuery` forwarding fix to MainController so `pstyle:` works from estate/inventory routerName too? Not user-reported yet but probably the same latent bug.
+
+---
+
 ## Session N+11 — 2026-05-17 (Phase 6.3 chat-cleanup infra — PhotoCache + sendScenicPhoto)
 
 ### Goal

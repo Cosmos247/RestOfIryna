@@ -106,8 +106,8 @@ public enum ExplorationService {
         let starvationLoss = VigorService.applyStarvationHPLoss(user)
 
         // Pick weights by tier.
-        let wNothing: Int
-        let wLoot: Int
+        var wNothing: Int
+        var wLoot: Int
         let wEncounter: Int
         let wTrip: Int
         switch priorVisits {
@@ -129,6 +129,32 @@ public enum ExplorationService {
             wLoot      = weightLootBare
             wEncounter = weightEncounterBare
             wTrip      = weightTripBare
+        }
+
+        // Phase 6.4 — Fortune Teller hook. The active card's
+        // `lootChanceMultiplier` (default 1.0) reweights the `loot`
+        // bucket; we then compensate by shifting weight in/out of
+        // `nothing` so the four buckets still sum to `weightTotal`
+        // (the roll RNG range stays 0..<100). Negative multipliers
+        // shift weight FROM loot INTO nothing; positive multipliers
+        // the reverse. Encounter / trip are untouched — the Fool's
+        // luck doesn't summon a bear.
+        let lootMult = user.activeFortuneEffect?.lootChanceMultiplier ?? 1.0
+        if lootMult != 1.0 {
+            let originalLoot = wLoot
+            let adjustedLoot = max(0, Int((Double(originalLoot) * lootMult).rounded()))
+            let delta = adjustedLoot - originalLoot
+            // Shift the difference from/to `nothing` so the total stays
+            // at `weightTotal`. Floored at 0 — if the shift would push
+            // nothing negative we cap (loot gets the rest, rare).
+            let newNothing = wNothing - delta
+            if newNothing >= 0 {
+                wLoot = adjustedLoot
+                wNothing = newNothing
+            } else {
+                wLoot = wLoot + wNothing  // absorb whatever nothing had
+                wNothing = 0
+            }
         }
 
         // Pick the event bucket.

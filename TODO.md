@@ -371,10 +371,25 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] Dice + darts gambling — button-driven (bot-rolls model since Telegram doesn't let bots author messages as the player); wager tap → "Готовий?" confirm + `[🎲 Кинути][❌ Скасувати]` (no debit yet, free cancel), Roll tap debits + sequences (player label + N×sendDice → sleep → house label + N×sendDice → sleep → result + replay/back). Dice = 2 throws each, darts = 1.
 - [x] Result message has `[🔄 Зіграти ще раз][🔙 До шинка]` — replay edits text in place at same wager, back sends fresh photo tavern entry
 
-### 6.3 Capital Hub (remaining)
+### 6.3 Chat-cleanup infrastructure *(landed)*
+- [x] `PhotoCache` actor + `sendScenicPhoto` helper — file_id cache (no repeat uploads) + scenery-slot cleanup (deletes the user's previous backdrop before sending a new one)
+- [x] PNG MIME auto-detect (for tarot card art and future PNG assets)
+- [x] All capital + estate location backdrops migrated to `sendScenicPhoto`; registration narrative art stays on direct `bot.sendPhoto`
+
+### 6.4 Fortune Teller (Ворожка) *(landed)*
+- [x] `FortuneCatalog` — 22 Major Arcana cards (0_fool through 21_world) + `FortuneEffect` struct (14 optional fields covering stat bonuses + multipliers + one-shots + Wheel-style random)
+- [x] `FortuneService.draw(for:on:)` — 24h cooldown gate + 10g gold + uniform random draw + one-shot apply + state stamp
+- [x] 3 new User fields + 2 migrations (`AddFortuneFields` + `AddFortuneCooldownField`; split fields after 6h-buff vs 24h-cooldown design call)
+- [x] Effect hooks in 5 sites: User.effectiveAttack/Defense/Crit/Dodge/Accuracy, User.grantXP, ExplorationService.rollStep (loot weight), VigorService.drain (drain multiplier composes with stance)
+- [x] UI: showFortune (3 render states — can-draw / cooldown-with-buff / cooldown-only), reveal screen with card portrait + lore meaning + buff description + 6h countdown
+- [x] Profile fortune line (`🔮 <Card> · HH:MM`) on all 3 profile styles
+- [x] 22 card PNGs in `Assets/capital/fortune/` + entry portrait `Assets/capital/fortune.jpg`
+- [x] Reply-keyboard insurance — inline `[🔙 До столиці]` back button on fortune/tavern/trader entries (also re-attaches reply keyboard if a Telegram client collapsed it)
+- [x] Bugfix: `CapitalController.onCallbackQuery` forwards unknown callbacks (pstyle, stale explore/combat) to MainController instead of returning false — no more "Unsupported content type"
+
+### 6.5 Capital Hub (remaining)
 - [ ] **Market** — player-to-player marketplace (or auction house); needs `MarketListing` model + matching controller
 - [ ] **PvP Arena** — async duels (snapshot opponent stats, bot autobattles, ladder)
-- [ ] **Fortune Teller** — daily blessing (random buff), risk readings, lucky-direction hints
 - [ ] **Master** — weapon repair / reforge / enchant (first true gold sink to close the loop)
 - [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 

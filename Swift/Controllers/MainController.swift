@@ -220,13 +220,30 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         }
         let mainHandLine = "🗡 \(mainHandLabel): \(mainHandName)"
 
+        // Phase 6.4 — active fortune line. Renders on every style when the
+        // player has an unexpired tarot draw. 🔮 prefixed in Swift (Lingo
+        // template parser breaks on leading supplementary-plane emoji + var).
+        let fortuneLine: String?
+        if let cardId = session.activeFortuneCardId,
+           let card = FortuneCatalog.find(cardId),
+           let secondsLeft = session.fortuneSecondsRemaining() {
+            let cardName = lingo.localize(card.nameKey, locale: session.locale)
+            let h = secondsLeft / 3600
+            let m = (secondsLeft % 3600) / 60
+            let countdown = String(format: "%02d:%02d", h, m)
+            fortuneLine = "🔮 \(cardName) · \(countdown)"
+        } else {
+            fortuneLine = nil
+        }
+
+        let body: String
         switch style {
         case 2:
             let xpBar = isMaxLevel ? "" : bar(xp, xpMax)
             let xpLine = isMaxLevel
                 ? "📊 \(lingo.localize("profile.xp.max", locale: session.locale))"
                 : "📊 \(xpBar) \(xpFragment)"
-            return """
+            body = """
             \(cls.icon()) \(className)  «<b>\(nickname)</b>»  Lv.\(level)
             ━━━━━━━━━━━━━━━━
 
@@ -253,7 +270,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 \(emojiBar(xp, xpMax, fill: "🟦"))
                 """
             }
-            return """
+            body = """
             \(cls.icon()) <b>\(nickname)</b> — \(className)
             ✨ \(l.localize("profile.level", locale: loc)) \(level)
 
@@ -274,7 +291,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
             """
         default: // Style 1
-            return """
+            body = """
             \(cls.icon()) <b>\(nickname)</b> · Lv.\(level)
             \(className)
 
@@ -289,6 +306,13 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             🏰 \(estate)
             """
         }
+
+        // Append fortune line at the bottom of every style — last line so
+        // the cosmetic "today's card" stands out from the structural stats.
+        if let fl = fortuneLine {
+            return body + "\n\(fl)"
+        }
+        return body
     }
 
     // MARK: - Bar Helpers

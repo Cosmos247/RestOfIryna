@@ -82,7 +82,14 @@ public enum VigorService {
     /// rounded before the actual drain is applied.
     @discardableResult
     public static func drain(_ user: User, action: VigorAction, multiplier: Double = 1.0) -> Int {
-        let scaled = Double(cost(of: action)) * max(0.0, multiplier)
+        // Phase 6.4 — compose the active fortune's vigor-drain multiplier
+        // (default 1.0) with the caller-supplied stance multiplier.
+        // Chariot's −25% / Hanged Man's −50% reduce drain; Devil's ×1.5
+        // increases it. Drain values pre-fortune are visible through the
+        // stance multiplier alone, so combat stance + fortune compose
+        // multiplicatively.
+        let fortuneMult = user.activeFortuneEffect?.vigorDrainMultiplier ?? 1.0
+        let scaled = Double(cost(of: action)) * max(0.0, multiplier) * max(0.0, fortuneMult)
         return drain(user, amount: Int(scaled.rounded()))
     }
 
@@ -154,20 +161,31 @@ public enum VigorService {
 // MARK: - Effective stats on User
 
 extension User {
-    /// Attack after all active modifiers: base + equipped gear − starvation penalty.
+    /// Attack after all active modifiers: base + equipped gear − starvation
+    /// penalty + active fortune bonus (Phase 6.4, can be negative).
     public var effectiveAttack: Int {
-        return Self.applyVigorPenalty(base: attack + gearAttackBonus, user: self)
+        let fortune = activeFortuneEffect?.attackBonus ?? 0
+        return Self.applyVigorPenalty(base: attack + gearAttackBonus + fortune, user: self)
     }
 
-    /// Defense after all active modifiers: base + equipped gear − starvation penalty.
+    /// Defense after all active modifiers: base + equipped gear − starvation
+    /// penalty + active fortune bonus.
     public var effectiveDefense: Int {
-        return Self.applyVigorPenalty(base: defense + gearDefenseBonus, user: self)
+        let fortune = activeFortuneEffect?.defenseBonus ?? 0
+        return Self.applyVigorPenalty(base: defense + gearDefenseBonus + fortune, user: self)
     }
 
-    /// Crit / Dodge / Accuracy aren't affected by vigor in v1; gear still layers in.
-    public var effectiveCrit: Int     { return crit + gearCritBonus }
-    public var effectiveDodge: Int    { return dodge + gearDodgeBonus }
-    public var effectiveAccuracy: Int { return accuracy + gearAccuracyBonus }
+    /// Crit / Dodge / Accuracy aren't affected by vigor in v1; gear +
+    /// active fortune layer in.
+    public var effectiveCrit: Int {
+        return crit + gearCritBonus + (activeFortuneEffect?.critBonus ?? 0)
+    }
+    public var effectiveDodge: Int {
+        return dodge + gearDodgeBonus + (activeFortuneEffect?.dodgeBonus ?? 0)
+    }
+    public var effectiveAccuracy: Int {
+        return accuracy + gearAccuracyBonus + (activeFortuneEffect?.accuracyBonus ?? 0)
+    }
 
     private static func applyVigorPenalty(base: Int, user: User) -> Int {
         guard VigorService.isStarving(user) else { return base }

@@ -169,7 +169,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func onMarket(context: Context)  async throws -> Bool { try await renderLocation(.market,  context: context); return true }
     private func onArena(context: Context)   async throws -> Bool { try await renderLocation(.arena,   context: context); return true }
     private func onTrader(context: Context)  async throws -> Bool { try await showTrader(context: context); return true }
-    private func onFortune(context: Context) async throws -> Bool { try await renderLocation(.fortune, context: context); return true }
+    private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
     private func onMaster(context: Context)  async throws -> Bool { try await renderLocation(.master,  context: context); return true }
     private func onTavern(context: Context)  async throws -> Bool { try await showTavern(context: context); return true }
 
@@ -430,10 +430,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func traderMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let buyLabel  = lingo.localize("capital.trader.button.buy_section",  locale: locale)
         let sellLabel = lingo.localize("capital.trader.button.sell_section", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: buyLabel,  callbackData: "trader:buylist"),
-            TGInlineKeyboardButton(text: sellLabel, callbackData: "trader:selllist")
-        ]])
+        // Inline Back-to-capital insurance — if the Telegram client has
+        // collapsed the persistent reply keyboard after a chain of inline
+        // messages, this gives the player a guaranteed exit. Tapping it
+        // calls showCapital which re-attaches the reply keyboard via
+        // sendWelcome.
+        let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: buyLabel,  callbackData: "trader:buylist"),
+             TGInlineKeyboardButton(text: sellLabel, callbackData: "trader:selllist")],
+            [TGInlineKeyboardButton(text: backLabel, callbackData: "capital:back")]
+        ])
     }
 
     private func editToTraderMenu(messageId: Int, isPhoto: Bool, context: Context) async throws {
@@ -729,7 +736,29 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        return false
+        // Phase 6.4 — Fortune Teller draw + back.
+        if data == "fortune:draw" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await handleFortuneDraw(context: context)
+            return true
+        }
+        // Universal "back to capital" — used by fortune, trader, tavern
+        // entry screens. `fortune:back` kept as alias for stale messages
+        // sent before the rename.
+        if data == "capital:back" || data == "fortune:back" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.showCapital(context: context)
+            return true
+        }
+
+        // Unknown callback prefixes — forward to MainController which
+        // owns `pstyle:` (profile style switch) + `explore:` + `combat:`
+        // and has a default "delete stale inline message" fallback.
+        // Returning false here would trigger Router's
+        // unsupportedContentType ("Unsupported content type.") response,
+        // which is noise — old buttons on stale messages shouldn't shout
+        // at the player.
+        return try await MainController.onCallbackQuery(context: context)
     }
 
     private func postTraderResultBanner(forSell result: TraderService.SellResult, itemId: String, context: Context) async {
@@ -880,6 +909,190 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
+    // MARK: - Fortune Teller (Phase 6.4 — tarot daily-ish draw)
+    //
+    // Two states: idle (no active card OR previous one has expired) and
+    // active (countdown until expiry, no draw button). The same screen
+    // handles both — built from the player's User state at render time.
+    // Tap of `[🔮 Тягнути карту]` calls `FortuneService.draw`, then
+    // either shows the reveal (new bot message with the card photo +
+    // meaning + buff description) OR keeps the entry screen with an
+    // error banner. The reveal message goes through `sendScenicPhoto`
+    // so the previous scenery photo (probably the Ворожка entry) is
+    // replaced — only the latest reveal stays in chat.
+
+    func showFortune(context: Context) async throws {
+        let text = renderFortuneEntryBody(session: context.session, lingo: context.lingo)
+        let inline = fortuneEntryKeyboard(session: context.session, lingo: context.lingo)
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/capital/fortune.jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(inline),
+            toUser: context.session,
+            bot: context.bot
+        )
+    }
+
+    private func renderFortuneEntryBody(session: User, lingo: Lingo) -> String {
+        let locale = session.locale
+        let title = lingo.localize(Location.fortune.titleKey, locale: locale)
+        let intro = lingo.localize("capital.fortune.intro", locale: locale)
+        var lines: [String] = ["<b>\(title)</b>", "", intro, ""]
+
+        let cooldownLeft = session.fortuneCooldownRemaining()
+        let buffLeft = session.fortuneSecondsRemaining()
+        let activeCard: FortuneCard? = session.activeFortuneCardId.flatMap(FortuneCatalog.find)
+
+        if let cooldown = cooldownLeft {
+            // Draw still on cooldown. Two sub-states: buff still ticking
+            // (show both timers + card name) vs buff already worn off
+            // (show cooldown only).
+            if let buff = buffLeft, let card = activeCard {
+                let cardName = lingo.localize(card.nameKey, locale: locale)
+                lines.append(lingo.localize("capital.fortune.status.with_buff", locale: locale, interpolations: [
+                    "card": cardName,
+                    "buff_remaining": formatHM(buff),
+                    "cooldown_remaining": formatHM(cooldown)
+                ]))
+            } else {
+                lines.append(lingo.localize("capital.fortune.status.cooldown_only", locale: locale, interpolations: [
+                    "remaining": formatHM(cooldown)
+                ]))
+            }
+        } else {
+            // Draw available — show price + balance.
+            let priceLine = lingo.localize("capital.fortune.price", locale: locale, interpolations: [
+                "price": "\(FortuneCatalog.drawPrice)"
+            ])
+            let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
+                "gold": "\(session.gold)"
+            ])
+            lines.append(priceLine)
+            lines.append("💰 \(goldLabel)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func fortuneEntryKeyboard(session: User, lingo: Lingo) -> TGInlineKeyboardMarkup {
+        let locale = session.locale
+        let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
+        let backRow = [TGInlineKeyboardButton(text: backLabel, callbackData: "fortune:back")]
+
+        // No draw button while on cooldown — but the [🔙 Back] button is
+        // always present so the player can never be stuck on the fortune
+        // screen (e.g. zero gold, no draw available).
+        if session.fortuneCooldownRemaining() != nil {
+            return TGInlineKeyboardMarkup(inlineKeyboard: [backRow])
+        }
+        let drawLabel = lingo.localize("capital.fortune.button.draw", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: drawLabel, callbackData: "fortune:draw")],
+            backRow
+        ])
+    }
+
+    /// Format a remaining-seconds count as `HH:MM` (we never need
+    /// sub-minute precision for the 4-hour fortune window).
+    private func formatHM(_ seconds: Int) -> String {
+        let clamped = max(0, seconds)
+        let h = clamped / 3600
+        let m = (clamped % 3600) / 60
+        return String(format: "%02d:%02d", h, m)
+    }
+
+    /// Render the reveal screen after a successful draw. Sends a fresh
+    /// photo (the card portrait) with caption: meaning + buff
+    /// description + countdown (for duration cards) + one-shot deltas
+    /// (for instant cards).
+    private func renderFortuneReveal(
+        card: FortuneCard,
+        oneShot: FortuneService.OneShotApplied,
+        context: Context
+    ) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let cardName = lingo.localize(card.nameKey, locale: locale)
+        let meaning  = lingo.localize(card.meaningKey, locale: locale)
+        let buffDesc = lingo.localize(card.buffDescKey, locale: locale)
+
+        var lines: [String] = []
+        lines.append("🔮 <b>\(cardName)</b>")
+        lines.append("")
+        lines.append("<i>\(meaning)</i>")
+        lines.append("")
+        lines.append(buffDesc)
+
+        // One-shot deltas applied at draw time — show the concrete impact.
+        if oneShot.goldDelta != 0 {
+            let key = oneShot.goldDelta > 0 ? "capital.fortune.applied.gold_gain" : "capital.fortune.applied.gold_loss"
+            let line = lingo.localize(key, locale: locale, interpolations: [
+                "gold": "\(abs(oneShot.goldDelta))",
+                "balance": "\(context.session.gold)"
+            ])
+            lines.append("")
+            lines.append(line)
+        }
+        if oneShot.xpGained > 0 {
+            let line = lingo.localize("capital.fortune.applied.xp_gain", locale: locale, interpolations: [
+                "xp": "\(oneShot.xpGained)"
+            ])
+            lines.append(line)
+        }
+        if oneShot.hpRestored || oneShot.vigorRestored {
+            let key: String
+            if oneShot.hpRestored && oneShot.vigorRestored { key = "capital.fortune.applied.hp_vigor" }
+            else if oneShot.hpRestored                     { key = "capital.fortune.applied.hp_only"  }
+            else                                            { key = "capital.fortune.applied.vigor_only" }
+            lines.append(lingo.localize(key, locale: locale))
+        }
+
+        // Countdown line for duration cards.
+        if card.effect.hasDurationEffect, let secondsLeft = context.session.fortuneSecondsRemaining() {
+            let line = lingo.localize("capital.fortune.applied.duration", locale: locale, interpolations: [
+                "remaining": formatHM(secondsLeft)
+            ])
+            lines.append("")
+            lines.append(line)
+        }
+
+        let text = lines.joined(separator: "\n")
+        let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: backLabel, callbackData: "fortune:back")
+        ]])
+        _ = try await sendScenicPhoto(
+            assetPath: FortuneCatalog.assetPath(for: card.id),
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(keyboard),
+            toUser: context.session,
+            bot: context.bot
+        )
+    }
+
+    /// Static helper — handles the `fortune:draw` callback. Lives here
+    /// (vs as a member) so it can be invoked directly from the
+    /// `onCallbackQuery` dispatcher.
+    fileprivate static func handleFortuneDraw(context: Context) async throws {
+        let ctrl = Controllers.capitalController
+        let result = try await FortuneService.draw(for: context.session, on: context.db)
+        switch result {
+        case .success(let card, let applied):
+            try await ctrl.renderFortuneReveal(card: card, oneShot: applied, context: context)
+        case .onCooldown(let secondsLeft):
+            let lingo = context.lingo
+            let text = lingo.localize("capital.fortune.error.cooldown", locale: context.session.locale, interpolations: [
+                "remaining": ctrl.formatHM(secondsLeft)
+            ])
+            await ctrl.postStatusBanner("⏳ \(text)", context: context)
+        case .notEnoughGold(let have, let need):
+            let lingo = context.lingo
+            let text = lingo.localize("capital.fortune.error.gold", locale: context.session.locale, interpolations: [
+                "have": "\(have)", "need": "\(need)"
+            ])
+            await ctrl.postStatusBanner("❌ \(text)", context: context)
+        }
+    }
+
     // MARK: - Tavern (Phase 6.2 — menu + dice + darts)
     //
     // Entry screen is the existing tavern photo with caption (Royal Seal
@@ -921,11 +1134,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let menu  = lingo.localize("capital.tavern.button.menu",  locale: locale)
         let dice  = lingo.localize("capital.tavern.button.dice",  locale: locale)
         let darts = lingo.localize("capital.tavern.button.darts", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: menu,  callbackData: "tavern:food"),
-            TGInlineKeyboardButton(text: dice,  callbackData: "tavern:dice"),
-            TGInlineKeyboardButton(text: darts, callbackData: "tavern:darts")
-        ]])
+        // Inline Back-to-capital insurance (see traderMenuKeyboard
+        // comment) — re-attaches the reply keyboard if a chain of
+        // inline messages caused the client to collapse it.
+        let back  = lingo.localize("capital.button.back_to_capital", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: menu,  callbackData: "tavern:food"),
+             TGInlineKeyboardButton(text: dice,  callbackData: "tavern:dice"),
+             TGInlineKeyboardButton(text: darts, callbackData: "tavern:darts")],
+            [TGInlineKeyboardButton(text: back, callbackData: "capital:back")]
+        ])
     }
 
     private func editToTavernEntry(messageId: Int, isPhoto: Bool, context: Context) async throws {

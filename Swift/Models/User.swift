@@ -145,6 +145,25 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "location")
     var location: String
 
+    /// Phase 6.4 — Fortune Teller's drawn card. `activeFortuneCardId` is
+    /// the card's catalogue id (e.g. "19_sun"); `activeFortuneExpiresAt`
+    /// is BOTH the effect's expiry AND the next-draw cooldown gate. Nil
+    /// means "no active fortune" (player has never drawn OR previous
+    /// draw expired). Stat hooks consult `activeFortuneEffect` (below).
+    @OptionalField(key: "active_fortune_card_id")
+    var activeFortuneCardId: String?
+
+    @OptionalField(key: "active_fortune_expires_at")
+    var activeFortuneExpiresAt: Date?
+
+    /// Phase 6.4 fix — separate the 24h draw cooldown from the 6h buff
+    /// duration. Stamped to "now" on every successful draw; the next
+    /// draw is allowed only after `cooldownSeconds` has elapsed since
+    /// this value. `activeFortuneExpiresAt` continues to gate the buff
+    /// effects themselves (shorter window).
+    @OptionalField(key: "last_fortune_draw_at")
+    var lastFortuneDrawAt: Date?
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -192,6 +211,9 @@ final public class User: Model, @unchecked Sendable {
         self.estateLevel = 1
         self.bagTier = 1
         self.location = "estate"
+        self.activeFortuneCardId = nil
+        self.activeFortuneExpiresAt = nil
+        self.lastFortuneDrawAt = nil
         self.createdAt = Date()
     }
 
@@ -256,19 +278,24 @@ final public class User: Model, @unchecked Sendable {
     /// Add XP and process level-ups in a loop. Returns a result describing how
     /// many levels were gained, whether the estate tier crossed a threshold,
     /// and any stat growth applied (Phase 5.3b — +5 maxHP / +1 ATK / +1 DEF
-    /// at L2/3/5/6/9/12/15/18). Callers persist the user via `saveAndCache`.
+    /// at L2/3/5/6/9/12/15/18). Phase 6.4 — multiplies the incoming amount
+    /// by `activeFortuneEffect?.xpMultiplier` (1.0 if no active fortune).
+    /// Callers persist the user via `saveAndCache`.
     @discardableResult
     func grantXP(_ amount: Int) -> XPGrantResult {
         let oldLevel = level
         let oldEstate = estateLevel
-        guard amount > 0, level < User.maxLevel else {
+        let xpMult = activeFortuneEffect?.xpMultiplier ?? 1.0
+        let amountWithFortune = Int((Double(amount) * xpMult).rounded())
+        guard amountWithFortune > 0, level < User.maxLevel else {
             return XPGrantResult(
                 xpAwarded: 0, levelsGained: 0, estateLeveledUp: false,
                 newLevel: level, newEstateLevel: estateLevel,
                 maxHpGained: 0, attackGained: 0, defenseGained: 0
             )
         }
-        xp += amount
+        xp += amountWithFortune
+        let amount = amountWithFortune  // shadow for the XPGrantResult below
         var maxHpGained = 0
         var attackGained = 0
         var defenseGained = 0
@@ -347,6 +374,44 @@ extension User {
     /// gating for dev commands stays on `allowedUsers`.
     var isDeveloper: Bool {
         return developerUsers.contains(self.telegramId)
+    }
+}
+
+// MARK: - Active fortune (Phase 6.4)
+
+extension User {
+    /// The currently active fortune effect, or nil if no card is drawn or
+    /// the previous one has expired. Read by every stat-computation hook
+    /// (`effectiveAttack/Defense/Crit/Dodge/Accuracy`, `grantXP`,
+    /// `ExplorationService.rollStep`, `VigorService.drain` callsites)
+    /// to layer the buff/debuff on top of base values.
+    var activeFortuneEffect: FortuneEffect? {
+        guard let cardId = activeFortuneCardId,
+              let expiresAt = activeFortuneExpiresAt,
+              Date() < expiresAt,
+              let card = FortuneCatalog.find(cardId)
+        else { return nil }
+        return card.effect
+    }
+
+    /// Seconds until the active fortune effect expires (the 6h buff
+    /// window). Nil if no active fortune or already expired. Different
+    /// from `fortuneCooldownRemaining` — the buff can wear off long
+    /// before the cooldown allows another draw.
+    func fortuneSecondsRemaining(now: Date = Date()) -> Int? {
+        guard let expiresAt = activeFortuneExpiresAt, now < expiresAt else { return nil }
+        return Int(expiresAt.timeIntervalSince(now).rounded())
+    }
+
+    /// Seconds until the player can draw a new card (the 24h cooldown
+    /// window). Nil if no draw yet OR cooldown has already elapsed.
+    /// Independent of `fortuneSecondsRemaining` — the cooldown ALWAYS
+    /// outlasts the buff under the current 24h/6h split.
+    func fortuneCooldownRemaining(now: Date = Date()) -> Int? {
+        guard let drawn = lastFortuneDrawAt else { return nil }
+        let elapsed = now.timeIntervalSince(drawn)
+        let left = FortuneCatalog.cooldownSeconds - elapsed
+        return left > 0 ? Int(left.rounded()) : nil
     }
 }
 

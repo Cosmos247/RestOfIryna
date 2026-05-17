@@ -102,7 +102,12 @@ public func sendScenicPhoto(
         photoSource = .fileId(cachedId)
     } else {
         let filename = (assetPath as NSString).lastPathComponent
-        photoSource = .file(TGInputFile(filename: filename, data: inputData!, mimeType: "image/jpeg"))
+        // Auto-detect MIME from extension — tarot art ships as PNG, scenery
+        // backdrops as JPG. Telegram is OK with either; passing the right
+        // MIME lets the client pick a faster decode path.
+        let ext = (filename as NSString).pathExtension.lowercased()
+        let mime: String = (ext == "png") ? "image/png" : "image/jpeg"
+        photoSource = .file(TGInputFile(filename: filename, data: inputData!, mimeType: mime))
     }
 
     let sent = try await bot.sendPhoto(params: TGSendPhotoParams(

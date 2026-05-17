@@ -171,6 +171,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateLearnedTechniques())
     migrations.add(AddUserLocation())
     migrations.add(CreateTravelState())
+    migrations.add(AddFortuneFields())
+    migrations.add(AddFortuneCooldownField())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -235,6 +237,8 @@ public func configure(logger: Logger) async throws {
                 user.gearDodgeBonus = 0
                 user.gearAccuracyBonus = 0
                 user.location = "estate"
+                user.activeFortuneCardId = nil
+                user.activeFortuneExpiresAt = nil
                 try await user.saveAndCache(in: db)
 
                 // Wipe any in-flight travel row so a stale trip from a
