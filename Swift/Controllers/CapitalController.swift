@@ -282,31 +282,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// keyboard, with `Assets/capital/welcome.jpg` attached if present).
     /// Used both from request handlers via the instance `renderWelcome`
     /// and from `TravelService.pushArrival` on capital arrival — same
-    /// message shape in both cases.
+    /// message shape in both cases. Goes through `sendScenicPhoto` so
+    /// the file_id cache + scenery cleanup apply.
     public static func sendWelcome(toUser user: User, bot: TGBot, lingo: Lingo) async throws {
         let text = lingo.localize("capital.welcome", locale: user.locale)
         let markup = Controllers.capitalController.generateControllerKB(session: user, lingo: lingo)
-
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/capital/welcome.jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "capital_welcome.jpg", data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(user.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: markup
-            )
-            _ = try await bot.sendPhoto(params: params)
-        } else {
-            let params = TGSendMessageParams(
-                chatId: .chat(user.telegramId),
-                text: text,
-                parseMode: .html,
-                replyMarkup: markup
-            )
-            _ = try await bot.sendMessage(params: params)
-        }
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/capital/welcome.jpg",
+            caption: text,
+            replyMarkup: markup,
+            toUser: user,
+            bot: bot
+        )
     }
 
     private func renderLocation(_ location: Location, context: Context) async throws {
@@ -317,24 +304,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text  = "<b>\(title)</b>\n\n\(body)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
 
-        // Try to attach per-location artwork. Drop a JPEG at
-        // `Assets/capital/<location-id>.jpg` (e.g. `tavern.jpg`, `arena.jpg`)
-        // and it'll be picked up automatically — fall back to a text-only
-        // message when the file isn't there yet.
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/capital/\(location.rawValue).jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "\(location.rawValue).jpg", data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: markup
-            )
-            _ = try await context.bot.sendPhoto(params: params)
-        } else {
-            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
-        }
+        // Per-location artwork at `Assets/capital/<location-id>.jpg`.
+        // `sendScenicPhoto` handles missing-file fallback (text-only)
+        // AND file_id caching AND scenery-slot cleanup uniformly.
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/capital/\(location.rawValue).jpg",
+            caption: text,
+            replyMarkup: markup,
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     private func renderTripStarted(context: Context, destination: TravelDestination, endsAt: Date) async throws {
@@ -400,26 +379,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     func showTrader(context: Context) async throws {
         let text = renderTraderMenuBody(session: context.session, lingo: context.lingo)
         let keyboard = traderMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
-
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/capital/trader.jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "trader.jpg", data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(keyboard)
-            )
-            _ = try await context.bot.sendPhoto(params: params)
-        } else {
-            try await context.bot.sendMessage(
-                session: context.session,
-                text: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(keyboard)
-            )
-        }
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/capital/trader.jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(keyboard),
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     // MARK: Menu (entry screen)
@@ -929,36 +895,24 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // result text lands.
 
     func showTavern(context: Context) async throws {
-        // Reuses renderLocation for the photo + caption (it already loads
-        // `Assets/capital/tavern.jpg`) and only overrides the reply_markup
-        // path so the inline buttons get attached. Since renderLocation
-        // doesn't currently accept an inline keyboard, we inline the send
-        // here to keep that helper generic for the other 4 location stubs.
+        // Same photo as `renderLocation(.tavern)` would use, but with the
+        // tavern-specific inline keyboard ([🍲 Меню][🎲 Кості][🎯 Влучанка])
+        // attached instead of the plain capital reply-keyboard. Goes
+        // through `sendScenicPhoto` so file_id cache + scenery cleanup
+        // both apply.
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
         let body  = lingo.localize(Location.tavern.bodyKey,  locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let inline = tavernEntryKeyboard(lingo: lingo, locale: locale)
-
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/capital/tavern.jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "tavern.jpg", data: imageData, mimeType: "image/jpeg")
-            _ = try await context.bot.sendPhoto(params: TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(inline)
-            ))
-        } else {
-            try await context.bot.sendMessage(
-                session: context.session,
-                text: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(inline)
-            )
-        }
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/capital/tavern.jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(inline),
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     // MARK: Entry-screen rendering

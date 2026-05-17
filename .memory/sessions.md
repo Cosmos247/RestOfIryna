@@ -1,5 +1,50 @@
 # Session History
 
+## Session N+11 — 2026-05-17 (Phase 6.3 chat-cleanup infra — PhotoCache + sendScenicPhoto)
+
+### Goal
+After shipping Trader + Tavern + welcome-on-arrival, the user spotted that every navigation to a capital/estate location re-uploads the full JPEG bytes AND leaves a stale photo bubble in chat — a 20-tap test session was filling the chat with ~20 duplicate trader photos. Concern compounded by upcoming Fortune Teller which will need many images for daily blessings. Stand up the infrastructure to fix this before adding any more photo-heavy features.
+
+### What was done
+- **New `Swift/Helpers/PhotoCache.swift`** — actor with `[assetPath: fileId]` map. First-time `bot.sendPhoto` uploads the JPG bytes and Telegram returns a `file_id`; the helper grabs the largest `TGPhotoSize.fileId` from the response and caches it. Every later send for that asset uses `.fileId(cached)` instead of `.file(InputFile)` so no JPG bytes cross the wire. Cache is in-memory only (in-memory `actor`); lost on bot restart, refills naturally on next-send. file_id is a global Telegram reference so one cache serves all users.
+- **`sendScenicPhoto(assetPath:caption:parseMode:replyMarkup:toUser:bot:)`** — top-level free function in the same file. Wraps the PhotoCache logic plus chat-cleanup:
+  - Before sending, deletes the user's previous "scenery" photo (tracked in new `EphemeralChatState.lastSceneryPhotos`)
+  - Picks file_id from cache if present, else uploads + caches the id from the response
+  - Captures the new message ID into the scenery slot for the next call to clean up
+  - Falls back to `bot.sendMessage(text:)` when the asset is missing entirely — same scenery-slot tracking so the fallback gets cleaned up too
+- **`EphemeralChatState`** — added `lastSceneryPhotos: [Int64: Int]` + `setLastSceneryPhoto` / `takeLastSceneryPhoto` API. Single slot per user; capital + estate share it.
+- **Five callsites converted** to `sendScenicPhoto`:
+  - `CapitalController.showTrader` (was manual photo+text fallback)
+  - `CapitalController.showTavern` (was manual photo+text fallback)
+  - `CapitalController.renderLocation(_:)` (covers all 4 location stubs — Market/Arena/Fortune/Master — via the `Assets/capital/<id>.jpg` auto-loader)
+  - `CapitalController.sendWelcome(toUser:bot:lingo:)` (static — called from request handlers AND from `TravelService.pushArrival` on capital arrival)
+  - `EstateController.showEstate` (per-level artwork at `Assets/estate/level_<N>.jpg`)
+- **CLAUDE.md updated** with new convention: `sendScenicPhoto` is the default photo path for any location backdrop going forward; direct `bot.sendPhoto` is reserved for one-shot narrative art (registration King's Oath, future lore beats) that must persist in chat history.
+
+### Design decisions (with user)
+- **Variant B chosen** over file_id-only (A) and editMessageMedia (C). User wanted both bandwidth + clutter fixed; A doesn't fix clutter, C leaves the photo at original position which feels weird after navigation. B = file_id cache + delete-before-send is the "new content arrives at bottom, previous deleted" pattern that matches natural chat flow.
+- **One scenery slot per user across capital + estate**: a single `lastSceneryPhotos[telegramId]` slot. Switching capital → estate → capital deletes whichever was last. Simpler than per-location slots; players only ever care about the current scene.
+- **Sub-screens (trader Buy/Sell list, tavern Menu/Wager screen) keep using `editMessageCaption`**: they don't touch the scenery slot because they reuse the existing photo message. Only top-level entries (welcome / showTrader / showTavern / showFortune / renderLocation / showEstate) consume the slot.
+- **In-memory cache, no persistence**: PhotoCache is process-lifetime. Restart = re-upload-once-then-cache. Was tempting to persist file_id to DB for cross-restart durability but added complexity (migration, garbage collection on asset rename) not worth it — first re-upload per asset is cheap and players probably won't notice.
+- **Registration art (`kings_charter.jpg`, `<class>_estate.jpg`) NOT converted**: those are one-shot lore beats sent once per user during onboarding; players should be able to scroll up to revisit. Direct `bot.sendPhoto` stays. Could later add a `sendCachedPhoto` variant (file_id cache without scenery cleanup) for cross-user bandwidth savings, but minor benefit for V1.
+- **Fallback path** (asset missing) still tracks in the scenery slot so it gets cleaned up like any other scenery message. Otherwise text fallbacks would accumulate.
+
+### Files touched
+- New: `Swift/Helpers/PhotoCache.swift` (actor + helper)
+- Modified: `Swift/Helpers/EphemeralChatState.swift` (+ lastSceneryPhotos slot), `Swift/Controllers/CapitalController.swift` (4 callsites), `Swift/Controllers/EstateController.swift` (1 callsite), `CLAUDE.md` (+ scenery photos convention), `README.md` (Helpers section entry), `.memory/file-map.md` (+ PhotoCache entry + EphemeralChatState update), `.memory/status.md` (+ Phase 6.3 line)
+- 0 new locale keys, parity stays at 561/561
+
+### Build / tests
+- `swift build` clean.
+- Live dogfood: pending — user will test next chat session.
+
+### Open items / next steps
+- Fortune Teller (deferred from this session, blocked on this infra) — now ready to build. Design proposal already in chat: 6 one-time blessings, 24h cooldown via `User.lastFortuneAt`, free.
+- Optional: `sendCachedPhoto` variant for registration art (file_id cache without scenery cleanup) — small bandwidth win for new players (registration JPG bytes uploaded once per bot lifetime instead of once per user).
+- Optional: persist PhotoCache to disk/DB for cross-restart durability. Low priority.
+
+---
+
 ## Session N+10 — 2026-05-17 (Phase 6.1 Trader + 6.2 Tavern + economy v2 rebase)
 
 ### Goal

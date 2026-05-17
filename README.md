@@ -168,7 +168,8 @@ RestOfIryna/
 │   │   ├── TGBot+Extensions.swift
 │   │   ├── SessionCache.swift
 │   │   ├── Lingo+Locales.swift
-│   │   ├── EphemeralChatState.swift  # in-memory actor — exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), latest status-banner message ID per user
+│   │   ├── EphemeralChatState.swift  # in-memory actor — exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), latest status-banner message ID per user, latest scenery photo message ID per user (Phase 6.3 chat cleanup)
+│   │   ├── PhotoCache.swift          # Phase 6.3 — `[assetPath: fileId]` cache + `sendScenicPhoto(...)` helper (file_id reuse + auto-delete of the user's previous scenery photo so chat doesn't fill up with duplicate location backdrops). Default photo path for all location backdrops; direct `bot.sendPhoto` reserved for one-shot narrative art.
 │   │   └── DotEnv+Env.swift
 │   │
 │   ├── entrypoint.swift

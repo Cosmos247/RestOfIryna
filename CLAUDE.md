@@ -102,6 +102,21 @@ let button = TGInlineKeyboardButton(text: "Label", callbackData: "prefix:value")
 lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 ```
 
+### Scenery photos (capital / estate / future location backdrops)
+Always use `sendScenicPhoto(...)` from `Swift/Helpers/PhotoCache.swift` — never call `bot.sendPhoto` directly for player-visible location art. The helper does two things:
+- **file_id cache** — first send uploads the JPG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload).
+- **Scenery slot cleanup** — tracks the user's most recent scenery photo in `EphemeralChatState.lastSceneryPhotoId` and deletes it before sending a new one, so chat never accumulates duplicate location backdrops.
+```swift
+_ = try await sendScenicPhoto(
+    assetPath: "\(projectPath)/Assets/capital/<id>.jpg",
+    caption: text,
+    replyMarkup: .inlineKeyboardMarkup(keyboard),
+    toUser: context.session,
+    bot: context.bot
+)
+```
+For one-off narrative art that must stay in chat history (registration King's Oath, lore beats), call `bot.sendPhoto` directly — those don't share the scenery slot.
+
 ## Environment Variables
 
 Required in `.env` (see `.env.example`):

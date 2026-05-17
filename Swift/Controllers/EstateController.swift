@@ -171,27 +171,18 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let text = renderRoot(session: context.session, lingo: context.lingo)
         let inline = rootKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: context.session.locale)
 
-        // Try to attach per-level artwork. Optional for now — user will add JPEGs later.
+        // Per-level artwork at `Assets/estate/level_<N>.jpg`.
+        // `sendScenicPhoto` reuses Telegram's file_id cache + replaces
+        // the user's prior scenery photo, so estate revisits don't pile
+        // up duplicate landscapes in chat.
         let level = context.session.estateLevel
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/estate/level_\(level).jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "level_\(level).jpg", data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(inline)
-            )
-            _ = try await context.bot.sendPhoto(params: params)
-        } else {
-            try await context.bot.sendMessage(
-                session: context.session,
-                text: text,
-                parseMode: .html,
-                replyMarkup: .inlineKeyboardMarkup(inline)
-            )
-        }
+        _ = try await sendScenicPhoto(
+            assetPath: "\(projectPath)/Assets/estate/level_\(level).jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(inline),
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
