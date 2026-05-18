@@ -199,7 +199,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let vigor = session.vigor, maxVigor = session.maxVigor
         let atk = session.effectiveAttack, def = session.effectiveDefense
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
-        let gold = session.gold
+        let silver = session.silver
         let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
 
         // Phase 5.3a — compact XP fragment shown in every profile style. At max
@@ -255,7 +255,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             🎯 \(acc)  💨 \(dodge)
 
             \(mainHandLine)
-            💰 \(gold)
+            🪙 \(silver)
             🏰 \(estate)
             """
         case 3:
@@ -287,7 +287,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
 
             \(mainHandLine)
-            💰 \(gold) \(l.localize("profile.gold", locale: loc))
+            🪙 \(silver) \(l.localize("profile.silver", locale: loc))
             🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
             """
         default: // Style 1
@@ -302,7 +302,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             💨\(dodge)  💥\(crit)%
 
             \(mainHandLine)
-            💰 \(gold)
+            🪙 \(silver)
             🏰 \(estate)
             """
         }

@@ -132,6 +132,14 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_super_uses")
     public var combatSuperUses: Int?
 
+    /// Player action counter for the current fight. Starts at 0 on
+    /// `beginCombat`, incremented at the top of `finishRound` so the very
+    /// first action displays "Раунд 1" in the status card. Cleared in
+    /// `endCombat`. Nil for fights started before the AddCombatRound
+    /// migration shipped (read defensively as 0).
+    @OptionalField(key: "combat_round")
+    public var combatRound: Int?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -314,6 +322,7 @@ extension ExplorationState {
         self.combatSpecialAtkUses = specialAtkUses
         self.combatSpecialDefUses = specialDefUses
         self.combatSuperUses = superUses
+        self.combatRound = 0
     }
 
     /// Clear the combat fields without touching the rest of the row. Also
@@ -329,6 +338,7 @@ extension ExplorationState {
         self.combatSpecialAtkUses = nil
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
+        self.combatRound = nil
     }
 
     /// True when the row encodes a live Super-technique stance.

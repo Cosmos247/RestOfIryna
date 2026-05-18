@@ -886,6 +886,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// them; the action after that finds them gone.
     private func finishRound(context: Context, state: ExplorationState, enemy: Enemy, enemyHP: Int, lines: [String]) async throws {
         state.combatEnemyHP = enemyHP
+        // Bump the per-fight round counter BEFORE rendering so the very
+        // first action ends up showing "Раунд 1" in the status card. Reads
+        // defensively from nil for pre-AddCombatRound fights mid-flight.
+        state.combatRound = (state.combatRound ?? 0) + 1
 
         var allLines = lines
         let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
@@ -1099,10 +1103,18 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let starving = VigorService.isStarving(user)
             ? " · " + lingo.localize("vigor.starving", locale: locale)
             : ""
-        var lines: [String] = [
+        var lines: [String] = []
+        // Round counter is shown once the player has taken at least one
+        // action — the encounter intro screen (round 0) stays clean. 🌀
+        // prepended here in Swift since Lingo's `%{var}` parser breaks on a
+        // leading supplementary-plane emoji in the template.
+        if let round = state.combatRound, round > 0 {
+            lines.append("🌀 " + lingo.localize("combat.round", locale: locale, interpolations: ["n": "\(round)"]))
+        }
+        lines.append(contentsOf: [
             "\(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)",
             "❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
-        ]
+        ])
         if let rounds = state.combatStanceRoundsLeft, state.combatStance != nil, rounds > 0 {
             let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior
             let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)

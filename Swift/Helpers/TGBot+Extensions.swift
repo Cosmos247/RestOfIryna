@@ -72,7 +72,7 @@ public class TGControllerBase: @unchecked Sendable {
     /// Returns immediately on send failure (e.g. message permission revoked)
     /// — banners are advisory, not critical, so callers don't branch on the
     /// outcome.
-    public func postStatusBanner(_ text: String, context: Context) async {
+    public func postStatusBanner(_ text: String, context: Context, replyMarkup: TGReplyMarkup? = nil) async {
         let telegramId = context.session.telegramId
         let chatId = TGChatId.chat(telegramId)
 
@@ -84,7 +84,8 @@ public class TGControllerBase: @unchecked Sendable {
         let params = TGSendMessageParams(
             chatId: chatId,
             text: text,
-            parseMode: .html
+            parseMode: .html,
+            replyMarkup: replyMarkup
         )
         guard let sent = try? await context.bot.sendMessage(params: params) else { return }
         await EphemeralChatState.shared.setLastStatusBanner(telegramId: telegramId, messageId: sent.messageId)

@@ -39,6 +39,15 @@ final class GlobalCommandsController: @unchecked Sendable {
             try await self?.handleButtons(update: update)
         })
 
+        // `/menu` is the player-facing alias for `/buttons`. Surfaced via
+        // `setMyCommands` in the Telegram hamburger menu so the player has a
+        // discoverable escape hatch if the reply keyboard ever collapses or a
+        // second device opens the chat with a stale keyboard from another
+        // routerName.
+        await dispatcher.add(TGCommandHandler(commands: ["/menu"]) { [weak self] update in
+            try await self?.handleButtons(update: update)
+        })
+
         await dispatcher.add(TGCommandHandler(commands: ["/grant"]) { [weak self] update in
             try await self?.handleGrant(update: update)
         })

@@ -37,7 +37,7 @@ All Swift code lives in `Swift/` (not `Sources/`).
 ```
 Swift/
 ├── entrypoint.swift     # @main, calls configure()
-├── configure.swift      # Bootstrap: DB, Lingo, Bot, Hummingbird (hardcoded projectPath)
+├── configure.swift      # Bootstrap: DB, Lingo, Bot, Hummingbird (projectPath read from `ROI_PROJECT_PATH` env with dev-Mac fallback)
 ├── routes.swift         # RouterStore actor + per-user dispatch serialization
 ├── Controllers/         # Game screen controllers
 ├── Models/              # Fluent models + code-based catalogs (Item, Enemy, Recipe, …)

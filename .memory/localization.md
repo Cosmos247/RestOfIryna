@@ -86,6 +86,39 @@ ROI uses this for the trip / encounter.won / starvationOnly outcomes — the lea
 
 **For non-interpolated keys** (plain `"🏰 Ти повертаєшся додому."` with no `%{...}`), emoji can live anywhere in the template — the bug only fires when interpolation is involved. But if you ever ADD a placeholder to an existing key that starts with a multi-UTF-16 emoji, move the emoji to the Swift call site at the same time.
 
+**Updated 2026-05-18 — the rule covers ANY multi-UTF-16 emoji immediately adjacent to a `%{var}`, not only leading.** Rediscovered while wiring `🪙 %{silver}` into trader/tavern/fortune banners — the literal `%{silver}` rendered after the 🪙 even though the emoji wasn't at position 0.
+
+```swift
+// ❌ DON'T — 🪙 immediately before %{silver} kills the interpolation
+"capital.trader.sold": "%{item} ×%{qty} — sold for 🪙 %{silver}"
+
+// ✅ DO — pre-build the value with emoji + sign in Swift, keep template plain
+"capital.trader.sold": "%{item} ×%{qty} — sold for %{silver}"
+"silver": "🪙 \(silver)"            // or "+🪙 \(wager)", "−🪙 \(wager)"
+```
+
+Same trick handles signed amounts where the sign hugs the emoji-number group (`+🪙 5` / `−🪙 5`). Locale keys like `gamble.outcome_win`/`outcome_lose` lose their `+`/`−` from the template and pick it up in Swift.
+
+**Audit script (drop in a one-liner before commit when you've touched locales):**
+
+```bash
+python3 -c "
+import json, re
+for path in ['Localizations/en.json','Localizations/uk.json']:
+    d = json.load(open(path))
+    for k, v in d.items():
+        if not isinstance(v, str) or '%{' not in v: continue
+        if v and ord(v[0]) >= 0x1F000:
+            print(f'LEADING:  {path}  {k}')
+        for m in re.finditer(r'(.)%\\{', v):
+            if ord(m.group(1)) >= 0x1F000:
+                print(f'ADJACENT: {path}  {k}')
+                break
+"
+```
+
+Run from the repo root. Zero output = clean.
+
 ### Legacy fix options (when you can't touch Swift)
 
 If you must keep the emoji in the template for some reason:

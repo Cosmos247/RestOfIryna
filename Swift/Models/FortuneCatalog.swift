@@ -15,7 +15,7 @@
 //
 //  `FortuneEffect` is a single struct with optional fields so a card sets
 //  only what it cares about. The same struct serves stat bonuses,
-//  multipliers, one-shot gold/HP/vigor/XP gifts, and random "wheel"
+//  multipliers, one-shot silver/HP/vigor/XP gifts, and random "wheel"
 //  one-shots. Stat-bonus / multiplier fields are consulted lazily by
 //  `User.activeFortuneEffect` (which returns nil once expired); one-shot
 //  fields are applied at draw time by `FortuneService.draw`.
@@ -41,17 +41,17 @@ public struct FortuneEffect: Sendable {
     public let vigorDrainMultiplier: Double  // applied in VigorService.drain
 
     // One-shot effects applied immediately on draw. Don't depend on the
-    // 4h expiry window — gold lands, HP restores, etc.
-    public let oneShotGold: Int              // positive = gift, negative = loss
+    // 4h expiry window — silver lands, HP restores, etc.
+    public let oneShotSilver: Int              // positive = gift, negative = loss
     public let oneShotXpGain: Int
     public let oneShotHpRestore: Bool        // true = fully restore HP
     public let oneShotVigorRestore: Bool     // true = fully restore vigor
 
-    // Wheel-style random one-shot: 50/50 between `randomGoldPositive`
-    // (gift) and `randomGoldNegative` (loss). Both must be non-zero to
+    // Wheel-style random one-shot: 50/50 between `randomSilverPositive`
+    // (gift) and `randomSilverNegative` (loss). Both must be non-zero to
     // activate; otherwise the field is ignored.
-    public let randomGoldPositive: Int
-    public let randomGoldNegative: Int
+    public let randomSilverPositive: Int
+    public let randomSilverNegative: Int
 
     public init(
         attackBonus: Int = 0,
@@ -62,12 +62,12 @@ public struct FortuneEffect: Sendable {
         xpMultiplier: Double = 1.0,
         lootChanceMultiplier: Double = 1.0,
         vigorDrainMultiplier: Double = 1.0,
-        oneShotGold: Int = 0,
+        oneShotSilver: Int = 0,
         oneShotXpGain: Int = 0,
         oneShotHpRestore: Bool = false,
         oneShotVigorRestore: Bool = false,
-        randomGoldPositive: Int = 0,
-        randomGoldNegative: Int = 0
+        randomSilverPositive: Int = 0,
+        randomSilverNegative: Int = 0
     ) {
         self.attackBonus = attackBonus
         self.defenseBonus = defenseBonus
@@ -77,12 +77,12 @@ public struct FortuneEffect: Sendable {
         self.xpMultiplier = xpMultiplier
         self.lootChanceMultiplier = lootChanceMultiplier
         self.vigorDrainMultiplier = vigorDrainMultiplier
-        self.oneShotGold = oneShotGold
+        self.oneShotSilver = oneShotSilver
         self.oneShotXpGain = oneShotXpGain
         self.oneShotHpRestore = oneShotHpRestore
         self.oneShotVigorRestore = oneShotVigorRestore
-        self.randomGoldPositive = randomGoldPositive
-        self.randomGoldNegative = randomGoldNegative
+        self.randomSilverPositive = randomSilverPositive
+        self.randomSilverNegative = randomSilverNegative
     }
 
     /// True if this effect carries ANY duration-based component (consulted
@@ -114,7 +114,7 @@ public struct FortuneCard: Sendable {
 }
 
 public enum FortuneCatalog {
-    /// Draw price in gold. 10g matches the v2 economy's "small wager"
+    /// Draw price in silvers. 10s matches the v2 economy's "small wager"
     /// scale (10/25/50 in tavern gambling).
     public static let drawPrice: Int = 10
 
@@ -151,8 +151,8 @@ public enum FortuneCatalog {
         FortuneCard(id: "8_strength",        effect: FortuneEffect(critBonus: 10)),
         // 9 — Hermit. Deep study, lesser gathering.
         FortuneCard(id: "9_hermit",          effect: FortuneEffect(xpMultiplier: 1.35, lootChanceMultiplier: 0.85)),
-        // 10 — Wheel of Fortune. 50/50 gold swing.
-        FortuneCard(id: "10_wheel_fortune",  effect: FortuneEffect(randomGoldPositive: 30, randomGoldNegative: 15)),
+        // 10 — Wheel of Fortune. 50/50 silver swing.
+        FortuneCard(id: "10_wheel_fortune",  effect: FortuneEffect(randomSilverPositive: 30, randomSilverNegative: 15)),
         // 11 — Justice. Karma restrains.
         FortuneCard(id: "11_justice",        effect: FortuneEffect(attackBonus: -5, defenseBonus: 5)),
         // 12 — Hanged Man. Time slows; reflexes dull.
@@ -164,7 +164,7 @@ public enum FortuneCatalog {
         // 15 — Devil. Temptation drains and distracts.
         FortuneCard(id: "15_devil",          effect: FortuneEffect(defenseBonus: -5, vigorDrainMultiplier: 1.50)),
         // 16 — Tower. Sudden ruin.
-        FortuneCard(id: "16_tower",          effect: FortuneEffect(oneShotGold: -25)),
+        FortuneCard(id: "16_tower",          effect: FortuneEffect(oneShotSilver: -25)),
         // 17 — Star. Hopeful clarity.
         FortuneCard(id: "17_star",           effect: FortuneEffect(dodgeBonus: 5, accuracyBonus: 5)),
         // 18 — Moon. Fear blurs sight.
@@ -172,9 +172,9 @@ public enum FortuneCatalog {
         // 19 — Sun. Radiant strike.
         FortuneCard(id: "19_sun",            effect: FortuneEffect(attackBonus: 10)),
         // 20 — Judgement. Heavy reckoning, deep growth.
-        FortuneCard(id: "20_judgement",      effect: FortuneEffect(oneShotGold: -20, oneShotXpGain: 75)),
+        FortuneCard(id: "20_judgement",      effect: FortuneEffect(oneShotSilver: -20, oneShotXpGain: 75)),
         // 21 — World. Full circle jackpot.
-        FortuneCard(id: "21_world",          effect: FortuneEffect(oneShotGold: 20, oneShotHpRestore: true, oneShotVigorRestore: true)),
+        FortuneCard(id: "21_world",          effect: FortuneEffect(oneShotSilver: 20, oneShotHpRestore: true, oneShotVigorRestore: true)),
     ]
 
     private static let lookup: [String: FortuneCard] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })

@@ -83,42 +83,75 @@ public enum PlotService {
         public let amount: Int
     }
 
-    public enum HarvestResult: Sendable {
-        case empty                                                      // nothing to take
-        case success(primary: HarvestYield, bonus: HarvestYield?)
+    /// Where the controller wants this harvest to land. Warehouse is
+    /// uncapped; bag has slot-cap enforcement (with the usual dev bypass).
+    public enum HarvestDestination: Sendable {
+        case bag
+        case warehouse
     }
 
-    /// Move accumulated yield into the player's WAREHOUSE (not the
-    /// backpack). On success resets `lastHarvestedAt = now` and
-    /// `notifiedFull = false`. Caller doesn't need to do extra saves —
-    /// this method persists the warehouse rows + the plot row at its own
-    /// level. Returns a typed result so the controller can branch on empty
-    /// vs success. If the plot type carries a `bonusOutput` (Mine → iron),
-    /// the bonus is also transferred when its accumulator is non-zero.
-    /// **Why warehouse, not inventory?** Plot output piles up over hours;
-    /// landing it in the 50-slot bag would constantly fill it. The
-    /// warehouse has no slot cap, so no `.bagFull` branch is needed.
+    public enum HarvestResult: Sendable {
+        case empty                                                                // nothing to take
+        case success(primary: HarvestYield, bonus: HarvestYield?, destination: HarvestDestination)
+        /// Bag was the destination but the per-unit slot cap would have been
+        /// exceeded. Plot timestamp NOT reset — the yield stays on the plot
+        /// so the player can free a slot or retry with warehouse.
+        case bagFull(primary: HarvestYield, bonus: HarvestYield?, free: Int, need: Int)
+    }
+
+    /// Move accumulated yield into the player's chosen destination — bag
+    /// (capped) or warehouse (uncapped). On success resets `lastHarvestedAt
+    /// = now` and `notifiedFull = false`. If the bag can't fit the full
+    /// haul, returns `.bagFull` without touching the plot or moving any
+    /// items (atomic — partial deposits would be confusing). Caller doesn't
+    /// need to do extra saves — this method persists rows + the plot row
+    /// at its own level. If the plot type carries a `bonusOutput` (Mine →
+    /// iron), the bonus is also transferred when its accumulator is non-zero.
     @discardableResult
-    public static func harvest(_ plot: Plot, for user: User, on db: any Database) async throws -> HarvestResult {
+    public static func harvest(_ plot: Plot, to destination: HarvestDestination, for user: User, on db: any Database) async throws -> HarvestResult {
         guard let tuning = PlotCatalog.tuning(forRaw: plot.plotType, tier: plot.tier) else { return .empty }
         let primaryAmount = accumulated(for: plot)
         let bonusAmount = bonusAccumulated(for: plot)
         guard primaryAmount > 0 || bonusAmount > 0 else { return .empty }
 
-        if primaryAmount > 0 {
-            try await WarehouseEntry.add(tuning.producedItemId, quantity: primaryAmount, to: user, on: db)
-        }
+        let primaryYield = HarvestYield(itemId: tuning.producedItemId, amount: primaryAmount)
         var bonusYield: HarvestYield? = nil
         if let bonus = tuning.bonusOutput, bonusAmount > 0 {
-            try await WarehouseEntry.add(bonus.producedItemId, quantity: bonusAmount, to: user, on: db)
             bonusYield = HarvestYield(itemId: bonus.producedItemId, amount: bonusAmount)
+        }
+
+        switch destination {
+        case .warehouse:
+            if primaryAmount > 0 {
+                try await WarehouseEntry.add(tuning.producedItemId, quantity: primaryAmount, to: user, on: db)
+            }
+            if let bonus = tuning.bonusOutput, bonusAmount > 0 {
+                try await WarehouseEntry.add(bonus.producedItemId, quantity: bonusAmount, to: user, on: db)
+            }
+        case .bag:
+            // Atomic preflight — bag is per-unit capped, so a partial yield
+            // landing would leave the player with a half-harvested plot AND
+            // a full bag, which is the worst of both worlds. Better to bail
+            // and let them empty a slot or pick warehouse.
+            let totalToAdd = primaryAmount + bonusAmount
+            let used = try await InventoryEntry.slotsUsed(for: user, on: db)
+            let cap = InventoryEntry.slotCap(for: user)
+            let free = max(0, cap - used)
+            if !user.isDeveloper, free < totalToAdd {
+                return .bagFull(primary: primaryYield, bonus: bonusYield, free: free, need: totalToAdd)
+            }
+            if primaryAmount > 0 {
+                try await InventoryEntry.add(tuning.producedItemId, quantity: primaryAmount, to: user, on: db)
+            }
+            if let bonus = tuning.bonusOutput, bonusAmount > 0 {
+                try await InventoryEntry.add(bonus.producedItemId, quantity: bonusAmount, to: user, on: db)
+            }
         }
 
         plot.lastHarvestedAt = Date()
         plot.notifiedFull = false
         try await plot.save(on: db)
-        let primaryYield = HarvestYield(itemId: tuning.producedItemId, amount: primaryAmount)
-        return .success(primary: primaryYield, bonus: bonusYield)
+        return .success(primary: primaryYield, bonus: bonusYield, destination: destination)
     }
 
     // MARK: - Claim

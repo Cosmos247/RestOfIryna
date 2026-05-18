@@ -502,10 +502,19 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Clean arrival at the estate after Step Back from km 0 or km 1.
-    /// Deletes the ExplorationState row and drops to main menu.
+    /// Deletes the ExplorationState row and drops to main menu. On the very
+    /// first successful return, also fires a one-shot tutorial hint pointing
+    /// the player at the capital trader (gated by `tutorialTraderHintShown`).
     private func handleHomeReached(context: Context, state: ExplorationState) async throws {
         try await state.delete(on: context.db)
         try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+
+        if !context.session.tutorialTraderHintShown {
+            let hint = context.lingo.localize("tutorial.trader_hint", locale: context.session.locale)
+            try await context.bot.sendMessage(session: context.session, text: hint, parseMode: .html, replyMarkup: nil)
+            context.session.tutorialTraderHintShown = true
+            try await context.session.saveAndCache(in: context.db)
+        }
     }
 
     private func goToMainMenu(context: Context, text: String) async throws {

@@ -19,8 +19,12 @@ import SwiftTelegramBot
 let store = RouterStore()
 
 /// Root path of the project on disk. Used to locate `Localizations/`, `Assets/`, etc.
-/// Hardcoded to the dev machine for now; move to env/config when deploying.
-public let projectPath: String = "/Users/cosmos/RestOfIryna"
+/// Read from the process env (`ROI_PROJECT_PATH`) so each deployment box can point
+/// at its own checkout without merge conflicts. Falls back to the dev Mac path.
+/// Must be a real env var (shell rc / systemd `Environment=`) — `.env` is loaded
+/// LATER, using this very path.
+public let projectPath: String = ProcessInfo.processInfo.environment["ROI_PROJECT_PATH"]
+    ?? "/Users/cosmos/RestOfIryna"
 
 let maxim: Int64 = 327887608
 let basel: Int64 = 768795585
@@ -173,6 +177,9 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateTravelState())
     migrations.add(AddFortuneFields())
     migrations.add(AddFortuneCooldownField())
+    migrations.add(RenameGoldToSilver())
+    migrations.add(AddTutorialTraderHint())
+    migrations.add(AddCombatRound())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -230,7 +237,7 @@ public func configure(logger: Logger) async throws {
                 user.crit = 5
                 user.dodge = 5
                 user.accuracy = 10
-                user.gold = 0
+                user.silver = 0
                 user.gearAttackBonus = 0
                 user.gearDefenseBonus = 0
                 user.gearCritBonus = 0
@@ -239,6 +246,10 @@ public func configure(logger: Logger) async throws {
                 user.location = "estate"
                 user.activeFortuneCardId = nil
                 user.activeFortuneExpiresAt = nil
+                // Dev convenience: keep the trader-hint flag set so the tutorial
+                // line doesn't pop up on every reset cycle. Flip to false in
+                // Postico to retest the hint flow.
+                user.tutorialTraderHintShown = true
                 try await user.saveAndCache(in: db)
 
                 // Wipe any in-flight travel row so a stale trip from a
@@ -375,6 +386,21 @@ public func configure(logger: Logger) async throws {
 
     // Start the bot
     try await appState.bot.start()
+
+    // MARK: - Bot commands menu
+    // Register the player-facing slash commands so Telegram's hamburger menu
+    // (left of the input field) surfaces them. `/menu` is the discoverable
+    // escape hatch — re-attaches the current controller's reply keyboard if
+    // a player's client collapsed it or opened the chat with stale buttons
+    // from another device.
+    for code in ["en", "uk"] {
+        let cmds = [
+            TGBotCommand(command: "menu",     description: lingo.localize("menu.cmd.description", locale: code)),
+            TGBotCommand(command: "help",     description: lingo.localize("menu.cmd.help",        locale: code)),
+            TGBotCommand(command: "settings", description: lingo.localize("menu.cmd.settings",    locale: code))
+        ]
+        _ = try? await appState.bot.setMyCommands(params: TGSetMyCommandsParams(commands: cmds, languageCode: code))
+    }
 
     // MARK: - Passive expedition rescheduler
     // Pick up any passive expeditions that were mid-flight when the bot last

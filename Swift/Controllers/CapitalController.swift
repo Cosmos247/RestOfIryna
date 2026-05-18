@@ -364,14 +364,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Trader (Phase 6.1 — two-step UX)
     //
-    // Entry screen is the "menu" — atmospheric intro, gold balance, two
+    // Entry screen is the "menu" — atmospheric intro, silver balance, two
     // buttons [💰 Buy] / [💸 Sell]. Each section is its own list view
     // edited in-place over the menu, with a [🔙 Back] returning to the
     // menu. Buy list shows every catalog listing; Sell list filters to
     // items the player has at least one packet of (less clutter, no
     // dead taps).
     //
-    // Refresh policy: a buy refreshes the buy list (gold balance updates,
+    // Refresh policy: a buy refreshes the buy list (silver balance updates,
     // rows are static); a sell refreshes the sell list (a row may
     // disappear if the player no longer has packet-worth of that item).
     // Status banners ride along via `postStatusBanner`.
@@ -396,10 +396,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // intro carries its own inline HTML — lore prose + an italic closing
         // quote — so the renderer mustn't wrap it again.
         let intro = lingo.localize("capital.trader.intro", locale: locale)
-        let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-            "gold": "\(session.gold)"
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(session.silver)"
         ])
-        return "<b>\(title)</b>\n\n\(intro)\n\n💰 \(goldLabel)"
+        return "<b>\(title)</b>\n\n\(intro)\n\n🪙 \(silverLabel)"
     }
 
     /// Single edit helper — picks editMessageCaption when the source message
@@ -449,51 +449,66 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
-    // MARK: Buy list
+    // MARK: Buy — category picker
 
+    /// Same body as the buy-item list: title + balance. Category picker has
+    /// no per-row data on the screen, only the two category buttons in the
+    /// keyboard.
     private func renderBuyBody(session: User, lingo: Lingo) -> String {
         let locale = session.locale
         let title = lingo.localize("capital.trader.buy_title", locale: locale)
-        let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-            "gold": "\(session.gold)"
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(session.silver)"
         ])
-        return "<b>\(title)</b>\n\n💰 \(goldLabel)"
+        return "<b>\(title)</b>\n\n🪙 \(silverLabel)"
     }
 
-    private func buyListKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let goldSuffix = lingo.localize("capital.trader.gold_short", locale: locale)
-        let oneLabel = lingo.localize("capital.trader.button.buy_one", locale: locale)
-        let nLabel   = lingo.localize("capital.trader.button.bulk_n",  locale: locale)
-        var rows: [[TGInlineKeyboardButton]] = []
-        for listing in TraderCatalog.all {
-            guard let item = ItemCatalog.find(listing.itemId) else { continue }
-            let iconPrefix = item.icon.map { "\($0) " } ?? ""
-            let name = lingo.localize(item.nameKey, locale: locale)
-            // Row 1 — info label (tap shows item lore in a modal).
-            let priceText = listing.buyPacketQty == 1
-                ? "\(listing.buyPacketGold)\(goldSuffix)"
-                : "\(listing.buyPacketQty)·\(listing.buyPacketGold)\(goldSuffix)"
-            let infoLabel = "\(iconPrefix)\(name) · \(priceText)"
-            rows.append([TGInlineKeyboardButton(text: infoLabel, callbackData: "trader:info:\(listing.itemId)")])
-            // Row 2 — actions: ×1 + custom N. No All for buy (gold + slots
-            // bound the upper limit, so "buy max" is ambiguous).
-            rows.append([
-                TGInlineKeyboardButton(text: oneLabel, callbackData: "trader:buy:\(listing.itemId)"),
-                TGInlineKeyboardButton(text: nLabel,   callbackData: "trader:buyN:\(listing.itemId)")
-            ])
-        }
-        let back = lingo.localize("capital.trader.button.back_to_menu", locale: locale)
-        rows.append([TGInlineKeyboardButton(text: back, callbackData: "trader:menu")])
-        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    /// Renders [🥩 Їжа] [🪨 Матеріали] + [🔙 До крамаря]. Mirrors the
+    /// Inventory category UX so the player has the same "pick a section
+    /// first" muscle memory in both screens.
+    private func buyCategoryKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let foodLabel = lingo.localize("capital.trader.cat.food", locale: locale)
+        let matLabel  = lingo.localize("capital.trader.cat.materials", locale: locale)
+        let back      = lingo.localize("capital.trader.button.back_to_menu", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: foodLabel, callbackData: "trader:buy:food"),
+             TGInlineKeyboardButton(text: matLabel,  callbackData: "trader:buy:materials")],
+            [TGInlineKeyboardButton(text: back, callbackData: "trader:menu")]
+        ])
     }
 
     private func editToBuyList(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let text = renderBuyBody(session: context.session, lingo: context.lingo)
-        let keyboard = buyListKeyboard(lingo: context.lingo, locale: context.session.locale)
+        let keyboard = buyCategoryKeyboard(lingo: context.lingo, locale: context.session.locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
-    // MARK: Sell list
+    // MARK: Buy — items in category
+
+    private func buyItemsKeyboard(category: ItemType, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        for listing in TraderCatalog.all {
+            guard let item = ItemCatalog.find(listing.itemId), item.type == category else { continue }
+            let iconPrefix = item.icon.map { "\($0) " } ?? ""
+            let name = lingo.localize(item.nameKey, locale: locale)
+            // Single button per listing — tap opens the "How many?" prompt.
+            // Item descriptions intentionally removed from the trader (still
+            // available in the Inventory drill-down).
+            let label = "\(iconPrefix)\(name) · 🪙 \(listing.buyPacketSilver)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "trader:buyN:\(listing.itemId)")])
+        }
+        let back = lingo.localize("capital.trader.button.back_to_categories", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "trader:buylist")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    private func editToBuyItems(category: ItemType, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let text = renderBuyBody(session: context.session, lingo: context.lingo)
+        let keyboard = buyItemsKeyboard(category: category, lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    // MARK: Sell — category picker
 
     /// Build the per-listing (item, in-bag-qty) pairs for the sell list,
     /// filtered to listings where the player has at least one full packet.
@@ -513,10 +528,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func renderSellBody(session: User, lingo: Lingo, sellable: [(TraderListing, Int)]) -> String {
         let locale = session.locale
         let title = lingo.localize("capital.trader.sell_title", locale: locale)
-        let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-            "gold": "\(session.gold)"
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(session.silver)"
         ])
-        var body = "<b>\(title)</b>\n\n💰 \(goldLabel)"
+        var body = "<b>\(title)</b>\n\n🪙 \(silverLabel)"
         if sellable.isEmpty {
             let empty = lingo.localize("capital.trader.sell_empty", locale: locale)
             body += "\n\n<i>\(empty)</i>"
@@ -524,37 +539,47 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return body
     }
 
-    private func sellListKeyboard(lingo: Lingo, locale: String, sellable: [(TraderListing, Int)]) -> TGInlineKeyboardMarkup {
-        let goldSuffix = lingo.localize("capital.trader.gold_short", locale: locale)
-        let oneLabel = lingo.localize("capital.trader.button.sell_one", locale: locale)
-        let nLabel   = lingo.localize("capital.trader.button.bulk_n",   locale: locale)
-        var rows: [[TGInlineKeyboardButton]] = []
-        for (listing, qty) in sellable {
-            guard let item = ItemCatalog.find(listing.itemId) else { continue }
-            let iconPrefix = item.icon.map { "\($0) " } ?? ""
-            let name = lingo.localize(item.nameKey, locale: locale)
-            // Row 1 — info label.
-            let priceText = listing.sellPacketQty == 1
-                ? "\(listing.sellPacketGold)\(goldSuffix)"
-                : "\(listing.sellPacketQty)·\(listing.sellPacketGold)\(goldSuffix)"
-            let infoLabel = "\(iconPrefix)\(name) · 🎒 \(qty) · \(priceText)"
-            rows.append([TGInlineKeyboardButton(text: infoLabel, callbackData: "trader:info:\(listing.itemId)")])
-            // Row 2 — actions: ×1 + custom N. (Sell-all button retired —
-            // ×N with typed quantity covers the dump-everything case.)
-            rows.append([
-                TGInlineKeyboardButton(text: oneLabel, callbackData: "trader:sell:\(listing.itemId)"),
-                TGInlineKeyboardButton(text: nLabel,   callbackData: "trader:sellN:\(listing.itemId)")
-            ])
-        }
-        let back = lingo.localize("capital.trader.button.back_to_menu", locale: locale)
-        rows.append([TGInlineKeyboardButton(text: back, callbackData: "trader:menu")])
-        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    private func sellCategoryKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let foodLabel = lingo.localize("capital.trader.cat.food", locale: locale)
+        let matLabel  = lingo.localize("capital.trader.cat.materials", locale: locale)
+        let back      = lingo.localize("capital.trader.button.back_to_menu", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: foodLabel, callbackData: "trader:sell:food"),
+             TGInlineKeyboardButton(text: matLabel,  callbackData: "trader:sell:materials")],
+            [TGInlineKeyboardButton(text: back, callbackData: "trader:menu")]
+        ])
     }
 
     private func editToSellList(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let sellable = try await sellableListings(for: context.session, on: context.db)
         let text = renderSellBody(session: context.session, lingo: context.lingo, sellable: sellable)
-        let keyboard = sellListKeyboard(lingo: context.lingo, locale: context.session.locale, sellable: sellable)
+        let keyboard = sellCategoryKeyboard(lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    // MARK: Sell — items in category
+
+    private func sellItemsKeyboard(category: ItemType, lingo: Lingo, locale: String, sellable: [(TraderListing, Int)]) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        for (listing, qty) in sellable {
+            guard let item = ItemCatalog.find(listing.itemId), item.type == category else { continue }
+            let iconPrefix = item.icon.map { "\($0) " } ?? ""
+            let name = lingo.localize(item.nameKey, locale: locale)
+            // Single button per listing — bag quantity stays so the player sees
+            // how much they can dump without opening the prompt; tap opens the
+            // "How many?" prompt directly.
+            let label = "\(iconPrefix)\(name) · 🎒 \(qty) · 🪙 \(listing.sellPacketSilver)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "trader:sellN:\(listing.itemId)")])
+        }
+        let back = lingo.localize("capital.trader.button.back_to_categories", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "trader:selllist")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    private func editToSellItems(category: ItemType, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let sellable = try await sellableListings(for: context.session, on: context.db)
+        let text = renderSellBody(session: context.session, lingo: context.lingo, sellable: sellable)
+        let keyboard = sellItemsKeyboard(category: category, lingo: context.lingo, locale: context.session.locale, sellable: sellable)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
@@ -597,47 +622,32 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Trader info modal — same UX convention as the warehouse:
-        // description if available, "no description yet" placeholder otherwise.
-        if data.hasPrefix("trader:info:") {
-            let itemId = String(data.dropFirst("trader:info:".count))
-            let answer: TGAnswerCallbackQueryParams
-            if let item = ItemCatalog.find(itemId), let descKey = item.descriptionKey {
-                let description = context.lingo.localize(descKey, locale: context.session.locale)
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
-            } else if let item = ItemCatalog.find(itemId) {
-                let itemName = context.lingo.localize(item.nameKey, locale: context.session.locale)
-                let toast = context.lingo.localize("inventory.info.placeholder", locale: context.session.locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
-            } else {
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id)
-            }
-            _ = try? await context.bot.answerCallbackQuery(params: answer)
-            return true
-        }
-
-        // Trader actions — sell/buy 1 unit, banner result, refresh.
-        if data.hasPrefix("trader:sell:") {
-            let itemId = String(data.dropFirst("trader:sell:".count))
-            let result = try await TraderService.sell(itemId: itemId, quantity: 1, for: context.session, on: context.db)
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            await ctrl.postTraderResultBanner(forSell: result, itemId: itemId, context: context)
-            try await ctrl.editToSellList(messageId: message.messageId, isPhoto: isPhoto, context: context)
-            return true
-        }
-
+        // Category-filtered item lists. Categories are limited to Food and
+        // Materials — that's the full surface of what the trader handles.
         if data.hasPrefix("trader:buy:") {
-            let itemId = String(data.dropFirst("trader:buy:".count))
-            let result = try await TraderService.buy(itemId: itemId, quantity: 1, for: context.session, on: context.db)
+            let cat = String(data.dropFirst("trader:buy:".count))
+            guard let category = traderCategory(from: cat) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            await ctrl.postTraderResultBanner(forBuy: result, itemId: itemId, context: context)
-            try await ctrl.editToBuyList(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            try await ctrl.editToBuyItems(category: category, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("trader:sell:") {
+            let cat = String(data.dropFirst("trader:sell:".count))
+            guard let category = traderCategory(from: cat) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToSellItems(category: category, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
 
-        // Custom-N prompts — open the "How many?" prompt and stash
-        // pending state. The next text update will be consumed in
-        // `unmatched`.
+        // Trader item taps — the single item button opens the "How many?"
+        // prompt directly. Pending state is stashed in EphemeralChatState and
+        // consumed by `unmatched` on the next text update.
         if data.hasPrefix("trader:sellN:") {
             let itemId = String(data.dropFirst("trader:sellN:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -689,7 +699,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Food purchase — debit gold, deposit dish, banner + refresh.
+        // Food purchase — debit silver, deposit dish, banner + refresh.
         if data.hasPrefix("tavern:food:buy:") {
             let itemId = String(data.dropFirst("tavern:food:buy:".count))
             let result = try await TavernService.buyDish(itemId: itemId, for: context.session, on: context.db)
@@ -700,7 +710,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         // Phase 1 — wager taken. Edit to "Ready?" screen with the [Roll]
-        // + [Cancel] buttons. Gold isn't debited yet — cancel here costs
+        // + [Cancel] buttons. Silver isn't debited yet — cancel here costs
         // nothing.
         if data.hasPrefix("tavern:dice:wager:") {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -761,21 +771,37 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return try await MainController.onCallbackQuery(context: context)
     }
 
+    /// `[🔙 До столиці]` inline kb attached to every trader/tavern result
+    /// banner. The trader/tavern photo bubble (which carries the same back
+    /// button) often scrolls out of view after a few actions; the banner is
+    /// the latest visible message, so giving it its own back-out button means
+    /// the player is never left without a nav point.
+    private func backToCapitalBannerKB(lingo: Lingo, locale: String) -> TGReplyMarkup {
+        let label = lingo.localize("capital.button.back_to_capital", locale: locale)
+        return .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: label, callbackData: "capital:back")
+        ]]))
+    }
+
     private func postTraderResultBanner(forSell result: TraderService.SellResult, itemId: String, context: Context) async {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
-        case .success(_, let qty, let gold):
+        case .success(_, let qty, let silver):
+            // 🪙 + amount pre-built in Swift — Lingo's `%{var}` parser breaks
+            // when a supplementary-plane emoji sits next to the variable
+            // inside the template, leaving the literal `%{silver}` rendered.
             let text = lingo.localize("capital.trader.sold", locale: locale, interpolations: [
-                "item": itemName, "qty": "\(qty)", "gold": "\(gold)"
+                "item": itemName, "qty": "\(qty)", "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context)
+            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
         case .notEnoughInBag(let have, let need):
             let text = lingo.localize("capital.trader.not_enough_bag", locale: locale, interpolations: [
                 "item": itemName, "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         case .unknownListing:
             // Stale catalogue / dev typo. Silent — banner would just confuse the player.
             break
@@ -786,22 +812,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
-        case .success(_, let qty, let gold):
+        case .success(_, let qty, let silver):
             let text = lingo.localize("capital.trader.bought", locale: locale, interpolations: [
-                "item": itemName, "qty": "\(qty)", "gold": "\(gold)"
+                "item": itemName, "qty": "\(qty)", "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context)
-        case .notEnoughGold(let have, let need):
-            let text = lingo.localize("capital.trader.not_enough_gold", locale: locale, interpolations: [
+            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         case .inventoryFull(let free, let need):
             let text = lingo.localize("capital.trader.bag_full", locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         case .unknownListing:
             break
         }
@@ -845,7 +872,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     /// Cancel the prompt — delete the prompt message + clear pending.
     /// Trader screen left as-is (no need to refresh — the player's bag /
-    /// gold didn't change).
+    /// silver didn't change).
     fileprivate func cancelTraderBulkPrompt(context: Context) async throws {
         let telegramId = context.session.telegramId
         guard let pending = await EphemeralChatState.shared.takePendingTraderTransfer(telegramId: telegramId) else { return }
@@ -897,15 +924,32 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             messageId: pending.promptMessageId
         ))
 
+        // Refresh the SAME category-filtered list the player was viewing
+        // when they tapped the item — derive the category from the item's
+        // type so we don't have to thread it through PendingTraderTransfer.
+        let refreshCategory = ItemCatalog.find(pending.itemId)?.type ?? .material
+
         switch pending.direction {
         case .sell:
             let result = try await TraderService.sell(itemId: pending.itemId, quantity: quantity, for: context.session, on: context.db)
             await postTraderResultBanner(forSell: result, itemId: pending.itemId, context: context)
-            try await editToSellList(messageId: pending.traderScreenMessageId, isPhoto: pending.isPhoto, context: context)
+            try await editToSellItems(category: refreshCategory, messageId: pending.traderScreenMessageId, isPhoto: pending.isPhoto, context: context)
         case .buy:
             let result = try await TraderService.buy(itemId: pending.itemId, quantity: quantity, for: context.session, on: context.db)
             await postTraderResultBanner(forBuy: result, itemId: pending.itemId, context: context)
-            try await editToBuyList(messageId: pending.traderScreenMessageId, isPhoto: pending.isPhoto, context: context)
+            try await editToBuyItems(category: refreshCategory, messageId: pending.traderScreenMessageId, isPhoto: pending.isPhoto, context: context)
+        }
+    }
+
+    /// Map the URL-safe category slug carried in callback data
+    /// (`trader:buy:<slug>` / `trader:sell:<slug>`) back to the `ItemType`
+    /// used to filter the catalog. Limited to the two categories the trader
+    /// actually handles — anything else returns nil and the caller swallows.
+    private static func traderCategory(from slug: String) -> ItemType? {
+        switch slug {
+        case "food":      return .food
+        case "materials": return .material
+        default:          return nil
         }
     }
 
@@ -964,11 +1008,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let priceLine = lingo.localize("capital.fortune.price", locale: locale, interpolations: [
                 "price": "\(FortuneCatalog.drawPrice)"
             ])
-            let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-                "gold": "\(session.gold)"
+            let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+                "silver": "\(session.silver)"
             ])
             lines.append(priceLine)
-            lines.append("💰 \(goldLabel)")
+            lines.append("🪙 \(silverLabel)")
         }
         return lines.joined(separator: "\n")
     }
@@ -980,7 +1024,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         // No draw button while on cooldown — but the [🔙 Back] button is
         // always present so the player can never be stuck on the fortune
-        // screen (e.g. zero gold, no draw available).
+        // screen (e.g. zero silver, no draw available).
         if session.fortuneCooldownRemaining() != nil {
             return TGInlineKeyboardMarkup(inlineKeyboard: [backRow])
         }
@@ -1023,11 +1067,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         lines.append(buffDesc)
 
         // One-shot deltas applied at draw time — show the concrete impact.
-        if oneShot.goldDelta != 0 {
-            let key = oneShot.goldDelta > 0 ? "capital.fortune.applied.gold_gain" : "capital.fortune.applied.gold_loss"
+        // Sign + 🪙 + amount pre-built in Swift; the locale string only has
+        // `%{silver}` because a supplementary-plane emoji adjacent to
+        // `%{var}` breaks Lingo's parser (leaves the literal `%{silver}`).
+        if oneShot.silverDelta != 0 {
+            let key = oneShot.silverDelta > 0 ? "capital.fortune.applied.silver_gain" : "capital.fortune.applied.silver_loss"
+            let signedSilver = oneShot.silverDelta > 0
+                ? "+🪙 \(oneShot.silverDelta)"
+                : "−🪙 \(abs(oneShot.silverDelta))"
             let line = lingo.localize(key, locale: locale, interpolations: [
-                "gold": "\(abs(oneShot.goldDelta))",
-                "balance": "\(context.session.gold)"
+                "silver": signedSilver,
+                "balance": "\(context.session.silver)"
             ])
             lines.append("")
             lines.append(line)
@@ -1080,16 +1130,20 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.renderFortuneReveal(card: card, oneShot: applied, context: context)
         case .onCooldown(let secondsLeft):
             let lingo = context.lingo
-            let text = lingo.localize("capital.fortune.error.cooldown", locale: context.session.locale, interpolations: [
+            let locale = context.session.locale
+            let text = lingo.localize("capital.fortune.error.cooldown", locale: locale, interpolations: [
                 "remaining": ctrl.formatHM(secondsLeft)
             ])
-            await ctrl.postStatusBanner("⏳ \(text)", context: context)
-        case .notEnoughGold(let have, let need):
+            let backKB = ctrl.backToCapitalBannerKB(lingo: lingo, locale: locale)
+            await ctrl.postStatusBanner("⏳ \(text)", context: context, replyMarkup: backKB)
+        case .notEnoughSilver(let have, let need):
             let lingo = context.lingo
-            let text = lingo.localize("capital.fortune.error.gold", locale: context.session.locale, interpolations: [
+            let locale = context.session.locale
+            let text = lingo.localize("capital.fortune.error.silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            await ctrl.postStatusBanner("❌ \(text)", context: context)
+            let backKB = ctrl.backToCapitalBannerKB(lingo: lingo, locale: locale)
+            await ctrl.postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         }
     }
 
@@ -1101,7 +1155,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // throughout) and carries a [🔙 Back] returning to the entry.
     //
     // Gambling sends animated Telegram dice / dart emoji via `sendDice`,
-    // reads the returned 1-6 value, and applies the gold delta. Two rolls
+    // reads the returned 1-6 value, and applies the silver delta. Two rolls
     // per player so a single round produces a 2-12 sum — more atmospheric
     // than a single roll. Between the player's two dice and the house's
     // two dice the runner sleeps ~4 s so the animations finish before the
@@ -1161,21 +1215,20 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func renderTavernMenuBody(session: User, lingo: Lingo) -> String {
         let locale = session.locale
         let title = lingo.localize("capital.tavern.menu_title", locale: locale)
-        let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-            "gold": "\(session.gold)"
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(session.silver)"
         ])
-        return "<b>\(title)</b>\n\n💰 \(goldLabel)"
+        return "<b>\(title)</b>\n\n🪙 \(silverLabel)"
     }
 
     private func tavernMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let goldSuffix = lingo.localize("capital.trader.gold_short", locale: locale)
         var rows: [[TGInlineKeyboardButton]] = []
         for listing in TavernCatalog.food {
             guard let item = ItemCatalog.find(listing.itemId) else { continue }
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
             let name = lingo.localize(item.nameKey, locale: locale)
-            // Format: "🍠 Baked Potato · 3g". One tap = one dish.
-            let label = "\(iconPrefix)\(name) · \(listing.priceGold)\(goldSuffix)"
+            // Format: "🥔 Baked Potato · 🪙 20". One tap = one dish.
+            let label = "\(iconPrefix)\(name) · 🪙 \(listing.priceSilver)"
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "tavern:food:buy:\(listing.itemId)")])
         }
         let back = lingo.localize("capital.tavern.button.back", locale: locale)
@@ -1195,17 +1248,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = session.locale
         let title = lingo.localize(titleKey, locale: locale)
         let subtitle = lingo.localize(subtitleKey, locale: locale)
-        let goldLabel = lingo.localize("capital.trader.gold_balance", locale: locale, interpolations: [
-            "gold": "\(session.gold)"
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(session.silver)"
         ])
-        return "<b>\(title)</b>\n\n<i>\(subtitle)</i>\n\n💰 \(goldLabel)"
+        return "<b>\(title)</b>\n\n<i>\(subtitle)</i>\n\n🪙 \(silverLabel)"
     }
 
     private func wagerKeyboard(lingo: Lingo, locale: String, callbackPrefix: String) -> TGInlineKeyboardMarkup {
-        let goldSuffix = lingo.localize("capital.trader.gold_short", locale: locale)
         var wagerRow: [TGInlineKeyboardButton] = []
         for wager in TavernCatalog.wagerTiers {
-            let label = "💰 \(wager)\(goldSuffix)"
+            let label = "🪙 \(wager)"
             wagerRow.append(TGInlineKeyboardButton(text: label, callbackData: "\(callbackPrefix):wager:\(wager)"))
         }
         let back = lingo.localize("capital.tavern.button.back", locale: locale)
@@ -1238,7 +1290,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // MARK: Gambling — two-phase flow (button-driven)
     //
     // Phase 1 — wager tap → `editToWagerConfirm`: shows a "Ready?" screen
-    // with [🎲 Кинути кубік] / [🎯 Кинути дротик] + [❌ Скасувати]. No gold
+    // with [🎲 Кинути кубік] / [🎯 Кинути дротик] + [❌ Скасувати]. No silver
     // movement yet — player can back out for free.
     //
     // Phase 2 — Roll button tap → `runRound`: debits the wager, runs the
@@ -1261,9 +1313,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         let titleKey = emoji == "🎲" ? "capital.tavern.dice_title" : "capital.tavern.darts_title"
         let title = lingo.localize(titleKey, locale: locale)
-        let wagerLine = lingo.localize("capital.tavern.gamble.wager_taken", locale: locale, interpolations: ["wager": "\(wager)"])
+        // 🪙 + amount pre-built in Swift — Lingo's `%{var}` parser breaks
+        // when a supplementary-plane emoji sits next to the variable.
+        let wagerLine = lingo.localize("capital.tavern.gamble.wager_taken", locale: locale, interpolations: ["wager": "🪙 \(wager)"])
         let readyPrompt = lingo.localize("capital.tavern.gamble.ready_prompt", locale: locale)
-        let text = "<b>\(title)</b>\n\n💰 \(wagerLine)\n\n\(readyPrompt)"
+        let text = "<b>\(title)</b>\n\n\(wagerLine)\n\n\(readyPrompt)"
 
         let rollKey = emoji == "🎲" ? "capital.tavern.gamble.button.roll_dice" : "capital.tavern.gamble.button.roll_dart"
         let rollLabel = lingo.localize(rollKey, locale: locale)
@@ -1287,20 +1341,21 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let chatId = TGChatId.chat(context.session.telegramId)
 
-        // Gold could have changed between wager-tap and roll-tap (other
+        // Silver could have changed between wager-tap and roll-tap (other
         // expense in a parallel session, etc) — re-validate.
-        if context.session.gold < wager {
-            let text = lingo.localize("capital.tavern.not_enough_gold", locale: locale, interpolations: [
-                "have": "\(context.session.gold)", "need": "\(wager)"
+        if context.session.silver < wager {
+            let text = lingo.localize("capital.tavern.not_enough_silver", locale: locale, interpolations: [
+                "have": "\(context.session.silver)", "need": "\(wager)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
             return
         }
 
         // Debit now. From this point on the round runs to completion —
         // no cancel mid-roll. Per-user dispatch serialises so the ~10 s
         // sequence below only blocks this player.
-        context.session.gold -= wager
+        context.session.silver -= wager
         try await context.session.saveAndCache(in: context.db)
 
         let throwCount = emoji == "🎲" ? 2 : 1
@@ -1337,15 +1392,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let outcomeText: String
         switch outcome {
         case .win:
-            context.session.gold += wager * 2
+            context.session.silver += wager * 2
             try await context.session.saveAndCache(in: context.db)
             symbol = "✅"
-            outcomeText = lingo.localize("capital.tavern.gamble.outcome_win", locale: locale, interpolations: ["wager": "\(wager)"])
+            outcomeText = lingo.localize("capital.tavern.gamble.outcome_win", locale: locale, interpolations: ["wager": "+🪙 \(wager)"])
         case .lose:
             symbol = "❌"
-            outcomeText = lingo.localize("capital.tavern.gamble.outcome_lose", locale: locale, interpolations: ["wager": "\(wager)"])
+            outcomeText = lingo.localize("capital.tavern.gamble.outcome_lose", locale: locale, interpolations: ["wager": "−🪙 \(wager)"])
         case .tie:
-            context.session.gold += wager
+            context.session.silver += wager
             try await context.session.saveAndCache(in: context.db)
             symbol = "⚪"
             outcomeText = lingo.localize("capital.tavern.gamble.outcome_tie", locale: locale)
@@ -1367,7 +1422,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Leading emoji prepended in Swift — the score line carries
         // %{var} interpolations and Lingo's parser breaks on a leading
         // surrogate-pair emoji in the template.
-        let resultText = "\(emoji) \(scoreLine)\n\(symbol) \(outcomeText) · 💰 \(context.session.gold)"
+        let resultText = "\(emoji) \(scoreLine)\n\(symbol) \(outcomeText) · 🪙 \(context.session.silver)"
 
         // Result message carries replay + back buttons.
         let replayKind = emoji == "🎲" ? "dice" : "darts"
@@ -1403,22 +1458,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
-        case .success(_, let gold):
+        case .success(_, let silver):
             let text = lingo.localize("capital.tavern.bought", locale: locale, interpolations: [
-                "item": itemName, "gold": "\(gold)"
+                "item": itemName, "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context)
-        case .notEnoughGold(let have, let need):
-            let text = lingo.localize("capital.tavern.not_enough_gold", locale: locale, interpolations: [
+            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.tavern.not_enough_silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         case .inventoryFull(let free, _):
             let text = lingo.localize("capital.tavern.bag_full", locale: locale, interpolations: [
                 "free": "\(free)"
             ])
-            await postStatusBanner("❌ \(text)", context: context)
+            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
         case .unknownListing:
             break
         }

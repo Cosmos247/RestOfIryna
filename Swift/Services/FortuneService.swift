@@ -5,7 +5,7 @@
 //  Created by Dmytro Ihnatyuhin on 17.05.2026.
 //
 //  Phase 6.4 — pure orchestrator for the tarot draw. Validates cooldown
-//  + gold, debits the draw price, picks a card uniformly at random from
+//  + silver, debits the draw price, picks a card uniformly at random from
 //  `FortuneCatalog.all`, applies one-shot components immediately, stamps
 //  the User's `activeFortuneCardId` + `activeFortuneExpiresAt` so the
 //  duration-based components are visible to later stat computations.
@@ -22,21 +22,21 @@ public enum FortuneService {
     public enum DrawResult: Sendable {
         case success(card: FortuneCard, oneShotApplied: OneShotApplied)
         case onCooldown(secondsLeft: Int)
-        case notEnoughGold(have: Int, need: Int)
+        case notEnoughSilver(have: Int, need: Int)
     }
 
     /// Snapshot of what the one-shot side of a draw actually did, so the
-    /// reveal text can say "+30g" / "Healed to full" / "Lost 25g" exactly.
+    /// reveal text can say "+30s" / "Healed to full" / "Lost 25s" exactly.
     /// Duration-based fields (stat bonuses, multipliers) are NOT here —
     /// the UI reads those from `FortuneCard.effect` directly.
     public struct OneShotApplied: Sendable {
-        public var goldDelta: Int       // net change after Wheel roll
+        public var silverDelta: Int     // net change after Wheel roll
         public var xpGained: Int
         public var hpRestored: Bool
         public var vigorRestored: Bool
 
-        public init(goldDelta: Int = 0, xpGained: Int = 0, hpRestored: Bool = false, vigorRestored: Bool = false) {
-            self.goldDelta = goldDelta
+        public init(silverDelta: Int = 0, xpGained: Int = 0, hpRestored: Bool = false, vigorRestored: Bool = false) {
+            self.silverDelta = silverDelta
             self.xpGained = xpGained
             self.hpRestored = hpRestored
             self.vigorRestored = vigorRestored
@@ -44,7 +44,7 @@ public enum FortuneService {
     }
 
     /// Draw a card. Validates cooldown (still under the previous card's
-    /// expiry) and gold (must afford `FortuneCatalog.drawPrice`). On
+    /// expiry) and silver (must afford `FortuneCatalog.drawPrice`). On
     /// success: debits the draw fee, picks a card uniformly, applies
     /// one-shot effects, stamps `activeFortuneCardId` + `activeFortuneExpiresAt`.
     public static func draw(for user: User, on db: any Database) async throws -> DrawResult {
@@ -60,43 +60,43 @@ public enum FortuneService {
             }
         }
 
-        // Gold gate.
-        if user.gold < FortuneCatalog.drawPrice {
-            return .notEnoughGold(have: user.gold, need: FortuneCatalog.drawPrice)
+        // Silver gate.
+        if user.silver < FortuneCatalog.drawPrice {
+            return .notEnoughSilver(have: user.silver, need: FortuneCatalog.drawPrice)
         }
 
         // Debit + pick.
-        user.gold -= FortuneCatalog.drawPrice
+        user.silver -= FortuneCatalog.drawPrice
         guard let card = FortuneCatalog.all.randomElement() else {
             // Defensive — catalog is non-empty by construction.
-            return .notEnoughGold(have: user.gold, need: FortuneCatalog.drawPrice)
+            return .notEnoughSilver(have: user.silver, need: FortuneCatalog.drawPrice)
         }
         let effect = card.effect
 
         // Apply one-shot effects + collect applied deltas for the reveal.
         var applied = OneShotApplied()
 
-        if effect.oneShotGold != 0 {
-            // Negative loss is clamped to current gold (never goes below 0).
-            if effect.oneShotGold < 0 {
-                let loss = min(user.gold, -effect.oneShotGold)
-                user.gold -= loss
-                applied.goldDelta -= loss
+        if effect.oneShotSilver != 0 {
+            // Negative loss is clamped to current silver (never goes below 0).
+            if effect.oneShotSilver < 0 {
+                let loss = min(user.silver, -effect.oneShotSilver)
+                user.silver -= loss
+                applied.silverDelta -= loss
             } else {
-                user.gold += effect.oneShotGold
-                applied.goldDelta += effect.oneShotGold
+                user.silver += effect.oneShotSilver
+                applied.silverDelta += effect.oneShotSilver
             }
         }
 
         // Wheel-style: 50/50 between positive gain and negative loss.
-        if effect.randomGoldPositive > 0 || effect.randomGoldNegative > 0 {
+        if effect.randomSilverPositive > 0 || effect.randomSilverNegative > 0 {
             if Bool.random() {
-                user.gold += effect.randomGoldPositive
-                applied.goldDelta += effect.randomGoldPositive
+                user.silver += effect.randomSilverPositive
+                applied.silverDelta += effect.randomSilverPositive
             } else {
-                let loss = min(user.gold, effect.randomGoldNegative)
-                user.gold -= loss
-                applied.goldDelta -= loss
+                let loss = min(user.silver, effect.randomSilverNegative)
+                user.silver -= loss
+                applied.silverDelta -= loss
             }
         }
 

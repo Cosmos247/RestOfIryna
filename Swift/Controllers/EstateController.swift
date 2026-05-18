@@ -278,18 +278,18 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
         }
 
-        // Phase 5.3c — gold cost line. Hidden when the step is gold-free
+        // Phase 5.3c — silver cost line. Hidden when the step is silver-free
         // (early transitions). Drawn outside the materials block so the
         // player sees the wallet check as a separate gate.
-        if nextStep.goldCost > 0 {
-            let goldOK = session.gold >= nextStep.goldCost
-            let goldMark = goldOK ? "✅" : "⛔"
+        if nextStep.silverCost > 0 {
+            let silverOK = session.silver >= nextStep.silverCost
+            let silverMark = silverOK ? "✅" : "⛔"
             lines.append("")
-            // 💰 prepended in Swift — Lingo's `%{var}` parser breaks on
+            // 🪙 prepended in Swift — Lingo's `%{var}` parser breaks on
             // a leading supplementary-plane emoji in the template.
-            lines.append("\(goldMark) 💰 " + lingo.localize("estate.upgrade.gold_required", locale: locale, interpolations: [
-                "required": "\(nextStep.goldCost)",
-                "have":     "\(session.gold)"
+            lines.append("\(silverMark) 🪙 " + lingo.localize("estate.upgrade.silver_required", locale: locale, interpolations: [
+                "required": "\(nextStep.silverCost)",
+                "have":     "\(session.silver)"
             ]))
         }
 
@@ -904,7 +904,15 @@ extension EstateController {
         if data == "bag:upgrade:confirm" {
             return try await handleBagUpgradeConfirm(query: query, message: message, context: context)
         }
-        guard data.hasPrefix("estate:") else { return false }
+        // Anything that doesn't belong to the estate's own callback namespace
+        // (e.g. `pstyle:` profile-style switch, stale `explore:*` from a passive
+        // report pushed while the player is in the estate, `fortune:*` insurance)
+        // is forwarded to MainController, which owns those prefixes and falls
+        // back to deleting truly unknown inline messages. Returning `false`
+        // here used to surface "Unsupported content type." to the player.
+        guard data.hasPrefix("estate:") else {
+            return try await MainController.onCallbackQuery(context: context)
+        }
 
         let ctrl = Controllers.estateController
         let locale = context.session.locale
@@ -971,6 +979,12 @@ extension EstateController {
         }
         if data.hasPrefix("estate:plot:harvest:") {
             return try await handlePlotHarvest(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:plot:hvbag:") {
+            return try await handlePlotHarvestTo(destination: .bag, data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:plot:hvwh:") {
+            return try await handlePlotHarvestTo(destination: .warehouse, data: data, query: query, message: message, context: context)
         }
         if data.hasPrefix("estate:plot:train:") {
             return try await handlePlotTraining(data: data, query: query, message: message, context: context)
@@ -1542,10 +1556,82 @@ extension EstateController {
         }
     }
 
-    /// `estate:plot:harvest:<slot>` — moves accumulated yield to the bag,
-    /// shows inline status on success, modal alert on empty / bag-full.
+    /// Comma-joined "+N <icon> <name>" string for the (primary, optional
+     /// bonus) pair the player is about to take. Shared between the picker
+     /// preview line and the post-harvest banner so both render identically.
+    private static func formatYields(primary: PlotService.HarvestYield, bonus: PlotService.HarvestYield?, lingo: Lingo, locale: String) -> String {
+        func one(_ y: PlotService.HarvestYield) -> String {
+            let item = ItemCatalog.find(y.itemId)
+            let icon = item?.icon ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? y.itemId
+            return "+\(y.amount) \(icon) \(name)"
+        }
+        var pieces: [String] = []
+        if primary.amount > 0 { pieces.append(one(primary)) }
+        if let bonus = bonus, bonus.amount > 0 { pieces.append(one(bonus)) }
+        return pieces.joined(separator: ", ")
+    }
+
+    /// `estate:plot:harvest:<slot>` — opens the destination picker. Yield
+    /// stays on the plot until the player picks Bag or Warehouse; tapping
+    /// Cancel re-renders the plot list unchanged. Empty plots short-circuit
+    /// with the existing "nothing produced yet" modal toast.
     static func handlePlotHarvest(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let slot = Int(String(data.dropFirst("estate:plot:harvest:".count))) ?? -1
+        let locale = context.session.locale
+        guard let plot = try await Plot.find(slot: slot, for: context.session, on: context.db) else {
+            let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        guard let tuning = PlotCatalog.tuning(forRaw: plot.plotType, tier: plot.tier) else {
+            let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        // Peek at the yield without taking it. Picker is suppressed when
+        // there's nothing on the plot — saves a redundant "Where?" tap.
+        let primaryAmount = PlotService.accumulated(for: plot)
+        let bonusAmount = PlotService.bonusAccumulated(for: plot)
+        if primaryAmount == 0 && bonusAmount == 0 {
+            let toast = "💤 " + context.lingo.localize("estate.plot.alert.harvest_empty", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+
+        let primaryYield = PlotService.HarvestYield(itemId: tuning.producedItemId, amount: primaryAmount)
+        let bonusYield: PlotService.HarvestYield? = (tuning.bonusOutput != nil && bonusAmount > 0)
+            ? PlotService.HarvestYield(itemId: tuning.bonusOutput!.producedItemId, amount: bonusAmount)
+            : nil
+        let yieldsText = formatYields(primary: primaryYield, bonus: bonusYield, lingo: context.lingo, locale: locale)
+        // 🚜 prepended in Swift since Lingo's `%{var}` parser breaks on a
+        // leading supplementary-plane emoji in the template.
+        let body = "🚜 " + context.lingo.localize("estate.plot.harvest.where_prompt", locale: locale, interpolations: [
+            "slot": "\(slot + 1)",
+            "yields": yieldsText
+        ])
+        let bagLabel = context.lingo.localize("estate.plot.harvest.button.to_bag",       locale: locale)
+        let whLabel  = context.lingo.localize("estate.plot.harvest.button.to_warehouse", locale: locale)
+        let cancel   = context.lingo.localize("estate.plot.harvest.button.cancel",       locale: locale)
+        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: bagLabel, callbackData: "estate:plot:hvbag:\(slot)"),
+             TGInlineKeyboardButton(text: whLabel,  callbackData: "estate:plot:hvwh:\(slot)")],
+            [TGInlineKeyboardButton(text: cancel, callbackData: "estate:plot")]
+        ])
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `estate:plot:hvbag:<slot>` / `estate:plot:hvwh:<slot>` — actual
+    /// harvest with chosen destination. Refreshes the plot list with a
+    /// success banner; on bag-full surfaces a modal alert and leaves the
+    /// picker on screen so the player can switch to warehouse.
+    static func handlePlotHarvestTo(destination: PlotService.HarvestDestination, data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let prefix = destination == .bag ? "estate:plot:hvbag:" : "estate:plot:hvwh:"
+        let slot = Int(String(data.dropFirst(prefix.count))) ?? -1
         let locale = context.session.locale
         let ctrl = Controllers.estateController
         guard let plot = try await Plot.find(slot: slot, for: context.session, on: context.db) else {
@@ -1553,29 +1639,27 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
-        let result = try await PlotService.harvest(plot, for: context.session, on: context.db)
+        let result = try await PlotService.harvest(plot, to: destination, for: context.session, on: context.db)
         switch result {
         case .empty:
-            // 💤 prepended in Swift since Lingo bug fires on leading
-            // supplementary-plane emoji + interpolation.
             let toast = "💤 " + context.lingo.localize("estate.plot.alert.harvest_empty", locale: locale, interpolations: ["slot": "\(slot + 1)"])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
-        case .success(let primary, let bonus):
+
+        case .bagFull(_, _, let free, let need):
+            // Picker stays on screen — player can switch to warehouse with one
+            // more tap instead of restarting from the plot list.
+            let toast = context.lingo.localize("estate.plot.alert.bag_full", locale: locale, interpolations: [
+                "free": "\(free)", "need": "\(need)"
+            ])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .success(let primary, let bonus, let dest):
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            // Format each yield as "+N <icon> <name>" and join with comma.
-            // Bonus is appended only when present (e.g. Mine → iron).
-            func formatYield(_ y: PlotService.HarvestYield) -> String {
-                let item = ItemCatalog.find(y.itemId)
-                let icon = item?.icon ?? ""
-                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? y.itemId
-                return "+\(y.amount) \(icon) \(name)"
-            }
-            var pieces: [String] = []
-            if primary.amount > 0 { pieces.append(formatYield(primary)) }
-            if let bonus = bonus, bonus.amount > 0 { pieces.append(formatYield(bonus)) }
-            let yieldsText = pieces.joined(separator: ", ")
-            let statusLine = "✅ " + context.lingo.localize("estate.plot.alert.harvested_multi", locale: locale, interpolations: [
+            let yieldsText = formatYields(primary: primary, bonus: bonus, lingo: context.lingo, locale: locale)
+            let bannerKey = (dest == .bag) ? "estate.plot.alert.harvested_to_bag" : "estate.plot.alert.harvested_multi"
+            let statusLine = "✅ " + context.lingo.localize(bannerKey, locale: locale, interpolations: [
                 "slot":   "\(slot + 1)",
                 "yields": yieldsText
             ])
@@ -2035,9 +2119,9 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
-        case .insufficientGold(let required, let current):
-            // 💰 prepended in Swift — same Lingo emoji-leading-template bug.
-            let toast = "💰 " + context.lingo.localize("estate.upgrade.gold_too_low", locale: locale, interpolations: [
+        case .insufficientSilver(let required, let current):
+            // 🪙 prepended in Swift — same Lingo emoji-leading-template bug.
+            let toast = "🪙 " + context.lingo.localize("estate.upgrade.silver_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])

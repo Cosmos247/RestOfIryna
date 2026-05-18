@@ -92,8 +92,8 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "accuracy")
     var accuracy: Int
 
-    @Field(key: "gold")
-    var gold: Int
+    @Field(key: "silver")
+    var silver: Int
 
     // MARK: - Cached Gear Bonuses
     // Sum of equipped gear's GearStats. Recomputed on every equip/unequip so
@@ -164,6 +164,12 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_fortune_draw_at")
     var lastFortuneDrawAt: Date?
 
+    /// One-shot tutorial flag — flipped to `true` the first time the player
+    /// returns from an active expedition. Used by `ExplorationController.handleHomeReached`
+    /// to send a single "there's a Trader in the Capital" hint and never again.
+    @Field(key: "tutorial_trader_hint_shown")
+    var tutorialTraderHintShown: Bool
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -202,7 +208,7 @@ final public class User: Model, @unchecked Sendable {
         self.crit = 5
         self.dodge = 5
         self.accuracy = 10
-        self.gold = 0
+        self.silver = 0
         self.gearAttackBonus = 0
         self.gearDefenseBonus = 0
         self.gearCritBonus = 0
@@ -214,6 +220,7 @@ final public class User: Model, @unchecked Sendable {
         self.activeFortuneCardId = nil
         self.activeFortuneExpiresAt = nil
         self.lastFortuneDrawAt = nil
+        self.tutorialTraderHintShown = false
         self.createdAt = Date()
     }
 

@@ -27,10 +27,10 @@ public enum EstateUpgradeService {
         /// Player hasn't hit the player-level requirement for the next tier
         /// yet — go fight more before pouring lumber into walls.
         case playerLevelTooLow(required: Int, current: Int)
-        /// `User.gold` is below the step's `goldCost`. Gold isn't an inventory
-        /// item (lives on the User row), so it's reported separately rather
-        /// than folded into `missingMaterials`.
-        case insufficientGold(required: Int, current: Int)
+        /// `User.silver` is below the step's `silverCost`. Silver isn't an
+        /// inventory item (lives on the User row), so it's reported separately
+        /// rather than folded into `missingMaterials`.
+        case insufficientSilver(required: Int, current: Int)
         /// Combined inventory + warehouse pool can't cover the next tier's
         /// cost. Each missing input is reported individually so the UI can
         /// surface a precise shortage list.
@@ -60,11 +60,11 @@ public enum EstateUpgradeService {
             return .playerLevelTooLow(required: nextStep.requiredPlayerLevel, current: user.level)
         }
 
-        // 3. Gold gate. Checked before material snapshot so a player who's
-        // short on cash gets the cleaner "💰 not enough gold" alert instead
+        // 3. Silver gate. Checked before material snapshot so a player who's
+        // short on cash gets the cleaner "🪙 not enough silver" alert instead
         // of a noisy materials breakdown that might also look fine.
-        if nextStep.goldCost > 0, user.gold < nextStep.goldCost {
-            return .insufficientGold(required: nextStep.goldCost, current: user.gold)
+        if nextStep.silverCost > 0, user.silver < nextStep.silverCost {
+            return .insufficientSilver(required: nextStep.silverCost, current: user.silver)
         }
 
         // 4. Material availability snapshot.
@@ -96,9 +96,9 @@ public enum EstateUpgradeService {
             }
         }
 
-        // 6. Drain gold and bump the tier in the same persist call.
-        if nextStep.goldCost > 0 {
-            user.gold -= nextStep.goldCost
+        // 6. Drain silver and bump the tier in the same persist call.
+        if nextStep.silverCost > 0 {
+            user.silver -= nextStep.silverCost
         }
         user.estateLevel = nextStep.toTier
         try await user.saveAndCache(in: db)

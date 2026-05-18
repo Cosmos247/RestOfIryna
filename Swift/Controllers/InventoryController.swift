@@ -529,7 +529,13 @@ extension InventoryController {
             return true
         }
 
-        return false
+        // Anything that doesn't match an `inv:*` callback (e.g. `pstyle:`
+        // profile-style switch tapped while the player is in the inventory
+        // routerName, or stale `fortune:*` insurance) is forwarded to
+        // MainController, which owns those prefixes and falls back to deleting
+        // truly unknown inline messages. Returning `false` here used to surface
+        // "Unsupported content type." to the player.
+        return try await MainController.onCallbackQuery(context: context)
     }
 
     /// Handle a tap on `📖 Learn` for a recipe-scroll artifact (Phase 5.2.1).

@@ -1,5 +1,108 @@
 # Session History
 
+## Session N+13 — 2026-05-18 (Currency rename gold→silver, capital polish, plot harvest picker, combat round counter)
+
+### Goal
+Post-launch polish based on live-play feedback. The previous Fortune Teller phase exposed several rough edges: in-game currency word "gold" felt off, trader UX had too many buttons per item, player got "stuck" after a buy/sell when the photo bubble scrolled away, no `/menu` discoverability, plot harvest dumped to warehouse without choice, combat lacked any sense of "how many rounds in".
+
+### What was done
+
+**Currency rename — gold → silver (in code) / silvers / срібники (player-facing)**
+- Schema-level rename via new `RenameGoldToSilver` migration (raw SQL `ALTER TABLE users RENAME COLUMN gold TO silver`; revert reverses). Existing balances survive untouched. Historical `AddGameStats` migration left intact (never edit history).
+- `User.silver` Swift field + matching `@Field(key: "silver")`. Init / dev-reset both updated.
+- 8 catalog / service identifiers renamed: `EstateUpgradeStep.silverCost`, `TavernFoodListing.priceSilver`, `TraderListing.sellPacketSilver`/`buyPacketSilver`, `FortuneEffect.oneShotSilver`/`randomSilverPositive`/`randomSilverNegative`, `FortuneService.OneShotApplied.silverDelta`. Result-enum cases renamed: `TraderService.{SellResult.success.silverGained, BuyResult.success.silverSpent, BuyResult.notEnoughSilver}`, `TavernService.BuyDishResult.{success.silverSpent, notEnoughSilver}`, `FortuneService.DrawResult.notEnoughSilver`, `EstateUpgradeService.UpgradeResult.insufficientSilver`. Comments + local vars swept (`silverLabel`, `silverSuffix`, `silverOK`, `silverMark`, `totalSilver`).
+- Locale keys + values: `profile.gold→profile.silver`, `capital.trader.gold_balance→silver_balance`, suffix `g`/`з` → `s`/`с` (then removed entirely, see below), narrative ("glory and gold"→"glory and silver" / "славу й срібло"; "win a few coins" → "пару срібників"; "For a few coins" → "За кілька срібників"). Fixed leftover UK `−25 gold` on Tower card.
+
+**Trader UI: 2-row → 1-button flatten + Food/Materials category split**
+- Two-step rebuild driven by live play. First pass: collapsed the 2-row layout (`[icon name · price]` info + `[💸 ×1][✏️ N]` action) into a single button per item that opens the bulk-N prompt directly. Removed `trader:info:` modal, `trader:sell:` / `trader:buy:` ×1 callbacks (~50 LoC). Buy label: `[icon name · 🪙 price]`. Sell label: `[icon name · 🎒 qty · 🪙 price]` (bag count preserved).
+- Second pass: added Food/Materials category split inside Buy/Sell to mirror Inventory's "categories first" UX. Existing `editToBuyList`/`editToSellList` repurposed to render the category picker; new `editToBuyItems(category:)`/`editToSellItems(category:)` for filtered lists. Callbacks `trader:buy:food` / `trader:buy:materials` / `trader:sell:food` / `trader:sell:materials` with static `traderCategory(slug)→ItemType?` mapper (only `food`/`materials` recognised; everything else swallowed for stale-callback safety). `handleTraderBulkInput` post-action refresh derives category from `ItemCatalog.find(itemId)?.type` so the player stays on the same category after each transaction.
+- 4 deleted locale keys (`silver_short`, `button.buy_one`, `button.sell_one`, `button.bulk_n`); 3 added (`cat.food`, `cat.materials`, `button.back_to_categories`).
+
+**Currency display: 🪙 prefix everywhere, no letter suffix**
+- All button labels: `🪙 N` instead of `Ns`/`Nс`. Tavern wager buttons (`🪙 10` instead of `🪙 10с`), tavern menu food labels, trader prices.
+- All status banners: `sold for 🪙 50`, `Won +🪙 5`, `Lost −🪙 5`, `Wager: 🪙 10`. Fortune cards 10/16/20/21 buff_desc unified: `+🪙 30 or −🪙 15`, `−🪙 25`, `−🪙 20, +75 XP`, `+🪙 20, full HP and Vigor`.
+- `silverSuffix` local var removed from 4 keyboard functions.
+
+**Lingo emoji-adjacent-%{var} rule rediscovered + documented**
+- The "leading supplementary-plane emoji breaks `%{var}` parser" rule ALSO bites when the emoji is INSIDE the template but immediately adjacent to a `%{var}`. Symptom: literal `%{silver}` rendered after the 🪙.
+- Pre-build pattern adopted: locale template loses the inline emoji/sign; Swift call site passes interpolation values like `"🪙 \(silver)"`, `"+🪙 \(wager)"`, `"−🪙 \(wager)"`.
+- Same rule re-confirmed twice during the session — caught `combat.round` (leading 🌀 + `%{n}`) and `estate.plot.harvest.where_prompt` (leading 🚜 + `%{slot}`/`%{yields}`) with a Python audit script. Both fixed by moving emoji into Swift call sites.
+- Audit script (`python3 ... ord(v[0]) >= 0x1F000 / re.finditer(r'(.)%\{', v)`) ad-hoc, not committed.
+
+**`/menu` command + bot menu registration**
+- `/menu` registered as alias for the existing `/buttons` handler in `GlobalCommandsController` — re-attaches the current controller's reply keyboard.
+- New bot-startup call in `configure.swift`: `bot.setMyCommands(...)` twice (en + uk) with `[menu, help, settings]`. Surfaces commands in Telegram's hamburger menu (the ≡ button left of the input field). Discoverable escape hatch for stuck players + cross-device kb mismatch.
+- 3 new locale keys for command descriptions.
+
+**Banner reply-keyboard anchor**
+- `postStatusBanner(_:context:replyMarkup:)` gained an optional `replyMarkup:` param. Trader/tavern result banners (sold/bought/not-enough/bag-full/wager-lost-on-roll/fortune-error) now attach a `[🔙 До столиці]` inline kb via a new `backToCapitalBannerKB(lingo:locale:)` helper. Player gets a visible nav button after every action even when the trader/tavern photo bubble has scrolled out of view. Other banner callers (inventory, estate, exploration) still call the no-arg overload.
+
+**Estate / Inventory unknown callback forwarding (pstyle latent bug fix)**
+- `EstateController.onCallbackQuery` and `InventoryController.onCallbackQuery` used to `return false` for callbacks not matching their own prefix (`estate:*` / `inv:*`), which surfaced "Unsupported content type" whenever the player tapped a profile-style switcher (`pstyle:N` owned by MainController) from those routerNames. Both now forward unknown callbacks to `MainController.onCallbackQuery` — same fix already in place on `CapitalController`.
+- Cross-device kb sync was already covered: every controller's `unmatched` already re-renders its own main screen when a stale text from another controller's reply kb hits the wrong routerName. `/menu` adds a manual override on top.
+
+**Tutorial trader hint (one-shot post-first-expedition)**
+- New `User.tutorialTraderHintShown: Bool` field (DB column `tutorial_trader_hint_shown`, default false) + new `AddTutorialTraderHint` migration.
+- Flag flipped to true on the first clean `ExplorationController.handleHomeReached` (active-mode Step Back to home). Death and force-end paths don't trigger it.
+- `User.init` defaults false; `resetDevProfile` sets true so dev iteration doesn't see hint on every reset (flip in Postico to retest).
+- New locale `tutorial.trader_hint` × 2.
+
+**Env-driven `projectPath`**
+- `Swift/configure.swift`: `public let projectPath = ProcessInfo.processInfo.environment["ROI_PROJECT_PATH"] ?? "/Users/cosmos/RestOfIryna"`. Pi deploy can set the env var in systemd `Environment=` / `.zshenv` without merge conflicts. Must live in real shell env, not `.env` (`.env` is loaded later, using this very path).
+
+**Combat round counter**
+- New `combat_round: Int?` field on `ExplorationState` + `AddCombatRound` migration.
+- `beginCombat` sets to 0; `finishRound` bumps before render so the first action shows "Раунд 1"; `endCombat` clears.
+- Status card surfaces `🌀 Раунд N` line when `> 0` (intro/encounter card stays clean).
+- 🌀 prepended in Swift (Lingo rule).
+
+**Plot harvest destination picker**
+- `PlotService.HarvestDestination` enum (`.bag` / `.warehouse`) + new parameter on `harvest(_:to:for:on:)`. `HarvestResult.success(...)` now carries the chosen destination; new `.bagFull(primary:bonus:free:need:)` case is atomic — nothing moves, plot timestamp stays put so the yield is preserved for retry.
+- `EstateController.handlePlotHarvest` repurposed to a picker: shows yield preview `+5 🪨, +1 🔩` + `[🎒 До сумки][📦 На склад]` + `[❌ Скасувати]`. Empty plots short-circuit with the existing `harvest_empty` toast.
+- New `handlePlotHarvestTo(destination:...)` + callbacks `estate:plot:hvbag:<slot>` / `estate:plot:hvwh:<slot>`. Cancel uses existing `estate:plot` to re-render the plot list. Bag-full surfaces as modal alert + leaves picker on screen so player can switch to warehouse with one tap.
+- Bag preflight: per-unit `slotsUsed + total <= slotCap` (dev bypass via `user.isDeveloper`).
+- Shared `formatYields(primary:bonus:...)` between picker preview and post-harvest banner (DRY).
+- 7 new locale keys × 2 (where_prompt, button.to_bag / to_warehouse / cancel, harvested_to_bag, bag_full).
+
+**Find-narrative emoji simplification**
+- All 8 `exploration.find.<itemId>` keys × 2 locales: leading per-item emoji (🌲/🪨/🧱/🔩/🫐/🌰/🥔/🥚) replaced with ✨ — consistent "found something" marker matching the existing `loot.picked`/`loot.full` templates. Item icon still visible in the next-line `+N <icon> <name>` summary.
+
+**Tavern wording fix**
+- UK `capital.tavern.gamble.button.roll_dice`: "🎲 Кинути кубік" → "🎲 Кинути кубики" (player throws 2 dice per round, label was singular).
+
+### Files added
+- `Swift/Migrations/RenameGoldToSilver.swift` — raw-SQL column rename
+- `Swift/Migrations/AddTutorialTraderHint.swift` — bool flag for one-shot trader hint
+- `Swift/Migrations/AddCombatRound.swift` — nullable Int on `exploration_state` for round counter
+
+### Files significantly touched
+- `Swift/Controllers/CapitalController.swift` — trader flatten + categories, currency display, banner reply-kb anchor, fortune error banners
+- `Swift/Controllers/EstateController.swift` — plot harvest picker (new handlers), pstyle forwarding
+- `Swift/Controllers/CombatController.swift` — round counter
+- `Swift/Controllers/ExplorationController.swift` — first-return trader hint trigger
+- `Swift/Controllers/InventoryController.swift` — pstyle forwarding
+- `Swift/Controllers/MainController.swift` — silver instead of gold in profile (3 styles)
+- `Swift/Controllers/GlobalCommandsController.swift` — /menu alias handler
+- `Swift/Helpers/TGBot+Extensions.swift` — `postStatusBanner` optional replyMarkup param
+- `Swift/Models/User.swift` — silver field + tutorialTraderHintShown field
+- `Swift/Models/ExplorationState.swift` — combat_round field + lifecycle hooks
+- `Swift/Models/FortuneCatalog.swift` — silver field rename
+- `Swift/Models/TraderCatalog.swift` / `TavernCatalog.swift` / `EstateUpgradeCatalog.swift` — silver field rename
+- `Swift/Services/PlotService.swift` — HarvestDestination + new harvest signature + bagFull case
+- `Swift/Services/TraderService.swift` / `TavernService.swift` / `FortuneService.swift` / `EstateUpgradeService.swift` — silver everywhere
+- `Swift/configure.swift` — env projectPath, 3 new migrations, setMyCommands, resetDevProfile updates
+
+### Build state
+Build clean across all interim and final iterations.
+
+### Design decisions (with user)
+- Currency naming: EN = `silvers` (RPG-canon plural), UK = `срібники` (genitive plural `срібників` in declensions). Internal Swift identifiers renamed (full refactor + DB migration) rather than keeping `gold` as a non-destructive shim — the precedent of `User.vigor` (DB still `hunger`) was explicitly rejected for this rename because the in-game word changed meaningfully.
+- Trader UI position of Food/Materials split: **inside** Buy/Sell (3 levels: trader → action → category → items), NOT in front of them.
+- Banner reply-kb only on capital sub-actions: inventory/estate/exploration banners don't need it (their UX doesn't suffer from scroll-away).
+- Emoji-before convention for currency: `🪙 N` on buttons, `±🪙 N` on signed status text — single visual convention everywhere.
+
+---
+
 ## Session N+12 — 2026-05-17 (Phase 6.4 Fortune Teller — 22 Major Arcana, 6h buff / 24h cooldown)
 
 ### Goal

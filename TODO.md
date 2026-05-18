@@ -254,7 +254,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] Initial farm grant at registration completion (slot 0 = farm)
 - [x] Iron resource overhaul: `mat.iron` (Iron Lump 🔩, raw — foraging + Mine bonus) + `mat.iron_ingot` (Iron Ingot 🔳, placeholder for Phase 5.x Workshop crafting); legacy `mat.old_iron` retired with `RemoveOldIron` data migration
 - [x] Foraging pool → weighted (`pickWeighted` helper); iron weight 2 vs 10 staples = ~5% medium-zone drop
-- [-] 30×30 spatial estate grid — *deferred until Phase 7 territorial PvP design*
+- [-] 30×30 spatial estate grid — **removed from the roadmap (2026-05-18).** User explicitly closed this design direction; the abstract slot-index Plot model is the final design, NOT a placeholder. Do not propose this as a future feature. See line further down ("do not resurrect this approach") for the long-form rationale.
 - [-] Manor 7×7 interior rooms — *deferred; current model uses abstract House nav*
 - [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 

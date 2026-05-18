@@ -40,17 +40,17 @@ public struct EstateUpgradeStep: Sendable {
     public let requiredPlayerLevel: Int
     /// Materials drained from the combined inventory + warehouse pool.
     public let inputs: [EstateUpgradeInput]
-    /// Gold drained directly from `User.gold` (NOT an inventory item — gold
-    /// lives on the User row, not in a backpack slot). Zero for the early
-    /// transitions; T3+ start gating with real money. Source of gold is
-    /// quest rewards (Phase 6 Capital); no mob drops.
-    public let goldCost: Int
+    /// Silvers drained directly from `User.silver` (NOT an inventory item —
+    /// silver lives on the User row, not in a backpack slot). Zero for the
+    /// early transitions; T3+ start gating with real money. Source of silvers
+    /// is quest rewards (Phase 6 Capital); no mob drops.
+    public let silverCost: Int
 
-    public init(toTier: Int, requiredPlayerLevel: Int, inputs: [EstateUpgradeInput], goldCost: Int = 0) {
+    public init(toTier: Int, requiredPlayerLevel: Int, inputs: [EstateUpgradeInput], silverCost: Int = 0) {
         self.toTier = toTier
         self.requiredPlayerLevel = requiredPlayerLevel
         self.inputs = inputs
-        self.goldCost = goldCost
+        self.silverCost = silverCost
     }
 }
 
@@ -95,7 +95,7 @@ public enum EstateUpgradeCatalog {
 
         // T3 → T4 (Маєток): real masonry — clay for proper plastered walls,
         // first ingots for the front gates. Tannery unlocks at this tier.
-        // First tier with a gold sink — proper masonry costs hired labour.
+        // First tier with a silver sink — proper masonry costs hired labour.
         EstateUpgradeStep(
             toTier: 4,
             requiredPlayerLevel: 10,
@@ -106,7 +106,7 @@ public enum EstateUpgradeCatalog {
                 EstateUpgradeInput("mat.iron_ingot", 3),
                 EstateUpgradeInput("mat.clay", 10)
             ],
-            goldCost: 50
+            silverCost: 50
         ),
 
         // T4 → T5 (Лицарський маєток): a defensive tower — heavy stone +
@@ -122,7 +122,7 @@ public enum EstateUpgradeCatalog {
                 EstateUpgradeInput("mat.hide", 10),
                 EstateUpgradeInput("mat.clay", 15)
             ],
-            goldCost: 150
+            silverCost: 150
         ),
 
         // T5 → T6 (Баронський маєток): grand expansion — every material
@@ -138,7 +138,7 @@ public enum EstateUpgradeCatalog {
                 EstateUpgradeInput("mat.hide", 15),
                 EstateUpgradeInput("mat.clay", 20)
             ],
-            goldCost: 400
+            silverCost: 400
         ),
 
         // T6 → T7 (Володіння лорда): endgame — the player should have a deep
@@ -155,7 +155,7 @@ public enum EstateUpgradeCatalog {
                 EstateUpgradeInput("mat.hide", 20),
                 EstateUpgradeInput("mat.clay", 25)
             ],
-            goldCost: 1000
+            silverCost: 1000
         )
     ]
 
