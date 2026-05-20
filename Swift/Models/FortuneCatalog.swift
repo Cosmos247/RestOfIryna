@@ -184,7 +184,7 @@ public enum FortuneCatalog {
     }
 
     /// Asset path for a card's portrait. Caller passes the result to
-    /// `sendScenicPhoto`. Files are PNG (preserve original tarot art).
+    /// `sendCachedPhoto`. Files are PNG (preserve original tarot art).
     public static func assetPath(for cardId: String) -> String {
         return "\(projectPath)/Assets/capital/fortune/\(cardId).png"
     }

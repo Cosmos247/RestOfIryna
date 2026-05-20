@@ -282,12 +282,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// keyboard, with `Assets/capital/welcome.jpg` attached if present).
     /// Used both from request handlers via the instance `renderWelcome`
     /// and from `TravelService.pushArrival` on capital arrival — same
-    /// message shape in both cases. Goes through `sendScenicPhoto` so
-    /// the file_id cache + scenery cleanup apply.
+    /// message shape in both cases. Goes through `sendCachedPhoto` so
+    /// the file_id cache applies (photo is kept in chat history).
     public static func sendWelcome(toUser user: User, bot: TGBot, lingo: Lingo) async throws {
         let text = lingo.localize("capital.welcome", locale: user.locale)
         let markup = Controllers.capitalController.generateControllerKB(session: user, lingo: lingo)
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/welcome.jpg",
             caption: text,
             replyMarkup: markup,
@@ -305,9 +305,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let markup = generateControllerKB(session: context.session, lingo: lingo)
 
         // Per-location artwork at `Assets/capital/<location-id>.jpg`.
-        // `sendScenicPhoto` handles missing-file fallback (text-only)
-        // AND file_id caching AND scenery-slot cleanup uniformly.
-        _ = try await sendScenicPhoto(
+        // `sendCachedPhoto` handles missing-file fallback (text-only)
+        // AND file_id caching uniformly; photo is kept in chat history.
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/\(location.rawValue).jpg",
             caption: text,
             replyMarkup: markup,
@@ -379,7 +379,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     func showTrader(context: Context) async throws {
         let text = renderTraderMenuBody(session: context.session, lingo: context.lingo)
         let keyboard = traderMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/trader.jpg",
             caption: text,
             replyMarkup: .inlineKeyboardMarkup(keyboard),
@@ -961,14 +961,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // Tap of `[🔮 Тягнути карту]` calls `FortuneService.draw`, then
     // either shows the reveal (new bot message with the card photo +
     // meaning + buff description) OR keeps the entry screen with an
-    // error banner. The reveal message goes through `sendScenicPhoto`
-    // so the previous scenery photo (probably the Ворожка entry) is
-    // replaced — only the latest reveal stays in chat.
+    // error banner. The reveal message goes through `sendCachedPhoto`
+    // (file_id cache); like every location photo it stays in chat so the
+    // player keeps a record of past draws.
 
     func showFortune(context: Context) async throws {
         let text = renderFortuneEntryBody(session: context.session, lingo: context.lingo)
         let inline = fortuneEntryKeyboard(session: context.session, lingo: context.lingo)
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/fortune.jpg",
             caption: text,
             replyMarkup: .inlineKeyboardMarkup(inline),
@@ -1110,7 +1110,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: backLabel, callbackData: "fortune:back")
         ]])
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: FortuneCatalog.assetPath(for: card.id),
             caption: text,
             replyMarkup: .inlineKeyboardMarkup(keyboard),
@@ -1165,15 +1165,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Same photo as `renderLocation(.tavern)` would use, but with the
         // tavern-specific inline keyboard ([🍲 Меню][🎲 Кості][🎯 Влучанка])
         // attached instead of the plain capital reply-keyboard. Goes
-        // through `sendScenicPhoto` so file_id cache + scenery cleanup
-        // both apply.
+        // through `sendCachedPhoto` so the file_id cache applies (photo
+        // kept in chat history).
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
         let body  = lingo.localize(Location.tavern.bodyKey,  locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let inline = tavernEntryKeyboard(lingo: lingo, locale: locale)
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/tavern.jpg",
             caption: text,
             replyMarkup: .inlineKeyboardMarkup(inline),
@@ -1360,26 +1360,38 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         let throwCount = emoji == "🎲" ? 2 : 1
 
+        // Every message this round sprays into chat — labels, animated dice,
+        // and (below) the result line. We collect their ids and hand them to
+        // `TavernCleanupService` for deletion once they age past 24 h.
+        // Telegram forbids bots from deleting a dice message in a private
+        // chat until it's 24 h old, so the round stays visible as game
+        // history and the sweep clears it the moment it becomes deletable.
+        var roundMessageIds: [Int] = []
+
         // Player label + dice.
         let playerLabel = "\(emoji) " + lingo.localize("capital.tavern.gamble.player_throws", locale: locale)
-        _ = try await context.bot.sendMessage(params: TGSendMessageParams(
+        let playerLabelMsg = try await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: chatId, text: playerLabel, parseMode: .html
         ))
+        roundMessageIds.append(playerLabelMsg.messageId)
         var playerValues: [Int] = []
         for _ in 0..<throwCount {
             let dice = try await context.bot.sendDice(params: TGSendDiceParams(chatId: chatId, emoji: emoji))
+            roundMessageIds.append(dice.messageId)
             playerValues.append(dice.dice?.value ?? 1)
         }
         try? await Task.sleep(nanoseconds: 4_000_000_000)
 
         // Innkeeper label + dice.
         let houseLabel = "\(emoji) " + lingo.localize("capital.tavern.gamble.house_throws", locale: locale)
-        _ = try await context.bot.sendMessage(params: TGSendMessageParams(
+        let houseLabelMsg = try await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: chatId, text: houseLabel, parseMode: .html
         ))
+        roundMessageIds.append(houseLabelMsg.messageId)
         var houseValues: [Int] = []
         for _ in 0..<throwCount {
             let dice = try await context.bot.sendDice(params: TGSendDiceParams(chatId: chatId, emoji: emoji))
+            roundMessageIds.append(dice.messageId)
             houseValues.append(dice.dice?.value ?? 1)
         }
         try? await Task.sleep(nanoseconds: 4_000_000_000)
@@ -1432,12 +1444,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             TGInlineKeyboardButton(text: replayLabel, callbackData: "tavern:roll:\(replayKind):\(wager)"),
             TGInlineKeyboardButton(text: backLabel,   callbackData: "tavern:menu")
         ]])
-        _ = try await context.bot.sendMessage(params: TGSendMessageParams(
+        let resultMsg = try await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: chatId,
             text: resultText,
             parseMode: .html,
             replyMarkup: .inlineKeyboardMarkup(resultKeyboard)
         ))
+        roundMessageIds.append(resultMsg.messageId)
+
+        // Record the whole round for the 24 h cleanup sweep. Best-effort —
+        // a DB hiccup just means this round lingers a little longer.
+        try? await TavernCleanupService.record(messageIds: roundMessageIds, telegramId: context.session.telegramId, on: context.db)
 
         // For a photo host (initial wager screen) restore the wager view
         // so the player can scroll up and pick a different stake. For a

@@ -180,6 +180,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(RenameGoldToSilver())
     migrations.add(AddTutorialTraderHint())
     migrations.add(AddCombatRound())
+    migrations.add(CreateTavernGameMessages())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -420,6 +421,12 @@ public func configure(logger: Logger) async throws {
     // crosses its cap. Production amount is computed lazily on visit, the
     // ticker only handles notifications.
     PlotProductionService.startTicker(on: db, bot: appState.bot, lingo: lingo)
+
+    // MARK: - Tavern dice cleanup sweeper
+    // Tavern rounds leave their dice/labels/result in chat (Telegram blocks
+    // deleting a private-chat dice message until it's 24 h old). This loop
+    // sweeps each recorded message away the moment it ages past that limit.
+    TavernCleanupService.startSweeper(on: db, bot: appState.bot)
 
     // MARK: - Notify admins about starting bot
     // Restored players keep whatever reply keyboard their current controller

@@ -197,21 +197,14 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         ]])
         let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
 
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/registration/kings_charter.jpg")
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: "kings_charter.jpg", data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: markup
-            )
-            _ = try await context.bot.sendPhoto(params: params)
-        } else {
-            // Fallback: text-only if the artwork file is missing.
-            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
-        }
+        // file_id cache via `sendCachedPhoto`; kept in chat (lore beat).
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/registration/kings_charter.jpg",
+            caption: text,
+            replyMarkup: markup,
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     // MARK: - Step 4: Journey & Wolves
@@ -226,22 +219,16 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
 
         let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
-        let imageURL = URL(fileURLWithPath: "\(projectPath)/Assets/registration/\(cls.journeyImageName)")
 
-        if let imageData = try? Data(contentsOf: imageURL) {
-            let inputFile = TGInputFile(filename: cls.journeyImageName, data: imageData, mimeType: "image/jpeg")
-            let params = TGSendPhotoParams(
-                chatId: .chat(context.session.telegramId),
-                photo: .file(inputFile),
-                caption: text,
-                parseMode: .html,
-                replyMarkup: markup
-            )
-            _ = try await context.bot.sendPhoto(params: params)
-        } else {
-            // Fallback: text-only if the artwork file is missing for some reason.
-            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
-        }
+        // Per-class journey art; file_id cache via `sendCachedPhoto`, kept
+        // in chat as a lore beat.
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/registration/\(cls.journeyImageName)",
+            caption: text,
+            replyMarkup: markup,
+            toUser: context.session,
+            bot: context.bot
+        )
     }
 
     // MARK: - Step 5: Estate Name

@@ -172,11 +172,10 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let inline = rootKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: context.session.locale)
 
         // Per-level artwork at `Assets/estate/level_<N>.jpg`.
-        // `sendScenicPhoto` reuses Telegram's file_id cache + replaces
-        // the user's prior scenery photo, so estate revisits don't pile
-        // up duplicate landscapes in chat.
+        // `sendCachedPhoto` reuses Telegram's file_id cache; the photo is
+        // kept in chat so the player keeps a record of past estate visits.
         let level = context.session.estateLevel
-        _ = try await sendScenicPhoto(
+        _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/estate/level_\(level).jpg",
             caption: text,
             replyMarkup: .inlineKeyboardMarkup(inline),

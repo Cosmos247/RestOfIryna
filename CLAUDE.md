@@ -102,12 +102,13 @@ let button = TGInlineKeyboardButton(text: "Label", callbackData: "prefix:value")
 lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 ```
 
-### Scenery photos (capital / estate / future location backdrops)
-Always use `sendScenicPhoto(...)` from `Swift/Helpers/PhotoCache.swift` — never call `bot.sendPhoto` directly for player-visible location art. The helper does two things:
-- **file_id cache** — first send uploads the JPG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload).
-- **Scenery slot cleanup** — tracks the user's most recent scenery photo in `EphemeralChatState.lastSceneryPhotoId` and deletes it before sending a new one, so chat never accumulates duplicate location backdrops.
+### Player-visible photos (capital / estate / location backdrops / registration / lore)
+Always use `sendCachedPhoto(...)` from `Swift/Helpers/PhotoCache.swift` — never call `bot.sendPhoto` directly for player-visible art. The helper does one thing:
+- **file_id cache** — first send uploads the JPG/PNG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload). file_id is a global Telegram reference, so one cached entry serves every user; the cache is in-memory and refills after a restart.
+
+Photos are **kept in chat history** — nothing is deleted. Players asked to keep a scrollable record of where they've been (and for future stats). Because every bubble references the same server-side file_id, a long history of repeated backdrops costs no extra storage (Telegram dedups by file_id), so accumulation is cheap.
 ```swift
-_ = try await sendScenicPhoto(
+_ = try await sendCachedPhoto(
     assetPath: "\(projectPath)/Assets/capital/<id>.jpg",
     caption: text,
     replyMarkup: .inlineKeyboardMarkup(keyboard),
@@ -115,7 +116,7 @@ _ = try await sendScenicPhoto(
     bot: context.bot
 )
 ```
-For one-off narrative art that must stay in chat history (registration King's Oath, lore beats), call `bot.sendPhoto` directly — those don't share the scenery slot.
+**Exception — tavern gambling rolls (24 h sweep).** Dice/darts rounds spray messages (labels, animated dice, result). Telegram forbids bots from deleting a **dice** message in a private chat until it's 24 h old (anti-cheat), so they can't be removed when the round ends — they stay as game history. Each round records every message id via `TavernCleanupService.record(...)` into the `tavern_game_messages` table; a background sweeper (`TavernCleanupService.startSweeper`, started in `configure.swift`, mirrors `PlotProductionService`) deletes each message + row once it ages past 24 h. This is the only message flow that gets cleaned up.
 
 ## Environment Variables
 

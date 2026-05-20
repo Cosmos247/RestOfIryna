@@ -112,25 +112,6 @@ public actor EphemeralChatState {
         lastStatusBanners.removeValue(forKey: telegramId)
     }
 
-    // MARK: - Scenery photo slot (Phase 6.3 chat-cleanup, 2026-05-17)
-    //
-    // One "scenery" photo per user lives in chat at a time — the capital
-    // welcome, trader/tavern/etc. location entries, and estate landscapes
-    // all share this slot. `sendScenicPhoto` deletes the previous entry
-    // before sending a new one, so navigation between locations replaces
-    // the photo bubble instead of stacking duplicates. Sub-screens that
-    // edit the SAME photo via `editMessageCaption` don't touch the slot.
-
-    private var lastSceneryPhotos: [Int64: Int] = [:]
-
-    public func setLastSceneryPhoto(telegramId: Int64, messageId: Int) {
-        lastSceneryPhotos[telegramId] = messageId
-    }
-
-    public func takeLastSceneryPhoto(telegramId: Int64) -> Int? {
-        lastSceneryPhotos.removeValue(forKey: telegramId)
-    }
-
     // MARK: - Trader bulk-N (Phase 6.1 polish)
     //
     // Tap of `[✏️ N]` on a trader buy/sell row opens a prompt asking for

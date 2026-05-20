@@ -371,10 +371,11 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] Dice + darts gambling — button-driven (bot-rolls model since Telegram doesn't let bots author messages as the player); wager tap → "Готовий?" confirm + `[🎲 Кинути][❌ Скасувати]` (no debit yet, free cancel), Roll tap debits + sequences (player label + N×sendDice → sleep → house label + N×sendDice → sleep → result + replay/back). Dice = 2 throws each, darts = 1.
 - [x] Result message has `[🔄 Зіграти ще раз][🔙 До шинка]` — replay edits text in place at same wager, back sends fresh photo tavern entry
 
-### 6.3 Chat-cleanup infrastructure *(landed)*
-- [x] `PhotoCache` actor + `sendScenicPhoto` helper — file_id cache (no repeat uploads) + scenery-slot cleanup (deletes the user's previous backdrop before sending a new one)
+### 6.3 Photo infrastructure *(landed; reworked 2026-05-20)*
+- [x] `PhotoCache` actor + `sendCachedPhoto` helper — file_id cache (no repeat uploads). **Reworked 2026-05-20**: dropped the scenery-slot auto-deletion — photos now stay in chat as history (players wanted a record of visits; file_id dedup makes accumulation free).
 - [x] PNG MIME auto-detect (for tarot card art and future PNG assets)
-- [x] All capital + estate location backdrops migrated to `sendScenicPhoto`; registration narrative art stays on direct `bot.sendPhoto`
+- [x] ALL player-visible art on `sendCachedPhoto` — capital + estate backdrops AND registration narrative art (converted from direct `bot.sendPhoto` on 2026-05-20)
+- [x] Tavern dice 24h cleanup — Telegram blocks deleting private-chat dice <24h old, so `TavernGameMessage` table + `TavernCleanupService` sweeper delete each round once it ages past 24h
 
 ### 6.4 Fortune Teller (Ворожка) *(landed)*
 - [x] `FortuneCatalog` — 22 Major Arcana cards (0_fool through 21_world) + `FortuneEffect` struct (14 optional fields covering stat bonuses + multipliers + one-shots + Wheel-style random)

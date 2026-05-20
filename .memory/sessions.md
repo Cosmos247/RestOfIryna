@@ -1924,3 +1924,28 @@ Display names ARE tier-specific even though the item id isn't, via the new `Item
 ### Decision rule for future trims:
 - If a CLAUDE.md block duplicates `.memory/file-map.md` or `.memory/status.md` content, replace with a one-line pointer. Those two files are the canonical sources and are the ones kept fresh.
 - If it's a pattern/snippet that doesn't drift (architecture, sendMessage signature, callback_data byte limit, locale-button footgun), keep it inline in CLAUDE.md.
+
+## Session — 2026-05-20 (photo file_id everywhere + keep history; tavern game cleanup)
+
+### What was done:
+- **Renamed `sendScenicPhoto` → `sendCachedPhoto`** (`Swift/Helpers/PhotoCache.swift`). Dropped the scenery-slot deletion entirely — location/lore photos now **stay in chat history** (file_id cache only). Players asked to keep a scrollable record of visits (future stats). file_id dedup means a long history of repeated backdrops costs no extra storage.
+- **Registration art now uses `sendCachedPhoto`** (`kings_charter.jpg` + per-class journey art) — previously direct `bot.sendPhoto(.file)` re-uploaded every time. Now file_id-cached.
+- **Removed scenery slot** from `EphemeralChatState` (`lastSceneryPhotos` + setters); nothing else used it.
+- **Tavern gambling self-cleanup**: `EphemeralChatState.tavernGameMessages` tracks every throwaway message of a dice/darts round (player/house labels, dice, result). New `clearTavernGameMessages(...)` in `CapitalController` deletes the prior round when a new round starts (replay/fresh roll, at top of `runRound` after silver debit) and when leaving to the tavern menu (`tavern:menu` handler). This is the ONLY photo/message flow that self-deletes now.
+- Updated CLAUDE.md "Player-visible photos" section + stale comments in CapitalController/EstateController.
+
+### Why:
+- A friend's playtest showed location photos vanishing as the player navigated (old scenery-slot deletion) — looked broken and erased visit history.
+- Tavern dice are pure noise that piled up on every replay → kept the per-round delete-on-replay there.
+
+### Update — 2026-05-20 (tavern dice: 24h sweep, not in-round delete)
+
+Correction to the entry above. Tried deleting the round's dice in-round / on-replay — **Telegram blocks it**: `deleteMessage` refuses a dice message in a private chat until it's >24h old (anti-cheat). Text (labels/result) deletes fine, dice don't → "wall of dice" persisted. User chose to keep dice as visible game history and clean up after 24h instead.
+
+Final design:
+- Reverted all immediate tavern deletion (in-round + cross-round + tavern:menu) and removed `EphemeralChatState.tavernGameMessages` + `clearTavernGameMessages`.
+- New `TavernGameMessage` model + `CreateTavernGameMessages` migration (`tavern_game_messages`: telegram_id, message_id, created_at; no User FK).
+- New `TavernCleanupService`: `record(...)` persists every round message id; `startSweeper(on:bot:)` (in configure.swift, mirrors PlotProductionService) runs catch-up sweep on boot + every 30 min, deleting messages + rows once `created_at` > 24h (deletableAfter = 24h + 60s).
+- `runRound` collects label+dice+result ids into `roundMessageIds` and calls `TavernCleanupService.record`.
+
+Note: dice can't be tested for deletion sooner than 24h — that's the Telegram floor, deleting earlier just errors.
