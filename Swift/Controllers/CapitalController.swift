@@ -189,7 +189,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     ///     transition.
     public func showCapital(context: Context) async throws {
         if try await ExplorationState.current(for: context.session, on: context.db) != nil {
-            let notice = context.lingo.localize("capital.blocked_by_expedition", locale: context.session.locale)
+            let notice = context.lingo.localize("capital.blocked_by_expedition", gender: context.session.gender, locale: context.session.locale)
             try await context.bot.sendMessage(
                 session: context.session,
                 text: notice,
@@ -256,7 +256,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         } catch TravelService.StartFailure.starving {
             try await Controllers.capitalController.postCannotStart(context: context, key: "travel.cannot_start.no_vigor")
         } catch TravelService.StartFailure.onExpedition {
-            try await Controllers.capitalController.postCannotStart(context: context, key: "capital.blocked_by_expedition")
+            try await Controllers.capitalController.postCannotStart(context: context, key: "capital.blocked_by_expedition", gendered: true)
         } catch TravelService.StartFailure.alreadyTraveling {
             if let trip = try await TravelState.current(for: context.session, on: context.db) {
                 try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip)
@@ -300,7 +300,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(location.titleKey, locale: locale)
-        let body  = lingo.localize(location.bodyKey,  locale: locale)
+        // Only the tavern body addresses the player with a feminitive
+        // ("наміснику"); the other locations are gender-neutral, so route just
+        // the tavern through the gendered helper to avoid missing `.m/.f` keys.
+        let body  = location == .tavern
+            ? lingo.localize(location.bodyKey, gender: context.session.gender, locale: locale)
+            : lingo.localize(location.bodyKey, locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
 
@@ -357,8 +362,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip)
     }
 
-    private func postCannotStart(context: Context, key: String) async throws {
-        let text = context.lingo.localize(key, locale: context.session.locale)
+    /// `gendered` routes through the feminitive helper — set it only for keys
+    /// that have `.m/.f` variants in `uk.json` (e.g. the "намісник" expedition
+    /// block); the no-HP / no-vigor reasons are gender-neutral.
+    private func postCannotStart(context: Context, key: String, gendered: Bool = false) async throws {
+        let locale = context.session.locale
+        let text = gendered
+            ? context.lingo.localize(key, gender: context.session.gender, locale: locale)
+            : context.lingo.localize(key, locale: locale)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: nil)
     }
 
@@ -395,7 +406,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let title = lingo.localize("capital.location.trader.title", locale: locale)
         // intro carries its own inline HTML — lore prose + an italic closing
         // quote — so the renderer mustn't wrap it again.
-        let intro = lingo.localize("capital.trader.intro", locale: locale)
+        let intro = lingo.localize("capital.trader.intro", gender: session.gender, locale: locale)
         let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
             "silver": "\(session.silver)"
         ])
@@ -980,7 +991,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func renderFortuneEntryBody(session: User, lingo: Lingo) -> String {
         let locale = session.locale
         let title = lingo.localize(Location.fortune.titleKey, locale: locale)
-        let intro = lingo.localize("capital.fortune.intro", locale: locale)
+        let intro = lingo.localize("capital.fortune.intro", gender: session.gender, locale: locale)
         var lines: [String] = ["<b>\(title)</b>", "", intro, ""]
 
         let cooldownLeft = session.fortuneCooldownRemaining()
@@ -1170,7 +1181,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
-        let body  = lingo.localize(Location.tavern.bodyKey,  locale: locale)
+        let body  = lingo.localize(Location.tavern.bodyKey, gender: context.session.gender, locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let inline = tavernEntryKeyboard(lingo: lingo, locale: locale)
         _ = try await sendCachedPhoto(
@@ -1204,7 +1215,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
-        let body  = lingo.localize(Location.tavern.bodyKey,  locale: locale)
+        let body  = lingo.localize(Location.tavern.bodyKey, gender: context.session.gender, locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let keyboard = tavernEntryKeyboard(lingo: lingo, locale: locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)

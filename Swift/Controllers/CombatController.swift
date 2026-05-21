@@ -94,13 +94,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     }
 
     /// /start force-ends the fight. During registration this drops the
-    /// player back to the wolves prompt (the registration-bound retry path);
+    /// player back to the rabid-dog prompt (the registration-bound retry path);
     /// otherwise it exits to the main menu and clears the expedition row.
     public func onStart(context: Context) async throws -> Bool {
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
             try await state.delete(on: context.db)
         }
-        if context.session.registrationStep < 6 {
+        if context.session.registrationStep < User.registrationDoneStep {
             try await Registration.handleCombatEnd(context: context, won: false)
             return true
         }
@@ -526,8 +526,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 "enemy": enemyName
             ])
 
-            if context.session.registrationStep < 6 {
-                // Registration: fleeing the wolves is a soft retry — same as
+            if context.session.registrationStep < User.registrationDoneStep {
+                // Registration: fleeing the rabid dog is a soft retry — same as
                 // defeat. The state row is deleted by handleCombatEnd's caller
                 // path (we wipe it here directly to keep the invariant clean).
                 try await state.delete(on: context.db)
@@ -688,7 +688,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // Shadow Veil: full dodge this round (no enemy counter), apply
             // lingering dodge buff for the next round.
             state.applyPlayerDodgeBuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
-            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", locale: locale, interpolations: [
+            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", gender: player.gender, locale: locale, interpolations: [
                 "enemy": enemyName
             ])
 
@@ -946,10 +946,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
         let prefix = parts.joined(separator: "\n")
 
-        if context.session.registrationStep < 6 {
-            // Registration tutorial fight — delete the row entirely (it's not
-            // a real expedition), send the result, then bounce to estate naming.
-            // No XP grant: tutorial wolves stay narrative-only.
+        if context.session.registrationStep < User.registrationDoneStep {
+            // Registration tutorial fight (rabid dog) — delete the row entirely
+            // (it's not a real expedition), send the result, then bounce to
+            // estate naming. No XP grant: the tutorial fight is narrative-only.
             try await state.delete(on: context.db)
             try await context.session.saveAndCache(in: context.db)
             try await context.bot.sendMessage(session: context.session, text: prefix, parseMode: .html)
@@ -1021,11 +1021,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     /// Defeat handler — shares the inventory wipe + HP reset with
     /// ExplorationController.handleDeath. During registration the player
-    /// instead gets a soft retry (full HP, re-show the wolves prompt) since
+    /// instead gets a soft retry (full HP, re-show the rabid-dog prompt) since
     /// dying mid-tutorial would otherwise leave them at HP=1 and unable to
     /// finish the fight.
     private func handleCombatDeath(context: Context, enemy: Enemy) async throws {
-        if context.session.registrationStep < 6 {
+        if context.session.registrationStep < User.registrationDoneStep {
             if let state = try await ExplorationState.current(for: context.session, on: context.db) {
                 try await state.delete(on: context.db)
             }
@@ -1086,7 +1086,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // untouched — rebuilding the exploration UI here was disorienting
             // because the player may have already walked back / returned home.
             if let query = context.update.callbackQuery {
-                let toast = context.lingo.localize("combat.ended", locale: context.session.locale)
+                let toast = context.lingo.localize("combat.ended", gender: context.session.gender, locale: context.session.locale)
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                     callbackQueryId: query.id, text: toast, showAlert: true
                 ))

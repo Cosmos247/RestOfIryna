@@ -170,6 +170,21 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "tutorial_trader_hint_shown")
     var tutorialTraderHintShown: Bool
 
+    /// Player's chosen gender — "m" (male) or "f" (female). Set once during
+    /// registration (the gender step, ahead of the name prompt) and read by
+    /// `Lingo.localize(_:gender:locale:)` to pick the Ukrainian feminitive
+    /// variant of any gendered string, plus the per-gender estate artwork.
+    /// Nil only between account creation and the gender step; the gendered
+    /// localize helper treats nil as male.
+    @OptionalField(key: "gender")
+    var gender: String?
+
+    /// The `registrationStep` value marking a fully-registered player. The
+    /// dispatcher restore + combat bridge compare against this to tell
+    /// mid-registration users from active players. It is `7` because the
+    /// gender step was inserted ahead of the name prompt (steps 0–7).
+    public static let registrationDoneStep: Int = 7
+
 
     var name: String {
         if let firstName = firstName, let lastName = lastName {
@@ -221,6 +236,7 @@ final public class User: Model, @unchecked Sendable {
         self.activeFortuneExpiresAt = nil
         self.lastFortuneDrawAt = nil
         self.tutorialTraderHintShown = false
+        self.gender = nil
         self.createdAt = Date()
     }
 

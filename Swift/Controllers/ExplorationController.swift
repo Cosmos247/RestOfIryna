@@ -223,7 +223,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// to the mode picker.
     fileprivate func editToDurationPicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
         let locale = session.locale
-        let prompt = lingo.localize("exploration.duration.prompt", locale: locale)
+        let prompt = lingo.localize("exploration.duration.prompt", gender: session.gender, locale: locale)
 
         var rows: [[TGInlineKeyboardButton]] = []
         for duration in PassiveDuration.allCases {
@@ -296,12 +296,12 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = Controllers.mainController.routerName
         try await context.session.saveAndCache(in: context.db)
 
-        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
+        let homeText = lingo.localize("exploration.passive.closed_home", gender: context.session.gender, locale: locale)
         let text: String
         if let json = reportJSON,
            let data = json.data(using: .utf8),
            let report = try? JSONDecoder().decode(PassiveReport.self, from: data) {
-            let reportText = PassiveExpeditionService.renderReport(report, lingo: lingo, locale: locale)
+            let reportText = PassiveExpeditionService.renderReport(report, gender: context.session.gender, lingo: lingo, locale: locale)
             text = "\(homeText)\n\n\(reportText)"
         } else {
             text = homeText
@@ -424,7 +424,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     private func renderOutcome(context: Context, outcome: StepOutcome, state: ExplorationState, priorVisits: Int) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let narrative = narrateOutcome(outcome, priorVisits: priorVisits, lingo: lingo, locale: locale)
+        let narrative = narrateOutcome(outcome, priorVisits: priorVisits, gender: context.session.gender, lingo: lingo, locale: locale)
         let status = renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale)
         let text = "\(narrative)\n\n\(status)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
@@ -528,7 +528,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// set HP to 1 (vigor stays — per design), end the exploration state, and send
     /// a death screen as the main-menu text override.
     private func handleDeath(context: Context, outcome: StepOutcome) async throws {
-        let cause = narrateOutcome(outcome, priorVisits: 0, lingo: context.lingo, locale: context.session.locale)
+        let cause = narrateOutcome(outcome, priorVisits: 0, gender: context.session.gender, lingo: context.lingo, locale: context.session.locale)
         try await Self.handleDeath(context: context, causeNarrative: cause)
     }
 
@@ -550,7 +550,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
 
-        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": causeNarrative])
+        let deathText = "💀 " + lingo.localize("exploration.death", gender: context.session.gender, locale: locale, interpolations: ["cause": causeNarrative])
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
@@ -573,7 +573,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// Render the narrative for a rolled outcome. `.nothing` picks between
     /// three flavor variants based on the room's prior visit count (fresh /
     /// thinned / bare). Every other outcome uses a single narrative.
-    fileprivate func narrateOutcome(_ outcome: StepOutcome, priorVisits: Int, lingo: Lingo, locale: String) -> String {
+    fileprivate func narrateOutcome(_ outcome: StepOutcome, priorVisits: Int, gender: String?, lingo: Lingo, locale: String) -> String {
         switch outcome {
         case .nothing:
             let key: String
@@ -611,7 +611,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             // Leading 🦵 is prepended here (post-interpolation) because Lingo
             // drops interpolations after a multi-UTF-16 emoji in the template.
             // ❤️ rides inside the `hp` interpolation value for the same reason.
-            return "🦵 " + lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
+            return "🦵 " + lingo.localize("exploration.outcome.trip", gender: gender, locale: locale, interpolations: [
                 "hp": "❤️ −\(hpLost)"
             ])
 
@@ -620,7 +620,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             // ❤️ / 🍖 are passed as interpolation values rather than placed in
             // the template — Lingo drops `%{}` placeholders that follow a
             // multi-UTF-16 emoji in the template itself.
-            let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [
+            let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", gender: gender, locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)",
                 "hp": "❤️ −\(hpLost)",
@@ -727,7 +727,7 @@ extension ExplorationController {
             context.session.routerName = Controllers.mainController.routerName
             try await context.session.saveAndCache(in: context.db)
 
-            let homeText = context.lingo.localize("exploration.passive.closed_home", locale: locale)
+            let homeText = context.lingo.localize("exploration.passive.closed_home", gender: context.session.gender, locale: locale)
             try await Controllers.mainController.showMainMenu(context: context, text: homeText)
             return true
         }
@@ -804,7 +804,7 @@ extension ExplorationController {
             try await context.session.saveAndCache(in: context.db)
 
             let timeText = PassiveExpeditionService.formatDuration(duration)
-            let confirmation = context.lingo.localize("exploration.passive.started", locale: locale, interpolations: ["time": timeText])
+            let confirmation = context.lingo.localize("exploration.passive.started", gender: context.session.gender, locale: locale, interpolations: ["time": timeText])
             let editParams = TGEditMessageTextParams(
                 chatId: chatId,
                 messageId: message.messageId,

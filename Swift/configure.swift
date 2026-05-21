@@ -73,13 +73,27 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
         }
     }
 
-    /// Filename under `Assets/registration/` for the class-specific "approaching the estate"
-    /// artwork shown during the wolves encounter step.
-    var journeyImageName: String {
+    /// Filename under `Assets/registration/` for the class+gender-specific
+    /// "approaching the estate" artwork shown during the rabid-dog encounter
+    /// step (e.g. `warrior_estate_f.jpg`).
+    func journeyImageName(gender: CharacterGender) -> String {
+        return "\(rawValue)_estate_\(gender.rawValue).jpg"
+    }
+}
+
+// MARK: - Character Gender
+/// Player gender chosen during registration. Drives Ukrainian feminitive text
+/// variants (`Lingo.localize(_:gender:locale:)`) and per-gender estate artwork.
+/// English copy is gender-neutral, so this only affects the `uk` locale and
+/// asset selection.
+public enum CharacterGender: String, CaseIterable, Codable, Sendable {
+    case male = "m"
+    case female = "f"
+
+    func icon() -> String {
         switch self {
-        case .warrior: return "warrior_estate.jpg"
-        case .archer:  return "archer_estate.jpg"
-        case .mage:    return "mage_estate.jpg"
+        case .male:   return "♂️"
+        case .female: return "♀️"
         }
     }
 }
@@ -181,6 +195,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddTutorialTraderHint())
     migrations.add(AddCombatRound())
     migrations.add(CreateTavernGameMessages())
+    migrations.add(AddGender())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -226,6 +241,7 @@ public func configure(logger: Logger) async throws {
                 user.registrationStep = 0
                 user.nickname = nil
                 user.characterClass = nil
+                user.gender = nil
                 user.estateName = nil
                 user.level = 1
                 user.xp = 0
@@ -444,10 +460,10 @@ public func configure(logger: Logger) async throws {
         let chatId = TGChatId.chat(tgId)
         let user = try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first()
         let locale = user?.locale ?? "uk"
-        let text = lingo.localize("bot.restarted", locale: locale)
+        let text = lingo.localize("bot.restarted", gender: user?.gender, locale: locale)
 
         let markup: TGReplyMarkup
-        if let user = user, user.registrationStep >= 6 {
+        if let user = user, user.registrationStep >= User.registrationDoneStep {
             let activeCtrl = Controllers.all.first { $0.routerName == user.routerName }
             let kbCtrl: TGControllerBase
             if activeCtrl?.routerName == Controllers.combatController.routerName {

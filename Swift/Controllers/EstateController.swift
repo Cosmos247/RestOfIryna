@@ -140,7 +140,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // Same rule for active and passive — if an ExplorationState row
         // exists, the manor is locked until the expedition ends.
         if try await ExplorationState.current(for: context.session, on: context.db) != nil {
-            let notice = context.lingo.localize("estate.blocked_by_expedition", locale: context.session.locale)
+            let notice = context.lingo.localize("estate.blocked_by_expedition", gender: context.session.gender, locale: context.session.locale)
             try await context.bot.sendMessage(
                 session: context.session,
                 text: notice,

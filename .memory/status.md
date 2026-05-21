@@ -25,7 +25,8 @@
 - [x] Database connection pool graceful shutdown (defer in configure)
 
 ### Controllers
-- [x] RegistrationController — lore-driven 6-step flow: language → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming. First message strips any leftover reply keyboard via `ReplyKeyboardRemove`. Nickname + estate-name inputs are validated against three character allow-lists (digits / Latin / Ukrainian) with separate error toasts for too short, too long, edge whitespace, consecutive spaces, and invalid characters; single internal spaces are permitted so two-word names work.
+- [x] RegistrationController — lore-driven 8-step flow (steps 0–7): language → **gender (step 1)** → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming → done. Gender (`set_gender:m|f`) is picked ahead of the name prompt so every later string renders the correct uk feminitive and the estate-reveal art picks the matching gender. "Done" is `User.registrationDoneStep` (= 7), replacing the old magic `6` in CombatController/configure. First message strips any leftover reply keyboard via `ReplyKeyboardRemove`. Nickname + estate-name inputs are validated against three character allow-lists (digits / Latin / Ukrainian) with separate error toasts for too short, too long, edge whitespace, consecutive spaces, and invalid characters; single internal spaces are permitted so two-word names work.
+- [x] Gender system (Phase 6.5) — `User.gender` ("m"/"f", nil=male) + `AddGender` migration + `CharacterGender` enum. Drives uk feminitives via the `Lingo.localize(_:gender:locale:)` overload (`.m`/`.f` in uk.json only; English stays neutral) across ~20 keys, and per-gender estate art `CharacterClass.journeyImageName(gender:)` → `Assets/registration/<class>_estate_<m|f>.jpg` (falls back to genderless file). Full rationale in `.memory/localization.md`.
 - [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Inventory/Estate/Capital nav buttons
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
@@ -115,7 +116,7 @@
 - [ ] Tutorial/onboarding quest
 
 ### Content Needed
-- [x] Bestiary — 7 animals across 6 tiers in code-based EnemyCatalog. Wild family (🐗 boar km 1-10 / 🫎 moose 6-15 / 🦬 buffalo 11-20 / 🐻 wild_bear 21-30) drops raw meat + hide; rabid family (🐈‍⬛ lynx 11-20 / 🐺 wolf 16-25 / 🐻‍❄️ rabid_bear 25-35) drops hide only. Three deep-zone overlaps stack: rabid_wolf↔wild_bear at 21-25, wild_bear↔rabid_bear at 25-30. Reference doc at `content/bestiary.md`. T5+ currently only has regular mobs; the dedicated boss is reserved for Phase 3.5.
+- [x] Bestiary — 7 animals across 6 tiers in code-based EnemyCatalog. Wild family (🐗 boar km 1-10 / 🫎 moose 6-15 / 🦬 buffalo 11-20 / 🐻 wild_bear 21-30) drops raw meat + hide; rabid family (🐈‍⬛ lynx 11-20 / 🐺 wolf 16-25 / 🐻‍❄️ rabid_bear 25-35) drops hide only. Three deep-zone overlaps stack: rabid_wolf↔wild_bear at 21-25, wild_bear↔rabid_bear at 25-30. Reference doc at `content/bestiary.md`. T5+ currently only has regular mobs; the dedicated boss is reserved for Phase 3.5. Plus two non-exploration mobs (depthRange 0...0, never rolled): 🥋 training_dummy (estate sparring) and 🐕 rabid_dog (one-off registration tutorial fight, wild_boar-level stats, no loot, no XP — replaced the over-tier rabid_wolf in the first fight 2026-05-21).
 - [ ] Recipe book (crafting recipes per tier)
 - [ ] Tuning curves (XP per level, vigor scaling, stat curves)
 - [ ] Quest definitions
@@ -123,7 +124,7 @@
 
 ---
 
-*Last updated: 2026-05-20 (Photo/chat-cleanup rework — file_id for all photos + kept history; tavern dice 24h cleanup). Live-play feedback session — full details in `sessions.md`.*
+*Last updated: 2026-05-21 (Gender selection at registration step 1 + uk feminitives across ~20 keys via the `gender:` localize overload + per-gender estate art with genderless fallback). Full details in `sessions.md`.*
 
 *Headline highlights for this entry:*
 - **Photo helper reworked**: `sendScenicPhoto` → `sendCachedPhoto` (`PhotoCache.swift`). Dropped the scenery-slot auto-deletion — location/lore photos now STAY in chat history (players wanted a scrollable record of visits; file_id dedup makes accumulation free). Removed `EphemeralChatState.lastSceneryPhotos`. Registration art (`kings_charter` + per-class journey) converted from direct `bot.sendPhoto(.file)` (re-uploaded every time) to `sendCachedPhoto` (file_id cached).

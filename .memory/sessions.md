@@ -1949,3 +1949,55 @@ Final design:
 - `runRound` collects label+dice+result ids into `roundMessageIds` and calls `TavernCleanupService.record`.
 
 Note: dice can't be tested for deletion sooner than 24h — that's the Telegram floor, deleting earlier just errors.
+
+## Session — 2026-05-21 (Gender selection at registration + uk feminitives)
+
+Added player gender (male/female) chosen during registration, driving Ukrainian feminitive text and per-gender estate art. Design discussed at length before coding (placement, feminitive scope, hybrid neutralize-vs-variants split).
+
+**Placement decision:** gender = new registration **step 1**, ahead of the name prompt (user choice), so even `registration.welcome` ("воїне/прибув") renders gendered. Step sequence renumbered 0–7 (was 0–6): 0 lang → 1 gender → 2 name → 3 class → 4 oath → 5 journey → 6 estate → 7 done. Replaced the magic `6` "done" sentinel with `User.registrationDoneStep` (4 sites in CombatController + 1 in configure).
+
+**Data/infra:**
+- `User.gender: String?` ("m"/"f", nil=male) + `AddGender` migration (nullable) + registered in configure.
+- `CharacterGender` enum (configure.swift, ♂️/♀️ icons).
+- `Lingo.localize(_:gender:locale:)` overload (Lingo+Locales.swift): branches on locale — `.m`/`.f` for uk, plain base key for en. **No English duplication.** Verified Lingo returns raw key + console warning on miss, so the locale-branch (not fallback-detection) is the clean design.
+- dev-reset clears `gender = nil` → test profiles re-pick on the registration re-run (the only "reset" path; no player-facing reset exists).
+
+**Art:** `CharacterClass.journeyImageName(gender:)` → `Assets/registration/<class>_estate_<m|f>.jpg` with `FileManager.fileExists` fallback to genderless `<class>_estate.jpg`. User to drop 6 files (warrior/archer/mage × m/f).
+
+**Feminitive scope (full uk.json scan, not just the obvious 9):** ~20 keys gendered (`.m`/`.f`), 7 neutralized, 1 item-desc neutralized. The bulk beyond "намісник" was 2nd-person past-tense (`ти подолав`, `ти знайшов`…) in combat/exploration — present tense and formal `Ви + -ли` are already gender-neutral.
+- **Variants (.m/.f):** registration.welcome / name_accepted / king_oath / wolves_retry / estate.prompt, estate.blocked_by_expedition, capital.blocked_by_expedition, capital.location.tavern.body, capital.trader.intro, capital.fortune.intro, exploration.outcome.trip / encounter.won, exploration.death, exploration.duration.prompt, exploration.passive.started / closed_home / report.death, combat.ended, combat.special_def.archer.activate, bot.restarted.
+- **Neutralized (Cat 1):** capital.tavern.gamble.ready_prompt ("Кидаємо?"), kitchen.alert.not_learned, combat.tech.no_uses_left, combat.tech.locked, exploration.outcome.loot.picked ("Знайдено…"), travel.cannot_start.no_hp ("Рани не пускають у дорогу"), travel.cannot_start.no_vigor ("Сил на дорогу не лишилось"), item.food.governors_feast.desc (gendering one item would mean plumbing gender through the whole item-desc path).
+- New: registration.gender.prompt/.m/.f (both locales).
+
+**Call-site routing:** ~20 sites switched to the `gender:` overload. Threaded `gender:` params into `ExplorationController.narrateOutcome` and `PassiveExpeditionService.renderReport`. Special cases: tavern body gendered only for `.tavern` in `renderLocation`; `postCannotStart` got a `gendered: Bool` flag (true only for capital.blocked_by_expedition).
+
+**Verification:** JSON valid (both locales); `swift build` green; scripted check confirms every routed key has exactly `.m`+`.f` in uk.json, no stray uk base, base intact in en.json, and no plain `localize` left on a split key.
+
+**Word choices to confirm with user:** "воїне"→"войовнице" (welcome.f), намісник vocative→"наміснице".
+
+Not committed (awaiting audit-and-commit prompt). Docs updated: CLAUDE.md (Localization rule), .memory/localization.md (full gendered section), status.md, file-map.md.
+
+### Addendum — registration tutorial mob (same day, 2026-05-21)
+
+The first registration fight was against `enemy.rabid_wolf` (tier 4, hp 70, atk 28) — far over-tier for a fresh L1 player with only a starter weapon. Added a one-off `enemy.rabid_dog` (🐕, tier 1, hp 18, atk 14, def 1 — wild_boar level), `depthRange 0...0` so exploration never rolls it (mirrors the training dummy), empty lootTable, xpReward 0. `RegistrationController.startWolvesFight` now finds `enemy.rabid_dog`. The registration branch of `CombatController.finishVictory` already grants no XP and (with the empty loot table) no loot, so the fight is purely instructional.
+
+Narrative updated to match: the journey/retry copy now describes a single rabid dog instead of a wolf pack (uk uses feminine "скажена собака" → "вона … вискочила").
+
+Then renamed all internal "wolves" identifiers to "dog" (separate pass): locale keys `registration.journey_dog` / `registration.fight_dog` / `registration.dog_retry` (were `*_wolves` / `wolves_retry`); funcs `Registration.startDogFight` / `promptJourneyDog`; callback `reg:fight_dog`; local var `dog`; MARK "Rabid Dog Fight Bridge". Also corrected stale step numbers in the bridge comments (journey is now step 5, victory→6, not the pre-gender-renumber 4/5) and refreshed "wolves" wording in CombatController / CombatService / configure comments. The exploration `enemy.rabid_wolf` (tier-4 wilderness mob) is untouched. Build green.
+
+### Addendum 2 — art assets dropped in (same day, 2026-05-21)
+
+User supplied the real artwork.
+- **Per-gender journey art** (6 files) → `Assets/registration/{warrior,archer,mage}_estate_{m,f}.jpg`. Removed the old genderless `*_estate.jpg` (3 files) per user request, and simplified `promptJourneyDog` to use the gendered path directly (dropped the `FileManager.fileExists` fallback + `CharacterClass.journeyImageNameFallback`).
+- **Per-tier estate art** (7 files) → `Assets/estate/level_1.jpg … level_7.jpg`, converted from the user's `Tier_1…7.png` via `sips -s format jpeg`. Covers all tiers (EstateUpgradeCatalog.maxTier = 7). EstateController loads `level_<estateLevel>.jpg` directly.
+
+Build green.
+
+### Addendum 3 — capital art + file_id cache rule (same day, 2026-05-21)
+
+- Replaced the capital backdrop: user's `capital.jpeg` → `Assets/capital/welcome.jpg` (1280×853 JPEG).
+- **file_id cache audit:** every player-visible image is sent via `sendCachedPhoto` (9 call sites: registration kings_charter + journey art, capital welcome/location/trader/fortune-intro/fortune-card/tavern×2, estate level art). So all new art (6 journey + 7 estate + capital) auto-registers its file_id on first send — nothing extra to wire up.
+- Closed the one cache-bypass loophole: `TGBot.sendMessage(session:text:…)` had an unused optional `photo: TGFileInfo?` param that called `bot.sendPhoto` directly. Removed it (no callers ever passed it) so `sendCachedPhoto` is structurally the only photo path.
+- Strengthened the CLAUDE.md "Player-visible photos" rule: every image MUST go through `sendCachedPhoto`; convenience `sendMessage` has no `photo:` param by design; restart the bot after swapping an asset file so the stale in-memory file_id drops.
+
+Build green.

@@ -59,7 +59,7 @@ public enum CombatService {
     }
 
     /// Tuple of per-fight uses for a user — called by every `beginCombat`
-    /// caller (active exploration, training dummy, registration wolves) so
+    /// caller (active exploration, training dummy, registration rabid dog) so
     /// the budget always tracks the user's current level.
     public static func initialUsesForUser(_ user: User) -> (atk: Int, def: Int, sup: Int) {
         return (

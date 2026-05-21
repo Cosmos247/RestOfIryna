@@ -625,8 +625,8 @@ public enum PassiveExpeditionService {
             return
         }
         let locale = user.locale
-        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
-        let reportText = renderReport(report, lingo: lingo, locale: locale)
+        let homeText = lingo.localize("exploration.passive.closed_home", gender: user.gender, locale: locale)
+        let reportText = renderReport(report, gender: user.gender, lingo: lingo, locale: locale)
 
         // Single combined message — home-again line first, report body below.
         // Let send errors propagate so `finalizeAndPush` logs + skips the
@@ -648,13 +648,13 @@ public enum PassiveExpeditionService {
     /// Build the multi-line report text shown when the passive expedition
     /// finishes. Called from both the background push and the
     /// `showExploration` controller entry (when a report is waiting).
-    public static func renderReport(_ report: PassiveReport, lingo: Lingo, locale: String) -> String {
+    public static func renderReport(_ report: PassiveReport, gender: String?, lingo: Lingo, locale: String) -> String {
         var lines: [String] = []
         lines.append(lingo.localize("exploration.passive.report.title", locale: locale))
         lines.append("")
 
         if report.died, let deathKm = report.deathDepth {
-            lines.append(lingo.localize("exploration.passive.report.death", locale: locale, interpolations: ["km": "\(deathKm)"]))
+            lines.append(lingo.localize("exploration.passive.report.death", gender: gender, locale: locale, interpolations: ["km": "\(deathKm)"]))
             lines.append("")
         }
 

@@ -196,6 +196,21 @@ public enum EnemyCatalog {
             icon: "🥋",
             xpReward: 0
         ),
+        // Rabid Dog — one-off registration tutorial mob. Tuned to wild_boar
+        // level (the weakest exploration enemy) so a fresh L1 player with only
+        // a starter weapon wins comfortably while learning the combat UI. Never
+        // rolled by exploration (depthRange 0...0, like the training dummy),
+        // no loot, no XP — `CombatController.finishVictory`'s registration
+        // branch grants neither, so this fight stays purely instructional.
+        Enemy(
+            id: "enemy.rabid_dog",
+            nameKey: "enemy.rabid_dog",
+            tier: 1, hp: 18, attack: 14, defense: 1,
+            depthRange: 0...0,
+            lootTable: [],
+            icon: "🐕",
+            xpReward: 0
+        ),
         // Rabid Bear — tier 6 deepest hostile. Beastfever has bleached the
         // fur and stripped the discipline; what's left is a hard-hitting
         // monster that follows the rabid family pattern (high ATK, lower

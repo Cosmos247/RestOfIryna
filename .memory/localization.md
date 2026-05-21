@@ -134,13 +134,71 @@ If you must keep the emoji in the template for some reason:
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
+## 👫 Gender-aware feminitives (uk) — added 2026-05-21
+
+Ukrainian declines past-tense verbs, adjectives and the "намісник/намісниця"
+noun by the player's gender; English copy is gender-neutral. Player gender is
+chosen once at **registration step 1** (ahead of the name prompt) and stored in
+`User.gender` ("m"/"f"; nil treated as male). The estate-reveal art is also
+per-gender (`CharacterClass.journeyImageName(gender:)` → `<class>_estate_<m|f>.jpg`,
+falls back to the genderless `<class>_estate.jpg`).
+
+### Helper (`Lingo+Locales.swift`)
+```swift
+lingo.localize("some.key", gender: session.gender, locale: locale, interpolations: [...])
+```
+Branches on locale: for **uk** it looks up `some.key.m` / `some.key.f`; for any
+other locale it short-circuits to the plain `some.key`. So **only `uk.json` gets
+`.m`/`.f` variants — never duplicate the English string.**
+
+### Contract / GO-FORWARD RULE
+- A key routed through the gendered helper **MUST** have `<key>.m` AND `<key>.f`
+  in `uk.json`, and the base `<key>` in `uk.json` is removed (dead — the helper
+  never reads it for uk). `en.json` keeps the single neutral base `<key>`.
+- When you add ANY new uk string that addresses the player with a gendered word
+  (past-tense `-в/-ла`, an adjective, or намісник/-иця), either give it `.m`/`.f`
+  + route the call site through the gendered helper, OR phrase it neutrally
+  (impersonal "Знайдено…", plural "Готові?", passive "ще не вивчено"). Prefer
+  neutral for short system toasts; keep `.m`/`.f` for narrative/dramatic beats.
+- Missing a `.m`/`.f` for a routed key → uk shows the raw key + a Lingo console
+  warning (loud, easy to catch).
+
+### Gendered keys today (have `.m`/`.f` in uk.json)
+namespace "намісник" + verbs/adjectives: `registration.welcome`,
+`registration.name_accepted`, `registration.king_oath`,
+`registration.dog_retry`, `registration.estate.prompt`,
+`estate.blocked_by_expedition`, `capital.blocked_by_expedition`,
+`capital.location.tavern.body`, `capital.trader.intro`, `capital.fortune.intro`,
+`exploration.outcome.trip`, `exploration.outcome.encounter.won`,
+`exploration.death`, `exploration.duration.prompt`,
+`exploration.passive.started`, `exploration.passive.closed_home`,
+`exploration.passive.report.death`, `combat.ended`,
+`combat.special_def.archer.activate`, `bot.restarted`.
+
+Special-cased call sites: `capital.location.tavern.body` is routed gendered only
+for the tavern in `CapitalController.renderLocation` (other locations stay
+plain); `capital.blocked_by_expedition` passes `gendered: true` through
+`postCannotStart` (the no-HP/no-vigor reasons there are neutral). `narrateOutcome`
+/ `renderReport` take a `gender:` param threaded from the caller's session.
+
+### Neutralized instead of gendered (Cat 1 — single uk key, no variants)
+`capital.tavern.gamble.ready_prompt` ("Кидаємо?"), `kitchen.alert.not_learned`,
+`combat.tech.no_uses_left`, `combat.tech.locked`,
+`exploration.outcome.loot.picked` ("Знайдено…"), `travel.cannot_start.no_hp`,
+`travel.cannot_start.no_vigor`, `item.food.governors_feast.desc` (gendering one
+item among many would mean plumbing gender through the whole item-desc path).
+
+### New keys
+`registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
+(both locales — the step-1 picker).
+
 ## Current Keys (~368 per locale)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*
-- Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long/edge_space/consecutive_spaces/invalid_chars (validation toasts), registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_wolves, registration.continue, registration.estate.prompt/too_short/too_long/edge_space/consecutive_spaces/invalid_chars, registration.complete
+- Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long/edge_space/consecutive_spaces/invalid_chars (validation toasts), registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_dog, registration.estate.prompt/too_short/too_long/edge_space/consecutive_spaces/invalid_chars, registration.complete, registration.gender.prompt/m/f (step-1 picker)
 - Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on startup with the player's controller-specific reply keyboard for registered users, or a one-time `/start` button for unregistered ones — message text no longer hard-codes the `/start` hint since registered players see their normal nav)
-- Combat (Phase 4.1): combat.button.<action>.<class> — 9 inline-button labels (Attack/Defend/Flee × warrior/archer/mage). combat.encounter.intro for the round-1 framing line. combat.you.{hit,crit,miss} / combat.enemy.{hit,crit,miss} for round narration (each interpolates `%{enemy}` and `%{damage}` where applicable). combat.defend.absorbed for the parry-counter chip line. combat.flee.{success,fail} for retreat outcomes. combat.victory / combat.defeat for end-of-fight headers. combat.in_progress — one-line nudge ("you're locked in combat with X — finish the fight first") sent when the player taps anything outside the inline action buttons mid-fight. registration.fight_wolves (Stand and fight button) and registration.wolves_retry (soft-retry preamble after defeat / flee at the registration tutorial fight).
+- Combat (Phase 4.1): combat.button.<action>.<class> — 9 inline-button labels (Attack/Defend/Flee × warrior/archer/mage). combat.encounter.intro for the round-1 framing line. combat.you.{hit,crit,miss} / combat.enemy.{hit,crit,miss} for round narration (each interpolates `%{enemy}` and `%{damage}` where applicable). combat.defend.absorbed for the parry-counter chip line. combat.flee.{success,fail} for retreat outcomes. combat.victory / combat.defeat for end-of-fight headers. combat.in_progress — one-line nudge ("you're locked in combat with X — finish the fight first") sent when the player taps anything outside the inline action buttons mid-fight. registration.fight_dog (Stand and fight button) and registration.dog_retry (soft-retry preamble after defeat / flee at the registration tutorial rabid-dog fight; uk has .m/.f variants).
 - Combat (Phase 4.2): submenu opener combat.button.techniques + combat.tech.back + combat.tech.no_uses_left (defensive toast for stale-message taps after a technique counter went to 0). Super stances: combat.button.super.<class> + combat.super.<class>.activate (interpolates `%{rounds}`) + combat.super.<class>.expire + combat.super.already_active. Special Attacks: combat.button.special_atk.<class> + combat.special_atk.<class>.{hit,crit} for archer/mage, plus combat.special_atk.warrior.miss for Cleave. Special Defenses: combat.button.special_def.<class> + combat.special_def.<class>.activate, plus combat.special_def.mage.no_damage for the Mirror Ward "wouldn't have hit anyway" branch. Persistent-effect status indicators: combat.effect.armor_split / combat.effect.shadow_veil (each interpolates `%{rounds}`). All Phase 4.2 narrative strings are stored emoji-free — Lingo's `%{var}` parser breaks on leading UTF-16 surrogate pairs, so CombatController prepends class-flavoured icons (🩸/🦅/✨ Super, 🪓/🎯/🔥 Special Atk hits, 🏰/🌑/🪞 Special Def, plus universal 💥 crit / 💨 miss / 🛡 / 🌑 indicators) at render time via static helpers.
 - Profile: profile.level/xp/health/vigor/attack/defense/accuracy/dodge/crit/gold/estate
 - Stubs: stub.coming_soon (shared placeholder for not-yet-implemented features)

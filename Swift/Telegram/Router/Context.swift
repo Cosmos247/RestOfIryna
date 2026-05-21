@@ -94,14 +94,13 @@ public class Context {
 }
 
 extension TGBot {
-    func sendMessage(session: User, text: String, photo: TGFileInfo? = nil, disableNotification: Bool? = nil, parseMode: TGParseMode? = nil, replyMarkup: TGReplyMarkup? = nil) async throws {
+    /// Text-only convenience send. There is deliberately NO `photo:` parameter:
+    /// every player-visible image MUST go through `sendCachedPhoto(...)` so its
+    /// Telegram file_id is captured + reused (see PhotoCache + CLAUDE.md). Keeping
+    /// a photo path here would be a cache-bypassing loophole.
+    func sendMessage(session: User, text: String, disableNotification: Bool? = nil, parseMode: TGParseMode? = nil, replyMarkup: TGReplyMarkup? = nil) async throws {
         let chatId = TGChatId.chat(session.telegramId)
-        if let fileInfo = photo {
-            let photoParams = TGSendPhotoParams(chatId: chatId, photo: fileInfo, caption: text, parseMode: parseMode, disableNotification: disableNotification, replyMarkup: replyMarkup)
-            try await self.sendPhoto(params: photoParams)
-        } else {
-            let params = TGSendMessageParams(chatId: chatId, text: text, parseMode: parseMode, disableNotification: disableNotification, replyMarkup: replyMarkup)
-            try await self.sendMessage(params: params)
-        }
+        let params = TGSendMessageParams(chatId: chatId, text: text, parseMode: parseMode, disableNotification: disableNotification, replyMarkup: replyMarkup)
+        try await self.sendMessage(params: params)
     }
 }

@@ -5,14 +5,15 @@
 //  Created by Maxim Lanskoy on 13.06.2025.
 //  Maintained by Dmytro Ihnatyuhin from 17.04.2026.
 //
-//  Registration is a 6-step lore-driven flow:
+//  Registration is a lore-driven flow (steps 0–7):
 //    0 — language selection
-//    1 — Artanian welcome + name prompt (text input)
-//    2 — class selection (inline buttons; class choice also grants starter weapon)
-//    3 — King's Oath narrative (inline button "Set out for the estate")
-//    4 — wolf encounter on the road (inline button "Continue" — combat stub for now)
-//    5 — estate naming (text input)
-//    6 — done (user is on the main controller)
+//    1 — gender selection (inline buttons; drives feminitive text + estate art)
+//    2 — Artanian welcome + name prompt (text input)
+//    3 — class selection (inline buttons; class choice also grants starter weapon)
+//    4 — King's Oath narrative (inline button "Set out for the estate")
+//    5 — rabid-dog encounter on the road (tutorial combat — teaches the fight UI)
+//    6 — estate naming (text input)
+//    7 — done (user is on the main controller) — see `User.registrationDoneStep`
 //
 
 import Foundation
@@ -74,9 +75,9 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         }
 
         switch context.session.registrationStep {
-        case 1:
+        case 2:
             return try await handleNicknameInput(context: context, text: text)
-        case 5:
+        case 6:
             return try await handleEstateNameInput(context: context, text: text)
         default:
             return try await showCurrentStep(context: context)
@@ -87,14 +88,16 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     private func showCurrentStep(context: Context) async throws -> Bool {
         switch context.session.registrationStep {
         case 1:
-            try await promptNickname(context: context)
+            try await promptGenderSelection(context: context)
         case 2:
-            try await promptClassSelection(context: context)
+            try await promptNickname(context: context)
         case 3:
-            try await promptKingOath(context: context)
+            try await promptClassSelection(context: context)
         case 4:
-            try await promptJourneyWolves(context: context)
+            try await promptKingOath(context: context)
         case 5:
+            try await promptJourneyDog(context: context)
+        case 6:
             try await promptEstateName(context: context)
         default:
             try await showLanguageSelection(context: context)
@@ -128,10 +131,30 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html, replyMarkup: markup)
     }
 
-    // MARK: - Step 1: Nickname (Artanian welcome)
+    // MARK: - Step 1: Gender Selection
+
+    /// Asked right after language and ahead of the name prompt so every later
+    /// string (welcome included) can render the correct feminitive, and the
+    /// estate reveal art can pick the matching gender. Mirrors the class-pick
+    /// inline-button pattern.
+    func promptGenderSelection(context: Context) async throws {
+        let locale = context.session.locale
+        let prompt = context.lingo.localize("registration.gender.prompt", locale: locale)
+
+        var inlineKeyboard: [[TGInlineKeyboardButton]] = []
+        for gender in CharacterGender.allCases {
+            let name = context.lingo.localize("registration.gender.\(gender.rawValue)", locale: locale)
+            let button = TGInlineKeyboardButton(text: "\(gender.icon()) \(name)", callbackData: "set_gender:\(gender.rawValue)")
+            inlineKeyboard.append([button])
+        }
+        let markup = TGReplyMarkup.inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: inlineKeyboard))
+        try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html, replyMarkup: markup)
+    }
+
+    // MARK: - Step 2: Nickname (Artanian welcome)
 
     func promptNickname(context: Context) async throws {
-        let prompt = context.lingo.localize("registration.welcome", locale: context.session.locale)
+        let prompt = context.lingo.localize("registration.welcome", gender: context.session.gender, locale: context.session.locale)
         try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html)
     }
 
@@ -151,19 +174,19 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         }
 
         context.session.nickname = text
-        context.session.registrationStep = 2
+        context.session.registrationStep = 3
         try await context.session.saveAndCache(in: context.db)
         try await promptClassSelection(context: context)
         return true
     }
 
-    // MARK: - Step 2: Class Selection
+    // MARK: - Step 3: Class Selection
 
     private func promptClassSelection(context: Context) async throws {
         let locale = context.session.locale
         let nickname = context.session.nickname ?? "?"
 
-        let intro = context.lingo.localize("registration.name_accepted", locale: locale, interpolations: ["name": nickname])
+        let intro = context.lingo.localize("registration.name_accepted", gender: context.session.gender, locale: locale, interpolations: ["name": nickname])
         let prompt = context.lingo.localize("registration.class.prompt", locale: locale)
 
         var text = intro + "\n"
@@ -183,13 +206,13 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
-    // MARK: - Step 3: King's Oath
+    // MARK: - Step 4: King's Oath
 
     func promptKingOath(context: Context) async throws {
         let locale = context.session.locale
         let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
         let weapon = context.lingo.localize("registration.weapon.\(cls.rawValue)", locale: locale)
-        let text = context.lingo.localize("registration.king_oath", locale: locale, interpolations: ["weapon": weapon])
+        let text = context.lingo.localize("registration.king_oath", gender: context.session.gender, locale: locale, interpolations: ["weapon": weapon])
 
         let buttonLabel = context.lingo.localize("registration.to_estate", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
@@ -207,23 +230,24 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         )
     }
 
-    // MARK: - Step 4: Journey & Wolves
+    // MARK: - Step 5: Journey & Rabid Dog
 
-    func promptJourneyWolves(context: Context) async throws {
+    func promptJourneyDog(context: Context) async throws {
         let locale = context.session.locale
-        let text = context.lingo.localize("registration.journey_wolves", locale: locale)
-        let buttonLabel = context.lingo.localize("registration.fight_wolves", locale: locale)
+        let text = context.lingo.localize("registration.journey_dog", locale: locale)
+        let buttonLabel = context.lingo.localize("registration.fight_dog", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:fight_wolves")
+            TGInlineKeyboardButton(text: buttonLabel, callbackData: "reg:fight_dog")
         ]])
         let markup = TGReplyMarkup.inlineKeyboardMarkup(inline)
 
         let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        let gender = CharacterGender(rawValue: context.session.gender ?? "") ?? .male
 
-        // Per-class journey art; file_id cache via `sendCachedPhoto`, kept
-        // in chat as a lore beat.
+        // Per-class + per-gender journey art (the player's first look at the
+        // estate). file_id cache via `sendCachedPhoto`, kept in chat as a lore beat.
         _ = try await sendCachedPhoto(
-            assetPath: "\(projectPath)/Assets/registration/\(cls.journeyImageName)",
+            assetPath: "\(projectPath)/Assets/registration/\(cls.journeyImageName(gender: gender))",
             caption: text,
             replyMarkup: markup,
             toUser: context.session,
@@ -231,12 +255,12 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         )
     }
 
-    // MARK: - Step 5: Estate Name
+    // MARK: - Step 6: Estate Name
 
     func promptEstateName(context: Context) async throws {
         let nickname = context.session.nickname ?? "?"
-        let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale, interpolations: ["name": nickname])
-        // Strip any leftover reply keyboard (combat buttons after the wolves
+        let prompt = context.lingo.localize("registration.estate.prompt", gender: context.session.gender, locale: context.session.locale, interpolations: ["name": nickname])
+        // Strip any leftover reply keyboard (combat buttons after the rabid-dog
         // fight) so the player can't tap a button label as their estate name.
         let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
         try await context.bot.sendMessage(session: context.session, text: prompt, parseMode: .html, replyMarkup: removeKB)
@@ -279,7 +303,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
 
         let mainController = Controllers.mainController
         context.session.routerName = mainController.routerName
-        context.session.registrationStep = 6
+        context.session.registrationStep = User.registrationDoneStep
         try await context.session.saveAndCache(in: context.db)
 
         // Phase 5.3c: no starter farm grant — T1 estate has zero plot slots
@@ -315,24 +339,35 @@ extension Registration {
         )
         _ = try? await context.bot.editMessageReplyMarkup(params: editParams)
 
-        // Language selection (step 0 → 1)
+        // Language selection (step 0 → 1: gender)
         if data.starts(with: "set_lang:") {
             let locale = data.replacingOccurrences(of: "set_lang:", with: "")
             context.session.locale = locale
             context.session.registrationStep = 1
             try await context.session.saveAndCache(in: context.db)
+            try await Controllers.registration.promptGenderSelection(context: context)
+            return true
+        }
+
+        // Gender selection (step 1 → 2: name). Set before the welcome so every
+        // later string renders the correct feminitive.
+        if data.starts(with: "set_gender:") {
+            let gender = data.replacingOccurrences(of: "set_gender:", with: "")
+            context.session.gender = CharacterGender(rawValue: gender)?.rawValue ?? CharacterGender.male.rawValue
+            context.session.registrationStep = 2
+            try await context.session.saveAndCache(in: context.db)
             try await Controllers.registration.promptNickname(context: context)
             return true
         }
 
-        // Class selection (step 2 → 3): applies stats + grants the class's starter weapon
+        // Class selection (step 3 → 4): applies stats + grants the class's starter weapon
         if data.starts(with: "set_class:") {
             let cls = data.replacingOccurrences(of: "set_class:", with: "")
             context.session.characterClass = cls
             if let charClass = CharacterClass(rawValue: cls) {
                 context.session.applyStartingStats(for: charClass)
             }
-            context.session.registrationStep = 3
+            context.session.registrationStep = 4
             try await context.session.saveAndCache(in: context.db)
 
             if let charClass = CharacterClass(rawValue: cls), let userId = context.session.id {
@@ -350,20 +385,20 @@ extension Registration {
             return true
         }
 
-        // King's Oath → Set out for the estate (step 3 → 4)
+        // King's Oath → Set out for the estate (step 4 → 5)
         if data == "reg:to_estate" {
-            context.session.registrationStep = 4
+            context.session.registrationStep = 5
             try await context.session.saveAndCache(in: context.db)
-            try await Controllers.registration.promptJourneyWolves(context: context)
+            try await Controllers.registration.promptJourneyDog(context: context)
             return true
         }
 
-        // Wolves encounter → Fight! Hand off to CombatController against
-        // a rabid wolf. Player stays at registrationStep = 4 until victory;
-        // soft-retry on defeat / successful flee. Step → 5 happens inside
-        // `Registration.handleCombatEnd(won: true)` after the fight.
-        if data == "reg:fight_wolves" {
-            try await Controllers.registration.startWolvesFight(context: context)
+        // Rabid-dog encounter → Fight! Hand off to CombatController against
+        // the tutorial rabid dog. Player stays at registrationStep = 5 until
+        // victory; soft-retry on defeat / successful flee. Step → 6 happens
+        // inside `Registration.handleCombatEnd(won: true)` after the fight.
+        if data == "reg:fight_dog" {
+            try await Controllers.registration.startDogFight(context: context)
             return true
         }
 
@@ -371,57 +406,57 @@ extension Registration {
     }
 }
 
-// MARK: - Wolves Fight Bridge
+// MARK: - Rabid Dog Fight Bridge
 
 extension Registration {
-    /// Begin the registration-step-4 combat against a rabid wolf. The fight
-    /// rides on the same `ExplorationState` row we use for normal expeditions
-    /// (with `stepsDeep = 0`, combat fields populated) — `CombatController`
-    /// detects the registration context via `session.registrationStep < 6`
-    /// and routes back here on every end condition instead of falling into
-    /// the exploration handoff.
-    func startWolvesFight(context: Context) async throws {
-        guard let wolf = EnemyCatalog.find("enemy.rabid_wolf") else { return }
+    /// Begin the registration-step-5 combat against the tutorial rabid dog.
+    /// The fight rides on the same `ExplorationState` row we use for normal
+    /// expeditions (with `stepsDeep = 0`, combat fields populated) —
+    /// `CombatController` detects the registration context via
+    /// `session.registrationStep < User.registrationDoneStep` and routes back
+    /// here on every end condition instead of falling into the exploration handoff.
+    func startDogFight(context: Context) async throws {
+        guard let dog = EnemyCatalog.find("enemy.rabid_dog") else { return }
 
         // Defensive: clear any leftover state row before stamping a fresh one.
         try await ExplorationState.end(for: context.session, on: context.db)
 
         let state = try await ExplorationState.begin(for: context.session, on: context.db)
         let uses = CombatService.initialUsesForUser(context.session)
-        state.beginCombat(enemyId: wolf.id, hp: wolf.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
+        state.beginCombat(enemyId: dog.id, hp: dog.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
         try await state.save(on: context.db)
 
         let combatCtrl = Controllers.combatController
         context.session.routerName = combatCtrl.routerName
         try await context.session.saveAndCache(in: context.db)
 
-        try await combatCtrl.showCombat(context: context, state: state, enemy: wolf, intro: true)
+        try await combatCtrl.showCombat(context: context, state: state, enemy: dog, intro: true)
     }
 
-    /// Called by `CombatController` once the registration-step-4 fight
+    /// Called by `CombatController` once the registration-step-5 fight
     /// resolves. Victory advances to estate naming; defeat / flee soft-retries
-    /// the wolves prompt with full HP. The state row is deleted by the
+    /// the rabid-dog prompt with full HP. The state row is deleted by the
     /// CombatController before this is invoked.
     static func handleCombatEnd(context: Context, won: Bool) async throws {
         let registration = Controllers.registration
         if won {
-            context.session.registrationStep = 5
+            context.session.registrationStep = 6
             context.session.routerName = registration.routerName
             try await context.session.saveAndCache(in: context.db)
             try await registration.promptEstateName(context: context)
         } else {
-            // Soft retry — full heal, re-show the wolves prompt at step 4.
+            // Soft retry — full heal, re-show the rabid-dog prompt at step 5.
             context.session.hp = context.session.maxHp
-            context.session.registrationStep = 4
+            context.session.registrationStep = 5
             context.session.routerName = registration.routerName
             try await context.session.saveAndCache(in: context.db)
-            let retryText = context.lingo.localize("registration.wolves_retry", locale: context.session.locale)
-            // Clear the combat reply keyboard before the wolves photo
+            let retryText = context.lingo.localize("registration.dog_retry", gender: context.session.gender, locale: context.session.locale)
+            // Clear the combat reply keyboard before the rabid-dog photo
             // (the photo carries an inline button, so it can't also carry
             // ReplyKeyboardRemove on the same message).
             let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
             try await context.bot.sendMessage(session: context.session, text: retryText, parseMode: .html, replyMarkup: removeKB)
-            try await registration.promptJourneyWolves(context: context)
+            try await registration.promptJourneyDog(context: context)
         }
     }
 }
