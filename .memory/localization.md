@@ -125,6 +125,21 @@ If you must keep the emoji in the template for some reason:
 1. Use a safe single-UTF-16 BMP emoji (see verified-safe set above).
 2. Move the emoji to the END so `%{...}` is the first dynamic token.
 
+### 🇺🇦 Ukrainian game-term glossary (no English / no loot slang)
+
+`uk.json` values must not leave English game-stat tokens or transliterated slang. Fixed 2026-05-21 (was scattered: "vigor drain", "Vigor", "HP/XP/ATK/DEF", "лут"). Canonical UA terms:
+
+| concept | uk (inline unit, after a number) | uk (label / status sentence) | en (unchanged) |
+|---|---|---|---|
+| health | `ОЗ` (e.g. `%{damage} ОЗ`, `макс. ОЗ`) | `Здоров'я` (profile/effect labels, "Повне здоров'я") | HP / maxHP |
+| experience | `досвіду` (genitive: `+5 досвіду`, `+25% досвіду`) | `Досвід` (profile label) | XP |
+| vigor | `снаги` / `Снага` / `виснаження снаги` (for "vigor drain") | `Снага` | Vigor |
+| attack | `АТК` | `Атака` | ATK |
+| defense | `ЗАХ` | `Захист` | DEF |
+| loot | `здобич` / `здобичі` (e.g. "шанс здобичі") | — | loot |
+
+Rule: English stat tokens stay only in `en.json`; never copy them into `uk.json`. Numeric units use the abbreviation (`ОЗ`/`АТК`/`ЗАХ`) except XP which the user wants spelled out (`досвіду`); vigor has no abbreviation (`Снага`/`снаги`). Labels and "fully restored" status lines use full words. Mind case agreement (`здобич` is feminine → `яку`, not `який`).
+
 ### ⚠️ Callback-toast keys must be plain text (no HTML)
 
 `answerCallbackQuery(text:)` (both the narrow top-strip toast AND the modal `showAlert: true` popup) renders the `text:` field as **plain text only** — Telegram does not parse HTML / Markdown there. Locale keys that feed callback-answer text must therefore be HTML-free. Affected keys today: `equip.success`, `unequip.success`, `inventory.full`, `inventory.use.unavailable`, `inventory.category.empty`, `inventory.info.placeholder`, `consume.not_raw_edible`, `consume.no_effect`, `estate.warehouse.{deposited,withdrawn,nothing_to_deposit,nothing_to_withdraw}`, `vigor.restored`, `hp.restored`. If a key is shared between a sendMessage-style render (where HTML is OK) and a callback-answer (where HTML is not), prefer plain text — the few extra emoji or numeric formatting can be added in Swift before passing to sendMessage. An audit script (Python over both `.json` files) can verify all interpolated keys are emoji-free at the start AND that every send/edit-message callsite that references an HTML-tagged key has `parseMode: .html` in scope.

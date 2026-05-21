@@ -143,6 +143,7 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Update `TODO.md` progress markers when tasks complete
 - Add new localization keys to both `en.json` and `uk.json` simultaneously
 - For uk strings that address the player with a gendered word, follow the gendered-text rule (see Localization above): `.m`/`.f` in `uk.json` + the `gender:` overload, or neutral phrasing
+- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`. Full table in `.memory/localization.md`.
 - If adding new controllers/models, update the file map in README.md's Project Structure section
 
 ### Git Workflow
