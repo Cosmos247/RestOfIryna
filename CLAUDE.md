@@ -161,3 +161,4 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Follow existing file header format (Created by / Maintained by)
 - New models need corresponding migrations
 - Keep Telegram callback_data under 64 bytes
+- Never interpolate an Optional directly into a player-facing string (`"\(item.icon)"` prints `Optional("🪖")`) — unwrap it (`item.icon.map { "\($0) " } ?? ""`). A clean build won't catch this; verify new strings actually render. (Same vigilance as the Lingo emoji-before-`%{}` rule in `.memory/localization.md`.)

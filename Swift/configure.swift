@@ -196,6 +196,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddCombatRound())
     migrations.add(CreateTavernGameMessages())
     migrations.add(AddGender())
+    migrations.add(AddGearCondition())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()

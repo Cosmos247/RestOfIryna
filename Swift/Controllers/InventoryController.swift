@@ -223,7 +223,15 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // instead of always "Rusty Sword". Non-tiered gear falls through.
             let name = lingo.localize(ItemDisplay.nameKey(for: pair.item, tier: pair.entry.tier), locale: locale)
             let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
-            let itemLabel = "\(iconPrefix)\(name)"
+            // Phase 6.5 — armor condition: enchant level (✨+N), broken (💥),
+            // or worn durability (⚙️dur/max). Repaired/enchanted at the Master.
+            var condition = ""
+            if let slot = pair.item.slot, GearConditionService.armorSlots.contains(slot.rawValue) {
+                if pair.entry.enchantLevel > 0 { condition += " ✨+\(pair.entry.enchantLevel)" }
+                if pair.entry.durability <= 0 { condition += " 💥" }
+                else if pair.entry.durability < pair.entry.maxDurability { condition += " ⚙️\(pair.entry.durability)/\(pair.entry.maxDurability)" }
+            }
+            let itemLabel = "\(iconPrefix)\(name)\(condition)"
             let isEquipped = pair.entry.equippedSlot != nil
             let actionLabel = isEquipped ? unequipLabel : equipLabel
             let actionPrefix = isEquipped ? "inv:unequip:" : "inv:equip:"

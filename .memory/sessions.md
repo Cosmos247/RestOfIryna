@@ -2001,3 +2001,33 @@ Build green.
 - Strengthened the CLAUDE.md "Player-visible photos" rule: every image MUST go through `sendCachedPhoto`; convenience `sendMessage` has no `photo:` param by design; restart the bot after swapping an asset file so the stale in-memory file_id drops.
 
 Build green.
+
+## Session — 2026-05-21 (Phase 6.5 — Master capital location + armor durability)
+
+Built the **Master** — the capital's armor shop / repair / enchant NPC, the game's first real silver sink. Closes the economy loop (silver finally has a meaningful drain). Designed interactively via quizzes (user prefers AskUserQuestion for clarifications).
+
+**Scope (user decisions):** Master works on **armor only** for now — weapons keep the Workshop tier ladder + a future gem-inlay phase (gems drop from rabid beasts later, nothing now). Three actions: Buy / Repair / Enchant.
+
+**New files:**
+- `Swift/Models/MasterCatalog.swift` — shop economics: `armorForSale` (Forester set, ≈2.5× resource value: hood 15 / boots 23 / breeches 38 / jerkin 45🪙), `repairCost(itemId:missing:)` (≈half buy price for a full repair), `enchantSteps` (L1 30🪙+3 hide / L2 70+6 / L3 150+10) + `enchantCap` 3.
+- `Swift/Services/GearConditionService.swift` — durability runtime. `maxDurabilityStart` **30**, `repairMaxShave` 1, `armorSlots`, `WearEvent` (victory 1 / defeat 3 / flee 5). `drainEquippedArmor(amount:)` = **model C**: a fight's wear budget distributed point-by-point across random equipped armor (no synchronized set-collapse cliff), recomputes bonuses after.
+- `Swift/Services/MasterService.swift` — `buy` / `repair` / `enchant`, typed result enums, all drain `User.silver` (+ materials/durability). Armor-only.
+- `Swift/Migrations/AddGearCondition.swift` — `durability` + `max_durability` (default 30) + `enchant_level` (default 0) on inventory.
+
+**Model/logic changes:**
+- `InventoryEntry` gains the three columns (init defaults from `GearConditionService.maxDurabilityStart`).
+- `EquipmentService.recomputeBonuses` — armor at 0 durability is **broken** (0 stats); armor `enchant_level` adds +1 DEF/level.
+- Wear hooks: `CombatController` (victory/defeat/flee paths), `PassiveExpeditionService.finalizeAndPush` (won×1 + lost×3 budget for the run).
+- **Repair = mechanic B**: restores to (max−1), so a piece slowly wears toward a rebuy.
+
+**UI (CapitalController, mirrors Trader):** `showMaster` → `[🛡 Buy][⚒️ Repair][✨ Improve]` → per-item button lists (price / durability / enchant step) → `MasterService` → `✅/❌` banner + in-place refresh. Inventory gear rows now show armor condition (`✨+N` / `💥` broken / `⚙️dur/max`).
+
+**Tuning decisions (quizzed):** broken-at-0 = 0 bonus; buy markup ×2.5; enchant cap +3; starter durability lowered 100→30 for a felt repair cadence; wear distribution = model C (point-by-point random).
+
+**Polish:** removed the inline `[🔙 До столиці]` button from ALL capital result banners (`backToCapitalBannerKB` deleted) — the persistent reply-keyboard is always visible, so banners are now just `✅/❌ text`.
+
+**Bug caught in playtest:** `itemLabel` interpolated `item.icon` (an Optional) directly → `Optional("🪖 ")` leaked into buttons; fixed with `.map { } ?? ""`. User asked to remember the rule (saved to auto-memory `feedback_verify_interpolation`): a clean build doesn't catch interpolation bugs — verify new player-facing strings render (no `Optional(...)`, no emoji-before-`%{}`).
+
+**Locale:** 17 new `capital.master.*` keys (en + uk, UA glossary — ЗАХ for defense). Build clean, parity confirmed.
+
+**Deferred:** weapon durability + gem inlay (next phase). `Assets/capital/master.jpg` not added yet (text fallback). `repairMaxShave` is the lever if the rebuy loop should be felt sooner.

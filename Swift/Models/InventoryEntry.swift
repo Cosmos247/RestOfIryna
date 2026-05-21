@@ -38,6 +38,23 @@ final public class InventoryEntry: Model, @unchecked Sendable {
     @Field(key: "tier")
     public var tier: Int
 
+    /// Phase 6.5 — armor durability. Drains with every fight (see
+    /// `GearConditionService`); at 0 the piece is "broken" and contributes no
+    /// stats until repaired at the Master. `maxDurability` starts at 30 and is
+    /// permanently shaved by 1 on each repair, so armor eventually wears out.
+    /// Non-armor rows keep these full and never drain.
+    @Field(key: "durability")
+    public var durability: Int
+
+    @Field(key: "max_durability")
+    public var maxDurability: Int
+
+    /// Phase 6.5 — permanent armor enchant level (0…`MasterCatalog.enchantCap`).
+    /// Each level adds +1 to the piece's defense via `EquipmentService`. Bought
+    /// at the Master for silver + materials. Weapons stay at 0 (gem inlay later).
+    @Field(key: "enchant_level")
+    public var enchantLevel: Int
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -51,6 +68,9 @@ final public class InventoryEntry: Model, @unchecked Sendable {
         self.itemId = itemId
         self.quantity = quantity
         self.tier = 1
+        self.durability = GearConditionService.maxDurabilityStart
+        self.maxDurability = GearConditionService.maxDurabilityStart
+        self.enchantLevel = 0
     }
 }
 

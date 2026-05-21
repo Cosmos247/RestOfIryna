@@ -207,7 +207,11 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
-## Current Keys (~368 per locale)
+## Current Keys (~673 en / ~693 uk — uk has +20 from the gendered `.m`/`.f` pairs)
+
+Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
+
+### Full historical list (may lag — grep the JSON for the source of truth)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
 - Settings: settings.title, settings.language.prompt
 - Help: welcome, here.are.commands, help.*, how.to.*

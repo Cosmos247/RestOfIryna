@@ -537,6 +537,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 return true
             }
 
+            // Phase 6.5: fleeing wears armor the hardest.
+            try await GearConditionService.wear(.flee, for: player, on: context.db)
+
             // Step out of the encounter: clear combat fields, walk back one km.
             state.endCombat()
             state.stepsDeep = max(0, state.stepsDeep - 1)
@@ -957,6 +960,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return
         }
 
+        // Phase 6.5: equipped armor takes a small durability hit on a win.
+        try await GearConditionService.wear(.victory, for: context.session, on: context.db)
+
         // Phase 5.3a: grant XP from the kill, append level-up + estate-up
         // banners to the victory message. Training dummies have xpReward = 0
         // so they're naturally a no-op (and never reach this branch anyway —
@@ -1032,6 +1038,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             try await Registration.handleCombatEnd(context: context, won: false)
             return
         }
+
+        // Phase 6.5: a defeat wears equipped armor (more than a win, less than
+        // a flee). Equipped gear survives the death wipe, only its durability drops.
+        try await GearConditionService.wear(.defeat, for: context.session, on: context.db)
 
         let lingo = context.lingo
         let locale = context.session.locale

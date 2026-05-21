@@ -170,7 +170,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func onArena(context: Context)   async throws -> Bool { try await renderLocation(.arena,   context: context); return true }
     private func onTrader(context: Context)  async throws -> Bool { try await showTrader(context: context); return true }
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
-    private func onMaster(context: Context)  async throws -> Bool { try await renderLocation(.master,  context: context); return true }
+    private func onMaster(context: Context)  async throws -> Bool { try await showMaster(context: context); return true }
     private func onTavern(context: Context)  async throws -> Bool { try await showTavern(context: context); return true }
 
     private func onLeave(context: Context) async throws -> Bool {
@@ -594,6 +594,181 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
+    // MARK: - Master (Phase 6.5) — armor shop / repair / enchant
+
+    func showMaster(context: Context) async throws {
+        let text = renderMasterMenuBody(session: context.session, lingo: context.lingo)
+        let keyboard = masterMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/capital/master.jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(keyboard),
+            toUser: context.session,
+            bot: context.bot
+        )
+    }
+
+    private func renderMasterMenuBody(session: User, lingo: Lingo) -> String {
+        let locale = session.locale
+        let title = lingo.localize("capital.location.master.title", locale: locale)
+        let body  = lingo.localize("capital.location.master.body", locale: locale)
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: ["silver": "\(session.silver)"])
+        return "<b>\(title)</b>\n\n\(body)\n\n🪙 \(silverLabel)"
+    }
+
+    private func masterMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let buy     = lingo.localize("capital.master.button.buy",     locale: locale)
+        let repair  = lingo.localize("capital.master.button.repair",  locale: locale)
+        let enchant = lingo.localize("capital.master.button.enchant", locale: locale)
+        let back    = lingo.localize("capital.button.back_to_capital", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: buy,     callbackData: "master:buylist")],
+            [TGInlineKeyboardButton(text: repair,  callbackData: "master:repairlist"),
+             TGInlineKeyboardButton(text: enchant, callbackData: "master:enchantlist")],
+            [TGInlineKeyboardButton(text: back,    callbackData: "capital:back")]
+        ])
+    }
+
+    private func editToMasterMenu(messageId: Int, isPhoto: Bool, context: Context) async {
+        let text = renderMasterMenuBody(session: context.session, lingo: context.lingo)
+        let keyboard = masterMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    /// Localized "icon name" for an item (armor isn't tiered, so the base
+    /// name key is fine).
+    private func itemLabel(_ itemId: String, lingo: Lingo, locale: String) -> String {
+        guard let item = ItemCatalog.find(itemId) else { return itemId }
+        // `item.icon` is optional — unwrap it, never interpolate the Optional
+        // directly (that leaks "Optional(...)" into player-facing text).
+        let iconPrefix = item.icon.map { "\($0) " } ?? ""
+        return "\(iconPrefix)\(lingo.localize(item.nameKey, locale: locale))"
+    }
+
+    /// All owned armor rows (equipped or in the bag), sorted by slot.
+    private func ownedArmorRows(for user: User, on db: any Database) async throws -> [InventoryEntry] {
+        guard let userId = user.id else { return [] }
+        let rows = try await InventoryEntry.query(on: db).filter(\.$user.$id, .equal, userId).all()
+        return rows.filter {
+            guard let slot = ItemCatalog.find($0.itemId)?.slot else { return false }
+            return GearConditionService.armorSlots.contains(slot.rawValue)
+        }.sorted { ($0.itemId, $0.id?.uuidString ?? "") < ($1.itemId, $1.id?.uuidString ?? "") }
+    }
+
+    // MARK: Buy
+
+    private func sectionBody(_ titleKey: String, hintKey: String, session: User, lingo: Lingo) -> String {
+        let locale = session.locale
+        let title = lingo.localize(titleKey, locale: locale)
+        let hint  = lingo.localize(hintKey, locale: locale)
+        let silver = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: ["silver": "\(session.silver)"])
+        return "<b>\(title)</b>\n\n\(hint)\n\n🪙 \(silver)"
+    }
+
+    private func editToMasterBuy(messageId: Int, isPhoto: Bool, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        let text = sectionBody("capital.master.buy.title", hintKey: "capital.master.buy.hint", session: context.session, lingo: lingo)
+        var rows: [[TGInlineKeyboardButton]] = MasterCatalog.armorForSale.map { listing in
+            let label = "\(itemLabel(listing.itemId, lingo: lingo, locale: locale)) · 🪙 \(listing.priceSilver)"
+            return [TGInlineKeyboardButton(text: label, callbackData: "master:buy:\(listing.itemId)")]
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Repair
+
+    private func editToMasterRepair(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let armor = try await ownedArmorRows(for: context.session, on: context.db)
+        let needRepair = armor.filter { $0.durability < $0.maxDurability }
+        let hintKey = needRepair.isEmpty ? "capital.master.repair.empty" : "capital.master.repair.hint"
+        let text = sectionBody("capital.master.repair.title", hintKey: hintKey, session: context.session, lingo: lingo)
+        var rows: [[TGInlineKeyboardButton]] = needRepair.compactMap { row -> [TGInlineKeyboardButton]? in
+            guard let id = row.id else { return nil }
+            let missing = row.maxDurability - row.durability
+            let cost = MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
+            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability) · 🪙 \(cost)"
+            return [TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")]
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Enchant
+
+    private func editToMasterEnchant(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let armor = try await ownedArmorRows(for: context.session, on: context.db)
+        let enchantable = armor.filter { $0.enchantLevel < MasterCatalog.enchantCap }
+        let hintKey = enchantable.isEmpty ? "capital.master.enchant.empty" : "capital.master.enchant.hint"
+        let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo)
+        let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
+        var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
+            guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
+            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level) · 🪙 \(step.silver)+\(step.materialQty)\(hideIcon)"
+            return [TGInlineKeyboardButton(text: label, callbackData: "master:enchant:\(id.uuidString)")]
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Result banners
+
+    private func postMasterResultBanner(forBuy result: MasterService.BuyResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let price):
+            let name = itemLabel(itemId, lingo: lingo, locale: locale)
+            let text = lingo.localize("capital.master.bought", locale: locale, interpolations: ["item": name, "silver": "🪙 \(price)"])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .inventoryFull(let free):
+            let text = lingo.localize("capital.trader.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "1"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .unknownItem:
+            break
+        }
+    }
+
+    private func postMasterResultBanner(forRepair result: MasterService.RepairResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let cost, let newMax):
+            let name = itemLabel(itemId, lingo: lingo, locale: locale)
+            let text = lingo.localize("capital.master.repaired", locale: locale, interpolations: ["item": name, "silver": "🪙 \(cost)", "max": "\(newMax)"])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .alreadyFull, .notArmor:
+            break
+        }
+    }
+
+    private func postMasterResultBanner(forEnchant result: MasterService.EnchantResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let newLevel):
+            let name = itemLabel(itemId, lingo: lingo, locale: locale)
+            let text = lingo.localize("capital.master.enchanted", locale: locale, interpolations: ["item": name, "level": "\(newLevel)"])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .maxLevel:
+            await postStatusBanner("❌ " + lingo.localize("capital.master.max_level", locale: locale), context: context)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .missingMaterials(let itemId, let have, let need):
+            let name = itemLabel(itemId, lingo: lingo, locale: locale)
+            let text = lingo.localize("capital.master.missing_materials", locale: locale, interpolations: ["item": name, "have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .notArmor:
+            break
+        }
+    }
+
     // MARK: - Trader callback dispatch
 
     static func onCallbackQuery(context: Context) async throws -> Bool {
@@ -766,6 +941,56 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Universal "back to capital" — used by fortune, trader, tavern
         // entry screens. `fortune:back` kept as alias for stale messages
         // sent before the rename.
+        // MARK: Master (Phase 6.5) — buy / repair / enchant armor
+        if data == "master:menu" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await ctrl.editToMasterMenu(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "master:buylist" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await ctrl.editToMasterBuy(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "master:repairlist" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToMasterRepair(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "master:enchantlist" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("master:buy:") {
+            let itemId = String(data.dropFirst("master:buy:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let result = try await MasterService.buy(itemId: itemId, for: context.session, on: context.db)
+            await ctrl.postMasterResultBanner(forBuy: result, context: context)
+            await ctrl.editToMasterBuy(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("master:repair:") {
+            let idStr = String(data.dropFirst("master:repair:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                let result = try await MasterService.repair(entryId: id, for: context.session, on: context.db)
+                await ctrl.postMasterResultBanner(forRepair: result, context: context)
+            }
+            try await ctrl.editToMasterRepair(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("master:enchant:") {
+            let idStr = String(data.dropFirst("master:enchant:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                let result = try await MasterService.enchant(entryId: id, for: context.session, on: context.db)
+                await ctrl.postMasterResultBanner(forEnchant: result, context: context)
+            }
+            try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+
         if data == "capital:back" || data == "fortune:back" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.showCapital(context: context)
@@ -782,23 +1007,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return try await MainController.onCallbackQuery(context: context)
     }
 
-    /// `[🔙 До столиці]` inline kb attached to every trader/tavern result
-    /// banner. The trader/tavern photo bubble (which carries the same back
-    /// button) often scrolls out of view after a few actions; the banner is
-    /// the latest visible message, so giving it its own back-out button means
-    /// the player is never left without a nav point.
-    private func backToCapitalBannerKB(lingo: Lingo, locale: String) -> TGReplyMarkup {
-        let label = lingo.localize("capital.button.back_to_capital", locale: locale)
-        return .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: label, callbackData: "capital:back")
-        ]]))
-    }
-
     private func postTraderResultBanner(forSell result: TraderService.SellResult, itemId: String, context: Context) async {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
-        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
         case .success(_, let qty, let silver):
             // 🪙 + amount pre-built in Swift — Lingo's `%{var}` parser breaks
@@ -807,12 +1019,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let text = lingo.localize("capital.trader.sold", locale: locale, interpolations: [
                 "item": itemName, "qty": "\(qty)", "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("✅ \(text)", context: context)
         case .notEnoughInBag(let have, let need):
             let text = lingo.localize("capital.trader.not_enough_bag", locale: locale, interpolations: [
                 "item": itemName, "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
         case .unknownListing:
             // Stale catalogue / dev typo. Silent — banner would just confuse the player.
             break
@@ -823,23 +1035,22 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
-        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
         case .success(_, let qty, let silver):
             let text = lingo.localize("capital.trader.bought", locale: locale, interpolations: [
                 "item": itemName, "qty": "\(qty)", "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("✅ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
             let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free, let need):
             let text = lingo.localize("capital.trader.bag_full", locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
         case .unknownListing:
             break
         }
@@ -1145,16 +1356,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let text = lingo.localize("capital.fortune.error.cooldown", locale: locale, interpolations: [
                 "remaining": ctrl.formatHM(secondsLeft)
             ])
-            let backKB = ctrl.backToCapitalBannerKB(lingo: lingo, locale: locale)
-            await ctrl.postStatusBanner("⏳ \(text)", context: context, replyMarkup: backKB)
+            await ctrl.postStatusBanner("⏳ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
             let lingo = context.lingo
             let locale = context.session.locale
             let text = lingo.localize("capital.fortune.error.silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            let backKB = ctrl.backToCapitalBannerKB(lingo: lingo, locale: locale)
-            await ctrl.postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await ctrl.postStatusBanner("❌ \(text)", context: context)
         }
     }
 
@@ -1358,8 +1567,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let text = lingo.localize("capital.tavern.not_enough_silver", locale: locale, interpolations: [
                 "have": "\(context.session.silver)", "need": "\(wager)"
             ])
-            let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
             return
         }
 
@@ -1486,23 +1694,22 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
-        let backKB = backToCapitalBannerKB(lingo: lingo, locale: locale)
         switch result {
         case .success(_, let silver):
             let text = lingo.localize("capital.tavern.bought", locale: locale, interpolations: [
                 "item": itemName, "silver": "🪙 \(silver)"
             ])
-            await postStatusBanner("✅ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("✅ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
             let text = lingo.localize("capital.tavern.not_enough_silver", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
             ])
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free, _):
             let text = lingo.localize("capital.tavern.bag_full", locale: locale, interpolations: [
                 "free": "\(free)"
             ])
-            await postStatusBanner("❌ \(text)", context: context, replyMarkup: backKB)
+            await postStatusBanner("❌ \(text)", context: context)
         case .unknownListing:
             break
         }

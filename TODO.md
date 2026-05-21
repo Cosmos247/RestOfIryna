@@ -391,7 +391,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 ### 6.5 Capital Hub (remaining)
 - [ ] **Market** — player-to-player marketplace (or auction house); needs `MarketListing` model + matching controller
 - [ ] **PvP Arena** — async duels (snapshot opponent stats, bot autobattles, ladder)
-- [ ] **Master** — weapon repair / reforge / enchant (first true gold sink to close the loop)
+- [x] **Master** *(landed 2026-05-21)* — armor shop / repair / enchant; the first real silver sink. Armor durability system (`InventoryEntry.durability`/`max_durability` start 30, `enchant_level` cap 3 via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces; broken at 0); `MasterCatalog` + `MasterService` (buy ≈2.5× resource value, repair to max−1, +1 DEF/level enchant). Weapon durability + gem inlay deferred to a later phase.
 - [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 
 ---

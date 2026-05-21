@@ -98,11 +98,20 @@ public enum EquipmentService {
                 stats = item.gearStats
             }
             guard let s = stats else { continue }
+
+            // Phase 6.5 — armor only: a piece worn down to 0 durability is
+            // "broken" and contributes nothing until repaired at the Master.
+            let isArmor = row.equippedSlot.map { GearConditionService.armorSlots.contains($0) } == true
+            if isArmor && row.durability <= 0 { continue }
+
             atk   += s.attack
             def   += s.defense
             crit  += s.crit
             dodge += s.dodge
             acc   += s.accuracy
+
+            // Phase 6.5 — permanent enchant adds +1 defense per level to armor.
+            if isArmor { def += row.enchantLevel }
         }
         user.gearAttackBonus   = atk
         user.gearDefenseBonus  = def
