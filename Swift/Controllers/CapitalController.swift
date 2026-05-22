@@ -669,6 +669,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo, locale = context.session.locale
         let text = sectionBody("capital.master.buy.title", hintKey: "capital.master.buy.hint", session: context.session, lingo: lingo)
         var rows: [[TGInlineKeyboardButton]] = MasterCatalog.armorForSale.map { listing in
+            // Buy list keeps the price on the button (helps compare pieces);
+            // the confirm prompt still restates it before purchase.
             let label = "\(itemLabel(listing.itemId, lingo: lingo, locale: locale)) · 🪙 \(listing.priceSilver)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:buy:\(listing.itemId)")]
         }
@@ -705,18 +707,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let weaponNeedsRepair = weapon.map { $0.durability < $0.maxDurability } == true
         let hintKey = (needRepair.isEmpty && !weaponNeedsRepair) ? "capital.master.repair.empty" : "capital.master.repair.hint"
         let text = sectionBody("capital.master.repair.title", hintKey: hintKey, session: context.session, lingo: lingo)
+        // Cost is shown on the confirm prompt, so the list buttons stay clean:
+        // item name + current durability only.
         var rows: [[TGInlineKeyboardButton]] = needRepair.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id else { return nil }
-            let missing = row.maxDurability - row.durability
-            let cost = MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
-            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability) · 🪙 \(cost)"
+            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")]
         }
-        // The equipped weapon — its own class-flavoured label, 1🪙/point cost.
+        // The equipped weapon — its own class-flavoured label.
         if let weapon, weaponNeedsRepair, let id = weapon.id {
-            let cost = MasterCatalog.weaponRepairCost(missing: weapon.maxDurability - weapon.durability)
             let name = lingo.localize(Self.weaponRepairLabelKey(for: context.session), locale: locale)
-            let label = "\(name) · \(weapon.durability)/\(weapon.maxDurability) · 🪙 \(cost)"
+            let label = "\(name) · \(weapon.durability)/\(weapon.maxDurability)"
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")])
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
@@ -760,14 +761,72 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let hintKey = enchantable.isEmpty ? "capital.master.enchant.empty" : "capital.master.enchant.hint"
         let focus = lingo.localize(Self.enchantFocusKey(for: context.session), locale: locale)
         let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo, hintInterpolations: ["focus": focus])
-        let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
         var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
-            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level) · 🪙 \(step.silver)+\(step.materialQty)\(hideIcon)"
+            // Cost is shown on the confirm prompt — list shows just the level step.
+            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:enchant:\(id.uuidString)")]
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Confirm (guard against accidental taps)
+
+    private func ownedRow(_ entryId: UUID, for user: User, on db: any Database) async throws -> InventoryEntry? {
+        guard let userId = user.id else { return nil }
+        return try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId).filter(\.$id, .equal, entryId).first()
+    }
+
+    private func masterConfirmKeyboard(yes: String, no: String, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("capital.master.confirm.yes", locale: locale), callbackData: yes),
+            TGInlineKeyboardButton(text: lingo.localize("capital.master.confirm.no", locale: locale), callbackData: no)
+        ]])
+    }
+
+    private func editToMasterConfirmBuy(itemId: String, messageId: Int, isPhoto: Bool, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let price = MasterCatalog.buyPrice(for: itemId) else {
+            await editToMasterBuy(messageId: messageId, isPhoto: isPhoto, context: context); return
+        }
+        let text = lingo.localize("capital.master.confirm.buy", locale: locale, interpolations: [
+            "item": itemLabel(itemId, lingo: lingo, locale: locale), "cost": "🪙 \(price)"
+        ])
+        let kb = masterConfirmKeyboard(yes: "master:buyok:\(itemId)", no: "master:buylist", lingo: lingo, locale: locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
+    }
+
+    private func editToMasterConfirmRepair(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let row = try await ownedRow(entryId, for: context.session, on: context.db), row.durability < row.maxDurability else {
+            try await editToMasterRepair(messageId: messageId, isPhoto: isPhoto, context: context); return
+        }
+        let missing = row.maxDurability - row.durability
+        let isWeapon = ItemCatalog.find(row.itemId)?.slot.map { GearConditionService.weaponSlots.contains($0.rawValue) } == true
+        let cost = isWeapon ? MasterCatalog.weaponRepairCost(missing: missing) : MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
+        let text = lingo.localize("capital.master.confirm.repair", locale: locale, interpolations: [
+            "item": itemLabel(row.itemId, lingo: lingo, locale: locale),
+            "cur": "\(row.durability)", "max": "\(row.maxDurability)", "cost": "🪙 \(cost)"
+        ])
+        let kb = masterConfirmKeyboard(yes: "master:repairok:\(entryId.uuidString)", no: "master:repairlist", lingo: lingo, locale: locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
+    }
+
+    private func editToMasterConfirmEnchant(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let row = try await ownedRow(entryId, for: context.session, on: context.db),
+              let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else {
+            try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context); return
+        }
+        let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
+        let text = lingo.localize("capital.master.confirm.enchant", locale: locale, interpolations: [
+            "item": itemLabel(row.itemId, lingo: lingo, locale: locale),
+            "level": "\(step.level)", "cost": "🪙 \(step.silver) + \(step.materialQty)\(hideIcon)"
+        ])
+        let kb = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
     }
 
     // MARK: Result banners
@@ -1020,8 +1079,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
+        // Item taps open a confirm prompt first (guard against accidental
+        // taps); the `*ok:` callbacks below actually run the action.
         if data.hasPrefix("master:buy:") {
             let itemId = String(data.dropFirst("master:buy:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await ctrl.editToMasterConfirmBuy(itemId: itemId, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("master:buyok:") {
+            let itemId = String(data.dropFirst("master:buyok:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             let result = try await MasterService.buy(itemId: itemId, for: context.session, on: context.db)
             await ctrl.postMasterResultBanner(forBuy: result, context: context)
@@ -1032,6 +1099,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let idStr = String(data.dropFirst("master:repair:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             if let id = UUID(uuidString: idStr) {
+                try await ctrl.editToMasterConfirmRepair(entryId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("master:repairok:") {
+            let idStr = String(data.dropFirst("master:repairok:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
                 let result = try await MasterService.repair(entryId: id, for: context.session, on: context.db)
                 await ctrl.postMasterResultBanner(forRepair: result, context: context)
             }
@@ -1040,6 +1115,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
         if data.hasPrefix("master:enchant:") {
             let idStr = String(data.dropFirst("master:enchant:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                try await ctrl.editToMasterConfirmEnchant(entryId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("master:enchantok:") {
+            let idStr = String(data.dropFirst("master:enchantok:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             if let id = UUID(uuidString: idStr) {
                 let result = try await MasterService.enchant(entryId: id, for: context.session, on: context.db)

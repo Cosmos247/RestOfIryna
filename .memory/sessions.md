@@ -30,6 +30,10 @@ Iterative balance + depth pass on the Master (Phase 6.5), driven entirely by int
 - Gear-row labels cleaned: durability removed from the inline button (it truncated names — user feedback), enchant shown as plain `+N` (no ✨ icon).
 - Repair success banner: `(max durability N)` → `(cur/max)` e.g. `(29/29)`.
 
+**Master confirm step (accidental-tap guard)**
+- Buy/repair/enchant taps no longer act immediately — they open a confirm prompt (`✅ Yes`/`❌ No`) restating item + cost. New `master:buyok:/repairok:/enchantok:` callbacks execute; `No` returns to the list. Helpers `editToMasterConfirm{Buy,Repair,Enchant}` + `masterConfirmKeyboard` + a controller-local `ownedRow`.
+- With cost now on the prompt, list buttons were trimmed: repair drops the price (keeps durability), enchant drops the price (keeps the level step). Per user follow-up, the **buy** list keeps its price on the button (helps compare pieces).
+
 ### Notes
 - No schema/migration change — weapon durability reuses the existing `AddGearCondition` columns.
 - All design numbers (curves, prices, iron amounts, durability endpoints, dull %, button names) were settled via multiple-choice Q&A with the user.
