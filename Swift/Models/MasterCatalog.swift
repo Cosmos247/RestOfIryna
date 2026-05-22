@@ -21,10 +21,12 @@ public enum MasterCatalog {
 
     // MARK: - Buyable armor
 
-    /// Armor the Master sells ready-made for silver — a convenience tax over
-    /// crafting it from hides at the Workshop. Price ≈ resource value × 2.5
-    /// (hide is worth 3🪙 at the Trader), rounded to a tidy number. Pieces
-    /// arrive at full durability, enchant level 0.
+    /// Armor the Master sells ready-made for silver — a premium "convenience
+    /// tax" over crafting it at the estate. Ready-made costs ≈ 4× the crafted
+    /// material value (no hides, no iron, no zone travel, instant), so the shop
+    /// is the lazy/no-stock path while crafting stays the economical one. Pieces
+    /// arrive at full durability, enchant level 0. Repair cost derives from this
+    /// price (full repair = ½ buy price), so it scales with the premium too.
     public struct ArmorListing: Sendable {
         public let itemId: String
         public let priceSilver: Int
@@ -35,10 +37,10 @@ public enum MasterCatalog {
     }
 
     public static let armorForSale: [ArmorListing] = [
-        ArmorListing("gear.forester_hood",     15),  // 2 hide  → 15🪙
-        ArmorListing("gear.forester_boots",    23),  // 3 hide  → 23🪙
-        ArmorListing("gear.forester_breeches", 38),  // 5 hide  → 38🪙
-        ArmorListing("gear.forester_jerkin",   45),  // 6 hide  → 45🪙
+        ArmorListing("gear.forester_hood",      60),  // craft  5🦴       → repair 30
+        ArmorListing("gear.forester_boots",     95),  // craft  8🦴 + 2⛓ → repair 48
+        ArmorListing("gear.forester_breeches", 150),  // craft 12🦴 + 2⛓ → repair 75
+        ArmorListing("gear.forester_jerkin",   180),  // craft 15🦴 + 4⛓ → repair 90
     ]
 
     public static func buyPrice(for itemId: String) -> Int? {
@@ -59,10 +61,30 @@ public enum MasterCatalog {
         return max(1, Int(cost.rounded()))
     }
 
+    /// Weapon repair cost: a flat 1🪙 per missing durability point. Weapons have
+    /// no buy price (they're upgraded, never sold), so the cost is keyed to the
+    /// tier's durability ceiling instead — a full repair runs 30🪙 (T1) → 100🪙
+    /// (T5). No max shave: the King's weapon is mended, not worn out.
+    public static func weaponRepairCost(missing: Int) -> Int {
+        return max(0, missing)
+    }
+
     // MARK: - Enchant
 
     /// Hard cap on the permanent enchant bonus a single piece can hold.
-    public static let enchantCap = 3
+    public static let enchantCap = 5
+
+    /// Cumulative stat points an enchant of `level` (0…cap) grants per affected
+    /// stat. Non-linear — the per-level weights are +1 +1 +1 +2 +3, so the top
+    /// two levels are worth more than the early ones and the last point is the
+    /// real prize. Drives BOTH the flat +ЗАХ every class gets and the
+    /// class-identity bonus (which mirrors these points): see
+    /// `EquipmentService.recomputeBonuses`.
+    public static let enchantPerLevelPoints = [1, 1, 1, 2, 3]
+    public static func enchantBonusPoints(level: Int) -> Int {
+        guard level > 0 else { return 0 }
+        return enchantPerLevelPoints.prefix(min(level, enchantPerLevelPoints.count)).reduce(0, +)
+    }
 
     /// Cost to raise a piece from `(level-1)` → `level` (1-based). Silver +
     /// material. Escalates so the last point is the deepest sink.
@@ -80,9 +102,11 @@ public enum MasterCatalog {
     }
 
     public static let enchantSteps: [EnchantStep] = [
-        EnchantStep(1, 30,  "mat.hide", 3),
-        EnchantStep(2, 70,  "mat.hide", 6),
-        EnchantStep(3, 150, "mat.hide", 10),
+        EnchantStep(1, 40,  "mat.hide", 4),
+        EnchantStep(2, 100, "mat.hide", 8),
+        EnchantStep(3, 220, "mat.hide", 15),
+        EnchantStep(4, 450, "mat.hide", 26),
+        EnchantStep(5, 850, "mat.hide", 42),
     ]
 
     /// The step that takes a piece from its current `level` to `level + 1`,

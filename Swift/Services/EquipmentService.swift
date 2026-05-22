@@ -85,38 +85,58 @@ public enum EquipmentService {
 
         var atk = 0, def = 0, crit = 0, dodge = 0, acc = 0
         for row in rows where row.equippedSlot != nil {
-            guard let item = ItemCatalog.find(row.itemId) else { continue }
-            // Tiered weapons (the three class starters in WeaponUpgradeCatalog)
-            // pull stats from the per-tier table; everything else falls back
-            // to the static `Item.gearStats`. T1 stats match the legacy values
-            // exactly, so existing equipped weapons see no numeric change
-            // until the player upgrades.
-            let stats: GearStats?
-            if let tierStats = WeaponUpgradeCatalog.stats(for: item.id, tier: row.tier) {
-                stats = tierStats
-            } else {
-                stats = item.gearStats
-            }
-            guard let s = stats else { continue }
-
-            // Phase 6.5 — armor only: a piece worn down to 0 durability is
-            // "broken" and contributes nothing until repaired at the Master.
-            let isArmor = row.equippedSlot.map { GearConditionService.armorSlots.contains($0) } == true
-            if isArmor && row.durability <= 0 { continue }
-
-            atk   += s.attack
-            def   += s.defense
-            crit  += s.crit
-            dodge += s.dodge
-            acc   += s.accuracy
-
-            // Phase 6.5 — permanent enchant adds +1 defense per level to armor.
-            if isArmor { def += row.enchantLevel }
+            let s = contributedStats(of: row, for: user)
+            atk += s.attack; def += s.defense; crit += s.crit; dodge += s.dodge; acc += s.accuracy
         }
         user.gearAttackBonus   = atk
         user.gearDefenseBonus  = def
         user.gearCritBonus     = crit
         user.gearDodgeBonus    = dodge
         user.gearAccuracyBonus = acc
+    }
+
+    /// Full-condition stats of a gear row: its tier/base `GearStats` plus the
+    /// armor enchant bonus — a flat +DEF scaled by the non-linear
+    /// `MasterCatalog.enchantBonusPoints` curve, PLUS a class-identity stat
+    /// (⚔️ warrior +DEF, 🏹 archer +dodge, 🔮 mage +crit). No durability penalty
+    /// applied — this is what the piece grants at full condition (used by the
+    /// inventory detail card). Tiered weapons read the per-tier table; T1 equals
+    /// the legacy `Item.gearStats`. Returns zeroes for non-gear / unknown items.
+    public static func nominalStats(of row: InventoryEntry, for user: User) -> GearStats {
+        guard let item = ItemCatalog.find(row.itemId) else { return GearStats() }
+        let base: GearStats
+        if let tierStats = WeaponUpgradeCatalog.stats(for: item.id, tier: row.tier) {
+            base = tierStats
+        } else if let s = item.gearStats {
+            base = s
+        } else {
+            return GearStats()
+        }
+        let isArmor = item.slot.map { GearConditionService.armorSlots.contains($0.rawValue) } == true
+        let points = MasterCatalog.enchantBonusPoints(level: row.enchantLevel)
+        guard isArmor, points > 0 else { return base }
+        var def = base.defense + points, crit = base.crit, dodge = base.dodge
+        switch CharacterClass(rawValue: user.characterClass ?? "") {
+        case .warrior: def   += points
+        case .archer:  dodge += points
+        case .mage:    crit  += points
+        case nil:      break
+        }
+        return GearStats(attack: base.attack, defense: def, crit: crit, dodge: dodge, accuracy: base.accuracy)
+    }
+
+    /// What a row actually contributes right now, after durability:
+    ///  • armor worn to 0 is "broken" → zero.
+    ///  • the weapon at 0 keeps HALF its stats (floored). Lore: the King's
+    ///    weapon can't truly break, only dull/slacken until honed.
+    /// The single source of truth summed by `recomputeBonuses`.
+    public static func contributedStats(of row: InventoryEntry, for user: User) -> GearStats {
+        guard let slot = ItemCatalog.find(row.itemId)?.slot else { return GearStats() }
+        let isArmor  = GearConditionService.armorSlots.contains(slot.rawValue)
+        let isWeapon = GearConditionService.weaponSlots.contains(slot.rawValue)
+        if isArmor && row.durability <= 0 { return GearStats() }
+        let n = nominalStats(of: row, for: user)
+        guard isWeapon && row.durability <= 0 else { return n }
+        return GearStats(attack: n.attack / 2, defense: n.defense / 2, crit: n.crit / 2, dodge: n.dodge / 2, accuracy: n.accuracy / 2)
     }
 }

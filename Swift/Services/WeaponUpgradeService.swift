@@ -113,8 +113,12 @@ public enum WeaponUpgradeService {
         }
 
         // 6. Bump the tier on the same row — this is the entire "the weapon
-        // grew up" mutation. Item id never changes.
+        // grew up" mutation. Item id never changes. Reforging to a higher tier
+        // raises its durability ceiling and renews it to full (a freshly
+        // tempered weapon is pristine).
         weapon.tier = nextTier
+        weapon.maxDurability = WeaponUpgradeCatalog.durability(forTier: nextTier)
+        weapon.durability = weapon.maxDurability
         try await weapon.save(on: db)
 
         // 7. Recompute cached gear bonuses so combat / profile pick up the

@@ -5,10 +5,10 @@
 //  Created by Dmytro Ihnatyuhin on 21.05.2026.
 //
 //  Phase 6.5 — the Master's three actions: buy ready-made armor, repair worn
-//  armor, and enchant armor (+DEF). All three drain `User.silver` (the first
-//  real silver sink); enchant + repair also touch materials / durability.
-//  Pure-ish: owns its DB writes per action and recomputes gear bonuses, mirrors
-//  TraderService / WeaponUpgradeService shape. Armor-only for now.
+//  gear (armor or the main-hand weapon), and enchant armor (+DEF + class stat).
+//  All three drain `User.silver` (the first real silver sink); enchant + repair
+//  also touch materials / durability. Pure-ish: owns its DB writes per action
+//  and recomputes gear bonuses, mirrors TraderService / WeaponUpgradeService.
 //
 
 import Fluent
@@ -48,6 +48,12 @@ public enum MasterService {
         return GearConditionService.armorSlots.contains(slot.rawValue)
     }
 
+    /// True when an item id is a main-hand weapon.
+    private static func isWeapon(_ itemId: String) -> Bool {
+        guard let slot = ItemCatalog.find(itemId)?.slot else { return false }
+        return GearConditionService.weaponSlots.contains(slot.rawValue)
+    }
+
     private static func ownedRow(_ entryId: UUID, for user: User, on db: any Database) async throws -> InventoryEntry? {
         guard let userId = user.id else { return nil }
         return try await InventoryEntry.query(on: db)
@@ -78,20 +84,27 @@ public enum MasterService {
 
     // MARK: - Repair
 
-    /// Restore a worn armor piece to full, then permanently shave its max
-    /// durability (mechanic B). Repairs to the *new* reduced max so the piece
-    /// slowly wears out toward a rebuy.
+    /// Repair a worn piece back to full.
+    ///   • Armor — permanently shaves 1 off its max (mechanic B), so it slowly
+    ///     wears out toward a rebuy; cost scales with the buy price.
+    ///   • Weapon — restores to the *same* max (lore: the King's weapon can't
+    ///     break, no shave); cost is a flat 1🪙 per durability point, so a full
+    ///     repair runs from 30🪙 (T1) up to 100🪙 (T5).
     public static func repair(entryId: UUID, for user: User, on db: any Database) async throws -> RepairResult {
-        guard let row = try await ownedRow(entryId, for: user, on: db), isArmor(row.itemId) else {
-            return .notArmor
-        }
+        guard let row = try await ownedRow(entryId, for: user, on: db) else { return .notArmor }
+        let weapon = isWeapon(row.itemId)
+        guard weapon || isArmor(row.itemId) else { return .notArmor }
+
         let missing = row.maxDurability - row.durability
         guard missing > 0 else { return .alreadyFull }
 
-        let cost = MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
+        let cost = weapon
+            ? MasterCatalog.weaponRepairCost(missing: missing)
+            : MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
         if user.silver < cost { return .notEnoughSilver(have: user.silver, need: cost) }
 
-        let newMax = max(1, row.maxDurability - GearConditionService.repairMaxShave)
+        // Armor sheds 1 max per repair; the weapon keeps its full ceiling.
+        let newMax = weapon ? row.maxDurability : max(1, row.maxDurability - GearConditionService.repairMaxShave)
         user.silver -= cost
         row.maxDurability = newMax
         row.durability = newMax

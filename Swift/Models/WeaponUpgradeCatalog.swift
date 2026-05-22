@@ -191,6 +191,16 @@ public enum WeaponUpgradeCatalog {
         return progression[itemId]?.count
     }
 
+    /// Durability a weapon of the given tier starts (and is repaired back) to.
+    /// Climbs with tier — a higher-tier weapon endures far longer. Unlike armor,
+    /// weapon repair never shaves this max (lore: the King's weapon can't break),
+    /// and a weapon worn to 0 keeps half its stats rather than going dead.
+    public static let durabilityByTier = [30, 40, 50, 70, 100]
+    public static func durability(forTier tier: Int) -> Int {
+        let idx = max(1, min(tier, durabilityByTier.count)) - 1
+        return durabilityByTier[idx]
+    }
+
     /// True if this item participates in the tier-upgrade ladder.
     public static func isUpgradable(_ itemId: String) -> Bool {
         return progression[itemId] != nil

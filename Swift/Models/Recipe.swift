@@ -131,31 +131,34 @@ public enum RecipeCatalog {
             output: RecipeOutput("mat.iron_ingot", 1)
         ),
 
-        // 🧵 Tannery — Forester's leather set. Costs scale by piece size:
-        // hood (2) < boots (3) < breeches (5) < jerkin (6). Total 16 hide for
-        // a full suit grants +7 DEF / +1 dodge.
+        // 🧵 Tannery — Forester's leather set. Costs scale by piece size and now
+        // require a little iron (smallest piece, the hood, stays hide-only). A
+        // full suit costs 40 hide + 8 iron and grants +7 DEF / +1 dodge. The
+        // iron makes the basic set a soft gate into the medium zone; the cost in
+        // trader-material value (~200–400🪙) keeps crafting clearly cheaper than
+        // buying ready-made from the Master (485🪙) while no longer near-free.
         Recipe(
             id: "recipe.forester_hood",
             category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 2)],
+            inputs: [RecipeIngredient("mat.hide", 5)],
             output: RecipeOutput("gear.forester_hood", 1)
         ),
         Recipe(
             id: "recipe.forester_jerkin",
             category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 6)],
+            inputs: [RecipeIngredient("mat.hide", 15), RecipeIngredient("mat.iron", 4)],
             output: RecipeOutput("gear.forester_jerkin", 1)
         ),
         Recipe(
             id: "recipe.forester_breeches",
             category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 5)],
+            inputs: [RecipeIngredient("mat.hide", 12), RecipeIngredient("mat.iron", 2)],
             output: RecipeOutput("gear.forester_breeches", 1)
         ),
         Recipe(
             id: "recipe.forester_boots",
             category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 3)],
+            inputs: [RecipeIngredient("mat.hide", 8), RecipeIngredient("mat.iron", 2)],
             output: RecipeOutput("gear.forester_boots", 1)
         ),
 

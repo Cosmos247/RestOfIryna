@@ -502,11 +502,11 @@ public enum PassiveExpeditionService {
             try? await user.saveAndCache(in: db)
         }
 
-        // Phase 6.5 — wear equipped armor for the whole run: each won fight
-        // costs a little, each lost fight more (no flee in passive autobattle).
-        let armorWear = outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
-                      + outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
-        try? await GearConditionService.drainEquippedArmor(amount: armorWear, for: user, on: db)
+        // Phase 6.5 — wear equipped gear (armor + weapon) for the whole run: each
+        // won fight costs a little, each lost fight more (no flee in passive autobattle).
+        let gearWear = outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
+                     + outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
+        try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)
 
         let report = PassiveReport(
             stepsTaken: state.stepsDeep,

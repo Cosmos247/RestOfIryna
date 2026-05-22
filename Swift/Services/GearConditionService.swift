@@ -10,9 +10,10 @@
 //  "broken" and contributes no stats until repaired — that check + the
 //  permanent enchant bonus both live in `EquipmentService.recomputeBonuses`.
 //
-//  Armor-only for now: weapons keep their tier ladder and will gain gem inlay
-//  + their own wear in a later phase. The four armor slots are helmet / chest /
-//  legs / boots; main-hand / off-hand / accessories never drain here.
+//  Both armor and the main-hand weapon wear here. Armor at 0 goes "broken"
+//  (0 stats); the weapon at 0 keeps HALF its stats (lore: the King's weapon
+//  can't truly break) — both behaviours live in `EquipmentService`. Off-hand /
+//  accessories never drain.
 //
 
 import Fluent
@@ -27,8 +28,13 @@ public enum GearConditionService {
     public static let maxDurabilityStart = 30
     public static let repairMaxShave = 1
 
-    /// Equipment slots that carry durability today (armor only).
+    /// Equipment slots that carry durability. Armor (4 slots) plus the main-hand
+    /// weapon. `durableSlots` is the full set that wears in a fight; `armorSlots`
+    /// stays separate because armor and weapons differ at 0 (broken vs −50%) and
+    /// in repair rules (max shave vs none).
     public static let armorSlots: Set<String> = ["helmet", "chest", "legs", "boots"]
+    public static let weaponSlots: Set<String> = [EquipmentSlot.mainHand.rawValue]
+    public static let durableSlots: Set<String> = armorSlots.union(weaponSlots)
 
     /// A single fight's wear *budget* (model C — distributed across equipped
     /// armor point-by-point, not charged per piece). Victory < defeat < flee —
@@ -55,27 +61,30 @@ public enum GearConditionService {
     /// once" cliff), and a piece hitting 0 goes "broken" (0 stats) until repaired.
     /// No-op when amount ≤ 0 or nothing armored is worn. We recompute bonuses +
     /// persist here so the durability rows and recomputed stats land together.
-    public static func drainEquippedArmor(amount: Int, for user: User, on db: any Database) async throws {
+    public static func drainEquippedGear(amount: Int, for user: User, on db: any Database) async throws {
         guard amount > 0, let userId = user.id else { return }
 
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
-        let armor = rows.filter { $0.equippedSlot.map { armorSlots.contains($0) } == true }
-        guard !armor.isEmpty else { return }
+        // Armor + weapon share one wear pool, so the per-fight budget is split
+        // across everything equipped (predictable silver sink regardless of how
+        // many durable pieces are worn).
+        let gear = rows.filter { $0.equippedSlot.map { durableSlots.contains($0) } == true }
+        guard !gear.isEmpty else { return }
 
         var touched: Set<UUID> = []
         for _ in 0..<amount {
             // Only pieces with durability left are eligible; once everything
-            // worn is broken, the remaining budget is simply lost.
-            let eligible = armor.indices.filter { armor[$0].durability > 0 }
+            // worn is at 0, the remaining budget is simply lost.
+            let eligible = gear.indices.filter { gear[$0].durability > 0 }
             guard let pick = eligible.randomElement() else { break }
-            armor[pick].durability -= 1
-            if let id = armor[pick].id { touched.insert(id) }
+            gear[pick].durability -= 1
+            if let id = gear[pick].id { touched.insert(id) }
         }
 
         guard !touched.isEmpty else { return }
-        for row in armor where row.id.map({ touched.contains($0) }) == true {
+        for row in gear where row.id.map({ touched.contains($0) }) == true {
             try await row.save(on: db)
         }
         try await EquipmentService.recomputeBonuses(for: user, on: db)
@@ -84,6 +93,29 @@ public enum GearConditionService {
 
     /// Convenience for a single fight outcome.
     public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws {
-        try await drainEquippedArmor(amount: event.amount, for: user, on: db)
+        try await drainEquippedGear(amount: event.amount, for: user, on: db)
+    }
+
+    /// One-shot, idempotent startup backfill: weapon rows created before the
+    /// per-tier durability table existed carry the generic `max = 30` from
+    /// `InventoryEntry.init`. Raise any under-provisioned weapon's max to its
+    /// tier value, preserving the missing amount (a full 30/30 T5 becomes
+    /// 100/100; a worn 20/30 becomes 90/100). Acts only when `max < tier value`,
+    /// so re-running never refills a legitimately worn weapon. Bonuses depend on
+    /// `durability > 0`, not max, so no recompute is needed here.
+    public static func backfillWeaponDurability(on db: any Database) async throws {
+        let weaponIds = Array(WeaponUpgradeCatalog.progression.keys)
+        guard !weaponIds.isEmpty else { return }
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$itemId ~~ weaponIds)
+            .all()
+        for row in rows {
+            let target = WeaponUpgradeCatalog.durability(forTier: row.tier)
+            guard row.maxDurability < target else { continue }
+            let gap = target - row.maxDurability
+            row.maxDurability = target
+            row.durability = min(target, row.durability + gap)
+            try await row.save(on: db)
+        }
     }
 }

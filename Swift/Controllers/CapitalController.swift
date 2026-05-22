@@ -657,10 +657,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Buy
 
-    private func sectionBody(_ titleKey: String, hintKey: String, session: User, lingo: Lingo) -> String {
+    private func sectionBody(_ titleKey: String, hintKey: String, session: User, lingo: Lingo, hintInterpolations: [String: String] = [:]) -> String {
         let locale = session.locale
         let title = lingo.localize(titleKey, locale: locale)
-        let hint  = lingo.localize(hintKey, locale: locale)
+        let hint  = lingo.localize(hintKey, locale: locale, interpolations: hintInterpolations)
         let silver = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: ["silver": "\(session.silver)"])
         return "<b>\(title)</b>\n\n\(hint)\n\n🪙 \(silver)"
     }
@@ -678,11 +678,32 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Repair
 
+    /// The player's currently-equipped main-hand weapon row, if any.
+    private func equippedWeaponRow(for user: User, on db: any Database) async throws -> InventoryEntry? {
+        guard let userId = user.id else { return nil }
+        return try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$equippedSlot, .equal, EquipmentSlot.mainHand.rawValue)
+            .first()
+    }
+
+    /// Class-specific repair-button label for the weapon (sword/bow/staff each
+    /// get a fitting verb). Unknown/nil class falls back to the warrior label.
+    private static func weaponRepairLabelKey(for user: User) -> String {
+        switch CharacterClass(rawValue: user.characterClass ?? "") {
+        case .archer: return "capital.master.repair.weapon.archer"
+        case .mage:   return "capital.master.repair.weapon.mage"
+        case .warrior, nil: return "capital.master.repair.weapon.warrior"
+        }
+    }
+
     private func editToMasterRepair(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
         let armor = try await ownedArmorRows(for: context.session, on: context.db)
         let needRepair = armor.filter { $0.durability < $0.maxDurability }
-        let hintKey = needRepair.isEmpty ? "capital.master.repair.empty" : "capital.master.repair.hint"
+        let weapon = try await equippedWeaponRow(for: context.session, on: context.db)
+        let weaponNeedsRepair = weapon.map { $0.durability < $0.maxDurability } == true
+        let hintKey = (needRepair.isEmpty && !weaponNeedsRepair) ? "capital.master.repair.empty" : "capital.master.repair.hint"
         let text = sectionBody("capital.master.repair.title", hintKey: hintKey, session: context.session, lingo: lingo)
         var rows: [[TGInlineKeyboardButton]] = needRepair.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id else { return nil }
@@ -691,18 +712,54 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability) · 🪙 \(cost)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")]
         }
+        // The equipped weapon — its own class-flavoured label, 1🪙/point cost.
+        if let weapon, weaponNeedsRepair, let id = weapon.id {
+            let cost = MasterCatalog.weaponRepairCost(missing: weapon.maxDurability - weapon.durability)
+            let name = lingo.localize(Self.weaponRepairLabelKey(for: context.session), locale: locale)
+            let label = "\(name) · \(weapon.durability)/\(weapon.maxDurability) · 🪙 \(cost)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")])
+        }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
     }
 
     // MARK: Enchant
 
+    /// Localization key for the stat *focus* of the player's class, used in the
+    /// enchant-screen hint (no level numbers — just which stats this class's
+    /// enchant reinforces). Unknown/nil class falls back to warrior.
+    private static func enchantFocusKey(for user: User) -> String {
+        switch CharacterClass(rawValue: user.characterClass ?? "") {
+        case .archer: return "capital.master.enchant.focus.archer"
+        case .mage:   return "capital.master.enchant.focus.mage"
+        case .warrior, nil: return "capital.master.enchant.focus.warrior"
+        }
+    }
+
+    /// Localized phrase for the *actual* enchant bonus a piece grants at `level`,
+    /// with the real numbers from the non-linear point curve. Warrior gets double
+    /// DEF (flat + class), archer/mage get flat DEF plus their signature stat.
+    /// Mirror of the switch in `EquipmentService.recomputeBonuses`.
+    private static func enchantBonusPhrase(for user: User, level: Int, lingo: Lingo) -> String {
+        let locale = user.locale
+        let points = MasterCatalog.enchantBonusPoints(level: level)
+        switch CharacterClass(rawValue: user.characterClass ?? "") {
+        case .archer:
+            return lingo.localize("capital.master.enchant.bonus.archer", locale: locale, interpolations: ["def": "\(points)", "extra": "\(points)"])
+        case .mage:
+            return lingo.localize("capital.master.enchant.bonus.mage", locale: locale, interpolations: ["def": "\(points)", "extra": "\(points)"])
+        case .warrior, nil:
+            return lingo.localize("capital.master.enchant.bonus.warrior", locale: locale, interpolations: ["def": "\(points * 2)"])
+        }
+    }
+
     private func editToMasterEnchant(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
         let armor = try await ownedArmorRows(for: context.session, on: context.db)
         let enchantable = armor.filter { $0.enchantLevel < MasterCatalog.enchantCap }
         let hintKey = enchantable.isEmpty ? "capital.master.enchant.empty" : "capital.master.enchant.hint"
-        let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo)
+        let focus = lingo.localize(Self.enchantFocusKey(for: context.session), locale: locale)
+        let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo, hintInterpolations: ["focus": focus])
         let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
         var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
@@ -738,7 +795,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         switch result {
         case .success(let itemId, let cost, let newMax):
             let name = itemLabel(itemId, lingo: lingo, locale: locale)
-            let text = lingo.localize("capital.master.repaired", locale: locale, interpolations: ["item": name, "silver": "🪙 \(cost)", "max": "\(newMax)"])
+            let text = lingo.localize("capital.master.repaired", locale: locale, interpolations: ["item": name, "silver": "🪙 \(cost)", "cur": "\(newMax)", "max": "\(newMax)"])
             await postStatusBanner("✅ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
             let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
@@ -753,7 +810,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         switch result {
         case .success(let itemId, let newLevel):
             let name = itemLabel(itemId, lingo: lingo, locale: locale)
-            let text = lingo.localize("capital.master.enchanted", locale: locale, interpolations: ["item": name, "level": "\(newLevel)"])
+            let bonus = Self.enchantBonusPhrase(for: context.session, level: newLevel, lingo: lingo)
+            let text = lingo.localize("capital.master.enchanted", locale: locale, interpolations: ["item": name, "level": "\(newLevel)", "bonus": bonus])
             await postStatusBanner("✅ \(text)", context: context)
         case .maxLevel:
             await postStatusBanner("❌ " + lingo.localize("capital.master.max_level", locale: locale), context: context)

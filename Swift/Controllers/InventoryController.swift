@@ -223,13 +223,14 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // instead of always "Rusty Sword". Non-tiered gear falls through.
             let name = lingo.localize(ItemDisplay.nameKey(for: pair.item, tier: pair.entry.tier), locale: locale)
             let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
-            // Phase 6.5 — armor condition: enchant level (✨+N), broken (💥),
-            // or worn durability (⚙️dur/max). Repaired/enchanted at the Master.
+            // Phase 6.5 — keep the list label clean: only the enchant level
+            // (as a plain "+N", no icon) for armor. Durability / broken / dulled
+            // state lives in the tap-through detail card and the Master's repair
+            // screen, not crammed into the button (it truncates the name).
             var condition = ""
-            if let slot = pair.item.slot, GearConditionService.armorSlots.contains(slot.rawValue) {
-                if pair.entry.enchantLevel > 0 { condition += " ✨+\(pair.entry.enchantLevel)" }
-                if pair.entry.durability <= 0 { condition += " 💥" }
-                else if pair.entry.durability < pair.entry.maxDurability { condition += " ⚙️\(pair.entry.durability)/\(pair.entry.maxDurability)" }
+            if let slot = pair.item.slot, GearConditionService.armorSlots.contains(slot.rawValue),
+               pair.entry.enchantLevel > 0 {
+                condition += " +\(pair.entry.enchantLevel)"
             }
             let itemLabel = "\(iconPrefix)\(name)\(condition)"
             let isEquipped = pair.entry.equippedSlot != nil
@@ -240,6 +241,53 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
                 TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(pair.item.id)")
             ]
         }
+    }
+
+    /// Full HTML detail card for one owned gear row — name (+tier for weapons),
+    /// lore, the stats it grants at full condition (tier-aware; armor includes
+    /// the enchant + class bonus), and a condition block (durability, broken /
+    /// dulled warning, enchant level). Mirrors the workshop recipe-detail layout.
+    private static func gearDetailCard(row: InventoryEntry, item: Item, user: User, lingo: Lingo, locale: String) -> String {
+        let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: row.tier), locale: locale)
+        let icon = item.icon.map { "\($0) " } ?? ""
+        var header = "\(icon)<b>\(name)</b>"
+        if WeaponUpgradeCatalog.isUpgradable(item.id) { header += " <i>(T\(row.tier))</i>" }
+        var lines: [String] = [header]
+
+        if let descKey = ItemDisplay.descriptionKey(for: item, tier: row.tier) {
+            lines.append("")
+            lines.append("<i>\(lingo.localize(descKey, locale: locale))</i>")
+        }
+
+        // Stats at full condition (so the player sees the piece's real value).
+        let s = EquipmentService.nominalStats(of: row, for: user)
+        var statLines: [String] = []
+        if s.attack   != 0 { statLines.append("   +\(s.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
+        if s.defense  != 0 { statLines.append("   +\(s.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
+        if s.crit     != 0 { statLines.append("   +\(s.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
+        if s.dodge    != 0 { statLines.append("   +\(s.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
+        if s.accuracy != 0 { statLines.append("   +\(s.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
+        if !statLines.isEmpty {
+            lines.append("")
+            lines.append("<b>\(lingo.localize("workshop.detail.stats", locale: locale))</b>")
+            lines.append(contentsOf: statLines)
+        }
+
+        // Condition — only durable gear (armor / weapon).
+        let isArmor  = item.slot.map { GearConditionService.armorSlots.contains($0.rawValue) } == true
+        let isWeapon = item.slot.map { GearConditionService.weaponSlots.contains($0.rawValue) } == true
+        if isArmor || isWeapon {
+            lines.append("")
+            lines.append("<b>\(lingo.localize("inventory.detail.condition", locale: locale))</b>")
+            lines.append("   ⚙️ \(lingo.localize("inventory.detail.durability", locale: locale)): \(row.durability)/\(row.maxDurability)")
+            if row.durability <= 0 {
+                lines.append("   \(lingo.localize(isWeapon ? "inventory.detail.weapon_dulled" : "inventory.detail.broken", locale: locale))")
+            }
+            if isArmor && row.enchantLevel > 0 {
+                lines.append("   ✨ \(lingo.localize("inventory.detail.enchant", locale: locale)): +\(row.enchantLevel)")
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 
     /// Non-gear rows (food / material / potion / artifact). Materials have no action
@@ -367,6 +415,21 @@ extension InventoryController {
             guard let item = ItemCatalog.find(itemId) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
+            }
+            // Gear → a full HTML detail card sent as its own message (stats +
+            // durability + enchant/tier), so the player can review owned gear.
+            if item.type == .gear, let userId = context.session.id {
+                let rows = try await InventoryEntry.query(on: context.db)
+                    .filter(\.$user.$id, .equal, userId)
+                    .filter(\.$itemId, .equal, item.id)
+                    .all()
+                // Prefer the equipped copy if the player owns more than one.
+                if let row = rows.first(where: { $0.equippedSlot != nil }) ?? rows.first {
+                    _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                    let card = Self.gearDetailCard(row: row, item: item, user: context.session, lingo: context.lingo, locale: locale)
+                    try await context.bot.sendMessage(session: context.session, text: card, parseMode: .html, replyMarkup: nil)
+                    return true
+                }
             }
             // For tiered weapons (3 starter weapons in WeaponUpgradeCatalog) the
             // lore changes per tier — fetch the player's row to know which tier
