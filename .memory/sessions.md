@@ -1,5 +1,39 @@
 # Session History
 
+## Session — 2026-05-22 (Master/gear progression expansion: enchant class bonus, premium prices + iron craft, weapon durability, inventory gear card)
+
+### Goal
+Iterative balance + depth pass on the Master (Phase 6.5), driven entirely by interactive design Q&A with the user. Four threads, all building toward one big commit.
+
+### What was done
+
+**Armor enchant — class-identity bonus + deeper ladder**
+- On top of the flat +DEF every class gets per enchant level, enchant now grants a class-identity stat: ⚔️ warrior +DEF (doubles down), 🏹 archer +dodge, 🔮 mage +crit. Chosen scheme: "by class identity", layered ON TOP of the base DEF.
+- Cap raised +3 → **+5**. Non-linear point curve `MasterCatalog.enchantBonusPoints` (per-level weights 1/1/1/2/3 → cumulative 1/2/3/5/8) — top levels worth more; drives BOTH the flat DEF and the class bonus.
+- Step costs raised ("moderately higher"): 40/100/220/450/850🪙 + 4/8/15/26/42 hide.
+- UI: enchant-screen hint shows the class focus; success banner shows the real per-level numbers. Keys `capital.master.enchant.focus.{class}` + `bonus.{class}` (with `%{def}`/`%{extra}`).
+
+**Master premium prices + heavier craft recipe**
+- Forester buy prices premium (×4 material value): hood 60 / boots 95 / breeches 150 / jerkin 180 (set 485🪙). Repair derives from buy price, so it scaled up automatically (user liked the resulting numbers; no wear multiplier added).
+- Craft cost raised + iron added (user: "more hide + a little iron", hood stays hide-only): hood 5🦴; boots 8🦴+2🔩; breeches 12🦴+2🔩; jerkin 15🦴+4🔩 (set 40🦴+8🔩). `RecipeIngredient` already supports multiple inputs, so no silver-cost field / `CraftingService` change needed.
+
+**Weapon durability (new)**
+- `WeaponUpgradeCatalog.durabilityByTier` [30,40,50,70,100] + `durability(forTier:)`. T1=30, T5=100 (user-chosen endpoints; accelerating curve).
+- Weapon joins the wear pool: `GearConditionService.weaponSlots`/`durableSlots`, `drainEquippedArmor`→`drainEquippedGear` (caller in PassiveExpeditionService updated too).
+- At 0 durability the weapon keeps **half** its stats (floored) — NOT broken. Lore: it's the King's weapon, can't break. Repair restores to full at **1🪙/point** (full T1=30 … T5=100), **no** max shave (`repairMaxShave` armor-only). Branch added in `MasterService.repair` + `MasterCatalog.weaponRepairCost`.
+- Upgrade refreshes durability to the new tier's full max. Idempotent startup `backfillWeaponDurability` lifts pre-existing weapons (init's flat 30) to their tier ceiling, preserving the missing amount.
+- Repair UI adds the equipped weapon with a class-flavoured button: 🗡 Sharpen blade / 🏹 Restring bow / 🔮 Re-empower staff.
+
+**Inventory gear detail card + cleanup**
+- Tapping gear now opens a full HTML detail card as its own message (`InventoryController.gearDetailCard`): name+tier, lore, full-condition stats, condition block (durability, broken/dulled warning, enchant). Non-gear keeps the lore alert.
+- Single source of truth: `EquipmentService.nominalStats` / `contributedStats` (recompute now sums `contributedStats`; card uses `nominalStats`).
+- Gear-row labels cleaned: durability removed from the inline button (it truncated names — user feedback), enchant shown as plain `+N` (no ✨ icon).
+- Repair success banner: `(max durability N)` → `(cur/max)` e.g. `(29/29)`.
+
+### Notes
+- No schema/migration change — weapon durability reuses the existing `AddGearCondition` columns.
+- All design numbers (curves, prices, iron amounts, durability endpoints, dull %, button names) were settled via multiple-choice Q&A with the user.
+
 ## Session N+13 — 2026-05-18 (Currency rename gold→silver, capital polish, plot harvest picker, combat round counter)
 
 ### Goal
