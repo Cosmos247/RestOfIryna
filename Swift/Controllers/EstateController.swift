@@ -861,9 +861,11 @@ extension EstateController {
         guard let query = context.update.callbackQuery else { return false }
         guard let message = query.message else { return false }
         guard let data = query.data else { return false }
-        // Phase 5.1: training mode keeps routerName at "estate" so the player
-        // can navigate the main reply-keyboard while sparring with the dummy.
-        // Combat inline-button callbacks need to forward to CombatController.
+        // Safety net for stale `combat:*` inline callbacks lingering in chat
+        // history (e.g. an old round message tapped while browsing the estate).
+        // Combat is now reply-keyboard driven and flips routerName to "combat"
+        // even for training, so this no longer carries live combat — it just
+        // forwards to CombatController's legacy handler to recover gracefully.
         if data.hasPrefix("combat:") {
             return try await CombatController.onCallbackQuery(context: context)
         }
@@ -1748,15 +1750,17 @@ extension EstateController {
         }
         // Spin up a fresh ExplorationState row holding the training fight.
         // Estate is locked during real expeditions (`showEstate` guard), so
-        // there's no concurrent state to clash with. **Note:** unlike real
-        // combat, we do NOT flip `routerName` to "combat" — the player
-        // should be free to navigate the main reply-keyboard while
-        // training. The combat callbacks reach `CombatController` via the
-        // `combat:*` forwarding installed in every other controller.
+        // there's no concurrent state to clash with. Combat now owns a reply
+        // keyboard, so we flip `routerName` to "combat" (just like a real
+        // fight) — the combat keyboard replaces the main one for the spar and
+        // is restored to the estate keyboard by `onTrainingExit`.
         let state = ExplorationState(userID: userId, stepsDeep: 0)
         let uses = CombatService.initialUsesForUser(context.session)
         state.beginCombat(enemyId: dummy.id, hp: dummy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
         try await state.save(on: context.db)
+
+        context.session.routerName = Controllers.combatController.routerName
+        try await context.session.saveAndCache(in: context.db)
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         try await Controllers.combatController.showCombat(context: context, state: state, enemy: dummy, intro: true)

@@ -206,7 +206,7 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 ### 4.3 Combat polish
 
 - [x] **4.3.1 Class-specific Flee chances** — landed. `CombatService.fleeChance(forClass:)` + `fleeVigorExtra(forClass:)`; warrior 40 / archer 70 / mage 90; mage pays +2 vigor.
-- [-] **4.3.2 Edit single message in-place per round** — *deferred by user; preference is to keep all combat logs visible as separate messages*
+- [-] **4.3.2 Edit single message in-place per round** — *deferred by user; preference is to keep all combat logs visible as separate messages. Moot since the 2026-05-27 reply-keyboard switch (combat actions are now reply-keyboard buttons that replace the main keyboard; every action re-sends a message).*
 - [-] **4.3.3 XP grant on victory** — *deferred; XP system will be re-designed during Phase 5 to feed estate progression directly (player XP → estate level), not character level. Phase 5.0's "estate level computed from `user.level`" derivation will be replaced once the new XP-to-Estate model lands.*
 - Status effects (rabies from rabid family, cured at chapel) — *moved to Future / Backlog (Phase 6 dependency)*
 - Per-enemy AI hooks (aggression, fleeResist) — *moved to Future / Backlog*
@@ -250,7 +250,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] `PlotService` helpers (lazy `accumulated` / `bonusAccumulated`, `harvest` deposits to **WarehouseEntry**, `claim` validates slot allowance, `slotsForLevel` — currently flat 5 override pending XP-to-Estate)
 - [x] `PlotProductionService` background ticker (single Task.detached, 60s test / 300s prod, pushes "🌾 ready to harvest" message when cap reached, `notified_full` flag suppresses repeats)
 - [x] EstateController plot drill-down (slot list, claim picker, harvest, training entry); inline status banners on harvest with current/cap on both primary and bonus
-- [x] Training Ground combat mode (clean damage, no vigor drain, no enemy counter, dummy auto-revives, routerName stays at "estate" so reply-keyboard nav unblocked, `combat:*` callback forwarding from Main / Inventory / Estate / Settings)
+- [x] Training Ground combat mode (clean damage, no vigor drain, no enemy counter, dummy auto-revives). *2026-05-27: with the combat reply-keyboard switch, `handleTrainingSpar` now flips routerName to "combat" (was "estate"); `onTrainingExit` restores routerName + the estate keyboard. The `combat:*` callback forwarding from Main / Inventory / Estate / Settings is now just a stale-button safety net.*
 - [x] Initial farm grant at registration completion (slot 0 = farm)
 - [x] Iron resource overhaul: `mat.iron` (Iron Lump 🔩, raw — foraging + Mine bonus) + `mat.iron_ingot` (Iron Ingot 🔳, placeholder for Phase 5.x Workshop crafting); legacy `mat.old_iron` retired with `RemoveOldIron` data migration
 - [x] Foraging pool → weighted (`pickWeighted` helper); iron weight 2 vs 10 staples = ~5% medium-zone drop

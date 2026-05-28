@@ -83,10 +83,26 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     override public func attachHandlers(to bot: TGBot, lingo: Lingo) async {
         let router = Router(bot: bot) { router in
             router[Commands.start.command()] = onStart
-            // Combat actions are inline buttons attached to each round message
-            // so the player's existing reply keyboard (exploration's
-            // [Step fwd][Step back]/[Bag], or nothing during registration)
-            // stays in place but cannot drive the fight.
+            // Combat actions are reply-keyboard buttons that REPLACE the main
+            // keyboard for the duration of the fight, so we match them by text
+            // (per class × locale) just like exploration's [Step]/[Bag] buttons.
+            for locale in SupportedLocale.allCases {
+                let loc = locale.rawValue
+                for cls in CharacterClass.allCases {
+                    let c = cls.rawValue
+                    router[lingo.localize(Self.attackKeyPrefix     + c, locale: loc)] = onAttack
+                    router[lingo.localize(Self.defendKeyPrefix     + c, locale: loc)] = onDefend
+                    router[lingo.localize(Self.fleeKeyPrefix       + c, locale: loc)] = onFlee
+                    router[lingo.localize(Self.specialAtkKeyPrefix + c, locale: loc)] = onSpecialAttack
+                    router[lingo.localize(Self.specialDefKeyPrefix + c, locale: loc)] = onSpecialDefense
+                    router[lingo.localize(Self.superKeyPrefix      + c, locale: loc)] = onSuper
+                }
+                router[lingo.localize("combat.button.techniques",    locale: loc)] = onTechMenu
+                router[lingo.localize("combat.tech.back",            locale: loc)] = onTechBack
+                router[lingo.localize("combat.button.training_exit", locale: loc)] = onTrainingExit
+            }
+            // Legacy fallback: inline combat buttons lingering in chat history
+            // from before the reply-keyboard switch still emit callbacks.
             router[.callback_query(data: nil)] = T.onCallbackQuery
             router.unmatched = unmatched
         }
@@ -113,18 +129,20 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     override func unmatched(context: Context) async throws -> Bool {
         guard try await super.unmatched(context: context) else { return false }
-        // Anything that isn't a combat callback or global command (incl. the
-        // player's old reply-keyboard buttons) gets the in-combat notice.
+        // Free-form text (or any input that isn't a combat button / global
+        // command) gets the in-combat notice — the combat reply keyboard is
+        // already in place to drive the fight.
         try await sendInCombatNotice(context: context)
         return true
     }
 
-    /// Combat does not own a reply keyboard — actions are inline buttons on
-    /// the round message. Returning nil keeps whatever reply keyboard was
-    /// visible before combat started (exploration's, or none for registration)
-    /// so the player can see they're "trapped" in the fight at the UI level.
+    /// Combat owns a reply keyboard that replaces the main one for the fight.
+    /// State isn't available here (sync, no db), so this returns the default
+    /// (non-training) layout — used by `/buttons` and the configure.swift
+    /// fallback. The actual round messages build the state-aware keyboard via
+    /// `combatReplyKeyboard` so the training-mode Exit button shows correctly.
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
-        return nil
+        return combatReplyKeyboard(session: session, state: nil, lingo: lingo)
     }
 
     /// True if the active combat is a Training Ground session. Detected by
@@ -143,87 +161,33 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return state.hasEnemyDefDebuff ? 0 : enemy.defense
     }
 
-    /// Main combat inline keyboard: Attack / Defend on top row, Techniques +
-    /// Flee on the bottom. Class identity is inferred from session — Attack
-    /// / Defend / Flee are class-flavoured, Techniques is a single static
-    /// label that opens a submenu. In training mode the Flee slot is
-    /// replaced with a Back button that exits cleanly to the Plot list.
-    private func combatMainMarkup(session: User, state: ExplorationState?, lingo: Lingo) -> TGInlineKeyboardMarkup {
+    /// Main combat reply keyboard: Attack / Defend on the top row, Techniques +
+    /// Flee on the bottom. It REPLACES whatever reply keyboard was visible
+    /// before combat (exploration's, or none during registration) and is
+    /// restored to the prior controller's keyboard on victory / flee / death.
+    /// Attack / Defend / Flee are class-flavoured; Techniques is a static
+    /// label that opens a sub-keyboard. In training mode the Flee slot is
+    /// replaced with an Exit button that leaves cleanly to the Plot list.
+    private func combatReplyKeyboardMarkup(session: User, state: ExplorationState?, lingo: Lingo) -> TGReplyKeyboardMarkup {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let locale = session.locale
-        let attack = TGInlineKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:attack")
-        let defend = TGInlineKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:defend")
-        let tech   = TGInlineKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale), callbackData: "combat:tech:menu")
-        let trailing: TGInlineKeyboardButton
+        let attack = TGKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale))
+        let defend = TGKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale))
+        let tech   = TGKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale))
+        let trailing: TGKeyboardButton
         if let state = state, Self.isTraining(state) {
-            trailing = TGInlineKeyboardButton(text: lingo.localize("combat.button.training_exit", locale: locale), callbackData: "combat:training:exit")
+            trailing = TGKeyboardButton(text: lingo.localize("combat.button.training_exit", locale: locale))
         } else {
-            trailing = TGInlineKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale), callbackData: "combat:flee")
+            trailing = TGKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale))
         }
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[attack, defend], [tech, trailing]])
+        return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [tech, trailing]], resizeKeyboard: true)
     }
 
     /// Wrapper for sendMessage callers that want a full TGReplyMarkup.
     /// State threaded through so the training-mode branch can swap Flee for
-    /// a Back button (see `combatMainMarkup`).
-    private func combatInlineKeyboard(session: User, state: ExplorationState?, lingo: Lingo) -> TGReplyMarkup {
-        return .inlineKeyboardMarkup(combatMainMarkup(session: session, state: state, lingo: lingo))
-    }
-
-    /// Submenu shown when the player taps `[🪄 Techniques]`. Per-fight budget
-    /// gates each button: Special Atk and Special Def get 2 uses each, Super
-    /// gets 1. When a counter reaches 0 the button is hidden — players see
-    /// only the techniques they can still spend, plus Back. Labels carry a
-    /// "× N" suffix showing remaining uses for clarity. Edit-in-place via
-    /// `editMessageReplyMarkup` keeps the round narrative intact.
-    /// Submenu. Phase 5.3e gates each kind behind `LearnedTechnique`:
-    ///   - Learned + uses > 0 → normal `<name> × N` button
-    ///   - Learned + uses == 0 → button hidden (already spent this fight)
-    ///   - Unlearned → `🔒 <name>` button with the same callback; the
-    ///     execution handler checks the learned-set and replies with a
-    ///     "learn at Training Ground" modal instead of executing.
-    private func combatTechniquesMarkup(session: User, state: ExplorationState, learned: Set<String>, lingo: Lingo) -> TGInlineKeyboardMarkup {
-        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
-        let locale = session.locale
-        var rows: [[TGInlineKeyboardButton]] = []
-
-        let atkLearned = learned.contains(CombatService.TechniqueKind.specialAtk.rawValue)
-        let defLearned = learned.contains(CombatService.TechniqueKind.specialDef.rawValue)
-        let supLearned = learned.contains(CombatService.TechniqueKind.super.rawValue)
-
-        var techRow: [TGInlineKeyboardButton] = []
-        if atkLearned {
-            if let uses = state.combatSpecialAtkUses, uses > 0 {
-                let label = lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
-                techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_attack"))
-            }
-        } else {
-            let label = "🔒 " + lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale)
-            techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_attack"))
-        }
-        if defLearned {
-            if let uses = state.combatSpecialDefUses, uses > 0 {
-                let label = lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
-                techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_defense"))
-            }
-        } else {
-            let label = "🔒 " + lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale)
-            techRow.append(TGInlineKeyboardButton(text: label, callbackData: "combat:tech:special_defense"))
-        }
-        if !techRow.isEmpty {
-            rows.append(techRow)
-        }
-        if supLearned {
-            if let uses = state.combatSuperUses, uses > 0 {
-                let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale) + " × \(uses)"
-                rows.append([TGInlineKeyboardButton(text: label, callbackData: "combat:super")])
-            }
-        } else {
-            let label = "🔒 " + lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "combat:super")])
-        }
-        rows.append([TGInlineKeyboardButton(text: lingo.localize("combat.tech.back", locale: locale), callbackData: "combat:tech:back")])
-        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    /// an Exit button (see `combatReplyKeyboardMarkup`).
+    private func combatReplyKeyboard(session: User, state: ExplorationState?, lingo: Lingo) -> TGReplyMarkup {
+        return .replyKeyboardMarkup(combatReplyKeyboardMarkup(session: session, state: state, lingo: lingo))
     }
 
     // MARK: - Public entry
@@ -246,32 +210,38 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale))
         let text = lines.joined(separator: "\n\n")
 
-        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
+        let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
     // MARK: - Callback dispatch
 
-    /// All combat callbacks come through here. Unknown / stale callbacks
-    /// (e.g. an old Estate inline button that lingered before combat started)
-    /// fall through to the in-combat notice.
+    /// Legacy fallback for inline combat buttons that linger in chat history
+    /// from before the reply-keyboard switch. Combat is now driven by the
+    /// reply keyboard, so we just dismiss the spinner and re-present the live
+    /// fight (with the reply keyboard) — or route the player out if the fight
+    /// already ended.
     static func onCallbackQuery(context: Context) async throws -> Bool {
-        guard let data = context.update.callbackQuery?.data else { return false }
+        guard let query = context.update.callbackQuery else { return false }
         let ctrl = Controllers.combatController
-        switch data {
-        case "combat:attack":               return try await ctrl.onAttack(context: context)
-        case "combat:defend":               return try await ctrl.onDefend(context: context)
-        case "combat:flee":                 return try await ctrl.onFlee(context: context)
-        case "combat:tech:menu":            return try await ctrl.onTechMenu(context: context)
-        case "combat:tech:back":            return try await ctrl.onTechBack(context: context)
-        case "combat:tech:special_attack":  return try await ctrl.onSpecialAttack(context: context)
-        case "combat:tech:special_defense": return try await ctrl.onSpecialDefense(context: context)
-        case "combat:super":                return try await ctrl.onSuper(context: context)
-        case "combat:training:exit":        return try await ctrl.onTrainingExit(context: context)
-        default:
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        if let state = try await ExplorationState.current(for: context.session, on: context.db),
+           state.isInCombat,
+           let enemyId = state.combatEnemyId,
+           let enemy = EnemyCatalog.find(enemyId) {
+            // Could be forwarded from another controller's router (e.g. a
+            // pre-switch training session still on routerName "estate") — make
+            // sure the player is on the combat router so the reply keyboard's
+            // buttons actually reach this controller.
+            if context.session.routerName != ctrl.routerName {
+                context.session.routerName = ctrl.routerName
+                try await context.session.saveAndCache(in: context.db)
+            }
+            try await ctrl.showCombat(context: context, state: state, enemy: enemy, intro: false)
+        } else {
             try await ctrl.sendInCombatNotice(context: context)
-            return true
         }
+        return true
     }
 
     /// Defensive toast for the case where a stale callback (from an older
@@ -285,23 +255,22 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Phase 5.3e — if the player hasn't learned the given technique kind,
-    /// show a modal alert pointing them at the Training Ground and return
-    /// `true` so the caller bails out before executing. Returns `false`
-    /// when the technique is learned (caller continues normally).
+    /// send a notice pointing them at the Training Ground and return `true`
+    /// so the caller bails out before executing. Returns `false` when the
+    /// technique is learned (caller continues normally). Normally unreachable
+    /// from the submenu (unlearned techniques are hidden), but guards against
+    /// a free-typed label matching an unlearned technique.
     private func sendLockedToastIfUnlearned(kind: CombatService.TechniqueKind, context: Context) async throws -> Bool {
         if try await LearnedTechnique.has(kind.rawValue, for: context.session, on: context.db) {
             return false
         }
-        guard let query = context.update.callbackQuery else { return true }
         let required = CombatService.requiredLevel(for: kind)
         // 🔒 prepended in Swift — leading supplementary-plane emoji breaks
         // Lingo's `%{var}` parser (see .memory/localization.md).
         let text = "🔒 " + context.lingo.localize("combat.tech.locked", locale: context.session.locale, interpolations: [
             "level": "\(required)"
         ])
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
-            callbackQueryId: query.id, text: text, showAlert: true
-        ))
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
         return true
     }
 
@@ -571,58 +540,89 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
-    /// Open the Techniques submenu by editing the current message's inline
-    /// keyboard (round narrative + status card stay put). Stale taps from an
-    /// older message just edit that older message — the live combat is
-    /// unaffected. The submenu rebuilds from the live state so already-spent
-    /// techniques stay hidden.
+    /// Open the Techniques sub-keyboard. Reply keyboards can't be edited in
+    /// place, so this sends a fresh message carrying the technique buttons —
+    /// only the ones the player can use RIGHT NOW (learned AND with uses left).
+    /// Unlearned / spent techniques are hidden. Remaining uses are shown in the
+    /// message body (the buttons stay static-labelled so text routing matches).
+    /// When nothing is available, the main combat keyboard is re-sent with a
+    /// short note instead of an empty submenu.
     private func onTechMenu(context: Context) async throws -> Bool {
-        guard let message = context.update.callbackQuery?.message else { return false }
         guard let state = try await ExplorationState.current(for: context.session, on: context.db),
               state.isInCombat else {
-            // No live combat — the original notice path will handle this.
             try await sendInCombatNotice(context: context)
             return true
         }
         let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
-        let markup = combatTechniquesMarkup(session: context.session, state: state, learned: learned, lingo: context.lingo)
-        let params = TGEditMessageReplyMarkupParams(
-            chatId: TGChatId.chat(message.chat.id),
-            messageId: message.messageId,
-            replyMarkup: markup
-        )
-        _ = try? await context.bot.editMessageReplyMarkup(params: params)
+        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+        let locale = context.session.locale
+        let lingo = context.lingo
+
+        var techRow: [TGKeyboardButton] = []
+        var bodyLines: [String] = []
+        if learned.contains(CombatService.TechniqueKind.specialAtk.rawValue), let uses = state.combatSpecialAtkUses, uses > 0 {
+            let label = lingo.localize(Self.specialAtkKeyPrefix + cls.rawValue, locale: locale)
+            techRow.append(TGKeyboardButton(text: label))
+            bodyLines.append("\(label) × \(uses)")
+        }
+        if learned.contains(CombatService.TechniqueKind.specialDef.rawValue), let uses = state.combatSpecialDefUses, uses > 0 {
+            let label = lingo.localize(Self.specialDefKeyPrefix + cls.rawValue, locale: locale)
+            techRow.append(TGKeyboardButton(text: label))
+            bodyLines.append("\(label) × \(uses)")
+        }
+        var superRow: [TGKeyboardButton] = []
+        if learned.contains(CombatService.TechniqueKind.super.rawValue), let uses = state.combatSuperUses, uses > 0 {
+            let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)
+            superRow.append(TGKeyboardButton(text: label))
+            bodyLines.append("\(label) × \(uses)")
+        }
+
+        if techRow.isEmpty && superRow.isEmpty {
+            // Nothing usable — keep the main keyboard, explain why.
+            let text = lingo.localize("combat.tech.none_available", locale: locale)
+            let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
+            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+            return true
+        }
+
+        var rows: [[TGKeyboardButton]] = []
+        if !techRow.isEmpty { rows.append(techRow) }
+        if !superRow.isEmpty { rows.append(superRow) }
+        rows.append([TGKeyboardButton(text: lingo.localize("combat.tech.back", locale: locale))])
+        let markup = TGReplyKeyboardMarkup(keyboard: rows, resizeKeyboard: true)
+
+        let text = ([lingo.localize("combat.tech.prompt", locale: locale)] + bodyLines).joined(separator: "\n")
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: .replyKeyboardMarkup(markup))
         return true
     }
 
-    /// Close the Techniques submenu — flip the keyboard back to the main
-    /// combat layout.
+    /// Close the Techniques sub-keyboard — re-send the combat status card with
+    /// the main combat reply keyboard (state read live so the trailing button
+    /// is Flee, or Exit in training mode).
     private func onTechBack(context: Context) async throws -> Bool {
-        guard let message = context.update.callbackQuery?.message else { return false }
-        // Read the live state so the main layout can correctly pick Flee vs.
-        // Back (training mode) for the trailing button.
-        let state = try await ExplorationState.current(for: context.session, on: context.db)
-        let markup = combatMainMarkup(session: context.session, state: state, lingo: context.lingo)
-        let params = TGEditMessageReplyMarkupParams(
-            chatId: TGChatId.chat(message.chat.id),
-            messageId: message.messageId,
-            replyMarkup: markup
-        )
-        _ = try? await context.bot.editMessageReplyMarkup(params: params)
+        guard let (state, enemy) = try await loadCombat(context: context) else { return true }
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: state.combatEnemyHP ?? enemy.hp, state: state, lingo: lingo, locale: locale)
+        let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
+        try await context.bot.sendMessage(session: context.session, text: status, parseMode: .html, replyMarkup: markup)
         return true
     }
 
     /// Phase 5.1: clean exit from a Training Ground session. Wipes the
-    /// ExplorationState row that was holding the dummy fight and re-renders
-    /// the plot list so the Training Ground row is visible again. The
-    /// player's routerName never changed (training keeps them in `estate`
-    /// so the reply keyboard stays unblocked), so no transition is needed.
-    /// No HP / vigor / inventory changes — training is consequence-free.
+    /// ExplorationState row that was holding the dummy fight, restores the
+    /// estate routerName + main reply keyboard (combat replaced it while
+    /// sparring), and re-renders the plot list so the Training Ground row is
+    /// visible again. No HP / vigor / inventory changes — training is
+    /// consequence-free.
     private func onTrainingExit(context: Context) async throws -> Bool {
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
             try await state.delete(on: context.db)
         }
         let estate = Controllers.estateController
+        context.session.routerName = estate.routerName
+        try await context.session.saveAndCache(in: context.db)
+
         let lingo = context.lingo
         let locale = context.session.locale
         let prefix = "🥋 " + lingo.localize("estate.plot.alert.training_exited", locale: locale)
@@ -630,7 +630,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let body = estate.renderPlotList(plots: plots, session: context.session, lingo: lingo, locale: locale)
         let markup = estate.plotListKeyboard(plots: plots, session: context.session, lingo: lingo, locale: locale)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
-        await estate.postStatusBanner(prefix, context: context)
+        // The plot list carries inline markup, so the combat reply keyboard
+        // would otherwise linger — restore the main keyboard on the banner.
+        let mainKB = estate.generateControllerKB(session: context.session, lingo: lingo)
+        await estate.postStatusBanner(prefix, context: context, replyMarkup: mainKB)
         return true
     }
 
@@ -872,7 +875,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         ])
         let status = renderStatusCard(user: player, enemy: enemy, enemyHP: state.combatEnemyHP ?? enemy.hp, state: state, lingo: lingo, locale: locale)
         let text = "\(activate)\n\n\(status)"
-        let markup = combatInlineKeyboard(session: player, state: state, lingo: lingo)
+        let markup = combatReplyKeyboard(session: player, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
         return true
     }
@@ -913,7 +916,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale)
         let text = (allLines + [status]).joined(separator: "\n\n")
-        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
+        let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
@@ -1021,7 +1024,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         ]))
         lines.append(renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemy.hp, state: state, lingo: lingo, locale: locale))
         let text = lines.joined(separator: "\n\n")
-        let markup = combatInlineKeyboard(session: context.session, state: state, lingo: lingo)
+        let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
@@ -1091,16 +1094,14 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
               state.isInCombat,
               let enemyId = state.combatEnemyId,
               let enemy = EnemyCatalog.find(enemyId) else {
-            // Stale callback: combat already ended (victory / defeat / flee).
-            // Tell the player via a modal alert and leave their current screen
-            // untouched — rebuilding the exploration UI here was disorienting
-            // because the player may have already walked back / returned home.
-            if let query = context.update.callbackQuery {
-                let toast = context.lingo.localize("combat.ended", gender: context.session.gender, locale: context.session.locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
-                    callbackQueryId: query.id, text: toast, showAlert: true
-                ))
-            }
+            // Stale: combat already ended but the router still points here.
+            // Tell the player and recover a usable keyboard by routing back to
+            // the exploration entry.
+            let text = context.lingo.localize("combat.ended", gender: context.session.gender, locale: context.session.locale)
+            try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
+            context.session.routerName = Controllers.explorationController.routerName
+            try await context.session.saveAndCache(in: context.db)
+            try await Controllers.explorationController.showExploration(context: context)
             return nil
         }
         return (state, enemy)

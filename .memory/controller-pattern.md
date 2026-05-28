@@ -64,7 +64,7 @@ func handlerName(context: Context) async throws -> Bool
 Override `generateControllerKB(session:lingo:)` to define persistent reply keyboard.
 Used by `/buttons` command to restore keyboards, and by the bot-restart notice in `configure.swift` to redraw whichever keyboard the player had before downtime.
 
-A controller can deliberately return `nil` if it owns no reply keyboard — `CombatController` does this so the previous controller's keyboard (exploration's `[Step fwd][Step back]/[Bag]`, or nothing during registration) stays put while combat actions live as inline buttons on each round message. Callers that need a non-nil fallback (e.g. the bot-restart greeting for a player whose `routerName == "combat"`) should pick the parent context's keyboard explicitly — for combat that's `Controllers.explorationController.generateControllerKB(...)`, since combat is always nested inside an active expedition.
+A controller can return `nil` if it owns no reply keyboard. `CombatController` used to do this (combat was inline-button driven) but since the 2026-05-27 reply-keyboard switch it returns the combat keyboard itself: `generateControllerKB` hands back the default (non-training) `[Attack][Defend]/[🪄 Techniques][Flee]` layout — used by `/buttons` and the restart greeting — while the live round messages build the state-aware version (training swaps Flee for `[🚪 Exit]`) via `combatReplyKeyboard`. The combat keyboard replaces the player's previous one for the fight and is restored to the parent controller's keyboard on victory / flee / death.
 
 ### Callback Queries
 - Must be `static` methods (limitation of how they're registered)

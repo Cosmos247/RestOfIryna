@@ -1,5 +1,22 @@
 # Session History
 
+## Session — 2026-05-27 (Combat keyboard: inline → reply-keyboard)
+
+### Goal
+User wanted combat actions to **replace** the main reply keyboard for the duration of a fight (like every other controller) instead of riding as inline buttons on each round message. Two design choices settled via quiz: keep the techniques **sub-menu** structure; **hide** unavailable techniques (unlearned + spent).
+
+### What was done (`CombatController.swift`, `EstateController.swift`, both locales + docs)
+- `combatMainMarkup`/`combatInlineKeyboard` → `combatReplyKeyboardMarkup`/`combatReplyKeyboard` (`TGReplyKeyboardMarkup`, resizeKeyboard). `generateControllerKB` now returns the default (non-training) combat keyboard (was `nil`).
+- `attachHandlers` registers action labels by text per `CharacterClass.allCases` × `SupportedLocale.allCases` (onAttack/onDefend/onFlee/onSpecial*/onSuper) + per-locale onTechMenu/onTechBack/onTrainingExit. Labels must stay **static** (router matches text; the old `× N` suffix would break matching and trip the default `partialMatch` "input ignored" message) — `× N` moved to the submenu message body.
+- `onTechMenu` sends a fresh sub-keyboard of only usable techniques (learned AND uses>0); unlearned/spent hidden; none-usable → re-send main keyboard + `combat.tech.none_available`. `onTechBack` re-sends the status card + main keyboard. `combatTechniquesMarkup` deleted.
+- `onCallbackQuery` demoted to a **legacy fallback** for inline buttons lingering in chat history (answers spinner, re-presents fight, flips routerName→combat if forwarded). `loadCombat` stale path + `sendLockedToastIfUnlearned` now send plain messages (no more modal toasts — reply keyboards have none).
+- **Training:** `EstateController.handleTrainingSpar` flips `routerName` to "combat" (was "estate" — combat now owns the keyboard); `onTrainingExit` restores `routerName="estate"` + the main keyboard (attached to the exit banner) before re-rendering the plot list.
+- **Locale collision fix:** `combat.button.training_exit` renamed "🔙 Back" → "🚪 Exit" (en) / "🔙 Назад" → "🚪 Вийти" (uk) so it doesn't collide by text with the techniques `combat.tech.back` ("🔙 Back"). Added `combat.tech.prompt` + `combat.tech.none_available` (both locales).
+- Docs synced: README, `.memory/{status,file-map,controller-pattern,localization}.md`, TODO.
+
+### Verified
+`swift build` clean; JSON valid. **Manual Telegram run-through still owed by user** (encounter, techniques, training, registration dog fight).
+
 ## Session — 2026-05-22 (Master/gear progression expansion: enchant class bonus, premium prices + iron craft, weapon durability, inventory gear card)
 
 ### Goal
