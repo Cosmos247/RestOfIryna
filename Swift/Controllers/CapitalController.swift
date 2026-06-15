@@ -159,6 +159,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
+        // Market sell prompt — incoming text is the quantity (stage 1) or the
+        // lot price (stage 2) the player typed. Consume here so it doesn't
+        // fall through to the welcome render.
+        if let text = context.update.message?.text,
+           let pending = await EphemeralChatState.shared.peekPendingMarketListing(telegramId: context.session.telegramId) {
+            try await handleMarketListingInput(text: text, pending: pending, context: context)
+            return true
+        }
+
+        // Trade numeric prompt — incoming text is the silver amount or the
+        // quantity of a stackable to offer in a live player-to-player trade.
+        if let text = context.update.message?.text,
+           let pending = await EphemeralChatState.shared.peekPendingTradeInput(telegramId: context.session.telegramId) {
+            try await handleTradeInput(text: text, pending: pending, context: context)
+            return true
+        }
+
         // Random text falls back to re-rendering the welcome screen.
         try await renderWelcome(context: context)
         return true
@@ -166,7 +183,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Location handlers
 
-    private func onMarket(context: Context)  async throws -> Bool { try await renderLocation(.market,  context: context); return true }
+    private func onMarket(context: Context)  async throws -> Bool { try await showMarket(context: context); return true }
     private func onArena(context: Context)   async throws -> Bool { try await renderLocation(.arena,   context: context); return true }
     private func onTrader(context: Context)  async throws -> Bool { try await showTrader(context: context); return true }
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
@@ -1132,6 +1149,151 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
+        // MARK: Market (Phase 6.5) — player-to-player marketplace
+        if data == "market:menu" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToMarketMenu(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "market:buyboard" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToBuyBoard(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "market:sellpicker" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToSellPicker(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "market:mylots" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToMyLots(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("market:item:") {
+            let itemId = String(data.dropFirst("market:item:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToItemLots(itemId: itemId, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        // Item-lot tap opens a confirm prompt first; `buyok:` runs the purchase.
+        if data.hasPrefix("market:buy:") {
+            let idStr = String(data.dropFirst("market:buy:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                try await ctrl.editToBuyConfirm(lotId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("market:buyok:") {
+            let idStr = String(data.dropFirst("market:buyok:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                let result = try await MarketService.buyListing(id: id, buyer: context.session, on: context.db)
+                await ctrl.postMarketBuyBanner(result: result, context: context)
+                await ctrl.notifySellerSold(result: result, context: context)
+            }
+            try await ctrl.editToBuyBoard(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("market:cancel:") {
+            let idStr = String(data.dropFirst("market:cancel:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: idStr) {
+                let result = try await MarketService.cancelListing(id: id, seller: context.session, on: context.db)
+                await ctrl.postMarketCancelBanner(result: result, context: context)
+            }
+            try await ctrl.editToMyLots(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("market:sell:") {
+            let itemId = String(data.dropFirst("market:sell:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.openMarketSellPrompt(itemId: itemId, marketScreenMessageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "market:cancelN" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.cancelMarketSellPrompt(context: context)
+            return true
+        }
+
+        // MARK: Trade (Phase 6.5) — synchronous player-to-player exchange
+        if data == "trade:lobby" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.showTradeLobby(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "trade:back" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await TradeStore.shared.leaveLobby(telegramId: context.session.telegramId)
+            try await ctrl.editToMarketMenu(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("trade:invite:") {
+            let raw = String(data.dropFirst("trade:invite:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let targetTg = Int64(raw) {
+                try await ctrl.handleTradeInvite(targetTelegramId: targetTg, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("trade:accept:") {
+            let raw = String(data.dropFirst("trade:accept:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: raw) {
+                try await ctrl.handleTradeAccept(sessionId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("trade:decline:") {
+            let raw = String(data.dropFirst("trade:decline:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: raw) {
+                try await ctrl.handleTradeDecline(sessionId: id, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("trade:stack:") {
+            let itemId = String(data.dropFirst("trade:stack:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleTradeStackTap(itemId: itemId, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("trade:gear:") {
+            let raw = String(data.dropFirst("trade:gear:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            if let id = UUID(uuidString: raw) {
+                try await ctrl.handleTradeGearTap(entryId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data == "trade:silver" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.openTradeSilverPrompt(screenMessageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "trade:promptcancel" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.cancelTradePrompt(context: context)
+            return true
+        }
+        if data == "trade:ok" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleTradeConfirmFirst(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "trade:final" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleTradeConfirmSecond(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "trade:cancel" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleTradeCancel(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+
         if data == "capital:back" || data == "fortune:back" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.showCapital(context: context)
@@ -1314,6 +1476,888 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case "materials": return .material
         default:          return nil
         }
+    }
+
+    // MARK: - Market (Phase 6.5 — player-to-player marketplace)
+    //
+    // Entry screen is the menu: lore + silver balance + active-lot count and
+    // three buttons [🛒 Buy] / [🏷 Sell] / [📦 My lots]. The buy board is
+    // item-grouped (Level 1 = one row per distinct item on the market, Level 2
+    // = that item's lots cheapest-per-unit first). Selling is a two-prompt
+    // flow (quantity → price) gated by a flat listing fee. Listing escrows the
+    // units off the seller's bag; buying transfers them + the silver and pushes
+    // the seller a "sold" notification; cancelling returns the units (fee kept).
+
+    func showMarket(context: Context) async throws {
+        let activeLots = try await MarketListing.activeCount(for: context.session, on: context.db)
+        let text = renderMarketMenuBody(session: context.session, lingo: context.lingo, activeLots: activeLots)
+        let keyboard = marketMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/capital/market.jpg",
+            caption: text,
+            replyMarkup: .inlineKeyboardMarkup(keyboard),
+            toUser: context.session,
+            bot: context.bot
+        )
+    }
+
+    private func renderMarketMenuBody(session: User, lingo: Lingo, activeLots: Int) -> String {
+        let locale = session.locale
+        let title = lingo.localize("capital.location.market.title", locale: locale)
+        let body  = lingo.localize("capital.location.market.body", locale: locale)
+        let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: ["silver": "\(session.silver)"])
+        let lotsLine = lingo.localize("capital.market.lots_count", locale: locale, interpolations: [
+            "count": "\(activeLots)", "max": "\(MarketCatalog.maxActiveLots)"
+        ])
+        return "<b>\(title)</b>\n\n\(body)\n\n🪙 \(silverLabel)\n📦 \(lotsLine)"
+    }
+
+    private func marketMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let buy     = lingo.localize("capital.market.button.buy",     locale: locale)
+        let sell    = lingo.localize("capital.market.button.sell",    locale: locale)
+        let myLots  = lingo.localize("capital.market.button.my_lots", locale: locale)
+        let trade   = lingo.localize("capital.market.button.trade",   locale: locale)
+        let back    = lingo.localize("capital.button.back_to_capital", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: buy,    callbackData: "market:buyboard"),
+             TGInlineKeyboardButton(text: sell,   callbackData: "market:sellpicker")],
+            [TGInlineKeyboardButton(text: myLots, callbackData: "market:mylots"),
+             TGInlineKeyboardButton(text: trade,  callbackData: "trade:lobby")],
+            [TGInlineKeyboardButton(text: back,   callbackData: "capital:back")]
+        ])
+    }
+
+    private func editToMarketMenu(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let activeLots = try await MarketListing.activeCount(for: context.session, on: context.db)
+        let text = renderMarketMenuBody(session: context.session, lingo: context.lingo, activeLots: activeLots)
+        let keyboard = marketMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    // MARK: Buy — Level 1 (item-grouped board)
+
+    private func editToBuyBoard(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let summaries = try await MarketListing.itemSummaries(excludingSeller: context.session.id, on: context.db)
+
+        let title = lingo.localize("capital.market.buy_title", locale: locale)
+        var body = "<b>\(title)</b>"
+        if summaries.isEmpty {
+            body += "\n\n<i>\(lingo.localize("capital.market.buy_empty", locale: locale))</i>"
+        }
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for s in summaries {
+            let name = ItemCatalog.find(s.itemId).map { item -> String in
+                let icon = item.icon.map { "\($0) " } ?? ""
+                return "\(icon)\(lingo.localize(item.nameKey, locale: locale))"
+            } ?? s.itemId
+            let label = lingo.localize("capital.market.board_row", locale: locale, interpolations: [
+                "item": name, "count": "\(s.lotCount)"
+            ])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "market:item:\(s.itemId)")])
+        }
+        let back = lingo.localize("capital.market.button.back_to_menu", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "market:menu")])
+
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Buy — Level 2 (lots of one item)
+
+    private func editToItemLots(itemId: String, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let viewerId = context.session.id
+        let lots = try await MarketListing.forItem(itemId, on: context.db).filter { $0.$seller.id != viewerId }
+
+        // No lots left (all bought / cancelled) — bounce back to the board.
+        if lots.isEmpty {
+            try await editToBuyBoard(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+
+        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let title = lingo.localize("capital.market.item_lots_title", locale: locale, interpolations: ["item": itemName])
+        let body = "<b>\(title)</b>"
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for lot in lots {
+            guard let lotId = lot.id else { continue }
+            let seller = try await User.find(lot.$seller.id, on: context.db)
+            let nick = seller?.nickname ?? "—"
+            let label = lingo.localize("capital.market.lot_row", locale: locale, interpolations: [
+                "qty": "\(lot.quantity)", "total": "🪙 \(lot.price)", "nick": nick
+            ])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "market:buy:\(lotId.uuidString)")])
+        }
+        let back = lingo.localize("capital.market.button.back_to_board", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "market:buyboard")])
+
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Buy — confirm
+
+    private func editToBuyConfirm(lotId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let lot = try await MarketListing.find(id: lotId, on: context.db) else {
+            try await editToBuyBoard(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let itemName = ItemCatalog.find(lot.itemId).map { item -> String in
+            let icon = item.icon.map { "\($0) " } ?? ""
+            return "\(icon)\(lingo.localize(item.nameKey, locale: locale))"
+        } ?? lot.itemId
+        let seller = try await User.find(lot.$seller.id, on: context.db)
+        let nick = seller?.nickname ?? "—"
+        let text = lingo.localize("capital.market.confirm.buy", locale: locale, interpolations: [
+            "item": itemName, "qty": "\(lot.quantity)",
+            "total": "🪙 \(lot.price)", "unit": "🪙 \(lot.unitPrice)", "nick": nick
+        ])
+        let yes = lingo.localize("capital.market.confirm.yes", locale: locale)
+        let no  = lingo.localize("capital.market.confirm.no", locale: locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: yes, callbackData: "market:buyok:\(lotId.uuidString)"),
+            TGInlineKeyboardButton(text: no,  callbackData: "market:item:\(lot.itemId)")
+        ]])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
+    }
+
+    // MARK: My lots
+
+    private func editToMyLots(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let lots = try await MarketListing.forSeller(context.session, on: context.db)
+
+        let title = lingo.localize("capital.market.my_lots_title", locale: locale)
+        var body = "<b>\(title)</b>"
+        if lots.isEmpty {
+            body += "\n\n<i>\(lingo.localize("capital.market.my_lots_empty", locale: locale))</i>"
+        }
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for lot in lots {
+            guard let lotId = lot.id else { continue }
+            let name = ItemCatalog.find(lot.itemId).map { item -> String in
+                let icon = item.icon.map { "\($0) " } ?? ""
+                return "\(icon)\(lingo.localize(item.nameKey, locale: locale))"
+            } ?? lot.itemId
+            let label = lingo.localize("capital.market.my_lot_row", locale: locale, interpolations: [
+                "item": name, "qty": "\(lot.quantity)", "total": "🪙 \(lot.price)"
+            ])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "market:cancel:\(lotId.uuidString)")])
+        }
+        let back = lingo.localize("capital.market.button.back_to_menu", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "market:menu")])
+
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Sell — item picker (bag stackables)
+
+    /// Distinct stackable items in the bag (unequipped, qty ≥ 1) with totals.
+    private func sellableBagItems(for user: User, on db: any Database) async throws -> [(itemId: String, qty: Int)] {
+        let rows = try await InventoryEntry.list(for: user, on: db)
+        var totals: [String: Int] = [:]
+        for row in rows where row.equippedSlot == nil {
+            guard let item = ItemCatalog.find(row.itemId), item.stackable else { continue }
+            totals[row.itemId, default: 0] += row.quantity
+        }
+        return totals
+            .filter { $0.value > 0 }
+            .map { (itemId: $0.key, qty: $0.value) }
+            .sorted { $0.itemId < $1.itemId }
+    }
+
+    private func editToSellPicker(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let items = try await sellableBagItems(for: context.session, on: context.db)
+
+        let title = lingo.localize("capital.market.sell_title", locale: locale)
+        var body = "<b>\(title)</b>"
+        if items.isEmpty {
+            body += "\n\n<i>\(lingo.localize("capital.market.sell_empty", locale: locale))</i>"
+        }
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for entry in items {
+            let name = ItemCatalog.find(entry.itemId).map { item -> String in
+                let icon = item.icon.map { "\($0) " } ?? ""
+                return "\(icon)\(lingo.localize(item.nameKey, locale: locale))"
+            } ?? entry.itemId
+            let label = "\(name) · 🎒 \(entry.qty)"
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "market:sell:\(entry.itemId)")])
+        }
+        let back = lingo.localize("capital.market.button.back_to_menu", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: "market:menu")])
+
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Sell — two-stage prompt (quantity → price)
+
+    /// Open the "How many to list?" prompt + cancel button, stash pending state
+    /// at stage `.quantity`. The next text update is consumed by
+    /// `handleMarketListingInput`.
+    fileprivate func openMarketSellPrompt(itemId: String, marketScreenMessageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
+        let cancelLabel = lingo.localize("capital.market.button.cancel", locale: locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
+        ]])
+        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(context.session.telegramId),
+            text: promptText,
+            parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(kb)
+        ))
+        await EphemeralChatState.shared.setPendingMarketListing(
+            telegramId: context.session.telegramId,
+            listing: EphemeralChatState.PendingMarketListing(
+                itemId: itemId,
+                stage: .quantity,
+                quantity: nil,
+                promptMessageId: sent.messageId,
+                marketScreenMessageId: marketScreenMessageId,
+                isPhoto: isPhoto
+            )
+        )
+    }
+
+    fileprivate func cancelMarketSellPrompt(context: Context) async throws {
+        // The listing prompt (qty → price) is transient input — remove it from
+        // chat on cancel (player asked for this prompt type to be deletable).
+        let telegramId = context.session.telegramId
+        guard let pending = await EphemeralChatState.shared.takePendingMarketListing(telegramId: telegramId) else { return }
+        _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(
+            chatId: .chat(telegramId),
+            messageId: pending.promptMessageId
+        ))
+    }
+
+    /// Re-render the active prompt in place with an optional error line, keeping
+    /// pending so the next typed message retries. `stage` decides the wording.
+    private func reshowMarketPrompt(pending: EphemeralChatState.PendingMarketListing, error: String?, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        let itemName = ItemCatalog.find(pending.itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? pending.itemId
+        let promptText: String
+        if pending.stage == .quantity {
+            promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
+        } else {
+            promptText = lingo.localize("capital.market.sell.price_prompt", locale: locale, interpolations: [
+                "item": itemName, "qty": "\(pending.quantity ?? 0)", "fee": "🪙 \(MarketCatalog.listingFee)"
+            ])
+        }
+        let cancelLabel = lingo.localize("capital.market.button.cancel", locale: locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
+        ]])
+        let full = error.map { "\(promptText)\n\n❌ \($0)" } ?? promptText
+        _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
+            chatId: .chat(context.session.telegramId),
+            messageId: pending.promptMessageId,
+            text: full,
+            parseMode: .html,
+            replyMarkup: kb
+        ))
+    }
+
+    fileprivate func handleMarketListingInput(text: String, pending: EphemeralChatState.PendingMarketListing, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let telegramId = context.session.telegramId
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let number = Int(trimmed), number > 0 else {
+            await reshowMarketPrompt(pending: pending, error: lingo.localize("capital.market.invalid_number", locale: locale), context: context)
+            return
+        }
+
+        if pending.stage == .quantity {
+            // Validate against the bag before advancing to the price stage.
+            guard let userId = context.session.id else { return }
+            let inBag = try await InventoryEntry.totalQuantity(of: pending.itemId, for: userId, on: context.db)
+            if number > inBag {
+                let err = lingo.localize("capital.market.qty_too_high", locale: locale, interpolations: ["have": "\(inBag)"])
+                await reshowMarketPrompt(pending: pending, error: err, context: context)
+                return
+            }
+            await EphemeralChatState.shared.setPendingMarketListingQuantity(telegramId: telegramId, quantity: number)
+            if let advanced = await EphemeralChatState.shared.peekPendingMarketListing(telegramId: telegramId) {
+                await reshowMarketPrompt(pending: advanced, error: nil, context: context)
+            }
+            return
+        }
+
+        // Stage .price — `number` is the total lot price. Clear pending up front,
+        // delete the listing prompt (transient input), create the listing,
+        // refresh the menu.
+        guard let quantity = pending.quantity else {
+            _ = await EphemeralChatState.shared.takePendingMarketListing(telegramId: telegramId)
+            return
+        }
+        _ = await EphemeralChatState.shared.takePendingMarketListing(telegramId: telegramId)
+        _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(
+            chatId: .chat(telegramId),
+            messageId: pending.promptMessageId
+        ))
+
+        let result = try await MarketService.createListing(itemId: pending.itemId, quantity: quantity, price: number, for: context.session, on: context.db)
+        await postMarketCreateBanner(result: result, context: context)
+        try await editToMarketMenu(messageId: pending.marketScreenMessageId, isPhoto: pending.isPhoto, context: context)
+    }
+
+    // MARK: Result banners + seller notification
+
+    private func postMarketCreateBanner(result: MarketService.CreateResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let qty, let price):
+            let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            let text = lingo.localize("capital.market.listed", locale: locale, interpolations: [
+                "item": name, "qty": "\(qty)", "total": "🪙 \(price)"
+            ])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .notSellable:
+            await postStatusBanner("❌ \(lingo.localize("capital.market.err.not_sellable", locale: locale))", context: context)
+        case .tooManyLots(let max):
+            let text = lingo.localize("capital.market.err.too_many_lots", locale: locale, interpolations: ["max": "\(max)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .notEnoughInBag(let have, let need):
+            let text = lingo.localize("capital.market.err.not_enough_bag", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .notEnoughSilver(_, let fee):
+            let text = lingo.localize("capital.market.err.not_enough_silver_fee", locale: locale, interpolations: ["fee": "🪙 \(fee)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        }
+    }
+
+    private func postMarketBuyBanner(result: MarketService.BuyResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let qty, let price, _, _, _):
+            let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            let text = lingo.localize("capital.market.bought", locale: locale, interpolations: [
+                "item": name, "qty": "\(qty)", "total": "🪙 \(price)"
+            ])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .notFound:
+            await postStatusBanner("❌ \(lingo.localize("capital.market.err.lot_gone", locale: locale))", context: context)
+        case .ownListing:
+            await postStatusBanner("❌ \(lingo.localize("capital.market.err.own_lot", locale: locale))", context: context)
+        case .notEnoughSilver(let have, let need):
+            let text = lingo.localize("capital.market.err.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        case .inventoryFull(let free, let need):
+            let text = lingo.localize("capital.market.err.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        }
+    }
+
+    private func postMarketCancelBanner(result: MarketService.CancelResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .success(let itemId, let qty):
+            let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            let text = lingo.localize("capital.market.canceled", locale: locale, interpolations: ["item": name, "qty": "\(qty)"])
+            await postStatusBanner("✅ \(text)", context: context)
+        case .notFound:
+            await postStatusBanner("❌ \(lingo.localize("capital.market.err.lot_gone", locale: locale))", context: context)
+        case .notOwner:
+            await postStatusBanner("❌ \(lingo.localize("capital.market.err.lot_gone", locale: locale))", context: context)
+        case .inventoryFull(_, let need):
+            let text = lingo.localize("capital.market.err.cant_cancel_bag_full", locale: locale, interpolations: ["need": "\(need)"])
+            await postStatusBanner("❌ \(text)", context: context)
+        }
+    }
+
+    /// Push a "your lot sold" message straight to the seller's chat (the seller
+    /// is offline / on another screen — same fire-and-forget pattern as
+    /// `PlotProductionService`). Pulled from the buy result so we don't re-query.
+    private func notifySellerSold(result: MarketService.BuyResult, context: Context) async {
+        guard case .success(let itemId, let qty, let price, let sellerTelegramId, let sellerLocale, _) = result else { return }
+        let lingo = context.lingo
+        let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: sellerLocale) } ?? itemId
+        let text = lingo.localize("capital.market.sold_notification", locale: sellerLocale, interpolations: [
+            "item": name, "qty": "\(qty)", "total": "🪙 \(price)"
+        ])
+        _ = try? await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(sellerTelegramId),
+            text: "💰 \(text)",
+            parseMode: .html
+        ))
+    }
+
+    // MARK: - Trade (Phase 6.5 — synchronous player-to-player exchange)
+    //
+    // Lives inside the Market. The live negotiation state is held in the
+    // `TradeStore` actor; this controller only renders screens and pushes
+    // cross-user messages. Both traders sit in routerName "capital", so every
+    // tap from either lands in `onCallbackQuery` and is attributed to the
+    // tapping `context.session`.
+
+    /// Generic in-place edit targeting an ARBITRARY chat (the other trader's),
+    /// unlike `editTraderScreen` which always targets `context.session`.
+    private func editScreenFor(telegramId: Int64, messageId: Int, isPhoto: Bool, context: Context, text: String, keyboard: TGInlineKeyboardMarkup) async {
+        let chatId = TGChatId.chat(telegramId)
+        if isPhoto {
+            _ = try? await context.bot.editMessageCaption(params: TGEditMessageCaptionParams(
+                chatId: chatId, messageId: messageId, caption: text, parseMode: .html, replyMarkup: keyboard
+            ))
+        } else {
+            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
+                chatId: chatId, messageId: messageId, text: text, parseMode: .html, replyMarkup: keyboard
+            ))
+        }
+    }
+
+    private func userByTelegramId(_ tg: Int64, on db: any Database) async throws -> User? {
+        try await User.query(on: db).filter(\.$telegramId, .equal, tg).first()
+    }
+
+    // MARK: Lobby
+
+    func showTradeLobby(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let me = context.session
+        let lingo = context.lingo, locale = me.locale
+
+        // Stale entry: already negotiating → re-render the live screen instead.
+        if let s = await TradeStore.shared.snapshot(for: me.telegramId) {
+            if s.phase == .locked { try await renderLockedSide(session: s, tg: me.telegramId, context: context) }
+            else { try await renderBuildingSide(session: s, tg: me.telegramId, context: context) }
+            return
+        }
+
+        await TradeStore.shared.touchLobby(telegramId: me.telegramId, nickname: me.nickname ?? "—")
+        let members = await TradeStore.shared.lobbyMembers(excluding: me.telegramId)
+
+        let title = lingo.localize("capital.trade.lobby_title", locale: locale)
+        var body = "<b>\(title)</b>"
+        if members.isEmpty {
+            body += "\n\n<i>\(lingo.localize("capital.trade.lobby_empty", locale: locale))</i>"
+        }
+        var rows: [[TGInlineKeyboardButton]] = []
+        for m in members {
+            rows.append([TGInlineKeyboardButton(text: "🧑 \(m.nickname)", callbackData: "trade:invite:\(m.telegramId)")])
+        }
+        rows.append([
+            TGInlineKeyboardButton(text: lingo.localize("capital.trade.refresh_btn", locale: locale), callbackData: "trade:lobby"),
+            TGInlineKeyboardButton(text: lingo.localize("capital.market.button.back_to_menu", locale: locale), callbackData: "trade:back")
+        ])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    // MARK: Invite / accept / decline
+
+    func handleTradeInvite(targetTelegramId targetTg: Int64, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let me = context.session
+        let lingo = context.lingo, locale = me.locale
+        guard let myId = me.id else { return }
+
+        guard let target = try await userByTelegramId(targetTg, on: context.db), let targetId = target.id else {
+            await postStatusBanner("❌ \(lingo.localize("capital.trade.err.gone", locale: locale))", context: context)
+            try await showTradeLobby(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+
+        let aSide = TradeStore.Side(
+            telegramId: me.telegramId, userId: myId,
+            nickname: me.nickname ?? "—", locale: me.locale,
+            screenMessageId: messageId, isPhoto: isPhoto
+        )
+        let result = await TradeStore.shared.invite(
+            initiator: aSide,
+            targetTelegramId: targetTg, targetUserId: targetId,
+            targetNickname: target.nickname ?? "—", targetLocale: target.locale
+        )
+        switch result {
+        case .created(let session):
+            // A's screen → "request sent".
+            let body = "<b>\(lingo.localize("capital.trade.lobby_title", locale: locale))</b>\n\n\(lingo.localize("capital.trade.invite_sent", locale: locale))"
+            let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+                TGInlineKeyboardButton(text: lingo.localize("capital.trade.cancel_btn", locale: locale), callbackData: "trade:cancel")
+            ]])
+            await editScreenFor(telegramId: me.telegramId, messageId: messageId, isPhoto: isPhoto, context: context, text: body, keyboard: kb)
+            await pushTradeInvite(session: session, context: context)
+        case .selfBusy:
+            await postStatusBanner("❌ \(lingo.localize("capital.trade.err.busy_self", locale: locale))", context: context)
+        case .targetBusy:
+            await postStatusBanner("❌ \(lingo.localize("capital.trade.err.busy_other", locale: locale))", context: context)
+            try await showTradeLobby(messageId: messageId, isPhoto: isPhoto, context: context)
+        case .targetGone:
+            await postStatusBanner("❌ \(lingo.localize("capital.trade.err.gone", locale: locale))", context: context)
+            try await showTradeLobby(messageId: messageId, isPhoto: isPhoto, context: context)
+        }
+    }
+
+    private func pushTradeInvite(session: TradeStore.TradeSession, context: Context) async {
+        let lingo = context.lingo, locale = session.b.locale
+        let text = lingo.localize("capital.trade.invite_push", locale: locale, interpolations: ["nick": session.a.nickname])
+        let accept = lingo.localize("capital.trade.accept_btn", locale: locale)
+        let decline = lingo.localize("capital.trade.decline_btn", locale: locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: accept,  callbackData: "trade:accept:\(session.id.uuidString)"),
+            TGInlineKeyboardButton(text: decline, callbackData: "trade:decline:\(session.id.uuidString)")
+        ]])
+        _ = try? await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(session.b.telegramId), text: text, parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(kb)
+        ))
+    }
+
+    func handleTradeAccept(sessionId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let result = await TradeStore.shared.accept(sessionId: sessionId, tapper: context.session.telegramId, screenMessageId: messageId, isPhoto: isPhoto)
+        switch result {
+        case .stale:
+            await postStatusBanner("❌ \(context.lingo.localize("capital.trade.err.stale", locale: context.session.locale))", context: context)
+        case .opened(let session):
+            try await renderAndPushBuilding(session: session, context: context)
+        }
+    }
+
+    func handleTradeDecline(sessionId: UUID, context: Context) async throws {
+        guard let sides = await TradeStore.shared.decline(sessionId: sessionId, tapper: context.session.telegramId) else { return }
+        await finishTradeUI(sides: sides, reasonKey: "capital.trade.declined", context: context)
+    }
+
+    // MARK: Offer edits
+
+    func handleTradeStackTap(itemId: String, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard let session = await TradeStore.shared.snapshot(for: context.session.telegramId), session.phase == .building else { return }
+        let side = session.side(for: context.session.telegramId)
+        if side.offeredStacks[itemId] != nil {
+            // Already offered → remove it.
+            if let updated = await TradeStore.shared.toggleStack(tg: context.session.telegramId, itemId: itemId, ownedQty: 0) {
+                try await renderAndPushBuilding(session: updated, context: context)
+            }
+        } else {
+            // Not offered → ask how many.
+            try await openTradeNumberPrompt(kind: .itemQty(itemId: itemId), screenMessageId: messageId, isPhoto: isPhoto, context: context)
+        }
+    }
+
+    func handleTradeGearTap(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard await TradeStore.shared.snapshot(for: context.session.telegramId)?.phase == .building else { return }
+        if let updated = await TradeStore.shared.toggleGear(tg: context.session.telegramId, entryId: entryId) {
+            try await renderAndPushBuilding(session: updated, context: context)
+        }
+    }
+
+    func openTradeSilverPrompt(screenMessageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard await TradeStore.shared.snapshot(for: context.session.telegramId)?.phase == .building else { return }
+        try await openTradeNumberPrompt(kind: .silver, screenMessageId: screenMessageId, isPhoto: isPhoto, context: context)
+    }
+
+    private func openTradeNumberPrompt(kind: EphemeralChatState.PendingTradeInput.Kind, screenMessageId: Int, isPhoto: Bool, context: Context) async throws {
+        let promptText = await tradePromptText(for: kind, context: context)
+        let cancel = context.lingo.localize("capital.trade.cancel_btn", locale: context.session.locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: cancel, callbackData: "trade:promptcancel")
+        ]])
+        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(context.session.telegramId), text: promptText, parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(kb)
+        ))
+        await EphemeralChatState.shared.setPendingTradeInput(
+            telegramId: context.session.telegramId,
+            input: EphemeralChatState.PendingTradeInput(
+                kind: kind, promptMessageId: sent.messageId,
+                screenMessageId: screenMessageId, isPhoto: isPhoto
+            )
+        )
+    }
+
+    private func tradePromptText(for kind: EphemeralChatState.PendingTradeInput.Kind, context: Context) async -> String {
+        let lingo = context.lingo, locale = context.session.locale
+        switch kind {
+        case .silver:
+            return lingo.localize("capital.trade.silver_prompt", locale: locale, interpolations: ["have": "\(context.session.silver)"])
+        case .itemQty(let itemId):
+            let have = (try? await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)) ?? 0
+            let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            return lingo.localize("capital.trade.qty_prompt", locale: locale, interpolations: ["item": name, "have": "\(have)"])
+        }
+    }
+
+    func cancelTradePrompt(context: Context) async throws {
+        // The numeric prompt is transient input — remove it from chat on cancel,
+        // then re-render the bag so the screen is interactive again.
+        guard let pending = await EphemeralChatState.shared.takePendingTradeInput(telegramId: context.session.telegramId) else { return }
+        _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(
+            chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId
+        ))
+        if let session = await TradeStore.shared.snapshot(for: context.session.telegramId), session.phase == .building {
+            try await renderBuildingSide(session: session, tg: context.session.telegramId, context: context)
+        }
+    }
+
+    func handleTradeInput(text: String, pending: EphemeralChatState.PendingTradeInput, context: Context) async throws {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let n = Int(trimmed), n >= 0 else {
+            let promptText = await tradePromptText(for: pending.kind, context: context)
+            let cancel = context.lingo.localize("capital.trade.cancel_btn", locale: context.session.locale)
+            let err = context.lingo.localize("capital.market.invalid_number", locale: context.session.locale)
+            let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[TGInlineKeyboardButton(text: cancel, callbackData: "trade:promptcancel")]])
+            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
+                chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId,
+                text: "\(promptText)\n\n❌ \(err)", parseMode: .html, replyMarkup: kb
+            ))
+            return
+        }
+
+        // Trade still live + building?
+        guard let session = await TradeStore.shared.snapshot(for: context.session.telegramId), session.phase == .building else {
+            _ = await EphemeralChatState.shared.takePendingTradeInput(telegramId: context.session.telegramId)
+            _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId))
+            return
+        }
+
+        var updated: TradeStore.TradeSession?
+        switch pending.kind {
+        case .silver:
+            updated = await TradeStore.shared.setSilver(tg: context.session.telegramId, amount: min(n, context.session.silver))
+        case .itemQty(let itemId):
+            let owned = (try? await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)) ?? 0
+            updated = await TradeStore.shared.setStack(tg: context.session.telegramId, itemId: itemId, qty: n, ownedQty: owned)
+        }
+
+        _ = await EphemeralChatState.shared.takePendingTradeInput(telegramId: context.session.telegramId)
+        _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId))
+        _ = session
+        if let updated { try await renderAndPushBuilding(session: updated, context: context) }
+    }
+
+    // MARK: Confirmations
+
+    func handleTradeConfirmFirst(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        switch await TradeStore.shared.confirmFirst(tg: context.session.telegramId) {
+        case .noop: return
+        case .waiting(let s): try await renderAndPushBuilding(session: s, context: context)
+        case .both(let s): try await renderAndPushLocked(session: s, context: context)
+        }
+    }
+
+    func handleTradeConfirmSecond(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        switch await TradeStore.shared.confirmSecond(tg: context.session.telegramId) {
+        case .noop: return
+        case .waiting(let s): try await renderAndPushLocked(session: s, context: context)
+        case .both(let s):
+            guard await TradeStore.shared.beginCommit(sessionId: s.id) else { return }
+            let result = try await TradeService.commit(session: s, on: context.db)
+            guard let sides = await TradeStore.shared.finish(sessionId: s.id) else { return }
+            switch result {
+            case .success:
+                await finishTradeSuccess(sides: sides, context: context)
+            case .failed(let reason):
+                await finishTradeFailure(sides: sides, reason: reason, context: context)
+            }
+        }
+    }
+
+    func handleTradeCancel(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard let sides = await TradeStore.shared.cancel(tg: context.session.telegramId) else {
+            // No active (or mid-commit) — just put the player back on the Market menu.
+            try await editToMarketMenu(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        await finishTradeUI(sides: sides, reasonKey: "capital.trade.cancelled", context: context)
+    }
+
+    // MARK: Screen rendering
+
+    private func renderAndPushBuilding(session: TradeStore.TradeSession, context: Context) async throws {
+        try await renderBuildingSide(session: session, tg: session.a.telegramId, context: context)
+        try await renderBuildingSide(session: session, tg: session.b.telegramId, context: context)
+    }
+
+    private func renderBuildingSide(session: TradeStore.TradeSession, tg: Int64, context: Context) async throws {
+        let side = session.side(for: tg)
+        guard let msgId = side.screenMessageId else { return }
+        let user: User
+        if tg == context.session.telegramId { user = context.session }
+        else if let u = try await User.find(side.userId, on: context.db) { user = u }
+        else { return }
+        let (text, kb) = try await buildBuildingScreen(session: session, side: side, user: user, context: context)
+        await editScreenFor(telegramId: tg, messageId: msgId, isPhoto: side.isPhoto, context: context, text: text, keyboard: kb)
+    }
+
+    private func buildBuildingScreen(session: TradeStore.TradeSession, side: TradeStore.Side, user: User, context: Context) async throws -> (String, TGInlineKeyboardMarkup) {
+        let lingo = context.lingo, locale = side.locale
+        let (stacks, gear) = try await TradeService.tradeableBagItems(for: user, on: context.db)
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        for s in stacks {
+            let item = ItemCatalog.find(s.itemId)
+            let icon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? s.itemId
+            let mark = side.offeredStacks[s.itemId].map { " ✅\($0)" } ?? ""
+            rows.append([TGInlineKeyboardButton(text: "\(icon)\(name) ×\(s.qty)\(mark)", callbackData: "trade:stack:\(s.itemId)")])
+        }
+        for g in gear {
+            guard let gid = g.id, let item = ItemCatalog.find(g.itemId) else { continue }
+            let icon = item.icon.map { "\($0) " } ?? ""
+            let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: g.tier), locale: locale)
+            let ench = g.enchantLevel > 0 ? " +\(g.enchantLevel)" : ""
+            let mark = side.offeredGear.contains(gid) ? " ✅" : ""
+            rows.append([TGInlineKeyboardButton(text: "\(icon)\(name)\(ench) (\(g.durability)/\(g.maxDurability))\(mark)", callbackData: "trade:gear:\(gid.uuidString)")])
+        }
+        rows.append([TGInlineKeyboardButton(
+            text: "🪙 " + lingo.localize("capital.trade.add_silver_btn", locale: locale, interpolations: ["silver": "\(side.silver)"]),
+            callbackData: "trade:silver"
+        )])
+
+        let cancelBtn = TGInlineKeyboardButton(text: lingo.localize("capital.trade.cancel_btn", locale: locale), callbackData: "trade:cancel")
+        if side.firstConfirmed {
+            rows.append([cancelBtn])
+        } else {
+            rows.append([
+                TGInlineKeyboardButton(text: lingo.localize("capital.trade.confirm_btn", locale: locale), callbackData: "trade:ok"),
+                cancelBtn
+            ])
+        }
+
+        let other = session.other(for: side.telegramId)
+        var body = "<b>\(lingo.localize("capital.trade.bag_title", locale: locale))</b>"
+        body += "\n\n" + lingo.localize("capital.trade.with_player", locale: locale, interpolations: ["nick": other.nickname])
+        if side.firstConfirmed {
+            body += "\n\n✅ " + lingo.localize("capital.trade.ready_waiting", locale: locale, interpolations: ["nick": other.nickname])
+        } else if other.firstConfirmed {
+            body += "\n\n" + lingo.localize("capital.trade.other_ready", locale: locale, interpolations: ["nick": other.nickname])
+        }
+        return (body, TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    private func renderAndPushLocked(session: TradeStore.TradeSession, context: Context) async throws {
+        try await renderLockedSide(session: session, tg: session.a.telegramId, context: context)
+        try await renderLockedSide(session: session, tg: session.b.telegramId, context: context)
+    }
+
+    private func renderLockedSide(session: TradeStore.TradeSession, tg: Int64, context: Context) async throws {
+        let side = session.side(for: tg)
+        guard let msgId = side.screenMessageId else { return }
+        let (text, kb) = try await buildLockedScreen(session: session, side: side, context: context)
+        await editScreenFor(telegramId: tg, messageId: msgId, isPhoto: side.isPhoto, context: context, text: text, keyboard: kb)
+    }
+
+    private func buildLockedScreen(session: TradeStore.TradeSession, side: TradeStore.Side, context: Context) async throws -> (String, TGInlineKeyboardMarkup) {
+        let lingo = context.lingo, locale = side.locale
+        let other = session.other(for: side.telegramId)
+        let give = try await describeOffer(stacks: side.offeredStacks, gearIds: side.offeredGear, silver: side.silver, locale: locale, context: context)
+        let get = try await describeOffer(stacks: other.offeredStacks, gearIds: other.offeredGear, silver: other.silver, locale: locale, context: context)
+
+        var body = "<b>\(lingo.localize("capital.trade.combined_title", locale: locale))</b>"
+        body += "\n\n<b>\(lingo.localize("capital.trade.you_give", locale: locale))</b>\n\(give)"
+        body += "\n\n<b>\(lingo.localize("capital.trade.you_get", locale: locale))</b>\n\(get)"
+
+        var rows: [[TGInlineKeyboardButton]] = []
+        let cancelBtn = TGInlineKeyboardButton(text: lingo.localize("capital.trade.cancel_btn", locale: locale), callbackData: "trade:cancel")
+        if side.secondConfirmed {
+            body += "\n\n⏳ " + lingo.localize("capital.trade.waiting_final", locale: locale, interpolations: ["nick": other.nickname])
+            rows.append([cancelBtn])
+        } else {
+            rows.append([
+                TGInlineKeyboardButton(text: lingo.localize("capital.trade.final_btn", locale: locale), callbackData: "trade:final"),
+                cancelBtn
+            ])
+        }
+        return (body, TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    /// Human-readable list of one side's offer (item names + silver). Loads the
+    /// offered gear rows fresh so enchant/tier names render correctly.
+    private func describeOffer(stacks: [String: Int], gearIds: [UUID], silver: Int, locale: String, context: Context) async throws -> String {
+        let lingo = context.lingo
+        var lines: [String] = []
+        for (itemId, qty) in stacks.sorted(by: { $0.key < $1.key }) {
+            let item = ItemCatalog.find(itemId)
+            let icon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            lines.append("\(icon)\(name) ×\(qty)")
+        }
+        if !gearIds.isEmpty {
+            let rows = try await InventoryEntry.query(on: context.db).filter(\.$id ~~ gearIds).all()
+            for g in rows {
+                guard let item = ItemCatalog.find(g.itemId) else { continue }
+                let icon = item.icon.map { "\($0) " } ?? ""
+                let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: g.tier), locale: locale)
+                let ench = g.enchantLevel > 0 ? " +\(g.enchantLevel)" : ""
+                lines.append("\(icon)\(name)\(ench)")
+            }
+        }
+        if silver > 0 { lines.append("🪙 \(silver)") }
+        if lines.isEmpty { lines.append(lingo.localize("capital.trade.nothing", locale: locale)) }
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: Teardown UI
+
+    /// Notify both sides with one localized banner and restore each player's
+    /// Market menu in place. Used for done / cancelled / declined.
+    private func finishTradeUI(sides: TradeStore.Sides, reasonKey: String, context: Context) async {
+        for side in [sides.a, sides.b] {
+            await pushTradeBanner(text: context.lingo.localize(reasonKey, locale: side.locale), to: side, context: context)
+            await restoreMarketMenu(for: side, context: context)
+        }
+    }
+
+    /// Post a permanent per-side record of the COMPLETED trade (so each player
+    /// can later scroll back and see when + with whom they traded), then restore
+    /// the Market menu. The record is a fresh message at the BOTTOM of the chat —
+    /// below the numeric input they typed — and is kept (never deleted).
+    private func finishTradeSuccess(sides: TradeStore.Sides, context: Context) async {
+        let lingo = context.lingo
+        for side in [sides.a, sides.b] {
+            let other = side.telegramId == sides.a.telegramId ? sides.b : sides.a
+            let locale = side.locale
+            let give = (try? await describeOffer(stacks: side.offeredStacks, gearIds: side.offeredGear, silver: side.silver, locale: locale, context: context))
+                ?? lingo.localize("capital.trade.nothing", locale: locale)
+            let get = (try? await describeOffer(stacks: other.offeredStacks, gearIds: other.offeredGear, silver: other.silver, locale: locale, context: context))
+                ?? lingo.localize("capital.trade.nothing", locale: locale)
+            var body = "<b>\(lingo.localize("capital.trade.done", locale: locale))</b>"
+            body += "\n" + lingo.localize("capital.trade.with_player", locale: locale, interpolations: ["nick": other.nickname])
+            body += "\n\n<b>\(lingo.localize("capital.trade.gave", locale: locale))</b>\n\(give)"
+            body += "\n\n<b>\(lingo.localize("capital.trade.got", locale: locale))</b>\n\(get)"
+            await pushTradeBanner(text: body, to: side, context: context)
+            await restoreMarketMenu(for: side, context: context)
+        }
+    }
+
+    private func finishTradeFailure(sides: TradeStore.Sides, reason: TradeService.Reason, context: Context) async {
+        let key: String
+        let nick: String
+        switch reason {
+        case .itemGone(let n): key = "capital.trade.err.item_gone"; nick = n
+        case .noSilver(let n): key = "capital.trade.err.no_silver"; nick = n
+        case .bagFull(let n):  key = "capital.trade.err.bag_full";  nick = n
+        }
+        for side in [sides.a, sides.b] {
+            let text = context.lingo.localize(key, locale: side.locale, interpolations: ["nick": nick])
+            await pushTradeBanner(text: text, to: side, context: context)
+            await restoreMarketMenu(for: side, context: context)
+        }
+    }
+
+    private func pushTradeBanner(text: String, to side: TradeStore.Side, context: Context) async {
+        _ = try? await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(side.telegramId), text: text, parseMode: .html
+        ))
+    }
+
+    private func restoreMarketMenu(for side: TradeStore.Side, context: Context) async {
+        // Drop any dangling numeric prompt (transient input — removed from chat).
+        if let pending = await EphemeralChatState.shared.takePendingTradeInput(telegramId: side.telegramId) {
+            _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(chatId: .chat(side.telegramId), messageId: pending.promptMessageId))
+        }
+        guard let msgId = side.screenMessageId else { return }
+        let user: User?
+        if side.telegramId == context.session.telegramId { user = context.session }
+        else { user = try? await User.find(side.userId, on: context.db) }
+        guard let user else { return }
+        let activeLots = (try? await MarketListing.activeCount(for: user, on: context.db)) ?? 0
+        let text = renderMarketMenuBody(session: user, lingo: context.lingo, activeLots: activeLots)
+        let kb = marketMenuKeyboard(lingo: context.lingo, locale: user.locale)
+        await editScreenFor(telegramId: side.telegramId, messageId: msgId, isPhoto: side.isPhoto, context: context, text: text, keyboard: kb)
     }
 
     // MARK: - Fortune Teller (Phase 6.4 — tarot daily-ish draw)

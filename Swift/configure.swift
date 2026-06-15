@@ -197,6 +197,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateTavernGameMessages())
     migrations.add(AddGender())
     migrations.add(AddGearCondition())
+    migrations.add(CreateMarketListings())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -448,6 +449,12 @@ public func configure(logger: Logger) async throws {
     // deleting a private-chat dice message until it's 24 h old). This loop
     // sweeps each recorded message away the moment it ages past that limit.
     TavernCleanupService.startSweeper(on: db, bot: appState.bot)
+
+    // MARK: - Trade lobby / session TTL sweeper
+    // Live player-to-player trades and exchange-lobby presence live in the
+    // in-memory TradeStore. This loop drops stale presence and cancels idle
+    // trades (notifying both participants).
+    TradeStore.startSweeper(bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
     // Restored players keep whatever reply keyboard their current controller

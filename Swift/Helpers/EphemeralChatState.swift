@@ -144,4 +144,78 @@ public actor EphemeralChatState {
         pendingTraderTransfers.removeValue(forKey: telegramId)
     }
 
+    // MARK: - Market listing (Phase 6.5 — two-stage prompt)
+    //
+    // Tap of an item in the Market sell-picker opens a "How many?" prompt;
+    // once the player types a valid quantity the SAME prompt is edited into
+    // a "Price for the whole lot?" question. One pending record per user
+    // carries both stages — `.quantity` is the awaiting-count stage,
+    // `.price` (with `quantity` filled in) is the awaiting-price stage.
+    // Cancel / completion / validation failure clear the entry. Mirrors the
+    // warehouse transfer-N two-stage shape.
+
+    public struct PendingMarketListing: Sendable {
+        public enum Stage: String, Sendable { case quantity, price }
+        public let itemId: String
+        public var stage: Stage
+        public var quantity: Int?
+        public let promptMessageId: Int
+        public let marketScreenMessageId: Int
+        public let isPhoto: Bool
+    }
+
+    private var pendingMarketListings: [Int64: PendingMarketListing] = [:]
+
+    public func setPendingMarketListing(telegramId: Int64, listing: PendingMarketListing) {
+        pendingMarketListings[telegramId] = listing
+    }
+
+    /// Advance to the price stage, stamping the chosen quantity. No-op if the
+    /// pending entry was cleared by a parallel cancel.
+    public func setPendingMarketListingQuantity(telegramId: Int64, quantity: Int) {
+        guard var current = pendingMarketListings[telegramId] else { return }
+        current.quantity = quantity
+        current.stage = .price
+        pendingMarketListings[telegramId] = current
+    }
+
+    public func peekPendingMarketListing(telegramId: Int64) -> PendingMarketListing? {
+        pendingMarketListings[telegramId]
+    }
+
+    public func takePendingMarketListing(telegramId: Int64) -> PendingMarketListing? {
+        pendingMarketListings.removeValue(forKey: telegramId)
+    }
+
+    // MARK: - Trade numeric input (Phase 6.5 — silver / stack quantity)
+    //
+    // During a live player-to-player trade the player can type a number for
+    // two things: the silver amount to add (`.silver`) or how many of a
+    // stackable item to offer (`.itemQty`). Tapping the relevant button opens
+    // a prompt and stashes this record; the next text update is routed to the
+    // trade input handler, which writes it into `TradeStore` and refreshes the
+    // bag screen. Cancel / completion / a parallel teardown clear the entry.
+
+    public struct PendingTradeInput: Sendable {
+        public enum Kind: Sendable, Equatable { case silver; case itemQty(itemId: String) }
+        public let kind: Kind
+        public let promptMessageId: Int
+        public let screenMessageId: Int
+        public let isPhoto: Bool
+    }
+
+    private var pendingTradeInputs: [Int64: PendingTradeInput] = [:]
+
+    public func setPendingTradeInput(telegramId: Int64, input: PendingTradeInput) {
+        pendingTradeInputs[telegramId] = input
+    }
+
+    public func peekPendingTradeInput(telegramId: Int64) -> PendingTradeInput? {
+        pendingTradeInputs[telegramId]
+    }
+
+    public func takePendingTradeInput(telegramId: Int64) -> PendingTradeInput? {
+        pendingTradeInputs.removeValue(forKey: telegramId)
+    }
+
 }

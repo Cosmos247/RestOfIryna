@@ -2086,3 +2086,21 @@ Built the **Master** — the capital's armor shop / repair / enchant NPC, the ga
 **Locale:** 17 new `capital.master.*` keys (en + uk, UA glossary — ЗАХ for defense). Build clean, parity confirmed.
 
 **Deferred:** weapon durability + gem inlay (next phase). `Assets/capital/master.jpg` not added yet (text fallback). `repairMaxShave` is the lever if the rebuy loop should be felt sooner.
+
+## Session — 2026-06-15 (Bazaar / Market + Trade — post-playtest polish)
+
+First playtest of the Phase 6.5 Bazaar (player-to-player Market + 🤝 Trade). All changes are polish on the already-built feature; the feature itself (MarketService/MarketListing/MarketCatalog/CreateMarketListings + TradeStore/TradeService) was uncommitted from prior sessions and ships in the same commit.
+
+**Localization & naming:**
+- uk renamed **Ринок → Базар** everywhere (main button + all copy). English kept (button "Market" / location "Bazaar").
+- Fixed the `🪙 Срібло: %{silver}` trade button — classic Lingo emoji-before-`%{}` bug left the literal `%{silver}`. Moved 🪙 into Swift (`"🪙 " + lingo.localize(...)`), template plain. Applied the go-forward rule; audited all new market/trade keys (no other offenders).
+- Dropped the unused `від %U` from the buy-board row (`capital.market.board_row`) — feature not wanted; removed the `from` interpolation in the controller.
+- +2 keys `capital.trade.gave`/`got` ("Ви віддали:" / "Ви отримали:", plural past = gender-neutral).
+
+**Trade confirmation flow (user quiz):** `TradeStore.mutateBuilding` now resets ONLY the editor's stage-1 ready-flag (was BOTH). The partner's «Погодити» survives your edits, so each player taps it once at the selection stage instead of re-tapping after every partner edit. Safety preserved — the locked-summary stage still re-confirms both sides, so committing a changed deal is impossible.
+
+**Trade summary record:** new `finishTradeSuccess(sides:context:)` replaces the plain done-banner on success — posts a PERMANENT per-side record (✅ done + "Обмін із <nick>" + gave/got lists) as a fresh message at the BOTTOM of the chat (below the typed quantity), then restores the Market menu. Gives players a scrollable history of when/with-whom they traded. Cancelled/declined/timed-out stay plain banners.
+
+**Bazaar message-visibility policy (iterated with user):** transient numeric prompts (market listing qty→price, trade silver/qty) are DELETED on submit/cancel/teardown; ✅/❌ banners, the trade record, and menu screens (edited in place) are KEPT. (Briefly tried keeping all prompts; user refined to delete the input prompts only.)
+
+Build green after each step; both locale JSONs validate. Docs synced: README (CapitalController entry + Trade/TradeStore/TradeService in structure + EphemeralChatState), file-map (mutateBuilding note corrected, Trade UI + visibility policy, pending types), status.md, TODO.md.
