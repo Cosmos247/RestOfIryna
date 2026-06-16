@@ -2124,7 +2124,6 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         _ = await EphemeralChatState.shared.takePendingTradeInput(telegramId: context.session.telegramId)
         _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId))
-        _ = session
         if let updated { try await renderAndPushBuilding(session: updated, context: context) }
     }
 
