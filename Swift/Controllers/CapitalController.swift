@@ -87,6 +87,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize(Location.fortune.buttonKey, locale: locale)] = onFortune
                 router[lingo.localize(Location.master.buttonKey,  locale: locale)] = onMaster
                 router[lingo.localize(Location.tavern.buttonKey,  locale: locale)] = onTavern
+                router[lingo.localize("capital.button.guild",     locale: locale)] = onGuild
             }
 
             // Leave-capital triggers the return trip back to the estate.
@@ -189,6 +190,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
     private func onMaster(context: Context)  async throws -> Bool { try await showMaster(context: context); return true }
     private func onTavern(context: Context)  async throws -> Bool { try await showTavern(context: context); return true }
+
+    /// The Guildhall is a full controller, not an inline sub-flow — flip
+    /// routerName to "guild" (GuildController takes over the reply keyboard) and
+    /// render its home. `guild.button.back` flips routerName back to "capital".
+    private func onGuild(context: Context) async throws -> Bool {
+        let guild = Controllers.guildController
+        context.session.routerName = guild.routerName
+        try await context.session.saveAndCache(in: context.db)
+        try await guild.showGuildHome(context: context)
+        return true
+    }
 
     private func onLeave(context: Context) async throws -> Bool {
         try await startReturnTrip(context: context)
@@ -2910,11 +2922,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let fortune = TGKeyboardButton(text: l.localize(Location.fortune.buttonKey, locale: loc))
         let master  = TGKeyboardButton(text: l.localize(Location.master.buttonKey,  locale: loc))
         let tavern  = TGKeyboardButton(text: l.localize(Location.tavern.buttonKey,  locale: loc))
+        let guild   = TGKeyboardButton(text: l.localize("capital.button.guild",     locale: loc))
         let leave   = TGKeyboardButton(text: l.localize(Self.leaveButtonKey,        locale: loc))
         let markup = TGReplyKeyboardMarkup(keyboard: [
             [market, arena],
             [trader, fortune],
             [master, tavern],
+            [guild],
             [Commands.inventory.button(for: session, lingo),
              Commands.profile.button(for: session, lingo)],
             [leave]

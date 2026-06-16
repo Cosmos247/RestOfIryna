@@ -179,6 +179,18 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "gender")
     var gender: String?
 
+    /// The guild this player belongs to, if any (Phase 7.1). One guild per
+    /// player — nil = not in a guild. Set/cleared by `GuildService` on
+    /// found / join / leave / kick / disband. The roster is a `User` query by
+    /// this field; `guildRole` carries their standing.
+    @OptionalParent(key: "guild_id")
+    var guild: Guild?
+
+    /// Raw `GuildRole` value ("leader"/"officer"/"member"). Nil whenever `guild`
+    /// is nil. Officers (max 2) + leader can manage members and withdraw vault.
+    @OptionalField(key: "guild_role")
+    var guildRole: String?
+
     /// The `registrationStep` value marking a fully-registered player. The
     /// dispatcher restore + combat bridge compare against this to tell
     /// mid-registration users from active players. It is `7` because the
@@ -237,6 +249,8 @@ final public class User: Model, @unchecked Sendable {
         self.lastFortuneDrawAt = nil
         self.tutorialTraderHintShown = false
         self.gender = nil
+        self.$guild.id = nil
+        self.guildRole = nil
         self.createdAt = Date()
     }
 

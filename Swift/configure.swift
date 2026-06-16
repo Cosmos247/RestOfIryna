@@ -198,6 +198,10 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddGender())
     migrations.add(AddGearCondition())
     migrations.add(CreateMarketListings())
+    migrations.add(CreateGuilds())
+    migrations.add(AddUserGuildFields())
+    migrations.add(CreateGuildInvites())
+    migrations.add(CreateGuildVault())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()

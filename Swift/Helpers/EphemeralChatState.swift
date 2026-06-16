@@ -218,4 +218,38 @@ public actor EphemeralChatState {
         pendingTradeInputs.removeValue(forKey: telegramId)
     }
 
+    // MARK: - Guild text input (Phase 7.1 — guild name on found)
+    //
+    // Tapping «➕ Заснувати гільдію» opens a name prompt and stashes this record;
+    // the next text update is routed to the found handler, which validates the
+    // name and creates the guild. Cancel / completion / validation failure clear
+    // the entry. Mirrors the market-listing prompt shape.
+
+    public struct PendingGuildInput: Sendable {
+        public enum Kind: Sendable, Equatable {
+            case foundName
+            case inviteName
+            case vaultDeposit(itemId: String)
+            case vaultWithdraw(itemId: String)
+            case treasuryDeposit
+            case treasuryWithdraw
+        }
+        public let kind: Kind
+        public let promptMessageId: Int
+    }
+
+    private var pendingGuildInputs: [Int64: PendingGuildInput] = [:]
+
+    public func setPendingGuildInput(telegramId: Int64, input: PendingGuildInput) {
+        pendingGuildInputs[telegramId] = input
+    }
+
+    public func peekPendingGuildInput(telegramId: Int64) -> PendingGuildInput? {
+        pendingGuildInputs[telegramId]
+    }
+
+    public func takePendingGuildInput(telegramId: Int64) -> PendingGuildInput? {
+        pendingGuildInputs.removeValue(forKey: telegramId)
+    }
+
 }

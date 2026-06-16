@@ -20,6 +20,7 @@ struct Controllers {
     static let estateController      = EstateController     (routerName: "estate")
     static let capitalController     = CapitalController    (routerName: "capital")
     static let inventoryController   = InventoryController  (routerName: "inventory")
+    static let guildController       = GuildController      (routerName: "guild")
 
     static let all: [TGControllerBase] = [
         registration,
@@ -29,7 +30,8 @@ struct Controllers {
         combatController,
         estateController,
         capitalController,
-        inventoryController
+        inventoryController,
+        guildController
     ]
     
     static func attachAllHandlers(for bot: TGBot, lingo: Lingo) async {

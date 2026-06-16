@@ -229,7 +229,7 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 
 ## Phase 5: Estates & Crafting *(started out of order — while Phase 3/4 were paused)*
 
-> **XP-to-Estate redesign (planned during Phase 5.x):** the current `User.estateLevel` derivation (every 5 player levels → +1 estate level) will be replaced. New direction: combat / exploration XP feeds the **estate** progression directly instead of a character level. The `User.level` / `User.xp` fields stay (or get repurposed) but stop being the source of truth for estate tier. Concrete migration path will be locked once estate plot/crafting needs are clearer.
+> **XP-to-Estate redesign — DROPPED (decided 2026-06-16).** Was: replace the player-level-driven estate progression with XP feeding estate tier directly. No longer pursued — the current model is the intended one: XP → player level → player-level gate on manual `EstateUpgradeService.upgrade`. That already makes "experience advances the estate" true enough. Do not resurrect this redesign.
 
 ### 5.0 Estate navigation skeleton *(landed)*
 - [x] Estate level computed from `user.level` (every 5 player levels → +1 estate level)
@@ -401,11 +401,13 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 ## Phase 7: Social Systems
 
 ### 7.1 Guild System
-- [ ] Design Guild model (name, banner, vault, members)
-- [ ] Design GuildMembership model (user_id, guild_id, role)
-- [ ] Create GuildController (create, join, manage, chat)
-- [ ] Implement guild vault (shared storage)
-- [ ] Implement non-aggression pacts
+- [x] **Guild model + membership** *(landed 2026-06-16)* — `Guild` (name unique, tag, emblem, leader, treasury, motto) + membership on `User` (`guild_id` + `guild_role`, one guild per player) + `GuildInvite` + `GuildVaultEntry` + `GuildCatalog` (memberCap 20, maxOfficers 2, foundCost 500🪙, foundLevelGate 5, vaultUnitCap 3000) + `GuildRole` enum. Migrations: `CreateGuilds` → `AddUserGuildFields` → `CreateGuildInvites` → `CreateGuildVault`.
+- [x] **GuildController** *(landed 2026-06-16)* — capital `🏰 Гільдії` button → routerName `"guild"`; membership-branched reply keyboard. Found (silver sink + level gate; **tag left empty, game-creator-assigned via DB** — name prompt directs the player to `@TGUserName`), invite (by nickname/@username + push) / accept / decline, roster, kick / promote / demote (officer cap 2), leave / disband. All via `GuildService` (typed results).
+- [x] **Guild vault (shared storage)** *(landed 2026-06-16)* — item vault `🏦` (stackables only, deposit any member / withdraw leader+officers, cap 3000) **and** silver treasury `🪙` (deposit any member / withdraw leader+officers, `Guild.treasury`).
+- [ ] Guild chat (bot-proxied broadcast) — deferred (rate-limit-aware fan-out)
+- [ ] Guild banner on estate (cosmetic) — deferred
+- [ ] Implement non-aggression pacts — deferred (depends on territorial PvP, 7.2)
+- [ ] Leadership transfer (currently the leader must disband; no hand-off)
 
 ### 7.2 Territorial Warfare
 - [ ] Implement territorial challenge initiation (adjacent only)

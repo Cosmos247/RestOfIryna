@@ -2104,3 +2104,21 @@ First playtest of the Phase 6.5 Bazaar (player-to-player Market + 🤝 Trade). A
 **Bazaar message-visibility policy (iterated with user):** transient numeric prompts (market listing qty→price, trade silver/qty) are DELETED on submit/cancel/teardown; ✅/❌ banners, the trade record, and menu screens (edited in place) are KEPT. (Briefly tried keeping all prompts; user refined to delete the input prompts only.)
 
 Build green after each step; both locale JSONs validate. Docs synced: README (CapitalController entry + Trade/TradeStore/TradeService in structure + EphemeralChatState), file-map (mutateBuilding note corrected, Trade UI + visibility policy, pending types), status.md, TODO.md.
+
+## Session — 2026-06-16 (Phase 7.1 — Guilds: full v1 in the capital)
+
+Built the Guild system end-to-end across four increments (data → controller skeleton → social → vault/treasury), driven by a design quiz up front. User chose: separate `GuildController`, 3-tier roles (leader/officer/member), v1 scope = core + shared vault.
+
+**Data (Inc 1):** `Guild` (name unique, tag, emblem, leader, treasury, motto) + `GuildInvite` + `GuildVaultEntry` (mirrors WarehouseEntry, keyed by guild) + `GuildCatalog` (`GuildRole` enum + tuning: memberCap 20, maxOfficers 2, foundCost 500🪙, foundLevelGate 5, vaultUnitCap 3000) + `User.guild`/`guildRole` (`@OptionalParent` + field). Migrations `CreateGuilds` → `AddUserGuildFields` → `CreateGuildInvites` → `CreateGuildVault` (order matters — FK targets).
+
+**Controller (Inc 2):** routerName "guild", entered via a new capital `🏰 Гільдії` reply button (flips routerName, CombatController-style keyboard takeover). Membership-branched reply keyboard; drill-downs inline + `EphemeralChatState.PendingGuildInput`. Found / leave / disband / roster / browse.
+
+**Social (Inc 3):** invite by nickname/@username (`findTarget` = userName ILIKE then nickname ILIKE) + fire-and-forget push; accept/decline from the guildless-home invites list; kick (rank rules) + promote/demote (leader only, officer cap 2). Pushes to invitee/kicked/promoted/demoted.
+
+**Vault + treasury (Inc 4 + follow-up):** item vault `🏦` (stackables ONLY — the row carries no enchant/durability, so gear is excluded; deposit any member / withdraw leader+officers; cap 3000) and silver treasury `🪙` (deposit any / withdraw leader+officers; the existing `Guild.treasury` field). User had forgotten the treasury initially; added after the vault.
+
+**Post-build tweaks (user):** (1) capital button uk "Гільдія" → "Гільдії"; (2) invite push "Гільдхолу" → "Гільдій"; (3) **interpolation bug** — `guild.roster.title` had a leading 👥 before `%{name}` (Lingo left the literal) → moved 👥 to Swift, audited all guild keys with a script (clean). (4) **Tag is no longer auto-derived** — `found` stores an empty tag; the game creator assigns it manually via DB (Postico) to avoid bad abbreviations; the name prompt now tells the player to message `@TGUserName`; `tagSuffix()` hides ` [TAG]` while empty. Removed dead `deriveTag` + unused `tagMin/MaxLength`.
+
+All neutral uk copy (passive: founded/left/disbanded/deposited/withdrew) — no gendered words, gender rule untouched. 82 guild locale keys × 2, parity verified. Build green throughout. Docs synced: README (GuildController prose + structure: controllers/models/migrations/services), TODO (7.1 marked, deferrals listed), status.md, file-map.md. Also carries the earlier-decided TODO note: XP→Estate redesign DROPPED.
+
+**Deferred (7.1+):** guild chat (bot-proxied fan-out), banner-on-estate, non-aggression pacts (need territorial PvP), leadership transfer.
