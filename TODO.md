@@ -461,7 +461,8 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 ### 9.2 Content Authoring
 - [ ] Full bestiary (all enemy types with stats and loot)
 - [ ] Full recipe book (all crafting tiers)
-- [ ] Quest definitions (tutorial + daily/weekly)
+- [x] **Daily NPC quests — v1** *(landed 2026-08-23)* — three quest-giving capital NPCs (Trader / Master / Tavernkeeper), 3 jobs each, **one auto-assigned job per NPC per game day** (no picking, no journal). Assignment is *derived*, not stored: stable FNV-1a over `userId:npc:GameDay.stamp()` indexes the pool, so it survives restarts and needs no DB write; only progress + claimed live in `quest_progress` (`QuestProgress` model + `CreateQuestProgress`, unique on user+npc+day). Two objective shapes — `deliver` (progress read live from the bag, items consumed at turn-in) and `counter` (ticked by hook sites: combat victory, passive-expedition kills, forge output, trader sales, tavern wins). Rewards: silver on every job + per-NPC accent (Trader = more silver, Master = XP, Tavernkeeper = Vigor); payouts funnel through `QuestService.payOut` and echo the combat level-up banner. `[📜 Замовлення]` on each NPC menu → board screen edited in place, plus a **quest journal «Нотатник»** on the profile screen (row under the 1/2/3 style buttons; read-only digest of all three jobs + countdown to the 12:00 rollover; claim-free by design). 43 locale keys × 2 (neutral except the gendered journal title).
+- [ ] Quest definitions — chains + weeklies (deferred from v1: forester set, governor's feast, blood week, guild co-op, fortune-teller streaks)
 - [ ] Flavor text pools for exploration events
 - [ ] Achievement/milestone definitions
 

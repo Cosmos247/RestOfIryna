@@ -1,5 +1,29 @@
 # Session History
 
+## Session — 2026-08-23 (Phase 9.2 — daily NPC quests, v1)
+
+### Goal
+Land the first quest system. Design was settled in a quiz up front: **v1 scope = the gathering core** (Крамар / Майстер / Шинкар — all single-player, works with content that already exists), **cadence = dailies only**, **mechanic = auto-assignment** ("нехай система обирає з тієї бази, що ти зробив, і ставить один рандомний квест для НПС на день"), **rewards = silver everywhere + per-NPC accent** (Крамар → срібло, Майстер → Досвід, Шинкар → Снага). Arena / Ворожка / Гільдія quest-givers, chains and weeklies were explicitly deferred.
+
+### Key design call — assignment is derived, not stored
+`QuestCatalog.daily(npc:userId:stamp:)` = FNV-1a over `"userId:npc:GameDay.stamp()"` mod pool size. No RNG, no assignment row, no scheduler: the same player on the same game day always resolves to the same job, and every player gets an independent roll. Hand-rolled FNV **on purpose** — Swift's `Hasher` is seeded per process, so a bot restart mid-day would have re-rolled everyone's job. Verified over 200 fake players × 30 days: 5999/5998/6003 split across the three slots, and 200/200 players saw all three jobs inside a month.
+
+### What was done
+- **New**: `Models/QuestCatalog.swift`, `Models/QuestProgress.swift`, `Migrations/CreateQuestProgress.swift`, `Services/QuestService.swift`. Migration registered in `configure.swift`.
+- **Two objective shapes.** `deliver` reads progress LIVE from the bag (nothing to keep in sync; gather in any order, anywhere) and consumes items at turn-in, which pays out in the same tap. `counter` accumulates via `QuestService.record(...)`.
+- **5 hook sites**, all `try?` so a quest write can never break the flow it rides on: `CombatController.finishVictory` (+1 kill; training dummies bail before this), `PassiveExpeditionService.finalizeAndPush` (whole run's kills banked at once, deaths included — same rule as the XP grant), `CraftingService.craft` (ingot output only), `TraderService.sell` (silver amount), `CapitalController.runRound` (wins only — a tie returns the stake but doesn't tick).
+- **UI**: `[📜 Замовлення]` added to the trader / master / tavern menus → board edited in place over the NPC's own message (`editTraderScreen` handles photo-vs-text hosts). Exactly one action button, and only when the job is finishable — `✅ Здати` for deliver, `🎁 Забрати нагороду` for counter. Payout banner echoes the combat level-up / estate-up lines.
+- **33 locale keys × 2**, all gender-neutral (imperatives + impersonal «виконано»), emoji prepended in Swift per the Lingo leading-emoji rule. uk glossary respected: `Досвіду` / `Снаги`, item names matched to the real catalog strings («шматок заліза», «юшка мисливця»).
+
+### Follow-up in the same session — quest journal («Нотатник»)
+User asked for a journal screen and placed it **in the profile**, under the 1/2/3 style buttons (screenshot). Implemented as a second keyboard row (`journal:open`) that edits the *same* profile bubble into a read-only digest of all three jobs — per-job state (✅ claimed / 🎁 ready / ⏳ done/target + reward), a `🕛` countdown to the next 12:00 rollover, and a line reminding that turn-in happens at the NPC. `journal:back` edits it back to the profile, so the player never accumulates profile screens. **Deliberately claim-free** — letting the journal pay out would turn a status screen into a remote control for the capital and make the trip to town optional. Reward wording delegates to `CapitalController.rewardPhrase` (one source, board and journal can't drift). New `GameDay.secondsUntilNextRollover(from:)` (calendar search in the Kyiv zone → DST-safe) powers the countdown. Works from every router that falls through to `MainController.onCallbackQuery` (capital / estate / guild / arena / inventory), which is how the capital-opened profile keeps working. Journal title is gendered (намісника/-иці) → `.m`/`.f` in uk.json + the gender overload; the other 9 journal keys are neutral.
+
+### Balance note flagged to the user
+`master.smelt` asks for **1** ingot, not the 3 sketched in the design pass — one ingot is already 10 raw iron (≈100🪙 of material, a full expedition). Three would be a week-long job wearing a daily's clothes. Rewards sized at ~1.5–2× the trader value of the same materials.
+
+### Not verified at runtime
+Build is clean and the hash distribution was checked with a standalone script, but nothing was exercised against a live bot/DB — the migration applies on next boot. First real playtest still owes: turn-in on an exactly-full bag, the 12:00 rollover, and the counter hooks firing from a passive expedition.
+
 ## Session — 2026-05-27 (Combat keyboard: inline → reply-keyboard)
 
 ### Goal

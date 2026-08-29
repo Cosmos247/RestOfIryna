@@ -961,6 +961,18 @@
     "quest.not_enough": "Не вистачає для здачі: %{have}/%{need}",
     "quest.not_complete": "Ще не виконано: %{done}/%{need}",
 
+    "journal.button.open": "📓 Нотатник",
+    "journal.button.back": "🔙 До профілю",
+    "journal.title.m": "Нотатник намісника",
+    "journal.title.f": "Нотатник намісниці",
+    "journal.subtitle": "Сьогоднішні замовлення столиці",
+    "journal.status.claimed": "нагороду отримано",
+    "journal.status.ready": "готово — забери нагороду",
+    "journal.resets_in": "Нові замовлення через %{time}",
+    "journal.hint": "Замовлення здаються в столиці — тому, хто їх дав.",
+    "journal.time.hours": "г",
+    "journal.time.minutes": "хв",
+
     "quest.trader.hides.title": "Постачання шкур",
     "quest.trader.hides.desc": "Чинбарі не встигають. Принеси 10 шкур.",
     "quest.trader.iron.title": "Дефіцит заліза",

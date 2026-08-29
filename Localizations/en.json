@@ -941,6 +941,17 @@
     "quest.not_enough": "Not enough to hand over: %{have}/%{need}",
     "quest.not_complete": "Not finished yet: %{done}/%{need}",
 
+    "journal.button.open": "📓 Journal",
+    "journal.button.back": "🔙 Back to profile",
+    "journal.title": "Governor's Journal",
+    "journal.subtitle": "Today's jobs from the capital",
+    "journal.status.claimed": "reward taken",
+    "journal.status.ready": "done — collect the reward",
+    "journal.resets_in": "New jobs in %{time}",
+    "journal.hint": "Jobs are handed in at the capital, to whoever gave them.",
+    "journal.time.hours": "h",
+    "journal.time.minutes": "m",
+
     "quest.trader.hides.title": "Hide delivery",
     "quest.trader.hides.desc": "The tanners can't keep up. Bring 10 hides.",
     "quest.trader.iron.title": "Iron shortage",

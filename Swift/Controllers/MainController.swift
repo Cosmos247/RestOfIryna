@@ -159,7 +159,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let style = context.session.profileStyle
         let equipped = try await EquipmentService.equipped(for: context.session, on: context.db)
         let text = renderProfile(session: context.session, equipped: equipped, lingo: context.lingo, style: style)
-        let keyboard = profileStyleKeyboard(currentStyle: style)
+        let keyboard = profileStyleKeyboard(currentStyle: style, lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
             let params = TGEditMessageTextParams(
@@ -176,12 +176,92 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         }
     }
 
-    private func profileStyleKeyboard(currentStyle: Int) -> TGInlineKeyboardMarkup {
+    private func profileStyleKeyboard(currentStyle: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let buttons = (1...3).map { style in
             let label = style == currentStyle ? "· \(style) ·" : "\(style)"
             return TGInlineKeyboardButton(text: label, callbackData: "pstyle:\(style)")
         }
-        return TGInlineKeyboardMarkup(inlineKeyboard: [buttons])
+        // Phase 9.2 — the quest journal hangs off the profile rather than the
+        // capital: it's a read-only status screen the player wants from
+        // anywhere, not another capital location.
+        let journal = TGInlineKeyboardButton(
+            text: lingo.localize("journal.button.open", locale: locale),
+            callbackData: "journal:open"
+        )
+        return TGInlineKeyboardMarkup(inlineKeyboard: [buttons, [journal]])
+    }
+
+    // MARK: - Quest Journal (Phase 9.2)
+    //
+    // Read-only digest of today's three capital jobs — what they are, how far
+    // along each one is, what it pays. Nothing is claimable here: turn-in
+    // stays at the NPC who gave the job, so the journal can never become a
+    // remote-control for the capital.
+
+    func showJournal(context: Context, editMessageId: Int) async throws {
+        let text = try await renderJournal(context: context)
+        let back = TGInlineKeyboardButton(
+            text: context.lingo.localize("journal.button.back", locale: context.session.locale),
+            callbackData: "journal:back"
+        )
+        try await context.bot.editMessageText(params: TGEditMessageTextParams(
+            chatId: .chat(context.session.telegramId),
+            messageId: editMessageId,
+            text: text,
+            parseMode: .html,
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]])
+        ))
+    }
+
+    private func renderJournal(context: Context) async throws -> String {
+        let lingo = context.lingo
+        let locale = context.session.locale
+
+        // Title carries "намісник/намісниця" — gendered in uk, so it goes
+        // through the gender overload (`.m`/`.f` in uk.json, plain key in en).
+        var lines = ["📓 <b>" + lingo.localize("journal.title", gender: context.session.gender, locale: locale) + "</b>",
+                     "<i>" + lingo.localize("journal.subtitle", locale: locale) + "</i>"]
+
+        for npc in QuestNPC.allCases {
+            let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
+            let npcLabel = lingo.localize("capital.button.\(npc.rawValue)", locale: locale)
+            let questTitle = lingo.localize(status.def.titleKey, locale: locale)
+
+            let stateLine: String
+            if status.claimed {
+                stateLine = "✅ " + lingo.localize("journal.status.claimed", locale: locale)
+            } else if status.isActionable {
+                stateLine = "🎁 " + lingo.localize("journal.status.ready", locale: locale)
+            } else {
+                let reward = Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
+            }
+            lines.append(contentsOf: ["", "<b>\(npcLabel)</b>", questTitle, stateLine])
+        }
+
+        lines.append("")
+        lines.append("🕛 " + lingo.localize("journal.resets_in", locale: locale, interpolations: [
+            "time": Self.shortDuration(GameDay.secondsUntilNextRollover(), lingo: lingo, locale: locale)
+        ]))
+        lines.append("<i>" + lingo.localize("journal.hint", locale: locale) + "</i>")
+        return lines.joined(separator: "\n")
+    }
+
+    /// "3h 20m" / "3г 20хв" — minutes only under an hour. Unit words come from
+    /// Lingo so uk stays inside the glossary.
+    private static func shortDuration(_ seconds: Int, lingo: Lingo, locale: String) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let hourUnit = lingo.localize("journal.time.hours", locale: locale)
+        let minuteUnit = lingo.localize("journal.time.minutes", locale: locale)
+        guard hours > 0 else { return "\(minutes)\(minuteUnit)" }
+        return "\(hours)\(hourUnit) \(minutes)\(minuteUnit)"
+    }
+
+    /// Same reward formatting the capital quest board uses — one source so the
+    /// journal and the board can never disagree about what a job pays.
+    private static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
+        CapitalController.rewardPhrase(reward, lingo: lingo, locale: locale)
     }
 
     // MARK: - Profile Rendering
@@ -350,6 +430,20 @@ extension MainController {
 
             let answerParams = TGAnswerCallbackQueryParams(callbackQueryId: query.id)
             try await context.bot.answerCallbackQuery(params: answerParams)
+            return true
+        }
+
+        // Quest journal — opens over the profile message and returns to it.
+        // Both directions edit the same bubble, so the player never collects a
+        // stack of profile screens.
+        if data == "journal:open" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await Controllers.mainController.showJournal(context: context, editMessageId: message.messageId)
+            return true
+        }
+        if data == "journal:back" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await Controllers.mainController.showProfile(context: context, editMessageId: message.messageId)
             return true
         }
 
