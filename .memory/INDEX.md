@@ -6,10 +6,12 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 - [Architecture Overview](architecture.md) — Router-controller state machine, app lifecycle, dispatcher chain
 - [Tech Stack](tech-stack.md) — Swift 6.2, Hummingbird 2, Fluent, swift-telegram-sdk, Lingo
 - [File Map](file-map.md) — Source tree with purpose annotations per file
+- [Content Pipeline](content-pipeline.md) — Data-driven catalogs: JSON layout, loader/validator, snapshots, how to add content, migration + verification discipline
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates
 - [Implemented vs Planned](status.md) — What exists now vs what GDD describes
+- [Rebalance](rebalance.md) — **Active work.** Audit findings, locked decisions, the calibrated math model, phase tracker
 
 ## Patterns & Conventions
 - [Controller Pattern](controller-pattern.md) — How to build/register controllers, routing, keyboards

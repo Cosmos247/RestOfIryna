@@ -2378,6 +2378,39 @@ hardcoded switch that becomes a league table in JSON.
 `ContentExporter` is empty again for the same reason as Phase 2 — re-exporting a façade writes
 back what was just loaded. It now prints the list of catalogs still awaiting the move.
 
+### Documentation + memory sync pass (same session)
+Dead-code sweep removed 8 genuinely unreferenced symbols: `GameContent.itemsByType` (DomainContent
+has its own), `ContentReport.telegramSummary`, `ContentError.notLoaded` (the holders trap with
+`fatalError` instead), `GameData.isLoaded`, `Catalogs.isLoaded`, `LocaleIndex.keys(withPrefix:)`,
+`ROISim.describe`, `ContentBootstrap.schemaVersion`; `ContentDigest.fingerprint` tightened back to
+`private` now that the exporter no longer shares it. Digest unchanged (`9242a2c1501994ed`), 42
+tests still green. Forward-looking DTO fields (`rarity`, `setId`, enemy `level`/`archetype`/
+`silverReward`/`spawnWeight`) were KEPT — they are schema placeholders documented for Phases 5–6,
+and having them now avoids a `schemaVersion` bump later.
+
+Stale records found and fixed:
+- `content/recipes.md` still listed the pre-2026-05-22 Forester costs (2/6/5/3 hide, "full suit 16
+  hide"). Regenerated from `recipes.json`: 40 hide + 8 iron.
+- `content/bestiary.md` carried a "Stat scaling" block with pre-2026-05-15 ATK values
+  (18/5/1 … 120/22/4 vs the real 18/14/1 … 120/38/4) and named `rabid_wolf` as the registration
+  tutorial enemy — it has been `rabid_dog` since 2026-05-21. Both regenerated from
+  `enemies.json`, plus new sections for the non-rollable mobs, XP rewards, and a JSON-based
+  "adding a new enemy" workflow that spells out the order-is-load-bearing and band-dilution traps.
+- `CLAUDE.md`, `README.md` and `GDD.md` still described catalogs as living in code.
+- `.memory/status.md` had a trailing blob mislabelled "Last updated: 2026-05-02" sitting *below*
+  three newer "Previously:" entries; relabelled and a provenance note added at the top.
+
+New knowledge files: `.memory/content-pipeline.md` (architecture, add-content workflow, migration
+loop, verification layers, gotchas) and `.memory/rebalance.md` (audit evidence, locked decisions,
+calibrated formulas, the five structural corrections, phase tracker). Both linked from
+`.memory/INDEX.md`. `Prompt.md` fully rewritten so a fresh session resumes at Phase 3 batch B
+without reading anything else first.
+
+Auto-memory: added `project_rebalance_active`, `feedback_phase_gate_approval`,
+`feedback_content_spec_before_authoring`, `feedback_verify_migration_not_just_roundtrip`; updated
+`feedback_commit_protocol` for the evolved two-form audit prompt.
+
 ### Next
-Phase 3 Batch B (Trader / Tavern / Market / Guild / Arena), then Batch C (Master / Plot /
-Fortune / Quest). User asked to confirm the start of each phase before it begins.
+Phase 3 Batch B (Trader / Tavern / Market / Guild / Arena) — digest baseline `9242a2c1501994ed`
+already covers them while still Swift-backed. Then Batch C (Master / Plot / Fortune / Quest).
+User asked to confirm the start of each phase before it begins.

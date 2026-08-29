@@ -81,10 +81,4 @@ public struct LocaleIndex: Sendable {
         }.sorted()
     }
 
-    /// Keys present in a locale table that match `prefix` — used to find
-    /// orphaned strings left behind by content renames.
-    public func keys(withPrefix prefix: String, locale: String) -> [String] {
-        guard let table = tables[locale] else { return [] }
-        return table.keys.filter { $0.hasPrefix(prefix) }.sorted()
-    }
 }

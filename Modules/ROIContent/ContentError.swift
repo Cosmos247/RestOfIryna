@@ -21,8 +21,6 @@ public enum ContentError: Error, CustomStringConvertible, Sendable {
     case schemaMismatch(found: Int, expected: Int)
     /// Validation produced at least one error-severity issue.
     case validationFailed(errorCount: Int)
-    /// The snapshot was read before `GameData.install` ran.
-    case notLoaded
 
     public var description: String {
         switch self {
@@ -34,8 +32,6 @@ public enum ContentError: Error, CustomStringConvertible, Sendable {
             return "content schemaVersion \(found) does not match binary schemaVersion \(expected) — pull matching content"
         case .validationFailed(let count):
             return "content validation failed with \(count) error(s)"
-        case .notLoaded:
-            return "GameData read before ContentLoader bootstrap"
         }
     }
 }

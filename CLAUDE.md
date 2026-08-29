@@ -46,6 +46,13 @@ Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this gr
 `Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
 `Swift/` use those types without their own import line.
 
+**Game content is data, not code.** Items, enemies, recipes and the weapon / bag /
+estate ladders live in `content/data/*.json`; the `*Catalog` types are façades over
+a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
+in both `en.json` and `uk.json` — never a Swift array edit. Full rules, the
+migration pattern and the verification discipline: `.memory/content-pipeline.md`.
+Run `swift run roi-content validate --strict` before committing content.
+
 
 ```
 Swift/
@@ -53,7 +60,7 @@ Swift/
 ├── configure.swift      # Bootstrap: DB, Lingo, Bot, Hummingbird (projectPath read from `ROI_PROJECT_PATH` env with dev-Mac fallback)
 ├── routes.swift         # RouterStore actor + per-user dispatch serialization
 ├── Controllers/         # Game screen controllers
-├── Models/              # Fluent models + code-based catalogs (Item, Enemy, Recipe, …)
+├── Models/              # Fluent models + catalog façades (Item, Enemy, Recipe, … — data lives in content/data/*.json)
 ├── Migrations/          # DB migrations
 ├── Services/            # Domain services (pure where possible)
 ├── Telegram/            # Router engine + TG client

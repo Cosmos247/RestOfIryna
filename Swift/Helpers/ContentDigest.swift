@@ -223,17 +223,17 @@ enum ContentDigest {
     // type gains a stored property, extend the matching fingerprint in the same
     // edit — an omission here silently weakens both checks at once.
 
-    static func fingerprint(_ step: BagUpgradeStep) -> String {
+    private static func fingerprint(_ step: BagUpgradeStep) -> String {
         let inputs = step.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
         return "t\(step.toTier) cap\(step.capacity) estate\(step.requiredEstateLevel) \(inputs)"
     }
 
-    static func fingerprint(_ step: EstateUpgradeStep) -> String {
+    private static func fingerprint(_ step: EstateUpgradeStep) -> String {
         let inputs = step.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
         return "t\(step.toTier) lvl\(step.requiredPlayerLevel) silver\(step.silverCost) \(inputs)"
     }
 
-    static func fingerprint(_ item: Item) -> String {
+    private static func fingerprint(_ item: Item) -> String {
         let effects = item.effects.map { effect -> String in
             switch effect {
             case .restoreVigor(let amount): return "vigor:\(amount)"
@@ -250,7 +250,7 @@ enum ContentDigest {
         ].joined(separator: " · ")
     }
 
-    static func fingerprint(_ enemy: Enemy) -> String {
+    private static func fingerprint(_ enemy: Enemy) -> String {
         let loot = enemy.lootTable
             .map { "\($0.itemId)@\($0.chance)x\($0.quantity)" }
             .joined(separator: "|")
@@ -261,7 +261,7 @@ enum ContentDigest {
         ].joined(separator: " · ")
     }
 
-    static func fingerprint(_ recipe: Recipe) -> String {
+    private static func fingerprint(_ recipe: Recipe) -> String {
         let inputs = recipe.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
         return [
             recipe.id, recipe.category.rawValue, inputs,

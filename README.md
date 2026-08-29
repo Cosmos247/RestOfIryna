@@ -69,6 +69,24 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ## 📁 Project Structure
 
+> **Content is data.** Since the pre-release rebalance the game's rosters live in
+> `content/data/*.json`, not in Swift arrays — the `*Catalog` types are façades
+> over a validated snapshot loaded at boot. See `.memory/content-pipeline.md`.
+
+```
+Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex
+├── ROISim/                       # SplitMix64 + OutcomeDigest (balance simulator lands in rebalance Phase 8)
+└── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
+
+Tests/ROIContentTests/            # 42 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+
+content/data/                     # SOURCE OF TRUTH for game content
+├── manifest.json                 # schemaVersion · contentVersion · timeScale
+├── items.json · enemies.json · recipes.json
+└── weapon_upgrades.json · bags.json · estate_upgrades.json
+```
+
 ```
 RestOfIryna/
 ├── Swift/
@@ -86,16 +104,16 @@ RestOfIryna/
 │   │   ├── GuildController.swift         # Phase 7.1 — capital Guildhall (routerName "guild"): found/invite/roster/kick/promote/demote/leave/disband + item vault + silver treasury
 │   │   └── ArenaController.swift        # Phase 8.3 — capital Arena (Ристалище), routerName "arena": lobby challenge, real-time turn-based duel, Honor ELO, daily fight budget on the GameDay boundary
 │   │
-│   ├── Models/                   # Fluent ORM models + code-based catalogs
+│   ├── Models/                   # Fluent ORM models + catalog façades (roster data lives in content/data/*.json)
 │   │   ├── User.swift
-│   │   ├── Item.swift            # static item catalog (code, not DB) — Phase 5.2 added the Forester's leather set; Phase 5.2.1 added 7 cooked dishes + 5 recipe scrolls + Item.teachesRecipe field
-│   │   ├── Recipe.swift          # static crafting catalog (RecipeCategory forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog) — Phase 5.2 + 5.2.1. Phase 6.5 (2026-05-22) raised the Forester set cost + added iron (40🦴 + 8🔩 for a full suit) to track the premium Master prices
+│   │   ├── Item.swift            # Item/GearStats/EquipmentSlot types + ItemCatalog façade + ItemDisplay (roster in content/data/items.json) — Phase 5.2 added the Forester's leather set; Phase 5.2.1 added 7 cooked dishes + 5 recipe scrolls + Item.teachesRecipe field
+│   │   ├── Recipe.swift          # Recipe types + RecipeCatalog façade (roster in content/data/recipes.json) (RecipeCategory forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog) — Phase 5.2 + 5.2.1. Phase 6.5 (2026-05-22) raised the Forester set cost + added iron (40🦴 + 8🔩 for a full suit) to track the premium Master prices
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
 │   │   ├── LearnedTechnique.swift # Phase 5.3e — Fluent model: per-user known-technique set (user_id, technique_id, learned_at). IDs are class-agnostic (`special_atk` / `special_def` / `super`); player's class resolves the concrete technique in combat. has/add/allIds mirror LearnedRecipe.
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers. Phase 6.5 added gear `durability`/`max_durability` (init stamps 30; weapons get their per-tier ceiling 30→100) + `enchant_level` (armor, cap 5) columns
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory) + remove helper (Phase 5.2)
 │   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, running_report_json, visited_rooms)
-│   │   ├── Enemy.swift           # code-based bestiary (EnemyCatalog) — 7 wilderness animals + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); reference doc at content/bestiary.md
+│   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 7 wilderness animals + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); reference doc at content/bestiary.md
 │   │   ├── Plot.swift            # Phase 5.1 — Fluent model for estate plots (user_id, slot_index, plot_type, tier, last_harvested_at, notified_full)
 │   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
 │   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 5 tiers, stats + materials); ItemDisplay namespace lives in Item.swift. Phase 6.5 (2026-05-22) added `durabilityByTier` [30,40,50,70,100] + `durability(forTier:)` — weapon durability ceiling climbs with tier

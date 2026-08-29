@@ -22,12 +22,12 @@ The **Forester's** set — first craftable armor. Uses hide drops from wild kill
 
 | Recipe id | Inputs | Output | Slot | Stats |
 |---|---|---|---|---|
-| `recipe.forester_hood`      | 2× 🟫 Hide | 🪖 Forester's Hood (`gear.forester_hood`)         | helmet | +1 DEF |
-| `recipe.forester_jerkin`    | 6× 🟫 Hide | 🦺 Forester's Jerkin (`gear.forester_jerkin`)     | chest  | +3 DEF |
-| `recipe.forester_breeches`  | 5× 🟫 Hide | 👖 Forester's Breeches (`gear.forester_breeches`) | legs   | +2 DEF |
-| `recipe.forester_boots`     | 3× 🟫 Hide | 🥾 Forester's Boots (`gear.forester_boots`)       | boots  | +1 DEF, +1 dodge |
+| `recipe.forester_hood` | 5× 🟫 Hide | 🪖 Forester's Hood (`gear.forester_hood`)         | helmet | +1 DEF |
+| `recipe.forester_jerkin` | 15× 🟫 Hide + 4× 🔩 Iron | 🦺 Forester's Jerkin (`gear.forester_jerkin`)     | chest  | +3 DEF |
+| `recipe.forester_breeches` | 12× 🟫 Hide + 2× 🔩 Iron | 👖 Forester's Breeches (`gear.forester_breeches`) | legs   | +2 DEF |
+| `recipe.forester_boots` | 8× 🟫 Hide + 2× 🔩 Iron | 🥾 Forester's Boots (`gear.forester_boots`)       | boots  | +1 DEF, +1 dodge |
 
-**Full suit:** 16× hide → +7 DEF / +1 dodge.
+**Full suit:** 40× hide + 8× iron → +7 DEF / +1 dodge. (Raised from the original 16-hide cost on 2026-05-22 so crafting stays cheaper than buying from the Master, without being near-free.)
 
 ### 🍳 Kitchen — cooked food (Phase 5.2.1)
 

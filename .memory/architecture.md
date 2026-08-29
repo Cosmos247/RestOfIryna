@@ -2,6 +2,13 @@
 
 ## App Lifecycle
 
+> **Content loads first.** `ContentBootstrap.load` runs in `configure` right after
+> `Dotenv.configure` and BEFORE the database block — the dev-inventory seed and
+> `GearConditionService.backfillWeaponDurability` later in the same function both
+> touch a catalog, and catalog `all` is a computed property that traps if read
+> before install. Details: [content-pipeline.md](content-pipeline.md).
+
+
 1. `entrypoint.swift` — `@main enum Entrypoint` calls `configure(logger:)`
 2. `configure.swift` — Orchestrates everything:
    - Loads `.env` via SwiftDotenv (hardcoded path: `/Users/cosmos/RestOfIryna`)
@@ -48,6 +55,11 @@ TGUpdate arrives via long polling
 Why: actor reentrancy means concurrent updates from the same Telegram user could otherwise interleave between awaits. Real symptom seen: spam-tapping "Step Forward" both rolled events at the same `stepsDeep` (duplicate loot, single vigor drain) because both dispatches read the same `ExplorationState` row before either had written. The chain forces tap N+1 to start only after tap N has fully written its mutations and refreshed `sessionCache`. Dispatches for *different* users still run concurrently — only same-user calls are serialized.
 
 ## Global State
+
+Three process-wide holders, all `nonisolated(unsafe)` + a lock:
+`appState` (DB / Lingo / bot), `GameData` (validated DTO content snapshot) and
+`Catalogs` (domain content snapshot the `*Catalog` façades read).
+
 
 - `appState: AppState!` — global, holds bot/db/lingo/logger/httpClient
 - `store: RouterStore` — global actor, holds all registered routers

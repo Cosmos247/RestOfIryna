@@ -100,11 +100,6 @@ enum Catalogs {
         return content
     }
 
-    static var isLoaded: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return _current != nil
-    }
 
     static func install(_ content: DomainContent) {
         lock.lock()

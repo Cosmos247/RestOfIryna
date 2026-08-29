@@ -13,14 +13,8 @@
 //
 
 import Foundation
-import ROIContent
 
 public enum ROISim {
     public static let version = "0.1.0-phase0"
 
-    /// Placeholder so the target has a reason to link ROIContent and the
-    /// dependency edge is exercised by the build.
-    public static func describe(_ content: GameContent) -> String {
-        "ROISim \(version) · \(content.items.count) items · \(content.enemies.count) enemies"
-    }
 }

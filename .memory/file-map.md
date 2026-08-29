@@ -4,7 +4,7 @@
 RestOfIryna/
 ├── .env.example                    # Environment template (TG token, DB creds)
 ├── .gitignore                      # Ignores .build, .env, .xcodeproj, etc.
-├── .memory/                        # Project-scoped AI memory (this system)
+├── .memory/                        # Project-scoped AI memory. INDEX.md links all; content-pipeline.md (data-driven catalogs) and rebalance.md (active work: decisions + calibrated math + phase tracker) were added 2026-08-29
 ├── Package.swift                   # SPM manifest, Swift 6.2, macOS 14+ — 5 targets (see Modules/)
 │
 ├── Modules/                        # Content pipeline (added 2026-08-29, rebalance Phase 0)

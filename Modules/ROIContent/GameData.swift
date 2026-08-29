@@ -42,13 +42,6 @@ public enum GameData {
         return content
     }
 
-    /// True once a snapshot is installed. Lets the bootstrap assert ordering
-    /// without tripping the `fatalError` in `current`.
-    public static var isLoaded: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return _current != nil
-    }
 
     /// Atomic hot-swap. The caller must already have parsed, validated and
     /// built `content` — this step is infallible and must be the last one, so

@@ -70,7 +70,4 @@ public enum ContentBootstrap {
         }
     }
 
-    /// Schema version this binary speaks. Surfaced for `/content` and for the
-    /// startup banner.
-    public static var schemaVersion: Int { ContentSchema.current }
 }

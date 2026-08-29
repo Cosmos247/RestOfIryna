@@ -27,7 +27,6 @@ public final class GameContent: Sendable {
 
     public let items: [ItemDTO]
     public let itemsById: [String: ItemDTO]
-    public let itemsByType: [String: [ItemDTO]]
 
     public let enemies: [EnemyDTO]
     public let enemiesById: [String: EnemyDTO]
@@ -49,7 +48,6 @@ public final class GameContent: Sendable {
 
         self.items = bundle.items
         self.itemsById = Dictionary(bundle.items.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
-        self.itemsByType = Dictionary(grouping: bundle.items, by: { $0.type })
 
         self.enemies = bundle.enemies
         self.enemiesById = Dictionary(bundle.enemies.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })

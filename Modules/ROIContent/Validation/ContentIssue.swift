@@ -58,16 +58,4 @@ public struct ContentReport: Sendable {
     public var warnings: [ContentIssue] { issues.filter { $0.severity == .warning } }
     public var hasErrors: Bool { issues.contains { $0.severity == .error } }
 
-    /// Compact rendering for a Telegram reply, which has a hard message limit.
-    public func telegramSummary(limit: Int = 15) -> String {
-        guard !issues.isEmpty else { return "✅ content valid — 0 issues" }
-        var lines = ["❌ \(errors.count) error(s), \(warnings.count) warning(s)"]
-        for issue in errors.prefix(limit) {
-            lines.append("• \(issue.file) \(issue.path) — \(issue.message)")
-        }
-        if errors.count > limit {
-            lines.append("… and \(errors.count - limit) more")
-        }
-        return lines.joined(separator: "\n")
-    }
 }

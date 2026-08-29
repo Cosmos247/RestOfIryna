@@ -3,7 +3,15 @@
 ## Language & Tooling
 - **Swift 6.2** (strict concurrency, `ExistentialAny` upcoming feature enabled)
 - **macOS 14+** deployment target
-- **Package.swift** sources path: `Swift/` (not `Sources/`)
+- **Package.swift** — five targets:
+  - `RestOfIryna` (executable) path `Swift/` — the bot
+  - `ROIContent` (library) path `Modules/ROIContent` — Foundation only
+  - `ROISim` (library) path `Modules/ROISim`
+  - `roi-content` (executable) path `Modules/roi-content` — content CLI
+  - `ROIContentTests` path `Tests/ROIContentTests`
+  Never `Sources/` — game code is `Swift/`, pipeline code is `Modules/`.
+- `Synchronization.Mutex` is **not** usable (macOS 15; package targets 14) — the
+  content snapshots use `nonisolated(unsafe)` + `NSLock`.
 
 ## Dependencies (from Package.swift)
 

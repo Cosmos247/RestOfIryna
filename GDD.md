@@ -297,7 +297,7 @@ Two thematic families across a 20-km depth span. Wild animals are killable + coo
 | T4     | 🐺 Rabid Wolf             | rabid  | km 16–20    | 70 / 15 / 4    | hide (top hostile)    |
 | Boss   | (Dungeon-only named beasts) | —    | dungeon     | TBD            | Unique rewards        |
 
-Full bestiary lives in code at `Swift/Models/Enemy.swift` (`EnemyCatalog`).
+Full bestiary lives in data at `content/data/enemies.json` (`EnemyCatalog` is a façade over it). Reference doc: `content/bestiary.md`.
 
 Full bestiary to live in `content/bestiary.md` (to be created).
 
