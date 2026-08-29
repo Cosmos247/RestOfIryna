@@ -10,16 +10,30 @@
 //
 //    swift run RestOfIryna --content-digest
 //
-//  Two halves, because two different things can break:
+//  Three halves, because three different things can break:
 //
 //  1. **Record fingerprints** — every stored property of every item, enemy,
-//     recipe and ladder step, in catalog order. Catches a changed value and a
-//     changed ordering alike.
+//     recipe, ladder step, card and job, in catalog order, plus an accessor
+//     replay for the derived reads (`nextStep`, `capForTier`, `durability`,
+//     `stats`, `leagueKey`, `tithe`, `repairCost`, `icon`, `tuning`). The
+//     accessor half exists because fingerprinting data does not verify the code
+//     that reads it — `PlotCatalog.icon` and `MasterCatalog.repairCost` have no
+//     backing array at all.
 //  2. **Seeded `pickFor` replay** — 40 depths × 200 draws from a fixed seed.
 //     `EnemyCatalog.pickFor` is `filter().randomElement()`, so the DECLARATION
 //     ORDER of the roster decides which enemy a given roll returns. A reorder
 //     that leaves every record byte-identical would still silently change every
 //     encounter in the game; only a seeded replay catches that.
+//  3. **Seeded `daily()` replay** — 200 users × 4 days × 3 NPCs. Same shape,
+//     same reason: `QuestCatalog.daily` is
+//     `pool[stableHash("<uuid>:<npc>:<day>") % pool.count]`, so pool order is
+//     the assignment. Negative-tested — dropping the day from the hash key
+//     leaves `records` byte-identical and moves this half alone.
+//
+//  Every dictionary a catalog exposes (`pools`, `t1Tunings`,
+//  `WeaponUpgradeCatalog.progression`) is walked via `allCases` or a sorted key
+//  list. Iterating one directly would make the digest differ between processes
+//  and quietly destroy the whole comparison.
 //
 //  Full `RandomNumberGenerator` threading through `ExplorationService` /
 //  `CombatService` is NOT needed here — the migration changes where catalog

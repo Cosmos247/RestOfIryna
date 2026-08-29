@@ -579,8 +579,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         distinct value.
   - [x] **Batch C** *(2026-08-29)* — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`,
         `QuestCatalog` are façades; `master.json` + `plots.json` + `fortune.json` + `quests.json`
-        exported. **Digest identical across the flip (`8053216102eceff7`).** 250 lines of Swift
-        arrays deleted. Step 1 was real work this time — the digest had no coverage yet — so it
+        exported. **Digest identical across the flip (`8053216102eceff7`).** 172 lines removed from
+        the four catalogs (49 of them data literals), net −78 after the façade code. Step 1 was real work this time — the digest had no coverage yet — so it
         gained a `records` extension (22 cards × 14 effect fields, 9 jobs, 4 plot tunings, the
         Master ladder) **plus a third half, `quests`**: a seeded replay of `daily()` over 200
         users × 4 days × 3 NPCs.

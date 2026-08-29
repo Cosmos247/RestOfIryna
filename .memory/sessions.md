@@ -2471,7 +2471,8 @@ are also behaviour-in-code rather than arrays.
 
 ### Phase 3 Batch C — master / plots / fortune / quests *(2026-08-29)*
 The last four catalogs moved to `content/data/`. **Phase 3 is closed: all 12 catalogs read JSON,
-no Swift array remains.** 85 tests green (was 62). 250 lines of arrays deleted; 403 lines of JSON.
+no Swift array remains.** 85 tests green (was 62). 172 lines removed from the four catalogs
+(49 of them data literals), net −78 after the façade code; 403 lines of JSON.
 
 **Step 1 was real work this time.** Batch B inherited its digest coverage; batch C had none, so
 the digest gained a `records` extension (22 cards × 14 effect fields, 9 jobs, 4 plot tunings, the
