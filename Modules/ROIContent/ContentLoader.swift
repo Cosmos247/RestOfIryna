@@ -26,6 +26,7 @@ public enum ContentLoader {
     private static let itemsFile    = "items.json"
     private static let enemiesFile  = "enemies.json"
     private static let recipesFile  = "recipes.json"
+    private static let weaponsFile  = "weapon_upgrades.json"
 
     public static func load(from root: URL) throws -> ContentBundle {
         var hashState = FNV1a()
@@ -45,12 +46,17 @@ public enum ContentLoader {
         let recipesData = try read(recipesFile, in: root, into: &hashState)
         let recipeFile: RecipeFileDTO = try decode(recipesData, as: RecipeFileDTO.self, file: recipesFile)
 
+        let weaponsData = try read(weaponsFile, in: root, into: &hashState)
+        let weaponFile: WeaponUpgradeFileDTO = try decode(weaponsData, as: WeaponUpgradeFileDTO.self, file: weaponsFile)
+
         return ContentBundle(
             manifest: manifest,
             items: itemFile.items,
             enemies: enemyFile.enemies,
             recipes: recipeFile.recipes,
             starterRecipeIds: recipeFile.starterRecipeIds,
+            weaponLadders: weaponFile.ladders,
+            weaponDurabilityByTier: weaponFile.durabilityByTier,
             contentHash: hashState.hexDigest
         )
     }

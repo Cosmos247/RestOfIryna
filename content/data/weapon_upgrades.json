@@ -1,0 +1,295 @@
+{
+  "durabilityByTier" : [
+    30,
+    40,
+    50,
+    70,
+    100
+  ],
+  "ladders" : [
+    {
+      "itemId" : "gear.rusty_sword",
+      "tiers" : [
+        {
+          "inputs" : [
+
+          ],
+          "stats" : {
+            "attack" : 3
+          },
+          "tier" : 1
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "attack" : 5,
+            "crit" : 3
+          },
+          "tier" : 2
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 2
+            }
+          ],
+          "stats" : {
+            "attack" : 8,
+            "crit" : 6
+          },
+          "tier" : 3
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 1
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "attack" : 12,
+            "crit" : 10,
+            "defense" : 1
+          },
+          "tier" : 4
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 3
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 10
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            }
+          ],
+          "stats" : {
+            "attack" : 16,
+            "crit" : 15,
+            "defense" : 3
+          },
+          "tier" : 5
+        }
+      ]
+    },
+    {
+      "itemId" : "gear.simple_bow",
+      "tiers" : [
+        {
+          "inputs" : [
+
+          ],
+          "stats" : {
+            "accuracy" : 1,
+            "attack" : 2
+          },
+          "tier" : 1
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 1
+            }
+          ],
+          "stats" : {
+            "accuracy" : 3,
+            "attack" : 4
+          },
+          "tier" : 2
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "accuracy" : 5,
+            "attack" : 6,
+            "crit" : 3
+          },
+          "tier" : 3
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 10
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 1
+            }
+          ],
+          "stats" : {
+            "accuracy" : 7,
+            "attack" : 9,
+            "crit" : 6
+          },
+          "tier" : 4
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 15
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 8
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "accuracy" : 10,
+            "attack" : 12,
+            "crit" : 10
+          },
+          "tier" : 5
+        }
+      ]
+    },
+    {
+      "itemId" : "gear.wooden_staff",
+      "tiers" : [
+        {
+          "inputs" : [
+
+          ],
+          "stats" : {
+            "attack" : 2,
+            "crit" : 1
+          },
+          "tier" : 1
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "attack" : 4,
+            "crit" : 3
+          },
+          "tier" : 2
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.clay",
+              "quantity" : 3
+            }
+          ],
+          "stats" : {
+            "accuracy" : 2,
+            "attack" : 6,
+            "crit" : 6
+          },
+          "tier" : 3
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 8
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 1
+            }
+          ],
+          "stats" : {
+            "accuracy" : 4,
+            "attack" : 9,
+            "crit" : 10
+          },
+          "tier" : 4
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 8
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 10
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 3
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 5
+            }
+          ],
+          "stats" : {
+            "accuracy" : 6,
+            "attack" : 12,
+            "crit" : 14
+          },
+          "tier" : 5
+        }
+      ]
+    }
+  ]
+}

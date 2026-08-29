@@ -18,6 +18,8 @@ public struct ContentBundle: Sendable {
     public let enemies: [EnemyDTO]
     public let recipes: [RecipeDTO]
     public let starterRecipeIds: [String]
+    public let weaponLadders: [WeaponLadderDTO]
+    public let weaponDurabilityByTier: [Int]
     /// FNV-1a over the concatenated raw bytes of every file, in load order.
     /// Printed at boot and by `/content` so a running bot can be matched to a
     /// checkout without guessing.
@@ -29,6 +31,8 @@ public struct ContentBundle: Sendable {
         enemies: [EnemyDTO],
         recipes: [RecipeDTO],
         starterRecipeIds: [String],
+        weaponLadders: [WeaponLadderDTO] = [],
+        weaponDurabilityByTier: [Int] = [],
         contentHash: String
     ) {
         self.manifest = manifest
@@ -36,6 +40,8 @@ public struct ContentBundle: Sendable {
         self.enemies = enemies
         self.recipes = recipes
         self.starterRecipeIds = starterRecipeIds
+        self.weaponLadders = weaponLadders
+        self.weaponDurabilityByTier = weaponDurabilityByTier
         self.contentHash = contentHash
     }
 
@@ -43,6 +49,7 @@ public struct ContentBundle: Sendable {
         let version = manifest.contentVersion.map { " · \($0)" } ?? ""
         return "schema v\(manifest.schemaVersion)\(version) · hash \(contentHash) · "
             + "\(items.count) items · \(enemies.count) enemies · \(recipes.count) recipes · "
+            + "\(weaponLadders.count) ladders · "
             + "timeScale \(manifest.timeScale)"
     }
 }

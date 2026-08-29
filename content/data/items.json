@@ -1,0 +1,363 @@
+{
+  "items" : [
+    {
+      "effects" : [
+        {
+          "amount" : 4,
+          "kind" : "restore_vigor"
+        }
+      ],
+      "icon" : "🫐",
+      "id" : "food.forest_berries",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 5,
+          "kind" : "restore_vigor"
+        }
+      ],
+      "icon" : "🌰",
+      "id" : "food.forest_nuts",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "icon" : "🥔",
+      "id" : "food.potato",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 7,
+          "kind" : "restore_vigor"
+        }
+      ],
+      "icon" : "🥚",
+      "id" : "food.duck_egg",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "icon" : "🥩",
+      "id" : "food.raw_meat",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 9,
+          "kind" : "restore_vigor"
+        }
+      ],
+      "icon" : "🍠",
+      "id" : "food.baked_potato",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 12,
+          "kind" : "restore_vigor"
+        }
+      ],
+      "icon" : "🍗",
+      "id" : "food.roasted_meat",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 16,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 3,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🍳",
+      "id" : "food.foragers_omelette",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 20,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 5,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🍲",
+      "id" : "food.hunters_stew",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 18,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 4,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🥘",
+      "id" : "food.meat_ragout",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 16,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 6,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🥧",
+      "id" : "food.berry_tart",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 35,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 10,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🍽",
+      "id" : "food.governors_feast",
+      "stackable" : true,
+      "tier" : 3,
+      "type" : "food"
+    },
+    {
+      "icon" : "🪵",
+      "id" : "mat.pine_lumber",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🪨",
+      "id" : "mat.river_pebble",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🧱",
+      "id" : "mat.clay",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🔩",
+      "id" : "mat.iron",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "material"
+    },
+    {
+      "icon" : "🔳",
+      "id" : "mat.iron_ingot",
+      "stackable" : true,
+      "tier" : 3,
+      "type" : "material"
+    },
+    {
+      "icon" : "🟫",
+      "id" : "mat.hide",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "descriptionKey" : null,
+      "effects" : [
+        {
+          "amount" : 30,
+          "kind" : "restore_hp"
+        }
+      ],
+      "id" : "potion.heal_small",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "potion"
+    },
+    {
+      "descriptionKey" : null,
+      "effects" : [
+        {
+          "amount" : 60,
+          "kind" : "restore_hp"
+        }
+      ],
+      "id" : "potion.heal_medium",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "potion"
+    },
+    {
+      "gearStats" : {
+        "attack" : 3
+      },
+      "icon" : "⚔️",
+      "id" : "gear.rusty_sword",
+      "slot" : "main_hand",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "accuracy" : 1,
+        "attack" : 2
+      },
+      "icon" : "🏹",
+      "id" : "gear.simple_bow",
+      "slot" : "main_hand",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "attack" : 2,
+        "crit" : 1
+      },
+      "icon" : "🪄",
+      "id" : "gear.wooden_staff",
+      "slot" : "main_hand",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "defense" : 1
+      },
+      "icon" : "🪖",
+      "id" : "gear.forester_hood",
+      "slot" : "helmet",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "defense" : 3
+      },
+      "icon" : "🦺",
+      "id" : "gear.forester_jerkin",
+      "slot" : "chest",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "defense" : 2
+      },
+      "icon" : "👖",
+      "id" : "gear.forester_breeches",
+      "slot" : "legs",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "defense" : 1,
+        "dodge" : 1
+      },
+      "icon" : "🥾",
+      "id" : "gear.forester_boots",
+      "slot" : "boots",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "descriptionKey" : null,
+      "id" : "artifact.shrine_coin",
+      "stackable" : true,
+      "tier" : 3,
+      "type" : "artifact"
+    },
+    {
+      "icon" : "📜",
+      "id" : "artifact.recipe.foragers_omelette",
+      "stackable" : false,
+      "teachesRecipe" : "recipe.foragers_omelette",
+      "tier" : 2,
+      "type" : "artifact"
+    },
+    {
+      "icon" : "📜",
+      "id" : "artifact.recipe.hunters_stew",
+      "stackable" : false,
+      "teachesRecipe" : "recipe.hunters_stew",
+      "tier" : 2,
+      "type" : "artifact"
+    },
+    {
+      "icon" : "📜",
+      "id" : "artifact.recipe.meat_ragout",
+      "stackable" : false,
+      "teachesRecipe" : "recipe.meat_ragout",
+      "tier" : 2,
+      "type" : "artifact"
+    },
+    {
+      "icon" : "📜",
+      "id" : "artifact.recipe.berry_tart",
+      "stackable" : false,
+      "teachesRecipe" : "recipe.berry_tart",
+      "tier" : 2,
+      "type" : "artifact"
+    },
+    {
+      "icon" : "📜",
+      "id" : "artifact.recipe.governors_feast",
+      "stackable" : false,
+      "teachesRecipe" : "recipe.governors_feast",
+      "tier" : 3,
+      "type" : "artifact"
+    }
+  ]
+}

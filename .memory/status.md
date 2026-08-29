@@ -167,7 +167,11 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   `LocaleIndex`), `Modules/ROISim` (SplitMix64 + OutcomeDigest), `Modules/roi-content` CLI,
   `Tests/ROIContentTests` (24 tests). Additive only — no existing behaviour changed, nothing
   reads the new code yet.
-- Phases 1–11 pending: export→JSON, catalog façades, tuning tables, new combat model,
+- **Phase 1 DONE** — `ContentExporter` + `--export-content`; `content/data/` now holds
+  manifest/items/enemies/recipes/weapon_upgrades JSON (33/9/12/3). Round-trip and count/order
+  checks pass; two exports byte-identical; `roi-content validate` = 0 errors, 1 truthful warning.
+  Still inert — the bot runs off the Swift arrays until Phase 2.
+- Phases 2–11 pending: catalog façades, remaining catalogs, tuning tables, new combat model,
   rarity+sets, `/reload`, simulator calibration, content specs, authoring, wipe.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve

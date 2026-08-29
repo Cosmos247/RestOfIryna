@@ -496,9 +496,29 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `ContentBootstrap.swift` compiles with no import of its own, so the ~315 existing catalog
       call sites need no churn. Platform stays macOS 14 (`NSLock` instead of `Mutex`).
       Provably inert: +26 lines in `Package.swift`, +6 in `configure.swift`, nothing else touched.
-- [ ] Phase 1 — Exporter + first JSON (behaviour-neutral, committed byte-for-byte)
+- [x] **Phase 1 — Exporter + first JSON** *(2026-08-29)* — `ContentExporter` + `--export-content`
+      argv branch in `entrypoint.swift` (runs before `configure`, so no DB/token/network);
+      `ContentMapping` gives domain⇄DTO in BOTH directions, so `toDomain()` is ready for Phase 2.
+      Exported `content/data/{manifest,items,enemies,recipes,weapon_upgrades}.json` — 33 items,
+      9 enemies, 12 recipes, 3 ladders. **Nothing normalized**: the `0...0` depthRange sentinel
+      is exported verbatim, declaration order preserved (`pickFor` uses `filter().randomElement()`,
+      so order decides seeded rolls). Three verification layers pass: **layer 0 (domain
+      equivalence)**, layer 1 (canonical round-trip byte-identical), layer 2 (counts + id sets +
+      order); two independent exports are byte-identical. Layer 0 was added during the audit and
+      is the load-bearing one: `domain→DTO→domain→DTO→JSON` stays byte-stable even when the mapper
+      never captured a field, because both directions drop it consistently. Proven by negative
+      test — deleting `teachesRecipe` from the mapper (which would have silently removed all five
+      recipe scrolls from the game) left layers 1 and 2 **green**; only layer 0 caught it.
+      Independently cross-checked by parsing the Swift sources in Python: all 11 item fields ×
+      33 items and all 10 enemy fields × 9 enemies match the JSON. `roi-content validate` on the real bundle: **0 errors, 1 warning**
+      (`timeScale 60.0`, truthful — the three `testMode` flags are still on). `--strict` exits 1
+      on it, as intended. 37 tests green.
+      **Scope note:** `weapon_upgrades.json` was pulled forward from Phase 3 — the localization
+      rules cannot be correct without it. `ItemDisplay` appends `.t<tier>` for laddered items, so
+      the base `.desc` key is never resolved and all three shipped weapons legitimately lack it;
+      without ladder data the validator emitted six false warnings.
 - [ ] Phase 2 — Flip Item/Enemy/Recipe catalogs to façades; delete the Swift arrays
-- [ ] Phase 3 — Remaining 12 catalogs
+- [ ] Phase 3 — Remaining 11 catalogs (weapon_upgrades landed in Phase 1)
 - [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
       technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)

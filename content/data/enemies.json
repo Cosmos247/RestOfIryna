@@ -1,0 +1,214 @@
+{
+  "enemies" : [
+    {
+      "depth" : {
+        "max" : 10,
+        "min" : 1
+      },
+      "icon" : "🐗",
+      "id" : "enemy.wild_boar",
+      "loot" : [
+        {
+          "chance" : 0.7,
+          "itemId" : "food.raw_meat",
+          "quantity" : 1
+        },
+        {
+          "chance" : 0.8,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 14,
+        "defense" : 1,
+        "hp" : 18
+      },
+      "tier" : 1,
+      "xpReward" : 5
+    },
+    {
+      "depth" : {
+        "max" : 15,
+        "min" : 6
+      },
+      "icon" : "🫎",
+      "id" : "enemy.wild_moose",
+      "loot" : [
+        {
+          "chance" : 0.8,
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.7,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 18,
+        "defense" : 2,
+        "hp" : 32
+      },
+      "tier" : 2,
+      "xpReward" : 12
+    },
+    {
+      "depth" : {
+        "max" : 20,
+        "min" : 11
+      },
+      "icon" : "🦬",
+      "id" : "enemy.wild_buffalo",
+      "loot" : [
+        {
+          "chance" : 0.8,
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.9,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 23,
+        "defense" : 4,
+        "hp" : 55
+      },
+      "tier" : 3,
+      "xpReward" : 25
+    },
+    {
+      "depth" : {
+        "max" : 20,
+        "min" : 11
+      },
+      "icon" : "🐈‍⬛",
+      "id" : "enemy.rabid_lynx",
+      "loot" : [
+        {
+          "chance" : 0.7,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 25,
+        "defense" : 2,
+        "hp" : 45
+      },
+      "tier" : 3,
+      "xpReward" : 25
+    },
+    {
+      "depth" : {
+        "max" : 25,
+        "min" : 16
+      },
+      "icon" : "🐺",
+      "id" : "enemy.rabid_wolf",
+      "loot" : [
+        {
+          "chance" : 0.8,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 28,
+        "defense" : 4,
+        "hp" : 70
+      },
+      "tier" : 4,
+      "xpReward" : 50
+    },
+    {
+      "depth" : {
+        "max" : 30,
+        "min" : 21
+      },
+      "icon" : "🐻",
+      "id" : "enemy.wild_bear",
+      "loot" : [
+        {
+          "chance" : 0.85,
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.9,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "attack" : 32,
+        "defense" : 5,
+        "hp" : 95
+      },
+      "tier" : 5,
+      "xpReward" : 100
+    },
+    {
+      "depth" : {
+        "max" : 0,
+        "min" : 0
+      },
+      "icon" : "🥋",
+      "id" : "enemy.training_dummy",
+      "loot" : [
+
+      ],
+      "stats" : {
+        "attack" : 0,
+        "defense" : 1,
+        "hp" : 200
+      },
+      "tier" : 0,
+      "xpReward" : 0
+    },
+    {
+      "depth" : {
+        "max" : 0,
+        "min" : 0
+      },
+      "icon" : "🐕",
+      "id" : "enemy.rabid_dog",
+      "loot" : [
+
+      ],
+      "stats" : {
+        "attack" : 14,
+        "defense" : 1,
+        "hp" : 18
+      },
+      "tier" : 1,
+      "xpReward" : 0
+    },
+    {
+      "depth" : {
+        "max" : 35,
+        "min" : 25
+      },
+      "icon" : "🐻‍❄️",
+      "id" : "enemy.rabid_bear",
+      "loot" : [
+        {
+          "chance" : 0.9,
+          "itemId" : "mat.hide",
+          "quantity" : 2
+        }
+      ],
+      "stats" : {
+        "attack" : 38,
+        "defense" : 4,
+        "hp" : 120
+      },
+      "tier" : 6,
+      "xpReward" : 175
+    }
+  ]
+}

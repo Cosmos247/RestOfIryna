@@ -1,0 +1,264 @@
+{
+  "recipes" : [
+    {
+      "category" : "forge",
+      "id" : "recipe.iron_ingot",
+      "inputs" : [
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 10
+        }
+      ],
+      "output" : {
+        "itemId" : "mat.iron_ingot",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "tannery",
+      "id" : "recipe.forester_hood",
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 5
+        }
+      ],
+      "output" : {
+        "itemId" : "gear.forester_hood",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "tannery",
+      "id" : "recipe.forester_jerkin",
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 15
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 4
+        }
+      ],
+      "output" : {
+        "itemId" : "gear.forester_jerkin",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "tannery",
+      "id" : "recipe.forester_breeches",
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 12
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 2
+        }
+      ],
+      "output" : {
+        "itemId" : "gear.forester_breeches",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "tannery",
+      "id" : "recipe.forester_boots",
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 8
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 2
+        }
+      ],
+      "output" : {
+        "itemId" : "gear.forester_boots",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.baked_potato",
+      "inputs" : [
+        {
+          "itemId" : "food.potato",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.baked_potato",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.roasted_meat",
+      "inputs" : [
+        {
+          "itemId" : "food.raw_meat",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.roasted_meat",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.foragers_omelette",
+      "inputs" : [
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.forest_berries",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.foragers_omelette",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.hunters_stew",
+      "inputs" : [
+        {
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.potato",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.hunters_stew",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.meat_ragout",
+      "inputs" : [
+        {
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.potato",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.meat_ragout",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.berry_tart",
+      "inputs" : [
+        {
+          "itemId" : "food.forest_berries",
+          "quantity" : 4
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.berry_tart",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.governors_feast",
+      "inputs" : [
+        {
+          "itemId" : "food.raw_meat",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "food.potato",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.forest_berries",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.governors_feast",
+        "quantity" : 1
+      }
+    }
+  ],
+  "starterRecipeIds" : [
+    "recipe.baked_potato",
+    "recipe.roasted_meat"
+  ]
+}

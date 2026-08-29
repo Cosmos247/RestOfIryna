@@ -2259,6 +2259,55 @@ repointed: `CLAUDE.md` key-documents table, `.memory/file-map.md` tree, `TODO.md
 two mentions in this file's own history (2026-04 entries) were left alone — the file really was
 called `Prompt.me` then, and rewriting a session log would make it lie.
 
+### Phase 1 built (same session)
+`ContentExporter` + `--export-content` in `entrypoint.swift` (before `configure`, so no DB or
+network) and `ContentMapping` with BOTH directions — `toDomain()` written now because the
+round-trip proof is meaningless unless the DTO can actually rebuild the domain value, and
+Phase 2 reuses it verbatim.
+
+Exported `content/data/` — 33 items, 9 enemies, 12 recipes, 3 ladders. **Zero normalization**:
+the `0...0` depthRange sentinel on training_dummy/rabid_dog is exported as-is (normalizing it to
+null would be behaviour-identical, but Phase 1 must be provably neutral, so that cleanup gets its
+own commit). Declaration order preserved — `pickFor` is `filter().randomElement()`, so order
+decides which enemy a seeded roll returns. `starterRecipeIds` and the ladder dictionary are
+sorted, since both sources are unordered.
+
+`generatedAt` deliberately omitted from the manifest: a timestamp would dirty every re-export and
+destroy the byte-for-byte comparison. Two independent exports verified byte-identical.
+
+**Validator findings on the real bundle: 0 errors, 6 false warnings** — the base
+`item.gear.<weapon>.desc` key for the three tiered weapons. Root cause: `ItemDisplay` appends
+`.t<tier>` for anything with a ladder, so the base `.desc` is never resolved and all three
+legitimately lack it (only `.desc.t1…t5` exist). Fix required ladder data, so
+**`weapon_upgrades.json` was pulled forward from Phase 3** — with an explicit `tier` field per
+step, because the shipped catalog encodes tier as nothing but array position. New ladder rules:
+tier-matches-position, no stat regression across tiers, T1 costs nothing, ladder target must be
+main_hand gear, durability table at least as long as the longest ladder. Real bundle now: 0
+errors, 1 warning (`timeScale 60.0` — truthful while the three testMode flags are on).
+`--strict` exits 1 on it.
+
+### Phase 1 audit — two defects found in my own verification
+1. **The canonical round-trip has a blind spot.** `domain → DTO → domain → DTO → JSON` stays
+   byte-stable even when the mapper never captured a field at all: both directions drop it
+   consistently, so the encodings still match. Added **layer 0 (domain equivalence)** — rebuild
+   the domain value from the DTO and compare field-complete fingerprints against the original.
+   Proven non-vacuous by negative test: deleting `teachesRecipe` from the mapper (which would
+   have silently removed all five recipe scrolls from the game) left layers 1 and 2 GREEN; only
+   layer 0 went red. A second negative test (enemy loot quantity forced to 1) behaved the same
+   way. **Lesson: a round-trip proves the mapping is self-consistent, not that it is complete.**
+2. **Diagnostics were lost on failure.** `print` is block-buffered when stdout is a pipe, and an
+   error escaping `@main` terminates without flushing — so the failure explanation vanished
+   exactly when it was needed. Now `fflush(stdout)` before throwing, and the export branch
+   catches, prints and `exit(1)` instead of a top-level `fatalError`. Verified: exit 1 on
+   failure, 0 on success.
+
+Independently cross-checked with a Python parse of `Item.swift` / `Enemy.swift` (no Swift mapper
+code involved): all 11 item fields × 33 items and all 10 enemy fields × 9 enemies match the JSON.
+
+37 tests green. Still inert: the bot never reads `content/data/`.
+
 ### Next
-Phase 1 (exporter + first JSON, byte-for-byte, zero balance change). User asked to confirm the
+Phase 2 — flip Item/Enemy/Recipe catalogs to façades over `GameData.current` and delete the
+Swift arrays. Needs verification layer 3 first (seeded simulation diff), which requires threading
+`RandomNumberGenerator` through `ExplorationService`/`CombatService`. User asked to confirm the
 start of each phase before it begins.

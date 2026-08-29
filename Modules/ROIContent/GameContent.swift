@@ -36,6 +36,9 @@ public final class GameContent: Sendable {
     public let recipesById: [String: RecipeDTO]
     public let starterRecipeIds: Set<String>
 
+    public let weaponLaddersByItemId: [String: WeaponLadderDTO]
+    public let weaponDurabilityByTier: [Int]
+
     public init(_ bundle: ContentBundle) {
         self.manifest = bundle.manifest
         self.contentHash = bundle.contentHash
@@ -51,5 +54,8 @@ public final class GameContent: Sendable {
         self.recipes = bundle.recipes
         self.recipesById = Dictionary(bundle.recipes.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.starterRecipeIds = Set(bundle.starterRecipeIds)
+        self.weaponLaddersByItemId = Dictionary(
+            bundle.weaponLadders.map { ($0.itemId, $0) }, uniquingKeysWith: { _, last in last })
+        self.weaponDurabilityByTier = bundle.weaponDurabilityByTier
     }
 }

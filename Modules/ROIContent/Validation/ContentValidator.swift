@@ -29,6 +29,7 @@ public enum ContentValidator {
         issues += validateIdentity(bundle)
         issues += validateEnums(bundle)
         issues += validateReferences(bundle)
+        issues += validateWeaponLadders(bundle)
         issues += validateTime(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -270,25 +271,132 @@ public enum ContentValidator {
         return issues
     }
 
+    // MARK: - Weapon ladders
+
+    private static func validateWeaponLadders(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let itemsById = Dictionary(bundle.items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let file = "weapon_upgrades.json"
+        var longestLadder = 0
+
+        for (index, ladder) in bundle.weaponLadders.enumerated() {
+            let path = "ladders[\(index)]"
+            longestLadder = max(longestLadder, ladder.tiers.count)
+
+            guard let item = itemsById[ladder.itemId] else {
+                issues.append(.init(severity: .error, file: file, path: path, id: ladder.itemId,
+                                    rule: "reference.item.unknown",
+                                    message: "ladder references unknown item \"\(ladder.itemId)\""))
+                continue
+            }
+            if item.type != "gear" || item.slot != "main_hand" {
+                issues.append(.init(severity: .error, file: file, path: path, id: ladder.itemId,
+                                    rule: "ladder.not_a_weapon",
+                                    message: "ladder target must be gear in the main_hand slot"))
+            }
+            if ladder.tiers.isEmpty {
+                issues.append(.init(severity: .error, file: file, path: path, id: ladder.itemId,
+                                    rule: "ladder.empty",
+                                    message: "ladder has no tiers"))
+                continue
+            }
+
+            for (position, step) in ladder.tiers.enumerated() {
+                let stepPath = "\(path).tiers[\(position)]"
+                // The shipped catalog encodes tier purely as array position.
+                // Writing it down is what lets an inserted or dropped step be
+                // caught instead of silently shifting the whole ladder.
+                if step.tier != position + 1 {
+                    issues.append(.init(severity: .error, file: file, path: stepPath, id: ladder.itemId,
+                                        rule: "ladder.tier_out_of_order",
+                                        message: "step at position \(position) declares tier \(step.tier), expected \(position + 1)"))
+                }
+                if position == 0 && !step.inputs.isEmpty {
+                    issues.append(.init(severity: .warning, file: file, path: stepPath, id: ladder.itemId,
+                                        rule: "ladder.t1_has_cost",
+                                        message: "tier 1 is the granted starter weapon and should cost nothing"))
+                }
+                for (inputIndex, input) in step.inputs.enumerated() {
+                    if itemsById[input.itemId] == nil {
+                        issues.append(.init(severity: .error, file: file, path: "\(stepPath).inputs[\(inputIndex)]", id: ladder.itemId,
+                                            rule: "reference.item.unknown",
+                                            message: "references unknown item \"\(input.itemId)\""))
+                    }
+                    if input.quantity < 1 {
+                        issues.append(.init(severity: .error, file: file, path: "\(stepPath).inputs[\(inputIndex)]", id: ladder.itemId,
+                                            rule: "ladder.quantity",
+                                            message: "quantity must be >= 1, found \(input.quantity)"))
+                    }
+                }
+                // An upgrade that makes a stat worse is a data entry slip: the
+                // player spends materials and gets a weaker weapon.
+                if position > 0 {
+                    let previous = ladder.tiers[position - 1].stats
+                    let pairs: [(String, Int, Int)] = [
+                        ("attack", previous.attack, step.stats.attack),
+                        ("defense", previous.defense, step.stats.defense),
+                        ("crit", previous.crit, step.stats.crit),
+                        ("dodge", previous.dodge, step.stats.dodge),
+                        ("accuracy", previous.accuracy, step.stats.accuracy)
+                    ]
+                    for (stat, before, after) in pairs where after < before {
+                        issues.append(.init(severity: .error, file: file, path: "\(stepPath).stats.\(stat)", id: ladder.itemId,
+                                            rule: "ladder.stat_regression",
+                                            message: "\(stat) drops from \(before) to \(after) on upgrade"))
+                    }
+                }
+            }
+        }
+
+        if !bundle.weaponLadders.isEmpty && bundle.weaponDurabilityByTier.count < longestLadder {
+            issues.append(.init(severity: .error, file: file, path: "durabilityByTier", id: nil,
+                                rule: "ladder.durability_short",
+                                message: "durabilityByTier has \(bundle.weaponDurabilityByTier.count) entries but the longest ladder is \(longestLadder) tiers"))
+        }
+
+        return issues
+    }
+
     // MARK: - Localization
 
     private static func validateLocalization(_ bundle: ContentBundle, _ locales: LocaleIndex) -> [ContentIssue] {
         var issues: [ContentIssue] = []
 
+        let ladders = Dictionary(bundle.weaponLadders.map { ($0.itemId, $0) },
+                                 uniquingKeysWith: { _, last in last })
+
         for (index, item) in bundle.items.enumerated() {
-            for locale in locales.missing(item.nameKey) {
-                issues.append(.init(severity: .error, file: "\(locale).json", path: "items[\(index)]", id: item.id,
-                                    rule: "locale.key.missing",
-                                    message: "missing key \"\(item.nameKey)\""))
-            }
-            // `descriptionKey` is nil for items that deliberately have no lore
-            // blurb — demanding a key for those would be a false positive.
-            if let descriptionKey = item.descriptionKey {
-                for locale in locales.missing(descriptionKey) {
-                    issues.append(.init(severity: .warning, file: "\(locale).json", path: "items[\(index)]", id: item.id,
+            let path = "items[\(index)]"
+
+            func require(_ key: String, _ severity: ContentIssue.Severity) {
+                for locale in locales.missing(key) {
+                    issues.append(.init(severity: severity, file: "\(locale).json", path: path, id: item.id,
                                         rule: "locale.key.missing",
-                                        message: "missing key \"\(descriptionKey)\""))
+                                        message: "missing key \"\(key)\""))
                 }
+            }
+
+            // The base name key is resolved by call sites that don't go through
+            // `ItemDisplay` (vendor rows, recipe outputs), so it is required for
+            // every item, tiered or not.
+            require(item.nameKey, .error)
+
+            if let ladder = ladders[item.id] {
+                // `ItemDisplay.nameKey(for:tier:)` / `.descriptionKey(for:tier:)`
+                // append `.t<tier>` for anything with a ladder, so these are the
+                // keys players actually see. The base `.desc` is never resolved
+                // for such an item and must NOT be demanded — all three shipped
+                // weapons legitimately lack it.
+                for step in ladder.tiers {
+                    require("\(item.nameKey).t\(step.tier)", .error)
+                    if let descriptionKey = item.descriptionKey {
+                        require("\(descriptionKey).t\(step.tier)", .warning)
+                    }
+                }
+            } else if let descriptionKey = item.descriptionKey {
+                // nil for items that deliberately have no lore blurb —
+                // demanding a key for those would be a false positive.
+                require(descriptionKey, .warning)
             }
         }
 

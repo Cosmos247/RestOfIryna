@@ -16,7 +16,7 @@ RestOfIryna/
 │   │   ├── GameContent.swift       # Immutable validated snapshot; all lookup dicts built once; dedupes with uniquingKeysWith (uniqueKeysWithValues TRAPS)
 │   │   ├── GameData.swift          # nonisolated(unsafe) + NSLock holder; keeps catalog façades sync/non-throwing for ~315 call sites. NOT @TaskLocal (doesn't cross Task.detached — 6 detached tasks read catalogs)
 │   │   ├── LocaleIndex.swift       # en/uk flat maps; `has()` accepts uk `.m`/`.f` pairs (21 keys rely on this); emoji-before-%{} detector
-│   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO — hand-written init(from:) because Swift ignores property defaults for missing keys
+│   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO · WeaponUpgradeDTO — hand-written init(from:) because Swift ignores property defaults for missing keys
 │   │   └── Validation/             # ContentIssue/ContentReport + ContentValidator (identity · enums · references · localization · timeScale)
 │   ├── ROISim/                     # library → ROIContent
 │   │   ├── SplitMix64.swift        # Seedable RNG + OutcomeDigest — the migration equivalence proof needs reproducible rolls
@@ -24,7 +24,7 @@ RestOfIryna/
 │   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (Phase 8)
 │
 ├── Tests/
-│   └── ROIContentTests/            # 24 tests: DTO defaults/round-trip, validator rules, LocaleIndex gendered keys + emoji rule
+│   └── ROIContentTests/            # 37 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 ├── GDD.md                          # Game Design Document (full v1 vision)
 ├── README.md                       # Project overview, arch, setup, dev notes
 ├── CLAUDE.md                       # AI assistant instructions & project reference
@@ -46,7 +46,15 @@ RestOfIryna/
 ├── Public/
 │   └── favicon.ico                 # (if present)
 │
-├── content/                        # Reference documents (game content authoring)
+├── content/
+│   ├── data/                       # DATA-DRIVEN CONTENT (exported 2026-08-29, rebalance Phase 1)
+│   │   ├── manifest.json           # schemaVersion + contentVersion + timeScale (60.0 while the three testMode flags are on)
+│   │   ├── items.json              # 33 items — locale keys omitted where derivable (`item.<id>`); explicit null = no description key
+│   │   ├── enemies.json            # 9 enemies — depthRange exported verbatim, `0...0` sentinel included, nothing normalized
+│   │   ├── recipes.json            # 12 recipes + starterRecipeIds (sorted; the source is an unordered Set)
+│   │   └── weapon_upgrades.json    # 3 ladders × 5 tiers + durabilityByTier; explicit `tier` field so an off-by-one can't shift a ladder silently
+│   │                               # NOTHING READS THESE YET — the bot still runs off the Swift arrays until Phase 2.
+│                                   # Reference documents (game content authoring)
 │   └── bestiary.md                 # Per-enemy stats, loot, depth ranges, family overviews
 │
 ├── PostgreSQL/                     # Docker volume mount for PG data
@@ -200,5 +208,8 @@ RestOfIryna/
         ├── EphemeralChatState.swift # Actor — in-memory cache of transient state. `pendingPickers` (mode-picker → auto-delete on navigation). **2026-05-15** `pendingWarehouseTransfers`: PendingWarehouseTransfer (itemId / promptMessageId / warehouseMessageId / direction: .put|.take|nil) for warehouse `[✏️ N]` flow. `lastStatusBanners`: latest standalone status-banner message ID per user — drives `TGControllerBase.postStatusBanner` so each new banner deletes its predecessor. **2026-05-17 (Phase 6.1)** `pendingTraderTransfers`: PendingTraderTransfer (itemId / direction: .buy|.sell / promptMessageId / traderScreenMessageId / isPhoto) — set by the trader's `[✏️ N]` callback, consumed by `CapitalController.unmatched` on the next text update; same invalid-input-keeps-pending / validation-failure-clears semantics as the warehouse flow. **2026-05-28 (Phase 6.5)** `pendingMarketListings`: PendingMarketListing (itemId / stage: .quantity|.price / quantity / promptMessageId / marketScreenMessageId / isPhoto) for the two-stage sell flow. **2026-06-10 (Phase 6.5)** `pendingTradeInputs`: PendingTradeInput (kind: .silver|.itemQty(itemId) / promptMessageId / screenMessageId / isPhoto) for the trade silver/qty prompts. Both consumed by `CapitalController.unmatched`; their prompt messages are deleted on submit/cancel (2026-06-15 visibility policy). **2026-06-16 (Phase 7.1)** `pendingGuildInputs`: PendingGuildInput (kind: .foundName | .inviteName | .vaultDeposit(itemId) | .vaultWithdraw(itemId) | .treasuryDeposit | .treasuryWithdraw / promptMessageId) — consumed by `GuildController.unmatched`, dispatched by kind. The earlier `pendingTavernGames` entry (player-rolls-own-dice state machine) was added then removed when gambling pivoted to the bot-rolls-all model. (The `lastSceneryPhotos` slot added 2026-05-17 for scenery-photo replacement was removed 2026-05-20 when location photos became permanent chat history — see `PhotoCache.swift`.)
         ├── PhotoCache.swift         # **2026-05-17, reworked 2026-05-20** — actor cache `[assetPath: fileId]` + top-level `sendCachedPhoto(assetPath:caption:parseMode:replyMarkup:toUser:bot:)` helper. After the first `bot.sendPhoto` for a given asset, Telegram returns a `file_id` that the bot caches and reuses on all later sends — no repeat JPG/PNG uploads. **No deletion** — photos stay in chat history (players wanted a scrollable record of visits; file_id dedup means a long history of repeated backdrops costs no extra storage). Falls back to `bot.sendMessage` with the caption when the asset is missing entirely. **This is the default photo send-path for ALL player-visible art** — location backdrops AND registration/lore scenes (the latter converted from direct `bot.sendPhoto(.file)` on 2026-05-20). The 2026-05-20 rework renamed `sendScenicPhoto`→`sendCachedPhoto` and dropped the old scenery-slot auto-deletion.
         ├── GameDay.swift            # 2026-07-28: the shared daily-reset boundary — rolls at **12:00 Kyiv**, not midnight (an evening session plus next morning spans one in-game day). `GameDay.stamp(date)` → `yyyy-MM-dd` key of the game day an instant falls in (shifts back by `rolloverHour`, then formats in Europe/Kyiv). Used by `ArenaProfile` (daily fight budget) and `QuestProgress` (daily job). `secondsUntilNextRollover(from:)` (calendar search in the Kyiv zone, DST-safe) powers the journal's countdown.
-        └── DotEnv+Env.swift        # Env helper: get env vars with fallback to .env file
+        ├── DotEnv+Env.swift        # Env helper: get env vars with fallback to .env file
+        ├── ContentBootstrap.swift  # **2026-08-29 (rebalance Phase 0)** — parse → validate → build → install seam for `content/data`. NOT called yet; wires into `configure` in Phase 2, after `Dotenv.configure` and BEFORE the DB block (the dev-seed later in `configure` already calls `ItemCatalog.find`). Deliberately carries NO `import ROIContent` — it is the live proof that the `@_exported import` in configure.swift propagates.
+        ├── ContentMapping.swift    # **2026-08-29 (Phase 1)** — domain ⇄ DTO in BOTH directions for Item/Enemy/Recipe/WeaponLadder. `toDomain()` exists now because the round-trip proof is meaningless unless the DTO can rebuild the domain value; Phase 2 reuses it verbatim. Locale keys are omitted when they equal the derived form (`item.<id>`, `<nameKey>.desc`, the enemy's own id) — verified to hold for all 33 items and all 9 enemies.
+        └── ContentExporter.swift   # **2026-08-29 (Phase 1)** — `--export-content` migration tool; dumps the compiled Swift catalogs to JSON, normalizing NOTHING (the `0...0` depthRange sentinel and declaration order are preserved). Three verification layers, of which **Layer 0 (domain equivalence) is the load-bearing one**: the canonical round-trip stays byte-stable even when a field is never captured, so only comparing rebuilt-vs-original field fingerprints catches a dropped column. Proven by negative test — dropping `teachesRecipe` left Layer 1 green and Layer 0 red. DELETE at end of Phase 3 together with the Swift arrays.
 ```
