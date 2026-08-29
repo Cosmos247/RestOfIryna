@@ -121,151 +121,18 @@ public struct Recipe: Sendable {
 
 // MARK: - Catalog
 
+/// Façade over the live content snapshot. Recipes and the starter set now live
+/// in `content/data/recipes.json`.
 public enum RecipeCatalog {
-    public static let all: [Recipe] = [
-        // 🔥 Forge — smelting.
-        Recipe(
-            id: "recipe.iron_ingot",
-            category: .forge,
-            inputs: [RecipeIngredient("mat.iron", 10)],
-            output: RecipeOutput("mat.iron_ingot", 1)
-        ),
+    public static var all: [Recipe] { Catalogs.current.recipes }
 
-        // 🧵 Tannery — Forester's leather set. Costs scale by piece size and now
-        // require a little iron (smallest piece, the hood, stays hide-only). A
-        // full suit costs 40 hide + 8 iron and grants +7 DEF / +1 dodge. The
-        // iron makes the basic set a soft gate into the medium zone; the cost in
-        // trader-material value (~200–400🪙) keeps crafting clearly cheaper than
-        // buying ready-made from the Master (485🪙) while no longer near-free.
-        Recipe(
-            id: "recipe.forester_hood",
-            category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 5)],
-            output: RecipeOutput("gear.forester_hood", 1)
-        ),
-        Recipe(
-            id: "recipe.forester_jerkin",
-            category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 15), RecipeIngredient("mat.iron", 4)],
-            output: RecipeOutput("gear.forester_jerkin", 1)
-        ),
-        Recipe(
-            id: "recipe.forester_breeches",
-            category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 12), RecipeIngredient("mat.iron", 2)],
-            output: RecipeOutput("gear.forester_breeches", 1)
-        ),
-        Recipe(
-            id: "recipe.forester_boots",
-            category: .tannery,
-            inputs: [RecipeIngredient("mat.hide", 8), RecipeIngredient("mat.iron", 2)],
-            output: RecipeOutput("gear.forester_boots", 1)
-        ),
-
-        // 🍳 Kitchen — cooked food. Costs and effects scale with the
-        // ingredient count: 1-ingredient dishes restore vigor only, 3+
-        // ingredient dishes also restore some HP. Every kitchen recipe
-        // also burns 1× 🪵 pine_lumber for the cooking fire — adds
-        // authenticity (cooking on flame needs firewood) and prevents
-        // trivial farming of cooked food without lumberyard investment.
-        // Players unlock the four richer recipes through scrolls
-        // (artifact.recipe.<dish_id>); the two starter dishes
-        // (baked_potato, roasted_meat) are always-available via
-        // RecipeCatalog.starterRecipeIds so a fresh player has something
-        // to cook on day one.
-        Recipe(
-            id: "recipe.baked_potato",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.potato", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.baked_potato", 1)
-        ),
-        Recipe(
-            id: "recipe.roasted_meat",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.raw_meat", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.roasted_meat", 1)
-        ),
-        Recipe(
-            id: "recipe.foragers_omelette",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.duck_egg", 2),
-                RecipeIngredient("food.forest_nuts", 2),
-                RecipeIngredient("food.forest_berries", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.foragers_omelette", 1)
-        ),
-        Recipe(
-            id: "recipe.hunters_stew",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.raw_meat", 2),
-                RecipeIngredient("food.potato", 2),
-                RecipeIngredient("food.duck_egg", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.hunters_stew", 1)
-        ),
-        Recipe(
-            id: "recipe.meat_ragout",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.raw_meat", 2),
-                RecipeIngredient("food.potato", 2),
-                RecipeIngredient("food.forest_nuts", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.meat_ragout", 1)
-        ),
-        Recipe(
-            id: "recipe.berry_tart",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.forest_berries", 4),
-                RecipeIngredient("food.forest_nuts", 2),
-                RecipeIngredient("food.duck_egg", 1),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.berry_tart", 1)
-        ),
-        Recipe(
-            id: "recipe.governors_feast",
-            category: .kitchen,
-            inputs: [
-                RecipeIngredient("food.raw_meat", 3),
-                RecipeIngredient("food.potato", 3),
-                RecipeIngredient("food.duck_egg", 2),
-                RecipeIngredient("food.forest_berries", 2),
-                RecipeIngredient("food.forest_nuts", 2),
-                RecipeIngredient("mat.pine_lumber", 1)
-            ],
-            output: RecipeOutput("food.governors_feast", 1)
-        )
-    ]
-
-    /// Kitchen recipes that are **always available** — no scroll, no learning,
-    /// no `LearnedRecipe` row required. Every player can cook these from day
-    /// one. The kitchen UI unions this set with the player's learned recipes
-    /// when deciding which dishes to show.
-    public static let starterRecipeIds: Set<String> = [
-        "recipe.baked_potato",
-        "recipe.roasted_meat"
-    ]
-
-    private static let lookup: [String: Recipe] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
+    /// Recipes a fresh player can cook without finding a scroll first.
+    public static var starterRecipeIds: Set<String> { Catalogs.current.starterRecipeIds }
 
     public static func find(_ id: String) -> Recipe? {
-        return lookup[id]
+        return Catalogs.current.recipesById[id]
     }
 
-    /// Recipes belonging to a single category, in declaration order.
     public static func recipes(in category: RecipeCategory) -> [Recipe] {
         return all.filter { $0.category == category }
     }

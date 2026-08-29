@@ -55,8 +55,13 @@ public enum ContentBootstrap {
                 throw ContentError.validationFailed(errorCount: report.errors.count)
             }
 
+            // Build both snapshots before installing either: `DomainContent`
+            // can still throw on a value the domain enums cannot represent, and
+            // a half-installed state would be worse than no install at all.
             let content = GameContent(bundle)
+            let domain = try DomainContent(content)
             GameData.install(content)
+            Catalogs.install(domain)
             logger.info("Content loaded: \(bundle.summaryLine)")
             return content
         } catch {

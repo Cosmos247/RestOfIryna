@@ -141,6 +141,19 @@ public func configure(logger: Logger) async throws {
 
     try Dotenv.configure(atPath: "\(projectPath)/.env", overwrite: false)
 
+    // MARK: - Game Content (data-driven catalogs)
+    // Must run BEFORE anything that touches a catalog. Two call sites inside
+    // this very function do: the dev-inventory seed (`ItemCatalog.find`) and
+    // `GearConditionService.backfillWeaponDurability`. `ItemCatalog.all` is now
+    // a computed property over `Catalogs.current`, so a read before this line
+    // traps rather than returning stale data.
+    //
+    // Loading is after `Dotenv.configure` so `ROI_CONTENT_PATH` can come from
+    // `.env`, and before the database block so a malformed bundle stops the bot
+    // without opening a connection. A throw here propagates out of `configure`
+    // and `entrypoint.swift` rethrows it from `@main` — non-zero exit.
+    try ContentBootstrap.load(logger: logger)
+
     // MARK: - Database Setup (Fluent + PostgreSQL)
 
     let databases = Databases(threadPool: .singleton, on: MultiThreadedEventLoopGroup.singleton)

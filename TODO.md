@@ -517,7 +517,25 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       rules cannot be correct without it. `ItemDisplay` appends `.t<tier>` for laddered items, so
       the base `.desc` key is never resolved and all three shipped weapons legitimately lack it;
       without ladder data the validator emitted six false warnings.
-- [ ] Phase 2 — Flip Item/Enemy/Recipe catalogs to façades; delete the Swift arrays
+- [x] **Phase 2 — Catalog façades** *(2026-08-29)* — `ContentBootstrap.load` wired into
+      `configure` right after `Dotenv.configure` and BEFORE the database block (the dev-seed and
+      `backfillWeaponDurability` later in the same function both touch a catalog). `ItemCatalog` /
+      `EnemyCatalog` / `RecipeCatalog` are now façades over a `DomainContent` snapshot;
+      **397 lines of hardcoded arrays deleted, replaced by 40 lines of routing**. `all` changed
+      from `static let` to a computed property — verified no `static let` anywhere reads a catalog
+      at type-init.
+      **Verification layer 3 (`--content-digest`)**: field-complete record fingerprints + a seeded
+      `pickFor` replay (40 depths × 200 draws). Baseline from the Swift arrays and the result from
+      JSON are **identical: `545017168ce60953`**. Non-vacuous by two negative tests — reordering
+      two enemies in JSON moved both halves; dropping `?? all.first` from `pickFor` left `records`
+      byte-identical and moved `spawns` alone, which is exactly the class of bug record hashes
+      cannot see. Plus a live façade smoke test: every recipe input/output, loot id, scroll,
+      starter recipe and class starter weapon resolves through `find()`.
+      `pickFor` was unified to a single implementation (the argument-free overload delegates to the
+      seedable one) so the digest can never replay different logic than the game runs. The
+      `?? all.first` km≥36 fallback bug is preserved deliberately — fixing it belongs to Phase 5.
+      `ContentExporter` narrowed to Swift-backed catalogs only, since re-exporting a façade is
+      circular. 37 tests green.
 - [ ] Phase 3 — Remaining 11 catalogs (weapon_upgrades landed in Phase 1)
 - [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,

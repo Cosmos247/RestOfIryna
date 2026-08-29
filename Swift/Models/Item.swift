@@ -135,119 +135,22 @@ public struct Item: Sendable {
 
 // MARK: - Catalog
 
+/// Façade over the live content snapshot. The item roster now lives in
+/// `content/data/items.json`; this type only routes lookups.
+///
+/// `all` changed from `static let` to a computed property, so the first read
+/// happens after `ContentBootstrap.load` rather than at type-init. Reading any
+/// catalog before that traps with a message naming the ordering rule — see
+/// `Catalogs.current`.
 public enum ItemCatalog {
-    public static let all: [Item] = [
-        // Food — raw foragables + kill drops. Cooked variants will come from
-        // the Kitchen (Phase 5.3). Potato is the one strategic ingredient:
-        // inedible raw, only useful once cooking lands.
-        Item(id: "food.forest_berries", nameKey: "item.food.forest_berries", type: .food, tier: 1, stackable: true,
-             effects: [.restoreVigor(4)],  icon: "🫐", descriptionKey: "item.food.forest_berries.desc"),
-        Item(id: "food.forest_nuts",    nameKey: "item.food.forest_nuts",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreVigor(5)],  icon: "🌰", descriptionKey: "item.food.forest_nuts.desc"),
-        Item(id: "food.potato",         nameKey: "item.food.potato",         type: .food, tier: 1, stackable: true,
-             effects: [],                   icon: "🥔", descriptionKey: "item.food.potato.desc"),
-        Item(id: "food.duck_egg",       nameKey: "item.food.duck_egg",       type: .food, tier: 1, stackable: true,
-             effects: [.restoreVigor(7)],  icon: "🥚", descriptionKey: "item.food.duck_egg.desc"),
-        Item(id: "food.raw_meat",       nameKey: "item.food.raw_meat",       type: .food, tier: 2, stackable: true,
-             effects: [], icon: "🥩", descriptionKey: "item.food.raw_meat.desc"),
-
-        // Cooked food — Kitchen recipes (Phase 5.2.1). Tuning intent: cooked
-        // dishes give meaningfully more vigor than raw foragables (15-25)
-        // but stay below the small healing potion (+30 HP) on the HP side
-        // so food doesn't displace potions.
-        Item(id: "food.baked_potato",    nameKey: "item.food.baked_potato",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreVigor(9)],  icon: "🍠", descriptionKey: "item.food.baked_potato.desc"),
-        Item(id: "food.roasted_meat",    nameKey: "item.food.roasted_meat",    type: .food, tier: 1, stackable: true,
-             effects: [.restoreVigor(12)], icon: "🍗", descriptionKey: "item.food.roasted_meat.desc"),
-        Item(id: "food.foragers_omelette", nameKey: "item.food.foragers_omelette", type: .food, tier: 2, stackable: true,
-             effects: [.restoreVigor(16), .restoreHP(3)], icon: "🍳", descriptionKey: "item.food.foragers_omelette.desc"),
-        Item(id: "food.hunters_stew",    nameKey: "item.food.hunters_stew",    type: .food, tier: 2, stackable: true,
-             effects: [.restoreVigor(20), .restoreHP(5)], icon: "🍲", descriptionKey: "item.food.hunters_stew.desc"),
-        Item(id: "food.meat_ragout",     nameKey: "item.food.meat_ragout",     type: .food, tier: 2, stackable: true,
-             effects: [.restoreVigor(18), .restoreHP(4)], icon: "🥘", descriptionKey: "item.food.meat_ragout.desc"),
-        Item(id: "food.berry_tart",      nameKey: "item.food.berry_tart",      type: .food, tier: 2, stackable: true,
-             effects: [.restoreVigor(16), .restoreHP(6)], icon: "🥧", descriptionKey: "item.food.berry_tart.desc"),
-        Item(id: "food.governors_feast", nameKey: "item.food.governors_feast", type: .food, tier: 3, stackable: true,
-             effects: [.restoreVigor(35), .restoreHP(10)], icon: "🍽", descriptionKey: "item.food.governors_feast.desc"),
-
-        // Materials — estate-upgrade resources. Icons + descriptions show
-        // on the inventory info-button modal.
-        Item(id: "mat.pine_lumber",     nameKey: "item.mat.pine_lumber",    type: .material, tier: 1, stackable: true,  effects: [],
-             icon: "🪵", descriptionKey: "item.mat.pine_lumber.desc"),
-        Item(id: "mat.river_pebble",    nameKey: "item.mat.river_pebble",   type: .material, tier: 1, stackable: true,  effects: [],
-             icon: "🪨", descriptionKey: "item.mat.river_pebble.desc"),
-        Item(id: "mat.clay",            nameKey: "item.mat.clay",           type: .material, tier: 1, stackable: true,  effects: [],
-             icon: "🧱", descriptionKey: "item.mat.clay.desc"),
-        // `mat.iron` is the RAW resource — a lump pulled from the rock.
-        // Found rarely in exploration foraging and trickled out by the Mine
-        // plot. The crafted Iron Ingot (`mat.iron_ingot`, below) is the
-        // refined form used by Workshop recipes; the planned recipe is
-        // 10 lumps → 1 ingot.
-        Item(id: "mat.iron",            nameKey: "item.mat.iron",           type: .material, tier: 2, stackable: true,  effects: [],
-             icon: "🔩", descriptionKey: "item.mat.iron.desc"),
-        Item(id: "mat.iron_ingot",      nameKey: "item.mat.iron_ingot",     type: .material, tier: 3, stackable: true,  effects: [],
-             icon: "🔳", descriptionKey: "item.mat.iron_ingot.desc"),
-        Item(id: "mat.hide",            nameKey: "item.mat.hide",           type: .material, tier: 1, stackable: true,  effects: [],
-             icon: "🟫", descriptionKey: "item.mat.hide.desc"),
-
-        // Potions
-        Item(id: "potion.heal_small",   nameKey: "item.potion.heal_small",  type: .potion,   tier: 1, stackable: true,  effects: [.restoreHP(30)]),
-        Item(id: "potion.heal_medium",  nameKey: "item.potion.heal_medium", type: .potion,   tier: 2, stackable: true,  effects: [.restoreHP(60)]),
-
-        // Gear — starter loadouts. Slot + gearStats wired in Phase 2.3.1.
-        // Class starter weapons — granted by the King at registration. Stats are
-        // the T1 baseline from `WeaponUpgradeCatalog`; subsequent tiers are
-        // applied via `InventoryEntry.tier` and `EquipmentService.recomputeBonuses`,
-        // which prefer the catalog over `gearStats` when the item is upgradable.
-        // Display name / description keys resolve through `ItemDisplay.nameKey(for:tier:)`.
-        Item(id: "gear.rusty_sword",    nameKey: "item.gear.rusty_sword",   type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 3), icon: "⚔️", descriptionKey: "item.gear.rusty_sword.desc"),
-        Item(id: "gear.simple_bow",     nameKey: "item.gear.simple_bow",    type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 2, accuracy: 1), icon: "🏹", descriptionKey: "item.gear.simple_bow.desc"),
-        Item(id: "gear.wooden_staff",   nameKey: "item.gear.wooden_staff",  type: .gear,     tier: 1, stackable: false, effects: [],
-             slot: .mainHand, gearStats: GearStats(attack: 2, crit: 1), icon: "🪄", descriptionKey: "item.gear.wooden_staff.desc"),
-        // Forester's set — first craftable armor (Phase 5.2 Workshop / Tannery).
-        // `gear.forester_jerkin` succeeds the retired `gear.leather_vest`; old DB
-        // rows are remapped by `RenameLeatherVest`. Set total = 16 hide for full
-        // suit (+7 DEF / +1 dodge), tunable as new gear tiers come online.
-        Item(id: "gear.forester_hood",     nameKey: "item.gear.forester_hood",     type: .gear, tier: 1, stackable: false, effects: [],
-             slot: .helmet, gearStats: GearStats(defense: 1), icon: "🪖", descriptionKey: "item.gear.forester_hood.desc"),
-        Item(id: "gear.forester_jerkin",   nameKey: "item.gear.forester_jerkin",   type: .gear, tier: 1, stackable: false, effects: [],
-             slot: .chest,  gearStats: GearStats(defense: 3), icon: "🦺", descriptionKey: "item.gear.forester_jerkin.desc"),
-        Item(id: "gear.forester_breeches", nameKey: "item.gear.forester_breeches", type: .gear, tier: 1, stackable: false, effects: [],
-             slot: .legs,   gearStats: GearStats(defense: 2), icon: "👖", descriptionKey: "item.gear.forester_breeches.desc"),
-        Item(id: "gear.forester_boots",    nameKey: "item.gear.forester_boots",    type: .gear, tier: 1, stackable: false, effects: [],
-             slot: .boots,  gearStats: GearStats(defense: 1, dodge: 1), icon: "🥾", descriptionKey: "item.gear.forester_boots.desc"),
-
-        // Artifacts. Recipe scrolls (Phase 5.2.1): each carries a
-        // `teachesRecipe` link to the dish recipe it unlocks. Tapping
-        // "📖 Learn" in the inventory adds an entry to `learned_recipes`
-        // and removes the scroll. Non-stackable so each scroll is a
-        // distinct row — duplicates can be traded once the market opens.
-        Item(id: "artifact.shrine_coin", nameKey: "item.artifact.shrine_coin", type: .artifact, tier: 3, stackable: true, effects: []),
-        // Baked Potato + Roasted Meat have no scroll — they're starter dishes
-        // every player can cook from day one (gated as always-available via
-        // `RecipeCatalog.starterRecipeIds`, no LearnedRecipe row required).
-        Item(id: "artifact.recipe.foragers_omelette", nameKey: "item.artifact.recipe.foragers_omelette", type: .artifact, tier: 2, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.foragers_omelette.desc", teachesRecipe: "recipe.foragers_omelette"),
-        Item(id: "artifact.recipe.hunters_stew", nameKey: "item.artifact.recipe.hunters_stew", type: .artifact, tier: 2, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.hunters_stew.desc", teachesRecipe: "recipe.hunters_stew"),
-        Item(id: "artifact.recipe.meat_ragout", nameKey: "item.artifact.recipe.meat_ragout", type: .artifact, tier: 2, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.meat_ragout.desc", teachesRecipe: "recipe.meat_ragout"),
-        Item(id: "artifact.recipe.berry_tart", nameKey: "item.artifact.recipe.berry_tart", type: .artifact, tier: 2, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.berry_tart.desc", teachesRecipe: "recipe.berry_tart"),
-        Item(id: "artifact.recipe.governors_feast", nameKey: "item.artifact.recipe.governors_feast", type: .artifact, tier: 3, stackable: false,
-             effects: [], icon: "📜", descriptionKey: "item.artifact.recipe.governors_feast.desc", teachesRecipe: "recipe.governors_feast"),
-    ]
-
-    private static let lookup: [String: Item] = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
+    public static var all: [Item] { Catalogs.current.items }
 
     public static func find(_ id: String) -> Item? {
-        return lookup[id]
+        return Catalogs.current.itemsById[id]
     }
 
     public static func items(of type: ItemType) -> [Item] {
-        return all.filter { $0.type == type }
+        return Catalogs.current.itemsByType[type] ?? []
     }
 }
 

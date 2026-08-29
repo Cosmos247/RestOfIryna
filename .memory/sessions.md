@@ -2306,8 +2306,43 @@ code involved): all 11 item fields × 33 items and all 10 enemy fields × 9 enem
 
 37 tests green. Still inert: the bot never reads `content/data/`.
 
+### Phase 2 built (same session) — the catalogs now read JSON
+`ContentBootstrap.load` wired into `configure` after `Dotenv.configure`, before the DB block.
+`DomainContent` + `Catalogs` holder added in the main target: the domain types still live in
+`Swift/Models/`, so `ROIContent` can only hold DTOs, and mapping DTO→domain on every `find()`
+would allocate inside combat loops. `ContentBootstrap.load` installs BOTH snapshots from one
+bundle so they cannot drift. Item/Enemy/Recipe façades replace **397 lines of hardcoded arrays
+with 40 lines of routing**.
+
+**Verification layer 3 turned out NOT to need full RNG threading.** The migration changes where
+catalog data comes from, not how rolls resolve — so the only place needing determinism is where
+catalog data feeds a random choice: `EnemyCatalog.pickFor`. Added a seedable overload and made
+the argument-free one delegate to it, so there is a single selection implementation and the
+digest can never replay different logic than the game runs. Full threading through
+`ExplorationService`/`CombatService` stays a Phase 8 prerequisite for the simulator.
+
+`--content-digest` = record fingerprints (catalog order) + seeded `pickFor` replay (40 depths ×
+200 draws, fixed seed). Swift-array baseline and JSON result are **identical:
+`545017168ce60953`**.
+
+Proven non-vacuous by two negative tests:
+- swapping two enemies in `enemies.json` moved BOTH halves;
+- dropping `?? all.first` from `pickFor` left `records` byte-identical (`732746c647e9e55c`) and
+  moved `spawns` alone — a selection-logic change that record hashes structurally cannot see.
+
+Caught while writing the digest: my first seedable `pickFor` omitted the `?? all.first` fallback,
+so it measured different logic than the game runs (visible as 1000 empty draws at km 36–40). The
+fallback is a real bug — past km 35 every encounter is a wild boar — but it is preserved
+deliberately; fixing it belongs to Phase 5, not to a migration that must be neutral.
+
+Also added a live façade smoke test (every recipe input/output, loot id, scroll, starter recipe
+and class starter weapon resolved through `find()`), and narrowed `ContentExporter` to
+Swift-backed catalogs only — re-exporting a façade would write back what was just loaded and
+prove nothing.
+
+37 tests green. Verified no `static let` anywhere reads a catalog at type-init, which would now
+trap since `all` is a computed property.
+
 ### Next
-Phase 2 — flip Item/Enemy/Recipe catalogs to façades over `GameData.current` and delete the
-Swift arrays. Needs verification layer 3 first (seeded simulation diff), which requires threading
-`RandomNumberGenerator` through `ExplorationService`/`CombatService`. User asked to confirm the
-start of each phase before it begins.
+Phase 3 — the remaining 11 catalogs, one per commit. User asked to confirm the start of each
+phase before it begins.

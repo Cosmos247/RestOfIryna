@@ -81,163 +81,36 @@ public struct Enemy: Sendable {
 
 // MARK: - Catalog
 
+/// Façade over the live content snapshot. The bestiary now lives in
+/// `content/data/enemies.json`.
 public enum EnemyCatalog {
-    // Tiers map to 5-km depth bands:
-    //   T1 = km 1–5  · T2 = km 6–10 · T3 = km 11–15 · T4 = km 16–20 ·
-    //   T5 = km 21–30 · T6 = km 26–35
-    // Each animal spans 1–2 consecutive bands via `depthRange`. Three deep
-    // overlaps stack: rabid_wolf (16–25) ↔ wild_bear (21–30) ↔ rabid_bear
-    // (25–35), giving each transition zone a mix of two species.
-    //
-    // Two families:
-    //   - Wild (🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
-    //   - Rabid (🐈‍⬛ 🐺 🐻‍❄️): dangerous; meat is poisoned by disease, so
-    //     loot tables only include hide.
-    //
-    // Stats scale weakest → strongest in this order:
-    //   wild_boar → wild_moose → wild_buffalo → rabid_lynx → rabid_wolf →
-    //   wild_bear → rabid_bear.
-    public static let all: [Enemy] = [
-        // Wild Boar — first big game (T1–T2). Reliable meat + hide source.
-        Enemy(
-            id: "enemy.wild_boar",
-            nameKey: "enemy.wild_boar",
-            tier: 1, hp: 18, attack: 14, defense: 1,
-            depthRange: 1...10,
-            lootTable: [
-                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.7, quantity: 1),
-                EnemyLootDrop(itemId: "mat.hide",      chance: 0.8, quantity: 1)
-            ],
-            icon: "🐗",
-            xpReward: 5
-        ),
-        // Wild Moose — tier 2–3 forest mid-game.
-        Enemy(
-            id: "enemy.wild_moose",
-            nameKey: "enemy.wild_moose",
-            tier: 2, hp: 32, attack: 18, defense: 2,
-            depthRange: 6...15,
-            lootTable: [
-                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
-                EnemyLootDrop(itemId: "mat.hide",      chance: 0.7, quantity: 1)
-            ],
-            icon: "🫎",
-            xpReward: 12
-        ),
-        // Wild Buffalo — tier 3–4 heavy game, high defense.
-        Enemy(
-            id: "enemy.wild_buffalo",
-            nameKey: "enemy.wild_buffalo",
-            tier: 3, hp: 55, attack: 23, defense: 4,
-            depthRange: 11...20,
-            lootTable: [
-                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.8, quantity: 2),
-                EnemyLootDrop(itemId: "mat.hide",      chance: 0.9, quantity: 1)
-            ],
-            icon: "🦬",
-            xpReward: 25
-        ),
-        // Rabid Lynx — tier 3–4 fast predator. Meat inedible (rabies).
-        Enemy(
-            id: "enemy.rabid_lynx",
-            nameKey: "enemy.rabid_lynx",
-            tier: 3, hp: 45, attack: 25, defense: 2,
-            depthRange: 11...20,
-            lootTable: [
-                EnemyLootDrop(itemId: "mat.hide", chance: 0.7, quantity: 1)
-            ],
-            icon: "🐈‍⬛",
-            xpReward: 25
-        ),
-        // Rabid Wolf — tier 4 top hostile. Meat inedible (rabies).
-        // Range extended to km 16–25 so the rabid family bleeds into the T5
-        // band, overlapping with wild_bear at 21–25.
-        Enemy(
-            id: "enemy.rabid_wolf",
-            nameKey: "enemy.rabid_wolf",
-            tier: 4, hp: 70, attack: 28, defense: 4,
-            depthRange: 16...25,
-            lootTable: [
-                EnemyLootDrop(itemId: "mat.hide", chance: 0.8, quantity: 1)
-            ],
-            icon: "🐺",
-            xpReward: 50
-        ),
-        // Wild Bear — tier 5 deep-wilderness mob. Master of the forest:
-        // huge HP pool, hard-hitting, but a wild animal — drops meat + hide.
-        // Range km 21–30; the first 5 km (21–25) overlap with rabid_wolf,
-        // the deeper 5 km (26–30) overlap with rabid_bear. The dedicated
-        // boss for the deep wilderness is reserved for Phase 3.5 once the
-        // boss-fight mechanics are designed.
-        Enemy(
-            id: "enemy.wild_bear",
-            nameKey: "enemy.wild_bear",
-            tier: 5, hp: 95, attack: 32, defense: 5,
-            depthRange: 21...30,
-            lootTable: [
-                EnemyLootDrop(itemId: "food.raw_meat", chance: 0.85, quantity: 2),
-                EnemyLootDrop(itemId: "mat.hide",      chance: 0.9,  quantity: 1)
-            ],
-            icon: "🐻",
-            xpReward: 100
-        ),
-        // Training Dummy — Phase 5.1 estate-side training plot. ATK = 0 so
-        // it never deals damage in return; DEF = 1 so the player sees a
-        // non-trivial damage number (vs. exactly the raw ATK). HP is set
-        // generously and CombatController auto-revives the dummy when it
-        // hits 0 — training is meant to be open-ended, not a fight to win.
-        // No depthRange (this enemy is never rolled by exploration), no loot.
-        Enemy(
-            id: "enemy.training_dummy",
-            nameKey: "enemy.training_dummy",
-            tier: 0, hp: 200, attack: 0, defense: 1,
-            depthRange: 0...0,
-            lootTable: [],
-            icon: "🥋",
-            xpReward: 0
-        ),
-        // Rabid Dog — one-off registration tutorial mob. Tuned to wild_boar
-        // level (the weakest exploration enemy) so a fresh L1 player with only
-        // a starter weapon wins comfortably while learning the combat UI. Never
-        // rolled by exploration (depthRange 0...0, like the training dummy),
-        // no loot, no XP — `CombatController.finishVictory`'s registration
-        // branch grants neither, so this fight stays purely instructional.
-        Enemy(
-            id: "enemy.rabid_dog",
-            nameKey: "enemy.rabid_dog",
-            tier: 1, hp: 18, attack: 14, defense: 1,
-            depthRange: 0...0,
-            lootTable: [],
-            icon: "🐕",
-            xpReward: 0
-        ),
-        // Rabid Bear — tier 6 deepest hostile. Beastfever has bleached the
-        // fur and stripped the discipline; what's left is a hard-hitting
-        // monster that follows the rabid family pattern (high ATK, lower
-        // DEF, hide-only loot since the meat is plague-tainted). Range
-        // km 25–35: overlaps with wild_bear at 25–30 and reigns alone at
-        // 31–35.
-        Enemy(
-            id: "enemy.rabid_bear",
-            nameKey: "enemy.rabid_bear",
-            tier: 6, hp: 120, attack: 38, defense: 4,
-            depthRange: 25...35,
-            lootTable: [
-                EnemyLootDrop(itemId: "mat.hide", chance: 0.9, quantity: 2)
-            ],
-            icon: "🐻‍❄️",
-            xpReward: 175
-        ),
-    ]
+    public static var all: [Enemy] { Catalogs.current.enemies }
 
+    /// Roll an enemy for the given depth. Delegates to the seedable overload so
+    /// there is exactly one selection implementation — a second copy would be
+    /// free to drift from the one the migration digest and the simulator
+    /// replay.
     public static func pickFor(kmDepth: Int) -> Enemy? {
-        let eligible = all.filter { $0.depthRange.contains(max(1, kmDepth)) }
-        return eligible.randomElement() ?? all.first
+        var generator = SystemRandomNumberGenerator()
+        return pickFor(kmDepth: kmDepth, using: &generator)
     }
 
-    /// Look up an enemy by id. Used by CombatController to rehydrate the
-    /// fight from the persisted `combat_enemy_id` between taps.
+    /// Seedable variant used by the migration digest and, later, the balance
+    /// simulator. Selection is `filter().randomElement(using:)`, so the
+    /// DECLARATION ORDER of `all` decides which enemy a given roll returns — a
+    /// reordered roster changes every encounter in the game even when every
+    /// record stays byte-identical. That is why the loader never sorts.
+    ///
+    /// The `?? all.first` fallback is preserved deliberately: past km 35 no
+    /// `depthRange` matches and every encounter becomes a wild boar. A real
+    /// bug, listed for the Phase 5 combat rework — changing it here would make
+    /// the migration non-neutral.
+    public static func pickFor<G: RandomNumberGenerator>(kmDepth: Int, using generator: inout G) -> Enemy? {
+        let eligible = all.filter { $0.depthRange.contains(max(1, kmDepth)) }
+        return eligible.randomElement(using: &generator) ?? all.first
+    }
+
     public static func find(_ id: String) -> Enemy? {
-        return all.first(where: { $0.id == id })
+        return Catalogs.current.enemiesById[id]
     }
 }

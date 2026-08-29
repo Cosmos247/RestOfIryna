@@ -171,8 +171,12 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   manifest/items/enemies/recipes/weapon_upgrades JSON (33/9/12/3). Round-trip and count/order
   checks pass; two exports byte-identical; `roi-content validate` = 0 errors, 1 truthful warning.
   Still inert — the bot runs off the Swift arrays until Phase 2.
-- Phases 2–11 pending: catalog façades, remaining catalogs, tuning tables, new combat model,
-  rarity+sets, `/reload`, simulator calibration, content specs, authoring, wipe.
+- **Phase 2 DONE** — Item/Enemy/Recipe are façades over `Catalogs.current`; the Swift arrays are
+  gone (−397 lines). `ContentBootstrap.load` runs in `configure` before the DB block. Migration
+  digest identical before/after (`545017168ce60953`), verified non-vacuous by two negative tests.
+  **The bot now runs off `content/data/` for items, enemies and recipes.**
+- Phases 3–11 pending: remaining 11 catalogs, tuning tables, new combat model, rarity+sets,
+  `/reload`, simulator calibration, content specs, authoring, wipe.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve
 capped at 70% · gear power ceiling 1.75× common · sinks ≈85% of faucets.
