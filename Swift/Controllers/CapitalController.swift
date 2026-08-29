@@ -2838,6 +2838,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         case .win:
             context.session.silver += wager * 2
             try await context.session.saveAndCache(in: context.db)
+            // Phase 9.2 — the tavernkeeper's "Щаслива рука" job counts outright
+            // wins only; a tie pays the stake back but doesn't tick.
+            try? await QuestService.record(.gambleWin, for: context.session, on: context.db)
             symbol = "✅"
             outcomeText = lingo.localize("capital.tavern.gamble.outcome_win", locale: locale, interpolations: ["wager": "+🪙 \(wager)"])
         case .lose:

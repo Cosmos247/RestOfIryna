@@ -120,6 +120,12 @@ public enum CraftingService {
         // 4. Output to inventory.
         try await InventoryEntry.add(recipe.output.itemId, quantity: recipe.output.quantity, to: user, on: db)
 
+        // Phase 9.2 — the Master's "Виплавка" job counts forge output. Only the
+        // ingot is tracked in v1; best-effort so a quest hiccup can't eat a craft.
+        if recipe.output.itemId == "mat.iron_ingot" {
+            try? await QuestService.record(.ironIngotForged, amount: recipe.output.quantity, for: user, on: db)
+        }
+
         return .success(outputItemId: recipe.output.itemId, outputQuantity: recipe.output.quantity)
     }
 }

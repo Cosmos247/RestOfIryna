@@ -508,6 +508,14 @@ public enum PassiveExpeditionService {
                      + outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
         try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)
 
+        // Phase 9.2 — autobattle kills count toward the Master's beast-slaying
+        // job, banked in one go for the whole run (same as the XP grant above).
+        // Kills made before a death still count; the run is over either way.
+        let killsThisRun = outcomeCounts["encounter_won", default: 0]
+        if killsThisRun > 0 {
+            try? await QuestService.record(.beastKill, amount: killsThisRun, for: user, on: db)
+        }
+
         let report = PassiveReport(
             stepsTaken: state.stepsDeep,
             finalDepth: state.stepsDeep,

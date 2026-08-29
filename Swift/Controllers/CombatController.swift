@@ -966,6 +966,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // Phase 6.5: equipped armor takes a small durability hit on a win.
         try await GearConditionService.wear(.victory, for: context.session, on: context.db)
 
+        // Phase 9.2: feeds the Master's "Випробування клинка" job. Training
+        // dummies never reach here (finishVictory bails at the top), so every
+        // tick is a real beast. Best-effort — a quest write must not break the
+        // victory flow.
+        try? await QuestService.record(.beastKill, for: context.session, on: context.db)
+
         // Phase 5.3a: grant XP from the kill, append level-up + estate-up
         // banners to the victory message. Training dummies have xpReward = 0
         // so they're naturally a no-op (and never reach this branch anyway —

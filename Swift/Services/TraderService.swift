@@ -60,6 +60,9 @@ public enum TraderService {
         let totalSilver = quantity * listing.sellPacketSilver
         user.silver += totalSilver
         try await user.saveAndCache(in: db)
+        // Phase 9.2 — feeds the trader's "Оптовий день" job (sell 300🪙 worth in
+        // a day). Best-effort: a quest hiccup must never fail a sale.
+        try? await QuestService.record(.traderSilver, amount: totalSilver, for: user, on: db)
         return .success(itemId: itemId, soldQty: quantity, silverGained: totalSilver)
     }
 
