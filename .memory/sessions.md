@@ -3,7 +3,7 @@
 ## Session — 2026-08-23 (Phase 9.2 — daily NPC quests, v1)
 
 ### Goal
-Land the first quest system. Design was settled in a quiz up front: **v1 scope = the gathering core** (Крамар / Майстер / Шинкар — all single-player, works with content that already exists), **cadence = dailies only**, **mechanic = auto-assignment** ("нехай система обирає з тієї бази, що ти зробив, і ставить один рандомний квест для НПС на день"), **rewards = silver everywhere + per-NPC accent** (Крамар → срібло, Майстер → Досвід, Шинкар → Снага). Arena / Ворожка / Гільдія quest-givers, chains and weeklies were explicitly deferred.
+Land the first quest system. Design was settled in a quiz up front: **v1 scope = the gathering core** (Trader / Master / Innkeeper — all single-player, works with content that already exists), **cadence = dailies only**, **mechanic = auto-assignment** (user: "let the system pick from the pool you built and give each NPC one random quest per day"), **rewards = silver everywhere + per-NPC accent** (Trader → silver, Master → XP, Innkeeper → Vigor). Arena / Ворожка / Гільдія quest-givers, chains and weeklies were explicitly deferred.
 
 ### Key design call — assignment is derived, not stored
 `QuestCatalog.daily(npc:userId:stamp:)` = FNV-1a over `"userId:npc:GameDay.stamp()"` mod pool size. No RNG, no assignment row, no scheduler: the same player on the same game day always resolves to the same job, and every player gets an independent roll. Hand-rolled FNV **on purpose** — Swift's `Hasher` is seeded per process, so a bot restart mid-day would have re-rolled everyone's job. Verified over 200 fake players × 30 days: 5999/5998/6003 split across the three slots, and 200/200 players saw all three jobs inside a month.
@@ -21,8 +21,36 @@ User asked for a journal screen and placed it **in the profile**, under the 1/2/
 ### Balance note flagged to the user
 `master.smelt` asks for **1** ingot, not the 3 sketched in the design pass — one ingot is already 10 raw iron (≈100🪙 of material, a full expedition). Three would be a week-long job wearing a daily's clothes. Rewards sized at ~1.5–2× the trader value of the same materials.
 
-### Not verified at runtime
-Build is clean and the hash distribution was checked with a standalone script, but nothing was exercised against a live bot/DB — the migration applies on next boot. First real playtest still owes: turn-in on an exactly-full bag, the 12:00 rollover, and the counter hooks firing from a passive expedition.
+### Verified, and what is still owed
+The migration landed: the database now reports 45/45 migrations applied and a live
+`quest_progress` table (the same boot also caught the DB up on Market, Guilds, gear
+condition and Arena, which had never run against it). The bot boots clean and polls
+Telegram. The hash distribution was checked with a standalone script — 200 players ×
+30 days spread 5999/5998/6003 across the three pool slots, and all 200 saw every job
+within a month. Still owed by a real playtest: turn-in against an exactly-full bag,
+the 12:00 rollover in the wild, and the counter hooks firing from a passive expedition.
+
+### Operational lessons from getting it running (worth keeping)
+- **The database is not the Docker container on the Pi.** That container belongs to a
+  different project; `ArtaniaDB` lives in a *native* PostgreSQL 15 cluster bound to the
+  Pi's loopback, so it needs an SSH tunnel and is invisible to a port scan. Connecting
+  to the wrong Postgres fails with `role "<user>" does not exist`, not a connection
+  error — that message means "right host, wrong server".
+- **`HTTPClientError.deadlineExceeded` at boot was not a network fault.** A previous run
+  stopped at a debugger breakpoint was still alive and still holding the token's
+  `getUpdates`; the new instance starved until the 30 s client deadline tripped. The
+  stopped process survives `kill -9` while the debugger traces it — kill `debugserver`
+  first. Check `pgrep -fl RestOfIryna` before starting a run.
+- Both failures surface as a bare `Fatal error: Error raised at top level`, which shows
+  only assembly in the debugger. Wrapping the migration step and `bot.start()` so they
+  report the host/port or the likely duplicate instance is still an open improvement.
+
+### Commit hygiene
+The tree held two unrelated phases at once (Arena from July, quests from today), so it
+was split into six commits — GameDay, Arena, quest engine, quest hooks, quest boards,
+journal — each built before it was committed. The entangled files (both locale JSONs,
+`configure.swift`, `file-map.md`) were split by reconstructing intermediate file states
+against a fixed base commit rather than by hand-editing hunks.
 
 ## Session — 2026-05-27 (Combat keyboard: inline → reply-keyboard)
 

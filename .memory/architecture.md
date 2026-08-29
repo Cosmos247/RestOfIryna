@@ -53,6 +53,7 @@ Why: actor reentrancy means concurrent updates from the same Telegram user could
 - `store: RouterStore` — global actor, holds all registered routers
 - `sessionCache: SessionCache` — global actor, in-memory user cache (5min TTL)
 - `allowedUsers: [Int64]` — hardcoded authorized Telegram IDs
+- In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner)
 
 ## Service Layer
 
@@ -62,7 +63,9 @@ Why: keeps game logic testable, swap-able, and cheap to compose. Same function c
 
 - `VigorService` (Phase 2.2) — drain per action, consume food/potion, compute starvation penalty on effective stats, apply per-room HP loss when starving.
 - `CombatService` (Phase 4.1) — shared damage primitives. `applyAttack` returns hit/miss/crit; `chipDamage` returns the parry-counter chip for Defend. Both `ExplorationService.resolveAutobattle` (passive) and `CombatController` (active) call into the same primitives so a fight resolves with the same odds in either mode. Single source of truth for combat math; tuning constants (`baseHitChance`, `critMultiplier`, `defendChipFraction`, `varianceRange`) are exported so both consumers stay in sync. Active mode hands off via `StepOutcome.encounterStarted` — `ExplorationService.rollStep(mode:)` short-circuits the autobattle, the ExplorationController stamps `combat_enemy_id` / `combat_enemy_hp` on the expedition row, and CombatController takes over.
-- Future: `CraftingService`, `EstateService`.
+- `QuestService` (Phase 9.2) — the daily-quest loop. Reads a board in one call (`status`), ticks counters from gameplay hook sites (`record`), and pays out (`finish` → private `payOut`). Which job a player has today is *derived*, never stored: `QuestCatalog.daily` hashes `userId:npc:GameDay.stamp()` with FNV-1a and indexes the NPC's pool, so the assignment survives a restart with zero DB writes. Hook sites call `record` best-effort (`try?`) — a quest write must never break the fight, craft or sale it rides on.
+- `ArenaService` / `ArenaStore` (Phase 8.3) — the split is deliberate: `ArenaStore` is an actor holding everything live (lobby presence, pending challenges, in-flight duels) and rolls the combat dice *inside* the actor so roll and HP mutation can't interleave; `ArenaService` owns the DB side (validation, Honor ELO, stake settlement) and the background sweeper. Nothing about a live duel is persisted — a restart cancels it.
+- Both `CraftingService` and `EstateService`-shaped work now exist (`CraftingService`, `PlotService`, `EstateUpgradeService`).
 
 ## Concurrency Model
 

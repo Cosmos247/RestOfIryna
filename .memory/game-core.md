@@ -49,6 +49,15 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 
 ### Capital
 - Main Square, Market (NPC + player bazaar), Quest Board, Stables, Guildhall, Arena, Chapel, Bank
+- Built out so far: Trader, Tavern, Fortune Teller, Master, Market + Trade, Guildhall, Arena. Chapel / Stables / Bank remain GDD-only.
+
+### Daily quests *(design locked 2026-08-23, v1 shipped as Phase 9.2)*
+- **Scope of v1: the gathering core** — Trader, Master and Innkeeper only. All three are single-player and lean on content that already exists, so the loop works the day it ships. Arena / Fortune Teller / Guild quest-givers, story chains and weeklies were explicitly deferred.
+- **Cadence: dailies only.** One job per NPC per game day, on the `GameDay` boundary (12:00 Kyiv).
+- **No picking, no queue of active jobs** — the system assigns the day's job. The player never browses a list; they walk up to the NPC and either can finish it or can't. Assignment is derived from a hash of player + NPC + day, so every player gets their own roll and nothing has to be stored or scheduled.
+- **Rewards: silver on every job, plus a per-NPC accent** — Trader pays more silver, Master adds XP, the Innkeeper adds Vigor. Sizing intent is ~1.5–2× what selling the same materials to the Trader would earn: worth a detour, not a replacement for play.
+- **Two objective shapes.** "Hand over N items" is checked live against the bag and consumes the items on turn-in; "do X N times" is counted from gameplay events (beast kills, forge output, trader sales, tavern wins).
+- The journal on the profile screen is a *status* screen only — it shows progress and the countdown to the next rollover, but rewards are always collected from the NPC who gave the job, so the trip to the capital keeps its weight.
 
 ### Pets & Taming
 - 2-5% chance on encounter -> Attempt to Cure button

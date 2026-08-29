@@ -188,7 +188,7 @@ namespace "намісник" + verbs/adjectives: `registration.welcome`,
 `exploration.death`, `exploration.duration.prompt`,
 `exploration.passive.started`, `exploration.passive.closed_home`,
 `exploration.passive.report.death`, `combat.ended`,
-`combat.special_def.archer.activate`, `bot.restarted`.
+`combat.special_def.archer.activate`, `bot.restarted`, `journal.title`.
 
 Special-cased call sites: `capital.location.tavern.body` is routed gendered only
 for the tavern in `CapitalController.renderLocation` (other locations stay
@@ -207,9 +207,25 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
-## Current Keys (~673 en / ~693 uk — uk has +20 from the gendered `.m`/`.f` pairs)
+## Current Keys (956 en / 977 uk as of 2026-08-23 — uk has +21 from the gendered `.m`/`.f` pairs)
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
+
+Arena (Phase 8.3): 53 keys under `arena.*` — `arena.button.*` (reply-keyboard
+labels for hub and live fight), `arena.hub.*`, `arena.log.*` (per-round lines),
+`arena.result.*`, `arena.honor.*`, `arena.leaderboard.*`, `arena.league.*`. All
+neutral; the fight labels are matched by text, so they must stay static.
+
+Quests + journal (Phase 9.2): 33 keys under `quest.*` and 10/11 under `journal.*`.
+Quest keys split into UI (`quest.button.*`, `quest.progress`, `quest.reward*`,
+`quest.done_today`, `quest.banner.paid`, `quest.not_enough`, `quest.not_complete`)
+and content — `quest.<npc>.board_title` plus `quest.<id>.title` / `.desc` for the
+nine jobs, all built dynamically from `QuestNPC.boardTitleKey` and
+`QuestDef.titleKey` / `.descKey`, so grepping for the literal key finds nothing.
+`quest.reward.xp` / `quest.reward.vigor` carry the unit words (uk: `Досвіду`,
+`Снаги`) so the glossary stays in one place. Journal keys are neutral except
+`journal.title`, which names the player (намісника/-иці) and therefore has
+`.m`/`.f`.
 
 ### Full historical list (may lag — grep the JSON for the source of truth)
 - UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory

@@ -104,6 +104,18 @@ lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 
 **Gendered text (uk feminitives):** Ukrainian strings that address the player with a gendered word (past-tense `-в/-ла`, adjective, or намісник/-иця) use the gender-aware overload — `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`. It looks up `key.m`/`key.f` for `uk` and the plain `key` for English (so **never duplicate English** — only `uk.json` gets `.m`/`.f`). Player gender (`User.gender`, "m"/"f", nil=male) is chosen at registration step 1. When adding new player-facing uk copy with a gendered word, either add `.m`/`.f` + route through this overload, or phrase it neutrally (impersonal/plural/passive). Full key list + rationale in `.memory/localization.md`.
 
+### Daily resets (`Swift/Helpers/GameDay.swift`)
+
+**RULE — every "once per day" system keys off `GameDay.stamp(...)`, never off a
+raw calendar date.** The in-game day rolls at **12:00 Kyiv, not midnight**, so an
+evening session plus the following morning stay inside one day instead of being
+cut in half. `stamp(date)` returns the `yyyy-MM-dd` key of the day an instant
+falls in; store that key alongside the counter and compare keys to detect a
+rollover (see `ArenaProfile.fightsSpentToday` and `QuestProgress.dayStamp`).
+`secondsUntilNextRollover(from:)` gives the countdown for screens that show
+"new jobs in Xh Ym". Keeping every daily system on this one helper is what stops
+the Arena budget and the quest of the day from drifting apart.
+
 ### Player-visible photos (capital / estate / location backdrops / registration / lore)
 **RULE — every player-visible image goes through `sendCachedPhoto(...)` (`Swift/Helpers/PhotoCache.swift`), no exceptions.** This is the ONLY sanctioned way to send a photo: it captures Telegram's `file_id` on first send and reuses it forever, so any newly-added art is automatically file_id-cached the first time it's shown — there is nothing extra to register. Never call `bot.sendPhoto` directly for player art, and note the `TGBot.sendMessage(session:text:…)` convenience has **no `photo:` parameter** on purpose (that bypass was removed) — if you need an image, you need `sendCachedPhoto`. The helper does one thing:
 - **file_id cache** — first send uploads the JPG/PNG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload). file_id is a global Telegram reference, so one cached entry serves every user; the cache is in-memory and refills after a restart. (After swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped and the new bytes re-upload.)

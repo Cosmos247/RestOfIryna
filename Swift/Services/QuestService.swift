@@ -34,8 +34,6 @@ public enum QuestService {
         public let target: Int
         public let claimed: Bool
 
-        /// Objective met (or already paid out).
-        public var isComplete: Bool { claimed || done >= target }
         /// Show the action button — the job is finishable right now.
         public var isActionable: Bool { !claimed && done >= target }
     }

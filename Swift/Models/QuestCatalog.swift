@@ -5,7 +5,7 @@
 //  Created by Dmytro Ihnatyuhin on 23.08.2026.
 //
 //  Phase 9.2 — daily NPC quests. Three capital NPCs (Trader / Master /
-//  Tavernkeeper) each hold a small pool of daily jobs. Exactly one job per NPC
+//  Innkeeper) each hold a small pool of daily jobs. Exactly one job per NPC
 //  is live per game day; the player never picks from a list — the system
 //  assigns it (see `QuestCatalog.daily`).
 //
@@ -17,7 +17,7 @@
 //
 //  Reward shape (design call, 2026-08-23): every job pays silver; each NPC
 //  layers its own accent on top — Trader pays *more* silver, Master adds XP,
-//  the Tavernkeeper adds Vigor.
+//  the Innkeeper adds Vigor.
 //
 
 import Foundation
