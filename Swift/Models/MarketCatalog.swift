@@ -4,20 +4,19 @@
 //
 //  Created by Dmytro Ihnatyuhin on 28.05.2026.
 //
-//  Phase 6.5 — pure tuning constants for the capital Market. Kept tiny and
-//  separate (like `TavernCatalog`) so balancing the silver sink and the
-//  anti-spam limit is a one-line edit.
+//  Façade over `content/data/market.json` (Phase 3B — was two Swift constants).
+//  Tuning only: the capital Market's silver sink and its anti-spam limit.
 //
 
 import Foundation
 
 public enum MarketCatalog {
     /// Flat silver charged when a lot is created. Non-refundable — this is the
-    /// market's silver sink and the soft cap on spam listings. Tunable.
-    public static let listingFee = 5
+    /// market's silver sink and the soft cap on spam listings.
+    public static var listingFee: Int { Catalogs.current.market.listingFee }
 
     /// Maximum number of simultaneous active lots per seller. Keeps the
     /// item-grouped board readable and stops one player from escrowing their
-    /// whole bag. Tunable.
-    public static let maxActiveLots = 5
+    /// whole bag.
+    public static var maxActiveLots: Int { Catalogs.current.market.maxActiveLots }
 }

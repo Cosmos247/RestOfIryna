@@ -2410,7 +2410,68 @@ Auto-memory: added `project_rebalance_active`, `feedback_phase_gate_approval`,
 `feedback_content_spec_before_authoring`, `feedback_verify_migration_not_just_roundtrip`; updated
 `feedback_commit_protocol` for the evolved two-form audit prompt.
 
+### Phase 3 Batch B — trader / tavern / market / guild / arena *(2026-08-29)*
+Five capital institutions moved to `content/data/`. **Migration digest identical across the flip:
+`9242a2c1501994ed`**, records and spawns halves both unchanged. 62 tests green (was 42).
+`roi-content validate` clean; `--strict` still exits 1 on the honest `timeScale 60.0`.
+
+The batch was not homogeneous, and that turned out to be the whole lesson. It held three
+different kinds of thing, each needing a different guarantee:
+
+- **Ordered records** (11 trader listings, 7 tavern dishes). Order is gameplay — it is the order
+  the player scrolls — so nothing sorts them, in the loader or in `DomainContent`. Layer 0
+  rebuilds the domain value and compares field-complete fingerprints, exactly as the ladders do.
+- **Tuning scalars** (2 market + 8 guild + 11 arena). These decode as **required**, never
+  `decodeIfPresent`. The ladders' optional-with-default pattern is right for a list (absent
+  `inputs` = no cost) and actively wrong for a constant: a missing `memberCap` silently becoming
+  20 is precisely the invisible balance drift the pipeline exists to stop. Their layer 0 is
+  encode → decode → compare each decoded field against the live Swift constant, because a
+  round-trip is blind to a transposed pair — `maxOfficers` written into `memberCap` encodes and
+  decodes flawlessly.
+- **One table that used to be control flow.** `ArenaCatalog.leagueKey` was a `switch`, so the
+  table could not be read off the catalog; it had to be hand-typed into `arena.json`. That
+  translation was proven rather than trusted: the exporter replayed the shipped switch against
+  the new table over honor **−500…3000** and refused to write a single file on the first
+  mismatch. Wider than the digest's 0…2000 on purpose — `case ..<1000` also swallowed negative
+  Honor, so the table's `?? first` fallback had to be shown to swallow them identically.
+
+Two subtleties that would have been silent behaviour changes:
+
+- `all.first { $0.itemId == … }` returns the FIRST match, so the replacement dictionaries use
+  `uniquingKeysWith: { first, _ in first }`. The reflexive `{ _, last in last }` would quietly
+  change which row a duplicated id resolves to.
+- The three scalar files have no array whose emptiness could mean "this fixture omitted the
+  file", and a zero `maxActiveLots` has to stay a validation ERROR rather than double as an
+  absence marker. So `ContentBundle` holds all five as **optionals** and `DomainContent` throws
+  `ContentMappingError.incompleteBundle` on a nil, rather than booting a game whose guild cap is
+  silently zero.
+
+`GuildRole` deliberately did NOT move: it is a raw value persisted in `User.guildRole` plus
+authorization predicates — code the DB schema depends on, not content a balance pass edits.
+
+**28 new validator rules, every one negative-tested against a perturbed bundle** (16 during the build, the remaining 12 during the audit pass — the count was first written down as 18, which was wrong). The one worth
+naming is `trader.arbitrage`: the shipped catalog held `sell ≤ buy` by convention alone, and a
+single-digit typo would have opened an unbounded silver faucet. It is compared per unit by
+cross-multiplication so unequal packet sizes stay exact. Also new: `arena.sweep_slower_than_turn`
+(warning — the sweeper is what enforces `turnSeconds`, so scanning less often than the deadline
+it polices makes the clock stop meaning anything), league table non-empty / strictly ascending /
+no gap above the rating floor, guild officer headroom and name bounds, and league keys required in
+both locales — the only locale keys the content data names outright rather than deriving from an
+id.
+
+**Digest coverage re-proven non-vacuous per file**, since a checker that has never failed proves
+nothing: perturbing `guild.memberCap`, an arena league boundary, `tithePercent`, trader row order,
+a tavern wager tier and `market.listingFee` each moved the digest to a distinct value. The league
+boundary is the interesting one — bands are never fingerprinted as records, so only the
+`leagueKey` accessor replay could have caught it.
+
+`ContentExporter` is empty again for the fourth time, same reason as always. Its header now
+carries the replay-before-flip recipe, because batch C needs it: `PlotCatalog` and `QuestCatalog`
+are also behaviour-in-code rather than arrays.
+
 ### Next
-Phase 3 Batch B (Trader / Tavern / Market / Guild / Arena) — digest baseline `9242a2c1501994ed`
-already covers them while still Swift-backed. Then Batch C (Master / Plot / Fortune / Quest).
+Phase 3 Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`. Extend
+`ContentDigest` to cover them while they are still Swift-backed and capture the new baseline
+first; `PlotCatalog` and `QuestCatalog` additionally need the batch-B replay proof. Then Phase 4
+(tuning tables + collapsing the three `testMode` flags into one `time.scale`).
 User asked to confirm the start of each phase before it begins.

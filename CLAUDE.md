@@ -46,8 +46,9 @@ Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this gr
 `Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
 `Swift/` use those types without their own import line.
 
-**Game content is data, not code.** Items, enemies, recipes and the weapon / bag /
-estate ladders live in `content/data/*.json`; the `*Catalog` types are façades over
+**Game content is data, not code.** Items, enemies, recipes, the weapon / bag /
+estate ladders and the five capital institutions (trader, tavern, market, guild,
+arena) live in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
 in both `en.json` and `uk.json` — never a Swift array edit. Full rules, the
 migration pattern and the verification discipline: `.memory/content-pipeline.md`.

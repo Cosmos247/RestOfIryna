@@ -1,0 +1,35 @@
+{
+  "challengeTTL" : 120,
+  "dailyFightCap" : 20,
+  "honorKFactor" : 32,
+  "leagues" : [
+    {
+      "fromHonor" : 0,
+      "key" : "arena.league.novice"
+    },
+    {
+      "fromHonor" : 1000,
+      "key" : "arena.league.fighter"
+    },
+    {
+      "fromHonor" : 1150,
+      "key" : "arena.league.veteran"
+    },
+    {
+      "fromHonor" : 1350,
+      "key" : "arena.league.champion"
+    }
+  ],
+  "lobbyTTL" : 180,
+  "maxMissedTurns" : 2,
+  "minHonor" : 0,
+  "stakeTiers" : [
+    25,
+    100,
+    500
+  ],
+  "startingHonor" : 1000,
+  "sweepInterval" : 10,
+  "tithePercent" : 10,
+  "turnSeconds" : 45
+}

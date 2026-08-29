@@ -536,7 +536,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `?? all.first` km≥36 fallback bug is preserved deliberately — fixing it belongs to Phase 5.
       `ContentExporter` narrowed to Swift-backed catalogs only, since re-exporting a façade is
       circular. 37 tests green.
-- [ ] **Phase 3 — Remaining catalogs** *(in progress — 3 of 12 done)*
+- [ ] **Phase 3 — Remaining catalogs** *(in progress — 8 of 12 done)*
   - [x] **Batch A** *(2026-08-29)* — `WeaponUpgradeCatalog`, `BagCatalog`, `EstateUpgradeCatalog`
         are façades; `bags.json` + `estate_upgrades.json` exported (weapon_upgrades.json landed in
         Phase 1). **386 lines of Swift arrays deleted.** Migration digest identical across the
@@ -549,11 +549,37 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         New validator rules: tier contiguity (`nextStep` indexes `progression[tier − 2]`, so a gap
         silently hands out the wrong upgrade), ladder-vs-`capacities` disagreement, capacity
         regression, estate level-gate regression. 42 tests green.
-  - [ ] Batch B — `TraderCatalog`, `TavernCatalog`, `MarketCatalog`, `GuildCatalog`,
-        `ArenaCatalog`. Digest already covers them (baseline `9242a2c1501994ed`), including a
-        `leagueKey` replay across honor 0…2000 and a `tithe` rounding replay, because
-        `ArenaCatalog.leagueKey` is a hardcoded switch that becomes a league table.
-  - [ ] Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`
+  - [x] **Batch B** *(2026-08-29)* — `TraderCatalog`, `TavernCatalog`, `MarketCatalog`,
+        `GuildCatalog`, `ArenaCatalog` are façades; `trader.json` + `tavern.json` + `market.json`
+        + `guild.json` + `arena.json` exported. **Migration digest identical across the flip
+        (`9242a2c1501994ed`).** The batch was heterogeneous — 18 ordered records, 22 tuning
+        scalars and one table — and each shape needed a different guarantee:
+        · **Records** (trader, tavern) keep declaration order, because it is the order the player
+        scrolls; layer 0 rebuilds the domain value and compares fingerprints, as the ladders do.
+        · **Scalars** (market, guild, arena timings) decode as REQUIRED — never `decodeIfPresent`.
+        A missing `memberCap` must fail the boot; defaulting it to 20 is precisely the silent
+        balance drift this pipeline exists to prevent. Their layer 0 is encode → decode → compare
+        each field against the live Swift constant, which is what catches a transposed pair that a
+        self-consistent round-trip is blind to.
+        · **`ArenaCatalog.leagueKey` was control flow, not data**, so the table could not be read
+        off the catalog — it was hand-translated, then *proven*: the exporter replayed the shipped
+        `switch` against the new table over honor −500…3000 and refused to write on any mismatch.
+        The range runs wider than the digest's 0…2000 because `case ..<1000` also swallowed
+        negatives, and the table's `?? first` tail has to swallow them identically.
+        **28 new validator rules, every one negative-tested against a perturbed bundle:** trader arbitrage (`sell ≤ buy`
+        compared per unit by cross-multiplication — the one economic invariant the shipped catalog
+        held only by convention, one typo away from an unbounded silver faucet), unknown/duplicate
+        listing ids, packet quantities, tavern price floor, strictly-ascending wager and stake
+        ladders, market fee/lot bounds, guild name bounds and officer headroom, arena tithe range,
+        K-factor, rating floor, positive timings, **sweeper-slower-than-a-turn** (warning — the
+        sweeper is what enforces `turnSeconds`), league table non-empty · strictly ascending ·
+        no gap above the rating floor, and league keys present in both locales. 62 tests green.
+        Digest coverage re-proven non-vacuous per file: perturbing `memberCap`, a league boundary,
+        `tithePercent`, trader row order, a wager tier and `listingFee` each moved it to a
+        distinct value.
+  - [ ] Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`.
+        `PlotCatalog` and `QuestCatalog` carry behaviour in code rather than arrays, so both need
+        the same replay-before-flip treatment `leagueKey` got in batch B.
 - [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
       technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)

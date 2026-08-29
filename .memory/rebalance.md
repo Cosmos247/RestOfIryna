@@ -98,7 +98,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 0 Scaffolding | ✅ `6cc1889` |
 | 1 Exporter + first JSON | ✅ `7e8f2a4` |
 | 2 Item/Enemy/Recipe façades | ✅ `c9e329b` |
-| 3 Remaining catalogs | 🔄 **3 of 12** — batch A (weapon/bag/estate) ✅ `f30a4ca` |
+| 3 Remaining catalogs | 🔄 **8 of 12** — batch A (weapon/bag/estate) ✅ `f30a4ca`, batch B (trader/tavern/market/guild/arena) ✅ |
 | 4 Tuning tables + `time.scale` | ⬜ |
 | 5 New combat model | ⬜ |
 | 6 Rarity + sets | ⬜ |
@@ -108,7 +108,40 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `9242a2c1501994ed`.** Batch B (Trader / Tavern /
-Market / Guild / Arena) is already covered by the digest while still
-Swift-backed, so its flip can be verified immediately. Batch C is Master / Plot /
-Fortune / Quest.
+**Current digest baseline: `9242a2c1501994ed`** — unchanged across the batch A
+and batch B flips, which is the whole point of it.
+
+**Batch C is Master / Plot / Fortune / Quest.** Two of the four are not arrays:
+`PlotCatalog` and `QuestCatalog` carry behaviour in code, the way
+`ArenaCatalog.leagueKey` did. That shape needs the batch-B treatment — hand-
+translate the logic into a table, then *prove* the table reproduces the code by
+replaying both across the full input range BEFORE the flip, refusing to write on
+the first mismatch. Extend `ContentDigest` for them first, as always.
+
+### What batch B taught (applies to every remaining catalog)
+
+- **A "catalog" can be three different things at once**, and each needs its own
+  guarantee. Batch B held 18 ordered records (11 trader + 7 tavern), 21 tuning scalars
+  (2 market + 8 guild + 11 arena) and one table.
+  Records need order preservation and a domain-rebuild fingerprint; scalars need
+  *required* decoding plus a field-by-field comparison against the live
+  constant; a table replacing control flow needs a replay proof.
+- **Tuning scalars must decode as required, never `decodeIfPresent`.** The
+  ladders' optional-with-default pattern is right for a list (`inputs` absent =
+  no cost) and wrong for a constant: a missing `memberCap` silently becoming 20
+  is exactly the invisible balance drift the pipeline exists to stop.
+- **A round-trip cannot see a transposed pair.** `maxOfficers` written into
+  `memberCap` encodes and decodes perfectly. Only comparing each decoded field
+  back against the live Swift constant catches it — the scalar analogue of the
+  layer-0 lesson.
+- **Replay a switch wider than the digest does.** `case ..<1000` also swallowed
+  negative Honor; the digest only replays 0…2000. The exporter ran −500…3000, so
+  the table's `?? first` fallback was proven to swallow negatives identically
+  rather than assumed to.
+- **Lookup helpers hide a semantic choice.** `all.first { … }` returns the FIRST
+  match, so the replacement dictionary must use `uniquingKeysWith: { first, _ in
+  first }`. `{ _, last in last }` would quietly change which row a duplicate id
+  resolves to.
+- **The trader had an unguarded money printer.** `sell ≤ buy` per unit was held
+  by convention alone; it is now `trader.arbitrage`, compared by
+  cross-multiplication so unequal packet sizes stay exact.

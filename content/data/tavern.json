@@ -1,0 +1,37 @@
+{
+  "food" : [
+    {
+      "itemId" : "food.baked_potato",
+      "priceSilver" : 20
+    },
+    {
+      "itemId" : "food.roasted_meat",
+      "priceSilver" : 30
+    },
+    {
+      "itemId" : "food.foragers_omelette",
+      "priceSilver" : 50
+    },
+    {
+      "itemId" : "food.berry_tart",
+      "priceSilver" : 60
+    },
+    {
+      "itemId" : "food.meat_ragout",
+      "priceSilver" : 80
+    },
+    {
+      "itemId" : "food.hunters_stew",
+      "priceSilver" : 100
+    },
+    {
+      "itemId" : "food.governors_feast",
+      "priceSilver" : 200
+    }
+  ],
+  "wagerTiers" : [
+    10,
+    25,
+    50
+  ]
+}

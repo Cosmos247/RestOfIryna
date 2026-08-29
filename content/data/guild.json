@@ -1,0 +1,10 @@
+{
+  "defaultEmblem" : "🛡",
+  "foundCost" : 500,
+  "foundLevelGate" : 5,
+  "maxOfficers" : 2,
+  "memberCap" : 20,
+  "nameMaxLength" : 24,
+  "nameMinLength" : 3,
+  "vaultUnitCap" : 3000
+}

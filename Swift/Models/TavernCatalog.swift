@@ -4,15 +4,20 @@
 //
 //  Created by Dmytro Ihnatyuhin on 17.05.2026.
 //
-//  Phase 6.2 — static configuration for the capital tavern. The menu sells
-//  ready-cooked dishes that the player would otherwise have to find a
+//  Façade over `content/data/tavern.json` (Phase 3B — was a Swift array).
+//  The menu sells ready-cooked dishes the player would otherwise have to find a
 //  recipe scroll for and craft in the kitchen — the tavern is the
 //  convenience-for-silver trade. Pricing follows the v2 economy rebase
 //  (pebble = 1s/unit) and lands between "5× old prices" and "DIY × ~2.5
 //  markup", whichever produced rounder numbers per dish.
 //
-//  Wager tiers feed both gambling games (dice + darts) — same three
-//  amounts for both so the player builds one mental model.
+//  Wager tiers feed both gambling games (dice + darts) — same three amounts for
+//  both so the player builds one mental model. Tuned for the v2 economy where
+//  shallow foraging already yields tens of silvers per expedition: 10s is "warm
+//  up", 50s is "feeling brave".
+//
+//  Menu order is display order — ascending by price, so it reads cheap →
+//  premium — and is preserved verbatim from the file.
 //
 
 import Foundation
@@ -29,28 +34,16 @@ public struct TavernFoodListing: Sendable {
 }
 
 public enum TavernCatalog {
-    /// Display order ascends by price so the menu naturally reads
-    /// cheap → premium.
-    public static let food: [TavernFoodListing] = [
-        TavernFoodListing(itemId: "food.baked_potato",      priceSilver: 20),
-        TavernFoodListing(itemId: "food.roasted_meat",      priceSilver: 30),
-        TavernFoodListing(itemId: "food.foragers_omelette", priceSilver: 50),
-        TavernFoodListing(itemId: "food.berry_tart",        priceSilver: 60),
-        TavernFoodListing(itemId: "food.meat_ragout",       priceSilver: 80),
-        TavernFoodListing(itemId: "food.hunters_stew",      priceSilver: 100),
-        TavernFoodListing(itemId: "food.governors_feast",   priceSilver: 200),
-    ]
+    public static var food: [TavernFoodListing] { Catalogs.current.tavernFood }
 
-    /// Shared wager tiers across dice and darts. Tuned for the v2 economy
-    /// where shallow foraging already yields tens of silvers per expedition —
-    /// 10s is "warm up", 50s is "feeling brave".
-    public static let wagerTiers: [Int] = [10, 25, 50]
+    /// Shared wager tiers across dice and darts.
+    public static var wagerTiers: [Int] { Catalogs.current.tavernWagerTiers }
 
     public static func price(for itemId: String) -> Int? {
-        return food.first { $0.itemId == itemId }?.priceSilver
+        listing(for: itemId)?.priceSilver
     }
 
     public static func listing(for itemId: String) -> TavernFoodListing? {
-        return food.first { $0.itemId == itemId }
+        Catalogs.current.tavernFoodById[itemId]
     }
 }

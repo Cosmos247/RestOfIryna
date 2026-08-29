@@ -29,6 +29,11 @@ public enum ContentLoader {
     private static let weaponsFile  = "weapon_upgrades.json"
     private static let bagsFile     = "bags.json"
     private static let estateFile   = "estate_upgrades.json"
+    private static let traderFile   = "trader.json"
+    private static let tavernFile   = "tavern.json"
+    private static let marketFile   = "market.json"
+    private static let guildFile    = "guild.json"
+    private static let arenaFile    = "arena.json"
 
     public static func load(from root: URL) throws -> ContentBundle {
         var hashState = FNV1a()
@@ -57,6 +62,21 @@ public enum ContentLoader {
         let estateData = try read(estateFile, in: root, into: &hashState)
         let estateFileDTO: EstateUpgradeFileDTO = try decode(estateData, as: EstateUpgradeFileDTO.self, file: estateFile)
 
+        let traderData = try read(traderFile, in: root, into: &hashState)
+        let traderFileDTO: TraderFileDTO = try decode(traderData, as: TraderFileDTO.self, file: traderFile)
+
+        let tavernData = try read(tavernFile, in: root, into: &hashState)
+        let tavernFileDTO: TavernFileDTO = try decode(tavernData, as: TavernFileDTO.self, file: tavernFile)
+
+        let marketData = try read(marketFile, in: root, into: &hashState)
+        let marketFileDTO: MarketFileDTO = try decode(marketData, as: MarketFileDTO.self, file: marketFile)
+
+        let guildData = try read(guildFile, in: root, into: &hashState)
+        let guildFileDTO: GuildFileDTO = try decode(guildData, as: GuildFileDTO.self, file: guildFile)
+
+        let arenaData = try read(arenaFile, in: root, into: &hashState)
+        let arenaFileDTO: ArenaFileDTO = try decode(arenaData, as: ArenaFileDTO.self, file: arenaFile)
+
         return ContentBundle(
             manifest: manifest,
             items: itemFile.items,
@@ -67,6 +87,11 @@ public enum ContentLoader {
             weaponDurabilityByTier: weaponFile.durabilityByTier,
             bags: bagFile,
             estateUpgrades: estateFileDTO,
+            trader: traderFileDTO,
+            tavern: tavernFileDTO,
+            market: marketFileDTO,
+            guild: guildFileDTO,
+            arena: arenaFileDTO,
             contentHash: hashState.hexDigest
         )
     }

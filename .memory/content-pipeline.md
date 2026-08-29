@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
 Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            42 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            62 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -34,8 +34,13 @@ content/data/*.json
    DomainContent (domain snapshot) → Catalogs.install
       ↑
   ItemCatalog / EnemyCatalog / RecipeCatalog / WeaponUpgradeCatalog /
-  BagCatalog / EstateUpgradeCatalog  — all read Catalogs.current
+  BagCatalog / EstateUpgradeCatalog / TraderCatalog / TavernCatalog /
+  MarketCatalog / GuildCatalog / ArenaCatalog  — all read Catalogs.current
 ```
+
+`content/data/` holds `manifest · items · enemies · recipes · weapon_upgrades ·
+bags · estate_upgrades · trader · tavern · market · guild · arena`. Still Swift-
+backed: `PlotCatalog`, `MasterCatalog`, `FortuneCatalog`, `QuestCatalog`.
 
 **Two snapshots on purpose.** The domain types (`Item`, `Enemy`, …) still live in
 the main target, so `ROIContent` can only hold DTOs. Mapping DTO → domain on
@@ -84,7 +89,17 @@ Three layers, learned the hard way (both lessons cost a real bug):
   catalog order, a seeded `pickFor` replay, and an **accessor replay**
   (`nextStep`, `capForTier`, `durability`, `stats`, `leagueKey`, `tithe`) over
   in- and out-of-range inputs. The accessor half exists because fingerprinting
-  data does not verify the code that reads it.
+  data does not verify the code that reads it. It earns its keep: the Arena
+  league bands are never fingerprinted as records, so moving a boundary from
+  1150 to 1151 is caught by the `leagueKey` replay **alone**.
+- **Replay proof for a catalog that is code, not data.** When the shipped
+  catalog is control flow (`ArenaCatalog.leagueKey` was a `switch`), the table
+  cannot be read off it — it has to be hand-translated, and the translation
+  proven before the flip: replay the shipped implementation against the new
+  table across the whole input range and refuse to write on the first mismatch.
+  Run it WIDER than the digest does; the digest replayed honor 0…2000 while
+  `case ..<1000` also swallowed negatives, so the export check ran −500…3000.
+  `PlotCatalog` and `QuestCatalog` are the same shape.
 
 Both halves have been negative-tested: reordering enemies moves both; dropping
 `?? all.first` from `pickFor` moves only `spawns`.
@@ -112,6 +127,26 @@ pipeline bug rather than a design change.
   pair and only built after passing.
 - Swift does **not** apply property defaults for missing keys in a synthesized
   `Decodable` — every DTO writes `init(from:)` by hand. Locked by a test.
+- **Records tolerate a missing key; tuning scalars must not.** A ladder step's
+  absent `inputs` sensibly means "no cost", so it decodes with
+  `decodeIfPresent`. A constant has no such reading: `market.json`,
+  `guild.json` and `arena.json` decode every field with `decode`, so a missing
+  `memberCap` fails the boot instead of silently becoming 20. Locked by
+  `CapitalCatalogTests`.
+- **A round-trip is blind to a transposed pair.** `maxOfficers` written into
+  `memberCap` encodes and decodes flawlessly. The scalar files' layer 0 is
+  therefore encode → decode → compare each field against the live Swift
+  constant, not a round-trip.
+- `all.first { … }` returns the **first** match, so a dictionary replacing it
+  needs `uniquingKeysWith: { first, _ in first }`. The `{ _, last in last }`
+  reflex changes which row a duplicate id resolves to.
+- Files that are scalars-only cannot use an empty-array sentinel for "absent",
+  because a zero has to stay a validation ERROR. `ContentBundle` holds the five
+  capital files as **optionals**; `DomainContent` throws `incompleteBundle` on a
+  nil rather than booting a game whose guild cap is silently zero.
+- `TimeInterval` fields are `Double` on the wire. `45` and `45.0` decode to the
+  same value and the digest interpolates them as `"45.0"`, so JSON formatting
+  cannot move the digest. Locked by a test.
 - `nextStep` on the bag and estate ladders indexes `progression[toTier − 2]`, so
   the validator demands contiguous tiers and the snapshot sorts on load.
 - 21 `en.json` keys have no plain `uk.json` form; uk supplies `.m`/`.f` instead.

@@ -1,0 +1,81 @@
+{
+  "listings" : [
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 2,
+      "itemId" : "mat.river_pebble",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 1
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 2,
+      "itemId" : "food.forest_berries",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 1
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 2,
+      "itemId" : "food.forest_nuts",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 1
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 4,
+      "itemId" : "mat.pine_lumber",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 2
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 4,
+      "itemId" : "mat.clay",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 2
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 6,
+      "itemId" : "food.potato",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 3
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 6,
+      "itemId" : "food.duck_egg",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 3
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 6,
+      "itemId" : "mat.hide",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 3
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 10,
+      "itemId" : "food.raw_meat",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 5
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 20,
+      "itemId" : "mat.iron",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 10
+    },
+    {
+      "buyPacketQty" : 1,
+      "buyPacketSilver" : 200,
+      "itemId" : "mat.iron_ingot",
+      "sellPacketQty" : 1,
+      "sellPacketSilver" : 100
+    }
+  ]
+}

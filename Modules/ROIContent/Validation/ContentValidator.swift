@@ -31,6 +31,7 @@ public enum ContentValidator {
         issues += validateReferences(bundle)
         issues += validateWeaponLadders(bundle)
         issues += validateUpgradeLadders(bundle)
+        issues += validateCapital(bundle)
         issues += validateTime(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -453,6 +454,197 @@ public enum ContentValidator {
         return issues
     }
 
+    // MARK: - Capital institutions
+
+    /// Rules for `trader.json`, `tavern.json`, `market.json`, `guild.json` and
+    /// `arena.json`. Each section is skipped when the file is absent, which only
+    /// happens in a hand-built test fixture — `ContentLoader` always supplies
+    /// all five and `DomainContent` throws on a nil.
+    private static func validateCapital(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let itemIds = Set(bundle.items.map(\.id))
+
+        /// Wager and stake ladders are player-facing button rows: a repeat would
+        /// render two identical buttons, and a descent would read as a bug.
+        func checkAscending(_ values: [Int], file: String, path: String, label: String) {
+            if values.isEmpty {
+                issues.append(.init(severity: .error, file: file, path: path, id: nil,
+                                    rule: "tiers.empty", message: "\(label) is empty"))
+            }
+            for (index, value) in values.enumerated() where value < 1 {
+                issues.append(.init(severity: .error, file: file, path: "\(path)[\(index)]", id: nil,
+                                    rule: "tiers.non_positive", message: "\(label) entry is \(value)"))
+            }
+            for pair in zip(values, values.dropFirst()) where pair.1 <= pair.0 {
+                issues.append(.init(severity: .error, file: file, path: path, id: nil,
+                                    rule: "tiers.not_ascending",
+                                    message: "\(label) must strictly ascend — \(pair.0) is followed by \(pair.1)"))
+            }
+        }
+
+        func require(_ passed: Bool, _ severity: ContentIssue.Severity = .error,
+                     file: String, path: String, rule: String, _ message: @autoclosure () -> String) {
+            guard !passed else { return }
+            issues.append(.init(severity: severity, file: file, path: path, id: nil,
+                                rule: rule, message: message()))
+        }
+
+        // MARK: Trader
+        if let trader = bundle.trader {
+            let file = "trader.json"
+            issues += duplicates(trader.listings.map(\.itemId), file: file, collection: "listings")
+            for (index, row) in trader.listings.enumerated() {
+                let path = "listings[\(index)]"
+                if !itemIds.contains(row.itemId) {
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "reference.item.unknown",
+                                        message: "references unknown item \"\(row.itemId)\""))
+                }
+                let quantitiesAreSane = row.sellPacketQty >= 1 && row.buyPacketQty >= 1
+                if !quantitiesAreSane {
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "trader.packet_quantity",
+                                        message: "packet quantities must be >= 1, found sell \(row.sellPacketQty) / buy \(row.buyPacketQty)"))
+                }
+                if row.sellPacketSilver < 0 || row.buyPacketSilver < 0 {
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "trader.negative_silver",
+                                        message: "packet prices must not be negative"))
+                }
+                // The one economic invariant the shipped catalog upheld only by
+                // convention: buying a unit must never cost less than selling it
+                // pays, or the trader becomes an infinite silver faucet. Compared
+                // by cross-multiplication so unequal packet sizes stay exact —
+                // and gated on sane quantities, since a zero packet makes both
+                // sides collapse to 0 and a negative one flips the comparison.
+                // A broken row reports its own defect instead of a second,
+                // confusing one on top.
+                if quantitiesAreSane,
+                   row.sellPacketSilver * row.buyPacketQty > row.buyPacketSilver * row.sellPacketQty {
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "trader.arbitrage",
+                                        message: "sells for \(row.sellPacketSilver)/\(row.sellPacketQty) but buys for \(row.buyPacketSilver)/\(row.buyPacketQty) — a player could mint silver in a loop"))
+                }
+            }
+        }
+
+        // MARK: Tavern
+        if let tavern = bundle.tavern {
+            let file = "tavern.json"
+            issues += duplicates(tavern.food.map(\.itemId), file: file, collection: "food")
+            for (index, dish) in tavern.food.enumerated() {
+                let path = "food[\(index)]"
+                if !itemIds.contains(dish.itemId) {
+                    issues.append(.init(severity: .error, file: file, path: path, id: dish.itemId,
+                                        rule: "reference.item.unknown",
+                                        message: "references unknown item \"\(dish.itemId)\""))
+                }
+                if dish.priceSilver < 1 {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).priceSilver", id: dish.itemId,
+                                        rule: "tavern.price",
+                                        message: "price must be >= 1, found \(dish.priceSilver)"))
+                }
+            }
+            checkAscending(tavern.wagerTiers, file: file, path: "wagerTiers", label: "wagerTiers")
+        }
+
+        // MARK: Market
+        if let market = bundle.market {
+            let file = "market.json"
+            require(market.listingFee >= 0, file: file, path: "listingFee",
+                    rule: "market.negative_fee", "listingFee must not be negative, found \(market.listingFee)")
+            require(market.maxActiveLots >= 1, file: file, path: "maxActiveLots",
+                    rule: "market.no_lots", "maxActiveLots must be >= 1 or nobody can list anything, found \(market.maxActiveLots)")
+        }
+
+        // MARK: Guild
+        if let guild = bundle.guild {
+            let file = "guild.json"
+            require(guild.memberCap >= 1, file: file, path: "memberCap",
+                    rule: "guild.member_cap", "memberCap must be >= 1, found \(guild.memberCap)")
+            require(guild.maxOfficers >= 0, file: file, path: "maxOfficers",
+                    rule: "guild.officers_negative", "maxOfficers must not be negative")
+            // The leader is not counted in `maxOfficers`, so officers must leave
+            // room for at least the leader — otherwise promotion logic can fill
+            // a guild with deputies and no rank left to manage.
+            require(guild.maxOfficers < guild.memberCap, file: file, path: "maxOfficers",
+                    rule: "guild.officers_exceed_cap",
+                    "maxOfficers \(guild.maxOfficers) leaves no room under memberCap \(guild.memberCap)")
+            require(guild.foundCost >= 0, file: file, path: "foundCost",
+                    rule: "guild.negative_cost", "foundCost must not be negative")
+            require(guild.foundLevelGate >= 1, file: file, path: "foundLevelGate",
+                    rule: "guild.level_gate", "foundLevelGate must be >= 1, found \(guild.foundLevelGate)")
+            require(!guild.defaultEmblem.isEmpty, file: file, path: "defaultEmblem",
+                    rule: "guild.empty_emblem", "defaultEmblem must not be empty")
+            require(guild.nameMinLength >= 1, file: file, path: "nameMinLength",
+                    rule: "guild.name_bounds", "nameMinLength must be >= 1, found \(guild.nameMinLength)")
+            require(guild.nameMaxLength >= guild.nameMinLength, file: file, path: "nameMaxLength",
+                    rule: "guild.name_bounds",
+                    "nameMaxLength \(guild.nameMaxLength) is below nameMinLength \(guild.nameMinLength) — no name could ever be valid")
+            require(guild.vaultUnitCap >= 1, file: file, path: "vaultUnitCap",
+                    rule: "guild.vault_cap", "vaultUnitCap must be >= 1, found \(guild.vaultUnitCap)")
+        }
+
+        // MARK: Arena
+        if let arena = bundle.arena {
+            let file = "arena.json"
+            checkAscending(arena.stakeTiers, file: file, path: "stakeTiers", label: "stakeTiers")
+            require((0...100).contains(arena.tithePercent), file: file, path: "tithePercent",
+                    rule: "arena.tithe_range", "tithePercent must be 0…100, found \(arena.tithePercent)")
+            require(arena.honorKFactor > 0, file: file, path: "honorKFactor",
+                    rule: "arena.k_factor", "honorKFactor must be positive — a zero K freezes every rating")
+            require(arena.minHonor >= 0, .warning, file: file, path: "minHonor",
+                    rule: "arena.negative_floor", "minHonor is \(arena.minHonor); a negative rating floor is almost certainly unintended")
+            require(arena.startingHonor >= arena.minHonor, file: file, path: "startingHonor",
+                    rule: "arena.start_below_floor",
+                    "startingHonor \(arena.startingHonor) is below minHonor \(arena.minHonor)")
+            require(arena.turnSeconds > 0, file: file, path: "turnSeconds",
+                    rule: "arena.non_positive_time", "turnSeconds must be positive")
+            require(arena.challengeTTL > 0, file: file, path: "challengeTTL",
+                    rule: "arena.non_positive_time", "challengeTTL must be positive")
+            require(arena.lobbyTTL > 0, file: file, path: "lobbyTTL",
+                    rule: "arena.non_positive_time", "lobbyTTL must be positive")
+            require(arena.sweepInterval > 0, file: file, path: "sweepInterval",
+                    rule: "arena.non_positive_time", "sweepInterval must be positive")
+            // The sweeper is what enforces `turnSeconds`; if it scans less often
+            // than the deadline it polices, a fighter keeps their turn past the
+            // clock and the timer stops meaning anything.
+            require(arena.sweepInterval <= arena.turnSeconds, .warning, file: file, path: "sweepInterval",
+                    rule: "arena.sweep_slower_than_turn",
+                    "sweepInterval \(arena.sweepInterval)s exceeds turnSeconds \(arena.turnSeconds)s — turn timeouts would be enforced late")
+            require(arena.maxMissedTurns >= 1, file: file, path: "maxMissedTurns",
+                    rule: "arena.missed_turns", "maxMissedTurns must be >= 1, found \(arena.maxMissedTurns)")
+            require(arena.dailyFightCap >= 1, file: file, path: "dailyFightCap",
+                    rule: "arena.daily_cap", "dailyFightCap must be >= 1, found \(arena.dailyFightCap)")
+
+            // The league table replaces a `switch`, so its shape has to carry
+            // the guarantees the switch got from the compiler: total coverage
+            // and unambiguous ordering.
+            if arena.leagues.isEmpty {
+                issues.append(.init(severity: .error, file: file, path: "leagues", id: nil,
+                                    rule: "arena.leagues_empty",
+                                    message: "league table is empty — every rating would render a blank league"))
+            } else {
+                for pair in zip(arena.leagues, arena.leagues.dropFirst()) where pair.1.fromHonor <= pair.0.fromHonor {
+                    issues.append(.init(severity: .error, file: file, path: "leagues", id: pair.1.key,
+                                        rule: "arena.leagues_not_ascending",
+                                        message: "bands must strictly ascend by fromHonor — \(pair.0.fromHonor) is followed by \(pair.1.fromHonor)"))
+                }
+                // With the opening band at or below the floor, every rating a
+                // player can actually hold lands inside a band and `leagueKey`'s
+                // fallback tail is unreachable.
+                if let first = arena.leagues.first, first.fromHonor > arena.minHonor {
+                    issues.append(.init(severity: .error, file: file, path: "leagues[0].fromHonor", id: first.key,
+                                        rule: "arena.leagues_gap_at_floor",
+                                        message: "first band starts at \(first.fromHonor) but honor floors at \(arena.minHonor) — ratings in between fall through"))
+                }
+                issues += duplicates(arena.leagues.map(\.key), file: file, collection: "leagues")
+            }
+        }
+
+        return issues
+    }
+
     // MARK: - Localization
 
     private static func validateLocalization(_ bundle: ContentBundle, _ locales: LocaleIndex) -> [ContentIssue] {
@@ -501,6 +693,17 @@ public enum ContentValidator {
                 issues.append(.init(severity: .error, file: "\(locale).json", path: "enemies[\(index)]", id: enemy.id,
                                     rule: "locale.key.missing",
                                     message: "missing key \"\(enemy.nameKey)\""))
+            }
+        }
+
+        // League names are the only locale keys the data itself names — every
+        // other content key is derived from an id. A renamed band would print
+        // the raw key stem to the player, so demand it exists.
+        for (index, league) in (bundle.arena?.leagues ?? []).enumerated() {
+            for locale in locales.missing(league.key) {
+                issues.append(.init(severity: .error, file: "\(locale).json", path: "leagues[\(index)]", id: league.key,
+                                    rule: "locale.key.missing",
+                                    message: "missing key \"\(league.key)\""))
             }
         }
 

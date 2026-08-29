@@ -41,6 +41,15 @@ public final class GameContent: Sendable {
     public let bags: BagFileDTO
     public let estateUpgrades: EstateUpgradeFileDTO
 
+    // Carried through as-is from the bundle. Optional for the same reason it is
+    // optional there: only a hand-built fixture can omit them, and `DomainContent`
+    // is where that becomes a thrown error rather than a silent zero.
+    public let trader: TraderFileDTO?
+    public let tavern: TavernFileDTO?
+    public let market: MarketFileDTO?
+    public let guild: GuildFileDTO?
+    public let arena: ArenaFileDTO?
+
     public init(_ bundle: ContentBundle) {
         self.manifest = bundle.manifest
         self.contentHash = bundle.contentHash
@@ -60,5 +69,10 @@ public final class GameContent: Sendable {
         self.weaponDurabilityByTier = bundle.weaponDurabilityByTier
         self.bags = bundle.bags
         self.estateUpgrades = bundle.estateUpgrades
+        self.trader = bundle.trader
+        self.tavern = bundle.tavern
+        self.market = bundle.market
+        self.guild = bundle.guild
+        self.arena = bundle.arena
     }
 }

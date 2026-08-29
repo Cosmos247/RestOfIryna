@@ -34,21 +34,27 @@ of Swift arrays into `content/data/*.json`. **This is the only work in flight.**
 
 ### Where we stopped
 
-Phases 0–2 done and committed; **Phase 3 is 3 of 12 catalogs in**.
+Phases 0–2 done and committed; **Phase 3 is 8 of 12 catalogs in** (batch A + B).
 
 | Reads from `content/data/` | Still a Swift array |
 |---|---|
-| items · enemies · recipes | Trader · Tavern · Market · Guild · Arena |
-| weapon ladders · bags · estate upgrades | Master · Plot · Fortune · Quest |
+| items · enemies · recipes | Master · Plot · Fortune · Quest |
+| weapon ladders · bags · estate upgrades | |
+| trader · tavern · market · guild · arena | |
 
-**Next step — Phase 3 batch B: Trader / Tavern / Market / Guild / Arena.**
-Their digest coverage is *already in place* while they are still Swift-backed, so
-the baseline to match after the flip is **`9242a2c1501994ed`**. `ArenaCatalog
-.leagueKey` is a hardcoded `switch` that becomes a league table in JSON — the
-digest already replays it across honor 0…2000, plus `tithe` rounding.
+**Next step — Phase 3 batch C: Master / Plot / Fortune / Quest.** Unlike batch B,
+their digest coverage does **not** exist yet — step 1 of the loop (extend
+`ContentDigest` while they are still Swift-backed, capture the new baseline) is
+real work this time.
 
-Then batch C: Master / Plot / Fortune / Quest. Then Phase 4 (tuning tables +
-collapsing the three `testMode` flags into one `time.scale`).
+Two of the four are behaviour-in-code rather than arrays: `PlotCatalog` and
+`QuestCatalog`. That shape needs the batch-B treatment — hand-translate the logic
+into a table, then **prove** it by replaying the shipped implementation against
+the new table across the full input range before the flip, refusing to write on
+the first mismatch. Run the replay wider than the digest does.
+
+Then Phase 4 (tuning tables + collapsing the three `testMode` flags into one
+`time.scale`).
 
 ### The migration loop (repeat per catalog)
 

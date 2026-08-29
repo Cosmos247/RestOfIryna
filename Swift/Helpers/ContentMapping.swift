@@ -29,6 +29,7 @@ enum ContentMappingError: Error, CustomStringConvertible {
     case unknownSlot(String, id: String)
     case unknownRecipeCategory(String, id: String)
     case invalidDepthRange(min: Int, max: Int, id: String)
+    case incompleteBundle(missing: [String])
 
     var description: String {
         switch self {
@@ -36,6 +37,8 @@ enum ContentMappingError: Error, CustomStringConvertible {
         case .unknownSlot(let value, let id):     return "\(id): unknown equipment slot \"\(value)\""
         case .unknownRecipeCategory(let v, let id): return "\(id): unknown recipe category \"\(v)\""
         case .invalidDepthRange(let lo, let hi, let id): return "\(id): depth min \(lo) > max \(hi)"
+        case .incompleteBundle(let missing):
+            return "content bundle is missing: \(missing.joined(separator: ", "))"
         }
     }
 }
@@ -270,5 +273,45 @@ extension EstateUpgradeStepDTO {
             inputs: inputs.map { EstateUpgradeInput($0.itemId, $0.quantity) },
             silverCost: silverCost
         )
+    }
+}
+
+// MARK: - Capital institutions
+//
+// Only the two RECORD catalogs need a mapper. `MarketCatalog`, `GuildCatalog`
+// and the scalar half of `ArenaCatalog` are flat constants with no domain type
+// of their own — nothing to parse, no range to build — so the exporter writes
+// their DTOs directly and `DomainContent` stores those DTOs verbatim rather
+// than inventing a mirror struct that would only ever copy fields across.
+
+extension TraderListingDTO {
+    init(_ listing: TraderListing) {
+        self.init(
+            itemId: listing.itemId,
+            sellPacketQty: listing.sellPacketQty,
+            sellPacketSilver: listing.sellPacketSilver,
+            buyPacketQty: listing.buyPacketQty,
+            buyPacketSilver: listing.buyPacketSilver
+        )
+    }
+
+    var domain: TraderListing {
+        TraderListing(
+            itemId: itemId,
+            sellPacketQty: sellPacketQty,
+            sellPacketSilver: sellPacketSilver,
+            buyPacketQty: buyPacketQty,
+            buyPacketSilver: buyPacketSilver
+        )
+    }
+}
+
+extension TavernFoodDTO {
+    init(_ listing: TavernFoodListing) {
+        self.init(itemId: listing.itemId, priceSilver: listing.priceSilver)
+    }
+
+    var domain: TavernFoodListing {
+        TavernFoodListing(itemId: itemId, priceSilver: priceSilver)
     }
 }
