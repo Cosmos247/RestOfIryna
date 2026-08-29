@@ -6,13 +6,12 @@
 //
 //  Loading seam for the data-driven content bundle.
 //
-//  Phase 0 lands the function; nothing calls it yet. It gets wired into
-//  `configure(logger:)` — immediately after `Dotenv.configure` and BEFORE the
-//  database block — in Phase 2, once `ItemCatalog` / `EnemyCatalog` /
-//  `RecipeCatalog` become façades over `GameData.current`. The ordering is
-//  load-bearing: the dev-seed block later in `configure` already calls
-//  `ItemCatalog.find`, and once that reads the snapshot, any touch before
-//  install traps.
+//  Called from `configure(logger:)` immediately after `Dotenv.configure` and
+//  BEFORE the database block. That ordering is load-bearing: all 12 catalogs
+//  are façades over the snapshot this installs, and the dev-seed block plus
+//  `GearConditionService.backfillWeaponDurability` — both later in the same
+//  function — already call `ItemCatalog.find`. Any catalog touch before this
+//  line traps rather than returning stale data.
 //
 //  NOTE — this file deliberately does NOT `import ROIContent`. It resolves
 //  `ContentSchema`, `ContentLoader`, `GameData` and friends through the

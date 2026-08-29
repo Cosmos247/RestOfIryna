@@ -24,8 +24,9 @@ Game code lives in `Swift/`. The content pipeline lives in `Modules/`. Never
 
 ## ⏳ ACTIVE WORK — pre-release rebalance
 
-The whole game is being rebalanced before release, and all content is moving out
-of Swift arrays into `content/data/*.json`. **This is the only work in flight.**
+The whole game is being rebalanced before release. All content has already moved
+out of Swift arrays into `content/data/*.json` (Phase 3, done); what remains is
+the maths. **This is the only work in flight.**
 
 - Plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 - Tracker: the "Full Rebalance" section of `TODO.md`
@@ -46,36 +47,61 @@ content/data/  manifest · items · enemies · recipes · weapon_upgrades · bag
 **Next step — Phase 4: tuning tables + collapsing the three `testMode` flags
 into one `time.scale`** (its own commit).
 
-Batch C surfaced why that is not mechanical. `PlotCatalog.testMode` alone drives
-**two different scales**: `intervalSeconds` is 60 ↔ 3600 (60×, which matches
-`manifest.timeScale: 60`) while `PlotProductionService`'s sweep is 60 ↔ 300
-(**5×**). The flag was carried into `plots.json` verbatim; Phase 4 reconciles all
-three flags and deletes it.
+**It is not mechanical.** There are three flags but FIVE scale sites, and they do
+not all use the same ratio:
+
+| Flag | Site | test : prod | ratio |
+|---|---|---|---|
+| `PlotCatalog.testMode` *(now in `plots.json`)* | `PlotCatalog.intervalSeconds:82` | 60 : 3600 | 60× |
+| ↑ same flag | `PlotProductionService:38` sweep | 60 : 300 | **5×** |
+| ↑ same flag | `EstateController:637` | picks `estate.plot.rate.per_minute` / `.per_hour` | UI label |
+| `TravelService.testMode:27` | `TravelService:35` | ×1.0 : ×60.0 | 60× |
+| `PassiveExpeditionService.testMode:199` | `:203` | 1 : 60 | 60× |
+
+So a naive `timeScale = 60` would speed the plot sweeper up 12× beyond its
+current behaviour, and the UI label has to follow whatever replaces the boolean.
+`plots.json` carries `testMode` verbatim for now; Phase 4 reconciles all five
+sites and deletes the field.
 
 Two smaller decisions worth making first: `manifest.json` still reads
 `contentVersion: "phase1-export"` (stale by three phases), and `schemaVersion`
 has never moved even though the bundle has gained nine required files since v1.
+Neither is broken — a stale bundle fails loudly with `missingFile(...)` — but a
+handshake that never moves slowly becomes decorative.
 
 **Current digest baseline: `8053216102eceff7`**
 (`records 04cbf2b5331ea85b` · `spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`).
 
-### The migration loop (historical — Phase 3 closed)
+### How content works now
 
-1. Extend `ContentDigest` **while the catalog is still Swift-backed**; capture the baseline.
-2. DTO → mapping → loader → `GameContent` / `DomainContent`.
-3. Add to `ContentExporter`; `swift run RestOfIryna --export-content`; commit the JSON verbatim.
-   *(deleted at the end of Phase 3 — recover from git if needed)*
-4. Flip the catalog to a façade; delete the Swift array.
-5. `swift run RestOfIryna --content-digest` — must equal the baseline.
-6. Remove it from `ContentExporter` (re-exporting a façade proves nothing).
+All 12 catalogs are façades over a snapshot installed at boot:
 
-Normalize nothing during a migration.
+```
+content/data/*.json → ContentLoader → ContentValidator → GameContent (DTOs)
+                                                       → DomainContent → Catalogs.current
+```
+
+Adding content is a **JSON edit plus locale keys in both `en.json` and
+`uk.json`** — never a Swift array edit, because there are none left. Locale keys
+are derived from ids (`item.<id>`, `plot.type.<type>.name`,
+`fortune.card.<id>.*`, `quest.<id>.title`) and the validator demands each exists
+in both locales.
+
+`ContentBootstrap.load` runs in `configure` **before the database block** — the
+dev-seed and `backfillWeaponDurability` both touch a catalog later in the same
+function, and a catalog read before install traps. **No `static let` anywhere may
+reference a catalog** — that is a real trap, not a theoretical one:
+`FortuneCatalog.lookup` was `Dictionary(uniqueKeysWithValues: all.map …)` and
+would have run at type-init the moment `all` started reading the snapshot.
+
+The migration loop that got us here, its verification layers and every gotcha
+live in `.memory/content-pipeline.md`.
 
 ### Commands
 
 ```
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
-swift run RestOfIryna --content-digest       # migration verification digest
+swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
 swift test                                   # 85 tests, ~0.04s
 ```
 
@@ -108,7 +134,7 @@ warns about it. Phase 4 flips it.
 | `GDD.md` | Game design document (predates the rebalance — treat its numbers as intent, not truth) |
 | `Swift/configure.swift` | Bootstrap; content loads before the DB block |
 | `Swift/Helpers/Catalogs.swift` | Domain content snapshot the façades read |
-| `Swift/Helpers/ContentDigest.swift` | Migration verification |
+| `Swift/Helpers/ContentDigest.swift` | `--content-digest`: records + spawn replay + daily-quest replay. Run before/after any content edit to confirm ONLY the intended change moved |
 
 ## Rules
 

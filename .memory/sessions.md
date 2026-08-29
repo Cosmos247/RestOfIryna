@@ -2547,13 +2547,44 @@ order + every set effect field, and all 3 quest pools with order, objectives and
 nothing left to export. `ContentDigest` stays: it is the "confirm only the intended change" step
 of the add-content workflow, not a migration leftover.
 
+### Documentation + dead-code audit pass (same session)
+Triggered by the audit-and-commit prompt after 3C landed. Three real findings, all mine:
+
+- **187 lines of dead code.** Deleting `ContentExporter` orphaned the entire domain → DTO half of
+  `ContentMapping` — 21 initialisers whose only caller was the exporter's byte-stability proof.
+  Confirmed by grep (zero uses anywhere in `Swift/` outside the file itself) and by rebuilding:
+  85 tests and the digest unchanged. File went 501 → 314 lines. The header now records why the
+  direction existed and where to recover it.
+- **`GameData` is a write-only holder.** `install` is called at boot; `GameData.current` is read
+  nowhere, and the comment claiming the validator and a `/content` command read it was wrong on
+  both counts — the validator runs on the `ContentBundle` before either snapshot exists, and
+  there is no `/content` command. KEPT deliberately (installing both snapshots from one bundle is
+  what stops them drifting, and Phase 7's hot reload is its first real reader), but the comment
+  now says so instead of implying live readers.
+- **Stale phase status.** `.memory/status.md` still read "Phase 3 IN PROGRESS (3 of 12)" with the
+  superseded `9242a2c1501994ed` baseline.
+
+Also corrected: the `ContentDigest` header still said "Two halves" after batch C added a third;
+`ContentBootstrap`'s header still described its own wiring as future Phase 2 work; the file-map
+entry for `ContentMapping` still called it bidirectional and Item/Enemy/Recipe-only.
+
+**`Prompt.md` reoriented for a cold start on Phase 4.** The migration-loop section was replaced
+with a "how content works now" summary (the loop itself lives in `content-pipeline.md`), and the
+Phase 4 recon was written down as a table: **three `testMode` flags drive FIVE sites**, and they
+do not share a ratio — `PlotProductionService`'s sweep is 60↔300 (**5×**) while the other four
+are 60×, plus `EstateController:637` switches a locale key off the same boolean. A naive
+`timeScale = 60` would speed the plot sweeper up 12× beyond current behaviour.
+
+Language audit: every `.md` and `.memory/` file greps clean of Ukrainian PROSE — the remaining
+Cyrillic is all quoted game copy (technique names, button labels, the UA glossary,
+`content/lore.md`), which is the intended distinction. New auto-memory `feedback-docs-in-english`
+records the rule; `project-rebalance-active` updated to say the content migration is finished and
+the maths rebuild is what remains.
+
 ### Next
 **Phase 4 — tuning tables + collapsing the three `testMode` flags into one `time.scale`** (its own
-commit). Batch C surfaced why that is not mechanical: `PlotCatalog.testMode` alone drives two
-different scales — `intervalSeconds` is 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
-`PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag rode into `plots.json` verbatim and
-Phase 4 reconciles and deletes it.
-Two smaller open items: `manifest.json` still says `contentVersion: "phase1-export"` (stale by
-three phases), and `schemaVersion` has never moved despite the bundle gaining nine required files
-since v1 — worth a decision before Phase 4.
+commit). Start from the five-site table in `Prompt.md`; the 5× sweeper is the trap.
+Two smaller decisions to make first: `manifest.json` still reads `contentVersion: "phase1-export"`
+(stale by three phases), and `schemaVersion` has never moved despite the bundle gaining nine
+required files since v1.
 User asked to confirm the start of each phase before it begins.

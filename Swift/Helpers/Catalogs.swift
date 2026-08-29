@@ -13,11 +13,14 @@
 //  so `ROIContent` cannot hold them — it holds DTOs. Mapping DTO → domain on
 //  every `ItemCatalog.find` would allocate on a path that runs inside combat
 //  loops, so the mapping happens once here and the result is what the ~315 call
-//  sites read. `GameData` keeps the DTO snapshot for the validator, `/content`
-//  and (Phase 7) hot reload.
+//  sites read. `GameData` keeps the DTO snapshot beside it.
 //
-//  The two must never drift: `ContentBootstrap.load` is the ONLY place that
-//  installs either, and it installs both from the same bundle in one call.
+//  NOTE — as of Phase 3 nothing READS `GameData.current` yet: the validator
+//  runs on the `ContentBundle` before either snapshot is built, and there is no
+//  `/content` command. It is installed anyway because `ContentBootstrap.load`
+//  is the ONLY place that installs either, and installing both from one bundle
+//  in one call is what stops them drifting. Phase 7's hot reload and
+//  `LiveReferenceCheck` are its first real readers.
 //
 //  Same holder shape as `GameData`: `nonisolated(unsafe)` + `NSLock`, because
 //  the façade accessors have to stay synchronous, non-throwing and nonisolated

@@ -183,10 +183,14 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   gone (−397 lines). `ContentBootstrap.load` runs in `configure` before the DB block. Migration
   digest identical before/after (`545017168ce60953`), verified non-vacuous by two negative tests.
   **The bot now runs off `content/data/` for items, enemies and recipes.**
-- **Phase 3 IN PROGRESS (3 of 12 catalogs)** — weapon/bag/estate ladders now read from JSON.
-  Digest baseline for the next batch: `9242a2c1501994ed`.
-- Phases 3 (rest) – 11 pending: 9 more catalogs, tuning tables, new combat model, rarity+sets,
-  `/reload`, simulator calibration, content specs, authoring, wipe.
+- **Phase 3 DONE (12 of 12 catalogs)** — batch A weapon/bag/estate ladders, batch B
+  trader/tavern/market/guild/arena, batch C master/plot/fortune/quest. **No Swift catalog array
+  remains anywhere in the tree**; `content/data/` holds 16 files. `ContentExporter` and
+  `--export-content` were deleted with the last array — nothing left to export. The migration
+  digest gained a third half in batch C (a seeded `daily()` replay) and stands at
+  **`8053216102eceff7`**; it held identical across every flip.
+- Phases 4 – 11 pending: tuning tables + `time.scale`, new combat model, rarity+sets, `/reload`,
+  simulator calibration, content specs, authoring, wipe.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve
 capped at 70% · gear power ceiling 1.75× common · sinks ≈85% of faucets.
