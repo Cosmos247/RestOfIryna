@@ -921,5 +921,44 @@
     "arena.league.novice": "Novice",
     "arena.league.fighter": "Fighter",
     "arena.league.veteran": "Veteran",
-    "arena.league.champion": "Champion"
+    "arena.league.champion": "Champion",
+
+    "quest.button.open": "📜 Job",
+    "quest.button.turn_in": "✅ Hand over",
+    "quest.button.claim": "🎁 Collect reward",
+    "quest.button.back": "🔙 Back",
+
+    "quest.trader.board_title": "📜 The trader's job",
+    "quest.master.board_title": "📜 The master's job",
+    "quest.tavern.board_title": "📜 The innkeeper's job",
+
+    "quest.progress": "Progress: %{done}/%{target}",
+    "quest.reward": "Reward: %{reward}",
+    "quest.reward.xp": "XP",
+    "quest.reward.vigor": "Vigor",
+    "quest.done_today": "Done for today. A new job at noon tomorrow.",
+    "quest.banner.paid": "Job done: %{quest} — %{reward}",
+    "quest.not_enough": "Not enough to hand over: %{have}/%{need}",
+    "quest.not_complete": "Not finished yet: %{done}/%{need}",
+
+    "quest.trader.hides.title": "Hide delivery",
+    "quest.trader.hides.desc": "The tanners can't keep up. Bring 10 hides.",
+    "quest.trader.iron.title": "Iron shortage",
+    "quest.trader.iron.desc": "The forges are running dry. Bring 5 lumps of iron.",
+    "quest.trader.bulk_day.title": "Market day",
+    "quest.trader.bulk_day.desc": "Sell the trader 300 silver worth of goods today.",
+
+    "quest.master.ore.title": "Smith's ore",
+    "quest.master.ore.desc": "The master needs stock. Bring 8 lumps of iron.",
+    "quest.master.smelt.title": "Smelting",
+    "quest.master.smelt.desc": "Prove you know the forge — smelt an iron ingot.",
+    "quest.master.blade_trial.title": "Blade trial",
+    "quest.master.blade_trial.desc": "Test your steel in the Wilds — slay 5 beasts.",
+
+    "quest.tavern.cook.title": "Inn cook",
+    "quest.tavern.cook.desc": "The kitchen is short-handed. Bring 3 cooked dishes — roasted meat or hunter's stew.",
+    "quest.tavern.supplies.title": "Hunter's supplies",
+    "quest.tavern.supplies.desc": "The larder is empty. Bring 6 cuts of raw meat.",
+    "quest.tavern.lucky_hand.title": "Lucky hand",
+    "quest.tavern.lucky_hand.desc": "Win 3 rounds of dice or darts at the inn."
 }

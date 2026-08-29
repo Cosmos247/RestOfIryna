@@ -486,9 +486,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // calls showCapital which re-attaches the reply keyboard via
         // sendWelcome.
         let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
+        let questLabel = lingo.localize("quest.button.open", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: buyLabel,  callbackData: "trader:buylist"),
              TGInlineKeyboardButton(text: sellLabel, callbackData: "trader:selllist")],
+            [TGInlineKeyboardButton(text: questLabel, callbackData: "quest:board:trader")],
             [TGInlineKeyboardButton(text: backLabel, callbackData: "capital:back")]
         ])
     }
@@ -660,10 +662,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let repair  = lingo.localize("capital.master.button.repair",  locale: locale)
         let enchant = lingo.localize("capital.master.button.enchant", locale: locale)
         let back    = lingo.localize("capital.button.back_to_capital", locale: locale)
+        let quest   = lingo.localize("quest.button.open", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: buy,     callbackData: "master:buylist")],
             [TGInlineKeyboardButton(text: repair,  callbackData: "master:repairlist"),
              TGInlineKeyboardButton(text: enchant, callbackData: "master:enchantlist")],
+            [TGInlineKeyboardButton(text: quest,   callbackData: "quest:board:master")],
             [TGInlineKeyboardButton(text: back,    callbackData: "capital:back")]
         ])
     }
@@ -925,6 +929,138 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
+    // MARK: - Daily quests (Phase 9.2)
+    //
+    // Each of the three quest-giving NPCs carries a [📜 Замовлення] button on
+    // its menu. The board is a single screen — one job, its progress, its
+    // reward — edited in place over the NPC's own message, same as every other
+    // sub-screen here. There's no picking and no journal: the system assigns
+    // one job per NPC per game day (see `QuestCatalog.daily`).
+    //
+    // One action button, whose meaning depends on the objective: deliver jobs
+    // show [✅ Здати] once the bag holds enough (turn-in consumes the items and
+    // pays out in one tap), counter jobs show [🎁 Забрати] once gameplay has
+    // ticked them to target. Before that there's no button at all — nothing to
+    // tap, nothing to mis-tap.
+
+    private func renderQuestBoardBody(status: QuestService.Status, npc: QuestNPC, session: User, lingo: Lingo) -> String {
+        let locale = session.locale
+        let title = lingo.localize(npc.boardTitleKey, locale: locale)
+        let questTitle = lingo.localize(status.def.titleKey, locale: locale)
+        let desc = lingo.localize(status.def.descKey, locale: locale)
+
+        var lines = ["<b>\(title)</b>", "", "<b>\(questTitle)</b>", desc, ""]
+        if status.claimed {
+            // Done for today — the progress line would just restate the target.
+            lines.append("✅ " + lingo.localize("quest.done_today", locale: locale))
+        } else {
+            lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
+                "done": "\(status.done)",
+                "target": "\(status.target)"
+            ]))
+            lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+                "reward": Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+            ]))
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor" — only the non-zero parts. Unit words
+    /// come from Lingo (uk: Досвід / Снага) so the glossary stays in one place.
+    static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
+        var parts: [String] = ["🪙 \(reward.silver)"]
+        if reward.xp > 0 {
+            parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+        }
+        if reward.vigor > 0 {
+            parts.append("🍗 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func questBoardKeyboard(status: QuestService.Status, npc: QuestNPC, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        if status.isActionable {
+            // Deliver jobs "hand in", counter jobs "collect" — same callback,
+            // different word, because the player is doing a different thing.
+            let labelKey: String
+            if case .deliver = status.def.objective {
+                labelKey = "quest.button.turn_in"
+            } else {
+                labelKey = "quest.button.claim"
+            }
+            rows.append([TGInlineKeyboardButton(
+                text: lingo.localize(labelKey, locale: locale),
+                callbackData: "quest:do:\(npc.rawValue)"
+            )])
+        }
+        rows.append([TGInlineKeyboardButton(
+            text: lingo.localize("quest.button.back", locale: locale),
+            callbackData: npc.backCallback
+        )])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    private func editToQuestBoard(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
+        let text = renderQuestBoardBody(status: status, npc: npc, session: context.session, lingo: context.lingo)
+        let keyboard = questBoardKeyboard(status: status, npc: npc, lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    /// Turn in / claim, then re-render the board so it flips to its "done for
+    /// today" state under the player's finger.
+    private func handleQuestFinish(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let result = try await QuestService.finish(npc: npc, for: context.session, on: context.db)
+        await postQuestResultBanner(result, context: context)
+        try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+    }
+
+    private func postQuestResultBanner(_ result: QuestService.FinishResult, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .paid(let def, let payout):
+            let questTitle = lingo.localize(def.titleKey, locale: locale)
+            var text = "✅ " + lingo.localize("quest.banner.paid", locale: locale, interpolations: [
+                "quest": questTitle,
+                "reward": Self.rewardPhrase(
+                    QuestReward(silver: payout.silver, xp: payout.xp, vigor: payout.vigor),
+                    lingo: lingo, locale: locale
+                )
+            ])
+            // Echo the same level-up lines a combat victory would show, so a
+            // quest that levels the player reads identically to a kill that does.
+            if let xpResult = payout.xpResult, xpResult.levelsGained > 0 {
+                text += "\n🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
+                    "level": "\(xpResult.newLevel)"
+                ])
+                if xpResult.maxHpGained > 0 {
+                    text += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
+                        "hp": "\(xpResult.maxHpGained)",
+                        "atk": "\(xpResult.attackGained)",
+                        "def": "\(xpResult.defenseGained)"
+                    ])
+                }
+                if xpResult.estateLeveledUp {
+                    text += "\n🏰 " + lingo.localize("estate_up.banner", locale: locale, interpolations: [
+                        "tier": "\(xpResult.newEstateLevel)"
+                    ])
+                }
+            }
+            await postStatusBanner(text, context: context)
+        case .notEnough(let have, let need):
+            await postStatusBanner("❌ " + lingo.localize("quest.not_enough", locale: locale, interpolations: [
+                "have": "\(have)", "need": "\(need)"
+            ]), context: context)
+        case .notComplete(let done, let need):
+            await postStatusBanner("❌ " + lingo.localize("quest.not_complete", locale: locale, interpolations: [
+                "done": "\(done)", "need": "\(need)"
+            ]), context: context)
+        case .alreadyClaimed:
+            await postStatusBanner("❌ " + lingo.localize("quest.done_today", locale: locale), context: context)
+        }
+    }
+
     // MARK: - Trader callback dispatch
 
     static func onCallbackQuery(context: Context) async throws -> Bool {
@@ -953,6 +1089,29 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // present, otherwise as text. All subsequent edits must match — pass
         // this flag through every editTo* helper.
         let isPhoto = (message.getMessage()?.photo) != nil
+
+        // MARK: Daily quests (Phase 9.2) — shared by all three quest NPCs.
+
+        if data.hasPrefix("quest:board:") {
+            let token = String(data.dropFirst("quest:board:".count))
+            guard let npc = QuestNPC(rawValue: token) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToQuestBoard(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("quest:do:") {
+            let token = String(data.dropFirst("quest:do:".count))
+            guard let npc = QuestNPC(rawValue: token) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleQuestFinish(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
 
         // Trader nav — switch between Menu / Buy / Sell views in place.
         if data == "trader:menu" {
@@ -2625,10 +2784,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // comment) — re-attaches the reply keyboard if a chain of
         // inline messages caused the client to collapse it.
         let back  = lingo.localize("capital.button.back_to_capital", locale: locale)
+        let quest = lingo.localize("quest.button.open", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: menu,  callbackData: "tavern:food"),
              TGInlineKeyboardButton(text: dice,  callbackData: "tavern:dice"),
              TGInlineKeyboardButton(text: darts, callbackData: "tavern:darts")],
+            [TGInlineKeyboardButton(text: quest, callbackData: "quest:board:tavern")],
             [TGInlineKeyboardButton(text: back, callbackData: "capital:back")]
         ])
     }

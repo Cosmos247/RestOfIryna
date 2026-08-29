@@ -941,5 +941,44 @@
     "arena.league.novice": "Новак",
     "arena.league.fighter": "Боєць",
     "arena.league.veteran": "Ветеран",
-    "arena.league.champion": "Чемпіон"
+    "arena.league.champion": "Чемпіон",
+
+    "quest.button.open": "📜 Замовлення",
+    "quest.button.turn_in": "✅ Здати",
+    "quest.button.claim": "🎁 Забрати нагороду",
+    "quest.button.back": "🔙 Назад",
+
+    "quest.trader.board_title": "📜 Замовлення крамаря",
+    "quest.master.board_title": "📜 Замовлення майстра",
+    "quest.tavern.board_title": "📜 Замовлення шинкаря",
+
+    "quest.progress": "Прогрес: %{done}/%{target}",
+    "quest.reward": "Нагорода: %{reward}",
+    "quest.reward.xp": "Досвіду",
+    "quest.reward.vigor": "Снаги",
+    "quest.done_today": "На сьогодні виконано. Нове замовлення — завтра опівдні.",
+    "quest.banner.paid": "Замовлення виконано: %{quest} — %{reward}",
+    "quest.not_enough": "Не вистачає для здачі: %{have}/%{need}",
+    "quest.not_complete": "Ще не виконано: %{done}/%{need}",
+
+    "quest.trader.hides.title": "Постачання шкур",
+    "quest.trader.hides.desc": "Чинбарі не встигають. Принеси 10 шкур.",
+    "quest.trader.iron.title": "Дефіцит заліза",
+    "quest.trader.iron.desc": "Горна порожніють. Принеси 5 шматків заліза.",
+    "quest.trader.bulk_day.title": "Оптовий день",
+    "quest.trader.bulk_day.desc": "Продай сьогодні крамареві товару на 300 срібла.",
+
+    "quest.master.ore.title": "Ковальська руда",
+    "quest.master.ore.desc": "Майстрові бракує запасу. Принеси 8 шматків заліза.",
+    "quest.master.smelt.title": "Виплавка",
+    "quest.master.smelt.desc": "Доведи, що знаєш горно, — виплав залізний злиток.",
+    "quest.master.blade_trial.title": "Випробування клинка",
+    "quest.master.blade_trial.desc": "Випробуй крицю в Пущі — убий 5 звірів.",
+
+    "quest.tavern.cook.title": "Кухар корчми",
+    "quest.tavern.cook.desc": "На кухні бракує рук. Принеси 3 готові страви — смажене мʼясо або юшку мисливця.",
+    "quest.tavern.supplies.title": "Мисливські припаси",
+    "quest.tavern.supplies.desc": "Комора порожня. Принеси 6 шматків сирого м'яса.",
+    "quest.tavern.lucky_hand.title": "Щаслива рука",
+    "quest.tavern.lucky_hand.desc": "Виграй у шинку 3 раунди в кості або влучанку."
 }
