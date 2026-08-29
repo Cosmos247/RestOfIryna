@@ -33,9 +33,30 @@ let package = Package(
         .package(url: "https://github.com/miroslavkovac/Lingo.git", from: "4.0.0"),
     ],
     targets: [
+        // 📦 Game content: DTOs, loader, validator and the live snapshot.
+        // Foundation only — no Fluent, no Telegram — so the CLI and the tests
+        // build in a second and can run in CI without a database.
+        .target(
+            name: "ROIContent",
+            path: "Modules/ROIContent", swiftSettings: swiftSettings
+        ),
+        // 🎲 Pure balance math + deterministic RNG for the simulator.
+        .target(
+            name: "ROISim",
+            dependencies: ["ROIContent"],
+            path: "Modules/ROISim", swiftSettings: swiftSettings
+        ),
+        // 🛠 Content pipeline CLI: validate / simulate.
+        .executableTarget(
+            name: "roi-content",
+            dependencies: ["ROIContent", "ROISim"],
+            path: "Modules/roi-content", swiftSettings: swiftSettings
+        ),
         .executableTarget(
             name: "RestOfIryna",
             dependencies: [
+                "ROIContent",
+                "ROISim",
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
@@ -47,6 +68,11 @@ let package = Package(
                 .product(name: "Lingo", package: "Lingo"),
             ],
             path: "Swift", swiftSettings: swiftSettings
+        ),
+        .testTarget(
+            name: "ROIContentTests",
+            dependencies: ["ROIContent"],
+            path: "Tests/ROIContentTests", swiftSettings: swiftSettings
         )
     ]
 )

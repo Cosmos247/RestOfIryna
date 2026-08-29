@@ -16,7 +16,7 @@
 | `GDD.md` | Full game design — classes, vigor, exploration, combat, estates, economy |
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
-| `Prompt.me` | Compact session primer — read this at session start |
+| `Prompt.md` | Compact session primer — read this at session start |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -32,7 +32,20 @@ Each user has a `routerName` field. Updates route to the controller registered u
 
 ## Source Layout
 
-All Swift code lives in `Swift/` (not `Sources/`).
+Game code lives in `Swift/` (not `Sources/`). The content pipeline lives in `Modules/`
+(also not `Sources/` — a `Sources/` directory would contradict the rule above).
+
+```
+Modules/
+├── ROIContent/          # Foundation-only: content DTOs, loader, validator, live snapshot
+├── ROISim/              # Pure balance math + deterministic RNG (simulator)
+└── roi-content/         # CLI: `swift run roi-content validate [--strict]`
+Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this graph
+```
+
+`Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
+`Swift/` use those types without their own import line.
+
 
 ```
 Swift/

@@ -2188,3 +2188,77 @@ No escrow: silver only moves at `settle` (loser → winner minus 10% King's tith
 
 ### Deferred (next increments, same engine)
 Queue auto-pairing (2nd half of the "both modes" decision — lobby-challenge shipped first), ranked/unranked split, seasons + end-of-season rewards, escrow-on-restart refund. Not committed yet — awaiting the user's audit-and-commit prompt.
+
+## Session — 2026-08-29 (Full pre-release rebalance — design + Phase 0)
+
+### Context
+User: "гра абсолютно незбалансована", asked for a rebalance plan that must also cover adding
+new items / sets / monsters in future. Audit (3 parallel explorers) found the math is broken,
+not mistuned — see TODO.md "Full Rebalance" for the evidence list.
+
+### Decisions (AskUserQuestion, two rounds)
+Full data-driven · full wipe at release · 3+ months to cap · **maxLevel 40** · death stays
+harsh (full bag wipe) · slow vigor regen + food · framework + levels 1–15 authored ·
+**content spec approved before authoring** (user's explicit condition).
+
+### Calibration findings that changed the design
+Ran a numerical audit + Monte-Carlo. Five structural corrections to the first draft:
+1. **DR denominators must be derived from the item budget curve**, not hand-picked — otherwise
+   a stat's *percentage* rots while its *rating* grows (archer dodge would end at 9.7% on L40,
+   below its L1 value).
+2. **Growth must be proportional, not flat** — flat growth drops warrior dodge 5.3% → 1.4%.
+3. **Enemy generation is design-time, not runtime** — runtime scaling nullifies every gear
+   upgrade (Oblivion trap). Needs an explicit `levelDiff` damage modifier to sell "I out-gear
+   this zone".
+4. **The drafted boss archetype was arithmetically impossible** — fixed HP-loss over rising
+   rounds made the boss hit *softer* than trash (4.5% vs 6.6% maxHP per swing).
+5. **Rarity multipliers were 3× too large** — drafted 1.95/2.45 gave 2.73×/4.15× total power.
+   Capped at 1.45, with enchant as +4% of the item's *own* budget per step (never flat points —
+   a flat bonus is worth 267% of base DEF at L1 and 14% at L40).
+
+Also found, unplanned: DEF-ignoring techniques become *net vigor losses* under a mitigation
+curve (0.44–0.59× efficiency); `WearEvent.flee = 5` > `defeat = 3` makes fleeing cost more than
+dying; passive expeditions are 53% more vigor-efficient than active (they always roll the fresh
+encounter table and charge 1 vigor/round instead of 2); **taps, not vigor, bind at L40**
+(390/day ⇒ 26–42 min of button-mashing, so `combatAttack = 2` must stay as the tap governor);
+the harsh death penalty is a hidden ~10%-of-gross-income sink.
+
+Cross-check that killed the naive assumption: 60 kills/day is short by 3–6× on vigor. Real
+throughput is 19/day at L1 → 47/day at L40. The XP curve was re-derived from that budget:
+`xpToNext(L) = max(11.4·L^3.30, 120L)`, `mobXP(L) = 26·L^1.55·archXP` → 19.4M XP, ≈110 days at
+80% engagement.
+
+### Phase 0 built (this session)
+4 new SwiftPM targets under `Modules/` + `Tests/` (first test target in the project).
+`ROIContent` is Foundation-only, so `swift test` runs without Fluent/Postgres/Telegram.
+DTOs decode into tolerant `String` fields on purpose — the validator has to run on data the
+domain types would trap on (`ClosedRange` with min > max, `Dictionary(uniqueKeysWithValues:)`
+on a duplicate id). Every DTO hand-writes `init(from:)` because **Swift does not apply property
+defaults for missing keys** (locked by a test).
+
+`GameData` uses `nonisolated(unsafe)` + `NSLock`, NOT `Synchronization.Mutex` — `Mutex` is
+macOS 15 and the package targets 14; a lock acquire is ~20 ns at this scale. NOT `@TaskLocal`:
+task-locals don't cross `Task.detached`, and six long-lived detached tasks read catalogs.
+
+**`@_exported import` spike passed** — `Swift/Helpers/ContentBootstrap.swift` compiles with no
+import of its own, so the ~315 existing catalog call sites need zero churn in Phase 2.
+
+Validator ships identity / enum-value / reference / localization / timeScale rules. Two locale
+facts verified against the real files: 21 en keys have no plain uk form and **all 21** are
+covered by `.m`/`.f` pairs (a naive parity check would emit 21 false errors); the
+emoji-before-`%{}` Lingo bug has **0 occurrences** across 259/268 interpolated values — the rule
+now guards against regression rather than finding existing breakage.
+
+24 tests green; both binaries link. **Provably inert**: +26 lines in `Package.swift`, +6 in
+`configure.swift` (the two re-exports), nothing else in `Swift/` touched, `ContentBootstrap`
+called from nowhere.
+
+### Also in this commit
+`Prompt.me` → `Prompt.md` (user's rename, byte-identical content). The three live pointers were
+repointed: `CLAUDE.md` key-documents table, `.memory/file-map.md` tree, `TODO.md` checklist. The
+two mentions in this file's own history (2026-04 entries) were left alone — the file really was
+called `Prompt.me` then, and rewriting a session log would make it lie.
+
+### Next
+Phase 1 (exporter + first JSON, byte-for-byte, zero balance change). User asked to confirm the
+start of each phase before it begins.

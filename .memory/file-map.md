@@ -5,12 +5,31 @@ RestOfIryna/
 ├── .env.example                    # Environment template (TG token, DB creds)
 ├── .gitignore                      # Ignores .build, .env, .xcodeproj, etc.
 ├── .memory/                        # Project-scoped AI memory (this system)
-├── Package.swift                   # SPM manifest, Swift 6.2, macOS 14+
+├── Package.swift                   # SPM manifest, Swift 6.2, macOS 14+ — 5 targets (see Modules/)
+│
+├── Modules/                        # Content pipeline (added 2026-08-29, rebalance Phase 0)
+│   ├── ROIContent/                 # library, Foundation ONLY — no Fluent/Telegram, so the CLI + tests build in ~1s
+│   │   ├── ContentSchema.swift     # `current` schema version; binary↔bundle handshake
+│   │   ├── ContentError.swift      # Designer-readable failure modes
+│   │   ├── ContentBundle.swift     # Decoded-but-unvalidated directory + summaryLine
+│   │   ├── ContentLoader.swift     # Reads content/data/*.json; renders DecodingError as "file · path · id · expected"; FNV-1a content hash; NEVER sorts (pickFor order is load-bearing)
+│   │   ├── GameContent.swift       # Immutable validated snapshot; all lookup dicts built once; dedupes with uniquingKeysWith (uniqueKeysWithValues TRAPS)
+│   │   ├── GameData.swift          # nonisolated(unsafe) + NSLock holder; keeps catalog façades sync/non-throwing for ~315 call sites. NOT @TaskLocal (doesn't cross Task.detached — 6 detached tasks read catalogs)
+│   │   ├── LocaleIndex.swift       # en/uk flat maps; `has()` accepts uk `.m`/`.f` pairs (21 keys rely on this); emoji-before-%{} detector
+│   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO — hand-written init(from:) because Swift ignores property defaults for missing keys
+│   │   └── Validation/             # ContentIssue/ContentReport + ContentValidator (identity · enums · references · localization · timeScale)
+│   ├── ROISim/                     # library → ROIContent
+│   │   ├── SplitMix64.swift        # Seedable RNG + OutcomeDigest — the migration equivalence proof needs reproducible rolls
+│   │   └── ROISim.swift            # Simulator namespace (model lands Phase 8, after CombatantStats)
+│   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (Phase 8)
+│
+├── Tests/
+│   └── ROIContentTests/            # 24 tests: DTO defaults/round-trip, validator rules, LocaleIndex gendered keys + emoji rule
 ├── GDD.md                          # Game Design Document (full v1 vision)
 ├── README.md                       # Project overview, arch, setup, dev notes
 ├── CLAUDE.md                       # AI assistant instructions & project reference
 ├── TODO.md                         # Phased progress tracker
-├── Prompt.me                       # New-session primer
+├── Prompt.md                       # New-session primer
 ├── icon.png                        # Bot icon asset
 │
 ├── Localizations/

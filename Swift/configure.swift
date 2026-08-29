@@ -16,6 +16,12 @@ import SwiftDotenv
 import SwiftTelegramBot
 @preconcurrency import Lingo
 
+// Re-exported so the ~315 existing catalog call sites across `Swift/` keep
+// compiling without adding an `import ROIContent` line to 40-odd files.
+// If this ever stops propagating, the fallback is a mechanical per-file import.
+@_exported import ROIContent
+@_exported import ROISim
+
 let store = RouterStore()
 
 /// Root path of the project on disk. Used to locate `Localizations/`, `Assets/`, etc.

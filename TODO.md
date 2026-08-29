@@ -41,7 +41,7 @@
 - [x] .memory/ session-persistent knowledge base
 - [x] CLAUDE.md AI assistant reference
 - [x] TODO.md progress tracker
-- [x] Prompt.me session primer
+- [x] Prompt.md session primer
 
 ---
 
@@ -451,12 +451,63 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 
 ## Phase 9: Content & Polish
 
-### 9.1 Tuning & Balance
+### 9.1 Tuning & Balance — **superseded by the Full Rebalance (below)**
+
+The original five bullets turned out to be under-scoped: an audit (2026-08-29) found the
+math itself is broken, not merely mistuned. Kept here for provenance; the work now lives in
+the phased plan.
+
 - [ ] Create `content/tuning.md` — XP curves, vigor scaling, stat growth
 - [ ] Balance damage formula through playtesting
 - [ ] Tune exploration event weights per depth
 - [ ] Tune vigor drain vs food availability
-- [ ] Balance economy (gold sinks vs sources)
+- [ ] Balance economy (silver sinks vs sources)
+
+---
+
+## Full Rebalance (pre-release) — started 2026-08-29
+
+**Why:** 868,585 XP to L21 against a 175-XP best mob (≈4,963 kills); `max(1, ATK − DEF)` is
+scale-free so a geared warrior takes 1 damage from the strongest mob while a fresh mage takes
+28 from a boar; enemies have no crit/dodge/accuracy (always `0/0/0`); monsters drop no silver
+and the tavern has exactly 0% house edge; all three `testMode` flags are `true`, so every time
+gate is 60× compressed.
+
+**Decisions:** full data-driven content · full wipe at release · 3+ months to cap ·
+`maxLevel = 40` · death stays harsh · slow vigor regen + food · framework + levels 1–15
+authored · **content spec approved before authoring**.
+
+**Model (calibrated, Monte-Carlo verified at 4,000 fights/cell):** DEF becomes
+`min(0.70, DEF/(DEF+K_def(L)))`; crit/dodge/accuracy become ratings→percent with denominators
+*derived from the item budget curve* (hand-picked ones let a stat rot — archer dodge would fall
+below its L1 value by L40); per-level growth is proportional, not flat; enemies are generated
+**at design time** from archetype tables (runtime generation would nullify every gear upgrade);
+`xpToNext(L) = max(11.4·L^3.30, 120L)`, `mobXP(L) = 26·L^1.55·archXP` → 19.4M XP ≈ 110 days at
+80% engagement; rarity budget multipliers capped at 1.45 (the drafted 2.45 gave 4.15× power).
+
+Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
+
+- [x] **Phase 0 — Scaffolding** *(2026-08-29)* — `ROIContent` / `ROISim` / `roi-content` /
+      `ROIContentTests` targets; DTOs for Item/GearStats/ItemEffect/Enemy/Recipe/Manifest;
+      `ContentLoader` (readable decode errors, FNV-1a hash, never sorts), `GameData` snapshot
+      holder (`nonisolated(unsafe)` + `NSLock`, keeps catalog façades synchronous),
+      `GameContent`, `LocaleIndex` (uk `.m`/`.f` aware), `ContentValidator` (identity · enums ·
+      references · localization · timeScale). 24 tests green. **`@_exported import` spike passed** —
+      `ContentBootstrap.swift` compiles with no import of its own, so the ~315 existing catalog
+      call sites need no churn. Platform stays macOS 14 (`NSLock` instead of `Mutex`).
+      Provably inert: +26 lines in `Package.swift`, +6 in `configure.swift`, nothing else touched.
+- [ ] Phase 1 — Exporter + first JSON (behaviour-neutral, committed byte-for-byte)
+- [ ] Phase 2 — Flip Item/Enemy/Recipe catalogs to façades; delete the Swift arrays
+- [ ] Phase 3 — Remaining 12 catalogs
+- [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
+- [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
+      technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)
+- [ ] Phase 6 — Rarity + sets; enchant as % of item budget (never flat points)
+- [ ] Phase 7 — `/reload` hot swap + `LiveReferenceCheck`
+- [ ] Phase 8 — `CombatantStats` refactor + simulator; lock every constant (verify p90, not mean)
+- [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
+- [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls
+- [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
 
 ### 9.2 Content Authoring
 - [ ] Full bestiary (all enemy types with stats and loot)
