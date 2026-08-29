@@ -111,7 +111,9 @@ RestOfIryna/
 │   │   ├── Guild.swift           # Phase 7.1 — Fluent model: one guild (name unique, tag [admin-assigned, may be empty], emblem, leader_id, treasury silver, motto). Read helpers: find/named(ILIKE)/all/members/memberCount/officerCount.
 │   │   ├── GuildCatalog.swift    # Phase 7.1 — tuning (memberCap 20, maxOfficers 2, foundCost 500🪙, foundLevelGate 5, nameMin/Max 3/24, vaultUnitCap 3000) + GuildRole enum (leader/officer/member; canManageMembers/canWithdrawVault). Pure data.
 │   │   ├── GuildInvite.swift     # Phase 7.1 — Fluent model: pending (guild, invitee, inviter) invitation. Helpers: find/forInvitee/exists/clearAll. Deleted on accept/decline.
-│   │   └── GuildVaultEntry.swift # Phase 7.1 — Fluent model: shared guild item storage (guild_id, item_id, quantity). Mirrors WarehouseEntry; stackables only. add/list/totalQuantity/totalUnits/remove.
+│   │   ├── GuildVaultEntry.swift # Phase 7.1 — Fluent model: shared guild item storage (guild_id, item_id, quantity). Mirrors WarehouseEntry; stackables only. add/list/totalQuantity/totalUnits/remove.
+│   │   ├── QuestCatalog.swift    # Phase 9.2 (2026-08-23) — daily-quest content: QuestNPC (trader/master/tavern), QuestCounter (beastKill/ironIngotForged/gambleWin/traderSilver), QuestObjective (.deliver/.counter), QuestReward, QuestDef, 3 jobs per NPC. `daily(npc:userId:stamp:)` assigns the day's job via a stable FNV-1a hash — derived, never stored, restart-proof
+│   │   └── QuestProgress.swift   # Phase 9.2 — Fluent model: one row per (player, NPC, game day) — npc, quest_id, day_stamp, progress, claimed. Stores only progress; which job it is comes from QuestCatalog. Rows are never deleted (free history for future streaks)
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
@@ -156,7 +158,8 @@ RestOfIryna/
 │   │   ├── CreateGuilds.swift                # Phase 7.1 — `guilds` table (name unique, tag, emblem, leader_id FK cascade, treasury, motto). Must run before AddUserGuildFields (FK target).
 │   │   ├── AddUserGuildFields.swift          # Phase 7.1 — `guild_id` (nullable FK → guilds, setNull on disband) + `guild_role` (string) on users.
 │   │   ├── CreateGuildInvites.swift          # Phase 7.1 — `guild_invites` table (guild_id, invitee_id, inviter_id FKs cascade, created_at).
-│   │   └── CreateGuildVault.swift            # Phase 7.1 — `guild_vault` table (guild_id FK cascade, item_id, quantity, created_at, updated_at). Shared stackable storage.
+│   │   ├── CreateGuildVault.swift            # Phase 7.1 — `guild_vault` table (guild_id FK cascade, item_id, quantity, created_at, updated_at). Shared stackable storage.
+│   │   └── CreateQuestProgress.swift        # Phase 9.2 (2026-08-23) — `quest_progress` table (user_id FK cascade, npc, quest_id, day_stamp, progress, claimed, timestamps). Unique on (user_id, npc, day_stamp): one job per NPC per day, enforced by the DB
 │   │
 │   ├── Services/                 # Domain services
 │   │   ├── VigorService.swift   # drain, consume, starvation penalty, HP loss (pure)
@@ -182,7 +185,8 @@ RestOfIryna/
 │   │   ├── TradeStore.swift        # Phase 6.5 (2026-06-10) — in-memory actor for the synchronous player-to-player Trade (Market → 🤝 Обмін): lobby presence + live sessions (keyed by UUID) + byUser busy-index, TTL sweeper. Methods return decision-snapshots (Telegram I/O stays in the controller). `mutateBuilding` resets only the editor's stage-1 ready-flag (2026-06-15). Not persisted — restart cancels in-flight trades.
 │   │   ├── TradeService.swift      # Phase 6.5 (2026-06-10) — DB side of the Trade. tradeableBagItems (non-equipped, non-bound bag rows; stackables summed, gear as rows) + atomic commit (validate-everything-first, then remove stacks → reassign gear rows preserving enchant/durability/tier → add stacks → swap silver — no Fluent transaction needed).
 │   │   ├── GuildService.swift      # Phase 7.1 — DB side of guilds (no bot I/O): found / leave / disband / invite / acceptInvite / declineInvite / kick / setOfficer / depositToVault / withdrawFromVault / depositSilver / withdrawSilver. Validate-then-mutate; typed result enums; findTarget resolves @username then nickname (ILIKE).
-│   │   └── TavernCleanupService.swift # 2026-05-20 — deletes tavern dice/darts clutter on a 24h delay (Telegram forbids deleting a private-chat dice message until it's >24h old). record(messageIds:telegramId:on:) persists a round's message ids; startSweeper(on:bot:) (in configure.swift, mirrors PlotProductionService) runs a Task.detached loop — catch-up sweep on boot + every 30 min — deleting each message + row once created_at passes deletableAfter (24h + 60s). Dice stay in chat as history until then.
+│   │   ├── TavernCleanupService.swift # 2026-05-20 — deletes tavern dice/darts clutter on a 24h delay (Telegram forbids deleting a private-chat dice message until it's >24h old). record(messageIds:telegramId:on:) persists a round's message ids; startSweeper(on:bot:) (in configure.swift, mirrors PlotProductionService) runs a Task.detached loop — catch-up sweep on boot + every 30 min — deleting each message + row once created_at passes deletableAfter (24h + 60s). Dice stay in chat as history until then.
+│   │   └── QuestService.swift     # Phase 9.2 (2026-08-23) — the daily-quest loop. status(for:npc:) builds the board in one read (deliver progress counted live from the bag, counter progress from the row, day's row created lazily); record(counter:amount:) is the event tick called from combat / passive expedition / forge / trader / tavern hook sites (all best-effort); finish(npc:) turns in a deliver job (drains items, pays) or claims a finished counter job; payOut applies silver + grantXP + Vigor (clamped to cap) and returns the XPGrantResult so banners can echo level-up lines
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system
