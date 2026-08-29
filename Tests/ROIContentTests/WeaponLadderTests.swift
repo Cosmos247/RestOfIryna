@@ -131,3 +131,68 @@ final class WeaponLadderTests: XCTestCase {
         XCTAssertEqual(step.stats.attack, 3)
     }
 }
+
+// MARK: - Bag / estate ladders
+
+final class UpgradeLadderTests: XCTestCase {
+
+    private func bundle(bags: BagFileDTO, estate: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, progression: [])) -> ContentBundle {
+        ContentBundle(
+            manifest: ManifestDTO(schemaVersion: ContentSchema.current),
+            items: [ItemDTO(id: "mat.hide", type: "material", tier: 1, stackable: true)],
+            enemies: [], recipes: [], starterRecipeIds: [],
+            bags: bags, estateUpgrades: estate, contentHash: "test")
+    }
+
+    private func bagStep(_ tier: Int, cap: Int) -> BagUpgradeStepDTO {
+        BagUpgradeStepDTO(toTier: tier, capacity: cap, requiredEstateLevel: tier,
+                          inputs: [MaterialCostDTO(itemId: "mat.hide", quantity: 5)])
+    }
+
+    /// `nextStep` indexes `progression[toTier - 2]`, so a gap hands the player
+    /// the wrong upgrade entirely.
+    func testGapInTierSequenceIsAnError() {
+        let bags = BagFileDTO(maxTier: 4, capacities: [25, 35, 45, 60],
+                              progression: [bagStep(2, cap: 35), bagStep(4, cap: 60)])
+        let report = ContentValidator.validate(bundle(bags: bags))
+        XCTAssertTrue(report.errors.contains { $0.rule == "ladder.tiers_not_contiguous" })
+    }
+
+    /// Two sources for one number — the ladder step and the flat table read by
+    /// `capForTier` — must agree.
+    func testCapacityTableDisagreementIsAnError() {
+        let bags = BagFileDTO(maxTier: 2, capacities: [25, 99],
+                              progression: [bagStep(2, cap: 35)])
+        let report = ContentValidator.validate(bundle(bags: bags))
+        XCTAssertTrue(report.errors.contains { $0.rule == "ladder.capacity_disagrees" })
+    }
+
+    func testShrinkingCapacityIsAnError() {
+        let bags = BagFileDTO(maxTier: 3, capacities: [25, 40, 30],
+                              progression: [bagStep(2, cap: 40), bagStep(3, cap: 30)])
+        let report = ContentValidator.validate(bundle(bags: bags))
+        XCTAssertTrue(report.errors.contains { $0.rule == "ladder.capacity_regression" })
+    }
+
+    func testEstateGateGoingBackwardsIsAnError() {
+        let estate = EstateUpgradeFileDTO(maxTier: 3, progression: [
+            EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 10),
+            EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 4)
+        ])
+        let bags = BagFileDTO(maxTier: 0, capacities: [], progression: [])
+        let report = ContentValidator.validate(bundle(bags: bags, estate: estate))
+        XCTAssertTrue(report.errors.contains { $0.rule == "ladder.gate_regression" })
+    }
+
+    func testWellFormedLaddersAreClean() {
+        let bags = BagFileDTO(maxTier: 3, capacities: [25, 35, 45],
+                              progression: [bagStep(2, cap: 35), bagStep(3, cap: 45)])
+        let estate = EstateUpgradeFileDTO(maxTier: 3, progression: [
+            EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4,
+                                 inputs: [MaterialCostDTO(itemId: "mat.hide", quantity: 3)]),
+            EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7, silverCost: 50)
+        ])
+        let report = ContentValidator.validate(bundle(bags: bags, estate: estate))
+        XCTAssertTrue(report.issues.isEmpty, "unexpected: \(report.issues)")
+    }
+}

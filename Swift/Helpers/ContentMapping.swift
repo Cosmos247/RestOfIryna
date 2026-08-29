@@ -228,3 +228,47 @@ extension WeaponLadderDTO {
 
     var domainSteps: [WeaponUpgradeStep] { tiers.map(\.domain) }
 }
+
+// MARK: - Bag ladder
+
+extension BagUpgradeStepDTO {
+    init(_ step: BagUpgradeStep) {
+        self.init(
+            toTier: step.toTier,
+            capacity: step.capacity,
+            requiredEstateLevel: step.requiredEstateLevel,
+            inputs: step.inputs.map { MaterialCostDTO(itemId: $0.itemId, quantity: $0.quantity) }
+        )
+    }
+
+    var domain: BagUpgradeStep {
+        BagUpgradeStep(
+            toTier: toTier,
+            capacity: capacity,
+            requiredEstateLevel: requiredEstateLevel,
+            inputs: inputs.map { BagUpgradeInput($0.itemId, $0.quantity) }
+        )
+    }
+}
+
+// MARK: - Estate ladder
+
+extension EstateUpgradeStepDTO {
+    init(_ step: EstateUpgradeStep) {
+        self.init(
+            toTier: step.toTier,
+            requiredPlayerLevel: step.requiredPlayerLevel,
+            silverCost: step.silverCost,
+            inputs: step.inputs.map { MaterialCostDTO(itemId: $0.itemId, quantity: $0.quantity) }
+        )
+    }
+
+    var domain: EstateUpgradeStep {
+        EstateUpgradeStep(
+            toTier: toTier,
+            requiredPlayerLevel: requiredPlayerLevel,
+            inputs: inputs.map { EstateUpgradeInput($0.itemId, $0.quantity) },
+            silverCost: silverCost
+        )
+    }
+}

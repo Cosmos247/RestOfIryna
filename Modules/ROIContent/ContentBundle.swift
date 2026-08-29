@@ -20,6 +20,8 @@ public struct ContentBundle: Sendable {
     public let starterRecipeIds: [String]
     public let weaponLadders: [WeaponLadderDTO]
     public let weaponDurabilityByTier: [Int]
+    public let bags: BagFileDTO
+    public let estateUpgrades: EstateUpgradeFileDTO
     /// FNV-1a over the concatenated raw bytes of every file, in load order.
     /// Printed at boot and by `/content` so a running bot can be matched to a
     /// checkout without guessing.
@@ -33,6 +35,8 @@ public struct ContentBundle: Sendable {
         starterRecipeIds: [String],
         weaponLadders: [WeaponLadderDTO] = [],
         weaponDurabilityByTier: [Int] = [],
+        bags: BagFileDTO = BagFileDTO(maxTier: 0, capacities: [], progression: []),
+        estateUpgrades: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, progression: []),
         contentHash: String
     ) {
         self.manifest = manifest
@@ -42,6 +46,8 @@ public struct ContentBundle: Sendable {
         self.starterRecipeIds = starterRecipeIds
         self.weaponLadders = weaponLadders
         self.weaponDurabilityByTier = weaponDurabilityByTier
+        self.bags = bags
+        self.estateUpgrades = estateUpgrades
         self.contentHash = contentHash
     }
 
@@ -49,7 +55,8 @@ public struct ContentBundle: Sendable {
         let version = manifest.contentVersion.map { " · \($0)" } ?? ""
         return "schema v\(manifest.schemaVersion)\(version) · hash \(contentHash) · "
             + "\(items.count) items · \(enemies.count) enemies · \(recipes.count) recipes · "
-            + "\(weaponLadders.count) ladders · "
+            + "\(weaponLadders.count) ladders · \(bags.progression.count) bag steps · "
+            + "\(estateUpgrades.progression.count) estate steps · "
             + "timeScale \(manifest.timeScale)"
     }
 }

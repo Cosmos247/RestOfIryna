@@ -39,6 +39,9 @@ public final class GameContent: Sendable {
     public let weaponLaddersByItemId: [String: WeaponLadderDTO]
     public let weaponDurabilityByTier: [Int]
 
+    public let bags: BagFileDTO
+    public let estateUpgrades: EstateUpgradeFileDTO
+
     public init(_ bundle: ContentBundle) {
         self.manifest = bundle.manifest
         self.contentHash = bundle.contentHash
@@ -57,5 +60,7 @@ public final class GameContent: Sendable {
         self.weaponLaddersByItemId = Dictionary(
             bundle.weaponLadders.map { ($0.itemId, $0) }, uniquingKeysWith: { _, last in last })
         self.weaponDurabilityByTier = bundle.weaponDurabilityByTier
+        self.bags = bundle.bags
+        self.estateUpgrades = bundle.estateUpgrades
     }
 }

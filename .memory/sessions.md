@@ -2343,6 +2343,41 @@ prove nothing.
 37 tests green. Verified no `static let` anywhere reads a catalog at type-init, which would now
 trap since `all` is a computed property.
 
+### Phase 3 Batch A — weapon / bag / estate ladders
+Three more catalogs became façades: `WeaponUpgradeCatalog`, `BagCatalog`,
+`EstateUpgradeCatalog`. `bags.json` and `estate_upgrades.json` exported (weapon_upgrades.json
+already existed from Phase 1). **386 lines of Swift arrays deleted.** `MaterialCostDTO` introduced
+and `WeaponUpgradeInputDTO` aliased to it — every ladder in the game costs materials in the same
+`{itemId, quantity}` shape.
+
+**Audit found a gap in my own verification.** The digest fingerprints the DATA, but the accessor
+bodies (`nextStep`, `capForTier`, `durability(forTier:)`, `stats(for:tier:)`, `isUpgradable`) were
+rewritten during the flip and nothing checked them. Added an accessor replay over tiers −2…12
+(deliberately including out-of-range values), then verified it properly: reverted ONLY the three
+catalog files to HEAD with `git stash push -- <paths>` and re-ran the *same* digest code against
+the Swift arrays. Identical: `9242a2c1501994ed`. **Lesson, again: fingerprinting data does not
+verify the code that reads it.**
+
+`nextStep` gained a bounds guard the original lacked — the original would have crashed if
+`maxTier` exceeded `progression.count + 1`. Can't happen with valid data (the new contiguity rule
+enforces it), and the replay confirms no observable difference.
+
+New validator rules: tier contiguity (both ladders index `progression[toTier − 2]`, so a gap
+silently hands out the wrong upgrade), ladder-capacity vs the flat `capacities` table
+disagreement, capacity regression, estate level-gate regression. +5 tests, 42 total.
+
+Independently cross-checked by parsing the pre-flip Swift arrays out of git HEAD: bag maxTier and
+capacities, all 5 bag steps, all 6 estate steps, all 3 weapon ladders and `durabilityByTier` match
+the JSON exactly.
+
+Digest also extended to cover Batch B (Trader / Tavern / Market / Guild / Arena) while they are
+still Swift-backed, so the baseline for that flip is already recorded. It includes a `leagueKey`
+replay across honor 0…2000 and a `tithe` rounding replay, because `ArenaCatalog.leagueKey` is a
+hardcoded switch that becomes a league table in JSON.
+
+`ContentExporter` is empty again for the same reason as Phase 2 — re-exporting a façade writes
+back what was just loaded. It now prints the list of catalogs still awaiting the move.
+
 ### Next
-Phase 3 — the remaining 11 catalogs, one per commit. User asked to confirm the start of each
-phase before it begins.
+Phase 3 Batch B (Trader / Tavern / Market / Guild / Arena), then Batch C (Master / Plot /
+Fortune / Quest). User asked to confirm the start of each phase before it begins.

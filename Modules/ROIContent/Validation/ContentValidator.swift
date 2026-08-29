@@ -30,6 +30,7 @@ public enum ContentValidator {
         issues += validateEnums(bundle)
         issues += validateReferences(bundle)
         issues += validateWeaponLadders(bundle)
+        issues += validateUpgradeLadders(bundle)
         issues += validateTime(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -352,6 +353,101 @@ public enum ContentValidator {
             issues.append(.init(severity: .error, file: file, path: "durabilityByTier", id: nil,
                                 rule: "ladder.durability_short",
                                 message: "durabilityByTier has \(bundle.weaponDurabilityByTier.count) entries but the longest ladder is \(longestLadder) tiers"))
+        }
+
+        return issues
+    }
+
+    // MARK: - Bag / estate ladders
+
+    /// `BagCatalog.nextStep` and `EstateUpgradeCatalog.nextStep` index
+    /// `progression[targetTier - 2]`, so a gap or a duplicate tier silently
+    /// hands the player the wrong upgrade. The DTO writes `toTier` down; this
+    /// is what makes writing it down worth anything.
+    private static func validateUpgradeLadders(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let itemIds = Set(bundle.items.map(\.id))
+
+        func checkCosts(_ inputs: [MaterialCostDTO], file: String, path: String, id: String?) {
+            for (index, cost) in inputs.enumerated() {
+                if !itemIds.contains(cost.itemId) {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).inputs[\(index)]", id: id,
+                                        rule: "reference.item.unknown",
+                                        message: "references unknown item \"\(cost.itemId)\""))
+                }
+                if cost.quantity < 1 {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).inputs[\(index)]", id: id,
+                                        rule: "ladder.quantity",
+                                        message: "quantity must be >= 1, found \(cost.quantity)"))
+                }
+            }
+        }
+
+        /// A ladder must run 2, 3, … maxTier with no gaps and no repeats.
+        func checkContiguity(_ tiers: [Int], maxTier: Int, file: String) {
+            let expected = Array(2...max(2, maxTier))
+            if tiers != expected {
+                issues.append(.init(severity: .error, file: file, path: "progression", id: nil,
+                                    rule: "ladder.tiers_not_contiguous",
+                                    message: "tiers \(tiers) must be exactly \(expected) — nextStep indexes by position"))
+            }
+        }
+
+        // Bag
+        let bagFile = "bags.json"
+        let bags = bundle.bags
+        if !bags.progression.isEmpty {
+            checkContiguity(bags.progression.map(\.toTier), maxTier: bags.maxTier, file: bagFile)
+            if bags.capacities.count < bags.maxTier {
+                issues.append(.init(severity: .error, file: bagFile, path: "capacities", id: nil,
+                                    rule: "ladder.capacities_short",
+                                    message: "capacities has \(bags.capacities.count) entries but maxTier is \(bags.maxTier)"))
+            }
+            for (index, step) in bags.progression.enumerated() {
+                let path = "progression[\(index)]"
+                checkCosts(step.inputs, file: bagFile, path: path, id: "bag.t\(step.toTier)")
+                // The ladder's capacity for a tier and the flat table read by
+                // `capForTier` are two separate sources for one number.
+                let tableIndex = step.toTier - 1
+                if tableIndex >= 0, tableIndex < bags.capacities.count,
+                   bags.capacities[tableIndex] != step.capacity {
+                    issues.append(.init(severity: .error, file: bagFile, path: "\(path).capacity", id: "bag.t\(step.toTier)",
+                                        rule: "ladder.capacity_disagrees",
+                                        message: "step says \(step.capacity) but capacities[\(tableIndex)] says \(bags.capacities[tableIndex])"))
+                }
+                if step.capacity < 1 {
+                    issues.append(.init(severity: .error, file: bagFile, path: "\(path).capacity", id: "bag.t\(step.toTier)",
+                                        rule: "ladder.capacity", message: "capacity must be positive"))
+                }
+            }
+            // Capacity must never shrink on upgrade.
+            for pair in zip(bags.progression, bags.progression.dropFirst()) where pair.1.capacity < pair.0.capacity {
+                issues.append(.init(severity: .error, file: bagFile, path: "progression", id: "bag.t\(pair.1.toTier)",
+                                    rule: "ladder.capacity_regression",
+                                    message: "capacity drops from \(pair.0.capacity) to \(pair.1.capacity) on upgrade"))
+            }
+        }
+
+        // Estate
+        let estateFile = "estate_upgrades.json"
+        let estate = bundle.estateUpgrades
+        if !estate.progression.isEmpty {
+            checkContiguity(estate.progression.map(\.toTier), maxTier: estate.maxTier, file: estateFile)
+            for (index, step) in estate.progression.enumerated() {
+                let path = "progression[\(index)]"
+                checkCosts(step.inputs, file: estateFile, path: path, id: "estate.t\(step.toTier)")
+                if step.silverCost < 0 {
+                    issues.append(.init(severity: .error, file: estateFile, path: "\(path).silverCost", id: "estate.t\(step.toTier)",
+                                        rule: "ladder.negative_cost", message: "silverCost must not be negative"))
+                }
+            }
+            // Later tiers must not unlock earlier than earlier ones.
+            for pair in zip(estate.progression, estate.progression.dropFirst())
+            where pair.1.requiredPlayerLevel < pair.0.requiredPlayerLevel {
+                issues.append(.init(severity: .error, file: estateFile, path: "progression", id: "estate.t\(pair.1.toTier)",
+                                    rule: "ladder.gate_regression",
+                                    message: "required level drops from \(pair.0.requiredPlayerLevel) to \(pair.1.requiredPlayerLevel)"))
+            }
         }
 
         return issues

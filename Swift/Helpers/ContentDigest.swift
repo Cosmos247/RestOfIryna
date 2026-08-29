@@ -54,6 +54,75 @@ enum ContentDigest {
         }
         for durability in WeaponUpgradeCatalog.durabilityByTier { digest.combine(durability) }
 
+        digest.combine(BagCatalog.maxTier)
+        for capacity in BagCatalog.capacities { digest.combine(capacity) }
+        for step in BagCatalog.progression { digest.combine(fingerprint(step)) }
+
+        digest.combine(EstateUpgradeCatalog.maxTier)
+        for step in EstateUpgradeCatalog.progression { digest.combine(fingerprint(step)) }
+
+        for listing in TraderCatalog.all {
+            digest.combine("\(listing.itemId) s\(listing.sellPacketQty)@\(listing.sellPacketSilver) b\(listing.buyPacketQty)@\(listing.buyPacketSilver)")
+        }
+        for listing in TavernCatalog.food { digest.combine("\(listing.itemId)@\(listing.priceSilver)") }
+        for wager in TavernCatalog.wagerTiers { digest.combine(wager) }
+
+        digest.combine(MarketCatalog.listingFee)
+        digest.combine(MarketCatalog.maxActiveLots)
+
+        digest.combine(GuildCatalog.memberCap)
+        digest.combine(GuildCatalog.maxOfficers)
+        digest.combine(GuildCatalog.foundCost)
+        digest.combine(GuildCatalog.foundLevelGate)
+        digest.combine(GuildCatalog.defaultEmblem)
+        digest.combine(GuildCatalog.nameMinLength)
+        digest.combine(GuildCatalog.nameMaxLength)
+        digest.combine(GuildCatalog.vaultUnitCap)
+
+        for stake in ArenaCatalog.stakeTiers { digest.combine(stake) }
+        digest.combine(ArenaCatalog.tithePercent)
+        digest.combine(ArenaCatalog.startingHonor)
+        digest.combine("\(ArenaCatalog.honorKFactor)")
+        digest.combine(ArenaCatalog.minHonor)
+        digest.combine("\(ArenaCatalog.turnSeconds)")
+        digest.combine(ArenaCatalog.maxMissedTurns)
+        digest.combine("\(ArenaCatalog.challengeTTL)")
+        digest.combine("\(ArenaCatalog.lobbyTTL)")
+        digest.combine("\(ArenaCatalog.sweepInterval)")
+        digest.combine(ArenaCatalog.dailyFightCap)
+        // Replay the league boundaries rather than trusting the thresholds:
+        // `leagueKey` is a switch today and a table after the move, so only
+        // exercising it across the range proves the two agree.
+        for honor in stride(from: 0, through: 2000, by: 5) {
+            digest.combine(ArenaCatalog.leagueKey(forHonor: honor))
+        }
+        // Accessor replay. The record fingerprints above cover the DATA; these
+        // cover the derived READS, whose bodies were rewritten when the
+        // catalogs became façades. `nextStep` indexes by position, `capForTier`
+        // and `durability(forTier:)` clamp — all three are exactly the kind of
+        // logic a data fingerprint cannot see.
+        for tier in -2...12 {
+            digest.combine(BagCatalog.capForTier(tier))
+            digest.combine(WeaponUpgradeCatalog.durability(forTier: tier))
+            digest.combine(BagCatalog.nextStep(from: tier).map(fingerprint) ?? "-")
+            digest.combine(EstateUpgradeCatalog.nextStep(from: tier).map(fingerprint) ?? "-")
+            digest.combine("\(BagCatalog.canUpgrade(from: tier))")
+            digest.combine("\(EstateUpgradeCatalog.canUpgrade(from: tier))")
+        }
+        for itemId in ["gear.rusty_sword", "gear.simple_bow", "gear.wooden_staff", "gear.forester_hood", "nope"] {
+            digest.combine("\(WeaponUpgradeCatalog.isUpgradable(itemId))")
+            digest.combine(WeaponUpgradeCatalog.maxTier(for: itemId).map(String.init) ?? "-")
+            for tier in 0...6 {
+                let stats = WeaponUpgradeCatalog.stats(for: itemId, tier: tier)
+                digest.combine(stats.map { "\($0.attack)/\($0.defense)/\($0.crit)/\($0.dodge)/\($0.accuracy)" } ?? "-")
+            }
+        }
+
+        // Tithe rounding is `.rounded()` on a Double — replay it too.
+        for pot in stride(from: 0, through: 2000, by: 7) {
+            digest.combine(ArenaCatalog.tithe(onPot: pot))
+        }
+
         // Snapshot the record-only hash before the spawn replay folds in.
         let recordDigest = digest.hexDigest
 
@@ -73,7 +142,7 @@ enum ContentDigest {
 
         digest.combine(spawnDigest)
 
-        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders)")
+        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("COMBINED \(digest.hexDigest)")
         print("")
@@ -153,6 +222,16 @@ enum ContentDigest {
     // Shared with `ContentExporter`'s layer-0 equivalence check. When a domain
     // type gains a stored property, extend the matching fingerprint in the same
     // edit — an omission here silently weakens both checks at once.
+
+    static func fingerprint(_ step: BagUpgradeStep) -> String {
+        let inputs = step.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
+        return "t\(step.toTier) cap\(step.capacity) estate\(step.requiredEstateLevel) \(inputs)"
+    }
+
+    static func fingerprint(_ step: EstateUpgradeStep) -> String {
+        let inputs = step.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
+        return "t\(step.toTier) lvl\(step.requiredPlayerLevel) silver\(step.silverCost) \(inputs)"
+    }
 
     static func fingerprint(_ item: Item) -> String {
         let effects = item.effects.map { effect -> String in

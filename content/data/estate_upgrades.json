@@ -1,0 +1,167 @@
+{
+  "maxTier" : 7,
+  "progression" : [
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 3
+        }
+      ],
+      "requiredPlayerLevel" : 4,
+      "silverCost" : 0,
+      "toTier" : 2
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 40
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 8
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 5
+        }
+      ],
+      "requiredPlayerLevel" : 7,
+      "silverCost" : 0,
+      "toTier" : 3
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 60
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 40
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 15
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 10
+        }
+      ],
+      "requiredPlayerLevel" : 10,
+      "silverCost" : 50,
+      "toTier" : 4
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 80
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 60
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 8
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 15
+        }
+      ],
+      "requiredPlayerLevel" : 13,
+      "silverCost" : 150,
+      "toTier" : 5
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 100
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 80
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 25
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 12
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 15
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 20
+        }
+      ],
+      "requiredPlayerLevel" : 16,
+      "silverCost" : 400,
+      "toTier" : 6
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 120
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 100
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 30
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 18
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 25
+        }
+      ],
+      "requiredPlayerLevel" : 19,
+      "silverCost" : 1000,
+      "toTier" : 7
+    }
+  ]
+}

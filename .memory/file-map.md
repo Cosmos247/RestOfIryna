@@ -16,7 +16,7 @@ RestOfIryna/
 │   │   ├── GameContent.swift       # Immutable validated snapshot; all lookup dicts built once; dedupes with uniquingKeysWith (uniqueKeysWithValues TRAPS)
 │   │   ├── GameData.swift          # nonisolated(unsafe) + NSLock holder; keeps catalog façades sync/non-throwing for ~315 call sites. NOT @TaskLocal (doesn't cross Task.detached — 6 detached tasks read catalogs)
 │   │   ├── LocaleIndex.swift       # en/uk flat maps; `has()` accepts uk `.m`/`.f` pairs (21 keys rely on this); emoji-before-%{} detector
-│   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO · WeaponUpgradeDTO — hand-written init(from:) because Swift ignores property defaults for missing keys
+│   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO · WeaponUpgradeDTO · UpgradeDTO (bag + estate, sharing MaterialCostDTO) — hand-written init(from:) because Swift ignores property defaults for missing keys
 │   │   └── Validation/             # ContentIssue/ContentReport + ContentValidator (identity · enums · references · localization · timeScale)
 │   ├── ROISim/                     # library → ROIContent
 │   │   ├── SplitMix64.swift        # Seedable RNG + OutcomeDigest — the migration equivalence proof needs reproducible rolls

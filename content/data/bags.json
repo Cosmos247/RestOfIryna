@@ -1,0 +1,88 @@
+{
+  "capacities" : [
+    25,
+    35,
+    45,
+    60,
+    80,
+    85
+  ],
+  "maxTier" : 6,
+  "progression" : [
+    {
+      "capacity" : 35,
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 5
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 2
+        }
+      ],
+      "requiredEstateLevel" : 3,
+      "toTier" : 2
+    },
+    {
+      "capacity" : 45,
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 3
+        }
+      ],
+      "requiredEstateLevel" : 4,
+      "toTier" : 3
+    },
+    {
+      "capacity" : 60,
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 15
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 5
+        }
+      ],
+      "requiredEstateLevel" : 5,
+      "toTier" : 4
+    },
+    {
+      "capacity" : 80,
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 8
+        }
+      ],
+      "requiredEstateLevel" : 6,
+      "toTier" : 5
+    },
+    {
+      "capacity" : 85,
+      "inputs" : [
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 25
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 12
+        }
+      ],
+      "requiredEstateLevel" : 7,
+      "toTier" : 6
+    }
+  ]
+}

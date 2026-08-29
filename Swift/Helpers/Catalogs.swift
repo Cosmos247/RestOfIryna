@@ -38,6 +38,16 @@ final class DomainContent: Sendable {
     let recipesById: [String: Recipe]
     let starterRecipeIds: Set<String>
 
+    let weaponLadders: [String: [WeaponUpgradeStep]]
+    let weaponDurabilityByTier: [Int]
+
+    let bagMaxTier: Int
+    let bagCapacities: [Int]
+    let bagProgression: [BagUpgradeStep]
+
+    let estateMaxTier: Int
+    let estateProgression: [EstateUpgradeStep]
+
     /// Throws when a DTO carries a value the domain enums can't represent
     /// (unknown item type, slot or recipe category) or an inverted depth range.
     /// Those are validator errors too, so this should be unreachable in
@@ -58,6 +68,22 @@ final class DomainContent: Sendable {
         self.enemiesById = Dictionary(enemies.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.recipesById = Dictionary(recipes.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.starterRecipeIds = content.starterRecipeIds
+
+        self.weaponLadders = Dictionary(
+            content.weaponLaddersByItemId.map { ($0.key, $0.value.domainSteps) },
+            uniquingKeysWith: { _, last in last })
+        self.weaponDurabilityByTier = content.weaponDurabilityByTier
+
+        self.bagMaxTier = content.bags.maxTier
+        self.bagCapacities = content.bags.capacities
+        // Sorted by `toTier`: `BagCatalog.nextStep` indexes `progression[tier - 2]`,
+        // so a shuffled file would hand out the wrong upgrade. The validator
+        // rejects a non-contiguous ladder outright; sorting here means a merge
+        // that only reorders cannot break the game in the meantime.
+        self.bagProgression = content.bags.progression.sorted { $0.toTier < $1.toTier }.map(\.domain)
+
+        self.estateMaxTier = content.estateUpgrades.maxTier
+        self.estateProgression = content.estateUpgrades.progression.sorted { $0.toTier < $1.toTier }.map(\.domain)
     }
 }
 

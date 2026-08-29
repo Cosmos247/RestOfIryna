@@ -536,7 +536,24 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `?? all.first` km≥36 fallback bug is preserved deliberately — fixing it belongs to Phase 5.
       `ContentExporter` narrowed to Swift-backed catalogs only, since re-exporting a façade is
       circular. 37 tests green.
-- [ ] Phase 3 — Remaining 11 catalogs (weapon_upgrades landed in Phase 1)
+- [ ] **Phase 3 — Remaining catalogs** *(in progress — 3 of 12 done)*
+  - [x] **Batch A** *(2026-08-29)* — `WeaponUpgradeCatalog`, `BagCatalog`, `EstateUpgradeCatalog`
+        are façades; `bags.json` + `estate_upgrades.json` exported (weapon_upgrades.json landed in
+        Phase 1). **386 lines of Swift arrays deleted.** Migration digest identical across the
+        flip. Cross-checked independently by parsing the pre-flip Swift arrays out of git: maxTier,
+        capacities, every ladder step and `durabilityByTier` all match.
+        **Digest gained an accessor replay** during the audit — the record fingerprints cover the
+        DATA, but `nextStep` / `capForTier` / `durability(forTier:)` / `stats(for:tier:)` bodies
+        were rewritten and nothing checked them. Verified by reverting only the three catalog files
+        to HEAD and re-running the *same* digest code: identical, including out-of-range tiers.
+        New validator rules: tier contiguity (`nextStep` indexes `progression[tier − 2]`, so a gap
+        silently hands out the wrong upgrade), ladder-vs-`capacities` disagreement, capacity
+        regression, estate level-gate regression. 42 tests green.
+  - [ ] Batch B — `TraderCatalog`, `TavernCatalog`, `MarketCatalog`, `GuildCatalog`,
+        `ArenaCatalog`. Digest already covers them (baseline `9242a2c1501994ed`), including a
+        `leagueKey` replay across honor 0…2000 and a `tithe` rounding replay, because
+        `ArenaCatalog.leagueKey` is a hardcoded switch that becomes a league table.
+  - [ ] Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`
 - [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
       technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)

@@ -20,15 +20,10 @@
 
 import Foundation
 
-public struct WeaponUpgradeInputDTO: Codable, Sendable, Equatable {
-    public let itemId: String
-    public let quantity: Int
-
-    public init(itemId: String, quantity: Int) {
-        self.itemId = itemId
-        self.quantity = quantity
-    }
-}
+/// Every ladder in the game costs materials in the same `{itemId, quantity}`
+/// shape, so they share one record. The alias keeps the weapon call sites
+/// reading naturally; the JSON is unchanged either way.
+public typealias WeaponUpgradeInputDTO = MaterialCostDTO
 
 public struct WeaponUpgradeStepDTO: Codable, Sendable, Equatable {
     public let tier: Int

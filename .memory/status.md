@@ -175,7 +175,9 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   gone (−397 lines). `ContentBootstrap.load` runs in `configure` before the DB block. Migration
   digest identical before/after (`545017168ce60953`), verified non-vacuous by two negative tests.
   **The bot now runs off `content/data/` for items, enemies and recipes.**
-- Phases 3–11 pending: remaining 11 catalogs, tuning tables, new combat model, rarity+sets,
+- **Phase 3 IN PROGRESS (3 of 12 catalogs)** — weapon/bag/estate ladders now read from JSON.
+  Digest baseline for the next batch: `9242a2c1501994ed`.
+- Phases 3 (rest) – 11 pending: 9 more catalogs, tuning tables, new combat model, rarity+sets,
   `/reload`, simulator calibration, content specs, authoring, wipe.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve
