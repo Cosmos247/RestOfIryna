@@ -2469,9 +2469,90 @@ boundary is the interesting one — bands are never fingerprinted as records, so
 carries the replay-before-flip recipe, because batch C needs it: `PlotCatalog` and `QuestCatalog`
 are also behaviour-in-code rather than arrays.
 
+### Phase 3 Batch C — master / plots / fortune / quests *(2026-08-29)*
+The last four catalogs moved to `content/data/`. **Phase 3 is closed: all 12 catalogs read JSON,
+no Swift array remains.** 85 tests green (was 62). 250 lines of arrays deleted; 403 lines of JSON.
+
+**Step 1 was real work this time.** Batch B inherited its digest coverage; batch C had none, so
+the digest gained a `records` extension (22 cards × 14 effect fields, 9 jobs, 4 plot tunings, the
+Master ladder and its accessor replays) **plus a third half, `quests`** — a seeded replay of
+`daily()` over 200 users × 4 days × 3 NPCs. New baseline `8053216102eceff7`
+(`records 04cbf2b5331ea85b` · `spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`), captured
+while the catalogs were still Swift-backed and **identical after the flip**.
+
+Six negative tests before writing a line of DTO, each moving exactly the intended half:
+
+| perturbation | records | quests |
+|---|---|---|
+| reorder two jobs in the trader pool | moved | moved |
+| **drop the day from the `daily()` hash key** | **byte-identical** | **moved alone** |
+| `icon(.mine)` ⛏→🪓 (a switch with no backing array) | moved | — |
+| `repairCost` coefficient 0.5→0.6 (a formula) | moved | — |
+| card `9_hermit` xpMultiplier 1.35→1.36 | moved | — |
+| `enchantPerLevelPoints` [..2,3]→[..2,4] | moved | — |
+
+Row 2 is the one that justifies the third half: `daily` is
+`pool[stableHash("<uuid>:<npc>:<day>") % pool.count]`, so pool ORDER is the assignment. A
+reordered pool hands every player a different job while leaving all nine record fingerprints
+untouched.
+
+**Two hand-translations, both proven before a byte was written.** `repairCostFraction` is the 0.5
+lifted out of `MasterCatalog.repairCost`; extracting a constant from a formula is a translation,
+so the exporter recomputed the whole formula from the extracted value across 6 items × missing
+−5…120 — including the `?? 30` fallback, the `missing <= 0` short-circuit and the `max(1, …)`
+floor that a naive re-derivation drops. And the exported pool order was replayed against
+`daily()` over 200 seeded users × 4 days × 3 NPCs, with the exporter refusing to write on the
+first mismatch.
+
+**The sharpest edge in the batch was a `private static let`.** `FortuneCatalog.lookup` was
+`Dictionary(uniqueKeysWithValues: all.map …)` — harmless while `all` was also a `static let`, and
+a guaranteed trap the instant `all` reads the snapshot, because it would run at type-init before
+`ContentBootstrap.load`. It was deleted, not moved; the dictionary lives in `DomainContent`.
+The lesson for next time: grep for `static let` INSIDE the catalog, not only at its call sites.
+
+Three more shape lessons:
+- **Absence is a value.** `tuning(for: .trainingGround)` returning nil is how the estate
+  controller opens a training fight instead of a harvest, so the DTO models it as an absent key
+  and the fingerprint compares `<none>` explicitly.
+- **A no-op default is per-field.** `FortuneEffect` omits 0 for bonuses but **1.0** for
+  multipliers; one "skip falsy" rule would have written nothing for a 1.0 and decoded a card that
+  zeroes the stat it scales.
+- **Never iterate a catalog's Dictionary for a digest or an export.** `pools` and `t1Tunings`
+  hash in an arbitrary per-process order; both had to be walked via `allCases`.
+
+Staying in Swift on purpose: `PlotType` (persisted in `Plot.plotType`), `QuestNPC` (callback
+token + locale infix), `QuestCounter` (names the four hook sites), `stableHash`, and
+`weaponRepairCost` — `max(0, missing)` has no magic number to lift, and inventing a ×1 rate would
+mean writing new logic during a migration. User chose "explicit magic numbers only" and
+"`testMode` verbatim into `plots.json`" when asked.
+
+**28 new validator rules, every one negative-tested.** The ones worth naming:
+`master.points_short` (`enchantBonusPoints` does `prefix(min(level, count))`, so a short table
+silently stops granting at the top while the UI still advertises the cap),
+`master.levels_not_contiguous` (`enchantStep` looks up by level, so a gap strands the player one
+short), `plot.type_missing` (a `PlotType` the file forgets is a DB row the game can load but not
+describe), `fortune.unsafe_id` (the id is also a PNG filename under `Assets/`),
+`fortune.half_wheel` (the wheel fires only when both sides are set, so setting one alone is an
+effect that never happens), and cross-pool quest id uniqueness (`find` is a global lookup).
+Plus derived locale keys for all four files — plot names/descs, the three keys per card, quest
+titles/descs and board titles.
+
+Independently cross-checked by parsing the pre-flip Swift out of git: all 4 armor rows, 5 enchant
+steps, the extracted 0.5, `testMode`, all 5 icons parsed out of the `switch`, every tuning
+including the mine's bonus output, `training_ground`'s absent tuning, all 22 cards with ids +
+order + every set effect field, and all 3 quest pools with order, objectives and rewards.
+
+**`ContentExporter` deleted** with the `--export-content` branch — Phase 3 is over and it had
+nothing left to export. `ContentDigest` stays: it is the "confirm only the intended change" step
+of the add-content workflow, not a migration leftover.
+
 ### Next
-Phase 3 Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`. Extend
-`ContentDigest` to cover them while they are still Swift-backed and capture the new baseline
-first; `PlotCatalog` and `QuestCatalog` additionally need the batch-B replay proof. Then Phase 4
-(tuning tables + collapsing the three `testMode` flags into one `time.scale`).
+**Phase 4 — tuning tables + collapsing the three `testMode` flags into one `time.scale`** (its own
+commit). Batch C surfaced why that is not mechanical: `PlotCatalog.testMode` alone drives two
+different scales — `intervalSeconds` is 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
+`PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag rode into `plots.json` verbatim and
+Phase 4 reconciles and deletes it.
+Two smaller open items: `manifest.json` still says `contentVersion: "phase1-export"` (stale by
+three phases), and `schemaVersion` has never moved despite the bundle gaining nine required files
+since v1 — worth a decision before Phase 4.
 User asked to confirm the start of each phase before it begins.

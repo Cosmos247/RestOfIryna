@@ -61,6 +61,34 @@ final class DomainContent: Sendable {
     let guild: GuildFileDTO
     let arena: ArenaFileDTO
 
+    // Batch C. The two lookup dictionaries replace what used to be a linear
+    // `first(where:)` and a `Dictionary(uniqueKeysWithValues:)` that TRAPPED on
+    // a duplicate id; duplicates are now a validator error instead, so a
+    // copy-pasted id reports rather than crashing the bot at first draw.
+    let masterArmor: [MasterCatalog.ArmorListing]
+    let masterArmorById: [String: MasterCatalog.ArmorListing]
+    let masterRepairCostFraction: Double
+    let masterEnchantCap: Int
+    let masterEnchantPerLevelPoints: [Int]
+    let masterEnchantSteps: [MasterCatalog.EnchantStep]
+
+    let plotTestMode: Bool
+    let plotIcons: [PlotType: String]
+    let plotTunings: [PlotType: PlotTuning]
+
+    let fortuneDrawPrice: Int
+    let fortuneBuffDurationSeconds: TimeInterval
+    let fortuneCooldownSeconds: TimeInterval
+    let fortuneCards: [FortuneCard]
+    let fortuneCardsById: [String: FortuneCard]
+
+    let questPools: [QuestNPC: [QuestDef]]
+    /// `QuestCatalog.find` used to scan an unordered dictionary of pools, so on
+    /// a duplicate id its answer was whichever pool the hasher happened to
+    /// visit first. Ids are unique, so no behaviour changes — but the lookup is
+    /// now deterministic by construction rather than by luck.
+    let questsById: [String: QuestDef]
+
     /// Throws when a DTO carries a value the domain enums can't represent
     /// (unknown item type, slot or recipe category), an inverted depth range, or
     /// a bundle missing one of the five capital files. All three are validator
@@ -72,13 +100,19 @@ final class DomainContent: Sendable {
         // a game whose guild cap is silently zero.
         guard let trader = content.trader, let tavern = content.tavern,
               let market = content.market, let guild = content.guild,
-              let arena = content.arena else {
+              let arena = content.arena, let master = content.master,
+              let plots = content.plots, let fortune = content.fortune,
+              let quests = content.quests else {
             throw ContentMappingError.incompleteBundle(missing: [
-                content.trader == nil ? "trader.json" : nil,
-                content.tavern == nil ? "tavern.json" : nil,
-                content.market == nil ? "market.json" : nil,
-                content.guild  == nil ? "guild.json"  : nil,
-                content.arena  == nil ? "arena.json"  : nil
+                content.trader  == nil ? "trader.json"  : nil,
+                content.tavern  == nil ? "tavern.json"  : nil,
+                content.market  == nil ? "market.json"  : nil,
+                content.guild   == nil ? "guild.json"   : nil,
+                content.arena   == nil ? "arena.json"   : nil,
+                content.master  == nil ? "master.json"  : nil,
+                content.plots   == nil ? "plots.json"   : nil,
+                content.fortune == nil ? "fortune.json" : nil,
+                content.quests  == nil ? "quests.json"  : nil
             ].compactMap { $0 })
         }
 
@@ -132,6 +166,51 @@ final class DomainContent: Sendable {
         self.market = market
         self.guild = guild
         self.arena = arena
+
+        // Shop order is display order — ascending by price — so no sort here.
+        self.masterArmor = master.armorForSale.map(\.domain)
+        // First-wins, matching the `armorForSale.first(where:)` it replaces.
+        self.masterArmorById = Dictionary(masterArmor.map { ($0.itemId, $0) },
+                                          uniquingKeysWith: { first, _ in first })
+        self.masterRepairCostFraction = master.repairCostFraction
+        self.masterEnchantCap = master.enchantCap
+        self.masterEnchantPerLevelPoints = master.enchantPerLevelPoints
+        self.masterEnchantSteps = master.enchantSteps.map(\.domain)
+
+        self.plotTestMode = plots.testMode
+        // Built by parsing each row's `type`. A raw value the enum cannot
+        // represent throws — a validator error too, so unreachable on install.
+        var icons: [PlotType: String] = [:]
+        var tunings: [PlotType: PlotTuning] = [:]
+        for row in plots.types {
+            let type = try row.toPlotType()
+            icons[type] = row.icon
+            // Absent stays absent: `tuning(for:)` returning nil is how the
+            // estate controller knows to open a training fight instead of a
+            // harvest, so `training_ground` must NOT gain an entry here.
+            if let tuning = row.tuning { tunings[type] = tuning.domain }
+        }
+        self.plotIcons = icons
+        self.plotTunings = tunings
+
+        self.fortuneDrawPrice = fortune.drawPrice
+        self.fortuneBuffDurationSeconds = fortune.buffDurationSeconds
+        self.fortuneCooldownSeconds = fortune.cooldownSeconds
+        // Deck order decides which card a given `randomElement()` roll returns.
+        self.fortuneCards = fortune.cards.map(\.domain)
+        self.fortuneCardsById = Dictionary(fortuneCards.map { ($0.id, $0) },
+                                           uniquingKeysWith: { _, last in last })
+
+        // Pool ORDER is the daily assignment (`pool[hash % count]`), so the
+        // rows are taken exactly as written.
+        var pools: [QuestNPC: [QuestDef]] = [:]
+        for pool in quests.pools {
+            let npc = try pool.toNPC()
+            pools[npc] = try pool.quests.map { try $0.toDomain(npc: npc) }
+        }
+        self.questPools = pools
+        self.questsById = Dictionary(pools.values.flatMap { $0 }.map { ($0.id, $0) },
+                                     uniquingKeysWith: { _, last in last })
     }
 }
 

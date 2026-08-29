@@ -1,0 +1,50 @@
+{
+  "testMode" : true,
+  "types" : [
+    {
+      "icon" : "🌾",
+      "tuning" : {
+        "capacity" : 20,
+        "producedItemId" : "food.potato",
+        "ratePerInterval" : 4
+      },
+      "type" : "farm"
+    },
+    {
+      "icon" : "🪚",
+      "tuning" : {
+        "capacity" : 30,
+        "producedItemId" : "mat.pine_lumber",
+        "ratePerInterval" : 6
+      },
+      "type" : "forest"
+    },
+    {
+      "icon" : "⛏",
+      "tuning" : {
+        "bonusOutput" : {
+          "capacity" : 20,
+          "producedItemId" : "mat.iron",
+          "ratePerInterval" : 1
+        },
+        "capacity" : 40,
+        "producedItemId" : "mat.river_pebble",
+        "ratePerInterval" : 8
+      },
+      "type" : "mine"
+    },
+    {
+      "icon" : "🐔",
+      "tuning" : {
+        "capacity" : 12,
+        "producedItemId" : "food.duck_egg",
+        "ratePerInterval" : 2
+      },
+      "type" : "coop"
+    },
+    {
+      "icon" : "🥋",
+      "type" : "training_ground"
+    }
+  ]
+}

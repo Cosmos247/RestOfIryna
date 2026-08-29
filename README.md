@@ -79,13 +79,14 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
 ├── ROISim/                       # SplitMix64 + OutcomeDigest (balance simulator lands in rebalance Phase 8)
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
 
-Tests/ROIContentTests/            # 62 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 85 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion · timeScale
 ├── items.json · enemies.json · recipes.json
 ├── weapon_upgrades.json · bags.json · estate_upgrades.json
-└── trader.json · tavern.json · market.json · guild.json · arena.json
+├── trader.json · tavern.json · market.json · guild.json · arena.json
+└── master.json · plots.json · fortune.json · quests.json
 ```
 
 ```

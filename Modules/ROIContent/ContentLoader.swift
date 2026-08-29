@@ -34,6 +34,10 @@ public enum ContentLoader {
     private static let marketFile   = "market.json"
     private static let guildFile    = "guild.json"
     private static let arenaFile    = "arena.json"
+    private static let masterFile   = "master.json"
+    private static let plotsFile    = "plots.json"
+    private static let fortuneFile  = "fortune.json"
+    private static let questsFile   = "quests.json"
 
     public static func load(from root: URL) throws -> ContentBundle {
         var hashState = FNV1a()
@@ -77,6 +81,18 @@ public enum ContentLoader {
         let arenaData = try read(arenaFile, in: root, into: &hashState)
         let arenaFileDTO: ArenaFileDTO = try decode(arenaData, as: ArenaFileDTO.self, file: arenaFile)
 
+        let masterData = try read(masterFile, in: root, into: &hashState)
+        let masterFileDTO: MasterFileDTO = try decode(masterData, as: MasterFileDTO.self, file: masterFile)
+
+        let plotsData = try read(plotsFile, in: root, into: &hashState)
+        let plotsFileDTO: PlotFileDTO = try decode(plotsData, as: PlotFileDTO.self, file: plotsFile)
+
+        let fortuneData = try read(fortuneFile, in: root, into: &hashState)
+        let fortuneFileDTO: FortuneFileDTO = try decode(fortuneData, as: FortuneFileDTO.self, file: fortuneFile)
+
+        let questsData = try read(questsFile, in: root, into: &hashState)
+        let questsFileDTO: QuestFileDTO = try decode(questsData, as: QuestFileDTO.self, file: questsFile)
+
         return ContentBundle(
             manifest: manifest,
             items: itemFile.items,
@@ -92,6 +108,10 @@ public enum ContentLoader {
             market: marketFileDTO,
             guild: guildFileDTO,
             arena: arenaFileDTO,
+            master: masterFileDTO,
+            plots: plotsFileDTO,
+            fortune: fortuneFileDTO,
+            quests: questsFileDTO,
             contentHash: hashState.hexDigest
         )
     }

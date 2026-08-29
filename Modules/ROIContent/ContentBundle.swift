@@ -33,6 +33,11 @@ public struct ContentBundle: Sendable {
     public let market: MarketFileDTO?
     public let guild: GuildFileDTO?
     public let arena: ArenaFileDTO?
+    // Batch C. Optional for the same reason as the five above.
+    public let master: MasterFileDTO?
+    public let plots: PlotFileDTO?
+    public let fortune: FortuneFileDTO?
+    public let quests: QuestFileDTO?
     /// FNV-1a over the concatenated raw bytes of every file, in load order.
     /// Printed at boot and by `/content` so a running bot can be matched to a
     /// checkout without guessing.
@@ -53,6 +58,10 @@ public struct ContentBundle: Sendable {
         market: MarketFileDTO? = nil,
         guild: GuildFileDTO? = nil,
         arena: ArenaFileDTO? = nil,
+        master: MasterFileDTO? = nil,
+        plots: PlotFileDTO? = nil,
+        fortune: FortuneFileDTO? = nil,
+        quests: QuestFileDTO? = nil,
         contentHash: String
     ) {
         self.manifest = manifest
@@ -69,6 +78,10 @@ public struct ContentBundle: Sendable {
         self.market = market
         self.guild = guild
         self.arena = arena
+        self.master = master
+        self.plots = plots
+        self.fortune = fortune
+        self.quests = quests
         self.contentHash = contentHash
     }
 
@@ -79,7 +92,8 @@ public struct ContentBundle: Sendable {
             + "\(weaponLadders.count) ladders · \(bags.progression.count) bag steps · "
             + "\(estateUpgrades.progression.count) estate steps · "
             + "\(trader?.listings.count ?? 0) trader rows · \(tavern?.food.count ?? 0) dishes · "
-            + "\(arena?.leagues.count ?? 0) leagues · "
+            + "\(arena?.leagues.count ?? 0) leagues · \(fortune?.cards.count ?? 0) cards · "
+            + "\(quests?.pools.reduce(0) { $0 + $1.quests.count } ?? 0) quests · "
             + "timeScale \(manifest.timeScale)"
     }
 }

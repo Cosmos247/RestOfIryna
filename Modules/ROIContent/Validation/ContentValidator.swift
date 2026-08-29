@@ -32,6 +32,7 @@ public enum ContentValidator {
         issues += validateWeaponLadders(bundle)
         issues += validateUpgradeLadders(bundle)
         issues += validateCapital(bundle)
+        issues += validateEstateAndNPCs(bundle)
         issues += validateTime(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -645,6 +646,242 @@ public enum ContentValidator {
         return issues
     }
 
+    // MARK: - Master / plots / fortune / quests
+
+    /// Mirrors of enums that live in the main target. Keep in step with
+    /// `PlotType`, `QuestNPC` and `QuestCounter` — same arrangement as
+    /// `itemTypes` above, and for the same reason: this module is
+    /// Foundation-only and cannot see them.
+    private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop", "training_ground"]
+    private static let questNPCs: Set<String> = ["trader", "master", "tavern"]
+    private static let questCounters: Set<String> = ["beastKill", "ironIngotForged", "gambleWin", "traderSilver"]
+
+    private static func validateEstateAndNPCs(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let itemIds = Set(bundle.items.map(\.id))
+        let gearIds = Set(bundle.items.filter { $0.type == "gear" }.map(\.id))
+
+        func require(_ passed: Bool, _ severity: ContentIssue.Severity = .error,
+                     file: String, path: String, id: String? = nil, rule: String,
+                     _ message: @autoclosure () -> String) {
+            guard !passed else { return }
+            issues.append(.init(severity: severity, file: file, path: path, id: id,
+                                rule: rule, message: message()))
+        }
+
+        // MARK: Master
+        if let master = bundle.master {
+            let file = "master.json"
+            issues += duplicates(master.armorForSale.map(\.itemId), file: file, collection: "armorForSale")
+            for (index, row) in master.armorForSale.enumerated() {
+                let path = "armorForSale[\(index)]"
+                if !itemIds.contains(row.itemId) {
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "reference.item.unknown",
+                                        message: "references unknown item \"\(row.itemId)\""))
+                } else if !gearIds.contains(row.itemId) {
+                    // The shop hands the piece straight into an equipment slot;
+                    // a material sold as armor would be unequippable.
+                    issues.append(.init(severity: .error, file: file, path: path, id: row.itemId,
+                                        rule: "master.not_gear",
+                                        message: "the armor shop can only sell items of type \"gear\""))
+                }
+                require(row.priceSilver >= 1, file: file, path: "\(path).priceSilver", id: row.itemId,
+                        rule: "master.price", "price must be >= 1, found \(row.priceSilver)")
+            }
+
+            // Above 1.0 a full repair costs more than a new piece, so nobody
+            // would ever repair; at or below 0 repairs are free.
+            require(master.repairCostFraction > 0, file: file, path: "repairCostFraction",
+                    rule: "master.repair_fraction",
+                    "repairCostFraction must be positive, found \(master.repairCostFraction)")
+            require(master.repairCostFraction <= 1.0, file: file, path: "repairCostFraction",
+                    rule: "master.repair_fraction",
+                    "repairCostFraction \(master.repairCostFraction) exceeds 1.0 — repairing would cost more than rebuying")
+
+            require(master.enchantCap >= 1, file: file, path: "enchantCap",
+                    rule: "master.enchant_cap", "enchantCap must be >= 1, found \(master.enchantCap)")
+            // `enchantBonusPoints` does `prefix(min(level, points.count))`, so a
+            // short table silently stops granting points partway up the ladder
+            // while the UI keeps advertising the cap.
+            require(master.enchantPerLevelPoints.count >= master.enchantCap, file: file,
+                    path: "enchantPerLevelPoints", rule: "master.points_short",
+                    "enchantPerLevelPoints has \(master.enchantPerLevelPoints.count) entries but enchantCap is \(master.enchantCap) — the top levels would grant nothing")
+            for (index, points) in master.enchantPerLevelPoints.enumerated() where points < 0 {
+                issues.append(.init(severity: .error, file: file, path: "enchantPerLevelPoints[\(index)]", id: nil,
+                                    rule: "master.negative_points", message: "points must not be negative, found \(points)"))
+            }
+
+            // `enchantStep` looks a level up by value, so a gap makes that level
+            // unreachable — the player is stuck one short of the cap.
+            let levels = master.enchantSteps.map(\.level)
+            let expected = master.enchantCap >= 1 ? Array(1...master.enchantCap) : []
+            require(levels == expected, file: file, path: "enchantSteps", rule: "master.levels_not_contiguous",
+                    "levels \(levels) must be exactly \(expected) — enchantStep looks up by level")
+            for (index, step) in master.enchantSteps.enumerated() {
+                let path = "enchantSteps[\(index)]"
+                let id = "enchant.t\(step.level)"
+                if !itemIds.contains(step.materialId) {
+                    issues.append(.init(severity: .error, file: file, path: path, id: id,
+                                        rule: "reference.item.unknown",
+                                        message: "references unknown item \"\(step.materialId)\""))
+                }
+                require(step.materialQty >= 1, file: file, path: "\(path).materialQty", id: id,
+                        rule: "master.enchant_quantity", "materialQty must be >= 1, found \(step.materialQty)")
+                require(step.silver >= 0, file: file, path: "\(path).silver", id: id,
+                        rule: "master.negative_cost", "silver must not be negative")
+            }
+            // The ladder is designed so the last point is the deepest sink.
+            for pair in zip(master.enchantSteps, master.enchantSteps.dropFirst()) where pair.1.silver < pair.0.silver {
+                issues.append(.init(severity: .warning, file: file, path: "enchantSteps", id: "enchant.t\(pair.1.level)",
+                                    rule: "master.enchant_cost_drops",
+                                    message: "cost falls from \(pair.0.silver) to \(pair.1.silver) — the ladder is meant to escalate"))
+            }
+        }
+
+        // MARK: Plots
+        if let plots = bundle.plots {
+            let file = "plots.json"
+            issues += duplicates(plots.types.map(\.type), file: file, collection: "types")
+            let present = Set(plots.types.map(\.type))
+            // `PlotType` is persisted in `Plot.plotType`, so a type the file
+            // forgets is a row the game can load but not describe.
+            for missing in plotTypes.subtracting(present).sorted() {
+                issues.append(.init(severity: .error, file: file, path: "types", id: missing,
+                                    rule: "plot.type_missing",
+                                    message: "PlotType \"\(missing)\" has no row — every case must be described"))
+            }
+            for (index, row) in plots.types.enumerated() {
+                let path = "types[\(index)]"
+                if !plotTypes.contains(row.type) {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).type", id: row.type,
+                                        rule: "enum.plot_type.unknown",
+                                        message: "\"\(row.type)\" is not a valid plot type (expected one of: \(sorted(plotTypes)))"))
+                }
+                require(!row.icon.isEmpty, file: file, path: "\(path).icon", id: row.type,
+                        rule: "plot.empty_icon", "icon must not be empty")
+                guard let tuning = row.tuning else { continue }
+                if !itemIds.contains(tuning.producedItemId) {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).tuning", id: row.type,
+                                        rule: "reference.item.unknown",
+                                        message: "produces unknown item \"\(tuning.producedItemId)\""))
+                }
+                require(tuning.ratePerInterval >= 1, file: file, path: "\(path).tuning.ratePerInterval", id: row.type,
+                        rule: "plot.rate", "ratePerInterval must be >= 1, found \(tuning.ratePerInterval)")
+                require(tuning.capacity >= 1, file: file, path: "\(path).tuning.capacity", id: row.type,
+                        rule: "plot.capacity", "capacity must be >= 1, found \(tuning.capacity)")
+                guard let bonus = tuning.bonusOutput else { continue }
+                if !itemIds.contains(bonus.producedItemId) {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).tuning.bonusOutput", id: row.type,
+                                        rule: "reference.item.unknown",
+                                        message: "bonus output is unknown item \"\(bonus.producedItemId)\""))
+                }
+                require(bonus.ratePerInterval >= 1, file: file, path: "\(path).tuning.bonusOutput.ratePerInterval",
+                        id: row.type, rule: "plot.rate", "bonus ratePerInterval must be >= 1")
+                require(bonus.capacity >= 1, file: file, path: "\(path).tuning.bonusOutput.capacity",
+                        id: row.type, rule: "plot.capacity", "bonus capacity must be >= 1")
+            }
+        }
+
+        // MARK: Fortune
+        if let fortune = bundle.fortune {
+            let file = "fortune.json"
+            issues += duplicates(fortune.cards.map(\.id), file: file, collection: "cards")
+            require(fortune.drawPrice >= 0, file: file, path: "drawPrice",
+                    rule: "fortune.negative_price", "drawPrice must not be negative")
+            require(fortune.buffDurationSeconds > 0, file: file, path: "buffDurationSeconds",
+                    rule: "fortune.non_positive_time", "buffDurationSeconds must be positive")
+            require(fortune.cooldownSeconds > 0, file: file, path: "cooldownSeconds",
+                    rule: "fortune.non_positive_time", "cooldownSeconds must be positive")
+            require(!fortune.cards.isEmpty, file: file, path: "cards",
+                    rule: "fortune.deck_empty", "the deck is empty — a draw would have nothing to return")
+
+            for (index, card) in fortune.cards.enumerated() {
+                let path = "cards[\(index)]"
+                // The id is both a locale-key suffix and a PNG filename under
+                // `Assets/capital/fortune/`, so a stray separator would build a
+                // path outside the asset directory.
+                let safe = card.id.allSatisfy { $0.isLetter || $0.isNumber || $0 == "_" }
+                require(!card.id.isEmpty && safe, file: file, path: "\(path).id", id: card.id,
+                        rule: "fortune.unsafe_id",
+                        "card id doubles as a filename and a locale key — letters, digits and underscores only")
+
+                let e = card.effect
+                for (name, value) in [("xpMultiplier", e.xpMultiplier),
+                                      ("lootChanceMultiplier", e.lootChanceMultiplier),
+                                      ("vigorDrainMultiplier", e.vigorDrainMultiplier)] where value <= 0 {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).effect.\(name)", id: card.id,
+                                        rule: "fortune.non_positive_multiplier",
+                                        message: "\(name) is \(value) — a zero or negative multiplier zeroes or inverts the stat it scales"))
+                }
+                // `FortuneService` only fires the wheel when BOTH sides are
+                // non-zero, so setting one alone is an effect that silently
+                // never happens.
+                let onlyOneSide = (e.randomSilverPositive == 0) != (e.randomSilverNegative == 0)
+                require(!onlyOneSide, .warning, file: file, path: "\(path).effect", id: card.id,
+                        rule: "fortune.half_wheel",
+                        "randomSilverPositive \(e.randomSilverPositive) / randomSilverNegative \(e.randomSilverNegative) — the wheel needs both sides set or it is ignored entirely")
+            }
+        }
+
+        // MARK: Quests
+        if let quests = bundle.quests {
+            let file = "quests.json"
+            issues += duplicates(quests.pools.map(\.npc), file: file, collection: "pools")
+            let present = Set(quests.pools.map(\.npc))
+            for missing in questNPCs.subtracting(present).sorted() {
+                issues.append(.init(severity: .error, file: file, path: "pools", id: missing,
+                                    rule: "quest.npc_missing",
+                                    message: "QuestNPC \"\(missing)\" has no pool — its board would offer a synthetic empty job"))
+            }
+            // `find` is a global lookup, and a re-hydrated row resolves by id
+            // alone, so ids must be unique across every pool, not just within one.
+            issues += duplicates(quests.pools.flatMap { $0.quests.map(\.id) }, file: file, collection: "quests")
+
+            for (poolIndex, pool) in quests.pools.enumerated() {
+                let poolPath = "pools[\(poolIndex)]"
+                if !questNPCs.contains(pool.npc) {
+                    issues.append(.init(severity: .error, file: file, path: "\(poolPath).npc", id: pool.npc,
+                                        rule: "enum.quest_npc.unknown",
+                                        message: "\"\(pool.npc)\" is not a valid quest NPC (expected one of: \(sorted(questNPCs)))"))
+                }
+                // `daily` falls back to a synthetic zero-reward job on an empty
+                // pool rather than trapping — which would ship as a visible but
+                // unearnable board entry.
+                require(!pool.quests.isEmpty, file: file, path: "\(poolPath).quests", id: pool.npc,
+                        rule: "quest.pool_empty", "pool is empty — daily() would hand out a synthetic job paying nothing")
+
+                for (index, def) in pool.quests.enumerated() {
+                    let path = "\(poolPath).quests[\(index)]"
+                    require(def.objective.target >= 1, file: file, path: "\(path).objective.target", id: def.id,
+                            rule: "quest.target", "target must be >= 1, found \(def.objective.target)")
+                    switch def.objective.kind {
+                    case .deliver:
+                        require(!def.objective.itemIds.isEmpty, file: file, path: "\(path).objective.itemIds",
+                                id: def.id, rule: "quest.no_items", "a deliver objective needs at least one item")
+                        for itemId in def.objective.itemIds where !itemIds.contains(itemId) {
+                            issues.append(.init(severity: .error, file: file, path: "\(path).objective.itemIds", id: def.id,
+                                                rule: "reference.item.unknown",
+                                                message: "requires unknown item \"\(itemId)\""))
+                        }
+                    case .counter:
+                        let counter = def.objective.counter ?? ""
+                        if !questCounters.contains(counter) {
+                            issues.append(.init(severity: .error, file: file, path: "\(path).objective.counter", id: def.id,
+                                                rule: "enum.quest_counter.unknown",
+                                                message: "\"\(counter)\" is not a counter any hook site ticks (expected one of: \(sorted(questCounters)))"))
+                        }
+                    }
+                    require(def.reward.silver >= 0 && def.reward.xp >= 0 && def.reward.vigor >= 0,
+                            file: file, path: "\(path).reward", id: def.id,
+                            rule: "quest.negative_reward", "rewards must not be negative")
+                }
+            }
+        }
+
+        return issues
+    }
+
     // MARK: - Localization
 
     private static func validateLocalization(_ bundle: ContentBundle, _ locales: LocaleIndex) -> [ContentIssue] {
@@ -704,6 +941,38 @@ public enum ContentValidator {
                 issues.append(.init(severity: .error, file: "\(locale).json", path: "leagues[\(index)]", id: league.key,
                                     rule: "locale.key.missing",
                                     message: "missing key \"\(league.key)\""))
+            }
+        }
+
+        // Batch C derives its keys from ids the same way items do, so the file
+        // carries none of them — which means nothing but this pass stands
+        // between a renamed id and a raw key stem rendered to the player.
+        func requireKey(_ key: String, file: String, path: String, id: String?) {
+            for locale in locales.missing(key) {
+                issues.append(.init(severity: .error, file: "\(locale).json", path: path, id: id,
+                                    rule: "locale.key.missing", message: "missing key \"\(key)\""))
+            }
+        }
+
+        for (index, row) in (bundle.plots?.types ?? []).enumerated() {
+            requireKey("plot.type.\(row.type).name", file: "plots.json", path: "types[\(index)]", id: row.type)
+            requireKey("plot.type.\(row.type).desc", file: "plots.json", path: "types[\(index)]", id: row.type)
+        }
+
+        for (index, card) in (bundle.fortune?.cards ?? []).enumerated() {
+            for suffix in ["name", "meaning", "buff_desc"] {
+                requireKey("fortune.card.\(card.id).\(suffix)",
+                           file: "fortune.json", path: "cards[\(index)]", id: card.id)
+            }
+        }
+
+        for (poolIndex, pool) in (bundle.quests?.pools ?? []).enumerated() {
+            requireKey("quest.\(pool.npc).board_title",
+                       file: "quests.json", path: "pools[\(poolIndex)]", id: pool.npc)
+            for (index, def) in pool.quests.enumerated() {
+                let path = "pools[\(poolIndex)].quests[\(index)]"
+                requireKey("quest.\(def.id).title", file: "quests.json", path: path, id: def.id)
+                requireKey("quest.\(def.id).desc",  file: "quests.json", path: path, id: def.id)
             }
         }
 

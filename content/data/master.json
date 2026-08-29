@@ -1,0 +1,61 @@
+{
+  "armorForSale" : [
+    {
+      "itemId" : "gear.forester_hood",
+      "priceSilver" : 60
+    },
+    {
+      "itemId" : "gear.forester_boots",
+      "priceSilver" : 95
+    },
+    {
+      "itemId" : "gear.forester_breeches",
+      "priceSilver" : 150
+    },
+    {
+      "itemId" : "gear.forester_jerkin",
+      "priceSilver" : 180
+    }
+  ],
+  "enchantCap" : 5,
+  "enchantPerLevelPoints" : [
+    1,
+    1,
+    1,
+    2,
+    3
+  ],
+  "enchantSteps" : [
+    {
+      "level" : 1,
+      "materialId" : "mat.hide",
+      "materialQty" : 4,
+      "silver" : 40
+    },
+    {
+      "level" : 2,
+      "materialId" : "mat.hide",
+      "materialQty" : 8,
+      "silver" : 100
+    },
+    {
+      "level" : 3,
+      "materialId" : "mat.hide",
+      "materialQty" : 15,
+      "silver" : 220
+    },
+    {
+      "level" : 4,
+      "materialId" : "mat.hide",
+      "materialQty" : 26,
+      "silver" : 450
+    },
+    {
+      "level" : 5,
+      "materialId" : "mat.hide",
+      "materialQty" : 42,
+      "silver" : 850
+    }
+  ],
+  "repairCostFraction" : 0.5
+}

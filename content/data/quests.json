@@ -1,0 +1,135 @@
+{
+  "pools" : [
+    {
+      "npc" : "trader",
+      "quests" : [
+        {
+          "id" : "trader.hides",
+          "objective" : {
+            "itemIds" : [
+              "mat.hide"
+            ],
+            "kind" : "deliver",
+            "target" : 10
+          },
+          "reward" : {
+            "silver" : 60
+          }
+        },
+        {
+          "id" : "trader.iron",
+          "objective" : {
+            "itemIds" : [
+              "mat.iron"
+            ],
+            "kind" : "deliver",
+            "target" : 5
+          },
+          "reward" : {
+            "silver" : 100
+          }
+        },
+        {
+          "id" : "trader.bulk_day",
+          "objective" : {
+            "counter" : "traderSilver",
+            "kind" : "counter",
+            "target" : 300
+          },
+          "reward" : {
+            "silver" : 60
+          }
+        }
+      ]
+    },
+    {
+      "npc" : "master",
+      "quests" : [
+        {
+          "id" : "master.ore",
+          "objective" : {
+            "itemIds" : [
+              "mat.iron"
+            ],
+            "kind" : "deliver",
+            "target" : 8
+          },
+          "reward" : {
+            "silver" : 100,
+            "xp" : 40
+          }
+        },
+        {
+          "id" : "master.smelt",
+          "objective" : {
+            "counter" : "ironIngotForged",
+            "kind" : "counter",
+            "target" : 1
+          },
+          "reward" : {
+            "silver" : 120,
+            "xp" : 60
+          }
+        },
+        {
+          "id" : "master.blade_trial",
+          "objective" : {
+            "counter" : "beastKill",
+            "kind" : "counter",
+            "target" : 5
+          },
+          "reward" : {
+            "silver" : 50,
+            "xp" : 80
+          }
+        }
+      ]
+    },
+    {
+      "npc" : "tavern",
+      "quests" : [
+        {
+          "id" : "tavern.cook",
+          "objective" : {
+            "itemIds" : [
+              "food.roasted_meat",
+              "food.hunters_stew"
+            ],
+            "kind" : "deliver",
+            "target" : 3
+          },
+          "reward" : {
+            "silver" : 60,
+            "vigor" : 25
+          }
+        },
+        {
+          "id" : "tavern.supplies",
+          "objective" : {
+            "itemIds" : [
+              "food.raw_meat"
+            ],
+            "kind" : "deliver",
+            "target" : 6
+          },
+          "reward" : {
+            "silver" : 60,
+            "vigor" : 20
+          }
+        },
+        {
+          "id" : "tavern.lucky_hand",
+          "objective" : {
+            "counter" : "gambleWin",
+            "kind" : "counter",
+            "target" : 3
+          },
+          "reward" : {
+            "silver" : 50,
+            "vigor" : 30
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -4,15 +4,16 @@
 //
 //  Created by Dmytro Ihnatyuhin on 21.05.2026.
 //
-//  Phase 6.5 — the Master (Майстер) capital location: armor shop + repair +
-//  enchant. Pure data + cost formulas, no DB writes — the actions themselves
-//  run through `MasterService`. The Master is the game's first real silver
-//  sink (buy markup, repair fees, enchant fees all drain `User.silver`).
+//  Façade over `content/data/master.json` (Phase 3C — was Swift arrays and
+//  constants). The Master (Майстер) capital location: armor shop + repair +
+//  enchant. The actions themselves run through `MasterService`; this owns the
+//  shop economics so every tunable number sits in one place. The Master is the
+//  game's first real silver sink — buy markup, repair fees and enchant fees all
+//  drain `User.silver`.
 //
 //  Durability is armor-only for now (weapons keep their tier ladder and will
-//  gain gem inlay in a later phase). Gear-condition runtime (drain on combat,
-//  "broken at 0") lives in `GearConditionService`; this catalog owns the shop
-//  economics so all tunable numbers sit in one place.
+//  gain gem inlay in a later phase). Gear-condition runtime — drain on combat,
+//  "broken at 0" — lives in `GearConditionService`.
 //
 
 import Foundation
@@ -26,7 +27,7 @@ public enum MasterCatalog {
     /// material value (no hides, no iron, no zone travel, instant), so the shop
     /// is the lazy/no-stock path while crafting stays the economical one. Pieces
     /// arrive at full durability, enchant level 0. Repair cost derives from this
-    /// price (full repair = ½ buy price), so it scales with the premium too.
+    /// price, so it scales with the premium too.
     public struct ArmorListing: Sendable {
         public let itemId: String
         public let priceSilver: Int
@@ -36,28 +37,33 @@ public enum MasterCatalog {
         }
     }
 
-    public static let armorForSale: [ArmorListing] = [
-        ArmorListing("gear.forester_hood",      60),  // craft  5🦴       → repair 30
-        ArmorListing("gear.forester_boots",     95),  // craft  8🦴 + 2⛓ → repair 48
-        ArmorListing("gear.forester_breeches", 150),  // craft 12🦴 + 2⛓ → repair 75
-        ArmorListing("gear.forester_jerkin",   180),  // craft 15🦴 + 4⛓ → repair 90
-    ]
+    /// Display order, ascending by price. Computed, never a `static let` — the
+    /// snapshot is installed at boot and a type-level constant would read it
+    /// too early.
+    public static var armorForSale: [ArmorListing] { Catalogs.current.masterArmor }
 
     public static func buyPrice(for itemId: String) -> Int? {
-        armorForSale.first(where: { $0.itemId == itemId })?.priceSilver
+        Catalogs.current.masterArmorById[itemId]?.priceSilver
     }
 
     // MARK: - Repair
 
     /// Silver cost to fully repair a piece from its current durability back to
     /// max. Scales with how worn it is and the piece's value — a full repair
-    /// from 0 costs ≈ half the buy price. Every repair also permanently shaves
-    /// 1 off `maxDurability` (see `GearConditionService.repairMaxShave`), so an
-    /// often-repaired piece eventually wears out and must be rebought.
+    /// from 0 costs `repairCostFraction` of the buy price. Every repair also
+    /// permanently shaves 1 off `maxDurability` (see
+    /// `GearConditionService.repairMaxShave`), so an often-repaired piece
+    /// eventually wears out and must be rebought.
+    ///
+    /// Only the fraction is data. The rest stays here because it reads
+    /// `GearConditionService.maxDurabilityStart`, a runtime constant rather than
+    /// content, and because the `?? 30` fallback and the `max(1, …)` floor are
+    /// behaviour, not tuning.
     public static func repairCost(itemId: String, missing: Int) -> Int {
         guard missing > 0 else { return 0 }
         let value = buyPrice(for: itemId) ?? 30
-        let cost = Double(value) * 0.5 * Double(missing) / Double(GearConditionService.maxDurabilityStart)
+        let fraction = Catalogs.current.masterRepairCostFraction
+        let cost = Double(value) * fraction * Double(missing) / Double(GearConditionService.maxDurabilityStart)
         return max(1, Int(cost.rounded()))
     }
 
@@ -65,6 +71,10 @@ public enum MasterCatalog {
     /// no buy price (they're upgraded, never sold), so the cost is keyed to the
     /// tier's durability ceiling instead — a full repair runs 30🪙 (T1) → 100🪙
     /// (T5). No max shave: the King's weapon is mended, not worn out.
+    ///
+    /// Deliberately NOT data-driven yet: there is no magic number in
+    /// `max(0, missing)` to lift into JSON, and inventing a `×1` rate would mean
+    /// writing new logic during a migration. Phase 4 owns it.
     public static func weaponRepairCost(missing: Int) -> Int {
         return max(0, missing)
     }
@@ -72,18 +82,19 @@ public enum MasterCatalog {
     // MARK: - Enchant
 
     /// Hard cap on the permanent enchant bonus a single piece can hold.
-    public static let enchantCap = 5
+    public static var enchantCap: Int { Catalogs.current.masterEnchantCap }
 
-    /// Cumulative stat points an enchant of `level` (0…cap) grants per affected
-    /// stat. Non-linear — the per-level weights are +1 +1 +1 +2 +3, so the top
-    /// two levels are worth more than the early ones and the last point is the
-    /// real prize. Drives BOTH the flat +ЗАХ every class gets and the
-    /// class-identity bonus (which mirrors these points): see
-    /// `EquipmentService.recomputeBonuses`.
-    public static let enchantPerLevelPoints = [1, 1, 1, 2, 3]
+    /// Points granted per level. Non-linear — +1 +1 +1 +2 +3 — so the top two
+    /// levels are worth more than the early ones and the last point is the real
+    /// prize. Drives BOTH the flat +ЗАХ every class gets and the class-identity
+    /// bonus that mirrors it: see `EquipmentService.recomputeBonuses`.
+    public static var enchantPerLevelPoints: [Int] { Catalogs.current.masterEnchantPerLevelPoints }
+
+    /// Cumulative points an enchant of `level` (0…cap) grants per affected stat.
     public static func enchantBonusPoints(level: Int) -> Int {
         guard level > 0 else { return 0 }
-        return enchantPerLevelPoints.prefix(min(level, enchantPerLevelPoints.count)).reduce(0, +)
+        let points = enchantPerLevelPoints
+        return points.prefix(min(level, points.count)).reduce(0, +)
     }
 
     /// Cost to raise a piece from `(level-1)` → `level` (1-based). Silver +
@@ -101,13 +112,7 @@ public enum MasterCatalog {
         }
     }
 
-    public static let enchantSteps: [EnchantStep] = [
-        EnchantStep(1, 40,  "mat.hide", 4),
-        EnchantStep(2, 100, "mat.hide", 8),
-        EnchantStep(3, 220, "mat.hide", 15),
-        EnchantStep(4, 450, "mat.hide", 26),
-        EnchantStep(5, 850, "mat.hide", 42),
-    ]
+    public static var enchantSteps: [EnchantStep] { Catalogs.current.masterEnchantSteps }
 
     /// The step that takes a piece from its current `level` to `level + 1`,
     /// or nil if already at `enchantCap`.

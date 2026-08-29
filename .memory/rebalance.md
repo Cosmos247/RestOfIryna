@@ -98,7 +98,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 0 Scaffolding | ✅ `6cc1889` |
 | 1 Exporter + first JSON | ✅ `7e8f2a4` |
 | 2 Item/Enemy/Recipe façades | ✅ `c9e329b` |
-| 3 Remaining catalogs | 🔄 **8 of 12** — batch A (weapon/bag/estate) ✅ `f30a4ca`, batch B (trader/tavern/market/guild/arena) ✅ |
+| 3 Remaining catalogs | ✅ **12 of 12** — A (weapon/bag/estate) `f30a4ca` · B (trader/tavern/market/guild/arena) `cb101f3` · C (master/plot/fortune/quest) |
 | 4 Tuning tables + `time.scale` | ⬜ |
 | 5 New combat model | ⬜ |
 | 6 Rarity + sets | ⬜ |
@@ -108,15 +108,48 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `9242a2c1501994ed`** — unchanged across the batch A
-and batch B flips, which is the whole point of it.
+**Current digest baseline: `8053216102eceff7`** — `records 04cbf2b5331ea85b`,
+`spawns 635cde3f65184c78`, `quests 2e52ecdfa45276ec`. It moved from
+`9242a2c1501994ed` only because batch C's step 1 *added* coverage; it held
+unchanged across every flip, which is the whole point of it.
 
-**Batch C is Master / Plot / Fortune / Quest.** Two of the four are not arrays:
-`PlotCatalog` and `QuestCatalog` carry behaviour in code, the way
-`ArenaCatalog.leagueKey` did. That shape needs the batch-B treatment — hand-
-translate the logic into a table, then *prove* the table reproduces the code by
-replaying both across the full input range BEFORE the flip, refusing to write on
-the first mismatch. Extend `ContentDigest` for them first, as always.
+**Phase 3 is complete — all 12 catalogs read `content/data/`.** No Swift array
+remains, so `ContentExporter` and the `--export-content` branch were deleted with
+the batch. `ContentDigest` stays: it is the "confirm only the intended change"
+tool in the add-content workflow, not just a migration artefact.
+
+**Next is Phase 4** — tuning tables plus collapsing the three `testMode` flags
+into one `time.scale`. Batch C surfaced why that needs its own commit: the flags
+are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds` is
+60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
+`PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
+`plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What batch C taught
+
+- **A `private static let` inside a catalog is the flip's sharpest edge.**
+  `FortuneCatalog.lookup` was `Dictionary(uniqueKeysWithValues: all.map …)`.
+  Harmless while `all` was also a `static let`; the instant `all` reads the
+  snapshot, that line runs at type-init and traps before
+  `ContentBootstrap.load`. Grep for `static let` inside the catalog itself, not
+  only at the call sites.
+- **Extracting a constant out of a formula is a hand-translation**, and gets the
+  same treatment as a switch-to-table: recompute the whole formula from the
+  extracted value and compare against the live function across a range — the
+  `?? 30` fallback, the `missing <= 0` short-circuit and the `max(1, …)` floor
+  all have to survive, and a naive re-derivation drops one of them.
+- **Absence can be a value.** `PlotCatalog.tuning(for: .trainingGround)`
+  returning nil is how the estate controller routes a tap to combat instead of a
+  harvest. The DTO models it as an absent key and the fingerprint compares
+  `<none>` explicitly, so a `training_ground` that gained a tuning is caught.
+- **A no-op default is per-field, not per-type.** `FortuneEffect` skips 0 for
+  bonuses, **1.0** for multipliers and false for flags. One "skip falsy" rule
+  would have written nothing for a 1.0 multiplier and decoded a card that zeroes
+  the stat it scales.
+- **Dictionaries in a catalog hash in an arbitrary order.** `t1Tunings` and
+  `pools` had to be walked via `allCases` in both the digest and the exporter;
+  iterating them directly would have produced a digest that changed between
+  processes.
 
 ### What batch B taught (applies to every remaining catalog)
 

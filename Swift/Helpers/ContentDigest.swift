@@ -37,6 +37,13 @@ enum ContentDigest {
     private static let drawsPerDepth = 200
     private static let maxDepth = 40
 
+    /// Daily-quest replay inputs. The stamps straddle a month boundary on
+    /// purpose — `daily` hashes the stamp as a plain string, so nothing about
+    /// the date is special, but a spread of them keeps one unlucky day from
+    /// hiding a pool reorder behind a collision.
+    private static let questDraws = 200
+    private static let questStamps = ["2026-08-29", "2026-08-30", "2026-09-01", "2027-01-15"]
+
     static func run() {
         var digest = OutcomeDigest()
 
@@ -123,7 +130,74 @@ enum ContentDigest {
             digest.combine(ArenaCatalog.tithe(onPot: pot))
         }
 
-        // Snapshot the record-only hash before the spawn replay folds in.
+        // MARK: Batch C — Master / Plot / Fortune / Quest
+        //
+        // Added while all four are still Swift arrays, per step 1 of the
+        // migration loop. Two of them carry behaviour in code rather than data
+        // (`PlotCatalog.icon`, `QuestCatalog.daily`), so the accessor replays
+        // below matter more here than they did for batch B.
+
+        digest.combine(MasterCatalog.enchantCap)
+        for points in MasterCatalog.enchantPerLevelPoints { digest.combine(points) }
+        for listing in MasterCatalog.armorForSale {
+            digest.combine("\(listing.itemId)@\(listing.priceSilver)")
+        }
+        for step in MasterCatalog.enchantSteps { digest.combine(fingerprint(step)) }
+        // `repairCost` folds in `GearConditionService.maxDurabilityStart` and a
+        // hardcoded 0.5, then rounds — none of which a record hash can see.
+        for itemId in MasterCatalog.armorForSale.map(\.itemId) + ["gear.rusty_sword", "nope"] {
+            digest.combine(MasterCatalog.buyPrice(for: itemId).map(String.init) ?? "-")
+            for missing in [-5, 0, 1, 7, 15, 29, 30, 31, 60] {
+                digest.combine(MasterCatalog.repairCost(itemId: itemId, missing: missing))
+            }
+        }
+        for missing in [-5, 0, 1, 30, 100] { digest.combine(MasterCatalog.weaponRepairCost(missing: missing)) }
+        for level in -1...8 { digest.combine(MasterCatalog.enchantBonusPoints(level: level)) }
+        for level in -1...6 {
+            digest.combine(MasterCatalog.enchantStep(currentLevel: level).map(fingerprint) ?? "-")
+        }
+
+        // `t1Tunings` is a DICTIONARY, so iterating it directly would hash in
+        // whatever order the hasher happens to produce this process. Walking
+        // `PlotType.allCases` is what makes the plot half reproducible at all.
+        digest.combine("\(PlotCatalog.testMode)")
+        digest.combine("\(PlotCatalog.intervalSeconds)")
+        for type in PlotType.allCases {
+            digest.combine(type.rawValue)
+            digest.combine(PlotCatalog.icon(for: type))
+            digest.combine(PlotCatalog.nameKey(for: type))
+            digest.combine(PlotCatalog.descriptionKey(for: type))
+            // Every tier returns the T1 row today — a documented placeholder.
+            // Replaying the range pins that, so the day tiers become real it
+            // shows up as a digest move rather than a silent behaviour change.
+            for tier in 0...3 {
+                digest.combine(PlotCatalog.tuning(for: type, tier: tier).map(fingerprint) ?? "-")
+            }
+        }
+        for raw in ["farm", "forest", "mine", "coop", "training_ground", "Farm", "nope", ""] {
+            digest.combine(PlotCatalog.tuning(forRaw: raw).map(fingerprint) ?? "-")
+        }
+
+        digest.combine(FortuneCatalog.drawPrice)
+        digest.combine("\(FortuneCatalog.buffDurationSeconds)")
+        digest.combine("\(FortuneCatalog.cooldownSeconds)")
+        for card in FortuneCatalog.all { digest.combine(fingerprint(card)) }
+        for cardId in FortuneCatalog.all.map(\.id) + ["nope", ""] {
+            digest.combine(FortuneCatalog.find(cardId).map(fingerprint) ?? "-")
+        }
+
+        // `pools` is a dictionary too — same reasoning as `t1Tunings`.
+        for npc in QuestNPC.allCases {
+            digest.combine(npc.rawValue)
+            digest.combine(npc.boardTitleKey)
+            digest.combine(npc.backCallback)
+            for def in QuestCatalog.pools[npc] ?? [] { digest.combine(fingerprint(def)) }
+        }
+        for questId in QuestNPC.allCases.flatMap({ (QuestCatalog.pools[$0] ?? []).map(\.id) }) + ["nope", ""] {
+            digest.combine(QuestCatalog.find(questId).map(fingerprint) ?? "-")
+        }
+
+        // Snapshot the record-only hash before the replays fold in.
         let recordDigest = digest.hexDigest
 
         // Seeded encounter replay — the half that catches a reordered roster.
@@ -142,8 +216,33 @@ enum ContentDigest {
 
         digest.combine(spawnDigest)
 
-        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps)")
+        // Seeded daily-quest replay — the batch-C twin of the spawn replay, and
+        // for the same reason. `QuestCatalog.daily` resolves to
+        // `pool[stableHash("<uuid>:<npc>:<day>") % pool.count]`, so the ORDER of
+        // each NPC's pool decides which job every player is handed. Reordering a
+        // pool leaves all nine record fingerprints byte-identical while silently
+        // reassigning the whole playerbase; only replaying the derivation with
+        // fixed inputs catches it.
+        var questRNG = SplitMix64(seed: seed)
+        var quests = OutcomeDigest()
+        var questCounts: [String: Int] = [:]
+        for _ in 0..<questDraws {
+            let userId = seededUUID(&questRNG)
+            for stamp in questStamps {
+                for npc in QuestNPC.allCases {
+                    let id = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp).id
+                    quests.combine(id)
+                    questCounts[id, default: 0] += 1
+                }
+            }
+        }
+        let questDigest = quests.hexDigest
+
+        digest.combine(questDigest)
+
+        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
+        print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs)")
         print("COMBINED \(digest.hexDigest)")
         print("")
         liveLookupCheck()
@@ -151,6 +250,18 @@ enum ContentDigest {
         print("spawn distribution:")
         for (id, count) in counts.sorted(by: { $0.key < $1.key }) {
             print("  \(id.padding(toLength: 24, withPad: " ", startingAt: 0)) \(count)")
+        }
+        // Worth printing rather than just hashing: a job that never appears is
+        // unreachable content, and `daily` is a modulo over pool size, so an
+        // uneven split is the visible symptom of a pool that changed length.
+        print("")
+        print("daily-quest distribution:")
+        for npc in QuestNPC.allCases {
+            for def in QuestCatalog.pools[npc] ?? [] {
+                let count = questCounts[def.id] ?? 0
+                let flag = count == 0 ? "   ⚠️ never assigned" : ""
+                print("  \(def.id.padding(toLength: 24, withPad: " ", startingAt: 0)) \(count)\(flag)")
+            }
         }
         fflush(stdout)
     }
@@ -219,9 +330,63 @@ enum ContentDigest {
 
     // MARK: - Field-complete fingerprints
     //
-    // Shared with `ContentExporter`'s layer-0 equivalence check. When a domain
-    // type gains a stored property, extend the matching fingerprint in the same
-    // edit — an omission here silently weakens both checks at once.
+    // When a domain type gains a stored property, extend the matching
+    // fingerprint in the same edit — an omission silently weakens the check.
+    // (These were shared with `ContentExporter`'s layer-0 equivalence pass
+    // until Phase 3 ended and that file was deleted with the last Swift array.)
+
+    /// Deterministic UUID from the seeded generator. `QuestCatalog.daily`
+    /// hashes `userId.uuidString`, so the replay needs stable ids that do not
+    /// come from `UUID()`.
+    private static func seededUUID(_ rng: inout SplitMix64) -> UUID {
+        let hex = Array(String(format: "%016llx%016llx", rng.next(), rng.next()))
+        let text = String(hex[0..<8]) + "-" + String(hex[8..<12]) + "-" + String(hex[12..<16])
+            + "-" + String(hex[16..<20]) + "-" + String(hex[20..<32])
+        // Non-optional by construction: 32 hex digits in the 8-4-4-4-12 shape
+        // always parse. Falling back to a fixed id rather than `UUID()` keeps
+        // the digest reproducible even if that ever stops being true.
+        return UUID(uuidString: text) ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+    }
+
+    private static func fingerprint(_ step: MasterCatalog.EnchantStep) -> String {
+        "t\(step.level) silver\(step.silver) \(step.materialId)x\(step.materialQty)"
+    }
+
+    private static func fingerprint(_ tuning: PlotTuning) -> String {
+        let bonus = tuning.bonusOutput.map {
+            "\($0.producedItemId)@\($0.ratePerInterval)/cap\($0.capacity)"
+        } ?? "-"
+        return "\(tuning.producedItemId)@\(tuning.ratePerInterval)/cap\(tuning.capacity) bonus[\(bonus)]"
+    }
+
+    private static func fingerprint(_ card: FortuneCard) -> String {
+        let e = card.effect
+        return [
+            card.id, card.nameKey, card.meaningKey, card.buffDescKey,
+            "\(e.attackBonus)/\(e.defenseBonus)/\(e.critBonus)/\(e.dodgeBonus)/\(e.accuracyBonus)",
+            "\(e.xpMultiplier)/\(e.lootChanceMultiplier)/\(e.vigorDrainMultiplier)",
+            "\(e.oneShotSilver)/\(e.oneShotXpGain)/\(e.oneShotHpRestore)/\(e.oneShotVigorRestore)",
+            "\(e.randomSilverPositive)/\(e.randomSilverNegative)",
+            // Derived, not stored — a field added to `FortuneEffect` and left
+            // out of `hasDurationEffect` would show up here and nowhere else.
+            "duration:\(e.hasDurationEffect)"
+        ].joined(separator: " · ")
+    }
+
+    private static func fingerprint(_ def: QuestDef) -> String {
+        let objective: String
+        switch def.objective {
+        case .deliver(let itemIds, let count):
+            objective = "deliver:\(itemIds.joined(separator: "|"))x\(count)"
+        case .counter(let counter, let target):
+            objective = "counter:\(counter.rawValue)x\(target)"
+        }
+        return [
+            def.id, def.npc.rawValue, objective, "target\(def.objective.target)",
+            "silver\(def.reward.silver)/xp\(def.reward.xp)/vigor\(def.reward.vigor)",
+            def.titleKey, def.descKey
+        ].joined(separator: " · ")
+    }
 
     private static func fingerprint(_ step: BagUpgradeStep) -> String {
         let inputs = step.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")

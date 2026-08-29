@@ -4,8 +4,9 @@
 //
 //  Created by Dmytro Ihnatyuhin on 23.08.2026.
 //
-//  Phase 9.2 — daily NPC quests. Three capital NPCs (Trader / Master /
-//  Innkeeper) each hold a small pool of daily jobs. Exactly one job per NPC
+//  Façade over `content/data/quests.json` (Phase 3C — was a Swift dictionary).
+//  Three capital NPCs (Trader / Master / Innkeeper) each hold a small pool of
+//  daily jobs. Exactly one job per NPC
 //  is live per game day; the player never picks from a list — the system
 //  assigns it (see `QuestCatalog.daily`).
 //
@@ -110,53 +111,18 @@ public enum QuestCatalog {
     /// 1.5–2× what selling the same materials to the trader would, so the
     /// daily is worth a detour but doesn't dwarf ordinary play.
     ///
-    /// `master.smelt` asks for ONE ingot, not the three sketched in the design
-    /// pass — one ingot already costs 10 raw iron (≈100🪙 of material), which
-    /// is a full expedition's worth. Three would be a week-long job wearing a
-    /// daily's clothes.
-    public static let pools: [QuestNPC: [QuestDef]] = [
-        .trader: [
-            QuestDef(id: "trader.hides", npc: .trader,
-                     objective: .deliver(itemIds: ["mat.hide"], count: 10),
-                     reward: QuestReward(silver: 60)),
-            QuestDef(id: "trader.iron", npc: .trader,
-                     objective: .deliver(itemIds: ["mat.iron"], count: 5),
-                     reward: QuestReward(silver: 100)),
-            QuestDef(id: "trader.bulk_day", npc: .trader,
-                     objective: .counter(.traderSilver, target: 300),
-                     reward: QuestReward(silver: 60)),
-        ],
-        .master: [
-            QuestDef(id: "master.ore", npc: .master,
-                     objective: .deliver(itemIds: ["mat.iron"], count: 8),
-                     reward: QuestReward(silver: 100, xp: 40)),
-            QuestDef(id: "master.smelt", npc: .master,
-                     objective: .counter(.ironIngotForged, target: 1),
-                     reward: QuestReward(silver: 120, xp: 60)),
-            QuestDef(id: "master.blade_trial", npc: .master,
-                     objective: .counter(.beastKill, target: 5),
-                     reward: QuestReward(silver: 50, xp: 80)),
-        ],
-        .tavern: [
-            QuestDef(id: "tavern.cook", npc: .tavern,
-                     objective: .deliver(itemIds: ["food.roasted_meat", "food.hunters_stew"], count: 3),
-                     reward: QuestReward(silver: 60, vigor: 25)),
-            QuestDef(id: "tavern.supplies", npc: .tavern,
-                     objective: .deliver(itemIds: ["food.raw_meat"], count: 6),
-                     reward: QuestReward(silver: 60, vigor: 20)),
-            QuestDef(id: "tavern.lucky_hand", npc: .tavern,
-                     objective: .counter(.gambleWin, target: 3),
-                     reward: QuestReward(silver: 50, vigor: 30)),
-        ],
-    ]
+    /// **Pool ORDER is the assignment.** `daily` indexes
+    /// `pool[stableHash(...) % pool.count]`, so moving a job within its pool
+    /// silently reassigns every player. `quests.json` writes the pools as an
+    /// ordered array and nothing sorts them.
+    ///
+    /// Computed, never a `static let` — the snapshot installs at boot.
+    public static var pools: [QuestNPC: [QuestDef]] { Catalogs.current.questPools }
 
     /// Look a job up by id — used when re-hydrating a stored row, so a pool
     /// edit mid-day can't silently swap the job a player already started.
     public static func find(_ id: String) -> QuestDef? {
-        for (_, pool) in pools {
-            if let hit = pool.first(where: { $0.id == id }) { return hit }
-        }
-        return nil
+        return Catalogs.current.questsById[id]
     }
 
     /// The job `npc` is offering `userId` on the game day `stamp`.

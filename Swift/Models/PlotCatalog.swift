@@ -4,13 +4,19 @@
 //
 //  Created by Dmytro Ihnatyuhin on 29.04.2026.
 //
-//  Phase 5.1: code-based config for estate plots — analogous to ItemCatalog
-//  and EnemyCatalog. Plot type identity, tier-1 production rate, capacity,
-//  produced item id, and the UI icon all live here so balance changes are a
-//  single-file edit.
+//  Façade over `content/data/plots.json` (Phase 3C — was a Swift dictionary and
+//  an icon `switch`). Plot type identity, tier-1 production rate, capacity,
+//  produced item id and the UI icon all come from the file, so a balance change
+//  is a JSON edit.
 //
-//  Test mode (`PlotCatalog.testMode`) scales rates so plots fill in minutes
-//  rather than hours — same pattern as `PassiveExpeditionService.testMode`.
+//  `PlotType` itself stays in Swift: its raw values are persisted in
+//  `Plot.plotType`, so the enum is a database contract rather than content.
+//
+//  `testMode` scales rates so plots fill in minutes rather than hours. It moved
+//  across verbatim rather than folding into `manifest.timeScale`, because that
+//  fold is NOT mechanical — the flag drives two different scales: the interval
+//  below is 60 ↔ 3600 (60×, which does match the manifest) while
+//  `PlotProductionService`'s sweep is 60 ↔ 300 (5×). Phase 4 reconciles them.
 //
 
 import Foundation
@@ -67,33 +73,21 @@ public struct PlotBonusOutput: Sendable {
 }
 
 public enum PlotCatalog {
-    /// Flip to `false` for production deploys (rate units = per hour).
-    /// `true` makes plots fill in minutes for dev playtest.
-    public static let testMode: Bool = true
+    /// `false` for production deploys (rate units = per hour); `true` makes
+    /// plots fill in minutes for dev playtest.
+    public static var testMode: Bool { Catalogs.current.plotTestMode }
 
     /// Translates `ratePerInterval` to "units per second" depending on test mode.
     public static var intervalSeconds: Double {
         return testMode ? 60.0 : 3600.0
     }
 
-    /// Per (type, tier=1) tunings. Tier 2+ will scale rate/cap when added.
-    /// `trainingGround` is intentionally absent — it doesn't produce; the
-    /// estate controller routes a tap on it to combat instead of harvest.
-    /// The Mine carries a `bonusOutput` of `mat.iron` at a much lower rate
-    /// (1/interval, cap 5) — primary pebble feel-rate is unchanged, iron
-    /// just trickles in alongside.
-    private static let t1Tunings: [PlotType: PlotTuning] = [
-        .farm:   PlotTuning(producedItemId: "food.potato",       ratePerInterval: 4, capacity: 20),
-        .forest: PlotTuning(producedItemId: "mat.pine_lumber",   ratePerInterval: 6, capacity: 30),
-        .mine:   PlotTuning(producedItemId: "mat.river_pebble",  ratePerInterval: 8, capacity: 40,
-                            bonusOutput: PlotBonusOutput(producedItemId: "mat.iron", ratePerInterval: 1, capacity: 20)),
-        .coop:   PlotTuning(producedItemId: "food.duck_egg",     ratePerInterval: 2, capacity: 12),
-    ]
-
     /// Lookup tuning for a given type + tier. Returns the T1 row regardless
-    /// of `tier` for now — higher tiers ship in a later subphase.
+    /// of `tier` for now — higher tiers ship in a later subphase. Returns nil
+    /// for `trainingGround`, which is how the estate controller decides to
+    /// route a tap to combat instead of a harvest.
     public static func tuning(for type: PlotType, tier: Int = 1) -> PlotTuning? {
-        return t1Tunings[type]
+        return Catalogs.current.plotTunings[type]
     }
 
     /// Lookup tuning by raw plot-type string (the value stored in `Plot.plotType`).
@@ -103,18 +97,15 @@ public enum PlotCatalog {
     }
 
     /// UI icon per type. Tied to the type, not the tier — visual continuity
-    /// across upgrades.
+    /// across upgrades. The validator requires a row for every `PlotType`, so
+    /// the fallback is unreachable on a bundle that installs.
     public static func icon(for type: PlotType) -> String {
-        switch type {
-        case .farm:           return "🌾"
-        case .forest:         return "🪚"
-        case .mine:           return "⛏"
-        case .coop:           return "🐔"
-        case .trainingGround: return "🥋"
-        }
+        return Catalogs.current.plotIcons[type] ?? ""
     }
 
-    /// Locale key for the plot type's display name.
+    /// Locale key for the plot type's display name. Derived, not stored: a
+    /// fixed convention with no overrides, so writing it into the file would
+    /// only be duplication. The validator derives the same key and checks it.
     public static func nameKey(for type: PlotType) -> String {
         return "plot.type.\(type.rawValue).name"
     }

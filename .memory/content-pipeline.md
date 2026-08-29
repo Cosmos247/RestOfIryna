@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
 Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            62 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            85 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -33,14 +33,17 @@ content/data/*.json
    GameContent  (DTO snapshot)   → GameData.install
    DomainContent (domain snapshot) → Catalogs.install
       ↑
-  ItemCatalog / EnemyCatalog / RecipeCatalog / WeaponUpgradeCatalog /
-  BagCatalog / EstateUpgradeCatalog / TraderCatalog / TavernCatalog /
-  MarketCatalog / GuildCatalog / ArenaCatalog  — all read Catalogs.current
+  ALL 12 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade
+  Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest
+  — every one reads Catalogs.current
 ```
 
-`content/data/` holds `manifest · items · enemies · recipes · weapon_upgrades ·
-bags · estate_upgrades · trader · tavern · market · guild · arena`. Still Swift-
-backed: `PlotCatalog`, `MasterCatalog`, `FortuneCatalog`, `QuestCatalog`.
+`content/data/` holds 16 files: `manifest · items · enemies · recipes ·
+weapon_upgrades · bags · estate_upgrades · trader · tavern · market · guild ·
+arena · master · plots · fortune · quests`. **No Swift catalog array remains**
+(Phase 3 closed 2026-08-29), so `ContentExporter` and `--export-content` are
+gone. `ContentDigest` stays — it is the "confirm only the intended change" step
+of the add-content workflow, not a migration leftover.
 
 **Two snapshots on purpose.** The domain types (`Item`, `Enemy`, …) still live in
 the main target, so `ROIContent` can only hold DTOs. Mapping DTO → domain on
@@ -104,12 +107,16 @@ Three layers, learned the hard way (both lessons cost a real bug):
 Both halves have been negative-tested: reordering enemies moves both; dropping
 `?? all.first` from `pickFor` moves only `spawns`.
 
-## Migration pattern (repeat per catalog)
+## Migration pattern (historical — Phase 3 is closed)
+
+Kept because the same shape recurs whenever behaviour moves from code to data.
 
 1. Extend `ContentDigest` to cover the catalog **while it is still Swift-backed**;
    capture the baseline.
 2. Add DTO + mapping + loader + `GameContent`/`DomainContent` fields.
 3. Add it to `ContentExporter`; run `--export-content`; commit the JSON verbatim.
+   *(That tool was deleted at the end of Phase 3 — reconstruct it from git if a
+   future catalog ever needs the same move.)*
 4. Flip the catalog to a façade, delete the Swift array.
 5. Re-run the digest — must be identical.
 6. **Remove it from `ContentExporter`** — re-exporting a façade writes back what
@@ -144,6 +151,18 @@ pipeline bug rather than a design change.
   because a zero has to stay a validation ERROR. `ContentBundle` holds the five
   capital files as **optionals**; `DomainContent` throws `incompleteBundle` on a
   nil rather than booting a game whose guild cap is silently zero.
+- **A `private static let` inside the catalog is the sharpest edge in a flip.**
+  `FortuneCatalog.lookup` read `all` at type-init; harmless while `all` was also
+  a `static let`, a guaranteed trap the moment `all` reads the snapshot. Grep
+  inside the catalog, not just at its call sites.
+- **Absence can be a value.** A plot with no `tuning` is how the estate
+  controller knows to open a training fight instead of a harvest, so nil-ness is
+  compared explicitly rather than flattened to an empty struct.
+- **A no-op default is per-field.** `FortuneEffect` omits 0 for bonuses but
+  **1.0** for multipliers; one "skip falsy" rule would decode a card that zeroes
+  the stat it scales.
+- **Never iterate a catalog's Dictionary for a digest or an export.** `pools`
+  and `t1Tunings` hash in an arbitrary per-process order; walk `allCases`.
 - `TimeInterval` fields are `Double` on the wire. `45` and `45.0` decode to the
   same value and the digest interpolates them as `"45.0"`, so JSON formatting
   cannot move the digest. Locked by a test.

@@ -49,6 +49,10 @@ public final class GameContent: Sendable {
     public let market: MarketFileDTO?
     public let guild: GuildFileDTO?
     public let arena: ArenaFileDTO?
+    public let master: MasterFileDTO?
+    public let plots: PlotFileDTO?
+    public let fortune: FortuneFileDTO?
+    public let quests: QuestFileDTO?
 
     public init(_ bundle: ContentBundle) {
         self.manifest = bundle.manifest
@@ -74,5 +78,9 @@ public final class GameContent: Sendable {
         self.market = bundle.market
         self.guild = bundle.guild
         self.arena = bundle.arena
+        self.master = bundle.master
+        self.plots = bundle.plots
+        self.fortune = bundle.fortune
+        self.quests = bundle.quests
     }
 }

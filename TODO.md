@@ -536,7 +536,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `?? all.first` km≥36 fallback bug is preserved deliberately — fixing it belongs to Phase 5.
       `ContentExporter` narrowed to Swift-backed catalogs only, since re-exporting a façade is
       circular. 37 tests green.
-- [ ] **Phase 3 — Remaining catalogs** *(in progress — 8 of 12 done)*
+- [x] **Phase 3 — Remaining catalogs** *(2026-08-29 — 12 of 12 done)*
   - [x] **Batch A** *(2026-08-29)* — `WeaponUpgradeCatalog`, `BagCatalog`, `EstateUpgradeCatalog`
         are façades; `bags.json` + `estate_upgrades.json` exported (weapon_upgrades.json landed in
         Phase 1). **386 lines of Swift arrays deleted.** Migration digest identical across the
@@ -577,9 +577,39 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         Digest coverage re-proven non-vacuous per file: perturbing `memberCap`, a league boundary,
         `tithePercent`, trader row order, a wager tier and `listingFee` each moved it to a
         distinct value.
-  - [ ] Batch C — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`, `QuestCatalog`.
-        `PlotCatalog` and `QuestCatalog` carry behaviour in code rather than arrays, so both need
-        the same replay-before-flip treatment `leagueKey` got in batch B.
+  - [x] **Batch C** *(2026-08-29)* — `MasterCatalog`, `PlotCatalog`, `FortuneCatalog`,
+        `QuestCatalog` are façades; `master.json` + `plots.json` + `fortune.json` + `quests.json`
+        exported. **Digest identical across the flip (`8053216102eceff7`).** 250 lines of Swift
+        arrays deleted. Step 1 was real work this time — the digest had no coverage yet — so it
+        gained a `records` extension (22 cards × 14 effect fields, 9 jobs, 4 plot tunings, the
+        Master ladder) **plus a third half, `quests`**: a seeded replay of `daily()` over 200
+        users × 4 days × 3 NPCs.
+        **That third half is the batch's whole point.** `daily` is
+        `pool[stableHash("<uuid>:<npc>:<day>") % pool.count]`, so pool ORDER is the assignment —
+        reordering silently reassigns the entire playerbase. Proven by negative test: dropping the
+        day from the hash key left `records` **byte-identical** and moved `quests` alone.
+        Five more negative tests pinned the pure-code accessors, which have no backing array at
+        all — `icon(.mine)` ⛏→🪓, the `repairCost` coefficient 0.5→0.6, a card multiplier
+        1.35→1.36 and `enchantPerLevelPoints` each moved `records`.
+        **Two hand-translations, both proven before a byte was written:** `repairCostFraction`
+        (the 0.5 lifted out of `repairCost` — the exporter recomputed the whole formula from the
+        extracted value over 6 items × missing −5…120) and the exported pool order (replayed
+        against `daily()` over 200 users × 4 days × 3 NPCs).
+        **`FortuneCatalog.lookup` was a `private static let` reading `all`** — after the flip that
+        would have run at type-init and trapped before `ContentBootstrap.load`. It moved into
+        `DomainContent`, which is the only reason the boot survived.
+        Staying in Swift on purpose: `PlotType` (persisted in `Plot.plotType`), `QuestNPC`
+        (callback token + locale infix), `QuestCounter` (names the four hook sites),
+        `weaponRepairCost` (`max(0, missing)` has no magic number to lift).
+        **28 new validator rules, every one negative-tested**, including `master.points_short`
+        (a short points table silently stops granting at the top of the ladder),
+        `master.levels_not_contiguous` (`enchantStep` looks up by level, so a gap strands the
+        player one short of the cap), `plot.type_missing` (a `PlotType` the file forgets is a DB
+        row the game cannot describe), `fortune.unsafe_id` (the id is also a PNG filename),
+        `fortune.half_wheel` (the wheel needs both sides or it is ignored entirely) and a
+        cross-pool `quest` id uniqueness check. 85 tests green.
+        **`ContentExporter` deleted** along with the `--export-content` branch: Phase 3 is over,
+        no Swift array remains, and there is nothing left for it to export.
 - [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
       technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)

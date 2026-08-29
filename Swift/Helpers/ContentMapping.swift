@@ -30,6 +30,9 @@ enum ContentMappingError: Error, CustomStringConvertible {
     case unknownRecipeCategory(String, id: String)
     case invalidDepthRange(min: Int, max: Int, id: String)
     case incompleteBundle(missing: [String])
+    case unknownPlotType(String)
+    case unknownQuestNPC(String)
+    case unknownQuestCounter(String, id: String)
 
     var description: String {
         switch self {
@@ -39,6 +42,9 @@ enum ContentMappingError: Error, CustomStringConvertible {
         case .invalidDepthRange(let lo, let hi, let id): return "\(id): depth min \(lo) > max \(hi)"
         case .incompleteBundle(let missing):
             return "content bundle is missing: \(missing.joined(separator: ", "))"
+        case .unknownPlotType(let value):   return "unknown plot type \"\(value)\""
+        case .unknownQuestNPC(let value):   return "unknown quest NPC \"\(value)\""
+        case .unknownQuestCounter(let v, let id): return "\(id): unknown quest counter \"\(v)\""
         }
     }
 }
@@ -313,5 +319,183 @@ extension TavernFoodDTO {
 
     var domain: TavernFoodListing {
         TavernFoodListing(itemId: itemId, priceSilver: priceSilver)
+    }
+}
+
+// MARK: - Master
+
+extension MasterArmorListingDTO {
+    init(_ listing: MasterCatalog.ArmorListing) {
+        self.init(itemId: listing.itemId, priceSilver: listing.priceSilver)
+    }
+
+    var domain: MasterCatalog.ArmorListing { MasterCatalog.ArmorListing(itemId, priceSilver) }
+}
+
+extension EnchantStepDTO {
+    init(_ step: MasterCatalog.EnchantStep) {
+        self.init(level: step.level, silver: step.silver,
+                  materialId: step.materialId, materialQty: step.materialQty)
+    }
+
+    var domain: MasterCatalog.EnchantStep {
+        MasterCatalog.EnchantStep(level, silver, materialId, materialQty)
+    }
+}
+
+// MARK: - Plot
+
+extension PlotBonusOutputDTO {
+    init(_ bonus: PlotBonusOutput) {
+        self.init(producedItemId: bonus.producedItemId,
+                  ratePerInterval: bonus.ratePerInterval, capacity: bonus.capacity)
+    }
+
+    var domain: PlotBonusOutput {
+        PlotBonusOutput(producedItemId: producedItemId,
+                        ratePerInterval: ratePerInterval, capacity: capacity)
+    }
+}
+
+extension PlotTuningDTO {
+    init(_ tuning: PlotTuning) {
+        self.init(producedItemId: tuning.producedItemId,
+                  ratePerInterval: tuning.ratePerInterval,
+                  capacity: tuning.capacity,
+                  bonusOutput: tuning.bonusOutput.map(PlotBonusOutputDTO.init))
+    }
+
+    var domain: PlotTuning {
+        PlotTuning(producedItemId: producedItemId,
+                   ratePerInterval: ratePerInterval,
+                   capacity: capacity,
+                   bonusOutput: bonusOutput?.domain)
+    }
+}
+
+extension PlotTypeDTO {
+    /// Domain side of a plot type is the enum itself; the row carries what
+    /// hangs off it. Throws on a raw value `PlotType` cannot represent —
+    /// a validator error too, so unreachable in a bundle that installs.
+    func toPlotType() throws -> PlotType {
+        guard let parsed = PlotType(rawValue: type) else {
+            throw ContentMappingError.unknownPlotType(type)
+        }
+        return parsed
+    }
+}
+
+// MARK: - Fortune
+
+extension FortuneEffectDTO {
+    init(_ effect: FortuneEffect) {
+        self.init(
+            attackBonus: effect.attackBonus,
+            defenseBonus: effect.defenseBonus,
+            critBonus: effect.critBonus,
+            dodgeBonus: effect.dodgeBonus,
+            accuracyBonus: effect.accuracyBonus,
+            xpMultiplier: effect.xpMultiplier,
+            lootChanceMultiplier: effect.lootChanceMultiplier,
+            vigorDrainMultiplier: effect.vigorDrainMultiplier,
+            oneShotSilver: effect.oneShotSilver,
+            oneShotXpGain: effect.oneShotXpGain,
+            oneShotHpRestore: effect.oneShotHpRestore,
+            oneShotVigorRestore: effect.oneShotVigorRestore,
+            randomSilverPositive: effect.randomSilverPositive,
+            randomSilverNegative: effect.randomSilverNegative
+        )
+    }
+
+    var domain: FortuneEffect {
+        FortuneEffect(
+            attackBonus: attackBonus,
+            defenseBonus: defenseBonus,
+            critBonus: critBonus,
+            dodgeBonus: dodgeBonus,
+            accuracyBonus: accuracyBonus,
+            xpMultiplier: xpMultiplier,
+            lootChanceMultiplier: lootChanceMultiplier,
+            vigorDrainMultiplier: vigorDrainMultiplier,
+            oneShotSilver: oneShotSilver,
+            oneShotXpGain: oneShotXpGain,
+            oneShotHpRestore: oneShotHpRestore,
+            oneShotVigorRestore: oneShotVigorRestore,
+            randomSilverPositive: randomSilverPositive,
+            randomSilverNegative: randomSilverNegative
+        )
+    }
+}
+
+extension FortuneCardDTO {
+    init(_ card: FortuneCard) {
+        self.init(id: card.id, effect: FortuneEffectDTO(card.effect))
+    }
+
+    /// `FortuneCard.init` derives all three locale keys from the id, so the
+    /// file carries none of them and they cannot drift from the convention.
+    var domain: FortuneCard { FortuneCard(id: id, effect: effect.domain) }
+}
+
+// MARK: - Quest
+
+extension QuestObjectiveDTO {
+    init(_ objective: QuestObjective) {
+        switch objective {
+        case .deliver(let itemIds, let count):
+            self.init(kind: .deliver, itemIds: itemIds, target: count)
+        case .counter(let counter, let target):
+            self.init(kind: .counter, counter: counter.rawValue, target: target)
+        }
+    }
+
+    /// `questId` is only used to name the row in the error — the objective
+    /// itself carries no id.
+    func toDomain(questId: String) throws -> QuestObjective {
+        switch kind {
+        case .deliver:
+            return .deliver(itemIds: itemIds, count: target)
+        case .counter:
+            guard let raw = counter, let parsed = QuestCounter(rawValue: raw) else {
+                throw ContentMappingError.unknownQuestCounter(counter ?? "<missing>", id: questId)
+            }
+            return .counter(parsed, target: target)
+        }
+    }
+}
+
+extension QuestRewardDTO {
+    init(_ reward: QuestReward) {
+        self.init(silver: reward.silver, xp: reward.xp, vigor: reward.vigor)
+    }
+
+    var domain: QuestReward { QuestReward(silver: silver, xp: xp, vigor: vigor) }
+}
+
+extension QuestDefDTO {
+    init(_ def: QuestDef) {
+        self.init(id: def.id,
+                  objective: QuestObjectiveDTO(def.objective),
+                  reward: QuestRewardDTO(def.reward))
+    }
+
+    /// The NPC comes from the pool this row sits in, not from the row.
+    func toDomain(npc: QuestNPC) throws -> QuestDef {
+        QuestDef(id: id, npc: npc,
+                 objective: try objective.toDomain(questId: id),
+                 reward: reward.domain)
+    }
+}
+
+extension QuestPoolDTO {
+    init(npc: QuestNPC, quests: [QuestDef]) {
+        self.init(npc: npc.rawValue, quests: quests.map(QuestDefDTO.init))
+    }
+
+    func toNPC() throws -> QuestNPC {
+        guard let parsed = QuestNPC(rawValue: npc) else {
+            throw ContentMappingError.unknownQuestNPC(npc)
+        }
+        return parsed
     }
 }

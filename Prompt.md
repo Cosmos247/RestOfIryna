@@ -34,33 +34,37 @@ of Swift arrays into `content/data/*.json`. **This is the only work in flight.**
 
 ### Where we stopped
 
-Phases 0–2 done and committed; **Phase 3 is 8 of 12 catalogs in** (batch A + B).
+**Phase 3 is complete — all 12 catalogs read `content/data/`.** No Swift catalog
+array remains anywhere in the tree.
 
-| Reads from `content/data/` | Still a Swift array |
-|---|---|
-| items · enemies · recipes | Master · Plot · Fortune · Quest |
-| weapon ladders · bags · estate upgrades | |
-| trader · tavern · market · guild · arena | |
+```
+content/data/  manifest · items · enemies · recipes · weapon_upgrades · bags ·
+               estate_upgrades · trader · tavern · market · guild · arena ·
+               master · plots · fortune · quests          (16 files)
+```
 
-**Next step — Phase 3 batch C: Master / Plot / Fortune / Quest.** Unlike batch B,
-their digest coverage does **not** exist yet — step 1 of the loop (extend
-`ContentDigest` while they are still Swift-backed, capture the new baseline) is
-real work this time.
+**Next step — Phase 4: tuning tables + collapsing the three `testMode` flags
+into one `time.scale`** (its own commit).
 
-Two of the four are behaviour-in-code rather than arrays: `PlotCatalog` and
-`QuestCatalog`. That shape needs the batch-B treatment — hand-translate the logic
-into a table, then **prove** it by replaying the shipped implementation against
-the new table across the full input range before the flip, refusing to write on
-the first mismatch. Run the replay wider than the digest does.
+Batch C surfaced why that is not mechanical. `PlotCatalog.testMode` alone drives
+**two different scales**: `intervalSeconds` is 60 ↔ 3600 (60×, which matches
+`manifest.timeScale: 60`) while `PlotProductionService`'s sweep is 60 ↔ 300
+(**5×**). The flag was carried into `plots.json` verbatim; Phase 4 reconciles all
+three flags and deletes it.
 
-Then Phase 4 (tuning tables + collapsing the three `testMode` flags into one
-`time.scale`).
+Two smaller decisions worth making first: `manifest.json` still reads
+`contentVersion: "phase1-export"` (stale by three phases), and `schemaVersion`
+has never moved even though the bundle has gained nine required files since v1.
 
-### The migration loop (repeat per catalog)
+**Current digest baseline: `8053216102eceff7`**
+(`records 04cbf2b5331ea85b` · `spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`).
+
+### The migration loop (historical — Phase 3 closed)
 
 1. Extend `ContentDigest` **while the catalog is still Swift-backed**; capture the baseline.
 2. DTO → mapping → loader → `GameContent` / `DomainContent`.
 3. Add to `ContentExporter`; `swift run RestOfIryna --export-content`; commit the JSON verbatim.
+   *(deleted at the end of Phase 3 — recover from git if needed)*
 4. Flip the catalog to a façade; delete the Swift array.
 5. `swift run RestOfIryna --content-digest` — must equal the baseline.
 6. Remove it from `ContentExporter` (re-exporting a façade proves nothing).
@@ -72,8 +76,7 @@ Normalize nothing during a migration.
 ```
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run RestOfIryna --content-digest       # migration verification digest
-swift run RestOfIryna --export-content       # dump still-Swift catalogs to JSON
-swift test                                   # 42 tests, ~0.03s
+swift test                                   # 85 tests, ~0.04s
 ```
 
 ## What Works Now (shipped game)
