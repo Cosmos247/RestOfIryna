@@ -322,7 +322,7 @@
     "capital.blocked_by_expedition": "🏕 Your governor is away in the wilderness. The capital is two days' ride — the road waits for another day.",
     "capital.welcome": "🏛 The Capital is the heart of the kingdom, where life never stills, day or night. Merchants haggle in the bustling bazaar, artisans hammer out blades and armour, and in the tavern there is always a tankard of ale and a fresh rumour. In the arena, fighters earn glory and silver, while a mysterious fortune teller whispers prophecies to those bold enough to ask about their fate. And over it all, the King himself watches closely from the royal palace.",
     "capital.button.market": "🛒 Market",
-    "capital.button.arena": "⚔️ PvP Arena",
+    "capital.button.arena": "⚔️ The Arena",
     "capital.button.trader": "💼 Trader",
     "capital.button.fortune": "🔮 Fortune Teller",
     "capital.button.master": "🛠 Master",
@@ -858,5 +858,68 @@
     "exploration.passive.outcome.encounter_won": "⚔️ victory",
     "exploration.passive.outcome.encounter_lost": "💀 defeat",
     "exploration.passive.outcome.trip": "🦵 stumble",
-    "exploration.passive.outcome.starvation": "🥀 hunger"
+    "exploration.passive.outcome.starvation": "🥀 hunger",
+
+    "arena.button.back": "🔙 Back to capital",
+    "arena.button.challenge": "⚔️ Challenge",
+    "arena.button.honor": "🏆 Honor",
+    "arena.button.attack": "⚔️ Attack",
+    "arena.button.defend": "🛡 Defend",
+    "arena.button.surrender": "🏳 Surrender",
+
+    "arena.hub.title": "⚔️ The Arena",
+    "arena.hub.body": "A sand pit dark with old stains. Here governors fight for silver and Honor.\n\nHonor: %{honor} — %{league}\nFights today: %{today}/%{cap}\n\nPick an opponent and stake silver on your duel.",
+
+    "arena.challenge.title": "⚔️ Who to challenge",
+    "arena.challenge.empty": "No one is in the Arena right now. Wait for someone to arrive.",
+    "arena.challenge.pick_stake": "Duel against %{nick}. Choose your silver stake:",
+    "arena.challenge.cancel": "❌ Cancel",
+    "arena.challenge.sent": "Challenge sent to %{nick}. Await their answer.",
+    "arena.challenge.self_busy": "You're already in a duel or awaiting an answer.",
+    "arena.challenge.busy": "That fighter is busy right now.",
+    "arena.challenge.gone": "That fighter has left the Arena.",
+
+    "arena.invite.push": "%{nick} challenges you to a duel. Stake: %{stake}. Accept?",
+    "arena.invite.accept": "⚔️ Accept",
+    "arena.invite.decline": "🏳 Decline",
+    "arena.invite.expired": "This challenge is no longer valid.",
+    "arena.invite.aborted": "Duel cancelled — your opponent isn't ready to fight.",
+    "arena.invite.you_declined": "Challenge declined.",
+    "arena.invite.declined_push": "Challenge declined: %{nick}.",
+    "arena.invite.expired_push": "Your challenge to %{nick} went unanswered.",
+
+    "arena.err.broke": "Not enough silver: need %{need}, you have %{have}.",
+    "arena.err.opponent_broke": "Your opponent can't cover this stake.",
+    "arena.err.dead": "You're barely alive — restore HP first.",
+    "arena.err.opponent_dead": "Your opponent is barely alive and can't fight.",
+    "arena.err.daily_cap": "You've used up today's fight limit.",
+    "arena.err.opponent_daily_cap": "Your opponent has used up today's fight limit.",
+
+    "arena.duel.header": "Duel — round %{round}",
+    "arena.duel.scoreline": "%{nick}: %{hp}/%{max} HP",
+    "arena.duel.your_turn": "Your move!",
+    "arena.duel.their_turn": "Opponent's move: %{nick}",
+    "arena.duel.not_your_turn": "Wait for your opponent's move.",
+
+    "arena.log.hit": "hit — %{dmg} damage",
+    "arena.log.crit": "critical hit — %{dmg}!",
+    "arena.log.miss": "miss",
+    "arena.log.defend": "defend (counter %{dmg})",
+    "arena.log.timeout": "turn skipped — forced defense (%{dmg})",
+
+    "arena.result.win_title": "Victory!",
+    "arena.result.win_body": "You bested %{nick} in the Arena.\n\nWinnings: %{payout} (Crown's tithe: %{tithe})\nHonor: %{hb} → %{ha}\nHP: %{hp}/%{max}",
+    "arena.result.loss_title": "Defeat",
+    "arena.result.loss_body": "%{nick} won the duel this time.\n\nStake lost: %{stake}\nHonor: %{hb} → %{ha}\nHP: %{hp}/%{max}",
+
+    "arena.honor.title": "🏆 Your honor",
+    "arena.honor.body": "Honor: %{honor} — %{league}\nWins: %{wins} · Losses: %{losses}\nFights today: %{today}/%{cap}",
+    "arena.leaderboard.title": "Top fighters",
+    "arena.leaderboard.row": "%{rank}. %{nick} — %{honor}",
+    "arena.leaderboard.empty": "No one has fought yet.",
+
+    "arena.league.novice": "Novice",
+    "arena.league.fighter": "Fighter",
+    "arena.league.veteran": "Veteran",
+    "arena.league.champion": "Champion"
 }

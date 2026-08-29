@@ -202,6 +202,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddUserGuildFields())
     migrations.add(CreateGuildInvites())
     migrations.add(CreateGuildVault())
+    migrations.add(CreateArenaProfiles())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -459,6 +460,12 @@ public func configure(logger: Logger) async throws {
     // in-memory TradeStore. This loop drops stale presence and cancels idle
     // trades (notifying both participants).
     TradeStore.startSweeper(bot: appState.bot, lingo: lingo)
+
+    // MARK: - Arena duel sweeper
+    // Live герць duels + challenge invites live in the in-memory ArenaStore.
+    // This loop expires unanswered challenges, auto-resolves turn timeouts, and
+    // settles any duel that ends by forfeit (pushing updates to both fighters).
+    ArenaService.startSweeper(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Notify admins about starting bot
     // Restored players keep whatever reply keyboard their current controller

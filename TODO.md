@@ -437,11 +437,15 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [ ] Implement pet XP and leveling
 - [ ] Pet leagues (ranked ladder) — may defer to post-v1
 
-### 8.3 Arena
-- [ ] Create ArenaController
-- [ ] Implement 1v1 matchmaking (ELO-based)
-- [ ] Implement ranked + unranked queues
-- [ ] Implement arena rewards (gold, tokens, leaderboards)
+### 8.3 Arena — "Ристалище" *(live герць, started 2026-07-20)*
+Design locked with the user: name **Ристалище**, **live** real-time turn-based duel (not async), rating currency **Честь** (ELO). Matchmaking: **queue + lobby-challenge** (both). Start HP: **current** (heal before fighting). Penalties: **no gear/vigor wear** — silver stake is the only cost. Non-lethal (loser floored at 1 HP, no inventory wipe).
+- [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejects out-of-turn taps (no keyboard swapping).
+- [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses. `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
+- [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
+- [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
+- [ ] Ranked vs unranked (casual/no-stake) queues
+- [ ] Seasons + end-of-season league rewards (silver / cosmetic title)
+- [ ] Escrow-on-restart refund (in-flight duel during a bot restart currently just cancels with no settlement — acceptable while testing)
 
 ---
 

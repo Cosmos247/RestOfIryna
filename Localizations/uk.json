@@ -330,7 +330,7 @@
     "capital.blocked_by_expedition.f": "🏕 Твоя намісниця у дикій пущі. Столиця — за два дні верхи, дорога почекає іншого дня.",
     "capital.welcome": "🏛 Столиця — серце королівства, де життя не стихає ні вдень, ні вночі. На галасливому базарі торгують міські купці, ремісники кують зброю та обладунки, а в шинку завжди знайдеться кухоль елю й свіжа чутка. На арені бійці здобувають славу й срібло, поки загадкова ворожка шепоче пророцтва тим, хто насмілиться запитати про свою долю. А над усім цим із королівського палацу пильно спостерігає сам Король.",
     "capital.button.market": "🛒 Базар",
-    "capital.button.arena": "⚔️ ПВП арена",
+    "capital.button.arena": "⚔️ Ристалище",
     "capital.button.trader": "💼 Крамар",
     "capital.button.fortune": "🔮 Ворожка",
     "capital.button.master": "🛠 Майстер",
@@ -878,5 +878,68 @@
     "exploration.passive.outcome.encounter_won": "⚔️ перемога",
     "exploration.passive.outcome.encounter_lost": "💀 поразка",
     "exploration.passive.outcome.trip": "🦵 спотикання",
-    "exploration.passive.outcome.starvation": "🥀 голод"
+    "exploration.passive.outcome.starvation": "🥀 голод",
+
+    "arena.button.back": "🔙 До столиці",
+    "arena.button.challenge": "⚔️ Виклик",
+    "arena.button.honor": "🏆 Честь",
+    "arena.button.attack": "⚔️ Атака",
+    "arena.button.defend": "🛡 Оборона",
+    "arena.button.surrender": "🏳 Здатися",
+
+    "arena.hub.title": "⚔️ Ристалище",
+    "arena.hub.body": "Піщана яма, темна від старих плям. Тут намісники б'ються за срібло й Честь.\n\nЧесть: %{honor} — %{league}\nБоїв сьогодні: %{today}/%{cap}\n\nОбери суперника й постав срібло на свій герць.",
+
+    "arena.challenge.title": "⚔️ Кого викликати на герць",
+    "arena.challenge.empty": "У Ристалищі зараз нікого немає. Зачекай, поки хтось зайде.",
+    "arena.challenge.pick_stake": "Ставка на герць проти %{nick}. Обери, скільки срібла ставиш:",
+    "arena.challenge.cancel": "❌ Скасувати",
+    "arena.challenge.sent": "Виклик надіслано: %{nick}. Чекай на відповідь.",
+    "arena.challenge.self_busy": "Ти вже в герці або чекаєш на відповідь.",
+    "arena.challenge.busy": "Цей боєць зараз зайнятий.",
+    "arena.challenge.gone": "Цей боєць уже покинув Ристалище.",
+
+    "arena.invite.push": "%{nick} викликає тебе на герць. Ставка: %{stake}. Приймаєш?",
+    "arena.invite.accept": "⚔️ Прийняти",
+    "arena.invite.decline": "🏳 Відхилити",
+    "arena.invite.expired": "Виклик уже недійсний.",
+    "arena.invite.aborted": "Герць скасовано: суперник не готовий до бою.",
+    "arena.invite.you_declined": "Виклик відхилено.",
+    "arena.invite.declined_push": "Виклик відхилено: %{nick}.",
+    "arena.invite.expired_push": "Виклик до %{nick} лишився без відповіді.",
+
+    "arena.err.broke": "Замало срібла: треба %{need}, маєш %{have}.",
+    "arena.err.opponent_broke": "У суперника замало срібла на цю ставку.",
+    "arena.err.dead": "Ти ледь живий — спершу віднови ОЗ.",
+    "arena.err.opponent_dead": "Суперник ледь живий і не може битися.",
+    "arena.err.daily_cap": "Денний ліміт боїв вичерпано.",
+    "arena.err.opponent_daily_cap": "У суперника вичерпано денний ліміт боїв.",
+
+    "arena.duel.header": "Герць — раунд %{round}",
+    "arena.duel.scoreline": "%{nick}: %{hp}/%{max} ОЗ",
+    "arena.duel.your_turn": "Твій хід!",
+    "arena.duel.their_turn": "Хід суперника: %{nick}",
+    "arena.duel.not_your_turn": "Зачекай на хід суперника.",
+
+    "arena.log.hit": "удар — %{dmg} ушкоджень",
+    "arena.log.crit": "критичний удар — %{dmg}!",
+    "arena.log.miss": "промах",
+    "arena.log.defend": "оборона (контратака %{dmg})",
+    "arena.log.timeout": "хід пропущено — вимушена оборона (%{dmg})",
+
+    "arena.result.win_title": "Перемога!",
+    "arena.result.win_body": "Твоя перемога над %{nick} на Ристалищі.\n\nВиграш: %{payout} (десятина Короні: %{tithe})\nЧесть: %{hb} → %{ha}\nОЗ: %{hp}/%{max}",
+    "arena.result.loss_title": "Поразка",
+    "arena.result.loss_body": "Цього разу гору взяв суперник — %{nick}.\n\nВтрата ставки: %{stake}\nЧесть: %{hb} → %{ha}\nОЗ: %{hp}/%{max}",
+
+    "arena.honor.title": "🏆 Твоя честь",
+    "arena.honor.body": "Честь: %{honor} — %{league}\nПеремоги: %{wins} · Поразки: %{losses}\nБоїв сьогодні: %{today}/%{cap}",
+    "arena.leaderboard.title": "Найкращі бійці",
+    "arena.leaderboard.row": "%{rank}. %{nick} — %{honor}",
+    "arena.leaderboard.empty": "Поки що ніхто не бився.",
+
+    "arena.league.novice": "Новак",
+    "arena.league.fighter": "Боєць",
+    "arena.league.veteran": "Ветеран",
+    "arena.league.champion": "Чемпіон"
 }

@@ -185,7 +185,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // MARK: - Location handlers
 
     private func onMarket(context: Context)  async throws -> Bool { try await showMarket(context: context); return true }
-    private func onArena(context: Context)   async throws -> Bool { try await renderLocation(.arena,   context: context); return true }
+    private func onArena(context: Context)   async throws -> Bool { try await onArenaEnter(context: context); return true }
     private func onTrader(context: Context)  async throws -> Bool { try await showTrader(context: context); return true }
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
     private func onMaster(context: Context)  async throws -> Bool { try await showMaster(context: context); return true }
@@ -200,6 +200,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
         try await guild.showGuildHome(context: context)
         return true
+    }
+
+    /// The Arena (Ристалище) is a full controller too — flip routerName to
+    /// "arena" (ArenaController takes over the reply keyboard) and render its
+    /// hub. `arena.button.back` flips routerName back to "capital".
+    private func onArenaEnter(context: Context) async throws {
+        let arena = Controllers.arenaController
+        context.session.routerName = arena.routerName
+        try await context.session.saveAndCache(in: context.db)
+        try await arena.showArenaHome(context: context)
     }
 
     private func onLeave(context: Context) async throws -> Bool {
@@ -929,6 +939,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // need to be forwarded to InventoryController explicitly.
         if data.hasPrefix("inv:") {
             return try await InventoryController.onCallbackQuery(context: context)
+        }
+
+        // Arena invite buttons (`arena:acc:` / `arena:dec:`) can land here if the
+        // challenged player stepped back into the capital before answering.
+        // Forward them so accept/decline still resolves against the ArenaStore.
+        if data.hasPrefix("arena:") {
+            return try await ArenaController.onCallbackQuery(context: context)
         }
 
         let ctrl = Controllers.capitalController

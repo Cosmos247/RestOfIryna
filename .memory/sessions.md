@@ -2122,3 +2122,17 @@ Built the Guild system end-to-end across four increments (data → controller sk
 All neutral uk copy (passive: founded/left/disbanded/deposited/withdrew) — no gendered words, gender rule untouched. 82 guild locale keys × 2, parity verified. Build green throughout. Docs synced: README (GuildController prose + structure: controllers/models/migrations/services), TODO (7.1 marked, deferrals listed), status.md, file-map.md. Also carries the earlier-decided TODO note: XP→Estate redesign DROPPED.
 
 **Deferred (7.1+):** guild chat (bot-proxied fan-out), banner-on-estate, non-aggression pacts (need territorial PvP), leadership transfer.
+
+## Session — 2026-07-20 (Phase 8.3 — Arena "Ристалище": live PvP герць v1)
+
+### Context
+User returned after a break (migrated DB to a fresh one — operational only, no code delta; last commit was 7.1 Guildhall). Reviewed where we stopped, then chose to skip the rest of Phase 7 and jump to the Arena (Phase 8; pets stay post-release). Design settled via two AskUserQuestion quizzes: name **Ристалище** · **live** real-time turn-based герць (NOT async) · rating **Честь** (ELO) · matchmaking **queue + lobby-challenge** (both) · start HP **current** (heal before fighting) · **no** gear/vigor wear (silver stake is the only cost). Assumed + stated: non-lethal (loser floored at 1 HP, no inventory wipe), damage carries to real HP.
+
+### What was built (v1 = lobby-challenge slice of the live engine)
+New files: `ArenaCatalog.swift` (constants), `ArenaProfile.swift` + `CreateArenaProfiles.swift` (Честь/W-L/daily), `ArenaStore.swift` (in-memory actor, TradeStore-shaped: lobby + pending + duels + byUser; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic; 45s turn timer, auto-defend on timeout, forfeit after 2 misses), `ArenaService.swift` (snapshot/validateMatch/honorAfter ELO K=32/settle + startSweeper), `ArenaController.swift` (routerName "arena", hub vs fight reply keyboards, challenge→stake→invite→accept→live duel, honor/leaderboard). Wired: AllControllers, CapitalController.onArena (flip routerName, like onGuild) + `arena:` callback forward, MainController `arena:` forward, configure (migration + sweeper). 58 arena locale keys × 2 (all neutral — no gendered words; templates kept emoji-free where they carry %{}, emoji ride in interpolation values / Swift prefixes per the Lingo rule). Renamed capital button/title uk → «Ристалище». Build green.
+
+### Economy / rules as implemented
+No escrow: silver only moves at `settle` (loser → winner minus 10% King's tithe = burned sink), so a bot restart mid-duel cancels with zero financial effect. Current-HP carry-over, non-lethal floor 1. Honor ELO both sides. Daily cap 20 (generous for testing). Leagues Новак/Боєць/Ветеран/Чемпіон by honor threshold.
+
+### Deferred (next increments, same engine)
+Queue auto-pairing (2nd half of the "both modes" decision — lobby-challenge shipped first), ranked/unranked split, seasons + end-of-season rewards, escrow-on-restart refund. Not committed yet — awaiting the user's audit-and-commit prompt.

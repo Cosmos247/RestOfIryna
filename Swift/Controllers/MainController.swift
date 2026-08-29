@@ -370,6 +370,11 @@ extension MainController {
         if data.hasPrefix("combat:") {
             return try await CombatController.onCallbackQuery(context: context)
         }
+        // Arena invite buttons can reach here if the challenged player is at the
+        // main hub when they answer — forward to the ArenaController.
+        if data.hasPrefix("arena:") {
+            return try await ArenaController.onCallbackQuery(context: context)
+        }
 
         // Default: delete inline message
         let chatId = TGChatId.chat(message.chat.id)
