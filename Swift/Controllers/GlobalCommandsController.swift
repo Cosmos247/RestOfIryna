@@ -59,6 +59,14 @@ final class GlobalCommandsController: @unchecked Sendable {
         await dispatcher.add(TGCommandHandler(commands: ["/revoke"]) { [weak self] update in
             try await self?.handleRevoke(update: update)
         })
+
+        await dispatcher.add(TGCommandHandler(commands: ["/content"]) { [weak self] update in
+            try await self?.handleContent(update: update)
+        })
+
+        await dispatcher.add(TGCommandHandler(commands: ["/reload"]) { [weak self] update in
+            try await self?.handleReload(update: update)
+        })
     }
 
     // MARK: - Command Handlers
@@ -102,6 +110,76 @@ final class GlobalCommandsController: @unchecked Sendable {
            let markup = controller.generateControllerKB(session: session, lingo: lingo) {
             let keyboardRestored = lingo.localize("keyboard.restored", locale: session.locale)
             try await bot.sendMessage(session: session, text: "⌨️ \(keyboardRestored).", replyMarkup: markup)
+        }
+    }
+
+    /// Escape text destined for a `parseMode: .html` message.
+    ///
+    /// Needed because `/reload` echoes VALIDATOR OUTPUT, which is arbitrary
+    /// developer-facing prose rather than curated locale copy — and two rules
+    /// legitimately say things like "expected min <= base <= max". Unescaped,
+    /// Telegram rejects the whole message, so the one code path whose entire
+    /// job is to explain a refusal would silently deliver nothing at all.
+    private static func htmlEscaped(_ text: String) -> String {
+        text.replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+    }
+
+    /// Dev-only `/content` — what bundle is actually loaded right now.
+    ///
+    /// Reports the CONTENT HASH rather than a version string: a version is what
+    /// someone remembered to type, the hash is what the process is really
+    /// serving. It is the fastest way to answer "is this bot running the bundle
+    /// I just edited".
+    private func handleContent(update: TGUpdate) async throws {
+        guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
+        guard developerUsers.contains(fromId.id) else { return }
+
+        let session = try await User.cachedSession(for: fromId, db: db)
+        let lines = [
+            "\u{1F4E6} <b>\(Self.htmlEscaped(GameData.current.summaryLine))</b>",
+            "",
+            "<code>\(Self.htmlEscaped(ContentBootstrap.contentDirectory))</code>"
+        ]
+        try await bot.sendMessage(session: session, text: lines.joined(separator: "\n"), parseMode: .html)
+    }
+
+    /// Dev-only `/reload` — hot-swap the content bundle from disk.
+    ///
+    /// The whole safety story is the ORDER: parse → validate → live-check →
+    /// build → install. Everything that can fail happens before anything is
+    /// touched, and `install` is a reference store that cannot fail. A refused
+    /// reload leaves the running game on exactly the snapshot it was serving,
+    /// which is what makes this safe to run with players mid-expedition.
+    ///
+    /// Not reloaded: **Lingo**. `AppState.lingo` is a `let` captured by every
+    /// controller, so new locale strings still need a restart — worth saying out
+    /// loud, because "I reloaded and my new string is still missing" is the
+    /// obvious first confusion.
+    private func handleReload(update: TGUpdate) async throws {
+        guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
+        guard developerUsers.contains(fromId.id) else { return }
+
+        let session = try await User.cachedSession(for: fromId, db: db)
+        do {
+            let outcome = try await ContentBootstrap.reload(on: db, logger: appState?.logger ?? Logger(label: "reload"))
+            var lines = ["\u{2705} <b>Content reloaded</b>", "",
+                         "<code>\(Self.htmlEscaped(outcome.summaryLine))</code>"]
+            if !outcome.warnings.isEmpty {
+                lines.append("")
+                lines.append("\u{26A0}\u{FE0F} \(outcome.warnings.count) warning(s):")
+                for warning in outcome.warnings.prefix(5) {
+                    lines.append("\u{2022} <code>\(Self.htmlEscaped(warning))</code>")
+                }
+            }
+            lines.append("")
+            lines.append("<i>Locale strings are not reloaded — those still need a restart.</i>")
+            try await bot.sendMessage(session: session, text: lines.joined(separator: "\n"), parseMode: .html)
+        } catch {
+            let detail = Self.htmlEscaped(String("\(error)".prefix(1200)))
+            let text = "\u{274C} <b>Reload refused — the running bundle is untouched.</b>\n\n<code>\(detail)</code>"
+            try await bot.sendMessage(session: session, text: text, parseMode: .html)
         }
     }
 

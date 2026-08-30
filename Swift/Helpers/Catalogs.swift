@@ -15,12 +15,11 @@
 //  loops, so the mapping happens once here and the result is what the ~315 call
 //  sites read. `GameData` keeps the DTO snapshot beside it.
 //
-//  NOTE — as of Phase 3 nothing READS `GameData.current` yet: the validator
-//  runs on the `ContentBundle` before either snapshot is built, and there is no
-//  `/content` command. It is installed anyway because `ContentBootstrap.load`
-//  is the ONLY place that installs either, and installing both from one bundle
-//  in one call is what stops them drifting. Phase 7's hot reload and
-//  `LiveReferenceCheck` are its first real readers.
+//  NOTE — `GameData.current` (the DTO snapshot) and `Catalogs.current` (the
+//  domain one) are installed together, from one bundle, in one call, because
+//  that is the only thing that stops them drifting. Phase 7 gave the DTO
+//  snapshot its first real reader: `/content` reports what is actually loaded,
+//  and `ContentBootstrap.reload` swaps both or neither.
 //
 //  Same holder shape as `GameData`: `nonisolated(unsafe)` + `NSLock`, because
 //  the façade accessors have to stay synchronous, non-throwing and nonisolated

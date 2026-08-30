@@ -2877,3 +2877,81 @@ content" into a number.
 full data move so there is something worth reloading. Still no live Telegram
 pass since the rebalance began: every formula changed in Phase 5 and every
 item's stats in Phase 6.
+
+---
+
+## Session — 2026-08-30 part 4 (Phase 7 — hot reload)
+
+`/reload` and `/content` in `GlobalCommandsController`, gated on
+`developerUsers`, plus the check that makes a hot swap safe at all.
+
+### The order is the design
+
+**parse → validate → live-check → build → install.** Everything that can fail
+happens before anything is touched, and `install` is a reference store that
+cannot fail. A refused reload therefore leaves the running game on exactly the
+snapshot it was already serving — which is what makes this safe to run against a
+bot with players mid-expedition. Nothing else about the feature matters as much.
+
+### LiveReferenceCheck
+
+Every other check in the pipeline asks whether a bundle is internally
+consistent. This one asks whether it is consistent with the game already in
+progress: drop `mat.iron` from `items.json` while four players are carrying it
+and every one of their inventory rows becomes an item the game cannot name,
+price, equip or sell.
+
+**The design listed six columns; the schema has ten.** The four it missed all
+fail SILENTLY, which is why they were easy to overlook and why they matter:
+`learned_recipes.recipe_id` (a workshop row that renders nothing),
+`exploration_state.combat_stance` (the player's Super does nothing),
+`quest_progress.quest_id` (a job in progress cannot be rendered),
+`users.active_fortune_card_id` (a buff they paid for evaporates). Re-derive such
+a list from the schema; do not trust the plan's copy of it.
+
+Deliberately NOT a stat check — drift under a live fight is allowed and clamped
+at rehydration. It is IDENTITY that must not move.
+
+### Split for testability
+
+The matching lives in `ROIContent` (Foundation-only) and the queries in the main
+target, which has no test host. The failure worth catching is a CATEGORY error:
+item ids checked against the bestiary would report every row as dangling, or
+none, and either way the rule would look like it was working. That is now a test
+and it needs no database.
+
+The database half remains untested — it needs a live run.
+
+### Deliberately not reloaded
+
+**Lingo.** `AppState.lingo` is a `let` captured by every controller, so new
+locale strings still need a restart; `/reload` says so in its own output,
+because "I reloaded and my new string is still missing" is the obvious first
+confusion. Armed timers carry their deadline in the database, so a changed
+duration never retroactively moves a trip already in flight.
+
+The boot path runs the same check as a WARNING once the database is up. It
+cannot refuse there: content loads before the DB block (the dev seed reads
+catalogs), so by the time rows are reachable the snapshot is installed and half
+of boot has read from it.
+
+185 tests. Digest unchanged at `f3b145f824ec150c` — Phase 7 added machinery, not
+content.
+
+### Next
+**Phase 8 — `CombatantStats` + the simulator.** Thread `RandomNumberGenerator`
+through the combat services, add `roi-content simulate`, and lock the constants
+against **p90 rather than the mean**. Still no live Telegram pass since the
+rebalance began — and `/reload` itself is now among the things only a live run
+can exercise.
+
+**Phase 7 audit found two things.** First, `/reload` echoes validator output
+into an HTML message and two rules legitimately contain `<=` — unescaped,
+Telegram rejects the message, so the one path whose job is explaining a refusal
+would have delivered nothing. Fixed with an escape helper, and the reasoning is
+in the code: validator output is arbitrary developer prose, not curated locale
+copy. Second, walking every `@Field` in `Swift/Models` rather than trusting the
+design's list turned up four more content-id columns than the plan named; three
+more (`quest_progress.npc`, `technique_id`, `character_class`) are covered
+transitively or by `DomainContent` refusing an incomplete bundle, and that
+reasoning is now written down in `LiveReferenceQuery` so nobody re-derives it.

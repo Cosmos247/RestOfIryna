@@ -102,7 +102,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 4 Tuning tables + `time.scale` | ✅ **4a** six tables · **4b** flags collapsed |
 | 5 New combat model | ✅ 5A bestiary · 5B progression · 5C combat · 5D techniques |
 | 6 Rarity + sets | ✅ budget curve · rarities · sets · enchant as % |
-| 7 `/reload` hot swap | ⬜ |
+| 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
 | 8 Simulator + constant lock-in | ⬜ |
 | 9 Content specs (approval gate) | ⬜ |
 | 10 Generate + author content | ⬜ |
@@ -140,6 +140,30 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What Phase 7 taught
+
+- **The failure path was the one that failed.** `/reload` echoes validator
+  output into a `parseMode: .html` message, and two rules legitimately say
+  "expected min <= base <= max". Unescaped, Telegram rejects the whole message —
+  so the single code path whose entire job is explaining a refusal would have
+  delivered nothing at all. Escape anything that is not curated locale copy.
+
+- **The safety of a hot swap is entirely in the ORDER.** parse → validate →
+  live-check → build → install, with `install` the only infallible step and
+  last. Nothing else about the feature matters as much: get the order right and
+  a refused reload is a no-op by construction.
+- **The design's list of live references was incomplete, and the gaps were the
+  quiet ones.** Six columns were specified; the schema has ten. The four
+  missing ones — learned recipes, combat stance, quest progress, active fortune
+  card — all degrade SILENTLY when their id vanishes, which is exactly why they
+  were easy to leave out and exactly why they matter. Re-derive such a list from
+  the schema rather than trusting the plan's copy.
+- **Split a check so its interesting half is testable.** The matching moved to
+  the Foundation-only module and the queries stayed in the main target, which
+  has no test host. The failure worth catching is a CATEGORY error — item ids
+  checked against the bestiary would report everything as dangling or nothing,
+  and either way the rule would look like it was working.
 
 ### What Phase 6 taught
 

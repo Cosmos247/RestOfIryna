@@ -436,6 +436,11 @@ public func configure(logger: Logger) async throws {
     // durability ceiling (rows created before the tier table carried a flat 30).
     try await GearConditionService.backfillWeaponDurability(on: db)
     try await User.backfillLevelDerivedStats(on: db, logger: logger)
+    // Phase 7 — the live-reference check the hot swap gates on, run once at
+    // boot as a WARNING. It cannot refuse here: content loads before the
+    // database block (the dev seed reads catalogs), so by the time rows are
+    // reachable the snapshot is installed and half of boot has read from it.
+    await ContentBootstrap.liveCheckAtBoot(on: db, logger: logger)
 
     // Start the bot
     try await appState.bot.start()

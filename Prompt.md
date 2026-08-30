@@ -61,8 +61,18 @@ purpose). Enchant is `1 + 4% × level` of the item's OWN budget, capped at +20%.
 Sets grant thresholds at 2/4/6 pieces through a second pass in
 `recomputeBonuses`. Gear now carries HP as a sixth stat.
 
-**Next — Phase 7: `/reload` hot swap + `LiveReferenceCheck`.** Deliberately
-after the full data move, so there is something worth reloading.
+**Phase 7 is done:** `/reload` and `/content` (dev-only), hot-swapping the
+bundle in **parse → validate → live-check → build → install** order, where
+`install` is the only infallible step and last — so a refused reload leaves the
+running game on exactly the snapshot it was serving. `LiveReferenceCheck`
+refuses a swap that would drop an id live rows still point at, across all ten
+content-id columns. Lingo is NOT reloaded; new strings still need a restart.
+
+**Next — Phase 8: `CombatantStats` refactor + the simulator.** Thread
+`RandomNumberGenerator` through `CombatService` / `ExplorationService`, add
+`roi-content simulate`, and lock every constant by verifying **p90, not the
+mean** — enemy crit barely moves average HP loss but moves the tail hard, and
+balancing on the mean is how players die on a tail the table calls fine.
 
 **Current digest baseline: `f3b145f824ec150c`**
 (`records efd31486552c644b` · `tuning 88db2a129b96a432` ·
@@ -111,9 +121,10 @@ live in `.memory/content-pipeline.md`.
 ### Commands
 
 ```
+/content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 176 tests, ~0.14s
+swift test                                   # 185 tests, ~0.14s
 ```
 
 ## What Works Now (shipped game)

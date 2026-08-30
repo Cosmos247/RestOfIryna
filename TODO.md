@@ -711,7 +711,30 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       draft's own ×2.45 legendary at 2.94× a common), a set-bonus budget cap, and ladder item
       levels that must ascend. A round-trip test caught `GearStatsDTO` silently dropping `hp` on
       encode — the Phase 1 layer-0 lesson, one field later. 176 tests.
-- [ ] Phase 7 — `/reload` hot swap + `LiveReferenceCheck`
+- [x] **Phase 7 — `/reload` hot swap + `LiveReferenceCheck`** *(2026-08-30)* — `/reload` and
+      `/content` in `GlobalCommandsController`, gated on `developerUsers`.
+      **The whole safety story is the ORDER: parse → validate → live-check → build → install.**
+      Everything that can fail happens before anything is touched and `install` is a reference
+      store that cannot fail, so a refused reload leaves the running game on exactly the snapshot
+      it was already serving — which is what makes this safe to run with players mid-expedition.
+      `LiveReferenceCheck` is the rule that makes a hot swap safe at all: every other check asks
+      whether a bundle is internally consistent, this one asks whether it is consistent with the
+      game already in progress. Drop `mat.iron` while four players carry it and every one of their
+      rows becomes an item the game cannot name, price, equip or sell.
+      **The design listed six columns; the schema has ten.** The three additions all fail SILENTLY,
+      which is worse than loudly: `combat_stance` (the player's Super does nothing),
+      `quest_progress.quest_id` (a job in progress cannot be rendered) and
+      `active_fortune_card_id` (a buff they paid for evaporates). `learned_recipes.recipe_id` was
+      the fourth.
+      Split so it is testable: the MATCHING lives in `ROIContent` (Foundation-only) and the
+      queries in the main target. The failure worth catching is a category error — item ids checked
+      against the bestiary would report every row as dangling, or none, and either way the rule
+      would look like it was working. 9 tests, no database required.
+      Not reloaded: **Lingo** (`AppState.lingo` is a `let` captured by every controller, so new
+      strings still need a restart) and armed timers, which carry their deadline in the database.
+      The boot path runs the same check as a warning once the database is up — it cannot refuse
+      there, because content loads before the DB block and half of boot has already read the
+      snapshot. Digest unchanged: Phase 7 added machinery, not content. 185 tests.
 - [ ] Phase 8 — `CombatantStats` refactor + simulator; lock every constant (verify p90, not mean)
 - [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
 - [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls
