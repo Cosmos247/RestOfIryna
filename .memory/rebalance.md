@@ -256,6 +256,24 @@ Schema v8. `--content-digest` moved `records` and `tuning` and left `spawns` and
 `quests` alone; the reference-character row for the warrior was **rebased**, with
 the archer and mage rows deliberately untouched so the check keeps its teeth.
 
+**The last subtractive formula in the game is gone.** The failed-flee counter
+still ran `max(1, ATK − DEF/2)` — Phase 5C replaced subtraction with absorption
+everywhere else and missed this one site. Absorption made DEF values large (a
+level-40 warrior carries 217 where the old model expected ~30), so half of it
+exceeded every enemy's attack and the "forced full-damage hit" was dealing
+literally **1 HP to every class at every level**: 0.2–1.0% of a bar, which made a
+failed escape free. Routed through `applyAttack` with `cannotMiss` and a crit
+RATING of 0 (the spec's "no crit roll", said to the curve rather than to a
+branch). It now costs 6.1% of a bar for a warrior, 8–9% for an archer or mage,
+and **the same percentage at every level** — 9–14% against an elite. Roughly two
+rounds' worth of damage for a failed escape, which is what the comment always
+claimed it was. The digest does not move: the flee formula was never
+fingerprinted, only `fleeChance` and `fleeVigorExtra` are.
+
+Found by reading the diff, not by the simulator — `FightSimulator` has no flee
+policy, because no design document states when a player should run. Worth knowing
+about the tool: it measures the fights you tell it to have.
+
 **Still open, all reported by the run itself:** the two remaining flat rating
 bonuses (`shadowVeilDodgeBonus` +50 is 238% of a level-1 archer's dodge and 34%
 of a level-40 one; `defend.archerDodgeBonus` +30 is 143% → 20%) — the same defect

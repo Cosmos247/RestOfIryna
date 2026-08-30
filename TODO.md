@@ -769,6 +769,11 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           `exploration.passive.silverMultiplier`, both award sites and both locale lines. Every
           faucet left is a player-facing system with a sink attached, which also closes the
           "silverReward has no curve" gap by deleting the thing that needed one.
+        · **the failed-flee counter was the last `max(1, ATK − DEF)` in the game** and was dealing
+          1 HP to every class at every level (0.2–1.0% of a bar), so a failed escape was free.
+          Routed through `applyAttack` with `cannotMiss` and crit rating 0: now 6.1% of a bar for
+          a warrior, 8–9% for an archer or mage, 9–14% against an elite, and the same percentage
+          at every level. Found by reading the diff — the simulator has no flee policy.
         **Result: 18 of 18 level-invariance rows pass, 0 broken bands.** New baseline
         `583a32cb5a9d9dc7` — `records` and `tuning` moved, `spawns` and `quests` did not.
         Still open and reported by every run: `shadowVeilDodgeBonus` (+50 = 238% of a level-1

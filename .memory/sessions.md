@@ -3151,3 +3151,28 @@ Left reported and open: the two flat dodge bonuses, the mage's 93% win rate
 against an elite at level 5 (the plan's fix is a spawn-level floor, which is
 content), and the bestiary carrying ~50% of what its archetypes ask (Phase 10 —
 `EnemyGenerator` now exists to regenerate it).
+
+### Follow-up — the failed-flee counter (same session)
+
+The commit audit caught one live bug that the simulator could not: the forced
+counter after a failed Flee still ran `max(1, ATK − DEF/2)`. Phase 5C replaced
+subtraction with absorption everywhere else and missed this one site, and
+absorption is exactly what made it harmless — DEF values grew (a level-40 warrior
+carries 217 where the subtractive model expected ~30), so half of it exceeded
+every enemy's attack. The "forced full-damage hit" was dealing **1 HP to every
+class at every level**, 0.2–1.0% of a bar. Fleeing cost Vigor and gear wear and
+nothing else, which is why the 40/70/90% per-class success rates never mattered.
+
+Fixed by routing it through `applyAttack` with `cannotMiss = true` and a crit
+RATING of 0 — the spec's "guaranteed hit, no crit roll" expressed to the curve
+rather than as a branch, and no new API. Cost now: 6.1% of a bar for a warrior,
+8–9% for an archer or mage, 9–14% against an elite, **the same percentage at
+every level**. About two rounds' worth of damage, which is what the comment
+always claimed.
+
+Two things worth remembering from how it was found. It was found by READING THE
+DIFF, not by the simulator — `FightSimulator` has no flee policy because no
+design document says when a player should run, and a tool only measures the
+fights you tell it to have. And the digest did not move: the flee formula was
+never fingerprinted, only `fleeChance` and `fleeVigorExtra` are. A hash proves
+what it covers and nothing more.

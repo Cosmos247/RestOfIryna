@@ -525,15 +525,34 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Failed — enemy lands a forced full-damage hit "in the back" (no
-        // dodge, no crit roll), combat continues. Stance DEF buff still
-        // helps reduce the bite, but the player's own armor is halved —
-        // turning to run means dropping your guard, so DEF only counts at
-        // 50%. (Shadow Veil's lingering dodge can't save a failed flee —
-        // the spec is "guaranteed hit".)
+        // Failed — enemy lands a forced hit "in the back", combat continues.
+        // The player's own armor is halved: turning to run means dropping your
+        // guard, so DEF only counts at 50%. The stance DEF buff still applies.
+        //
+        // Routed through `applyAttack` since Phase 8C. This was the LAST
+        // `max(1, ATK − DEF)` left in the game — Phase 5C replaced subtraction
+        // with absorption everywhere else, and absorption made DEF values large
+        // (a level-40 warrior carries 217 where the old model expected ~30), so
+        // even half of it exceeded every enemy's attack. The "forced
+        // full-damage hit" was dealing literally 1 HP to every class at every
+        // level, which made a failed escape free.
+        //
+        // `cannotMiss` gives the guaranteed hit the spec asks for (dodge is
+        // bypassed with it, so Shadow Veil cannot save a failed flee), and the
+        // crit RATING is passed as 0 rather than the enemy's — "no crit roll"
+        // is part of the same spec, and zeroing the rating is how you say that
+        // to a curve rather than to a branch.
         let halvedDEF = player.effectiveDefense / 2
         let buffedDEF = Int((Double(halvedDEF) * mods.defenseMultiplier).rounded())
-        let damage = max(1, Int((Double(max(1, enemy.attack - buffedDEF)) * Double.random(in: CombatService.varianceRange)).rounded()))
+        var fleeMods = CombatService.AttackModifiers()
+        fleeMods.cannotMiss = true
+        let backstab = CombatService.applyAttack(
+            attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: enemy.accuracy,
+            attackerLevel: enemy.level,
+            defenderDEF: buffedDEF, defenderDodge: 0, defenderLevel: player.level,
+            modifiers: fleeMods
+        )
+        let damage = max(1, backstab.damage)
         player.hp = max(0, player.hp - damage)
 
         let line = "❌ " + lingo.localize("combat.flee.fail", locale: locale, interpolations: [
