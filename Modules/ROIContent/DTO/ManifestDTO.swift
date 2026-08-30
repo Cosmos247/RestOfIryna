@@ -16,19 +16,18 @@ public struct ManifestDTO: Codable, Sendable {
     /// Free-form label for the content revision (e.g. "2026-08-29-rebalance").
     public let contentVersion: String?
     public let generatedAt: String?
-    /// Global time multiplier replacing the three `testMode` flags.
-    /// Must be 1.0 in a release bundle; the validator says so.
-    public let timeScale: Double
+    // `timeScale` used to live here. Phase 4b moved it to `tuning/time.json`
+    // → `scale`, alongside the five durations it multiplies: a knob two files
+    // away from everything it governs is a knob that gets changed alone.
 
-    public init(schemaVersion: Int, contentVersion: String? = nil, generatedAt: String? = nil, timeScale: Double = 1.0) {
+    public init(schemaVersion: Int, contentVersion: String? = nil, generatedAt: String? = nil) {
         self.schemaVersion = schemaVersion
         self.contentVersion = contentVersion
         self.generatedAt = generatedAt
-        self.timeScale = timeScale
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, contentVersion, generatedAt, timeScale
+        case schemaVersion, contentVersion, generatedAt
     }
 
     public init(from decoder: any Decoder) throws {
@@ -36,6 +35,5 @@ public struct ManifestDTO: Codable, Sendable {
         schemaVersion  = try c.decode(Int.self, forKey: .schemaVersion)
         contentVersion = try c.decodeIfPresent(String.self, forKey: .contentVersion)
         generatedAt    = try c.decodeIfPresent(String.self, forKey: .generatedAt)
-        timeScale      = try c.decodeIfPresent(Double.self, forKey: .timeScale) ?? 1.0
     }
 }

@@ -38,6 +38,15 @@ public enum ContentLoader {
     private static let plotsFile    = "plots.json"
     private static let fortuneFile  = "fortune.json"
     private static let questsFile   = "quests.json"
+    // The six balance tables live in a `tuning/` subdirectory: they are read by
+    // whoever is tuning the game, not by whoever is adding content, and mixing
+    // them into the same listing as `items.json` buries that distinction.
+    private static let combatTuningFile      = "tuning/combat.json"
+    private static let vigorTuningFile       = "tuning/vigor.json"
+    private static let explorationTuningFile = "tuning/exploration.json"
+    private static let progressionTuningFile = "tuning/progression.json"
+    private static let economyTuningFile     = "tuning/economy.json"
+    private static let timeTuningFile        = "tuning/time.json"
 
     public static func load(from root: URL) throws -> ContentBundle {
         var hashState = FNV1a()
@@ -93,6 +102,24 @@ public enum ContentLoader {
         let questsData = try read(questsFile, in: root, into: &hashState)
         let questsFileDTO: QuestFileDTO = try decode(questsData, as: QuestFileDTO.self, file: questsFile)
 
+        let combatTuningData = try read(combatTuningFile, in: root, into: &hashState)
+        let combatTuning: CombatTuningDTO = try decode(combatTuningData, as: CombatTuningDTO.self, file: combatTuningFile)
+
+        let vigorTuningData = try read(vigorTuningFile, in: root, into: &hashState)
+        let vigorTuning: VigorTuningDTO = try decode(vigorTuningData, as: VigorTuningDTO.self, file: vigorTuningFile)
+
+        let explorationTuningData = try read(explorationTuningFile, in: root, into: &hashState)
+        let explorationTuning: ExplorationTuningDTO = try decode(explorationTuningData, as: ExplorationTuningDTO.self, file: explorationTuningFile)
+
+        let progressionTuningData = try read(progressionTuningFile, in: root, into: &hashState)
+        let progressionTuning: ProgressionTuningDTO = try decode(progressionTuningData, as: ProgressionTuningDTO.self, file: progressionTuningFile)
+
+        let economyTuningData = try read(economyTuningFile, in: root, into: &hashState)
+        let economyTuning: EconomyTuningDTO = try decode(economyTuningData, as: EconomyTuningDTO.self, file: economyTuningFile)
+
+        let timeTuningData = try read(timeTuningFile, in: root, into: &hashState)
+        let timeTuning: TimeTuningDTO = try decode(timeTuningData, as: TimeTuningDTO.self, file: timeTuningFile)
+
         return ContentBundle(
             manifest: manifest,
             items: itemFile.items,
@@ -112,6 +139,13 @@ public enum ContentLoader {
             plots: plotsFileDTO,
             fortune: fortuneFileDTO,
             quests: questsFileDTO,
+            tuning: TuningBundleDTO(
+                combat: combatTuning,
+                vigor: vigorTuning,
+                exploration: explorationTuning,
+                progression: progressionTuning,
+                economy: economyTuning,
+                time: timeTuning),
             contentHash: hashState.hexDigest
         )
     }

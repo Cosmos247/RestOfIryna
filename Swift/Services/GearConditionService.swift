@@ -25,8 +25,8 @@ public enum GearConditionService {
     /// permanently shaves `repairMaxShave` off the piece's max, so armor
     /// eventually wears out and must be rebought from the Master.
     /// (30 for now — tuned for a felt repair cadence vs the −1/−3/−5 drain.)
-    public static let maxDurabilityStart = 30
-    public static let repairMaxShave = 1
+    public static var maxDurabilityStart: Int { Catalogs.current.tuningEconomy.gear.maxDurabilityStart }
+    public static var repairMaxShave: Int { Catalogs.current.tuningEconomy.gear.repairMaxShave }
 
     /// Equipment slots that carry durability. Armor (4 slots) plus the main-hand
     /// weapon. `durableSlots` is the full set that wears in a fight; `armorSlots`
@@ -39,16 +39,17 @@ public enum GearConditionService {
     /// A single fight's wear *budget* (model C — distributed across equipped
     /// armor point-by-point, not charged per piece). Victory < defeat < flee —
     /// running away drags the gear through the brush hardest.
-    public enum WearEvent: Sendable {
+    public enum WearEvent: String, CaseIterable, Sendable {
         case victory
         case defeat
         case flee
 
         public var amount: Int {
+            let budget = Catalogs.current.tuningEconomy.gear.wearBudget
             switch self {
-            case .victory: return 1
-            case .defeat:  return 3
-            case .flee:    return 5
+            case .victory: return budget.victory
+            case .defeat:  return budget.defeat
+            case .flee:    return budget.flee
             }
         }
     }

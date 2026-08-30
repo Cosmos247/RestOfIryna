@@ -634,7 +634,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             if let tuning = PlotCatalog.tuning(for: type) {
                 // Production plot — show item, rate, cap.
                 let itemName = ItemCatalog.find(tuning.producedItemId).map { lingo.localize($0.nameKey, locale: locale) } ?? tuning.producedItemId
-                let intervalLabel = lingo.localize(PlotCatalog.testMode ? "estate.plot.rate.per_minute" : "estate.plot.rate.per_hour", locale: locale)
+                // Was keyed off `PlotCatalog.testMode`. `time.scale` is a
+                // continuous knob, so the label reads the interval it actually
+                // produces: an hour or longer prints "/hr", anything shorter
+                // "/min". Reproduces both shipped labels — 3600s → /hr at
+                // scale 1, 60s → /min at the dev bundle's 60.
+                let perHour = PlotCatalog.intervalSeconds >= 3600
+                let intervalLabel = lingo.localize(perHour ? "estate.plot.rate.per_hour" : "estate.plot.rate.per_minute", locale: locale)
                 lines.append("\(icon) <b>\(typeName)</b> — \(itemName), \(tuning.ratePerInterval) \(intervalLabel), cap \(tuning.capacity)")
             } else {
                 // Non-producing plot (Training Ground) — show its lore blurb.

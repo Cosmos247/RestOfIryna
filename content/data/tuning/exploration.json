@@ -1,0 +1,27 @@
+{
+  "eventWeightTotal" : 100,
+  "tripDamagePercent" : 0.05,
+  "weightTiers" : [
+    {
+      "encounter" : 30,
+      "loot" : 50,
+      "nothing" : 10,
+      "priorVisits" : 0,
+      "trip" : 10
+    },
+    {
+      "encounter" : 20,
+      "loot" : 50,
+      "nothing" : 20,
+      "priorVisits" : 1,
+      "trip" : 10
+    },
+    {
+      "encounter" : 0,
+      "loot" : 20,
+      "nothing" : 80,
+      "priorVisits" : 2,
+      "trip" : 0
+    }
+  ]
+}

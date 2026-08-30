@@ -26,9 +26,8 @@ public enum WarehouseService {
     /// only made sense when one entry was an arbitrary stack. Estates past
     /// the table cap at the top tier (T7=2000). Existing rows beyond the
     /// new cap stay readable; only deposits refuse until space is freed.
-    private static let capTable: [Int] = [200, 400, 600, 800, 1200, 1600, 2000]
-
     public static func capForLevel(_ estateLevel: Int) -> Int {
+        let capTable = Catalogs.current.tuningProgression.warehouseCapByEstateLevel
         let idx = max(0, estateLevel - 1)
         return capTable[min(idx, capTable.count - 1)]
     }

@@ -610,7 +610,43 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         cross-pool `quest` id uniqueness check. 85 tests green.
         **`ContentExporter` deleted** along with the `--export-content` branch: Phase 3 is over,
         no Swift array remains, and there is nothing left for it to export.
-- [ ] Phase 4 — Tuning tables; collapse the three `testMode` flags into `time.scale` (own commit)
+- [x] **Phase 4 — Tuning tables + `time.scale`** *(2026-08-30)*
+  - [x] **4a — six tuning tables** — `content/data/tuning/{combat,vigor,exploration,progression,
+        economy,time}.json`. ~80 constants moved out of `CombatService` / `VigorService` /
+        `HealingService` / `ExplorationService` / `User` / `CharacterClass` / `WarehouseService` /
+        `GearConditionService` and the six time sites. **Migration digest identical across the
+        flip (`tuning a8b3c0fa99f86e3c`)**, with the three catalog halves held at their Phase 3
+        values — the proof that Phase 4 moved balance numbers and nothing else.
+        The digest gained a FOURTH half for exactly that reason, negative-tested five ways
+        (a plain scalar, a stance modifier reachable only through an accessor, a `Set` member, a
+        bare-tier weight, a `realTime` constant) — each moved `tuning` to a distinct value while
+        `records` / `spawns` / `quests` held.
+        `ExplorationService`'s weight-tier `switch` was extracted into `weights(forPriorVisits:)`
+        **before** the flip, so the baseline was captured through the accessor and the flip was a
+        plain no-op — strictly safer than batch B's hand-translate-then-prove. Its lookup is
+        "exact match, otherwise the LAST row": the shipped `default:` arm swallowed NEGATIVE visit
+        counts, and a "greatest row at or below" lookup would have handed them the fresh-room
+        weights instead. **No exporter** — it died with Phase 3, so the JSON was hand-written;
+        safe only because step 1 had already put every constant under the digest.
+        **48 new validator rules**, each negative-tested: the ones that matter guard values read
+        straight into an operation that TRAPS — an inverted `variance` (`ClosedRange`), a
+        non-positive `eventWeightTotal` (`Int.random`), an empty warehouse table (subscript), a
+        zero `maxDurabilityStart` (`MasterCatalog.repairCost` divides by it) — plus a contiguous
+        revisit-tier run, weights that must sum to the total, an unknown time zone (`GameDay`
+        silently falls back to UTC and moves every daily reset), and Telegram's 24 h delete floor.
+        Two warnings now fire truthfully: the audit's `flee (5) > defeat (3)` gear-wear inversion,
+        and the time scale. 130 tests green.
+  - [x] **4b — `testMode` → `time.scale`** — the three booleans and `manifest.timeScale` are gone;
+        `tuning/time.json` → `scale` is the single knob, and `schemaVersion` bumped to 2.
+        **Verified no-op: all four digest halves identical across the collapse.** The flags were
+        never one scale (`PlotProductionService`'s sweep was 5×, the rest 60×), which is why the
+        sweeper became DERIVED — `max(minSeconds, plotInterval / divisor)` — a DB polling cadence
+        rather than a game-time gate, calibrated so 3600/12 = 300 s reproduces production and the
+        60 s floor reproduces test mode. `EstateController`'s `/hr` vs `/min` label now reads the
+        interval instead of the deleted boolean. `time.json` splits `gameTime` (scaled) from
+        `realTime` (never scaled) because Telegram's 24 h dice-delete window is a protocol
+        constant: scaling it would not rebalance the tavern, it would break the sweep.
+        Left at **`scale: 60`** deliberately — Phase 11 flips it to 1.0 as a one-number change.
 - [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
       technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)
 - [ ] Phase 6 — Rarity + sets; enchant as % of item budget (never flat points)

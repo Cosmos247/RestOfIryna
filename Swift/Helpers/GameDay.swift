@@ -17,11 +17,15 @@ import Foundation
 
 public enum GameDay {
 
+    // `tuning/time.json` → `realTime`. A wall-clock hour in a named zone: the
+    // rollover is anchored to when players are awake, so `time.scale` leaves it
+    // alone the same way it leaves the Telegram delete window alone.
+
     /// Hour (Kyiv local) the game day rolls over. Noon.
-    public static let rolloverHour: Int = 12
+    public static var rolloverHour: Int { Catalogs.current.tuningTime.realTime.dayRolloverHour }
 
     /// Wall-clock timezone the boundary is measured in.
-    public static let timeZoneID: String = "Europe/Kyiv"
+    public static var timeZoneID: String { Catalogs.current.tuningTime.realTime.dayTimeZoneId }
 
     /// The `yyyy-MM-dd` key of the game day `date` falls in. Two instants share
     /// a key iff they sit between the same pair of consecutive 12:00-Kyiv

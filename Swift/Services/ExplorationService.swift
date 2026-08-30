@@ -50,44 +50,50 @@ public struct AutobattleResult: Sendable {
 
 public enum ExplorationService {
 
-    // Event weights for a step (sum = 100). GDD §5 starting values, trimmed for MVP.
-    // Phase 3.2 uses a three-tier table keyed on the room's prior visit count:
+    // Event weights come from `tuning/exploration.json` — a three-tier table
+    // keyed on the room's prior visit count:
     //   tier 0 (fresh)   — first entry ever during this expedition
     //   tier 1 (reduced) — second entry, most of the room's events already fired
     //   tier 2+ (bare)   — third+ entry, the room is picked clean
     // Trip risk shares a small tier-invariant chance at tiers 0 and 1 because
     // roots don't "learn" — it drops to zero at tier 2+ alongside every other
     // interesting outcome. Starvation HP still ticks on every step.
-    // Fresh-room tuning (2026-05-12): halved "nothing" (20 → 10) and shifted
-    // the 10 points into loot (40 → 50). User feedback — the wilderness felt
-    // too quiet; encounters and trips already produce drops via mob loot
-    // tables, so the easiest dial is the nothing/loot split.
-    static let weightNothing:   Int = 10
-    static let weightLoot:      Int = 50
-    static let weightEncounter: Int = 30
-    static let weightTrip:      Int = 10
-    static let weightTotal:     Int = 100
-
-    // Revisit tier (2026-05-12 second pass): step-back through visited rooms
-    // showed too many "🍂 Сліди витоптані" in a row. Pulled nothing down to
-    // 20 and bumped loot to 50 so the return trip has the same loot odds as
-    // a fresh room — encounter/trip stay reduced (thinned predator density,
-    // but berries and pebbles still grow back enough to find).
-    static let weightNothingReduced:   Int = 20
-    static let weightLootReduced:      Int = 50
-    static let weightEncounterReduced: Int = 20
-    static let weightTripReduced:      Int = 10
-
-    // Bare tier (2026-05-12 second pass): the room is heavily walked-over,
-    // but a 1-in-5 chance of stumbling on something keeps the trek alive.
-    // Encounter/trip stay at zero — beasts have learned to avoid the path.
-    static let weightNothingBare:   Int = 80
-    static let weightLootBare:      Int = 20
-    static let weightEncounterBare: Int = 0
-    static let weightTripBare:      Int = 0
+    static var weightTotal: Int { Catalogs.current.tuningExploration.eventWeightTotal }
 
     // Trip damage (% of max HP).
-    static let tripDamagePercent: Double = 0.05
+    static var tripDamagePercent: Double { Catalogs.current.tuningExploration.tripDamagePercent }
+
+    /// The four event weights for one step, chosen by how many times the room
+    /// has already been entered this expedition (0 = fresh, 1 = reduced,
+    /// 2+ = bare; a negative count falls to bare, as the original `default`
+    /// arm did).
+    ///
+    /// Lifted out of `rollStep` so the migration digest can replay it. The body
+    /// is a `switch` today and a table lookup once the weights live in
+    /// `tuning/exploration.json`, and a table that replaces control flow has to
+    /// be *proven* equal across the range rather than assumed equal — the same
+    /// treatment `ArenaCatalog.leagueKey` got in batch B. `rollStep` itself
+    /// needs a `User` and a `Database`, so it can never be replayed directly.
+    struct EventWeights: Sendable {
+        let nothing: Int
+        let loot: Int
+        let encounter: Int
+        let trip: Int
+    }
+
+    static func weights(forPriorVisits priorVisits: Int) -> EventWeights {
+        let tiers = Catalogs.current.tuningExploration.weightTiers
+        // Exact match, otherwise the LAST row — NOT "the greatest row at or
+        // below the query". The switch this replaced had arms for 0 and 1 and a
+        // `default` that swallowed everything else, negatives included, so a
+        // negative visit count must land on the bare tier. A "greatest row at
+        // or below" lookup would find nothing for −1 and fall back to the fresh
+        // tier, quietly making re-entered rooms generous. The validator pins
+        // the rows to a contiguous 0,1,2,… run so "last" cannot drift.
+        let row = tiers.first { $0.priorVisits == priorVisits } ?? tiers[tiers.count - 1]
+        return EventWeights(nothing: row.nothing, loot: row.loot,
+                            encounter: row.encounter, trip: row.trip)
+    }
 
     // MARK: - Rolling a step
 
@@ -106,30 +112,11 @@ public enum ExplorationService {
         let starvationLoss = VigorService.applyStarvationHPLoss(user)
 
         // Pick weights by tier.
-        var wNothing: Int
-        var wLoot: Int
-        let wEncounter: Int
-        let wTrip: Int
-        switch priorVisits {
-        case 0:
-            wNothing   = weightNothing
-            wLoot      = weightLoot
-            wEncounter = weightEncounter
-            wTrip      = weightTrip
-        case 1:
-            wNothing   = weightNothingReduced
-            wLoot      = weightLootReduced
-            wEncounter = weightEncounterReduced
-            wTrip      = weightTripReduced
-        default:
-            // 2+ prior visits — room is picked clean of beasts and hazards,
-            // but a small chance of finding overlooked forage remains. No
-            // encounter, no trip; starvation still applies (that's physiology).
-            wNothing   = weightNothingBare
-            wLoot      = weightLootBare
-            wEncounter = weightEncounterBare
-            wTrip      = weightTripBare
-        }
+        let tier = weights(forPriorVisits: priorVisits)
+        var wNothing = tier.nothing
+        var wLoot = tier.loot
+        let wEncounter = tier.encounter
+        let wTrip = tier.trip
 
         // Phase 6.4 — Fortune Teller hook. The active card's
         // `lootChanceMultiplier` (default 1.0) reweights the `loot`

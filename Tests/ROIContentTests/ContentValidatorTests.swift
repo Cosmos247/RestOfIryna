@@ -14,11 +14,10 @@ final class ContentValidatorTests: XCTestCase {
         items: [ItemDTO] = [],
         enemies: [EnemyDTO] = [],
         recipes: [RecipeDTO] = [],
-        starters: [String] = [],
-        timeScale: Double = 1.0
+        starters: [String] = []
     ) -> ContentBundle {
         ContentBundle(
-            manifest: ManifestDTO(schemaVersion: ContentSchema.current, timeScale: timeScale),
+            manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: items, enemies: enemies, recipes: recipes,
             starterRecipeIds: starters, contentHash: "test"
         )
@@ -67,14 +66,8 @@ final class ContentValidatorTests: XCTestCase {
         XCTAssertTrue(report.errors.contains { $0.rule == "identity.gear.missing_slot" })
     }
 
-    func testTimeScaleWarnsAndStrictPromotesIt() {
-        let warning = ContentValidator.validate(bundle(timeScale: 60))
-        XCTAssertFalse(warning.hasErrors)
-        XCTAssertEqual(warning.warnings.first?.rule, "time.scale_not_one")
-
-        let strict = ContentValidator.validate(bundle(timeScale: 60), strict: true)
-        XCTAssertTrue(strict.hasErrors, "a release build must not be able to ship 60x time compression")
-    }
+    // The time-scale rule moved to `TuningTests` when Phase 4b moved the knob
+    // itself out of `manifest.json` and into `tuning/time.json`.
 
     func testValidBundleProducesNoIssues() {
         let iron = ItemDTO(id: "mat.iron", type: "material", tier: 2, stackable: true, icon: "🔩")

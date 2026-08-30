@@ -17,12 +17,6 @@
 //  controller decides to route a tap to combat instead of a harvest. An absent
 //  `tuning` key is that nil, written down.
 //
-//  `testMode` is carried across verbatim rather than folded into
-//  `manifest.timeScale`, because that fold is NOT mechanical: the flag drives
-//  two different scales — `intervalSeconds` is 60 ↔ 3600 (60×, which does match
-//  the manifest) but `PlotProductionService`'s sweep is 60 ↔ 300 (5×). Phase 4
-//  owns that reconciliation and deletes this field.
-//
 //  Display name and lore keys stay derived in Swift (`plot.type.<type>.name` /
 //  `.desc`) — a fixed naming convention with no overrides, so writing them into
 //  the file would only be duplication. The validator derives the same keys and
@@ -55,8 +49,9 @@ public struct PlotBonusOutputDTO: Codable, Sendable, Equatable {
     }
 }
 
-/// Production config for one plot type. Rate is units per INTERVAL, where the
-/// interval is an hour in production and a minute under `testMode`.
+/// Production config for one plot type. Rate is units per INTERVAL, and the
+/// interval is `tuning/time.json` → `gameTime.plotIntervalSeconds` divided by
+/// `time.scale` — an hour at release pacing, a minute in the dev bundle.
 public struct PlotTuningDTO: Codable, Sendable, Equatable {
     public let producedItemId: String
     public let ratePerInterval: Int
@@ -115,19 +110,16 @@ public struct PlotTypeDTO: Codable, Sendable, Equatable {
 public struct PlotFileDTO: Codable, Sendable {
     /// Temporary: scales production so plots fill in minutes. Phase 4 replaces
     /// it with `manifest.timeScale` and deletes this field.
-    public let testMode: Bool
     public let types: [PlotTypeDTO]
 
-    public init(testMode: Bool, types: [PlotTypeDTO]) {
-        self.testMode = testMode
+    public init(types: [PlotTypeDTO]) {
         self.types = types
     }
 
-    private enum CodingKeys: String, CodingKey { case testMode, types }
+    private enum CodingKeys: String, CodingKey { case types }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        testMode = try c.decode(Bool.self, forKey: .testMode)
         types    = try c.decode([PlotTypeDTO].self, forKey: .types)
     }
 }

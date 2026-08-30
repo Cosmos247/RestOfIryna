@@ -58,7 +58,7 @@
 - [x] Ukrainian (uk.json) — 977 keys (+21 gendered `.m`/`.f` variants)
 
 ### Services
-- [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
+- [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
 - [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit)
 - [x] ExplorationService — rollStep (nothing / loot / trip / encounter / starvationOnly outcome), depth-aware loot pool (shallow vs medium), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.

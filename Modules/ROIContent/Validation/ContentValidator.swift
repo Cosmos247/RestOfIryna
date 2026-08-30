@@ -34,6 +34,7 @@ public enum ContentValidator {
         issues += validateCapital(bundle)
         issues += validateEstateAndNPCs(bundle)
         issues += validateTime(bundle)
+        issues += validateTuning(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -987,12 +988,397 @@ public enum ContentValidator {
         return issues
     }
 
+    // MARK: - Tuning tables
+    //
+    // Phase 4. Different in kind from every rule above: a catalog rule mostly
+    // asks "does this id resolve", while these ask "can the game survive this
+    // number". Several of the values below are read straight into an operation
+    // that TRAPS on a bad input — `ClosedRange(min...max)` on an inverted
+    // variance, `Int.random(in: 0..<total)` on a non-positive weight total, an
+    // array subscript on an empty warehouse table, a division by
+    // `maxDurabilityStart` inside `MasterCatalog.repairCost`. For those the
+    // validator is not a style checker, it is the thing standing between a typo
+    // and a crash on the first fight of the session.
+    private static func validateTuning(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let tuning = bundle.tuning else { return [] }
+        var issues: [ContentIssue] = []
+        let itemIds = Set(bundle.items.map(\.id))
+        let enemyIds = Set(bundle.enemies.map(\.id))
+        let knownClasses = ["warrior", "archer", "mage"]
+        let knownKinds = ["special_atk", "special_def", "super"]
+
+        func fail(_ file: String, _ path: String, _ rule: String,
+                  _ message: @autoclosure () -> String,
+                  _ severity: ContentIssue.Severity = .error) {
+            issues.append(.init(severity: severity, file: "tuning/\(file)", path: path,
+                                id: nil, rule: rule, message: message()))
+        }
+
+        func require(_ passed: Bool, _ file: String, _ path: String, _ rule: String,
+                     _ message: @autoclosure () -> String,
+                     _ severity: ContentIssue.Severity = .error) {
+            guard !passed else { return }
+            fail(file, path, rule, message(), severity)
+        }
+
+        /// Every per-class table must carry each class exactly once. A missing
+        /// row cannot be defaulted — `fleeChance(forClass:)` is non-optional and
+        /// non-throwing, so it would have to invent a number.
+        func checkClassCoverage(_ values: [String], file: String, path: String) {
+            for cls in knownClasses where !values.contains(cls) {
+                fail(file, path, "tuning.class_missing", "no row for class \"\(cls)\"")
+            }
+            for value in values where !knownClasses.contains(value) {
+                fail(file, path, "tuning.class_unknown", "unknown character class \"\(value)\"")
+            }
+            for (index, value) in values.enumerated()
+            where values.firstIndex(of: value) != index {
+                fail(file, "\(path)[\(index)]", "tuning.class_duplicate",
+                     "class \"\(value)\" appears more than once")
+            }
+        }
+
+        func checkFraction(_ value: Double, _ file: String, _ path: String,
+                           _ rule: String, upperBound: Double = 1.0) {
+            require(value >= 0 && value <= upperBound, file, path, rule,
+                    "\(path) must be between 0 and \(upperBound), found \(value)")
+        }
+
+        // MARK: combat.json
+        do {
+            let file = "combat.json"
+            let combat = tuning.combat
+            let hit = combat.hitChance
+            require(hit.min <= hit.base && hit.base <= hit.max, file, "hitChance",
+                    "tuning.combat.hit_chance_order",
+                    "expected min <= base <= max, found \(hit.min) / \(hit.base) / \(hit.max)")
+            require(hit.min >= 0 && hit.max <= 100, file, "hitChance",
+                    "tuning.combat.hit_chance_range",
+                    "hit chance bounds must sit inside 0...100, found \(hit.min)...\(hit.max)")
+            // `varianceRange` builds a `ClosedRange`, which TRAPS when the lower
+            // bound exceeds the upper. This rule is the only thing between an
+            // inverted pair and a crash on the first landed hit.
+            require(combat.variance.min <= combat.variance.max, file, "variance",
+                    "tuning.combat.variance_inverted",
+                    "variance min \(combat.variance.min) exceeds max \(combat.variance.max) — ClosedRange would trap")
+            require(combat.variance.min > 0, file, "variance.min",
+                    "tuning.combat.variance_non_positive",
+                    "variance floor must be positive, found \(combat.variance.min)")
+            require(combat.critMultiplier >= 1.0, file, "critMultiplier",
+                    "tuning.combat.crit_weaker_than_hit",
+                    "a crit multiplier below 1.0 makes crits hit softer than normal, found \(combat.critMultiplier)")
+            checkFraction(combat.defendChipFraction, file, "defendChipFraction",
+                          "tuning.combat.chip_fraction_range")
+            require(enemyIds.contains(combat.trainingDummyEnemyId), file, "trainingDummyEnemyId",
+                    "tuning.combat.dummy_unknown",
+                    "references unknown enemy \"\(combat.trainingDummyEnemyId)\"")
+
+            for kind in knownKinds where !combat.techniques.contains(where: { $0.kind == kind }) {
+                fail(file, "techniques", "tuning.combat.technique_missing", "no row for technique \"\(kind)\"")
+            }
+            for (index, row) in combat.techniques.enumerated() {
+                let path = "techniques[\(index)]"
+                require(knownKinds.contains(row.kind), file, path, "tuning.combat.technique_unknown",
+                        "unknown technique kind \"\(row.kind)\"")
+                require(row.requiredLevel >= 1, file, path, "tuning.combat.technique_level",
+                        "requiredLevel must be >= 1, found \(row.requiredLevel)")
+                // A second use granted before the technique can be learned is a
+                // budget the player can never observe changing.
+                require(row.secondUseAtLevel >= row.requiredLevel, file, path,
+                        "tuning.combat.second_use_before_unlock",
+                        "secondUseAtLevel \(row.secondUseAtLevel) is below requiredLevel \(row.requiredLevel)")
+                require(row.requiredLevel <= tuning.progression.maxLevel, file, path,
+                        "tuning.combat.technique_unreachable",
+                        "requiredLevel \(row.requiredLevel) is above maxLevel \(tuning.progression.maxLevel) — the technique can never be learned")
+            }
+
+            require(combat.stances.durationRounds >= 1, file, "stances.durationRounds",
+                    "tuning.combat.stance_duration",
+                    "a stance lasting \(combat.stances.durationRounds) rounds can never apply")
+            require(combat.stances.defaultActivationVigor >= 0, file, "stances.defaultActivationVigor",
+                    "tuning.combat.negative_vigor", "activation vigor must not be negative")
+            checkClassCoverage(combat.stances.byId.map(\.characterClass), file: file, path: "stances.byId")
+            issues += duplicates(combat.stances.byId.map(\.id), file: "tuning/combat.json", collection: "stances")
+            for (index, row) in combat.stances.byId.enumerated() {
+                let path = "stances.byId[\(index)]"
+                require(row.activationVigor >= 0, file, path, "tuning.combat.negative_vigor",
+                        "activation vigor must not be negative, found \(row.activationVigor)")
+                require(row.attackMultiplier > 0, file, path, "tuning.combat.stance_attack_multiplier",
+                        "attackMultiplier must be positive, found \(row.attackMultiplier)")
+                require(row.vigorMultiplier >= 0, file, path, "tuning.combat.stance_vigor_multiplier",
+                        "vigorMultiplier must not be negative, found \(row.vigorMultiplier)")
+            }
+
+            checkClassCoverage(combat.specialAttack.map(\.characterClass), file: file, path: "specialAttack")
+            for (index, row) in combat.specialAttack.enumerated() {
+                let path = "specialAttack[\(index)]"
+                require(row.vigor >= 0, file, path, "tuning.combat.negative_vigor",
+                        "vigor cost must not be negative, found \(row.vigor)")
+                checkFraction(row.defenderDEFFraction, file, "\(path).defenderDEFFraction",
+                              "tuning.combat.def_fraction_range")
+            }
+
+            checkClassCoverage(combat.specialDefense.byClass.map(\.characterClass),
+                               file: file, path: "specialDefense.byClass")
+            for (index, row) in combat.specialDefense.byClass.enumerated() {
+                require(row.vigor >= 0, file, "specialDefense.byClass[\(index)]",
+                        "tuning.combat.negative_vigor",
+                        "vigor cost must not be negative, found \(row.vigor)")
+            }
+            require(combat.specialDefense.effectPersistRounds >= 0, file,
+                    "specialDefense.effectPersistRounds", "tuning.combat.negative_rounds",
+                    "effectPersistRounds must not be negative")
+            checkFraction(combat.specialDefense.ironBulwarkChipFraction, file,
+                          "specialDefense.ironBulwarkChipFraction", "tuning.combat.chip_fraction_range")
+            checkFraction(combat.specialDefense.mirrorWardReflectFraction, file,
+                          "specialDefense.mirrorWardReflectFraction", "tuning.combat.reflect_fraction_range")
+            require(combat.specialDefense.shadowVeilDodgeBonus >= 0, file,
+                    "specialDefense.shadowVeilDodgeBonus", "tuning.combat.negative_bonus",
+                    "dodge bonus must not be negative")
+
+            checkClassCoverage(combat.flee.map(\.characterClass), file: file, path: "flee")
+            for (index, row) in combat.flee.enumerated() {
+                let path = "flee[\(index)]"
+                require(row.chance >= 1 && row.chance <= 100, file, path, "tuning.combat.flee_chance_range",
+                        "flee chance must sit inside 1...100, found \(row.chance)")
+                require(row.extraVigor >= 0, file, path, "tuning.combat.negative_vigor",
+                        "extraVigor must not be negative, found \(row.extraVigor)")
+            }
+
+            require(combat.defend.archerChipMultiplier >= 0, file, "defend.archerChipMultiplier",
+                    "tuning.combat.negative_multiplier", "chip multiplier must not be negative")
+            require(combat.defend.archerDodgeBonus >= 0, file, "defend.archerDodgeBonus",
+                    "tuning.combat.negative_bonus", "dodge bonus must not be negative")
+            checkFraction(combat.defend.mageBarrierDamageFraction, file,
+                          "defend.mageBarrierDamageFraction", "tuning.combat.barrier_fraction_range")
+        }
+
+        // MARK: vigor.json
+        do {
+            let file = "vigor.json"
+            let drain = tuning.vigor.drain
+            let costs: [(String, Int)] = [
+                ("walkRoom", drain.walkRoom), ("walkRoomDoubleSpeed", drain.walkRoomDoubleSpeed),
+                ("combatRound", drain.combatRound), ("combatAttack", drain.combatAttack),
+                ("combatDefend", drain.combatDefend), ("combatFlee", drain.combatFlee),
+                ("idle", drain.idle)
+            ]
+            for (name, value) in costs {
+                require(value >= 0, file, "drain.\(name)", "tuning.vigor.negative_drain",
+                        "drain must not be negative, found \(value)")
+            }
+            // A free step is not a balance choice, it is an unbounded loot
+            // faucet: exploration would cost the player nothing at all.
+            require(drain.walkRoom > 0, file, "drain.walkRoom", "tuning.vigor.free_step",
+                    "walking a room must cost vigor, found \(drain.walkRoom)")
+            checkFraction(tuning.vigor.starvation.statPenalty, file, "starvation.statPenalty",
+                          "tuning.vigor.starvation_range")
+            checkFraction(tuning.vigor.starvation.hpDrainPercent, file, "starvation.hpDrainPercent",
+                          "tuning.vigor.starvation_range")
+            checkFraction(tuning.vigor.healing.regenPerMinute, file, "healing.regenPerMinute",
+                          "tuning.vigor.regen_range")
+            require(tuning.vigor.healing.maxIdleMinutes > 0, file, "healing.maxIdleMinutes",
+                    "tuning.vigor.regen_window", "idle credit window must be positive")
+        }
+
+        // MARK: exploration.json
+        do {
+            let file = "exploration.json"
+            let exploration = tuning.exploration
+            // `Int.random(in: 0..<total)` traps on a non-positive upper bound.
+            require(exploration.eventWeightTotal > 0, file, "eventWeightTotal",
+                    "tuning.exploration.total_non_positive",
+                    "the roll range must be positive, found \(exploration.eventWeightTotal) — Int.random would trap")
+            checkFraction(exploration.tripDamagePercent, file, "tripDamagePercent",
+                          "tuning.exploration.trip_damage_range")
+            // Empty would crash the `tiers[count - 1]` fallback in `weights`.
+            require(!exploration.weightTiers.isEmpty, file, "weightTiers",
+                    "tuning.exploration.tiers_empty", "the weight table must not be empty")
+            // Contiguous from 0 is what makes "exact match, otherwise the LAST
+            // row" mean "the bare tier". A gap or a reorder silently changes
+            // which weights a re-entered room gets.
+            for (index, row) in exploration.weightTiers.enumerated() {
+                let path = "weightTiers[\(index)]"
+                require(row.priorVisits == index, file, path,
+                        "tuning.exploration.tier_not_contiguous",
+                        "expected priorVisits \(index), found \(row.priorVisits) — the tail row is the fallback for every higher and every negative count, so the run must be contiguous from 0")
+                let weights = [row.nothing, row.loot, row.encounter, row.trip]
+                for weight in weights where weight < 0 {
+                    fail(file, path, "tuning.exploration.negative_weight",
+                         "weights must not be negative, found \(weight)")
+                }
+                let sum = weights.reduce(0, +)
+                require(sum == exploration.eventWeightTotal, file, path,
+                        "tuning.exploration.weights_dont_sum",
+                        "weights sum to \(sum) but eventWeightTotal is \(exploration.eventWeightTotal) — the remainder silently falls into the last bucket")
+            }
+        }
+
+        // MARK: progression.json
+        do {
+            let file = "progression.json"
+            let progression = tuning.progression
+            require(progression.maxLevel >= 2, file, "maxLevel", "tuning.progression.max_level",
+                    "maxLevel must be at least 2, found \(progression.maxLevel)")
+            let curve = progression.xpCurve
+            require(curve.firstLevelCost > 0, file, "xpCurve.firstLevelCost",
+                    "tuning.progression.xp_first_cost",
+                    "the first level must cost something, found \(curve.firstLevelCost)")
+            require(curve.doublingThroughLevel >= 2, file, "xpCurve.doublingThroughLevel",
+                    "tuning.progression.xp_doubling_bound",
+                    "the doubling bound must be at least 2 (the first level the curve can compute), found \(curve.doublingThroughLevel)")
+            require(curve.growthMultiplier > 1.0, file, "xpCurve.growthMultiplier",
+                    "tuning.progression.xp_curve_flat",
+                    "a multiplier at or below 1.0 makes every level past the doubling bound cost the same or less, found \(curve.growthMultiplier)")
+
+            let growth = progression.statGrowth
+            for (index, level) in growth.levels.enumerated() {
+                let path = "statGrowth.levels[\(index)]"
+                require(level >= 2 && level <= progression.maxLevel, file, path,
+                        "tuning.progression.growth_level_unreachable",
+                        "level \(level) is outside 2...\(progression.maxLevel) and would never grant its boost")
+                require(growth.levels.firstIndex(of: level) == index, file, path,
+                        "tuning.progression.growth_level_duplicate",
+                        "level \(level) is listed more than once — the game holds these in a Set, so the repeat is silently dropped")
+            }
+            require(growth.maxHp >= 0 && growth.attack >= 0 && growth.defense >= 0,
+                    file, "statGrowth", "tuning.progression.negative_growth",
+                    "stat growth must not be negative")
+
+            checkClassCoverage(progression.classes.map(\.characterClass), file: file, path: "classes")
+            for (index, row) in progression.classes.enumerated() {
+                let path = "classes[\(index)]"
+                require(row.hp > 0, file, path, "tuning.progression.start_hp",
+                        "starting HP must be positive, found \(row.hp)")
+                let stats = [("attack", row.attack), ("defense", row.defense), ("crit", row.crit),
+                             ("dodge", row.dodge), ("accuracy", row.accuracy)]
+                for (name, value) in stats where value < 0 {
+                    fail(file, "\(path).\(name)", "tuning.progression.negative_start_stat",
+                         "\(name) must not be negative, found \(value)")
+                }
+                if !itemIds.contains(row.starterWeaponId) {
+                    fail(file, "\(path).starterWeaponId", "tuning.progression.starter_weapon_unknown",
+                         "references unknown item \"\(row.starterWeaponId)\"")
+                } else if bundle.items.first(where: { $0.id == row.starterWeaponId })?.slot != "main_hand" {
+                    // The King's Oath auto-equips this into the main hand; a
+                    // chest piece there would leave the class weaponless.
+                    fail(file, "\(path).starterWeaponId", "tuning.progression.starter_weapon_slot",
+                         "\"\(row.starterWeaponId)\" is not a main-hand item")
+                }
+            }
+
+            // Empty would crash the subscript in `WarehouseService.capForLevel`.
+            require(!progression.warehouseCapByEstateLevel.isEmpty, file, "warehouseCapByEstateLevel",
+                    "tuning.progression.warehouse_empty", "the warehouse cap table must not be empty")
+            for (index, cap) in progression.warehouseCapByEstateLevel.enumerated() {
+                require(cap > 0, file, "warehouseCapByEstateLevel[\(index)]",
+                        "tuning.progression.warehouse_non_positive",
+                        "capacity must be positive, found \(cap)")
+            }
+            for pair in zip(progression.warehouseCapByEstateLevel,
+                            progression.warehouseCapByEstateLevel.dropFirst())
+            where pair.1 < pair.0 {
+                fail(file, "warehouseCapByEstateLevel", "tuning.progression.warehouse_regression",
+                     "capacity must not shrink as the estate levels up — \(pair.0) is followed by \(pair.1)")
+            }
+        }
+
+        // MARK: economy.json
+        do {
+            let file = "economy.json"
+            let gear = tuning.economy.gear
+            // `MasterCatalog.repairCost` DIVIDES by this.
+            require(gear.maxDurabilityStart > 0, file, "gear.maxDurabilityStart",
+                    "tuning.economy.durability_non_positive",
+                    "starting durability must be positive, found \(gear.maxDurabilityStart) — MasterCatalog.repairCost divides by it")
+            require(gear.repairMaxShave >= 0, file, "gear.repairMaxShave",
+                    "tuning.economy.negative_shave", "repair shave must not be negative")
+            require(gear.repairMaxShave < gear.maxDurabilityStart, file, "gear.repairMaxShave",
+                    "tuning.economy.shave_destroys_gear",
+                    "a shave of \(gear.repairMaxShave) against a starting durability of \(gear.maxDurabilityStart) destroys the piece on its first repair")
+            let wear = gear.wearBudget
+            for (name, value) in [("victory", wear.victory), ("defeat", wear.defeat), ("flee", wear.flee)]
+            where value < 0 {
+                fail(file, "gear.wearBudget.\(name)", "tuning.economy.negative_wear",
+                     "wear must not be negative, found \(value)")
+            }
+            // The audit's finding, kept live in the tool rather than in prose:
+            // running away currently wears gear harder than dying does, which
+            // prices flight above death. Phase 5 rebalances it.
+            require(wear.flee <= wear.defeat, file, "gear.wearBudget",
+                    "tuning.economy.flee_costlier_than_defeat",
+                    "fleeing wears \(wear.flee) durability against \(wear.defeat) for a defeat — running away costs more than dying",
+                    .warning)
+        }
+
+        // MARK: time.json
+        do {
+            let file = "time.json"
+            let game = tuning.time.gameTime
+            let real = tuning.time.realTime
+            require(game.travelMinutes > 0, file, "gameTime.travelMinutes",
+                    "tuning.time.non_positive", "travel time must be positive")
+            require(game.passiveExpedition.unitsPerStep > 0, file, "gameTime.passiveExpedition.unitsPerStep",
+                    "tuning.time.non_positive", "a step must consume at least one duration unit")
+            require(game.passiveExpedition.secondsPerUnit > 0, file, "gameTime.passiveExpedition.secondsPerUnit",
+                    "tuning.time.non_positive", "a duration unit must be worth real time")
+            require(game.plotIntervalSeconds > 0, file, "gameTime.plotIntervalSeconds",
+                    "tuning.time.non_positive", "the production interval must be positive")
+            require(game.plotSweeper.intervalDivisor >= 1, file, "gameTime.plotSweeper.intervalDivisor",
+                    "tuning.time.sweeper_divisor",
+                    "the divisor must be at least 1, found \(game.plotSweeper.intervalDivisor)")
+            require(game.plotSweeper.minSeconds > 0, file, "gameTime.plotSweeper.minSeconds",
+                    "tuning.time.non_positive", "the sweeper floor must be positive")
+            // The floor is what keeps the sweeper off the database, but a floor
+            // above the interval inverts the invariant the derivation exists to
+            // hold: a filled plot would wait a whole extra cycle to be announced.
+            require(game.plotSweeper.minSeconds <= game.plotIntervalSeconds, file,
+                    "gameTime.plotSweeper.minSeconds", "tuning.time.sweeper_slower_than_interval",
+                    "the sweeper floor \(game.plotSweeper.minSeconds)s exceeds the production interval \(game.plotIntervalSeconds)s",
+                    .warning)
+
+            for (name, value) in [("tradeLobbyTTL", real.tradeLobbyTTL),
+                                  ("tradeSessionTTL", real.tradeSessionTTL),
+                                  ("tradeSweepInterval", real.tradeSweepInterval),
+                                  ("tavernSweepInterval", real.tavernSweepInterval)]
+            where value <= 0 {
+                fail(file, "realTime.\(name)", "tuning.time.non_positive",
+                     "\(name) must be positive, found \(value)")
+            }
+            // A PROTOCOL floor, not a balance number: Telegram refuses to delete
+            // a private-chat dice message younger than 24 h, so anything below
+            // that turns every sweep into a failed API call and the rows never
+            // clear.
+            require(real.tavernDeletableAfter >= 24 * 60 * 60, file, "realTime.tavernDeletableAfter",
+                    "tuning.time.tavern_below_telegram_floor",
+                    "must be at least 86400s — Telegram refuses to delete a private-chat dice message younger than 24 h, so every sweep below this floor fails")
+            require(real.dayRolloverHour >= 0 && real.dayRolloverHour <= 23, file,
+                    "realTime.dayRolloverHour", "tuning.time.rollover_hour_range",
+                    "the rollover hour must sit inside 0...23, found \(real.dayRolloverHour)")
+            // `GameDay` falls back to UTC on an unresolvable id, which would
+            // shift every daily reset by hours without a single error.
+            require(TimeZone(identifier: real.dayTimeZoneId) != nil, file, "realTime.dayTimeZoneId",
+                    "tuning.time.timezone_unknown",
+                    "\"\(real.dayTimeZoneId)\" is not a known time zone — GameDay would silently fall back to UTC and move every daily reset")
+        }
+
+        return issues
+    }
+
     // MARK: - Time
 
     private static func validateTime(_ bundle: ContentBundle) -> [ContentIssue] {
-        guard bundle.manifest.timeScale != 1.0 else { return [] }
-        return [.init(severity: .warning, file: "manifest.json", path: "timeScale", id: nil,
+        guard let scale = bundle.tuning?.time.scale else { return [] }
+        // A zero or negative scale is not a warning — every derived duration
+        // divides by it, so it would either trap or run the clock backwards.
+        if scale <= 0 {
+            return [.init(severity: .error, file: "tuning/time.json", path: "scale", id: nil,
+                          rule: "time.scale_non_positive",
+                          message: "scale must be positive, found \(scale) — every game-time duration divides by it")]
+        }
+        guard scale != 1.0 else { return [] }
+        return [.init(severity: .warning, file: "tuning/time.json", path: "scale", id: nil,
                       rule: "time.scale_not_one",
-                      message: "timeScale is \(bundle.manifest.timeScale) — every time gate is scaled; must be 1.0 for release")]
+                      message: "scale is \(scale) — every time gate is compressed \(scale)×; must be 1.0 for release")]
     }
 }

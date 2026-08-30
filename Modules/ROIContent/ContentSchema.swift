@@ -18,5 +18,9 @@ import Foundation
 
 public enum ContentSchema {
     /// Schema version this binary understands.
-    public static let current: Int = 1
+    /// v2 (Phase 4b): `manifest.timeScale` and `plots.testMode` are gone,
+    /// replaced by `tuning/time.json` → `scale`. A binary reading a v1 bundle
+    /// would find no scale at all and run every gate at release pacing, so the
+    /// handshake has to refuse rather than default.
+    public static let current: Int = 2
 }

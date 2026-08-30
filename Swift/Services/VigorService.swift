@@ -17,7 +17,7 @@ import Foundation
 
 // MARK: - Vigor-draining actions
 
-public enum VigorAction: Sendable {
+public enum VigorAction: String, CaseIterable, Sendable {
     case walkRoom
     case walkRoomDoubleSpeed
     /// Used by passive autobattle where each round costs one flat unit
@@ -41,19 +41,23 @@ public struct ConsumeResult: Sendable {
 
 public enum VigorService {
 
-    // Drain costs per action (⚙️ TBD — values from GDD §4)
-    public static let drainWalkRoom: Int = 2
-    public static let drainWalkRoomDoubleSpeed: Int = 4
-    public static let drainCombatRound: Int = 1
-    public static let drainCombatAttack: Int = 2
-    public static let drainCombatDefend: Int = 1
-    public static let drainCombatFlee: Int = 3
+    // Drain costs per action — `tuning/vigor.json`. Computed `var`s, never
+    // `static let`: a `static let` reading `Catalogs.current` runs at type-init,
+    // before `ContentBootstrap.load`.
+    public static var drainWalkRoom: Int { Catalogs.current.tuningVigor.drain.walkRoom }
+    public static var drainWalkRoomDoubleSpeed: Int { Catalogs.current.tuningVigor.drain.walkRoomDoubleSpeed }
+    public static var drainCombatRound: Int { Catalogs.current.tuningVigor.drain.combatRound }
+    /// The tap governor as much as a cost: at level 40 this is what keeps a day
+    /// of combat inside a human number of button presses. Not to be lowered
+    /// "for convenience" without re-checking the taps-per-day budget.
+    public static var drainCombatAttack: Int { Catalogs.current.tuningVigor.drain.combatAttack }
+    public static var drainCombatDefend: Int { Catalogs.current.tuningVigor.drain.combatDefend }
+    public static var drainCombatFlee: Int { Catalogs.current.tuningVigor.drain.combatFlee }
 
-    // Starvation penalties (⚙️ TBD — values from GDD §4)
     /// Fraction subtracted from Attack and Defense while starving (0.25 = -25%).
-    public static let starvationStatPenalty: Double = 0.25
+    public static var starvationStatPenalty: Double { Catalogs.current.tuningVigor.starvation.statPenalty }
     /// Fraction of max HP lost per room transition while starving (0.05 = 5%).
-    public static let starvationHPDrainPercent: Double = 0.05
+    public static var starvationHPDrainPercent: Double { Catalogs.current.tuningVigor.starvation.hpDrainPercent }
 
     // MARK: - Queries
 
@@ -70,7 +74,7 @@ public enum VigorService {
         case .combatAttack:         return drainCombatAttack
         case .combatDefend:         return drainCombatDefend
         case .combatFlee:           return drainCombatFlee
-        case .idle:                 return 0
+        case .idle:                 return Catalogs.current.tuningVigor.drain.idle
         }
     }
 

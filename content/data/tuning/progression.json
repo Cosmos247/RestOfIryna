@@ -1,0 +1,64 @@
+{
+  "classes" : [
+    {
+      "accuracy" : 10,
+      "attack" : 10,
+      "class" : "warrior",
+      "crit" : 5,
+      "defense" : 12,
+      "dodge" : 5,
+      "hp" : 120,
+      "starterWeaponId" : "gear.rusty_sword"
+    },
+    {
+      "accuracy" : 14,
+      "attack" : 14,
+      "class" : "archer",
+      "crit" : 10,
+      "defense" : 8,
+      "dodge" : 8,
+      "hp" : 90,
+      "starterWeaponId" : "gear.simple_bow"
+    },
+    {
+      "accuracy" : 10,
+      "attack" : 15,
+      "class" : "mage",
+      "crit" : 12,
+      "defense" : 6,
+      "dodge" : 6,
+      "hp" : 80,
+      "starterWeaponId" : "gear.wooden_staff"
+    }
+  ],
+  "maxLevel" : 21,
+  "statGrowth" : {
+    "attack" : 1,
+    "defense" : 1,
+    "levels" : [
+      2,
+      3,
+      5,
+      6,
+      9,
+      12,
+      15,
+      18
+    ],
+    "maxHp" : 5
+  },
+  "warehouseCapByEstateLevel" : [
+    200,
+    400,
+    600,
+    800,
+    1200,
+    1600,
+    2000
+  ],
+  "xpCurve" : {
+    "doublingThroughLevel" : 5,
+    "firstLevelCost" : 100,
+    "growthMultiplier" : 1.4
+  }
+}

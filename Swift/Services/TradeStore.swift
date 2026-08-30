@@ -33,12 +33,16 @@ import SwiftTelegramBot
 public actor TradeStore {
     public static let shared = TradeStore()
 
+    // `tuning/time.json` → `realTime`. These are anchored to how long a human
+    // is willing to wait at a trade window, not to game pacing, so `time.scale`
+    // must never touch them.
+
     /// Presence drops out of the lobby list this long after the last interaction.
-    static let lobbyTTL: TimeInterval = 180
+    static var lobbyTTL: TimeInterval { Catalogs.current.tuningTime.realTime.tradeLobbyTTL }
     /// An in-flight trade with no activity for this long is swept and cancelled.
-    static let sessionTTL: TimeInterval = 300
+    static var sessionTTL: TimeInterval { Catalogs.current.tuningTime.realTime.tradeSessionTTL }
     /// How often the background sweeper scans.
-    static let sweepInterval: TimeInterval = 30
+    static var sweepInterval: TimeInterval { Catalogs.current.tuningTime.realTime.tradeSweepInterval }
 
     private struct LobbyEntry { var lastSeen: Date; var nickname: String }
     private var lobby: [Int64: LobbyEntry] = [:]

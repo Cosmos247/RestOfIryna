@@ -75,7 +75,6 @@ final class DomainContent: Sendable {
     let masterEnchantPerLevelPoints: [Int]
     let masterEnchantSteps: [MasterCatalog.EnchantStep]
 
-    let plotTestMode: Bool
     let plotIcons: [PlotType: String]
     let plotTunings: [PlotType: PlotTuning]
 
@@ -84,6 +83,36 @@ final class DomainContent: Sendable {
     let fortuneCooldownSeconds: TimeInterval
     let fortuneCards: [FortuneCard]
     let fortuneCardsById: [String: FortuneCard]
+
+    // Phase 4 — the six balance tables.
+    //
+    // The flat scalar sections are kept as their DTOs (the DTO IS the domain
+    // shape; a mirror struct would only copy fields across, as with market /
+    // guild / arena). The per-class and per-kind rows get parsed into
+    // dictionaries keyed by the domain enums, because that parse is where an
+    // unknown class string becomes a thrown error instead of a silently absent
+    // row — and because doing it once here keeps the accessors on the combat
+    // hot path free of string comparison.
+    let tuningCombat: CombatTuningDTO
+    let tuningVigor: VigorTuningDTO
+    let tuningExploration: ExplorationTuningDTO
+    let tuningProgression: ProgressionTuningDTO
+    let tuningEconomy: EconomyTuningDTO
+    let tuningTime: TimeTuningDTO
+    /// How many times faster than real life the game runs. Every `gameTime`
+    /// duration is divided by it; nothing in `realTime` ever is.
+    var timeScale: Double { tuningTime.scale }
+
+    let techniqueTuning: [CombatService.TechniqueKind: TechniqueTuningDTO]
+    let stanceById: [String: StanceTuningDTO]
+    let stanceIdByClass: [CharacterClass: String]
+    let specialAttackByClass: [CharacterClass: SpecialAttackTuningDTO]
+    let specialDefenseVigorByClass: [CharacterClass: Int]
+    let fleeByClass: [CharacterClass: FleeTuningDTO]
+    let classStarts: [CharacterClass: ClassStartDTO]
+    /// Rebuilt as a `Set` because `User.statGrowthLevels` is one and callers do
+    /// membership tests on every level-up.
+    let statGrowthLevels: Set<Int>
 
     let questPools: [QuestNPC: [QuestDef]]
     /// `QuestCatalog.find` used to scan an unordered dictionary of pools, so on
@@ -105,7 +134,7 @@ final class DomainContent: Sendable {
               let market = content.market, let guild = content.guild,
               let arena = content.arena, let master = content.master,
               let plots = content.plots, let fortune = content.fortune,
-              let quests = content.quests else {
+              let quests = content.quests, let tuning = content.tuning else {
             throw ContentMappingError.incompleteBundle(missing: [
                 content.trader  == nil ? "trader.json"  : nil,
                 content.tavern  == nil ? "tavern.json"  : nil,
@@ -115,7 +144,8 @@ final class DomainContent: Sendable {
                 content.master  == nil ? "master.json"  : nil,
                 content.plots   == nil ? "plots.json"   : nil,
                 content.fortune == nil ? "fortune.json" : nil,
-                content.quests  == nil ? "quests.json"  : nil
+                content.quests  == nil ? "quests.json"  : nil,
+                content.tuning  == nil ? "tuning/*.json" : nil
             ].compactMap { $0 })
         }
 
@@ -180,7 +210,6 @@ final class DomainContent: Sendable {
         self.masterEnchantPerLevelPoints = master.enchantPerLevelPoints
         self.masterEnchantSteps = master.enchantSteps.map(\.domain)
 
-        self.plotTestMode = plots.testMode
         // Built by parsing each row's `type`. A raw value the enum cannot
         // represent throws — a validator error too, so unreachable on install.
         var icons: [PlotType: String] = [:]
@@ -214,6 +243,115 @@ final class DomainContent: Sendable {
         self.questPools = pools
         self.questsById = Dictionary(pools.values.flatMap { $0 }.map { ($0.id, $0) },
                                      uniquingKeysWith: { _, last in last })
+
+        // MARK: Phase 4 tuning
+        self.tuningCombat      = tuning.combat
+        self.tuningVigor       = tuning.vigor
+        self.tuningExploration = tuning.exploration
+        self.tuningProgression = tuning.progression
+        self.tuningEconomy     = tuning.economy
+        self.tuningTime        = tuning.time
+
+        var techniques: [CombatService.TechniqueKind: TechniqueTuningDTO] = [:]
+        for row in tuning.combat.techniques {
+            guard let kind = CombatService.TechniqueKind(rawValue: row.kind) else {
+                throw ContentMappingError.unknownTechniqueKind(row.kind)
+            }
+            techniques[kind] = row
+        }
+        self.techniqueTuning = techniques
+
+        var stances: [String: StanceTuningDTO] = [:]
+        var stanceIds: [CharacterClass: String] = [:]
+        for row in tuning.combat.stances.byId {
+            guard let cls = CharacterClass(rawValue: row.characterClass) else {
+                throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "combat.json")
+            }
+            stances[row.id] = row
+            stanceIds[cls] = row.id
+        }
+        self.stanceById = stances
+        self.stanceIdByClass = stanceIds
+
+        var attacks: [CharacterClass: SpecialAttackTuningDTO] = [:]
+        for row in tuning.combat.specialAttack {
+            guard let cls = CharacterClass(rawValue: row.characterClass) else {
+                throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "combat.json")
+            }
+            attacks[cls] = row
+        }
+        self.specialAttackByClass = attacks
+
+        var defenses: [CharacterClass: Int] = [:]
+        for row in tuning.combat.specialDefense.byClass {
+            guard let cls = CharacterClass(rawValue: row.characterClass) else {
+                throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "combat.json")
+            }
+            defenses[cls] = row.vigor
+        }
+        self.specialDefenseVigorByClass = defenses
+
+        var flees: [CharacterClass: FleeTuningDTO] = [:]
+        for row in tuning.combat.flee {
+            guard let cls = CharacterClass(rawValue: row.characterClass) else {
+                throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "combat.json")
+            }
+            flees[cls] = row
+        }
+        self.fleeByClass = flees
+
+        var starts: [CharacterClass: ClassStartDTO] = [:]
+        for row in tuning.progression.classes {
+            guard let cls = CharacterClass(rawValue: row.characterClass) else {
+                throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "progression.json")
+            }
+            starts[cls] = row
+        }
+        self.classStarts = starts
+        self.statGrowthLevels = Set(tuning.progression.statGrowth.levels)
+
+        // Every class must have a row in all five per-class tables. Checked
+        // HERE and not only in the validator because these accessors are
+        // non-optional and non-throwing at the call site — `fleeChance(forClass:)`
+        // has nowhere to report a missing row, so it would have to invent a
+        // number, and inventing one is how a balance hole ships unnoticed.
+        for cls in CharacterClass.allCases {
+            if stanceIds[cls] == nil {
+                throw ContentMappingError.tuningRowMissing("stance for \(cls.rawValue)", table: "combat.json")
+            }
+            if attacks[cls] == nil {
+                throw ContentMappingError.tuningRowMissing("specialAttack for \(cls.rawValue)", table: "combat.json")
+            }
+            if defenses[cls] == nil {
+                throw ContentMappingError.tuningRowMissing("specialDefense for \(cls.rawValue)", table: "combat.json")
+            }
+            if flees[cls] == nil {
+                throw ContentMappingError.tuningRowMissing("flee for \(cls.rawValue)", table: "combat.json")
+            }
+            if starts[cls] == nil {
+                throw ContentMappingError.tuningRowMissing("class start for \(cls.rawValue)", table: "progression.json")
+            }
+        }
+        for kind in CombatService.TechniqueKind.allCases where techniques[kind] == nil {
+            throw ContentMappingError.tuningRowMissing("technique \(kind.rawValue)", table: "combat.json")
+        }
+    }
+}
+
+extension DomainContent {
+    /// Non-optional read of a tuning row that `DomainContent.init` already
+    /// proved present.
+    ///
+    /// Unreachable by construction — but a named trap beats a bare `!`, and it
+    /// beats a `?? 0` by much more than that: the accessors this backs are
+    /// non-throwing, so a defaulted zero would not report anywhere. A missing
+    /// technique row silently unlocking every technique at level 0 is a worse
+    /// outcome than a crash on a bundle that should never have installed.
+    func required<T>(_ value: T?, _ what: @autoclosure () -> String) -> T {
+        guard let value else {
+            fatalError("tuning row missing after install: \(what()) — DomainContent.init should have refused this bundle")
+        }
+        return value
     }
 }
 

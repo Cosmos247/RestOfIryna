@@ -35,46 +35,51 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phase 3 is complete — all 12 catalogs read `content/data/`.** No Swift catalog
-array remains anywhere in the tree.
+**Phases 3 and 4 are complete.** All 12 catalogs read `content/data/`, and the
+balance numbers now live beside them in `content/data/tuning/`. No Swift catalog
+array and no hardcoded tuning constant remains.
 
 ```
-content/data/  manifest · items · enemies · recipes · weapon_upgrades · bags ·
-               estate_upgrades · trader · tavern · market · guild · arena ·
-               master · plots · fortune · quests          (16 files)
+content/data/         manifest · items · enemies · recipes · weapon_upgrades ·
+                      bags · estate_upgrades · trader · tavern · market · guild ·
+                      arena · master · plots · fortune · quests      (16 files)
+content/data/tuning/  combat · vigor · exploration · progression · economy · time
 ```
 
-**Next step — Phase 4: tuning tables + collapsing the three `testMode` flags
-into one `time.scale`** (its own commit).
+`time.scale` is now the single time knob — the three `testMode` booleans and
+`manifest.timeScale` are gone, and `schemaVersion` is 2. **It is still 60**, on
+purpose: Phase 11 flips it to 1.0 as a one-number change, which is what kept the
+collapse a verified no-op. `roi-content validate` says so, and `--strict` exits 1.
 
-**It is not mechanical.** There are three flags but FIVE scale sites, and they do
-not all use the same ratio:
+**Next step — Phase 5: the new combat model.** Mitigation instead of
+subtraction, ratings→percent with denominators derived from the item budget
+curve, `levelDiff`, a hit floor of 40, enemy archetypes generated at design time,
+`maxLevel = 40` with proportional growth, and the technique rebuild off
+`defenderDEFFraction = 0`. Every number it changes is already a JSON edit —
+`tuning/combat.json`, `tuning/progression.json` — but the FORMULAS are Swift, so
+this phase is a real rewrite of `CombatService` and `User`, not a retune.
 
-| Flag | Site | test : prod | ratio |
-|---|---|---|---|
-| `PlotCatalog.testMode` *(now in `plots.json`)* | `PlotCatalog.intervalSeconds:82` | 60 : 3600 | 60× |
-| ↑ same flag | `PlotProductionService:38` sweep | 60 : 300 | **5×** |
-| ↑ same flag | `EstateController:637` | picks `estate.plot.rate.per_minute` / `.per_hour` | UI label |
-| `TravelService.testMode:27` | `TravelService:35` | ×1.0 : ×60.0 | 60× |
-| `PassiveExpeditionService.testMode:199` | `:203` | 1 : 60 | 60× |
+Two things Phase 5 inherits, both already surfaced by the tooling rather than
+buried in prose:
+- `roi-content validate` warns that fleeing wears 5 durability against a
+  defeat's 3 — running away costs more than dying.
+- `EnemyCatalog.pickFor` still falls back to `all.first` past km 35, so every
+  deep encounter is a wild boar. Preserved through the migration on purpose;
+  it belongs to the `zones.json` work, alongside the foraging pools still
+  hardcoded in `ExplorationService.rollLoot`.
 
-So a naive `timeScale = 60` would speed the plot sweeper up 12× beyond its
-current behaviour, and the UI label has to follow whatever replaces the boolean.
-`plots.json` carries `testMode` verbatim for now; Phase 4 reconciles all five
-sites and deletes the field.
+**Current digest baseline: `893b57b06fad8068`**
+(`records 296960c1a998a7e7` · `tuning 9ba80c8f77fa3aa8` ·
+`spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`).
 
-Two smaller decisions worth making first: `manifest.json` still reads
-`contentVersion: "phase1-export"` (stale by three phases), and `schemaVersion`
-has never moved even though the bundle has gained nine required files since v1.
-Neither is broken — a stale bundle fails loudly with `missingFile(...)` — but a
-handshake that never moves slowly becomes decorative.
-
-**Current digest baseline: `8053216102eceff7`**
-(`records 04cbf2b5331ea85b` · `spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`).
+The digest has FOUR halves. Keep `tuning` separate from `records` — holding the
+three catalog halves fixed is how a balance change proves it touched only
+balance.
 
 ### How content works now
 
-All 12 catalogs are façades over a snapshot installed at boot:
+All 12 catalogs and all six tuning tables are façades over a snapshot
+installed at boot:
 
 ```
 content/data/*.json → ContentLoader → ContentValidator → GameContent (DTOs)
@@ -102,7 +107,7 @@ live in `.memory/content-pipeline.md`.
 ```
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 85 tests, ~0.04s
+swift test                                   # 130 tests, ~0.08s
 ```
 
 ## What Works Now (shipped game)
@@ -118,9 +123,10 @@ budget) · daily NPC quests derived from a stable hash + quest journal.
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
 localization (956 / 977 keys). Auth is still gated to 4 hardcoded TG IDs.
 
-⚠️ All three `testMode` flags are still `true`, so every time gate is 60×
-compressed. `manifest.json` records this as `timeScale: 60.0` and the validator
-warns about it. Phase 4 flips it.
+⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
+compressed and the validator warns about it. Deliberate; Phase 11 sets it to 1.0.
+Nothing under `realTime` is affected — Telegram's 24 h dice-delete window, the
+trade TTLs and the 12:00 rollover never scale.
 
 ## Key Files
 

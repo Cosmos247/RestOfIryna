@@ -22,17 +22,14 @@ import SwiftTelegramBot
 
 public enum TravelService {
 
-    /// Flip to `false` to use real minutes. In test mode every "minute" of
-    /// travel duration becomes a second — keeps dogfooding fast.
-    public static let testMode: Bool = true
+    /// How many minutes a single one-way trip takes.
+    /// `tuning/time.json` → `gameTime.travelMinutes`.
+    public static var travelMinutes: Int { Catalogs.current.tuningTime.gameTime.travelMinutes }
 
-    /// How many minutes a single one-way trip takes. The user picked 2 min as
-    /// the placeholder; we'll tune later.
-    public static let travelMinutes: Int = 2
-
-    /// Wall-clock seconds per one-way trip — honours `testMode`.
+    /// Wall-clock seconds per one-way trip, compressed by `time.scale`.
+    /// At scale 1 a "minute" is a minute; at the dev bundle's 60 it is a second.
     public static var travelSeconds: TimeInterval {
-        return Double(travelMinutes) * (testMode ? 1.0 : 60.0)
+        return Double(travelMinutes) * 60.0 / Catalogs.current.timeScale
     }
 
     // MARK: - Start

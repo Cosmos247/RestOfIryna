@@ -12,11 +12,11 @@
 //  `PlotType` itself stays in Swift: its raw values are persisted in
 //  `Plot.plotType`, so the enum is a database contract rather than content.
 //
-//  `testMode` scales rates so plots fill in minutes rather than hours. It moved
-//  across verbatim rather than folding into `manifest.timeScale`, because that
-//  fold is NOT mechanical — the flag drives two different scales: the interval
-//  below is 60 ↔ 3600 (60×, which does match the manifest) while
-//  `PlotProductionService`'s sweep is 60 ↔ 300 (5×). Phase 4 reconciles them.
+//  Rates are per INTERVAL, and the interval is `tuning/time.json` →
+//  `gameTime.plotIntervalSeconds` divided by `time.scale`: an hour at release
+//  pacing, a minute in the dev bundle. Phase 4b deleted the `testMode` flag that
+//  used to pick between them — it was never one scale anyway, since the same
+//  boolean also drove `PlotProductionService`'s sweep at a different ratio.
 //
 
 import Foundation
@@ -75,11 +75,11 @@ public struct PlotBonusOutput: Sendable {
 public enum PlotCatalog {
     /// `false` for production deploys (rate units = per hour); `true` makes
     /// plots fill in minutes for dev playtest.
-    public static var testMode: Bool { Catalogs.current.plotTestMode }
 
     /// Translates `ratePerInterval` to "units per second" depending on test mode.
     public static var intervalSeconds: Double {
-        return testMode ? 60.0 : 3600.0
+        let content = Catalogs.current
+        return content.tuningTime.gameTime.plotIntervalSeconds / content.timeScale
     }
 
     /// Lookup tuning for a given type + tier. Returns the T1 row regardless

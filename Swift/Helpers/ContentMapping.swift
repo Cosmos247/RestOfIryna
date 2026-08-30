@@ -40,6 +40,9 @@ enum ContentMappingError: Error, CustomStringConvertible {
     case unknownPlotType(String)
     case unknownQuestNPC(String)
     case unknownQuestCounter(String, id: String)
+    case unknownCharacterClass(String, table: String)
+    case unknownTechniqueKind(String)
+    case tuningRowMissing(String, table: String)
 
     var description: String {
         switch self {
@@ -52,6 +55,11 @@ enum ContentMappingError: Error, CustomStringConvertible {
         case .unknownPlotType(let value):   return "unknown plot type \"\(value)\""
         case .unknownQuestNPC(let value):   return "unknown quest NPC \"\(value)\""
         case .unknownQuestCounter(let v, let id): return "\(id): unknown quest counter \"\(v)\""
+        case .unknownCharacterClass(let v, let table):
+            return "tuning/\(table): unknown character class \"\(v)\""
+        case .unknownTechniqueKind(let v): return "tuning/combat.json: unknown technique kind \"\(v)\""
+        case .tuningRowMissing(let what, let table):
+            return "tuning/\(table): no row for \(what)"
         }
     }
 }

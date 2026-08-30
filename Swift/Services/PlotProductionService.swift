@@ -30,12 +30,34 @@ import SwiftTelegramBot
 
 public enum PlotProductionService {
 
-    /// How often the ticker wakes. 60s in test mode (where production rates
-    /// are per-minute) keeps the "ready" notification within a minute of
-    /// actually filling. In prod the rate is per-hour, so 5-minute ticks are
-    /// plenty fast and easier on the DB.
+    /// How often the ticker wakes.
+    ///
+    /// DERIVED from the production interval rather than stored, because the one
+    /// property that actually matters is "never slower than the thing it
+    /// sweeps" — a filled plot announced a whole cycle late is the failure
+    /// mode. Deriving it makes that hold by construction instead of by a rule
+    /// someone has to remember when they change the interval.
+    ///
+    /// It is deliberately NOT a function of `time.scale`: this is a database
+    /// polling cadence, not a game-time gate, and scaling it would make DB load
+    /// a function of game balance.
+    ///
+    /// The divisor and floor in `tuning/time.json` are calibrated to reproduce
+    /// both shipped values exactly — 3600/12 = 300 s in production, and 60 s
+    /// under test mode where 60/12 = 5 is lifted by the floor. Checked on every
+    /// `--content-digest` run, not merely asserted here.
     public static var tickInterval: TimeInterval {
-        return PlotCatalog.testMode ? 60.0 : 300.0
+        return tickInterval(forPlotInterval: PlotCatalog.intervalSeconds)
+    }
+
+    /// The derivation, exposed for the digest's two-point check. A running
+    /// process has exactly one `time.scale`, so `PlotCatalog.intervalSeconds`
+    /// only ever yields one cadence — and at the dev bundle's scale of 60 the
+    /// floor swallows the divisor entirely, making it invisible to the digest
+    /// hash. Only a parameterised call exercises the release branch.
+    static func tickInterval(forPlotInterval interval: TimeInterval) -> TimeInterval {
+        let sweeper = Catalogs.current.tuningTime.gameTime.plotSweeper
+        return max(sweeper.minSeconds, interval / Double(sweeper.intervalDivisor))
     }
 
     /// Spawn the long-running ticker. Called from `configure.swift` after

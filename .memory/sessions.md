@@ -2588,3 +2588,106 @@ Two smaller decisions to make first: `manifest.json` still reads `contentVersion
 (stale by three phases), and `schemaVersion` has never moved despite the bundle gaining nine
 required files since v1.
 User asked to confirm the start of each phase before it begins.
+
+---
+
+## Session — 2026-08-30 (Phase 4 — tuning tables + `time.scale`)
+
+Phase 3 closed last session with all 12 catalogs on JSON. This session moved the
+**balance numbers** — the constants the formulas consume, as opposed to the
+rosters the player scrolls through. Two steps, two commits' worth of work.
+
+### 4a — six tuning tables
+
+`content/data/tuning/{combat,vigor,exploration,progression,economy,time}.json`.
+~80 constants out of `CombatService`, `VigorService`, `HealingService`,
+`ExplorationService`, `User`, `CharacterClass`, `WarehouseService`,
+`GearConditionService`, `TravelService`, `PassiveExpeditionService`,
+`PlotProductionService`, `TradeStore`, `TavernCleanupService` and `GameDay`.
+
+**The digest gained a FOURTH half.** `tuning` is deliberately separate from
+`records`: keeping the three catalog halves at their Phase 3 values is what turns
+"Phase 4 touched only balance" from an assertion into an observation. It held —
+`tuning a8b3c0fa99f86e3c` identical across the flip, catalogs byte-identical.
+Negative-tested five ways, each moving `tuning` to a distinct value while the
+catalog halves held: a plain scalar (`baseHitChance`), a stance modifier
+reachable ONLY through an accessor replay (no backing array at all), a `Set<Int>`
+member (`statGrowthLevels` — hashed sorted, since a Set iterates in
+seeded-hash order), a bare-tier weight, and a `realTime` constant.
+
+**Extracted the switch before the flip, not during it.** Batch B had to
+hand-translate `ArenaCatalog.leagueKey` and prove it afterwards.
+`ExplorationService`'s weight tiers were lifted into `weights(forPriorVisits:)`
+while still Swift-backed, so the baseline was captured *through the accessor* and
+the flip itself was a plain no-op. Cheaper and strictly safer — worth reaching
+for whenever control flow is about to become a table. Its lookup had to be
+**"exact match, otherwise the LAST row"**: the shipped `default:` arm swallowed
+NEGATIVE visit counts, and a "greatest row at or below the query" lookup would
+have handed them the fresh-room weights and quietly made re-entered rooms
+generous. Replaying −2…5 is what surfaced that.
+
+**No exporter.** It died with Phase 3, so the six files were hand-written. Safe
+only because step 1 had already put every constant under the digest, so a
+transcription typo could not survive step 5. Written down in
+`content-pipeline.md` so the shortcut is not mistaken for the rule.
+
+**48 validator rules, every one negative-tested.** The load-bearing ones guard
+values read straight into an operation that TRAPS: an inverted `variance`
+(`ClosedRange`), a non-positive `eventWeightTotal` (`Int.random`), an empty
+warehouse table (subscript), a zero `maxDurabilityStart` (`MasterCatalog
+.repairCost` divides by it). Plus a contiguous revisit-tier run, weights that
+must sum to the total, a starter weapon that must resolve AND be main-hand, an
+unknown time zone (`GameDay` falls back to UTC and moves every daily reset with
+no error at all), and Telegram's 24 h delete floor.
+
+Two warnings now fire truthfully — the audit's `flee (5) > defeat (3)` gear-wear
+inversion, and the time scale. Keeping a known problem live in the tool beats
+keeping it in prose.
+
+### 4b — `testMode` → `time.scale`
+
+The three booleans and `manifest.timeScale` are gone; `tuning/time.json` →
+`scale` is the only knob, `schemaVersion` bumped to 2. **All four digest halves
+identical across the collapse.**
+
+The flags were never one scale — `PlotProductionService`'s sweep was 5× while
+the other four were 60× — so the sweeper became **derived**: `max(minSeconds,
+plotInterval / divisor)`. It is a DB polling cadence, not a game-time gate, so
+scaling it would make database load a function of game balance; deriving it from
+the interval makes "never slower than what it sweeps" hold by construction.
+
+**Calibrating the derivation to reproduce BOTH existing values cost nothing.**
+The first draft used a 30 s floor, which would have moved the dev cadence 60 → 30
+and made 4b a behaviour change. A 60 s floor reproduces production
+(3600/12 = 300) and test mode (floored to 60) exactly, so the collapse stayed a
+verified no-op. Worth reaching for: a derivation calibrated against the values it
+replaces is free to adopt.
+
+**A hash cannot see a value the shipped configuration masks.** `intervalDivisor`
+is invisible to the digest at `scale = 60` — the floor swallows every sane
+divisor, and the hash is identical for 12 and for 6. Covered instead by a
+two-point equivalence check printed on every digest run, which fails loudly
+(`interval 3600s derives 600s, shipped value was 300s`). When a derivation has a
+clamp, check the unclamped branch somewhere the hash is not looking.
+
+`time.json` splits `gameTime` from `realTime`, and the split is load-bearing:
+Telegram's 24 h dice-delete window is a PROTOCOL constant, so scaling it would
+not rebalance the tavern — every delete would fail and the rows would never
+clear. `EstateController`'s `/hr` vs `/min` label now reads the interval instead
+of the deleted boolean.
+
+Left at **`scale: 60`** on purpose. Phase 11 flips it to 1.0 as a one-number
+change — which is exactly the property 4b was shaped to preserve.
+
+130 tests green (was 85). Digest `893b57b06fad8068`.
+
+### Next
+**Phase 5 — the new combat model.** Mitigation instead of subtraction,
+ratings→percent with denominators derived from the item budget curve,
+`levelDiff`, hit floor 40, enemy archetypes generated at design time,
+`maxLevel = 40` with proportional growth, technique rebuild off
+`defenderDEFFraction = 0`. The numbers are already JSON; the FORMULAS are Swift,
+so this is a rewrite of `CombatService` and `User`, not a retune.
+Phase 5 also inherits the `pickFor` km ≥ 36 fallback and the foraging pools still
+hardcoded in `rollLoot` — both belong to `zones.json`.
+User asked to confirm the start of each phase before it begins.

@@ -46,13 +46,24 @@ Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this gr
 `Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
 `Swift/` use those types without their own import line.
 
-**Game content is data, not code.** ALL of it — items, enemies, recipes, the
+**Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
 market, guild, arena), the Master's shop, estate plots, the fortune deck and the
 daily quest pools — lives in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
-in both `en.json` and `uk.json` — never a Swift array edit. Full rules, the
-migration pattern and the verification discipline: `.memory/content-pipeline.md`.
+in both `en.json` and `uk.json` — never a Swift array edit.
+
+The **tuning constants** live beside them in `content/data/tuning/` — six tables
+(`combat` · `vigor` · `exploration` · `progression` · `economy` · `time`) holding
+hit/crit maths, vigor costs, the XP curve, per-class starting stats, gear wear and
+every duration. `CombatService.baseHitChance` and friends are computed `var`s over
+the snapshot, so **never add a `static let` that reads a catalog or a tuning value** —
+it runs at type-init and traps before `ContentBootstrap.load`.
+
+`tuning/time.json` splits `gameTime` (multiplied by `scale`) from `realTime` (never
+is): Telegram's 24 h dice-delete window is a protocol constant, not a balance knob.
+
+Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
 Run `swift run roi-content validate --strict` before committing content.
 
 

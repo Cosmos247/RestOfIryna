@@ -1,0 +1,19 @@
+{
+  "drain" : {
+    "combatAttack" : 2,
+    "combatDefend" : 1,
+    "combatFlee" : 3,
+    "combatRound" : 1,
+    "idle" : 0,
+    "walkRoom" : 2,
+    "walkRoomDoubleSpeed" : 4
+  },
+  "healing" : {
+    "maxIdleMinutes" : 1440.0,
+    "regenPerMinute" : 0.05
+  },
+  "starvation" : {
+    "hpDrainPercent" : 0.05,
+    "statPenalty" : 0.25
+  }
+}

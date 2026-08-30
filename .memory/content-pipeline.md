@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
 Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            85 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            130 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -63,6 +63,45 @@ and `GearConditionService.backfillWeaponDurability` later in the same function
 both touch a catalog, and `all` is a computed property that traps if read before
 install. No `static let` anywhere may reference a catalog.
 
+## Tuning tables (Phase 4)
+
+`content/data/tuning/` holds six balance tables — the numbers the formulas
+consume, as opposed to the rosters the player scrolls through. They decode by
+rules of their own:
+
+| File | Owns |
+|---|---|
+| `combat.json` | hit/crit/variance, technique gates, 3 stances, 3 special attacks, 3 special defenses, flee, per-class Defend, the training-dummy id |
+| `vigor.json` | 7 action costs, starvation, idle HP regen |
+| `exploration.json` | the three-tier revisit weight table, trip damage |
+| `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
+| `economy.json` | durability start, repair shave, per-fight wear budget |
+| `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |
+
+- **Everything decodes as REQUIRED.** No `decodeIfPresent` anywhere in
+  `TuningDTO.swift`. Optional-with-default is right for a record whose sub-field
+  is genuinely absent and catastrophic for a constant — a missing
+  `baseHitChance` silently becoming 0 is the drift the pipeline exists to stop.
+  `vigor.drain.idle` is 0 and is stated anyway, because an absent key and a
+  deliberate zero must not look alike.
+- **Per-class rows are ARRAYS carrying an explicit `class`**, not objects. A
+  JSON object decodes to `[String: T]`, where an absent `mage` reads as "the
+  mage has no flee chance" rather than as an error. `DomainContent.init` then
+  refuses a bundle missing any class from any of the five per-class tables,
+  because those accessors are non-throwing and would otherwise have to invent a
+  number.
+- **`time.json` splits `gameTime` from `realTime`, and the split is load-bearing.**
+  `time.scale` divides everything in `gameTime` and nothing in `realTime`.
+  `tavernDeletableAfter` is the sharpest case: Telegram refuses to delete a
+  private-chat dice message younger than 24 h, so scaling it would not rebalance
+  the tavern — every delete would fail and the rows would never clear. The trade
+  TTLs and the 12:00 rollover are the same kind of constant.
+- **The plot sweeper is DERIVED, not stored**: `max(minSeconds, plotInterval /
+  divisor)`. The one property that matters is "never slower than what it
+  sweeps", and deriving it makes that hold by construction. It is deliberately
+  not a function of `scale` — it is a DB polling cadence, and scaling it would
+  make database load a function of game balance.
+
 ## Adding content
 
 It is a data edit. There is no Swift array to touch.
@@ -104,8 +143,24 @@ Three layers, learned the hard way (both lessons cost a real bug):
   `case ..<1000` also swallowed negatives, so the export check ran −500…3000.
   `PlotCatalog` and `QuestCatalog` are the same shape.
 
-Both halves have been negative-tested: reordering enemies moves both; dropping
-`?? all.first` from `pickFor` moves only `spawns`.
+The digest has **four** halves: `records`, `tuning`, `spawns`, `quests`. Keeping
+`tuning` separate is what let Phase 4 prove it moved the balance tables and
+nothing else — the three catalog halves stayed at their Phase 3 values through
+the whole migration.
+
+All four have been negative-tested: reordering enemies moves `records` and
+`spawns`; dropping `?? all.first` from `pickFor` moves only `spawns`; perturbing
+`baseHitChance`, a bloodlust modifier, a `statGrowthLevels` member, a bare-tier
+weight and the tavern delete window each moved `tuning` to a distinct value
+while the catalog halves held.
+
+**A hash cannot see a value the shipped configuration masks.** The sweeper's
+`intervalDivisor` is invisible to the digest at `scale = 60`, because the 60 s
+floor swallows every sane divisor — the hash is identical for 12 and for 6. It
+is covered instead by the two-point equivalence check printed on every digest
+run (`interval 3600s → 300s`, `60s → 60s`), which fails loudly. When a
+derivation has a clamp, check the unclamped branch somewhere the hash is not
+looking.
 
 ## Migration pattern (historical — Phase 3 is closed)
 
@@ -115,8 +170,11 @@ Kept because the same shape recurs whenever behaviour moves from code to data.
    capture the baseline.
 2. Add DTO + mapping + loader + `GameContent`/`DomainContent` fields.
 3. Add it to `ContentExporter`; run `--export-content`; commit the JSON verbatim.
-   *(That tool was deleted at the end of Phase 3 — reconstruct it from git if a
-   future catalog ever needs the same move.)*
+   *(That tool was deleted at the end of Phase 3. Phase 4 skipped this step and
+   hand-wrote the six tuning files instead — safe ONLY because step 1 had
+   already put every one of the ~80 constants under the digest, so a
+   transcription typo could not survive step 5. Without that coverage, rebuild
+   the exporter from git.)*
 4. Flip the catalog to a façade, delete the Swift array.
 5. Re-run the digest — must be identical.
 6. **Remove it from `ContentExporter`** — re-exporting a façade writes back what

@@ -99,7 +99,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 1 Exporter + first JSON | ✅ `7e8f2a4` |
 | 2 Item/Enemy/Recipe façades | ✅ `c9e329b` |
 | 3 Remaining catalogs | ✅ **12 of 12** — A (weapon/bag/estate) `f30a4ca` · B (trader/tavern/market/guild/arena) `cb101f3` · C (master/plot/fortune/quest) |
-| 4 Tuning tables + `time.scale` | ⬜ |
+| 4 Tuning tables + `time.scale` | ✅ **4a** six tables · **4b** flags collapsed |
 | 5 New combat model | ⬜ |
 | 6 Rarity + sets | ⬜ |
 | 7 `/reload` hot swap | ⬜ |
@@ -108,10 +108,19 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `8053216102eceff7`** — `records 04cbf2b5331ea85b`,
-`spawns 635cde3f65184c78`, `quests 2e52ecdfa45276ec`. It moved from
-`9242a2c1501994ed` only because batch C's step 1 *added* coverage; it held
-unchanged across every flip, which is the whole point of it.
+**Current digest baseline: `893b57b06fad8068`** — `records 296960c1a998a7e7`,
+`tuning 9ba80c8f77fa3aa8`, `spawns 635cde3f65184c78`, `quests 2e52ecdfa45276ec`.
+The digest gained a FOURTH half in Phase 4 (`tuning`), kept separate from
+`records` on purpose: holding the three catalog halves at their Phase 3 values
+through the whole tuning migration is what proves Phase 4 touched only balance
+numbers.
+
+Baseline history — each move is an *added* coverage step, never a flip:
+`9242a2c1501994ed` (batch B) → `8053216102eceff7` (batch C added `quests`) →
+`5694aea8e3beca54` (Phase 4a added `tuning`; `tuning a8b3c0fa99f86e3c` held
+across the flip of ~80 constants) → `893b57b06fad8068` (Phase 4b's step 1 dropped
+the three `testMode` booleans from the hash, leaving only the DERIVED durations —
+which is what made the collapse itself a provable no-op).
 
 **Phase 3 is complete — all 12 catalogs read `content/data/`.** No Swift array
 remains, so `ContentExporter` and the `--export-content` branch were deleted with
@@ -124,6 +133,47 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What Phase 4 taught
+
+- **Keep a new digest half SEPARATE from the old ones.** Folding the tuning
+  constants into `records` would have made "the catalogs are untouched" an
+  assertion; a fourth hash made it an observation. The three catalog halves came
+  out of Phase 4 byte-identical to their Phase 3 values.
+- **A tuning scalar and a catalog record need opposite decoding rules.** The
+  ladders' optional-with-default is right for a record whose sub-field is
+  genuinely absent, and catastrophic for a constant. Nothing in `TuningDTO.swift`
+  uses `decodeIfPresent`. `vigor.drain.idle` is 0 and is written down anyway,
+  because an absent key and a deliberate zero must not be indistinguishable.
+- **Extract the switch BEFORE the flip, not during it.** Batch B had to
+  hand-translate `ArenaCatalog.leagueKey` and prove it afterwards.
+  `ExplorationService`'s weight tiers were lifted into
+  `weights(forPriorVisits:)` while still Swift-backed, so the baseline was
+  captured *through the accessor* and the flip was a plain no-op. Strictly safer,
+  and cheaper.
+- **`default:` swallows negatives — a table keyed 0/1/2 does not.** The revisit
+  lookup had to be "exact match, otherwise the LAST row", not "the greatest row
+  at or below the query": the latter finds nothing for −1 and falls back to the
+  FRESH tier, quietly making re-entered rooms generous. Replaying −2…5 is what
+  surfaced it.
+- **A hash cannot see a value the shipped configuration masks.** The sweeper's
+  `intervalDivisor` is invisible to the digest at `scale = 60` — the 60 s floor
+  swallows every sane divisor, and the hash is identical for 12 and for 6.
+  Covered instead by a two-point equivalence check that prints on every digest
+  run. When a derivation has a clamp, check the unclamped branch somewhere the
+  hash is not looking.
+- **Calibrate a derivation to reproduce BOTH existing values, and it costs
+  nothing to adopt.** The first sweeper draft used a floor of 30 s, which would
+  have moved the dev cadence 60 → 30 and made 4b a behaviour change. A floor of
+  60 reproduces production (3600/12 = 300) and test mode (floored to 60) exactly,
+  so the collapse stayed a verified no-op.
+- **`Set<Int>` is the dictionary lesson one type over.** `User.statGrowthLevels`
+  iterates in seeded-hash order; hashing it directly would have produced a digest
+  that differs between processes.
+- **A test that cannot fail is worse than no test.** The first
+  `realTime`-is-unscaled test compared two DTOs built from the same fixture — a
+  tautology that reads like coverage. Replaced with one that pins the base
+  durations against both pacings.
 
 ### What batch C taught
 

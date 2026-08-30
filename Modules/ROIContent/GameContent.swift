@@ -53,6 +53,7 @@ public final class GameContent: Sendable {
     public let plots: PlotFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
+    public let tuning: TuningBundleDTO?
 
     public init(_ bundle: ContentBundle) {
         self.manifest = bundle.manifest
@@ -82,5 +83,6 @@ public final class GameContent: Sendable {
         self.plots = bundle.plots
         self.fortune = bundle.fortune
         self.quests = bundle.quests
+        self.tuning = bundle.tuning
     }
 }

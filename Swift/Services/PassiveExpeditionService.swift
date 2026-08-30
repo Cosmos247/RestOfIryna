@@ -30,10 +30,11 @@ import SwiftTelegramBot
 
 // MARK: - Duration catalogue
 
-/// Three duration choices shown in the picker. Values are "units" — either
-/// minutes (production) or seconds (test mode), depending on `testMode`.
+/// Three duration choices shown in the picker. Values are "units"; one unit is
+/// `tuning/time.json` → `gameTime.passiveExpedition.secondsPerUnit` divided by
+/// `time.scale` — a minute at release pacing, a second in the dev bundle.
 public enum PassiveDuration: Int, CaseIterable, Sendable {
-    case short = 30   // 30 min  → 30 s in test mode
+    case short = 30   // 30 min  → 30 s at scale 60
     case medium = 60  // 1 h     → 60 s
     case long = 90    // 1.5 h   → 90 s
 
@@ -194,13 +195,11 @@ public struct RunningPassiveReport: Codable, Sendable {
 
 public enum PassiveExpeditionService {
 
-    /// Flip to `false` to use real minutes. In test mode every duration unit
-    /// becomes a second — the whole expedition cycle fits inside ~2 min.
-    public static let testMode: Bool = true
-
-    /// How many real seconds a single "duration unit" represents.
-    private static var secondsPerUnit: TimeInterval {
-        return testMode ? 1 : 60
+    /// How many real seconds a single "duration unit" represents, compressed
+    /// by `time.scale`.
+    static var secondsPerUnit: TimeInterval {
+        let content = Catalogs.current
+        return content.tuningTime.gameTime.passiveExpedition.secondsPerUnit / content.timeScale
     }
 
     // MARK: Start
@@ -266,10 +265,10 @@ public enum PassiveExpeditionService {
     /// expedition therefore resolves in 6 steps — same count in test mode
     /// (secondsPerUnit = 1 → 5 s/step) and prod (secondsPerUnit = 60 →
     /// 300 s/step).
-    private static let unitsPerStep: Int = 5
+    static var unitsPerStep: Int { Catalogs.current.tuningTime.gameTime.passiveExpedition.unitsPerStep }
 
     /// Real-world wall-clock seconds per simulated step.
-    private static var stepDurationSeconds: TimeInterval {
+    static var stepDurationSeconds: TimeInterval {
         return Double(unitsPerStep) * secondsPerUnit
     }
 

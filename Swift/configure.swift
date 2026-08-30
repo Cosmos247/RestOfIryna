@@ -60,23 +60,24 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
         }
     }
 
-    /// Starting stats for level 1 (hp, atk, def, crit%, dodge, acc)
+    /// Starting stats for level 1 (hp, atk, def, crit%, dodge, acc).
+    /// `tuning/progression.json` → `classes[]`.
     var startingStats: (hp: Int, attack: Int, defense: Int, crit: Int, dodge: Int, accuracy: Int) {
-        switch self {
-        case .warrior: return (hp: 120, attack: 10, defense: 12, crit: 5,  dodge: 5,  accuracy: 10)
-        case .archer:  return (hp: 90,  attack: 14, defense: 8,  crit: 10, dodge: 8,  accuracy: 14)
-        case .mage:    return (hp: 80,  attack: 15, defense: 6,  crit: 12, dodge: 6,  accuracy: 10)
-        }
+        let row = start
+        return (hp: row.hp, attack: row.attack, defense: row.defense,
+                crit: row.crit, dodge: row.dodge, accuracy: row.accuracy)
     }
 
     /// Starter weapon granted on registration when this class is chosen.
-    /// Must reference an entry in ItemCatalog.
+    /// The validator resolves it against `items.json` and checks it is a
+    /// main-hand item — the same assertion `liveLookupCheck` makes at runtime.
     var starterWeaponId: String {
-        switch self {
-        case .warrior: return "gear.rusty_sword"
-        case .archer:  return "gear.simple_bow"
-        case .mage:    return "gear.wooden_staff"
-        }
+        start.starterWeaponId
+    }
+
+    private var start: ClassStartDTO {
+        let content = Catalogs.current
+        return content.required(content.classStarts[self], "class start for \(rawValue)")
     }
 
     /// Filename under `Assets/registration/` for the class+gender-specific

@@ -37,25 +37,21 @@ public enum CombatService {
     }
 
     /// Player level required to learn the technique kind.
-    /// Special Atk at L8, Special Def at L11, Super at L14.
+    /// `tuning/combat.json` → `techniques[].requiredLevel`.
     public static func requiredLevel(for kind: TechniqueKind) -> Int {
-        switch kind {
-        case .specialAtk: return 8
-        case .specialDef: return 11
-        case .super:      return 14
-        }
+        technique(kind).requiredLevel
     }
 
-    /// Per-fight uses budget for the kind at the given player level.
-    /// Phase 5.3e starts everyone at 1 use per kind, then bumps to 2 at
-    /// L17 / L20 / L21 respectively (the "use-count growth" perks of the
+    /// Per-fight uses budget for the kind at the given player level: 1 until
+    /// `secondUseAtLevel`, 2 from there on (the "use-count growth" perks of the
     /// upper levels in the Phase 5.3 unlock map).
     public static func initialUses(for kind: TechniqueKind, playerLevel: Int) -> Int {
-        switch kind {
-        case .specialAtk: return playerLevel >= 17 ? 2 : 1
-        case .specialDef: return playerLevel >= 20 ? 2 : 1
-        case .super:      return playerLevel >= 21 ? 2 : 1
-        }
+        playerLevel >= technique(kind).secondUseAtLevel ? 2 : 1
+    }
+
+    private static func technique(_ kind: TechniqueKind) -> TechniqueTuningDTO {
+        let content = Catalogs.current
+        return content.required(content.techniqueTuning[kind], "technique \(kind.rawValue)")
     }
 
     /// Tuple of per-fight uses for a user — called by every `beginCombat`
@@ -69,19 +65,29 @@ public enum CombatService {
         )
     }
 
+    // Every constant below reads `tuning/combat.json`. All are computed `var`s,
+    // never `static let`: a `static let` that touches `Catalogs.current` runs at
+    // type-init and would trap before `ContentBootstrap.load` — the trap that
+    // `FortuneCatalog.lookup` walked into during batch C.
+
     /// Base hit chance before accuracy/dodge modifiers (percent).
-    public static let baseHitChance: Int = 70
+    public static var baseHitChance: Int { Catalogs.current.tuningCombat.hitChance.base }
     /// Floor and ceiling on hit chance so even a heavily out-statted side can
     /// land or miss occasionally (no 100/0 lock-ins).
-    public static let minHitChance: Int = 10
-    public static let maxHitChance: Int = 95
+    public static var minHitChance: Int { Catalogs.current.tuningCombat.hitChance.min }
+    public static var maxHitChance: Int { Catalogs.current.tuningCombat.hitChance.max }
     /// Crit damage multiplier on a successful crit roll.
-    public static let critMultiplier: Double = 1.5
-    /// ±10% variance on every landed hit.
-    public static let varianceRange: ClosedRange<Double> = 0.9...1.1
+    public static var critMultiplier: Double { Catalogs.current.tuningCombat.critMultiplier }
+    /// ±10% variance on every landed hit. `ClosedRange` TRAPS when built with
+    /// min > max, so the validator rejects an inverted pair before install
+    /// rather than letting the first attack of the session crash the bot.
+    public static var varianceRange: ClosedRange<Double> {
+        let variance = Catalogs.current.tuningCombat.variance
+        return variance.min...variance.max
+    }
     /// Defend's parry/counter chip damage as a fraction of a clean hit. Always
     /// lands, never crits — flavour is "you mostly hold the line but tag it".
-    public static let defendChipFraction: Double = 0.3
+    public static var defendChipFraction: Double { Catalogs.current.tuningCombat.defendChipFraction }
 
     /// Per-attack modifiers used by special techniques to bend the standard
     /// applyAttack roll without writing a new function. Defaults are no-ops
@@ -181,53 +187,41 @@ public enum CombatService {
     /// moment they tap Super, on top of the round's regular drain. Mage
     /// "concentration burn" is more expensive than the warrior / archer
     /// supers (per Phase 4.2 spec).
+    /// An id the table does not carry falls back to `defaultActivationVigor`,
+    /// which is the `default:` arm of the switch this replaced — an unknown
+    /// stance is charged, not free.
     public static func stanceActivationVigor(for stanceId: String) -> Int {
-        switch stanceId {
-        case StanceId.arcaneResonance: return 5
-        default: return 4
-        }
+        let content = Catalogs.current
+        return content.stanceById[stanceId]?.activationVigor
+            ?? content.tuningCombat.stances.defaultActivationVigor
     }
 
     /// Default duration in rounds for a freshly activated stance.
-    public static let stanceDurationRounds: Int = 3
+    public static var stanceDurationRounds: Int { Catalogs.current.tuningCombat.stances.durationRounds }
 
     /// Numeric tunings for each stance. Returned `StanceModifiers.none` for
     /// unknown / nil stance ids so callers can compose unconditionally.
     public static func stanceModifiers(for stanceId: String?) -> StanceModifiers {
-        switch stanceId {
-        case StanceId.bloodlust:
-            // Warrior — physical frenzy. Higher ATK, sturdier, but burns vigor fast.
-            var m = StanceModifiers()
-            m.attackBonus = 5
-            m.defenseBonus = 3
-            m.vigorMultiplier = 2.0
-            return m
-        case StanceId.hawksEye:
-            // Archer — hyper-focus. Buffs precision (crit / accuracy) and mobility (dodge).
-            var m = StanceModifiers()
-            m.critBonus = 15
-            m.accuracyBonus = 10
-            m.dodgeBonus = 10
-            return m
-        case StanceId.arcaneResonance:
-            // Mage — arcane surge. Big damage swing through a multiplier on ATK,
-            // plus a magical DEF buff against incoming blows.
-            var m = StanceModifiers()
-            m.attackMultiplier = 1.5
-            m.defenseBonus = 5
-            return m
-        default:
-            return .none
-        }
+        // nil and unknown both fall to `.none`, exactly as the `default:` arm of
+        // the switch this replaced did. Callers pass the stored
+        // `combat_stance` column straight through, and it is nil far more often
+        // than it is wrong.
+        guard let stanceId, let row = Catalogs.current.stanceById[stanceId] else { return .none }
+        var m = StanceModifiers()
+        m.attackMultiplier = row.attackMultiplier
+        m.attackBonus = row.attackBonus
+        m.defenseBonus = row.defenseBonus
+        m.critBonus = row.critBonus
+        m.accuracyBonus = row.accuracyBonus
+        m.dodgeBonus = row.dodgeBonus
+        m.vigorMultiplier = row.vigorMultiplier
+        return m
     }
 
     /// Stance ID a given character class triggers when they tap Super.
     public static func stanceId(forClass cls: CharacterClass) -> String {
-        switch cls {
-        case .warrior: return StanceId.bloodlust
-        case .archer:  return StanceId.hawksEye
-        case .mage:    return StanceId.arcaneResonance
-        }
+        let content = Catalogs.current
+        return content.required(content.stanceIdByClass[cls], "stance for \(cls.rawValue)")
     }
 
     // MARK: - Phase 4.2 special attacks
@@ -237,18 +231,21 @@ public enum CombatService {
     /// helper so the controller stays narrative-only.
     public enum SpecialAttack {
         // Vigor costs (paid on every tap; stance vigor multiplier composes).
-        public static let cleaveVigor:    Int = 4
-        public static let vitalShotVigor: Int = 4
-        public static let soulfireVigor:  Int = 5
+        // Kept as named constants because call sites outside this file read
+        // them; the numbers themselves come from `tuning/combat.json`.
+        public static var cleaveVigor:    Int { specialAttackVigor(forClass: .warrior) }
+        public static var vitalShotVigor: Int { specialAttackVigor(forClass: .archer) }
+        public static var soulfireVigor:  Int { specialAttackVigor(forClass: .mage) }
     }
 
     /// Vigor cost for a class's Special Attack.
     public static func specialAttackVigor(forClass cls: CharacterClass) -> Int {
-        switch cls {
-        case .warrior: return SpecialAttack.cleaveVigor
-        case .archer:  return SpecialAttack.vitalShotVigor
-        case .mage:    return SpecialAttack.soulfireVigor
-        }
+        specialAttack(cls).vigor
+    }
+
+    private static func specialAttack(_ cls: CharacterClass) -> SpecialAttackTuningDTO {
+        let content = Catalogs.current
+        return content.required(content.specialAttackByClass[cls], "specialAttack for \(cls.rawValue)")
     }
 
     /// Per-class Special Attack modifiers folded into `applyAttack`.
@@ -262,22 +259,13 @@ public enum CombatService {
     /// - Mage (Soulfire): cannot miss, ignores DEF, +5 flat damage. Most
     ///   reliable of the three but costs 5 vigor instead of 4.
     public static func specialAttackModifiers(forClass cls: CharacterClass) -> AttackModifiers {
+        let row = specialAttack(cls)
         var m = AttackModifiers()
-        switch cls {
-        case .warrior:
-            m.hitChanceModifier = -10
-            m.defenderDEFFraction = 0.0
-            m.flatDamageBonus = 12
-            m.critBonus = 20
-        case .archer:
-            m.cannotMiss = true
-            m.critBonus = 20
-            m.defenderDEFFraction = 0.0
-        case .mage:
-            m.cannotMiss = true
-            m.defenderDEFFraction = 0.0
-            m.flatDamageBonus = 5
-        }
+        m.hitChanceModifier = row.hitChanceModifier
+        m.defenderDEFFraction = row.defenderDEFFraction
+        m.critBonus = row.critBonus
+        m.cannotMiss = row.cannotMiss
+        m.flatDamageBonus = row.flatDamageBonus
         return m
     }
 
@@ -285,7 +273,7 @@ public enum CombatService {
     /// class's Special Attack — flagship case is the archer's Vital Shot,
     /// where the long aim leaves them open to the enemy counter.
     public static func specialAttackZeroesDodge(forClass cls: CharacterClass) -> Bool {
-        return cls == .archer
+        specialAttack(cls).zeroesDodge
     }
 
     // MARK: - Phase 4.2.3 special defenses
@@ -293,33 +281,39 @@ public enum CombatService {
     /// Tunings for the per-class Special Defense technique.
     public enum SpecialDefense {
         // Vigor costs.
-        public static let ironBulwarkVigor:    Int = 3
-        public static let shadowVeilVigor:     Int = 3
-        public static let mirrorWardVigor:     Int = 4
+        public static var ironBulwarkVigor: Int { specialDefenseVigor(forClass: .warrior) }
+        public static var shadowVeilVigor:  Int { specialDefenseVigor(forClass: .archer) }
+        public static var mirrorWardVigor:  Int { specialDefenseVigor(forClass: .mage) }
 
         /// Iron Bulwark's parry-counter chip damage as a fraction of a clean
         /// hit. Bigger than the basic Defend's 30% — this is a heavier counter.
-        public static let ironBulwarkChipFraction: Double = 0.5
+        public static var ironBulwarkChipFraction: Double {
+            Catalogs.current.tuningCombat.specialDefense.ironBulwarkChipFraction
+        }
 
         /// How much dodge Shadow Veil grants on the lingering buff round.
-        public static let shadowVeilDodgeBonus: Int = 50
+        public static var shadowVeilDodgeBonus: Int {
+            Catalogs.current.tuningCombat.specialDefense.shadowVeilDodgeBonus
+        }
 
         /// Mirror Ward reflects this fraction of the rolled would-be enemy
         /// damage back as direct damage to the enemy (player takes nothing).
-        public static let mirrorWardReflectFraction: Double = 0.5
+        public static var mirrorWardReflectFraction: Double {
+            Catalogs.current.tuningCombat.specialDefense.mirrorWardReflectFraction
+        }
 
         /// Persistent-effect duration in rounds. Only one round's worth of
         /// follow-up after activation by design.
-        public static let effectPersistRounds: Int = 1
+        public static var effectPersistRounds: Int {
+            Catalogs.current.tuningCombat.specialDefense.effectPersistRounds
+        }
     }
 
     /// Vigor cost for a class's Special Defense.
     public static func specialDefenseVigor(forClass cls: CharacterClass) -> Int {
-        switch cls {
-        case .warrior: return SpecialDefense.ironBulwarkVigor
-        case .archer:  return SpecialDefense.shadowVeilVigor
-        case .mage:    return SpecialDefense.mirrorWardVigor
-        }
+        let content = Catalogs.current
+        return content.required(content.specialDefenseVigorByClass[cls],
+                                "specialDefense for \(cls.rawValue)")
     }
 
     // MARK: - Phase 4.3 class-specific Flee
@@ -329,33 +323,32 @@ public enum CombatService {
     /// archers are mobile, mages flat-out teleport. The mage premium is
     /// paid in vigor (`fleeVigorExtra`) — a teleport isn't free.
     public enum Flee {
-        public static let warriorChance: Int = 40
-        public static let archerChance:  Int = 70
-        public static let mageChance:    Int = 90
+        public static var warriorChance: Int { fleeChance(forClass: .warrior) }
+        public static var archerChance:  Int { fleeChance(forClass: .archer) }
+        public static var mageChance:    Int { fleeChance(forClass: .mage) }
 
         /// Extra vigor drained on top of the base `combatFlee` cost when a
         /// mage attempts to teleport away. Layers on after the stance vigor
         /// multiplier so an Arcane-Resonance mage still pays the teleport tax.
-        public static let mageVigorExtra: Int = 2
+        public static var mageVigorExtra: Int { fleeVigorExtra(forClass: .mage) }
     }
 
     /// Per-class success chance for a Flee attempt (1–100). Failure still
     /// triggers the existing forced full-damage counter.
     public static func fleeChance(forClass cls: CharacterClass) -> Int {
-        switch cls {
-        case .warrior: return Flee.warriorChance
-        case .archer:  return Flee.archerChance
-        case .mage:    return Flee.mageChance
-        }
+        flee(cls).chance
     }
 
-    /// Extra flat vigor drained beyond the base Flee cost — non-zero only
-    /// for the mage (teleport tax).
+    /// Extra flat vigor drained beyond the base Flee cost. Zero for every class
+    /// but the mage today — but stored per class, so making a second class pay
+    /// a premium is a JSON edit rather than a new `case` here.
     public static func fleeVigorExtra(forClass cls: CharacterClass) -> Int {
-        switch cls {
-        case .mage: return Flee.mageVigorExtra
-        default:    return 0
-        }
+        flee(cls).extraVigor
+    }
+
+    private static func flee(_ cls: CharacterClass) -> FleeTuningDTO {
+        let content = Catalogs.current
+        return content.required(content.fleeByClass[cls], "flee for \(cls.rawValue)")
     }
 
     // MARK: - Per-class Defend tunings (2026-05-15)
@@ -374,10 +367,17 @@ public enum CombatService {
     //               warrior to compensate for zero return damage — a Defend
     //               turn should feel roughly equal in value across classes.
     public enum Defend {
-        public static let archerChipMultiplier: Double = 0.5  // 0.3 * 0.5 = 15% of raw
-        public static let archerDodgeBonus:     Int    = 30
+        /// Multiplies `defendChipFraction`, so 0.5 = 15% of raw at the shipped 0.3.
+        public static var archerChipMultiplier: Double {
+            Catalogs.current.tuningCombat.defend.archerChipMultiplier
+        }
+        public static var archerDodgeBonus: Int {
+            Catalogs.current.tuningCombat.defend.archerDodgeBonus
+        }
         /// Fraction of incoming damage the mage actually takes. 0.4 = 60% off.
-        public static let mageBarrierDamageFraction: Double = 0.4
+        public static var mageBarrierDamageFraction: Double {
+            Catalogs.current.tuningCombat.defend.mageBarrierDamageFraction
+        }
     }
 
     // MARK: - Phase 5.1 training mode
@@ -386,5 +386,7 @@ public enum CombatService {
     /// `state.combatEnemyId == trainingDummyEnemyId` to flip into training
     /// mode (Back button instead of Flee, no death/victory flow, dummy
     /// auto-revives when its HP hits 0).
-    public static let trainingDummyEnemyId: String = "enemy.training_dummy"
+    public static var trainingDummyEnemyId: String {
+        Catalogs.current.tuningCombat.trainingDummyEnemyId
+    }
 }

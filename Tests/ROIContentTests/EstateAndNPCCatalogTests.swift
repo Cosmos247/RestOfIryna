@@ -31,7 +31,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     }
 
     func testPlotTuningNilSurvivesTheRoundTrip() throws {
-        let original = PlotFileDTO(testMode: true, types: [
+        let original = PlotFileDTO(types: [
             PlotTypeDTO(type: "farm", icon: "🌾",
                         tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20)),
             PlotTypeDTO(type: "training_ground", icon: "🥋")
@@ -139,7 +139,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     }
 
     private func allPlots() -> PlotFileDTO {
-        PlotFileDTO(testMode: true, types: [
+        PlotFileDTO(types: [
             PlotTypeDTO(type: "farm", icon: "🌾",
                         tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20)),
             PlotTypeDTO(type: "forest", icon: "🪚",
@@ -202,7 +202,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     func testMissingPlotTypeIsAnError() {
         var types = allPlots().types
         types.removeAll { $0.type == "coop" }
-        XCTAssertTrue(rules(bundle(plots: PlotFileDTO(testMode: true, types: types)))
+        XCTAssertTrue(rules(bundle(plots: PlotFileDTO(types: types)))
             .contains("plot.type_missing"))
     }
 

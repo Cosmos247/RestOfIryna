@@ -174,7 +174,9 @@ enum ContentDigest {
         // `t1Tunings` is a DICTIONARY, so iterating it directly would hash in
         // whatever order the hasher happens to produce this process. Walking
         // `PlotType.allCases` is what makes the plot half reproducible at all.
-        digest.combine("\(PlotCatalog.testMode)")
+        // `PlotCatalog.testMode` used to be hashed here. Phase 4b deletes the
+        // flag, so what is hashed is the value it produced — which is the thing
+        // that must not change when the flag becomes `time.scale`.
         digest.combine("\(PlotCatalog.intervalSeconds)")
         for type in PlotType.allCases {
             digest.combine(type.rawValue)
@@ -214,6 +216,12 @@ enum ContentDigest {
         // Snapshot the record-only hash before the replays fold in.
         let recordDigest = digest.hexDigest
 
+        // Phase 4's own half. Kept OUT of `digest` until here so `records`
+        // keeps its Phase 3 value: the tuning move must leave the catalogs
+        // provably untouched, and it can only prove that if their hash is
+        // still comparable to the one batch C signed off on.
+        let tuningDigest = tuningFingerprint()
+
         // Seeded encounter replay — the half that catches a reordered roster.
         var rng = SplitMix64(seed: seed)
         var spawns = OutcomeDigest()
@@ -228,6 +236,7 @@ enum ContentDigest {
         }
         let spawnDigest = spawns.hexDigest
 
+        digest.combine(tuningDigest)
         digest.combine(spawnDigest)
 
         // Seeded daily-quest replay — the batch-C twin of the spawn replay, and
@@ -255,6 +264,7 @@ enum ContentDigest {
         digest.combine(questDigest)
 
         print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
+        print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs)")
         print("COMBINED \(digest.hexDigest)")
@@ -333,13 +343,232 @@ enum ContentDigest {
             problems.append("items(of:) covers \(grouped) items but the catalog holds \(ItemCatalog.all.count)")
         }
 
+        // The sweeper derivation is a HAND-TRANSLATION — `PlotProductionService
+        // .tickInterval` was `testMode ? 60 : 300` and is now
+        // `max(minSeconds, interval / divisor)`. The digest can only ever see
+        // one branch of `testMode` per process, so the equivalence is proven
+        // here instead: the old function had exactly two reachable outputs, and
+        // both are checked against the interval that produces them.
+        for (interval, expected) in [(60.0, 60.0), (3600.0, 300.0)] {
+            let derived = PlotProductionService.tickInterval(forPlotInterval: interval)
+            if derived != expected {
+                problems.append("plot sweeper: interval \(interval)s derives \(derived)s, shipped value was \(expected)s")
+            }
+        }
+
         if problems.isEmpty {
             print("live lookups: ✅ every recipe input/output, loot id, scroll, starter recipe and starter weapon resolves through the façades")
+            print("plot sweeper: ✅ derivation reproduces both shipped cadences (60s → 60s, 3600s → 300s)")
         } else {
             print("live lookups: ❌ \(problems.count) problem(s)")
             for problem in problems.prefix(10) { print("   • \(problem)") }
         }
         print("")
+    }
+
+    // MARK: - Phase 4 tuning fingerprint
+    //
+    // The FOURTH half, captured while every constant below is still a Swift
+    // literal (step 1 of the migration loop). Deliberately a separate hash
+    // rather than more entries in `records`: Phase 4 must leave the catalogs
+    // untouched, and the only way to *prove* that is to keep `records`,
+    // `spawns` and `quests` comparable to the values batch C signed off on.
+    //
+    // Two kinds of entry, and the split is the whole point:
+    //
+    //   • **Scalars** are hashed directly. This phase changes where the number
+    //     comes from, not the formula that consumes it, so fingerprinting the
+    //     value is a complete check for them.
+    //   • **Accessor replays** cover every `switch` that becomes a table
+    //     lookup. A value hash cannot see a rewritten body, and each of these
+    //     bodies IS rewritten. They are replayed PAST the live domain —
+    //     negative tiers, levels above the cap, unknown ids, an empty string —
+    //     because the out-of-range tail is exactly where a clamp or a
+    //     `?? first` fallback stops agreeing.
+    //
+    // Every set is walked sorted and every enum via `allCases`: a `Set<Int>`
+    // iterates in seeded-hash order, so hashing `statGrowthLevels` directly
+    // would produce a digest that differs between processes and quietly
+    // destroy the comparison (the batch-C dictionary lesson, one type over).
+    private static func tuningFingerprint() -> String {
+        var d = OutcomeDigest()
+
+        // MARK: combat.json — scalars
+        d.combine("combat")
+        d.combine(CombatService.baseHitChance)
+        d.combine(CombatService.minHitChance)
+        d.combine(CombatService.maxHitChance)
+        d.combine("\(CombatService.critMultiplier)")
+        d.combine("\(CombatService.varianceRange.lowerBound)...\(CombatService.varianceRange.upperBound)")
+        d.combine("\(CombatService.defendChipFraction)")
+        d.combine(CombatService.stanceDurationRounds)
+        d.combine(CombatService.trainingDummyEnemyId)
+        d.combine(CombatService.SpecialAttack.cleaveVigor)
+        d.combine(CombatService.SpecialAttack.vitalShotVigor)
+        d.combine(CombatService.SpecialAttack.soulfireVigor)
+        d.combine(CombatService.SpecialDefense.ironBulwarkVigor)
+        d.combine(CombatService.SpecialDefense.shadowVeilVigor)
+        d.combine(CombatService.SpecialDefense.mirrorWardVigor)
+        d.combine("\(CombatService.SpecialDefense.ironBulwarkChipFraction)")
+        d.combine(CombatService.SpecialDefense.shadowVeilDodgeBonus)
+        d.combine("\(CombatService.SpecialDefense.mirrorWardReflectFraction)")
+        d.combine(CombatService.SpecialDefense.effectPersistRounds)
+        d.combine(CombatService.Flee.warriorChance)
+        d.combine(CombatService.Flee.archerChance)
+        d.combine(CombatService.Flee.mageChance)
+        d.combine(CombatService.Flee.mageVigorExtra)
+        d.combine("\(CombatService.Defend.archerChipMultiplier)")
+        d.combine(CombatService.Defend.archerDodgeBonus)
+        d.combine("\(CombatService.Defend.mageBarrierDamageFraction)")
+
+        // MARK: combat.json — accessor replays
+        //
+        // `initialUses` is replayed to L25 rather than to `maxLevel`: the
+        // thresholds are 17 / 20 / 21, and 21 is the cap today. Running past it
+        // pins the "at or above" comparison so raising `maxLevel` to 40 in
+        // Phase 5 shows up as a deliberate digest move.
+        for kind in CombatService.TechniqueKind.allCases {
+            d.combine(kind.rawValue)
+            d.combine(CombatService.requiredLevel(for: kind))
+            for level in 1...25 { d.combine(CombatService.initialUses(for: kind, playerLevel: level)) }
+        }
+        for stanceId in [CombatService.StanceId.bloodlust, CombatService.StanceId.hawksEye,
+                         CombatService.StanceId.arcaneResonance, "nope", ""] {
+            d.combine(stanceId)
+            d.combine(CombatService.stanceActivationVigor(for: stanceId))
+            d.combine(fingerprint(CombatService.stanceModifiers(for: stanceId)))
+        }
+        // nil is a separate arm from an unknown id — callers pass the stored
+        // `combat_stance` column straight through, and it is nil far more often
+        // than it is wrong.
+        d.combine(fingerprint(CombatService.stanceModifiers(for: nil)))
+        for cls in CharacterClass.allCases {
+            d.combine(cls.rawValue)
+            d.combine(CombatService.stanceId(forClass: cls))
+            d.combine(CombatService.specialAttackVigor(forClass: cls))
+            d.combine(fingerprint(CombatService.specialAttackModifiers(forClass: cls)))
+            d.combine("\(CombatService.specialAttackZeroesDodge(forClass: cls))")
+            d.combine(CombatService.specialDefenseVigor(forClass: cls))
+            d.combine(CombatService.fleeChance(forClass: cls))
+            d.combine(CombatService.fleeVigorExtra(forClass: cls))
+        }
+
+        // MARK: vigor.json
+        d.combine("vigor")
+        d.combine(VigorService.drainWalkRoom)
+        d.combine(VigorService.drainWalkRoomDoubleSpeed)
+        d.combine(VigorService.drainCombatRound)
+        d.combine(VigorService.drainCombatAttack)
+        d.combine(VigorService.drainCombatDefend)
+        d.combine(VigorService.drainCombatFlee)
+        d.combine("\(VigorService.starvationStatPenalty)")
+        d.combine("\(VigorService.starvationHPDrainPercent)")
+        for action in VigorAction.allCases {
+            d.combine(action.rawValue)
+            d.combine(VigorService.cost(of: action))
+        }
+        d.combine("\(HealingService.regenPerMinute)")
+        d.combine("\(HealingService.maxIdleMinutes)")
+
+        // MARK: exploration.json
+        d.combine("exploration")
+        d.combine(ExplorationService.weightTotal)
+        d.combine("\(ExplorationService.tripDamagePercent)")
+        // −2 and −1 matter: the tier arm is a `default`, so a negative visit
+        // count resolves to BARE today. A table keyed 0/1/2 would return nil
+        // there instead, and nothing else in the digest would notice.
+        for priorVisits in -2...5 {
+            d.combine(fingerprint(ExplorationService.weights(forPriorVisits: priorVisits)))
+        }
+
+        // MARK: progression.json
+        d.combine("progression")
+        d.combine(User.maxLevel)
+        d.combine(User.statGrowthMaxHp)
+        d.combine(User.statGrowthAttack)
+        d.combine(User.statGrowthDefense)
+        // SORTED — `statGrowthLevels` is a `Set<Int>`, whose iteration order is
+        // seeded per process.
+        for level in User.statGrowthLevels.sorted() { d.combine(level) }
+        // Replayed past the cap on both ends: `xpRequiredToReach` returns
+        // `Int.max` outside 2...maxLevel, and that guard is as much a part of
+        // the curve as the 100 / ×2 / ×1.4 constants inside it.
+        for level in 0...30 { d.combine(User.xpRequiredToReach(level)) }
+        for cls in CharacterClass.allCases {
+            let s = cls.startingStats
+            d.combine("\(cls.rawValue) hp\(s.hp) atk\(s.attack) def\(s.defense) crit\(s.crit) dodge\(s.dodge) acc\(s.accuracy)")
+            d.combine(cls.starterWeaponId)
+        }
+        for estateLevel in -2...12 { d.combine(WarehouseService.capForLevel(estateLevel)) }
+
+        // MARK: economy.json
+        d.combine("economy")
+        d.combine(GearConditionService.maxDurabilityStart)
+        d.combine(GearConditionService.repairMaxShave)
+        for event in GearConditionService.WearEvent.allCases {
+            d.combine(event.rawValue)
+            d.combine(event.amount)
+        }
+        // Not moving to JSON — these must stay in lockstep with `EquipmentSlot`
+        // — but hashed so that stays a decision rather than an oversight.
+        for slot in GearConditionService.durableSlots.sorted() { d.combine(slot) }
+        for slot in GearConditionService.armorSlots.sorted() { d.combine(slot) }
+
+        // MARK: time.json
+        //
+        // Split the way the file will be: `gameTime` is everything `time.scale`
+        // multiplies, `realTime` is everything it must NOT touch. Telegram's
+        // 24 h floor on deleting a dice message is the sharpest example — it is
+        // a protocol constant, and scaling it would break the tavern sweep
+        // rather than merely rebalance it.
+        //
+        // Only DERIVED durations are hashed, never the `testMode` flags that
+        // feed them. That is what makes Phase 4b — collapsing three booleans
+        // into one `time.scale` — a provable no-op: the inputs change shape
+        // entirely while every wall-clock duration the player experiences has
+        // to come out bit-identical.
+        d.combine("time.gameTime")
+        d.combine(TravelService.travelMinutes)
+        d.combine("\(TravelService.travelSeconds)")
+        d.combine(PassiveExpeditionService.unitsPerStep)
+        d.combine("\(PassiveExpeditionService.secondsPerUnit)")
+        d.combine("\(PassiveExpeditionService.stepDurationSeconds)")
+        d.combine("\(PlotCatalog.intervalSeconds)")
+        d.combine("\(PlotProductionService.tickInterval)")
+        d.combine("time.realTime")
+        d.combine("\(TradeStore.lobbyTTL)")
+        d.combine("\(TradeStore.sessionTTL)")
+        d.combine("\(TradeStore.sweepInterval)")
+        d.combine("\(TavernCleanupService.deletableAfter)")
+        d.combine("\(TavernCleanupService.sweepInterval)")
+        d.combine(GameDay.rolloverHour)
+        d.combine(GameDay.timeZoneID)
+        // Replay `stamp` through the real function rather than trusting the two
+        // constants above. The instants straddle the 12:00 Kyiv boundary, a DST
+        // change and a year end — the three places an arithmetic shortcut
+        // would disagree with the calendar search the implementation uses.
+        for epoch in [1_756_000_000.0, 1_756_040_000.0, 1_761_000_000.0,
+                      1_767_225_600.0, 1_772_000_000.0] {
+            let date = Date(timeIntervalSince1970: epoch)
+            d.combine(GameDay.stamp(date))
+            d.combine(GameDay.secondsUntilNextRollover(from: date))
+        }
+
+        return d.hexDigest
+    }
+
+    private static func fingerprint(_ m: CombatService.StanceModifiers) -> String {
+        "atk×\(m.attackMultiplier)+\(m.attackBonus) def+\(m.defenseBonus) crit+\(m.critBonus) "
+            + "acc+\(m.accuracyBonus) dodge+\(m.dodgeBonus) vigor×\(m.vigorMultiplier)"
+    }
+
+    private static func fingerprint(_ m: CombatService.AttackModifiers) -> String {
+        "hit\(m.hitChanceModifier) defFrac\(m.defenderDEFFraction) crit+\(m.critBonus) "
+            + "cannotMiss:\(m.cannotMiss) flat+\(m.flatDamageBonus)"
+    }
+
+    private static func fingerprint(_ w: ExplorationService.EventWeights) -> String {
+        "n\(w.nothing)/l\(w.loot)/e\(w.encounter)/t\(w.trip)"
     }
 
     // MARK: - Field-complete fingerprints

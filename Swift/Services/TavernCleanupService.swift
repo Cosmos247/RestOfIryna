@@ -25,10 +25,15 @@ public enum TavernCleanupService {
 
     /// Telegram won't delete a private-chat dice message younger than this.
     /// 24 h plus a small margin so we never race the boundary and fail.
-    static let deletableAfter: TimeInterval = 24 * 60 * 60 + 60
+    ///
+    /// A PROTOCOL constant, not a balance number — it lives in `time.json`'s
+    /// `realTime` section for exactly that reason. Scaling it with `time.scale`
+    /// would not rebalance the tavern, it would break the sweep: every delete
+    /// would come back as an error and the rows would pile up forever.
+    static var deletableAfter: TimeInterval { Catalogs.current.tuningTime.realTime.tavernDeletableAfter }
 
     /// How often the background loop scans for aged-out messages.
-    static let sweepInterval: TimeInterval = 30 * 60
+    static var sweepInterval: TimeInterval { Catalogs.current.tuningTime.realTime.tavernSweepInterval }
 
     // MARK: - Recording
 

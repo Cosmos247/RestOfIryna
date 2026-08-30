@@ -258,7 +258,7 @@ final public class User: Model, @unchecked Sendable {
 
     /// Hard cap on player level. Reaching `maxLevel` freezes XP at zero and
     /// `xpToNextLevel` returns `Int.max` so progress bars render as full.
-    public static let maxLevel: Int = 21
+    public static var maxLevel: Int { Catalogs.current.tuningProgression.maxLevel }
 
     /// XP required to advance from `forLevel` → `forLevel + 1`. Softcap curve:
     ///   - L1→L5: pure doubling — 100, 200, 400, 800, 1600
@@ -269,13 +269,14 @@ final public class User: Model, @unchecked Sendable {
         // nextLevel is the level the player would reach by spending the XP.
         // I.e. the cost of L1→L2 is xpRequiredToReach(2).
         guard nextLevel >= 2, nextLevel <= maxLevel else { return Int.max }
-        var cost = 100
+        let curve = Catalogs.current.tuningProgression.xpCurve
+        var cost = curve.firstLevelCost
         var lvl = 2
         while lvl < nextLevel {
-            if lvl <= 5 {
+            if lvl <= curve.doublingThroughLevel {
                 cost *= 2
             } else {
-                cost = Int((Double(cost) * 1.4).rounded())
+                cost = Int((Double(cost) * curve.growthMultiplier).rounded())
             }
             lvl += 1
         }
@@ -291,11 +292,11 @@ final public class User: Model, @unchecked Sendable {
     /// levels only (not the estate-tier-up levels: 4 / 7 / 10 / 13 / 16 / 19,
     /// which already feel rewarding from the structural unlocks they bring).
     /// 8 boosts total → +40 maxHP, +8 ATK, +8 DEF by L21.
-    public static let statGrowthLevels: Set<Int> = [2, 3, 5, 6, 9, 12, 15, 18]
+    public static var statGrowthLevels: Set<Int> { Catalogs.current.statGrowthLevels }
 
-    public static let statGrowthMaxHp: Int = 5
-    public static let statGrowthAttack: Int = 1
-    public static let statGrowthDefense: Int = 1
+    public static var statGrowthMaxHp: Int { Catalogs.current.tuningProgression.statGrowth.maxHp }
+    public static var statGrowthAttack: Int { Catalogs.current.tuningProgression.statGrowth.attack }
+    public static var statGrowthDefense: Int { Catalogs.current.tuningProgression.statGrowth.defense }
 
     /// Result of a `grantXP` call. UI banners read these to decide what to show.
     public struct XPGrantResult: Sendable {

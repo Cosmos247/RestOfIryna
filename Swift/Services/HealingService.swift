@@ -25,12 +25,16 @@ import Fluent
 import Foundation
 
 public enum HealingService {
+    // `tuning/vigor.json` → `healing`. Resting lives in the vigor table on
+    // purpose: HP regen and vigor regen are one recovery model, and splitting
+    // them across two files is how the two halves drift apart.
+
     /// Fraction of `maxHp` restored per minute of eligible idle time.
-    public static let regenPerMinute: Double = 0.05
+    public static var regenPerMinute: Double { Catalogs.current.tuningVigor.healing.regenPerMinute }
 
     /// Cap on elapsed time credited in a single tick, to keep long-offline
     /// players from instantly topping up on their next hello.
-    public static let maxIdleMinutes: Double = 60 * 24
+    public static var maxIdleMinutes: Double { Catalogs.current.tuningVigor.healing.maxIdleMinutes }
 
     /// Apply idle-time HP regen. Writes the user back (via `saveAndCache`)
     /// whenever a field is touched. Returns amount of HP restored (0 if the

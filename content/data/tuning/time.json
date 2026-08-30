@@ -1,0 +1,24 @@
+{
+  "gameTime" : {
+    "passiveExpedition" : {
+      "secondsPerUnit" : 60.0,
+      "unitsPerStep" : 5
+    },
+    "plotIntervalSeconds" : 3600.0,
+    "plotSweeper" : {
+      "intervalDivisor" : 12,
+      "minSeconds" : 60.0
+    },
+    "travelMinutes" : 2
+  },
+  "realTime" : {
+    "dayRolloverHour" : 12,
+    "dayTimeZoneId" : "Europe/Kyiv",
+    "tavernDeletableAfter" : 86460.0,
+    "tavernSweepInterval" : 1800.0,
+    "tradeLobbyTTL" : 180.0,
+    "tradeSessionTTL" : 300.0,
+    "tradeSweepInterval" : 30.0
+  },
+  "scale" : 60.0
+}

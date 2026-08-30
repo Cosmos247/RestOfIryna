@@ -1,0 +1,147 @@
+{
+  "critMultiplier" : 1.5,
+  "defend" : {
+    "archerChipMultiplier" : 0.5,
+    "archerDodgeBonus" : 30,
+    "mageBarrierDamageFraction" : 0.4
+  },
+  "defendChipFraction" : 0.3,
+  "flee" : [
+    {
+      "chance" : 40,
+      "class" : "warrior",
+      "extraVigor" : 0
+    },
+    {
+      "chance" : 70,
+      "class" : "archer",
+      "extraVigor" : 0
+    },
+    {
+      "chance" : 90,
+      "class" : "mage",
+      "extraVigor" : 2
+    }
+  ],
+  "hitChance" : {
+    "base" : 70,
+    "max" : 95,
+    "min" : 10
+  },
+  "specialAttack" : [
+    {
+      "cannotMiss" : false,
+      "class" : "warrior",
+      "critBonus" : 20,
+      "defenderDEFFraction" : 0.0,
+      "flatDamageBonus" : 12,
+      "hitChanceModifier" : -10,
+      "vigor" : 4,
+      "zeroesDodge" : false
+    },
+    {
+      "cannotMiss" : true,
+      "class" : "archer",
+      "critBonus" : 20,
+      "defenderDEFFraction" : 0.0,
+      "flatDamageBonus" : 0,
+      "hitChanceModifier" : 0,
+      "vigor" : 4,
+      "zeroesDodge" : true
+    },
+    {
+      "cannotMiss" : true,
+      "class" : "mage",
+      "critBonus" : 0,
+      "defenderDEFFraction" : 0.0,
+      "flatDamageBonus" : 5,
+      "hitChanceModifier" : 0,
+      "vigor" : 5,
+      "zeroesDodge" : false
+    }
+  ],
+  "specialDefense" : {
+    "byClass" : [
+      {
+        "class" : "warrior",
+        "vigor" : 3
+      },
+      {
+        "class" : "archer",
+        "vigor" : 3
+      },
+      {
+        "class" : "mage",
+        "vigor" : 4
+      }
+    ],
+    "effectPersistRounds" : 1,
+    "ironBulwarkChipFraction" : 0.5,
+    "mirrorWardReflectFraction" : 0.5,
+    "shadowVeilDodgeBonus" : 50
+  },
+  "stances" : {
+    "byId" : [
+      {
+        "accuracyBonus" : 0,
+        "activationVigor" : 4,
+        "attackBonus" : 5,
+        "attackMultiplier" : 1.0,
+        "class" : "warrior",
+        "critBonus" : 0,
+        "defenseBonus" : 3,
+        "dodgeBonus" : 0,
+        "id" : "bloodlust",
+        "vigorMultiplier" : 2.0
+      },
+      {
+        "accuracyBonus" : 10,
+        "activationVigor" : 4,
+        "attackBonus" : 0,
+        "attackMultiplier" : 1.0,
+        "class" : "archer",
+        "critBonus" : 15,
+        "defenseBonus" : 0,
+        "dodgeBonus" : 10,
+        "id" : "hawks_eye",
+        "vigorMultiplier" : 1.0
+      },
+      {
+        "accuracyBonus" : 0,
+        "activationVigor" : 5,
+        "attackBonus" : 0,
+        "attackMultiplier" : 1.5,
+        "class" : "mage",
+        "critBonus" : 0,
+        "defenseBonus" : 5,
+        "dodgeBonus" : 0,
+        "id" : "arcane_resonance",
+        "vigorMultiplier" : 1.0
+      }
+    ],
+    "defaultActivationVigor" : 4,
+    "durationRounds" : 3
+  },
+  "techniques" : [
+    {
+      "kind" : "special_atk",
+      "requiredLevel" : 8,
+      "secondUseAtLevel" : 17
+    },
+    {
+      "kind" : "special_def",
+      "requiredLevel" : 11,
+      "secondUseAtLevel" : 20
+    },
+    {
+      "kind" : "super",
+      "requiredLevel" : 14,
+      "secondUseAtLevel" : 21
+    }
+  ],
+  "trainingDummyEnemyId" : "enemy.training_dummy",
+  "variance" : {
+    "max" : 1.1,
+    "min" : 0.9
+  }
+}

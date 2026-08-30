@@ -1,0 +1,11 @@
+{
+  "gear" : {
+    "maxDurabilityStart" : 30,
+    "repairMaxShave" : 1,
+    "wearBudget" : {
+      "defeat" : 3,
+      "flee" : 5,
+      "victory" : 1
+    }
+  }
+}

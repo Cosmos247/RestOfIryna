@@ -38,6 +38,10 @@ public struct ContentBundle: Sendable {
     public let plots: PlotFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
+    /// Phase 4's six balance tables. Optional for the same reason as the files
+    /// above — `ContentLoader` always supplies it, and `DomainContent` turns a
+    /// nil into a thrown error rather than a game whose hit chance is zero.
+    public let tuning: TuningBundleDTO?
     /// FNV-1a over the concatenated raw bytes of every file, in load order.
     /// Printed at boot and by `/content` so a running bot can be matched to a
     /// checkout without guessing.
@@ -62,6 +66,7 @@ public struct ContentBundle: Sendable {
         plots: PlotFileDTO? = nil,
         fortune: FortuneFileDTO? = nil,
         quests: QuestFileDTO? = nil,
+        tuning: TuningBundleDTO? = nil,
         contentHash: String
     ) {
         self.manifest = manifest
@@ -82,6 +87,7 @@ public struct ContentBundle: Sendable {
         self.plots = plots
         self.fortune = fortune
         self.quests = quests
+        self.tuning = tuning
         self.contentHash = contentHash
     }
 
@@ -94,6 +100,6 @@ public struct ContentBundle: Sendable {
             + "\(trader?.listings.count ?? 0) trader rows · \(tavern?.food.count ?? 0) dishes · "
             + "\(arena?.leagues.count ?? 0) leagues · \(fortune?.cards.count ?? 0) cards · "
             + "\(quests?.pools.reduce(0) { $0 + $1.quests.count } ?? 0) quests · "
-            + "timeScale \(manifest.timeScale)"
+            + "timeScale \(tuning?.time.scale ?? 1.0)"
     }
 }
