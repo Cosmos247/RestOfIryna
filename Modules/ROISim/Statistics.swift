@@ -21,8 +21,6 @@ public struct Distribution: Sendable {
     public let p50: Double
     public let p90: Double
     public let p99: Double
-    public let min: Double
-    public let max: Double
 
     /// Nearest-rank percentile on the sorted sample: the smallest value at or
     /// below which at least `p` of the sample falls. No interpolation — with
@@ -31,7 +29,7 @@ public struct Distribution: Sendable {
     /// be.
     public init(_ values: [Double]) {
         guard !values.isEmpty else {
-            count = 0; mean = 0; p50 = 0; p90 = 0; p99 = 0; min = 0; max = 0
+            count = 0; mean = 0; p50 = 0; p90 = 0; p99 = 0
             return
         }
         let sorted = values.sorted()
@@ -44,7 +42,5 @@ public struct Distribution: Sendable {
         p50 = percentile(0.50)
         p90 = percentile(0.90)
         p99 = percentile(0.99)
-        min = sorted[0]
-        max = sorted[sorted.count - 1]
     }
 }

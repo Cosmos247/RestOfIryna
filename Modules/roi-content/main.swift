@@ -117,7 +117,7 @@ case "simulate":
         } else {
             print("── findings ──────────────────────────────────────────────────────────────────")
             for finding in findings {
-                let mark = finding.severity == .error ? "❌" : (finding.severity == .warning ? "⚠️ " : "· ")
+                let mark = finding.severity == .error ? "❌" : "⚠️ "
                 print("  \(mark) [\(finding.rule)] \(finding.message)")
             }
             print("")

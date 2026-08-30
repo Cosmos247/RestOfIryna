@@ -172,8 +172,6 @@ final class SimulatorTests: XCTestCase {
         XCTAssertEqual(d.p50, 50, accuracy: 0.001)
         XCTAssertEqual(d.p90, 90, accuracy: 0.001)
         XCTAssertEqual(d.p99, 99, accuracy: 0.001)
-        XCTAssertEqual(d.min, 1, accuracy: 0.001)
-        XCTAssertEqual(d.max, 100, accuracy: 0.001)
         XCTAssertEqual(d.mean, 50.5, accuracy: 0.001)
         // A percentile is always a value that actually occurred.
         XCTAssertEqual(Distribution([5, 5, 5, 100]).p90, 100, accuracy: 0.001)

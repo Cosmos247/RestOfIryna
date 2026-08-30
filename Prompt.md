@@ -35,8 +35,11 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–6 are complete.** Content, tuning, the combat model and the item
-budget all live in `content/data/`.
+**Phases 3–8 are done. Phase 9 is next: content specifications, approved before
+a byte of content is authored.**
+
+The maths is finished and, for the first time, MEASURED. What remains is
+content — and the rule is that the list gets signed off before it reaches JSON.
 
 ```
 content/data/         manifest · items · enemies (+ archetypes) · recipes ·
@@ -47,70 +50,81 @@ content/data/tuning/  combat · vigor · exploration · progression · economy �
                       time · budget
 ```
 
-Phase 6 added the piece that makes balance CHECKABLE:
+#### What Phase 9 has to answer
+
+The simulator already named the content gaps, so the spec is not starting from a
+blank page:
+
+- **The bestiary is half-strength.** Every shipped enemy carries ~50% of the HP
+  and ATK its archetype asks for (62% at level 1, falling to 48% by level 25), so
+  all seven are a 100% win at 4–13% HP where the archetype asks 10–62%.
+  `EnemyGenerator` regenerates the table from the archetype targets — that is
+  Phase 10's job, and it needs a roster list first.
+- **km 31–40 holds a single elite**, the `boss` archetype has **no members**, and
+  `offHand` plus both accessory slots have **no items at all** (1.0 + 1.2 of slot
+  weight sitting idle — it is exactly the residual the reference character prints).
+- **Elites must not spawn below monster level ~14.** The mage's win rate against
+  one is 93% at level 5 and its p99 HP loss is 100%, i.e. a death. The plan
+  already specified the floor; it is a spawn rule, not a tuning change.
+- **`ExplorationService.rollLoot` still keeps its foraging pools in Swift** —
+  they belong in a `zones.json`.
+- **Two flat rating bonuses survive the Phase 8C sweep**: `shadowVeilDodgeBonus`
+  (+50 = 238% of a level-1 archer's dodge, 34% at the cap) and
+  `defend.archerDodgeBonus` (+30 = 143% → 20%). Same rot the stances had. The
+  report flags them every run; nobody has decided yet.
+
+#### What Phase 8 left behind (the tools Phase 9+ leans on)
+
+`swift run -c release roi-content simulate` rolls the SAME `CombatMath` the bot
+calls — the maths lives in `ROISim` and `CombatService` / `User` / `ItemBudget` /
+`VigorService` are façades over it, so a report cannot drift from the game. It
+sweeps levels × archetypes × classes × play profiles × gear offsets and bands
+level invariance, the p90 tail, win rates, pace to the cap, and the shipped
+roster against its archetype contract. `--strict` exits 1 on a broken band.
+
+Current state of those bands: **18 of 18 level-invariance rows pass, 0 broken
+bands**, 19,437,688 XP from level 1 to 40 — 50–56 perfect days, which is a floor
+rather than a forecast.
+
+`EnemyGenerator` is the piece Phase 10 will lean on hardest: the archetype table
+is a GENERATOR, and inverting its targets reproduces every shipped enemy's DEF,
+crit and dodge to within rounding. Run at design time and frozen — never at
+runtime, which is how gear upgrades evaporate.
+
+#### The model, compressed
 
 ```
 budget(itemLevel, slot, rarity) = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget
 ```
 
-Every stat an item carries is that budget spent at fixed exchange rates, so one
-number bounds a piece — and since the combat denominators were derived from the
-same curve, an item that respects its budget cannot move any stat's percentage.
-Rarity multiplies budget ×1.00→×1.45 while value goes ×1→×16 (decoupled on
-purpose). Enchant is `1 + 4% × level` of the item's OWN budget, capped at +20%.
-Sets grant thresholds at 2/4/6 pieces through a second pass in
-`recomputeBonuses`. Gear now carries HP as a sixth stat.
+Every stat an item carries is that budget spent at fixed exchange rates, and the
+combat denominators were derived from the same curve — so an item that respects
+its budget cannot move any stat's percentage. Rarity multiplies budget ×1.00→×1.45
+while value goes ×1→×16 (decoupled on purpose). Enchant is `1 + 4% × level` of the
+item's OWN budget, capped at +20%. Sets grant thresholds at 2/4/6 pieces. Gear
+carries HP as a sixth stat.
 
-**Phase 7 is done:** `/reload` and `/content` (dev-only), hot-swapping the
-bundle in **parse → validate → live-check → build → install** order, where
-`install` is the only infallible step and last — so a refused reload leaves the
-running game on exactly the snapshot it was serving. `LiveReferenceCheck`
-refuses a swap that would drop an id live rows still point at, across all ten
-content-id columns. Lingo is NOT reloaded; new strings still need a restart.
+**Nothing gets a flat bonus — items or techniques.** Phase 8C found two of the
+three Super stances still granting flat lifts that rotted across a lifetime
+(`hawks_eye` +115% crit at level 1, +21% at the cap; `bloodlust` charging double
+Vigor for +5%). All five stance lifts are multipliers of the character's own stat
+now, and the report audits every lift for it.
 
-**Phase 8 is done.** **8A** moved the combat, progression and budget math out of
-`CombatService` / `User` / `ItemBudget` and into `ROISim`, leaving the façades'
-public API untouched — so the game and the simulator execute the SAME
-`CombatMath.applyAttack`, and a report cannot drift from the bot. The digest held
-at `a4d825a8d728f4f8` across the move, which is a bit-level proof: its `tuning`
-half already replays `baseStats`, `xpRequiredToReach` and all four curves.
-
-**8B** shipped `swift run roi-content simulate` — `EnemyGenerator` (inverts the
-archetype targets the way the shipped roster's DEF/crit/dodge were derived),
-`ReferenceCharacter` (on curve and one ladder rung behind), `FightSimulator` (the
-round order copied from `CombatController.finishRound`; `.basic` IS the passive
-autobattle), and a banded report. **Level invariance holds on all 18 rows** —
-which is the claim the whole rebalance rests on.
-
-**8C acted on what it found**, three changes:
-- **every stance lift is a multiplier of the character's own stat** (schema v8).
-  Two of the three Supers were flat bonuses that rotted across a lifetime —
-  `hawks_eye` was +115% crit at level 1 and +21% at the cap, and `bloodlust` was
-  charging **double Vigor** for a bonus worth +5%. Now: bloodlust attack ×1.35 /
-  defence ×1.15 / vigor ×1.5, hawks_eye crit ×1.60 / accuracy ×1.15 / dodge ×1.15,
-  arcane_resonance attack ×1.50 / defence ×1.15.
-- **the warrior's budget was re-spent toward offence** — weapon attack 0.72 → 0.80,
-  armour defence 0.82 → 0.78 into HP, base attack 10 → 12. Days-to-cap spread
-  **17% → 9%**, and the tank trade finally exists: the warrior loses 50–53% of a
-  bar to an elite where the mage loses 65%.
-- **monster silver removed entirely** — every faucet left is a player-facing
-  system with a sink attached.
-
-**Reported by every run, not yet acted on:** `shadowVeilDodgeBonus` (+50 = 238%
-of a level-1 archer's dodge, 34% at the cap) and `defend.archerDodgeBonus`
-(+30 = 143% → 20%) are the same flat-bonus rot in the techniques beside the
-stances; the mage's 93% win rate against an elite at level 5 wants the
-spawn-level floor the plan specified; and the shipped bestiary carries ~50% of
-the HP and ATK its archetypes ask for (Phase 10 regenerates it — the generator
-now exists to do it with).
-
-**Next is Phase 9** — content specs, approved before a byte is authored.
+`/reload` and `/content` (dev-only) hot-swap the bundle in **parse → validate →
+live-check → build → install** order, where `install` is the only infallible step
+and last — a refused reload leaves the running game on exactly the snapshot it
+was serving. Lingo is NOT reloaded; new strings still need a restart.
 
 **Current digest baseline: `583a32cb5a9d9dc7`** (schema **v8**)
 (`records 7b3a5e700d0b8fe7` · `tuning 5946bb13b530389e` ·
 `spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`). Phase 8C moved the first
 two and left the last two alone — no selection logic or daily assignment was
 touched, and the digest says so rather than asking to be believed.
+
+⚠️ **No live Telegram pass since the rebalance began.** Every formula the player
+touches changed in Phase 5, every item's stat in Phase 6, and the stances plus
+the failed-Flee counter in Phase 8C. `/reload` itself has never run against a
+real database.
 
 ### How content works now
 
@@ -143,7 +157,7 @@ live in `.memory/content-pipeline.md`.
 ```
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
-swift run -c release roi-content simulate   # balance sweep; --runs/--seed/--levels, --strict gates
+swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
 swift test                                   # 192 tests, ~0.14s
 ```
@@ -179,6 +193,8 @@ trade TTLs and the 12:00 rollover never scale.
 | `Swift/configure.swift` | Bootstrap; content loads before the DB block |
 | `Swift/Helpers/Catalogs.swift` | Domain content snapshot the façades read |
 | `Swift/Helpers/ContentDigest.swift` | `--content-digest`: records + spawn replay + daily-quest replay. Run before/after any content edit to confirm ONLY the intended change moved |
+| `Modules/ROISim/CombatMath.swift` | The combat model itself. `CombatService` delegates here — add a roll THERE, never a second copy |
+| `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
 
 ## Rules
 
@@ -188,3 +204,9 @@ trade TTLs and the 12:00 rollover never scale.
 - New locale keys go in BOTH `en.json` and `uk.json`; uk gendered copy uses `.m`/`.f`
 - Telegram `callback_data` max 64 bytes
 - Content changes: `roi-content validate --strict` must pass before commit
+- Balance-table changes (`combat` / `progression` / `budget` / archetypes): re-run
+  `roi-content simulate --strict` too — the digest says what moved, the simulator
+  says whether it is survivable
+- Hand-edit `content/data/*.json` in the Swift `JSONEncoder` style already there
+  (`"key" : value`, keys sorted, 2-space indent) — a python-style re-emit reformats
+  every line and buries the real change

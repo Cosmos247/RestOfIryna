@@ -76,10 +76,12 @@ ROI is built on a router–controller state machine. Each controller represents 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
 ├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex
-├── ROISim/                       # SplitMix64 + OutcomeDigest (balance simulator lands in rebalance Phase 8)
+├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
+│                                 #   + EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
+                                  #       `swift run -c release roi-content simulate [--strict]`
 
-Tests/ROIContentTests/            # 185 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 192 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -98,6 +100,12 @@ content/data/                     # SOURCE OF TRUTH for game content
 > validator refuses an overspend — which is what makes adding items safe rather than a
 > slow power creep. `swift run RestOfIryna --content-digest` prints four live checks,
 > including the design's reference character rebuilt from the budget.
+>
+> **`swift run -c release roi-content simulate` measures those tables.** It rolls the
+> same `CombatMath` the bot calls over levels × archetypes × classes × play profiles ×
+> gear offsets and reports time-to-kill, the p90 tail, pace to the level cap and the
+> shipped bestiary against its own archetype contract. The digest says what moved; the
+> simulator says whether the move was survivable.
 >
 > Dev-only `/reload` hot-swaps the bundle without a restart (`parse → validate →
 > live-check → build → install`; a refusal leaves the running game untouched). Locale
@@ -122,7 +130,7 @@ RestOfIryna/
 │   │
 │   ├── Models/                   # Fluent ORM models + catalog façades (roster data lives in content/data/*.json)
 │   │   ├── User.swift
-│   │   ├── Item.swift            # Item/GearStats/EquipmentSlot types + ItemCatalog façade + ItemDisplay (roster in content/data/items.json) — Phase 5.2 added the Forester's leather set; Phase 5.2.1 added 7 cooked dishes + 5 recipe scrolls + Item.teachesRecipe field
+│   │   ├── Item.swift            # Item/GearStats types + ItemCatalog façade + ItemDisplay (roster in content/data/items.json; `EquipmentSlot` moved to ROIContent in rebalance Phase 8) — Phase 5.2 added the Forester's leather set; Phase 5.2.1 added 7 cooked dishes + 5 recipe scrolls + Item.teachesRecipe field
 │   │   ├── Recipe.swift          # Recipe types + RecipeCatalog façade (roster in content/data/recipes.json) (RecipeCategory forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog) — Phase 5.2 + 5.2.1. Phase 6.5 (2026-05-22) raised the Forester set cost + added iron (40🦴 + 8🔩 for a full suit) to track the premium Master prices
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
 │   │   ├── LearnedTechnique.swift # Phase 5.3e — Fluent model: per-user known-technique set (user_id, technique_id, learned_at). IDs are class-agnostic (`special_atk` / `special_def` / `super`); player's class resolves the concrete technique in combat. has/add/allIds mirror LearnedRecipe.
@@ -495,8 +503,9 @@ ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 in
 
 **A full pre-release rebalance is in flight** and is the only work happening right now:
 the game's mathematics is being rebuilt and all content plus all tuning has moved into
-`content/data/`. Phases 3–7 are done (data migration, tuning tables, the new combat
-model, the item budget, hot reload); Phase 8 adds the simulator. Progress lives in the
+`content/data/`. Phases 3–8 are done (data migration, tuning tables, the new combat
+model, the item budget, hot reload, and the balance simulator that measures all of it);
+Phase 9 writes the content specs that Phase 10 authors against. Progress lives in the
 "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
 [`.memory/rebalance.md`](./.memory/rebalance.md).
 

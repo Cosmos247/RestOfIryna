@@ -23,11 +23,11 @@ import ROIContent
 
 public struct ReferenceCharacter: Sendable {
     public let characterClass: String
-    public let level: Int
-    /// The item level of the gear, after the offset — never below 1.
-    public let itemLevel: Int
+    /// Level lives on `stats.level`, and the item level the gear was built at is
+    /// `max(1, level + gearOffset)` — both were stored here and read by nobody,
+    /// so they went in the Phase 8 dead-code sweep rather than sitting as two
+    /// more fields a reader has to check against the ones that are used.
     public let stats: CombatantStats
-    public let maxVigor: Int
 
     /// The weapon ladder maps tiers to item levels 1 / 10 / 20 / 30 / 40, so
     /// "one rung behind" is ten item levels, not one.
@@ -38,8 +38,7 @@ public struct ReferenceCharacter: Sendable {
                 profile: ClassBudgetProfileDTO, start: ClassStartDTO,
                 rarityMultiplier: Double = 1.0) {
         self.characterClass = characterClass
-        self.level = level
-        self.itemLevel = Swift.max(1, level + gearOffset)
+        let itemLevel = Swift.max(1, level + gearOffset)
         let base = ProgressionMath.baseStats(start: start, growth: progression.statGrowth,
                                              level: level)
         let gear = BudgetMath.referenceGear(profile: profile, itemLevel: itemLevel,
@@ -52,7 +51,6 @@ public struct ReferenceCharacter: Sendable {
             crit: base.crit + gear.crit,
             dodge: base.dodge + gear.dodge,
             accuracy: base.accuracy + gear.accuracy)
-        self.maxVigor = ProgressionMath.maxVigor(at: level, pool: progression.vigorPool)
     }
 
     /// Build one per class from a whole tuning bundle. Returns nil when the

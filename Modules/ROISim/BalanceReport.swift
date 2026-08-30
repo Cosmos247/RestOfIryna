@@ -46,7 +46,7 @@ public struct CellResult: Sendable {
 }
 
 public struct Finding: Sendable {
-    public enum Severity: String, Sendable { case error, warning, note }
+    public enum Severity: String, Sendable { case error, warning }
     public let severity: Severity
     public let rule: String
     public let message: String

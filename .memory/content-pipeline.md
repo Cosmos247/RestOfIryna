@@ -14,9 +14,9 @@ snapshot.
 
 ```
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
-Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
-Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            176 tests; fast because no Fluent/Postgres/Telegram
+Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
+Modules/roi-content   executable                 CLI: validate · simulate
+Tests/ROIContentTests                            192 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -145,11 +145,18 @@ is equipped.
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.
   Reading one as the other inflates derived values by ~80%.
-- **The `--content-digest` run prints three live checks** beside the hashes: the
-  façade lookups, the plot-sweeper equivalence, and `combat model`, which replays
-  the design's published anchors (five mitigation pairs, the warrior dodge line,
-  the levelDiff clamps, four XP-curve costs). They are printed rather than hashed
-  because a number that has drifted is worth seeing as a number.
+- **The `--content-digest` run prints four live checks** beside the hashes: the
+  façade lookups, the plot-sweeper equivalence, `combat model` (which replays the
+  design's published anchors — five mitigation pairs, the warrior dodge line, the
+  levelDiff clamps, four XP-curve costs), and the reference character rebuilt from
+  the item budget. They are printed rather than hashed because a number that has
+  drifted is worth seeing as a number.
+- **Phase 8 gave the tables a second reader.** `swift run roi-content simulate`
+  rolls the SAME `CombatMath` the bot calls over levels × archetypes × classes ×
+  profiles × gear offsets. Run it after touching `tuning/combat.json`,
+  `tuning/progression.json`, `tuning/budget.json` or the archetype table: the
+  digest says WHAT moved, the simulator says whether the move was survivable.
+  `--strict` exits 1 on a broken band.
 
 ## Adding content
 
@@ -159,6 +166,13 @@ It is a data edit. There is no Swift array to touch.
 2. Add locale keys to **both** `Localizations/en.json` and `uk.json`.
 3. `swift run roi-content validate --strict` → must exit 0.
 4. `swift run RestOfIryna --content-digest` → confirm only the intended change.
+5. If a balance table moved, `swift run -c release roi-content simulate --strict`.
+
+**Write JSON in the Swift `JSONEncoder` style** the files already use — two-space
+indent, `"key" : value` WITH the space before the colon, keys sorted, empty array
+as `[]`. A tool that re-emits them python-style reformats every line and buries
+the real change in a 900-line diff. (It cannot move the digest — that hashes
+values, not bytes — but it does move the bundle's content hash.)
 
 Locale keys are **derived** unless overridden: `item.<id>`, `<nameKey>.desc`,
 and an enemy's key is its own id. A tiered weapon resolves `.t<tier>` instead,

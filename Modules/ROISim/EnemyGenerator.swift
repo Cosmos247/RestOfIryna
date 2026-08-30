@@ -33,10 +33,6 @@ public struct GeneratedEnemy: Sendable {
     public let level: Int
     public let stats: CombatantStats
     public let xpReward: Int
-    /// What the archetype asked for, carried alongside so a report can print
-    /// measured-against-target without re-deriving the target.
-    public let targetRounds: Double
-    public let targetHPLossPercent: Double
 }
 
 public enum EnemyGenerator {
@@ -145,9 +141,7 @@ public enum EnemyGenerator {
             archetype: archetype.id, level: level,
             stats: CombatantStats(level: level, maxHP: hp, attack: attack, defense: defense,
                                   crit: crit, dodge: dodge, accuracy: 0),
-            xpReward: Swift.max(0, xp),
-            targetRounds: archetype.rounds,
-            targetHPLossPercent: archetype.hpLossPercent)
+            xpReward: Swift.max(0, xp))
     }
 
     private static func mean(_ values: [Double]) -> Double {

@@ -3176,3 +3176,57 @@ design document says when a player should run, and a tool only measures the
 fights you tell it to have. And the digest did not move: the flee formula was
 never fingerprinted, only `fleeChance` and `fleeVigorExtra` are. A hash proves
 what it covers and nothing more.
+
+### Documentation sweep + dead-code pass (same session, before the doc commit)
+
+A pass with no feature work: verify the two Phase 8 commits, sync every document,
+and remove what the phase orphaned.
+
+**The JSON reformat that nearly shipped.** Editing `content/data/*.json` from
+Python rewrote every line — the files are written by Swift's `JSONEncoder`
+(`"key" : value`, WITH the space before the colon), and `json.dumps` emits
+`"key": value`. The content diff was 905 lines for two dozen real changes.
+Fixed by writing a formatter that reproduces the Swift style and **proving it
+byte-identical against all six originals from HEAD** before re-emitting the
+modified data — the only surprise was that an empty array is `[]`, not the
+`[\n\n]` the pretty-printer uses for empty objects. Diff fell to 20 insertions /
+39 deletions. The digest did not move (it hashes values, not bytes); only the
+bundle's raw-byte content hash did, which is exactly the expected signature of a
+whitespace-only change. The rule is now written down in `content-pipeline.md`
+and `Prompt.md`.
+
+**Dead code the phase left.** Six things, split by whether the fix was to delete
+or to give them a reader:
+
+- *Given readers, because the reader was worth having:* `ROISim.version` now
+  stamps the report header beside the content hash — a report pasted into a
+  design doc six months later has to say which MODEL produced it, not just which
+  data; `ProgressionMath.totalXP` prints "19,437,688 XP from level 1 to 40",
+  which is the plan's own headline number stated by the tool that measures it;
+  `Distribution.p99` joins p90 on the worst-tail line, and immediately earned its
+  place — the mage's level-5 elite reads `p90 94%, p99 100%`, so the tail p90
+  calls survivable is a death one fight in a hundred.
+- *Deleted, because they duplicated something already exposed:*
+  `Distribution.min`/`.max`, `GeneratedEnemy.targetRounds`/`.targetHPLossPercent`
+  (the roster check carries its own copies straight off the archetype row),
+  `Finding.Severity.note` (never constructed), and
+  `ReferenceCharacter.level`/`.itemLevel`/`.maxVigor` — three stored properties
+  assigned in the initialiser and read by nobody.
+
+**Stale records found and fixed.** `.memory/file-map.md` still described
+`CombatService` as owning the maths and listed `defenderDEFFraction`, a knob
+deleted two sessions ago; `Item.swift`'s entry still claimed `EquipmentSlot`.
+`README.md` said the simulator "lands in Phase 8" and counted 185 tests.
+`content-pipeline.md` said three live checks (there are four) and described
+`ROISim` as SplitMix64 only. `INDEX.md` and `status.md` still said "3–7 done".
+
+**One real contradiction.** The original audit list — quoted in `TODO.md` and in
+the auto-memory — cited "monsters drop no silver" as a MISSING faucet. Phase 8C
+settled it the opposite way and deleted the mechanic, so the sentence had become
+an argument against the design. Annotated in both rather than deleted: the audit
+is history and worth reading, it just had to stop reading as intent.
+
+`Prompt.md` was reoriented to open at Phase 9 with the content gaps the simulator
+already named, so a fresh session starts at the work rather than at a recap. A
+new auto-memory records the closed direction: never propose monster coin drops
+again.

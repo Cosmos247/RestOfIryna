@@ -95,7 +95,11 @@ public enum BalanceFormatter {
         let onCurve = 0
         let behind = -ReferenceCharacter.ladderRung
 
-        out.append("ROI balance report — seed \(run.seed), \(run.runsPerCell) fights per cell")
+        // Provenance, both halves of it. A report gets pasted into a design doc
+        // and read months later, so it has to say which DATA it measured (the
+        // content summary carries the bundle hash) and which MODEL measured it.
+        out.append("ROI balance report — ROISim \(ROISim.version), seed \(run.seed), "
+                   + "\(run.runsPerCell) fights per cell")
         out.append(content.summaryLine)
         out.append("")
 
@@ -201,9 +205,12 @@ public enum BalanceFormatter {
             .filter { $0.profile == .basic && $0.gearOffset == onCurve && $0.archetype != "boss" }
             .max { $0.hpLossPercent.p90 < $1.hpLossPercent.p90 }
         if let worst {
-            out.append(String(format: "   worst non-boss tail: %@ L%d vs %@ — p90 %.0f%% HP, win %.1f%%",
+            // p99 beside p90 because that is the question p90 leaves open: a
+            // 94% tail is survivable, and whether the one-in-a-hundred fight
+            // behind it is a death is a different number entirely.
+            out.append(String(format: "   worst non-boss tail: %@ L%d vs %@ — p90 %.0f%% HP, p99 %.0f%%, win %.1f%%",
                               worst.characterClass, worst.level, worst.archetype,
-                              worst.hpLossPercent.p90, worst.winRate))
+                              worst.hpLossPercent.p90, worst.hpLossPercent.p99, worst.winRate))
         }
         out.append("")
 
@@ -364,6 +371,11 @@ public enum BalanceFormatter {
             out.append("   Nobody plays like that, so read the day count as a floor: the fastest")
             out.append("   possible run against level-matched `normal` mobs, with no travel, no")
             out.append("   crafting, no market and no sleep.")
+            out.append("")
+            let totalXP = ProgressionMath.totalXP(toReach: progression.maxLevel,
+                                                  curve: progression.xpCurve,
+                                                  maxLevel: progression.maxLevel)
+            out.append(String(format: "   %d XP from level 1 to %d.", totalXP, progression.maxLevel))
             out.append("")
             out.append("    class     vigor/kill  kills to 40  taps to 40   days at 100% of the budget")
             var daysByClass: [(String, Double)] = []

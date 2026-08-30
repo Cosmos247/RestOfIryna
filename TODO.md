@@ -470,6 +470,7 @@ the phased plan.
 **Why:** 868,585 XP to L21 against a 175-XP best mob (≈4,963 kills); `max(1, ATK − DEF)` is
 scale-free so a geared warrior takes 1 damage from the strongest mob while a fresh mage takes
 28 from a boar; enemies have no crit/dodge/accuracy (always `0/0/0`); monsters drop no silver
+(the audit read this as a missing faucet; Phase 8C settled it the other way — see below)
 and the tavern has exactly 0% house edge; all three `testMode` flags are `true`, so every time
 gate is 60× compressed.
 
