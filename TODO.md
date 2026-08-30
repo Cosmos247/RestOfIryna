@@ -683,7 +683,34 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         Verification: the digest's `combat model` check replays the design's published anchors on
         every run; 40 enemy values were independently re-derived from the shipped tables; total
         XP to the cap comes out at **19,437,688** against the plan's 19,437,688. 155 tests.
-- [ ] Phase 6 — Rarity + sets; enchant as % of item budget (never flat points)
+- [x] **Phase 6 — Rarity, sets and the item stat budget** *(2026-08-30)*
+      `budget(itemLevel, slot, rarity) = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget`, with
+      every stat an item carries being that budget SPENT at fixed exchange rates. One number now
+      bounds a piece, and because the combat denominators were derived from this same curve, an
+      item that respects its budget cannot move any stat's percentage however many items follow.
+      `rarities.json` (5 tiers, ×1.00→×1.45 budget against ×1→×16 value — decoupled, because tying
+      price to power makes *selling a legendary* the largest silver faucet in the game),
+      `sets.json` + a second pass in `recomputeBonuses`, `Item.itemLevel`/`rarity`/`setId`, and
+      **gear gains an HP stat** (sixth cached bonus + migration) without which the class armour
+      profiles cannot be expressed at all.
+      **Enchant is now a percentage of the item's own budget** — `1 + 4% × level`, capped at +20% —
+      replacing flat points plus a class-identity stat. No flat number works: +32 DEF is 267% of a
+      level-1 chest and 14% of a level-40 one.
+      **Regenerated the 7 shipped items and all 3 weapon ladders from the curve**, which dissolves
+      the documented T5 asymmetry: the three top weapons now spend ~100% of the same budget where
+      the warrior's had carried ~15% more for no stated reason. Ladder tiers map to item levels
+      1/10/20/30/40 — five rungs across forty levels, not five item levels.
+      **This is the phase that made balance checkable.** `--content-digest` now builds the design's
+      reference character from the budget and compares: **DEF and absorption reproduce the
+      published table exactly** for all three classes (225/136/99, 38.0%/27.0%/21.2%) and ATK
+      exactly for warrior and mage. The residual 4–10% HP gap is precisely the two empty accessory
+      slots — 1.0 of slot weight nobody has spent yet.
+      **New validator rules, each negative-tested**, including the budget overspend check (with an
+      absolute rounding slack, since rounding error is a fixed number of points and a percentage
+      tolerance would be far too tight at level 1), the rarity ceiling (which rejects the design
+      draft's own ×2.45 legendary at 2.94× a common), a set-bonus budget cap, and ladder item
+      levels that must ascend. A round-trip test caught `GearStatsDTO` silently dropping `hp` on
+      encode — the Phase 1 layer-0 lesson, one field later. 176 tests.
 - [ ] Phase 7 — `/reload` hot swap + `LiveReferenceCheck`
 - [ ] Phase 8 — `CombatantStats` refactor + simulator; lock every constant (verify p90, not mean)
 - [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**

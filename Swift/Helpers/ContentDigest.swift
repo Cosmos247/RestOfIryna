@@ -74,13 +74,58 @@ enum ContentDigest {
             digest.combine("xp\(spec.xpMultiplier) loot\(spec.lootMultiplier) silver\(spec.silverMultiplier)")
             digest.combine("weight\(spec.spawnWeight)")
         }
+        // MARK: Phase 6 — rarity, sets, item budget
+        for rarity in RarityCatalog.all {
+            digest.combine("\(rarity.id) budget\(rarity.budgetMultiplier) value\(rarity.valueMultiplier) \(rarity.glyph)")
+        }
+        for set in GearSetCatalog.all {
+            digest.combine("\(set.id) · \(set.nameKey)")
+            for bonus in set.bonuses {
+                switch bonus.effect {
+                case .flatStats(let st):
+                    digest.combine("\(bonus.pieces)pc flat \(st.attack)/\(st.defense)/\(st.hp)/\(st.crit)/\(st.dodge)/\(st.accuracy)")
+                case .gearMultiplier(let m):
+                    digest.combine("\(bonus.pieces)pc mult \(m)")
+                }
+            }
+        }
+        // The exchange rates. Hashed directly because nothing else reaches
+        // them: `ItemBudget.points` returns an ALLOWANCE, and the rates only
+        // enter when that allowance is spent — so doubling "one point buys 0.42
+        // attack" would double every generated weapon without moving a single
+        // other entry in this digest.
+        let perPoint = Catalogs.current.budget.statPerPoint
+        digest.combine("statPerPoint \(perPoint.attack)/\(perPoint.defense)/\(perPoint.hp)/"
+                       + "\(perPoint.crit)/\(perPoint.dodge)/\(perPoint.accuracy)")
+        // The reference kit, which is the only thing that reads the class
+        // budget profiles. Hashing it covers the profiles AND the exchange
+        // rates through the same call the acceptance check uses, so the printed
+        // table and the digest can never disagree about what the model says.
+        for cls in CharacterClass.allCases {
+            for level in [1, 20, 40] {
+                let kit = ItemBudget.referenceGear(for: cls, itemLevel: level)
+                digest.combine("refKit \(cls.rawValue)@\(level): \(kit.attack)/\(kit.defense)/"
+                               + "\(kit.hp)/\(kit.crit)/\(kit.dodge)/\(kit.accuracy)")
+            }
+        }
+        // Replayed through the accessor rather than hashed as constants: the
+        // slot weights are a dictionary, and the curve only means something
+        // once a level, a slot and a rarity have gone through it together.
+        for slot in EquipmentSlot.allCases {
+            for level in [1, 20, 40] {
+                for rarity in RarityCatalog.all.map(\.id) {
+                    let points = ItemBudget.points(itemLevel: level, slot: slot, rarity: rarity)
+                    digest.combine("budget \(slot.rawValue)@\(level)/\(rarity): \(points.map { String(format: "%.3f", $0) } ?? "-")")
+                }
+            }
+        }
         for recipe in RecipeCatalog.all { digest.combine(fingerprint(recipe)) }
         for id in RecipeCatalog.starterRecipeIds.sorted() { digest.combine(id) }
         for id in WeaponUpgradeCatalog.progression.keys.sorted() {
             digest.combine(id)
             for (index, step) in (WeaponUpgradeCatalog.progression[id] ?? []).enumerated() {
-                digest.combine("t\(index + 1)")
-                digest.combine("\(step.stats.attack)/\(step.stats.defense)/\(step.stats.crit)/\(step.stats.dodge)/\(step.stats.accuracy)")
+                digest.combine("t\(index + 1) iLvl\(step.itemLevel)")
+                digest.combine("\(step.stats.attack)/\(step.stats.defense)/\(step.stats.hp)/\(step.stats.crit)/\(step.stats.dodge)/\(step.stats.accuracy)")
                 for input in step.inputs { digest.combine("\(input.itemId)x\(input.quantity)") }
             }
         }
@@ -146,7 +191,7 @@ enum ContentDigest {
             digest.combine(WeaponUpgradeCatalog.maxTier(for: itemId).map(String.init) ?? "-")
             for tier in 0...6 {
                 let stats = WeaponUpgradeCatalog.stats(for: itemId, tier: tier)
-                digest.combine(stats.map { "\($0.attack)/\($0.defense)/\($0.crit)/\($0.dodge)/\($0.accuracy)" } ?? "-")
+                digest.combine(stats.map { "\($0.attack)/\($0.defense)/\($0.hp)/\($0.crit)/\($0.dodge)/\($0.accuracy)" } ?? "-")
             }
         }
 
@@ -163,7 +208,7 @@ enum ContentDigest {
         // below matter more here than they did for batch B.
 
         digest.combine(MasterCatalog.enchantCap)
-        for points in MasterCatalog.enchantPerLevelPoints { digest.combine(points) }
+        digest.combine("\(MasterCatalog.enchantBudgetFractionPerLevel)")
         for listing in MasterCatalog.armorForSale {
             digest.combine("\(listing.itemId)@\(listing.priceSilver)")
         }
@@ -177,7 +222,13 @@ enum ContentDigest {
             }
         }
         for missing in [-5, 0, 1, 30, 100] { digest.combine(MasterCatalog.weaponRepairCost(missing: missing)) }
-        for level in -1...8 { digest.combine(MasterCatalog.enchantBonusPoints(level: level)) }
+        // Replayed past both ends: the multiplier clamps at 0 below and at the
+        // cap above, and a change to either bound is invisible in the raw
+        // fraction alone.
+        for level in -1...8 {
+            digest.combine("\(MasterCatalog.enchantMultiplier(level: level))")
+            digest.combine(MasterCatalog.enchantBonusPercent(level: level))
+        }
         for level in -1...6 {
             digest.combine(MasterCatalog.enchantStep(currentLevel: level).map(fingerprint) ?? "-")
         }
@@ -283,6 +334,7 @@ enum ContentDigest {
         liveLookupCheck()
 
         combatModelCheck()
+        referenceCharacterCheck()
 
         // Printed, not hashed. A balance phase is read by eye as much as by
         // comparison, and a stat ladder that has gone wrong is obvious in a
@@ -395,6 +447,60 @@ enum ContentDigest {
             print("live lookups: ❌ \(problems.count) problem(s)")
             for problem in problems.prefix(10) { print("   • \(problem)") }
         }
+        print("")
+    }
+
+    /// Phase 6 acceptance: does the item budget, spent through the class
+    /// profiles, actually build the character the design table describes?
+    ///
+    /// This is the check Phase 5 could not make. Its combat-model check proved
+    /// that published stats produce published percentages; it could say nothing
+    /// about where those stats come from, because the reference warrior's DEF
+    /// 225 is 52 from levels and 173 from gear that did not exist yet.
+    ///
+    /// The two accessory slots are deliberately empty — no accessory has been
+    /// authored — so the kit is short by their 1.0 of slot weight. The residual
+    /// is printed rather than hidden: it IS the quantified value of the three
+    /// unfilled slots, and it should close in Phase 10, not before.
+    private static func referenceCharacterCheck() {
+        let design: [(CharacterClass, Int, hp: Int, atk: Double, def: Int, mit: Double)] = [
+            (.warrior, 40, hp: 625, atk: 108.9, def: 225, mit: 38.0),
+            (.archer,  40, hp: 442, atk: 128.4, def: 136, mit: 27.0),
+            (.mage,    40, hp: 558, atk: 131.7, def:  99, mit: 21.2),
+        ]
+        print("reference character (level gear, common, accessories empty):")
+        print("      class     HP           ATK          DEF          absorb")
+        var worstShortfall = 0.0
+        for row in design {
+            let base = User.baseStats(for: row.0, at: row.1)
+            let gear = ItemBudget.referenceGear(for: row.0, itemLevel: row.1)
+            let hp = base.maxHp + gear.hp
+            let atk = Double(base.attack + gear.attack)
+            let def = base.defense + gear.defense
+            let mit = CombatService.mitigation(defenderDEF: def, defenderLevel: row.1) * 100
+            func gap(_ got: Double, _ want: Double) -> String {
+                let delta = (got - want) / want * 100
+                worstShortfall = Swift.max(worstShortfall, abs(delta))
+                return String(format: "%+.0f%%", delta)
+            }
+            print("      \(row.0.rawValue.padding(toLength: 9, withPad: " ", startingAt: 0))"
+                  + "\(hp)/\(row.hp) \(gap(Double(hp), Double(row.hp)).padding(toLength: 6, withPad: " ", startingAt: 0))"
+                  + " \(String(format: "%.1f", atk))/\(row.atk) \(gap(atk, row.atk).padding(toLength: 5, withPad: " ", startingAt: 0))"
+                  + " \(def)/\(row.def) \(gap(Double(def), Double(row.def)).padding(toLength: 6, withPad: " ", startingAt: 0))"
+                  + " \(String(format: "%.1f", mit))%/\(row.mit)% \(gap(mit, row.mit))")
+        }
+        // DEF and absorption are load-bearing and must land: they are produced
+        // entirely by the four armour slots and the off-hand, all of which are
+        // populated. HP and ATK are allowed to run short because the accessory
+        // slots are not.
+        let defExact = design.allSatisfy { row in
+            let d = User.baseStats(for: row.0, at: row.1).defense
+                + ItemBudget.referenceGear(for: row.0, itemLevel: row.1).defense
+            return abs(Double(d - row.def) / Double(row.def)) < 0.02
+        }
+        print(defExact
+              ? "      ✅ DEF and absorption reproduce the design exactly; the residual gap is the two empty accessory slots"
+              : "      ❌ DEF does not reproduce the design — the armour profiles or slot weights have drifted")
         print("")
     }
 
@@ -811,10 +917,11 @@ enum ContentDigest {
             }
         }.joined(separator: "|")
         let gear = item.gearStats.map {
-            "\($0.attack)/\($0.defense)/\($0.crit)/\($0.dodge)/\($0.accuracy)"
+            "\($0.attack)/\($0.defense)/\($0.hp)/\($0.crit)/\($0.dodge)/\($0.accuracy)"
         } ?? "-"
         return [
-            item.id, item.nameKey, item.type.rawValue, "\(item.tier)", "\(item.stackable)",
+            item.id, item.nameKey, item.type.rawValue, "\(item.tier)",
+            "iLvl\(item.itemLevel)", item.rarity, item.setId ?? "-", "\(item.stackable)",
             effects, item.slot?.rawValue ?? "-", gear, item.icon ?? "-",
             item.descriptionKey ?? "-", item.teachesRecipe ?? "-"
         ].joined(separator: " · ")

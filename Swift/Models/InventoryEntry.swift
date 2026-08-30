@@ -52,8 +52,8 @@ final public class InventoryEntry: Model, @unchecked Sendable {
     public var maxDurability: Int
 
     /// Phase 6.5 — permanent armor enchant level (0…`MasterCatalog.enchantCap`).
-    /// Grants defense plus a class-identity bonus via `EquipmentService`, scaling
-    /// on the non-linear `MasterCatalog.enchantBonusPoints` curve. Bought at the
+    /// Scales every stat the piece carries by `1 + 4% × level` (Phase 6) —
+    /// a percentage of the item's own budget, never flat points. Bought at the
     /// Master for silver + materials. Weapons stay at 0 (gem inlay later).
     @Field(key: "enchant_level")
     public var enchantLevel: Int

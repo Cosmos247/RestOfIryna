@@ -36,6 +36,11 @@ public struct WeaponUpgradeInput: Sendable {
 public struct WeaponUpgradeStep: Sendable {
     /// Effective gear stats applied while the weapon is at this tier.
     public let stats: GearStats
+    /// Item level this rung is budgeted at. Carried into the domain rather than
+    /// left as validator-only input so the value is visible to anything that
+    /// prices or describes the weapon — and so the migration digest can see it
+    /// at all, which a DTO-only field cannot be.
+    public let itemLevel: Int
     /// Materials consumed from the combined inventory + warehouse pool to
     /// REACH this tier (i.e. the cost of upgrading from tier-1 to this tier).
     /// Empty for T1 — that's the starter weapon, granted by the King.

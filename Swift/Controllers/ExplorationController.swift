@@ -566,7 +566,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             : ""
         return """
         🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
-        ❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)
+        ❤️ \(user.hp)/\(user.effectiveMaxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)
         """
     }
 
@@ -887,7 +887,7 @@ extension ExplorationController {
                 parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
                     "amount":  "\(result.hpRestored)",
                     "current": "\(context.session.hp)",
-                    "max":     "\(context.session.maxHp)"
+                    "max":     "\(context.session.effectiveMaxHp)"
                 ]))
             }
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")

@@ -79,7 +79,7 @@ extension ItemEffectDTO {
 
 extension GearStatsDTO {
     var domain: GearStats {
-        GearStats(attack: attack, defense: defense, crit: crit, dodge: dodge, accuracy: accuracy)
+        GearStats(attack: attack, defense: defense, hp: hp, crit: crit, dodge: dodge, accuracy: accuracy)
     }
 }
 
@@ -100,6 +100,9 @@ extension ItemDTO {
             nameKey: nameKey,
             type: type,
             tier: tier,
+            itemLevel: itemLevel ?? 1,
+            rarity: rarity ?? "common",
+            setId: setId,
             stackable: stackable,
             effects: effects.map(\.domain),
             slot: equipSlot,
@@ -172,6 +175,10 @@ extension WeaponUpgradeStepDTO {
     var domain: WeaponUpgradeStep {
         WeaponUpgradeStep(
             stats: stats.domain,
+            // A rung with no stated item level falls back to its tier, which is
+            // only ever right for a hand-built fixture — the validator demands
+            // an ascending run on the shipped ladders.
+            itemLevel: itemLevel ?? tier,
             inputs: inputs.map { WeaponUpgradeInput($0.itemId, $0.quantity) }
         )
     }

@@ -177,7 +177,7 @@ public enum VigorService {
     @discardableResult
     public static func applyStarvationHPLoss(_ user: User) -> Int {
         guard isStarving(user) else { return 0 }
-        let loss = max(1, Int((Double(user.maxHp) * starvationHPDrainPercent).rounded()))
+        let loss = max(1, Int((Double(user.effectiveMaxHp) * starvationHPDrainPercent).rounded()))
         let before = user.hp
         user.hp = max(0, user.hp - loss)
         return before - user.hp
@@ -197,7 +197,7 @@ public enum VigorService {
             case .restoreVigor(let amount):
                 predictedVigor += min(amount, max(0, user.maxVigor - user.vigor))
             case .restoreHP(let amount):
-                predictedHP += min(amount, max(0, user.maxHp - user.hp))
+                predictedHP += min(amount, max(0, user.effectiveMaxHp - user.hp))
             }
         }
         guard predictedVigor > 0 || predictedHP > 0 else { return nil }
@@ -212,7 +212,7 @@ public enum VigorService {
                 vigorRestored += user.vigor - before
             case .restoreHP(let amount):
                 let before = user.hp
-                user.hp = min(user.maxHp, user.hp + amount)
+                user.hp = min(user.effectiveMaxHp, user.hp + amount)
                 hpRestored += user.hp - before
             }
         }
@@ -230,6 +230,13 @@ public enum VigorService {
 extension User {
     /// Attack after all active modifiers: base + equipped gear − starvation
     /// penalty + active fortune bonus (Phase 6.4, can be negative).
+    /// Max HP after equipped gear. Unlike the other five, this one is NOT
+    /// touched by the starvation penalty: hunger saps how hard you hit and how
+    /// well you guard, not how much blood you have.
+    public var effectiveMaxHp: Int {
+        Swift.max(1, maxHp + gearHpBonus)
+    }
+
     public var effectiveAttack: Int {
         let fortune = activeFortuneEffect?.attackBonus ?? 0
         return Self.applyVigorPenalty(base: attack + gearAttackBonus + fortune, user: self)

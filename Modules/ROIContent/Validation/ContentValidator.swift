@@ -36,6 +36,7 @@ public enum ContentValidator {
         issues += validateTime(bundle)
         issues += validateTuning(bundle)
         issues += validateBestiary(bundle)
+        issues += validateBudget(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -703,15 +704,20 @@ public enum ContentValidator {
 
             require(master.enchantCap >= 1, file: file, path: "enchantCap",
                     rule: "master.enchant_cap", "enchantCap must be >= 1, found \(master.enchantCap)")
-            // `enchantBonusPoints` does `prefix(min(level, points.count))`, so a
-            // short table silently stops granting points partway up the ladder
-            // while the UI keeps advertising the cap.
-            require(master.enchantPerLevelPoints.count >= master.enchantCap, file: file,
-                    path: "enchantPerLevelPoints", rule: "master.points_short",
-                    "enchantPerLevelPoints has \(master.enchantPerLevelPoints.count) entries but enchantCap is \(master.enchantCap) — the top levels would grant nothing")
-            for (index, points) in master.enchantPerLevelPoints.enumerated() where points < 0 {
-                issues.append(.init(severity: .error, file: file, path: "enchantPerLevelPoints[\(index)]", id: nil,
-                                    rule: "master.negative_points", message: "points must not be negative, found \(points)"))
+            require(master.enchantBudgetFractionPerLevel > 0, file: file,
+                    path: "enchantBudgetFractionPerLevel", rule: "master.enchant_no_effect",
+                    "an enchant adding 0% of the item's budget does nothing")
+            // The absorption cap is 70%. A fully enchanted legendary is designed
+            // to land at 49% — comfortably short, so the cap exists without ever
+            // becoming the binding constraint. Past ~35% total the second axis
+            // (rarity × enchant) starts outrunning forty levels of stat growth,
+            // which is the cliff the drafted 2.45x rarity multipliers fell off.
+            let totalEnchant = master.enchantBudgetFractionPerLevel * Double(master.enchantCap)
+            if totalEnchant > 0.35 {
+                issues.append(.init(severity: .warning, file: file,
+                                    path: "enchantBudgetFractionPerLevel", id: nil,
+                                    rule: "master.enchant_runaway",
+                                    message: "a full enchant multiplies the item by \(1 + totalEnchant)x — past 1.35x the enchant axis starts outrunning the whole level ladder"))
             }
 
             // `enchantStep` looks a level up by value, so a gap makes that level
@@ -983,6 +989,249 @@ public enum ContentValidator {
                 issues.append(.init(severity: .warning, file: "\(locale).json", path: key, id: nil,
                                     rule: "locale.emoji_before_placeholder",
                                     message: "a supplementary-plane emoji before %{…} breaks Lingo interpolation"))
+            }
+        }
+
+        return issues
+    }
+
+    // MARK: - Item stat budget (Phase 6)
+    //
+    // The rule that makes "add items forever" safe. Every equippable item's
+    // stats are a fixed budget SPENT at a fixed exchange rate, so one number
+    // bounds the piece — and because the combat denominators were derived from
+    // this same curve, an item that respects its budget cannot move any stat's
+    // PERCENTAGE, however many items get added later.
+    //
+    // Without it, power creep is invisible: each new piece looks reasonable
+    // beside the last one, and the drift only shows up as "why is everyone
+    // immune at level 30".
+    private static func validateBudget(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let budget = bundle.budget else { return [] }
+        var issues: [ContentIssue] = []
+        let knownSlots = ["helmet", "chest", "legs", "boots",
+                          "main_hand", "off_hand", "accessory_1", "accessory_2"]
+
+        func fail(_ file: String, _ path: String, _ rule: String,
+                  _ message: @autoclosure () -> String,
+                  _ severity: ContentIssue.Severity = .error, id: String? = nil) {
+            issues.append(.init(severity: severity, file: file, path: path, id: id,
+                                rule: rule, message: message()))
+        }
+
+        // MARK: the curve itself
+        if budget.base <= 0 {
+            fail("tuning/budget.json", "base", "budget.non_positive",
+                 "the budget intercept must be positive, found \(budget.base)")
+        }
+        if budget.perItemLevel <= 0 {
+            fail("tuning/budget.json", "perItemLevel", "budget.flat_curve",
+                 "at \(budget.perItemLevel) per item level a level-40 item is worth no more than a level-1 one")
+        }
+        let weights = Dictionary(budget.slotWeights.map { ($0.slot, $0.weight) },
+                                 uniquingKeysWith: { first, _ in first })
+        for slot in knownSlots where weights[slot] == nil {
+            fail("tuning/budget.json", "slotWeights", "budget.slot_missing",
+                 "no weight for equipment slot \"\(slot)\" — items in it would be unbounded")
+        }
+        for (index, row) in budget.slotWeights.enumerated() {
+            if !knownSlots.contains(row.slot) {
+                fail("tuning/budget.json", "slotWeights[\(index)]", "budget.slot_unknown",
+                     "unknown equipment slot \"\(row.slot)\"", id: row.slot)
+            }
+            if row.weight <= 0 {
+                fail("tuning/budget.json", "slotWeights[\(index)]", "budget.slot_weight",
+                     "slot weight must be positive, found \(row.weight)", id: row.slot)
+            }
+        }
+        let perPoint = budget.statPerPoint
+        for (name, rate) in [("attack", perPoint.attack), ("defense", perPoint.defense),
+                             ("hp", perPoint.hp), ("crit", perPoint.crit),
+                             ("dodge", perPoint.dodge), ("accuracy", perPoint.accuracy)]
+        where rate <= 0 {
+            fail("tuning/budget.json", "statPerPoint.\(name)", "budget.exchange_non_positive",
+                 "\(name) must buy something per point, found \(rate) — the spend check divides by it")
+        }
+
+        // MARK: the rarity ladder
+        let rarityFile = "rarities.json"
+        if bundle.rarities.isEmpty {
+            fail(rarityFile, "rarities", "rarity.empty", "at least one rarity must exist")
+        }
+        issues += duplicates(bundle.rarities.map(\.id), file: rarityFile, collection: "rarities")
+        if let first = bundle.rarities.first, first.budgetMultiplier != 1.0 {
+            fail(rarityFile, "rarities[0]", "rarity.baseline_not_one",
+                 "the lowest rarity is the baseline every other multiplies against, so it must be 1.0, found \(first.budgetMultiplier)",
+                 .error, id: first.id)
+        }
+        for (index, row) in bundle.rarities.enumerated() {
+            if row.glyph.isEmpty {
+                fail(rarityFile, "rarities[\(index)].glyph", "rarity.no_glyph",
+                     "rarity needs a glyph — the id is not player-facing", .error, id: row.id)
+            }
+            guard index > 0 else { continue }
+            let previous = bundle.rarities[index - 1]
+            if row.budgetMultiplier <= previous.budgetMultiplier {
+                fail(rarityFile, "rarities[\(index)]", "rarity.budget_not_ascending",
+                     "budget multipliers must strictly ascend — \(previous.id) is \(previous.budgetMultiplier), \(row.id) is \(row.budgetMultiplier)",
+                     .error, id: row.id)
+            }
+            if row.valueMultiplier <= previous.valueMultiplier {
+                fail(rarityFile, "rarities[\(index)]", "rarity.value_not_ascending",
+                     "value multipliers must strictly ascend", .error, id: row.id)
+            }
+        }
+        // The ceiling the whole model rests on: rarity times a full enchant must
+        // stay under 1.75x a common of the same level. Above that the second
+        // axis outgrows forty levels of the first, and — measured through the
+        // absorption curve — the 70% cap stops being unreachable and starts
+        // being the binding constraint, which is a cliff no design can stand on.
+        if let top = bundle.rarities.map(\.budgetMultiplier).max(), let master = bundle.master {
+            let full = top * (1 + master.enchantBudgetFractionPerLevel * Double(master.enchantCap))
+            if full > 1.75 {
+                fail(rarityFile, "rarities", "rarity.ceiling_exceeded",
+                     "top rarity \(top)x with a full enchant reaches \(full)x a common of the same level, past the 1.75x ceiling")
+            }
+        }
+
+        // MARK: every equippable item, and every rung of every ladder
+        let rarityBudget = Dictionary(bundle.rarities.map { ($0.id, $0.budgetMultiplier) },
+                                      uniquingKeysWith: { first, _ in first })
+
+        /// Points an item's stats cost, plus the most a half-up rounding of each
+        /// stat could have added. An absolute slack, not a percentage: rounding
+        /// error is a fixed number of points, so a percentage tolerance is far
+        /// too tight on a level-1 piece and far too loose on a level-40 one.
+        func spend(_ stats: GearStatsDTO) -> (points: Double, slack: Double) {
+            var points = 0.0, slack = 0.0
+            for (value, rate) in [(stats.attack, perPoint.attack), (stats.defense, perPoint.defense),
+                                  (stats.hp, perPoint.hp), (stats.crit, perPoint.crit),
+                                  (stats.dodge, perPoint.dodge), (stats.accuracy, perPoint.accuracy)]
+            where value != 0 && rate > 0 {
+                points += Double(value) / rate
+                slack += 0.5 / rate
+            }
+            return (points, slack)
+        }
+
+        func checkSpend(_ stats: GearStatsDTO, itemLevel: Int, slot: String, rarity: String,
+                        file: String, path: String, id: String) {
+            guard let weight = weights[slot] else { return }   // already reported
+            // An unknown rarity is reported by the caller that knows where the
+            // item came from; returning quietly here avoids naming the same
+            // item twice for one mistake.
+            guard let multiplier = rarityBudget[rarity] else { return }
+            let allowed = weight * (budget.base + budget.perItemLevel * Double(itemLevel)) * multiplier
+            let (points, slack) = spend(stats)
+            if points > allowed + slack {
+                fail(file, path, "budget.overspent",
+                     "spends \(String(format: "%.1f", points)) points against a budget of \(String(format: "%.1f", allowed)) for a \(rarity) \(slot) at item level \(itemLevel)",
+                     .error, id: id)
+            }
+        }
+
+        for (index, item) in bundle.items.enumerated() {
+            let rarity = item.rarity ?? "common"
+            if rarityBudget[rarity] == nil {
+                fail("items.json", "items[\(index)].rarity", "rarity.unknown",
+                     "unknown rarity \"\(rarity)\"", .error, id: item.id)
+            }
+            if let level = item.itemLevel, level < 1 {
+                fail("items.json", "items[\(index)].itemLevel", "budget.item_level",
+                     "item level must be at least 1, found \(level)", .error, id: item.id)
+            }
+            guard let slot = item.slot, let stats = item.gearStats else { continue }
+            checkSpend(stats, itemLevel: item.itemLevel ?? 1, slot: slot, rarity: rarity,
+                       file: "items.json", path: "items[\(index)]", id: item.id)
+        }
+
+        // A ladder rung is a whole item at that tier, not an increment, so each
+        // rung is measured against the budget for ITS item level.
+        for (ladderIndex, ladder) in bundle.weaponLadders.enumerated() {
+            let owner = bundle.items.first { $0.id == ladder.itemId }
+            let slot = owner?.slot ?? "main_hand"
+            let rarity = owner?.rarity ?? "common"
+            for (stepIndex, step) in ladder.tiers.enumerated() {
+                checkSpend(step.stats, itemLevel: step.itemLevel ?? step.tier, slot: slot,
+                           rarity: rarity, file: "weapon_upgrades.json",
+                           path: "ladders[\(ladderIndex)].tiers[\(stepIndex)]", id: ladder.itemId)
+            }
+            // Item level has to climb with the rung, or a later tier is a
+            // downgrade wearing a bigger number.
+            for pair in zip(ladder.tiers, ladder.tiers.dropFirst()) {
+                let previous = pair.0.itemLevel ?? pair.0.tier
+                let next = pair.1.itemLevel ?? pair.1.tier
+                if next <= previous {
+                    fail("weapon_upgrades.json", "ladders[\(ladderIndex)]",
+                         "budget.ladder_level_not_ascending",
+                         "item level must rise with tier — t\(pair.0.tier) is \(previous), t\(pair.1.tier) is \(next)",
+                         .error, id: ladder.itemId)
+                }
+            }
+        }
+
+        // MARK: equipment sets
+        let setFile = "sets.json"
+        issues += duplicates(bundle.gearSets.map(\.id), file: setFile, collection: "sets")
+        let setsById = Dictionary(bundle.gearSets.map { ($0.id, $0) },
+                                  uniquingKeysWith: { first, _ in first })
+        var membersPerSet: [String: [ItemDTO]] = [:]
+        for (index, item) in bundle.items.enumerated() {
+            guard let setId = item.setId else { continue }
+            if setsById[setId] == nil {
+                fail("items.json", "items[\(index)].setId", "set.unknown",
+                     "references unknown set \"\(setId)\"", .error, id: item.id)
+                continue
+            }
+            membersPerSet[setId, default: []].append(item)
+        }
+        for (index, set) in bundle.gearSets.enumerated() {
+            let path = "sets[\(index)]"
+            let members = membersPerSet[set.id] ?? []
+            if set.bonuses.isEmpty {
+                fail(setFile, "\(path).bonuses", "set.no_bonuses",
+                     "a set with no thresholds grants nothing and is indistinguishable from no set at all",
+                     .warning, id: set.id)
+            }
+            for (bonusIndex, bonus) in set.bonuses.enumerated() {
+                if bonus.pieces < 2 {
+                    fail(setFile, "\(path).bonuses[\(bonusIndex)]", "set.threshold_below_two",
+                         "a threshold of \(bonus.pieces) is not a set bonus — it applies to a single piece",
+                         .error, id: set.id)
+                }
+                if bonus.pieces > members.count {
+                    fail(setFile, "\(path).bonuses[\(bonusIndex)]", "set.threshold_unreachable",
+                         "needs \(bonus.pieces) pieces but only \(members.count) item(s) belong to the set",
+                         .error, id: set.id)
+                }
+                if case .gearMultiplier(let factor) = bonus.effect, factor <= 0 {
+                    fail(setFile, "\(path).bonuses[\(bonusIndex)]", "set.multiplier_non_positive",
+                         "a gear multiplier of \(factor) erases the wearer's equipment", .error, id: set.id)
+                }
+            }
+            for pair in zip(set.bonuses, set.bonuses.dropFirst()) where pair.1.pieces <= pair.0.pieces {
+                fail(setFile, "\(path).bonuses", "set.thresholds_not_ascending",
+                     "thresholds must ascend — \(pair.0.pieces) is followed by \(pair.1.pieces)",
+                     .error, id: set.id)
+            }
+            // A set bonus is EXTRA budget bought with slot freedom, so it is a
+            // third power axis beside item level and rarity and needs the same
+            // kind of ceiling. Capped against the members' own combined budget:
+            // unbounded, "wear the whole set" quietly becomes the only correct
+            // answer to every slot decision in the game.
+            let memberBudget = members.reduce(0.0) { total, item in
+                guard let slot = item.slot, let weight = weights[slot] else { return total }
+                let multiplier = rarityBudget[item.rarity ?? "common"] ?? 1.0
+                return total + weight * (budget.base + budget.perItemLevel * Double(item.itemLevel ?? 1)) * multiplier
+            }
+            let flatSpend = set.bonuses.reduce(0.0) { total, bonus in
+                guard case .flatStats(let stats) = bonus.effect else { return total }
+                return total + spend(stats).points
+            }
+            if memberBudget > 0, flatSpend > memberBudget * 0.25 {
+                fail(setFile, "\(path).bonuses", "set.bonus_over_budget",
+                     "grants \(String(format: "%.1f", flatSpend)) points against members worth \(String(format: "%.1f", memberBudget)) — past 25% the set bonus outweighs choosing the right pieces",
+                     .error, id: set.id)
             }
         }
 

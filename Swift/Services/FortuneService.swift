@@ -106,7 +106,7 @@ public enum FortuneService {
         }
 
         if effect.oneShotHpRestore {
-            user.hp = user.maxHp
+            user.hp = user.effectiveMaxHp
             applied.hpRestored = true
         }
 

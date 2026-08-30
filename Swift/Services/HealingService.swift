@@ -60,7 +60,7 @@ public enum HealingService {
 
         // Full HP — pin the clock to `now` to prevent banked regen piling
         // up against future damage.
-        if user.hp >= user.maxHp {
+        if user.hp >= user.effectiveMaxHp {
             user.lastHpTickAt = now
             try await user.saveAndCache(in: db)
             return 0
@@ -74,13 +74,13 @@ public enum HealingService {
         }
 
         let minutes = min(maxIdleMinutes, now.timeIntervalSince(last) / 60.0)
-        let restored = Int((Double(user.maxHp) * regenPerMinute * minutes).rounded(.down))
+        let restored = Int((Double(user.effectiveMaxHp) * regenPerMinute * minutes).rounded(.down))
 
         // Too few minutes to round up to 1 HP — keep the old timestamp so
         // partial elapsed time isn't lost.
         guard restored > 0 else { return 0 }
 
-        user.hp = min(user.maxHp, user.hp + restored)
+        user.hp = min(user.effectiveMaxHp, user.hp + restored)
         user.lastHpTickAt = now
         try await user.saveAndCache(in: db)
         return restored

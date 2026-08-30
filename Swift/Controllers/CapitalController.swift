@@ -780,21 +780,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
-    /// Localized phrase for the *actual* enchant bonus a piece grants at `level`,
-    /// with the real numbers from the non-linear point curve. Warrior gets double
-    /// DEF (flat + class), archer/mage get flat DEF plus their signature stat.
-    /// Mirror of the switch in `EquipmentService.recomputeBonuses`.
+    /// Localized phrase for what an enchant of `level` actually grants.
+    ///
+    /// One phrase for every class now: since Phase 6 an enchant scales the
+    /// piece's OWN stats by a percentage instead of adding flat points plus a
+    /// class-identity stat, so there is no longer anything class-specific to
+    /// say. The three per-class keys are retired.
     private static func enchantBonusPhrase(for user: User, level: Int, lingo: Lingo) -> String {
-        let locale = user.locale
-        let points = MasterCatalog.enchantBonusPoints(level: level)
-        switch CharacterClass(rawValue: user.characterClass ?? "") {
-        case .archer:
-            return lingo.localize("capital.master.enchant.bonus.archer", locale: locale, interpolations: ["def": "\(points)", "extra": "\(points)"])
-        case .mage:
-            return lingo.localize("capital.master.enchant.bonus.mage", locale: locale, interpolations: ["def": "\(points)", "extra": "\(points)"])
-        case .warrior, nil:
-            return lingo.localize("capital.master.enchant.bonus.warrior", locale: locale, interpolations: ["def": "\(points * 2)"])
-        }
+        lingo.localize("capital.master.enchant.bonus", locale: user.locale,
+                       interpolations: ["percent": "\(MasterCatalog.enchantBonusPercent(level: level))"])
     }
 
     private func editToMasterEnchant(messageId: Int, isPhoto: Bool, context: Context) async throws {

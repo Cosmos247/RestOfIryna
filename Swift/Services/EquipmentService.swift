@@ -83,25 +83,74 @@ public enum EquipmentService {
             .filter(\.$user.$id, .equal, userId)
             .all()
 
-        var atk = 0, def = 0, crit = 0, dodge = 0, acc = 0
+        var atk = 0, def = 0, hp = 0, crit = 0, dodge = 0, acc = 0
         for row in rows where row.equippedSlot != nil {
             let s = contributedStats(of: row, for: user)
-            atk += s.attack; def += s.defense; crit += s.crit; dodge += s.dodge; acc += s.accuracy
+            atk += s.attack; def += s.defense; hp += s.hp
+            crit += s.crit; dodge += s.dodge; acc += s.accuracy
         }
+        // MARK: Second pass — set bonuses (Phase 6)
+        //
+        // A separate pass because a set bonus is a property of the OUTFIT, not
+        // of any one piece: it cannot be known until every equipped row has been
+        // counted. Flat bonuses land first and multipliers second, so two sets
+        // can never end up multiplying each other's flats in whatever order the
+        // rows happened to come back from the database.
+        var wornPerSet: [String: Int] = [:]
+        for row in rows where row.equippedSlot != nil {
+            guard let setId = ItemCatalog.find(row.itemId)?.setId else { continue }
+            wornPerSet[setId, default: 0] += 1
+        }
+        var multiplier = 1.0
+        // Sorted: a dictionary iterates in seeded-hash order, and two sets each
+        // granting a multiplier would otherwise compose in a different order
+        // between processes.
+        for setId in wornPerSet.keys.sorted() {
+            guard let worn = wornPerSet[setId], let set = GearSetCatalog.find(setId) else { continue }
+            for bonus in set.bonuses where bonus.pieces <= worn {
+                switch bonus.effect {
+                case .flatStats(let stats):
+                    atk += stats.attack; def += stats.defense; hp += stats.hp
+                    crit += stats.crit; dodge += stats.dodge; acc += stats.accuracy
+                case .gearMultiplier(let factor):
+                    multiplier *= factor
+                }
+            }
+        }
+        if multiplier != 1.0 {
+            func scale(_ value: Int) -> Int { Int((Double(value) * multiplier).rounded()) }
+            atk = scale(atk); def = scale(def); hp = scale(hp)
+            crit = scale(crit); dodge = scale(dodge); acc = scale(acc)
+        }
+
+        user.gearHpBonus       = hp
         user.gearAttackBonus   = atk
         user.gearDefenseBonus  = def
         user.gearCritBonus     = crit
         user.gearDodgeBonus    = dodge
         user.gearAccuracyBonus = acc
+
+        // Taking off an HP piece lowers the ceiling, so current HP has to come
+        // down with it — otherwise the bar reads 140/120 and every "is the
+        // player full?" check answers wrong forever after.
+        user.hp = Swift.min(user.hp, user.effectiveMaxHp)
     }
 
-    /// Full-condition stats of a gear row: its tier/base `GearStats` plus the
-    /// armor enchant bonus — a flat +DEF scaled by the non-linear
-    /// `MasterCatalog.enchantBonusPoints` curve, PLUS a class-identity stat
-    /// (⚔️ warrior +DEF, 🏹 archer +dodge, 🔮 mage +crit). No durability penalty
-    /// applied — this is what the piece grants at full condition (used by the
-    /// inventory detail card). Tiered weapons read the per-tier table; T1 equals
-    /// the legacy `Item.gearStats`. Returns zeroes for non-gear / unknown items.
+    /// Full-condition stats of a gear row: its tier/base `GearStats` scaled by
+    /// the enchant multiplier. No durability penalty applied — this is what the
+    /// piece grants at full condition (used by the inventory detail card).
+    /// Tiered weapons read the per-tier table; T1 equals `Item.gearStats`.
+    /// Returns zeroes for non-gear / unknown items.
+    ///
+    /// Phase 6 changed what an enchant IS. It used to add flat points to DEF
+    /// plus a class-identity stat; it now scales the item's OWN stats by
+    /// `1 + 4% × level`. A flat bonus has no workable size — the same +32 DEF
+    /// is 267% of a level-1 chest and 14% of a level-40 one — and scaling the
+    /// item keeps its profile intact instead of bending every piece toward the
+    /// wearer's class.
+    ///
+    /// The class-identity flavour moves to sets, where it can be expressed
+    /// without distorting the budget of the piece it sits on.
     public static func nominalStats(of row: InventoryEntry, for user: User) -> GearStats {
         guard let item = ItemCatalog.find(row.itemId) else { return GearStats() }
         let base: GearStats
@@ -112,17 +161,8 @@ public enum EquipmentService {
         } else {
             return GearStats()
         }
-        let isArmor = item.slot.map { GearConditionService.armorSlots.contains($0.rawValue) } == true
-        let points = MasterCatalog.enchantBonusPoints(level: row.enchantLevel)
-        guard isArmor, points > 0 else { return base }
-        var def = base.defense + points, crit = base.crit, dodge = base.dodge
-        switch CharacterClass(rawValue: user.characterClass ?? "") {
-        case .warrior: def   += points
-        case .archer:  dodge += points
-        case .mage:    crit  += points
-        case nil:      break
-        }
-        return GearStats(attack: base.attack, defense: def, crit: crit, dodge: dodge, accuracy: base.accuracy)
+        guard row.enchantLevel > 0 else { return base }
+        return base.scaled(by: MasterCatalog.enchantMultiplier(level: row.enchantLevel))
     }
 
     /// What a row actually contributes right now, after durability:
@@ -137,6 +177,6 @@ public enum EquipmentService {
         if isArmor && row.durability <= 0 { return GearStats() }
         let n = nominalStats(of: row, for: user)
         guard isWeapon && row.durability <= 0 else { return n }
-        return GearStats(attack: n.attack / 2, defense: n.defense / 2, crit: n.crit / 2, dodge: n.dodge / 2, accuracy: n.accuracy / 2)
+        return n.scaled(by: 0.5)
     }
 }

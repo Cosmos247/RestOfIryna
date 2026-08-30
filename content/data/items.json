@@ -9,6 +9,7 @@
       ],
       "icon" : "🫐",
       "id" : "food.forest_berries",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -22,6 +23,7 @@
       ],
       "icon" : "🌰",
       "id" : "food.forest_nuts",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -29,6 +31,7 @@
     {
       "icon" : "🥔",
       "id" : "food.potato",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -42,6 +45,7 @@
       ],
       "icon" : "🥚",
       "id" : "food.duck_egg",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -49,6 +53,7 @@
     {
       "icon" : "🥩",
       "id" : "food.raw_meat",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "food"
@@ -62,6 +67,7 @@
       ],
       "icon" : "🍠",
       "id" : "food.baked_potato",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -75,6 +81,7 @@
       ],
       "icon" : "🍗",
       "id" : "food.roasted_meat",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "food"
@@ -92,6 +99,7 @@
       ],
       "icon" : "🍳",
       "id" : "food.foragers_omelette",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "food"
@@ -109,6 +117,7 @@
       ],
       "icon" : "🍲",
       "id" : "food.hunters_stew",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "food"
@@ -126,6 +135,7 @@
       ],
       "icon" : "🥘",
       "id" : "food.meat_ragout",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "food"
@@ -143,6 +153,7 @@
       ],
       "icon" : "🥧",
       "id" : "food.berry_tart",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "food"
@@ -160,6 +171,7 @@
       ],
       "icon" : "🍽",
       "id" : "food.governors_feast",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 3,
       "type" : "food"
@@ -167,6 +179,7 @@
     {
       "icon" : "🪵",
       "id" : "mat.pine_lumber",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "material"
@@ -174,6 +187,7 @@
     {
       "icon" : "🪨",
       "id" : "mat.river_pebble",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "material"
@@ -181,6 +195,7 @@
     {
       "icon" : "🧱",
       "id" : "mat.clay",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "material"
@@ -188,6 +203,7 @@
     {
       "icon" : "🔩",
       "id" : "mat.iron",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "material"
@@ -195,6 +211,7 @@
     {
       "icon" : "🔳",
       "id" : "mat.iron_ingot",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 3,
       "type" : "material"
@@ -202,6 +219,7 @@
     {
       "icon" : "🟫",
       "id" : "mat.hide",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "material"
@@ -215,6 +233,7 @@
         }
       ],
       "id" : "potion.heal_small",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 1,
       "type" : "potion"
@@ -228,16 +247,36 @@
         }
       ],
       "id" : "potion.heal_medium",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 2,
       "type" : "potion"
     },
     {
       "gearStats" : {
-        "attack" : 3
+        "accuracy" : 3,
+        "attack" : 7,
+        "crit" : 3
       },
       "icon" : "⚔️",
       "id" : "gear.rusty_sword",
+      "itemLevel" : 1,
+      "rarity" : "common",
+      "slot" : "main_hand",
+      "stackable" : false,
+      "tier" : 1,
+      "type" : "gear"
+    },
+    {
+      "gearStats" : {
+        "accuracy" : 3,
+        "attack" : 6,
+        "crit" : 3
+      },
+      "icon" : "🏹",
+      "id" : "gear.simple_bow",
+      "itemLevel" : 1,
+      "rarity" : "common",
       "slot" : "main_hand",
       "stackable" : false,
       "tier" : 1,
@@ -246,22 +285,13 @@
     {
       "gearStats" : {
         "accuracy" : 1,
-        "attack" : 2
-      },
-      "icon" : "🏹",
-      "id" : "gear.simple_bow",
-      "slot" : "main_hand",
-      "stackable" : false,
-      "tier" : 1,
-      "type" : "gear"
-    },
-    {
-      "gearStats" : {
-        "attack" : 2,
-        "crit" : 1
+        "attack" : 7,
+        "crit" : 5
       },
       "icon" : "🪄",
       "id" : "gear.wooden_staff",
+      "itemLevel" : 1,
+      "rarity" : "common",
       "slot" : "main_hand",
       "stackable" : false,
       "tier" : 1,
@@ -269,10 +299,16 @@
     },
     {
       "gearStats" : {
-        "defense" : 1
+        "crit" : 1,
+        "defense" : 3,
+        "dodge" : 1,
+        "hp" : 4
       },
       "icon" : "🪖",
       "id" : "gear.forester_hood",
+      "itemLevel" : 1,
+      "rarity" : "common",
+      "setId" : "set.forester",
       "slot" : "helmet",
       "stackable" : false,
       "tier" : 1,
@@ -280,10 +316,16 @@
     },
     {
       "gearStats" : {
-        "defense" : 3
+        "crit" : 1,
+        "defense" : 4,
+        "dodge" : 1,
+        "hp" : 6
       },
       "icon" : "🦺",
       "id" : "gear.forester_jerkin",
+      "itemLevel" : 1,
+      "rarity" : "common",
+      "setId" : "set.forester",
       "slot" : "chest",
       "stackable" : false,
       "tier" : 1,
@@ -291,10 +333,16 @@
     },
     {
       "gearStats" : {
-        "defense" : 2
+        "crit" : 1,
+        "defense" : 3,
+        "dodge" : 1,
+        "hp" : 5
       },
       "icon" : "👖",
       "id" : "gear.forester_breeches",
+      "itemLevel" : 1,
+      "rarity" : "common",
+      "setId" : "set.forester",
       "slot" : "legs",
       "stackable" : false,
       "tier" : 1,
@@ -302,11 +350,15 @@
     },
     {
       "gearStats" : {
-        "defense" : 1,
-        "dodge" : 1
+        "crit" : 1,
+        "defense" : 2,
+        "hp" : 3
       },
       "icon" : "🥾",
       "id" : "gear.forester_boots",
+      "itemLevel" : 1,
+      "rarity" : "common",
+      "setId" : "set.forester",
       "slot" : "boots",
       "stackable" : false,
       "tier" : 1,
@@ -315,6 +367,7 @@
     {
       "descriptionKey" : null,
       "id" : "artifact.shrine_coin",
+      "rarity" : "common",
       "stackable" : true,
       "tier" : 3,
       "type" : "artifact"
@@ -322,6 +375,7 @@
     {
       "icon" : "📜",
       "id" : "artifact.recipe.foragers_omelette",
+      "rarity" : "common",
       "stackable" : false,
       "teachesRecipe" : "recipe.foragers_omelette",
       "tier" : 2,
@@ -330,6 +384,7 @@
     {
       "icon" : "📜",
       "id" : "artifact.recipe.hunters_stew",
+      "rarity" : "common",
       "stackable" : false,
       "teachesRecipe" : "recipe.hunters_stew",
       "tier" : 2,
@@ -338,6 +393,7 @@
     {
       "icon" : "📜",
       "id" : "artifact.recipe.meat_ragout",
+      "rarity" : "common",
       "stackable" : false,
       "teachesRecipe" : "recipe.meat_ragout",
       "tier" : 2,
@@ -346,6 +402,7 @@
     {
       "icon" : "📜",
       "id" : "artifact.recipe.berry_tart",
+      "rarity" : "common",
       "stackable" : false,
       "teachesRecipe" : "recipe.berry_tart",
       "tier" : 2,
@@ -354,6 +411,7 @@
     {
       "icon" : "📜",
       "id" : "artifact.recipe.governors_feast",
+      "rarity" : "common",
       "stackable" : false,
       "teachesRecipe" : "recipe.governors_feast",
       "tier" : 3,

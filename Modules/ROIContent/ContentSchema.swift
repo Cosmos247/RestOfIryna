@@ -35,5 +35,8 @@ public enum ContentSchema {
     /// new formula and produce silently wrong fights.
     /// v6 (Phase 5D): `exploration.json` gains a required `passive` block and
     /// `combat.json` the rebuilt technique effects.
-    public static let current: Int = 6
+    /// v7 (Phase 6): gear stats gain `hp`, items gain `itemLevel` / `rarity` /
+    /// `setId`, and `master.enchantPerLevelPoints` becomes a budget FRACTION.
+    /// A v6 bundle's flat point table would decode as nothing at all.
+    public static let current: Int = 7
 }

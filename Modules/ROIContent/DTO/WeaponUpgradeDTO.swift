@@ -27,22 +27,31 @@ public typealias WeaponUpgradeInputDTO = MaterialCostDTO
 
 public struct WeaponUpgradeStepDTO: Codable, Sendable, Equatable {
     public let tier: Int
+    /// Item level for the stat budget at this rung. Spread across the whole
+    /// level range rather than tracking `tier`: five tiers cover forty levels,
+    /// so treating the tier number as the item level would squeeze the entire
+    /// weapon ladder into the first eight levels of the budget curve.
+    /// Absent means "same as the tier", which is only right for a fixture.
+    public let itemLevel: Int?
     public let stats: GearStatsDTO
     /// Materials consumed to REACH this tier. Empty for T1 — the starter
     /// weapon is granted at registration.
     public let inputs: [WeaponUpgradeInputDTO]
 
-    public init(tier: Int, stats: GearStatsDTO, inputs: [WeaponUpgradeInputDTO] = []) {
+    public init(tier: Int, itemLevel: Int? = nil, stats: GearStatsDTO,
+                inputs: [WeaponUpgradeInputDTO] = []) {
         self.tier = tier
+        self.itemLevel = itemLevel
         self.stats = stats
         self.inputs = inputs
     }
 
-    private enum CodingKeys: String, CodingKey { case tier, stats, inputs }
+    private enum CodingKeys: String, CodingKey { case tier, itemLevel, stats, inputs }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        tier   = try c.decode(Int.self, forKey: .tier)
+        tier      = try c.decode(Int.self, forKey: .tier)
+        itemLevel = try c.decodeIfPresent(Int.self, forKey: .itemLevel)
         stats  = try c.decode(GearStatsDTO.self, forKey: .stats)
         inputs = try c.decodeIfPresent([WeaponUpgradeInputDTO].self, forKey: .inputs) ?? []
     }

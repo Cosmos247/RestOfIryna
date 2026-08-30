@@ -1,0 +1,34 @@
+{
+  "rarities" : [
+    {
+      "budgetMultiplier" : 1.0,
+      "glyph" : "⚪",
+      "id" : "common",
+      "valueMultiplier" : 1
+    },
+    {
+      "budgetMultiplier" : 1.08,
+      "glyph" : "🟢",
+      "id" : "uncommon",
+      "valueMultiplier" : 2
+    },
+    {
+      "budgetMultiplier" : 1.18,
+      "glyph" : "🔵",
+      "id" : "rare",
+      "valueMultiplier" : 4
+    },
+    {
+      "budgetMultiplier" : 1.3,
+      "glyph" : "🟣",
+      "id" : "epic",
+      "valueMultiplier" : 8
+    },
+    {
+      "budgetMultiplier" : 1.45,
+      "glyph" : "🟠",
+      "id" : "legendary",
+      "valueMultiplier" : 16
+    }
+  ]
+}

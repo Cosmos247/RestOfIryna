@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
 Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            155 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            176 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -101,6 +101,31 @@ rules of their own:
   sweeps", and deriving it makes that hold by construction. It is deliberately
   not a function of `scale` — it is a DB polling cadence, and scaling it would
   make database load a function of game balance.
+
+## Item stat budget (Phase 6)
+
+`budget(itemLevel, slot, rarity) = slotWeight · (base + perItemLevel · itemLevel) · rarityBudget`,
+in `tuning/budget.json`. Every stat an item carries is that budget SPENT at the
+exchange rates in the same file, so one number bounds a piece. The combat
+denominators were derived from this curve, which is what makes adding items
+forever safe: respect the budget and no stat's PERCENTAGE can drift.
+
+- **The overspend rule carries an ABSOLUTE rounding slack**, not a percentage.
+  Rounding a stat can only add half a point of it, so the error is a fixed
+  number of points — a percentage tolerance would be far too tight on a level-1
+  piece and far too loose on a level-40 one.
+- **`itemLevel` is not `tier`.** Tier is a crafting-ladder position (1–5); item
+  level is the budget input (1–40). The weapon ladder maps tiers to levels
+  1/10/20/30/40, because five rungs cover forty levels.
+- **Rarity decouples budget from value** (×1.45 against ×16 at the top). Tying
+  them makes selling a legendary the largest silver faucet in the game.
+- **Enchant is a percentage of the item's own budget**, never flat points: the
+  same +32 DEF is 267% of a level-1 chest and 14% of a level-40 one.
+- **Set bonuses are capped against their members' combined budget**, because a
+  set bonus is a third power axis bought with slot freedom.
+- **The reference-character check** in `--content-digest` rebuilds the design's
+  published character from the budget. DEF and absorption land exactly; the
+  residual HP gap is the two unspent accessory slots, printed rather than hidden.
 
 ## Bestiary and combat model (Phase 5)
 

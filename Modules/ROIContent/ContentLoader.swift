@@ -38,6 +38,9 @@ public enum ContentLoader {
     private static let plotsFile    = "plots.json"
     private static let fortuneFile  = "fortune.json"
     private static let questsFile   = "quests.json"
+    private static let raritiesFile = "rarities.json"
+    private static let setsFile     = "sets.json"
+    private static let budgetFile   = "tuning/budget.json"
     // The six balance tables live in a `tuning/` subdirectory: they are read by
     // whoever is tuning the game, not by whoever is adding content, and mixing
     // them into the same listing as `items.json` buries that distinction.
@@ -102,6 +105,15 @@ public enum ContentLoader {
         let questsData = try read(questsFile, in: root, into: &hashState)
         let questsFileDTO: QuestFileDTO = try decode(questsData, as: QuestFileDTO.self, file: questsFile)
 
+        let raritiesData = try read(raritiesFile, in: root, into: &hashState)
+        let rarityFile: RarityFileDTO = try decode(raritiesData, as: RarityFileDTO.self, file: raritiesFile)
+
+        let setsData = try read(setsFile, in: root, into: &hashState)
+        let setFile: SetFileDTO = try decode(setsData, as: SetFileDTO.self, file: setsFile)
+
+        let budgetData = try read(budgetFile, in: root, into: &hashState)
+        let budgetTuning: BudgetTuningDTO = try decode(budgetData, as: BudgetTuningDTO.self, file: budgetFile)
+
         let combatTuningData = try read(combatTuningFile, in: root, into: &hashState)
         let combatTuning: CombatTuningDTO = try decode(combatTuningData, as: CombatTuningDTO.self, file: combatTuningFile)
 
@@ -126,6 +138,9 @@ public enum ContentLoader {
             enemies: enemyFile.enemies,
             enemyArchetypes: enemyFile.archetypes,
             recipes: recipeFile.recipes,
+            rarities: rarityFile.rarities,
+            gearSets: setFile.sets,
+            budget: budgetTuning,
             starterRecipeIds: recipeFile.starterRecipeIds,
             weaponLadders: weaponFile.ladders,
             weaponDurabilityByTier: weaponFile.durabilityByTier,

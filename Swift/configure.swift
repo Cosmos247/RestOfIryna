@@ -226,6 +226,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateQuestProgress())
     migrations.add(AddVigorTick())
     migrations.add(AddCombatBurn())
+    migrations.add(AddGearHpBonus())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()

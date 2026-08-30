@@ -49,7 +49,7 @@ public enum ArenaService {
             dodge: user.effectiveDodge,
             acc: user.effectiveAccuracy,
             level: user.level,
-            maxHp: user.maxHp,
+            maxHp: user.effectiveMaxHp,
             hp: max(1, user.hp),
             stake: stake,
             honor: honor
@@ -142,8 +142,8 @@ public enum ArenaService {
         winnerU.silver += payout
 
         // HP carry-over (non-lethal — floored at 1, no death penalty).
-        winnerU.hp = max(1, min(winnerC.hp, winnerU.maxHp))
-        loserU.hp  = max(1, min(loserC.hp, loserU.maxHp))
+        winnerU.hp = max(1, min(winnerC.hp, winnerU.effectiveMaxHp))
+        loserU.hp  = max(1, min(loserC.hp, loserU.effectiveMaxHp))
 
         try await winnerU.saveAndCache(in: db)
         try await loserU.saveAndCache(in: db)
@@ -164,8 +164,8 @@ public enum ArenaService {
             stake: stake, payout: payout, tithe: tithe,
             winnerHonorBefore: winnerC.honor, winnerHonorAfter: wNew,
             loserHonorBefore: loserC.honor, loserHonorAfter: lNew,
-            winnerHp: winnerU.hp, winnerMaxHp: winnerU.maxHp,
-            loserHp: loserU.hp, loserMaxHp: loserU.maxHp,
+            winnerHp: winnerU.hp, winnerMaxHp: winnerU.effectiveMaxHp,
+            loserHp: loserU.hp, loserMaxHp: loserU.effectiveMaxHp,
             reason: ended.reason
         )
     }

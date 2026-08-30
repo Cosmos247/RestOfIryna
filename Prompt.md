@@ -35,51 +35,52 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3, 4 and 5 are complete.** Catalogs and tuning both live in
-`content/data/`, and the game's mathematics has been rebuilt.
+**Phases 3–6 are complete.** Content, tuning, the combat model and the item
+budget all live in `content/data/`.
 
 ```
 content/data/         manifest · items · enemies (+ archetypes) · recipes ·
-                      weapon_upgrades · bags · estate_upgrades · trader · tavern ·
-                      market · guild · arena · master · plots · fortune · quests
-content/data/tuning/  combat · vigor · exploration · progression · economy · time
+                      rarities · sets · weapon_upgrades · bags · estate_upgrades ·
+                      trader · tavern · market · guild · arena · master · plots ·
+                      fortune · quests
+content/data/tuning/  combat · vigor · exploration · progression · economy ·
+                      time · budget
 ```
 
-What Phase 5 changed, in one line each: damage is **absorbed** (`ATK · (1 −
-DEF/(DEF+K(L)))`) rather than subtracted · crit/dodge/accuracy are **ratings**
-through curves whose denominators grow with level · **`levelDiff`** scales damage
-by the level gap · stats grow **proportionally every level**, cap 40 · Vigor has
-a **pool that grows and regenerates** · enemies carry level / archetype /
-crit / dodge / accuracy / silver / spawn weight and are **generated at design
-time** · the three special attacks were rebuilt off "ignore armour" onto armour
-break, guaranteed crit and burn · monsters **drop silver**.
+Phase 6 added the piece that makes balance CHECKABLE:
 
-**Next — Phase 6: rarity and sets.** `rarities.json`, `sets.json`,
-`Item.rarity` / `Item.setId`, enchant as a **percentage of the item's own
-budget** (never flat points — a flat +32 is 267% of base DEF at level 1 and 14%
-at 40), a second pass in `recomputeBonuses`, and budget rules in the validator.
+```
+budget(itemLevel, slot, rarity) = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget
+```
 
-**This is also the phase that makes the balance checkable.** Phase 5 could only
-prove the formulas: the design's reference character carries gear from a budget
-curve that does not exist yet, which is why its level-40 warrior shows DEF 225
-where the bare stat line gives 52.
+Every stat an item carries is that budget spent at fixed exchange rates, so one
+number bounds a piece — and since the combat denominators were derived from the
+same curve, an item that respects its budget cannot move any stat's percentage.
+Rarity multiplies budget ×1.00→×1.45 while value goes ×1→×16 (decoupled on
+purpose). Enchant is `1 + 4% × level` of the item's OWN budget, capped at +20%.
+Sets grant thresholds at 2/4/6 pieces through a second pass in
+`recomputeBonuses`. Gear now carries HP as a sixth stat.
 
-**Current digest baseline: `84b3316f44bd18c7`**
-(`records 70d6d2396af6f198` · `tuning 88db2a129b96a432` ·
+**Next — Phase 7: `/reload` hot swap + `LiveReferenceCheck`.** Deliberately
+after the full data move, so there is something worth reloading.
+
+**Current digest baseline: `f3b145f824ec150c`**
+(`records efd31486552c644b` · `tuning 88db2a129b96a432` ·
 `spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`).
 
-From Phase 5 on the digest is a change DETECTOR, not an equality check — the
-question is no longer "did it stay the same" but "did exactly the intended thing
-move". `--content-digest` also prints three live checks (façade lookups, the plot
-sweeper's two-point equivalence, and the combat model against the design anchors)
-plus the stat ladder and spawn distribution.
+`--content-digest` prints four live checks beside the hashes: façade lookups,
+the plot sweeper's two-point equivalence, the combat model against the design
+anchors, and the **reference character** rebuilt from the budget — where DEF and
+absorption reproduce the published table exactly and the residual 4–10% HP gap
+is precisely the two empty accessory slots.
 
 ⚠️ **No live Telegram pass has been run since the rebalance began.** Every
-formula the player touches changed in Phase 5.
+formula the player touches changed in Phase 5, and every item's stats in Phase 6.
 
-Known content gaps, all Phase 10's: km 31–40 has a single elite and nothing else,
-the `boss` archetype has no members, and `ExplorationService.rollLoot` still
-holds its foraging pools in Swift (they belong in `zones.json`).
+Known content gaps, all Phase 10's: km 31–40 holds a single elite, the `boss`
+archetype has no members, `offHand` and both accessory slots have no items at
+all (1.0 + 1.2 of slot weight idle), and `ExplorationService.rollLoot` still
+keeps its foraging pools in Swift (they belong in `zones.json`).
 
 ### How content works now
 
@@ -112,7 +113,7 @@ live in `.memory/content-pipeline.md`.
 ```
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 155 tests, ~0.14s
+swift test                                   # 176 tests, ~0.14s
 ```
 
 ## What Works Now (shipped game)

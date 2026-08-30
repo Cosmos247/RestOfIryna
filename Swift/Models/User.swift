@@ -112,6 +112,10 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "gear_dodge_bonus")
     var gearDodgeBonus: Int
 
+    /// Sixth cached gear bonus, added in Phase 6. See `AddGearHpBonus`.
+    @Field(key: "gear_hp_bonus")
+    var gearHpBonus: Int
+
     @Field(key: "gear_accuracy_bonus")
     var gearAccuracyBonus: Int
 
@@ -242,6 +246,7 @@ final public class User: Model, @unchecked Sendable {
         self.accuracy = 10
         self.silver = 0
         self.gearAttackBonus = 0
+        self.gearHpBonus = 0
         self.gearDefenseBonus = 0
         self.gearCritBonus = 0
         self.gearDodgeBonus = 0

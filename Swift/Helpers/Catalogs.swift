@@ -73,7 +73,7 @@ final class DomainContent: Sendable {
     let masterArmorById: [String: MasterCatalog.ArmorListing]
     let masterRepairCostFraction: Double
     let masterEnchantCap: Int
-    let masterEnchantPerLevelPoints: [Int]
+    let masterEnchantBudgetFraction: Double
     let masterEnchantSteps: [MasterCatalog.EnchantStep]
 
     let plotIcons: [PlotType: String]
@@ -112,6 +112,15 @@ final class DomainContent: Sendable {
     let fleeByClass: [CharacterClass: FleeTuningDTO]
     let classStarts: [CharacterClass: ClassStartDTO]
 
+    /// Phase 6. The DTOs ARE the domain shape here — a set is a list of
+    /// thresholds and a rarity is four scalars, so a mirror type would only
+    /// copy fields across (same reasoning as market / guild / arena).
+    let rarities: [RarityDTO]
+    let raritiesById: [String: RarityDTO]
+    let gearSets: [GearSetDTO]
+    let budget: BudgetTuningDTO
+    let slotWeights: [String: Double]
+
     let questPools: [QuestNPC: [QuestDef]]
     /// `QuestCatalog.find` used to scan an unordered dictionary of pools, so on
     /// a duplicate id its answer was whichever pool the hasher happened to
@@ -132,7 +141,8 @@ final class DomainContent: Sendable {
               let market = content.market, let guild = content.guild,
               let arena = content.arena, let master = content.master,
               let plots = content.plots, let fortune = content.fortune,
-              let quests = content.quests, let tuning = content.tuning else {
+              let quests = content.quests, let tuning = content.tuning,
+              let budget = content.budget else {
             throw ContentMappingError.incompleteBundle(missing: [
                 content.trader  == nil ? "trader.json"  : nil,
                 content.tavern  == nil ? "tavern.json"  : nil,
@@ -143,7 +153,8 @@ final class DomainContent: Sendable {
                 content.plots   == nil ? "plots.json"   : nil,
                 content.fortune == nil ? "fortune.json" : nil,
                 content.quests  == nil ? "quests.json"  : nil,
-                content.tuning  == nil ? "tuning/*.json" : nil
+                content.tuning  == nil ? "tuning/*.json" : nil,
+                content.budget  == nil ? "tuning/budget.json" : nil
             ].compactMap { $0 })
         }
 
@@ -229,7 +240,7 @@ final class DomainContent: Sendable {
                                           uniquingKeysWith: { first, _ in first })
         self.masterRepairCostFraction = master.repairCostFraction
         self.masterEnchantCap = master.enchantCap
-        self.masterEnchantPerLevelPoints = master.enchantPerLevelPoints
+        self.masterEnchantBudgetFraction = master.enchantBudgetFractionPerLevel
         self.masterEnchantSteps = master.enchantSteps.map(\.domain)
 
         // Built by parsing each row's `type`. A raw value the enum cannot
@@ -265,6 +276,22 @@ final class DomainContent: Sendable {
         self.questPools = pools
         self.questsById = Dictionary(pools.values.flatMap { $0 }.map { ($0.id, $0) },
                                      uniquingKeysWith: { _, last in last })
+
+        // MARK: Phase 6 — budget, rarity, sets
+        self.rarities = content.rarities
+        self.raritiesById = Dictionary(content.rarities.map { ($0.id, $0) },
+                                       uniquingKeysWith: { first, _ in first })
+        self.gearSets = content.gearSets
+        self.budget = budget
+        self.slotWeights = Dictionary(budget.slotWeights.map { ($0.slot, $0.weight) },
+                                      uniquingKeysWith: { first, _ in first })
+        // Every item's rarity must resolve. `Item.rarity` is non-optional and
+        // the glyph lookup is non-throwing, so an unknown id would have to be
+        // papered over at the point it is drawn.
+        for item in items where raritiesById[item.rarity] == nil {
+            throw ContentMappingError.tuningRowMissing("rarity \(item.rarity) for \(item.id)",
+                                                       table: "rarities.json")
+        }
 
         // MARK: Phase 4 tuning
         self.tuningCombat      = tuning.combat

@@ -20,6 +20,12 @@ public struct ContentBundle: Sendable {
     /// hand-built fixture; `DomainContent` refuses a bundle missing any of them.
     public let enemyArchetypes: [EnemyArchetypeDTO]
     public let recipes: [RecipeDTO]
+    /// The rarity ladder, lowest first. Empty only in a hand-built fixture.
+    public let rarities: [RarityDTO]
+    /// The item stat budget. Optional for the same reason the capital files are.
+    public let budget: BudgetTuningDTO?
+    /// Equipment sets and their thresholds. Empty means no set grants anything.
+    public let gearSets: [GearSetDTO]
     public let starterRecipeIds: [String]
     public let weaponLadders: [WeaponLadderDTO]
     public let weaponDurabilityByTier: [Int]
@@ -56,6 +62,9 @@ public struct ContentBundle: Sendable {
         enemies: [EnemyDTO],
         enemyArchetypes: [EnemyArchetypeDTO] = [],
         recipes: [RecipeDTO],
+        rarities: [RarityDTO] = [],
+        gearSets: [GearSetDTO] = [],
+        budget: BudgetTuningDTO? = nil,
         starterRecipeIds: [String],
         weaponLadders: [WeaponLadderDTO] = [],
         weaponDurabilityByTier: [Int] = [],
@@ -78,6 +87,9 @@ public struct ContentBundle: Sendable {
         self.enemies = enemies
         self.enemyArchetypes = enemyArchetypes
         self.recipes = recipes
+        self.rarities = rarities
+        self.gearSets = gearSets
+        self.budget = budget
         self.starterRecipeIds = starterRecipeIds
         self.weaponLadders = weaponLadders
         self.weaponDurabilityByTier = weaponDurabilityByTier

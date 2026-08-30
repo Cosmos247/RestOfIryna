@@ -1,0 +1,28 @@
+{
+  "sets" : [
+    {
+      "bonuses" : [
+        {
+          "effect" : {
+            "kind" : "flat_stats",
+            "stats" : {
+              "dodge" : 2
+            }
+          },
+          "pieces" : 2
+        },
+        {
+          "effect" : {
+            "kind" : "flat_stats",
+            "stats" : {
+              "defense" : 2,
+              "hp" : 6
+            }
+          },
+          "pieces" : 4
+        }
+      ],
+      "id" : "set.forester"
+    }
+  ]
+}

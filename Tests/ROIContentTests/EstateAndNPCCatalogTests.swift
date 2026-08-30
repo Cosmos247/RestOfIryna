@@ -125,13 +125,13 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         )
     }
 
-    private func validMaster(cap: Int = 3, points: [Int] = [1, 1, 2],
+    private func validMaster(cap: Int = 3, fraction: Double = 0.04,
                              steps: [EnchantStepDTO]? = nil) -> MasterFileDTO {
         MasterFileDTO(
             armorForSale: [MasterArmorListingDTO(itemId: "gear.forester_hood", priceSilver: 60)],
             repairCostFraction: 0.5,
             enchantCap: cap,
-            enchantPerLevelPoints: points,
+            enchantBudgetFractionPerLevel: fraction,
             enchantSteps: steps ?? (1...max(1, cap)).map {
                 EnchantStepDTO(level: $0, silver: 40 * $0, materialId: "mat.hide", materialQty: 4 * $0)
             }
@@ -158,11 +158,20 @@ final class EstateAndNPCCatalogTests: XCTestCase {
 
     // MARK: - Master rules
 
-    /// `enchantBonusPoints` does `prefix(min(level, points.count))`, so a short
-    /// table stops granting points partway up while the UI still shows the cap.
-    func testEnchantPointsShorterThanTheCapIsAnError() {
-        XCTAssertTrue(rules(bundle(master: validMaster(cap: 5, points: [1, 1, 2])))
-            .contains("master.points_short"))
+    /// Phase 6 replaced the flat point table with a percentage of the item's
+    /// own budget, so "the table is shorter than the cap" cannot happen any
+    /// more. What can is a zero fraction — an enchant bench that charges for
+    /// nothing.
+    func testEnchantWithNoEffectIsAnError() {
+        XCTAssertTrue(rules(bundle(master: validMaster(cap: 5, fraction: 0)))
+            .contains("master.enchant_no_effect"))
+    }
+
+    /// Past 1.35x total, the rarity × enchant axis starts outrunning forty
+    /// levels of stat growth — the cliff the drafted rarity multipliers fell off.
+    func testRunawayEnchantWarns() {
+        XCTAssertTrue(rules(bundle(master: validMaster(cap: 5, fraction: 0.20)))
+            .contains("master.enchant_runaway"))
     }
 
     /// `enchantStep` looks a level up by value, so a gap makes it unreachable.
@@ -171,14 +180,14 @@ final class EstateAndNPCCatalogTests: XCTestCase {
             EnchantStepDTO(level: 1, silver: 40, materialId: "mat.hide", materialQty: 4),
             EnchantStepDTO(level: 3, silver: 90, materialId: "mat.hide", materialQty: 8)
         ]
-        XCTAssertTrue(rules(bundle(master: validMaster(cap: 2, points: [1, 1], steps: steps)))
+        XCTAssertTrue(rules(bundle(master: validMaster(cap: 2, steps: steps)))
             .contains("master.levels_not_contiguous"))
     }
 
     /// Above 1.0 a full repair costs more than a new piece, so nobody repairs.
     func testRepairFractionAboveOneIsAnError() {
         let master = MasterFileDTO(armorForSale: [], repairCostFraction: 1.5, enchantCap: 1,
-                                   enchantPerLevelPoints: [1],
+                                   enchantBudgetFractionPerLevel: 0.04,
                                    enchantSteps: [EnchantStepDTO(level: 1, silver: 40, materialId: "mat.hide", materialQty: 4)])
         XCTAssertTrue(rules(bundle(master: master)).contains("master.repair_fraction"))
     }
@@ -186,7 +195,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     func testArmorShopSellingANonGearItemIsAnError() {
         let master = MasterFileDTO(
             armorForSale: [MasterArmorListingDTO(itemId: "mat.hide", priceSilver: 60)],
-            repairCostFraction: 0.5, enchantCap: 1, enchantPerLevelPoints: [1],
+            repairCostFraction: 0.5, enchantCap: 1, enchantBudgetFractionPerLevel: 0.04,
             enchantSteps: [EnchantStepDTO(level: 1, silver: 40, materialId: "mat.hide", materialQty: 4)])
         XCTAssertTrue(rules(bundle(master: master)).contains("master.not_gear"))
     }

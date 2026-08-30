@@ -1144,7 +1144,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             : ""
         let status = """
         🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
-        ❤️ \(context.session.hp)/\(context.session.maxHp)  🍖 \(context.session.vigor)/\(context.session.maxVigor)\(starving)
+        ❤️ \(context.session.hp)/\(context.session.effectiveMaxHp)  🍖 \(context.session.vigor)/\(context.session.maxVigor)\(starving)
         """
         let text = "\(prefix)\n\n\(status)"
         let markup = exploration.generateControllerKB(session: context.session, lingo: lingo)
@@ -1191,7 +1191,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
         lines.append(contentsOf: [
             "\(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)",
-            "❤️ \(user.hp)/\(user.maxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
+            "❤️ \(user.hp)/\(user.effectiveMaxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
         ])
         if let rounds = state.combatStanceRoundsLeft, state.combatStance != nil, rounds > 0 {
             let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior

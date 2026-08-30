@@ -446,7 +446,7 @@ extension Registration {
             try await registration.promptEstateName(context: context)
         } else {
             // Soft retry — full heal, re-show the rabid-dog prompt at step 5.
-            context.session.hp = context.session.maxHp
+            context.session.hp = context.session.effectiveMaxHp
             context.session.registrationStep = 5
             context.session.routerName = registration.routerName
             try await context.session.saveAndCache(in: context.db)

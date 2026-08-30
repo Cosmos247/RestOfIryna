@@ -101,15 +101,17 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 3 Remaining catalogs | ✅ **12 of 12** — A (weapon/bag/estate) `f30a4ca` · B (trader/tavern/market/guild/arena) `cb101f3` · C (master/plot/fortune/quest) |
 | 4 Tuning tables + `time.scale` | ✅ **4a** six tables · **4b** flags collapsed |
 | 5 New combat model | ✅ 5A bestiary · 5B progression · 5C combat · 5D techniques |
-| 6 Rarity + sets | ⬜ |
+| 6 Rarity + sets | ✅ budget curve · rarities · sets · enchant as % |
 | 7 `/reload` hot swap | ⬜ |
 | 8 Simulator + constant lock-in | ⬜ |
 | 9 Content specs (approval gate) | ⬜ |
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `84b3316f44bd18c7`** — `records 70d6d2396af6f198`,
+**Current digest baseline: `f3b145f824ec150c`** — `records efd31486552c644b`,
 `tuning 88db2a129b96a432`, `spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
+Phase 6 moved `records` only: it added item fields, rarity, sets and the budget
+curve, and touched none of the six balance tables.
 
 Phase 5 moved all three of `records`, `tuning` and `spawns` ON PURPOSE — it is the
 first phase that changes behaviour rather than relocating it. From here the
@@ -138,6 +140,40 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What Phase 6 taught
+
+- **The budget model is what turns "the formula is right" into "the balance is
+  right".** Phase 5's acceptance check could only prove published stats produce
+  published percentages. Feeding the budget through the class profiles rebuilds
+  the reference character from scratch — and DEF and absorption land exactly on
+  the design table for all three classes. That check now prints on every digest
+  run.
+- **A residual gap is worth printing, not hiding.** The reference kit comes out
+  4–10% short on HP. That is not drift: it is the two accessory slots, whose 1.0
+  of slot weight nobody has spent. Quantifying the gap turned "the empty slots
+  are cheap content" into a number.
+- **Decouple price from power.** Rarity multiplies budget ×1.45 at the top and
+  value ×16. Tying them (the drafted 1/2.2/5/14/40) makes selling a legendary
+  the biggest silver faucet in the game, against an unlimited vendor.
+- **A ceiling rule should encode the decision that produced it.** The rarity
+  ceiling rejects ×2.45 — the exact value the design draft proposed and then
+  rejected — with the arithmetic in the message. The rule is the reasoning, kept
+  executable.
+- **The validator caught the author.** The first Forester set bonus I wrote was
+  33% of its members' combined budget against a 25% cap. A rule that only ever
+  fires on hypothetical bad content is not yet known to work.
+- **The Phase 5 lesson repeated, and the audit is what caught it.** Four Phase 6
+  values had no digest coverage: the class budget profiles and the stat exchange
+  rates (both invisible — doubling "one point buys 0.42 attack" would have
+  doubled every generated weapon without moving a hash), the ladder rungs' item
+  levels, and `critMultiplierOverride`. Hashing the reference KIT covers the
+  first two through the same call the acceptance check uses, so the printed
+  table and the digest can never disagree about what the model says.
+- **Round-trip tests keep earning their keep.** `GearStatsDTO.encode` skips zero
+  values field by field, and the new `hp` was never added to it — so an HP stat
+  survived in memory and vanished through JSON. Exactly the Phase 1 layer-0
+  failure, one field later, caught the same way.
 
 ### What Phase 5 taught
 

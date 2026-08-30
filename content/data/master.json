@@ -17,14 +17,8 @@
       "priceSilver" : 180
     }
   ],
+  "enchantBudgetFractionPerLevel" : 0.04,
   "enchantCap" : 5,
-  "enchantPerLevelPoints" : [
-    1,
-    1,
-    1,
-    2,
-    3
-  ],
   "enchantSteps" : [
     {
       "level" : 1,

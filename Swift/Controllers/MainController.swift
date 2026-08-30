@@ -275,7 +275,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let xp = session.xp
         let xpMax = session.xpToNextLevel
         let isMaxLevel = level >= User.maxLevel
-        let hp = session.hp, maxHp = session.maxHp
+        let hp = session.hp, maxHp = session.effectiveMaxHp
         let vigor = session.vigor, maxVigor = session.maxVigor
         let atk = session.effectiveAttack, def = session.effectiveDefense
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy

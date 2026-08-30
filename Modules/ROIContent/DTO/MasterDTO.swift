@@ -79,23 +79,31 @@ public struct MasterFileDTO: Codable, Sendable {
     public let repairCostFraction: Double
     /// Hard cap on the permanent enchant bonus one piece can hold.
     public let enchantCap: Int
-    /// Points granted PER LEVEL, cumulative when summed. Non-linear on purpose
-    /// (+1 +1 +1 +2 +3) so the last point is the real prize.
-    public let enchantPerLevelPoints: [Int]
+    /// Fraction of the item's OWN budget added per enchant level.
+    ///
+    /// Never flat points. A flat bonus has no size that works: +32 DEF is 267%
+    /// of a level-1 chest piece's own defence and 14% of a level-40 one, so the
+    /// same number is game-breaking early and invisible late. A percentage of
+    /// the item scales with the item by construction, which is also what keeps
+    /// the absorption cap out of reach — a fully enchanted legendary reaches
+    /// 49% against a ceiling of 70%.
+    public let enchantBudgetFractionPerLevel: Double
     /// One step per level, ordered by `level`.
     public let enchantSteps: [EnchantStepDTO]
 
     public init(armorForSale: [MasterArmorListingDTO], repairCostFraction: Double,
-                enchantCap: Int, enchantPerLevelPoints: [Int], enchantSteps: [EnchantStepDTO]) {
+                enchantCap: Int, enchantBudgetFractionPerLevel: Double,
+                enchantSteps: [EnchantStepDTO]) {
         self.armorForSale = armorForSale
         self.repairCostFraction = repairCostFraction
         self.enchantCap = enchantCap
-        self.enchantPerLevelPoints = enchantPerLevelPoints
+        self.enchantBudgetFractionPerLevel = enchantBudgetFractionPerLevel
         self.enchantSteps = enchantSteps
     }
 
     private enum CodingKeys: String, CodingKey {
-        case armorForSale, repairCostFraction, enchantCap, enchantPerLevelPoints, enchantSteps
+        case armorForSale, repairCostFraction, enchantCap
+        case enchantBudgetFractionPerLevel, enchantSteps
     }
 
     public init(from decoder: any Decoder) throws {
@@ -103,7 +111,7 @@ public struct MasterFileDTO: Codable, Sendable {
         armorForSale          = try c.decode([MasterArmorListingDTO].self, forKey: .armorForSale)
         repairCostFraction    = try c.decode(Double.self, forKey: .repairCostFraction)
         enchantCap            = try c.decode(Int.self, forKey: .enchantCap)
-        enchantPerLevelPoints = try c.decode([Int].self, forKey: .enchantPerLevelPoints)
+        enchantBudgetFractionPerLevel = try c.decode(Double.self, forKey: .enchantBudgetFractionPerLevel)
         enchantSteps          = try c.decode([EnchantStepDTO].self, forKey: .enchantSteps)
     }
 }

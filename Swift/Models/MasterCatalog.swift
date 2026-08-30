@@ -84,17 +84,28 @@ public enum MasterCatalog {
     /// Hard cap on the permanent enchant bonus a single piece can hold.
     public static var enchantCap: Int { Catalogs.current.masterEnchantCap }
 
-    /// Points granted per level. Non-linear — +1 +1 +1 +2 +3 — so the top two
-    /// levels are worth more than the early ones and the last point is the real
-    /// prize. Drives BOTH the flat +ЗАХ every class gets and the class-identity
-    /// bonus that mirrors it: see `EquipmentService.recomputeBonuses`.
-    public static var enchantPerLevelPoints: [Int] { Catalogs.current.masterEnchantPerLevelPoints }
+    /// Fraction of an item's own budget each enchant level adds. Linear, and
+    /// deliberately so: the non-linearity that used to live here (+1 +1 +1 +2
+    /// +3) was compensating for a flat bonus that could not scale, and a
+    /// percentage needs no such correction.
+    public static var enchantBudgetFractionPerLevel: Double {
+        Catalogs.current.masterEnchantBudgetFraction
+    }
 
-    /// Cumulative points an enchant of `level` (0…cap) grants per affected stat.
-    public static func enchantBonusPoints(level: Int) -> Int {
-        guard level > 0 else { return 0 }
-        let points = enchantPerLevelPoints
-        return points.prefix(min(level, points.count)).reduce(0, +)
+    /// Multiplier an enchant of `level` applies to an item's own stats.
+    ///
+    /// `1 + fraction × level`, clamped at the cap — so a fully enchanted piece
+    /// is 1.20× itself rather than "+8 of something". Every stat the item
+    /// carries scales together, which keeps the item's own profile intact: a
+    /// mage's cloth stays a crit piece, a shield stays bulk.
+    public static func enchantMultiplier(level: Int) -> Double {
+        let clamped = Swift.max(0, Swift.min(level, enchantCap))
+        return 1 + enchantBudgetFractionPerLevel * Double(clamped)
+    }
+
+    /// Percent an enchant of `level` adds, for display ("+12%").
+    public static func enchantBonusPercent(level: Int) -> Int {
+        Int(((enchantMultiplier(level: level) - 1) * 100).rounded())
     }
 
     /// Cost to raise a piece from `(level-1)` → `level` (1-based). Silver +

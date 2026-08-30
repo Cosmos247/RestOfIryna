@@ -11,11 +11,12 @@
       "itemId" : "gear.rusty_sword",
       "tiers" : [
         {
-          "inputs" : [
-
-          ],
+          "inputs" : [],
+          "itemLevel" : 1,
           "stats" : {
-            "attack" : 3
+            "accuracy" : 3,
+            "attack" : 7,
+            "crit" : 3
           },
           "tier" : 1
         },
@@ -26,9 +27,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 10,
           "stats" : {
-            "attack" : 5,
-            "crit" : 3
+            "accuracy" : 7,
+            "attack" : 19,
+            "crit" : 9
           },
           "tier" : 2
         },
@@ -43,9 +46,11 @@
               "quantity" : 2
             }
           ],
+          "itemLevel" : 20,
           "stats" : {
-            "attack" : 8,
-            "crit" : 6
+            "accuracy" : 12,
+            "attack" : 33,
+            "crit" : 15
           },
           "tier" : 3
         },
@@ -64,10 +69,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 30,
           "stats" : {
-            "attack" : 12,
-            "crit" : 10,
-            "defense" : 1
+            "accuracy" : 17,
+            "attack" : 46,
+            "crit" : 21
           },
           "tier" : 4
         },
@@ -86,10 +92,11 @@
               "quantity" : 5
             }
           ],
+          "itemLevel" : 40,
           "stats" : {
-            "attack" : 16,
-            "crit" : 15,
-            "defense" : 3
+            "accuracy" : 22,
+            "attack" : 60,
+            "crit" : 28
           },
           "tier" : 5
         }
@@ -99,12 +106,12 @@
       "itemId" : "gear.simple_bow",
       "tiers" : [
         {
-          "inputs" : [
-
-          ],
+          "inputs" : [],
+          "itemLevel" : 1,
           "stats" : {
-            "accuracy" : 1,
-            "attack" : 2
+            "accuracy" : 3,
+            "attack" : 6,
+            "crit" : 3
           },
           "tier" : 1
         },
@@ -119,9 +126,11 @@
               "quantity" : 1
             }
           ],
+          "itemLevel" : 10,
           "stats" : {
-            "accuracy" : 3,
-            "attack" : 4
+            "accuracy" : 10,
+            "attack" : 17,
+            "crit" : 9
           },
           "tier" : 2
         },
@@ -136,10 +145,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 20,
           "stats" : {
-            "accuracy" : 5,
-            "attack" : 6,
-            "crit" : 3
+            "accuracy" : 16,
+            "attack" : 30,
+            "crit" : 16
           },
           "tier" : 3
         },
@@ -158,10 +168,11 @@
               "quantity" : 1
             }
           ],
+          "itemLevel" : 30,
           "stats" : {
-            "accuracy" : 7,
-            "attack" : 9,
-            "crit" : 6
+            "accuracy" : 23,
+            "attack" : 42,
+            "crit" : 23
           },
           "tier" : 4
         },
@@ -180,10 +191,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 40,
           "stats" : {
-            "accuracy" : 10,
-            "attack" : 12,
-            "crit" : 10
+            "accuracy" : 30,
+            "attack" : 55,
+            "crit" : 30
           },
           "tier" : 5
         }
@@ -193,12 +205,12 @@
       "itemId" : "gear.wooden_staff",
       "tiers" : [
         {
-          "inputs" : [
-
-          ],
+          "inputs" : [],
+          "itemLevel" : 1,
           "stats" : {
-            "attack" : 2,
-            "crit" : 1
+            "accuracy" : 1,
+            "attack" : 7,
+            "crit" : 5
           },
           "tier" : 1
         },
@@ -213,9 +225,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 10,
           "stats" : {
-            "attack" : 4,
-            "crit" : 3
+            "accuracy" : 3,
+            "attack" : 19,
+            "crit" : 15
           },
           "tier" : 2
         },
@@ -234,10 +248,11 @@
               "quantity" : 3
             }
           ],
+          "itemLevel" : 20,
           "stats" : {
-            "accuracy" : 2,
-            "attack" : 6,
-            "crit" : 6
+            "accuracy" : 5,
+            "attack" : 32,
+            "crit" : 26
           },
           "tier" : 3
         },
@@ -256,10 +271,11 @@
               "quantity" : 1
             }
           ],
+          "itemLevel" : 30,
           "stats" : {
-            "accuracy" : 4,
-            "attack" : 9,
-            "crit" : 10
+            "accuracy" : 7,
+            "attack" : 45,
+            "crit" : 37
           },
           "tier" : 4
         },
@@ -282,10 +298,11 @@
               "quantity" : 5
             }
           ],
+          "itemLevel" : 40,
           "stats" : {
-            "accuracy" : 6,
-            "attack" : 12,
-            "crit" : 14
+            "accuracy" : 10,
+            "attack" : 58,
+            "crit" : 48
           },
           "tier" : 5
         }

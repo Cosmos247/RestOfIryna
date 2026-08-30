@@ -2797,3 +2797,83 @@ are right".
 **Phase 6 — rarity and sets**, which is also what makes the balance checkable.
 Still no live Telegram pass since the rebalance began, and every formula the
 player touches changed here.
+
+---
+
+## Session — 2026-08-30 part 3 (Phase 6 — rarity, sets and the item stat budget)
+
+The phase that makes balance checkable. Phase 5 could only prove that published
+stats produce published percentages; it could say nothing about where the stats
+come from, because the design's reference warrior carries DEF 225 where the bare
+stat line gives 52.
+
+### The budget
+
+`budget(itemLevel, slot, rarity) = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget`,
+with every stat an item carries being that budget SPENT at fixed exchange rates.
+One number bounds a piece; because the combat denominators were derived from the
+same curve, an item that respects its budget cannot move any stat's percentage.
+
+`itemLevel` is deliberately NOT `tier`: tier is a crafting-ladder rung (1–5),
+item level is the budget input (1–40). The ladders map tiers to 1/10/20/30/40,
+because five rungs cover forty levels.
+
+**Regenerating the 7 shipped items and 3 ladders dissolved the T5 asymmetry** the
+plan had documented: the three top weapons now carry 198.4 / 198.5 / 198.6
+points — a 0.1% spread where the warrior's had been ~15% heavier for no stated
+reason.
+
+### The acceptance check
+
+`--content-digest` now rebuilds the design's reference character from the budget
+through the class profiles. **DEF and absorption reproduce the published table
+exactly** for all three classes; ATK exactly for warrior and mage. The residual
+4–10% HP shortfall is not drift — it is the two accessory slots, 1.0 of slot
+weight nobody has spent. Printing the gap turned "the empty slots are cheap
+content" into a number.
+
+### Decisions worth keeping
+
+- **Decouple price from power.** Rarity multiplies budget ×1.45 at the top and
+  value ×16. Tying them (the drafted 1/2.2/5/14/40) makes selling a legendary
+  the biggest silver faucet in the game against an unlimited vendor.
+- **Enchant is a percentage of the item's own budget.** No flat number works:
+  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. Scaling the item
+  also keeps its profile intact instead of bending every piece toward the
+  wearer's class — the class-identity flavour moves to sets.
+- **The overspend rule carries an ABSOLUTE rounding slack.** Rounding a stat can
+  only add half a point of it, so the error is a fixed number of points; a
+  percentage tolerance is far too tight at level 1 and far too loose at 40. It
+  is doing real work: a level-1 helmet legitimately sits at 124% of a 7.5-point
+  budget, entirely inside the slack four rounded stats can produce.
+- **Gear needed an HP stat** (sixth cached bonus + migration). Without it the
+  class armour profiles cannot be expressed at all — cloth spends 0.26 of its
+  allowance on bulk — and faking it as DEF puts it on a different curve.
+
+### What the audit caught
+
+- **Four values had no digest coverage**: the class budget profiles and the stat
+  exchange rates — both invisible, so doubling "one point buys 0.42 attack"
+  would have doubled every generated weapon without moving a hash — plus the
+  ladder rungs' item levels and `critMultiplierOverride`. Hashing the reference
+  KIT covers the first two through the same call the printed check uses, so the
+  two can never disagree. This is the second phase running where the audit's
+  main find was digest coverage following a value to its new home.
+- **The validator caught the author.** The first Forester set bonus I wrote was
+  33% of its members' combined budget against a 25% cap. A rule that only ever
+  fires on hypothetical bad content is not yet known to work.
+- **A round-trip test found a real bug**: `GearStatsDTO.encode` skips zero
+  values field by field and the new `hp` was never added to it, so an HP stat
+  survived in memory and vanished through JSON. Exactly the Phase 1 layer-0
+  failure, one field later, caught the same way.
+- Three stale doc comments and three pieces of dead API removed; the rarity
+  glyph was wired into the inventory, because rarity nobody can see is not a
+  feature.
+
+176 tests. Digest `f3b145f824ec150c`.
+
+### Next
+**Phase 7 — `/reload` hot swap + `LiveReferenceCheck`**, deliberately after the
+full data move so there is something worth reloading. Still no live Telegram
+pass since the rebalance began: every formula changed in Phase 5 and every
+item's stats in Phase 6.

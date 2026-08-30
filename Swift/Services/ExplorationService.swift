@@ -162,7 +162,7 @@ public enum ExplorationService {
             return try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db, extraStarvation: starvationLoss)
         }
         _ = wTrip
-        let tripDmg = max(1, Int((Double(user.maxHp) * tripDamagePercent).rounded()))
+        let tripDmg = max(1, Int((Double(user.effectiveMaxHp) * tripDamagePercent).rounded()))
         let totalHp = tripDmg + starvationLoss
         user.hp = max(0, user.hp - totalHp)
         return .trip(hpLost: totalHp)

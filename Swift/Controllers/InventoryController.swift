@@ -222,7 +222,10 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // Tier-aware name so an upgraded weapon shows e.g. "Sharpened Sword"
             // instead of always "Rusty Sword". Non-tiered gear falls through.
             let name = lingo.localize(ItemDisplay.nameKey(for: pair.item, tier: pair.entry.tier), locale: locale)
-            let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+            // Rarity glyph ahead of the icon, and only above the baseline —
+            // a ⚪ on every common item is noise, not information.
+            let iconPrefix = ItemDisplay.rarityPrefix(for: pair.item)
+                + (pair.item.icon.map { "\($0) " } ?? "")
             // Phase 6.5 — keep the list label clean: only the enchant level
             // (as a plain "+N", no icon) for armor. Durability / broken / dulled
             // state lives in the tap-through detail card and the Master's repair
@@ -249,7 +252,7 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     /// dulled warning, enchant level). Mirrors the workshop recipe-detail layout.
     private static func gearDetailCard(row: InventoryEntry, item: Item, user: User, lingo: Lingo, locale: String) -> String {
         let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: row.tier), locale: locale)
-        let icon = item.icon.map { "\($0) " } ?? ""
+        let icon = ItemDisplay.rarityPrefix(for: item) + (item.icon.map { "\($0) " } ?? "")
         var header = "\(icon)<b>\(name)</b>"
         if WeaponUpgradeCatalog.isUpgradable(item.id) { header += " <i>(T\(row.tier))</i>" }
         var lines: [String] = [header]
@@ -519,7 +522,7 @@ extension InventoryController {
                 parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
                     "amount":  "\(result.hpRestored)",
                     "current": "\(context.session.hp)",
-                    "max":     "\(context.session.maxHp)"
+                    "max":     "\(context.session.effectiveMaxHp)"
                 ]))
             }
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")

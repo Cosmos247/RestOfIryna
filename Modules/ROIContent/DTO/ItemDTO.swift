@@ -44,25 +44,34 @@ public struct ItemEffectDTO: Codable, Sendable, Equatable {
 public struct GearStatsDTO: Codable, Sendable, Equatable {
     public let attack: Int
     public let defense: Int
+    /// Flat max-HP granted while equipped. Added in Phase 6: the stat budget
+    /// spends 0.18–0.30 of an armour or off-hand allowance on HP depending on
+    /// the class profile, and without this stat those profiles cannot be
+    /// expressed at all — bulk would have to be faked as DEF, which is a
+    /// different axis with a different curve.
+    public let hp: Int
     public let crit: Int
     public let dodge: Int
     public let accuracy: Int
 
-    public init(attack: Int = 0, defense: Int = 0, crit: Int = 0, dodge: Int = 0, accuracy: Int = 0) {
+    public init(attack: Int = 0, defense: Int = 0, hp: Int = 0, crit: Int = 0,
+                dodge: Int = 0, accuracy: Int = 0) {
         self.attack = attack
         self.defense = defense
+        self.hp = hp
         self.crit = crit
         self.dodge = dodge
         self.accuracy = accuracy
     }
 
     private enum CodingKeys: String, CodingKey {
-        case attack, defense, crit, dodge, accuracy
+        case attack, defense, hp, crit, dodge, accuracy
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         attack   = try c.decodeIfPresent(Int.self, forKey: .attack)   ?? 0
+        hp       = try c.decodeIfPresent(Int.self, forKey: .hp)       ?? 0
         defense  = try c.decodeIfPresent(Int.self, forKey: .defense)  ?? 0
         crit     = try c.decodeIfPresent(Int.self, forKey: .crit)     ?? 0
         dodge    = try c.decodeIfPresent(Int.self, forKey: .dodge)    ?? 0
@@ -75,13 +84,14 @@ public struct GearStatsDTO: Codable, Sendable, Equatable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         if attack   != 0 { try c.encode(attack,   forKey: .attack) }
         if defense  != 0 { try c.encode(defense,  forKey: .defense) }
+        if hp       != 0 { try c.encode(hp,       forKey: .hp) }
         if crit     != 0 { try c.encode(crit,     forKey: .crit) }
         if dodge    != 0 { try c.encode(dodge,    forKey: .dodge) }
         if accuracy != 0 { try c.encode(accuracy, forKey: .accuracy) }
     }
 
     public var isEmpty: Bool {
-        attack == 0 && defense == 0 && crit == 0 && dodge == 0 && accuracy == 0
+        attack == 0 && defense == 0 && hp == 0 && crit == 0 && dodge == 0 && accuracy == 0
     }
 }
 
@@ -116,7 +126,18 @@ public struct ItemDTO: Codable, Sendable, Equatable {
 
     /// Phase 6 fields — accepted by the schema from day one so adding rarity
     /// and sets later is a data edit, not a schema bump.
+    /// Item level — the input to `budget(itemLevel, slot, rarity)`.
+    ///
+    /// Distinct from `tier`, which is a crafting-ladder position (1–5) and a
+    /// display concept. A tier-5 weapon is item level 40; conflating the two
+    /// would put the whole ladder inside the first eight levels of the budget
+    /// curve. Absent means 1, which is right for consumables and materials —
+    /// nothing that is not equipped has a budget at all.
+    public let itemLevel: Int?
+    /// Rarity id, resolved against `rarities.json`. Absent means common.
     public let rarity: String?
+    /// Set membership, resolved against `sets.json`. Absent means the item
+    /// belongs to no set.
     public let setId: String?
 
     public var nameKey: String { nameKeyOverride ?? "item.\(id)" }
@@ -139,6 +160,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         nameKeyOverride: String? = nil,
         descriptionKeyOverride: String? = nil,
         suppressesDescription: Bool = false,
+        itemLevel: Int? = nil,
         rarity: String? = nil,
         setId: String? = nil
     ) {
@@ -154,6 +176,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         self.nameKeyOverride = nameKeyOverride
         self.descriptionKeyOverride = descriptionKeyOverride
         self.suppressesDescription = suppressesDescription
+        self.itemLevel = itemLevel
         self.rarity = rarity
         self.setId = setId
     }
@@ -162,7 +185,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         case id, type, tier, stackable, effects, slot, gearStats, icon, teachesRecipe
         case nameKeyOverride = "nameKey"
         case descriptionKeyOverride = "descriptionKey"
-        case rarity, setId
+        case itemLevel, rarity, setId
     }
 
     public init(from decoder: any Decoder) throws {
@@ -185,6 +208,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         } else {
             suppressesDescription = false
         }
+        itemLevel     = try c.decodeIfPresent(Int.self, forKey: .itemLevel)
         rarity        = try c.decodeIfPresent(String.self, forKey: .rarity)
         setId         = try c.decodeIfPresent(String.self, forKey: .setId)
     }
@@ -206,6 +230,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         } else {
             try c.encodeIfPresent(descriptionKeyOverride, forKey: .descriptionKeyOverride)
         }
+        try c.encodeIfPresent(itemLevel, forKey: .itemLevel)
         try c.encodeIfPresent(rarity, forKey: .rarity)
         try c.encodeIfPresent(setId, forKey: .setId)
     }
