@@ -314,14 +314,14 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // Training mode forces a clean hit (no miss, no DEF reduction) so
         // the player can read their raw damage off the dummy.
         let player = context.session
-        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
+        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded())
         let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
         var swingMods = CombatService.AttackModifiers()
         if isTraining { swingMods.cannotMiss = true }
         let playerHit = CombatService.applyAttack(
             attackerATK: buffedATK,
-            attackerCrit: player.effectiveCrit + mods.critBonus,
-            attackerAcc: player.effectiveAccuracy + mods.accuracyBonus,
+            attackerCrit: Int((Double(player.effectiveCrit) * mods.critMultiplier).rounded()),
+            attackerAcc: Int((Double(player.effectiveAccuracy) * mods.accuracyMultiplier).rounded()),
             attackerLevel: player.level,
             defenderDEF: effectiveEnemyDEF,
             defenderDodge: enemy.dodge,
@@ -351,8 +351,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
-            defenderDEF: player.effectiveDefense + mods.defenseBonus,
-            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge,
+            defenderDEF: Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded()),
+            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier).rounded()) + extraDodge,
             defenderLevel: player.level
         )
         let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
@@ -388,7 +388,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // training mode forces enemy DEF to 0 for a clean chip number.
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
-        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded()) + mods.attackBonus
+        let buffedATK = Int((Double(player.effectiveAttack) * mods.attackMultiplier).rounded())
         let effectiveEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
 
         let chip: Int
@@ -433,20 +433,20 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let extraDefendDodge: Int
         switch cls {
         case .warrior:
-            defenderDEF = (player.effectiveDefense + mods.defenseBonus) * 2
+            defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded()) * 2
             extraDefendDodge = 0
         case .archer:
-            defenderDEF = player.effectiveDefense + mods.defenseBonus
+            defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded())
             extraDefendDodge = CombatService.Defend.archerDodgeBonus
         case .mage:
-            defenderDEF = player.effectiveDefense + mods.defenseBonus
+            defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded())
             extraDefendDodge = 0
         }
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
             defenderDEF: defenderDEF,
-            defenderDodge: player.effectiveDodge + mods.dodgeBonus + extraDodge + extraDefendDodge,
+            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier).rounded()) + extraDodge + extraDefendDodge,
             defenderLevel: player.level
         )
         let mitigatedHit: AttackOutcome
@@ -532,7 +532,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // 50%. (Shadow Veil's lingering dodge can't save a failed flee —
         // the spec is "guaranteed hit".)
         let halvedDEF = player.effectiveDefense / 2
-        let buffedDEF = halvedDEF + mods.defenseBonus
+        let buffedDEF = Int((Double(halvedDEF) * mods.defenseMultiplier).rounded())
         let damage = max(1, Int((Double(max(1, enemy.attack - buffedDEF)) * Double.random(in: CombatService.varianceRange)).rounded()))
         player.hp = max(0, player.hp - damage)
 
@@ -682,7 +682,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // Iron Bulwark: 100% block + heavier chip damage to enemy + apply
             // 1-round armor-split debuff for the follow-up swing. Training
             // mode zeroes the dummy's DEF for a clean chip-damage readout.
-            let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
+            let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
             let bulwarkEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
             let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: bulwarkEnemyDEF, defenderLevel: enemy.level)
             // The basic chipDamage uses 30% of base — Iron Bulwark scales it
@@ -710,7 +710,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             let wouldBeHit = CombatService.applyAttack(
                 attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
                 attackerLevel: enemy.level,
-                defenderDEF: player.effectiveDefense + stanceMods.defenseBonus,
+                defenderDEF: Int((Double(player.effectiveDefense) * stanceMods.defenseMultiplier).rounded()),
                 defenderDodge: 0,
                 defenderLevel: player.level
             )
@@ -778,7 +778,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // Iron Bulwark's armor-split debuff (if active) zeroes enemy DEF here too.
         // Training mode also forces cannotMiss so even Cleave's −10 hit
         // penalty never produces a miss against the dummy.
-        let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded()) + stanceMods.attackBonus
+        let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
         var swingMods = CombatService.specialAttackModifiers(forClass: cls)
         if isTraining {
             swingMods.cannotMiss = true
@@ -802,8 +802,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let sunderedEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
         let playerHit = CombatService.applyAttack(
             attackerATK: buffedATK,
-            attackerCrit: player.effectiveCrit + stanceMods.critBonus,
-            attackerAcc: player.effectiveAccuracy + stanceMods.accuracyBonus,
+            attackerCrit: Int((Double(player.effectiveCrit) * stanceMods.critMultiplier).rounded()),
+            attackerAcc: Int((Double(player.effectiveAccuracy) * stanceMods.accuracyMultiplier).rounded()),
             attackerLevel: player.level,
             defenderDEF: sunderedEnemyDEF,
             defenderDodge: enemy.dodge,
@@ -847,11 +847,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
         let dodgeForCounter = CombatService.specialAttackZeroesDodge(forClass: cls)
             ? 0
-            : (player.effectiveDodge + stanceMods.dodgeBonus + extraDodge)
+            : (Int((Double(player.effectiveDodge) * stanceMods.dodgeMultiplier).rounded()) + extraDodge)
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
-            defenderDEF: player.effectiveDefense + stanceMods.defenseBonus,
+            defenderDEF: Int((Double(player.effectiveDefense) * stanceMods.defenseMultiplier).rounded()),
             defenderDodge: dodgeForCounter,
             defenderLevel: player.level
         )
@@ -1028,17 +1028,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // training bails at the top of finishVictory).
         let xpResult = context.session.grantXP(
             User.xpFromKill(enemy, playerLevel: context.session.level))
-        // Phase 5D — monsters finally drop coin. Before this, the only silver
-        // faucets in the game were quests and selling foraged material, which
-        // is why the mid-game economy had no middle.
-        if enemy.silverReward > 0 {
-            context.session.silver += enemy.silverReward
-        }
+        // Monsters drop no coin (Phase 8C). Every silver faucet in the game is
+        // now a player-facing system with a sink attached — quests, the trader,
+        // the tavern, the market, the arena — which is what a corpse full of
+        // coin quietly worked against.
         var withXP = parts
-        if enemy.silverReward > 0 {
-            withXP.append("🪙 " + lingo.localize("combat.victory.silver", locale: locale,
-                                                 interpolations: ["silver": "\(enemy.silverReward)"]))
-        }
         if xpResult.xpAwarded > 0 {
             withXP.append("📊 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
                 "xp": "\(xpResult.xpAwarded)"

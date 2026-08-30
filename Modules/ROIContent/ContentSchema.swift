@@ -38,5 +38,11 @@ public enum ContentSchema {
     /// v7 (Phase 6): gear stats gain `hp`, items gain `itemLevel` / `rarity` /
     /// `setId`, and `master.enchantPerLevelPoints` becomes a budget FRACTION.
     /// A v6 bundle's flat point table would decode as nothing at all.
-    public static let current: Int = 7
+    /// v8 (Phase 8C): every Super stance's five stat lifts become MULTIPLIERS of
+    /// the character's own stat — `attackBonus` and friends are gone. A v6/v7
+    /// bundle's `+15 critBonus` would decode into a field that no longer exists,
+    /// and silently leaving the multiplier at 1.0 would delete the technique.
+    /// Monster silver went with it: `enemies.silverReward` and
+    /// `archetypes.silverMultiplier` are no longer read.
+    public static let current: Int = 8
 }

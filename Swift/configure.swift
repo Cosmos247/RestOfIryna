@@ -63,7 +63,7 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
     /// Starting stats for level 1 (hp, atk, def, crit%, dodge, acc).
     /// `tuning/progression.json` → `classes[]`.
     var startingStats: (hp: Int, attack: Int, defense: Int, crit: Int, dodge: Int, accuracy: Int) {
-        let row = start
+        let row = startRow
         return (hp: row.hp, attack: row.attack, defense: row.defense,
                 crit: row.crit, dodge: row.dodge, accuracy: row.accuracy)
     }
@@ -72,10 +72,13 @@ public enum CharacterClass: String, CaseIterable, Codable, Sendable {
     /// The validator resolves it against `items.json` and checks it is a
     /// main-hand item — the same assertion `liveLookupCheck` makes at runtime.
     var starterWeaponId: String {
-        start.starterWeaponId
+        startRow.starterWeaponId
     }
 
-    private var start: ClassStartDTO {
+    /// The whole row, not just the six stats: `ProgressionMath.baseStats` takes
+    /// it directly, so the level-1 line and the level-40 line are read off one
+    /// value instead of being transcribed through a tuple on the way.
+    var startRow: ClassStartDTO {
         let content = Catalogs.current
         return content.required(content.classStarts[self], "class start for \(rawValue)")
     }

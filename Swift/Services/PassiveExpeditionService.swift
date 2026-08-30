@@ -72,10 +72,6 @@ public struct PassiveReport: Codable, Sendable {
     /// renderer can show "📊 +N XP (Lv. M → M+L)" without re-deriving.
     /// Optional in storage for backwards compat with pre-5.3a reports.
     public let xpEarned: Int
-    /// Phase 5D — silver from kills, already discounted by the passive
-    /// multiplier. Optional in storage like `xpEarned`, for reports written
-    /// before monsters dropped coin at all.
-    public let silverEarned: Int
     public let levelsGained: Int
     public let newLevel: Int
     /// Phase 5.3b — stat growth totals from the XP grant. Zero unless the
@@ -98,7 +94,6 @@ public struct PassiveReport: Codable, Sendable {
         outcomeCounts: [String: Int],
         loot: [LootEntry],
         xpEarned: Int = 0,
-        silverEarned: Int = 0,
         levelsGained: Int = 0,
         newLevel: Int = 1,
         maxHpGained: Int = 0,
@@ -116,7 +111,6 @@ public struct PassiveReport: Codable, Sendable {
         self.outcomeCounts = outcomeCounts
         self.loot = loot
         self.xpEarned = xpEarned
-        self.silverEarned = silverEarned
         self.levelsGained = levelsGained
         self.newLevel = newLevel
         self.maxHpGained = maxHpGained
@@ -126,7 +120,7 @@ public struct PassiveReport: Codable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
-        case died, deathDepth, outcomeCounts, loot, xpEarned, silverEarned, levelsGained, newLevel
+        case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
         case maxHpGained, attackGained, defenseGained
     }
 
@@ -143,7 +137,6 @@ public struct PassiveReport: Codable, Sendable {
         outcomeCounts = try c.decode([String: Int].self, forKey: .outcomeCounts)
         loot = try c.decode([LootEntry].self, forKey: .loot)
         xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
-        silverEarned = (try? c.decode(Int.self, forKey: .silverEarned)) ?? 0
         levelsGained = (try? c.decode(Int.self, forKey: .levelsGained)) ?? 0
         newLevel = (try? c.decode(Int.self, forKey: .newLevel)) ?? 1
         maxHpGained = (try? c.decode(Int.self, forKey: .maxHpGained)) ?? 0
@@ -168,15 +161,12 @@ public struct RunningPassiveReport: Codable, Sendable {
     /// in one call at finalize time. Optional in storage for backwards
     /// compatibility with pre-5.3a in-flight rows.
     public var xpEarned: Int
-    /// Raw silver from kills, undiscounted — the passive multiplier is applied
-    /// once at finalize, so a restart mid-run cannot compound it.
-    public var silverEarned: Int
 
     public init(
         hpBefore: Int, vigorBefore: Int,
         outcomeCounts: [String: Int],
         lootPicked: [String: Int], lootDropped: [String: Int],
-        xpEarned: Int = 0, silverEarned: Int = 0
+        xpEarned: Int = 0
     ) {
         self.hpBefore = hpBefore
         self.vigorBefore = vigorBefore
@@ -184,11 +174,10 @@ public struct RunningPassiveReport: Codable, Sendable {
         self.lootPicked = lootPicked
         self.lootDropped = lootDropped
         self.xpEarned = xpEarned
-        self.silverEarned = silverEarned
     }
 
     enum CodingKeys: String, CodingKey {
-        case hpBefore, vigorBefore, outcomeCounts, lootPicked, lootDropped, xpEarned, silverEarned
+        case hpBefore, vigorBefore, outcomeCounts, lootPicked, lootDropped, xpEarned
     }
 
     public init(from decoder: any Decoder) throws {
@@ -199,7 +188,6 @@ public struct RunningPassiveReport: Codable, Sendable {
         lootPicked = try c.decode([String: Int].self, forKey: .lootPicked)
         lootDropped = try c.decode([String: Int].self, forKey: .lootDropped)
         xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
-        silverEarned = (try? c.decode(Int.self, forKey: .silverEarned)) ?? 0
     }
 }
 
@@ -346,7 +334,6 @@ public enum PassiveExpeditionService {
         var hpBefore: Int = 0
         var vigorBefore: Int = 0
         var xpEarned: Int = 0
-        var silverEarned: Int = 0
         var hasCapturedBefore = false
 
         while true {
@@ -366,7 +353,6 @@ public enum PassiveExpeditionService {
                 hpBefore      = restored.hpBefore
                 vigorBefore   = restored.vigorBefore
                 xpEarned      = restored.xpEarned
-                silverEarned  = restored.silverEarned
                 hasCapturedBefore = true
             }
 
@@ -383,7 +369,6 @@ public enum PassiveExpeditionService {
                     hpBefore: hasCapturedBefore ? hpBefore : state.user.hp,
                     vigorBefore: hasCapturedBefore ? vigorBefore : state.user.vigor,
                     xpEarned: xpEarned,
-                    silverEarned: silverEarned,
                     died: false, deathDepth: nil,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -436,8 +421,7 @@ public enum PassiveExpeditionService {
             }
 
             recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped,
-                          xpEarned: &xpEarned, silverEarned: &silverEarned,
-                          playerLevel: user.level)
+                          xpEarned: &xpEarned, playerLevel: user.level)
 
             // Persist the post-step running totals on the state row alongside
             // `stepsDeep` — single save, both fields together. Survives any
@@ -448,8 +432,7 @@ public enum PassiveExpeditionService {
                 outcomeCounts: outcomeCounts,
                 lootPicked: lootPicked,
                 lootDropped: lootDropped,
-                xpEarned: xpEarned,
-                silverEarned: silverEarned
+                xpEarned: xpEarned
             )
             state.runningReportJSON = encodeRunningReport(snapshot)
             state.stepsDeep = nextStep
@@ -470,7 +453,6 @@ public enum PassiveExpeditionService {
                     lootPicked: lootPicked, lootDropped: lootDropped,
                     hpBefore: hpBefore, vigorBefore: vigorBefore,
                     xpEarned: xpEarned,
-                    silverEarned: silverEarned,
                     died: true, deathDepth: nextStep,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -491,7 +473,6 @@ public enum PassiveExpeditionService {
         hpBefore: Int,
         vigorBefore: Int,
         xpEarned: Int,
-        silverEarned: Int,
         died: Bool,
         deathDepth: Int?,
         on db: any Database,
@@ -524,13 +505,7 @@ public enum PassiveExpeditionService {
         // partial total and drift the payout.
         let passive = ExplorationService.passiveTuning
         let xpResult = user.grantXP(Int((Double(xpEarned) * passive.xpMultiplier).rounded()))
-        let silverPaid = Swift.max(0, Int((Double(silverEarned) * passive.silverMultiplier).rounded()))
-        // Coin is carried, not worn, so a corpse keeps none of it — the same
-        // rule the loot list follows two blocks up.
-        if !died, silverPaid > 0 {
-            user.silver += silverPaid
-        }
-        if xpResult.xpAwarded > 0 || (!died && silverPaid > 0) {
+        if xpResult.xpAwarded > 0 {
             try? await user.saveAndCache(in: db)
         }
 
@@ -560,7 +535,6 @@ public enum PassiveExpeditionService {
             outcomeCounts: outcomeCounts,
             loot: loot,
             xpEarned: xpResult.xpAwarded,
-            silverEarned: died ? 0 : silverPaid,
             levelsGained: xpResult.levelsGained,
             newLevel: xpResult.newLevel,
             maxHpGained: xpResult.maxHpGained,
@@ -600,7 +574,6 @@ public enum PassiveExpeditionService {
         picked: inout [String: Int],
         dropped: inout [String: Int],
         xpEarned: inout Int,
-        silverEarned: inout Int,
         playerLevel: Int
     ) {
         switch outcome {
@@ -620,7 +593,6 @@ public enum PassiveExpeditionService {
         case .encounterWon(let enemy, _, _, _, let drops):
             counts["encounter_won", default: 0] += 1
             xpEarned += User.xpFromKill(enemy, playerLevel: playerLevel)
-            silverEarned += enemy.silverReward
             for drop in drops {
                 if drop.picked {
                     picked[drop.itemId, default: 0] += drop.quantity
@@ -744,15 +716,6 @@ public enum PassiveExpeditionService {
             }
             lines.append(xpLine)
         }
-        // Silver is its own line rather than a fragment of the XP one: a run
-        // can earn coin with no XP at all once `xpLevelDiff` bites on a
-        // heavily out-levelled band.
-        if report.silverEarned > 0 {
-            if report.xpEarned <= 0 { lines.append("") }
-            lines.append("🪙 " + lingo.localize("exploration.passive.report.silver", locale: locale,
-                                                interpolations: ["silver": "\(report.silverEarned)"]))
-        }
-
         let totalEvents = report.outcomeCounts.values.reduce(0, +)
         if totalEvents > 0 {
             lines.append("")

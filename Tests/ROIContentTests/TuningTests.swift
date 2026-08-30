@@ -65,14 +65,13 @@ final class TuningTests: XCTestCase {
                 durationRounds: stanceDuration, defaultActivationVigor: 4,
                 byId: stances ?? [
                     StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                                    attackMultiplier: 1.0, attackBonus: 5, defenseBonus: 3,
-                                    critBonus: 0, accuracyBonus: 0, dodgeBonus: 0, vigorMultiplier: 2.0),
+                                    attackMultiplier: 1.35, defenseMultiplier: 1.15,
+                                    vigorMultiplier: 1.5),
                     StanceTuningDTO(id: "hawks_eye", characterClass: "archer", activationVigor: 4,
-                                    attackMultiplier: 1.0, attackBonus: 0, defenseBonus: 0,
-                                    critBonus: 15, accuracyBonus: 10, dodgeBonus: 10, vigorMultiplier: 1.0),
+                                    critMultiplier: 1.6, accuracyMultiplier: 1.15,
+                                    dodgeMultiplier: 1.15),
                     StanceTuningDTO(id: "arcane_resonance", characterClass: "mage", activationVigor: 5,
-                                    attackMultiplier: 1.5, attackBonus: 0, defenseBonus: 5,
-                                    critBonus: 0, accuracyBonus: 0, dodgeBonus: 0, vigorMultiplier: 1.0)
+                                    attackMultiplier: 1.5, defenseMultiplier: 1.15)
                 ]),
             specialAttack: specialAttack ?? [
                 SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
@@ -125,7 +124,7 @@ final class TuningTests: XCTestCase {
                 EventWeightTierDTO(priorVisits: 1, nothing: 20, loot: 50, encounter: 20, trip: 10),
                 EventWeightTierDTO(priorVisits: 2, nothing: 80, loot: 20, encounter: 0, trip: 0)
             ],
-            passive: PassiveExpeditionTuningDTO(xpMultiplier: passiveXP, silverMultiplier: 0.7,
+            passive: PassiveExpeditionTuningDTO(xpMultiplier: passiveXP,
                                                 lootMultiplier: 1.0, freshStepCount: 1))
     }
 
@@ -195,8 +194,7 @@ final class TuningTests: XCTestCase {
         ].map {
             EnemyArchetypeDTO(id: $0.0, rounds: $0.1, hpLossPercent: $0.2,
                               mitigationPercent: $0.3, dodgePercent: $0.4, critPercent: $0.5,
-                              xpMultiplier: $0.6, lootMultiplier: $0.7,
-                              silverMultiplier: $0.8, spawnWeight: $0.9)
+                              xpMultiplier: $0.6, lootMultiplier: $0.7, spawnWeight: $0.9)
         }
     }
 
@@ -355,22 +353,18 @@ final class TuningTests: XCTestCase {
     func testMissingStanceForAClassIsAnError() {
         assertRule("tuning.class_missing", bundle(combat: combat(stances: [
             StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                            attackMultiplier: 1.0, attackBonus: 5, defenseBonus: 3,
-                            critBonus: 0, accuracyBonus: 0, dodgeBonus: 0, vigorMultiplier: 2.0)
+                            attackMultiplier: 1.35, defenseMultiplier: 1.15, vigorMultiplier: 1.5)
         ])))
     }
 
     func testDuplicateStanceIdIsAnError() {
         assertRule("identity.duplicate_id", bundle(combat: combat(stances: [
             StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                            attackMultiplier: 1.0, attackBonus: 5, defenseBonus: 3,
-                            critBonus: 0, accuracyBonus: 0, dodgeBonus: 0, vigorMultiplier: 2.0),
+                            attackMultiplier: 1.35, defenseMultiplier: 1.15, vigorMultiplier: 1.5),
             StanceTuningDTO(id: "bloodlust", characterClass: "archer", activationVigor: 4,
-                            attackMultiplier: 1.0, attackBonus: 0, defenseBonus: 0,
-                            critBonus: 15, accuracyBonus: 10, dodgeBonus: 10, vigorMultiplier: 1.0),
+                            critMultiplier: 1.6, accuracyMultiplier: 1.15, dodgeMultiplier: 1.15),
             StanceTuningDTO(id: "arcane_resonance", characterClass: "mage", activationVigor: 5,
-                            attackMultiplier: 1.5, attackBonus: 0, defenseBonus: 5,
-                            critBonus: 0, accuracyBonus: 0, dodgeBonus: 0, vigorMultiplier: 1.0)
+                            attackMultiplier: 1.5, defenseMultiplier: 1.15)
         ])))
     }
 

@@ -42,8 +42,8 @@ public enum ItemBudget {
         let content = Catalogs.current
         guard let weight = content.slotWeights[slot.rawValue] else { return nil }
         let multiplier = content.raritiesById[rarity]?.budgetMultiplier ?? 1.0
-        let curve = content.budget
-        return weight * (curve.base + curve.perItemLevel * Double(max(1, itemLevel))) * multiplier
+        return BudgetMath.points(itemLevel: itemLevel, slotWeight: weight,
+                                 rarityMultiplier: multiplier, curve: content.budget)
     }
 
     /// Stats produced by spending `points` according to `shares`, at the
@@ -51,17 +51,8 @@ public enum ItemBudget {
     /// beside `points` so the number the validator checks and the number the
     /// generator emits come from the same place.
     public static func spend(points: Double, shares: StatSharesDTO) -> GearStats {
-        let rate = Catalogs.current.budget.statPerPoint
-        func stat(_ share: Double, _ per: Double) -> Int {
-            Int((points * share * per).rounded())
-        }
-        return GearStats(
-            attack:   stat(shares.attack, rate.attack),
-            defense:  stat(shares.defense, rate.defense),
-            hp:       stat(shares.hp, rate.hp),
-            crit:     stat(shares.crit, rate.crit),
-            dodge:    stat(shares.dodge, rate.dodge),
-            accuracy: stat(shares.accuracy, rate.accuracy))
+        BudgetMath.spend(points: points, shares: shares,
+                         rate: Catalogs.current.budget.statPerPoint).domain
     }
 
     /// The reference character's full kit at `itemLevel`: common gear of that
@@ -72,23 +63,13 @@ public enum ItemBudget {
     /// than take them on faith.
     public static func referenceGear(for characterClass: CharacterClass, itemLevel: Int) -> GearStats {
         let content = Catalogs.current
-        guard let profile = content.budget.classProfiles
-            .first(where: { $0.characterClass == characterClass.rawValue }) else { return GearStats() }
-        var total = GearStats()
-        func add(_ slot: EquipmentSlot, _ shares: StatSharesDTO) {
-            guard let points = points(itemLevel: itemLevel, slot: slot, rarity: "common") else { return }
-            let s = spend(points: points, shares: shares)
-            total = GearStats(attack: total.attack + s.attack, defense: total.defense + s.defense,
-                              hp: total.hp + s.hp, crit: total.crit + s.crit,
-                              dodge: total.dodge + s.dodge, accuracy: total.accuracy + s.accuracy)
-        }
-        add(.mainHand, profile.weapon)
-        add(.offHand, profile.offHand)
-        for slot in [EquipmentSlot.helmet, .chest, .legs, .boots] { add(slot, profile.armour) }
+        guard let profile = content.classBudgetProfiles[characterClass.rawValue] else { return GearStats() }
         // The two accessory slots are deliberately left unspent: no accessory
         // exists yet, and their 1.0 of slot weight is exactly the gap between
         // this kit and the design's published reference numbers.
-        return total
+        return BudgetMath.referenceGear(
+            profile: profile, itemLevel: itemLevel, budget: content.budget,
+            rarityMultiplier: content.raritiesById["common"]?.budgetMultiplier ?? 1.0).domain
     }
 
 }

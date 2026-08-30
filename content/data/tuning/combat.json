@@ -114,38 +114,35 @@
   "stances" : {
     "byId" : [
       {
-        "accuracyBonus" : 0,
+        "accuracyMultiplier" : 1.0,
         "activationVigor" : 4,
-        "attackBonus" : 5,
-        "attackMultiplier" : 1.0,
+        "attackMultiplier" : 1.35,
         "class" : "warrior",
-        "critBonus" : 0,
-        "defenseBonus" : 3,
-        "dodgeBonus" : 0,
+        "critMultiplier" : 1.0,
+        "defenseMultiplier" : 1.15,
+        "dodgeMultiplier" : 1.0,
         "id" : "bloodlust",
-        "vigorMultiplier" : 2.0
+        "vigorMultiplier" : 1.5
       },
       {
-        "accuracyBonus" : 10,
+        "accuracyMultiplier" : 1.15,
         "activationVigor" : 4,
-        "attackBonus" : 0,
         "attackMultiplier" : 1.0,
         "class" : "archer",
-        "critBonus" : 15,
-        "defenseBonus" : 0,
-        "dodgeBonus" : 10,
+        "critMultiplier" : 1.6,
+        "defenseMultiplier" : 1.0,
+        "dodgeMultiplier" : 1.15,
         "id" : "hawks_eye",
         "vigorMultiplier" : 1.0
       },
       {
-        "accuracyBonus" : 0,
+        "accuracyMultiplier" : 1.0,
         "activationVigor" : 5,
-        "attackBonus" : 0,
         "attackMultiplier" : 1.5,
         "class" : "mage",
-        "critBonus" : 0,
-        "defenseBonus" : 5,
-        "dodgeBonus" : 0,
+        "critMultiplier" : 1.0,
+        "defenseMultiplier" : 1.15,
+        "dodgeMultiplier" : 1.0,
         "id" : "arcane_resonance",
         "vigorMultiplier" : 1.0
       }

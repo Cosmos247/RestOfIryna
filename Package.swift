@@ -71,7 +71,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ROIContentTests",
-            dependencies: ["ROIContent"],
+            dependencies: ["ROIContent", "ROISim"],
             path: "Tests/ROIContentTests", swiftSettings: swiftSettings
         )
     ]

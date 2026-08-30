@@ -68,29 +68,49 @@ running game on exactly the snapshot it was serving. `LiveReferenceCheck`
 refuses a swap that would drop an id live rows still point at, across all ten
 content-id columns. Lingo is NOT reloaded; new strings still need a restart.
 
-**Next — Phase 8: `CombatantStats` refactor + the simulator.** Thread
-`RandomNumberGenerator` through `CombatService` / `ExplorationService`, add
-`roi-content simulate`, and lock every constant by verifying **p90, not the
-mean** — enemy crit barely moves average HP loss but moves the tail hard, and
-balancing on the mean is how players die on a tail the table calls fine.
+**Phase 8 is done.** **8A** moved the combat, progression and budget math out of
+`CombatService` / `User` / `ItemBudget` and into `ROISim`, leaving the façades'
+public API untouched — so the game and the simulator execute the SAME
+`CombatMath.applyAttack`, and a report cannot drift from the bot. The digest held
+at `a4d825a8d728f4f8` across the move, which is a bit-level proof: its `tuning`
+half already replays `baseStats`, `xpRequiredToReach` and all four curves.
 
-**Current digest baseline: `a4d825a8d728f4f8`**
-(`records efd31486552c644b` · `tuning ae10c071662462d6` ·
-`spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`).
+**8B** shipped `swift run roi-content simulate` — `EnemyGenerator` (inverts the
+archetype targets the way the shipped roster's DEF/crit/dodge were derived),
+`ReferenceCharacter` (on curve and one ladder rung behind), `FightSimulator` (the
+round order copied from `CombatController.finishRound`; `.basic` IS the passive
+autobattle), and a banded report. **Level invariance holds on all 18 rows** —
+which is the claim the whole rebalance rests on.
 
-`--content-digest` prints four live checks beside the hashes: façade lookups,
-the plot sweeper's two-point equivalence, the combat model against the design
-anchors, and the **reference character** rebuilt from the budget — where DEF and
-absorption reproduce the published table exactly and the residual 4–10% HP gap
-is precisely the two empty accessory slots.
+**8C acted on what it found**, three changes:
+- **every stance lift is a multiplier of the character's own stat** (schema v8).
+  Two of the three Supers were flat bonuses that rotted across a lifetime —
+  `hawks_eye` was +115% crit at level 1 and +21% at the cap, and `bloodlust` was
+  charging **double Vigor** for a bonus worth +5%. Now: bloodlust attack ×1.35 /
+  defence ×1.15 / vigor ×1.5, hawks_eye crit ×1.60 / accuracy ×1.15 / dodge ×1.15,
+  arcane_resonance attack ×1.50 / defence ×1.15.
+- **the warrior's budget was re-spent toward offence** — weapon attack 0.72 → 0.80,
+  armour defence 0.82 → 0.78 into HP, base attack 10 → 12. Days-to-cap spread
+  **17% → 9%**, and the tank trade finally exists: the warrior loses 50–53% of a
+  bar to an elite where the mage loses 65%.
+- **monster silver removed entirely** — every faucet left is a player-facing
+  system with a sink attached.
 
-⚠️ **No live Telegram pass has been run since the rebalance began.** Every
-formula the player touches changed in Phase 5, and every item's stats in Phase 6.
+**Reported by every run, not yet acted on:** `shadowVeilDodgeBonus` (+50 = 238%
+of a level-1 archer's dodge, 34% at the cap) and `defend.archerDodgeBonus`
+(+30 = 143% → 20%) are the same flat-bonus rot in the techniques beside the
+stances; the mage's 93% win rate against an elite at level 5 wants the
+spawn-level floor the plan specified; and the shipped bestiary carries ~50% of
+the HP and ATK its archetypes ask for (Phase 10 regenerates it — the generator
+now exists to do it with).
 
-Known content gaps, all Phase 10's: km 31–40 holds a single elite, the `boss`
-archetype has no members, `offHand` and both accessory slots have no items at
-all (1.0 + 1.2 of slot weight idle), and `ExplorationService.rollLoot` still
-keeps its foraging pools in Swift (they belong in `zones.json`).
+**Next is Phase 9** — content specs, approved before a byte is authored.
+
+**Current digest baseline: `583a32cb5a9d9dc7`** (schema **v8**)
+(`records 7b3a5e700d0b8fe7` · `tuning 5946bb13b530389e` ·
+`spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`). Phase 8C moved the first
+two and left the last two alone — no selection logic or daily assignment was
+touched, and the digest says so rather than asking to be believed.
 
 ### How content works now
 
@@ -123,8 +143,9 @@ live in `.memory/content-pipeline.md`.
 ```
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
+swift run -c release roi-content simulate   # balance sweep; --runs/--seed/--levels, --strict gates
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 185 tests, ~0.14s
+swift test                                   # 192 tests, ~0.14s
 ```
 
 ## What Works Now (shipped game)
@@ -138,7 +159,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (957 / 978 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (955 / 976 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator warns about it. Deliberate; Phase 11 sets it to 1.0.

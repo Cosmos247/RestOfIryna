@@ -21,12 +21,25 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**Next: Phase 8** — `CombatantStats`, `RandomNumberGenerator` threading, `roi-content
-simulate`, and locking constants against **p90 rather than the mean**.
+**Next: Phase 9** — content specs, for approval before any authoring. Phase 8 is closed:
+the math moved into `ROISim` behind unchanged façades, `roi-content simulate` measures it,
+and the three findings it produced were acted on (stances multiplicative, warrior budget
+re-spent, monster silver removed).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `a4d825a8d728f4f8`, 185 tests.
+against a real database. Digest baseline `583a32cb5a9d9dc7` (schema v8), 192 tests.
+
+**Balance is now measurable.** `swift run roi-content simulate` rolls the real
+`CombatMath` — the same code the bot calls — over levels × archetypes × classes ×
+profiles × gear offsets and reports TTK, tails at p90, pace and the shipped roster
+against its own archetype contract. **Level invariance holds on all 18 rows, and no
+band is broken.** Phase 8C acted on what it found: every stance lift is a multiplier
+of the character's own stat (the warrior's Super was charging double Vigor for a bonus
+that had rotted to +5%), the warrior's budget was re-spent toward offence (days-to-cap
+spread 17% → 9%), and monster silver was removed entirely. Still reported every run:
+two flat dodge bonuses that rot the same way (`shadowVeilDodgeBonus`,
+`defend.archerDodgeBonus`), and a bestiary carrying ~50% of what its archetypes ask.
 
 Sections below describe the shipped FEATURE SET. Where they quote numbers (XP curves,
 stat growth, enemy stats, enchant bonuses) treat `content/data/` as the truth — several
@@ -78,8 +91,8 @@ were superseded by Phases 4–6.
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — 957 keys (2026-08-30)
-- [x] Ukrainian (uk.json) — 978 keys (+21 gendered `.m`/`.f` variants)
+- [x] English (en.json) — 955 keys (2026-08-30; the two monster-silver lines went with the mechanic in 8C)
+- [x] Ukrainian (uk.json) — 976 keys (+21 gendered `.m`/`.f` variants)
 
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
@@ -218,8 +231,10 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   stat budget with rarity and sets (6), `/reload` guarded by `LiveReferenceCheck` (7). The
   per-phase detail is in the table at the top of this file; the reasoning is in
   `.memory/rebalance.md`.
-- Phases 8 – 11 pending: simulator calibration (p90, not the mean), content specs, authoring,
-  wipe + the release pass that sets `time.scale` to 1.0.
+- Phase 8 done — 8A (math into `ROISim`, digest held), 8B (`roi-content simulate`),
+  8C (stances multiplicative, warrior budget re-spent, monster silver removed).
+- Phases 9 – 11 pending: content specs, authoring, wipe + the release pass that sets
+  `time.scale` to 1.0.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve
 capped at 70% · gear power ceiling 1.75× common · sinks ≈85% of faucets.

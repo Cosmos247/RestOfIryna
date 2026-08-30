@@ -2,7 +2,7 @@
   "classes" : [
     {
       "accuracy" : 10,
-      "attack" : 10,
+      "attack" : 12,
       "class" : "warrior",
       "crit" : 5,
       "defense" : 12,

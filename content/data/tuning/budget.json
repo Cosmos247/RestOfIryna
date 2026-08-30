@@ -3,8 +3,8 @@
   "classProfiles" : [
     {
       "armour" : {
-        "defense" : 0.82,
-        "hp" : 0.18
+        "defense" : 0.78,
+        "hp" : 0.22
       },
       "class" : "warrior",
       "offHand" : {
@@ -12,8 +12,8 @@
         "hp" : 0.3
       },
       "weapon" : {
-        "accuracy" : 0.14,
-        "attack" : 0.72,
+        "accuracy" : 0.06,
+        "attack" : 0.8,
         "crit" : 0.14
       }
     },

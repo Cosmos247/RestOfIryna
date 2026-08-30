@@ -3,7 +3,6 @@
   "passive" : {
     "freshStepCount" : 1,
     "lootMultiplier" : 1.0,
-    "silverMultiplier" : 0.7,
     "xpMultiplier" : 0.7
   },
   "tripDamagePercent" : 0.05,

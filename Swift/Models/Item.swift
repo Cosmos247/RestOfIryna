@@ -46,17 +46,10 @@ public enum ItemEffect: Sendable {
 }
 
 // MARK: - Equipment Slot
-
-public enum EquipmentSlot: String, Codable, CaseIterable, Sendable {
-    case helmet
-    case chest
-    case legs
-    case boots
-    case mainHand   = "main_hand"
-    case offHand    = "off_hand"
-    case accessory1 = "accessory_1"
-    case accessory2 = "accessory_2"
-}
+//
+// `EquipmentSlot` moved to `ROIContent/Vocabulary.swift` in Phase 8 — a slot id
+// is written in `items.json` and in `tuning/budget.json`, so the validator and
+// the simulator need it as much as the game does.
 
 // MARK: - Gear Stats
 

@@ -14,10 +14,13 @@
 //     exploration" — self-documenting where the shipped roster used a `0...0`
 //     sentinel for the training dummy and the tutorial dog.
 //
-//  2. `level` / `archetype` / `crit` / `dodge` / `accuracy` / `silverReward`
-//     are the fields the shipped `Enemy` struct lacks. They are optional here
-//     so the Phase 1 export of the current bestiary round-trips unchanged,
-//     and become required once the generated table lands.
+//  2. `level` / `archetype` / `crit` / `dodge` / `accuracy` are the fields the
+//     shipped `Enemy` struct lacked before Phase 5. `silverReward` was a third:
+//     it was removed in Phase 8C along with the whole monster-coin mechanic,
+//     so the only silver faucets are quests, the trader, the tavern, the
+//     market and the arena — all of them player-facing systems with a sink
+//     attached, which is what the mid-game economy needed and a coin drop
+//     quietly worked against.
 //
 
 import Foundation
@@ -126,9 +129,6 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
     /// Reserved for Phase 10's generated bestiary (wolf / undead / …), where it
     /// drives shared resistances and loot families. Nothing reads it yet.
     public let family: String?
-    /// Silver dropped on victory. Absent means none — a legitimate value for a
-    /// training dummy, which is why this one stays optional while `level` does not.
-    public let silverReward: Int?
     /// Relative spawn chance inside the depth band. Absent means "inherit the
     /// archetype's default", which is the common case: an enemy only carries
     /// its own weight when it is deliberately rarer or more common than its
@@ -154,7 +154,6 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         level: Int = 1,
         archetype: String = "normal",
         family: String? = nil,
-        silverReward: Int? = nil,
         spawnWeight: Double? = nil,
         nameKeyOverride: String? = nil
     ) {
@@ -168,14 +167,13 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         self.level = level
         self.archetype = archetype
         self.family = family
-        self.silverReward = silverReward
         self.spawnWeight = spawnWeight
         self.nameKeyOverride = nameKeyOverride
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, tier, icon, xpReward, stats, depth, loot
-        case level, archetype, family, silverReward, spawnWeight
+        case level, archetype, family, spawnWeight
         case nameKeyOverride = "nameKey"
     }
 
@@ -191,7 +189,6 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         level        = try c.decode(Int.self, forKey: .level)
         archetype    = try c.decode(String.self, forKey: .archetype)
         family       = try c.decodeIfPresent(String.self, forKey: .family)
-        silverReward = try c.decodeIfPresent(Int.self, forKey: .silverReward)
         spawnWeight  = try c.decodeIfPresent(Double.self, forKey: .spawnWeight)
         nameKeyOverride = try c.decodeIfPresent(String.self, forKey: .nameKeyOverride)
     }
@@ -223,13 +220,12 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
     public let critPercent: Double
     public let xpMultiplier: Double
     public let lootMultiplier: Double
-    public let silverMultiplier: Double
     /// Default relative spawn chance for enemies of this archetype.
     public let spawnWeight: Double
 
     public init(id: String, rounds: Double, hpLossPercent: Double,
                 mitigationPercent: Double, dodgePercent: Double, critPercent: Double,
-                xpMultiplier: Double, lootMultiplier: Double, silverMultiplier: Double,
+                xpMultiplier: Double, lootMultiplier: Double,
                 spawnWeight: Double) {
         self.id = id
         self.rounds = rounds
@@ -239,13 +235,12 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
         self.critPercent = critPercent
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
-        self.silverMultiplier = silverMultiplier
         self.spawnWeight = spawnWeight
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, rounds, hpLossPercent, mitigationPercent, dodgePercent, critPercent
-        case xpMultiplier, lootMultiplier, silverMultiplier, spawnWeight
+        case xpMultiplier, lootMultiplier, spawnWeight
     }
 
     /// Every field required — this is a tuning row, not a record with optional
@@ -260,7 +255,6 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
         critPercent       = try c.decode(Double.self, forKey: .critPercent)
         xpMultiplier      = try c.decode(Double.self, forKey: .xpMultiplier)
         lootMultiplier    = try c.decode(Double.self, forKey: .lootMultiplier)
-        silverMultiplier  = try c.decode(Double.self, forKey: .silverMultiplier)
         spawnWeight       = try c.decode(Double.self, forKey: .spawnWeight)
     }
 }

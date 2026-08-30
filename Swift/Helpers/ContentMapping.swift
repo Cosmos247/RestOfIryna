@@ -141,7 +141,6 @@ extension EnemyDTO {
             accuracy: stats.accuracy,
             level: level,
             archetype: kind,
-            silverReward: silverReward ?? 0,
             spawnWeight: spawnWeight ?? defaultSpawnWeight,
             depthRange: range,
             lootTable: loot.map {

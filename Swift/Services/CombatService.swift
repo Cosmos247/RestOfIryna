@@ -16,11 +16,10 @@
 
 import Foundation
 
-public enum AttackOutcome: Sendable {
-    case miss
-    case hit(damage: Int)
-    case crit(damage: Int)
-}
+/// The shape of a swing's result. Defined in `ROISim.CombatMath` since Phase 8
+/// so the game and the simulator speak in the same outcomes; the alias is what
+/// keeps every existing `case .miss` / `case .hit(let d)` call site unchanged.
+public typealias AttackOutcome = CombatMath.AttackOutcome
 
 public enum CombatService {
 
@@ -89,28 +88,11 @@ public enum CombatService {
     /// lands, never crits — flavour is "you mostly hold the line but tag it".
     public static var defendChipFraction: Double { Catalogs.current.tuningCombat.defendChipFraction }
 
-    /// Per-attack modifiers used by special techniques to bend the standard
-    /// applyAttack roll without writing a new function. Defaults are no-ops
-    /// so existing callers keep working unchanged.
-    ///
-    /// - `hitChanceModifier`: added to the clamped hit-chance roll (Cleave: -15)
-    ///   (Cleave: 0.5 — armor-piercing; Vital Shot / Soulfire: 0.0 — ignore DEF)
-    /// - `critBonus`: added to attacker crit % (Vital Shot: +20)
-    /// - `cannotMiss`: if true, hit-chance roll is bypassed (Vital Shot, Soulfire)
-    /// - `flatDamageBonus`: added to raw pre-variance damage (Soulfire: +5)
-    public struct AttackModifiers: Sendable {
-        public var hitChanceModifier: Int = 0
-        public var critBonus: Int = 0
-        public var cannotMiss: Bool = false
-        public var flatDamageBonus: Int = 0
-        /// Replaces `critMultiplier` for this swing only. Lets a technique buy
-        /// a bigger crit rather than a more frequent one, which is the shape
-        /// that survives an absorption model: a multiplier applies to the
-        /// number that is left AFTER armour, so armour cannot erode it.
-        public var critMultiplierOverride: Double?
-
-        public init() {}
-    }
+    /// Per-swing modifiers for the special techniques. The fields and what
+    /// each one bends live on `CombatMath.AttackModifiers`; this alias is what
+    /// keeps `CombatService.AttackModifiers()` reading the same at its call
+    /// sites and in the tuning fingerprint.
+    public typealias AttackModifiers = CombatMath.AttackModifiers
 
     // MARK: - Phase 5C curves
     //
@@ -120,39 +102,40 @@ public enum CombatService {
     // game while a fresh mage took 28 from a boar. A ratio has no such cliff —
     // and it is what makes a flat +32 enchant stop being game-breaking.
 
+    /// The per-swing scalars, lifted out of the live tuning table.
+    ///
+    /// Rebuilt on each call rather than cached: it is six field copies, and a
+    /// `static let` here would be exactly the type-init trap this file warns
+    /// about two comments up — plus it would survive a `/reload` and keep
+    /// serving the previous bundle's numbers.
+    private static var rules: CombatRules { CombatRules(Catalogs.current.tuningCombat) }
+
     /// Fraction of an incoming hit the defender absorbs.
     ///
     /// The denominator uses the DEFENDER's level: `K` is derived from the item
     /// budget curve of the character wearing that DEF, so it has to be read at
     /// their level, not the attacker's.
     public static func mitigation(defenderDEF: Int, defenderLevel: Int) -> Double {
-        let curve = Catalogs.current.tuningCombat.curves.mitigation
-        let def = Swift.max(0.0, Double(defenderDEF))
-        let k = curve.kBase + curve.kPerLevel * Double(Swift.max(1, defenderLevel))
-        guard def + k > 0 else { return 0 }
-        return Swift.min(curve.cap, def / (def + k))
-    }
-
-    private static func percent(_ curve: RatingCurveDTO, rating: Int, level: Int) -> Double {
-        let r = Swift.max(0.0, Double(rating))
-        let k = curve.kBase + curve.kPerLevel * Double(Swift.max(1, level))
-        guard r + k > 0 else { return 0 }
-        return curve.scale * r / (r + k)
+        CombatMath.mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel,
+                              curve: Catalogs.current.tuningCombat.curves.mitigation)
     }
 
     /// Chance to evade, as a percentage. Read at the DODGER's level.
     public static func dodgePercent(rating: Int, level: Int) -> Double {
-        percent(Catalogs.current.tuningCombat.curves.dodge, rating: rating, level: level)
+        CombatMath.dodgePercent(rating: rating, level: level,
+                                curves: Catalogs.current.tuningCombat.curves)
     }
 
     /// Chance to crit, as a percentage. Read at the ATTACKER's level.
     public static func critPercent(rating: Int, level: Int) -> Double {
-        percent(Catalogs.current.tuningCombat.curves.crit, rating: rating, level: level)
+        CombatMath.critPercent(rating: rating, level: level,
+                               curves: Catalogs.current.tuningCombat.curves)
     }
 
     /// Percentage points added to the base hit chance. Read at the ATTACKER's level.
     public static func accuracyPercent(rating: Int, level: Int) -> Double {
-        percent(Catalogs.current.tuningCombat.curves.accuracy, rating: rating, level: level)
+        CombatMath.accuracyPercent(rating: rating, level: level,
+                                   curves: Catalogs.current.tuningCombat.curves)
     }
 
     /// Damage multiplier from the level gap.
@@ -162,9 +145,8 @@ public enum CombatService {
     /// at runtime would make every gear upgrade evaporate the moment it is
     /// worn; a level term does the same job without touching the enemy table.
     public static func levelDiffMultiplier(attackerLevel: Int, defenderLevel: Int) -> Double {
-        let spec = Catalogs.current.tuningCombat.levelDiff
-        let raw = 1 + spec.perLevel * Double(attackerLevel - defenderLevel)
-        return Swift.max(spec.min, Swift.min(spec.max, raw))
+        CombatMath.levelDiffMultiplier(attackerLevel: attackerLevel, defenderLevel: defenderLevel,
+                                       spec: Catalogs.current.tuningCombat.levelDiff)
     }
 
     /// Roll a single attack.
@@ -189,31 +171,18 @@ public enum CombatService {
         defenderLevel: Int,
         modifiers: AttackModifiers = AttackModifiers()
     ) -> AttackOutcome {
-        let band = Catalogs.current.tuningCombat.hitChance
-        let hitChance: Double
-        if modifiers.cannotMiss {
-            hitChance = 100
-        } else {
-            let accuracy = accuracyPercent(rating: attackerAcc, level: attackerLevel)
-            let evasion = dodgePercent(rating: defenderDodge, level: defenderLevel)
-            let raw = Double(band.base) + accuracy - evasion + Double(modifiers.hitChanceModifier)
-            hitChance = Swift.max(Double(band.min), Swift.min(Double(band.max), raw))
-        }
-        if Double.random(in: 0..<100) >= hitChance { return .miss }
-
-        let absorbed = mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel)
-        let afterArmour = Double(attackerATK) * (1 - absorbed) + Double(modifiers.flatDamageBonus)
-        let scaled = afterArmour * levelDiffMultiplier(attackerLevel: attackerLevel,
-                                                       defenderLevel: defenderLevel)
-        let varied = scaled * Double.random(in: varianceRange)
-
-        let critChance = critPercent(rating: attackerCrit, level: attackerLevel)
-            + Double(modifiers.critBonus)
-        if Double.random(in: 0..<100) < critChance {
-            let multiplier = modifiers.critMultiplierOverride ?? critMultiplier
-            return .crit(damage: Swift.max(1, Int((varied * multiplier).rounded())))
-        }
-        return .hit(damage: Swift.max(1, Int(varied.rounded())))
+        // The flat argument list stays: every caller composes a swing out of
+        // numbers no character actually has — a bloodlust-buffed ATK, an
+        // armour-broken enemy DEF, an archer's dodge zeroed for the round — so
+        // the two `CombatantStats` are assembled here rather than at the call
+        // site, where they would read as characters and invite reuse.
+        var rng = SystemRandomNumberGenerator()
+        return CombatMath.applyAttack(
+            attacker: CombatantStats(level: attackerLevel, attack: attackerATK,
+                                     crit: attackerCrit, accuracy: attackerAcc),
+            defender: CombatantStats(level: defenderLevel, defense: defenderDEF,
+                                     dodge: defenderDodge),
+            modifiers: modifiers, rules: rules, using: &rng)
     }
 
     /// Defend-mode chip damage. Always lands, never crits, scaled to
@@ -223,29 +192,21 @@ public enum CombatService {
     /// passes 0.5 to halve the chip.
     public static func chipDamage(attackerATK: Int, defenderDEF: Int, defenderLevel: Int,
                                   extraMultiplier: Double = 1.0) -> Int {
-        let absorbed = mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel)
-        let raw = Double(attackerATK) * (1 - absorbed)
-        let varied = raw * Double.random(in: varianceRange) * defendChipFraction * extraMultiplier
-        return Swift.max(1, Int(varied.rounded()))
+        var rng = SystemRandomNumberGenerator()
+        return CombatMath.chipDamage(attackerATK: attackerATK, defenderDEF: defenderDEF,
+                                     defenderLevel: defenderLevel,
+                                     extraMultiplier: extraMultiplier,
+                                     rules: rules, using: &rng)
     }
 
     // MARK: - Phase 4.2 stance modifiers
 
     /// Per-round modifiers applied while a Super-technique stance is active.
-    /// Composed by the caller on top of the player's effective stats:
-    /// `buffedATK = effectiveATK * attackMultiplier + attackBonus` etc.
+    /// Composed by the caller on top of the player's effective stats, and every
+    /// lift is a MULTIPLIER of the stat the character already has (Phase 8C):
+    /// `buffedATK = round(effectiveATK × attackMultiplier)`.
     /// `vigorMultiplier` scales the vigor drain on each combat action.
-    public struct StanceModifiers: Sendable {
-        public var attackMultiplier: Double = 1.0
-        public var attackBonus: Int = 0
-        public var defenseBonus: Int = 0
-        public var critBonus: Int = 0
-        public var accuracyBonus: Int = 0
-        public var dodgeBonus: Int = 0
-        public var vigorMultiplier: Double = 1.0
-
-        public static let none = StanceModifiers()
-    }
+    public typealias StanceModifiers = CombatMath.StanceModifiers
 
     /// Stance IDs persisted on `exploration_state.combat_stance`. Plain string
     /// constants (no enum) so adding more techniques later is a one-line
@@ -280,15 +241,7 @@ public enum CombatService {
         // `combat_stance` column straight through, and it is nil far more often
         // than it is wrong.
         guard let stanceId, let row = Catalogs.current.stanceById[stanceId] else { return .none }
-        var m = StanceModifiers()
-        m.attackMultiplier = row.attackMultiplier
-        m.attackBonus = row.attackBonus
-        m.defenseBonus = row.defenseBonus
-        m.critBonus = row.critBonus
-        m.accuracyBonus = row.accuracyBonus
-        m.dodgeBonus = row.dodgeBonus
-        m.vigorMultiplier = row.vigorMultiplier
-        return m
+        return StanceModifiers(row)
     }
 
     /// Stance ID a given character class triggers when they tap Super.
@@ -339,15 +292,7 @@ public enum CombatService {
     /// armour-piercing fantasy lives in `armourBreak`, whose worth RISES with
     /// the target's absorption instead of falling with it.
     public static func specialAttackModifiers(forClass cls: CharacterClass) -> AttackModifiers {
-        let row = specialAttack(cls)
-        var m = AttackModifiers()
-        m.hitChanceModifier = row.hitChanceModifier
-        m.cannotMiss = row.cannotMiss
-        if case .guaranteedCrit(let multiplier) = row.effect {
-            m.critBonus = 100          // percentage points — always crits
-            m.critMultiplierOverride = multiplier
-        }
-        return m
+        CombatMath.modifiers(forSpecialAttack: specialAttack(cls))
     }
 
     /// The effect a class's Special Attack applies on top of its swing. The

@@ -5,8 +5,10 @@
 //  Created by Dmytro Ihnatyuhin on 30.08.2026.
 //
 //  Phase 5A. The archetype table is design input for the bestiary generator
-//  AND runtime data — its three multipliers price XP, loot and silver on every
-//  kill — so it is validated as strictly as a tuning table.
+//  AND runtime data — its multipliers price XP and loot on every kill, and its
+//  five target percentages are what `EnemyGenerator` inverts into an enemy's
+//  stats — so it is validated as strictly as a tuning table. (The silver
+//  multiplier went with the monster-coin mechanic in Phase 8C.)
 //
 //  The depth-coverage rules are the ones worth the most. `pickFor` used to
 //  answer an uncovered km with `all.first`, which read as "every encounter past
@@ -22,12 +24,12 @@ final class BestiaryTests: XCTestCase {
 
     private func archetype(_ id: String, rounds: Double = 5, hpLoss: Double = 24,
                            mitigation: Double = 20, dodge: Double = 3, crit: Double = 5,
-                           xp: Double = 1, loot: Double = 1, silver: Double = 1,
+                           xp: Double = 1, loot: Double = 1,
                            weight: Double = 60) -> EnemyArchetypeDTO {
         EnemyArchetypeDTO(id: id, rounds: rounds, hpLossPercent: hpLoss,
                           mitigationPercent: mitigation, dodgePercent: dodge,
                           critPercent: crit, xpMultiplier: xp, lootMultiplier: loot,
-                          silverMultiplier: silver, spawnWeight: weight)
+                          spawnWeight: weight)
     }
 
     private func allArchetypes() -> [EnemyArchetypeDTO] {
@@ -36,11 +38,11 @@ final class BestiaryTests: XCTestCase {
 
     private func enemy(_ id: String = "enemy.x", level: Int = 1, archetype: String = "trash",
                        depth: IntRangeDTO? = IntRangeDTO(min: 1, max: 40),
-                       silver: Int? = nil, weight: Double? = nil) -> EnemyDTO {
+                       weight: Double? = nil) -> EnemyDTO {
         EnemyDTO(id: id, tier: 1, icon: "🐗", xpReward: 5,
                  stats: EnemyStatsDTO(hp: 10, attack: 3, defense: 1),
                  depth: depth, level: level, archetype: archetype,
-                 silverReward: silver, spawnWeight: weight)
+                 spawnWeight: weight)
     }
 
     /// `maxLevel` comes from the tuning bundle, and the coverage + level-cap
@@ -80,7 +82,7 @@ final class BestiaryTests: XCTestCase {
                     eventWeightTotal: 100, tripDamagePercent: 0.05,
                     weightTiers: [EventWeightTierDTO(priorVisits: 0, nothing: 10, loot: 50,
                                                      encounter: 30, trip: 10)],
-                    passive: PassiveExpeditionTuningDTO(xpMultiplier: 0.7, silverMultiplier: 0.7,
+                    passive: PassiveExpeditionTuningDTO(xpMultiplier: 0.7,
                                                         lootMultiplier: 1.0, freshStepCount: 1)),
                 progression: ProgressionTuningDTO(
                     maxLevel: maxLevel,
@@ -185,10 +187,6 @@ final class BestiaryTests: XCTestCase {
 
     func testLevelAboveThePlayerCapWarns() {
         assertRule("enemy.level_above_cap", bundle(enemies: [enemy(level: 99)]), severity: .warning)
-    }
-
-    func testNegativeSilverIsAnError() {
-        assertRule("enemy.negative_silver", bundle(enemies: [enemy(silver: -5)]))
     }
 
     func testNegativeSpawnWeightIsAnError() {

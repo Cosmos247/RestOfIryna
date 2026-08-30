@@ -37,11 +37,18 @@ Game code lives in `Swift/` (not `Sources/`). The content pipeline lives in `Mod
 
 ```
 Modules/
-├── ROIContent/          # Foundation-only: content DTOs, loader, validator, live snapshot
-├── ROISim/              # Pure balance math + deterministic RNG (simulator)
-└── roi-content/         # CLI: `swift run roi-content validate [--strict]`
+├── ROIContent/          # Foundation-only: content DTOs, loader, validator, live snapshot, EquipmentSlot
+├── ROISim/              # The balance math itself + deterministic RNG + the simulator
+└── roi-content/         # CLI: `validate [--strict]` · `simulate [--runs N] [--seed S] [--strict]`
 Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this graph
 ```
+
+**The combat, progression and budget math lives in `ROISim`, not in the services.**
+`CombatService`, `User`, `ItemBudget` and `VigorService` keep their whole public API and
+delegate to `CombatMath` / `ProgressionMath` / `BudgetMath`. The direction matters: a
+simulator that reimplements the maths measures the simulator, so the bot and
+`roi-content simulate` execute the same lines. Add a new roll or curve THERE and expose
+it through the façade — never as a second implementation beside it.
 
 `Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
 `Swift/` use those types without their own import line.
@@ -72,10 +79,12 @@ respects it cannot move any stat's percentage — which is what makes adding ite
 Two consequences worth knowing before touching gear:
 - `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–5); item level is the
   budget input (1–40). The weapon ladders map tiers to 1/10/20/30/40.
-- **Never give anything a flat bonus.** Enchant is `1 + 4% × level` of the item's OWN
-  stats, and set bonuses are capped against their members' combined budget. The same
-  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one — no flat number works
-  at both ends.
+- **Never give anything a flat bonus — items OR techniques.** Enchant is `1 + 4% × level`
+  of the item's OWN stats, set bonuses are capped against their members' combined budget,
+  and every Super stance lifts by a multiplier of the character's own stat. The same
+  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one; the same rule caught
+  `hawks_eye` granting +115% crit at level 1 and +21% at the cap. No flat number works
+  at both ends, and `roi-content simulate` now audits every lift for exactly this.
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build
@@ -86,7 +95,13 @@ live rows still point at — if you add a column that stores a content id, add i
 reloaded**: new locale strings still need a restart.
 
 Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
-Run `swift run roi-content validate --strict` before committing content.
+Run `swift run roi-content validate --strict` before committing content, and
+`swift run -c release roi-content simulate` after touching `tuning/combat.json`,
+`tuning/progression.json`, `tuning/budget.json` or the archetype table — those four
+decide every fight, and the report is the only thing that shows what moved. It bands
+level invariance (a level-1 and a level-40 fight must play the same), the p90 tail,
+win rates, pace to the cap and the shipped roster against its own archetype contract;
+`--strict` exits 1 on a broken band.
 
 
 ```

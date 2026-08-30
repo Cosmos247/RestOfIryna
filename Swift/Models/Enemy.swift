@@ -72,12 +72,11 @@ public struct EnemyArchetypeSpec: Sendable {
     public let critPercent: Double
     public let xpMultiplier: Double
     public let lootMultiplier: Double
-    public let silverMultiplier: Double
     public let spawnWeight: Double
 
     public init(archetype: EnemyArchetype, rounds: Double, hpLossPercent: Double,
                 mitigationPercent: Double, dodgePercent: Double, critPercent: Double,
-                xpMultiplier: Double, lootMultiplier: Double, silverMultiplier: Double,
+                xpMultiplier: Double, lootMultiplier: Double,
                 spawnWeight: Double) {
         self.archetype = archetype
         self.rounds = rounds
@@ -87,7 +86,6 @@ public struct EnemyArchetypeSpec: Sendable {
         self.critPercent = critPercent
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
-        self.silverMultiplier = silverMultiplier
         self.spawnWeight = spawnWeight
     }
 }
@@ -111,8 +109,6 @@ public struct Enemy: Sendable {
     /// makes out-levelling a zone feel like out-levelling a zone.
     public let level: Int
     public let archetype: EnemyArchetype
-    /// Silver dropped on victory — the game's first monster-side coin faucet.
-    public let silverReward: Int
     /// Relative chance of being picked inside its depth band. Resolved at load
     /// from the archetype's default when the enemy does not state its own.
     public let spawnWeight: Double
@@ -139,7 +135,6 @@ public struct Enemy: Sendable {
         accuracy: Int = 0,
         level: Int = 1,
         archetype: EnemyArchetype = .normal,
-        silverReward: Int = 0,
         spawnWeight: Double = 1,
         depthRange: ClosedRange<Int>,
         lootTable: [EnemyLootDrop],
@@ -157,7 +152,6 @@ public struct Enemy: Sendable {
         self.accuracy = accuracy
         self.level = level
         self.archetype = archetype
-        self.silverReward = silverReward
         self.spawnWeight = spawnWeight
         self.depthRange = depthRange
         self.lootTable = lootTable

@@ -119,6 +119,10 @@ final class DomainContent: Sendable {
     let gearSets: [GearSetDTO]
     let budget: BudgetTuningDTO
     let slotWeights: [String: Double]
+    /// Keyed by class raw value. `referenceGear` scanned `classProfiles` with a
+    /// linear `first(where:)`; the simulator asks for a profile once per cell
+    /// of its sweep, so the scan became a lookup rather than staying a scan.
+    let classBudgetProfiles: [String: ClassBudgetProfileDTO]
 
     let questPools: [QuestNPC: [QuestDef]]
     /// `QuestCatalog.find` used to scan an unordered dictionary of pools, so on
@@ -173,8 +177,7 @@ final class DomainContent: Sendable {
                 archetype: kind, rounds: row.rounds, hpLossPercent: row.hpLossPercent,
                 mitigationPercent: row.mitigationPercent, dodgePercent: row.dodgePercent,
                 critPercent: row.critPercent, xpMultiplier: row.xpMultiplier,
-                lootMultiplier: row.lootMultiplier, silverMultiplier: row.silverMultiplier,
-                spawnWeight: row.spawnWeight)
+                lootMultiplier: row.lootMultiplier, spawnWeight: row.spawnWeight)
         }
         for kind in EnemyArchetype.allCases where archetypes[kind] == nil {
             throw ContentMappingError.tuningRowMissing("archetype \(kind.rawValue)", table: "enemies.json")
@@ -284,6 +287,11 @@ final class DomainContent: Sendable {
         self.budget = budget
         self.slotWeights = Dictionary(budget.slotWeights.map { ($0.slot, $0.weight) },
                                       uniquingKeysWith: { first, _ in first })
+        // First-wins, matching the `first(where:)` this replaces. The validator
+        // rejects a duplicated class profile, so it only decides behaviour on a
+        // bundle that never reaches install.
+        self.classBudgetProfiles = Dictionary(budget.classProfiles.map { ($0.characterClass, $0) },
+                                              uniquingKeysWith: { first, _ in first })
         // Every item's rarity must resolve. `Item.rarity` is non-optional and
         // the glyph lookup is non-throwing, so an unknown id would have to be
         // papered over at the point it is drawn.

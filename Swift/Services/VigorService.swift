@@ -72,9 +72,8 @@ public enum VigorService {
     /// grows, and by the level cap the player would be recovering 2.7% an hour
     /// instead of the 16.7% they started with.
     public static func regenPerMinute(for user: User) -> Double {
-        let hours = Catalogs.current.tuningProgression.vigorPool.fullRegenHours
-        guard hours > 0 else { return 0 }
-        return Double(user.maxVigor) / (hours * 60)
+        ProgressionMath.vigorRegenPerMinute(
+            maxVigor: user.maxVigor, pool: Catalogs.current.tuningProgression.vigorPool)
     }
 
     /// Credit idle time as Vigor. Mirrors `HealingService.tick`, with one

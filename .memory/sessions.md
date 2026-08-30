@@ -3013,3 +3013,141 @@ Also checked and clean: `enchantBonusPoints`, `statGrowthLevels`,
 - Locale counts corrected to 957 / 978 in both `status.md` and `Prompt.md`.
 
 185 tests, clean build. Digest `a4d825a8d728f4f8`.
+
+---
+
+## Session — 2026-08-30 part 6 (Phase 8A + 8B: the math moves, the simulator lands)
+
+### 8A — one implementation, proven inert
+
+`CombatantStats`, `CombatMath`, `ProgressionMath` and `BudgetMath` are new files in
+`ROISim`; `CombatService`, `User`, `ItemBudget` and `VigorService` kept every public
+signature and became façades over them. `StanceModifiers` and
+`specialAttackModifiers` went down too — a technique the simulator models
+differently is the same bug wearing a hat.
+
+The proof is the digest. `a4d825a8d728f4f8` held across the whole move, and its
+`tuning` half already replays `baseStats` over 3 classes × 6 levels,
+`xpRequiredToReach` over 0…45 and all four curves — so this is bit-level equality,
+not a smell test. Only `applyAttack`'s three random draws sit outside that net, and
+they moved verbatim (order preserved: hit → variance → crit).
+
+`EquipmentSlot` moved from `Swift/Models/Item.swift` to `ROIContent/Vocabulary.swift`.
+It had been written out three times — the enum plus two string-literal lists inside
+`ContentValidator` — and `BudgetMath` needed a fourth. A slot id appears in
+`items.json` AND `tuning/budget.json`, so it is content vocabulary; the validator now
+reads the enum.
+
+### 8B — `roi-content simulate`
+
+- **`EnemyGenerator`** is the discovery of the session: `enemies.json`'s archetype
+  table is a GENERATOR, and inverting it reproduces every shipped enemy's DEF, crit
+  and dodge to within rounding (`rabid_bear` wants 82.36 / 56.66 / 23.04 and carries
+  82 / 57 / 23). Pinned by test against literal numbers.
+- **`FightSimulator`** copies the round order out of `CombatController.finishRound`,
+  including that Super activation is a FREE action — the controller stamps the stance
+  and returns without calling `finishRound`, so the enemy gets no counter for it.
+- Bands: level invariance on MEANS and two-sided (ratio AND points — p90 on integer
+  HP reports quantisation as drift, which failed three rows on the first cut); the
+  tail on p90; the plan's ±7% class band moved onto days-to-cap, a number the design
+  actually stated, with the invented "power index" printed but never banded.
+
+### What it says
+
+**Level invariance holds on 18 of 18 rows** — mean HP loss spans ×1.01–×1.16 from
+level 1 to 40. That is the claim the entire rebalance rests on, and it is now
+measured rather than asserted. The plan's one flagged cell reproduced as well (mage
+vs elite at low level: p90 90% HP, 95% wins), which is good evidence the simulator
+measures the real thing.
+
+Two findings for 8C, plus one gap:
+- **classes are 17% apart** on days-to-cap: identical relative HP cost per fight, but
+  warrior 4.1 rounds / 17.8 vigor per kill against mage 3.1 / 15.0 → 59 perfect days
+  against 50. The warrior's armour is spent entirely equalising damage taken and buys
+  no speed back, so the tank/glass-cannon trade does not exist in the numbers.
+- **the shipped bestiary is half-strength against its own contract** — 64% of asked
+  HP/ATK at level 1 falling to 50% by level 25. Every roster enemy is a 100% win at
+  4–13% HP where the archetype asks 10–62%. Phase 10 regenerates it.
+- **two of the three Supers grant flat bonuses** — the rule Phase 6 wrote for items,
+  never applied to the stance table. `hawks_eye` lifts archer crit 115% at level 1 and
+  21% at the cap; `bloodlust` lifts warrior attack 29% → 5% and doubles the Vigor cost
+  of every action while it holds. Only the mage's ×1.5 holds its worth, which is exactly
+  why techniques save the mage 30% of a fight and the warrior 5%.
+- **`silverReward` has no curve anywhere.** The roster fits ≈1.7·L^1.09·silverMultiplier
+  but nothing states it, so Phase 10 has nothing to generate from and the daily-silver
+  check has no model. Wants an `economy.mobSilver` block.
+
+193 tests, clean build, digest unmoved, `simulate --strict` exits 0 with 0 broken
+bands and 8 warnings.
+
+---
+
+## Session — 2026-08-30 part 7 (Phase 8C: acting on what the simulator said)
+
+Three decisions, taken by the user off the 8B report, and all three measured
+before and after.
+
+### Stances became multipliers (schema v8)
+
+The audit that found this is the session's best moment: Phase 6 banned flat
+bonuses on ITEMS — the same +5 is a third of a level-1 stat line and a twentieth
+of a level-40 one — and nobody had ever pointed that rule at the stance table.
+Two of the three Supers were flat. `hawks_eye` lifted an archer's crit **115% at
+level 1 and 21% at the cap**; `bloodlust` lifted attack 29% → 5% *while charging
+double Vigor for every action*. Only the mage's ×1.5 held, which is the entire
+reason techniques used to save the mage 30% of a fight and the warrior 5%.
+
+`StanceTuningDTO`'s five `*Bonus: Int` fields are gone, replaced by
+`*Multiplier: Double`, all REQUIRED on decode — a defaulted 1.0 would read as
+"this stance does nothing to that stat", which is the silent drift the tuning
+tables exist to prevent. Shipped: bloodlust attack ×1.35 / defence ×1.15 / vigor
+×1.5, hawks_eye crit ×1.60 / accuracy ×1.15 / dodge ×1.15, arcane_resonance
+attack ×1.50 / defence ×1.15. The warrior's techniques now save 13–21% of a
+fight instead of 5%.
+
+The audit did not go away with the fix — it now checks the two flat rating
+bonuses left standing beside the stances, and reports them every run:
+`shadowVeilDodgeBonus` +50 is **238%** of a level-1 archer's dodge and 34% at the
+cap; `defend.archerDodgeBonus` +30 is 143% → 20%. Same defect, not yet asked
+about.
+
+### The warrior's budget was re-spent
+
+Weapon attack 0.72 → 0.80 (accuracy 0.14 → 0.06 — it was overshooting the 95% hit
+cap by level 40 anyway), armour defence 0.82 → 0.78 into HP, base attack 10 → 12.
+**Days-to-cap spread fell 17% → 9%**, inside the plan's ±7%-of-the-mean band.
+
+Worth more than the number: the trade the design always claimed now exists. The
+warrior loses 50–53% of a bar to an elite where the mage loses 65%, at 10% slower
+pace rather than 18%. Before the change all three classes lost the SAME fraction
+of HP per fight and the warrior was simply slower — their entire defensive
+investment bought nothing measurable.
+
+`--content-digest`'s reference-character row for the warrior was **rebased** to
+653 / 126.0 / 217 / 37.1%, with the archer and mage rows deliberately left alone
+so the check keeps its teeth: it still catches an accidental drift, and the two
+untouched rows prove it can.
+
+### Monster silver is gone
+
+`enemies.silverReward`, `archetypes.silverMultiplier`,
+`exploration.passive.silverMultiplier`, both award sites
+(`CombatController.finishVictory`, `PassiveExpeditionService`), the running-report
+and checkpoint fields, the validator's two rules and its test, and both locale
+lines. Every silver faucet left is a player-facing system with a sink attached —
+quests, trader, tavern, market, arena. It also closes the "`silverReward` has no
+curve anywhere" gap by deleting the thing that needed one.
+
+### Verification
+
+**18 of 18 level-invariance rows pass; 0 broken bands.** New baseline
+`583a32cb5a9d9dc7` (schema v8): `records` and `tuning` moved, **`spawns` and
+`quests` did not** — no selection logic or daily assignment was touched, and the
+split says so rather than asking to be believed. 192 tests (the negative-silver
+rule went with its mechanic), clean build, `validate` clean but for the known
+`time.scale 60` warning.
+
+Left reported and open: the two flat dodge bonuses, the mage's 93% win rate
+against an elite at level 5 (the plan's fix is a spawn-level floor, which is
+content), and the bestiary carrying ~50% of what its archetypes ask (Phase 10 —
+`EnemyGenerator` now exists to regenerate it).

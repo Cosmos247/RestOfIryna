@@ -167,13 +167,13 @@ public enum ContentValidator {
     /// instead of failing the whole file with a coding path. That tolerance is
     /// only safe because this pass checks the values against the domain enums.
     ///
-    /// Keep these sets in step with `ItemType`, `EquipmentSlot` and
-    /// `RecipeCategory` in `Swift/Models/`. They merge into one place when the
-    /// domain types move into this module (Phase 2).
+    /// `EquipmentSlot` is the shared enum in `Vocabulary.swift` since Phase 8 —
+    /// this pass and `validateBudget` used to carry their own transcription of
+    /// its eight cases, which is one copy too many for a list the simulator
+    /// also needs. `itemTypes` and `recipeCategories` are still transcribed:
+    /// keep them in step with `ItemType` / `RecipeCategory` in `Swift/Models/`.
     private static let itemTypes: Set<String> = ["food", "material", "gear", "potion", "artifact"]
-    private static let equipmentSlots: Set<String> = [
-        "helmet", "chest", "legs", "boots", "main_hand", "off_hand", "accessory_1", "accessory_2"
-    ]
+    private static let equipmentSlots: Set<String> = Set(EquipmentSlot.allCases.map(\.rawValue))
     private static let recipeCategories: Set<String> = ["forge", "tannery", "kitchen"]
 
     private static func validateEnums(_ bundle: ContentBundle) -> [ContentIssue] {
@@ -1009,8 +1009,8 @@ public enum ContentValidator {
     private static func validateBudget(_ bundle: ContentBundle) -> [ContentIssue] {
         guard let budget = bundle.budget else { return [] }
         var issues: [ContentIssue] = []
-        let knownSlots = ["helmet", "chest", "legs", "boots",
-                          "main_hand", "off_hand", "accessory_1", "accessory_2"]
+        // Declaration order — it is the order a missing weight is reported in.
+        let knownSlots = EquipmentSlot.allCases.map(\.rawValue)
 
         func fail(_ file: String, _ path: String, _ rule: String,
                   _ message: @autoclosure () -> String,
@@ -1286,8 +1286,7 @@ public enum ContentValidator {
                      "\(name) must sit inside 0...100, found \(value)", id: row.id)
             }
             for (name, value) in [("xpMultiplier", row.xpMultiplier),
-                                  ("lootMultiplier", row.lootMultiplier),
-                                  ("silverMultiplier", row.silverMultiplier)] where value <= 0 {
+                                  ("lootMultiplier", row.lootMultiplier)] where value <= 0 {
                 fail("\(path).\(name)", "enemy.archetype_multiplier",
                      "\(name) must be positive, found \(value)", id: row.id)
             }
@@ -1313,10 +1312,6 @@ public enum ContentValidator {
                 fail("\(path).level", "enemy.level_above_cap",
                      "level \(enemy.level) is above the player cap \(maxLevel), so `levelDiff` can only ever punish",
                      .warning, id: enemy.id)
-            }
-            if let silver = enemy.silverReward, silver < 0 {
-                fail("\(path).silverReward", "enemy.negative_silver",
-                     "silver reward must not be negative, found \(silver)", id: enemy.id)
             }
             if let weight = enemy.spawnWeight, weight < 0 {
                 fail("\(path).spawnWeight", "enemy.negative_weight",
@@ -1476,10 +1471,30 @@ public enum ContentValidator {
                 let path = "stances.byId[\(index)]"
                 require(row.activationVigor >= 0, file, path, "tuning.combat.negative_vigor",
                         "activation vigor must not be negative, found \(row.activationVigor)")
-                require(row.attackMultiplier > 0, file, path, "tuning.combat.stance_attack_multiplier",
-                        "attackMultiplier must be positive, found \(row.attackMultiplier)")
+                // Every lift is a multiplier of the character's own stat since
+                // Phase 8C. Zero is not "no effect", it DELETES the stat — and a
+                // stance that zeroes a defender's DEF is a bug that reads like a
+                // balance number, so it is refused rather than warned about.
+                for (name, value) in [("attackMultiplier", row.attackMultiplier),
+                                      ("defenseMultiplier", row.defenseMultiplier),
+                                      ("critMultiplier", row.critMultiplier),
+                                      ("accuracyMultiplier", row.accuracyMultiplier),
+                                      ("dodgeMultiplier", row.dodgeMultiplier)] {
+                    require(value > 0, file, "\(path).\(name)", "tuning.combat.stance_multiplier",
+                            "\(name) must be positive (1.0 = no change), found \(value)")
+                }
                 require(row.vigorMultiplier >= 0, file, path, "tuning.combat.stance_vigor_multiplier",
                         "vigorMultiplier must not be negative, found \(row.vigorMultiplier)")
+                // A stance that lifts nothing and costs Vigor is a button that
+                // makes the player weaker. Only reachable by a hand edit that
+                // dropped the payload, which is exactly when it is worth saying.
+                let lifts = [row.attackMultiplier, row.defenseMultiplier, row.critMultiplier,
+                             row.accuracyMultiplier, row.dodgeMultiplier]
+                if lifts.allSatisfy({ $0 == 1.0 }) {
+                    fail(file, path, "tuning.combat.stance_does_nothing",
+                         "stance \"\(row.id)\" changes no stat but still costs \(row.activationVigor) vigor",
+                         .warning)
+                }
             }
 
             checkClassCoverage(combat.specialAttack.map(\.characterClass), file: file, path: "specialAttack")

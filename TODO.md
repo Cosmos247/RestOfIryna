@@ -735,7 +735,48 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       The boot path runs the same check as a warning once the database is up — it cannot refuse
       there, because content loads before the DB block and half of boot has already read the
       snapshot. Digest unchanged: Phase 7 added machinery, not content. 185 tests.
-- [ ] Phase 8 — `CombatantStats` refactor + simulator; lock every constant (verify p90, not mean)
+- [x] **Phase 8 — simulator + constant lock-in** *(2026-08-30)*
+  - [x] **8A — the math moves into `ROISim`** — `CombatantStats`, `CombatMath` (absorption, rating
+        curves, `levelDiff`, `applyAttack`, `chipDamage`, stance + special-attack modifiers, all
+        generic over `RandomNumberGenerator`), `ProgressionMath`, `BudgetMath`. `CombatService` /
+        `User` / `ItemBudget` / `VigorService` keep their whole public API and delegate, so there is
+        ONE implementation and the report cannot drift from the game. `EquipmentSlot` moved to
+        `ROIContent/Vocabulary.swift` — it had been transcribed three times (enum + two literal
+        lists in the validator) and `BudgetMath` needed a fourth. **Digest `a4d825a8d728f4f8` held
+        across the move**, and its `tuning` half replays `baseStats`, `xpRequiredToReach` and all
+        four curves, so the refactor is proven bit-identical rather than assumed so.
+  - [x] **8B — `swift run roi-content simulate`** — `EnemyGenerator` (inverts the archetype targets
+        at design time), `ReferenceCharacter` (on curve and one ladder rung behind), `FightSimulator`
+        (the round order copied from `CombatController.finishRound`; `.basic` = the passive
+        autobattle, `.techniques` = super then specials), `Statistics`, and a report with bands:
+        level invariance (means, ratios, two-sided), the tail (p90 < 100%, win rate), stalemates,
+        pace to the cap, the class ±7% band on days-to-cap, and the shipped roster against its own
+        archetype contract. `--strict` exits 1 on a broken band; warnings never fail. 8 new tests.
+        **Results: 18 of 18 rows level-invariant** (mean HP loss ×1.01–×1.16 across levels 1–40),
+        no broken bands, 8 warnings.
+  - [x] **8C — act on what it found** — three changes, all measured before and after.
+        · **every stance lift is a multiplier now** (schema v8): the five `*Bonus` fields are gone
+          from `StanceTuningDTO`, replaced by `*Multiplier` fields that are REQUIRED on decode.
+          bloodlust attack ×1.35 / defence ×1.15 / vigor ×1.5 (was ×2.0 for a bonus that had rotted
+          to +5%), hawks_eye crit ×1.60 / accuracy ×1.15 / dodge ×1.15, arcane_resonance attack
+          ×1.50 / defence ×1.15. The warrior's techniques went from saving 5% of a fight to 13–21%.
+        · **the warrior's budget was re-spent toward offence**: weapon attack 0.72 → 0.80 (accuracy
+          0.14 → 0.06, which overshot the 95% hit cap by level 40 anyway), armour defence 0.82 →
+          0.78 into HP, base attack 10 → 12. **Days-to-cap spread 17% → 9%**, inside the ±7%-of-mean
+          band — and the tank trade finally shows: the warrior loses 50–53% of a bar to an elite
+          where the mage loses 65%.
+        · **monster silver removed entirely** — `enemies.silverReward`, `archetypes.silverMultiplier`,
+          `exploration.passive.silverMultiplier`, both award sites and both locale lines. Every
+          faucet left is a player-facing system with a sink attached, which also closes the
+          "silverReward has no curve" gap by deleting the thing that needed one.
+        **Result: 18 of 18 level-invariance rows pass, 0 broken bands.** New baseline
+        `583a32cb5a9d9dc7` — `records` and `tuning` moved, `spawns` and `quests` did not.
+        Still open and reported by every run: `shadowVeilDodgeBonus` (+50 = 238% of a level-1
+        archer's dodge, 34% at the cap) and `defend.archerDodgeBonus` (+30 = 143% → 20%) are the
+        same flat-bonus rot in the techniques beside the stances; the mage's 93% win rate against
+        an elite at level 5 wants the spawn-level floor the plan specified; the bestiary is
+        half-strength against its own archetypes (Phase 10).
+
 - [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
 - [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest

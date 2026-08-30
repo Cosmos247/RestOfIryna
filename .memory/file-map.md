@@ -17,20 +17,33 @@ RestOfIryna/
 │   │   ├── GameData.swift          # nonisolated(unsafe) + NSLock holder; keeps catalog façades sync/non-throwing for ~315 call sites. NOT @TaskLocal (doesn't cross Task.detached — 6 detached tasks read catalogs)
 │   │   ├── LocaleIndex.swift       # en/uk flat maps; `has()` accepts uk `.m`/`.f` pairs (21 keys rely on this); emoji-before-%{} detector
 │   │   ├── LiveReferenceCheck.swift # **Phase 7** — the rule a hot swap is gated on: matching only, no DB, so the category error (item ids checked against the bestiary) is testable
+│   │   ├── Vocabulary.swift        # **Phase 8** — `EquipmentSlot`, moved down from `Swift/Models/Item.swift`. It was transcribed three times (enum + two literal lists in the validator) and the simulator needed a fourth. Raw values are a DB contract (`InventoryEntry.equippedSlot`)
 │   │   ├── DTO/                    # ItemDTO · EnemyDTO · RecipeDTO · ManifestDTO · WeaponUpgradeDTO · UpgradeDTO (bag + estate, sharing MaterialCostDTO) · CapitalDTO (trader/tavern/market/guild/arena, 3B) · MasterDTO · PlotDTO · FortuneDTO · QuestDTO (3C) — hand-written init(from:) because Swift ignores property defaults for missing keys. Records decode optional-with-default; TUNING SCALARS decode REQUIRED (a missing memberCap must fail the boot, not silently become 20)
 │   │   │                       #   **Phase 4** TuningDTO (6 balance tables; every field REQUIRED — a defaulted constant is silent drift)
 │   │   │                       #   **Phase 6** BudgetDTO (item stat budget + rarity ladder + class profiles) · SetDTO (thresholds as a tagged union)
 │   │   └── Validation/             # ContentIssue/ContentReport + ContentValidator (identity · enums · references · localization · timeScale)
-│   ├── ROISim/                     # library → ROIContent
+│   ├── ROISim/                     # library → ROIContent. **Phase 8** — the balance math AND the game's, one copy
 │   │   ├── SplitMix64.swift        # Seedable RNG + OutcomeDigest — the migration equivalence proof needs reproducible rolls
-│   │   └── ROISim.swift            # Simulator namespace (model lands Phase 8, after CombatantStats)
-│   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (Phase 8)
+│   │   ├── ROISim.swift            # Namespace + version string
+│   │   ├── CombatantStats.swift    # One side of a fight as eight ints. Deliberately NOT a view onto `User`: every call site already feeds `applyAttack` numbers no character has (buffed ATK, sundered DEF, zeroed dodge)
+│   │   ├── CombatMath.swift        # `CombatRules` + absorption, rating curves, levelDiff, applyAttack, chipDamage, stance/special modifiers — generic over RandomNumberGenerator. `CombatService` DELEGATES here; the game and the report execute the same lines
+│   │   ├── ProgressionMath.swift   # XP curve + totals, xpMultiplier, proportional stat line, vigor pool + regen. `User` delegates
+│   │   ├── BudgetMath.swift        # points / spend / referenceGear. `ItemBudget` delegates
+│   │   ├── ReferenceCharacter.swift # (class, level, gearOffset) → CombatantStats. `gearOffset = -10` is one weapon-ladder rung behind, which is what real players actually wear
+│   │   ├── EnemyGenerator.swift    # **The design-time table.** Inverts the archetype targets: DEF = m·K/(1−m), rating = k·p/(scale−p), HP = rounds × expected damage, ATK from hpLossPercent. Reproduces every shipped enemy's DEF/crit/dodge to within rounding — pinned by test. Run at design time, NEVER at runtime (runtime scaling is how gear upgrades evaporate)
+│   │   ├── FightSimulator.swift    # The round structure copied from `CombatController.finishRound`: swing → counter → burn tick → stance/effect ticks. Super activation is a FREE action (the controller skips finishRound), modelled as such. Profiles: `.basic` (= passive autobattle) and `.techniques`
+│   │   ├── Statistics.swift        # Nearest-rank percentiles — p90 is the number the tail is judged on
+│   │   ├── BalanceReport.swift     # The sweep: levels × archetypes × classes × profiles × gear offsets. Per-cell seed derived from the cell's IDENTITY, so changing --levels cannot move the rows below it
+│   │   └── BalanceFormatter.swift  # The page + the bands. Level invariance is judged on MEANS and two-sided (ratio AND points); the tail on p90; the ±7% class band on days-to-cap, a number the design actually stated
+│   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (--runs/--seed/--levels; --strict exits 1 on a broken band). simulate refuses a bundle that does not validate
 │
 ├── Tests/
-│   └── ROIContentTests/            # 185 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
+│   └── ROIContentTests/            # 192 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 │                                #   Files: ContentDTOTests · ContentValidatorTests · WeaponLadderTests · LocaleIndexTests ·
 │                                #   CapitalCatalogTests · EstateAndNPCCatalogTests · **TuningTests** (Phase 4) ·
-│                                #   **BestiaryTests** (5A) · **BudgetTests** (6) · **LiveReferenceTests** (7)
+│                                #   **BestiaryTests** (5A) · **BudgetTests** (6) · **LiveReferenceTests** (7) ·
+│                                #   **SimulatorTests** (8 — the generator's inversions against the shipped roster's
+│                                #   literal DEF/crit/dodge, seed determinism, percentiles, XP anchors)
 ├── GDD.md                          # Game Design Document (full v1 vision)
 ├── README.md                       # Project overview, arch, setup, dev notes
 ├── CLAUDE.md                       # AI assistant instructions & project reference

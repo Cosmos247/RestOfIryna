@@ -278,11 +278,9 @@ final public class User: Model, @unchecked Sendable {
     public static func xpRequiredToReach(_ nextLevel: Int) -> Int {
         // nextLevel is the level the player would reach by spending the XP.
         // I.e. the cost of L1→L2 is xpRequiredToReach(2).
-        guard nextLevel >= 2, nextLevel <= maxLevel else { return Int.max }
-        let curve = Catalogs.current.tuningProgression.xpCurve
-        let from = Double(nextLevel - 1)
-        let power = (curve.coefficient * pow(from, curve.exponent)).rounded()
-        return Swift.max(Int(power), curve.floorPerLevel * (nextLevel - 1))
+        ProgressionMath.xpRequiredToReach(nextLevel,
+                                          curve: Catalogs.current.tuningProgression.xpCurve,
+                                          maxLevel: maxLevel)
     }
 
     /// XP multiplier for killing a monster this far below your level.
@@ -291,16 +289,15 @@ final public class User: Model, @unchecked Sendable {
     /// the XP for a fight that is 35% faster and 40% safer, which makes shallow
     /// farming strictly optimal and the whole depth ladder dead content.
     public static func xpMultiplier(playerLevel: Int, monsterLevel: Int) -> Double {
-        let spec = Catalogs.current.tuningProgression.xpLevelDiff
-        let raw = 1 - spec.perLevel * Double(playerLevel - monsterLevel)
-        return Swift.max(spec.min, Swift.min(spec.max, raw))
+        ProgressionMath.xpMultiplier(playerLevel: playerLevel, monsterLevel: monsterLevel,
+                                     spec: Catalogs.current.tuningProgression.xpLevelDiff)
     }
 
     /// XP this kill is worth to this player, after the level-gap scaling.
     public static func xpFromKill(_ enemy: Enemy, playerLevel: Int) -> Int {
-        let scaled = Double(enemy.xpReward)
-            * xpMultiplier(playerLevel: playerLevel, monsterLevel: enemy.level)
-        return Swift.max(0, Int(scaled.rounded()))
+        ProgressionMath.xpFromKill(xpReward: enemy.xpReward, monsterLevel: enemy.level,
+                                   playerLevel: playerLevel,
+                                   spec: Catalogs.current.tuningProgression.xpLevelDiff)
     }
 
     /// XP cost of the current pending level-up. `Int.max` once at max level.
@@ -326,20 +323,9 @@ final public class User: Model, @unchecked Sendable {
     public static func baseStats(
         for characterClass: CharacterClass, at level: Int
     ) -> (maxHp: Int, attack: Int, defense: Int, crit: Int, dodge: Int, accuracy: Int) {
-        let start = characterClass.startingStats
-        let growth = Catalogs.current.tuningProgression.statGrowth
-        let steps = Double(max(0, level - 1))
-        let hpScale = 1 + growth.hpPerLevel * steps
-        let atkScale = 1 + growth.attackPerLevel * steps
-        let ratingScale = 1 + growth.ratingPerLevel * steps
-        return (
-            maxHp:    max(1, Int((Double(start.hp) * hpScale).rounded())),
-            attack:   max(0, Int((Double(start.attack) * atkScale).rounded())),
-            defense:  max(0, Int((Double(start.defense) * ratingScale).rounded())),
-            crit:     max(0, Int((Double(start.crit) * ratingScale).rounded())),
-            dodge:    max(0, Int((Double(start.dodge) * ratingScale).rounded())),
-            accuracy: max(0, Int((Double(start.accuracy) * ratingScale).rounded()))
-        )
+        let progression = Catalogs.current.tuningProgression
+        return ProgressionMath.baseStats(start: characterClass.startRow,
+                                         growth: progression.statGrowth, level: level)
     }
 
     /// Bring every existing row onto the proportional model.
@@ -373,8 +359,8 @@ final public class User: Model, @unchecked Sendable {
     /// Vigor ceiling at a level. Grows with the player so the regen rate, read
     /// as a share of the pool, stays constant instead of decaying to nothing.
     public static func maxVigor(at level: Int) -> Int {
-        let pool = Catalogs.current.tuningProgression.vigorPool
-        return max(1, pool.base + pool.perLevel * max(0, level))
+        ProgressionMath.maxVigor(at: level,
+                                 pool: Catalogs.current.tuningProgression.vigorPool)
     }
 
     /// Recompute every level-derived stat from `characterClass` and `level`.

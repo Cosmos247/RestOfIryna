@@ -228,54 +228,70 @@ public struct TechniqueTuningDTO: Codable, Sendable, Equatable {
     }
 }
 
-/// One Super stance: which class triggers it, what it costs, and the seven
-/// modifier fields it applies for `durationRounds`.
+/// One Super stance: which class triggers it, what it costs, and the six
+/// multipliers it applies for `durationRounds`.
+///
+/// **Every lift is a multiplier of the character's OWN stat (Phase 8C).** The
+/// five flat `*Bonus` fields this replaces broke the rule Phase 6 wrote for
+/// items and never applied here: `hawks_eye`'s +15 crit was ×2.15 of an archer's
+/// rating at level 1 and ×1.21 at the cap, and `bloodlust`'s +5 attack decayed
+/// ×1.29 → ×1.05 — so two of the three Supers rotted across a lifetime while the
+/// mage's, alone in being a multiplier, held. That is the whole reason
+/// techniques used to save the mage 30% of a fight and the warrior 5%.
+///
+/// 1.0 means "no change". A multiplier below 1.0 is legal — a stance that trades
+/// defence for attack is a shape worth having — but zero is not: it would delete
+/// the stat rather than modify it.
 public struct StanceTuningDTO: Codable, Sendable, Equatable {
     public let id: String
     public let characterClass: String
     public let activationVigor: Int
     public let attackMultiplier: Double
-    public let attackBonus: Int
-    public let defenseBonus: Int
-    public let critBonus: Int
-    public let accuracyBonus: Int
-    public let dodgeBonus: Int
+    public let defenseMultiplier: Double
+    public let critMultiplier: Double
+    public let accuracyMultiplier: Double
+    public let dodgeMultiplier: Double
+    /// Scales the Vigor drain of every action while the stance holds. The one
+    /// multiplier that is a COST, so it is the one that may legitimately exceed
+    /// the others: bloodlust burning the player out is the mechanic.
     public let vigorMultiplier: Double
 
     public init(id: String, characterClass: String, activationVigor: Int,
-                attackMultiplier: Double, attackBonus: Int, defenseBonus: Int,
-                critBonus: Int, accuracyBonus: Int, dodgeBonus: Int, vigorMultiplier: Double) {
+                attackMultiplier: Double = 1.0, defenseMultiplier: Double = 1.0,
+                critMultiplier: Double = 1.0, accuracyMultiplier: Double = 1.0,
+                dodgeMultiplier: Double = 1.0, vigorMultiplier: Double = 1.0) {
         self.id = id
         self.characterClass = characterClass
         self.activationVigor = activationVigor
         self.attackMultiplier = attackMultiplier
-        self.attackBonus = attackBonus
-        self.defenseBonus = defenseBonus
-        self.critBonus = critBonus
-        self.accuracyBonus = accuracyBonus
-        self.dodgeBonus = dodgeBonus
+        self.defenseMultiplier = defenseMultiplier
+        self.critMultiplier = critMultiplier
+        self.accuracyMultiplier = accuracyMultiplier
+        self.dodgeMultiplier = dodgeMultiplier
         self.vigorMultiplier = vigorMultiplier
     }
 
     private enum CodingKeys: String, CodingKey {
         case id
         case characterClass = "class"
-        case activationVigor, attackMultiplier, attackBonus, defenseBonus
-        case critBonus, accuracyBonus, dodgeBonus, vigorMultiplier
+        case activationVigor, attackMultiplier, defenseMultiplier
+        case critMultiplier, accuracyMultiplier, dodgeMultiplier, vigorMultiplier
     }
 
+    /// Every multiplier is REQUIRED, `1.0` included. A defaulted 1.0 would let a
+    /// forgotten key read as "this stance does nothing to that stat", which is
+    /// exactly the silent balance drift the tuning tables exist to prevent.
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id               = try c.decode(String.self, forKey: .id)
-        characterClass   = try c.decode(String.self, forKey: .characterClass)
-        activationVigor  = try c.decode(Int.self, forKey: .activationVigor)
-        attackMultiplier = try c.decode(Double.self, forKey: .attackMultiplier)
-        attackBonus      = try c.decode(Int.self, forKey: .attackBonus)
-        defenseBonus     = try c.decode(Int.self, forKey: .defenseBonus)
-        critBonus        = try c.decode(Int.self, forKey: .critBonus)
-        accuracyBonus    = try c.decode(Int.self, forKey: .accuracyBonus)
-        dodgeBonus       = try c.decode(Int.self, forKey: .dodgeBonus)
-        vigorMultiplier  = try c.decode(Double.self, forKey: .vigorMultiplier)
+        id                 = try c.decode(String.self, forKey: .id)
+        characterClass     = try c.decode(String.self, forKey: .characterClass)
+        activationVigor    = try c.decode(Int.self, forKey: .activationVigor)
+        attackMultiplier   = try c.decode(Double.self, forKey: .attackMultiplier)
+        defenseMultiplier  = try c.decode(Double.self, forKey: .defenseMultiplier)
+        critMultiplier     = try c.decode(Double.self, forKey: .critMultiplier)
+        accuracyMultiplier = try c.decode(Double.self, forKey: .accuracyMultiplier)
+        dodgeMultiplier    = try c.decode(Double.self, forKey: .dodgeMultiplier)
+        vigorMultiplier    = try c.decode(Double.self, forKey: .vigorMultiplier)
     }
 }
 
@@ -729,28 +745,25 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
 /// the two progression currencies, are where active play earns its premium.
 public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     public let xpMultiplier: Double
-    public let silverMultiplier: Double
     public let lootMultiplier: Double
     /// Steps past this index roll the decayed weight tier instead of the fresh
     /// one, so an unattended walk cannot keep harvesting first-visit odds.
     public let freshStepCount: Int
 
-    public init(xpMultiplier: Double, silverMultiplier: Double,
+    public init(xpMultiplier: Double,
                 lootMultiplier: Double, freshStepCount: Int) {
         self.xpMultiplier = xpMultiplier
-        self.silverMultiplier = silverMultiplier
         self.lootMultiplier = lootMultiplier
         self.freshStepCount = freshStepCount
     }
 
     private enum CodingKeys: String, CodingKey {
-        case xpMultiplier, silverMultiplier, lootMultiplier, freshStepCount
+        case xpMultiplier, lootMultiplier, freshStepCount
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         xpMultiplier     = try c.decode(Double.self, forKey: .xpMultiplier)
-        silverMultiplier = try c.decode(Double.self, forKey: .silverMultiplier)
         lootMultiplier   = try c.decode(Double.self, forKey: .lootMultiplier)
         freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
     }

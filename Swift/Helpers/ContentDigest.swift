@@ -71,7 +71,7 @@ enum ContentDigest {
             guard let spec = EnemyCatalog.archetype(kind) else { digest.combine("-"); continue }
             digest.combine("r\(spec.rounds) hp\(spec.hpLossPercent) mit\(spec.mitigationPercent)")
             digest.combine("dodge\(spec.dodgePercent) crit\(spec.critPercent)")
-            digest.combine("xp\(spec.xpMultiplier) loot\(spec.lootMultiplier) silver\(spec.silverMultiplier)")
+            digest.combine("xp\(spec.xpMultiplier) loot\(spec.lootMultiplier)")
             digest.combine("weight\(spec.spawnWeight)")
         }
         // MARK: Phase 6 — rarity, sets, item budget
@@ -463,8 +463,16 @@ enum ContentDigest {
     /// is printed rather than hidden: it IS the quantified value of the three
     /// unfilled slots, and it should close in Phase 10, not before.
     private static func referenceCharacterCheck() {
+        // The warrior row was REBASED in Phase 8C, when the simulator measured
+        // the classes 17% apart on days-to-cap and the fix was to re-spend the
+        // warrior's budget toward offence (weapon attack 0.72 → 0.80, armour
+        // defence 0.82 → 0.78, base attack 10 → 12). Its published numbers moved
+        // with the profile, by intent. The archer and mage rows are UNTOUCHED
+        // and are what keeps this check honest: a later edit that moves them is
+        // still caught, and the warrior's own row still catches an accidental
+        // drift away from the new intent.
         let design: [(CharacterClass, Int, hp: Int, atk: Double, def: Int, mit: Double)] = [
-            (.warrior, 40, hp: 625, atk: 108.9, def: 225, mit: 38.0),
+            (.warrior, 40, hp: 653, atk: 126.0, def: 217, mit: 37.1),
             (.archer,  40, hp: 442, atk: 128.4, def: 136, mit: 27.0),
             (.mage,    40, hp: 558, atk: 131.7, def:  99, mit: 21.2),
         ]
@@ -713,7 +721,7 @@ enum ContentDigest {
         // once, deep inside `finalizeAndPush`, so only a direct hash notices a
         // change to the ratio that keeps unattended play below active play.
         let passive = ExplorationService.passiveTuning
-        d.combine("passive xp\(passive.xpMultiplier) silver\(passive.silverMultiplier) "
+        d.combine("passive xp\(passive.xpMultiplier) "
                   + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount)")
 
         // MARK: progression.json
@@ -808,8 +816,8 @@ enum ContentDigest {
     }
 
     private static func fingerprint(_ m: CombatService.StanceModifiers) -> String {
-        "atk×\(m.attackMultiplier)+\(m.attackBonus) def+\(m.defenseBonus) crit+\(m.critBonus) "
-            + "acc+\(m.accuracyBonus) dodge+\(m.dodgeBonus) vigor×\(m.vigorMultiplier)"
+        "atk×\(m.attackMultiplier) def×\(m.defenseMultiplier) crit×\(m.critMultiplier) "
+            + "acc×\(m.accuracyMultiplier) dodge×\(m.dodgeMultiplier) vigor×\(m.vigorMultiplier)"
     }
 
     private static func fingerprint(_ m: CombatService.AttackModifiers) -> String {
@@ -935,7 +943,7 @@ enum ContentDigest {
             enemy.id, enemy.nameKey, "\(enemy.tier)", "\(enemy.hp)", "\(enemy.attack)",
             "\(enemy.defense)", "\(enemy.crit)/\(enemy.dodge)/\(enemy.accuracy)",
             "L\(enemy.level)", enemy.archetype.rawValue,
-            "silver\(enemy.silverReward)", "weight\(enemy.spawnWeight)",
+            "weight\(enemy.spawnWeight)",
             "\(enemy.depthRange.lowerBound)...\(enemy.depthRange.upperBound)",
             loot, enemy.icon, "\(enemy.xpReward)"
         ].joined(separator: " · ")

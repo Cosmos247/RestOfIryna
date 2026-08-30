@@ -4,17 +4,22 @@
 //
 //  Created by Dmytro Ihnatyuhin on 29.08.2026.
 //
-//  Headless balance simulator.
+//  Namespace and version for the balance module.
 //
-//  Phase 0 lands the target and the deterministic RNG only. The combat model
-//  moves in once `CombatService` is re-typed against a `CombatantStats` value
-//  struct instead of the Fluent `User` model (Phase 8) — that refactor is the
-//  only thing standing between this module and running real TTK tables.
+//  Since Phase 8 this target holds the game's combat, progression and budget
+//  MATHS — not a model of them. `CombatService`, `User` and `ItemBudget` are
+//  façades that read the live tuning tables and delegate here, so the bot and
+//  `roi-content simulate` execute the same functions. That is the whole design:
+//  a simulator that reimplements the maths measures the simulator.
+//
+//    CombatantStats · CombatMath · ProgressionMath · BudgetMath   the maths
+//    ReferenceCharacter · EnemyGenerator · FightSimulator          the subjects
+//    Statistics · BalanceReport · BalanceFormatter                 the report
+//    SplitMix64                                                    the RNG
 //
 
 import Foundation
 
 public enum ROISim {
-    public static let version = "0.1.0-phase0"
-
+    public static let version = "1.0.0-phase8"
 }
