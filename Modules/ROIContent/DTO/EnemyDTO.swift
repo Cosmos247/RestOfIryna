@@ -115,12 +115,24 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
     public let depth: IntRangeDTO?
     public let loot: [EnemyLootDropDTO]
 
-    /// Phase 5 fields. Optional until the generated bestiary replaces the
-    /// hand-authored roster.
-    public let level: Int?
-    public let archetype: String?
+    /// Monster level. REQUIRED as of Phase 5: it feeds `levelDiff`, the XP
+    /// multiplier and every generated stat, so a missing one cannot be allowed
+    /// to fall back to `tier` — that fallback would look right and quietly
+    /// misprice the whole encounter.
+    public let level: Int
+    /// One of the six design archetypes. REQUIRED for the same reason: it
+    /// decides rounds-to-kill, danger per hit and all three reward multipliers.
+    public let archetype: String
+    /// Reserved for Phase 10's generated bestiary (wolf / undead / …), where it
+    /// drives shared resistances and loot families. Nothing reads it yet.
     public let family: String?
+    /// Silver dropped on victory. Absent means none — a legitimate value for a
+    /// training dummy, which is why this one stays optional while `level` does not.
     public let silverReward: Int?
+    /// Relative spawn chance inside the depth band. Absent means "inherit the
+    /// archetype's default", which is the common case: an enemy only carries
+    /// its own weight when it is deliberately rarer or more common than its
+    /// archetype.
     public let spawnWeight: Double?
 
     public let nameKeyOverride: String?
@@ -139,8 +151,8 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         stats: EnemyStatsDTO,
         depth: IntRangeDTO? = nil,
         loot: [EnemyLootDropDTO] = [],
-        level: Int? = nil,
-        archetype: String? = nil,
+        level: Int = 1,
+        archetype: String = "normal",
         family: String? = nil,
         silverReward: Int? = nil,
         spawnWeight: Double? = nil,
@@ -176,8 +188,8 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         stats        = try c.decode(EnemyStatsDTO.self, forKey: .stats)
         depth        = try c.decodeIfPresent(IntRangeDTO.self, forKey: .depth)
         loot         = try c.decodeIfPresent([EnemyLootDropDTO].self, forKey: .loot) ?? []
-        level        = try c.decodeIfPresent(Int.self, forKey: .level)
-        archetype    = try c.decodeIfPresent(String.self, forKey: .archetype)
+        level        = try c.decode(Int.self, forKey: .level)
+        archetype    = try c.decode(String.self, forKey: .archetype)
         family       = try c.decodeIfPresent(String.self, forKey: .family)
         silverReward = try c.decodeIfPresent(Int.self, forKey: .silverReward)
         spawnWeight  = try c.decodeIfPresent(Double.self, forKey: .spawnWeight)
@@ -185,8 +197,92 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// One row of the archetype table — the design-time spec every enemy of that
+/// archetype is generated from.
+///
+/// `rounds` and `hpLossPercent` are the two DANGER dials, and they are stated
+/// rather than derived because the drafted spec got this backwards: fixing the
+/// HP loss and letting rounds rise makes damage PER HIT fall, so the boss hit
+/// softer than trash (4.5% vs 6.6% of max HP). Stating danger per encounter and
+/// solving for stats keeps the per-hit ladder monotonic.
+///
+/// The three percentages are TARGETS, not ratings. The generator inverts the
+/// diminishing-returns curve at the enemy's level to get the rating that yields
+/// them, which is why an enemy's stored crit/dodge rating differs by level
+/// while the archetype's feel does not.
+public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
+    public let id: String
+    /// Target rounds-to-kill against a reference character of the same level.
+    public let rounds: Double
+    /// Share of the player's max HP the encounter is meant to cost. Above 100
+    /// for a boss on purpose — that is what makes consumables a mechanic
+    /// rather than a fallback.
+    public let hpLossPercent: Double
+    public let mitigationPercent: Double
+    public let dodgePercent: Double
+    public let critPercent: Double
+    public let xpMultiplier: Double
+    public let lootMultiplier: Double
+    public let silverMultiplier: Double
+    /// Default relative spawn chance for enemies of this archetype.
+    public let spawnWeight: Double
+
+    public init(id: String, rounds: Double, hpLossPercent: Double,
+                mitigationPercent: Double, dodgePercent: Double, critPercent: Double,
+                xpMultiplier: Double, lootMultiplier: Double, silverMultiplier: Double,
+                spawnWeight: Double) {
+        self.id = id
+        self.rounds = rounds
+        self.hpLossPercent = hpLossPercent
+        self.mitigationPercent = mitigationPercent
+        self.dodgePercent = dodgePercent
+        self.critPercent = critPercent
+        self.xpMultiplier = xpMultiplier
+        self.lootMultiplier = lootMultiplier
+        self.silverMultiplier = silverMultiplier
+        self.spawnWeight = spawnWeight
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, rounds, hpLossPercent, mitigationPercent, dodgePercent, critPercent
+        case xpMultiplier, lootMultiplier, silverMultiplier, spawnWeight
+    }
+
+    /// Every field required — this is a tuning row, not a record with optional
+    /// trimmings, and a defaulted multiplier is a silent balance hole.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id                = try c.decode(String.self, forKey: .id)
+        rounds            = try c.decode(Double.self, forKey: .rounds)
+        hpLossPercent     = try c.decode(Double.self, forKey: .hpLossPercent)
+        mitigationPercent = try c.decode(Double.self, forKey: .mitigationPercent)
+        dodgePercent      = try c.decode(Double.self, forKey: .dodgePercent)
+        critPercent       = try c.decode(Double.self, forKey: .critPercent)
+        xpMultiplier      = try c.decode(Double.self, forKey: .xpMultiplier)
+        lootMultiplier    = try c.decode(Double.self, forKey: .lootMultiplier)
+        silverMultiplier  = try c.decode(Double.self, forKey: .silverMultiplier)
+        spawnWeight       = try c.decode(Double.self, forKey: .spawnWeight)
+    }
+}
+
 /// Top-level shape of `enemies.json`.
 public struct EnemyFileDTO: Codable, Sendable {
     public let enemies: [EnemyDTO]
-    public init(enemies: [EnemyDTO]) { self.enemies = enemies }
+    /// The six archetypes. Lives beside the roster rather than in `tuning/`
+    /// because it is bestiary DESIGN — the table the generator reads to emit
+    /// these very enemies — not a knob the combat formula consumes.
+    public let archetypes: [EnemyArchetypeDTO]
+
+    public init(enemies: [EnemyDTO], archetypes: [EnemyArchetypeDTO] = []) {
+        self.enemies = enemies
+        self.archetypes = archetypes
+    }
+
+    private enum CodingKeys: String, CodingKey { case enemies, archetypes }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enemies    = try c.decode([EnemyDTO].self, forKey: .enemies)
+        archetypes = try c.decode([EnemyArchetypeDTO].self, forKey: .archetypes)
+    }
 }

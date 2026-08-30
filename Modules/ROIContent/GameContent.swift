@@ -30,6 +30,7 @@ public final class GameContent: Sendable {
 
     public let enemies: [EnemyDTO]
     public let enemiesById: [String: EnemyDTO]
+    public let enemyArchetypes: [EnemyArchetypeDTO]
 
     public let recipes: [RecipeDTO]
     public let recipesById: [String: RecipeDTO]
@@ -64,6 +65,7 @@ public final class GameContent: Sendable {
         self.itemsById = Dictionary(bundle.items.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
 
         self.enemies = bundle.enemies
+        self.enemyArchetypes = bundle.enemyArchetypes
         self.enemiesById = Dictionary(bundle.enemies.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
 
         self.recipes = bundle.recipes

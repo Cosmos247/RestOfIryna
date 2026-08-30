@@ -2691,3 +2691,109 @@ so this is a rewrite of `CombatService` and `User`, not a retune.
 Phase 5 also inherits the `pickFor` km ≥ 36 fallback and the foraging pools still
 hardcoded in `rollLoot` — both belong to `zones.json`.
 User asked to confirm the start of each phase before it begins.
+
+---
+
+## Session — 2026-08-30 part 2 (Phase 5 — the new combat model)
+
+The first phase that changes BEHAVIOUR rather than relocating it. Four steps,
+reordered mid-flight for a data dependency the plan's numbering hid.
+
+### The reorder, and why
+
+The plan's order was combat model → progression. But the enemy generator balances
+monsters against the player's growth curve, so enemies written before the new
+growth lands are fought by players who do not have it: a level-21 warrior meets
+the regenerated wild bear and loses **137% of max HP**. Reversed, every
+intermediate commit stays playable — new growth against old enemies is merely
+easy. **Order phases by data dependency, not by the plan's numbering.**
+
+### 5A — bestiary data
+
+Six-archetype table in `enemies.json`; `Enemy` gains level, archetype, crit,
+dodge, accuracy, silver, spawn weight. `pickFor` weighted, and the `?? all.first`
+tail deleted: it answered any uncovered km with the FIRST enemy in the file, so
+everything past km 35 was a wild boar — the deepest content in the game was also
+its easiest. `rollEncounter` already handled nil, so the call site had been
+written for the honest answer all along.
+
+The schema handshake caught my own omission here (bumped `ContentSchema` and
+forgot `manifest.json`). The mechanism that looked decorative last session
+earned itself in one shot.
+
+### 5B — progression
+
+Proportional growth replaces +5/+1/+1 on eight chosen levels. Under flat growth a
+warrior's dodge RATING rises while its PERCENT falls 5.3% → 1.4%, because the
+diminishing-returns denominator grows with level and a flat rating cannot keep
+up. `applyLevelDerivedStats` recomputes from (class, level) rather than
+accumulating, which makes it idempotent — a missed or doubled grant self-heals —
+and lets one startup backfill move old rows over.
+
+Vigor regeneration did not exist at all before this. It is deliberately NOT
+suspended during an expedition, unlike HP regen: stamina is spent on the trail,
+so a trickle there is the mechanic rather than a leak.
+
+### 5C — combat model
+
+Absorption, rating curves, `levelDiff`, hit floor 40, `maxLevel` 40, the XP pair.
+
+**Adding a parameter beat any grep.** Threading levels through `applyAttack` made
+the compiler enumerate all nine call sites, two of which were `chipDamage` calls
+that no search for `applyAttack` would have found.
+
+**Two curve shapes needed two TYPES.** In `min(0.70, DEF/(DEF+K))` the 0.70 is a
+CEILING; in `55·D/(D+K)` the 55 is a leading SCALE. I inverted one as the other
+in the generator, inflating every enemy's DEF by ~80% and stretching fights far
+past their target length. It was caught only because the user asked to see the
+table before it was written — which is the case for showing generated data
+before committing it. `MitigationCurveDTO` and `RatingCurveDTO` are now separate
+types so the compiler refuses the confusion.
+
+### 5D — techniques, flee, weights, passive, silver
+
+All three special attacks set `defenderDEFFraction = 0`. Under subtraction that
+was +50% damage; under absorption the gain is `1/(1−mitigation) − 1` — +11%
+against trash for +150% Vigor, i.e. strictly worse than attacking twice, and
+worst exactly where a trump card was wanted. Rebuilt onto effects whose value
+does not shrink with absorption: armour break (worth MORE against armour),
+guaranteed crit at ×2.0, and a burn that absorption cannot touch.
+
+Burn ticks in `finishRound`, the shared round end — a fire that only advanced
+when the mage cast again would not be a damage-over-time effect. Its damage is
+frozen at cast time so a stance expiring mid-burn cannot retroactively weaken it.
+
+`WearEvent.flee` 5 → 2 (fleeing had cost more than dying), event weights →
+5/45/40/10, passive expeditions charge full Vigor and pay 70% XP / 70% silver /
+100% materials (they had measured 53% MORE efficient than active play), and
+monsters drop silver for the first time.
+
+### What the audit found
+
+**A hash only covers what it reads.** The technique rebuild moved the payload out
+of `AttackModifiers` into a separate effect union the controller reads directly —
+so the digest kept hashing the modifiers and stopped seeing the technique.
+Doubling a burn's duration left it byte-identical. `passive`, `fullRegenHours`,
+`mobXP` and `critMultiplierOverride` had all fallen out the same way. All six now
+move it to distinct values. **Whenever a value moves to a new home, re-check that
+the digest followed it.**
+
+Independent cross-check: 40 enemy stats, XP and silver values re-derived from the
+shipped archetype table and curves, all matching; total XP to the cap comes out
+at **19,437,688** against the plan's stated 19,437,688.
+
+### What Phase 5 could NOT verify
+
+The design's reference character carries gear from an item budget curve that
+arrives in Phase 6 and items that arrive in Phase 10 — its level-40 warrior shows
+DEF 225 where the bare stat line gives 52. So the acceptance check proves the
+FORMULA (published stats in → published percentages out) and says nothing about
+BALANCE. Worth keeping separate before a green check gets read as "the numbers
+are right".
+
+155 tests. Digest `84b3316f44bd18c7`.
+
+### Next
+**Phase 6 — rarity and sets**, which is also what makes the balance checkable.
+Still no live Telegram pass since the rebalance began, and every formula the
+player touches changed here.

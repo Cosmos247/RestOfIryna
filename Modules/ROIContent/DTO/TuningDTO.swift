@@ -49,6 +49,123 @@ import Foundation
 
 // MARK: - combat.json
 
+/// Damage absorption: `min(cap, DEF / (DEF + kBase + kPerLevel·L))`.
+///
+/// A SEPARATE type from `RatingCurveDTO` on purpose. Both look like
+/// diminishing-returns curves, but `cap` here is a CEILING applied after the
+/// ratio, while `scale` there is a leading COEFFICIENT the ratio is multiplied
+/// by. Reading one as the other inflates every derived value by ~80% and the
+/// mistake is invisible in review — it was made once already, in the bestiary
+/// generator, and cost a table of enemies whose fights ran far past their
+/// target length. Two types means the compiler will not let it happen twice.
+public struct MitigationCurveDTO: Codable, Sendable, Equatable {
+    /// Hard ceiling on absorption, as a fraction. Nothing may become immune.
+    public let cap: Double
+    /// The denominator is linear in level BECAUSE the item budget curve is:
+    /// that is what holds a stat's PERCENTAGE steady while its rating grows.
+    /// Hand-picking these two numbers instead of deriving them from the budget
+    /// is how a stat silently rots — an archer's dodge would end lower at the
+    /// level cap than it started at level 1.
+    public let kBase: Double
+    public let kPerLevel: Double
+
+    public init(cap: Double, kBase: Double, kPerLevel: Double) {
+        self.cap = cap
+        self.kBase = kBase
+        self.kPerLevel = kPerLevel
+    }
+
+    private enum CodingKeys: String, CodingKey { case cap, kBase, kPerLevel }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        cap       = try c.decode(Double.self, forKey: .cap)
+        kBase     = try c.decode(Double.self, forKey: .kBase)
+        kPerLevel = try c.decode(Double.self, forKey: .kPerLevel)
+    }
+}
+
+/// Rating → percent: `scale · R / (R + kBase + kPerLevel·L)`.
+///
+/// `scale` is the asymptote the percentage approaches but never reaches, so it
+/// doubles as the stat's design ceiling: dodge tops out near 55%, crit near
+/// 50%, the accuracy bonus near 30.
+public struct RatingCurveDTO: Codable, Sendable, Equatable {
+    public let scale: Double
+    public let kBase: Double
+    public let kPerLevel: Double
+
+    public init(scale: Double, kBase: Double, kPerLevel: Double) {
+        self.scale = scale
+        self.kBase = kBase
+        self.kPerLevel = kPerLevel
+    }
+
+    private enum CodingKeys: String, CodingKey { case scale, kBase, kPerLevel }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        scale     = try c.decode(Double.self, forKey: .scale)
+        kBase     = try c.decode(Double.self, forKey: .kBase)
+        kPerLevel = try c.decode(Double.self, forKey: .kPerLevel)
+    }
+}
+
+public struct CombatCurvesDTO: Codable, Sendable, Equatable {
+    public let mitigation: MitigationCurveDTO
+    public let dodge: RatingCurveDTO
+    public let crit: RatingCurveDTO
+    public let accuracy: RatingCurveDTO
+
+    public init(mitigation: MitigationCurveDTO, dodge: RatingCurveDTO,
+                crit: RatingCurveDTO, accuracy: RatingCurveDTO) {
+        self.mitigation = mitigation
+        self.dodge = dodge
+        self.crit = crit
+        self.accuracy = accuracy
+    }
+
+    private enum CodingKeys: String, CodingKey { case mitigation, dodge, crit, accuracy }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mitigation = try c.decode(MitigationCurveDTO.self, forKey: .mitigation)
+        dodge      = try c.decode(RatingCurveDTO.self, forKey: .dodge)
+        crit       = try c.decode(RatingCurveDTO.self, forKey: .crit)
+        accuracy   = try c.decode(RatingCurveDTO.self, forKey: .accuracy)
+    }
+}
+
+/// Damage multiplier from the gap between attacker and defender level:
+/// `clamp(1 + perLevel·(attackerLevel − defenderLevel), min, max)`.
+///
+/// Orthogonal to the curves, and load-bearing for feel. The curves alone do not
+/// deliver "I have outgrown this zone" — out-levelling a band by ten moves a
+/// warrior's absorption from 38% to 44%, which nobody notices. This one line is
+/// what sells it, and it is why enemy stats can stay frozen at design time
+/// instead of scaling to the player (the trap that makes every gear upgrade
+/// worthless the moment it is equipped).
+public struct LevelDiffDTO: Codable, Sendable, Equatable {
+    public let perLevel: Double
+    public let min: Double
+    public let max: Double
+
+    public init(perLevel: Double, min: Double, max: Double) {
+        self.perLevel = perLevel
+        self.min = min
+        self.max = max
+    }
+
+    private enum CodingKeys: String, CodingKey { case perLevel, min, max }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        perLevel = try c.decode(Double.self, forKey: .perLevel)
+        min      = try c.decode(Double.self, forKey: .min)
+        max      = try c.decode(Double.self, forKey: .max)
+    }
+}
+
 public struct HitChanceDTO: Codable, Sendable, Equatable {
     public let base: Int
     public let min: Int
@@ -186,49 +303,111 @@ public struct StanceSectionDTO: Codable, Sendable, Equatable {
     }
 }
 
-/// Per-class Special Attack: the vigor price plus the five `AttackModifiers`
-/// fields and the dodge-forfeit flag.
-public struct SpecialAttackTuningDTO: Codable, Sendable, Equatable {
-    public let characterClass: String
-    public let vigor: Int
-    public let hitChanceModifier: Int
-    public let defenderDEFFraction: Double
-    public let critBonus: Int
-    public let cannotMiss: Bool
-    public let flatDamageBonus: Int
-    /// True when unleashing the technique zeroes the player's dodge for the
-    /// enemy's counter that round (the archer's long aim).
-    public let zeroesDodge: Bool
+/// What a Special Attack actually does, as a tagged union.
+///
+/// All three used to set `defenderDEFFraction = 0` — "ignore armour". Under
+/// subtraction that was worth +50% damage. Under absorption the gain is
+/// `1/(1−mitigation) − 1`: **+11% against trash, +25% against normal, +47%
+/// against a brute**, for **+150% Vigor**. Efficiency 0.44–0.59×, i.e. the
+/// technique was strictly worse than attacking twice, and worst exactly where
+/// the player most wanted a trump card.
+///
+/// The replacements are chosen so their value does NOT shrink as absorption
+/// rises. `armourBreak` grows with it, `burn` ignores it entirely, and
+/// `guaranteedCrit` multiplies the post-absorption number. A `switch` with no
+/// `default:` so a new case cannot be added without every consumer noticing.
+public enum SpecialAttackEffectDTO: Codable, Sendable, Equatable {
+    /// Sunders the target's armour for `rounds` player actions. The one effect
+    /// whose worth RISES with the defender's absorption — the anti-armour tool
+    /// matters against armour, which is the shape the old version got backwards.
+    case armourBreak(rounds: Int)
+    /// The blow always crits, at its own multiplier rather than the standard one.
+    case guaranteedCrit(critMultiplier: Double)
+    /// Damage per round for `rounds`, as a fraction of the attacker's ATK,
+    /// applied whole — absorption never touches it.
+    case burn(rounds: Int, fractionOfAttack: Double)
 
-    public init(characterClass: String, vigor: Int, hitChanceModifier: Int,
-                defenderDEFFraction: Double, critBonus: Int, cannotMiss: Bool,
-                flatDamageBonus: Int, zeroesDodge: Bool) {
-        self.characterClass = characterClass
-        self.vigor = vigor
-        self.hitChanceModifier = hitChanceModifier
-        self.defenderDEFFraction = defenderDEFFraction
-        self.critBonus = critBonus
-        self.cannotMiss = cannotMiss
-        self.flatDamageBonus = flatDamageBonus
-        self.zeroesDodge = zeroesDodge
+    public enum Kind: String, Codable, Sendable {
+        case armourBreak = "armour_break"
+        case guaranteedCrit = "guaranteed_crit"
+        case burn
+    }
+
+    public var kind: Kind {
+        switch self {
+        case .armourBreak: return .armourBreak
+        case .guaranteedCrit: return .guaranteedCrit
+        case .burn: return .burn
+        }
     }
 
     private enum CodingKeys: String, CodingKey {
-        case characterClass = "class"
-        case vigor, hitChanceModifier, defenderDEFFraction, critBonus
-        case cannotMiss, flatDamageBonus, zeroesDodge
+        case kind, rounds, critMultiplier, fractionOfAttack
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        characterClass      = try c.decode(String.self, forKey: .characterClass)
-        vigor               = try c.decode(Int.self, forKey: .vigor)
-        hitChanceModifier   = try c.decode(Int.self, forKey: .hitChanceModifier)
-        defenderDEFFraction = try c.decode(Double.self, forKey: .defenderDEFFraction)
-        critBonus           = try c.decode(Int.self, forKey: .critBonus)
-        cannotMiss          = try c.decode(Bool.self, forKey: .cannotMiss)
-        flatDamageBonus     = try c.decode(Int.self, forKey: .flatDamageBonus)
-        zeroesDodge         = try c.decode(Bool.self, forKey: .zeroesDodge)
+        switch try c.decode(Kind.self, forKey: .kind) {
+        case .armourBreak:
+            self = .armourBreak(rounds: try c.decode(Int.self, forKey: .rounds))
+        case .guaranteedCrit:
+            self = .guaranteedCrit(critMultiplier: try c.decode(Double.self, forKey: .critMultiplier))
+        case .burn:
+            self = .burn(rounds: try c.decode(Int.self, forKey: .rounds),
+                         fractionOfAttack: try c.decode(Double.self, forKey: .fractionOfAttack))
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(kind, forKey: .kind)
+        switch self {
+        case .armourBreak(let rounds):
+            try c.encode(rounds, forKey: .rounds)
+        case .guaranteedCrit(let multiplier):
+            try c.encode(multiplier, forKey: .critMultiplier)
+        case .burn(let rounds, let fraction):
+            try c.encode(rounds, forKey: .rounds)
+            try c.encode(fraction, forKey: .fractionOfAttack)
+        }
+    }
+}
+
+/// Per-class Special Attack: the Vigor price, the roll modifiers, and the
+/// effect that makes it worth paying for.
+public struct SpecialAttackTuningDTO: Codable, Sendable, Equatable {
+    public let characterClass: String
+    public let vigor: Int
+    public let hitChanceModifier: Int
+    public let cannotMiss: Bool
+    /// True when unleashing the technique zeroes the player's dodge for the
+    /// enemy's counter that round (the archer's long aim).
+    public let zeroesDodge: Bool
+    public let effect: SpecialAttackEffectDTO
+
+    public init(characterClass: String, vigor: Int, hitChanceModifier: Int,
+                cannotMiss: Bool, zeroesDodge: Bool, effect: SpecialAttackEffectDTO) {
+        self.characterClass = characterClass
+        self.vigor = vigor
+        self.hitChanceModifier = hitChanceModifier
+        self.cannotMiss = cannotMiss
+        self.zeroesDodge = zeroesDodge
+        self.effect = effect
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case characterClass = "class"
+        case vigor, hitChanceModifier, cannotMiss, zeroesDodge, effect
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        characterClass    = try c.decode(String.self, forKey: .characterClass)
+        vigor             = try c.decode(Int.self, forKey: .vigor)
+        hitChanceModifier = try c.decode(Int.self, forKey: .hitChanceModifier)
+        cannotMiss        = try c.decode(Bool.self, forKey: .cannotMiss)
+        zeroesDodge       = try c.decode(Bool.self, forKey: .zeroesDodge)
+        effect            = try c.decode(SpecialAttackEffectDTO.self, forKey: .effect)
     }
 }
 
@@ -339,6 +518,8 @@ public struct DefendTuningDTO: Codable, Sendable, Equatable {
 
 public struct CombatTuningDTO: Codable, Sendable {
     public let hitChance: HitChanceDTO
+    public let curves: CombatCurvesDTO
+    public let levelDiff: LevelDiffDTO
     public let critMultiplier: Double
     public let variance: VarianceDTO
     public let defendChipFraction: Double
@@ -353,13 +534,16 @@ public struct CombatTuningDTO: Codable, Sendable {
     public let flee: [FleeTuningDTO]
     public let defend: DefendTuningDTO
 
-    public init(hitChance: HitChanceDTO, critMultiplier: Double, variance: VarianceDTO,
+    public init(hitChance: HitChanceDTO, curves: CombatCurvesDTO, levelDiff: LevelDiffDTO,
+                critMultiplier: Double, variance: VarianceDTO,
                 defendChipFraction: Double, trainingDummyEnemyId: String,
                 techniques: [TechniqueTuningDTO], stances: StanceSectionDTO,
                 specialAttack: [SpecialAttackTuningDTO],
                 specialDefense: SpecialDefenseSectionDTO,
                 flee: [FleeTuningDTO], defend: DefendTuningDTO) {
         self.hitChance = hitChance
+        self.curves = curves
+        self.levelDiff = levelDiff
         self.critMultiplier = critMultiplier
         self.variance = variance
         self.defendChipFraction = defendChipFraction
@@ -373,13 +557,16 @@ public struct CombatTuningDTO: Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case hitChance, critMultiplier, variance, defendChipFraction, trainingDummyEnemyId
+        case hitChance, curves, levelDiff, critMultiplier, variance
+        case defendChipFraction, trainingDummyEnemyId
         case techniques, stances, specialAttack, specialDefense, flee, defend
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         hitChance            = try c.decode(HitChanceDTO.self, forKey: .hitChance)
+        curves               = try c.decode(CombatCurvesDTO.self, forKey: .curves)
+        levelDiff            = try c.decode(LevelDiffDTO.self, forKey: .levelDiff)
         critMultiplier       = try c.decode(Double.self, forKey: .critMultiplier)
         variance             = try c.decode(VarianceDTO.self, forKey: .variance)
         defendChipFraction   = try c.decode(Double.self, forKey: .defendChipFraction)
@@ -529,6 +716,46 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// How a passive (offline) expedition is discounted against active play.
+///
+/// Without these, the mode that needs no attention was measured 53% MORE
+/// efficient than the one that does: it charged one Vigor per combat round
+/// instead of two AND always rolled the fresh-room table, which no active
+/// player can do twice in the same room. A game where ignoring it beats playing
+/// it has no reason to be played.
+///
+/// Materials stay at 100% deliberately. The passive run is the floor — it should
+/// keep the estate supplied and the crafting loop alive — while XP and silver,
+/// the two progression currencies, are where active play earns its premium.
+public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
+    public let xpMultiplier: Double
+    public let silverMultiplier: Double
+    public let lootMultiplier: Double
+    /// Steps past this index roll the decayed weight tier instead of the fresh
+    /// one, so an unattended walk cannot keep harvesting first-visit odds.
+    public let freshStepCount: Int
+
+    public init(xpMultiplier: Double, silverMultiplier: Double,
+                lootMultiplier: Double, freshStepCount: Int) {
+        self.xpMultiplier = xpMultiplier
+        self.silverMultiplier = silverMultiplier
+        self.lootMultiplier = lootMultiplier
+        self.freshStepCount = freshStepCount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case xpMultiplier, silverMultiplier, lootMultiplier, freshStepCount
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        xpMultiplier     = try c.decode(Double.self, forKey: .xpMultiplier)
+        silverMultiplier = try c.decode(Double.self, forKey: .silverMultiplier)
+        lootMultiplier   = try c.decode(Double.self, forKey: .lootMultiplier)
+        freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
+    }
+}
+
 public struct ExplorationTuningDTO: Codable, Sendable {
     /// The RNG range a step rolls in. Every tier's four weights must sum to it,
     /// or the last bucket silently absorbs the remainder.
@@ -536,16 +763,19 @@ public struct ExplorationTuningDTO: Codable, Sendable {
     /// Trip damage as a fraction of max HP.
     public let tripDamagePercent: Double
     public let weightTiers: [EventWeightTierDTO]
+    public let passive: PassiveExpeditionTuningDTO
 
     public init(eventWeightTotal: Int, tripDamagePercent: Double,
-                weightTiers: [EventWeightTierDTO]) {
+                weightTiers: [EventWeightTierDTO],
+                passive: PassiveExpeditionTuningDTO) {
         self.eventWeightTotal = eventWeightTotal
         self.tripDamagePercent = tripDamagePercent
         self.weightTiers = weightTiers
+        self.passive = passive
     }
 
     private enum CodingKeys: String, CodingKey {
-        case eventWeightTotal, tripDamagePercent, weightTiers
+        case eventWeightTotal, tripDamagePercent, weightTiers, passive
     }
 
     public init(from decoder: any Decoder) throws {
@@ -553,60 +783,160 @@ public struct ExplorationTuningDTO: Codable, Sendable {
         eventWeightTotal  = try c.decode(Int.self, forKey: .eventWeightTotal)
         tripDamagePercent = try c.decode(Double.self, forKey: .tripDamagePercent)
         weightTiers       = try c.decode([EventWeightTierDTO].self, forKey: .weightTiers)
+        passive           = try c.decode(PassiveExpeditionTuningDTO.self, forKey: .passive)
     }
 }
 
 // MARK: - progression.json
 
-/// The three constants inside `User.xpRequiredToReach`. The loop shape stays in
-/// Swift — only the numbers move — but `doublingThroughLevel` is as much a
-/// tuning knob as the multiplier: it is the level the curve stops doubling at.
+/// XP to advance from level L to L+1: `max(round(coefficient · L^exponent),
+/// floorPerLevel · L)`.
+///
+/// A power law, not the old compounding loop. The compounding curve had no
+/// relationship to XP SUPPLY: it asked 868,585 XP to reach level 21 while the
+/// best monster in the game gave 175, which is 4,963 kills — and the last level
+/// alone was 1,422 rabid bears. This curve was fitted to the measured Vigor
+/// budget instead, so days-per-level rises 0.38 → 5.5 smoothly with no wall.
+///
+/// `floorPerLevel` only bites on levels 1–3, where the power term is still
+/// smaller than a single kill.
 public struct XPCurveDTO: Codable, Sendable, Equatable {
-    public let firstLevelCost: Int
-    public let doublingThroughLevel: Int
-    public let growthMultiplier: Double
+    public let coefficient: Double
+    public let exponent: Double
+    public let floorPerLevel: Int
 
-    public init(firstLevelCost: Int, doublingThroughLevel: Int, growthMultiplier: Double) {
-        self.firstLevelCost = firstLevelCost
-        self.doublingThroughLevel = doublingThroughLevel
-        self.growthMultiplier = growthMultiplier
+    public init(coefficient: Double, exponent: Double, floorPerLevel: Int) {
+        self.coefficient = coefficient
+        self.exponent = exponent
+        self.floorPerLevel = floorPerLevel
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case firstLevelCost, doublingThroughLevel, growthMultiplier
-    }
+    private enum CodingKeys: String, CodingKey { case coefficient, exponent, floorPerLevel }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        firstLevelCost       = try c.decode(Int.self, forKey: .firstLevelCost)
-        doublingThroughLevel = try c.decode(Int.self, forKey: .doublingThroughLevel)
-        growthMultiplier     = try c.decode(Double.self, forKey: .growthMultiplier)
+        coefficient   = try c.decode(Double.self, forKey: .coefficient)
+        exponent      = try c.decode(Double.self, forKey: .exponent)
+        floorPerLevel = try c.decode(Int.self, forKey: .floorPerLevel)
     }
 }
 
-public struct StatGrowthDTO: Codable, Sendable, Equatable {
-    /// Levels that grant the boost. An ARRAY, not a set: JSON has no set, and
-    /// the array is what makes the file reviewable in order.
-    public let levels: [Int]
-    public let maxHp: Int
-    public let attack: Int
-    public let defense: Int
+/// XP a monster awards: `round(coefficient · level^exponent · archetypeXP)`.
+///
+/// Design-time input — the value is baked into each enemy's `xpReward` — but it
+/// lives here, beside `xpCurve`, because the two are SOLVED AS A PAIR. The
+/// exponent is not free: it has to satisfy
+/// `curveExponent − mobExponent − 0.45 (fights/day slope) − 0.30 (mix slope)
+/// = days-per-level slope`. Choosing both independently produces an arbitrary
+/// pacing shape; two are chosen and the third is solved. Storing them apart
+/// would invite exactly that.
+public struct MobXPDTO: Codable, Sendable, Equatable {
+    public let coefficient: Double
+    public let exponent: Double
 
-    public init(levels: [Int], maxHp: Int, attack: Int, defense: Int) {
-        self.levels = levels
-        self.maxHp = maxHp
-        self.attack = attack
-        self.defense = defense
+    public init(coefficient: Double, exponent: Double) {
+        self.coefficient = coefficient
+        self.exponent = exponent
     }
 
-    private enum CodingKeys: String, CodingKey { case levels, maxHp, attack, defense }
+    private enum CodingKeys: String, CodingKey { case coefficient, exponent }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        levels  = try c.decode([Int].self, forKey: .levels)
-        maxHp   = try c.decode(Int.self, forKey: .maxHp)
-        attack  = try c.decode(Int.self, forKey: .attack)
-        defense = try c.decode(Int.self, forKey: .defense)
+        coefficient = try c.decode(Double.self, forKey: .coefficient)
+        exponent    = try c.decode(Double.self, forKey: .exponent)
+    }
+}
+
+/// XP scaling for out-levelling a monster:
+/// `clamp(1 − perLevel · (playerLevel − monsterLevel), min, max)`.
+///
+/// REQUIRED, not optional polish. Without it a level-40 player farming level-30
+/// monsters keeps 67% of the XP for a fight that is 35% faster and 40% safer —
+/// shallow farming becomes strictly optimal and the entire depth ladder turns
+/// into dead content.
+public struct XPLevelDiffDTO: Codable, Sendable, Equatable {
+    public let perLevel: Double
+    public let min: Double
+    public let max: Double
+
+    public init(perLevel: Double, min: Double, max: Double) {
+        self.perLevel = perLevel
+        self.min = min
+        self.max = max
+    }
+
+    private enum CodingKeys: String, CodingKey { case perLevel, min, max }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        perLevel = try c.decode(Double.self, forKey: .perLevel)
+        min      = try c.decode(Double.self, forKey: .min)
+        max      = try c.decode(Double.self, forKey: .max)
+    }
+}
+
+/// Per-level stat growth, as a FRACTION OF THE BASE added per level above 1:
+/// `stat(L) = base × (1 + rate × (L − 1))`.
+///
+/// Proportional, not flat, and that is the whole point. Under flat growth a
+/// warrior's dodge RATING rises while its dodge PERCENT falls — 5.3% at level 1
+/// down to 1.4% at level 40 — because the diminishing-returns denominator grows
+/// with level and a flat rating cannot keep up. The number on the profile screen
+/// goes up while the effect quietly disappears, which a player reads as a bug.
+/// Scaling ratings at the same rate as the denominator holds the percentage
+/// steady instead.
+///
+/// `ratingPerLevel` covers DEF, crit, dodge and accuracy together: they share
+/// the item-budget slope the denominators were derived from, so splitting them
+/// would let one rot independently.
+public struct StatGrowthDTO: Codable, Sendable, Equatable {
+    public let hpPerLevel: Double
+    public let attackPerLevel: Double
+    public let ratingPerLevel: Double
+
+    public init(hpPerLevel: Double, attackPerLevel: Double, ratingPerLevel: Double) {
+        self.hpPerLevel = hpPerLevel
+        self.attackPerLevel = attackPerLevel
+        self.ratingPerLevel = ratingPerLevel
+    }
+
+    private enum CodingKeys: String, CodingKey { case hpPerLevel, attackPerLevel, ratingPerLevel }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hpPerLevel     = try c.decode(Double.self, forKey: .hpPerLevel)
+        attackPerLevel = try c.decode(Double.self, forKey: .attackPerLevel)
+        ratingPerLevel = try c.decode(Double.self, forKey: .ratingPerLevel)
+    }
+}
+
+/// The Vigor pool and how fast it refills on its own.
+///
+/// `perLevel` matters as much as `base`: a flat pool means the regen rate,
+/// expressed as a share of the pool, shrinks every level — the plan measured a
+/// flat 8/hour degenerating to 2.7%/hour at the cap. Scaling the pool with level
+/// and stating regen as "the whole pool in N hours" keeps the felt recovery rate
+/// constant for the player's whole life.
+public struct VigorPoolDTO: Codable, Sendable, Equatable {
+    public let base: Int
+    public let perLevel: Int
+    /// Hours to refill an empty pool completely.
+    public let fullRegenHours: Double
+
+    public init(base: Int, perLevel: Int, fullRegenHours: Double) {
+        self.base = base
+        self.perLevel = perLevel
+        self.fullRegenHours = fullRegenHours
+    }
+
+    private enum CodingKeys: String, CodingKey { case base, perLevel, fullRegenHours }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        base           = try c.decode(Int.self, forKey: .base)
+        perLevel       = try c.decode(Int.self, forKey: .perLevel)
+        fullRegenHours = try c.decode(Double.self, forKey: .fullRegenHours)
     }
 }
 
@@ -656,31 +986,43 @@ public struct ClassStartDTO: Codable, Sendable, Equatable {
 public struct ProgressionTuningDTO: Codable, Sendable {
     public let maxLevel: Int
     public let xpCurve: XPCurveDTO
+    public let mobXP: MobXPDTO
+    public let xpLevelDiff: XPLevelDiffDTO
     public let statGrowth: StatGrowthDTO
+    public let vigorPool: VigorPoolDTO
     public let classes: [ClassStartDTO]
     /// Warehouse unit cap indexed by estate level (level 1 = index 0). Estates
     /// past the end of the table clamp to the last entry, so the array length
     /// is itself the top tier.
     public let warehouseCapByEstateLevel: [Int]
 
-    public init(maxLevel: Int, xpCurve: XPCurveDTO, statGrowth: StatGrowthDTO,
-                classes: [ClassStartDTO], warehouseCapByEstateLevel: [Int]) {
+    public init(maxLevel: Int, xpCurve: XPCurveDTO, mobXP: MobXPDTO,
+                xpLevelDiff: XPLevelDiffDTO, statGrowth: StatGrowthDTO,
+                vigorPool: VigorPoolDTO, classes: [ClassStartDTO],
+                warehouseCapByEstateLevel: [Int]) {
         self.maxLevel = maxLevel
         self.xpCurve = xpCurve
+        self.mobXP = mobXP
+        self.xpLevelDiff = xpLevelDiff
         self.statGrowth = statGrowth
+        self.vigorPool = vigorPool
         self.classes = classes
         self.warehouseCapByEstateLevel = warehouseCapByEstateLevel
     }
 
     private enum CodingKeys: String, CodingKey {
-        case maxLevel, xpCurve, statGrowth, classes, warehouseCapByEstateLevel
+        case maxLevel, xpCurve, mobXP, xpLevelDiff, statGrowth, vigorPool
+        case classes, warehouseCapByEstateLevel
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         maxLevel                  = try c.decode(Int.self, forKey: .maxLevel)
         xpCurve                   = try c.decode(XPCurveDTO.self, forKey: .xpCurve)
+        mobXP                     = try c.decode(MobXPDTO.self, forKey: .mobXP)
+        xpLevelDiff               = try c.decode(XPLevelDiffDTO.self, forKey: .xpLevelDiff)
         statGrowth                = try c.decode(StatGrowthDTO.self, forKey: .statGrowth)
+        vigorPool                 = try c.decode(VigorPoolDTO.self, forKey: .vigorPool)
         classes                   = try c.decode([ClassStartDTO].self, forKey: .classes)
         warehouseCapByEstateLevel = try c.decode([Int].self, forKey: .warehouseCapByEstateLevel)
     }

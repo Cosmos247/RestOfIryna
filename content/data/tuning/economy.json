@@ -4,7 +4,7 @@
     "repairMaxShave" : 1,
     "wearBudget" : {
       "defeat" : 3,
-      "flee" : 5,
+      "flee" : 2,
       "victory" : 1
     }
   }

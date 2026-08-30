@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       SplitMix64 + OutcomeDigest (simulator lands Phase 8)
 Modules/roi-content   executable                 CLI: validate
-Tests/ROIContentTests                            130 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            155 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -101,6 +101,30 @@ rules of their own:
   sweeps", and deriving it makes that hold by construction. It is deliberately
   not a function of `scale` — it is a DB polling cadence, and scaling it would
   make database load a function of game balance.
+
+## Bestiary and combat model (Phase 5)
+
+`enemies.json` carries an `archetypes` table beside the roster: six rows of
+design input (rounds-to-kill, HP loss per encounter, absorption / dodge / crit
+targets, XP / loot / silver multipliers, default spawn weight). Every enemy's
+stats are GENERATED from its level and archetype at design time, never scaled to
+the player at runtime — runtime scaling makes each gear upgrade evaporate as it
+is equipped.
+
+- **`pickFor` returns nil past coverage.** The old `?? all.first` tail answered
+  any uncovered km with the first enemy in the file, so everything past km 35 was
+  a wild boar and the deepest zone was the easiest. `rollEncounter` already
+  treated nil as "no encounter" — the call site had been written for the honest
+  answer all along. A gap is now a validator finding.
+- **Combat curves come in two shapes and they are separate TYPES.**
+  `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
+  `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.
+  Reading one as the other inflates derived values by ~80%.
+- **The `--content-digest` run prints three live checks** beside the hashes: the
+  façade lookups, the plot-sweeper equivalence, and `combat model`, which replays
+  the design's published anchors (five mitigation pairs, the warrior dodge line,
+  the levelDiff clamps, four XP-curve costs). They are printed rather than hashed
+  because a number that has drifted is worth seeing as a number.
 
 ## Adding content
 

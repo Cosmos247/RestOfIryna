@@ -13,6 +13,7 @@
 //  Values tagged ⚙️ TBD are initial GDD values and will be tuned later.
 //
 
+import Fluent
 import Foundation
 
 // MARK: - Vigor-draining actions
@@ -20,8 +21,10 @@ import Foundation
 public enum VigorAction: String, CaseIterable, Sendable {
     case walkRoom
     case walkRoomDoubleSpeed
-    /// Used by passive autobattle where each round costs one flat unit
-    /// (the player isn't picking actions; the simulation just resolves).
+    /// Used by passive autobattle, where the player picks no actions and the
+    /// simulation just resolves. Priced at PARITY with an active attack since
+    /// Phase 5D: charging less was half of why the unattended mode measured
+    /// 53% more efficient than the one that needs a human.
     case combatRound
     /// Active CombatController per-action costs (Phase 4.1).
     case combatAttack
@@ -58,6 +61,66 @@ public enum VigorService {
     public static var starvationStatPenalty: Double { Catalogs.current.tuningVigor.starvation.statPenalty }
     /// Fraction of max HP lost per room transition while starving (0.05 = 5%).
     public static var starvationHPDrainPercent: Double { Catalogs.current.tuningVigor.starvation.hpDrainPercent }
+
+    // MARK: - Regeneration (Phase 5B)
+
+    /// Vigor restored per minute of elapsed wall-clock time: the whole pool
+    /// over `fullRegenHours`.
+    ///
+    /// Scaling with `maxVigor` rather than being a flat number per hour is the
+    /// point — a flat rate shrinks, as a share of the pool, every time the pool
+    /// grows, and by the level cap the player would be recovering 2.7% an hour
+    /// instead of the 16.7% they started with.
+    public static func regenPerMinute(for user: User) -> Double {
+        let hours = Catalogs.current.tuningProgression.vigorPool.fullRegenHours
+        guard hours > 0 else { return 0 }
+        return Double(user.maxVigor) / (hours * 60)
+    }
+
+    /// Credit idle time as Vigor. Mirrors `HealingService.tick`, with one
+    /// deliberate difference: it is NOT suspended during an expedition.
+    ///
+    /// HP regen pauses out in the wilderness because resting is something you
+    /// do at the manor. Vigor is stamina, it is *spent* by walking and fighting,
+    /// and a trickle while the governor catches their breath is exactly the
+    /// mechanic — suspending it would make the pool strictly a pre-expedition
+    /// budget and delete the "wait a bit, then push deeper" decision.
+    ///
+    /// Returns the amount actually restored. Writes the user only when
+    /// something changed.
+    @discardableResult
+    public static func regenTick(_ user: User, on db: any Database) async throws -> Int {
+        let now = Date()
+
+        // Full pool — pin the clock so idle time cannot bank against future
+        // spending. Same guard `HealingService` needs, same reason.
+        if user.vigor >= user.maxVigor {
+            if user.lastVigorTickAt != now {
+                user.lastVigorTickAt = now
+                try await user.saveAndCache(in: db)
+            }
+            return 0
+        }
+
+        // First observation on a drained pool primes the clock and grants
+        // nothing: a row that predates the column must not pay out months.
+        guard let last = user.lastVigorTickAt else {
+            user.lastVigorTickAt = now
+            try await user.saveAndCache(in: db)
+            return 0
+        }
+
+        let minutes = max(0, now.timeIntervalSince(last) / 60.0)
+        let restored = Int((regenPerMinute(for: user) * minutes).rounded(.down))
+        // Not enough elapsed time to round up to a whole point — keep the old
+        // timestamp so the partial minutes are not thrown away.
+        guard restored > 0 else { return 0 }
+
+        user.vigor = min(user.maxVigor, user.vigor + restored)
+        user.lastVigorTickAt = now
+        try await user.saveAndCache(in: db)
+        return restored
+    }
 
     // MARK: - Queries
 

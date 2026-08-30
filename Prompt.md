@@ -35,46 +35,51 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3 and 4 are complete.** All 12 catalogs read `content/data/`, and the
-balance numbers now live beside them in `content/data/tuning/`. No Swift catalog
-array and no hardcoded tuning constant remains.
+**Phases 3, 4 and 5 are complete.** Catalogs and tuning both live in
+`content/data/`, and the game's mathematics has been rebuilt.
 
 ```
-content/data/         manifest · items · enemies · recipes · weapon_upgrades ·
-                      bags · estate_upgrades · trader · tavern · market · guild ·
-                      arena · master · plots · fortune · quests      (16 files)
+content/data/         manifest · items · enemies (+ archetypes) · recipes ·
+                      weapon_upgrades · bags · estate_upgrades · trader · tavern ·
+                      market · guild · arena · master · plots · fortune · quests
 content/data/tuning/  combat · vigor · exploration · progression · economy · time
 ```
 
-`time.scale` is now the single time knob — the three `testMode` booleans and
-`manifest.timeScale` are gone, and `schemaVersion` is 2. **It is still 60**, on
-purpose: Phase 11 flips it to 1.0 as a one-number change, which is what kept the
-collapse a verified no-op. `roi-content validate` says so, and `--strict` exits 1.
+What Phase 5 changed, in one line each: damage is **absorbed** (`ATK · (1 −
+DEF/(DEF+K(L)))`) rather than subtracted · crit/dodge/accuracy are **ratings**
+through curves whose denominators grow with level · **`levelDiff`** scales damage
+by the level gap · stats grow **proportionally every level**, cap 40 · Vigor has
+a **pool that grows and regenerates** · enemies carry level / archetype /
+crit / dodge / accuracy / silver / spawn weight and are **generated at design
+time** · the three special attacks were rebuilt off "ignore armour" onto armour
+break, guaranteed crit and burn · monsters **drop silver**.
 
-**Next step — Phase 5: the new combat model.** Mitigation instead of
-subtraction, ratings→percent with denominators derived from the item budget
-curve, `levelDiff`, a hit floor of 40, enemy archetypes generated at design time,
-`maxLevel = 40` with proportional growth, and the technique rebuild off
-`defenderDEFFraction = 0`. Every number it changes is already a JSON edit —
-`tuning/combat.json`, `tuning/progression.json` — but the FORMULAS are Swift, so
-this phase is a real rewrite of `CombatService` and `User`, not a retune.
+**Next — Phase 6: rarity and sets.** `rarities.json`, `sets.json`,
+`Item.rarity` / `Item.setId`, enchant as a **percentage of the item's own
+budget** (never flat points — a flat +32 is 267% of base DEF at level 1 and 14%
+at 40), a second pass in `recomputeBonuses`, and budget rules in the validator.
 
-Two things Phase 5 inherits, both already surfaced by the tooling rather than
-buried in prose:
-- `roi-content validate` warns that fleeing wears 5 durability against a
-  defeat's 3 — running away costs more than dying.
-- `EnemyCatalog.pickFor` still falls back to `all.first` past km 35, so every
-  deep encounter is a wild boar. Preserved through the migration on purpose;
-  it belongs to the `zones.json` work, alongside the foraging pools still
-  hardcoded in `ExplorationService.rollLoot`.
+**This is also the phase that makes the balance checkable.** Phase 5 could only
+prove the formulas: the design's reference character carries gear from a budget
+curve that does not exist yet, which is why its level-40 warrior shows DEF 225
+where the bare stat line gives 52.
 
-**Current digest baseline: `893b57b06fad8068`**
-(`records 296960c1a998a7e7` · `tuning 9ba80c8f77fa3aa8` ·
-`spawns 635cde3f65184c78` · `quests 2e52ecdfa45276ec`).
+**Current digest baseline: `84b3316f44bd18c7`**
+(`records 70d6d2396af6f198` · `tuning 88db2a129b96a432` ·
+`spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`).
 
-The digest has FOUR halves. Keep `tuning` separate from `records` — holding the
-three catalog halves fixed is how a balance change proves it touched only
-balance.
+From Phase 5 on the digest is a change DETECTOR, not an equality check — the
+question is no longer "did it stay the same" but "did exactly the intended thing
+move". `--content-digest` also prints three live checks (façade lookups, the plot
+sweeper's two-point equivalence, and the combat model against the design anchors)
+plus the stat ladder and spawn distribution.
+
+⚠️ **No live Telegram pass has been run since the rebalance began.** Every
+formula the player touches changed in Phase 5.
+
+Known content gaps, all Phase 10's: km 31–40 has a single elite and nothing else,
+the `boss` archetype has no members, and `ExplorationService.rollLoot` still
+holds its foraging pools in Swift (they belong in `zones.json`).
 
 ### How content works now
 
@@ -107,7 +112,7 @@ live in `.memory/content-pipeline.md`.
 ```
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 130 tests, ~0.08s
+swift test                                   # 155 tests, ~0.14s
 ```
 
 ## What Works Now (shipped game)

@@ -647,8 +647,42 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         `realTime` (never scaled) because Telegram's 24 h dice-delete window is a protocol
         constant: scaling it would not rebalance the tavern, it would break the sweep.
         Left at **`scale: 60`** deliberately — Phase 11 flips it to 1.0 as a one-number change.
-- [ ] Phase 5 — New combat model (mitigation curve, ratings→%, levelDiff, enemy archetypes,
-      technique rebuild off `defenderDEFFraction = 0`, `WearEvent.flee` ≤ defeat)
+- [x] **Phase 5 — New combat model** *(2026-08-30)* — four commits' worth of work in one:
+  - [x] **5A — bestiary data** — `EnemyArchetype` + the six-archetype table in `enemies.json`;
+        `Enemy` gains `level`, `archetype`, `crit`/`dodge`/`accuracy`, `silverReward`,
+        `spawnWeight`. `pickFor` is weighted and returns **nil** past coverage instead of
+        `all.first` — the fallback that made every encounter past km 35 a wild boar, so the
+        deepest content in the game was also its easiest. `rabid_bear` extended to km 40 to close
+        the hole honestly; a real gap is now a validator finding. Level = the depth an enemy
+        starts appearing at, which is what gives `levelDiff` meaning. 17 validator rules.
+  - [x] **5B — progression** — proportional growth (`base × (1 + rate·(L−1))`, 0.056 / 0.100 /
+        0.085) replaces +5/+1/+1 on eight chosen levels. Under flat growth a warrior's dodge
+        RATING rose while its PERCENT fell 5.3% → 1.4%, which reads as a bug. `maxVigor(L) =
+        100 + 5L`, and Vigor **regeneration exists at all** for the first time (whole pool per
+        6 h, `VigorService.regenTick`, deliberately NOT suspended during an expedition).
+        `applyLevelDerivedStats` recomputes rather than accumulates, so it is idempotent and a
+        startup backfill moves old rows onto the new line.
+  - [x] **5C — combat model** — absorption replaces `max(1, ATK − DEF)`; crit/dodge/accuracy
+        become ratings through curves whose denominators grow with level; `levelDiff`; hit band
+        85 / floor 40. `maxLevel` 21 → 40 with the power-law XP curve and `mobXP` **landed as a
+        pair** (the exponent is solved, not chosen). Enemy stats regenerated from the archetype
+        table. Adding levels to `applyAttack` made the compiler find all nine call sites,
+        including two `chipDamage` ones a text search would have missed. Enemies had passed
+        literal `0/0/0` for crit/dodge/accuracy — no beast had ever landed a critical hit.
+        `MitigationCurveDTO` and `RatingCurveDTO` are separate TYPES because `0.70` is a ceiling
+        where `55/50/30` are scales; conflating them had already cost one wrong enemy table.
+  - [x] **5D — techniques, flee, weights, passive, silver** — all three special attacks moved off
+        `defenderDEFFraction = 0`, which absorption turns into a 0.44–0.59× trade (+11% damage
+        against trash for +150% Vigor). Warrior → armour break for 3 rounds (worth MORE the more
+        armour the target has), archer → guaranteed crit at ×2.0, mage → burn 0.35×ATK for 3
+        rounds that absorption cannot touch. `WearEvent.flee` 5 → 2 (fleeing cost more than
+        dying). Event weights → 5/45/40/10. Passive expeditions charge full Vigor per round, roll
+        the decayed tier past the first step, and pay 70% XP / 70% silver / 100% materials — they
+        had measured 53% MORE efficient than active play. **Monsters drop silver**, the game's
+        first combat-side coin faucet.
+        Verification: the digest's `combat model` check replays the design's published anchors on
+        every run; 40 enemy values were independently re-derived from the shipped tables; total
+        XP to the cap comes out at **19,437,688** against the plan's 19,437,688. 155 tests.
 - [ ] Phase 6 — Rarity + sets; enchant as % of item budget (never flat points)
 - [ ] Phase 7 — `/reload` hot swap + `LiveReferenceCheck`
 - [ ] Phase 8 — `CombatantStats` refactor + simulator; lock every constant (verify p90, not mean)

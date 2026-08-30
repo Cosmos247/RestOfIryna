@@ -3,7 +3,7 @@
     "combatAttack" : 2,
     "combatDefend" : 1,
     "combatFlee" : 3,
-    "combatRound" : 1,
+    "combatRound" : 2,
     "idle" : 0,
     "walkRoom" : 2,
     "walkRoomDoubleSpeed" : 4

@@ -48,6 +48,7 @@ public enum ArenaService {
             crit: user.effectiveCrit,
             dodge: user.effectiveDodge,
             acc: user.effectiveAccuracy,
+            level: user.level,
             maxHp: user.maxHp,
             hp: max(1, user.hp),
             stake: stake,

@@ -46,6 +46,12 @@ final class TuningTests: XCTestCase {
     ) -> CombatTuningDTO {
         CombatTuningDTO(
             hitChance: HitChanceDTO(base: hitBase, min: hitMin, max: hitMax),
+            curves: CombatCurvesDTO(
+                mitigation: MitigationCurveDTO(cap: 0.70, kBase: 46.65, kPerLevel: 8.017),
+                dodge: RatingCurveDTO(scale: 55, kBase: 43.32, kPerLevel: 3.682),
+                crit: RatingCurveDTO(scale: 50, kBase: 51.89, kPerLevel: 3.213),
+                accuracy: RatingCurveDTO(scale: 30, kBase: 33.38, kPerLevel: 1.457)),
+            levelDiff: LevelDiffDTO(perLevel: 0.06, min: 0.25, max: 2.5),
             critMultiplier: critMultiplier,
             variance: VarianceDTO(min: varianceMin, max: varianceMax),
             defendChipFraction: defendChip,
@@ -70,14 +76,14 @@ final class TuningTests: XCTestCase {
                 ]),
             specialAttack: specialAttack ?? [
                 SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
-                                       defenderDEFFraction: 0.0, critBonus: 20, cannotMiss: false,
-                                       flatDamageBonus: 12, zeroesDodge: false),
+                                       cannotMiss: false, zeroesDodge: false,
+                                       effect: .armourBreak(rounds: 3)),
                 SpecialAttackTuningDTO(characterClass: "archer", vigor: 4, hitChanceModifier: 0,
-                                       defenderDEFFraction: 0.0, critBonus: 20, cannotMiss: true,
-                                       flatDamageBonus: 0, zeroesDodge: true),
+                                       cannotMiss: true, zeroesDodge: true,
+                                       effect: .guaranteedCrit(critMultiplier: 2.0)),
                 SpecialAttackTuningDTO(characterClass: "mage", vigor: 5, hitChanceModifier: 0,
-                                       defenderDEFFraction: 0.0, critBonus: 0, cannotMiss: true,
-                                       flatDamageBonus: 5, zeroesDodge: false)
+                                       cannotMiss: true, zeroesDodge: false,
+                                       effect: .burn(rounds: 3, fractionOfAttack: 0.35))
             ],
             specialDefense: SpecialDefenseSectionDTO(
                 effectPersistRounds: persistRounds,
@@ -110,6 +116,7 @@ final class TuningTests: XCTestCase {
     }
 
     private func exploration(total: Int = 100, tripDamage: Double = 0.05,
+                             passiveXP: Double = 0.7,
                              tiers: [EventWeightTierDTO]? = nil) -> ExplorationTuningDTO {
         ExplorationTuningDTO(
             eventWeightTotal: total, tripDamagePercent: tripDamage,
@@ -117,20 +124,30 @@ final class TuningTests: XCTestCase {
                 EventWeightTierDTO(priorVisits: 0, nothing: 10, loot: 50, encounter: 30, trip: 10),
                 EventWeightTierDTO(priorVisits: 1, nothing: 20, loot: 50, encounter: 20, trip: 10),
                 EventWeightTierDTO(priorVisits: 2, nothing: 80, loot: 20, encounter: 0, trip: 0)
-            ])
+            ],
+            passive: PassiveExpeditionTuningDTO(xpMultiplier: passiveXP, silverMultiplier: 0.7,
+                                                lootMultiplier: 1.0, freshStepCount: 1))
     }
 
-    private func progression(maxLevel: Int = 21, firstCost: Int = 100,
-                             doublingThrough: Int = 5, growth: Double = 1.4,
-                             growthLevels: [Int]? = nil,
+    private func progression(maxLevel: Int = 40, coefficient: Double = 11.4,
+                             exponent: Double = 3.30, floorPerLevel: Int = 120,
+                             mobExponent: Double = 1.55, xpGapPerLevel: Double = 0.08,
+                             hpRate: Double = 0.056, atkRate: Double = 0.100,
+                             ratingRate: Double = 0.085,
+                             vigorBase: Int = 100, vigorPerLevel: Int = 5,
+                             regenHours: Double = 6,
                              classes: [ClassStartDTO]? = nil,
                              warehouse: [Int]? = nil) -> ProgressionTuningDTO {
         ProgressionTuningDTO(
             maxLevel: maxLevel,
-            xpCurve: XPCurveDTO(firstLevelCost: firstCost, doublingThroughLevel: doublingThrough,
-                                growthMultiplier: growth),
-            statGrowth: StatGrowthDTO(levels: growthLevels ?? [2, 3, 5, 6, 9, 12, 15, 18],
-                                      maxHp: 5, attack: 1, defense: 1),
+            xpCurve: XPCurveDTO(coefficient: coefficient, exponent: exponent,
+                                floorPerLevel: floorPerLevel),
+            mobXP: MobXPDTO(coefficient: 26, exponent: mobExponent),
+            xpLevelDiff: XPLevelDiffDTO(perLevel: xpGapPerLevel, min: 0.10, max: 1.00),
+            statGrowth: StatGrowthDTO(hpPerLevel: hpRate, attackPerLevel: atkRate,
+                                      ratingPerLevel: ratingRate),
+            vigorPool: VigorPoolDTO(base: vigorBase, perLevel: vigorPerLevel,
+                                    fullRegenHours: regenHours),
             classes: classes ?? [
                 ClassStartDTO(characterClass: "warrior", hp: 120, attack: 10, defense: 12,
                               crit: 5, dodge: 5, accuracy: 10, starterWeaponId: "gear.rusty_sword"),
@@ -167,6 +184,22 @@ final class TuningTests: XCTestCase {
                                   dayRolloverHour: rolloverHour, dayTimeZoneId: timeZone))
     }
 
+    /// The six shipped archetypes, values from the design table.
+    private func archetypeTable() -> [EnemyArchetypeDTO] {
+        [("trash", 3.0, 10.0, 10.0, 0.0, 0.0, 0.40, 0.5, 0.40, 100.0),
+         ("normal", 5.0, 24.0, 20.0, 3.0, 5.0, 1.00, 1.0, 1.00, 60.0),
+         ("skirmisher", 4.0, 28.0, 12.0, 15.0, 12.0, 1.30, 1.2, 1.30, 40.0),
+         ("brute", 7.0, 42.0, 32.0, 0.0, 5.0, 1.90, 1.7, 1.90, 25.0),
+         ("elite", 8.0, 62.0, 25.0, 8.0, 15.0, 3.20, 3.0, 3.20, 8.0),
+         ("boss", 12.0, 130.0, 30.0, 5.0, 20.0, 9.00, 8.0, 9.00, 1.0)
+        ].map {
+            EnemyArchetypeDTO(id: $0.0, rounds: $0.1, hpLossPercent: $0.2,
+                              mitigationPercent: $0.3, dodgePercent: $0.4, critPercent: $0.5,
+                              xpMultiplier: $0.6, lootMultiplier: $0.7,
+                              silverMultiplier: $0.8, spawnWeight: $0.9)
+        }
+    }
+
     private func weapon(_ id: String) -> ItemDTO {
         ItemDTO(id: id, type: "gear", tier: 1, stackable: false, slot: "main_hand",
                 gearStats: GearStatsDTO(attack: 3), icon: "⚔️")
@@ -182,7 +215,12 @@ final class TuningTests: XCTestCase {
             items: [weapon("gear.rusty_sword"), weapon("gear.simple_bow"), weapon("gear.wooden_staff")],
             enemies: [EnemyDTO(id: "enemy.training_dummy", tier: 1, icon: "🎯", xpReward: 0,
                                stats: EnemyStatsDTO(hp: 50, attack: 5, defense: 1),
-                               depth: IntRangeDTO(min: 0, max: 0))],
+                               depth: IntRangeDTO(min: 0, max: 0),
+                               level: 1, archetype: "trash")],
+            // A bundle that carries enemies must carry the archetype table, so
+            // these fixtures do too — otherwise every tuning test would trip
+            // `enemy.archetype_missing` and mask what it is actually asserting.
+            enemyArchetypes: archetypeTable(),
             recipes: [], starterRecipeIds: [],
             tuning: TuningBundleDTO(
                 combat: combat ?? self.combat(),
@@ -336,18 +374,52 @@ final class TuningTests: XCTestCase {
         ])))
     }
 
-    func testDefFractionAboveOneIsAnError() {
-        assertRule("tuning.combat.def_fraction_range", bundle(combat: combat(specialAttack: [
-            SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
-                                   defenderDEFFraction: 4.0, critBonus: 20, cannotMiss: false,
-                                   flatDamageBonus: 12, zeroesDodge: false),
-            SpecialAttackTuningDTO(characterClass: "archer", vigor: 4, hitChanceModifier: 0,
-                                   defenderDEFFraction: 0.0, critBonus: 20, cannotMiss: true,
-                                   flatDamageBonus: 0, zeroesDodge: true),
-            SpecialAttackTuningDTO(characterClass: "mage", vigor: 5, hitChanceModifier: 0,
-                                   defenderDEFFraction: 0.0, critBonus: 0, cannotMiss: true,
-                                   flatDamageBonus: 5, zeroesDodge: false)
-        ])))
+    /// The three effects that replaced "ignore armour". Each is checked in its
+    /// own envelope, because a zero means something different in each: no
+    /// rounds is a debuff that never applies, a crit multiplier at or below the
+    /// standard one is a normal hit at double the Vigor, and a zero burn
+    /// fraction is a technique with no effect at all.
+    private func withEffect(_ effect: SpecialAttackEffectDTO,
+                            for cls: String = "warrior") -> [SpecialAttackTuningDTO] {
+        [SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
+                                cannotMiss: false, zeroesDodge: false,
+                                effect: cls == "warrior" ? effect : .armourBreak(rounds: 3)),
+         SpecialAttackTuningDTO(characterClass: "archer", vigor: 4, hitChanceModifier: 0,
+                                cannotMiss: true, zeroesDodge: true,
+                                effect: cls == "archer" ? effect : .guaranteedCrit(critMultiplier: 2.0)),
+         SpecialAttackTuningDTO(characterClass: "mage", vigor: 5, hitChanceModifier: 0,
+                                cannotMiss: true, zeroesDodge: false,
+                                effect: cls == "mage" ? effect : .burn(rounds: 3, fractionOfAttack: 0.35))]
+    }
+
+    func testZeroRoundEffectIsAnError() {
+        assertRule("tuning.combat.effect_rounds",
+                   bundle(combat: combat(specialAttack: withEffect(.armourBreak(rounds: 0)))))
+    }
+
+    /// A "guaranteed crit" no bigger than the crit the player already rolls for
+    /// free is a normal hit that costs twice the Vigor.
+    func testGuaranteedCritNoBetterThanStandardIsAnError() {
+        assertRule("tuning.combat.effect_crit_not_special",
+                   bundle(combat: combat(specialAttack:
+                       withEffect(.guaranteedCrit(critMultiplier: 1.5), for: "archer"))))
+    }
+
+    func testZeroBurnIsAnError() {
+        assertRule("tuning.combat.effect_burn_zero",
+                   bundle(combat: combat(specialAttack:
+                       withEffect(.burn(rounds: 3, fractionOfAttack: 0), for: "mage"))))
+    }
+
+    /// The union must survive JSON: a new effect kind that forgets its encoder
+    /// would silently lose its parameters.
+    func testSpecialAttackEffectsRoundTrip() throws {
+        for effect in [SpecialAttackEffectDTO.armourBreak(rounds: 3),
+                       .guaranteedCrit(critMultiplier: 2.0),
+                       .burn(rounds: 3, fractionOfAttack: 0.35)] {
+            let data = try ContentLoader.makeEncoder().encode(effect)
+            XCTAssertEqual(try JSONDecoder().decode(SpecialAttackEffectDTO.self, from: data), effect)
+        }
     }
 
     func testFleeChanceOutOfRangeIsAnError() {
@@ -421,23 +493,58 @@ final class TuningTests: XCTestCase {
     // MARK: - progression.json rules
 
     func testFlatXPCurveIsAnError() {
-        assertRule("tuning.progression.xp_curve_flat", bundle(progression: progression(growth: 1.0)))
+        assertRule("tuning.progression.xp_curve_flat",
+                   bundle(progression: progression(exponent: 1.0)))
     }
 
-    func testZeroFirstLevelCostIsAnError() {
-        assertRule("tuning.progression.xp_first_cost", bundle(progression: progression(firstCost: 0)))
+    func testZeroCurveCoefficientIsAnError() {
+        assertRule("tuning.progression.xp_first_cost",
+                   bundle(progression: progression(coefficient: 0)))
     }
 
-    func testGrowthLevelAboveCapIsAnError() {
-        assertRule("tuning.progression.growth_level_unreachable",
-                   bundle(progression: progression(growthLevels: [2, 3, 99])))
+    /// The pacing identity: if monster XP grows faster than the curve, kills
+    /// per level FALL as the player advances and the whole ladder inverts.
+    func testMobXPOutrunningTheCurveIsAnError() {
+        assertRule("tuning.progression.mob_xp_outruns_curve",
+                   bundle(progression: progression(exponent: 3.3, mobExponent: 4.0)))
     }
 
-    /// The game holds these in a `Set`, so a repeat is silently swallowed —
-    /// the file would read as nine boosts while granting eight.
-    func testDuplicateGrowthLevelIsAnError() {
-        assertRule("tuning.progression.growth_level_duplicate",
-                   bundle(progression: progression(growthLevels: [2, 3, 3, 5])))
+    /// Without a level-gap penalty, farming ten levels down stays fully
+    /// rewarding and the depth ladder becomes dead content.
+    func testAbsentXPLevelDiffIsAnError() {
+        assertRule("tuning.progression.xp_level_diff_absent",
+                   bundle(progression: progression(xpGapPerLevel: 0)))
+    }
+
+    func testNegativeGrowthRateIsAnError() {
+        assertRule("tuning.progression.negative_growth",
+                   bundle(progression: progression(hpRate: -0.01)))
+    }
+
+    /// The structural trap the proportional model exists to avoid, arriving
+    /// through the data instead of through the code: at a zero rating rate the
+    /// crit/dodge/accuracy PERCENTAGES fall every level while the ratings on the
+    /// profile screen stand still.
+    func testRatingsThatDoNotScaleIsAnError() {
+        assertRule("tuning.progression.ratings_do_not_scale",
+                   bundle(progression: progression(ratingRate: 0)))
+    }
+
+    /// 0.85 where 0.085 was meant multiplies the stat ~18x by the cap.
+    func testMisplacedDecimalInAGrowthRateWarns() {
+        assertRule("tuning.progression.growth_runaway",
+                   bundle(progression: progression(atkRate: 8.5)), severity: .warning)
+    }
+
+    /// `VigorService.regenTick` divides by this window.
+    func testZeroRegenWindowIsAnError() {
+        assertRule("tuning.progression.vigor_regen",
+                   bundle(progression: progression(regenHours: 0)))
+    }
+
+    func testNonPositiveVigorPoolIsAnError() {
+        assertRule("tuning.progression.vigor_pool",
+                   bundle(progression: progression(vigorBase: 0)))
     }
 
     func testUnknownStarterWeaponIsAnError() {

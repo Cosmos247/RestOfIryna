@@ -61,6 +61,10 @@ actor RouterStore {
             // exploration_state.
             let inExpedition = try await ExplorationState.current(for: user, on: db) != nil
             _ = try await HealingService.tick(user, inExpedition: inExpedition, on: db)
+            // Vigor regen deliberately ignores `inExpedition`: stamina is spent
+            // out on the trail, so a trickle while the governor catches their
+            // breath is the mechanic, not a leak.
+            _ = try await VigorService.regenTick(user, on: db)
             hydrated[k] = user
         }
         try await router.process(update: update, properties: hydrated, db: db, lingo: lingo)

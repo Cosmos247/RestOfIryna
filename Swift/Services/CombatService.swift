@@ -105,44 +105,118 @@ public enum CombatService {
         public var critBonus: Int = 0
         public var cannotMiss: Bool = false
         public var flatDamageBonus: Int = 0
+        /// Replaces `critMultiplier` for this swing only. Lets a technique buy
+        /// a bigger crit rather than a more frequent one, which is the shape
+        /// that survives an absorption model: a multiplier applies to the
+        /// number that is left AFTER armour, so armour cannot erode it.
+        public var critMultiplierOverride: Double?
 
         public init() {}
     }
 
-    /// Roll a single attack. Damage variance, crit chance, and accuracy/dodge
-    /// are baked in. Defender stats are passed in raw so the caller can boost
-    /// them ad-hoc (e.g. doubling player's effective DEF on a Defend round).
-    /// Optional `modifiers` are used by Phase 4.2 special techniques.
+    // MARK: - Phase 5C curves
+    //
+    // Damage is ABSORBED, not subtracted. `max(1, ATK − DEF)` was scale-free:
+    // one point of DEF was 7% of a hit at level 1 and 3% at level 21, so a
+    // geared warrior took literally 1 damage from the strongest beast in the
+    // game while a fresh mage took 28 from a boar. A ratio has no such cliff —
+    // and it is what makes a flat +32 enchant stop being game-breaking.
+
+    /// Fraction of an incoming hit the defender absorbs.
+    ///
+    /// The denominator uses the DEFENDER's level: `K` is derived from the item
+    /// budget curve of the character wearing that DEF, so it has to be read at
+    /// their level, not the attacker's.
+    public static func mitigation(defenderDEF: Int, defenderLevel: Int) -> Double {
+        let curve = Catalogs.current.tuningCombat.curves.mitigation
+        let def = Swift.max(0.0, Double(defenderDEF))
+        let k = curve.kBase + curve.kPerLevel * Double(Swift.max(1, defenderLevel))
+        guard def + k > 0 else { return 0 }
+        return Swift.min(curve.cap, def / (def + k))
+    }
+
+    private static func percent(_ curve: RatingCurveDTO, rating: Int, level: Int) -> Double {
+        let r = Swift.max(0.0, Double(rating))
+        let k = curve.kBase + curve.kPerLevel * Double(Swift.max(1, level))
+        guard r + k > 0 else { return 0 }
+        return curve.scale * r / (r + k)
+    }
+
+    /// Chance to evade, as a percentage. Read at the DODGER's level.
+    public static func dodgePercent(rating: Int, level: Int) -> Double {
+        percent(Catalogs.current.tuningCombat.curves.dodge, rating: rating, level: level)
+    }
+
+    /// Chance to crit, as a percentage. Read at the ATTACKER's level.
+    public static func critPercent(rating: Int, level: Int) -> Double {
+        percent(Catalogs.current.tuningCombat.curves.crit, rating: rating, level: level)
+    }
+
+    /// Percentage points added to the base hit chance. Read at the ATTACKER's level.
+    public static func accuracyPercent(rating: Int, level: Int) -> Double {
+        percent(Catalogs.current.tuningCombat.curves.accuracy, rating: rating, level: level)
+    }
+
+    /// Damage multiplier from the level gap.
+    ///
+    /// This is what sells "I have outgrown this zone", and it is the reason
+    /// enemy stats can be frozen at design time. Scaling enemies to the player
+    /// at runtime would make every gear upgrade evaporate the moment it is
+    /// worn; a level term does the same job without touching the enemy table.
+    public static func levelDiffMultiplier(attackerLevel: Int, defenderLevel: Int) -> Double {
+        let spec = Catalogs.current.tuningCombat.levelDiff
+        let raw = 1 + spec.perLevel * Double(attackerLevel - defenderLevel)
+        return Swift.max(spec.min, Swift.min(spec.max, raw))
+    }
+
+    /// Roll a single attack.
+    ///
+    /// Crit, dodge and accuracy arrive as RATINGS and are converted through the
+    /// curves here; both levels are required because every curve's denominator
+    /// grows with the level of whoever owns the stat. Before Phase 5 the enemy
+    /// side of every roll passed literal `0/0/0`, so enemies never dodged,
+    /// never crit and never missed.
+    ///
+    /// `modifiers.critBonus` is in PERCENTAGE POINTS, added after the curve —
+    /// Vital Shot's +20 means twenty points of crit chance, not twenty rating.
+    /// `modifiers.flatDamageBonus` is added AFTER absorption, so armour cannot
+    /// eat it (it is still scale-free, which Phase 5D rebuilds).
     public static func applyAttack(
         attackerATK: Int,
         attackerCrit: Int,
         attackerAcc: Int,
+        attackerLevel: Int,
         defenderDEF: Int,
         defenderDodge: Int,
+        defenderLevel: Int,
         modifiers: AttackModifiers = AttackModifiers()
     ) -> AttackOutcome {
-        let hitChance: Int
+        let band = Catalogs.current.tuningCombat.hitChance
+        let hitChance: Double
         if modifiers.cannotMiss {
             hitChance = 100
         } else {
-            hitChance = max(minHitChance, min(maxHitChance, baseHitChance + attackerAcc - defenderDodge + modifiers.hitChanceModifier))
+            let accuracy = accuracyPercent(rating: attackerAcc, level: attackerLevel)
+            let evasion = dodgePercent(rating: defenderDodge, level: defenderLevel)
+            let raw = Double(band.base) + accuracy - evasion + Double(modifiers.hitChanceModifier)
+            hitChance = Swift.max(Double(band.min), Swift.min(Double(band.max), raw))
         }
-        if Int.random(in: 1...100) > hitChance {
-            return .miss
+        if Double.random(in: 0..<100) >= hitChance { return .miss }
+
+        let effectiveDEF = Swift.max(0, Int((Double(defenderDEF) * modifiers.defenderDEFFraction).rounded()))
+        let absorbed = mitigation(defenderDEF: effectiveDEF, defenderLevel: defenderLevel)
+        let afterArmour = Double(attackerATK) * (1 - absorbed) + Double(modifiers.flatDamageBonus)
+        let scaled = afterArmour * levelDiffMultiplier(attackerLevel: attackerLevel,
+                                                       defenderLevel: defenderLevel)
+        let varied = scaled * Double.random(in: varianceRange)
+
+        let critChance = critPercent(rating: attackerCrit, level: attackerLevel)
+            + Double(modifiers.critBonus)
+        if Double.random(in: 0..<100) < critChance {
+            let multiplier = modifiers.critMultiplierOverride ?? critMultiplier
+            return .crit(damage: Swift.max(1, Int((varied * multiplier).rounded())))
         }
-
-        let effectiveDEF = max(0, Int((Double(defenderDEF) * modifiers.defenderDEFFraction).rounded()))
-        let raw = Double(max(1, attackerATK - effectiveDEF + modifiers.flatDamageBonus))
-        let varied = raw * Double.random(in: varianceRange)
-
-        let isCrit = Int.random(in: 1...100) <= max(0, attackerCrit + modifiers.critBonus)
-        if isCrit {
-            let damage = max(1, Int((varied * critMultiplier).rounded()))
-            return .crit(damage: damage)
-        }
-
-        let damage = max(1, Int(varied.rounded()))
-        return .hit(damage: damage)
+        return .hit(damage: Swift.max(1, Int(varied.rounded())))
     }
 
     /// Defend-mode chip damage. Always lands, never crits, scaled to
@@ -150,10 +224,12 @@ public enum CombatService {
     /// applies so the number isn't pure deterministic. `extraMultiplier`
     /// defaults to 1.0 (warrior); the archer's "plinks while hiding" Defend
     /// passes 0.5 to halve the chip.
-    public static func chipDamage(attackerATK: Int, defenderDEF: Int, extraMultiplier: Double = 1.0) -> Int {
-        let raw = Double(max(1, attackerATK - defenderDEF))
+    public static func chipDamage(attackerATK: Int, defenderDEF: Int, defenderLevel: Int,
+                                  extraMultiplier: Double = 1.0) -> Int {
+        let absorbed = mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel)
+        let raw = Double(attackerATK) * (1 - absorbed)
         let varied = raw * Double.random(in: varianceRange) * defendChipFraction * extraMultiplier
-        return max(1, Int(varied.rounded()))
+        return Swift.max(1, Int(varied.rounded()))
     }
 
     // MARK: - Phase 4.2 stance modifiers
@@ -258,15 +334,29 @@ public enum CombatService {
     ///   the enemy counter (handled by `specialAttackZeroesDodge`).
     /// - Mage (Soulfire): cannot miss, ignores DEF, +5 flat damage. Most
     ///   reliable of the three but costs 5 vigor instead of 4.
+    /// Roll modifiers for a class's Special Attack.
+    ///
+    /// `defenderDEFFraction` is deliberately NOT set any more. All three
+    /// techniques used to zero it — "ignore armour" — which an absorption model
+    /// turns into a 0.44–0.59× trade: +11% damage against trash for +150%
+    /// Vigor. The armour-piercing fantasy now lives in `armourBreak`, whose
+    /// worth RISES with the target's absorption instead of falling with it.
     public static func specialAttackModifiers(forClass cls: CharacterClass) -> AttackModifiers {
         let row = specialAttack(cls)
         var m = AttackModifiers()
         m.hitChanceModifier = row.hitChanceModifier
-        m.defenderDEFFraction = row.defenderDEFFraction
-        m.critBonus = row.critBonus
         m.cannotMiss = row.cannotMiss
-        m.flatDamageBonus = row.flatDamageBonus
+        if case .guaranteedCrit(let multiplier) = row.effect {
+            m.critBonus = 100          // percentage points — always crits
+            m.critMultiplierOverride = multiplier
+        }
         return m
+    }
+
+    /// The effect a class's Special Attack applies on top of its swing. The
+    /// controller owns the round-lasting state, so it reads this and acts.
+    public static func specialAttackEffect(forClass cls: CharacterClass) -> SpecialAttackEffectDTO {
+        specialAttack(cls).effect
     }
 
     /// True if the player keeps no dodge on this round when they unleash this

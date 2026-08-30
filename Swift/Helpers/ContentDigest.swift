@@ -63,6 +63,17 @@ enum ContentDigest {
 
         for item in ItemCatalog.all { digest.combine(fingerprint(item)) }
         for enemy in EnemyCatalog.all { digest.combine(fingerprint(enemy)) }
+        // The archetype table is a DICTIONARY on the snapshot, so it is walked
+        // via `allCases` — iterating it directly would hash in seeded-hash
+        // order and differ between processes.
+        for kind in EnemyArchetype.allCases {
+            digest.combine(kind.rawValue)
+            guard let spec = EnemyCatalog.archetype(kind) else { digest.combine("-"); continue }
+            digest.combine("r\(spec.rounds) hp\(spec.hpLossPercent) mit\(spec.mitigationPercent)")
+            digest.combine("dodge\(spec.dodgePercent) crit\(spec.critPercent)")
+            digest.combine("xp\(spec.xpMultiplier) loot\(spec.lootMultiplier) silver\(spec.silverMultiplier)")
+            digest.combine("weight\(spec.spawnWeight)")
+        }
         for recipe in RecipeCatalog.all { digest.combine(fingerprint(recipe)) }
         for id in RecipeCatalog.starterRecipeIds.sorted() { digest.combine(id) }
         for id in WeaponUpgradeCatalog.progression.keys.sorted() {
@@ -271,6 +282,27 @@ enum ContentDigest {
         print("")
         liveLookupCheck()
 
+        combatModelCheck()
+
+        // Printed, not hashed. A balance phase is read by eye as much as by
+        // comparison, and a stat ladder that has gone wrong is obvious in a
+        // table and invisible in a hex digest.
+        print("stat ladder (base line, before gear):")
+        print("  " + "level".padding(toLength: 8, withPad: " ", startingAt: 0)
+              + ["warrior", "archer", "mage"].map {
+                  $0.padding(toLength: 30, withPad: " ", startingAt: 0)
+              }.joined())
+        for level in [1, 5, 10, 21, 40] {
+            var row = "L\(level)".padding(toLength: 8, withPad: " ", startingAt: 0)
+            for cls in CharacterClass.allCases {
+                let s = User.baseStats(for: cls, at: level)
+                row += "\(s.maxHp)hp \(s.attack)atk \(s.defense)def \(s.crit)/\(s.dodge)/\(s.accuracy)"
+                    .padding(toLength: 30, withPad: " ", startingAt: 0)
+            }
+            print("  " + row + "vigor \(User.maxVigor(at: level))")
+        }
+        print("")
+
         print("spawn distribution:")
         for (id, count) in counts.sorted(by: { $0.key < $1.key }) {
             print("  \(id.padding(toLength: 24, withPad: " ", startingAt: 0)) \(count)")
@@ -366,6 +398,77 @@ enum ContentDigest {
         print("")
     }
 
+    /// Acceptance check for the Phase 5C combat model against the anchors the
+    /// design published.
+    ///
+    /// It cannot verify BALANCE — the plan's reference character carries gear
+    /// from an item budget curve that does not exist until Phase 6, which is
+    /// why its level-40 warrior shows DEF 225 where the bare stat line gives 52.
+    /// What it can verify, and does, is that feeding the published stat values
+    /// through the implemented formula returns the published percentages. Five
+    /// of those pairs pin the mitigation curve exactly, and the warrior's dodge
+    /// pins a rating curve end to end, because the warrior is the one build
+    /// that wears no dodge.
+    ///
+    /// Printed rather than hashed: a number that drifts is worth seeing as a
+    /// number, not as a changed digest.
+    private static func combatModelCheck() {
+        var problems: [String] = []
+
+        func near(_ got: Double, _ want: Double, _ tolerance: Double, _ label: String) {
+            if abs(got - want) > tolerance {
+                problems.append("\(label): got \(String(format: "%.2f", got)), design says \(want)")
+            }
+        }
+
+        // Mitigation — the five (DEF, level) pairs printed in the design table.
+        for (def, level, want) in [(12, 1, 18.0), (6, 1, 9.9), (225, 40, 38.0),
+                                   (136, 40, 27.0), (99, 40, 21.2)] {
+            near(CombatService.mitigation(defenderDEF: def, defenderLevel: level) * 100,
+                 want, 0.15, "mitigation(DEF \(def) @ L\(level))")
+        }
+        // Dodge — the warrior line, the only one free of gear contribution.
+        for (rating, level, want) in [(5.0, 1, 5.3), (5.0 * (1 + 0.085 * 19), 20, 5.5),
+                                      (5.0 * (1 + 0.085 * 39), 40, 5.6)] {
+            near(CombatService.dodgePercent(rating: Int(rating.rounded()), level: level),
+                 want, 0.15, "warrior dodge @ L\(level)")
+        }
+        // Nobody may become immune, however much DEF they stack.
+        let cap = Catalogs.current.tuningCombat.curves.mitigation.cap
+        near(CombatService.mitigation(defenderDEF: 1_000_000, defenderLevel: 1) , cap, 0.001,
+             "mitigation cap")
+
+        // levelDiff: neutral at parity, clamped at both ends.
+        let diff = Catalogs.current.tuningCombat.levelDiff
+        near(CombatService.levelDiffMultiplier(attackerLevel: 10, defenderLevel: 10), 1.0, 0.001,
+             "levelDiff at parity")
+        near(CombatService.levelDiffMultiplier(attackerLevel: 1, defenderLevel: 99), diff.min, 0.001,
+             "levelDiff floor")
+        near(CombatService.levelDiffMultiplier(attackerLevel: 99, defenderLevel: 1), diff.max, 0.001,
+             "levelDiff ceiling")
+
+        // XP curve — the design's published costs at four levels.
+        for (level, want) in [(2, 120.0), (6, 2309.0), (11, 22746.0), (21, 224029.0)] {
+            let got = Double(User.xpRequiredToReach(level))
+            // 0.5% — the design table rounded its exponent for print.
+            if abs(got - want) / want > 0.005 {
+                problems.append("xpToNext(L\(level - 1)): got \(Int(got)), design says \(Int(want))")
+            }
+        }
+        // Out-levelling must cost XP, and never below the floor.
+        let xpGap = Catalogs.current.tuningProgression.xpLevelDiff
+        near(User.xpMultiplier(playerLevel: 10, monsterLevel: 10), 1.0, 0.001, "xp parity")
+        near(User.xpMultiplier(playerLevel: 40, monsterLevel: 1), xpGap.min, 0.001, "xp floor")
+
+        if problems.isEmpty {
+            print("combat model: ✅ mitigation, dodge, levelDiff and the XP curve all reproduce the design anchors")
+        } else {
+            print("combat model: ❌ \(problems.count) mismatch(es)")
+            for problem in problems { print("   • \(problem)") }
+        }
+        print("")
+    }
+
     // MARK: - Phase 4 tuning fingerprint
     //
     // The FOURTH half, captured while every constant below is still a Swift
@@ -421,6 +524,24 @@ enum ContentDigest {
         d.combine(CombatService.Defend.archerDodgeBonus)
         d.combine("\(CombatService.Defend.mageBarrierDamageFraction)")
 
+        // The curves, replayed through the live accessors rather than hashed as
+        // constants: a `kBase`/`kPerLevel` pair only means something once it has
+        // been through the formula, and the mitigation curve's `cap` is a
+        // ceiling where the other three carry a leading scale — a distinction a
+        // raw constant hash cannot express.
+        for level in [1, 20, 40] {
+            for rating in [0, 5, 50, 500] {
+                d.combine("mit@\(level)/\(rating):\(CombatService.mitigation(defenderDEF: rating, defenderLevel: level))")
+                d.combine("dodge@\(level)/\(rating):\(CombatService.dodgePercent(rating: rating, level: level))")
+                d.combine("crit@\(level)/\(rating):\(CombatService.critPercent(rating: rating, level: level))")
+                d.combine("acc@\(level)/\(rating):\(CombatService.accuracyPercent(rating: rating, level: level))")
+            }
+        }
+        // Replayed past both clamps — the tails are where a changed bound hides.
+        for gap in [-60, -10, 0, 10, 60] {
+            d.combine("levelDiff\(gap):\(CombatService.levelDiffMultiplier(attackerLevel: 20 + gap, defenderLevel: 20))")
+        }
+
         // MARK: combat.json — accessor replays
         //
         // `initialUses` is replayed to L25 rather than to `maxLevel`: the
@@ -448,6 +569,7 @@ enum ContentDigest {
             d.combine(CombatService.specialAttackVigor(forClass: cls))
             d.combine(fingerprint(CombatService.specialAttackModifiers(forClass: cls)))
             d.combine("\(CombatService.specialAttackZeroesDodge(forClass: cls))")
+            d.combine(fingerprint(CombatService.specialAttackEffect(forClass: cls)))
             d.combine(CombatService.specialDefenseVigor(forClass: cls))
             d.combine(CombatService.fleeChance(forClass: cls))
             d.combine(CombatService.fleeVigorExtra(forClass: cls))
@@ -467,6 +589,7 @@ enum ContentDigest {
             d.combine(action.rawValue)
             d.combine(VigorService.cost(of: action))
         }
+        d.combine("\(Catalogs.current.tuningProgression.vigorPool.fullRegenHours)")
         d.combine("\(HealingService.regenPerMinute)")
         d.combine("\(HealingService.maxIdleMinutes)")
 
@@ -480,20 +603,41 @@ enum ContentDigest {
         for priorVisits in -2...5 {
             d.combine(fingerprint(ExplorationService.weights(forPriorVisits: priorVisits)))
         }
+        // The passive discounts. Nothing else reaches them — they are applied
+        // once, deep inside `finalizeAndPush`, so only a direct hash notices a
+        // change to the ratio that keeps unattended play below active play.
+        let passive = ExplorationService.passiveTuning
+        d.combine("passive xp\(passive.xpMultiplier) silver\(passive.silverMultiplier) "
+                  + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount)")
 
         // MARK: progression.json
         d.combine("progression")
         d.combine(User.maxLevel)
-        d.combine(User.statGrowthMaxHp)
-        d.combine(User.statGrowthAttack)
-        d.combine(User.statGrowthDefense)
-        // SORTED — `statGrowthLevels` is a `Set<Int>`, whose iteration order is
-        // seeded per process.
-        for level in User.statGrowthLevels.sorted() { d.combine(level) }
+        // Growth is a FUNCTION of level now, so the replay walks the whole
+        // ladder instead of hashing three flat constants and a set of levels.
+        // This is the half that would catch a rate whose decimal point moved:
+        // the level-1 line is unchanged by construction, and only the shape
+        // above it moves.
+        for cls in CharacterClass.allCases {
+            for level in [1, 2, 5, 10, 21, 40] {
+                let s = User.baseStats(for: cls, at: level)
+                d.combine("\(cls.rawValue)@\(level) hp\(s.maxHp) atk\(s.attack) def\(s.defense) crit\(s.crit) dodge\(s.dodge) acc\(s.accuracy)")
+            }
+        }
+        for level in [0, 1, 21, 40] { d.combine(User.maxVigor(at: level)) }
         // Replayed past the cap on both ends: `xpRequiredToReach` returns
         // `Int.max` outside 2...maxLevel, and that guard is as much a part of
         // the curve as the 100 / ×2 / ×1.4 constants inside it.
-        for level in 0...30 { d.combine(User.xpRequiredToReach(level)) }
+        for level in 0...45 { d.combine(User.xpRequiredToReach(level)) }
+        // `mobXP` is design-time input — every enemy's `xpReward` was baked from
+        // it — but it lives in the tuning and is solved as a pair with the curve
+        // above, so it is hashed beside it.
+        let mobXP = Catalogs.current.tuningProgression.mobXP
+        d.combine("mobXP \(mobXP.coefficient)^\(mobXP.exponent)")
+        // The level-gap scaling, replayed across both clamps.
+        for gap in [-20, -5, 0, 5, 20] {
+            d.combine("xpGap\(gap):\(User.xpMultiplier(playerLevel: 20 + gap, monsterLevel: 20))")
+        }
         for cls in CharacterClass.allCases {
             let s = cls.startingStats
             d.combine("\(cls.rawValue) hp\(s.hp) atk\(s.attack) def\(s.defense) crit\(s.crit) dodge\(s.dodge) acc\(s.accuracy)")
@@ -564,7 +708,25 @@ enum ContentDigest {
 
     private static func fingerprint(_ m: CombatService.AttackModifiers) -> String {
         "hit\(m.hitChanceModifier) defFrac\(m.defenderDEFFraction) crit+\(m.critBonus) "
-            + "cannotMiss:\(m.cannotMiss) flat+\(m.flatDamageBonus)"
+            + "cannotMiss:\(m.cannotMiss) flat+\(m.flatDamageBonus) "
+            + "critMult:\(m.critMultiplierOverride.map { "\($0)" } ?? "-")"
+    }
+
+    /// The Phase 5D technique effects. Hashed SEPARATELY from the roll
+    /// modifiers because they do not travel through `AttackModifiers` at all —
+    /// the controller reads them and mutates round state. Without this,
+    /// doubling a burn's duration or halving an armour break would leave the
+    /// digest byte-identical, which is exactly the silent balance drift the
+    /// whole layer exists to catch.
+    private static func fingerprint(_ effect: SpecialAttackEffectDTO) -> String {
+        switch effect {
+        case .armourBreak(let rounds):
+            return "armour_break:\(rounds)"
+        case .guaranteedCrit(let multiplier):
+            return "guaranteed_crit:\(multiplier)"
+        case .burn(let rounds, let fraction):
+            return "burn:\(rounds)x\(fraction)"
+        }
     }
 
     private static func fingerprint(_ w: ExplorationService.EventWeights) -> String {
@@ -664,7 +826,10 @@ enum ContentDigest {
             .joined(separator: "|")
         return [
             enemy.id, enemy.nameKey, "\(enemy.tier)", "\(enemy.hp)", "\(enemy.attack)",
-            "\(enemy.defense)", "\(enemy.depthRange.lowerBound)...\(enemy.depthRange.upperBound)",
+            "\(enemy.defense)", "\(enemy.crit)/\(enemy.dodge)/\(enemy.accuracy)",
+            "L\(enemy.level)", enemy.archetype.rawValue,
+            "silver\(enemy.silverReward)", "weight\(enemy.spawnWeight)",
+            "\(enemy.depthRange.lowerBound)...\(enemy.depthRange.upperBound)",
             loot, enemy.icon, "\(enemy.xpReward)"
         ].joined(separator: " · ")
     }

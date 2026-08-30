@@ -16,6 +16,9 @@ public struct ContentBundle: Sendable {
     public let manifest: ManifestDTO
     public let items: [ItemDTO]
     public let enemies: [EnemyDTO]
+    /// The six design archetypes from `enemies.json`. Empty only in a
+    /// hand-built fixture; `DomainContent` refuses a bundle missing any of them.
+    public let enemyArchetypes: [EnemyArchetypeDTO]
     public let recipes: [RecipeDTO]
     public let starterRecipeIds: [String]
     public let weaponLadders: [WeaponLadderDTO]
@@ -51,6 +54,7 @@ public struct ContentBundle: Sendable {
         manifest: ManifestDTO,
         items: [ItemDTO],
         enemies: [EnemyDTO],
+        enemyArchetypes: [EnemyArchetypeDTO] = [],
         recipes: [RecipeDTO],
         starterRecipeIds: [String],
         weaponLadders: [WeaponLadderDTO] = [],
@@ -72,6 +76,7 @@ public struct ContentBundle: Sendable {
         self.manifest = manifest
         self.items = items
         self.enemies = enemies
+        self.enemyArchetypes = enemyArchetypes
         self.recipes = recipes
         self.starterRecipeIds = starterRecipeIds
         self.weaponLadders = weaponLadders

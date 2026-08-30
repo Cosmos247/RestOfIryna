@@ -60,6 +60,11 @@ public enum ExplorationService {
     // interesting outcome. Starvation HP still ticks on every step.
     static var weightTotal: Int { Catalogs.current.tuningExploration.eventWeightTotal }
 
+    /// Discounts and decay applied to an unattended expedition.
+    static var passiveTuning: PassiveExpeditionTuningDTO {
+        Catalogs.current.tuningExploration.passive
+    }
+
     // Trip damage (% of max HP).
     static var tripDamagePercent: Double { Catalogs.current.tuningExploration.tripDamagePercent }
 
@@ -294,7 +299,9 @@ public enum ExplorationService {
             // Player strikes first.
             let playerHit = CombatService.applyAttack(
                 attackerATK: playerAtk, attackerCrit: playerCrit, attackerAcc: playerAcc,
-                defenderDEF: enemy.defense, defenderDodge: 0
+                attackerLevel: player.level,
+                defenderDEF: enemy.defense, defenderDodge: enemy.dodge,
+                defenderLevel: enemy.level
             )
             switch playerHit {
             case .miss: break
@@ -302,10 +309,14 @@ public enum ExplorationService {
             }
             if enemyHP <= 0 { break }
 
-            // Enemy counter — no crit/accuracy stats on Enemy yet, so pass 0.
+            // Enemy counter. Enemies carry real crit / dodge / accuracy since
+            // Phase 5A — this used to pass literal zeros on both sides, which
+            // is why no beast in the game had ever landed a critical hit.
             let enemyHit = CombatService.applyAttack(
-                attackerATK: enemy.attack, attackerCrit: 0, attackerAcc: 0,
-                defenderDEF: playerDef, defenderDodge: playerDodge
+                attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
+                attackerLevel: enemy.level,
+                defenderDEF: playerDef, defenderDodge: playerDodge,
+                defenderLevel: player.level
             )
             switch enemyHit {
             case .miss: break

@@ -100,9 +100,20 @@ final class ContentDTOTests: XCTestCase {
     /// All 9 shipped enemies use their id as their locale key, verified against
     /// `EnemyCatalog`. The derivation must be the identity, not prefix surgery.
     func testEnemyNameKeyIsTheId() throws {
-        let json = Data(#"{"id":"enemy.wild_boar","icon":"🐗","stats":{"hp":18,"attack":14,"defense":1}}"#.utf8)
+        let json = Data(#"{"id":"enemy.wild_boar","icon":"🐗","level":1,"archetype":"trash","stats":{"hp":18,"attack":14,"defense":1}}"#.utf8)
         let enemy = try JSONDecoder().decode(EnemyDTO.self, from: json)
         XCTAssertEqual(enemy.nameKey, "enemy.wild_boar")
+    }
+
+    /// `level` and `archetype` are REQUIRED as of Phase 5A. Defaulting either
+    /// would look harmless and misprice the encounter: level feeds `levelDiff`
+    /// and the XP multiplier, archetype feeds rounds-to-kill and all three
+    /// reward multipliers.
+    func testEnemyWithoutLevelOrArchetypeFailsToDecode() {
+        let noLevel = Data(#"{"id":"enemy.x","icon":"🐗","archetype":"trash","stats":{"hp":1,"attack":1,"defense":0}}"#.utf8)
+        XCTAssertThrowsError(try JSONDecoder().decode(EnemyDTO.self, from: noLevel))
+        let noArchetype = Data(#"{"id":"enemy.x","icon":"🐗","level":1,"stats":{"hp":1,"attack":1,"defense":0}}"#.utf8)
+        XCTAssertThrowsError(try JSONDecoder().decode(EnemyDTO.self, from: noArchetype))
     }
 
     // MARK: - Canonical round-trip

@@ -112,6 +112,14 @@ final public class ExplorationState: Model, @unchecked Sendable {
     /// Rounds remaining where the player gets a flat +50 dodge against
     /// incoming hits. Set by archer's Shadow Veil. Decremented at end of
     /// each player action.
+    /// Rounds of burn left on the enemy, and the damage each tick deals.
+    /// Damage is frozen at cast time from the caster's ATK — see `AddCombatBurn`.
+    @OptionalField(key: "combat_enemy_burn_rounds")
+    public var combatEnemyBurnRounds: Int?
+
+    @OptionalField(key: "combat_enemy_burn_damage")
+    public var combatEnemyBurnDamage: Int?
+
     @OptionalField(key: "combat_player_dodge_buff")
     public var combatPlayerDodgeBuff: Int?
 
@@ -162,6 +170,8 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.combatStanceRoundsLeft = nil
         self.combatEnemyDefDebuff = nil
         self.combatPlayerDodgeBuff = nil
+        self.combatEnemyBurnRounds = nil
+        self.combatEnemyBurnDamage = nil
         self.combatSpecialAtkUses = nil
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
@@ -335,6 +345,8 @@ extension ExplorationState {
         self.combatStanceRoundsLeft = nil
         self.combatEnemyDefDebuff = nil
         self.combatPlayerDodgeBuff = nil
+        self.combatEnemyBurnRounds = nil
+        self.combatEnemyBurnDamage = nil
         self.combatSpecialAtkUses = nil
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
@@ -378,6 +390,30 @@ extension ExplorationState {
     /// the player gets +50 dodge on the incoming counter this round.
     public var hasPlayerDodgeBuff: Bool {
         return (combatPlayerDodgeBuff ?? 0) > 0
+    }
+
+    /// True while Soulfire is still burning on the enemy.
+    public var hasEnemyBurn: Bool {
+        return (combatEnemyBurnRounds ?? 0) > 0 && (combatEnemyBurnDamage ?? 0) > 0
+    }
+
+    /// Light the enemy up for `rounds` ticks of `damage` each.
+    public func applyEnemyBurn(rounds: Int, damage: Int) {
+        self.combatEnemyBurnRounds = max(0, rounds)
+        self.combatEnemyBurnDamage = max(0, damage)
+    }
+
+    /// Take one burn tick, returning the damage dealt (0 when not burning).
+    /// Absorption is deliberately not consulted: a burn that armour could eat
+    /// would have exactly the scaling problem the technique was rebuilt to
+    /// escape.
+    public func tickEnemyBurn() -> Int {
+        guard hasEnemyBurn, let damage = combatEnemyBurnDamage,
+              let rounds = combatEnemyBurnRounds else { return 0 }
+        let next = rounds - 1
+        self.combatEnemyBurnRounds = next > 0 ? next : nil
+        if next <= 0 { self.combatEnemyBurnDamage = nil }
+        return damage
     }
 
     /// Set the enemy DEF debuff for `rounds` upcoming player actions.

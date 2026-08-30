@@ -119,6 +119,11 @@ final public class User: Model, @unchecked Sendable {
     /// Last wall-clock tick used by `HealingService.tick`. Nil = needs priming on
     /// next interaction. Pinned to `now` while at full HP or during an active
     /// expedition so idle time doesn't accumulate into banked regen.
+    /// Last wall-clock tick used by `VigorService.regenTick`. Nil = needs
+    /// priming; see `AddVigorTick` for why that matters on an old row.
+    @OptionalField(key: "last_vigor_tick_at")
+    var lastVigorTickAt: Date?
+
     @OptionalField(key: "last_hp_tick_at")
     var lastHpTickAt: Date?
 
@@ -260,27 +265,37 @@ final public class User: Model, @unchecked Sendable {
     /// `xpToNextLevel` returns `Int.max` so progress bars render as full.
     public static var maxLevel: Int { Catalogs.current.tuningProgression.maxLevel }
 
-    /// XP required to advance from `forLevel` → `forLevel + 1`. Softcap curve:
-    ///   - L1→L5: pure doubling — 100, 200, 400, 800, 1600
-    ///   - L5+:   `prev * 1.4`, rounded — 2240, 3136, 4390, …
-    /// Returns `Int.max` past `maxLevel` so callers can treat "no more XP needed"
-    /// uniformly.
+    /// XP required to advance from `nextLevel - 1` → `nextLevel`:
+    /// `max(round(c · L^e), floor · L)` where L is the level being left.
+    ///
+    /// Returns `Int.max` past `maxLevel` so callers can treat "no more XP
+    /// needed" uniformly.
     public static func xpRequiredToReach(_ nextLevel: Int) -> Int {
         // nextLevel is the level the player would reach by spending the XP.
         // I.e. the cost of L1→L2 is xpRequiredToReach(2).
         guard nextLevel >= 2, nextLevel <= maxLevel else { return Int.max }
         let curve = Catalogs.current.tuningProgression.xpCurve
-        var cost = curve.firstLevelCost
-        var lvl = 2
-        while lvl < nextLevel {
-            if lvl <= curve.doublingThroughLevel {
-                cost *= 2
-            } else {
-                cost = Int((Double(cost) * curve.growthMultiplier).rounded())
-            }
-            lvl += 1
-        }
-        return cost
+        let from = Double(nextLevel - 1)
+        let power = (curve.coefficient * pow(from, curve.exponent)).rounded()
+        return Swift.max(Int(power), curve.floorPerLevel * (nextLevel - 1))
+    }
+
+    /// XP multiplier for killing a monster this far below your level.
+    ///
+    /// Required, not polish: without it, farming ten levels down keeps 67% of
+    /// the XP for a fight that is 35% faster and 40% safer, which makes shallow
+    /// farming strictly optimal and the whole depth ladder dead content.
+    public static func xpMultiplier(playerLevel: Int, monsterLevel: Int) -> Double {
+        let spec = Catalogs.current.tuningProgression.xpLevelDiff
+        let raw = 1 - spec.perLevel * Double(playerLevel - monsterLevel)
+        return Swift.max(spec.min, Swift.min(spec.max, raw))
+    }
+
+    /// XP this kill is worth to this player, after the level-gap scaling.
+    public static func xpFromKill(_ enemy: Enemy, playerLevel: Int) -> Int {
+        let scaled = Double(enemy.xpReward)
+            * xpMultiplier(playerLevel: playerLevel, monsterLevel: enemy.level)
+        return Swift.max(0, Int(scaled.rounded()))
     }
 
     /// XP cost of the current pending level-up. `Int.max` once at max level.
@@ -292,11 +307,103 @@ final public class User: Model, @unchecked Sendable {
     /// levels only (not the estate-tier-up levels: 4 / 7 / 10 / 13 / 16 / 19,
     /// which already feel rewarding from the structural unlocks they bring).
     /// 8 boosts total → +40 maxHP, +8 ATK, +8 DEF by L21.
-    public static var statGrowthLevels: Set<Int> { Catalogs.current.statGrowthLevels }
+    /// Base stat line for a class at a given level.
+    ///
+    /// Stats are a FUNCTION of level now, not an accumulated pile of per-level
+    /// bonuses: `base × (1 + rate × (L − 1))`. That is what lets a rating keep
+    /// pace with its own diminishing-returns denominator — under the old flat
+    /// +1/level a warrior's dodge percentage fell from 5.3% to 1.4% across a
+    /// lifetime while the rating on the profile screen rose.
+    ///
+    /// Being a pure function of (class, level) also means a level-up cannot
+    /// drift: it recomputes rather than accumulating, so a missed or
+    /// double-applied grant self-heals on the next one.
+    public static func baseStats(
+        for characterClass: CharacterClass, at level: Int
+    ) -> (maxHp: Int, attack: Int, defense: Int, crit: Int, dodge: Int, accuracy: Int) {
+        let start = characterClass.startingStats
+        let growth = Catalogs.current.tuningProgression.statGrowth
+        let steps = Double(max(0, level - 1))
+        let hpScale = 1 + growth.hpPerLevel * steps
+        let atkScale = 1 + growth.attackPerLevel * steps
+        let ratingScale = 1 + growth.ratingPerLevel * steps
+        return (
+            maxHp:    max(1, Int((Double(start.hp) * hpScale).rounded())),
+            attack:   max(0, Int((Double(start.attack) * atkScale).rounded())),
+            defense:  max(0, Int((Double(start.defense) * ratingScale).rounded())),
+            crit:     max(0, Int((Double(start.crit) * ratingScale).rounded())),
+            dodge:    max(0, Int((Double(start.dodge) * ratingScale).rounded())),
+            accuracy: max(0, Int((Double(start.accuracy) * ratingScale).rounded()))
+        )
+    }
 
-    public static var statGrowthMaxHp: Int { Catalogs.current.tuningProgression.statGrowth.maxHp }
-    public static var statGrowthAttack: Int { Catalogs.current.tuningProgression.statGrowth.attack }
-    public static var statGrowthDefense: Int { Catalogs.current.tuningProgression.statGrowth.defense }
+    /// Bring every existing row onto the proportional model.
+    ///
+    /// Idempotent by construction: `applyLevelDerivedStats` recomputes from
+    /// (class, level) rather than adding to what is already there, so running
+    /// this twice is the same as running it once. Rows written under the old
+    /// flat-growth model carry stats that no formula produces any more — a
+    /// level-21 warrior sits on 160 HP where the new model says 254 — and the
+    /// enemies Phase 5C generates are balanced against the new line.
+    ///
+    /// Registration-incomplete rows are skipped: they have no class yet, and
+    /// the King's Oath sets the level-1 line when they get one.
+    static func backfillLevelDerivedStats(on db: any Database, logger: Logger) async throws {
+        let users = try await User.query(on: db).all()
+        var touched = 0
+        for user in users where user.characterClass != nil {
+            let beforeHp = user.maxHp, beforeAtk = user.attack, beforeDef = user.defense
+            let beforeVigor = user.maxVigor
+            user.applyLevelDerivedStats()
+            guard user.maxHp != beforeHp || user.attack != beforeAtk
+                    || user.defense != beforeDef || user.maxVigor != beforeVigor else { continue }
+            try await user.save(on: db)
+            touched += 1
+        }
+        if touched > 0 {
+            logger.info("Backfilled level-derived stats for \(touched) user(s) onto the proportional model")
+        }
+    }
+
+    /// Vigor ceiling at a level. Grows with the player so the regen rate, read
+    /// as a share of the pool, stays constant instead of decaying to nothing.
+    public static func maxVigor(at level: Int) -> Int {
+        let pool = Catalogs.current.tuningProgression.vigorPool
+        return max(1, pool.base + pool.perLevel * max(0, level))
+    }
+
+    /// Recompute every level-derived stat from `characterClass` and `level`.
+    /// Current HP and Vigor rise by whatever the ceilings rose by, so a
+    /// level-up is felt immediately rather than leaving the player at a lower
+    /// fraction of a bigger bar. Returns the deltas for the UI banner.
+    @discardableResult
+    func applyLevelDerivedStats() -> (maxHp: Int, attack: Int, defense: Int) {
+        guard let raw = characterClass,
+              let cls = CharacterClass(rawValue: raw) else {
+            return (0, 0, 0)
+        }
+        let next = User.baseStats(for: cls, at: level)
+        let hpDelta = next.maxHp - maxHp
+        let atkDelta = next.attack - attack
+        let defDelta = next.defense - defense
+
+        maxHp = next.maxHp
+        if hpDelta > 0 { hp += hpDelta }
+        hp = min(hp, maxHp)
+        attack = next.attack
+        defense = next.defense
+        crit = next.crit
+        dodge = next.dodge
+        accuracy = next.accuracy
+
+        let newMaxVigor = User.maxVigor(at: level)
+        let vigorDelta = newMaxVigor - maxVigor
+        maxVigor = newMaxVigor
+        if vigorDelta > 0 { vigor += vigorDelta }
+        vigor = min(vigor, maxVigor)
+
+        return (hpDelta, atkDelta, defDelta)
+    }
 
     /// Result of a `grantXP` call. UI banners read these to decide what to show.
     public struct XPGrantResult: Sendable {
@@ -340,18 +447,14 @@ final public class User: Model, @unchecked Sendable {
         while level < User.maxLevel, xp >= xpToNextLevel {
             xp -= xpToNextLevel
             level += 1
-            // Phase 5.3b — apply stat growth on configured levels. Bump current
-            // HP alongside maxHp so the player visibly benefits right away
-            // (RPG-standard "you feel stronger" cadence).
-            if User.statGrowthLevels.contains(level) {
-                maxHp += User.statGrowthMaxHp
-                hp += User.statGrowthMaxHp
-                attack += User.statGrowthAttack
-                defense += User.statGrowthDefense
-                maxHpGained += User.statGrowthMaxHp
-                attackGained += User.statGrowthAttack
-                defenseGained += User.statGrowthDefense
-            }
+            // Phase 5B — every level grows every stat, proportionally. The
+            // old model boosted three stats on eight chosen levels and left the
+            // other twelve inert; over a lifetime that was +40 HP against +32
+            // DEF from a single enchant, which is why levels felt weightless.
+            let gained = applyLevelDerivedStats()
+            maxHpGained += gained.maxHp
+            attackGained += gained.attack
+            defenseGained += gained.defense
         }
         if level >= User.maxLevel {
             // Pin XP to 0 at cap so the profile doesn't keep accumulating

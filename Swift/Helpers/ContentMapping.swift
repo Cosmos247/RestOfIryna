@@ -40,6 +40,7 @@ enum ContentMappingError: Error, CustomStringConvertible {
     case unknownPlotType(String)
     case unknownQuestNPC(String)
     case unknownQuestCounter(String, id: String)
+    case unknownEnemyArchetype(String, id: String)
     case unknownCharacterClass(String, table: String)
     case unknownTechniqueKind(String)
     case tuningRowMissing(String, table: String)
@@ -55,6 +56,7 @@ enum ContentMappingError: Error, CustomStringConvertible {
         case .unknownPlotType(let value):   return "unknown plot type \"\(value)\""
         case .unknownQuestNPC(let value):   return "unknown quest NPC \"\(value)\""
         case .unknownQuestCounter(let v, let id): return "\(id): unknown quest counter \"\(v)\""
+        case .unknownEnemyArchetype(let v, let id): return "\(id): unknown enemy archetype \"\(v)\""
         case .unknownCharacterClass(let v, let table):
             return "tuning/\(table): unknown character class \"\(v)\""
         case .unknownTechniqueKind(let v): return "tuning/combat.json: unknown technique kind \"\(v)\""
@@ -112,10 +114,17 @@ extension ItemDTO {
 // MARK: - Enemy
 
 extension EnemyDTO {
-    func toDomain() throws -> Enemy {
+    /// `defaultSpawnWeight` is the archetype's, supplied by the caller because
+    /// the DTO cannot see the archetype table. An enemy that states its own
+    /// weight overrides it; that is the whole meaning of the field being
+    /// optional.
+    func toDomain(defaultSpawnWeight: Double) throws -> Enemy {
         guard let depth, let range = depth.closedRange else {
             throw ContentMappingError.invalidDepthRange(
                 min: depth?.min ?? 0, max: depth?.max ?? 0, id: id)
+        }
+        guard let kind = EnemyArchetype(rawValue: archetype) else {
+            throw ContentMappingError.unknownEnemyArchetype(archetype, id: id)
         }
         return Enemy(
             id: id,
@@ -124,6 +133,13 @@ extension EnemyDTO {
             hp: stats.hp,
             attack: stats.attack,
             defense: stats.defense,
+            crit: stats.crit,
+            dodge: stats.dodge,
+            accuracy: stats.accuracy,
+            level: level,
+            archetype: kind,
+            silverReward: silverReward ?? 0,
+            spawnWeight: spawnWeight ?? defaultSpawnWeight,
             depthRange: range,
             lootTable: loot.map {
                 EnemyLootDrop(itemId: $0.itemId, chance: $0.chance, quantity: $0.quantity)

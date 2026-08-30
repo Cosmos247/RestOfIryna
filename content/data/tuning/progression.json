@@ -31,21 +31,20 @@
       "starterWeaponId" : "gear.wooden_staff"
     }
   ],
-  "maxLevel" : 21,
+  "maxLevel" : 40,
+  "mobXP" : {
+    "coefficient" : 26.0,
+    "exponent" : 1.55
+  },
   "statGrowth" : {
-    "attack" : 1,
-    "defense" : 1,
-    "levels" : [
-      2,
-      3,
-      5,
-      6,
-      9,
-      12,
-      15,
-      18
-    ],
-    "maxHp" : 5
+    "attackPerLevel" : 0.1,
+    "hpPerLevel" : 0.056,
+    "ratingPerLevel" : 0.085
+  },
+  "vigorPool" : {
+    "base" : 100,
+    "fullRegenHours" : 6.0,
+    "perLevel" : 5
   },
   "warehouseCapByEstateLevel" : [
     200,
@@ -57,8 +56,13 @@
     2000
   ],
   "xpCurve" : {
-    "doublingThroughLevel" : 5,
-    "firstLevelCost" : 100,
-    "growthMultiplier" : 1.4
+    "coefficient" : 11.4,
+    "exponent" : 3.3,
+    "floorPerLevel" : 120
+  },
+  "xpLevelDiff" : {
+    "max" : 1.0,
+    "min" : 0.1,
+    "perLevel" : 0.08
   }
 }

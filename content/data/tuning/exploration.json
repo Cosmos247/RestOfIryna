@@ -1,25 +1,31 @@
 {
   "eventWeightTotal" : 100,
+  "passive" : {
+    "freshStepCount" : 1,
+    "lootMultiplier" : 1.0,
+    "silverMultiplier" : 0.7,
+    "xpMultiplier" : 0.7
+  },
   "tripDamagePercent" : 0.05,
   "weightTiers" : [
     {
-      "encounter" : 30,
-      "loot" : 50,
-      "nothing" : 10,
+      "encounter" : 40,
+      "loot" : 45,
+      "nothing" : 5,
       "priorVisits" : 0,
       "trip" : 10
     },
     {
       "encounter" : 20,
-      "loot" : 50,
-      "nothing" : 20,
+      "loot" : 45,
+      "nothing" : 25,
       "priorVisits" : 1,
       "trip" : 10
     },
     {
       "encounter" : 0,
-      "loot" : 20,
-      "nothing" : 80,
+      "loot" : 25,
+      "nothing" : 75,
       "priorVisits" : 2,
       "trip" : 0
     }

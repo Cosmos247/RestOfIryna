@@ -35,6 +35,7 @@ public enum ContentValidator {
         issues += validateEstateAndNPCs(bundle)
         issues += validateTime(bundle)
         issues += validateTuning(bundle)
+        issues += validateBestiary(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -988,6 +989,129 @@ public enum ContentValidator {
         return issues
     }
 
+    // MARK: - Bestiary (Phase 5A)
+    //
+    // The archetype table is design input for the generator AND runtime data
+    // (its multipliers price XP, loot and silver), so it is validated as a
+    // tuning table even though it ships inside `enemies.json`.
+    //
+    // The depth-coverage rule is the one that pays for itself. `pickFor` used
+    // to answer an uncovered km with `all.first`, so the gap above km 35 read
+    // as "every deep encounter is a wild boar" instead of as missing content.
+    // Now the gap is reported here and the roll honestly returns nil.
+    private static func validateBestiary(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard !bundle.enemies.isEmpty || !bundle.enemyArchetypes.isEmpty else { return [] }
+        var issues: [ContentIssue] = []
+        let file = "enemies.json"
+        let known = ["trash", "normal", "skirmisher", "brute", "elite", "boss"]
+
+        func fail(_ path: String, _ rule: String, _ message: @autoclosure () -> String,
+                  _ severity: ContentIssue.Severity = .error, id: String? = nil) {
+            issues.append(.init(severity: severity, file: file, path: path, id: id,
+                                rule: rule, message: message()))
+        }
+
+        // MARK: archetype table
+        let present = bundle.enemyArchetypes.map(\.id)
+        for name in known where !present.contains(name) {
+            fail("archetypes", "enemy.archetype_missing", "no row for archetype \"\(name)\"")
+        }
+        issues += duplicates(present, file: file, collection: "archetypes")
+        for (index, row) in bundle.enemyArchetypes.enumerated() {
+            let path = "archetypes[\(index)]"
+            if !known.contains(row.id) {
+                fail(path, "enemy.archetype_unknown", "unknown archetype \"\(row.id)\"", id: row.id)
+            }
+            if row.rounds <= 0 {
+                fail(path, "enemy.archetype_rounds",
+                     "rounds must be positive, found \(row.rounds)", id: row.id)
+            }
+            if row.hpLossPercent <= 0 {
+                fail(path, "enemy.archetype_danger",
+                     "hpLossPercent must be positive, found \(row.hpLossPercent)", id: row.id)
+            }
+            for (name, value) in [("mitigationPercent", row.mitigationPercent),
+                                  ("dodgePercent", row.dodgePercent),
+                                  ("critPercent", row.critPercent)] where value < 0 || value > 100 {
+                fail("\(path).\(name)", "enemy.archetype_percent_range",
+                     "\(name) must sit inside 0...100, found \(value)", id: row.id)
+            }
+            for (name, value) in [("xpMultiplier", row.xpMultiplier),
+                                  ("lootMultiplier", row.lootMultiplier),
+                                  ("silverMultiplier", row.silverMultiplier)] where value <= 0 {
+                fail("\(path).\(name)", "enemy.archetype_multiplier",
+                     "\(name) must be positive, found \(value)", id: row.id)
+            }
+            if row.spawnWeight < 0 {
+                fail("\(path).spawnWeight", "enemy.archetype_weight",
+                     "spawn weight must not be negative", id: row.id)
+            }
+        }
+
+        // MARK: per-enemy design fields
+        let maxLevel = bundle.tuning?.progression.maxLevel
+        for (index, enemy) in bundle.enemies.enumerated() {
+            let path = "enemies[\(index)]"
+            if !known.contains(enemy.archetype) {
+                fail("\(path).archetype", "enemy.archetype_unknown",
+                     "unknown archetype \"\(enemy.archetype)\"", id: enemy.id)
+            }
+            if enemy.level < 1 {
+                fail("\(path).level", "enemy.level_range",
+                     "level must be at least 1, found \(enemy.level)", id: enemy.id)
+            }
+            if let maxLevel, enemy.level > maxLevel {
+                fail("\(path).level", "enemy.level_above_cap",
+                     "level \(enemy.level) is above the player cap \(maxLevel), so `levelDiff` can only ever punish",
+                     .warning, id: enemy.id)
+            }
+            if let silver = enemy.silverReward, silver < 0 {
+                fail("\(path).silverReward", "enemy.negative_silver",
+                     "silver reward must not be negative, found \(silver)", id: enemy.id)
+            }
+            if let weight = enemy.spawnWeight, weight < 0 {
+                fail("\(path).spawnWeight", "enemy.negative_weight",
+                     "spawn weight must not be negative, found \(weight)", id: enemy.id)
+            }
+        }
+
+        // MARK: depth coverage
+        //
+        // Walked up to the player level cap, because the design invariant is
+        // "km tracks level": a player who can reach level N must find something
+        // to fight at km N. Enemies with the `0...0` sentinel never spawn and
+        // are excluded — counting them would hide the very gap this looks for.
+        if let horizon = maxLevel, !bundle.enemies.isEmpty {
+            let spawnable = bundle.enemies.compactMap { enemy -> (ClosedRange<Int>, Double?)? in
+                guard let range = enemy.depth?.closedRange, range != 0...0 else { return nil }
+                return (range, enemy.spawnWeight)
+            }
+            var uncovered: [Int] = []
+            for km in 1...horizon where !spawnable.contains(where: { $0.0.contains(km) }) {
+                uncovered.append(km)
+            }
+            if !uncovered.isEmpty {
+                let shown = uncovered.prefix(8).map(String.init).joined(separator: ", ")
+                let tail = uncovered.count > 8 ? ", … (\(uncovered.count) km total)" : ""
+                fail("enemies", "enemy.depth_gap",
+                     "no enemy can spawn at km \(shown)\(tail) — exploration there rolls no encounter at all",
+                     .warning)
+            }
+            // A band whose every candidate is weighted zero would make the
+            // weighted roll fall back to a uniform draw, silently ignoring the
+            // weights the band was written with.
+            for km in 1...horizon {
+                let band = spawnable.filter { $0.0.contains(km) }
+                guard !band.isEmpty, band.allSatisfy({ ($0.1 ?? 1) == 0 }) else { continue }
+                fail("enemies", "enemy.band_all_zero_weight",
+                     "every enemy that can spawn at km \(km) is weighted 0")
+                break
+            }
+        }
+
+        return issues
+    }
+
     // MARK: - Tuning tables
     //
     // Phase 4. Different in kind from every rule above: a catalog rule mostly
@@ -1114,8 +1238,28 @@ public enum ContentValidator {
                 let path = "specialAttack[\(index)]"
                 require(row.vigor >= 0, file, path, "tuning.combat.negative_vigor",
                         "vigor cost must not be negative, found \(row.vigor)")
-                checkFraction(row.defenderDEFFraction, file, "\(path).defenderDEFFraction",
-                              "tuning.combat.def_fraction_range")
+                // Each effect carries its own sanity envelope. No `default:` —
+                // a new effect kind has to be validated deliberately, not
+                // waved through by an else branch.
+                switch row.effect {
+                case .armourBreak(let rounds):
+                    require(rounds >= 1, file, "\(path).effect.rounds",
+                            "tuning.combat.effect_rounds",
+                            "an armour break lasting \(rounds) rounds never applies")
+                case .guaranteedCrit(let multiplier):
+                    // At or below the standard multiplier the technique is a
+                    // normal hit that costs twice the Vigor.
+                    require(multiplier > combat.critMultiplier, file, "\(path).effect.critMultiplier",
+                            "tuning.combat.effect_crit_not_special",
+                            "a guaranteed crit at ×\(multiplier) is no better than the standard ×\(combat.critMultiplier) it costs double the Vigor to reach")
+                case .burn(let rounds, let fraction):
+                    require(rounds >= 1, file, "\(path).effect.rounds",
+                            "tuning.combat.effect_rounds",
+                            "a burn lasting \(rounds) rounds never ticks")
+                    require(fraction > 0, file, "\(path).effect.fractionOfAttack",
+                            "tuning.combat.effect_burn_zero",
+                            "a burn dealing 0 × ATK is a technique with no effect")
+                }
             }
 
             checkClassCoverage(combat.specialDefense.byClass.map(\.characterClass),
@@ -1221,29 +1365,69 @@ public enum ContentValidator {
             require(progression.maxLevel >= 2, file, "maxLevel", "tuning.progression.max_level",
                     "maxLevel must be at least 2, found \(progression.maxLevel)")
             let curve = progression.xpCurve
-            require(curve.firstLevelCost > 0, file, "xpCurve.firstLevelCost",
+            require(curve.coefficient > 0, file, "xpCurve.coefficient",
                     "tuning.progression.xp_first_cost",
-                    "the first level must cost something, found \(curve.firstLevelCost)")
-            require(curve.doublingThroughLevel >= 2, file, "xpCurve.doublingThroughLevel",
-                    "tuning.progression.xp_doubling_bound",
-                    "the doubling bound must be at least 2 (the first level the curve can compute), found \(curve.doublingThroughLevel)")
-            require(curve.growthMultiplier > 1.0, file, "xpCurve.growthMultiplier",
+                    "the curve coefficient must be positive, found \(curve.coefficient)")
+            require(curve.floorPerLevel > 0, file, "xpCurve.floorPerLevel",
+                    "tuning.progression.xp_floor",
+                    "the early-level floor must be positive, found \(curve.floorPerLevel)")
+            // At or below 1 the curve is linear or shrinking, so later levels
+            // cost no more than early ones and the ladder flattens entirely.
+            require(curve.exponent > 1.0, file, "xpCurve.exponent",
                     "tuning.progression.xp_curve_flat",
-                    "a multiplier at or below 1.0 makes every level past the doubling bound cost the same or less, found \(curve.growthMultiplier)")
+                    "an exponent at or below 1.0 makes late levels cost no more than early ones, found \(curve.exponent)")
+
+            let mob = progression.mobXP
+            require(mob.coefficient > 0, file, "mobXP.coefficient",
+                    "tuning.progression.mob_xp_coefficient",
+                    "monsters must award XP, found coefficient \(mob.coefficient)")
+            // The pacing identity: the XP a level costs must outgrow the XP a
+            // monster of that level gives, or kills-per-level FALLS as the
+            // player advances and the whole curve inverts.
+            require(mob.exponent < curve.exponent, file, "mobXP.exponent",
+                    "tuning.progression.mob_xp_outruns_curve",
+                    "monster XP grows at L^\(mob.exponent) against a curve of L^\(curve.exponent) — kills per level would fall as the player levels up")
+
+            let xpGap = progression.xpLevelDiff
+            require(xpGap.perLevel > 0, file, "xpLevelDiff.perLevel",
+                    "tuning.progression.xp_level_diff_absent",
+                    "without a per-level penalty, farming far below your level stays fully rewarding and the depth ladder becomes dead content")
+            require(xpGap.min >= 0 && xpGap.min <= xpGap.max, file, "xpLevelDiff",
+                    "tuning.progression.xp_level_diff_range",
+                    "expected 0 <= min <= max, found \(xpGap.min) / \(xpGap.max)")
 
             let growth = progression.statGrowth
-            for (index, level) in growth.levels.enumerated() {
-                let path = "statGrowth.levels[\(index)]"
-                require(level >= 2 && level <= progression.maxLevel, file, path,
-                        "tuning.progression.growth_level_unreachable",
-                        "level \(level) is outside 2...\(progression.maxLevel) and would never grant its boost")
-                require(growth.levels.firstIndex(of: level) == index, file, path,
-                        "tuning.progression.growth_level_duplicate",
-                        "level \(level) is listed more than once — the game holds these in a Set, so the repeat is silently dropped")
+            for (name, rate) in [("hpPerLevel", growth.hpPerLevel),
+                                 ("attackPerLevel", growth.attackPerLevel),
+                                 ("ratingPerLevel", growth.ratingPerLevel)] {
+                require(rate >= 0, file, "statGrowth.\(name)",
+                        "tuning.progression.negative_growth",
+                        "growth rate must not be negative, found \(rate)")
+                // A rate that multiplies a stat by more than ~50x over a
+                // lifetime is almost certainly a misplaced decimal point
+                // (0.85 where 0.085 was meant) rather than a design choice.
+                require(rate * Double(progression.maxLevel) <= 50, file, "statGrowth.\(name)",
+                        "tuning.progression.growth_runaway",
+                        "a rate of \(rate) multiplies the stat by \(1 + rate * Double(progression.maxLevel - 1)) by the cap — check for a misplaced decimal point",
+                        .warning)
             }
-            require(growth.maxHp >= 0 && growth.attack >= 0 && growth.defense >= 0,
-                    file, "statGrowth", "tuning.progression.negative_growth",
-                    "stat growth must not be negative")
+            // Ratings must not grow SLOWER than the diminishing-returns
+            // denominators they feed, or the percentage they produce rots while
+            // the number on the profile screen rises. This is the structural
+            // trap the proportional model exists to avoid; a zero rate is the
+            // flat-growth model coming back in through the data.
+            require(growth.ratingPerLevel > 0, file, "statGrowth.ratingPerLevel",
+                    "tuning.progression.ratings_do_not_scale",
+                    "ratings must grow with level — at 0 the crit/dodge/accuracy PERCENTAGES fall every level while their ratings stand still")
+
+            let pool = progression.vigorPool
+            require(pool.base > 0, file, "vigorPool.base", "tuning.progression.vigor_pool",
+                    "the Vigor pool must be positive, found \(pool.base)")
+            require(pool.perLevel >= 0, file, "vigorPool.perLevel", "tuning.progression.vigor_pool",
+                    "per-level Vigor must not be negative")
+            require(pool.fullRegenHours > 0, file, "vigorPool.fullRegenHours",
+                    "tuning.progression.vigor_regen",
+                    "regen window must be positive — the tick divides by it")
 
             checkClassCoverage(progression.classes.map(\.characterClass), file: file, path: "classes")
             for (index, row) in progression.classes.enumerated() {

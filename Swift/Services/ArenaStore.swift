@@ -56,6 +56,10 @@ public actor ArenaStore {
         public let crit: Int
         public let dodge: Int
         public let acc: Int
+        /// Player level. Every combat curve's denominator is read at the level
+        /// of whoever owns the stat, so a duel needs both sides' levels; the
+        /// matchmaker's ±3 bracket keeps `levelDiff` close to 1 in practice.
+        public let level: Int
         public let maxHp: Int
         public var hp: Int
         public let stake: Int
@@ -229,7 +233,8 @@ public actor ArenaStore {
         case .defend:
             // Brace: buff DEF against the next incoming hit + a chip counter.
             attacker.defending = true
-            let chip = CombatService.chipDamage(attackerATK: attacker.atk, defenderDEF: defender.def)
+            let chip = CombatService.chipDamage(attackerATK: attacker.atk, defenderDEF: defender.def,
+                                                defenderLevel: defender.level)
             defender.hp = max(0, defender.hp - chip)
             log.append("🛡|\(chip)")   // controller expands into localized copy
         case .attack:
@@ -237,7 +242,9 @@ public actor ArenaStore {
             defender.defending = false
             let outcome = CombatService.applyAttack(
                 attackerATK: attacker.atk, attackerCrit: attacker.crit, attackerAcc: attacker.acc,
-                defenderDEF: effectiveDEF, defenderDodge: defender.dodge
+                attackerLevel: attacker.level,
+                defenderDEF: effectiveDEF, defenderDodge: defender.dodge,
+                defenderLevel: defender.level
             )
             switch outcome {
             case .miss:            log.append("miss|0")
@@ -324,7 +331,8 @@ public actor ArenaStore {
             // Auto-defend for the idle fighter, then pass the turn.
             var opp = idleIsA ? duel.b : duel.a
             idle.defending = true
-            let chip = CombatService.chipDamage(attackerATK: idle.atk, defenderDEF: opp.def)
+            let chip = CombatService.chipDamage(attackerATK: idle.atk, defenderDEF: opp.def,
+                                                defenderLevel: opp.level)
             opp.hp = max(0, opp.hp - chip)
             if idleIsA { duel.a = idle; duel.b = opp } else { duel.b = idle; duel.a = opp }
 

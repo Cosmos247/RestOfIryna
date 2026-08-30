@@ -124,6 +124,7 @@ public enum ContentLoader {
             manifest: manifest,
             items: itemFile.items,
             enemies: enemyFile.enemies,
+            enemyArchetypes: enemyFile.archetypes,
             recipes: recipeFile.recipes,
             starterRecipeIds: recipeFile.starterRecipeIds,
             weaponLadders: weaponFile.ladders,

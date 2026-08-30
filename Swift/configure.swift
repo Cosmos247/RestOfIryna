@@ -224,6 +224,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(CreateGuildVault())
     migrations.add(CreateArenaProfiles())
     migrations.add(CreateQuestProgress())
+    migrations.add(AddVigorTick())
+    migrations.add(AddCombatBurn())
 
     let migrator = Migrator(databases: databases, migrations: migrations, logger: logger, on: MultiThreadedEventLoopGroup.singleton.any())
     try await migrator.setupIfNeeded().get()
@@ -432,6 +434,7 @@ public func configure(logger: Logger) async throws {
     // One-shot, idempotent: lift pre-existing weapons to their per-tier
     // durability ceiling (rows created before the tier table carried a flat 30).
     try await GearConditionService.backfillWeaponDurability(on: db)
+    try await User.backfillLevelDerivedStats(on: db, logger: logger)
 
     // Start the bot
     try await appState.bot.start()

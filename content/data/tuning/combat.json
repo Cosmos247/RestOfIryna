@@ -1,5 +1,27 @@
 {
   "critMultiplier" : 1.5,
+  "curves" : {
+    "accuracy" : {
+      "kBase" : 33.38,
+      "kPerLevel" : 1.457,
+      "scale" : 30.0
+    },
+    "crit" : {
+      "kBase" : 51.89,
+      "kPerLevel" : 3.213,
+      "scale" : 50.0
+    },
+    "dodge" : {
+      "kBase" : 43.32,
+      "kPerLevel" : 3.682,
+      "scale" : 55.0
+    },
+    "mitigation" : {
+      "cap" : 0.7,
+      "kBase" : 46.65,
+      "kPerLevel" : 8.017
+    }
+  },
   "defend" : {
     "archerChipMultiplier" : 0.5,
     "archerDodgeBonus" : 30,
@@ -24,17 +46,23 @@
     }
   ],
   "hitChance" : {
-    "base" : 70,
+    "base" : 85,
     "max" : 95,
-    "min" : 10
+    "min" : 40
+  },
+  "levelDiff" : {
+    "max" : 2.5,
+    "min" : 0.25,
+    "perLevel" : 0.06
   },
   "specialAttack" : [
     {
       "cannotMiss" : false,
       "class" : "warrior",
-      "critBonus" : 20,
-      "defenderDEFFraction" : 0.0,
-      "flatDamageBonus" : 12,
+      "effect" : {
+        "kind" : "armour_break",
+        "rounds" : 3
+      },
       "hitChanceModifier" : -10,
       "vigor" : 4,
       "zeroesDodge" : false
@@ -42,9 +70,10 @@
     {
       "cannotMiss" : true,
       "class" : "archer",
-      "critBonus" : 20,
-      "defenderDEFFraction" : 0.0,
-      "flatDamageBonus" : 0,
+      "effect" : {
+        "critMultiplier" : 2.0,
+        "kind" : "guaranteed_crit"
+      },
       "hitChanceModifier" : 0,
       "vigor" : 4,
       "zeroesDodge" : true
@@ -52,9 +81,11 @@
     {
       "cannotMiss" : true,
       "class" : "mage",
-      "critBonus" : 0,
-      "defenderDEFFraction" : 0.0,
-      "flatDamageBonus" : 5,
+      "effect" : {
+        "fractionOfAttack" : 0.35,
+        "kind" : "burn",
+        "rounds" : 3
+      },
       "hitChanceModifier" : 0,
       "vigor" : 5,
       "zeroesDodge" : false

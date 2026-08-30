@@ -36,6 +36,7 @@ final class DomainContent: Sendable {
 
     let enemies: [Enemy]
     let enemiesById: [String: Enemy]
+    let enemyArchetypes: [EnemyArchetype: EnemyArchetypeSpec]
 
     let recipes: [Recipe]
     let recipesById: [String: Recipe]
@@ -110,9 +111,6 @@ final class DomainContent: Sendable {
     let specialDefenseVigorByClass: [CharacterClass: Int]
     let fleeByClass: [CharacterClass: FleeTuningDTO]
     let classStarts: [CharacterClass: ClassStartDTO]
-    /// Rebuilt as a `Set` because `User.statGrowthLevels` is one and callers do
-    /// membership tests on every level-up.
-    let statGrowthLevels: Set<Int>
 
     let questPools: [QuestNPC: [QuestDef]]
     /// `QuestCatalog.find` used to scan an unordered dictionary of pools, so on
@@ -153,7 +151,31 @@ final class DomainContent: Sendable {
         // selects with `filter().randomElement()`, so the order of `enemies`
         // decides which enemy a given roll returns.
         self.items = try content.items.map { try $0.toDomain() }
-        self.enemies = try content.enemies.map { try $0.toDomain() }
+        // The archetype table is built FIRST: each enemy resolves its default
+        // spawn weight from it, so a roster row that omits the field inherits
+        // its archetype's rarity rather than a hardcoded 1.
+        var archetypes: [EnemyArchetype: EnemyArchetypeSpec] = [:]
+        for row in content.enemyArchetypes {
+            guard let kind = EnemyArchetype(rawValue: row.id) else {
+                throw ContentMappingError.unknownEnemyArchetype(row.id, id: "archetypes")
+            }
+            archetypes[kind] = EnemyArchetypeSpec(
+                archetype: kind, rounds: row.rounds, hpLossPercent: row.hpLossPercent,
+                mitigationPercent: row.mitigationPercent, dodgePercent: row.dodgePercent,
+                critPercent: row.critPercent, xpMultiplier: row.xpMultiplier,
+                lootMultiplier: row.lootMultiplier, silverMultiplier: row.silverMultiplier,
+                spawnWeight: row.spawnWeight)
+        }
+        for kind in EnemyArchetype.allCases where archetypes[kind] == nil {
+            throw ContentMappingError.tuningRowMissing("archetype \(kind.rawValue)", table: "enemies.json")
+        }
+        self.enemyArchetypes = archetypes
+
+        self.enemies = try content.enemies.map { dto in
+            let kind = EnemyArchetype(rawValue: dto.archetype)
+            let fallback = kind.flatMap { archetypes[$0]?.spawnWeight } ?? 1
+            return try dto.toDomain(defaultSpawnWeight: fallback)
+        }
         self.recipes = try content.recipes.map { try $0.toDomain() }
 
         // `uniquingKeysWith:` rather than `uniqueKeysWithValues:` — the latter
@@ -308,7 +330,6 @@ final class DomainContent: Sendable {
             starts[cls] = row
         }
         self.classStarts = starts
-        self.statGrowthLevels = Set(tuning.progression.statGrowth.levels)
 
         // Every class must have a row in all five per-class tables. Checked
         // HERE and not only in the validator because these accessors are

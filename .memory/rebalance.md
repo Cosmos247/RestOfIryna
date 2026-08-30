@@ -100,7 +100,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 2 Item/Enemy/Recipe façades | ✅ `c9e329b` |
 | 3 Remaining catalogs | ✅ **12 of 12** — A (weapon/bag/estate) `f30a4ca` · B (trader/tavern/market/guild/arena) `cb101f3` · C (master/plot/fortune/quest) |
 | 4 Tuning tables + `time.scale` | ✅ **4a** six tables · **4b** flags collapsed |
-| 5 New combat model | ⬜ |
+| 5 New combat model | ✅ 5A bestiary · 5B progression · 5C combat · 5D techniques |
 | 6 Rarity + sets | ⬜ |
 | 7 `/reload` hot swap | ⬜ |
 | 8 Simulator + constant lock-in | ⬜ |
@@ -108,8 +108,13 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `893b57b06fad8068`** — `records 296960c1a998a7e7`,
-`tuning 9ba80c8f77fa3aa8`, `spawns 635cde3f65184c78`, `quests 2e52ecdfa45276ec`.
+**Current digest baseline: `84b3316f44bd18c7`** — `records 70d6d2396af6f198`,
+`tuning 88db2a129b96a432`, `spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
+
+Phase 5 moved all three of `records`, `tuning` and `spawns` ON PURPOSE — it is the
+first phase that changes behaviour rather than relocating it. From here the
+digest is a change DETECTOR, not an equality check: the question stopped being
+"did it stay the same" and became "did exactly the intended thing move".
 The digest gained a FOURTH half in Phase 4 (`tuning`), kept separate from
 `records` on purpose: holding the three catalog halves at their Phase 3 values
 through the whole tuning migration is what proves Phase 4 touched only balance
@@ -133,6 +138,42 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What Phase 5 taught
+
+- **A published design table can bake in things that do not exist yet.** The
+  plan's reference character shows a level-40 warrior at DEF 225; the bare stat
+  line gives 52. The other 173 is gear from an item budget curve that arrives in
+  Phase 6 and real items that arrive in Phase 10. So Phase 5 can prove the
+  FORMULA (published stats in → published percentages out, and five mitigation
+  pairs land exactly) and cannot prove the BALANCE. Worth separating explicitly
+  before anyone reads a green check as "the numbers are right".
+- **Order the phases by data dependency, not by the plan's numbering.** Enemies
+  generated against the new growth model kill a level-21 warrior outright under
+  the old one (137% of max HP). Swapping the progression step ahead of the combat
+  step made every intermediate commit playable; the reverse order has a window
+  where the game is arithmetically unwinnable.
+- **Calibrate a derivation to reproduce the values it replaces.** The sweeper
+  floor and, later, the enemy generator both had a free parameter. Choosing it to
+  reproduce the shipped numbers exactly turns a behaviour change into a verified
+  no-op at zero cost.
+- **Two curve shapes that look alike need two TYPES.** In `min(0.70, DEF/(DEF+K))`
+  the 0.70 is a ceiling; in `55·D/(D+K)` the 55 is a leading scale. Inverting one
+  as the other inflated every enemy's DEF by ~80% and stretched fights far past
+  their target length. It was caught only because the table was reviewed before
+  it was written. `MitigationCurveDTO` and `RatingCurveDTO` are now distinct so
+  the compiler refuses the confusion.
+- **Adding a parameter is a better migration tool than a grep.** Threading
+  attacker/defender level through `applyAttack` made the compiler enumerate all
+  nine call sites, two of which were `chipDamage` calls no search for
+  `applyAttack` would have found.
+- **A hash only covers what it reads.** The technique rebuild moved the payload
+  from `AttackModifiers` into a separate effect union that the controller reads
+  directly — so the digest kept hashing the modifiers and stopped seeing the
+  technique. Doubling a burn's duration left it byte-identical. Whenever a value
+  moves to a new home, re-check that the digest followed it: `passive`,
+  `fullRegenHours`, `mobXP` and `critMultiplierOverride` had all fallen out the
+  same way, and all six now move it to distinct values.
 
 ### What Phase 4 taught
 

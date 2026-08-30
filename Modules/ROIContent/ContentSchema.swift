@@ -22,5 +22,18 @@ public enum ContentSchema {
     /// replaced by `tuning/time.json` → `scale`. A binary reading a v1 bundle
     /// would find no scale at all and run every gate at release pacing, so the
     /// handshake has to refuse rather than default.
-    public static let current: Int = 2
+    /// v3 (Phase 5A): `enemies.json` gains a required `archetypes` table, and
+    /// every enemy a required `level` and `archetype`. A v2 bundle has neither,
+    /// and defaulting them would misprice every encounter silently.
+    /// v4 (Phase 5B): `progression.statGrowth` changes shape entirely — flat
+    /// per-level bonuses on named levels become proportional rates — and gains
+    /// `vigorPool`. A v3 bundle's `statGrowth` would decode as garbage, so the
+    /// handshake has to refuse rather than reinterpret.
+    /// v5 (Phase 5C): `combat.json` gains `curves` and `levelDiff`, and
+    /// `hitChance` changes meaning (base 70 → 85, floor 10 → 40) because damage
+    /// is absorbed rather than subtracted. A v4 bundle would decode into the
+    /// new formula and produce silently wrong fights.
+    /// v6 (Phase 5D): `exploration.json` gains a required `passive` block and
+    /// `combat.json` the rebuilt technique effects.
+    public static let current: Int = 6
 }
