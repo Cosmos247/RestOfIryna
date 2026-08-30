@@ -108,8 +108,10 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `f3b145f824ec150c`** — `records efd31486552c644b`,
-`tuning 88db2a129b96a432`, `spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
+**Current digest baseline: `a4d825a8d728f4f8`** — `records efd31486552c644b`,
+`tuning ae10c071662462d6`, `spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
+`tuning` last moved when the dead `defenderDEFFraction` knob was deleted, taking
+its fingerprint entry with it.
 Phase 6 moved `records` only: it added item fields, rarity, sets and the budget
 curve, and touched none of the six balance tables.
 

@@ -8,6 +8,30 @@
 > numbers read the JSON; for the active work read [rebalance.md](rebalance.md).
 
 
+## Rebalance status (Phases 3–7 done, 2026-08-30)
+
+The pre-release rebalance is the only work in flight and has rewritten most of the
+numbers below. Current state:
+
+| Phase | What landed |
+|---|---|
+| 3 | All 12 catalogs read `content/data/*.json`; no Swift content array remains |
+| 4 | Six tuning tables in `content/data/tuning/`; three `testMode` flags collapsed into one `time.scale` (still 60; Phase 11 sets 1.0) |
+| 5 | Combat is ABSORPTION, not subtraction; ratings→% curves; `levelDiff`; `maxLevel` 40; proportional growth; Vigor pool + regen; enemies generated from a six-archetype table and dropping silver; the three special attacks rebuilt off "ignore armour" |
+| 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
+| 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
+
+**Next: Phase 8** — `CombatantStats`, `RandomNumberGenerator` threading, `roi-content
+simulate`, and locking constants against **p90 rather than the mean**.
+
+⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
+changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
+against a real database. Digest baseline `a4d825a8d728f4f8`, 185 tests.
+
+Sections below describe the shipped FEATURE SET. Where they quote numbers (XP curves,
+stat growth, enemy stats, enchant bonuses) treat `content/data/` as the truth — several
+were superseded by Phases 4–6.
+
 ## What Exists (implemented and working)
 
 ### Infrastructure
@@ -54,8 +78,8 @@
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — 956 keys (2026-08-23)
-- [x] Ukrainian (uk.json) — 977 keys (+21 gendered `.m`/`.f` variants)
+- [x] English (en.json) — 957 keys (2026-08-30)
+- [x] Ukrainian (uk.json) — 978 keys (+21 gendered `.m`/`.f` variants)
 
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
@@ -190,8 +214,12 @@ into `content/data/*.json` so balance changes need no recompile. Plan:
   `--export-content` were deleted with the last array — nothing left to export. The migration
   digest gained a third half in batch C (a seeded `daily()` replay) and stands at
   **`8053216102eceff7`**; it held identical across every flip.
-- Phases 4 – 11 pending: tuning tables + `time.scale`, new combat model, rarity+sets, `/reload`,
-  simulator calibration, content specs, authoring, wipe.
+- **Phases 4 – 7 DONE** — tuning tables + `time.scale` (4), the new combat model (5), the item
+  stat budget with rarity and sets (6), `/reload` guarded by `LiveReferenceCheck` (7). The
+  per-phase detail is in the table at the top of this file; the reasoning is in
+  `.memory/rebalance.md`.
+- Phases 8 – 11 pending: simulator calibration (p90, not the mean), content specs, authoring,
+  wipe + the release pass that sets `time.scale` to 1.0.
 
 Key targets: maxLevel 40 · ~110 days to cap at 80% engagement · DEF as a mitigation curve
 capped at 70% · gear power ceiling 1.75× common · sinks ≈85% of faucets.

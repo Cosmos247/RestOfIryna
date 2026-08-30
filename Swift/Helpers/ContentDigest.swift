@@ -813,7 +813,7 @@ enum ContentDigest {
     }
 
     private static func fingerprint(_ m: CombatService.AttackModifiers) -> String {
-        "hit\(m.hitChanceModifier) defFrac\(m.defenderDEFFraction) crit+\(m.critBonus) "
+        "hit\(m.hitChanceModifier) crit+\(m.critBonus) "
             + "cannotMiss:\(m.cannotMiss) flat+\(m.flatDamageBonus) "
             + "critMult:\(m.critMultiplierOverride.map { "\($0)" } ?? "-")"
     }

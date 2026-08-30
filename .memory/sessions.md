@@ -2955,3 +2955,61 @@ design's list turned up four more content-id columns than the plan named; three
 more (`quest_progress.npc`, `technique_id`, `character_class`) are covered
 transitively or by `DomainContent` refusing an incomplete bundle, and that
 reasoning is now written down in `LiveReferenceQuery` so nobody re-derives it.
+
+---
+
+## Session — 2026-08-30 part 5 (documentation sync + dead-code sweep)
+
+A pass with no feature work: bring every document back in line with Phases 4–7
+and remove what those phases orphaned.
+
+### The gap that mattered
+
+`.memory/file-map.md` is described in `CLAUDE.md` as canonical and updated per
+session. It contained **none of the thirteen files added across Phases 4–7**, and
+its `User.swift` annotation still described the pre-rebalance model — `maxLevel
+= 21`, flat stat growth on eight chosen levels, "maxVigor stays 100 always (no
+growth — per design)". A map that confidently describes a model the code no
+longer has is worse than a map with a hole in it.
+
+Fixed by adding the thirteen files with the reasoning that makes each one
+non-obvious (why burn damage is frozen at cast time, why the vigor tick primes
+rather than pays, why `LiveReferenceCheck` is split from its queries) and by
+marking the superseded `User.swift` block explicitly rather than deleting it —
+the history is still worth reading, it just needed to stop claiming to be
+current.
+
+The `Previously:` blocks in `status.md` are frozen snapshots BY DESIGN and were
+left alone; `status.md` gained a live rebalance phase table above them instead.
+
+### Dead code
+
+`AttackModifiers.defenderDEFFraction` — Phase 5D rebuilt all three special
+attacks off "ignore armour", which left the knob with no user at all, still
+multiplied into every damage roll and still documented as scaling DEF "before
+subtraction", which absorption removed two phases earlier. Deleted: nothing set
+it, armour-piercing has a real home in `armourBreak`, and a live knob with a
+lying comment is worse than no knob. Its digest entry went with it — `tuning`
+moved to `ae10c071662462d6`, which is the whole change.
+
+Also checked and clean: `enchantBonusPoints`, `statGrowthLevels`,
+`ItemBudget.spent`, `RarityCatalog.glyph`, `plotTestMode`, `PlotCatalog.testMode`
+— all removed at the time, none lingering.
+
+### Documents brought current
+
+- **`CLAUDE.md`** — the item stat budget and its two consequences (`itemLevel` is
+  not `tier`; never give anything a flat bonus), and the `/reload` contract
+  including the rule that a new content-id column must be added to
+  `LiveReferenceQuery` or the hot swap will break it.
+- **`README.md`** — untouched through four phases. Now carries `tuning/`, the
+  rarity and set files, the balance-is-data note, the `/reload` line, and a
+  roadmap that says the rebalance is in flight.
+- **`GDD.md`** — a header warning that it predates the rebalance and its numbers
+  are intent, not behaviour. It was already treated that way in conversation;
+  now the document says so itself.
+- **`.memory/INDEX.md`** — descriptions widened to match what the files grew
+  into.
+- Locale counts corrected to 957 / 978 in both `status.md` and `Prompt.md`.
+
+185 tests, clean build. Digest `a4d825a8d728f4f8`.

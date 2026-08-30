@@ -48,8 +48,9 @@ Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this gr
 
 **Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
-market, guild, arena), the Master's shop, estate plots, the fortune deck and the
-daily quest pools — lives in `content/data/*.json`; the `*Catalog` types are façades over
+market, guild, arena), the Master's shop, estate plots, the fortune deck, the
+daily quest pools, the rarity ladder (`rarities.json`) and equipment sets
+(`sets.json`) — lives in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
 in both `en.json` and `uk.json` — never a Swift array edit.
 
@@ -62,6 +63,27 @@ it runs at type-init and traps before `ContentBootstrap.load`.
 
 `tuning/time.json` splits `gameTime` (multiplied by `scale`) from `realTime` (never
 is): Telegram's 24 h dice-delete window is a protocol constant, not a balance knob.
+
+**Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
+= slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
+stats ARE that budget spent at fixed exchange rates, and the validator refuses an
+overspend. Because the combat curves were derived from this same budget, an item that
+respects it cannot move any stat's percentage — which is what makes adding items safe.
+Two consequences worth knowing before touching gear:
+- `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–5); item level is the
+  budget input (1–40). The weapon ladders map tiers to 1/10/20/30/40.
+- **Never give anything a flat bonus.** Enchant is `1 + 4% × level` of the item's OWN
+  stats, and set bonuses are capped against their members' combined budget. The same
+  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one — no flat number works
+  at both ends.
+
+**`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
+shows what is loaded). The order is the safety: **parse → validate → live-check → build
+→ install**, with `install` the only infallible step and last, so a refused reload leaves
+the running game untouched. `LiveReferenceCheck` refuses a bundle that would drop an id
+live rows still point at — if you add a column that stores a content id, add it to
+`LiveReferenceQuery.collect` or the hot swap will happily break it. **Lingo is NOT
+reloaded**: new locale strings still need a restart.
 
 Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
 Run `swift run roi-content validate --strict` before committing content.

@@ -94,14 +94,12 @@ public enum CombatService {
     /// so existing callers keep working unchanged.
     ///
     /// - `hitChanceModifier`: added to the clamped hit-chance roll (Cleave: -15)
-    /// - `defenderDEFFraction`: scales enemy DEF before subtraction
     ///   (Cleave: 0.5 — armor-piercing; Vital Shot / Soulfire: 0.0 — ignore DEF)
     /// - `critBonus`: added to attacker crit % (Vital Shot: +20)
     /// - `cannotMiss`: if true, hit-chance roll is bypassed (Vital Shot, Soulfire)
     /// - `flatDamageBonus`: added to raw pre-variance damage (Soulfire: +5)
     public struct AttackModifiers: Sendable {
         public var hitChanceModifier: Int = 0
-        public var defenderDEFFraction: Double = 1.0
         public var critBonus: Int = 0
         public var cannotMiss: Bool = false
         public var flatDamageBonus: Int = 0
@@ -203,8 +201,7 @@ public enum CombatService {
         }
         if Double.random(in: 0..<100) >= hitChance { return .miss }
 
-        let effectiveDEF = Swift.max(0, Int((Double(defenderDEF) * modifiers.defenderDEFFraction).rounded()))
-        let absorbed = mitigation(defenderDEF: effectiveDEF, defenderLevel: defenderLevel)
+        let absorbed = mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel)
         let afterArmour = Double(attackerATK) * (1 - absorbed) + Double(modifiers.flatDamageBonus)
         let scaled = afterArmour * levelDiffMultiplier(attackerLevel: attackerLevel,
                                                        defenderLevel: defenderLevel)
@@ -336,11 +333,11 @@ public enum CombatService {
     ///   reliable of the three but costs 5 vigor instead of 4.
     /// Roll modifiers for a class's Special Attack.
     ///
-    /// `defenderDEFFraction` is deliberately NOT set any more. All three
-    /// techniques used to zero it — "ignore armour" — which an absorption model
-    /// turns into a 0.44–0.59× trade: +11% damage against trash for +150%
-    /// Vigor. The armour-piercing fantasy now lives in `armourBreak`, whose
-    /// worth RISES with the target's absorption instead of falling with it.
+    /// There is no "ignore armour" knob any more. All three techniques used to
+    /// zero the defender's DEF, which an absorption model turns into a
+    /// 0.44–0.59× trade: +11% damage against trash for +150% Vigor. The
+    /// armour-piercing fantasy lives in `armourBreak`, whose worth RISES with
+    /// the target's absorption instead of falling with it.
     public static func specialAttackModifiers(forClass cls: CharacterClass) -> AttackModifiers {
         let row = specialAttack(cls)
         var m = AttackModifiers()

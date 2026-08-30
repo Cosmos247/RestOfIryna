@@ -2,6 +2,10 @@
 
 **Version:** 0.1 (initial draft)
 **Status:** Design in progress — numeric values marked `⚙️ TBD` are tuning placeholders
+**⚠️ Predates the pre-release rebalance.** Every number here is design INTENT, not what
+the game does: combat, progression, the economy and all item stats were rebuilt in
+2026-08 and now live in `content/data/`, which is the truth. See `TODO.md` →
+"Full Rebalance" and `.memory/rebalance.md`.
 **Target scale:** 1,000–3,000 concurrent players, shared world
 **Platform:** Telegram Bot (text + emoji + inline keyboards)
 

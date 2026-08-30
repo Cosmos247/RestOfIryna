@@ -79,15 +79,29 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
 ├── ROISim/                       # SplitMix64 + OutcomeDigest (balance simulator lands in rebalance Phase 8)
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
 
-Tests/ROIContentTests/            # 85 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 185 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
-├── manifest.json                 # schemaVersion · contentVersion · timeScale
-├── items.json · enemies.json · recipes.json
+├── manifest.json                 # schemaVersion · contentVersion
+├── items.json · enemies.json (+ archetypes) · recipes.json
+├── rarities.json · sets.json
 ├── weapon_upgrades.json · bags.json · estate_upgrades.json
 ├── trader.json · tavern.json · market.json · guild.json · arena.json
-└── master.json · plots.json · fortune.json · quests.json
+├── master.json · plots.json · fortune.json · quests.json
+└── tuning/                       # BALANCE, separate from content
+    └── combat · vigor · exploration · progression · economy · time · budget
 ```
+
+> **Balance lives in `content/data/tuning/`.** Hit chance, the absorption curve, the XP
+> curve, Vigor costs, gear wear and every duration are data, not constants. The item stat
+> budget (`budget(itemLevel, slot, rarity)`) bounds every equippable piece, and the
+> validator refuses an overspend — which is what makes adding items safe rather than a
+> slow power creep. `swift run RestOfIryna --content-digest` prints four live checks,
+> including the design's reference character rebuilt from the budget.
+>
+> Dev-only `/reload` hot-swaps the bundle without a restart (`parse → validate →
+> live-check → build → install`; a refusal leaves the running game untouched). Locale
+> strings are the exception — those still need a restart.
 
 ```
 RestOfIryna/
@@ -479,7 +493,16 @@ Bot-level settings in `configure.swift`:
 
 ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 includes the full game vision: exploration, combat (PvE + PvP), estates, territorial wars, guilds, dungeons, taming, and the capital city with arena.
 
-See [**GDD.md**](./GDD.md) for systems detail, numeric tuning placeholders, and scope notes.
+**A full pre-release rebalance is in flight** and is the only work happening right now:
+the game's mathematics is being rebuilt and all content plus all tuning has moved into
+`content/data/`. Phases 3–7 are done (data migration, tuning tables, the new combat
+model, the item budget, hot reload); Phase 8 adds the simulator. Progress lives in the
+"Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
+[`.memory/rebalance.md`](./.memory/rebalance.md).
+
+See [**GDD.md**](./GDD.md) for systems detail and scope notes — but note it predates the
+rebalance, so treat its numbers as design intent rather than what the game currently
+does. `content/data/` is the truth.
 
 ---
 

@@ -74,8 +74,8 @@ content-id columns. Lingo is NOT reloaded; new strings still need a restart.
 mean** — enemy crit barely moves average HP loss but moves the tail hard, and
 balancing on the mean is how players die on a tail the table calls fine.
 
-**Current digest baseline: `f3b145f824ec150c`**
-(`records efd31486552c644b` · `tuning 88db2a129b96a432` ·
+**Current digest baseline: `a4d825a8d728f4f8`**
+(`records efd31486552c644b` · `tuning ae10c071662462d6` ·
 `spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`).
 
 `--content-digest` prints four live checks beside the hashes: façade lookups,
@@ -138,7 +138,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (956 / 977 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (957 / 978 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator warns about it. Deliberate; Phase 11 sets it to 1.0.
