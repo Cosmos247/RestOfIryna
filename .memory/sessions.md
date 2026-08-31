@@ -3513,3 +3513,113 @@ moves `spawns` alone, the plot-slot ladder T7 6 → 5 and a farm capacity 6 → 
 each move `records` alone, and the seven enemy spawn counts are identical to the
 pre-8E run — so the `spawns` half moved because foraging joined it, not because
 enemy selection shifted.
+
+---
+
+## Session — 2026-08-31 part 3 (Phase 9: the first two content specs)
+
+The phase's rule is that the list gets signed off before it reaches JSON. The
+first decision was about the documents themselves.
+
+### Numbers are printed, never typed
+
+A specification full of hand-typed numbers is a fourth transcription of the same
+curves, rotting from the moment a coefficient moves. So `roi-content spec
+<progression|gates|bestiary|items>` emits every table from the code that owns the
+maths — `ProgressionMath` for the ladder and stat line, `EnemyGenerator` for what
+an archetype asks at a level, `BudgetMath` for what a slot may spend. The spec
+and the generator cannot disagree, and the command is the seed of Phase 10's
+generator: the same tables, one step earlier and in a form a person can argue
+with.
+
+### spec-progression.md — the skeleton
+
+Printing the ladder made something visible that nobody had seen laid out:
+**levels 1–15 are 1.3% of the whole climb, and 30–40 are 71.5%.** The plan's
+"author 1–15, generate the rest" therefore meant authoring the part every player
+sees and almost none of the time they spend. Decided: **the authored band is
+1–25** (12.8%), which is also where every technique and estate gate lands.
+
+Two more decisions, both deliberate deferrals rather than fixes: **nothing new
+unlocks between level 21 and 40** — a real hole, 78% of the XP with only stats
+and gear in it, but what fills it is better decided after the game has been
+played; and **past km 40 the deep zone continues** rather than ending in a wall,
+because content will go there later. The second was applied immediately
+(`zone.deepwood` to km 49) and the digest did not move, which is the correct
+signature: the forage replay walks km 1–40, so extending past it is provably
+inert.
+
+The document also writes down a rule the shipped roster had always obeyed and
+nobody had stated: **an enemy of level N spawns from km N to km N+9.** From the
+player's side, at km K you meet levels K−9…K — so depth is the difficulty dial
+and the player's hand is on it. The elite floor of level 14 becomes a *place*:
+no elite before km 14.
+
+### spec-bestiary.md — density without new content
+
+The km rule turned the roster's shape into a number: **the first six kilometres
+of the game contain one animal.** A seventeen-creature roster was drafted, nine
+of them new, with the Blight thickening by ratio and a wild aurochs as the boss.
+
+**It was turned down, and the counter-proposal is better.** No new creatures:
+re-spread the seven that exist (boar 1, moose 4, bison 7, lynx 10, wolf 13, bear
+16, rabid bear 22), changing levels only and leaving families, archetypes, names
+and loot untouched. The spacing was SEARCHED rather than chosen — every
+arrangement keeping the family ladders in order, respecting the elite floor and
+actually ascending — and it wins on the two things that matter: all four common
+archetypes are met by km 10, and the Blight thickens with depth in the ratio
+(3:1 wild in the thicket, 3:3 in the old wood). Density 2.2 → 2.6 per km, with
+the gain where it was needed: km 4–9 had one creature, now three.
+
+Worth keeping: **no new locale keys, no new art, no new ids** — the whole
+improvement is seven integers. And the roster change is NOT in the data yet;
+authoring is Phase 10's job, which is what a spec phase means.
+
+The boss stays unmembered by decision. The archetype keeps its contract (12
+rounds, 130% of a bar, ×9 XP) and waits for a played game.
+
+### The three wildernesses became one
+
+The game described the same forest three ways: the lore's bands (1–10 / 10–20 /
+20–35, from before the cap moved to 40), the enemy bands (level N → km N…N+9) and
+the foraging pools (1–2 / 3–5 / 6–49, written when the map ended at km 10). None
+of the three agreed with either other.
+
+Reconciled and applied: **Гущавина 1–10 / Старий ліс 11–25 / Пуща 26–49**, in
+`zones.json` and `lore.md` both, so the authored band is exactly the first two
+zones and the draft band exactly the third. The cost was weighed rather than
+discovered: foraged iron and clay move from km 3 to km 11, which means **the mine
+plot stops being optional in the first week**. `spawns` moved and the other three
+halves held, which is exactly the signature a foraging-band change should have.
+
+### Audit pass before the Phase 9 commit (same session)
+
+**A parsing bug in the new command.** `roi-content spec --levels 1,5 bestiary`
+read "1,5" as the table name, because a flag's VALUE does not start with a dash
+either. `spec` is the first command in the CLI with a positional after flags, so
+nothing had needed to skip flag values before. Fixed by stepping over a flag and
+its value together, and checked in both argument orders.
+
+**Two claims from the specs were checked rather than left as assertions.** The
+bestiary spec said the Blight "starves the player as well as fighting them" and
+that the economy spec would have to verify it. Verified here: a wild kill returns
+0.7–1.7 raw meat, which cooks to 8.4–20.4 Vigor against the ~16.8 a kill costs —
+so clean game roughly pays for itself and a Blighted animal is a pure loss. Two
+things fell out that the spec now records: **the boar is the exception and it is
+the first thing anyone meets** (8.4 against 16.8, so the opening hours run at a
+loss), and **past km 31 there is no meat at all**, which with foraging at −0.5
+Vigor per fresh room makes the deepest zone a pure sink.
+
+**A knob that does nothing.** Every archetype declares a `lootMultiplier` (elite
+3.0, boss 8.0). It is mapped into the domain and fingerprinted by the digest, and
+**no award site reads it** — both loot paths go through `rollLootDrops`, which
+rolls each table row's own chance. An elite drops exactly what a trash mob drops.
+Same shape as the `silverReward` that had no curve: a field that reads as balance
+and is wired to nothing. Recorded for `spec-economy.md` to decide.
+
+**`content/bestiary.md` was a stale reference doc** — Phase 4 combat, cap 21,
+five-kilometre tiers, the boar at 18 HP against the 34 it carries. Marked
+SUPERSEDED with a pointer to where each part of the truth now lives, rather than
+edited or deleted: its family design (Wild drops meat and hide, Rabid hide only)
+is still exactly right, and it is the second stale document this rebalance has
+found sitting quietly beside working code — after `PlotService`'s header.

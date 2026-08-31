@@ -2,7 +2,7 @@
   "zones" : [
     {
       "depth" : {
-        "max" : 2,
+        "max" : 10,
         "min" : 1
       },
       "forage" : [
@@ -27,8 +27,8 @@
     },
     {
       "depth" : {
-        "max" : 5,
-        "min" : 3
+        "max" : 25,
+        "min" : 11
       },
       "forage" : [
         {
@@ -68,8 +68,8 @@
     },
     {
       "depth" : {
-        "max" : 40,
-        "min" : 6
+        "max" : 49,
+        "min" : 26
       },
       "forage" : [
         {

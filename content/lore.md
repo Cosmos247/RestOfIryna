@@ -231,26 +231,29 @@ Crown flying from its top.
 Past the perimeter of any estate, the kingdom thins into deep forest
 and then into the wilderness proper. Wilderness is measured in
 kilometres of *depth* from the homestead (1 km = a long walk to the
-treeline; 35 km = somewhere no one comes back from). Foraging,
+treeline; 49 km = the horizon of the world, where a level-40 beast is the
+deepest thing that can live). Foraging,
 encounters, and ambient resources scale by depth.
 
-**Three wilderness zones for art reference:**
+**Three wilderness zones for art reference.** The bands are the ones
+`zones.json` and the bestiary both use — one ladder, three names, aligned in
+Phase 9. Depths were 1–10 / 10–20 / 20–35 before the level cap moved to 40.
 
-### Shallow (1–10 km)
+### Thicket — Гущавина (1–10 km)
 Mixed pine-and-oak forest, dappled sunlight reaching the floor, soft
 moss underfoot, bracken and bilberry bushes, fallen logs already half
 returned to soil. Birds heard but not seen. Streams clean enough to
 drink. The blight is rumour here. Atmosphere: warm, lived-in, dangerous
 but recoverable.
 
-### Medium (10–20 km)
+### Old Wood — Старий ліс (11–25 km)
 Pine-dominant, taller and denser, less light reaching the ground, thick
 needle-carpet, the occasional clearing of bone-pale grass where
 something died. First sightings of Blight-touched undergrowth — fungal
 patches, oddly twisted saplings. Streams running darker. Atmosphere:
 quiet, wary, the kind of quiet where you stop talking.
 
-### Deep (20–35 km)
+### Deep Wood — Пуща (26–49 km)
 Old-growth oak, towering and silent, almost no understorey, a forest
 floor of dry leaves and exposed roots like ribs. Light is amber-tinted
 and slanted even at noon. The Blight is everywhere — bark peeling in

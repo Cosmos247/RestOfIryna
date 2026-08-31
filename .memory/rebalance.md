@@ -105,15 +105,19 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
 | 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
 | 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
-| 9 Content specs (approval gate) | ⬜ |
+| 9 Content specs (approval gate) | 🟡 2 of 5 — progression ✅ · bestiary ✅ · items / sets / economy ⬜ |
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `abbdaa0e82efb78f`** (schema **v10**) —
+**Current digest baseline: `e004ea8d93ba32b9`** (schema **v10**) —
 `records 992c19419d162379`, `tuning 3ef097038094a4d8`,
-`spawns d376de1dc066797d`, `quests 2e52ecdfa45276ec`.
+`spawns 1a18e0cd09136c69`, `quests 2e52ecdfa45276ec`.
 
-Phase 8E moved three of the four: `records` (the plot ladder, the retuned farm
+Phase 9 moved `spawns` alone, and only because the three zone systems were
+reconciled — the foraging bands went from 1–2 / 3–5 / 6–49 to 1–10 / 11–25 /
+26–49. No roster change is in the data yet: the bestiary spec is approved, and
+authoring it is Phase 10's job.
+Phase 8E before it moved three of the four: `records` (the plot ladder, the retuned farm
 and coop), `tuning` (`fullRegenHours` gone) and `spawns` (the forage replay is
 new, and the pools it replays moved out of Swift). **`quests` did not move.**
 Phase 8D before it moved `records` (the archetype fingerprint gained `minLevel`)

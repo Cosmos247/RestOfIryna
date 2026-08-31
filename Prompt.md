@@ -35,8 +35,27 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–8 are done, 8D and 8E included. Phase 9 is next: content
-specifications, approved before a byte of content is authored.**
+**Phases 3–8 are done, 8D and 8E included. Phase 9 is IN FLIGHT — content
+specifications, approved before a byte of content is authored. Two of five are
+signed off (`content/spec/spec-progression.md`, `spec-bestiary.md`); items, sets
+and economy remain.**
+
+The rule the phase runs on: **numbers are printed, never typed.**
+`roi-content spec <progression|gates|bestiary|items>` emits every table from the
+code that owns the maths, so a specification cannot drift from the generator it
+feeds — and that command is the seed of Phase 10's generator.
+
+What the two approved documents decided: the **authored band is levels 1–25**
+(not 1–15 — that was 1.3% of the climb); **no new creatures**, the seven that
+exist are re-spread instead (boar 1, moose 4, bison 7, lynx 10, wolf 13, bear 16,
+rabid bear 22); **the boss stays unmembered** until the game has been played;
+**nothing new unlocks between 21 and 40** and that is deferred on purpose; and
+the three zone systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 /
+Пуща 26–49**, already applied to `zones.json` and `lore.md`.
+
+The rule that had always been true and was never written down: **an enemy of
+level N spawns from km N to km N+9**, so at km K a player meets levels K−9…K.
+Depth is the difficulty dial, and the player's hand is on it.
 
 Phase 8E removed passive Vigor regeneration entirely (2026-08-31). The trickle
 did not pause during an expedition — `VigorService.regenTick`'s own comment
@@ -140,10 +159,10 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline: `abbdaa0e82efb78f`** (schema **v10**)
+**Current digest baseline: `e004ea8d93ba32b9`** (schema **v10**)
 (`records 992c19419d162379` · `tuning 3ef097038094a4d8` ·
-`spawns d376de1dc066797d` · `quests 2e52ecdfa45276ec`). Phase 8E moved the first
-three and left `quests` alone — no selection logic or daily assignment was
+`spawns 1a18e0cd09136c69` · `quests 2e52ecdfa45276ec`). Phase 9 moved `spawns`
+alone, when the foraging bands were realigned — no selection logic or daily assignment was
 touched, and the digest says so rather than asking to be believed.
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player

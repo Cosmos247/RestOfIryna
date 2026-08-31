@@ -9,6 +9,7 @@
 //
 //    swift run roi-content validate [--content DIR] [--locales DIR] [--strict]
 //    swift run roi-content simulate [--runs N] [--seed S] [--levels 1,5,…] [--strict]
+//    swift run roi-content spec <progression|gates|bestiary|items> [--levels 1,5,…]
 //
 //  Exits 0 on success and 1 on failure so it drops into a pre-commit hook or CI
 //  unchanged. Argument parsing is hand-rolled — adding swift-argument-parser
@@ -35,6 +36,7 @@ private func usage() -> Never {
     commands:
       validate    parse and validate the content bundle
       simulate    roll the balance sweep and report TTK, tails and pace
+      spec        print a content-specification table, straight off the curves
 
     options:
       --content DIR   content data directory (default: <project>/content/data)
@@ -46,6 +48,14 @@ private func usage() -> Never {
       --runs N        fights per cell (default 8000)
       --seed S        RNG seed — the same seed always gives the same report
       --levels L,L,…  levels to sweep (default 1,5,10,20,30,40)
+
+    spec <table>      progression · gates · bestiary · items
+      --levels L,L,…  levels the table covers (default 1…15 for bestiary/items)
+
+      Phase 9 signs the content list off before it reaches JSON, and a spec full
+      of hand-typed numbers is a fourth copy of the same curves. Every table here
+      is printed by the code that owns the maths, so the document and the
+      generator cannot disagree.
     """)
     exit(2)
 }
@@ -134,6 +144,47 @@ case "simulate":
         // re-simulate — is not a fight with the exit code. `--strict` is what
         // a pre-commit hook or CI runs.
         if strict && !errors.isEmpty { exit(1) }
+    } catch {
+        print("❌ \(error)")
+        exit(1)
+    }
+
+case "spec":
+    do {
+        let bundle = try ContentLoader.load(from: URL(fileURLWithPath: contentDir))
+        // Same posture as `simulate`: a spec is quoted in a document people
+        // sign off on, so it is read off a bundle the validator has passed.
+        let report = ContentValidator.validate(bundle)
+        if report.hasErrors {
+            print("❌ the bundle does not validate — fix it before quoting it")
+            for issue in report.errors { print(issue) }
+            exit(1)
+        }
+        let content = GameContent(bundle)
+        let levels = value(for: "--levels", in: args)
+            .map { $0.split(separator: ",").compactMap { Int($0) } }
+            .flatMap { $0.isEmpty ? nil : $0 } ?? Array(1...15)
+
+        // The positional table name, skipping flags AND their values —
+        // `spec --levels 1,5 bestiary` used to read "1,5" as the table, because
+        // a flag's value does not start with a dash either.
+        var positional: String?
+        var index = 1
+        while index < args.count {
+            let token = args[index]
+            if token.hasPrefix("--") { index += 2; continue }   // flag + its value
+            positional = token
+            break
+        }
+        switch positional {
+        case "progression": print(SpecTables.progression(content: content))
+        case "gates":       print(SpecTables.gates(content: content))
+        case "bestiary":    print(SpecTables.bestiary(content: content, levels: levels))
+        case "items":       print(SpecTables.items(content: content, levels: levels))
+        default:
+            print("spec: pick a table — progression · gates · bestiary · items")
+            exit(2)
+        }
     } catch {
         print("❌ \(error)")
         exit(1)

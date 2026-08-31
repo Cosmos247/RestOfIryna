@@ -858,7 +858,38 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       **Result: 0 broken bands, 222 tests.** Baseline `abbdaa0e82efb78f` — `records`, `tuning`
       and `spawns` moved, `quests` did not.
 
-- [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
+- [ ] **Phase 9 — Content specs in `content/spec/`** *(started 2026-08-31, 2 of 5 approved)* —
+      the numbers are PRINTED, never typed: `roi-content spec <progression|gates|bestiary|items>`
+      emits every table from the code that owns the maths (`ProgressionMath`, `EnemyGenerator`,
+      `BudgetMath`), so a spec cannot drift from the generator it feeds. That command is also the
+      seed of Phase 10's generator.
+  - [x] **`spec-progression.md`** — the skeleton. Decisions: the **authored band is 1–25**, not
+        the plan's 1–15 (1.3% of the climb against 12.8%, and every technique and estate gate
+        lands inside it); **nothing new unlocks between 21 and 40 and that is deferred on
+        purpose** — the hole is real, 78% of the XP with only stats and gear in it, but what
+        fills it is better decided after the game has been played than guessed now; **past km 40
+        the deep zone continues** rather than ending in a wall. It also writes down the rule the
+        shipped roster always obeyed and nobody had stated: **an enemy of level N spawns from km
+        N to km N+9**, so at km K a player meets levels K−9…K and depth is the difficulty dial.
+        The elite floor of 14 becomes a place: no elite before km 14.
+  - [x] **`spec-bestiary.md`** — decisions: **no new creatures**. Nine were proposed and turned
+        down; the seven that exist are re-spread instead (boar 1, moose 4, bison 7, lynx 10,
+        wolf 13, bear 16, rabid bear 22 — levels only, families and archetypes untouched). The
+        spacing was searched, not chosen: all four common archetypes are now met by km 10, the
+        Blight thickens with depth in the ratio (3:1 wild in the thicket, 3:3 in the old wood),
+        and density goes 2.2 → 2.6 candidates per km with the gain exactly where it was needed —
+        km 4–9 had one creature and now has three. **The boss stays unmembered** by decision.
+        **The three zone systems were reconciled and applied**: Гущавина 1–10 / Старий ліс 11–25
+        / Пуща 26–49, in `zones.json` and `lore.md` both. Cost, weighed: foraged iron and clay
+        move from km 3 to km 11, so the mine plot stops being optional in the first week.
+  - [ ] `spec-items.md` · `spec-sets.md` · `spec-economy.md`
+        Two findings waiting for the economy spec, both verified during the bestiary pass:
+        **the archetype `lootMultiplier` is dead** (elite 3.0, boss 8.0 — mapped, fingerprinted,
+        and read by no award site; both loot paths just roll each table row's own chance), and
+        **the Vigor ledger of a kill** — a wild kill returns 8.4–20.4 Vigor as cooked meat
+        against the ~16.8 it costs, a rabid kill returns nothing, the boar (the first mob anyone
+        meets) runs at −8.4, and past km 31 no meat drops at all.
+
 - [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
 
