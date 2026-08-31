@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | Content specifications, approved before authoring (Phase 9). Numbers in them are emitted by `roi-content spec`, never typed |
+| `content/spec/*.md` | The five approved content specifications (Phase 9, closed 2026-09-01). Numbers in them are emitted by `roi-content spec`, never typed — refresh the `<!-- generated -->` blocks after any content edit |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -105,10 +105,19 @@ reloaded**: new locale strings still need a restart.
 
 **Content is specified before it is authored.** `content/spec/*.md` holds the
 signed-off list — what creatures exist, at what level and archetype, what items
-fill which slot — and Phase 10 authors against it, never around it. Every number
-in a spec is printed by `swift run roi-content spec <progression|gates|bestiary|items>`,
-which reads the same `ProgressionMath` / `EnemyGenerator` / `BudgetMath` the game
-does, so a specification cannot drift from the generator it feeds.
+fill which slot, what a set bonus may cost and where silver enters and leaves —
+and content work follows it, never goes around it. All five were approved in
+Phase 9. Every number in a spec is printed by `swift run roi-content spec
+<progression|gates|bestiary|items|sets|economy>`, which reads the same
+`ProgressionMath` / `EnemyGenerator` / `BudgetMath` / `BudgetCurve` the game does,
+so a specification cannot drift from the generator it feeds.
+
+**A spec quotes generated tables inside `<!-- generated: … -->` markers. After any
+content edit, re-run the command and refresh those blocks** — the markers exist so
+drift is mechanically detectable, and in Phase 10 that check caught two blocks the
+enemy re-spread had silently invalidated. It protects tables, not the prose beside
+them: a hand-counted number in a sentence is exactly where the one real error of
+Phase 9 lived.
 
 Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
 Run `swift run roi-content validate --strict` before committing content, and
@@ -136,7 +145,7 @@ Swift/
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
 
 `Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art.
-`content/data/` — the game itself as JSON. `content/spec/` — the content specifications Phase 9 signs off before anything is authored. `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
+`content/data/` — the game itself as JSON. `content/spec/` — the five content specifications signed off in Phase 9 (closed). `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
 
 ## How to Add a New Controller
 

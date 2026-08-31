@@ -859,7 +859,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       and `spawns` moved, `quests` did not.
 
 - [x] **Phase 9 — Content specs in `content/spec/`** *(2026-08-31 → 2026-09-01, all 5 approved)* —
-      the numbers are PRINTED, never typed: `roi-content spec <progression|gates|bestiary|items>`
+      the numbers are PRINTED, never typed: `roi-content spec <progression|gates|bestiary|items|sets|economy>`
       emits every table from the code that owns the maths (`ProgressionMath`, `EnemyGenerator`,
       `BudgetMath`), so a spec cannot drift from the generator it feeds. That command is also the
       seed of Phase 10's generator.

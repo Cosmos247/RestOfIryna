@@ -1,5 +1,111 @@
 # Session History
 
+## Session — 2026-08-31 → 09-01 (Rebalance Phases 9 + 10: the five content specs, then the level re-spread)
+
+### Goal
+Close Phase 9 (content specifications, approved before anything is authored) and apply
+Phase 10. Started with three of five specs unwritten; ended with Phase 10 committed and
+only Phase 11 left.
+
+### Phase 9 — the three remaining specifications
+
+**`spec-items.md` — a FRAME, not a list.** The user ruled out new items for the rebalance
+("зроби каркас для майбутнього додавання різного рівню сетів, але все це після
+ребалансу"), so the document specifies the grid a future item lands on rather than the
+items. Extended `roi-content spec items` with two printed tables — slot coverage and the
+obtainable kit against the on-curve kit — and what they printed reset the phase plan:
+
+- The wardrobe is **7 pieces**. Three weapons ladder itemLevel 1→40; four armour pieces are
+  **frozen at itemLevel 1 forever** (only the Master's +20% enchant ever touches them);
+  `off_hand` and both accessories have **no items at all**.
+- A fully enchanted kit is **97% of the on-curve budget at level 1 and 40% at level 25.**
+- Since the bestiary carried ~50% of its archetype contract, **the two half-strength errors
+  were cancelling** — and `spec-bestiary.md` §9 had committed Phase 10 to removing exactly
+  one of them. Amended that approved document in place rather than rewriting it quietly.
+- **The frame that costs no content:** generalise `weapon_upgrades.json` to armour, so the
+  Forester set climbs the same rungs. `EquipmentService.nominalStats` already resolves by
+  `itemId + tier` **without checking the slot**, so stat resolution needs no change. User
+  chose: build it *after* the rebalance, together with the regeneration.
+
+**`spec-sets.md` — the inherited fix was wrong.** Measuring before applying showed it:
+
+- The flat set bonus does **not** rot today (the set never climbs, so 8.4 points against 36
+  is a stable 23%); it rots only when the gear ladder lands.
+- **`gear_multiplier` scales the wearer's WHOLE kit**, weapon included, and the weapon is
+  not a set member. The same ×1.05 costs **8% of the members' budget at L1 and 33% at L40**
+  — a flat bonus decays, a whole-kit multiplier compounds, and both measure a bonus by a
+  denominator that is not its own. Under that reading the largest legal multiplier falls
+  ×1.15 → ×1.04: no single authored value is legal for a whole lifetime.
+- Decided: a multiplier scales its **own equipped members**; the 25% cap extends to
+  multipliers; **set strength is a ladder whose top rung is that ceiling**, independent of
+  item level. The user then freed the Forester set's numbers and called it "the first,
+  weakest set" — so it is one four-piece threshold at **×1.07, 29% of the ceiling**. An
+  earlier draft proposed ~19% to preserve its strength and was wrong for a reason worth
+  keeping: a ladder whose bottom rung is three-quarters of the way up is not a ladder.
+
+**`spec-economy.md` — the finding was not about silver.** It was that the opening is
+Vigor-bankrupt and an APPROVED document said otherwise: `spec-progression.md` §3 carried
+"about eleven kills to reach level 4". Eleven reaches level 2. Level 4 is 788 XP = **79
+boars**, ~**664 Vigor of deficit against a 105 pool**. Amended §3.
+
+- Silver: **1,600 mandatory across the whole game** against ~19,800 from quests alone over
+  ~90 days. The trader is the only real sink and using it is optional. Three shapes nobody
+  chose, recorded and left alone: a uniform −50% spread on every line, a forge that adds no
+  value in either direction (10 iron = 200 to buy = 1 ingot = 200; both sell for 100), and a
+  tavern with **exactly a 0% house edge**.
+- **`lootMultiplier` wired to QUANTITY**, per the user's call — chance is a probability and
+  saturates. `quantity` is an `Int` and the multiplier a `Double`, so the fractional part
+  becomes a **probability, not a rounding**: at a base quantity of 1, ×0.5/×1.0/×1.2/×1.7
+  all round to 1 or 2 and six archetypes collapse into two. And the loot tables must be
+  **re-normalised to a base** in the same pass — the elite's 1.80 hide is already a
+  hand-written answer to "elites drop more", so the multiplier would apply it twice.
+
+### Phase 10 — the level re-spread, and three things it moved underneath
+
+Applied `spec-bestiary.md` §3 and nothing else. Six enemies changed `level`, `depth` and
+`xpReward`; stats untouched.
+
+- **`xpReward` had to move too.** It was exactly `round(mobXP(level))` for every enemy
+  before the change and is again after — it is *solved*, not authored (`spec-bestiary` §2
+  says so). Values read off `roi-content spec bestiary`, not recomputed by hand.
+- **The rabid bear keeps a stretched band, km 22–40.** The plain N…N+9 rule opened a
+  nine-km hole at km 32–40 where exploration rolls no encounter, and the validator refused
+  the bundle (`enemy.depth_gap`). It shipped as 25–40 for that same reason.
+- **The Bison rename is three files, not one.** The spec justified it with "which is what
+  the Ukrainian name and the lore already say" — they did not (`uk.json` had «Дикий
+  буйвіл», `lore.md` had Wild Buffalo). Decision stands on the emoji and the animal;
+  the parenthetical was wrong and is corrected.
+- **Side effect worth knowing:** the roster moved from **~50% to ~60% of its archetype
+  contract with no stat change at all** — a lower level is a lower target. It thins the
+  cancellation `spec-items.md` §3 relies on without breaking it; every affected document is
+  annotated rather than rewritten.
+
+### Tooling added (so specs quote rather than assert)
+`roi-content spec` gained **`sets`** and **`economy`**; `items` gained slot coverage and the
+obtainable-kit gap; `economy` prints the trader spread, every ladder priced at buy prices,
+the sinks, the quest faucet, the opening ledger and the per-kill Vigor/silver return.
+`GearStatsDTO.pointsSpent(at:)` moved to **`Modules/ROIContent/BudgetCurve.swift`** so the
+validator's set-bonus cap and the spec tables share one exchange rate — ROIContent cannot
+import ROISim, which is why it lives there and not beside `BudgetMath.spend`.
+
+### The lesson worth carrying
+**"Numbers are printed, never typed" protects tables, not the prose beside them.** Phase 9's
+one real error lived in a hand-counted sentence under a correct table. During the Phase 10
+audit the verbatim check caught two generated blocks the re-spread had invalidated *and* a
+passage quoting a planned change as if it were already in the data — while three numbers
+typed into prose by hand (223 vs 231 XP, 664 vs 662 Vigor, the moose's level) had to be
+caught by re-deriving them. The opening ledger was made generated for exactly this reason.
+
+### Verification discipline held throughout
+Phase 9 moved **no digest half at all** — five specifications, three spec tables and a
+validator refactor, and `records` / `tuning` / `spawns` / `quests` all stood still. Phase 10
+moved **exactly the two predicted** (`records ee3fa473`, `spawns eaea309f`) and held the
+other two. 222 tests, `validate --strict` clean but for the deliberate `scale = 60`,
+`simulate --strict` 0 broken bands throughout.
+
+### Commits
+`bf70986` Phase 9 · `977bd0e` Phase 10.
+
 ## Session — 2026-08-23 (Phase 9.2 — daily NPC quests, v1)
 
 ### Goal

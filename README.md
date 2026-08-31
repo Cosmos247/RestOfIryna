@@ -80,6 +80,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
 │                                 #   + EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
+                                  #       `swift run roi-content spec <table>`  (the spec tables)
 
 Tests/ROIContentTests/            # 222 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
@@ -89,7 +90,7 @@ content/data/                     # SOURCE OF TRUTH for game content
 ├── rarities.json · sets.json
 ├── weapon_upgrades.json · bags.json · estate_upgrades.json
 ├── trader.json · tavern.json · market.json · guild.json · arena.json
-├── master.json · plots.json · fortune.json · quests.json
+├── master.json · plots.json · fortune.json · quests.json · zones.json
 └── tuning/                       # BALANCE, separate from content
     └── combat · vigor · exploration · progression · economy · time · budget
 ```
@@ -503,13 +504,18 @@ ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 in
 
 **A full pre-release rebalance is in flight** and is the only work happening right now:
 the game's mathematics is being rebuilt and all content plus all tuning has moved into
-`content/data/`. Phases 3–8 are done (data migration, tuning tables, the new combat
-model, the item budget, hot reload, and the balance simulator that measures all of it);
-Phase 9 is in flight: it writes the content specs that Phase 10 authors against, and two
-of the five are signed off ([`content/spec/`](./content/spec/) — progression and bestiary).
-Every number in them is emitted by `roi-content spec`, never typed, so a specification
-cannot drift from the generator it feeds. Progress lives in the "Full Rebalance" section
-of [TODO.md](./TODO.md), the reasoning in [`.memory/rebalance.md`](./.memory/rebalance.md).
+`content/data/`. Phases 3–10 are done — data migration, tuning tables, the new combat
+model, the item budget, hot reload, the balance simulator that measures all of it, the
+Vigor rework that made the estate load-bearing, the five content specifications
+([`content/spec/`](./content/spec/), all approved) and the bestiary level re-spread they
+called for. Every number in a spec is emitted by `roi-content spec`, never typed, so a
+specification cannot drift from the generator it feeds.
+
+**Phase 11 is what remains, and it is the untested surface:** set `tuning/time.json` →
+`scale` back to 1.0, run the `WipeForRebalance` migration, and play the first hour for
+real — there has been no live Telegram pass since the rebalance began. Progress lives in
+the "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
+[`.memory/rebalance.md`](./.memory/rebalance.md).
 
 See [**GDD.md**](./GDD.md) for systems detail and scope notes — but note it predates the
 rebalance, so treat its numbers as design intent rather than what the game currently

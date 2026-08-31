@@ -35,28 +35,49 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–8 are done, 8D and 8E included. Phase 9 is CLOSED (2026-09-01) — all
-five content specifications are approved:** `spec-progression.md`,
-`spec-bestiary.md`, `spec-items.md`, `spec-sets.md`, `spec-economy.md`.
+**Phases 3–10 are done.** Phase 9 closed on 2026-09-01 with all five content
+specifications approved (`spec-progression` · `spec-bestiary` · `spec-items` ·
+`spec-sets` · `spec-economy`), and Phase 10 applied the one thing they left for
+it: the bestiary level re-spread.
 
-> **Phase 10 is done (2026-09-01).** The six re-levels landed, `xpReward` was
-> re-solved with them, Wild Buffalo became **Wild Bison / Зубр** in both locales
-> and the lore, and the elite's band stayed stretched to km 40 because the plain
-> N…N+9 rule opened a nine-km hole the validator refused. Density km 1–25 went
-> **2.24 → 2.56** candidates per km; only `records` and `spawns` moved.
+> ## Next action: **Phase 11**, the last one — and it carries the whole untested surface.
 >
-> **Next action: Phase 11 — and it is the whole untested surface.**
-> `WipeForRebalance`, `tuning/time.json` → `scale` 60 → **1.0** (the only error
-> `validate --strict` still reports), and the **live first-hour playtest**.
+> 1. **`tuning/time.json` → `scale` 60 → 1.0.** This is the only error
+>    `validate --strict` still reports, and it is deliberate: every game-time gate
+>    is 60× compressed for development. Nothing under `realTime` scales.
+> 2. **`WipeForRebalance` migration** — the full wipe agreed at the start.
+> 3. **The live first-hour playtest.** ⚠️ See the warning below: there has been no
+>    live Telegram pass since the rebalance began, and `/reload` has never run
+>    against a real database.
+>
+> One debt the rebalance wrote itself, best paid before the playtest:
+> **a `simulate` band for levels 1–3** (`spec-economy.md` §7). The report gives
+> pace 1→40 as an aggregate and says nothing about the only stretch with no estate
+> behind it — and that stretch is exactly the first hour a playtest measures.
+
+**What Phase 10 changed (2026-09-01).** Six enemies re-levelled — boar 1, moose 4,
+bison 7, lynx 10, wolf 13, bear 16, rabid bear 22 — with `depth` following the
+level↔km rule and `xpReward` re-solved from the generator (it is solved, not
+authored: it was exactly `round(mobXP(level))` before and is again after). Stats
+were **not** touched. Wild Buffalo became **Wild Bison / Зубр** in `en.json`,
+`uk.json` and `lore.md`. The rabid bear keeps a **stretched band, km 22–40**:
+the plain N…N+9 rule opened a nine-km hole at km 32–40 where exploration rolls no
+encounter, and the validator refuses that (`enemy.depth_gap`).
+
+Measured after: density km 1–25 went **2.24 → 2.56** candidates per km, all four
+common archetypes are met by km 10, km 4–9 went from one creature to three — and
+the roster moved from **~50% to ~60% of its archetype contract with no stat change
+at all**, because a lower level is a lower target.
 
 **What Phase 9 decided, compressed.** The authored band is **levels 1–25**; an
 enemy of level N spawns **km N…N+9**; the zones are **Гущавина 1–10 / Старий ліс
-11–25 / Пуща 26–49** (applied); **no new creatures** and **no new items**. The
-wardrobe was then measured and it reset the plan: a fully enchanted kit is **97%
-of the on-curve budget at level 1 and 40% at level 25** (armour is frozen at
-itemLevel 1 forever; only weapons ladder), and since the bestiary carries ~60% of
-its archetype contract, **the two half-strength errors have been cancelling** —
-so Phase 10 removes neither.
+11–25 / Пуща 26–49**; **no new creatures** and **no new items**. The wardrobe was
+then measured and it reset the plan: a fully enchanted kit is **97% of the
+on-curve budget at level 1 and 40% at level 25** (armour is frozen at itemLevel 1
+forever; only weapons ladder). Since the bestiary is at ~60% of its contract,
+**the two half-strength errors lean the same way**, so correcting one alone is
+worse than correcting neither — which is why Phase 10 corrected the levels and
+left the strength alone.
 
 **One package, all of it after the rebalance:** the **gear ladder** (the Forester
 set climbing the weapons' own rungs 1/10/20/30/40 — zero new items), the
@@ -67,31 +88,26 @@ at L40), the 25% cap extended to multipliers, `set.forester` rewritten as the
 wired to **quantity** with its loot tables re-normalised to a base in the same
 pass.
 
-**And the one thing the rebalance still owes.** `spec-economy.md` found the
-opening is Vigor-bankrupt: level 4 is **79 boars and 664 Vigor of deficit against
-a 105 pool**, not the "about eleven kills" an approved spec claimed (eleven
-reaches level 2 — `spec-progression.md` §3 is amended). The game's real answer is
-to **walk deeper than is comfortable, immediately** — the shipped moose at km 6
-pays 418 XP against the boar's 10 — and the decision is **measure before
-retuning**: add a simulate band for levels 1–3, the one stretch with no estate
-behind it, before touching the boar's meat chance.
+**And the one thing still owed.** `spec-economy.md` found the opening is
+Vigor-bankrupt: level 4 is **79 boars and ~664 Vigor of deficit against a 105
+pool**, not the "about eleven kills" an approved spec claimed (eleven reaches
+level 2 — `spec-progression.md` §3 is amended). The game's real answer is to
+**walk deeper than is comfortable, immediately** — the moose at km 4 pays 223 XP
+against the boar's 10, twenty-two boars for a four-kilometre walk. Decided:
+**measure before retuning.**
 
-The rule the phase runs on: **numbers are printed, never typed.**
-`roi-content spec <progression|gates|bestiary|items>` emits every table from the
-code that owns the maths, so a specification cannot drift from the generator it
-feeds — and that command is the seed of Phase 10's generator.
+The rule those five documents run on, and the reason they can be trusted:
+**numbers are printed, never typed.** `roi-content spec
+<progression|gates|bestiary|items|sets|economy>` emits every table from the code
+that owns the maths, so a specification cannot drift from the generator it feeds.
+It earns its keep: during the Phase 10 audit the verbatim check caught two
+generated blocks in `spec-economy.md` that the re-spread had silently invalidated,
+plus a passage quoting a *planned* change as though it were already in the data.
 
-What the two approved documents decided: the **authored band is levels 1–25**
-(not 1–15 — that was 1.3% of the climb); **no new creatures**, the seven that
-exist are re-spread instead (boar 1, moose 4, bison 7, lynx 10, wolf 13, bear 16,
-rabid bear 22); **the boss stays unmembered** until the game has been played;
-**nothing new unlocks between 21 and 40** and that is deferred on purpose; and
-the three zone systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 /
-Пуща 26–49**, already applied to `zones.json` and `lore.md`.
-
-The rule that had always been true and was never written down: **an enemy of
-level N spawns from km N to km N+9**, so at km K a player meets levels K−9…K.
-Depth is the difficulty dial, and the player's hand is on it.
+The corollary, learned the hard way and worth keeping in mind: **the rule protects
+tables, not the prose beside them.** `spec-progression.md` §3 carried "about
+eleven kills to reach level 4" for two weeks — eleven reaches level 2 — in the one
+sentence that settled a design question, right under a table that was correct.
 
 Phase 8E removed passive Vigor regeneration entirely (2026-08-31). The trickle
 did not pause during an expedition — `VigorService.regenTick`'s own comment
@@ -115,11 +131,6 @@ The food plots were cut (farm 4/h cap 20 → 1/h cap 6, coop 2/h cap 12 → 1/h
 cap 5) to land the pace at **85–93 days of perfect play** — slower than the old
 51–56 on purpose, so "3+ months" sits in the figure instead of in an assumption
 about imperfect play. Taps fell from 1,211/day to 513 on the way.
-
-Two things the report flags every run and nobody has fixed, both deliberate:
-**food portions are flat against a pool that grows** (33% of a level-1 pool, 12%
-of a level-40 one — deferred with batch cooking to after the rebalance), and
-**levels 1–3 have no estate at all** (the first days are lived off the trail).
 
 `zones.json` landed with it: the foraging pools left `ExplorationService`, the
 last content in Swift. Proved equivalent by replaying the shipped arrays out of
@@ -145,7 +156,8 @@ level invariance, the p90 tail, win rates, pace to the cap, and the shipped
 roster against its archetype contract. `--strict` exits 1 on a broken band.
 
 Current state of those bands: **18 of 18 level-invariance rows pass, 0 broken
-bands, 7 warnings** — all seven the half-strength roster. 19,437,688 XP from
+bands, 11 warnings** — seven are the off-curve roster, three are the levels with
+no estate, one is the flat food portion. 19,437,688 XP from
 level 1 to 40, and **85–93 days** on a tended estate — an estimate between two
 opposing simplifications (every point spent on combat, but nothing except the
 estate feeding the player) rather than the floor the old number was.
@@ -155,10 +167,11 @@ The default sample size is **8000 fights per cell** (2.6s for the sweep). It was
 means — turned out to cross on sampling noise alone, so `--strict` was failing
 the build on a row that reads ×1.13 at 8000 and ×1.16 at 2000 from the same seed.
 
-`EnemyGenerator` is the piece Phase 10 will lean on hardest: the archetype table
-is a GENERATOR, and inverting its targets reproduces every shipped enemy's DEF,
-crit and dodge to within rounding. Run at design time and frozen — never at
-runtime, which is how gear upgrades evaporate.
+`EnemyGenerator` is what the post-rebalance regeneration will lean on: the
+archetype table is a GENERATOR, and inverting its targets reproduces every shipped
+enemy's DEF, crit and dodge to within rounding. Phase 10 already used it for
+`xpReward`. Run at design time and frozen — never at runtime, which is how gear
+upgrades evaporate.
 
 #### The model, compressed
 
@@ -185,9 +198,12 @@ and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
 **Current digest baseline (Phase 10, schema v10):** `records ee3fa4731c5a3a27` ·
-`tuning 3ef097038094a4d8` · `spawns eaea309f4813dfa2` · `quests 2e52ecdfa45276ec`. Phase 9 moved `spawns`
-alone, when the foraging bands were realigned — no selection logic or daily assignment was
-touched, and the digest says so rather than asking to be believed.
+`tuning 3ef097038094a4d8` · `spawns eaea309f4813dfa2` · `quests 2e52ecdfa45276ec`.
+
+Phase 10 moved `records` and `spawns` and held `tuning` and `quests` — the two
+halves predicted *before* the edit, which is the whole point of splitting the
+digest in four. Phase 9 moved nothing at all: five specifications, three new spec
+tables and a validator refactor, and every half stood still.
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player
 touches changed in Phase 5, every item's stat in Phase 6, the stances plus the
@@ -227,7 +243,7 @@ live in `.memory/content-pipeline.md`.
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
-swift run roi-content spec bestiary          # spec tables: progression · gates · bestiary · items
+swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
 swift test                                   # 222 tests, ~0.14s
 ```
@@ -266,7 +282,7 @@ trade TTLs and the 12:00 rollover never scale.
 | `Modules/ROISim/CombatMath.swift` | The combat model itself. `CombatService` delegates here — add a roll THERE, never a second copy |
 | `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
 | `Modules/ROISim/SpecTables.swift` | What `roi-content spec` prints — the tables a content spec quotes, from the code that owns them |
-| `content/spec/` | The Phase 9 approval gate: the content list, signed off before it reaches JSON |
+| `content/spec/` | The five approved specifications (Phase 9, closed). Numbers in them are printed by `roi-content spec`; re-run it after any content edit and refresh the `<!-- generated -->` blocks |
 
 ## Rules
 

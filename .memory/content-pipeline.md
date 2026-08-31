@@ -23,12 +23,16 @@ Swift/                executable                 the bot; carries @_exported imp
 `Modules/`, not `Sources/` — `CLAUDE.md` states game code lives in `Swift/`, and
 a `Sources/` directory would contradict that.
 
-**`roi-content spec <progression|gates|bestiary|items>`** (Phase 9) prints the
+**`roi-content spec <progression|gates|bestiary|items|sets|economy>`** prints the
 tables a content specification quotes, from the code that owns the maths —
-`ProgressionMath`, `EnemyGenerator`, `BudgetMath`. A spec full of hand-typed
-numbers would be a fourth transcription of the same curves; this way the document
-and the generator it feeds cannot disagree, and the command is the seed of Phase
-10's generator.
+`ProgressionMath`, `EnemyGenerator`, `BudgetMath`, `BudgetCurve`. A spec full of
+hand-typed numbers would be a fourth transcription of the same curves; this way
+the document and the generator it feeds cannot disagree. Specs quote the output
+inside `<!-- generated: … -->` markers, so **after any content edit, re-run the
+command and refresh those blocks** — in Phase 10 that check caught two blocks the
+enemy re-spread had silently invalidated. It guards tables, not the prose beside
+them: see [[feedback-printed-numbers-protect-tables-not-prose]] in the auto-memory
+bank for the error that discipline did not catch.
 
 ## Runtime shape
 
