@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**Phase 10 is CLOSED (2026-09-01)** — the bestiary level re-spread applied and nothing else:
+six enemies re-levelled with `xpReward` re-solved from the generator, stats deliberately
+untouched, Wild Buffalo renamed to **Wild Bison / Зубр** across `en.json` / `uk.json` /
+`lore.md`, and the elite's band kept stretched to km 40 because the plain N…N+9 rule opened a
+nine-km hole the validator refused. Density km 1–25: **2.24 → 2.56** per km. Only `records`
+and `spawns` moved. **Phase 11 is next — and it carries the whole untested surface.**
+
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
 `spec-economy.md`). Every number in them is emitted by `roi-content spec`, never
@@ -35,7 +42,7 @@ No new items are authored in the rebalance, so the spec is a FRAME: the shipped 
 is three weapons that ladder 1→40, four armour pieces frozen at itemLevel 1 forever, and
 three empty slots. A fully enchanted kit is **97% of the on-curve budget at level 1 and
 40% at level 25** — printed by the two tables added to `roi-content spec items`. Since the
-bestiary carries ~50% of its archetype contract, **the two half-strength errors have been
+bestiary carries ~60% of its archetype contract, **the two half-strength errors have been
 cancelling**, and Phase 10 was scheduled to remove exactly one. So: the weapon ladder
 **generalises to a gear ladder** (the Forester set climbs the same rungs — zero new items;
 `EquipmentService.nominalStats` already resolves by `itemId + tier` with no slot check),
@@ -82,7 +89,7 @@ during an expedition, so it was the reason depth had no gate. Vigor now comes on
 quests and levelling; the estate's plots are the income, and `FoodBudget` measures what a
 tended one feeds (85–93 days to the cap after the food plots were cut to land there, down from
 1,211 to 513 taps a day). The foraging pools left Swift for `zones.json` at the same time.
-**What the report still flags:** the shipped bestiary carries ~50% of what its archetypes ask
+**What the report still flags:** the shipped bestiary carries ~60% of what its archetypes ask
 (Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
 batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature).
 

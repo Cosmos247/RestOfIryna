@@ -99,14 +99,22 @@ The balance run reports the other half of this in its own words:
 
 ```
 ⚠️  [content.roster_off_curve] enemy.wild_boar carries 62% of the HP and 71% of the ATK its archetype asks for at L1
-⚠️  [content.roster_off_curve] enemy.rabid_wolf carries 50% of the HP and 50% of the ATK its archetype asks for at L16
-⚠️  [content.roster_off_curve] enemy.rabid_bear carries 48% of the HP and 46% of the ATK its archetype asks for at L25
+⚠️  [content.roster_off_curve] enemy.rabid_wolf carries 58% of the HP and 55% of the ATK its archetype asks for at L13
+⚠️  [content.roster_off_curve] enemy.rabid_bear carries 53% of the HP and 50% of the ATK its archetype asks for at L22
 ```
 
-**The bestiary is at ~50% of its contract and the player is at ~40% of theirs.**
-The seven "100% win at 4–11% HP" rows are what those two errors produce together,
-and neither was chosen — the roster was authored before the archetype table
-existed, and the wardrobe was authored before the budget curve did.
+**The bestiary is at ~60% of its contract and the player is at ~40% of theirs.**
+The seven "100% win" rows are what those two errors produce together, and neither
+was chosen — the roster was authored before the archetype table existed, and the
+wardrobe was authored before the budget curve did.
+
+> *Updated 2026-09-01, after Phase 10.* These figures were 50% / 40% when this
+> section was written. **The level re-spread moved the roster from ~50% to ~60%
+> of contract without touching a single stat** — the same HP against a lower
+> archetype target is a larger fraction of it. The gap narrowed by accident, not
+> by design, and it narrows the argument below by exactly as much: the two errors
+> still lean the same way, so correcting one alone is still worse than correcting
+> neither, but the imbalance between them is now larger than it was.
 
 That is the finding this specification exists to put in front of a decision:
 
@@ -307,7 +315,7 @@ rebalance, not inside it.**
 
 **Therefore Phase 10 does not regenerate the bestiary's strength** — only the
 level re-spread `spec-bestiary.md` §3 specifies. This amends that document's §9,
-and the reason is §3 above: the roster's ~50% and the wardrobe's ~40% are
+and the reason is §3 above: the roster's ~60% and the wardrobe's ~40% are
 currently holding each other up, so the two halves are corrected together or not
 at all. The gear ladder and the regeneration are one piece of work, after the
 rebalance.

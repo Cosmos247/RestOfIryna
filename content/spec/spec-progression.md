@@ -156,9 +156,13 @@ implies a rule that has never been written down:
 
 > **An enemy of level N spawns from km N to km N+9.**
 
-Every shipped band obeys it — boar L1 at km 1–10, moose L6 at km 6–15, buffalo
-and lynx L11 at km 11–20, wolf L16 at km 16–25, bear L21 at km 21–30 — with the
-one elite (L25, km 25–40) stretched wider because nothing else lives out there.
+Every shipped band obeys it — as of Phase 10, boar L1 at km 1–10, moose L4 at km
+4–13, bison L7 at km 7–16, lynx L10 at km 10–19, wolf L13 at km 13–22, bear L16
+at km 16–25 — with the one elite (L22, km 22–**40**) stretched wider because
+nothing else lives out there. That stretch is not decoration: applying the plain
+rule to it opens a nine-kilometre hole at km 32–40 where exploration rolls no
+encounter, and the validator refuses the bundle (`enemy.depth_gap`). It closes
+when something is authored to live past km 31, and not before.
 
 Read from the player's side it says: **at km K you meet levels K−9 through K**.
 So a player is level-matched at the shallow edge of a band and progressively

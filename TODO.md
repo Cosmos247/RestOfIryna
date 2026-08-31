@@ -892,6 +892,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         **The finding that moved the plan:** the bestiary carries ~50% of its archetype
         contract and the player ~40% of theirs, so **the two half-strength errors have been
         cancelling**, and Phase 10 was scheduled to remove exactly one of them.
+        *(Phase 10's re-spread later moved the roster to ~60% without touching a stat — a
+        lower level is a lower archetype target. The decision stands; the margin is thinner.)*
         Decisions: the weapon ladder **generalises to a gear ladder** (the Forester set
         climbs the same rungs 1/10/20/30/40 — zero new items, and mechanically what "sets of
         different levels" means; `EquipmentService.nominalStats` already resolves by
@@ -954,11 +956,31 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         more", and the multiplier would apply it twice (the printed `hide ×mult` column shows
         1.80 → 5.40). New: `roi-content spec economy`.
 
-- [ ] Phase 10 — **shrunk by the Phase 9 decisions.** Apply `spec-bestiary.md` §3 (the level
-      re-spread of the seven creatures + the Bison string fix) and NOTHING else: no new items,
-      no filling of the 3 dead slots, and **no stat-line regeneration** — see `spec-items.md` §3.
-      Deferred past the rebalance, as one piece of work: the gear ladder, the bestiary
-      regeneration, the empty slots, new sets, and potions/scrolls.
+- [x] **Phase 10 — the level re-spread** *(2026-09-01)* — `spec-bestiary.md` §3 applied and
+      nothing else: six enemies change `level`, `depth` and `xpReward`; the boar does not move;
+      HP/ATK/DEF/crit/dodge are **untouched** (`spec-items.md` §3 — the roster stays
+      half-strength on purpose, because the wardrobe is too). `xpReward` DID move, because it is
+      solved, not authored: it was exactly `mobXP(level)` for every enemy before the change and
+      is again after, read off `roi-content spec bestiary` rather than recomputed by hand
+      (moose 418→223, bison 2032→1008, lynx 1390→1199, wolf 1911→1385, bear 5536→3632, rabid
+      bear 12216→10020). Renamed Wild Buffalo → **Wild Bison / Зубр** in `en.json`, `uk.json`
+      AND `lore.md` — the spec claimed the uk name and lore "already say" Bison and they did
+      not, so the rename is three files, not one; corrected in the spec.
+      **The one thing the plan did not foresee:** applying the plain N…N+9 rule to the rabid
+      bear (22–31) opened a nine-km hole at km 32–40 where exploration rolls no encounter, and
+      the validator refused it (`enemy.depth_gap`). Its band shipped as 25–40 precisely because
+      nothing else lives out there — an exception `spec-progression.md` §4 already records — so
+      the level moves to 22 and the band stays stretched to **22–40**. Filling it needs a new
+      creature, which this release rules out.
+      Measured after: the roster moved from **~50% to ~60% of its archetype contract with no
+      stat change at all** — a lower level is a lower target, so the same HP is a larger
+      fraction of it (worth knowing: it thins the cancellation `spec-items.md` §3 relies on
+      without breaking it, and that spec is annotated). Density km 1–25 goes **2.24 → 2.56**
+      candidates per km, all four common
+      archetypes are met by km 10 (trash 1 · normal 4 · brute 7 · skirmisher 10), and km 4–9
+      goes from one creature to three. Digest moved **exactly** the two predicted halves —
+      `records` and `spawns`; `tuning` and `quests` held. 222 tests, `simulate --strict` 0
+      broken bands.
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
 
 ### 9.2 Content Authoring

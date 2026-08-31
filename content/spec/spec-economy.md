@@ -52,7 +52,7 @@ boar, and both are unambiguous:
 | XP to reach level 4 | 788 |
 | `enemy.wild_boar` at level 1 | 10 XP → **79 kills** |
 | starting Vigor pool | 105 |
-| `enemy.wild_moose` at level 6, on curve | 418 XP — 42 boars |
+| `enemy.wild_moose` at level 4, on curve | 223 XP — 22 boars |
 
 The second row is the pure-boar path at km 1–3. The last is why it is
 not the intended one: depth is the difficulty dial from the first hour.
@@ -66,13 +66,13 @@ the estate — the thing designed to pay for it — does not exist yet.
 ### The game does have an answer, and it should be stated rather than discovered
 
 The boar is `trash` (XP ×0.4) and it is the only creature at km 1–3. The next
-creature along is the moose, and the printed row is worth reading instead of the
-plan: **as shipped it is level 6, spawns from km 6, and is worth 418 XP — forty-two
-boars.** After `spec-bestiary.md` §3's re-spread lands in Phase 10 it becomes
-level 4 from km 4, worth 223 XP, or twenty-one boars.
+creature along is the moose, and since Phase 10 applied `spec-bestiary.md` §3 it
+is **level 4, spawns from km 4, and is worth 223 XP — twenty-two boars.** (Before
+the re-spread it was level 6 from km 6 at 418 XP, or forty-two boars: the
+re-spread made the reward smaller and the walk to it shorter, which is the trade
+it was chosen for.)
 
-Either way the conclusion is the same, and the shipped numbers make it louder:
-the intended opening is not "grind the boar", it is **walk deeper than is
+So the intended opening is not "grind the boar", it is **walk deeper than is
 comfortable, early**. Depth is the difficulty dial and the player's hand is on it
 from the first hour.
 
@@ -101,12 +101,12 @@ decisions in §7:
 | enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |
 |---|---|---|---|---|---|---|---|---|
 | `enemy.wild_boar` | 1 | trash | ×0.5 | 0.70 | 8.4 | 0.80 | 2.4 | 0.40 |
-| `enemy.wild_moose` | 6 | normal | ×1.0 | 1.60 | 19.2 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_buffalo` | 11 | brute | ×1.7 | 1.60 | 19.2 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_lynx` | 11 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.rabid_wolf` | 16 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_bear` | 21 | brute | ×1.7 | 1.70 | 20.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_bear` | 25 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
+| `enemy.wild_moose` | 4 | normal | ×1.0 | 1.60 | 19.2 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 19.2 | 0.90 | 2.7 | 1.53 |
+| `enemy.rabid_lynx` | 10 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
+| `enemy.rabid_wolf` | 13 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
+| `enemy.wild_bear` | 16 | brute | ×1.7 | 1.70 | 20.4 | 0.90 | 2.7 | 1.53 |
+| `enemy.rabid_bear` | 22 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
 
 `lootMult` does not apply today — no award site reads it, so `hide`
 is what the table says regardless of archetype. `hide ×mult` is what
@@ -273,8 +273,8 @@ has to cover this too — they are the same first week.
 wrong — eleven reaches level 2, and level 4 takes 79 boars and 664 Vigor of
 deficit against a 105 pool. The correction goes in that document, along with the
 actual reason the opening works: **the player is meant to walk deeper than is
-comfortable**, where the shipped moose pays 418 XP against the boar's 10 — and
-223 XP once the re-spread lands, which is still twenty-one boars.
+comfortable**, where the moose pays 223 XP against the boar's 10 — twenty-two
+boars for a four-kilometre walk.
 
 **The opening gets a measurement before it gets a retune** — decided. `roi-content
 simulate` reports pace as an aggregate over levels 1–40 and says nothing about

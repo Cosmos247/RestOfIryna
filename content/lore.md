@@ -272,7 +272,7 @@ Two families of wildlife, and one stand-in.
   bristles, curved tusks, small hot eyes.
 - **Wild Moose** 🫎 — tall, regal, palm-antlered. Velvet-dark coat,
   long melancholy face. Will charge if cornered.
-- **Wild Buffalo** 🦬 — heavy-shouldered, shaggy, slow but
+- **Wild Bison** 🦬 — heavy-shouldered, shaggy, slow but
   immovable. The kingdom's old herd-beast turned wild.
 - **Wild Bear** 🐻 — full-grown brown bear, deep-chested, claws like
   carving knives. Deep-zone apex of the uninfected wild.

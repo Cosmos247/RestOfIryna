@@ -109,12 +109,12 @@
     {
       "archetype" : "normal",
       "depth" : {
-        "max" : 15,
-        "min" : 6
+        "max" : 13,
+        "min" : 4
       },
       "icon" : "🫎",
       "id" : "enemy.wild_moose",
-      "level" : 6,
+      "level" : 4,
       "loot" : [
         {
           "chance" : 0.8,
@@ -136,17 +136,17 @@
         "hp" : 73
       },
       "tier" : 2,
-      "xpReward" : 418
+      "xpReward" : 223
     },
     {
       "archetype" : "brute",
       "depth" : {
-        "max" : 20,
-        "min" : 11
+        "max" : 16,
+        "min" : 7
       },
       "icon" : "🦬",
       "id" : "enemy.wild_buffalo",
-      "level" : 11,
+      "level" : 7,
       "loot" : [
         {
           "chance" : 0.8,
@@ -168,17 +168,17 @@
         "hp" : 121
       },
       "tier" : 3,
-      "xpReward" : 2032
+      "xpReward" : 1008
     },
     {
       "archetype" : "skirmisher",
       "depth" : {
-        "max" : 20,
-        "min" : 11
+        "max" : 19,
+        "min" : 10
       },
       "icon" : "🐈‍⬛",
       "id" : "enemy.rabid_lynx",
-      "level" : 11,
+      "level" : 10,
       "loot" : [
         {
           "chance" : 0.7,
@@ -195,17 +195,17 @@
         "hp" : 75
       },
       "tier" : 3,
-      "xpReward" : 1390
+      "xpReward" : 1199
     },
     {
       "archetype" : "normal",
       "depth" : {
-        "max" : 25,
-        "min" : 16
+        "max" : 22,
+        "min" : 13
       },
       "icon" : "🐺",
       "id" : "enemy.rabid_wolf",
-      "level" : 16,
+      "level" : 13,
       "loot" : [
         {
           "chance" : 0.8,
@@ -222,17 +222,17 @@
         "hp" : 124
       },
       "tier" : 4,
-      "xpReward" : 1911
+      "xpReward" : 1385
     },
     {
       "archetype" : "brute",
       "depth" : {
-        "max" : 30,
-        "min" : 21
+        "max" : 25,
+        "min" : 16
       },
       "icon" : "🐻",
       "id" : "enemy.wild_bear",
-      "level" : 21,
+      "level" : 16,
       "loot" : [
         {
           "chance" : 0.85,
@@ -254,7 +254,7 @@
         "hp" : 183
       },
       "tier" : 5,
-      "xpReward" : 5536
+      "xpReward" : 3632
     },
     {
       "archetype" : "trash",
@@ -299,11 +299,11 @@
       "archetype" : "elite",
       "depth" : {
         "max" : 40,
-        "min" : 25
+        "min" : 22
       },
       "icon" : "🐻‍❄️",
       "id" : "enemy.rabid_bear",
-      "level" : 25,
+      "level" : 22,
       "loot" : [
         {
           "chance" : 0.9,
@@ -320,7 +320,7 @@
         "hp" : 240
       },
       "tier" : 6,
-      "xpReward" : 12216
+      "xpReward" : 10020
     }
   ]
 }

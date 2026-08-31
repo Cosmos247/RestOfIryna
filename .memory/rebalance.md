@@ -106,12 +106,17 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
 | 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
 | 9 Content specs (approval gate) | ✅ **5 of 5** — progression · bestiary · items · sets · economy |
-| 10 Apply the bestiary level re-spread — **and nothing else** | ⬜ shrunk by `spec-items.md`; no new items, no stat regeneration |
+| 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `e004ea8d93ba32b9`** (schema **v10**) —
-`records 992c19419d162379`, `tuning 3ef097038094a4d8`,
-`spawns 1a18e0cd09136c69`, `quests 2e52ecdfa45276ec`.
+**Current digest baseline (Phase 10):** `records ee3fa4731c5a3a27`,
+`tuning 3ef097038094a4d8`, `spawns eaea309f4813dfa2`,
+`quests 2e52ecdfa45276ec` (schema **v10**).
+
+Phase 10 moved `records` and `spawns` and held `tuning` and `quests` — the two
+halves predicted before the edit, which is the whole point of splitting them.
+Before it: `records 992c19419d162379`, `spawns 1a18e0cd09136c69` (bundle digest
+`e004ea8d93ba32b9`), unmoved through the whole of Phase 9.
 
 Phase 9 moved `spawns` alone, and only because the three zone systems were
 reconciled — the foraging bands went from 1–2 / 3–5 / 6–49 to 1–10 / 11–25 /
@@ -172,7 +177,8 @@ leaves it immediately, and the sawtooth (58% at L10 → 43% at L15) is the
 ten-level ladder rungs arriving late against a curve that climbs every level.
 
 **The finding that reset the plan: two half-strength errors were cancelling.**
-The bestiary carries ~50% of its archetype contract; the player carries ~40% of
+The bestiary carries ~60% of its archetype contract (~50% before Phase 10's
+re-spread lowered the levels without touching the stats); the player carries ~40% of
 theirs. The seven "100% win at 4–11% HP" rows are what those two produce
 *together*, and neither was chosen — the roster predates the archetype table, the
 wardrobe predates the budget curve. `spec-bestiary.md` §9 had committed Phase 10

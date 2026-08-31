@@ -16,9 +16,13 @@ swift run roi-content spec bestiary --levels 1,5,11,14,21,25
 
 ## 1. The problem this spec exists to fix
 
-The shipped roster is seven creatures, and the level↔km rule from
+*(This section describes the roster **before** Phase 10 — it is the problem
+statement, and the table below is what the game looked like on 2026-08-31. §3 is
+what replaced it, and §4 measures the result.)*
+
+The roster was seven creatures, and the level↔km rule from
 `spec-progression.md` (**an enemy of level N spawns from km N to km N+9**) shows
-what that means in play:
+what that meant in play:
 
 | km | what can be met |
 |---|---|
@@ -36,7 +40,8 @@ Two other holes, both already reported by the balance run:
 - **The `boss` archetype has no members.** It is designed (12 rounds, 130% of a
   bar, ×9 XP, ×8 loot) and nothing in the game uses it.
 - **Every shipped enemy carries ~50% of the HP and ATK its archetype asks for**
-  (62% at level 1, 48% by 25). The roster was authored before the archetype
+  (62% at level 1, 48% by 25 — ~60% across the board after Phase 10's re-spread
+  lowered the levels without touching the stats). The roster was authored before the archetype
   table existed. This document therefore specifies **level, archetype and family
   — never HP**, so that the stat lines can be regenerated from the table without
   reopening it. *(Amended: that regeneration is deferred past the rebalance —
@@ -78,17 +83,33 @@ rearranging what it already has, and new species wait until after the rebalance.
 | 10 | `enemy.rabid_lynx` | Rabid Lynx | Скажена рись | rabid | skirmisher | 10–19 | level 11 → 10 |
 | 13 | `enemy.rabid_wolf` | Rabid Wolf | Скажений вовк | rabid | normal | 13–22 | level 16 → 13 |
 | 16 | `enemy.wild_bear` | Brown Bear | Бурий ведмідь | wild | brute | 16–25 | level 21 → 16 |
-| 22 | `enemy.rabid_bear` | Rabid Bear | Скажений ведмідь | rabid | elite | 22–31 | level 25 → 22 |
+| 22 | `enemy.rabid_bear` | Rabid Bear | Скажений ведмідь | rabid | elite | 22–**40** | level 25 → 22 |
 
 `enemy.rabid_dog` (the registration fight) and `enemy.training_dummy` keep their
 `0…0` depth and never spawn. **No boss ships in this band** — see §5.
 
 Only two things about a creature change: its **level**, and therefore its whole
 generated stat line, and its **km band**, which follows from the level by the
-rule in `spec-progression.md`. Family, archetype, name, icon and loot table are
-untouched. `enemy.wild_buffalo`'s English string is corrected to Bison, which is
-what the Ukrainian name and the lore already say; the id stays, because ids are a
-database contract.
+rule in `spec-progression.md`.
+
+> *Corrected 2026-09-01, during Phase 10.* The rabid bear's band is **22–40**,
+> not 22–31. Applying the plain N…N+9 rule opened a nine-kilometre hole at km
+> 32–40 where exploration rolls no encounter at all, and the validator refused it
+> (`enemy.depth_gap`). That is not a new exception: `spec-progression.md` §4
+> already records this creature's band as "stretched wider because nothing else
+> lives out there", which is exactly why it shipped as 25–40. The level moves as
+> specified; the stretch stays until something is authored to live past km 31.
+> Filling it needs a new creature, and §8 rules those out for this release. Family, archetype, name, icon and loot table are
+untouched. `enemy.wild_buffalo` is renamed to Bison / Зубр per the table above;
+the id stays, because ids are a database contract.
+
+> *Corrected 2026-09-01, during Phase 10.* This sentence used to justify the
+> rename with "which is what the Ukrainian name and the lore already say".
+> **They did not** — `uk.json` said «Дикий буйвіл» and `lore.md` said Wild
+> Buffalo, so the rename touches three files, not one. The decision stands on
+> its own: 🦬 is a bison, and the European bison — зубр — is the animal that
+> belongs in a pine-and-oak wilderness. The table in this section always
+> specified both names; only the parenthetical was wrong.
 
 ### Why this ladder and not another
 
@@ -115,12 +136,14 @@ that matter:
 | 4–6 | 2 | trash, normal |
 | 7–9 | 3 | trash, normal, brute |
 | 10–18 | 3–4 | + skirmisher, second normal |
-| 19–21 | 3 | skirmisher, normal, brute |
+| 19–21 | 2–3 | skirmisher (to km 19), normal, brute |
 | 22–25 | 2–3 | + **elite** |
 | 26+ | 1 | elite only — the draft band starts here |
 
-Average 2.6 candidates per kilometre against 2.2 shipped, and the improvement is
-where it was needed: km 4–9 goes from one creature to three.
+Average **2.56** candidates per kilometre across km 1–25 against **2.24** before,
+and the improvement is where it was needed: km 4–9 goes from one creature to
+three. *(Measured after the change landed in Phase 10; the km 19–21 row was 3 in
+the draft and is 2–3 in fact, because the lynx's band ends at km 19.)*
 
 **The first three kilometres stay a single animal.** A creature covers km N…N+9,
 so only a level-1 creature can appear at km 1, and there is exactly one of those.
@@ -128,9 +151,11 @@ Fixing that needs a second level-1 creature — which is a new animal, and new
 animals are what this document just decided against. It is a tutorial, and it
 lasts about five kills.
 
-**The draft band shows through from km 26.** Only the rabid bear reaches past 31,
-and nothing at all lives past km 40. That edge is the first thing Phase 10 fills,
-and it is visible in the table rather than discovered in play.
+**The draft band shows through from km 26.** Only the rabid bear reaches out
+there, and nothing at all lives past km 40. That edge is the first thing the
+post-rebalance content pass fills — Phase 10 shrank to the level re-spread alone
+(`spec-items.md` §3), so it is carried by the elite's stretched band and is
+visible in the table rather than discovered in play.
 
 ## 5. Spawn weights, and the boss that is not here
 
@@ -254,7 +279,7 @@ a boss is in this world gets decided against a played game.
 **Amended 2026-08-31 by `spec-items.md` §3 — read that amendment first.** This
 section was approved before the wardrobe was measured. It turns out the shipped
 player carries about **40%** of the on-curve kit the archetype targets were
-solved against, so the roster's ~50% and the wardrobe's ~40% have been holding
+solved against, so the roster's ~60% (~50% before Phase 10) and the wardrobe's ~40% have been holding
 each other up. Regenerating the bestiary alone would double every enemy against
 a player who did not move.
 
@@ -274,4 +299,6 @@ result against the same contract that produced it.
 **No new locale keys are needed** — every creature in the table already has its
 `enemy.<id>` name in both locales, which is one of the quieter arguments for
 re-spreading the roster rather than inventing one. The only string that changes
-is `enemy.wild_buffalo` in `en.json`, from Buffalo to Bison.
+is `enemy.wild_buffalo` — and it changes in **`en.json`, `uk.json` and
+`lore.md`** (Buffalo → Bison, «Дикий буйвіл» → «Зубр»), not in `en.json` alone as
+this section originally said. See the correction in §3.

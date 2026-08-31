@@ -39,20 +39,22 @@ the maths. **This is the only work in flight.**
 five content specifications are approved:** `spec-progression.md`,
 `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`, `spec-economy.md`.
 
-> **Next action: Phase 10 — and it is now small.** Apply `spec-bestiary.md` §3:
-> re-spread the seven creatures' LEVELS (boar 1, moose 4, bison 7, lynx 10, wolf
-> 13, bear 16, rabid bear 22) and fix `enemy.wild_buffalo`'s English string to
-> Bison. **Nothing else.** No new items, no filling the three empty slots, and
-> **no stat-line regeneration** — see `spec-items.md` §3. Then Phase 11:
-> `WipeForRebalance`, `--strict`, and the live first-hour playtest that has never
-> happened.
+> **Phase 10 is done (2026-09-01).** The six re-levels landed, `xpReward` was
+> re-solved with them, Wild Buffalo became **Wild Bison / Зубр** in both locales
+> and the lore, and the elite's band stayed stretched to km 40 because the plain
+> N…N+9 rule opened a nine-km hole the validator refused. Density km 1–25 went
+> **2.24 → 2.56** candidates per km; only `records` and `spawns` moved.
+>
+> **Next action: Phase 11 — and it is the whole untested surface.**
+> `WipeForRebalance`, `tuning/time.json` → `scale` 60 → **1.0** (the only error
+> `validate --strict` still reports), and the **live first-hour playtest**.
 
 **What Phase 9 decided, compressed.** The authored band is **levels 1–25**; an
 enemy of level N spawns **km N…N+9**; the zones are **Гущавина 1–10 / Старий ліс
 11–25 / Пуща 26–49** (applied); **no new creatures** and **no new items**. The
 wardrobe was then measured and it reset the plan: a fully enchanted kit is **97%
 of the on-curve budget at level 1 and 40% at level 25** (armour is frozen at
-itemLevel 1 forever; only weapons ladder), and since the bestiary carries ~50% of
+itemLevel 1 forever; only weapons ladder), and since the bestiary carries ~60% of
 its archetype contract, **the two half-strength errors have been cancelling** —
 so Phase 10 removes neither.
 
@@ -182,9 +184,8 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline: `e004ea8d93ba32b9`** (schema **v10**)
-(`records 992c19419d162379` · `tuning 3ef097038094a4d8` ·
-`spawns 1a18e0cd09136c69` · `quests 2e52ecdfa45276ec`). Phase 9 moved `spawns`
+**Current digest baseline (Phase 10, schema v10):** `records ee3fa4731c5a3a27` ·
+`tuning 3ef097038094a4d8` · `spawns eaea309f4813dfa2` · `quests 2e52ecdfa45276ec`. Phase 9 moved `spawns`
 alone, when the foraging bands were realigned — no selection logic or daily assignment was
 touched, and the digest says so rather than asking to be believed.
 
