@@ -134,7 +134,6 @@ final class TuningTests: XCTestCase {
                              hpRate: Double = 0.056, atkRate: Double = 0.100,
                              ratingRate: Double = 0.085,
                              vigorBase: Int = 100, vigorPerLevel: Int = 5,
-                             regenHours: Double = 6,
                              classes: [ClassStartDTO]? = nil,
                              warehouse: [Int]? = nil) -> ProgressionTuningDTO {
         ProgressionTuningDTO(
@@ -145,8 +144,7 @@ final class TuningTests: XCTestCase {
             xpLevelDiff: XPLevelDiffDTO(perLevel: xpGapPerLevel, min: 0.10, max: 1.00),
             statGrowth: StatGrowthDTO(hpPerLevel: hpRate, attackPerLevel: atkRate,
                                       ratingPerLevel: ratingRate),
-            vigorPool: VigorPoolDTO(base: vigorBase, perLevel: vigorPerLevel,
-                                    fullRegenHours: regenHours),
+            vigorPool: VigorPoolDTO(base: vigorBase, perLevel: vigorPerLevel),
             classes: classes ?? [
                 ClassStartDTO(characterClass: "warrior", hp: 120, attack: 10, defense: 12,
                               crit: 5, dodge: 5, accuracy: 10, starterWeaponId: "gear.rusty_sword"),
@@ -543,12 +541,6 @@ final class TuningTests: XCTestCase {
     func testMisplacedDecimalInAGrowthRateWarns() {
         assertRule("tuning.progression.growth_runaway",
                    bundle(progression: progression(atkRate: 8.5)), severity: .warning)
-    }
-
-    /// `VigorService.regenTick` divides by this window.
-    func testZeroRegenWindowIsAnError() {
-        assertRule("tuning.progression.vigor_regen",
-                   bundle(progression: progression(regenHours: 0)))
     }
 
     func testNonPositiveVigorPoolIsAnError() {

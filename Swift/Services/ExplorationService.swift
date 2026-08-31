@@ -171,27 +171,28 @@ public enum ExplorationService {
     // MARK: - Private rolls
 
     private static func rollLoot(for user: User, kmDepth: Int, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
-        // Depth-aware FORAGING pool — only items the governor can physically
-        // find on the trail. Hide / raw meat are deliberately NOT here; they
-        // drop exclusively from enemy kills via EnemyCatalog loot tables.
-        // Each itemId listed here has a matching `exploration.find.<id>`
-        // locale key with a per-item flavor line. Pairs are (id, weight) —
-        // higher weight = more common. `mat.iron` is the rare drop at the
-        // medium tier, weighted ~1/5 of the staples so it's a notable find.
-        let shallow: [(String, Int)] = [
-            ("food.forest_berries", 10),
-            ("food.forest_nuts",    10),
-            ("mat.pine_lumber",     10),
-            ("mat.river_pebble",    10)
-        ]
-        let medium: [(String, Int)] = [
-            ("food.potato",   10),
-            ("food.duck_egg", 10),
-            ("mat.clay",      10),
-            ("mat.iron",       2)   // rare — replaces the retired `mat.old_iron`
-        ]
-        let pool: [(String, Int)] = kmDepth <= 2 ? shallow : (kmDepth <= 5 ? shallow + medium : medium)
-        let itemId = pickWeighted(pool) ?? "mat.pine_lumber"
+        // Depth-aware FORAGING pool, from `content/data/zones.json` since Phase
+        // 8E — it was two Swift arrays and a nested ternary here, the last
+        // content left in code after Phase 3 emptied every catalog. Hide and
+        // raw meat are deliberately absent: they drop only from kills, through
+        // the enemy loot tables. Each id in a pool has a matching
+        // `exploration.find.<id>` locale line, which the validator enforces.
+        //
+        // The `?? "mat.pine_lumber"` fallback went with the arrays. A zone that
+        // covers no km is a content gap the validator reports; handing out
+        // lumber forever instead is the same silent-wrong-item bug that made
+        // every encounter past km 35 a wild boar.
+        guard let itemId = ZoneCatalog.rollForage(atDepth: kmDepth) else {
+            // Nothing to find here — but the starvation tick still has to be
+            // both APPLIED and REPORTED, exactly as the "nothing happens"
+            // bucket above does it. Swallowing it into `.nothing` would take
+            // HP off the player and tell them the room was empty.
+            if extraStarvation > 0 {
+                user.hp = max(0, user.hp - extraStarvation)
+                return .starvationOnly(hpLost: extraStarvation)
+            }
+            return .nothing
+        }
         let quantity = Int.random(in: 1...2)
 
         // Apply any starvation HP loss first.
@@ -342,21 +343,5 @@ public enum ExplorationService {
             }
         }
         return drops
-    }
-
-    /// Pick a `T` from a (T, weight) list with weights as plain integers —
-    /// roll one random integer in `1...sum(weights)` and walk the list. Used
-    /// by the foraging pool so rare items can sit alongside staples in the
-    /// same `[(id, weight)]` array without bumping their share to even.
-    private static func pickWeighted<T>(_ items: [(T, Int)]) -> T? {
-        let total = items.reduce(0) { $0 + max(0, $1.1) }
-        guard total > 0 else { return nil }
-        var roll = Int.random(in: 1...total)
-        for (item, weight) in items {
-            let w = max(0, weight)
-            if roll <= w { return item }
-            roll -= w
-        }
-        return items.last?.0
     }
 }

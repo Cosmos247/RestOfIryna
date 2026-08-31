@@ -96,13 +96,4 @@ public enum ProgressionMath {
         Swift.max(1, pool.base + pool.perLevel * Swift.max(0, level))
     }
 
-    /// Vigor restored per minute of wall-clock time: the whole pool over
-    /// `fullRegenHours`. Scaling with the pool rather than being flat is the
-    /// point — a flat rate shrinks, as a share of the pool, every time the pool
-    /// grows, and by the level cap the player would recover 2.7% an hour
-    /// instead of the 16.7% they started with.
-    public static func vigorRegenPerMinute(maxVigor: Int, pool: VigorPoolDTO) -> Double {
-        guard pool.fullRegenHours > 0 else { return 0 }
-        return Double(maxVigor) / (pool.fullRegenHours * 60)
-    }
 }

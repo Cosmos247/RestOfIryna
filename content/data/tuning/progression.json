@@ -43,7 +43,6 @@
   },
   "vigorPool" : {
     "base" : 100,
-    "fullRegenHours" : 6.0,
     "perLevel" : 5
   },
   "warehouseCapByEstateLevel" : [

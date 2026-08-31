@@ -98,10 +98,28 @@ public struct EstateUpgradeStepDTO: Codable, Sendable, Equatable {
 /// Top-level shape of `estate_upgrades.json`.
 public struct EstateUpgradeFileDTO: Codable, Sendable {
     public let maxTier: Int
+    /// Plot slots unlocked at each estate tier, indexed by `tier - 1`.
+    ///
+    /// Data since Phase 8E, and not for tidiness: with Vigor no longer
+    /// regenerating, these slots ARE the daily budget, so the balance report
+    /// has to read the same ladder the game grants from. Tier 1 has none — the
+    /// wooden hut has cleared no land — which is why the first days are lived
+    /// off the trail rather than off the estate.
+    public let plotSlotsByTier: [Int]
     public let progression: [EstateUpgradeStepDTO]
 
-    public init(maxTier: Int, progression: [EstateUpgradeStepDTO]) {
+    public init(maxTier: Int, plotSlotsByTier: [Int], progression: [EstateUpgradeStepDTO]) {
         self.maxTier = maxTier
+        self.plotSlotsByTier = plotSlotsByTier
         self.progression = progression
+    }
+
+    private enum CodingKeys: String, CodingKey { case maxTier, plotSlotsByTier, progression }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        maxTier         = try c.decode(Int.self, forKey: .maxTier)
+        plotSlotsByTier = try c.decode([Int].self, forKey: .plotSlotsByTier)
+        progression     = try c.decode([EstateUpgradeStepDTO].self, forKey: .progression)
     }
 }

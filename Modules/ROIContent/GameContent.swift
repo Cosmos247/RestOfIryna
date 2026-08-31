@@ -55,6 +55,7 @@ public final class GameContent: Sendable {
     public let arena: ArenaFileDTO?
     public let master: MasterFileDTO?
     public let plots: PlotFileDTO?
+    public let zones: ZoneFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
     public let tuning: TuningBundleDTO?
@@ -89,6 +90,7 @@ public final class GameContent: Sendable {
         self.arena = bundle.arena
         self.master = bundle.master
         self.plots = bundle.plots
+        self.zones = bundle.zones
         self.fortune = bundle.fortune
         self.quests = bundle.quests
         self.tuning = bundle.tuning

@@ -81,7 +81,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
 
-Tests/ROIContentTests/            # 201 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 222 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion

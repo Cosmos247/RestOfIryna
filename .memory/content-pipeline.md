@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            201 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            222 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -38,11 +38,13 @@ content/data/*.json
   — every one reads Catalogs.current
 ```
 
-`content/data/` holds 16 files: `manifest · items · enemies · recipes ·
+`content/data/` holds 17 files: `manifest · items · enemies · recipes ·
 weapon_upgrades · bags · estate_upgrades · trader · tavern · market · guild ·
-arena · master · plots · fortune · quests`. **No Swift catalog array remains**
-(Phase 3 closed 2026-08-29), so `ContentExporter` and `--export-content` are
-gone. `ContentDigest` stays — it is the "confirm only the intended change" step
+arena · master · plots · fortune · quests · zones`. **No Swift catalog array
+remains** (Phase 3 closed 2026-08-29; `zones.json` was the last holdout, two
+arrays inside `ExplorationService.rollLoot` that Phase 8E pulled out when
+foraging became part of the food economy), so `ContentExporter` and
+`--export-content` are gone. `ContentDigest` stays — it is the "confirm only the intended change" step
 of the add-content workflow, not a migration leftover.
 
 **Two snapshots on purpose.** The domain types (`Item`, `Enemy`, …) still live in
@@ -215,7 +217,15 @@ All four have been negative-tested: reordering enemies moves `records` and
 `spawns`; dropping `?? all.first` from `pickFor` moves only `spawns`; perturbing
 `baseHitChance`, a bloodlust modifier, a `statGrowthLevels` member, a bare-tier
 weight and the tavern delete window each moved `tuning` to a distinct value
-while the catalog halves held.
+while the catalog halves held. Phase 8D added three more: Shadow Veil ×2.1 and
+the archer's Defend ×1.6 each moved `tuning` to a distinct value, and an elite
+floor of 15 moved `records` alone. `spawns` covers foraging too since 8E — the
+zone pools are picked by a weighted walk in declaration order, so a reordered
+pool changes every draw while leaving each entry byte-identical. 8E's own three:
+a forage weight of 2 → 3 moved `spawns` alone, while the plot-slot ladder (T7
+6 → 5) and a farm capacity (6 → 7) each moved `records` alone. The enemy half of
+the spawn replay is unchanged across the phase, which the printed distribution
+shows directly — the same seven counts as before, with the forage rows appended.
 
 **A hash cannot see a value the shipped configuration masks.** The sweeper's
 `intervalDivisor` is invisible to the digest at `scale = 60`, because the 60 s

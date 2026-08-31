@@ -136,6 +136,7 @@ enum ContentDigest {
         for step in BagCatalog.progression { digest.combine(fingerprint(step)) }
 
         digest.combine(EstateUpgradeCatalog.maxTier)
+        digest.combine("slots" + EstateUpgradeCatalog.plotSlotsByTier.map(String.init).joined(separator: "/"))
         for step in EstateUpgradeCatalog.progression { digest.combine(fingerprint(step)) }
 
         for listing in TraderCatalog.all {
@@ -185,6 +186,10 @@ enum ContentDigest {
             digest.combine(EstateUpgradeCatalog.nextStep(from: tier).map(fingerprint) ?? "-")
             digest.combine("\(BagCatalog.canUpgrade(from: tier))")
             digest.combine("\(EstateUpgradeCatalog.canUpgrade(from: tier))")
+            // Replayed past both ends: `slotsForLevel` clamps above the table
+            // and floors below it, and a clamp is exactly what a value hash
+            // cannot see.
+            digest.combine("slots@\(tier):\(PlotService.slotsForLevel(tier))")
         }
         for itemId in ["gear.rusty_sword", "gear.simple_bow", "gear.wooden_staff", "gear.forester_hood", "nope"] {
             digest.combine("\(WeaponUpgradeCatalog.isUpgradable(itemId))")
@@ -294,6 +299,18 @@ enum ContentDigest {
                 let id = picked?.id ?? "-"
                 spawns.combine(id)
                 counts[id, default: 0] += 1
+            }
+        }
+        // Foraging replayed on the same principle, and for the same class of
+        // bug: `zones.json` picks by a weighted walk in declaration order, so a
+        // reordered pool leaves every entry byte-identical while changing every
+        // draw. Folded into the spawn half because it is the same question —
+        // what the wilderness hands out at a given km.
+        for km in 1...maxDepth {
+            for _ in 0..<drawsPerDepth {
+                let found = ZoneCatalog.rollForage(atDepth: km, using: &rng) ?? "-"
+                spawns.combine("forage:\(found)")
+                counts["forage:\(found)", default: 0] += 1
             }
         }
         let spawnDigest = spawns.hexDigest
@@ -703,7 +720,6 @@ enum ContentDigest {
             d.combine(action.rawValue)
             d.combine(VigorService.cost(of: action))
         }
-        d.combine("\(Catalogs.current.tuningProgression.vigorPool.fullRegenHours)")
         d.combine("\(HealingService.regenPerMinute)")
         d.combine("\(HealingService.maxIdleMinutes)")
 

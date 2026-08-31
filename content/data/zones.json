@@ -1,0 +1,95 @@
+{
+  "zones" : [
+    {
+      "depth" : {
+        "max" : 2,
+        "min" : 1
+      },
+      "forage" : [
+        {
+          "itemId" : "food.forest_berries",
+          "weight" : 10
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "weight" : 10
+        }
+      ],
+      "id" : "zone.thicket"
+    },
+    {
+      "depth" : {
+        "max" : 5,
+        "min" : 3
+      },
+      "forage" : [
+        {
+          "itemId" : "food.forest_berries",
+          "weight" : 10
+        },
+        {
+          "itemId" : "food.forest_nuts",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "weight" : 10
+        },
+        {
+          "itemId" : "food.potato",
+          "weight" : 10
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.clay",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.iron",
+          "weight" : 2
+        }
+      ],
+      "id" : "zone.oldwood"
+    },
+    {
+      "depth" : {
+        "max" : 40,
+        "min" : 6
+      },
+      "forage" : [
+        {
+          "itemId" : "food.potato",
+          "weight" : 10
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.clay",
+          "weight" : 10
+        },
+        {
+          "itemId" : "mat.iron",
+          "weight" : 2
+        }
+      ],
+      "id" : "zone.deepwood"
+    }
+  ]
+}

@@ -10,11 +10,12 @@
 //  the player's inventory, resets the timestamp, and clears the
 //  `notifiedFull` flag so the background ticker can pick the plot up again.
 //
-//  The `slotsForLevel(_:)` table is logarithmic: 2 / 3 / 4 / 5 / 5 / 6 / 6 …
-//  with +1 every 4 levels past the explicit table. Estate level is derived
-//  from `User.estateLevel` (`(User.level - 1) / 3 + 1` since Phase 5.3a).
-//  The slot table is currently overridden to a flat 5 — restored as part
-//  of Phase 5.3c.
+//  `slotsForLevel(_:)` reads the ladder from `estate_upgrades.json` — 0 slots
+//  at T1, then one more per tier to 6 at T7. (This header described a
+//  pre-5.3c design of "2 / 3 / 4 / 5 / 5 / 6 / 6, +1 every 4 levels" and a
+//  "flat 5 override" for three phases after the code stopped doing any of
+//  that; it was corrected in 8E, when the ladder became the daily Vigor
+//  budget and therefore worth reading twice.)
 //
 
 import Fluent
@@ -24,22 +25,25 @@ public enum PlotService {
 
     // MARK: - Slot count
 
-    /// Phase 5.3c — slot count by estate tier. T1 has zero plots (the wooden
-    /// hut hasn't cleared any land yet); the first slot opens at T2 (player
-    /// L4), and one more opens with each subsequent tier. T7 caps at 6
-    /// plots, matching the planned unlock map.
-    /// Index = estate level - 1.
-    private static let slotTable: [Int] = [0, 1, 2, 3, 4, 5, 6]
-
-    /// How many plot slots are unlocked at the given estate level. Estates
-    /// past the table's last entry get the maximum (6) — keeps the function
-    /// total in case the tier ladder ever extends past T7. Existing players
-    /// who have already claimed plots beyond their current allowance keep
-    /// them: the allowance only gates *new* claims via `claim(...)`, not the
-    /// list returned by `Plot.list(...)`.
+    /// How many plot slots are unlocked at the given estate level.
+    ///
+    /// T1 has zero plots — the wooden hut has cleared no land yet — and the
+    /// first opens at T2 (player level 4), one more per tier to 6 at T7. The
+    /// table lives in `estate_upgrades.json` since Phase 8E: with Vigor no
+    /// longer regenerating these slots are the player's daily budget, and a
+    /// balance number that important cannot sit in a Swift literal the
+    /// simulator has no way to read.
+    ///
+    /// Estates past the table's last entry get its final value, so the
+    /// function stays total if the tier ladder ever extends. Existing players
+    /// who have claimed plots beyond their current allowance keep them: the
+    /// allowance only gates *new* claims via `claim(...)`, not the list
+    /// returned by `Plot.list(...)`.
     public static func slotsForLevel(_ estateLevel: Int) -> Int {
+        let table = EstateUpgradeCatalog.plotSlotsByTier
+        guard let last = table.last else { return 0 }
         let idx = max(0, estateLevel - 1)
-        return slotTable[min(idx, slotTable.count - 1)]
+        return idx < table.count ? table[idx] : last
     }
 
     // MARK: - Production math

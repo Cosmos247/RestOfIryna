@@ -61,6 +61,11 @@ public struct EstateUpgradeStep: Sendable {
 public enum EstateUpgradeCatalog {
     public static var maxTier: Int { Catalogs.current.estateMaxTier }
     public static var progression: [EstateUpgradeStep] { Catalogs.current.estateProgression }
+    /// Plot slots by estate tier, indexed by `tier - 1`. `PlotService.slotsForLevel`
+    /// is the reader; it lives in content because since Phase 8E these slots are
+    /// the player's whole daily Vigor budget, and the balance report has to read
+    /// the ladder the game actually grants from.
+    public static var plotSlotsByTier: [Int] { Catalogs.current.estatePlotSlotsByTier }
 
     /// Indexes by position, so the snapshot keeps `progression` sorted by
     /// `toTier` and the validator rejects a non-contiguous ladder.

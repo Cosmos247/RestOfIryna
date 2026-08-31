@@ -35,42 +35,40 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–8 are done, 8D included. The next work is NOT Phase 9 — it is the
-vigor rework, decided 2026-08-31: passive Vigor regeneration is being removed
-entirely.**
+**Phases 3–8 are done, 8D and 8E included. Phase 9 is next: content
+specifications, approved before a byte of content is authored.**
 
-The reasoning is the depth gate. `stepsDeep` has no level gate and never needed
-one: the pool plus the food in your bag is what decides how deep you can walk and
-still walk home. Passive regen defuses exactly that, and `VigorService.regenTick`
-deliberately does NOT pause during an expedition — so today a player can stand at
-km 25, wait six hours and have a full pool. Remove the trickle and the wilderness
-becomes an expedition with supplies.
+Phase 8E removed passive Vigor regeneration entirely (2026-08-31). The trickle
+did not pause during an expedition — `VigorService.regenTick`'s own comment
+argued for that — so a player could stand at km 25, wait six hours and refill:
+there was no depth gate, only patience. Vigor now comes from food, quests and
+levelling; the pool is a stock and **the estate is the income**, which is what
+finally makes it load-bearing.
 
-Decided with it: **the estate is the replacement faucet** (plots + kitchen), and
-the numbers already line up — a 2-slot estate at level 1 yields ~540 Vigor/day
-against the 525 the regen gives, and a 6-slot estate ~1620 against 1500 at the
-cap, both assuming three harvests a day. The clock becomes a farm you tend.
-
-What this breaks, and has to be rebuilt with it: **the pace model.** "A day is
-one pool plus 4× regen" is where 50–56 days to the cap came from, so the
-simulator's pace section has to measure food throughput instead. Watch the tap
-budget too — 60 dishes a day at level 1 and 180 at the cap is more taps than
-combat unless the kitchen learns to batch. The 0-Vigor stop already exists and
-already works: a step costs 5% max HP and ATK/DEF drop 25%, so a starving player
-crawls home and forages rather than soft-locking.
-
-**Then Phase 9: content specifications, approved before a byte is authored.**
-The maths is finished and, for the first time, MEASURED. What remains is
-content — and the rule is that the list gets signed off before it reaches JSON.
+`FoodBudget` in `ROISim` measures that income by enumerating every plot layout
+the slots allow and cooking each one out, so the pace number reads off content
+rather than an assumed mix:
 
 ```
-content/data/         manifest · items · enemies (+ archetypes) · recipes ·
-                      rarities · sets · weapon_upgrades · bags · estate_upgrades ·
-                      trader · tavern · market · guild · arena · master · plots ·
-                      fortune · quests
-content/data/tuning/  combat · vigor · exploration · progression · economy ·
-                      time · budget
+level  estate  slots  vigor/day  portions  best mix
+1      T1      0      0          0         — nothing cleared yet   (a feature)
+7      T3      2      210        30        coop + coop
+19     T7      6      810        90        farm ×5 + forest
 ```
+
+The food plots were cut (farm 4/h cap 20 → 1/h cap 6, coop 2/h cap 12 → 1/h
+cap 5) to land the pace at **85–93 days of perfect play** — slower than the old
+51–56 on purpose, so "3+ months" sits in the figure instead of in an assumption
+about imperfect play. Taps fell from 1,211/day to 513 on the way.
+
+Two things the report flags every run and nobody has fixed, both deliberate:
+**food portions are flat against a pool that grows** (33% of a level-1 pool, 12%
+of a level-40 one — deferred with batch cooking to after the rebalance), and
+**levels 1–3 have no estate at all** (the first days are lived off the trail).
+
+`zones.json` landed with it: the foraging pools left `ExplorationService`, the
+last content in Swift. Proved equivalent by replaying the shipped arrays out of
+git for km 1–40 — identical including weights and order.
 
 #### What Phase 9 has to answer
 
@@ -85,11 +83,8 @@ blank page:
 - **km 31–40 holds a single elite**, the `boss` archetype has **no members**, and
   `offHand` plus both accessory slots have **no items at all** (1.0 + 1.2 of slot
   weight sitting idle — it is exactly the residual the reference character prints).
-- **`ExplorationService.rollLoot` still keeps its foraging pools in Swift** —
-  they belong in a `zones.json`, which is deferred until the vigor rework: zones
-  and the food economy are the same question.
-
-Two of the gaps this list used to carry are closed. **The elite floor is
+Three of the gaps this list used to carry are closed. **The foraging pools are
+in `zones.json`** as of 8E, so no content is left in Swift. **The elite floor is
 enforced**: every archetype row carries a required `minLevel` and elite/boss are
 14, so the generator cannot emit the fight that made the mage's level-5 elite a
 93% win. And **the last two flat rating bonuses are multipliers** — Shadow Veil
@@ -107,9 +102,9 @@ roster against its archetype contract. `--strict` exits 1 on a broken band.
 
 Current state of those bands: **18 of 18 level-invariance rows pass, 0 broken
 bands, 7 warnings** — all seven the half-strength roster. 19,437,688 XP from
-level 1 to 40, 50–56 perfect days: a floor rather than a forecast, and a floor
-the vigor rework will invalidate, since it counts a day as one pool plus four
-regens.
+level 1 to 40, and **85–93 days** on a tended estate — an estimate between two
+opposing simplifications (every point spent on combat, but nothing except the
+estate feeding the player) rather than the floor the old number was.
 
 The default sample size is **8000 fights per cell** (2.6s for the sweep). It was
 2000 until Phase 8D, where the level-invariance band — a ±15% ratio of two
@@ -145,15 +140,16 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline: `dfe1ff8e24605e0d`** (schema **v9**)
-(`records 53752623031088d9` · `tuning 3ba689e278efe3c6` ·
-`spawns 81f6639962cbc4a7` · `quests 2e52ecdfa45276ec`). Phase 8D moved the first
-two and left the last two alone — no selection logic or daily assignment was
+**Current digest baseline: `abbdaa0e82efb78f`** (schema **v10**)
+(`records 992c19419d162379` · `tuning 3ef097038094a4d8` ·
+`spawns d376de1dc066797d` · `quests 2e52ecdfa45276ec`). Phase 8E moved the first
+three and left `quests` alone — no selection logic or daily assignment was
 touched, and the digest says so rather than asking to be believed.
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player
 touches changed in Phase 5, every item's stat in Phase 6, the stances plus the
-failed-Flee counter in Phase 8C, and Shadow Veil plus the archer's Defend in 8D.
+failed-Flee counter in Phase 8C, Shadow Veil plus the archer's Defend in 8D, and
+the whole Vigor economy in 8E.
 `/reload` itself has never run against a real database.
 
 ### How content works now
@@ -189,7 +185,7 @@ live in `.memory/content-pipeline.md`.
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 201 tests, ~0.14s
+swift test                                   # 222 tests, ~0.14s
 ```
 
 ## What Works Now (shipped game)

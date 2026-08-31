@@ -3,9 +3,9 @@
     {
       "icon" : "🌾",
       "tuning" : {
-        "capacity" : 20,
+        "capacity" : 6,
         "producedItemId" : "food.potato",
-        "ratePerInterval" : 4
+        "ratePerInterval" : 1
       },
       "type" : "farm"
     },
@@ -35,9 +35,9 @@
     {
       "icon" : "🐔",
       "tuning" : {
-        "capacity" : 12,
+        "capacity" : 5,
         "producedItemId" : "food.duck_egg",
-        "ratePerInterval" : 2
+        "ratePerInterval" : 1
       },
       "type" : "coop"
     },

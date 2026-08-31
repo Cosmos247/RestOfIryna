@@ -62,64 +62,21 @@ public enum VigorService {
     /// Fraction of max HP lost per room transition while starving (0.05 = 5%).
     public static var starvationHPDrainPercent: Double { Catalogs.current.tuningVigor.starvation.hpDrainPercent }
 
-    // MARK: - Regeneration (Phase 5B)
-
-    /// Vigor restored per minute of elapsed wall-clock time: the whole pool
-    /// over `fullRegenHours`.
-    ///
-    /// Scaling with `maxVigor` rather than being a flat number per hour is the
-    /// point — a flat rate shrinks, as a share of the pool, every time the pool
-    /// grows, and by the level cap the player would be recovering 2.7% an hour
-    /// instead of the 16.7% they started with.
-    public static func regenPerMinute(for user: User) -> Double {
-        ProgressionMath.vigorRegenPerMinute(
-            maxVigor: user.maxVigor, pool: Catalogs.current.tuningProgression.vigorPool)
-    }
-
-    /// Credit idle time as Vigor. Mirrors `HealingService.tick`, with one
-    /// deliberate difference: it is NOT suspended during an expedition.
-    ///
-    /// HP regen pauses out in the wilderness because resting is something you
-    /// do at the manor. Vigor is stamina, it is *spent* by walking and fighting,
-    /// and a trickle while the governor catches their breath is exactly the
-    /// mechanic — suspending it would make the pool strictly a pre-expedition
-    /// budget and delete the "wait a bit, then push deeper" decision.
-    ///
-    /// Returns the amount actually restored. Writes the user only when
-    /// something changed.
-    @discardableResult
-    public static func regenTick(_ user: User, on db: any Database) async throws -> Int {
-        let now = Date()
-
-        // Full pool — pin the clock so idle time cannot bank against future
-        // spending. Same guard `HealingService` needs, same reason.
-        if user.vigor >= user.maxVigor {
-            if user.lastVigorTickAt != now {
-                user.lastVigorTickAt = now
-                try await user.saveAndCache(in: db)
-            }
-            return 0
-        }
-
-        // First observation on a drained pool primes the clock and grants
-        // nothing: a row that predates the column must not pay out months.
-        guard let last = user.lastVigorTickAt else {
-            user.lastVigorTickAt = now
-            try await user.saveAndCache(in: db)
-            return 0
-        }
-
-        let minutes = max(0, now.timeIntervalSince(last) / 60.0)
-        let restored = Int((regenPerMinute(for: user) * minutes).rounded(.down))
-        // Not enough elapsed time to round up to a whole point — keep the old
-        // timestamp so the partial minutes are not thrown away.
-        guard restored > 0 else { return 0 }
-
-        user.vigor = min(user.maxVigor, user.vigor + restored)
-        user.lastVigorTickAt = now
-        try await user.saveAndCache(in: db)
-        return restored
-    }
+    // MARK: - No regeneration (Phase 8E)
+    //
+    // Vigor does NOT come back on a clock. It is spent by walking and fighting
+    // and returns only through food, quest rewards and the vigor a level-up
+    // grants — which is what makes the pool, plus whatever is in the bag, the
+    // real limit on how deep the wilderness can be walked and still walked out
+    // of. `regenTick` and `regenPerMinute` lived here until Phase 8E, and the
+    // comment that justified them is the reason they had to go: the trickle
+    // deliberately did not pause during an expedition, so a player could stand
+    // at km 25, wait six hours and refill. There was no depth gate, only
+    // patience.
+    //
+    // HP regeneration is a different mechanic and stays: `HealingService` ticks
+    // it, and it DOES pause out in the wilderness, because resting is something
+    // you do at the manor.
 
     // MARK: - Queries
 

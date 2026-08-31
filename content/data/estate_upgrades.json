@@ -1,5 +1,14 @@
 {
   "maxTier" : 7,
+  "plotSlotsByTier" : [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
   "progression" : [
     {
       "inputs" : [

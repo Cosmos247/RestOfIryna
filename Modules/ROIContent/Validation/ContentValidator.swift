@@ -36,6 +36,7 @@ public enum ContentValidator {
         issues += validateTime(bundle)
         issues += validateTuning(bundle)
         issues += validateBestiary(bundle)
+        issues += validateZones(bundle)
         issues += validateBudget(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
@@ -453,6 +454,28 @@ public enum ContentValidator {
                                     rule: "ladder.gate_regression",
                                     message: "required level drops from \(pair.0.requiredPlayerLevel) to \(pair.1.requiredPlayerLevel)"))
             }
+        }
+
+        // Plot slots by tier. Since Phase 8E these are the player's daily Vigor
+        // budget rather than a convenience, so the ladder is held to the same
+        // shape rules as the tiers it indexes.
+        let slots = estate.plotSlotsByTier
+        if slots.count != estate.maxTier {
+            issues.append(.init(severity: .error, file: estateFile, path: "plotSlotsByTier", id: nil,
+                                rule: "estate.slot_table_length",
+                                message: "the table has \(slots.count) entries for \(estate.maxTier) tiers — it is indexed by `tier - 1`, so a short table silently caps the top tiers at the last value it does have"))
+        }
+        for (index, count) in slots.enumerated() where count < 0 {
+            issues.append(.init(severity: .error, file: estateFile, path: "plotSlotsByTier[\(index)]", id: nil,
+                                rule: "estate.slot_count_negative",
+                                message: "plot slots must not be negative, found \(count)"))
+        }
+        // An upgrade that takes plots AWAY would strand claimed plots above the
+        // new allowance — `Plot.list` keeps returning them while `claim` refuses.
+        for (index, pair) in zip(slots, slots.dropFirst()).enumerated() where pair.1 < pair.0 {
+            issues.append(.init(severity: .error, file: estateFile, path: "plotSlotsByTier[\(index + 1)]", id: nil,
+                                rule: "estate.slot_count_regression",
+                                message: "slots drop from \(pair.0) to \(pair.1) between tier \(index + 1) and \(index + 2)"))
         }
 
         return issues
@@ -895,6 +918,21 @@ public enum ContentValidator {
     private static func validateLocalization(_ bundle: ContentBundle, _ locales: LocaleIndex) -> [ContentIssue] {
         var issues: [ContentIssue] = []
 
+        // Every forageable item needs its own flavour line — the exploration
+        // screen resolves `exploration.find.<id>` per item, so a missing key is
+        // a raw key printed at the player rather than a fallback.
+        for (index, zone) in (bundle.zones?.zones ?? []).enumerated() {
+            for entry in zone.forage {
+                let key = "exploration.find.\(entry.itemId)"
+                for locale in locales.missing(key) {
+                    issues.append(.init(severity: .error, file: "\(locale).json",
+                                        path: "zones[\(index)].forage", id: zone.id,
+                                        rule: "locale.key.missing",
+                                        message: "missing key \"\(key)\""))
+                }
+            }
+        }
+
         let ladders = Dictionary(bundle.weaponLadders.map { ($0.itemId, $0) },
                                  uniquingKeysWith: { _, last in last })
 
@@ -1248,6 +1286,83 @@ public enum ContentValidator {
     // to answer an uncovered km with `all.first`, so the gap above km 35 read
     // as "every deep encounter is a wild boar" instead of as missing content.
     // Now the gap is reported here and the roll honestly returns nil.
+    /// `zones.json` — the foraging pools, content since Phase 8E.
+    ///
+    /// Held to the same rules as the bestiary's depth bands, and for the same
+    /// reason: the roll now returns nil where nothing covers a km, so a gap is
+    /// a step that finds nothing rather than a step that finds the wrong thing
+    /// forever. That is only an improvement if somebody is told about the gap.
+    private static func validateZones(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let file = bundle.zones else { return [] }
+        var issues: [ContentIssue] = []
+        let name = "zones.json"
+        let knownItems = Set(bundle.items.map(\.id))
+
+        func fail(_ path: String, _ rule: String, _ message: String,
+                  _ severity: ContentIssue.Severity = .error, id: String? = nil) {
+            issues.append(.init(severity: severity, file: name, path: path, id: id,
+                                rule: rule, message: message))
+        }
+
+        issues += duplicates(file.zones.map(\.id), file: name, collection: "zones")
+
+        for (index, zone) in file.zones.enumerated() {
+            let path = "zones[\(index)]"
+            guard let range = zone.depth.closedRange else {
+                fail("\(path).depth", "zone.depth_inverted",
+                     "depth range is inverted: \(zone.depth.min)...\(zone.depth.max)", id: zone.id)
+                continue
+            }
+            if range.lowerBound < 1 {
+                fail("\(path).depth", "zone.depth_range",
+                     "depth starts at \(range.lowerBound); km numbering starts at 1", id: zone.id)
+            }
+            if zone.forage.isEmpty {
+                fail("\(path).forage", "zone.pool_empty",
+                     "a zone with no forage pool makes every loot roll in its band find nothing",
+                     id: zone.id)
+            }
+            var total = 0
+            for (entryIndex, entry) in zone.forage.enumerated() {
+                let entryPath = "\(path).forage[\(entryIndex)]"
+                if !knownItems.contains(entry.itemId) {
+                    fail("\(entryPath).itemId", "zone.unknown_item",
+                         "unknown item \"\(entry.itemId)\"", id: zone.id)
+                }
+                if entry.weight <= 0 {
+                    fail("\(entryPath).weight", "zone.weight_range",
+                         "weight must be positive, found \(entry.weight) — a zero-weight entry can never be found and is content nobody will ever see",
+                         id: zone.id)
+                }
+                total += Swift.max(0, entry.weight)
+            }
+            if !zone.forage.isEmpty && total <= 0 {
+                fail("\(path).forage", "zone.pool_unreachable",
+                     "every weight in the pool is zero, so the roll can never return anything",
+                     id: zone.id)
+            }
+            issues += duplicates(zone.forage.map(\.itemId), file: name,
+                                 collection: "\(path).forage")
+        }
+
+        // Coverage, walked to the deepest km any enemy can spawn at — the two
+        // tables describe the same wilderness, so a band one covers and the
+        // other does not is a hole in exactly one of them.
+        let horizon = bundle.enemies.compactMap { $0.depth?.closedRange }
+            .filter { $0 != 0...0 }.map(\.upperBound).max()
+        if let horizon, !file.zones.isEmpty {
+            let covered = file.zones.compactMap { $0.depth.closedRange }
+            let gaps = (1...horizon).filter { km in !covered.contains { $0.contains(km) } }
+            if !gaps.isEmpty {
+                fail("zones", "zone.depth_gap",
+                     "no zone covers km \(gaps.map(String.init).joined(separator: ", ")) — foraging there finds nothing at all",
+                     .warning)
+            }
+        }
+
+        return issues
+    }
+
     private static func validateBestiary(_ bundle: ContentBundle) -> [ContentIssue] {
         guard !bundle.enemies.isEmpty || !bundle.enemyArchetypes.isEmpty else { return [] }
         var issues: [ContentIssue] = []
@@ -1724,9 +1839,9 @@ public enum ContentValidator {
                     "the Vigor pool must be positive, found \(pool.base)")
             require(pool.perLevel >= 0, file, "vigorPool.perLevel", "tuning.progression.vigor_pool",
                     "per-level Vigor must not be negative")
-            require(pool.fullRegenHours > 0, file, "vigorPool.fullRegenHours",
-                    "tuning.progression.vigor_regen",
-                    "regen window must be positive — the tick divides by it")
+            // `fullRegenHours` and its rule went in Phase 8E with the mechanic.
+            // Nothing refills the pool on a clock now, so the pool is a stock
+            // and food is the whole income.
 
             checkClassCoverage(progression.classes.map(\.characterClass), file: file, path: "classes")
             for (index, row) in progression.classes.enumerated() {

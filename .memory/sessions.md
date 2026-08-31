@@ -3386,3 +3386,130 @@ which is the only reason it was noticed within a minute. The files were rebuilt
 and the baseline `dfe1ff8e24605e0d` came back identical, which is what proves the
 restore was exact. With uncommitted work in the tree, back a file up by COPY
 before perturbing it; `git checkout` is not an undo for edits git has never seen.
+
+---
+
+## Session — 2026-08-31 part 2 (Phase 8E: Vigor stops regenerating)
+
+The user reopened a locked decision — "slow regeneration plus food" — and it
+turned out to be the one holding up the depth gate.
+
+### The argument, which the code made better than the plan did
+
+`stepsDeep` increments per step with no level gate, and it does not need one:
+the pool plus the food in the bag decides how deep a player can walk and still
+walk home, and the walk home is symmetric (returning is step-by-step, not a
+teleport). But `VigorService.regenTick` deliberately did NOT pause during an
+expedition — a comment argued for it in as many words — so a player could stand
+at km 25, wait six hours and refill. **There was no depth gate; there was only
+patience.**
+
+Removed: `regenTick`, `regenPerMinute`, `ProgressionMath.vigorRegenPerMinute`,
+the one call site in `routes.swift`, `progression.vigorPool.fullRegenHours`
+(schema v10) and its validator rule, and the `last_vigor_tick_at` column
+(`RemoveVigorTick`). HP regeneration is untouched — it is a different mechanic
+and it DOES pause in the wilderness, because resting is something you do at home.
+
+### The wrong number, and what it teaches
+
+The estimate that convinced everyone — "a 2-slot estate at level 1 feeds ~540
+Vigor/day against the regen's 525" — **was wrong.** It came from `PlotService`'s
+file header, which described a pre-5.3c ladder ("2 / 3 / 4 / 5 / 5 / 6 / 6, +1
+every 4 levels", "currently overridden to a flat 5") while the code four lines
+below it read `[0, 1, 2, 3, 4, 5, 6]`. **Estate tier 1 has no plots at all**; the
+first opens at T2, player level 4.
+
+Caught only by moving the table into content so the simulator could read it —
+i.e. by making the number executable. **A stale comment outlives a stale value,
+because nothing runs it.** This one sat directly above the function it described
+through three phases of edits to that function.
+
+### FoodBudget: the pace model had to be rebuilt, not retuned
+
+"A day is one full pool plus 4× regen" was a line in the report that stopped
+being true the moment the trickle went. The replacement enumerates every multiset
+of plot types the slots allow — 84 layouts at six slots — cooks each through any
+recipe whose inputs it produces, eats the rest raw, and keeps the best. Brute
+force beat argument here: with four plot types there was no need to pick a
+"representative" mix, so the last hand-picked constant in the pace number is the
+harvest cadence, which the report prints.
+
+What it found, in order:
+
+- **36–40 days against the old 51–56.** The estate at three harvests a day is
+  MORE generous than the regen was. The call was to go slower than the old
+  number rather than back to it — 90 days, so "3+ months" sits in the figure
+  instead of in an assumption about imperfect play. Landed at **85–93** by
+  cutting the food plots (farm 4/h cap 20 → 1/h cap 6, coop 2/h cap 12 → 1/h
+  cap 5), leaving forest and mine alone so building materials keep their pace.
+- **1,211 taps a day**, against the ~390 the plan budgeted for everything. Cutting
+  the plots took it to 513, because fewer Vigor per day is fewer portions per day
+  as well as fewer fights. The report prints taps/day now, not just taps-to-cap.
+- **Food portions rot exactly like the stances did.** `restore_vigor` is FLAT
+  against a pool that grows: the best dish is 33% of a level-1 pool and 12% of a
+  level-40 one. Deferred by decision, with batch cooking, to after the rebalance —
+  and wired into the report (`balance.portion_rots`) so it cannot be forgotten.
+- **Levels 1–3 have no estate at all**, which is a feature: the first days are
+  lived off the trail, XP there is tiny (~11 kills to reach level 4), and it
+  gives the estate a reason to exist. The model excludes those levels and says
+  so rather than dividing by zero.
+
+The `pace.too_fast` band moved 45 → 72 days with the model it judges. **A band
+and the model under it are one decision**, the same lesson 8D learned about a
+band and its sample size.
+
+### zones.json — the last content in Swift
+
+The foraging pools left `ExplorationService.rollLoot` (two arrays and a nested
+ternary). **Equivalence was proved by parsing the shipped arrays out of git and
+replaying them against the new file for km 1–40: identical, including weights and
+ORDER** — the roll walks the array subtracting weights, so a reordered pool
+changes every draw while leaving each entry byte-identical.
+
+Two deliberate differences, both stated rather than smoothed over: the
+`?? "mat.pine_lumber"` fallback is gone, so a km no zone covers now finds nothing
+and the validator reports the gap (the same lesson as `pickFor`'s `?? all.first`,
+which made every encounter past km 35 a wild boar); and past km 40 foraging finds
+nothing where it used to hand out the deep pool forever, which is what the
+encounter table already does past its own horizon.
+
+Nine validator rules, a seeded forage replay folded into the digest's `spawns`
+half, and `pickWeighted` deleted as dead.
+
+### State
+
+222 tests, `validate` clean, `simulate --strict` exit 0, 0 broken bands. Baseline
+`abbdaa0e82efb78f` (schema v10): `records`, `tuning` and `spawns` all moved —
+the plot ladder and the retuned plots, `fullRegenHours` leaving, and foraging
+joining the replay — while **`quests` did not**.
+
+### Audit pass before the 8E commit (same session)
+
+Three things the review caught.
+
+**A real bug in the phase's own change.** `rollLoot`'s new "no zone covers this
+km" path applied the starvation HP tick and then returned `.nothing` — taking HP
+off the player while telling them the room was empty. The bucket ten lines above
+it returns `.starvationOnly(hpLost:)` for exactly this case; the new path now
+does the same. Narrow (it needs an uncovered km AND a starving player, and the
+shipped file covers km 1–40) but it was wrong, and it was wrong in the direction
+that hides itself.
+
+**The greedy in `FoodBudget.cook` is exact only by luck of the bundle.** Exactly
+one recipe is reachable from plot output today (`baked_potato`), so richest-first
+cannot mis-spend an input. If a second becomes reachable it can under-count. Said
+so in the code rather than leaving the reader to find out, and noted that the
+error direction is toward a slower pace, which is the safe one.
+
+**Phase 5B's entry in `TODO.md` still read as intent.** It described Vigor regen
+as a feature "deliberately NOT suspended during an expedition" — which is now
+precisely the reasoning for deleting it. Annotated rather than removed, the same
+way the monster-silver line was: the history is worth reading, it just had to
+stop sounding like a plan.
+
+Digest coverage of the new data was proved by perturbation, with file COPIES
+rather than `git checkout` (the lesson from the 8D audit): a forage weight 2 → 3
+moves `spawns` alone, the plot-slot ladder T7 6 → 5 and a farm capacity 6 → 7
+each move `records` alone, and the seven enemy spawn counts are identical to the
+pre-8E run — so the `spawns` half moved because foraging joined it, not because
+enemy selection shifted.

@@ -939,25 +939,24 @@ public struct StatGrowthDTO: Codable, Sendable, Equatable {
 /// flat 8/hour degenerating to 2.7%/hour at the cap. Scaling the pool with level
 /// and stating regen as "the whole pool in N hours" keeps the felt recovery rate
 /// constant for the player's whole life.
+/// The Vigor pool. A STOCK, not an income: since Phase 8E nothing refills it
+/// on a clock, so `base + perLevel × level` is the most a player can be holding
+/// at once and food is the only way to top it back up.
 public struct VigorPoolDTO: Codable, Sendable, Equatable {
     public let base: Int
     public let perLevel: Int
-    /// Hours to refill an empty pool completely.
-    public let fullRegenHours: Double
 
-    public init(base: Int, perLevel: Int, fullRegenHours: Double) {
+    public init(base: Int, perLevel: Int) {
         self.base = base
         self.perLevel = perLevel
-        self.fullRegenHours = fullRegenHours
     }
 
-    private enum CodingKeys: String, CodingKey { case base, perLevel, fullRegenHours }
+    private enum CodingKeys: String, CodingKey { case base, perLevel }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        base           = try c.decode(Int.self, forKey: .base)
-        perLevel       = try c.decode(Int.self, forKey: .perLevel)
-        fullRegenHours = try c.decode(Double.self, forKey: .fullRegenHours)
+        base     = try c.decode(Int.self, forKey: .base)
+        perLevel = try c.decode(Int.self, forKey: .perLevel)
     }
 }
 

@@ -56,8 +56,8 @@ it through the façade — never as a second implementation beside it.
 **Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
 market, guild, arena), the Master's shop, estate plots, the fortune deck, the
-daily quest pools, the rarity ladder (`rarities.json`) and equipment sets
-(`sets.json`) — lives in `content/data/*.json`; the `*Catalog` types are façades over
+daily quest pools, the rarity ladder (`rarities.json`), equipment sets
+(`sets.json`) and the foraging zones (`zones.json`) — lives in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
 in both `en.json` and `uk.json` — never a Swift array edit.
 
@@ -70,6 +70,14 @@ it runs at type-init and traps before `ContentBootstrap.load`.
 
 `tuning/time.json` splits `gameTime` (multiplied by `scale`) from `realTime` (never
 is): Telegram's 24 h dice-delete window is a protocol constant, not a balance knob.
+
+**Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
+level-up grant are the only sources, and the estate's plots are the intended income —
+which is what makes the pool plus the food in the bag the real limit on how deep the
+wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
+one deliberately did not pause during an expedition, so a player could stand at km 25
+and wait out a full pool. HP regeneration is a different mechanic and stays
+(`HealingService`, and it DOES pause in the wilderness).
 
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
 = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's

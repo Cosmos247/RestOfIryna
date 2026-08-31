@@ -47,6 +47,8 @@ public struct ContentBundle: Sendable {
     public let plots: PlotFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
+    /// Foraging pools by depth band. Optional so a fixture bundle can omit it.
+    public let zones: ZoneFileDTO?
     /// Phase 4's six balance tables. Optional for the same reason as the files
     /// above — `ContentLoader` always supplies it, and `DomainContent` turns a
     /// nil into a thrown error rather than a game whose hit chance is zero.
@@ -69,7 +71,7 @@ public struct ContentBundle: Sendable {
         weaponLadders: [WeaponLadderDTO] = [],
         weaponDurabilityByTier: [Int] = [],
         bags: BagFileDTO = BagFileDTO(maxTier: 0, capacities: [], progression: []),
-        estateUpgrades: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, progression: []),
+        estateUpgrades: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, plotSlotsByTier: [], progression: []),
         trader: TraderFileDTO? = nil,
         tavern: TavernFileDTO? = nil,
         market: MarketFileDTO? = nil,
@@ -79,6 +81,7 @@ public struct ContentBundle: Sendable {
         plots: PlotFileDTO? = nil,
         fortune: FortuneFileDTO? = nil,
         quests: QuestFileDTO? = nil,
+        zones: ZoneFileDTO? = nil,
         tuning: TuningBundleDTO? = nil,
         contentHash: String
     ) {
@@ -104,6 +107,7 @@ public struct ContentBundle: Sendable {
         self.plots = plots
         self.fortune = fortune
         self.quests = quests
+        self.zones = zones
         self.tuning = tuning
         self.contentHash = contentHash
     }

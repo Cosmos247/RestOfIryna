@@ -104,19 +104,21 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 6 Rarity + sets | ✅ budget curve · rarities · sets · enchant as % |
 | 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
 | 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
-| 8E Vigor rework — no passive regen | ⬜ **next** |
+| 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
 | 9 Content specs (approval gate) | ⬜ |
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `dfe1ff8e24605e0d`** (schema **v9**) —
-`records 53752623031088d9`, `tuning 3ba689e278efe3c6`,
-`spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
+**Current digest baseline: `abbdaa0e82efb78f`** (schema **v10**) —
+`records 992c19419d162379`, `tuning 3ef097038094a4d8`,
+`spawns d376de1dc066797d`, `quests 2e52ecdfa45276ec`.
 
-Phase 8D moved the same two halves and left the same two alone: `records` (the
-archetype fingerprint gained `minLevel`) and `tuning` (the two dodge lifts became
-multipliers). **`spawns` and `quests` did not move** — nothing about selection or
-daily assignment was touched.
+Phase 8E moved three of the four: `records` (the plot ladder, the retuned farm
+and coop), `tuning` (`fullRegenHours` gone) and `spawns` (the forage replay is
+new, and the pools it replays moved out of Swift). **`quests` did not move.**
+Phase 8D before it moved `records` (the archetype fingerprint gained `minLevel`)
+and `tuning` (the two dodge lifts became multipliers) and left the other two
+alone; its baseline was `dfe1ff8e24605e0d` (schema v9).
 Previous baseline `583a32cb5a9d9dc7` (schema v8). Phase 8C moved exactly two
 halves for its own reasons: `records` (enemy + archetype fingerprints lost
 silver, the reference kit moved with the warrior profile) and `tuning` (stances
@@ -346,41 +348,104 @@ into a multiplier.
 depth gating and the food economy are the same question — so migrating them
 first would mean migrating them twice.
 
-### The vigor rework (decided 2026-08-31, not yet built)
+### Phase 8E — the vigor rework (built 2026-08-31)
 
-**Passive Vigor regeneration is removed entirely.** This reverses the plan's
-"slow regeneration plus food" and returns to the original intent.
+**Passive Vigor regeneration is gone.** This reverses the plan's "slow
+regeneration plus food" and returns to the original intent.
 
 The argument is the depth gate. `stepsDeep` increments per step with no level
-gate, and it does not need one: the pool plus the food in the bag is what decides
-how deep a player can walk and still walk home, and the walk home is symmetric
-(returning is step-by-step, not a teleport). Passive regen defuses precisely
-that, because `VigorService.regenTick` deliberately does not pause during an
-expedition — the comment argues for it, and it is the loophole: stand at km 25,
-wait six hours, full pool. There is no depth gate today; there is only patience.
+gate, and it does not need one: the pool plus the food in the bag decides how
+deep a player can walk and still walk home, and the walk home is symmetric.
+Passive regen defused precisely that, because `VigorService.regenTick`
+deliberately did not pause during an expedition — the comment argued for it, and
+it was the loophole: stand at km 25, wait six hours, full pool. There was no
+depth gate; there was only patience.
 
-**The estate replaces the clock.** Plots produce on a real-time interval, so the
-"come back tomorrow" loop survives — it just has to be built and harvested. The
-numbers already line up, at 3 harvests/day:
+Removed: `regenTick`, `regenPerMinute`, `ProgressionMath.vigorRegenPerMinute`,
+the call site in `routes.swift`, `progression.vigorPool.fullRegenHours` (schema
+**v10**) and its validator rule, plus the `last_vigor_tick_at` column
+(`RemoveVigorTick`). HP regeneration is untouched and still pauses in the
+wilderness — resting is something you do at the manor.
 
-| | today (regen) | estate plots |
-|---|---|---|
-| L1, estate 1 (2 slots) | 105 × 5 = 525 Vigor/day | 1 farm → 60 potatoes → 60 baked × 9 = 540 |
-| L40, estate 7 (6 slots) | 300 × 5 = 1500 | 3 farms → 180 dishes × 9 = 1620 |
+#### The number that was wrong, and how it was caught
 
-**What it breaks:** the pace model. "A day is one pool plus 4× regen" is where
-50–56 days to the cap came from, so `simulate`'s pace section has to measure food
-throughput instead of pool refills. Watch the tap budget as well — 60 dishes a
-day at level 1 and 180 at the cap is more taps than combat unless the kitchen
-learns to batch.
+The first estimate said "a 2-slot estate at level 1 yields ~540 Vigor/day
+against the regen's 525". **It was wrong.** It came from `PlotService`'s file
+header, which described a pre-5.3c ladder of "2 / 3 / 4 / 5 / 5 / 6 / 6, +1
+every 4 levels" and a "flat 5 override" — while the code four lines below it had
+read `[0, 1, 2, 3, 4, 5, 6]` for three phases. **Estate tier 1 has no plots at
+all.** The header is corrected and the table is now content
+(`estate_upgrades.json` → `plotSlotsByTier`), which is what let the simulator
+read the same ladder the game grants from.
 
-**What it does not break:** the 0-Vigor stop, which already exists and already
-does the job. A step at 0 costs 5% of max HP and ATK/DEF drop 25%, so a starving
-player crawls home and forages rather than soft-locking. Death is still the whole
-unequipped backpack, which is what makes the walk home a real decision.
+Lesson worth keeping: a stale header outlives a stale value, because nothing
+executes it. This one survived three phases of edits to the very function it
+sits above.
 
-Technically small: `regenTick` has exactly one call site (`routes.swift`), plus
-`progression.vigorPool.fullRegenHours`.
+#### What the estate actually feeds
+
+`FoodBudget` (in `ROISim`) enumerates every multiset of plot types the slots
+allow — 84 layouts at six slots — cooks each one through any recipe whose inputs
+it produces, eats the rest raw, and keeps the best. No assumed mix, no
+hand-picked constant except the harvest cadence, which the report prints.
+
+    level  estate  slots  vigor/day  portions  best mix
+    1      T1      0      0          0         — nothing cleared yet
+    4      T2      1      105        15        coop
+    7      T3      2      210        30        coop + coop
+    13     T5      4      486        54        farm ×3 + forest
+    19     T7      6      810        90        farm ×5 + forest
+
+#### What it measured, and what changed because of it
+
+Three findings, all acted on except the one deliberately deferred:
+
+- **Pace.** The first run came out at 36–40 days against the old model's 51–56:
+  the estate at three harvests a day was MORE generous than the regen. The
+  decision was to go slower than the old number rather than back to it — 90 days
+  of perfect play, so "3+ months" lives in the figure instead of in an assumption
+  about imperfect play. The food plots were cut to land there (farm 4/h cap 20 →
+  **1/h cap 6**, coop 2/h cap 12 → **1/h cap 5**; forest and mine untouched, so
+  building materials keep their pace). Result: **85–93 days**. The
+  `pace.too_fast` band moved with the model, from 45 to 72 days.
+- **Taps.** 1,211 a day at the first run, against the ~390 the plan budgeted —
+  because 190 portions a day is 380 button presses on their own. Cutting the
+  plots took it to **513/day**, and the report now prints taps/day rather than
+  only taps-to-cap.
+- **Portions rot, and it is deferred.** `restore_vigor` is a FLAT number against
+  a pool that grows: the best dish in the game is 33% of a level-1 pool and 12%
+  of a level-40 one — the same defect Phase 6 removed from items and 8C and 8D
+  from techniques, now sitting in the whole economy. Left alone on purpose:
+  batch cooking is the alternative fix and both are post-rebalance decisions.
+  The report warns every run (`balance.portion_rots`) so it cannot be forgotten.
+- **Levels 1–3 have no estate at all** and that is a FEATURE, decided: the first
+  days are lived off the trail, XP requirements there are tiny (~11 kills to
+  reach level 4), and it gives the estate a reason to exist. The report says so
+  every run rather than dividing by zero.
+
+#### `zones.json` — the last content in Swift
+
+The foraging pools moved out of `ExplorationService.rollLoot` (two arrays and a
+nested ternary) into `content/data/zones.json`: three bands, weights and
+declaration order preserved. **Proved equivalent by replaying the shipped arrays
+out of git against the new file for km 1–40 — identical, including weights and
+ORDER**, which matters because the roll walks the array and a reordered pool
+changes every draw while leaving each entry byte-identical.
+
+Two deliberate differences: the `?? "mat.pine_lumber"` fallback is gone (a km no
+zone covers now finds nothing, and the validator reports the gap — the same
+lesson as `pickFor`'s `?? all.first`), and past km 40 foraging finds nothing
+where it used to hand out the deep pool forever. That matches what the encounter
+table already does past its own horizon.
+
+Nine new validator rules, the digest gained a seeded forage replay folded into
+the `spawns` half, and `pickWeighted` was deleted as dead.
+
+Digest coverage was proved rather than assumed: a forage weight 2 → 3 moves
+`spawns` alone, the plot-slot ladder T7 6 → 5 and a farm capacity 6 → 7 each move
+`records` alone, and every enemy count in the printed spawn distribution is
+unchanged across the whole phase — so `spawns` moved because foraging JOINED the
+replay, not because enemy selection shifted.
 
 ### What Phase 7 taught
 

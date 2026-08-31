@@ -99,7 +99,7 @@ final class BestiaryTests: XCTestCase {
                     xpLevelDiff: XPLevelDiffDTO(perLevel: 0.08, min: 0.10, max: 1.00),
                     statGrowth: StatGrowthDTO(hpPerLevel: 0.056, attackPerLevel: 0.1,
                                               ratingPerLevel: 0.085),
-                    vigorPool: VigorPoolDTO(base: 100, perLevel: 5, fullRegenHours: 6),
+                    vigorPool: VigorPoolDTO(base: 100, perLevel: 5),
                     classes: [], warehouseCapByEstateLevel: [200]),
                 economy: EconomyTuningDTO(gear: GearEconomyDTO(
                     maxDurabilityStart: 30, repairMaxShave: 1,

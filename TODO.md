@@ -661,6 +661,10 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         RATING rose while its PERCENT fell 5.3% → 1.4%, which reads as a bug. `maxVigor(L) =
         100 + 5L`, and Vigor **regeneration exists at all** for the first time (whole pool per
         6 h, `VigorService.regenTick`, deliberately NOT suspended during an expedition).
+        *(Phase 8E deleted the regeneration entirely — and that "deliberately NOT suspended"
+        is exactly why: it meant a player could stand at km 25 and wait out a full pool, so
+        depth had no gate. The line stays because the reasoning is worth reading; it is
+        history, not intent.)*
         `applyLevelDerivedStats` recomputes rather than accumulates, so it is idempotent and a
         startup backfill moves old rows onto the new line.
   - [x] **5C — combat model** — absorption replaces `max(1, ATK − DEF)`; crit/dodge/accuracy
@@ -813,19 +817,46 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         Zones have to answer to the vigor rework — depth gating and the food economy are one
         question — so moving them first would mean moving them twice.
 
-- [ ] **Phase 8E — the vigor rework** *(decided 2026-08-31)* — remove passive Vigor
-      regeneration entirely (`VigorService.regenTick`, one call site in `routes.swift`, plus
-      `progression.vigorPool.fullRegenHours`). Reverses the plan's "slow regeneration plus
-      food" on purpose: regen does NOT pause during an expedition, so a player can stand at
-      km 25 and wait out a full pool — which is why depth has no gate today. Without it the
-      pool plus the carried food is the gate, and the walk home is symmetric. The estate
-      becomes the clock: at 3 harvests/day a 2-slot estate yields ~540 Vigor against the
-      regen's 525 at level 1, and a 6-slot ~1620 against 1500 at the cap. Rebuild with it:
-      the pace section of `simulate` (a day is no longer "one pool + 4× regen"), and watch
-      the tap budget — 60 dishes/day at level 1 and 180 at the cap needs batch cooking. The
-      0-Vigor stop already works (5% max HP per step, −25% ATK/DEF), so there is no soft-lock
-      to design around. `zones.json` lands here too, since depth and the food economy are one
-      question.
+- [x] **Phase 8E — the vigor rework** *(2026-08-31)* — schema v10. **Passive Vigor
+      regeneration is gone**: `regenTick`, `regenPerMinute`, `ProgressionMath.vigorRegenPerMinute`,
+      the `routes.swift` call site, `progression.vigorPool.fullRegenHours` and the
+      `last_vigor_tick_at` column (`RemoveVigorTick`). Reverses the plan's "slow regeneration
+      plus food" on purpose: regen did NOT pause during an expedition, so a player could stand
+      at km 25 and wait out a full pool — there was no depth gate, only patience. HP regen is
+      untouched and still pauses in the wilderness.
+      · **A wrong number, caught by building the model.** The first estimate ("a 2-slot estate
+      at level 1 feeds ~540 Vigor/day") came from `PlotService`'s file header, which described
+      a pre-5.3c ladder while the code four lines below read `[0,1,2,3,4,5,6]` — **tier 1 has
+      no plots at all**. Header corrected; the ladder is now content
+      (`estate_upgrades.json` → `plotSlotsByTier`), which is what lets the simulator read the
+      same table the game grants from.
+      · **`FoodBudget` replaces "one pool plus 4× regen"** as the pace model: it enumerates
+      every plot layout the slots allow (84 at six slots), cooks each through any recipe whose
+      inputs it produces, eats the rest raw, and keeps the best — no assumed mix. The only
+      hand-picked constant left is the harvest cadence (3/day), which the report prints.
+      · **Retuned to the decided pace.** The first run measured 36–40 days against the old
+      51–56 — the estate was more generous than the regen. The call was to go SLOWER than the
+      old number, so "3+ months" sits in the figure rather than in an assumption about
+      imperfect play: farm 4/h cap 20 → **1/h cap 6**, coop 2/h cap 12 → **1/h cap 5** (forest
+      and mine untouched, so building materials keep their pace). **85–93 days**, and taps fell
+      from **1,211/day to 513** on the way. The `pace.too_fast` band moved 45 → 72 days with
+      the model it judges.
+      · **Two findings left standing on purpose.** `restore_vigor` is flat against a pool that
+      grows (the best dish is 33% of a level-1 pool and 12% of a level-40 one) — the same
+      defect as the stances, now in the whole economy; deferred with batch cooking to after the
+      rebalance, and warned about every run. And levels 1–3 have no estate at all, which is a
+      feature: the first days are lived off the trail, and it gives the estate a reason to exist.
+      · **`zones.json`** — the foraging pools left `ExplorationService.rollLoot` (two arrays and
+      a nested ternary), the last content in Swift. **Proved equivalent by replaying the shipped
+      arrays out of git for km 1–40: identical, including weights and ORDER** (the roll walks
+      the array, so order is behaviour). Two deliberate differences: the `?? "mat.pine_lumber"`
+      fallback is gone — an uncovered km now finds nothing and the validator reports the gap,
+      the same lesson as `pickFor`'s `?? all.first` — and past km 40 foraging finds nothing
+      where it used to hand out the deep pool forever, matching the encounter table's own
+      horizon. Nine validator rules, a seeded forage replay folded into the digest's `spawns`
+      half, and `pickWeighted` deleted as dead.
+      **Result: 0 broken bands, 222 tests.** Baseline `abbdaa0e82efb78f` — `records`, `tuning`
+      and `spawns` moved, `quests` did not.
 
 - [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
 - [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls

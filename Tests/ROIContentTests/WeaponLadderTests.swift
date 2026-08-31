@@ -136,7 +136,7 @@ final class WeaponLadderTests: XCTestCase {
 
 final class UpgradeLadderTests: XCTestCase {
 
-    private func bundle(bags: BagFileDTO, estate: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, progression: [])) -> ContentBundle {
+    private func bundle(bags: BagFileDTO, estate: EstateUpgradeFileDTO = EstateUpgradeFileDTO(maxTier: 0, plotSlotsByTier: [], progression: [])) -> ContentBundle {
         ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [ItemDTO(id: "mat.hide", type: "material", tier: 1, stackable: true)],
@@ -175,7 +175,7 @@ final class UpgradeLadderTests: XCTestCase {
     }
 
     func testEstateGateGoingBackwardsIsAnError() {
-        let estate = EstateUpgradeFileDTO(maxTier: 3, progression: [
+        let estate = EstateUpgradeFileDTO(maxTier: 3, plotSlotsByTier: [0, 1, 2], progression: [
             EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 10),
             EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 4)
         ])
@@ -184,10 +184,48 @@ final class UpgradeLadderTests: XCTestCase {
         XCTAssertTrue(report.errors.contains { $0.rule == "ladder.gate_regression" })
     }
 
+    // MARK: - Plot slots by tier (Phase 8E)
+    //
+    // The ladder became content when Vigor stopped regenerating: these slots
+    // are the player's whole daily budget now, so a table that is short, or
+    // that goes backwards, is a balance change wearing a typo's clothes.
+
+    func testShortSlotTableIsAnError() {
+        let estate = EstateUpgradeFileDTO(maxTier: 3, plotSlotsByTier: [0, 1], progression: [
+            EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4),
+            EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)
+        ])
+        let bags = BagFileDTO(maxTier: 0, capacities: [], progression: [])
+        let report = ContentValidator.validate(bundle(bags: bags, estate: estate))
+        XCTAssertTrue(report.errors.contains { $0.rule == "estate.slot_table_length" })
+    }
+
+    func testNegativeSlotCountIsAnError() {
+        let estate = EstateUpgradeFileDTO(maxTier: 3, plotSlotsByTier: [0, -1, 2], progression: [
+            EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4),
+            EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)
+        ])
+        let bags = BagFileDTO(maxTier: 0, capacities: [], progression: [])
+        let report = ContentValidator.validate(bundle(bags: bags, estate: estate))
+        XCTAssertTrue(report.errors.contains { $0.rule == "estate.slot_count_negative" })
+    }
+
+    /// An upgrade that takes plots away strands the ones already claimed:
+    /// `Plot.list` keeps returning them while `claim` refuses to add more.
+    func testSlotCountGoingBackwardsIsAnError() {
+        let estate = EstateUpgradeFileDTO(maxTier: 3, plotSlotsByTier: [0, 2, 1], progression: [
+            EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4),
+            EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)
+        ])
+        let bags = BagFileDTO(maxTier: 0, capacities: [], progression: [])
+        let report = ContentValidator.validate(bundle(bags: bags, estate: estate))
+        XCTAssertTrue(report.errors.contains { $0.rule == "estate.slot_count_regression" })
+    }
+
     func testWellFormedLaddersAreClean() {
         let bags = BagFileDTO(maxTier: 3, capacities: [25, 35, 45],
                               progression: [bagStep(2, cap: 35), bagStep(3, cap: 45)])
-        let estate = EstateUpgradeFileDTO(maxTier: 3, progression: [
+        let estate = EstateUpgradeFileDTO(maxTier: 3, plotSlotsByTier: [0, 1, 2], progression: [
             EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4,
                                  inputs: [MaterialCostDTO(itemId: "mat.hide", quantity: 3)]),
             EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7, silverCost: 50)

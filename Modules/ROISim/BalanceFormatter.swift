@@ -382,6 +382,45 @@ public enum BalanceFormatter {
                 }
             }
             out.append("")
+
+            // Food, held to the same rule — and failing it. `restore_vigor` is
+            // a FLAT number against a pool that grows with level, so a portion
+            // is worth three times as much at level 1 as at the cap. It never
+            // mattered while regeneration supplied most of the day; Phase 8E
+            // made food the whole income, and the tap column in the pace
+            // section is what a rotting portion size costs in button presses.
+            let poolLow = Double(ProgressionMath.maxVigor(at: 1, pool: progression.vigorPool))
+            let poolCap = Double(ProgressionMath.maxVigor(at: progression.maxLevel,
+                                                          pool: progression.vigorPool))
+            let portions = content.items
+                .filter { item in item.effects.contains { $0.kind == .restoreVigor } }
+                .map { item -> (String, Double) in
+                    (item.id, Double(item.effects.filter { $0.kind == .restoreVigor }
+                                                 .reduce(0) { $0 + $1.amount }))
+                }
+                .sorted { $0.1 > $1.1 }
+            if !portions.isEmpty, poolLow > 0, poolCap > 0 {
+                out.append("    portion            restores    share of the Vigor pool")
+                for (id, amount) in portions.prefix(4) {
+                    let atOne = amount / poolLow * 100
+                    let atCap = amount / poolCap * 100
+                    out.append("    " + pad(String(id.dropFirst(id.hasPrefix("food.") ? 5 : 0)), 19)
+                               + pad(String(format: "%.0f vigor", amount), 12)
+                               + String(format: "%.0f%% at L1, %.0f%% at L%d   %@",
+                                        atOne, atCap, progression.maxLevel,
+                                        atCap >= atOne * 0.5 ? "✅ holds" : "❌ rots"))
+                }
+                if let (id, amount) = portions.first {
+                    let atOne = amount / poolLow * 100, atCap = amount / poolCap * 100
+                    if atCap < atOne * 0.5 {
+                        findings.append(Finding(
+                            severity: .warning, rule: "balance.portion_rots",
+                            message: String(format: "the richest food in the game (%@, %.0f vigor) is %.0f%% of a level-1 pool and %.0f%% of a level-%d one — every `restore_vigor` is flat against a pool that grows, which is the same defect the stances and techniques were cured of, and since 8E it is the whole economy",
+                                            id, amount, atOne, atCap, progression.maxLevel)))
+                    }
+                }
+            }
+            out.append("")
         }
 
         // MARK: pace
@@ -396,24 +435,48 @@ public enum BalanceFormatter {
             let stepsPerEncounter = (fresh?.encounter ?? 0) > 0
                 ? Double(exploration.eventWeightTotal) / Double(fresh!.encounter) : 0
             let walkCost = Double(tuning.vigor.drain.walkRoom) * stepsPerEncounter
-            let regenPerDay = progression.vigorPool.fullRegenHours > 0
-                ? 24 / progression.vigorPool.fullRegenHours : 0
+            let harvestsPerDay = FoodBudget.defaultHarvestsPerDay
 
             out.append("── pace to the level cap ─────────────────────────────────────────────────────")
             out.append(String(format: "   a kill is %.1f rooms of walking (%.0f vigor) plus the fight;",
                               stepsPerEncounter, walkCost))
-            out.append(String(format: "   a day is one full pool plus %.0f× regen, and every point is spent on combat.",
-                              regenPerDay))
-            out.append("   Nobody plays like that, so read the day count as a floor: the fastest")
-            out.append("   possible run against level-matched `normal` mobs, with no travel, no")
-            out.append("   crafting, no market and no sleep.")
+            out.append(String(format: "   a day is what a tended estate FEEDS you, at %.0f harvests a day.",
+                              harvestsPerDay))
+            out.append("   Vigor stopped regenerating in Phase 8E, so the pool is a stock and the")
+            out.append("   estate is the whole income. Two simplifications pull against each other")
+            out.append("   here, which is why this is an estimate and not the floor it used to be:")
+            out.append("   every point is spent on combat (nobody plays like that, so it is fast),")
+            out.append("   and nothing but the estate feeds the player — no foraging, no monster")
+            out.append("   meat, no food bought with silver (so it is slow).")
+            out.append("")
+            out.append("    what the estate can feed, per day:")
+            out.append("    level  estate  slots  vigor/day  portions  best mix")
+            var foodByLevel: [Int: FoodBudget.DailyFood] = [:]
+            for level in 1...progression.maxLevel {
+                let tier = FoodBudget.estateTier(playerLevel: level, upgrades: content.estateUpgrades)
+                foodByLevel[level] = FoodBudget.best(
+                    slots: FoodBudget.slots(tier: tier, upgrades: content.estateUpgrades),
+                    harvestsPerDay: harvestsPerDay, content: content)
+            }
+            var shownTiers = Set<Int>()
+            for level in 1...progression.maxLevel {
+                let tier = FoodBudget.estateTier(playerLevel: level, upgrades: content.estateUpgrades)
+                guard !shownTiers.contains(tier) else { continue }
+                shownTiers.insert(tier)
+                let food = foodByLevel[level] ?? .none
+                out.append("    " + pad("\(level)", 7) + pad("T\(tier)", 8)
+                           + pad("\(FoodBudget.slots(tier: tier, upgrades: content.estateUpgrades))", 7)
+                           + pad(String(format: "%.0f", food.vigor), 11)
+                           + pad(String(format: "%.0f", food.portions), 10)
+                           + (food.mix.isEmpty ? "— nothing cleared yet" : food.mix.joined(separator: " + ")))
+            }
             out.append("")
             let totalXP = ProgressionMath.totalXP(toReach: progression.maxLevel,
                                                   curve: progression.xpCurve,
                                                   maxLevel: progression.maxLevel)
             out.append(String(format: "   %d XP from level 1 to %d.", totalXP, progression.maxLevel))
             out.append("")
-            out.append("    class     vigor/kill  kills to 40  taps to 40   days at 100% of the budget")
+            out.append("    class     vigor/kill  kills to 40  taps to 40   days on the estate alone  taps/day")
             var daysByClass: [(String, Double)] = []
             for cls in run.classes {
                 let cells = run.levels.compactMap { run.cell(cls, $0, "normal", .basic, onCurve) }
@@ -423,7 +486,7 @@ public enum BalanceFormatter {
                 let vigorPerKill = vigorPerFight + walkCost
                 guard let normal = content.enemyArchetypes.first(where: { $0.id == "normal" }) else { continue }
 
-                var kills = 0.0, days = 0.0, taps = 0.0
+                var kills = 0.0, days = 0.0, taps = 0.0, foodTaps = 0.0, unfed = 0
                 for level in 1..<progression.maxLevel {
                     let needed = ProgressionMath.xpRequiredToReach(level + 1, curve: progression.xpCurve,
                                                                    maxLevel: progression.maxLevel)
@@ -432,25 +495,51 @@ public enum BalanceFormatter {
                         * pow(Double(level), progression.mobXP.exponent) * normal.xpMultiplier
                     guard xpPerKill > 0 else { continue }
                     let killsHere = Double(needed) / xpPerKill
-                    let pool = Double(ProgressionMath.maxVigor(at: level, pool: progression.vigorPool))
-                    let vigorPerDay = pool * (1 + regenPerDay)
                     kills += killsHere
                     taps += killsHere * (roundsPerFight + stepsPerEncounter)
-                    days += killsHere * vigorPerKill / vigorPerDay
+
+                    let food = foodByLevel[level] ?? .none
+                    // Levels before the first plot is cleared have NO estate at
+                    // all. They are lived off the trail, which this model does
+                    // not count — so they are excluded and reported rather than
+                    // divided by zero into an infinite day count.
+                    guard food.vigor > 0 else { unfed += 1; continue }
+                    days += killsHere * vigorPerKill / food.vigor
+                    // Every portion is a button: cook it, then eat it.
+                    foodTaps += killsHere * vigorPerKill / food.vigor * food.portions * 2
                 }
                 out.append("    " + pad(cls, 10)
-                           + String(format: "%6.1f      %8.0f     %8.0f     %6.1f",
-                                    vigorPerKill, kills, taps, days))
+                           + String(format: "%6.1f      %8.0f     %8.0f     %6.1f              %8.0f",
+                                    vigorPerKill, kills, taps + foodTaps, days,
+                                    days > 0 ? (taps + foodTaps) / days : 0))
+                if foodTaps > taps {
+                    findings.append(Finding(
+                        severity: .warning, rule: "pace.food_taps_dominate",
+                        message: String(format: "%@ spends %.0f taps cooking and eating against %.0f fighting — the food loop is a bigger button-press budget than the game it feeds, and portions restore a FLAT amount while the pool grows with level",
+                                        cls, foodTaps, taps)))
+                }
+                if unfed > 0 {
+                    findings.append(Finding(
+                        severity: .warning, rule: "pace.levels_without_an_estate",
+                        message: "\(cls): \(unfed) level(s) have no plot slots at all, so the estate feeds them nothing — the model excludes them and the trail has to carry them"))
+                }
                 daysByClass.append((cls, days))
+                // The band moved with the model in Phase 8E. It used to sit on a
+                // FLOOR (one pool plus four regens, every point spent on
+                // combat) where 45 days was aggressive; the number is now an
+                // estate-fed estimate, and the design's "3+ months" was put
+                // INTO it rather than left to the gap between perfect and real
+                // play — so 90 days is the target and the warning fires 20%
+                // either side of failing it.
                 if days > 200 {
                     findings.append(Finding(
                         severity: .warning, rule: "pace.too_slow",
-                        message: String(format: "%@ needs %.0f perfect days to reach the cap — the design asks for 3+ months of REAL play, and this floor already exceeds it",
+                        message: String(format: "%@ needs %.0f days of a fully tended estate to reach the cap — past six months of perfect play, the curve is not slow, it is a wall",
                                         cls, days)))
-                } else if days < 45 {
+                } else if days < 72 {
                     findings.append(Finding(
                         severity: .warning, rule: "pace.too_fast",
-                        message: String(format: "%@ can reach the cap in %.0f perfect days — the design asks for 3+ months",
+                        message: String(format: "%@ can reach the cap in %.0f days of a fully tended estate — the design asks for 3+ months, and this number is meant to carry that rather than assume imperfect play",
                                         cls, days)))
                 }
             }

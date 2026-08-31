@@ -28,7 +28,7 @@ re-spent, monster silver removed).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `dfe1ff8e24605e0d` (schema v9), 201 tests.
+against a real database. Digest baseline `abbdaa0e82efb78f` (schema v10), 222 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×
@@ -42,8 +42,14 @@ sweep: the last two flat lifts became multipliers (Shadow Veil dodge ×2.0, the 
 Defend ×1.5 — both measured at +9 and +5.5 points of dodge chance at EVERY level),
 every archetype row gained a required `minLevel` with elite and boss at 14, and the
 simulator's default sample size went 2000 → 8000 because `--strict` was failing on
-noise. **The one thing the report still flags is content:** the shipped bestiary
-carries ~50% of what its archetypes ask, which is Phase 10's.
+noise. **Phase 8E then removed passive Vigor regeneration entirely** — the trickle did not pause
+during an expedition, so it was the reason depth had no gate. Vigor now comes only from food,
+quests and levelling; the estate's plots are the income, and `FoodBudget` measures what a
+tended one feeds (85–93 days to the cap after the food plots were cut to land there, down from
+1,211 to 513 taps a day). The foraging pools left Swift for `zones.json` at the same time.
+**What the report still flags:** the shipped bestiary carries ~50% of what its archetypes ask
+(Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
+batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature).
 
 Sections below describe the shipped FEATURE SET. Where they quote numbers (XP curves,
 stat growth, enemy stats, enchant bonuses) treat `content/data/` as the truth — several

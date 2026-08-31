@@ -49,6 +49,7 @@ final class DomainContent: Sendable {
     let bagProgression: [BagUpgradeStep]
 
     let estateMaxTier: Int
+    let estatePlotSlotsByTier: [Int]
     let estateProgression: [EstateUpgradeStep]
 
     // The capital institutions. Trader and tavern get mapped to their domain
@@ -77,6 +78,7 @@ final class DomainContent: Sendable {
 
     let plotIcons: [PlotType: String]
     let plotTunings: [PlotType: PlotTuning]
+    let zones: [Zone]
 
     let fortuneDrawPrice: Int
     let fortuneBuffDurationSeconds: TimeInterval
@@ -215,6 +217,7 @@ final class DomainContent: Sendable {
         self.bagProgression = content.bags.progression.sorted { $0.toTier < $1.toTier }.map(\.domain)
 
         self.estateMaxTier = content.estateUpgrades.maxTier
+        self.estatePlotSlotsByTier = content.estateUpgrades.plotSlotsByTier
         self.estateProgression = content.estateUpgrades.progression.sorted { $0.toTier < $1.toTier }.map(\.domain)
 
         // NOT sorted: both arrays are the order the player scrolls through in
@@ -260,6 +263,13 @@ final class DomainContent: Sendable {
         }
         self.plotIcons = icons
         self.plotTunings = tunings
+        // Declaration order preserved: `ZoneCatalog.zone(forDepth:)` takes the
+        // FIRST band that covers a km, which is how the shipped ternary chose.
+        self.zones = (content.zones?.zones ?? []).map { dto in
+            Zone(id: dto.id,
+                 depthRange: (dto.depth.closedRange ?? 0...0),
+                 forage: dto.forage.map { ForageEntry(itemId: $0.itemId, weight: $0.weight) })
+        }
 
         self.fortuneDrawPrice = fortune.drawPrice
         self.fortuneBuffDurationSeconds = fortune.buffDurationSeconds

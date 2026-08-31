@@ -56,15 +56,12 @@ actor RouterStore {
         for (k, v) in properties {
             let user = try await sessionCache.getOrFetch(tgId: v, db: db)
             // Query expedition presence once — HealingService decides whether
-            // to pause regen, the Estate/Capital guards re-read it later in
+            // to pause HP regen, the Estate/Capital guards re-read it later in
             // their own flows. Cheap lookup: user_id is indexed on
-            // exploration_state.
+            // exploration_state. There is no Vigor tick to run beside it since
+            // Phase 8E: Vigor comes back from food, never from the clock.
             let inExpedition = try await ExplorationState.current(for: user, on: db) != nil
             _ = try await HealingService.tick(user, inExpedition: inExpedition, on: db)
-            // Vigor regen deliberately ignores `inExpedition`: stamina is spent
-            // out on the trail, so a trickle while the governor catches their
-            // breath is the mechanic, not a leak.
-            _ = try await VigorService.regenTick(user, on: db)
             hydrated[k] = user
         }
         try await router.process(update: update, properties: hydrated, db: db, lingo: lingo)

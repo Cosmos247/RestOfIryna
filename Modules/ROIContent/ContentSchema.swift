@@ -50,5 +50,9 @@ public enum ContentSchema {
     /// archetype row gains a required `minLevel`. A v8 bundle carries `+50`
     /// where a multiplier is now read: decoded as one it would be a ×50 dodge,
     /// so the handshake has to refuse rather than reinterpret.
-    public static let current: Int = 9
+    /// v10 (Phase 8E): `progression.vigorPool.fullRegenHours` is gone with the
+    /// mechanic it drove — Vigor no longer regenerates at all. A v9 bundle
+    /// still carries the field, and silently ignoring it would leave the
+    /// operator believing a trickle they can no longer get.
+    public static let current: Int = 10
 }
