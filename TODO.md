@@ -858,7 +858,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       **Result: 0 broken bands, 222 tests.** Baseline `abbdaa0e82efb78f` — `records`, `tuning`
       and `spawns` moved, `quests` did not.
 
-- [ ] **Phase 9 — Content specs in `content/spec/`** *(started 2026-08-31, 2 of 5 approved)* —
+- [x] **Phase 9 — Content specs in `content/spec/`** *(2026-08-31 → 2026-09-01, all 5 approved)* —
       the numbers are PRINTED, never typed: `roi-content spec <progression|gates|bestiary|items>`
       emits every table from the code that owns the maths (`ProgressionMath`, `EnemyGenerator`,
       `BudgetMath`), so a spec cannot drift from the generator it feeds. That command is also the
@@ -882,15 +882,83 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         **The three zone systems were reconciled and applied**: Гущавина 1–10 / Старий ліс 11–25
         / Пуща 26–49, in `zones.json` and `lore.md` both. Cost, weighed: foraged iron and clay
         move from km 3 to km 11, so the mine plot stops being optional in the first week.
-  - [ ] `spec-items.md` · `spec-sets.md` · `spec-economy.md`
-        Two findings waiting for the economy spec, both verified during the bestiary pass:
-        **the archetype `lootMultiplier` is dead** (elite 3.0, boss 8.0 — mapped, fingerprinted,
-        and read by no award site; both loot paths just roll each table row's own chance), and
-        **the Vigor ledger of a kill** — a wild kill returns 8.4–20.4 Vigor as cooked meat
-        against the ~16.8 it costs, a rabid kill returns nothing, the boar (the first mob anyone
-        meets) runs at −8.4, and past km 31 no meat drops at all.
+  - [x] **`spec-items.md`** — a FRAME, not a list: **no new items are authored in the
+        rebalance**. `roi-content spec items` was extended to print two new tables so the
+        gap is generated rather than typed, and what it printed reset the phase plan.
+        **The shipped wardrobe is 7 items**: three weapons that ladder 1→40, four armour
+        pieces frozen at itemLevel 1 forever, and three slots (`off_hand`, both accessories)
+        with nothing in them. A fully enchanted kit is **97% of the on-curve budget at
+        level 1 and 40% at level 25** — the game starts on curve and leaves it at once.
+        **The finding that moved the plan:** the bestiary carries ~50% of its archetype
+        contract and the player ~40% of theirs, so **the two half-strength errors have been
+        cancelling**, and Phase 10 was scheduled to remove exactly one of them.
+        Decisions: the weapon ladder **generalises to a gear ladder** (the Forester set
+        climbs the same rungs 1/10/20/30/40 — zero new items, and mechanically what "sets of
+        different levels" means; `EquipmentService.nominalStats` already resolves by
+        `itemId + tier` with no slot check), **built after the rebalance**; therefore
+        **Phase 10 does NOT regenerate the bestiary's strength** — an amendment to the
+        approved `spec-bestiary.md` §9, applied there — and the ladder and the regeneration
+        land together as one correction. The uncapped `gear_multiplier` (a set could grant
+        ×3.0 and validate cleanly) is **recorded, deferred to `spec-sets.md`** with the
+        flat→multiplier transition, since the shipped flat bonus rots 23% → 4% across the
+        band. Accessories additionally have **no class share profile** in `tuning/budget.json`,
+        so they cannot be authored at all until that is a tuning decision.
+  - [x] **`spec-sets.md`** — measuring the inherited fix first showed it walks into the
+        defect it repairs. Two corrections to the record: **the flat bonus does NOT rot
+        today** (the set never climbs, so 8.4 points against 36 is a stable 23% at every
+        level — it rots only when the ladder lands), and **`gear_multiplier` scales the
+        WRONG THING**: `EquipmentService.recomputeBonuses` applies it to the wearer's whole
+        equipped contribution, weapon included, and the weapon is not a member of the set.
+        The same ×1.05 costs **8% of the members' budget at L1 and 33% at L40** — a flat
+        bonus decays, a whole-kit multiplier compounds, and both are one defect: a bonus
+        measured by a denominator that is not its own. Under that reading the largest legal
+        multiplier falls ×1.15 → ×1.04, so **no single value is legal for a whole lifetime**;
+        scaling the members only is a constant ×1.24. Decisions: **a multiplier scales the
+        set's own equipped members** (inert — no set uses the case); **the 25% cap is
+        extended to multipliers**, costed `(factor − 1) × members' spent points`; **set
+        strength is a LADDER whose top rung is the ceiling**, independent of the members'
+        item level — and `set.forester` is rewritten as **the first and weakest rung, one
+        four-piece threshold at ×1.07 = 29% of the ceiling** (not its present 23%: a starter
+        outfit claiming three-quarters of the ceiling leaves later sets nowhere to climb).
+        **Six-piece thresholds are unreachable** until the empty slots have items, and the
+        class tilt waits for the second and third sets, where it lives in *which* set a
+        player wears rather than in a new effect case. **All of it ships with the gear
+        ladder, after the rebalance.** New: `roi-content spec sets`.
+  - [x] **`spec-economy.md`** — the last, and its finding is not about silver.
+        **The opening is Vigor-bankrupt, and an approved spec said otherwise.**
+        `spec-progression.md` §3 justified levels 1–3 having no estate with "about eleven
+        kills to reach level 4" — **eleven reaches level 2**. Level 4 is 788 XP = **79 boars**
+        at 10 XP, and at ~16.8 Vigor a kill against 8.4 returned as meat that is **664 Vigor
+        of deficit against a 105 pool**: short by six pools. The game's real answer was never
+        written down — the boar is `trash` (XP ×0.4) and the only creature at km 1–3, but the
+        shipped moose at level 6 from km 6 pays **418 XP** (223 after the re-spread), so the intended
+        opening is **to walk deeper than is comfortable, immediately**. `spec-progression.md`
+        §3 amended in place. Decided: **measure before retuning** — add a simulate band for
+        levels 1–3 (the report gives pace 1→40 as an aggregate and says nothing about the one
+        stretch with no estate behind it); the one-number fix (boar meat 0.70 → ~1.4) waits
+        for a number the report can check.
+        **Silver is a faucet with almost nothing to drain it**: mandatory spend is **1,600
+        across the whole game**, quests alone pay **220/day ≈ 19,800 over 90 days**, and
+        buying every material instead of gathering it costs ~21,900 — so the trader is the
+        only real sink and using it is optional. Three shapes nobody chose, recorded and left
+        alone: the spread is a uniform −50% on every line, **the forge adds no value in either
+        direction** (10 iron = 200 to buy = 1 ingot = 200; both sell for 100 — it is inventory
+        compression wearing an economy's clothes), and **the tavern has exactly a 0% house
+        edge** (win pays ×2, tie refunds, two fair dice = EV zero).
+        **`lootMultiplier` is wired up and multiplies QUANTITY, not chance** — chance is a
+        probability and saturates (the boar's 0.8 hide would become 2.4). The fractional part
+        of `quantity × multiplier` becomes a probability rather than a rounding, because at a
+        base quantity of 1 rounding collapses ×0.5/×1.0/×1.2/×1.7 into 1 or 2. It lands with
+        the bestiary regeneration, and **the loot tables are re-normalised to a base in the
+        same pass**: the elite's 1.80 hide is already a hand-written answer to "elites drop
+        more", and the multiplier would apply it twice (the printed `hide ×mult` column shows
+        1.80 → 5.40). New: `roi-content spec economy`.
 
-- [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls
+- [ ] Phase 10 — **shrunk by the Phase 9 decisions.** Apply `spec-bestiary.md` §3 (the level
+      re-spread of the seven creatures + the Bison string fix) and NOTHING else: no new items,
+      no filling of the 3 dead slots, and **no stat-line regeneration** — see `spec-items.md` §3.
+      Deferred past the rebalance, as one piece of work: the gear ladder, the bestiary
+      regeneration, the empty slots, new sets, and potions/scrolls.
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
 
 ### 9.2 Content Authoring

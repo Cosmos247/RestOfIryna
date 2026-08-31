@@ -9,7 +9,7 @@
 //
 //    swift run roi-content validate [--content DIR] [--locales DIR] [--strict]
 //    swift run roi-content simulate [--runs N] [--seed S] [--levels 1,5,…] [--strict]
-//    swift run roi-content spec <progression|gates|bestiary|items> [--levels 1,5,…]
+//    swift run roi-content spec <progression|gates|bestiary|items|sets|economy> [--levels 1,5,…]
 //
 //  Exits 0 on success and 1 on failure so it drops into a pre-commit hook or CI
 //  unchanged. Argument parsing is hand-rolled — adding swift-argument-parser
@@ -49,7 +49,7 @@ private func usage() -> Never {
       --seed S        RNG seed — the same seed always gives the same report
       --levels L,L,…  levels to sweep (default 1,5,10,20,30,40)
 
-    spec <table>      progression · gates · bestiary · items
+    spec <table>      progression · gates · bestiary · items · sets · economy
       --levels L,L,…  levels the table covers (default 1…25, the authored band)
 
       Phase 9 signs the content list off before it reaches JSON, and a spec full
@@ -183,8 +183,10 @@ case "spec":
         case "gates":       print(SpecTables.gates(content: content))
         case "bestiary":    print(SpecTables.bestiary(content: content, levels: levels))
         case "items":       print(SpecTables.items(content: content, levels: levels))
+        case "sets":        print(SpecTables.sets(content: content, levels: levels))
+        case "economy":     print(SpecTables.economy(content: content))
         default:
-            print("spec: pick a table — progression · gates · bestiary · items")
+            print("spec: pick a table — progression · gates · bestiary · items · sets · economy")
             exit(2)
         }
     } catch {

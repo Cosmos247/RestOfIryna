@@ -35,14 +35,44 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–8 are done, 8D and 8E included. Phase 9 is IN FLIGHT — content
-specifications, approved before a byte of content is authored. Two of five are
-signed off (`content/spec/spec-progression.md`, `spec-bestiary.md`).**
+**Phases 3–8 are done, 8D and 8E included. Phase 9 is CLOSED (2026-09-01) — all
+five content specifications are approved:** `spec-progression.md`,
+`spec-bestiary.md`, `spec-items.md`, `spec-sets.md`, `spec-economy.md`.
 
-> **Next action: write `content/spec/spec-items.md`**, then `spec-sets.md`, then
-> `spec-economy.md`. Each is one approval gate: propose, get sign-off, move on.
-> Start by reading the two approved specs — they fix the band (levels 1–25), the
-> level↔km rule and the zones that the item and economy specs both build on.
+> **Next action: Phase 10 — and it is now small.** Apply `spec-bestiary.md` §3:
+> re-spread the seven creatures' LEVELS (boar 1, moose 4, bison 7, lynx 10, wolf
+> 13, bear 16, rabid bear 22) and fix `enemy.wild_buffalo`'s English string to
+> Bison. **Nothing else.** No new items, no filling the three empty slots, and
+> **no stat-line regeneration** — see `spec-items.md` §3. Then Phase 11:
+> `WipeForRebalance`, `--strict`, and the live first-hour playtest that has never
+> happened.
+
+**What Phase 9 decided, compressed.** The authored band is **levels 1–25**; an
+enemy of level N spawns **km N…N+9**; the zones are **Гущавина 1–10 / Старий ліс
+11–25 / Пуща 26–49** (applied); **no new creatures** and **no new items**. The
+wardrobe was then measured and it reset the plan: a fully enchanted kit is **97%
+of the on-curve budget at level 1 and 40% at level 25** (armour is frozen at
+itemLevel 1 forever; only weapons ladder), and since the bestiary carries ~50% of
+its archetype contract, **the two half-strength errors have been cancelling** —
+so Phase 10 removes neither.
+
+**One package, all of it after the rebalance:** the **gear ladder** (the Forester
+set climbing the weapons' own rungs 1/10/20/30/40 — zero new items), the
+**bestiary regeneration**, a set bonus that multiplies its **own members** rather
+than the whole kit (the same ×1.05 costs 8% of the members' budget at L1 and 33%
+at L40), the 25% cap extended to multipliers, `set.forester` rewritten as the
+**first and weakest rung** of a strength ladder at ×1.07, and `lootMultiplier`
+wired to **quantity** with its loot tables re-normalised to a base in the same
+pass.
+
+**And the one thing the rebalance still owes.** `spec-economy.md` found the
+opening is Vigor-bankrupt: level 4 is **79 boars and 664 Vigor of deficit against
+a 105 pool**, not the "about eleven kills" an approved spec claimed (eleven
+reaches level 2 — `spec-progression.md` §3 is amended). The game's real answer is
+to **walk deeper than is comfortable, immediately** — the shipped moose at km 6
+pays 418 XP against the boar's 10 — and the decision is **measure before
+retuning**: add a simulate band for levels 1–3, the one stretch with no estate
+behind it, before touching the boar's meat chance.
 
 The rule the phase runs on: **numbers are printed, never typed.**
 `roi-content spec <progression|gates|bestiary|items>` emits every table from the
@@ -93,35 +123,15 @@ of a level-40 one — deferred with batch cooking to after the rebalance), and
 last content in Swift. Proved equivalent by replaying the shipped arrays out of
 git for km 1–40 — identical including weights and order.
 
-#### What the remaining three specs have to answer
+#### Standing deferrals
 
-Still open, and every one of them measured rather than guessed:
-
-- **The bestiary is half-strength.** Every shipped enemy carries ~50% of the HP
-  and ATK its archetype asks for (62% at level 1, falling to 48% by level 25), so
-  all seven are a 100% win at 4–13% HP where the archetype asks 10–62%. Phase 10
-  regenerates the whole table from the archetype targets — the approved roster is
-  the list it works from.
-- **`offHand` and both accessory slots have no items at all** — 1.0 + 1.2 of slot
-  weight sitting idle, exactly the residual the reference character prints. That
-  is `spec-items.md`.
-- **The archetype `lootMultiplier` is dead.** Elite 3.0 and boss 8.0 are mapped
-  into the domain and fingerprinted by the digest, and no award site reads them:
-  both loot paths go through `rollLootDrops`, which rolls each table row's own
-  chance. An elite drops what a trash mob drops. `spec-economy.md` decides
-  whether it is wired up or deleted.
-- **The Vigor ledger of a kill.** A wild kill returns 8.4–20.4 Vigor as cooked
-  meat against the ~16.8 it costs; a rabid kill returns nothing; the boar — the
-  first mob anyone meets — runs at −8.4; and past km 31 no meat drops at all.
-  Foraging is −0.5 Vigor per fresh room in every zone. `spec-economy.md`.
-- **Food portions are flat against a pool that grows** (33% of a level-1 pool,
-  12% of a level-40 one) and **nothing new unlocks between level 21 and 40**.
-  Both are deliberate deferrals to after the rebalance, both reported every run.
-
-Closed since this list was written: the foraging pools are in `zones.json`, the
-elite floor is enforced by the validator (`minLevel` 14), the last two flat
-rating bonuses are multipliers, and km 31–40 now has an approved roster to fill
-it with.
+Reported by every `simulate` run, all deliberate: **food portions are flat
+against a pool that grows** (33% of a level-1 pool, 12% of a level-40 one),
+**nothing new unlocks between level 21 and 40**, **levels 1–3 have no estate at
+all**, and the **seven `content.roster_off_curve` warnings** stay until the
+regeneration package lands. Silver is also **over-supplied** — roughly twenty
+thousand spare over a lifetime against 1,600 of mandatory spend — and the fix is
+more to buy, which is items, which is after the rebalance.
 
 #### What Phase 8 left behind (the tools Phase 9+ leans on)
 

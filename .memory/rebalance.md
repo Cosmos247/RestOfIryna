@@ -105,8 +105,8 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
 | 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
 | 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
-| 9 Content specs (approval gate) | 🟡 2 of 5 — progression ✅ · bestiary ✅ · items / sets / economy ⬜ |
-| 10 Generate + author content | ⬜ |
+| 9 Content specs (approval gate) | ✅ **5 of 5** — progression · bestiary · items · sets · economy |
+| 10 Apply the bestiary level re-spread — **and nothing else** | ⬜ shrunk by `spec-items.md`; no new items, no stat regeneration |
 | 11 Wipe + final pass | ⬜ |
 
 **Current digest baseline: `e004ea8d93ba32b9`** (schema **v10**) —
@@ -158,6 +158,183 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What Phase 9's item spec found (2026-08-31)
+
+**The measurement.** `roi-content spec items` gained two tables — slot coverage and
+the obtainable kit against the on-curve kit — so the gap is printed rather than
+argued. The shipped wardrobe is **7 items**: three weapons that ladder 1→40 and
+four armour pieces frozen at **itemLevel 1 forever** (the Master's enchant, +20%
+of the piece's own budget, is the only thing that ever happens to them), plus
+three slots with nothing in them at all. A fully enchanted kit is **97% of the
+on-curve budget at level 1 and 40% at level 25**: the game starts on curve and
+leaves it immediately, and the sawtooth (58% at L10 → 43% at L15) is the
+ten-level ladder rungs arriving late against a curve that climbs every level.
+
+**The finding that reset the plan: two half-strength errors were cancelling.**
+The bestiary carries ~50% of its archetype contract; the player carries ~40% of
+theirs. The seven "100% win at 4–11% HP" rows are what those two produce
+*together*, and neither was chosen — the roster predates the archetype table, the
+wardrobe predates the budget curve. `spec-bestiary.md` §9 had committed Phase 10
+to regenerating the roster, which would have removed exactly one side and doubled
+every enemy against a player who did not move. **The specs were about to
+contradict each other, and only a printed number caught it.** §9 was amended in
+place rather than quietly rewritten.
+
+**The frame that costs no content.** `weapon_upgrades.json` already describes
+what an armour set needs — an item id and rungs carrying an `itemLevel`, a stat
+line and material costs — and `EquipmentService.nominalStats` resolves a row by
+`itemId + tier` **without checking the slot**. So laddering armour is a data edit
+against a code path that is already slot-agnostic; only the upgrade *flow* needs
+building. That is what "sets of different levels" means mechanically: one set
+that climbs is four items, four sets at four levels is sixteen items with
+thirty-two locale keys. Decided: built **after** the rebalance, together with the
+bestiary regeneration, because the two halves are one correction.
+
+**Two holes in the set frame, deferred to `spec-sets.md` with the measurement
+recorded.** The one shipped set bonus is flat and rots exactly as the project's
+own rule predicts — 8.4 points against members worth 37 at item level 1 and 210
+at item level 25, so **23% of the set at the bottom of the band and 4% at the
+top**. And the 25% cap does not cover the fix: `flatSpend` sums only the
+`flat_stats` thresholds, so `{"kind": "gear_multiplier", "multiplier": 3.0}`
+validates cleanly. Nothing is exposed while no set uses the case — which is
+exactly why the cap must land *before* the first multiplier is authored.
+
+**The Forester set's numbers were then unfrozen by the user, and measuring first
+is what kept it from being wasted.** The offer was to rewrite the set's stats from
+scratch. Measured: the four pieces already spend **37.0 budget points against a
+nominal 36.0** at item level 1 — on curve, inside the validator's rounding slack.
+So re-deriving them moves nothing, because **the 40% gap is the frozen
+`itemLevel`, not the spread**. What the freedom does buy is real but smaller: the
+flat→multiplier transition becomes a write instead of a migration, and the
+shared-set compromise becomes a decision — one set is worn by all three classes
+(nothing restricts equipment by class anywhere) and its single spread delivers
+**81 / 86 / 75%** of what the warrior / archer / mage armour profiles ask for.
+The cheap fix needs no new items and the codebase already named it:
+`EquipmentService.nominalStats`'s comment says *"the class-identity flavour moves
+to sets"*. Explicitly NOT licensed: armour whose `itemLevel` tracks the wearer —
+that closes the gap and nullifies every gear upgrade, the same reason
+`EnemyGenerator` runs at design time.
+
+**And a slot that cannot be authored at all.** `tuning/budget.json` gives every
+class a `weapon`, an `armour` and an `offHand` share profile and **no accessory
+profile**. The two accessory slots have weight (0.5 each) and no answer to what
+an accessory spends its points on, so filling them is a tuning decision before it
+is a content one. Related: the reference character **wears an off-hand today**,
+because that profile does exist — the simulator has always measured a player
+holding an item the game has never sold.
+
+**Housekeeping that came with it.** `GearStatsDTO.pointsSpent(at:)` (the inverse
+of `BudgetMath.spend`) now lives in `ROIContent/BudgetCurve.swift`, because the
+validator's set-bonus cap needs it and ROIContent cannot import ROISim — a second
+copy of the exchange rate is the exact duplicate the item budget exists to
+prevent. Verified inert: 222 tests, `validate --strict` unchanged, the cap
+negative-tested (raising a bonus past 25% still fails), and **all four digest
+halves unmoved**.
+
+### What Phase 9's set spec found (2026-08-31)
+
+**The inherited fix was wrong, and only measuring it caught that.** `spec-items.md`
+handed the set spec "flat bonuses rot, make them multipliers". Both halves needed
+correcting.
+
+**The flat bonus does not rot today.** Its denominator is stable because the set
+never climbs: 8.4 points against 36 is **23% at every level**, sitting just under
+the 25% ceiling. It rots only when the gear ladder lands and the members go 36 →
+210 across the band. So the defect is real but not live, and it must be fixed in
+the same package as the ladder rather than before it.
+
+**And `gear_multiplier` scales the wrong thing — the mirror of the same defect.**
+`EquipmentService.recomputeBonuses` applies the factor to the wearer's WHOLE
+equipped contribution, weapon included, and the weapon is not a member of the set
+— it is also the only slot that climbs. The same **×1.05 costs 8% of the members'
+budget at level 1 and 33% at level 40**. A flat bonus decays; a whole-kit
+multiplier compounds; both measure a bonus by a denominator that is not its own.
+Phase 8C learned half of this when it made every stance lift a multiplier of the
+character's OWN stat; the other half is that a multiplier only self-normalises
+when it multiplies its own base. Sharpest form: under the whole-kit reading the
+largest legal multiplier falls ×1.15 → ×1.04, so **no single authored value is
+legal for a whole lifetime.** Scaling the members only is a constant ×1.24.
+Inert to correct — no set uses the case, so the semantics can be fixed before
+anything depends on them.
+
+**The frame the user actually asked for, finally in one piece.** Set strength is
+a **ladder whose top rung is the 25% ceiling**, and it is independent of the
+members' item level: the rung sets the share of the ceiling, item level sets what
+that share is worth. Because a set that spends its budget honestly has
+`memberSpend ≈ memberBudget`, **the multiplier minus one IS its share** — ×1.07
+reads as "7 of the 25 points of ceiling" with no arithmetic. `set.forester` is
+rewritten as the **first and weakest rung**: one four-piece threshold at ×1.07,
+29% of the ceiling. An earlier draft proposed ~19% to preserve its present
+strength and was wrong for a reason worth keeping: it treated Forester as *the*
+set rather than *the first* set, and a ladder whose bottom rung is
+three-quarters of the way up is not a ladder.
+
+**Two shapes the content cannot express yet.** Six-piece thresholds are
+unreachable while `off_hand` and the accessories are empty — the validator
+refuses them as exceeding membership — so they are not a rejected design but a
+blocked one. And the class tilt cannot live in a bonus: `gear_multiplier` is one
+scalar, and a case that named stats would still tilt everyone the same way. With
+more than one set the tilt is simply *which set a player wears*, which needs no
+new effect case, no class dimension and no runtime class check.
+
+**Everything ships with the gear ladder, after the rebalance.** What the
+rebalance gets is that the decisions are taken and measured, so the ladder
+package is a build rather than a design. New: `roi-content spec sets`.
+
+### What Phase 9's economy spec found (2026-09-01)
+
+**The last spec's finding was not about silver.** It was that the game's opening
+is Vigor-bankrupt and an APPROVED document said otherwise. `spec-progression.md`
+§3 justified levels 1–3 having no estate with *"about eleven kills to reach level
+4, so it is hours, not days"*. **Eleven reaches level 2.** Level 4 is 788 XP —
+120 + 240 + 428, straight off that document's own printed table — which at the
+shipped boar's 10 XP is **79 kills**, and at ~16.8 Vigor a kill against 8.4
+returned as cooked meat is **664 Vigor of deficit against a 105 pool.** Short by
+six pools, and the estate that is designed to pay for it does not exist yet.
+
+**The lesson is about where errors hide.** Every table in that spec was printed
+and every table was right. The wrong number was in the PROSE ABOUT the table —
+a count nobody generated, in the one sentence that decided a design question.
+"Numbers are printed, never typed" protects the tables; it does not protect the
+sentence underneath them, and that is where this one lived for two weeks.
+
+**The game does have an answer, and it was never written down either.** The boar
+is `trash` (XP ×0.4) and the only creature at km 1–3, but the shipped moose at
+level 6 pays **418 XP — forty-two boars** (223 and twenty-one once the re-spread
+lands; the generated table prints the shipped state, which is how the plan-vs-data
+slip was caught at all). The intended opening is **to walk deeper than is comfortable,
+immediately**: depth is the difficulty dial from the first hour, not from the
+first plot. Decided: **measure before retuning.** The report gives pace 1→40 as
+an aggregate and says nothing about the only stretch with no estate behind it, so
+a band for levels 1–3 comes first; the one-number fix (boar meat 0.70 → ~1.4)
+waits for a number the report can check.
+
+**Silver: a faucet with almost nothing to drain it.** Mandatory spend across the
+entire game is **1,600**. Quests alone pay **220/day ≈ 19,800 over ~90 days**,
+before a hide is sold. Buying every material rather than gathering it costs
+~21,900 — so the trader is the only real sink and using it is a choice, and a
+player who forages ends with roughly twenty thousand spare. Three shapes nobody
+chose, recorded and left alone because none is broken: the spread is a uniform
+**−50%** on every line (so no material is ever a better trade than another),
+**the forge adds no value in either direction** (10 iron = 200 to buy = 1 ingot =
+200; both sell for 100 — inventory compression wearing an economy's clothes), and
+**the tavern has exactly a 0% house edge** (win pays ×2, tie refunds, two fair
+dice = EV zero — a variance machine, not a sink).
+
+**`lootMultiplier` is wired to QUANTITY, and the detail is the decision.**
+Scaling `chance` is impossible — it is a probability, and ×3.0 on the boar's 0.8
+hide is 2.4. Scaling quantity is linear, but `quantity` is an `Int` and the
+multiplier a `Double`, and **rounding destroys the distinction it exists to
+make**: at a base quantity of 1, ×0.5 · ×1.0 · ×1.2 · ×1.7 all round to 1 or 2
+and six archetypes collapse into two. So the fractional part becomes a
+probability rather than a rounding — `floor(q×m)` plus one more at `frac(q×m)` —
+and the expected yield is exactly `chance × quantity × multiplier` at any base.
+**And wiring it is not a one-line change**: the printed `hide ×mult` column shows
+the elite going 1.80 → 5.40, because its table was already hand-differentiated.
+The loot tables must be re-normalised to a base in the same pass the stat lines
+are — two answers to one question is what the pipeline exists to remove, and this
+was the last place in the bestiary holding both. It goes with the regeneration.
 
 ### What Phase 8 taught
 

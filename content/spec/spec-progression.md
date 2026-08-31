@@ -119,8 +119,23 @@ Three things are worth noticing in that table before approving it.
 **Levels 1–3 have no estate at all** — tier 1 clears no land, and the first plot
 opens at tier 2, player level 4. Decided in Phase 8E and kept deliberately: with
 no Vigor regeneration the first days are lived off the trail, which is what gives
-the estate a reason to exist. XP there is tiny (about eleven kills to reach level
-4), so it is hours, not days.
+the estate a reason to exist.
+
+> **Amended 2026-09-01 by `spec-economy.md` §2.** This paragraph used to end
+> *"XP there is tiny (about eleven kills to reach level 4), so it is hours, not
+> days."* **Eleven kills reaches level 2.** Level 4 is 788 XP — 120 + 240 + 428
+> off the table above — which at the shipped boar's 10 XP is **79 kills**, and at
+> ~16.8 Vigor a kill against 8.4 returned as meat is **664 Vigor of deficit
+> against a 105 pool**. The opening is not short; it is short by six pools.
+>
+> **Why it works anyway, which is the part that was never written down:** the
+> boar is `trash` (XP ×0.4) and it is the only creature at km 1–3, but the next
+> creature along pays for the walk many times over — the shipped moose is level 6
+> from km 6 and worth **418 XP, forty-two boars** (223 XP and twenty-one boars
+> once `spec-bestiary.md` §3's re-spread lands). The intended opening is **to walk
+> deeper than is comfortable**, immediately. Depth is the difficulty dial from the first hour,
+> not from the first plot. `spec-economy.md` §7 asks for a simulate band that
+> measures this stretch before anyone retunes it.
 
 **The bag is gated on the ESTATE, not on the player.** Bag T2 needs estate T3,
 which needs player level 7 — so a player carries 25 slots for the first seven

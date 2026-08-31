@@ -21,14 +21,40 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**Phase 9 is IN FLIGHT — content specs, approved before any authoring. Two of five are
-signed off** (`content/spec/spec-progression.md`, `spec-bestiary.md`); items, sets and
-economy remain. Every number in them is emitted by `roi-content spec`, never typed, so a
-spec cannot drift from the generator it feeds. What they decided: the authored band is
-levels **1–25**; an enemy of level N spawns from **km N to km N+9**; the three zone
+**Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
+(`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
+`spec-economy.md`). Every number in them is emitted by `roi-content spec`, never
+typed, so a spec cannot drift from the generator it feeds. What they decided: the authored
+band is levels **1–25**; an enemy of level N spawns from **km N to km N+9**; the three zone
 systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 / Пуща 26–49** (applied);
 **no new creatures** — the seven that exist are re-spread (levels only); the boss stays
 unmembered; and nothing new unlocks between level 21 and 40, deferred on purpose.
+
+**`spec-items.md` shrank Phase 10 to almost nothing, and the reason is measured.**
+No new items are authored in the rebalance, so the spec is a FRAME: the shipped wardrobe
+is three weapons that ladder 1→40, four armour pieces frozen at itemLevel 1 forever, and
+three empty slots. A fully enchanted kit is **97% of the on-curve budget at level 1 and
+40% at level 25** — printed by the two tables added to `roi-content spec items`. Since the
+bestiary carries ~50% of its archetype contract, **the two half-strength errors have been
+cancelling**, and Phase 10 was scheduled to remove exactly one. So: the weapon ladder
+**generalises to a gear ladder** (the Forester set climbs the same rungs — zero new items;
+`EquipmentService.nominalStats` already resolves by `itemId + tier` with no slot check),
+built **after** the rebalance, and **Phase 10 does NOT regenerate the bestiary's strength**
+— an amendment applied to the approved `spec-bestiary.md` §9. The two land together.
+Accessories have **no class share profile** in `tuning/budget.json` and cannot be authored
+until that is decided.
+
+**`spec-sets.md` then corrected the fix it inherited.** The flat set bonus does **not** rot
+today (the set never climbs, so it is a stable 23% — it rots when the ladder lands), and
+`gear_multiplier` scales the wearer's **whole kit**, weapon included, so the same ×1.05
+costs **8% of the members' budget at L1 and 33% at L40**: a flat bonus decays, a whole-kit
+multiplier compounds, and both measure a bonus by a denominator that is not its own.
+Decided: a multiplier scales the set's **own equipped members** (inert — no set uses the
+case); the 25% cap is extended to multipliers; **set strength is a ladder whose top rung is
+that ceiling**, independent of item level; and `set.forester` becomes the **first and
+weakest rung** — one four-piece threshold at **×1.07, 29% of the ceiling**. Six-piece
+thresholds are unreachable until the empty slots have items. All of it ships with the gear
+ladder, after the rebalance.
 
 Phase 8 is closed: the math moved into `ROISim` behind unchanged façades, `roi-content
 simulate` measures it, and its findings were acted on (stances multiplicative, warrior

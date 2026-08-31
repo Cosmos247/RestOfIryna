@@ -37,8 +37,11 @@ Two other holes, both already reported by the balance run:
   bar, ×9 XP, ×8 loot) and nothing in the game uses it.
 - **Every shipped enemy carries ~50% of the HP and ATK its archetype asks for**
   (62% at level 1, 48% by 25). The roster was authored before the archetype
-  table existed. Phase 10 regenerates every stat line from the table, which is
-  why this document specifies **level, archetype and family — never HP**.
+  table existed. This document therefore specifies **level, archetype and family
+  — never HP**, so that the stat lines can be regenerated from the table without
+  reopening it. *(Amended: that regeneration is deferred past the rebalance —
+  see §9. The wardrobe turned out to be off-curve by the same factor, and the
+  two are corrected together.)*
 
 ---
 
@@ -154,12 +157,15 @@ The family decides the table; the archetype's `lootMultiplier` decides how much.
 | rabid | `mat.hide` only — the meat carries Beastfever |
 
 That rule is from `content/lore.md` §8 and the shipped tables already obey it.
-Two things this spec deliberately does **not** decide, because they belong to
-`spec-items.md`:
+Two things this spec deliberately does **not** decide:
 
 - whether elites and the boss drop something a trash mob cannot (a trophy, a
   crafting material, a recipe scroll);
 - what the drop quantities and chances are per level band.
+
+*(Both went to `spec-economy.md` §5 rather than to the item spec, because the
+answer turned out to be the archetype's `lootMultiplier` — wired to quantity,
+with the loot tables re-normalised to a base in the same pass.)*
 
 What it does decide: **every wild creature is food**, and that matters more than
 it used to. Since Phase 8E removed Vigor regeneration, meat is one of the two
@@ -245,12 +251,25 @@ a boss is in this world gets decided against a played game.
 
 ## 9. What happens after approval
 
-Phase 10 regenerates **every** stat line in the table from the archetype
-contract — including the seven that already exist, which today carry about half
-of what their archetype asks. The specification names creatures, levels,
-archetypes, families and loot tables; `EnemyGenerator` supplies HP, ATK, DEF,
-crit, dodge and XP; the validator enforces the archetype floor; and the balance
-report measures the result against the same contract that produced it.
+**Amended 2026-08-31 by `spec-items.md` §3 — read that amendment first.** This
+section was approved before the wardrobe was measured. It turns out the shipped
+player carries about **40%** of the on-curve kit the archetype targets were
+solved against, so the roster's ~50% and the wardrobe's ~40% have been holding
+each other up. Regenerating the bestiary alone would double every enemy against
+a player who did not move.
+
+**So Phase 10 applies §3 — the level re-spread — and nothing else.** The seven
+creatures keep the stat lines they have; the `content.roster_off_curve` warnings
+stay in every report; the archetype table stays decorative for one more release.
+The regeneration below happens **after the rebalance, together with the gear
+ladder** in `spec-items.md` §4, because the two halves are one correction.
+
+What that regeneration will be, when it comes: Phase 10+ regenerates **every**
+stat line in the table from the archetype contract — including the seven that
+already exist. The specification names creatures, levels, archetypes, families
+and loot tables; `EnemyGenerator` supplies HP, ATK, DEF, crit, dodge and XP; the
+validator enforces the archetype floor; and the balance report measures the
+result against the same contract that produced it.
 
 **No new locale keys are needed** — every creature in the table already has its
 `enemy.<id>` name in both locales, which is one of the quieter arguments for

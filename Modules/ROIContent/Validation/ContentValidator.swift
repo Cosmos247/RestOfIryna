@@ -1140,16 +1140,20 @@ public enum ContentValidator {
         /// stat could have added. An absolute slack, not a percentage: rounding
         /// error is a fixed number of points, so a percentage tolerance is far
         /// too tight on a level-1 piece and far too loose on a level-40 one.
+        ///
+        /// The points come from the shared inverse in `BudgetCurve`: the exchange
+        /// rate is the item budget's whole contract and must not exist twice.
+        /// Slack stays local because it is this check's own rounding tolerance,
+        /// not a property of the curve.
         func spend(_ stats: GearStatsDTO) -> (points: Double, slack: Double) {
-            var points = 0.0, slack = 0.0
+            var slack = 0.0
             for (value, rate) in [(stats.attack, perPoint.attack), (stats.defense, perPoint.defense),
                                   (stats.hp, perPoint.hp), (stats.crit, perPoint.crit),
                                   (stats.dodge, perPoint.dodge), (stats.accuracy, perPoint.accuracy)]
             where value != 0 && rate > 0 {
-                points += Double(value) / rate
                 slack += 0.5 / rate
             }
-            return (points, slack)
+            return (stats.pointsSpent(at: perPoint), slack)
         }
 
         func checkSpend(_ stats: GearStatsDTO, itemLevel: Int, slot: String, rarity: String,
