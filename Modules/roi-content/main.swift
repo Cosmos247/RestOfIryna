@@ -50,7 +50,7 @@ private func usage() -> Never {
       --levels L,L,…  levels to sweep (default 1,5,10,20,30,40)
 
     spec <table>      progression · gates · bestiary · items
-      --levels L,L,…  levels the table covers (default 1…15 for bestiary/items)
+      --levels L,L,…  levels the table covers (default 1…25, the authored band)
 
       Phase 9 signs the content list off before it reaches JSON, and a spec full
       of hand-typed numbers is a fourth copy of the same curves. Every table here
@@ -163,7 +163,9 @@ case "spec":
         let content = GameContent(bundle)
         let levels = value(for: "--levels", in: args)
             .map { $0.split(separator: ",").compactMap { Int($0) } }
-            .flatMap { $0.isEmpty ? nil : $0 } ?? Array(1...15)
+            // The authored band from `spec-progression.md`. Narrow it with
+            // `--levels` when a table only needs a few rows.
+            .flatMap { $0.isEmpty ? nil : $0 } ?? Array(1...25)
 
         // The positional table name, skipping flags AND their values —
         // `spec --levels 1,5 bestiary` used to read "1,5" as the table, because

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Rest Of Iryna (ROI)** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a wilderness plagued by rabies, manage 30x30 estates, battle beasts, and wage territorial wars.
+**Rest Of Iryna (ROI)** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a wilderness plagued by rabies, build up an estate of production plots, battle beasts, and wage territorial wars. (The estate is an abstract slot-indexed plot list — the 30×30 spatial grid was removed from the roadmap on 2026-05-18 and must not be proposed again.)
 
 - **Language:** Swift 6.2 (strict concurrency, `ExistentialAny`)
 - **Platform:** macOS 14+, Telegram Bot (long polling)
@@ -17,6 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
+| `content/spec/*.md` | Content specifications, approved before authoring (Phase 9). Numbers in them are emitted by `roi-content spec`, never typed |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -39,7 +40,7 @@ Game code lives in `Swift/` (not `Sources/`). The content pipeline lives in `Mod
 Modules/
 ├── ROIContent/          # Foundation-only: content DTOs, loader, validator, live snapshot, EquipmentSlot
 ├── ROISim/              # The balance math itself + deterministic RNG + the simulator
-└── roi-content/         # CLI: `validate [--strict]` · `simulate [--runs N] [--seed S] [--strict]`
+└── roi-content/         # CLI: `validate [--strict]` · `simulate [--runs N] [--seed S] [--strict]` · `spec <table>`
 Tests/ROIContentTests/   # Fast tests — no Fluent/Postgres/Telegram in this graph
 ```
 
@@ -102,6 +103,13 @@ live rows still point at — if you add a column that stores a content id, add i
 `LiveReferenceQuery.collect` or the hot swap will happily break it. **Lingo is NOT
 reloaded**: new locale strings still need a restart.
 
+**Content is specified before it is authored.** `content/spec/*.md` holds the
+signed-off list — what creatures exist, at what level and archetype, what items
+fill which slot — and Phase 10 authors against it, never around it. Every number
+in a spec is printed by `swift run roi-content spec <progression|gates|bestiary|items>`,
+which reads the same `ProgressionMath` / `EnemyGenerator` / `BudgetMath` the game
+does, so a specification cannot drift from the generator it feeds.
+
 Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
 Run `swift run roi-content validate --strict` before committing content, and
 `swift run -c release roi-content simulate` after touching `tuning/combat.json`,
@@ -127,7 +135,8 @@ Swift/
 
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
 
-`Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art. `content/` — game-content reference docs (bestiary, recipes).
+`Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art.
+`content/data/` — the game itself as JSON. `content/spec/` — the content specifications Phase 9 signs off before anything is authored. `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
 
 ## How to Add a New Controller
 

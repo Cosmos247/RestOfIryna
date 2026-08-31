@@ -37,8 +37,12 @@ the maths. **This is the only work in flight.**
 
 **Phases 3–8 are done, 8D and 8E included. Phase 9 is IN FLIGHT — content
 specifications, approved before a byte of content is authored. Two of five are
-signed off (`content/spec/spec-progression.md`, `spec-bestiary.md`); items, sets
-and economy remain.**
+signed off (`content/spec/spec-progression.md`, `spec-bestiary.md`).**
+
+> **Next action: write `content/spec/spec-items.md`**, then `spec-sets.md`, then
+> `spec-economy.md`. Each is one approval gate: propose, get sign-off, move on.
+> Start by reading the two approved specs — they fix the band (levels 1–25), the
+> level↔km rule and the zones that the item and economy specs both build on.
 
 The rule the phase runs on: **numbers are printed, never typed.**
 `roi-content spec <progression|gates|bestiary|items>` emits every table from the
@@ -89,26 +93,35 @@ of a level-40 one — deferred with batch cooking to after the rebalance), and
 last content in Swift. Proved equivalent by replaying the shipped arrays out of
 git for km 1–40 — identical including weights and order.
 
-#### What Phase 9 has to answer
+#### What the remaining three specs have to answer
 
-The simulator already named the content gaps, so the spec is not starting from a
-blank page:
+Still open, and every one of them measured rather than guessed:
 
 - **The bestiary is half-strength.** Every shipped enemy carries ~50% of the HP
   and ATK its archetype asks for (62% at level 1, falling to 48% by level 25), so
-  all seven are a 100% win at 4–13% HP where the archetype asks 10–62%.
-  `EnemyGenerator` regenerates the table from the archetype targets — that is
-  Phase 10's job, and it needs a roster list first.
-- **km 31–40 holds a single elite**, the `boss` archetype has **no members**, and
-  `offHand` plus both accessory slots have **no items at all** (1.0 + 1.2 of slot
-  weight sitting idle — it is exactly the residual the reference character prints).
-Three of the gaps this list used to carry are closed. **The foraging pools are
-in `zones.json`** as of 8E, so no content is left in Swift. **The elite floor is
-enforced**: every archetype row carries a required `minLevel` and elite/boss are
-14, so the generator cannot emit the fight that made the mage's level-5 elite a
-93% win. And **the last two flat rating bonuses are multipliers** — Shadow Veil
-dodge ×2.0, the archer's Defend ×1.5, both worth the same points of dodge chance
-at level 1 and at level 40.
+  all seven are a 100% win at 4–13% HP where the archetype asks 10–62%. Phase 10
+  regenerates the whole table from the archetype targets — the approved roster is
+  the list it works from.
+- **`offHand` and both accessory slots have no items at all** — 1.0 + 1.2 of slot
+  weight sitting idle, exactly the residual the reference character prints. That
+  is `spec-items.md`.
+- **The archetype `lootMultiplier` is dead.** Elite 3.0 and boss 8.0 are mapped
+  into the domain and fingerprinted by the digest, and no award site reads them:
+  both loot paths go through `rollLootDrops`, which rolls each table row's own
+  chance. An elite drops what a trash mob drops. `spec-economy.md` decides
+  whether it is wired up or deleted.
+- **The Vigor ledger of a kill.** A wild kill returns 8.4–20.4 Vigor as cooked
+  meat against the ~16.8 it costs; a rabid kill returns nothing; the boar — the
+  first mob anyone meets — runs at −8.4; and past km 31 no meat drops at all.
+  Foraging is −0.5 Vigor per fresh room in every zone. `spec-economy.md`.
+- **Food portions are flat against a pool that grows** (33% of a level-1 pool,
+  12% of a level-40 one) and **nothing new unlocks between level 21 and 40**.
+  Both are deliberate deferrals to after the rebalance, both reported every run.
+
+Closed since this list was written: the foraging pools are in `zones.json`, the
+elite floor is enforced by the validator (`minLevel` 14), the last two flat
+rating bonuses are multipliers, and km 31–40 now has an approved roster to fill
+it with.
 
 #### What Phase 8 left behind (the tools Phase 9+ leans on)
 
@@ -173,7 +186,7 @@ the whole Vigor economy in 8E.
 
 ### How content works now
 
-All 12 catalogs and all six tuning tables are façades over a snapshot
+All 13 catalogs (Zone joined in 8E) and all seven tuning tables are façades over a snapshot
 installed at boot:
 
 ```
@@ -203,6 +216,7 @@ live in `.memory/content-pipeline.md`.
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
+swift run roi-content spec bestiary          # spec tables: progression · gates · bestiary · items
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
 swift test                                   # 222 tests, ~0.14s
 ```
@@ -240,6 +254,8 @@ trade TTLs and the 12:00 rollover never scale.
 | `Swift/Helpers/ContentDigest.swift` | `--content-digest`: records + spawn replay + daily-quest replay. Run before/after any content edit to confirm ONLY the intended change moved |
 | `Modules/ROISim/CombatMath.swift` | The combat model itself. `CombatService` delegates here — add a roll THERE, never a second copy |
 | `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
+| `Modules/ROISim/SpecTables.swift` | What `roi-content spec` prints — the tables a content spec quotes, from the code that owns them |
+| `content/spec/` | The Phase 9 approval gate: the content list, signed off before it reaches JSON |
 
 ## Rules
 

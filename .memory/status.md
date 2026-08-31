@@ -15,16 +15,25 @@ numbers below. Current state:
 
 | Phase | What landed |
 |---|---|
-| 3 | All 12 catalogs read `content/data/*.json`; no Swift content array remains |
+| 3 | All 12 catalogs read `content/data/*.json`; no Swift content array remains (Zone made it 13 in 8E) |
 | 4 | Six tuning tables in `content/data/tuning/`; three `testMode` flags collapsed into one `time.scale` (still 60; Phase 11 sets 1.0) |
-| 5 | Combat is ABSORPTION, not subtraction; ratings→% curves; `levelDiff`; `maxLevel` 40; proportional growth; Vigor pool + regen; enemies generated from a six-archetype table and dropping silver; the three special attacks rebuilt off "ignore armour" |
+| 5 | Combat is ABSORPTION, not subtraction; ratings→% curves; `levelDiff`; `maxLevel` 40; proportional growth; a Vigor pool ~~+ regen~~ *(8E deleted the regen)*; enemies generated from a six-archetype table ~~and dropping silver~~ *(8C deleted the silver)*; the three special attacks rebuilt off "ignore armour" |
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**Next: Phase 9** — content specs, for approval before any authoring. Phase 8 is closed:
-the math moved into `ROISim` behind unchanged façades, `roi-content simulate` measures it,
-and the three findings it produced were acted on (stances multiplicative, warrior budget
-re-spent, monster silver removed).
+**Phase 9 is IN FLIGHT — content specs, approved before any authoring. Two of five are
+signed off** (`content/spec/spec-progression.md`, `spec-bestiary.md`); items, sets and
+economy remain. Every number in them is emitted by `roi-content spec`, never typed, so a
+spec cannot drift from the generator it feeds. What they decided: the authored band is
+levels **1–25**; an enemy of level N spawns from **km N to km N+9**; the three zone
+systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 / Пуща 26–49** (applied);
+**no new creatures** — the seven that exist are re-spread (levels only); the boss stays
+unmembered; and nothing new unlocks between level 21 and 40, deferred on purpose.
+
+Phase 8 is closed: the math moved into `ROISim` behind unchanged façades, `roi-content
+simulate` measures it, and its findings were acted on (stances multiplicative, warrior
+budget re-spent, monster silver removed, the last two flat lifts converted, the archetype
+level floor enforced).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested

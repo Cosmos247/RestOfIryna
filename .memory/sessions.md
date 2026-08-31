@@ -3623,3 +3623,38 @@ SUPERSEDED with a pointer to where each part of the truth now lives, rather than
 edited or deleted: its family design (Wild drops meat and hide, Rabid hide only)
 is still exactly right, and it is the second stale document this rebalance has
 found sitting quietly beside working code — after `PlotService`'s header.
+
+### Documentation and memory sweep (same session)
+
+A pass with no feature work: make every document say what is true, and make a
+fresh session able to continue without reading the transcript.
+
+**Stale records found and fixed.** `CLAUDE.md`'s one-line description of the game
+still said "manage 30x30 estates" — a design direction closed on 2026-05-18 and
+recorded as closed in the auto-memory, sitting in the first paragraph a new
+session reads. `README.md` still described Shadow Veil as "+50 dodge" and the
+archer's Defend as "+30 dodge" (multipliers since 8D) and the XP reward as a
+per-tier table of 5/12/25/50/100/175 (per-enemy data, solved from the archetype
+table, since Phase 5A). `.memory/file-map.md` carried the same two flat bonuses,
+described `VigorService` as if it still regenerated, and its whole `content/`
+block was Phase 1 vintage — five files and the line "NOTHING READS THESE YET —
+the bot still runs off the Swift arrays until Phase 2". `.memory/status.md` and
+`INDEX.md` still said Phase 9 was next rather than in flight.
+
+**The pattern is worth naming, because it is now three for three.** `PlotService`'s
+header outlived its own function by three phases; `content/bestiary.md` outlived
+the combat model it documented; the file-map's content block outlived the
+migration it described. **A document rots silently because nothing executes it** —
+which is exactly why the numbers in the Phase 9 specs are printed by
+`roi-content spec` rather than typed.
+
+**Written down where it will be found again.** `CLAUDE.md` gained the rule that
+content is specified before it is authored, with the command that prints the
+tables. The auto-memory gained `project-world-ladder`: the level↔km rule, the
+three zones, the authored band 1–25 — the four facts every remaining spec hangs
+from, each expensive to derive and none of them obvious from the code.
+`Prompt.md` now opens the Phase 9 section with an explicit next action
+(`spec-items.md`, then sets, then economy) so a fresh session starts at the work.
+
+**One consistency fix in the tool**: `roi-content spec` defaulted to levels 1–15
+while the approved band is 1–25. The default follows the decision now.

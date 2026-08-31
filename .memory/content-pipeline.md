@@ -23,6 +23,13 @@ Swift/                executable                 the bot; carries @_exported imp
 `Modules/`, not `Sources/` — `CLAUDE.md` states game code lives in `Swift/`, and
 a `Sources/` directory would contradict that.
 
+**`roi-content spec <progression|gates|bestiary|items>`** (Phase 9) prints the
+tables a content specification quotes, from the code that owns the maths —
+`ProgressionMath`, `EnemyGenerator`, `BudgetMath`. A spec full of hand-typed
+numbers would be a fourth transcription of the same curves; this way the document
+and the generator it feeds cannot disagree, and the command is the seed of Phase
+10's generator.
+
 ## Runtime shape
 
 ```
@@ -33,7 +40,7 @@ content/data/*.json
    GameContent  (DTO snapshot)   → GameData.install
    DomainContent (domain snapshot) → Catalogs.install
       ↑
-  ALL 12 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade
+  ALL 13 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade · Zone (8E)
   Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest
   — every one reads Catalogs.current
 ```
