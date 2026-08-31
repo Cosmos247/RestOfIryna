@@ -177,7 +177,8 @@ final class DomainContent: Sendable {
                 archetype: kind, rounds: row.rounds, hpLossPercent: row.hpLossPercent,
                 mitigationPercent: row.mitigationPercent, dodgePercent: row.dodgePercent,
                 critPercent: row.critPercent, xpMultiplier: row.xpMultiplier,
-                lootMultiplier: row.lootMultiplier, spawnWeight: row.spawnWeight)
+                lootMultiplier: row.lootMultiplier, spawnWeight: row.spawnWeight,
+                minLevel: row.minLevel)
         }
         for kind in EnemyArchetype.allCases where archetypes[kind] == nil {
             throw ContentMappingError.tuningRowMissing("archetype \(kind.rawValue)", table: "enemies.json")

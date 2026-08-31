@@ -51,11 +51,11 @@ final class SimulatorTests: XCTestCase {
                 characterClass: "warrior", vigor: 4, hitChanceModifier: -10, cannotMiss: false,
                 zeroesDodge: false, effect: .armourBreak(rounds: 3))],
             specialDefense: SpecialDefenseSectionDTO(
-                effectPersistRounds: 1, ironBulwarkChipFraction: 0.5, shadowVeilDodgeBonus: 50,
+                effectPersistRounds: 1, ironBulwarkChipFraction: 0.5, shadowVeilDodgeMultiplier: 2.0,
                 mirrorWardReflectFraction: 0.5,
                 byClass: [SpecialDefenseClassDTO(characterClass: "warrior", vigor: 3)]),
             flee: [FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0)],
-            defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeBonus: 30,
+            defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
                                      mageBarrierDamageFraction: 0.4))
     }
 

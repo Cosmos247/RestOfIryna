@@ -25,11 +25,19 @@ final class BestiaryTests: XCTestCase {
     private func archetype(_ id: String, rounds: Double = 5, hpLoss: Double = 24,
                            mitigation: Double = 20, dodge: Double = 3, crit: Double = 5,
                            xp: Double = 1, loot: Double = 1,
-                           weight: Double = 60) -> EnemyArchetypeDTO {
+                           weight: Double = 60, floor: Int = 1) -> EnemyArchetypeDTO {
         EnemyArchetypeDTO(id: id, rounds: rounds, hpLossPercent: hpLoss,
                           mitigationPercent: mitigation, dodgePercent: dodge,
                           critPercent: crit, xpMultiplier: xp, lootMultiplier: loot,
-                          spawnWeight: weight)
+                          spawnWeight: weight, minLevel: floor)
+    }
+
+    /// The shipped floors: an elite (and a boss) may not be authored below
+    /// level 14. Used by the floor tests so they read against the real table
+    /// rather than a number invented in the fixture.
+    private func archetypesWithShippedFloors() -> [EnemyArchetypeDTO] {
+        ["trash", "normal", "skirmisher", "brute"].map { archetype($0) }
+            + ["elite", "boss"].map { archetype($0, floor: 14) }
     }
 
     private func allArchetypes() -> [EnemyArchetypeDTO] {
@@ -69,9 +77,9 @@ final class BestiaryTests: XCTestCase {
                     specialAttack: [],
                     specialDefense: SpecialDefenseSectionDTO(
                         effectPersistRounds: 1, ironBulwarkChipFraction: 0.5,
-                        shadowVeilDodgeBonus: 50, mirrorWardReflectFraction: 0.5, byClass: []),
+                        shadowVeilDodgeMultiplier: 2.0, mirrorWardReflectFraction: 0.5, byClass: []),
                     flee: [],
-                    defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeBonus: 30,
+                    defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
                                             mageBarrierDamageFraction: 0.4)),
                 vigor: VigorTuningDTO(
                     drain: VigorDrainDTO(walkRoom: 2, walkRoomDoubleSpeed: 4, combatRound: 1,
@@ -145,6 +153,53 @@ final class BestiaryTests: XCTestCase {
     func testDuplicateArchetypeRowIsAnError() {
         assertRule("identity.duplicate_id",
                    bundle(enemies: [enemy()], archetypes: allArchetypes() + [archetype("trash")]))
+    }
+
+    // MARK: - The archetype level floor
+    //
+    // Phase 8D. An elite costs 62% of a bar by contract and its p99 is a death;
+    // below level 14 the player has no technique unlocked at all, so the fight
+    // is the `basic` row with nothing to spend. Enemy stats are frozen at
+    // design time, which makes this file the only place the floor can break —
+    // and the generator that fills the table in Phase 10 is why it is checked
+    // now rather than then.
+
+    func testEliteBelowItsArchetypeFloorIsAnError() {
+        assertRule("enemy.below_archetype_floor",
+                   bundle(enemies: [enemy("enemy.cub", level: 13, archetype: "elite")],
+                          archetypes: archetypesWithShippedFloors()))
+    }
+
+    func testEliteAtItsArchetypeFloorIsClean() {
+        let report = ContentValidator.validate(
+            bundle(enemies: [enemy("enemy.cub", level: 14, archetype: "elite")],
+                   archetypes: archetypesWithShippedFloors()))
+        XCTAssertFalse(report.errors.contains { $0.rule == "enemy.below_archetype_floor" },
+                       "level 14 is the floor itself and must pass")
+    }
+
+    /// Deliberately no exception for the `0...0` sentinel. A row that never
+    /// spawns from the wilderness is still reachable through training and
+    /// scripted hooks, and a rule with an "unless it is unreachable" clause
+    /// is a rule nobody can check.
+    func testArchetypeFloorAppliesToNonSpawningRowsToo() {
+        assertRule("enemy.below_archetype_floor",
+                   bundle(enemies: [enemy("enemy.cub", level: 5, archetype: "elite",
+                                          depth: IntRangeDTO(min: 0, max: 0))],
+                          archetypes: archetypesWithShippedFloors()))
+    }
+
+    func testArchetypeFloorAboveTheLevelCapIsAnError() {
+        var table = allArchetypes()
+        table[4] = archetype("elite", floor: 41)
+        assertRule("enemy.archetype_floor_above_cap",
+                   bundle(enemies: [enemy()], archetypes: table, maxLevel: 40))
+    }
+
+    func testArchetypeFloorBelowOneIsAnError() {
+        var table = allArchetypes()
+        table[0] = archetype("trash", floor: 0)
+        assertRule("enemy.archetype_floor_range", bundle(enemies: [enemy()], archetypes: table))
     }
 
     func testNonPositiveRoundsIsAnError() {

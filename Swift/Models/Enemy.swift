@@ -73,11 +73,15 @@ public struct EnemyArchetypeSpec: Sendable {
     public let xpMultiplier: Double
     public let lootMultiplier: Double
     public let spawnWeight: Double
+    /// Lowest monster level this archetype may be authored at. Enforced by the
+    /// validator, not here: enemy stats are frozen at design time, so the only
+    /// way to break the floor is to write the row.
+    public let minLevel: Int
 
     public init(archetype: EnemyArchetype, rounds: Double, hpLossPercent: Double,
                 mitigationPercent: Double, dodgePercent: Double, critPercent: Double,
                 xpMultiplier: Double, lootMultiplier: Double,
-                spawnWeight: Double) {
+                spawnWeight: Double, minLevel: Int) {
         self.archetype = archetype
         self.rounds = rounds
         self.hpLossPercent = hpLossPercent
@@ -87,6 +91,7 @@ public struct EnemyArchetypeSpec: Sendable {
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
         self.spawnWeight = spawnWeight
+        self.minLevel = minLevel
     }
 }
 

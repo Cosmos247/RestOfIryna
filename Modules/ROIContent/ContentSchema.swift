@@ -44,5 +44,11 @@ public enum ContentSchema {
     /// and silently leaving the multiplier at 1.0 would delete the technique.
     /// Monster silver went with it: `enemies.silverReward` and
     /// `archetypes.silverMultiplier` are no longer read.
-    public static let current: Int = 8
+    /// v9 (Phase 8D): the last two flat rating bonuses become multipliers —
+    /// `specialDefense.shadowVeilDodgeBonus` → `shadowVeilDodgeMultiplier`,
+    /// `defend.archerDodgeBonus` → `archerDodgeMultiplier` — and every
+    /// archetype row gains a required `minLevel`. A v8 bundle carries `+50`
+    /// where a multiplier is now read: decoded as one it would be a ×50 dodge,
+    /// so the handshake has to refuse rather than reinterpret.
+    public static let current: Int = 9
 }

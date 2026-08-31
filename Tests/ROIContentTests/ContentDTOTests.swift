@@ -15,6 +15,51 @@ import XCTest
 
 final class ContentDTOTests: XCTestCase {
 
+    // MARK: - The schema handshake
+    //
+    // `ContentLoader.load` refuses a bundle whose `manifest.schemaVersion`
+    // disagrees with the binary. Four bumps have now leaned on that guard —
+    // v9 renamed two tuning fields and made a third required, so a v8 bundle
+    // would decode `+50` into a multiplier if it ever got past — and nothing
+    // exercised it. The guard fires before any other file is read, so a
+    // directory holding nothing but a manifest is enough to reach it.
+
+    private func manifestOnlyDirectory(schemaVersion: Int) throws -> URL {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("roi-schema-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let manifest = #"{"schemaVersion":\#(schemaVersion)}"#
+        try Data(manifest.utf8).write(to: dir.appendingPathComponent("manifest.json"))
+        return dir
+    }
+
+    func testOlderSchemaVersionIsRefused() throws {
+        let dir = try manifestOnlyDirectory(schemaVersion: ContentSchema.current - 1)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        XCTAssertThrowsError(try ContentLoader.load(from: dir)) { error in
+            guard case ContentError.schemaMismatch(let found, let expected) = error else {
+                return XCTFail("expected schemaMismatch, got \(error)")
+            }
+            XCTAssertEqual(found, ContentSchema.current - 1)
+            XCTAssertEqual(expected, ContentSchema.current)
+        }
+    }
+
+    /// The positive control, and the half that makes the test above mean
+    /// something: with a MATCHING version the same directory gets past the
+    /// handshake and fails on the next file instead. Without this, a loader
+    /// that threw `schemaMismatch` unconditionally would still pass.
+    func testMatchingSchemaVersionGetsPastTheHandshake() throws {
+        let dir = try manifestOnlyDirectory(schemaVersion: ContentSchema.current)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        XCTAssertThrowsError(try ContentLoader.load(from: dir)) { error in
+            guard case ContentError.missingFile(let file) = error else {
+                return XCTFail("expected the load to proceed to a missing file, got \(error)")
+            }
+            XCTAssertEqual(file, "items.json")
+        }
+    }
+
     // MARK: - Defaults
 
     /// Swift does NOT apply a property's default value for a missing key in a

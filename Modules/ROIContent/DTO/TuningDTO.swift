@@ -451,30 +451,34 @@ public struct SpecialDefenseClassDTO: Codable, Sendable, Equatable {
 public struct SpecialDefenseSectionDTO: Codable, Sendable, Equatable {
     public let effectPersistRounds: Int
     public let ironBulwarkChipFraction: Double
-    public let shadowVeilDodgeBonus: Int
+    /// Shadow Veil lifts the archer's dodge by this MULTIPLE of their own
+    /// rating (Phase 8D). It was a flat +50 until then — worth 16 points of
+    /// dodge chance at level 1 and 4 at the cap, the same rot Phase 8C took
+    /// out of the stances one file over.
+    public let shadowVeilDodgeMultiplier: Double
     public let mirrorWardReflectFraction: Double
     public let byClass: [SpecialDefenseClassDTO]
 
     public init(effectPersistRounds: Int, ironBulwarkChipFraction: Double,
-                shadowVeilDodgeBonus: Int, mirrorWardReflectFraction: Double,
+                shadowVeilDodgeMultiplier: Double, mirrorWardReflectFraction: Double,
                 byClass: [SpecialDefenseClassDTO]) {
         self.effectPersistRounds = effectPersistRounds
         self.ironBulwarkChipFraction = ironBulwarkChipFraction
-        self.shadowVeilDodgeBonus = shadowVeilDodgeBonus
+        self.shadowVeilDodgeMultiplier = shadowVeilDodgeMultiplier
         self.mirrorWardReflectFraction = mirrorWardReflectFraction
         self.byClass = byClass
     }
 
     private enum CodingKeys: String, CodingKey {
         case effectPersistRounds, ironBulwarkChipFraction
-        case shadowVeilDodgeBonus, mirrorWardReflectFraction, byClass
+        case shadowVeilDodgeMultiplier, mirrorWardReflectFraction, byClass
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         effectPersistRounds       = try c.decode(Int.self, forKey: .effectPersistRounds)
         ironBulwarkChipFraction   = try c.decode(Double.self, forKey: .ironBulwarkChipFraction)
-        shadowVeilDodgeBonus      = try c.decode(Int.self, forKey: .shadowVeilDodgeBonus)
+        shadowVeilDodgeMultiplier = try c.decode(Double.self, forKey: .shadowVeilDodgeMultiplier)
         mirrorWardReflectFraction = try c.decode(Double.self, forKey: .mirrorWardReflectFraction)
         byClass                   = try c.decode([SpecialDefenseClassDTO].self, forKey: .byClass)
     }
@@ -509,25 +513,29 @@ public struct FleeTuningDTO: Codable, Sendable, Equatable {
 
 public struct DefendTuningDTO: Codable, Sendable, Equatable {
     public let archerChipMultiplier: Double
-    public let archerDodgeBonus: Int
+    /// The archer's Defend melts into cover: dodge is multiplied by this for
+    /// the round. A MULTIPLE of their own rating since Phase 8D, for the same
+    /// reason as `shadowVeilDodgeMultiplier` — and this one is worse as a flat
+    /// number, because Defend is available every round from level 1.
+    public let archerDodgeMultiplier: Double
     /// Fraction of incoming damage the mage actually takes (0.4 = 60% off).
     public let mageBarrierDamageFraction: Double
 
-    public init(archerChipMultiplier: Double, archerDodgeBonus: Int,
+    public init(archerChipMultiplier: Double, archerDodgeMultiplier: Double,
                 mageBarrierDamageFraction: Double) {
         self.archerChipMultiplier = archerChipMultiplier
-        self.archerDodgeBonus = archerDodgeBonus
+        self.archerDodgeMultiplier = archerDodgeMultiplier
         self.mageBarrierDamageFraction = mageBarrierDamageFraction
     }
 
     private enum CodingKeys: String, CodingKey {
-        case archerChipMultiplier, archerDodgeBonus, mageBarrierDamageFraction
+        case archerChipMultiplier, archerDodgeMultiplier, mageBarrierDamageFraction
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         archerChipMultiplier      = try c.decode(Double.self, forKey: .archerChipMultiplier)
-        archerDodgeBonus          = try c.decode(Int.self, forKey: .archerDodgeBonus)
+        archerDodgeMultiplier     = try c.decode(Double.self, forKey: .archerDodgeMultiplier)
         mageBarrierDamageFraction = try c.decode(Double.self, forKey: .mageBarrierDamageFraction)
     }
 }

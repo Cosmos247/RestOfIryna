@@ -345,14 +345,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Enemy counter — DEF / Dodge get the stance buffs, plus Shadow Veil
-        // lingering dodge buff if active.
-        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
+        // Enemy counter — DEF / Dodge get the stance buffs, plus Shadow Veil's
+        // lingering dodge buff if active. Every lift composes as a MULTIPLE of
+        // the player's own rating and the product rounds once, the way
+        // `CombatMath.buffed` rounds each stat once.
+        let veilDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeMultiplier : 1.0
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
             defenderDEF: Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded()),
-            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier).rounded()) + extraDodge,
+            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier * veilDodge).rounded()),
             defenderLevel: player.level
         )
         let enemyLine = renderEnemyHit(enemyHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale)
@@ -378,8 +380,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         //   • Warrior — chip 30% × ATK + 2× DEF for the round (the canonical
         //     parry: tags the enemy with the shield, eats most of the swing).
         //   • Archer  — chip 15% × ATK (knife flick while melting into cover)
-        //               + flat +30 dodge for the round; DEF stays single
-        //               since the fantasy is evasion, not armor.
+        //               + dodge ×1.5 for the round; DEF stays single since the
+        //               fantasy is evasion, not armor.
         //   • Mage    — no chip (barrier is purely passive); enemy attack
         //               rolls normally through single DEF + dodge, then the
         //               landed damage is multiplied by 0.4 (60% off) before
@@ -424,29 +426,30 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         // Enemy strikes back. Per-class mitigation:
         //   • Warrior: defender DEF is doubled this round (existing behavior).
-        //   • Archer:  defender DEF stays normal, but dodge gets +30.
+        //   • Archer:  defender DEF stays normal, but dodge is multiplied.
         //   • Mage:    defender DEF + dodge stay normal; final landed damage
         //              is multiplied by `Defend.mageBarrierDamageFraction`
         //              after the applyAttack roll.
-        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
+        let veilDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeMultiplier : 1.0
         let defenderDEF: Int
-        let extraDefendDodge: Int
+        let defendDodgeMultiplier: Double
         switch cls {
         case .warrior:
             defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded()) * 2
-            extraDefendDodge = 0
+            defendDodgeMultiplier = 1.0
         case .archer:
             defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded())
-            extraDefendDodge = CombatService.Defend.archerDodgeBonus
+            defendDodgeMultiplier = CombatService.Defend.archerDodgeMultiplier
         case .mage:
             defenderDEF = Int((Double(player.effectiveDefense) * mods.defenseMultiplier).rounded())
-            extraDefendDodge = 0
+            defendDodgeMultiplier = 1.0
         }
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
             defenderDEF: defenderDEF,
-            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier).rounded()) + extraDodge + extraDefendDodge,
+            defenderDodge: Int((Double(player.effectiveDodge) * mods.dodgeMultiplier
+                                * veilDodge * defendDodgeMultiplier).rounded()),
             defenderLevel: player.level
         )
         let mitigatedHit: AttackOutcome
@@ -863,10 +866,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // Enemy counter — Vital Shot's "long aim" zeroes player dodge.
         // Shadow Veil lingering buff still applies (even Vital Shot benefits
         // from it as a base; the long-aim penalty still wins to 0 if active).
-        let extraDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeBonus : 0
+        let veilDodge = state.hasPlayerDodgeBuff ? CombatService.SpecialDefense.shadowVeilDodgeMultiplier : 1.0
         let dodgeForCounter = CombatService.specialAttackZeroesDodge(forClass: cls)
             ? 0
-            : (Int((Double(player.effectiveDodge) * stanceMods.dodgeMultiplier).rounded()) + extraDodge)
+            : Int((Double(player.effectiveDodge) * stanceMods.dodgeMultiplier * veilDodge).rounded())
         let enemyHit = CombatService.applyAttack(
             attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
             attackerLevel: enemy.level,
@@ -1215,7 +1218,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             lines.append("🛡 " + lingo.localize("combat.effect.armor_split", locale: locale, interpolations: ["rounds": "\(rounds)"]))
         }
         if let rounds = state.combatPlayerDodgeBuff, rounds > 0 {
-            lines.append("🌑 " + lingo.localize("combat.effect.shadow_veil", locale: locale, interpolations: ["rounds": "\(rounds)"]))
+            // The multiplier is interpolated rather than written into the copy:
+            // `shadowVeilDodgeMultiplier` is a tuning value that `/reload` can
+            // change under a running bot, and a sentence that says "doubled"
+            // would quietly start lying. `%g` drops the trailing zero, so ×2.0
+            // reads "×2" and ×1.5 reads "×1.5".
+            let veil = CombatService.SpecialDefense.shadowVeilDodgeMultiplier
+            lines.append("🌑 " + lingo.localize("combat.effect.shadow_veil", locale: locale, interpolations: [
+                "rounds": "\(rounds)",
+                "multiplier": String(format: "%g", veil)
+            ]))
         }
         return lines.joined(separator: "\n")
     }

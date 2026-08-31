@@ -38,7 +38,7 @@ RestOfIryna/
 │   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (--runs/--seed/--levels; --strict exits 1 on a broken band). simulate refuses a bundle that does not validate
 │
 ├── Tests/
-│   └── ROIContentTests/            # 192 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
+│   └── ROIContentTests/            # 201 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 │                                #   Files: ContentDTOTests · ContentValidatorTests · WeaponLadderTests · LocaleIndexTests ·
 │                                #   CapitalCatalogTests · EstateAndNPCCatalogTests · **TuningTests** (Phase 4) ·
 │                                #   **BestiaryTests** (5A) · **BudgetTests** (6) · **LiveReferenceTests** (7) ·

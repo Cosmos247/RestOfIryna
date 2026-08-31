@@ -38,11 +38,11 @@ final class TuningTests: XCTestCase {
         specialAttack: [SpecialAttackTuningDTO]? = nil,
         specialDefenseVigor: [SpecialDefenseClassDTO]? = nil,
         ironBulwarkChip: Double = 0.5,
-        shadowVeilDodge: Int = 50,
+        shadowVeilDodge: Double = 2.0,
         mirrorWardReflect: Double = 0.5,
         persistRounds: Int = 1,
         flee: [FleeTuningDTO]? = nil,
-        archerChip: Double = 0.5, archerDodge: Int = 30, mageBarrier: Double = 0.4
+        archerChip: Double = 0.5, archerDodge: Double = 1.5, mageBarrier: Double = 0.4
     ) -> CombatTuningDTO {
         CombatTuningDTO(
             hitChance: HitChanceDTO(base: hitBase, min: hitMin, max: hitMax),
@@ -87,7 +87,7 @@ final class TuningTests: XCTestCase {
             specialDefense: SpecialDefenseSectionDTO(
                 effectPersistRounds: persistRounds,
                 ironBulwarkChipFraction: ironBulwarkChip,
-                shadowVeilDodgeBonus: shadowVeilDodge,
+                shadowVeilDodgeMultiplier: shadowVeilDodge,
                 mirrorWardReflectFraction: mirrorWardReflect,
                 byClass: specialDefenseVigor ?? [
                     SpecialDefenseClassDTO(characterClass: "warrior", vigor: 3),
@@ -100,7 +100,7 @@ final class TuningTests: XCTestCase {
                 FleeTuningDTO(characterClass: "mage", chance: 90, extraVigor: 2)
             ],
             defend: DefendTuningDTO(archerChipMultiplier: archerChip,
-                                    archerDodgeBonus: archerDodge,
+                                    archerDodgeMultiplier: archerDodge,
                                     mageBarrierDamageFraction: mageBarrier))
     }
 
@@ -194,7 +194,8 @@ final class TuningTests: XCTestCase {
         ].map {
             EnemyArchetypeDTO(id: $0.0, rounds: $0.1, hpLossPercent: $0.2,
                               mitigationPercent: $0.3, dodgePercent: $0.4, critPercent: $0.5,
-                              xpMultiplier: $0.6, lootMultiplier: $0.7, spawnWeight: $0.9)
+                              xpMultiplier: $0.6, lootMultiplier: $0.7, spawnWeight: $0.9,
+                              minLevel: ["elite", "boss"].contains($0.0) ? 14 : 1)
         }
     }
 
@@ -267,8 +268,8 @@ final class TuningTests: XCTestCase {
          "variance":{"min":0.9,"max":1.1},"trainingDummyEnemyId":"enemy.training_dummy",
          "techniques":[],"stances":{"durationRounds":3,"defaultActivationVigor":4,"byId":[]},
          "specialAttack":[],"specialDefense":{"effectPersistRounds":1,"ironBulwarkChipFraction":0.5,
-         "shadowVeilDodgeBonus":50,"mirrorWardReflectFraction":0.5,"byClass":[]},
-         "flee":[],"defend":{"archerChipMultiplier":0.5,"archerDodgeBonus":30,
+         "shadowVeilDodgeMultiplier":2.0,"mirrorWardReflectFraction":0.5,"byClass":[]},
+         "flee":[],"defend":{"archerChipMultiplier":0.5,"archerDodgeMultiplier":1.5,
          "mageBarrierDamageFraction":0.4}}
         """
         XCTAssertThrowsError(try JSONDecoder().decode(CombatTuningDTO.self, from: Data(json.utf8)),
@@ -322,6 +323,20 @@ final class TuningTests: XCTestCase {
 
     func testCritWeakerThanHitIsAnError() {
         assertRule("tuning.combat.crit_weaker_than_hit", bundle(combat: combat(critMultiplier: 0.8)))
+    }
+
+    /// Both dodge techniques became multipliers of the archer's own rating in
+    /// Phase 8D. Below 1.0 they are not a weaker buff, they are a DEBUFF on a
+    /// defensive move — the same shape of mistake the stance rule catches one
+    /// section over, and unreachable through any UI, so only this rule can.
+    func testShadowVeilDodgeMultiplierBelowOneIsAnError() {
+        assertRule("tuning.combat.dodge_multiplier",
+                   bundle(combat: combat(shadowVeilDodge: 0.5)))
+    }
+
+    func testArcherDefendDodgeMultiplierBelowOneIsAnError() {
+        assertRule("tuning.combat.dodge_multiplier",
+                   bundle(combat: combat(archerDodge: 0.9)))
     }
 
     func testUnknownTrainingDummyIsAnError() {

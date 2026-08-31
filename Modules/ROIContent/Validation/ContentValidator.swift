@@ -1294,10 +1294,27 @@ public enum ContentValidator {
                 fail("\(path).spawnWeight", "enemy.archetype_weight",
                      "spawn weight must not be negative", id: row.id)
             }
+            if row.minLevel < 1 {
+                fail("\(path).minLevel", "enemy.archetype_floor_range",
+                     "minLevel must be at least 1, found \(row.minLevel)", id: row.id)
+            }
         }
 
-        // MARK: per-enemy design fields
+        // The level cap arrives with the progression bundle, so the two rules
+        // that need it sit here rather than in the loop above.
         let maxLevel = bundle.tuning?.progression.maxLevel
+        // A floor above the cap would make the archetype unauthorable, which is
+        // a table typo rather than a design choice.
+        for (index, row) in bundle.enemyArchetypes.enumerated() {
+            guard let maxLevel, row.minLevel > maxLevel else { continue }
+            fail("archetypes[\(index)].minLevel", "enemy.archetype_floor_above_cap",
+                 "minLevel \(row.minLevel) is above the player cap \(maxLevel), so no enemy of this archetype could ever be authored",
+                 id: row.id)
+        }
+        let archetypeFloor = Dictionary(bundle.enemyArchetypes.map { ($0.id, $0.minLevel) },
+                                        uniquingKeysWith: { first, _ in first })
+
+        // MARK: per-enemy design fields
         for (index, enemy) in bundle.enemies.enumerated() {
             let path = "enemies[\(index)]"
             if !known.contains(enemy.archetype) {
@@ -1316,6 +1333,19 @@ public enum ContentValidator {
             if let weight = enemy.spawnWeight, weight < 0 {
                 fail("\(path).spawnWeight", "enemy.negative_weight",
                      "spawn weight must not be negative, found \(weight)", id: enemy.id)
+            }
+            // The archetype's level floor. Enemy stats are frozen at design
+            // time, so this file is the only place the floor can be broken —
+            // and an elite below level 14 meets a player with no techniques
+            // unlocked at all, where its own contract asks for 62% of a bar.
+            //
+            // Applied to every row, including the `0...0` sentinels that never
+            // spawn from the wilderness: a rule with an exception for "it is
+            // only reachable another way" is a rule that stops being checked.
+            if let floor = archetypeFloor[enemy.archetype], enemy.level < floor {
+                fail("\(path).level", "enemy.below_archetype_floor",
+                     "level \(enemy.level) is below the \(enemy.archetype) floor of \(floor)",
+                     id: enemy.id)
             }
         }
 
@@ -1540,9 +1570,13 @@ public enum ContentValidator {
                           "specialDefense.ironBulwarkChipFraction", "tuning.combat.chip_fraction_range")
             checkFraction(combat.specialDefense.mirrorWardReflectFraction, file,
                           "specialDefense.mirrorWardReflectFraction", "tuning.combat.reflect_fraction_range")
-            require(combat.specialDefense.shadowVeilDodgeBonus >= 0, file,
-                    "specialDefense.shadowVeilDodgeBonus", "tuning.combat.negative_bonus",
-                    "dodge bonus must not be negative")
+            // A MULTIPLE of the archer's own dodge since Phase 8D, held to the
+            // same rule as the stance lifts: zero does not mean "no effect",
+            // it deletes the stat, and a value below 1.0 is a defensive
+            // technique that makes the defender easier to hit.
+            require(combat.specialDefense.shadowVeilDodgeMultiplier >= 1.0, file,
+                    "specialDefense.shadowVeilDodgeMultiplier", "tuning.combat.dodge_multiplier",
+                    "shadowVeilDodgeMultiplier must be at least 1.0 (1.0 = no change), found \(combat.specialDefense.shadowVeilDodgeMultiplier)")
 
             checkClassCoverage(combat.flee.map(\.characterClass), file: file, path: "flee")
             for (index, row) in combat.flee.enumerated() {
@@ -1555,8 +1589,9 @@ public enum ContentValidator {
 
             require(combat.defend.archerChipMultiplier >= 0, file, "defend.archerChipMultiplier",
                     "tuning.combat.negative_multiplier", "chip multiplier must not be negative")
-            require(combat.defend.archerDodgeBonus >= 0, file, "defend.archerDodgeBonus",
-                    "tuning.combat.negative_bonus", "dodge bonus must not be negative")
+            require(combat.defend.archerDodgeMultiplier >= 1.0, file, "defend.archerDodgeMultiplier",
+                    "tuning.combat.dodge_multiplier",
+                    "archerDodgeMultiplier must be at least 1.0 (1.0 = no change), found \(combat.defend.archerDodgeMultiplier)")
             checkFraction(combat.defend.mageBarrierDamageFraction, file,
                           "defend.mageBarrierDamageFraction", "tuning.combat.barrier_fraction_range")
         }

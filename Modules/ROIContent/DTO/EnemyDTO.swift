@@ -222,11 +222,24 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
     public let lootMultiplier: Double
     /// Default relative spawn chance for enemies of this archetype.
     public let spawnWeight: Double
+    /// Lowest monster level an enemy of this archetype may be authored at.
+    ///
+    /// The plan calls for it on the elite: measured against an on-curve
+    /// reference character, an elite is a 93–95% win for the mage with a p99
+    /// HP loss of 100% — a death one fight in twenty, and a death here wipes
+    /// the whole unequipped backpack. Below level 14 the player has no
+    /// techniques at all (special attack unlocks at 8, defence at 11, the
+    /// Super at 14), so the fight is the `basic` row with nothing to spend.
+    ///
+    /// Enemy stats are frozen at design time, so this is the only place the
+    /// floor can be broken and the validator is the only thing that can catch
+    /// it. It bites in Phase 10, when the generator fills the table.
+    public let minLevel: Int
 
     public init(id: String, rounds: Double, hpLossPercent: Double,
                 mitigationPercent: Double, dodgePercent: Double, critPercent: Double,
                 xpMultiplier: Double, lootMultiplier: Double,
-                spawnWeight: Double) {
+                spawnWeight: Double, minLevel: Int) {
         self.id = id
         self.rounds = rounds
         self.hpLossPercent = hpLossPercent
@@ -236,15 +249,18 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
         self.spawnWeight = spawnWeight
+        self.minLevel = minLevel
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, rounds, hpLossPercent, mitigationPercent, dodgePercent, critPercent
-        case xpMultiplier, lootMultiplier, spawnWeight
+        case xpMultiplier, lootMultiplier, spawnWeight, minLevel
     }
 
     /// Every field required — this is a tuning row, not a record with optional
-    /// trimmings, and a defaulted multiplier is a silent balance hole.
+    /// trimmings, and a defaulted multiplier is a silent balance hole. That
+    /// goes for `minLevel` too: defaulting it to 1 would quietly re-open the
+    /// hole it exists to close.
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id                = try c.decode(String.self, forKey: .id)
@@ -256,6 +272,7 @@ public struct EnemyArchetypeDTO: Codable, Sendable, Equatable {
         xpMultiplier      = try c.decode(Double.self, forKey: .xpMultiplier)
         lootMultiplier    = try c.decode(Double.self, forKey: .lootMultiplier)
         spawnWeight       = try c.decode(Double.self, forKey: .spawnWeight)
+        minLevel          = try c.decode(Int.self, forKey: .minLevel)
     }
 }
 

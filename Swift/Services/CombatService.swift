@@ -323,9 +323,12 @@ public enum CombatService {
             Catalogs.current.tuningCombat.specialDefense.ironBulwarkChipFraction
         }
 
-        /// How much dodge Shadow Veil grants on the lingering buff round.
-        public static var shadowVeilDodgeBonus: Int {
-            Catalogs.current.tuningCombat.specialDefense.shadowVeilDodgeBonus
+        /// What Shadow Veil multiplies the archer's dodge by on the lingering
+        /// buff round. A multiple of their OWN rating since Phase 8D: the flat
+        /// +50 it replaced was 16 points of dodge chance at level 1 and 4 at
+        /// the cap, so the technique quietly retired as the archer levelled.
+        public static var shadowVeilDodgeMultiplier: Double {
+            Catalogs.current.tuningCombat.specialDefense.shadowVeilDodgeMultiplier
         }
 
         /// Mirror Ward reflects this fraction of the rolled would-be enemy
@@ -403,8 +406,12 @@ public enum CombatService {
         public static var archerChipMultiplier: Double {
             Catalogs.current.tuningCombat.defend.archerChipMultiplier
         }
-        public static var archerDodgeBonus: Int {
-            Catalogs.current.tuningCombat.defend.archerDodgeBonus
+        /// What the archer's Defend multiplies their dodge by for the round.
+        /// A multiple rather than a flat bonus for the same reason as Shadow
+        /// Veil — and it matters more here, because Defend costs no cooldown
+        /// and is available every round from level 1.
+        public static var archerDodgeMultiplier: Double {
+            Catalogs.current.tuningCombat.defend.archerDodgeMultiplier
         }
         /// Fraction of incoming damage the mage actually takes. 0.4 = 60% off.
         public static var mageBarrierDamageFraction: Double {

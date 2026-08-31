@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            192 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            201 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 

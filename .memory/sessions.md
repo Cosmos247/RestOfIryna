@@ -3230,3 +3230,159 @@ is history and worth reading, it just had to stop reading as intent.
 already named, so a fresh session starts at the work rather than at a recap. A
 new auto-memory records the closed direction: never propose monster coin drops
 again.
+
+---
+
+## Session — 2026-08-31 (Phase 8D: the last flat lifts, the archetype floor, a noisy gate — and the vigor decision)
+
+Opened on "where did we stop", which the tracker answered with "Phase 9". The
+session went the other way on purpose: the user picked the code debts the 8B
+report had been printing every run, and then reopened a design decision that is
+bigger than all of them.
+
+### The two flat lifts
+
+`shadowVeilDodgeBonus` +50 and `defend.archerDodgeBonus` +30 were the last flat
+rating bonuses in the game — the same defect Phase 6 removed from items and 8C
+from the stances, in the two techniques sitting beside them.
+
+**The values were chosen on the EFFECT, not on the rating.** The report had been
+stating the rot as a share of the rating ("238% at L1, 34% at the cap"), which
+says a lift is broken but not what to replace it with. Converting to points of
+dodge chance made the answer fall out:
+
+| | L1 | L10 | L20 | L40 |
+|---|---|---|---|---|
+| Shadow Veil +50 | +16.1 pp | +9.4 | +6.4 | +4.0 |
+| Shadow Veil ×2.0 | +9.0 pp | +9.4 | +9.4 | +9.4 |
+| Defend +30 | +11.6 pp | +6.3 | +4.2 | +2.5 |
+| Defend ×1.5 | +5.3 pp | +5.5 | +5.5 | +5.6 |
+
+A multiplier is nearly flat in percentage points because the rating and its
+denominator move together — which is the property the derived denominators were
+built for, now visible on a technique rather than on a stat line. ×2.0 and ×1.5
+reproduce what the flat bonus was worth around level 10, i.e. the middle of its
+own decay. Both are REQUIRED on decode (schema v9): a defaulted 1.0 reads as
+"this technique does nothing".
+
+The report now MEASURES both instead of trusting them, because "a multiplier
+holds by construction" is only true if the denominator keeps pace, and the curve
+is the only thing that can say so. The audit that convicted the flat bonuses kept
+its place and changed its unit.
+
+### The archetype floor
+
+`minLevel` on every archetype row, elite and boss at 14. The plan specified the
+floor and nothing enforced it; the shipped roster already complies (its one elite
+is level 25), so this is a lock for Phase 10's generator rather than a fix today.
+
+Two decisions inside it worth keeping:
+
+- **No exception for the `0...0` sentinels.** They never spawn from the
+  wilderness, but they are reachable through training and scripted hooks, and a
+  rule with an "unless it is unreachable" clause is a rule nobody can check.
+- **The floor made the report honest.** The sweep rolls every archetype at every
+  level because that is what proves level invariance — but the tail band was
+  raising findings on the mage's level-1 and level-5 elites, which the validator
+  now refuses to let exist. Those cells are skipped, and the worst SHIPPABLE tail
+  reads `mage L20 vs elite — p90 89% HP, p99 100%, win 96.2%`.
+
+### The gate was failing on noise
+
+`simulate --strict` exited 1 at HEAD, on a band nobody had broken. The
+mage-vs-skirmisher level-invariance row reads ×1.16 at the default 2000 fights
+per cell and ×1.13 at 8000 — from the same seed. The band is a ±15% ratio of two
+MEANS, so the sampling error on a cell is wide enough to cross it alone.
+
+Raised the default to 8000. The whole sweep costs 2.6s there against 0.7s at
+2000, so the 2000 was buying nothing and costing a false alarm on the one gate
+`CLAUDE.md` tells every session to run after touching combat tuning.
+
+**Worth remembering: a threshold and a sample size are one decision.** The band
+was chosen in 8B and the sample size defaulted in 8B, and neither was checked
+against the other.
+
+### How the change was proven confined
+
+At equal sample size, every fight number in the report is byte-identical before
+and after. `FightSimulator` models neither Defend nor Special Defence — a policy
+question no design document answers — so the two techniques 8D changed are
+exactly the two the simulator does not roll. The diff is the header, the lift
+audit, and four warnings that went away.
+
+The digest agrees: `records` moved (the archetype fingerprint gained the floor)
+and `tuning` moved (the two multipliers); **`spawns` and `quests` did not**.
+New baseline `dfe1ff8e24605e0d`, schema v9, 201 tests.
+
+### The vigor decision (designed, not yet built)
+
+Raised by the user against the "depth is not gated by player level" finding: it
+does not need a level gate, because a low-level player cannot AFFORD the deep
+forest — and the thing that breaks that is passive Vigor regeneration, which was
+never wanted.
+
+Reading the code made the case stronger than the intent. `VigorService.regenTick`
+deliberately does not pause during an expedition, and the comment argues for it —
+so a player can stand at km 25, wait six hours and refill. There is no depth gate
+today; there is only patience. Returning is step-by-step rather than a teleport,
+so without the trickle the pool plus the carried food IS the gate, symmetrically.
+
+Checked before agreeing:
+
+- **The estate can replace the clock.** At 3 harvests/day a 2-slot estate yields
+  ~540 Vigor/day against the regen's 525 at level 1, and a 6-slot ~1620 against
+  1500 at the cap. The offline loop survives; it just has to be tended.
+- **There is no soft-lock.** At 0 Vigor a step costs 5% of max HP and ATK/DEF
+  drop 25% — the player crawls home and forages. The stop already exists; regen
+  is what has been hiding it.
+- **The pace model dies with it.** "One pool plus 4× regen" is where 50–56 days
+  to the cap came from, so the simulator's pace section has to measure food
+  throughput instead.
+- **The tap budget is the real risk.** 60 dishes a day at level 1 and 180 at the
+  cap is more taps than combat, unless the kitchen learns to batch.
+
+Recorded as Phase 8E in `TODO.md`, and the plan's locked decision was annotated
+rather than deleted — the reasoning against it is the interesting part.
+`zones.json` was deliberately deferred out of 8D into it: depth gating and the
+food economy are the same question, and moving the foraging pools first would
+mean moving them twice.
+
+### Audit pass before the commit (same session)
+
+Four things the review caught, all fixed before committing.
+
+**The report overclaimed.** The new section header said "every lift in the game
+is now a multiplier of the character's own stat". It is not: **14 of the 22
+fortune cards grant flat ±5/±10 ratings** for six hours (`attackBonus` and
+friends), which decay across a lifetime exactly as the stances did. Narrowed the
+claim to what is true — every lift a TECHNIQUE grants — and named the deck as the
+largest flat-bonus site left, unaudited and deliberately unchanged: those cards
+carry penalties as well as bonuses, so what they should BE is a design question
+rather than a conversion.
+
+**A tuning value was hardcoded into player copy.** `combat.effect.shadow_veil`
+read "doubled dodge" / "подвоєного ухилення" — true only while the multiplier is
+2.0, and `/reload` can change it under a running bot. Interpolated as
+`×%{multiplier}` (formatted `%g`, so 2.0 reads "×2" and 1.5 reads "×1.5") and
+checked mechanically against the Lingo rule: same placeholder set in both
+locales, nothing wider than one UTF-16 unit before a placeholder.
+
+**The schema handshake had no test**, and four version bumps have now leaned on
+it — v9 renames two fields and makes a third required, so a v8 bundle decoding
+`+50` into a multiplier is exactly what it is there to stop. Two tests: a
+manifest-only directory with a wrong version throws `schemaMismatch`, and the
+same directory with the CURRENT version gets past the guard and fails on
+`items.json` instead. The second is what makes the first mean something.
+
+**Digest coverage was proven rather than asserted.** Each new field was perturbed
+alone and moved exactly one half, each to a distinct value: veil ×2.1 →
+`tuning 924ff095f7971c49`, defend ×1.6 → `tuning f09d71add3e1d551`, elite floor
+15 → `records b94c5e72a1a899fc`.
+
+**A mistake worth writing down: `git checkout <path>` on UNCOMMITTED work.**
+Restoring the perturbed JSON that way reverted the files to HEAD and silently
+threw away the phase's own edits to them — the next digest run failed to decode,
+which is the only reason it was noticed within a minute. The files were rebuilt
+and the baseline `dfe1ff8e24605e0d` came back identical, which is what proves the
+restore was exact. With uncommitted work in the tree, back a file up by COPY
+before perturbing it; `git checkout` is not an undo for edits git has never seen.

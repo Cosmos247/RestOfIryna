@@ -72,7 +72,7 @@ enum ContentDigest {
             digest.combine("r\(spec.rounds) hp\(spec.hpLossPercent) mit\(spec.mitigationPercent)")
             digest.combine("dodge\(spec.dodgePercent) crit\(spec.critPercent)")
             digest.combine("xp\(spec.xpMultiplier) loot\(spec.lootMultiplier)")
-            digest.combine("weight\(spec.spawnWeight)")
+            digest.combine("weight\(spec.spawnWeight) floor\(spec.minLevel)")
         }
         // MARK: Phase 6 — rarity, sets, item budget
         for rarity in RarityCatalog.all {
@@ -627,7 +627,7 @@ enum ContentDigest {
         d.combine(CombatService.SpecialDefense.shadowVeilVigor)
         d.combine(CombatService.SpecialDefense.mirrorWardVigor)
         d.combine("\(CombatService.SpecialDefense.ironBulwarkChipFraction)")
-        d.combine(CombatService.SpecialDefense.shadowVeilDodgeBonus)
+        d.combine("\(CombatService.SpecialDefense.shadowVeilDodgeMultiplier)")
         d.combine("\(CombatService.SpecialDefense.mirrorWardReflectFraction)")
         d.combine(CombatService.SpecialDefense.effectPersistRounds)
         d.combine(CombatService.Flee.warriorChance)
@@ -635,7 +635,7 @@ enum ContentDigest {
         d.combine(CombatService.Flee.mageChance)
         d.combine(CombatService.Flee.mageVigorExtra)
         d.combine("\(CombatService.Defend.archerChipMultiplier)")
-        d.combine(CombatService.Defend.archerDodgeBonus)
+        d.combine("\(CombatService.Defend.archerDodgeMultiplier)")
         d.combine("\(CombatService.Defend.mageBarrierDamageFraction)")
 
         // The curves, replayed through the live accessors rather than hashed as

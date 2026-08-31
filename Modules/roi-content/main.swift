@@ -43,7 +43,7 @@ private func usage() -> Never {
                       simulate: exit 1 when a band is broken
 
     simulate options:
-      --runs N        fights per cell (default 2000)
+      --runs N        fights per cell (default 8000)
       --seed S        RNG seed — the same seed always gives the same report
       --levels L,L,…  levels to sweep (default 1,5,10,20,30,40)
     """)
@@ -95,7 +95,14 @@ case "simulate":
             exit(1)
         }
         let content = GameContent(bundle)
-        let runs = value(for: "--runs", in: args).flatMap(Int.init) ?? 2000
+        // 8000, not the 2000 this shipped with. The level-invariance band is a
+        // ±15% ratio of two MEANS, and at 2000 fights the sampling error on a
+        // cell is wide enough to cross it on its own: the mage-vs-skirmisher
+        // row reads ×1.16 at 2000 and ×1.13 at 8000 from the same seed, so
+        // `--strict` failed the build on noise. The whole sweep costs 2.6s at
+        // 8000 against 0.7s at 2000, which is no reason at all to keep a gate
+        // that cries wolf.
+        let runs = value(for: "--runs", in: args).flatMap(Int.init) ?? 8000
         let seed = value(for: "--seed", in: args).flatMap(UInt64.init) ?? 20260830
         let levels = value(for: "--levels", in: args)
             .map { $0.split(separator: ",").compactMap { Int($0) } }

@@ -24,7 +24,7 @@
   },
   "defend" : {
     "archerChipMultiplier" : 0.5,
-    "archerDodgeBonus" : 30,
+    "archerDodgeMultiplier" : 1.5,
     "mageBarrierDamageFraction" : 0.4
   },
   "defendChipFraction" : 0.3,
@@ -109,7 +109,7 @@
     "effectPersistRounds" : 1,
     "ironBulwarkChipFraction" : 0.5,
     "mirrorWardReflectFraction" : 0.5,
-    "shadowVeilDodgeBonus" : 50
+    "shadowVeilDodgeMultiplier" : 2.0
   },
   "stances" : {
     "byId" : [

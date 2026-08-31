@@ -28,7 +28,7 @@ Audit findings:
 | Pacing | **3+ months** of engaged play to cap |
 | Level cap | **40** (was 21), stats grow **every** level |
 | Death | **Stays harsh** — the whole unequipped backpack is destroyed |
-| Vigor | Slow regeneration **plus** food; `maxVigor` grows with level |
+| Vigor | ~~Slow regeneration **plus** food~~ → **REVERSED 2026-08-31: no passive regeneration at all.** Vigor comes from food, quests and levelling; the estate's plots and kitchen are the faucet. `maxVigor` still grows with level. The original decision is kept here because the reasoning against it is the interesting part: passive regen does not pause during an expedition, so it defuses the only thing gating depth — a player could stand at km 25 and wait out a full pool. See "The vigor rework" below |
 | Content scope | Framework + levels 1–15 fully authored; 16–40 generated as a draft |
 | Authoring order | **Spec approved before authoring** — nothing reaches JSON until the list is written down and signed off |
 
@@ -103,22 +103,25 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 5 New combat model | ✅ 5A bestiary · 5B progression · 5C combat · 5D techniques |
 | 6 Rarity + sets | ✅ budget curve · rarities · sets · enchant as % |
 | 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
-| 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed |
+| 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
+| 8E Vigor rework — no passive regen | ⬜ **next** |
 | 9 Content specs (approval gate) | ⬜ |
 | 10 Generate + author content | ⬜ |
 | 11 Wipe + final pass | ⬜ |
 
-**Current digest baseline: `583a32cb5a9d9dc7`** (schema **v8**) —
-`records 7b3a5e700d0b8fe7`, `tuning 5946bb13b530389e`,
+**Current digest baseline: `dfe1ff8e24605e0d`** (schema **v9**) —
+`records 53752623031088d9`, `tuning 3ba689e278efe3c6`,
 `spawns 81f6639962cbc4a7`, `quests 2e52ecdfa45276ec`.
 
-Phase 8C moved exactly two halves and left two untouched, which is the whole
-point of the split: `records` (enemy + archetype fingerprints lost silver, the
-reference kit moved with the warrior profile) and `tuning` (stances became
-multipliers, warrior base attack 10 → 12, `passive.silverMultiplier` deleted).
-**`spawns` and `quests` did not move** — no selection logic or daily assignment
-was touched, and the digest says so rather than asking to be believed.
-Previous baseline `a4d825a8d728f4f8` (schema v7).
+Phase 8D moved the same two halves and left the same two alone: `records` (the
+archetype fingerprint gained `minLevel`) and `tuning` (the two dodge lifts became
+multipliers). **`spawns` and `quests` did not move** — nothing about selection or
+daily assignment was touched.
+Previous baseline `583a32cb5a9d9dc7` (schema v8). Phase 8C moved exactly two
+halves for its own reasons: `records` (enemy + archetype fingerprints lost
+silver, the reference kit moved with the warrior profile) and `tuning` (stances
+became multipliers, warrior base attack 10 → 12, `passive.silverMultiplier`
+deleted). Before that, `a4d825a8d728f4f8` (schema v7).
 Phase 6 moved `records` only: it added item fields, rarity, sets and the budget
 curve, and touched none of the six balance tables.
 
@@ -274,12 +277,110 @@ Found by reading the diff, not by the simulator — `FightSimulator` has no flee
 policy, because no design document states when a player should run. Worth knowing
 about the tool: it measures the fights you tell it to have.
 
-**Still open, all reported by the run itself:** the two remaining flat rating
-bonuses (`shadowVeilDodgeBonus` +50 is 238% of a level-1 archer's dodge and 34%
-of a level-40 one; `defend.archerDodgeBonus` +30 is 143% → 20%) — the same defect
-as the stances, in the techniques beside them; the mage's 93% win rate against an
-elite at level 5, whose fix is the spawn-level floor the plan already specified;
-and the half-strength bestiary, which is Phase 10's.
+**Still open after 8C, and all reported by the run itself:** the two remaining
+flat rating bonuses, the mage's 93% win rate against an elite at level 5, and the
+half-strength bestiary. Phase 8D closed the first two; the bestiary is Phase 10's.
+
+### What Phase 8D did
+
+Three things, all of them items the 8B report had been printing every run.
+
+**The last two flat lifts became multipliers (schema v9).**
+`specialDefense.shadowVeilDodgeBonus` → `shadowVeilDodgeMultiplier ×2.0` and
+`defend.archerDodgeBonus` → `archerDodgeMultiplier ×1.5`, both REQUIRED on decode
+for the same reason the stance fields are: a defaulted 1.0 reads as "this
+technique does nothing". The values were chosen on the EFFECT, not the rating —
+what the flat bonus was worth in points of dodge chance around level 10, which is
+the middle of its own decay:
+
+| | L1 | L10 | L20 | L40 |
+|---|---|---|---|---|
+| Shadow Veil +50 (was) | +16.1 pp | +9.4 | +6.4 | +4.0 |
+| Shadow Veil ×2.0 (now) | +9.0 pp | +9.4 | +9.4 | +9.4 |
+| Defend +30 (was) | +11.6 pp | +6.3 | +4.2 | +2.5 |
+| Defend ×1.5 (now) | +5.3 pp | +5.5 | +5.5 | +5.6 |
+
+The report now MEASURES both rather than trusting them: a multiplier holds by
+construction only if the rating's denominator grows with the rating, and the
+curve is the only thing that can say so. Three call sites in `CombatController`
+compose the lifts as a product of the player's own rating and round once, the way
+`CombatMath.buffed` rounds each stat once.
+
+**Every archetype row gained a required `minLevel`; elite and boss are 14.** The
+plan specified the floor and nothing enforced it. Enemy stats are frozen at
+design time, so `enemies.json` is the only place it can break and the validator
+is the only thing that can catch it — which matters in Phase 10, when the
+generator fills the table. The shipped roster already complies (its one elite is
+level 25), so this is a lock rather than a fix, negative-tested in both
+directions plus the level-14 positive control. The floor applies to the `0...0`
+sentinels too, deliberately: a rule with an "unless it is unreachable" clause is
+a rule nobody can check.
+
+The floor also made the report honest. The sweep rolls every archetype at every
+level because that is what proves level invariance, but the tail band was raising
+findings on cells the validator now refuses — the mage's level-1 and level-5
+elites. They are skipped, and the worst shippable tail reads `mage L20 vs elite —
+p90 89% HP, p99 100%, win 96.2%`.
+
+**`simulate`'s default sample size went 2000 → 8000, because `--strict` was
+failing on noise.** The level-invariance band is a ±15% ratio of two means; at
+2000 fights the mage-vs-skirmisher row reads ×1.16 from the same seed that gives
+×1.13 at 8000, so the gate the workflow depends on was crying wolf at HEAD. The
+whole sweep costs 2.6s at 8000 against 0.7s at 2000.
+
+**Proof the change is confined:** at equal sample size every fight number in the
+report is byte-identical before and after. `FightSimulator` models neither
+Defend nor Special Defence, so the only lines that moved are the lift audit, the
+four warnings that went away, and the header. Digest: `records` and `tuning`
+moved (the archetype fingerprint gained the floor, the tuning half the two
+multipliers) and **`spawns` and `quests` did not** — no selection logic was
+touched, and each new field was negative-tested to a DISTINCT digest value
+(veil ×2.1 → `924ff095f7971c49`, defend ×1.6 → `f09d71add3e1d551`, elite floor 15
+→ records `b94c5e72a1a899fc`), so the coverage is not vacuous. 201 tests: the two
+beyond the floor rules cover the schema handshake, which four version bumps had
+leaned on with nothing exercising it — a v8 bundle would decode `+50` straight
+into a multiplier.
+
+**Deferred out of 8D on purpose:** `zones.json` (the foraging pools still in
+`ExplorationService.rollLoot`). Zones now have to answer to the vigor rework —
+depth gating and the food economy are the same question — so migrating them
+first would mean migrating them twice.
+
+### The vigor rework (decided 2026-08-31, not yet built)
+
+**Passive Vigor regeneration is removed entirely.** This reverses the plan's
+"slow regeneration plus food" and returns to the original intent.
+
+The argument is the depth gate. `stepsDeep` increments per step with no level
+gate, and it does not need one: the pool plus the food in the bag is what decides
+how deep a player can walk and still walk home, and the walk home is symmetric
+(returning is step-by-step, not a teleport). Passive regen defuses precisely
+that, because `VigorService.regenTick` deliberately does not pause during an
+expedition — the comment argues for it, and it is the loophole: stand at km 25,
+wait six hours, full pool. There is no depth gate today; there is only patience.
+
+**The estate replaces the clock.** Plots produce on a real-time interval, so the
+"come back tomorrow" loop survives — it just has to be built and harvested. The
+numbers already line up, at 3 harvests/day:
+
+| | today (regen) | estate plots |
+|---|---|---|
+| L1, estate 1 (2 slots) | 105 × 5 = 525 Vigor/day | 1 farm → 60 potatoes → 60 baked × 9 = 540 |
+| L40, estate 7 (6 slots) | 300 × 5 = 1500 | 3 farms → 180 dishes × 9 = 1620 |
+
+**What it breaks:** the pace model. "A day is one pool plus 4× regen" is where
+50–56 days to the cap came from, so `simulate`'s pace section has to measure food
+throughput instead of pool refills. Watch the tap budget as well — 60 dishes a
+day at level 1 and 180 at the cap is more taps than combat unless the kitchen
+learns to batch.
+
+**What it does not break:** the 0-Vigor stop, which already exists and already
+does the job. A step at 0 costs 5% of max HP and ATK/DEF drop 25%, so a starving
+player crawls home and forages rather than soft-locking. Death is still the whole
+unequipped backpack, which is what makes the walk home a real decision.
+
+Technically small: `regenTick` has exactly one call site (`routes.swift`), plus
+`progression.vigorPool.fullRegenHours`.
 
 ### What Phase 7 taught
 

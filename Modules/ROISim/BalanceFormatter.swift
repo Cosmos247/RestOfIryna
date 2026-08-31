@@ -170,14 +170,28 @@ public enum BalanceFormatter {
         out.append("")
 
         // MARK: the tail
+        //
+        // Judged only on cells that could actually SHIP. The sweep rolls every
+        // archetype at every level because that is what proves the model is
+        // level-invariant, but an archetype carries a `minLevel` and the table
+        // below the floor describes content the validator would refuse — so
+        // reporting a mage's level-5 elite as a balance problem is reporting a
+        // fight nobody can be given.
+        let archetypeFloor = Dictionary(content.enemyArchetypes.map { ($0.id, $0.minLevel) },
+                                        uniquingKeysWith: { first, _ in first })
+        func shippable(_ cell: CellResult) -> Bool {
+            cell.level >= (archetypeFloor[cell.archetype] ?? 1)
+        }
         out.append("── the tail ──────────────────────────────────────────────────────────────────")
         out.append("   p90, not the mean: enemy crit barely moves average HP loss and moves the")
         out.append("   tail hard, so a row that looks survivable on average can still be a death.")
+        out.append("   Cells below their archetype's level floor are skipped — an elite before")
+        out.append("   level \(archetypeFloor["elite"] ?? 1) is content the validator refuses, not a fight to balance.")
         out.append("")
         for cell in run.cells where cell.profile == .basic && cell.gearOffset == onCurve {
             // The boss is designed to cost more than a full bar — consumables
             // are the mechanic, not a fallback — so it is exempt by design.
-            guard cell.archetype != "boss" else { continue }
+            guard cell.archetype != "boss", shippable(cell) else { continue }
             if cell.hpLossPercent.p90 >= 100 {
                 findings.append(Finding(
                     severity: .error, rule: "balance.tail_is_death",
@@ -202,7 +216,8 @@ public enum BalanceFormatter {
             }
         }
         let worst = run.cells
-            .filter { $0.profile == .basic && $0.gearOffset == onCurve && $0.archetype != "boss" }
+            .filter { $0.profile == .basic && $0.gearOffset == onCurve && $0.archetype != "boss"
+                      && shippable($0) }
             .max { $0.hpLossPercent.p90 < $1.hpLossPercent.p90 }
         if let worst {
             // p99 beside p90 because that is the question p90 leaves open: a
@@ -295,8 +310,18 @@ public enum BalanceFormatter {
             out.append("── do the lifts scale? ───────────────────────────────────────────────────────")
             out.append("   Phase 6 banned flat bonuses on ITEMS because the same +5 is a third of a")
             out.append("   level-1 stat line and a twentieth of a level-40 one. Phase 8C applied the")
-            out.append("   same rule to the Super stances, which now lift by multiplier and hold")
-            out.append("   their worth by construction. What is left flat is audited below it.")
+            out.append("   same rule to the Super stances and Phase 8D to the last two techniques")
+            out.append("   that still held out, so every lift a TECHNIQUE grants is now a multiplier")
+            out.append("   of the character's own stat. The two dodge ones are MEASURED below rather")
+            out.append("   than trusted: a multiplier holds its worth by construction, but only the")
+            out.append("   curve can say what it is worth in points of dodge chance.")
+            out.append("")
+            out.append("   NOT audited here, and the largest flat-bonus site left in the game: the")
+            out.append("   fortune deck. 14 of its 22 cards grant flat ±5/±10 ratings for six hours")
+            out.append("   (`attackBonus` and friends on the card effect), which decay across a")
+            out.append("   lifetime exactly as the stances did. Left alone deliberately — they are")
+            out.append("   a gambling buff with penalties as well as bonuses, so what they SHOULD")
+            out.append("   be is a design question, not a conversion.")
             out.append("")
             out.append("    stance             class      lift                          vigor×")
             for row in tuning.combat.stances.byId {
@@ -312,18 +337,20 @@ public enum BalanceFormatter {
             }
             out.append("")
 
-            // The stances are fixed; these two are the same defect, still live.
-            // Reported rather than changed, because nobody asked for them yet —
-            // but a number nobody has seen is a number nobody can decide about.
-            out.append("    still flat — the same rot, in the techniques the stances sit beside:")
-            let flats: [(String, String, Int, (CombatantStats) -> Int)] = [
-                ("shadowVeilDodgeBonus", "archer",
-                 tuning.combat.specialDefense.shadowVeilDodgeBonus, { $0.dodge }),
-                ("defend.archerDodgeBonus", "archer",
-                 tuning.combat.defend.archerDodgeBonus, { $0.dodge }),
+            // Measured on the reference archer at both ends of the game. The
+            // rating a multiplier acts on grows five-fold across a lifetime and
+            // its denominator does not grow as fast, so equal multiplication is
+            // not automatically an equal EFFECT — this is the line that proves
+            // it, and it is the same line that convicted the flat +50 these two
+            // replaced (16 points of dodge chance at level 1 against 4 at the
+            // cap).
+            out.append("    technique          class      lift        effect on dodge chance")
+            let lifts: [(String, String, Double)] = [
+                ("shadow_veil", "archer", tuning.combat.specialDefense.shadowVeilDodgeMultiplier),
+                ("defend", "archer", tuning.combat.defend.archerDodgeMultiplier),
             ]
-            for (name, cls, bonus, stat) in flats {
-                guard bonus != 0,
+            for (name, cls, multiplier) in lifts {
+                guard multiplier != 1.0,
                       let low = ReferenceCharacter.build(
                         characterClass: cls, level: 1, gearOffset: 0, progression: progression,
                         budget: budget, rarities: content.rarities),
@@ -331,18 +358,27 @@ public enum BalanceFormatter {
                         characterClass: cls, level: progression.maxLevel, gearOffset: 0,
                         progression: progression, budget: budget, rarities: content.rarities)
                 else { continue }
-                let atOne = Double(bonus) / Double(Swift.max(1, stat(low.stats))) * 100
-                let atCap = Double(bonus) / Double(Swift.max(1, stat(high.stats))) * 100
+                func points(_ c: ReferenceCharacter) -> Double {
+                    let base = CombatMath.dodgePercent(rating: c.stats.dodge, level: c.stats.level,
+                                                       curves: tuning.combat.curves)
+                    let lifted = CombatMath.dodgePercent(
+                        rating: Int((Double(c.stats.dodge) * multiplier).rounded()),
+                        level: c.stats.level, curves: tuning.combat.curves)
+                    return lifted - base
+                }
+                let atOne = points(low)
+                let atCap = points(high)
                 let holds = atCap >= atOne * 0.5
-                out.append("    " + pad(name, 30)
-                           + String(format: "+%d dodge = %.0f%% at L1, %.0f%% at L%d   %@",
-                                    bonus, atOne, atCap, progression.maxLevel,
+                out.append("    " + pad(name, 19) + pad(cls, 11)
+                           + pad(String(format: "dodge ×%.2f", multiplier), 12)
+                           + String(format: "%+.1f pp at L1, %+.1f pp at L%d   %@",
+                                    atOne, atCap, progression.maxLevel,
                                     holds ? "✅ holds" : "❌ rots"))
                 if !holds {
                     findings.append(Finding(
-                        severity: .warning, rule: "balance.flat_bonus_rots",
-                        message: String(format: "%@ is +%d on a rating the reference %@ grows five-fold: %.0f%% of it at level 1, %.0f%% at the cap — the stances were fixed in 8C, this one was not",
-                                        name, bonus, cls, atOne, atCap)))
+                        severity: .warning, rule: "balance.lift_rots",
+                        message: String(format: "%@ lifts the reference %@'s dodge by %.1f points of dodge chance at level 1 and only %.1f at the cap — a lift that decays across a lifetime is the defect Phase 6 removed from items",
+                                        name, cls, atOne, atCap)))
                 }
             }
             out.append("")

@@ -777,11 +777,55 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           at every level. Found by reading the diff — the simulator has no flee policy.
         **Result: 18 of 18 level-invariance rows pass, 0 broken bands.** New baseline
         `583a32cb5a9d9dc7` — `records` and `tuning` moved, `spawns` and `quests` did not.
-        Still open and reported by every run: `shadowVeilDodgeBonus` (+50 = 238% of a level-1
-        archer's dodge, 34% at the cap) and `defend.archerDodgeBonus` (+30 = 143% → 20%) are the
-        same flat-bonus rot in the techniques beside the stances; the mage's 93% win rate against
-        an elite at level 5 wants the spawn-level floor the plan specified; the bestiary is
-        half-strength against its own archetypes (Phase 10).
+        Still open after 8C and reported by every run: two flat dodge bonuses, the mage's 93%
+        win rate against an elite at level 5, and the half-strength bestiary. 8D closed the
+        first two.
+  - [x] **8D — the last flat lifts, the archetype floor, and the noisy gate** *(2026-08-31)* —
+        schema v9. `specialDefense.shadowVeilDodgeBonus` → `shadowVeilDodgeMultiplier ×2.0` and
+        `defend.archerDodgeBonus` → `archerDodgeMultiplier ×1.5`, both REQUIRED on decode.
+        The values were picked on the EFFECT rather than the rating: the flat +50 was worth
+        16.1 points of dodge chance at level 1 and 4.0 at the cap, and ×2.0 is worth **+9.0 pp at
+        level 1 and +9.4 at level 40** — what the old bonus was worth around level 10, now worth
+        that everywhere. Defend: +11.6 → +2.5 pp becomes a flat +5.3 → +5.6. The report MEASURES
+        both instead of trusting them, because a multiplier only holds if the rating's
+        denominator grows with the rating and the curve is the only thing that can say so.
+        · **Every archetype row gained a required `minLevel`; elite and boss are 14** — the floor
+        the plan specified and nothing enforced. Enemy stats are frozen at design time, so
+        `enemies.json` is the only place it can break; the shipped roster already complies (one
+        elite, level 25), which makes this a lock for Phase 10's generator rather than a fix.
+        Negative-tested both ways plus a level-14 positive control, and applied to the `0...0`
+        sentinels too — a rule with an "unless it is unreachable" clause is a rule nobody checks.
+        The tail band now skips cells below the floor, so the report stopped raising findings
+        against content the validator refuses; the worst shippable tail is `mage L20 vs elite —
+        p90 89% HP, p99 100%, win 96.2%`.
+        · **`simulate`'s default sample size 2000 → 8000**: the level-invariance band is a ±15%
+        ratio of two means, and at 2000 the mage-vs-skirmisher row read ×1.16 from the same seed
+        that gives ×1.13 at 8000 — so `--strict`, the gate the workflow depends on, was failing
+        on noise at HEAD. The sweep costs 2.6s at 8000 against 0.7s at 2000.
+        **Result: 0 broken bands, warnings 11 → 7** (the seven left are the half-strength roster).
+        At equal sample size every fight number is byte-identical before and after — the
+        simulator models neither Defend nor Special Defence, so the change is provably confined
+        to the two techniques it does not roll. New baseline `dfe1ff8e24605e0d` — `records` and
+        `tuning` moved, `spawns` and `quests` did not. 201 tests — the two beyond the floor
+        rules cover the schema handshake itself, which four version bumps had leaned on with
+        nothing exercising it (a v8 bundle would decode `+50` straight into a multiplier).
+        **Deferred on purpose:** `zones.json` (foraging pools still in `ExplorationService`).
+        Zones have to answer to the vigor rework — depth gating and the food economy are one
+        question — so moving them first would mean moving them twice.
+
+- [ ] **Phase 8E — the vigor rework** *(decided 2026-08-31)* — remove passive Vigor
+      regeneration entirely (`VigorService.regenTick`, one call site in `routes.swift`, plus
+      `progression.vigorPool.fullRegenHours`). Reverses the plan's "slow regeneration plus
+      food" on purpose: regen does NOT pause during an expedition, so a player can stand at
+      km 25 and wait out a full pool — which is why depth has no gate today. Without it the
+      pool plus the carried food is the gate, and the walk home is symmetric. The estate
+      becomes the clock: at 3 harvests/day a 2-slot estate yields ~540 Vigor against the
+      regen's 525 at level 1, and a 6-slot ~1620 against 1500 at the cap. Rebuild with it:
+      the pace section of `simulate` (a day is no longer "one pool + 4× regen"), and watch
+      the tap budget — 60 dishes/day at level 1 and 180 at the cap needs batch cooking. The
+      0-Vigor stop already works (5% max HP per step, −25% ATK/DEF), so there is no soft-lock
+      to design around. `zones.json` lands here too, since depth and the food economy are one
+      question.
 
 - [ ] Phase 9 — Content specs in `content/spec/` **for approval before authoring**
 - [ ] Phase 10 — Generate + author content; fill the 3 dead equipment slots; restore potions/scrolls

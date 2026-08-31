@@ -28,7 +28,7 @@ re-spent, monster silver removed).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `583a32cb5a9d9dc7` (schema v8), 192 tests.
+against a real database. Digest baseline `dfe1ff8e24605e0d` (schema v9), 201 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×
@@ -37,9 +37,13 @@ against its own archetype contract. **Level invariance holds on all 18 rows, and
 band is broken.** Phase 8C acted on what it found: every stance lift is a multiplier
 of the character's own stat (the warrior's Super was charging double Vigor for a bonus
 that had rotted to +5%), the warrior's budget was re-spent toward offence (days-to-cap
-spread 17% → 9%), and monster silver was removed entirely. Still reported every run:
-two flat dodge bonuses that rot the same way (`shadowVeilDodgeBonus`,
-`defend.archerDodgeBonus`), and a bestiary carrying ~50% of what its archetypes ask.
+spread 17% → 9%), and monster silver was removed entirely. Phase 8D finished the
+sweep: the last two flat lifts became multipliers (Shadow Veil dodge ×2.0, the archer's
+Defend ×1.5 — both measured at +9 and +5.5 points of dodge chance at EVERY level),
+every archetype row gained a required `minLevel` with elite and boss at 14, and the
+simulator's default sample size went 2000 → 8000 because `--strict` was failing on
+noise. **The one thing the report still flags is content:** the shipped bestiary
+carries ~50% of what its archetypes ask, which is Phase 10's.
 
 Sections below describe the shipped FEATURE SET. Where they quote numbers (XP curves,
 stat growth, enemy stats, enchant bonuses) treat `content/data/` as the truth — several

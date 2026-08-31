@@ -773,7 +773,7 @@
   "combat.special_def.mage.activate": "A mirror ward shimmers around you — <b>%{enemy}</b>'s blow rebounds, scoring them for <b>%{damage} HP</b>.",
   "combat.special_def.mage.no_damage": "The ward holds — <b>%{enemy}</b>'s blow glances off, finding no purchase.",
   "combat.effect.armor_split": "Armor split — <b>%{rounds}</b> swing(s).",
-  "combat.effect.shadow_veil": "Shadow lingers — <b>%{rounds}</b> round(s) of +50 dodge.",
+  "combat.effect.shadow_veil": "Shadow lingers — <b>%{rounds}</b> round(s) of dodge ×%{multiplier}.",
   "combat.tech.no_uses_left": "You've spent every charge of that technique this fight.",
   "combat.tech.locked": "You haven't learned this technique yet. Visit the Training Ground at your estate once you reach level %{level}.",
   "combat.ended": "The fight is already over. Return to the wilds when you're ready to face another beast.",
