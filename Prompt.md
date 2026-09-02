@@ -42,13 +42,24 @@ it: the bestiary level re-spread.
 
 > ## Next action: **Phase 11**, the last one — and it carries the whole untested surface.
 >
-> 1. **`tuning/time.json` → `scale` 60 → 1.0.** This is the only error
->    `validate --strict` still reports, and it is deliberate: every game-time gate
->    is 60× compressed for development. Nothing under `realTime` scales.
-> 2. **`WipeForRebalance` migration** — the full wipe agreed at the start.
-> 3. **The live first-hour playtest.** ⚠️ See the warning below: there has been no
->    live Telegram pass since the rebalance began, and `/reload` has never run
->    against a real database.
+> 1. ~~**`WipeForRebalance` migration**~~ — **written 2026-09-02, runs at the next
+>    bot launch.** Registered LAST in `configure.swift` (it truncates every table the
+>    migrations above create); a no-op on a fresh database. Explicit table list, not
+>    an FK cascade — `tavern_game_messages` carries no foreign key and a cascade
+>    would leave it standing — and it asks `information_schema` afterwards, refusing
+>    to finish while any table still holds a row.
+> 2. **`tuning/time.json` → `scale` 60 → 1.0 — DEFERRED past the playtest**
+>    (user's call, 2026-09-02): the first hour runs on compressed time. Sound for
+>    what it measures, because the opening has no game-time gate at all — no step
+>    cooldown, no estate below level 4, no Vigor regeneration — so the ledger's
+>    km-1-vs-km-4 answer is testable as-is. The estate pace (85–93 days) is NOT
+>    measurable that way. Still the only error `validate --strict` reports, and
+>    still owed before release.
+> 3. **The live first-hour playtest — this is the next action.** ⚠️ See the warning
+>    below: there has been no live Telegram pass since the rebalance began, and
+>    `/reload` has never run against a real database. The wipe means the allowed
+>    accounts land in registration on their first message, which is where the
+>    measurement should start.
 >
 > **The one debt the rebalance wrote itself is PAID (2026-09-02).** `simulate`
 > now carries an **opening ledger**: levels 1–3 priced at every depth against the

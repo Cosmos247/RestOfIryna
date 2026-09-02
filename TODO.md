@@ -982,6 +982,36 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `records` and `spawns`; `tuning` and `quests` held. 222 tests, `simulate --strict` 0
       broken bands.
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
+  - [x] **`WipeForRebalance`** *(2026-09-02)* — the full wipe agreed at the start of the
+        rebalance. Registered **last** in `configure.swift` on purpose: it truncates every
+        table the migrations above create, so anything registered after it would be wiped
+        before it existed. On a fresh database it is a **no-op**, because it runs in the same
+        batch as the `Create…` migrations; it bites exactly once, on a database that predates
+        it.
+        **Why a wipe and not a backfill:** most of the rebalance heals itself
+        (`applyLevelDerivedStats` recomputes rather than accumulates, gear stats resolve out
+        of the catalog by `itemId + tier`), but every STORED QUANTITY sits on a curve that
+        moved — XP totals are on a ladder whose cap went 21 → 40, Vigor pools changed shape
+        and stopped regenerating in 8E, and silver balances are inflated by a faucet 8C
+        deleted. A session against those rows measures the hybrid, not the game.
+        **The table list is explicit, and that is the point:** deleting `users` and leaning on
+        the FK cascades looks tidier and is wrong — `tavern_game_messages` stores a raw
+        `telegram_id` and carries no foreign key at all, so a cascade would leave it standing.
+        Rather than trust the list OR the cascade, `prepare` asks `information_schema` what
+        tables exist afterwards and **refuses to finish while any of them holds a row**, so a
+        table added later and forgotten here fails the boot instead of quietly surviving.
+        Counts are taken before the truncate and logged, because a wipe with no record of what
+        it removed cannot be told from one that never ran.
+        Verified statically: a wiped database is not a broken one — `User._session` creates a
+        row on first contact with `routerName = "registration"`, so the playtest starts at the
+        actual beginning. **Not executed yet** — it runs at the next bot launch.
+  - [ ] **`scale` 60 → 1.0 — DEFERRED past the playtest** *(2026-09-02, user's call)*: the
+        first-hour pass runs on compressed game time. Sound for what it measures — the opening
+        has no game-time gate at all (no step cooldown, no estate below level 4, and Vigor
+        stopped regenerating), so the opening ledger's km-1-vs-km-4 answer is testable as-is.
+        What it canNOT measure on `scale: 60` is the estate pace (85–93 days), which is
+        entirely game-time. Still owed before release: it is the only error
+        `validate --strict` reports.
   - [x] **The opening ledger** *(2026-09-02)* — the debt `spec-economy.md` §7 booked before
         the playtest: `roi-content simulate` reported pace 1→40 as an aggregate and said
         nothing about the only stretch with no estate behind it, which is exactly the first

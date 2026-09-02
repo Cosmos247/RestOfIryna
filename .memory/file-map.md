@@ -41,6 +41,13 @@ RestOfIryna/
 │   │   ├── SpecTables.swift       # **Phase 9.** The tables a content specification quotes, printed by the code that owns them — `progression` (XP ladder + stat line), `gates` (technique / estate / bag unlocks), `bestiary` (what an archetype asks for at a level, through `EnemyGenerator`), `items` (budget per slot/rarity, and what a class profile buys with it). Exists so a spec is never a fourth transcription of the curves, and is the seed of Phase 10's generator
 │   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (--runs/--seed/--levels; --strict exits 1 on a broken band). simulate refuses a bundle that does not validate
 │
+│                                #   **WipeForRebalance** (11) — the full wipe. LAST in the
+│                                #   list, no-op on a fresh DB (same batch as the creates).
+│                                #   Explicit table list because `tavern_game_messages` has no
+│                                #   FK and a cascade would miss it; then asks
+│                                #   `information_schema` and refuses to finish while any table
+│                                #   still holds a row, so a table added later fails the boot
+│                                #   rather than surviving the wipe
 ├── Tests/
 │   └── ROIContentTests/            # 234 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 │                                #   Files: ContentDTOTests · ContentValidatorTests · WeaponLadderTests · LocaleIndexTests ·

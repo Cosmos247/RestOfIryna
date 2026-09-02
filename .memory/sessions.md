@@ -113,12 +113,50 @@ output. Compare each blank-line group, not the block as one string. Written into
 `.memory/content-pipeline.md`, because a checker that cries wolf gets ignored,
 which is worse than not having one.
 
+### Then the wipe
+
+`spec-economy.md` §2 was amended after all (the user asked to see the diff first):
+an **AMENDED** notice on the heading, a *superseded* note under the 664, and a
+*Measured* subsection quoting a generated block. Rather than type the table in,
+the ledger got its own spec table — `roi-content spec opening` — sharing
+`simulate`'s seed and sample size, so the two cannot print different numbers.
+`runs`/`seed` moved to one place in `main.swift` to make that structural rather
+than a coincidence.
+
+`WipeForRebalance` followed. Two things decided it:
+
+- **The FK cascades do not cover the schema.** Deleting `users` and letting the
+  cascades run looks tidier and is wrong: `tavern_game_messages` stores a raw
+  `telegram_id` and carries no foreign key at all, so it would survive untouched.
+  The list is explicit, and `TRUNCATE` takes all fifteen in one statement so FK
+  order between them stops mattering.
+- **A list can go stale; a schema cannot.** So `prepare` asks
+  `information_schema` what tables exist AFTER the truncate and refuses to finish
+  while any of them holds a row. A table added later and forgotten in the list
+  fails the boot instead of quietly surviving the wipe — which is the same shape
+  as the opening ledger's derived depth: read the ceiling off the data, never
+  write it down.
+
+Registered LAST in `configure.swift`, with the reason in a comment: it truncates
+every table the migrations above create, so anything registered after it would be
+wiped before it existed. On a fresh database it is a no-op — it runs in the same
+batch as the creates.
+
+Verified statically that a wiped database is not a broken one: `User._session`
+creates a row on first contact with `routerName = "registration"`, so the allowed
+accounts land in registration rather than in a null state. **Not executed** — no
+database was reachable (the tunnel was down), and it runs at the next bot launch.
+
 ### Still open
 
-`spec-economy.md` §2 carries two numbers this supersedes — 664 → 374 and 79 → 92.2 —
-and the document has **not** been amended; that is a decision about reopening an
-approved Phase 9 spec, not a doc chore. The rest of Phase 11 is untouched: `scale`
-60 → 1.0, the `WipeForRebalance` migration, and the live first-hour playtest.
+`scale` 60 → 1.0 is **deferred past the playtest at the user's call** — the first
+hour runs on compressed time. That is sound for what it measures: the opening has
+no game-time gate at all (no step cooldown, no estate below level 4, no Vigor
+regeneration), so the ledger's km-1-vs-km-4 answer is testable as-is. What it
+cannot measure that way is the estate pace, which is entirely game-time. The flip
+is still the only error `validate --strict` reports and still owed before release.
+
+Then: the live first-hour playtest, which is now the next action.
 
 
 ## Session — 2026-08-31 → 09-01 (Rebalance Phases 9 + 10: the five content specs, then the level re-spread)

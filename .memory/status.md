@@ -37,6 +37,14 @@ opening is not bankrupt, the **shallow** opening is. km 1 ends 374 Vigor short, 
 rather than Vigor is the binding constraint. New warning `opening.shallow_is_bankrupt`;
 `--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234.
 
+**`WipeForRebalance` written (2026-09-02), not yet executed** — it runs at the next bot
+launch. Registered last in `configure.swift`; a no-op on a fresh database. Explicit table
+list rather than an FK cascade, because `tavern_game_messages` carries no foreign key, and
+a self-check against `information_schema` refuses to finish while any table still holds a
+row. **`scale` 60 → 1.0 is deferred past the playtest** at the user's call: the first hour
+runs on compressed time, which is sound because the opening has no game-time gate — but the
+estate pace cannot be measured that way, and the flip is still owed before release.
+
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
 `spec-economy.md`). Every number in them is emitted by `roi-content spec`, never
