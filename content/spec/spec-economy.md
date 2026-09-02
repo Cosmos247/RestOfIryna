@@ -7,6 +7,7 @@ Scope: levels 1–25, the authored band. Numbers are printed, never typed:
 
 ```
 swift run roi-content spec economy
+swift run -c release roi-content spec opening # §2's amendment — it rolls fights
 swift run -c release roi-content simulate     # for what a kill COSTS
 ```
 
@@ -28,6 +29,12 @@ whether it has anything to do at all.
 ---
 
 ## 2. The opening is Vigor-bankrupt, and an approved spec said otherwise
+
+> **AMENDED 2026-09-02, and the title is now half wrong.** The measurement this
+> section asked for exists, and it says the opening is not bankrupt — **the
+> SHALLOW opening is.** Everything down to "The game does have an answer" is the
+> approved text and is kept as written; the measured answer is at the end of the
+> section under *Measured*. Two numbers below are superseded there.
 
 `spec-progression.md` §3 justified levels 1–3 having no estate like this:
 
@@ -63,6 +70,13 @@ At the ledger in §3 a boar costs ~16.8 Vigor and returns 8.4 as cooked meat, so
 level-up grant of +5 a level. **The opening is short by roughly six pools**, and
 the estate — the thing designed to pay for it — does not exist yet.
 
+> *Superseded by the measurement below: **374**, not 664, and **92.2** kills, not
+> 79. Both were hand-computed here. The deficit was overstated because the boar
+> is credited with 8.4 Vigor of cooked meat across a stretch where the kitchen is
+> locked, and because foraging was not counted at all; the kill count was
+> understated because a level-3 player earns 8 XP from a level-1 boar, not 10.
+> The two errors ran in opposite directions, which is why neither showed.*
+
 ### The game does have an answer, and it should be stated rather than discovered
 
 The boar is `trash` (XP ×0.4) and it is the only creature at km 1–3. The next
@@ -90,6 +104,74 @@ decisions in §7:
 - **Nothing is retuned yet.** The cheapest fix is one number — the boar's meat
   chance from 0.70 to ~1.4 takes a kill to break-even — but retuning the opening
   before the report can measure it is guessing, and §6 puts it in order.
+
+### Measured (2026-09-02) — and it is the shallow opening that is bankrupt
+
+`OpeningLedger` prices this stretch at every depth against the trail, because
+before the estate exists the trail is the whole income. It rolls the same
+`FightSimulator` the balance report rolls, so `roi-content spec opening` and
+`simulate`'s own opening section are the same numbers in two formats.
+
+<!-- generated: roi-content spec opening -->
+**The opening** — levels 1–3, the only stretch with no estate behind it
+
+788 XP to reach level 4 against a stock of 115 Vigor — the starting pool plus
+every level-up grant, with a kill costing 2.5 rooms of walking plus the fight.
+`trail` is what the walk feeds you: foraged food, plus anything a kill drops
+edible AS FOUND. A kill's raw meat is not that — every recipe for it is a
+kitchen recipe, and the kitchen is a room of the estate this stretch ends by
+unlocking — `if cooked` is the size of what that gate holds back. Silver is
+never spent here either, so every row is a floor and not an estimate.
+
+| km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 8.5 | 9.1 | 100% | 92.2 | 350 | 837 | 2 | **-374** | +400 |
+| 4 | 1,4 | 89.0 | 11.4 | 100% | 8.9 | 34 | 101 | 8 | **+40** | +150 |
+| 7 | 1,4,7 | 213.2 | 13.6 | 97% | 3.7 | 14 | 50 | 14 | **+65** | +114 |
+| 10 | 1,4,7,10 | 388.4 | 14.9 | 95% | 2.0 | 8 | 30 | 20 | **+72** | +95 |
+| 11 | 4,7,10 | 692.3 | 19.6 | 91% | 1.1 | 4 | 22 | 22 | **+75** | +90 |
+| 13 | 4,7,10,13 | 917.0 | 23.2 | 66% | 0.9 | 3 | 20 | 26 | **+72** | +80 |
+| 14 | 7,10,13 | 1250.1 | 27.0 | 50% | 0.6 | 2 | 17 | 28 | **+72** | +75 |
+| 16 | 7,10,13,16 | 1647.1 | 26.2 | 41% | 0.5 | 2 | 13 | 32 | **+72** | +75 |
+| 17 | 10,13,16 | 1774.9 | 25.9 | 34% | 0.4 | 2 | 12 | 34 | **+71** | +73 |
+| 20 | 13,16 | 2045.9 | 28.1 | 9% | 0.4 | 1 | 11 | 40 | **+66** | +68 |
+| 22 | 13,16,22 | 2731.8 | 27.0 | 9% | 0.3 | 1 | 8 | 44 | **+64** | +66 |
+| 23 | 16,22 | 5180.6 | 20.5 | 0% | 0.2 | 1 | 3 | 46 | **+66** | +69 |
+| 26 | 22 | 10020.0 | 15.7 | 0% | 0.1 | 0 | 1 | 52 | **+62** | +62 |
+
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 10**, at +72 Vigor.
+<!-- /generated -->
+
+**The answer to "at what depth" is: four kilometres further than a new player
+will walk.** Four kilometres of walking is worth more than the entire deficit,
+and the flip lands at km 4 — the first depth where anything but the boar spawns.
+Depth then has a measured **optimum** rather than an open ceiling: Vigor stops
+being the binding constraint at about km 4, and at about km 11 survival takes
+over (95% win at km 10, 66% at km 13, 9% at km 20). What §2 argued from prose is
+now a table, and it holds.
+
+Three modelling choices carry that result, and each of them moves it by more than
+the deficit this section was arguing about:
+
+- **A kill's raw meat is not income here.** It restores nothing as found, and
+  every recipe that turns it into a portion is a `kitchen` recipe — a room gated
+  on estate tier 2, which is the level this stretch ENDS at. It is printed as
+  `if cooked` (774 Vigor at km 1, twice the deficit) and kept out of the net.
+- **Only forage that is edible as found counts.** Half the km 1–10 pool is lumber
+  and river pebble, and the potato deeper in needs the same locked kitchen.
+- **Kills use the level-gap scaler.** The generated table in §2 prints 79 as the
+  flat 788 ÷ 10 and labels it correctly; the ledger's 92.2 is the same path with
+  the decay applied.
+
+Excluded and named rather than rounded away — silver (hide sells, quests pay, the
+trader stocks both food and the lumber a kitchen would want), the events the
+approach walk rolls on the way in, and re-entered rooms, whose encounter weight
+decays. All three push the same way, so every row is a **floor** on the opening
+rather than an estimate of it.
+
+The band is `opening.shallow_is_bankrupt`, and it is a warning rather than a
+broken band for the reason §7 gives: measure before retuning, so nothing here
+fails a build on a number the project has agreed to look at first.
 
 ---
 
@@ -260,10 +342,12 @@ silver a unit. That is a real change to how the first week plays, it was weighed
 and accepted when the zones were reconciled, and it is recorded here as the
 ledger entry it is rather than as a footnote there.
 
-**It compounds with §2.** The opening already asks for 79 kills before the first
-plot exists; the mine now sits behind that same gate, and iron is the first
-material the estate ladder cannot do without. Whatever measurement §2 asks for
-has to cover this too — they are the same first week.
+**It compounds with §2.** The opening asks for 92 kills at km 1 before the first
+plot exists (§2, *Measured*), and the mine sits behind that same gate — iron is
+the first material the estate ladder cannot do without. §2's measured answer
+shortens this problem rather than removing it: a player who walks to km 4 needs
+nine kills instead of ninety-two, but the mine is still three levels away, and
+they are the same first week.
 
 ---
 
@@ -282,6 +366,15 @@ the only stretch with no estate behind it. The band to add: **can levels 1–3 b
 completed, and at what depth**. Retuning first — the boar's meat chance from 0.70
 to ~1.4 is the one-number fix — would be guessing at a number the report cannot
 yet check.
+
+> **DISCHARGED 2026-09-02.** The band exists (`OpeningLedger`, printed by both
+> `roi-content spec opening` and `simulate`), and the answer is in §2 under
+> *Measured*: yes, from km 4, best at km 10. **The one-number retune is no longer
+> obviously wanted** — the boar's meat chance does not enter the opening at all,
+> because the kitchen that would cook it opens at the level this stretch ends at.
+> What the ledger points at instead is that the game never tells the player to
+> walk, which is a first-hour teaching problem rather than a tuning one, and it
+> belongs to the playtest.
 
 **The `lootMultiplier` is wired up and multiplies QUANTITY, not chance** (§5) —
 chance is a probability and saturates. The fractional part of `quantity ×

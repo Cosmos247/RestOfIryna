@@ -1,5 +1,126 @@
 # Session History
 
+## Session — 2026-09-02 (Phase 11 opens: the opening ledger)
+
+### Goal
+Pay the one debt the rebalance wrote itself before the playtest — `spec-economy.md`
+§7's band for levels 1–3 — chosen over flipping `time.scale` or writing the wipe,
+because it is the only piece that produces a prediction the playtest can then check
+and it carries no live risk.
+
+### What landed
+
+**`Modules/ROISim/OpeningLedger.swift`** — a model file beside `FoodBudget`, for the
+same reason `FoodBudget` is one: the pace section divides kills by what a tended
+estate feeds, and before the first upgrade there is nothing to divide by, so those
+levels were excluded and reported as `pace.levels_without_an_estate` and never
+priced. The ledger prices them at every depth against the trail — walk plus fight
+out, forage in — and prints one row per distinct spawn set at the shallowest km that
+has it.
+
+**The measurement inverts the spec's own conclusion.** `spec-economy.md` §2 says the
+opening is Vigor-bankrupt: 79 boars, 664 Vigor of deficit against a 105 pool. Measured:
+
+```
+km  mob levels    xp/kill  vigor/kill    win%     kills     trail     spent  walk in       net  if cooked
+1   1                 8.5         9.1    100%      92.2       350       837        2      -374        400
+4   1,4              89.0        11.4    100%       8.9        34       101        8        40        150
+10  1,4,7,10        388.4        14.9     95%       2.0         8        30       20        72         95
+13  4,7,10,13       917.0        23.2     66%       0.9         3        20       26        72         80
+```
+
+The opening is not bankrupt — **the shallow opening is.** Four kilometres of walking
+is worth more than the entire deficit, and the flip lands at km 4, the first depth
+where anything but the boar spawns. Depth then has a measured **optimum** rather than
+an open ceiling: Vigor stops binding at about km 4 and survival takes over at about
+km 11 (95% win at km 10, 66% at km 13, 9% at km 20). The design's "walk deeper than
+is comfortable" stopped being a claim and became a number.
+
+### The three things that decided the answer
+
+- **Raw meat is not income during the opening.** It restores nothing as found, and
+  every recipe that turns it into a portion is a `kitchen` recipe — a room gated on
+  estate tier 2, which is the level the opening ENDS at (`EstateController` line 1037).
+  §3's ledger had credited the boar with 8.4 Vigor of cooked meat across a stretch
+  where the oven is locked. It is printed as `if cooked` instead: 774 Vigor at km 1,
+  twice the deficit, which is the size of what the gate holds back.
+- **Only forage edible as found counts.** Half the km 1–10 pool is lumber and river
+  pebble, and the potato deeper in needs the same locked kitchen. Counting the pool
+  as food would have paid double.
+- **Kills use the level-gap scaler.** 92.2 at km 1, not the flat 788 ÷ 10 = 79 — a
+  level-3 player earns 8 XP from a level-1 boar, not 10, and the decay adds 17%.
+
+Everything else is excluded and named rather than rounded away: silver (hide sells,
+quests pay, the trader stocks food AND the lumber a kitchen would want), the events
+the approach walk rolls on the way in, and re-entered rooms. All three push the same
+direction, which is what makes the table a **floor** and not an estimate.
+
+### The band
+
+`opening.shallow_is_bankrupt` — a **warning**, not a broken band, and deliberately:
+§7 decided to measure before retuning, so an error would fail the build on the exact
+number the project agreed to look at first. It fires when the shallowest depth cannot
+pay for itself while a deeper one can — when the game is solvable only by a move it
+never teaches, which is precisely what a first-hour playtest walks into. Three more
+rules sit beside it and stay silent on today's data (`opening.vigor_bankrupt`,
+`opening.depth_does_not_pay`, `opening.no_holdable_depth`), each of them the shape the
+answer would take if a retune overshot.
+
+`--strict` still exits 0: 0 broken bands, 12 warnings (was 11). No content file was
+touched, so no digest half can have moved.
+
+### What this session is worth remembering for
+
+**A model's exclusions are where its answer lives.** Three of them here — the locked
+kitchen, the inedible half of the forage pool, the level-gap decay — and each one
+moved the result by more than the whole deficit the spec was arguing about. Two of
+the three were *corrections* to an approved document's prose rather than choices, and
+neither was visible from the numbers beside them: §2's table was right and the
+sentence under it was not, which is the same failure `spec-progression.md` §3 already
+had. Printed numbers guard tables, not the prose beside them — third instance.
+
+**Tests: 222 → 234.** The load-bearing one is the level-gap scaler, because dividing
+the XP ladder by a printed reward is the obvious way to count an opening, it is the
+way an approved spec counted it, and it is wrong by 17%. The selection rule is
+negative-tested too: a depth the player cannot hold is not a cheaper opening, it is a
+shorter one, so `best` skips the richest row when its win rate fails.
+
+### What the audit caught, after the section already worked
+
+Reading the finished model back found two defects, both invisible in its output:
+
+- **A kill drop edible AS FOUND counted as nothing.** The loot loop asked "does
+  this restore Vigor? then it is not the locked meat" and priced it at zero —
+  so a food drop would have contributed to neither the trail column nor the
+  locked one. No shipped enemy drops food, so the bug was worth exactly 0 today
+  and would have been worth a whole column the day one was authored. Split into
+  `killFood` (income, in the net) and `meatLocked` (printed only); every shipped
+  row is byte-identical after the fix, which is the proof it was neutral.
+- **`maxKm: 25` was an undocumented magic number** in a file whose premise is
+  that numbers come from content — and it truncated the table before the
+  wilderness ends, since the elite's band runs to km 40. Now read off the
+  roster's own deepest band, which added the km 26 row the ceiling was hiding.
+
+The second is the more interesting one: it truncated in the single direction the
+table exists to answer — *is there a better depth further out?* A ceiling that
+silently answers "no" to the question you built the tool to ask is worse than no
+tool. Both are pinned by tests (12 in the file now).
+
+Also caught, and worth remembering separately: the first verbatim checker for the
+`<!-- generated -->` blocks reported all four as drifted, and was itself wrong —
+a block may quote several tables from ONE command that are not adjacent in its
+output. Compare each blank-line group, not the block as one string. Written into
+`.memory/content-pipeline.md`, because a checker that cries wolf gets ignored,
+which is worse than not having one.
+
+### Still open
+
+`spec-economy.md` §2 carries two numbers this supersedes — 664 → 374 and 79 → 92.2 —
+and the document has **not** been amended; that is a decision about reopening an
+approved Phase 9 spec, not a doc chore. The rest of Phase 11 is untouched: `scale`
+60 → 1.0, the `WipeForRebalance` migration, and the live first-hour playtest.
+
+
 ## Session — 2026-08-31 → 09-01 (Rebalance Phases 9 + 10: the five content specs, then the level re-spread)
 
 ### Goal

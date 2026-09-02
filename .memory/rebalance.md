@@ -107,7 +107,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
 | 9 Content specs (approval gate) | ✅ **5 of 5** — progression · bestiary · items · sets · economy |
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
-| 11 Wipe + final pass | ⬜ |
+| 11 Wipe + final pass | ⬜ — the opening ledger (its one pre-playtest debt) landed 2026-09-02 |
 
 **Current digest baseline (Phase 10):** `records ee3fa4731c5a3a27`,
 `tuning 3ef097038094a4d8`, `spawns eaea309f4813dfa2`,
@@ -163,6 +163,67 @@ are NOT one scale. `PlotCatalog.testMode` alone drives two — `intervalSeconds`
 60 ↔ 3600 (60×, matching `manifest.timeScale: 60`) while
 `PlotProductionService`'s sweep is 60 ↔ 300 (5×). The flag was carried into
 `plots.json` verbatim; Phase 4 reconciles and deletes it.
+
+### What the opening ledger measured (2026-09-02)
+
+`spec-economy.md` §7 decided to **measure the opening before retuning it**, and
+`Modules/ROISim/OpeningLedger.swift` is that measurement: levels 1–3 priced at
+every depth against the trail, since before the estate exists the trail is the
+only income there is. It reports one row per distinct spawn set, at the
+shallowest km that has it.
+
+```
+km  mob levels    xp/kill  vigor/kill    win%     kills     trail     spent  walk in       net  if cooked
+1   1                 8.5         9.1    100%      92.2       350       837        2      -374        400
+4   1,4              89.0        11.4    100%       8.9        34       101        8        40        150
+7   1,4,7           213.2        13.6     97%       3.7        14        50       14        65        114
+10  1,4,7,10        388.4        14.9     95%       2.0         8        30       20        72         95
+13  4,7,10,13       917.0        23.2     66%       0.9         3        20       26        72         80
+20  13,16          2045.9        28.1      9%       0.4         1        11       40        66         68
+26  22            10020.0        15.7      0%       0.1         0         1       52        62         62
+```
+
+**The spec's own conclusion is inverted by its own measurement.** The opening is
+not Vigor-bankrupt; the SHALLOW opening is. One kilometre of extra walking is
+worth more than the whole deficit, and the flip happens at km 4 — the first
+depth where anything but the boar spawns. Depth then has a measured **optimum**
+rather than an open ceiling: Vigor stops binding at about km 4 and survival
+takes over at about km 11, where the win rate falls off a cliff (95% at km 10,
+66% at km 13, 9% at km 20). "Walk deeper than is comfortable" is now a number.
+
+Three modelling choices carry the result, and each of them moves it:
+
+- **Raw meat is not income during this stretch.** It restores nothing as found,
+  and every recipe that turns it into a portion is a `kitchen` recipe — a room
+  gated on estate tier 2, which is the level the opening ENDS at. So it is
+  printed as `if cooked` (the size of what the gate holds back: 774 Vigor at km
+  1, twice the deficit) and kept out of the net. `spec-economy.md` §3's ledger
+  credited the boar with 8.4 Vigor of cooked meat during a stretch where the
+  oven is locked.
+- **Only forage that is edible as found counts.** Half the km 1–10 pool is
+  lumber and river pebble; the raw potato deeper in is food that needs the same
+  locked kitchen. Counting the whole pool would have paid double.
+- **Kills use the level-gap scaler.** 92.2 at km 1, not the flat 788 ÷ 10 = 79
+  the generated table prints — a level-3 player earns 8 XP from a level-1 boar,
+  not 10, and the decay adds 17% to the count.
+
+Deliberately excluded, and each one a whole loop rather than a rounding: silver
+(hide sells, quests pay, the trader stocks both food and lumber), the events the
+approach walk rolls on the way in, and re-entered rooms (the encounter weight
+decays, so every real route costs more than this one). All three push the same
+way, which is what makes the table a **floor** on the opening rather than an
+estimate of it.
+
+**The new finding is `opening.shallow_is_bankrupt`**, and it is a warning rather
+than a broken band on purpose: §7 decided to measure before retuning, so an
+error would fail the build on the exact number the project agreed to look at
+first. It fires when the shallowest depth cannot pay for itself while a deeper
+one can — which is to say, when the game is solvable only by a move it never
+teaches. That is precisely what a first-hour playtest walks into.
+
+Two numbers in `spec-economy.md` §2 are superseded by this and the document is
+**not yet amended**: the deficit is 374 rather than 664, and the pure-boar path
+is 92.2 kills rather than 79.
 
 ### What Phase 9's item spec found (2026-08-31)
 

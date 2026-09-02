@@ -16,14 +16,23 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            222 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            234 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
 `Modules/`, not `Sources/` — `CLAUDE.md` states game code lives in `Swift/`, and
 a `Sources/` directory would contradict that.
 
-**`roi-content spec <progression|gates|bestiary|items|sets|economy>`** prints the
+**Gotcha when checking a generated block verbatim:** a block may quote several
+tables from ONE command that are not adjacent in its output — `spec-economy.md`
+quotes "Every ladder" and "The faucet" from `spec economy` with "The sinks that
+are not a ladder" printed between them. So compare **each blank-line-separated
+group** against the command's output, not the block as one string; a whole-block
+containment check reports that block as drifted forever and teaches everyone to
+ignore the checker. (`spec opening` is also the one table that needs `-c release`
+— it rolls 8000 fights per cell.)
+
+**`roi-content spec <progression|gates|bestiary|items|sets|economy|opening>`** prints the
 tables a content specification quotes, from the code that owns the maths —
 `ProgressionMath`, `EnemyGenerator`, `BudgetMath`, `BudgetCurve`. A spec full of
 hand-typed numbers would be a fourth transcription of the same curves; this way

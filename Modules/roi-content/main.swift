@@ -9,7 +9,7 @@
 //
 //    swift run roi-content validate [--content DIR] [--locales DIR] [--strict]
 //    swift run roi-content simulate [--runs N] [--seed S] [--levels 1,5,…] [--strict]
-//    swift run roi-content spec <progression|gates|bestiary|items|sets|economy> [--levels 1,5,…]
+//    swift run roi-content spec <progression|gates|bestiary|items|sets|economy|opening> [--levels 1,5,…]
 //
 //  Exits 0 on success and 1 on failure so it drops into a pre-commit hook or CI
 //  unchanged. Argument parsing is hand-rolled — adding swift-argument-parser
@@ -49,8 +49,10 @@ private func usage() -> Never {
       --seed S        RNG seed — the same seed always gives the same report
       --levels L,L,…  levels to sweep (default 1,5,10,20,30,40)
 
-    spec <table>      progression · gates · bestiary · items · sets · economy
+    spec <table>      progression · gates · bestiary · items · sets · economy · opening
       --levels L,L,…  levels the table covers (default 1…25, the authored band)
+      --runs / --seed opening only — it rolls the same fights `simulate` does,
+                      at the same defaults, so the two cannot disagree
 
       Phase 9 signs the content list off before it reaches JSON, and a spec full
       of hand-typed numbers is a fourth copy of the same curves. Every table here
@@ -67,6 +69,20 @@ let root = projectRoot()
 let contentDir = value(for: "--content", in: args) ?? "\(root)/content/data"
 let localeDir  = value(for: "--locales", in: args) ?? "\(root)/Localizations"
 let strict     = args.contains("--strict")
+
+// Shared by `simulate` and by `spec opening`, which rolls the same fights. Two
+// commands printing different numbers off the same content would be exactly the
+// drift the generated-block discipline exists to stop, so the defaults live in
+// one place rather than in two branches that happen to agree.
+//
+// 8000, not the 2000 this shipped with. The level-invariance band is a ±15%
+// ratio of two MEANS, and at 2000 fights the sampling error on a cell is wide
+// enough to cross it on its own: the mage-vs-skirmisher row reads ×1.16 at 2000
+// and ×1.13 at 8000 from the same seed, so `--strict` failed the build on noise.
+// The whole sweep costs 2.6s at 8000 against 0.7s at 2000, which is no reason at
+// all to keep a gate that cries wolf.
+let runs = value(for: "--runs", in: args).flatMap(Int.init) ?? 8000
+let seed = value(for: "--seed", in: args).flatMap(UInt64.init) ?? 20260830
 
 switch command {
 case "validate":
@@ -105,15 +121,6 @@ case "simulate":
             exit(1)
         }
         let content = GameContent(bundle)
-        // 8000, not the 2000 this shipped with. The level-invariance band is a
-        // ±15% ratio of two MEANS, and at 2000 fights the sampling error on a
-        // cell is wide enough to cross it on its own: the mage-vs-skirmisher
-        // row reads ×1.16 at 2000 and ×1.13 at 8000 from the same seed, so
-        // `--strict` failed the build on noise. The whole sweep costs 2.6s at
-        // 8000 against 0.7s at 2000, which is no reason at all to keep a gate
-        // that cries wolf.
-        let runs = value(for: "--runs", in: args).flatMap(Int.init) ?? 8000
-        let seed = value(for: "--seed", in: args).flatMap(UInt64.init) ?? 20260830
         let levels = value(for: "--levels", in: args)
             .map { $0.split(separator: ",").compactMap { Int($0) } }
             .flatMap { $0.isEmpty ? nil : $0 } ?? BalanceSimulator.defaultLevels
@@ -185,8 +192,9 @@ case "spec":
         case "items":       print(SpecTables.items(content: content, levels: levels))
         case "sets":        print(SpecTables.sets(content: content, levels: levels))
         case "economy":     print(SpecTables.economy(content: content))
+        case "opening":     print(SpecTables.opening(content: content, runs: runs, seed: seed))
         default:
-            print("spec: pick a table — progression · gates · bestiary · items · sets · economy")
+            print("spec: pick a table — progression · gates · bestiary · items · sets · economy · opening")
             exit(2)
         }
     } catch {

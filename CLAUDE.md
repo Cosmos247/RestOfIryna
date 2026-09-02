@@ -108,9 +108,12 @@ signed-off list — what creatures exist, at what level and archetype, what item
 fill which slot, what a set bonus may cost and where silver enters and leaves —
 and content work follows it, never goes around it. All five were approved in
 Phase 9. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy>`, which reads the same
+<progression|gates|bestiary|items|sets|economy|opening>`, which reads the same
 `ProgressionMath` / `EnemyGenerator` / `BudgetMath` / `BudgetCurve` the game does,
-so a specification cannot drift from the generator it feeds.
+so a specification cannot drift from the generator it feeds. `opening` is the one
+table that ROLLS rather than solves — a fight's Vigor cost is a distribution — so
+it runs `FightSimulator` at the same seed and sample size `simulate` uses, and the
+two print the same numbers by construction. Give it `-c release`.
 
 **A spec quotes generated tables inside `<!-- generated: … -->` markers. After any
 content edit, re-run the command and refresh those blocks** — the markers exist so

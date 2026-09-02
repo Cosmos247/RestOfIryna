@@ -30,6 +30,7 @@ RestOfIryna/
 │   │   ├── CombatMath.swift        # `CombatRules` + absorption, rating curves, levelDiff, applyAttack, chipDamage, stance/special modifiers — generic over RandomNumberGenerator. `CombatService` DELEGATES here; the game and the report execute the same lines
 │   │   ├── ProgressionMath.swift   # XP curve + totals, xpMultiplier, proportional stat line, vigor pool. `User` delegates. **Vigor regen removed in 8E** — `vigorRegenPerMinute` is gone with the mechanic
 │   │   ├── FoodBudget.swift        # **Phase 8E.** What a tended estate feeds per day: enumerates every plot layout the slots allow (84 at six slots), cooks each through any recipe whose inputs it produces, eats the rest raw, keeps the best. Replaces "one pool + 4× regen" as the pace model. Only hand-picked constant is `defaultHarvestsPerDay = 3`, which the report prints
+│   │   ├── OpeningLedger.swift     # **Phase 11.** The stretch `FoodBudget` cannot price: every level below the estate's first upgrade, measured at each depth against the trail (walk + fight out, forage in). Raw meat is NOT income — it restores nothing as found and every recipe for it is a `kitchen` recipe, a room the estate opens at the level this stretch ends at — so it prints as `if cooked` and stays out of the net. Kills use the level-gap scaler, which is 17% more than the flat XP ÷ reward an approved spec used. Answers `spec-economy.md` §7: the opening is not bankrupt, the SHALLOW opening is
 │   │   ├── BudgetMath.swift        # points / spend / referenceGear. `ItemBudget` delegates
 │   │   ├── ReferenceCharacter.swift # (class, level, gearOffset) → CombatantStats. `gearOffset = -10` is one weapon-ladder rung behind, which is what real players actually wear
 │   │   ├── EnemyGenerator.swift    # **The design-time table.** Inverts the archetype targets: DEF = m·K/(1−m), rating = k·p/(scale−p), HP = rounds × expected damage, ATK from hpLossPercent. Reproduces every shipped enemy's DEF/crit/dodge to within rounding — pinned by test. Run at design time, NEVER at runtime (runtime scaling is how gear upgrades evaporate)
@@ -41,7 +42,7 @@ RestOfIryna/
 │   └── roi-content/main.swift      # CLI: validate (exit 0/1, CI-ready) | simulate (--runs/--seed/--levels; --strict exits 1 on a broken band). simulate refuses a bundle that does not validate
 │
 ├── Tests/
-│   └── ROIContentTests/            # 222 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
+│   └── ROIContentTests/            # 234 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 │                                #   Files: ContentDTOTests · ContentValidatorTests · WeaponLadderTests · LocaleIndexTests ·
 │                                #   CapitalCatalogTests · EstateAndNPCCatalogTests · **TuningTests** (Phase 4) ·
 │                                #   **BestiaryTests** (5A) · **BudgetTests** (6) · **LiveReferenceTests** (7) ·
@@ -50,7 +51,12 @@ RestOfIryna/
 │                                #   **FoodBudgetTests** (8E — the estate optimiser: which production ceiling binds,
 │                                #   the tier ladder's clamps at both ends, and that cooking beats eating raw) ·
 │                                #   **ZoneTests** (8E — forage pools: unknown item, zero weight, empty pool,
-│                                #   inverted depth, and the coverage gap that only warns)
+│                                #   inverted depth, and the coverage gap that only warns) ·
+│                                #   **OpeningLedgerTests** (11 — that the stretch ends where the ESTATE LADDER says,
+│                                #   that meat is priced per unit CONSUMED and reported as locked rather than earned,
+│                                #   that only forage edible as found counts, and that the best depth ignores rows the
+│                                #   player cannot hold; the load-bearing one is the level-gap scaler, which is the
+│                                #   17% an approved spec's flat XP ÷ reward missed)
 │                                #   ContentDTOTests also pins the SCHEMA HANDSHAKE (v9): a wrong version throws
 │                                #   `schemaMismatch`, the right one gets past the guard and fails on the next file —
 │                                #   four version bumps had leaned on it with nothing exercising it

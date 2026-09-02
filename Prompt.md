@@ -50,10 +50,30 @@ it: the bestiary level re-spread.
 >    live Telegram pass since the rebalance began, and `/reload` has never run
 >    against a real database.
 >
-> One debt the rebalance wrote itself, best paid before the playtest:
-> **a `simulate` band for levels 1–3** (`spec-economy.md` §7). The report gives
-> pace 1→40 as an aggregate and says nothing about the only stretch with no estate
-> behind it — and that stretch is exactly the first hour a playtest measures.
+> **The one debt the rebalance wrote itself is PAID (2026-09-02).** `simulate`
+> now carries an **opening ledger**: levels 1–3 priced at every depth against the
+> trail, which is the only income they have. It answers `spec-economy.md` §7's
+> question outright — and the answer is not the one that document's prose assumed.
+> **The opening is not bankrupt; the SHALLOW opening is.**
+>
+> | km | mobs | kills | net vigor |
+> |---|---|---|---|
+> | 1 | L1 | 92.2 | **−374** |
+> | 4 | L1,4 | 8.9 | **+40** |
+> | 10 | L1,4,7,10 | 2.0 | **+72** — deepest km still won 95% of the time |
+> | 13 | L4,7,10,13 | 0.9 | +72, but the win rate is 66% |
+>
+> So depth has a measured optimum rather than an open ceiling: Vigor stops being
+> the binding constraint at about km 4 and survival takes over at about km 11.
+> The new warning is `opening.shallow_is_bankrupt` — it fires exactly when the
+> obvious path fails while a deeper one works, which is the first hour a playtest
+> walks into. `--strict` still passes: 0 broken bands, now 12 warnings.
+>
+> Two things in `spec-economy.md` §2 are superseded by it and the spec is **not
+> yet amended**: the deficit is **374, not 664**, and the pure-boar path is
+> **92.2 kills, not 79** — 79 is the flat `788 ÷ 10` the generated table prints
+> and correctly labels, but a level-3 player earns 8 XP from a level-1 boar, not
+> 10, so the level-gap scaler adds 17%.
 
 **What Phase 10 changed (2026-09-01).** Six enemies re-levelled — boar 1, moose 4,
 bison 7, lynx 10, wolf 13, bear 16, rabid bear 22 — with `depth` following the
@@ -98,7 +118,7 @@ against the boar's 10, twenty-two boars for a four-kilometre walk. Decided:
 
 The rule those five documents run on, and the reason they can be trusted:
 **numbers are printed, never typed.** `roi-content spec
-<progression|gates|bestiary|items|sets|economy>` emits every table from the code
+<progression|gates|bestiary|items|sets|economy|opening>` emits every table from the code
 that owns the maths, so a specification cannot drift from the generator it feeds.
 It earns its keep: during the Phase 10 audit the verbatim check caught two
 generated blocks in `spec-economy.md` that the re-spread had silently invalidated,
@@ -243,9 +263,9 @@ live in `.memory/content-pipeline.md`.
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
-swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy
+swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 222 tests, ~0.14s
+swift test                                   # 234 tests, ~0.16s
 ```
 
 ## What Works Now (shipped game)

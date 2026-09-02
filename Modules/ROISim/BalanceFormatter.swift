@@ -423,6 +423,98 @@ public enum BalanceFormatter {
             out.append("")
         }
 
+        // MARK: the opening
+        //
+        // The stretch the pace section below cannot see. It divides kills by
+        // what the estate feeds, and before the first upgrade the estate feeds
+        // nothing — so those levels are excluded there and measured here
+        // instead, against the trail, which is the only income they have.
+        //
+        // Every finding here is a WARNING rather than a broken band, and that is
+        // deliberate: `spec-economy.md` §7 decided to MEASURE the opening before
+        // retuning it, so an error would fail the build on the exact number the
+        // project has already agreed to look at first.
+        if let opening = OpeningLedger.measure(content: content, runs: run.runsPerCell,
+                                               seed: run.seed) {
+            let title = "the opening: levels 1–\(opening.endsAtLevel - 1), before the estate exists"
+            out.append("── " + title + " "
+                       + String(repeating: "─", count: max(3, 74 - title.count)))
+            out.append("   The pace table below divides kills by what the estate feeds, so it cannot")
+            out.append("   see this stretch at all — at tier 1 there are no plot slots and the")
+            out.append("   divisor is zero. Here it is measured against the only income it has.")
+            out.append(String(format: "   %d XP to reach level %d, against a stock of %.0f Vigor — the starting pool",
+                              opening.xpNeeded, opening.endsAtLevel, opening.stock))
+            out.append("   plus every level-up grant on the way, and since Phase 8E nothing refills it.")
+            out.append(String(format: "   A kill is %.1f rooms of walking (%.0f vigor) plus the fight, and the same",
+                              opening.stepsPerEncounter, opening.walkVigor))
+            out.append(String(format: "   walk forages %.1f times. `walk in` is the one-off cost of reaching the km,",
+                              opening.forageEventsPerEncounter))
+            out.append("   charged once because nothing refills the pool out here — the whole")
+            out.append("   opening is a single budget — and credited nothing for what it rolls.")
+            out.append("   `trail` is what the walk feeds you — foraged berries and nuts, plus")
+            out.append("   anything a kill drops edible AS FOUND (nothing does today). Raw meat")
+            out.append("   is not that: it restores")
+            out.append("   nothing as found, and every recipe that makes it a portion is a kitchen")
+            out.append("   recipe — a room of the estate this stretch ends by unlocking. `if cooked`")
+            out.append("   is the size of what that gate holds back, not income. Silver is never")
+            out.append("   spent here either, so this is a FLOOR on the opening, not an estimate.")
+            out.append("")
+            out.append("    " + pad("km", 4) + pad("mob levels", 14)
+                       + "xp/kill  vigor/kill    win%     kills     trail     spent  walk in       net  if cooked")
+            for depth in opening.depths {
+                out.append("    " + pad("\(depth.km)", 4)
+                           + pad(depth.mobLevels.map(String.init).joined(separator: ","), 14)
+                           + String(format: "%7.1f  %10.1f  %5.0f%%  %8.1f  %8.0f  %8.0f  %7.0f  %8.0f  %9.0f",
+                                    depth.xpPerKill, depth.vigorPerKill, depth.winRate,
+                                    depth.kills, depth.trailFood, depth.spent, depth.approach,
+                                    depth.net, depth.netIfCooked))
+            }
+            out.append("")
+            if let best = opening.best {
+                out.append(String(format: "    cheapest depth the player can actually HOLD (win ≥ %.0f%%): km %d, net %+.0f vigor",
+                                  OpeningLedger.survivableWinRate, best.km, best.net))
+                if best.net < 0 {
+                    findings.append(Finding(
+                        severity: .warning, rule: "opening.vigor_bankrupt",
+                        message: String(format: "levels 1–%d end %.0f Vigor short at their cheapest holdable depth (km %d) — %.1f× the entire stock a player has before the estate exists, and no plot has been cleared to make it up",
+                                        opening.endsAtLevel - 1, -best.net, best.km,
+                                        -best.net / max(1, opening.stock))))
+                }
+                // The finding this section was built to produce. `spec-economy.md`
+                // §2 says the opening works by walking deeper than is
+                // comfortable, and that this is "completely unstated, and the
+                // exact opposite of what a new player will do". So the naive
+                // path is measured on its own: if the shallowest depth cannot
+                // pay for itself while a deeper one can, the game is solvable
+                // only by a move it never teaches, and that is what a first-hour
+                // playtest walks straight into.
+                if let shallowest = opening.shallowest, shallowest.km != best.km,
+                   shallowest.net < 0, best.net >= 0 {
+                    findings.append(Finding(
+                        severity: .warning, rule: "opening.shallow_is_bankrupt",
+                        message: String(format: "km %d ends the opening %.0f Vigor short where km %d ends it %+.0f — the stretch is solvable only by walking deeper than a new player will, and nothing in the game says so",
+                                        shallowest.km, -shallowest.net, best.km, best.net)))
+                }
+                // The design's own claim, checked rather than repeated: an enemy
+                // of level N spawns from km N, so depth is meant to be BOTH the
+                // difficulty dial and the reward for turning it. If the
+                // shallowest row is also the cheapest, that claim is not true of
+                // the shipped numbers.
+                if let shallowest = opening.shallowest, opening.depths.count > 1,
+                   best.km == shallowest.km {
+                    findings.append(Finding(
+                        severity: .warning, rule: "opening.depth_does_not_pay",
+                        message: "km \(shallowest.km) is the cheapest opening on the table — the design makes depth both the difficulty dial and the reward for turning it, and the ledger does not agree"))
+                }
+            } else {
+                findings.append(Finding(
+                    severity: .warning, rule: "opening.no_holdable_depth",
+                    message: String(format: "no measured depth holds a win rate of %.0f%% for a player below level %d — the opening has no route this ledger can price",
+                                    OpeningLedger.survivableWinRate, opening.endsAtLevel)))
+            }
+            out.append("")
+        }
+
         // MARK: pace
         if let tuning = content.tuning {
             let progression = tuning.progression
@@ -521,7 +613,7 @@ public enum BalanceFormatter {
                 if unfed > 0 {
                     findings.append(Finding(
                         severity: .warning, rule: "pace.levels_without_an_estate",
-                        message: "\(cls): \(unfed) level(s) have no plot slots at all, so the estate feeds them nothing — the model excludes them and the trail has to carry them"))
+                        message: "\(cls): \(unfed) level(s) have no plot slots at all, so the estate feeds them nothing — the model excludes them here and the opening section above prices them against the trail instead"))
                 }
                 daysByClass.append((cls, days))
                 // The band moved with the model in Phase 8E. It used to sit on a

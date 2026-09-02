@@ -28,6 +28,15 @@ untouched, Wild Buffalo renamed to **Wild Bison / Зубр** across `en.json` / 
 nine-km hole the validator refused. Density km 1–25: **2.24 → 2.56** per km. Only `records`
 and `spawns` moved. **Phase 11 is next — and it carries the whole untested surface.**
 
+**Phase 11's one pre-playtest debt is paid (2026-09-02).** `roi-content simulate` grew an
+**opening ledger** (`Modules/ROISim/OpeningLedger.swift`) that prices levels 1–3 at every
+depth against the trail — the stretch the pace model has to skip, because it divides by an
+estate that does not exist yet. It answers `spec-economy.md` §7 and inverts its prose: the
+opening is not bankrupt, the **shallow** opening is. km 1 ends 374 Vigor short, km 4 ends
++40, km 10 ends +72 and is the deepest km still won 95% of the time; past km 11 survival
+rather than Vigor is the binding constraint. New warning `opening.shallow_is_bankrupt`;
+`--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234.
+
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
 `spec-economy.md`). Every number in them is emitted by `roi-content spec`, never

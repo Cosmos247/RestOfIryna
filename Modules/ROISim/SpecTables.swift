@@ -541,6 +541,49 @@ public enum SpecTables {
         return out.joined(separator: "\n")
     }
 
+    // MARK: - The opening
+
+    /// Levels below the estate's first upgrade, priced at every depth.
+    ///
+    /// The only spec table that ROLLS rather than solves. What a fight costs in
+    /// Vigor is a distribution and not a closed form, so this one runs the same
+    /// `FightSimulator` the balance sweep runs, at the same default sample size
+    /// and the same seed — `simulate`'s own opening section and this table are
+    /// therefore the same numbers in two formats, which is the only arrangement
+    /// under which a spec can quote one of them.
+    public static func opening(content: GameContent, runs: Int, seed: UInt64) -> String {
+        guard let result = OpeningLedger.measure(content: content, runs: runs, seed: seed)
+        else { return "nothing to price — the bundle has no estate ladder, zones or tuning" }
+        var out: [String] = []
+        out.append("**The opening** — levels 1–\(result.endsAtLevel - 1), the only stretch with no estate behind it")
+        out.append("")
+        out.append(String(format: "%d XP to reach level %d against a stock of %.0f Vigor — the starting pool plus",
+                          result.xpNeeded, result.endsAtLevel, result.stock))
+        out.append(String(format: "every level-up grant, with a kill costing %.1f rooms of walking plus the fight.",
+                          result.stepsPerEncounter))
+        out.append("`trail` is what the walk feeds you: foraged food, plus anything a kill drops")
+        out.append("edible AS FOUND. A kill's raw meat is not that — every recipe for it is a")
+        out.append("kitchen recipe, and the kitchen is a room of the estate this stretch ends by")
+        out.append("unlocking — `if cooked` is the size of what that gate holds back. Silver is")
+        out.append("never spent here either, so every row is a floor and not an estimate.")
+        out.append("")
+        out.append("| km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |")
+        out.append("|---|---|---|---|---|---|---|---|---|---|---|")
+        for depth in result.depths {
+            out.append(String(format: "| %d | %@ | %.1f | %.1f | %.0f%% | %.1f | %.0f | %.0f | %.0f | **%+.0f** | %+.0f |",
+                              depth.km, depth.mobLevels.map(String.init).joined(separator: ","),
+                              depth.xpPerKill, depth.vigorPerKill, depth.winRate, depth.kills,
+                              depth.trailFood, depth.spent, depth.approach,
+                              depth.net, depth.netIfCooked))
+        }
+        if let best = result.best {
+            out.append("")
+            out.append(String(format: "Cheapest depth a player can actually HOLD (win ≥ %.0f%%): **km %d**, at %+.0f Vigor.",
+                              OpeningLedger.survivableWinRate, best.km, best.net))
+        }
+        return out.joined(separator: "\n")
+    }
+
     // MARK: - Helpers
 
     private static func format(_ value: Int) -> String {

@@ -982,6 +982,26 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       `records` and `spawns`; `tuning` and `quests` held. 222 tests, `simulate --strict` 0
       broken bands.
 - [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
+  - [x] **The opening ledger** *(2026-09-02)* — the debt `spec-economy.md` §7 booked before
+        the playtest: `roi-content simulate` reported pace 1→40 as an aggregate and said
+        nothing about the only stretch with no estate behind it, which is exactly the first
+        hour a playtest measures. `Modules/ROISim/OpeningLedger.swift` prices that stretch at
+        every depth against the trail — walk plus fight out, forage in — and the section it
+        prints answers §7's question directly.
+        **The answer inverts the spec's prose: the opening is not bankrupt, the SHALLOW
+        opening is.** km 1 ends 374 Vigor short; km 4 ends **+40**; km 10 ends **+72** and is
+        the deepest km a level-1–3 player still wins 95% of fights at. Past km 11 survival,
+        not Vigor, becomes the binding constraint (66% at km 13, 9% at km 20) — so depth has
+        a measured optimum instead of an open ceiling, and the design's "walk deeper than is
+        comfortable" is now a number rather than a claim.
+        Three things the ledger refuses to fudge, each of which moves the answer: **raw meat
+        is not income** (it restores nothing as found and every recipe that makes it a portion
+        is a kitchen recipe — a room of the estate this stretch ends by unlocking), so it is
+        printed as `if cooked` and left out of the net; **only forage that is edible as found
+        counts** (half the km 1–10 pool is lumber and pebble); and **kills use the level-gap
+        scaler** — 92.2, not the flat 788 ÷ 10 = 79, because a level-3 player earns 8 XP from
+        the boar and not 10. New warning `opening.shallow_is_bankrupt`; `--strict` still
+        passes at 0 broken bands, 12 warnings. +10 tests (232).
 
 ### 9.2 Content Authoring
 - [ ] Full bestiary (all enemy types with stats and loot)
