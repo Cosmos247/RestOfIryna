@@ -147,6 +147,60 @@ creates a row on first contact with `routerName = "registration"`, so the allowe
 accounts land in registration rather than in a null state. **Not executed** — no
 database was reachable (the tunnel was down), and it runs at the next bot launch.
 
+### The finding the playtest has to check first
+
+Written down late, and it is the most important caveat in the session. Every
+number the balance report prints — TTK, win rates, the p90 tail, the opening
+ledger — is measured against `ReferenceCharacter`: a class's proportional stat
+line **plus a full kit of common gear**. A real level-1 player has **only the
+class starter weapon**: `RegistrationController` step 3 grants and equips it,
+there is no armour grant anywhere, and the first armour reachable is the Forester
+set (a workshop craft — estate T3, player level 7) or the Master's armour bought
+for silver.
+
+So every fight in the opening costs more rounds and more Vigor than the report
+says, and every win rate is lower. Direction certain, magnitude unmeasured.
+
+What survives: the ledger's km-1-vs-km-4 ordering is **amplified**, not weakened —
+weaker gear raises the per-kill cost equally at both depths, but km 1 needs 92
+kills and km 4 needs nine. What is at risk is the load-bearing claim itself:
+whether a level-1 player can beat the level-4 moose at km 4, which the sim puts at
+100% *with the kit*. If that fight is not winnable in one weapon, "walk deeper
+immediately" needs a different shape.
+
+Not a defect in the ledger — a property of the report as a whole, and it predates
+it. It bites hardest at level 1, where the missing kit is everything except the
+weapon. Fixing it would need a slot-aware gear offset in `ReferenceCharacter`
+(`gearOffset` scales item LEVEL today, not which slots are filled); not attempted,
+because measuring it live comes first.
+
+### The drift check found a hole in itself
+
+Re-running the verbatim check across all five specs reported two blocks in
+`spec-items.md` and `spec-sets.md` as drifted. They were not: every number matched,
+only the ROW SELECTION differed, because those blocks were generated with explicit
+`--levels` and the marker recorded only `roi-content spec items`. A marker that
+under-specifies its command cannot be reproduced, so the block reads as broken
+forever — the same "a checker that cries wolf gets ignored" failure as the
+blank-line-group bug the day before, one level up. Markers now carry the full
+command; **all 31 groups across the five specs reproduce from their own marker**.
+
+### Then the docs were squared up
+
+A sync pass found four stale records and one unrecorded finding (the one above).
+Retired: `Prompt.md`'s "the spec is not yet amended" and its whole "one thing
+still owed" passage, both overtaken the same day; "0 broken bands, 11 warnings"
+(12 now); "Phases 3–10 are done / only Phase 11 remains" in `Prompt.md`,
+`README.md`, `.memory/INDEX.md` and `.memory/status.md`; and a `222 tests`
+baseline in `status.md`.
+
+One was older than this session and worth naming: `spec-progression.md`'s
+Phase 9 amendment still said *"the shipped moose is level 6 from km 6 worth 418
+XP"* with the re-spread as a pending parenthetical — but Phase 10 landed it on
+2026-09-01, so the parenthetical had become the truth and the sentence had
+become false. **Third instance of the same failure**: printed tables cannot
+drift, the prose beside them can, and an amendment is prose too.
+
 ### Still open
 
 `scale` 60 → 1.0 is **deferred past the playtest at the user's call** — the first

@@ -35,56 +35,73 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–10 are done.** Phase 9 closed on 2026-09-01 with all five content
-specifications approved (`spec-progression` · `spec-bestiary` · `spec-items` ·
-`spec-sets` · `spec-economy`), and Phase 10 applied the one thing they left for
-it: the bestiary level re-spread.
+**Phases 3–10 are done; Phase 11 is IN FLIGHT.** Two of its four pieces landed on
+2026-09-02 — the opening ledger and the `WipeForRebalance` migration — and the
+remaining work is a live session, not code.
 
-> ## Next action: **Phase 11**, the last one — and it carries the whole untested surface.
+> ## Next action: **run the first-hour playtest.**
 >
-> 1. ~~**`WipeForRebalance` migration**~~ — **written 2026-09-02, runs at the next
->    bot launch.** Registered LAST in `configure.swift` (it truncates every table the
->    migrations above create); a no-op on a fresh database. Explicit table list, not
->    an FK cascade — `tavern_game_messages` carries no foreign key and a cascade
->    would leave it standing — and it asks `information_schema` afterwards, refusing
->    to finish while any table still holds a row.
-> 2. **`tuning/time.json` → `scale` 60 → 1.0 — DEFERRED past the playtest**
->    (user's call, 2026-09-02): the first hour runs on compressed time. Sound for
->    what it measures, because the opening has no game-time gate at all — no step
->    cooldown, no estate below level 4, no Vigor regeneration — so the ledger's
->    km-1-vs-km-4 answer is testable as-is. The estate pace (85–93 days) is NOT
->    measurable that way. Still the only error `validate --strict` reports, and
->    still owed before release.
-> 3. **The live first-hour playtest — this is the next action.** ⚠️ See the warning
->    below: there has been no live Telegram pass since the rebalance began, and
->    `/reload` has never run against a real database. The wipe means the allowed
->    accounts land in registration on their first message, which is where the
->    measurement should start.
+> Everything code-side that the playtest needs is committed. What is left is to
+> launch the bot and play.
 >
-> **The one debt the rebalance wrote itself is PAID (2026-09-02).** `simulate`
-> now carries an **opening ledger**: levels 1–3 priced at every depth against the
-> trail, which is the only income they have. It answers `spec-economy.md` §7's
-> question outright — and the answer is not the one that document's prose assumed.
-> **The opening is not bankrupt; the SHALLOW opening is.**
+> **Launching (both traps are real and both look identical — `Fatal error: Error
+> raised at top level`):**
 >
-> | km | mobs | kills | net vigor |
-> |---|---|---|---|
-> | 1 | L1 | 92.2 | **−374** |
-> | 4 | L1,4 | 8.9 | **+40** |
-> | 10 | L1,4,7,10 | 2.0 | **+72** — deepest km still won 95% of the time |
-> | 13 | L4,7,10,13 | 0.9 | +72, but the win rate is 66% |
+> ```
+> pkill -f debugserver; pkill -9 -f 'Build/Products/Debug/RestOfIryna'
+> ssh -f -N -L 5433:localhost:5433 rpi5@192.168.0.203
+> printf '\x00\x00\x00\x08\x04\xd2\x16\x2f' | nc -w2 localhost 5433 | head -c1
+> ```
 >
-> So depth has a measured optimum rather than an open ceiling: Vigor stops being
-> the binding constraint at about km 4 and survival takes over at about km 11.
-> The new warning is `opening.shallow_is_bankrupt` — it fires exactly when the
-> obvious path fails while a deeper one works, which is the first hour a playtest
-> walks into. `--strict` still passes: 0 broken bands, now 12 warnings.
+> The last line must print `S` or `N` — that is Postgres answering behind the
+> tunnel. `nc -z` alone only proves ssh is up, because an `-L` forward listens
+> locally even when the far side is dead. A crashed Xcode run sits as `STAT SX`
+> and survives `kill -9` while debugserver traces it, so kill the debugger first.
 >
-> Two things in `spec-economy.md` §2 are superseded by it and the spec is **not
-> yet amended**: the deficit is **374, not 664**, and the pure-boar path is
-> **92.2 kills, not 79** — 79 is the flat `788 ÷ 10` the generated table prints
-> and correctly labels, but a level-3 player earns 8 XP from a level-1 boar, not
-> 10, so the level-gap scaler adds 17%.
+> **First thing in the log — the wipe has never run:**
+>
+> ```
+> [warning] WipeForRebalance: removed users 4, inventory 37, ...
+> [info]    WipeForRebalance: verified empty — every table in the schema holds 0 rows
+> ```
+>
+> A boot failure saying `still holds N row(s)` means a table is missing from
+> `WipeForRebalance.playerTables`; the message names it. After the wipe the
+> allowed accounts land in **registration** on their first message.
+>
+> **⚠️ Read this before trusting any printed number at level 1.** The whole
+> balance report — TTK, win rates, the opening ledger — measures
+> `ReferenceCharacter`: a class stat line **plus a full common kit**. Registration
+> grants **only the class starter weapon**, and the first armour is a workshop
+> craft at estate T3 / player level 7. So a real level-1 player is weaker than
+> anything the report prints. The km-1-vs-km-4 ORDERING survives and is amplified
+> (weaker gear costs the same per kill at both depths, but km 1 needs 92 kills and
+> km 4 needs 9); **what is at risk is whether a level-1 player can beat the km-4
+> moose at all** — the sim says 100%, with the kit. That is the load-bearing
+> claim of the whole opening design and the single most important thing to watch.
+>
+> **What the first hour can and cannot measure.** `scale` is still 60, deliberately
+> (below). The opening has no game-time gate at all — no step cooldown, no estate
+> below level 4, no Vigor regeneration — so the ledger's prediction is testable
+> as-is. The estate pace (85–93 days) is *not* measurable on compressed time.
+>
+> | km | mobs | kills to L4 | net vigor | win |
+> |---|---|---|---|---|
+> | 1 | L1 | 92.2 | **−374** | 100% |
+> | 4 | L1,4 | 8.9 | **+40** | 100% |
+> | 10 | L1,4,7,10 | 2.0 | **+72** | 95% |
+> | 13 | L4,7,10,13 | 0.9 | +72 | 66% |
+>
+> **Untested surface worth touching on purpose:** a fight won, a fight lost and a
+> **flee** (the failed-Flee counter changed in 8C); Vigor only ever going down;
+> and one run of `/reload` + `/content`, which have never executed against a real
+> database — a freshly wiped one is the safest moment. Techniques unlock at levels
+> 8/11/14, so the first hour is basic attacks only, which is exactly the `.basic`
+> profile the sim measured.
+>
+> **Then, still owed before release:** `tuning/time.json` → `scale` 60 → **1.0**.
+> Deferred past the playtest on 2026-09-02 at the user's call, not cancelled — it
+> is the only error `validate --strict` still reports.
 
 **What Phase 10 changed (2026-09-01).** Six enemies re-levelled — boar 1, moose 4,
 bison 7, lynx 10, wolf 13, bear 16, rabid bear 22 — with `depth` following the
@@ -119,13 +136,20 @@ at L40), the 25% cap extended to multipliers, `set.forester` rewritten as the
 wired to **quantity** with its loot tables re-normalised to a base in the same
 pass.
 
-**And the one thing still owed.** `spec-economy.md` found the opening is
-Vigor-bankrupt: level 4 is **79 boars and ~664 Vigor of deficit against a 105
-pool**, not the "about eleven kills" an approved spec claimed (eleven reaches
-level 2 — `spec-progression.md` §3 is amended). The game's real answer is to
-**walk deeper than is comfortable, immediately** — the moose at km 4 pays 223 XP
-against the boar's 10, twenty-two boars for a four-kilometre walk. Decided:
-**measure before retuning.**
+**The debt Phase 9 wrote itself is PAID (2026-09-02).** `spec-economy.md` claimed
+the opening was Vigor-bankrupt — 79 boars, ~664 Vigor of deficit against a 105
+pool — and decided to **measure before retuning**. `OpeningLedger` measured it and
+inverted the conclusion: **the opening is not bankrupt, the SHALLOW opening is.**
+km 1 nets −374, km 4 nets **+40**, km 10 nets +72 and is the deepest km still won
+95% of the time; past km 11 survival rather than Vigor binds. §2 is amended, and
+both of its hand-computed numbers were wrong in opposite directions — the deficit
+credited the boar with cooked meat across a stretch where the kitchen is locked
+(it is an estate room, opening at the level the stretch ENDS at) and counted no
+foraging; the kill count missed the level-gap scaler, which adds 17%. The
+one-number retune that was on the table — the boar's meat chance 0.70 → ~1.4 — is
+**no longer obviously wanted**, because that meat cannot be cooked during the
+opening at all. What the ledger points at instead is that the game never tells the
+player to walk: a first-hour teaching problem, not a tuning one.
 
 The rule those five documents run on, and the reason they can be trusted:
 **numbers are printed, never typed.** `roi-content spec
@@ -172,8 +196,9 @@ git for km 1–40 — identical including weights and order.
 Reported by every `simulate` run, all deliberate: **food portions are flat
 against a pool that grows** (33% of a level-1 pool, 12% of a level-40 one),
 **nothing new unlocks between level 21 and 40**, **levels 1–3 have no estate at
-all**, and the **seven `content.roster_off_curve` warnings** stay until the
-regeneration package lands. Silver is also **over-supplied** — roughly twenty
+all**, the **seven `content.roster_off_curve` warnings** (until the regeneration
+package lands), and **`opening.shallow_is_bankrupt`** — a warning and not a broken
+band on purpose, because §7 decided to measure before retuning. Silver is also **over-supplied** — roughly twenty
 thousand spare over a lifetime against 1,600 of mandatory spend — and the fix is
 more to buy, which is items, which is after the rebalance.
 
@@ -187,8 +212,9 @@ level invariance, the p90 tail, win rates, pace to the cap, and the shipped
 roster against its archetype contract. `--strict` exits 1 on a broken band.
 
 Current state of those bands: **18 of 18 level-invariance rows pass, 0 broken
-bands, 11 warnings** — seven are the off-curve roster, three are the levels with
-no estate, one is the flat food portion. 19,437,688 XP from
+bands, 12 warnings** — seven are the off-curve roster, three are the levels with
+no estate, one is the flat food portion, and one is
+`opening.shallow_is_bankrupt`. 19,437,688 XP from
 level 1 to 40, and **85–93 days** on a tended estate — an estimate between two
 opposing simplifications (every point spent on combat, but nothing except the
 estate feeding the player) rather than the floor the old number was.
@@ -293,7 +319,9 @@ Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
 localization (955 / 976 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
-compressed and the validator warns about it. Deliberate; Phase 11 sets it to 1.0.
+compressed and the validator reports it. Deliberate, and **deferred past the
+first-hour playtest** (2026-09-02) so that pass runs on compressed time; Phase 11
+sets it to 1.0 afterwards, and it is the only error `validate --strict` reports.
 Nothing under `realTime` is affected — Telegram's 24 h dice-delete window, the
 trade TTLs and the 12:00 rollover never scale.
 
@@ -313,6 +341,8 @@ trade TTLs and the 12:00 rollover never scale.
 | `Modules/ROISim/CombatMath.swift` | The combat model itself. `CombatService` delegates here — add a roll THERE, never a second copy |
 | `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
 | `Modules/ROISim/SpecTables.swift` | What `roi-content spec` prints — the tables a content spec quotes, from the code that owns them |
+| `Modules/ROISim/OpeningLedger.swift` | **Phase 11.** Levels 1–3 priced at every depth against the trail — the stretch the pace model must skip. Raw meat is NOT income (its recipes are kitchen recipes, and the kitchen is a room of the estate this stretch ends by unlocking) |
+| `Swift/Migrations/WipeForRebalance.swift` | **Phase 11.** The full wipe. LAST in `configure.swift`, no-op on a fresh DB. Explicit table list because `tavern_game_messages` has no FK, plus an `information_schema` self-check that refuses to finish while any table holds a row |
 | `content/spec/` | The five approved specifications (Phase 9, closed). Numbers in them are printed by `roi-content spec`; re-run it after any content edit and refresh the `<!-- generated -->` blocks |
 
 ## Rules

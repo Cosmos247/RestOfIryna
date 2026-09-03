@@ -47,7 +47,7 @@ multipliers". Both halves of that need correcting before anything is authored.
 
 ### First, the record: the flat bonus does not rot *today*
 
-<!-- generated: roi-content spec sets -->
+<!-- generated: roi-content spec sets --levels 1,10,20,25,30,40 -->
 **`set.forester`** — 4 member(s), 36.0 points of member budget, 37.0 actually spent
 
 | L | kit worn | flat 8.4 pts | ×1.05 on the KIT | ×1.05 on MEMBERS | cap allows, kit | cap allows, members |

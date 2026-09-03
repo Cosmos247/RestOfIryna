@@ -8,7 +8,7 @@
 > numbers read the JSON; for the active work read [rebalance.md](rebalance.md).
 
 
-## Rebalance status (Phases 3–10 done, 2026-09-01 — only Phase 11 remains)
+## Rebalance status (Phases 3–10 done · Phase 11 IN FLIGHT since 2026-09-02)
 
 The pre-release rebalance is the only work in flight and has rewritten most of the
 numbers below. Current state:
@@ -87,7 +87,8 @@ level floor enforced).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `abbdaa0e82efb78f` (schema v10), 222 tests.
+against a real database. Digest baseline `ee3fa4731c5a3a27` / `3ef097038094a4d8` /
+`eaea309f4813dfa2` / `2e52ecdfa45276ec` (schema v10, Phase 10), 234 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×

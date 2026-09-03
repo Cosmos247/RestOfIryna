@@ -511,11 +511,16 @@ Vigor rework that made the estate load-bearing, the five content specifications
 called for. Every number in a spec is emitted by `roi-content spec`, never typed, so a
 specification cannot drift from the generator it feeds.
 
-**Phase 11 is what remains, and it is the untested surface:** set `tuning/time.json` →
-`scale` back to 1.0, run the `WipeForRebalance` migration, and play the first hour for
-real — there has been no live Telegram pass since the rebalance began. Progress lives in
-the "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
-[`.memory/rebalance.md`](./.memory/rebalance.md).
+**Phase 11 is in flight, and it is the untested surface.** Two pieces landed on
+2026-09-02: an **opening ledger** that prices levels 1–3 at every depth against the trail
+(the stretch the pace model must skip, because it divides by an estate that does not exist
+yet) — it inverted the economy spec's conclusion, since the opening is not Vigor-bankrupt,
+the *shallow* opening is; and the **`WipeForRebalance` migration**, written and registered
+but not yet run. Setting `scale` back to 1.0 is deferred until after the playtest, which
+runs on compressed time deliberately — the opening has no game-time gate at all. What
+remains is to **play the first hour for real**: there has been no live Telegram pass since
+the rebalance began. Progress lives in the "Full Rebalance" section of
+[TODO.md](./TODO.md), the reasoning in [`.memory/rebalance.md`](./.memory/rebalance.md).
 
 See [**GDD.md**](./GDD.md) for systems detail and scope notes — but note it predates the
 rebalance, so treat its numbers as design intent rather than what the game currently

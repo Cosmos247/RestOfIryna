@@ -136,6 +136,19 @@ the estate a reason to exist.
 > deeper than is comfortable**, immediately. Depth is the difficulty dial from the first hour,
 > not from the first plot. `spec-economy.md` §7 asks for a simulate band that
 > measures this stretch before anyone retunes it.
+>
+> **Amended again 2026-09-02, by the band §7 asked for.** Two things above are
+> now stale. (a) *"the shipped moose is level 6 from km 6 worth 418 XP"* — the
+> re-spread landed in Phase 10, so the moose **is** level 4 from km 4 at 223 XP,
+> and the parenthetical is the shipped truth rather than the pending one.
+> (b) The **664 Vigor of deficit is 374**, and the 79 kills are **92.2**: that
+> ledger credited the boar with cooked meat across a stretch where the kitchen is
+> locked (it is an estate room, opening at the level this stretch ENDS at) and
+> counted no foraging, while 79 is the flat 788 ÷ 10 before the level-gap scaler.
+> The conclusion this paragraph draws is **strengthened, not weakened** — km 1
+> nets −374 and km 4 nets +40, so walking deeper is not merely faster, it is what
+> makes the opening solvent at all. Measured table in `spec-economy.md` §2,
+> printed by `roi-content spec opening`.
 
 **The bag is gated on the ESTATE, not on the player.** Bag T2 needs estate T3,
 which needs player level 7 — so a player carries 25 slots for the first seven

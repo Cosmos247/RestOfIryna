@@ -221,9 +221,23 @@ first. It fires when the shallowest depth cannot pay for itself while a deeper
 one can — which is to say, when the game is solvable only by a move it never
 teaches. That is precisely what a first-hour playtest walks into.
 
-Two numbers in `spec-economy.md` §2 are superseded by this and the document is
-**not yet amended**: the deficit is 374 rather than 664, and the pure-boar path
-is 92.2 kills rather than 79.
+`spec-economy.md` §2 was **amended the same day**: an *AMENDED* notice on the
+heading, a *superseded* note under the 664, and a *Measured* subsection quoting a
+generated block. Rather than typing the table in, the ledger got its own spec
+table — `roi-content spec opening` — sharing `simulate`'s seed and sample size, so
+the two cannot print different numbers; `runs`/`seed` moved to one place in
+`main.swift` to make that structural rather than coincidental.
+
+**Read the absolute numbers as a ceiling.** The ledger measures
+`ReferenceCharacter` — a class stat line plus a FULL common kit — while
+registration grants only the class starter weapon and the first armour is a
+workshop craft at estate T3 / player level 7. So a real level-1 player is weaker
+than anything the report prints: more rounds, more Vigor, lower win rates. The
+km-1-vs-km-4 ORDERING survives it and is amplified (weaker gear multiplies the
+per-kill cost equally, but km 1 needs 92 kills and km 4 needs 9); what is at risk
+is whether a level-1 player can actually beat the km-4 moose, which the sim puts
+at 100% *with the kit*. That is the single most important thing the playtest
+measures.
 
 ### What Phase 9's item spec found (2026-08-31)
 
@@ -359,6 +373,13 @@ is Vigor-bankrupt and an APPROVED document said otherwise. `spec-progression.md`
 shipped boar's 10 XP is **79 kills**, and at ~16.8 Vigor a kill against 8.4
 returned as cooked meat is **664 Vigor of deficit against a 105 pool.** Short by
 six pools, and the estate that is designed to pay for it does not exist yet.
+
+> **Superseded 2026-09-02 by the measurement it asked for** — see *What the
+> opening ledger measured* above. The deficit is 374, not 664, and the pure-boar
+> path is 92.2 kills, not 79: this paragraph's ledger credited the boar with
+> cooked meat across a stretch where the kitchen is locked, and counted no
+> foraging at all. The finding below about WHERE errors hide stands unchanged,
+> and now has a second instance — the correction was wrong the same way.
 
 **The lesson is about where errors hide.** Every table in that spec was printed
 and every table was right. The wrong number was in the PROSE ABOUT the table —

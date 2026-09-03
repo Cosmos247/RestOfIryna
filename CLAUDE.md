@@ -115,8 +115,12 @@ table that ROLLS rather than solves — a fight's Vigor cost is a distribution �
 it runs `FightSimulator` at the same seed and sample size `simulate` uses, and the
 two print the same numbers by construction. Give it `-c release`.
 
-**A spec quotes generated tables inside `<!-- generated: … -->` markers. After any
-content edit, re-run the command and refresh those blocks** — the markers exist so
+**A spec quotes generated tables inside `<!-- generated: … -->` markers, and the
+marker records the COMPLETE command including flags** — a block produced with
+`--levels 1,10,20,25,30,40` under a bare `roi-content spec sets` marker cannot be
+reproduced, so it reads as permanently drifted even though every number in it is
+right. **After any content edit, re-run the command in the marker and refresh those
+blocks** — the markers exist so
 drift is mechanically detectable, and in Phase 10 that check caught two blocks the
 enemy re-spread had silently invalidated. It protects tables, not the prose beside
 them: a hand-counted number in a sentence is exactly where the one real error of

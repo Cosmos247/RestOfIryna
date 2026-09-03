@@ -71,7 +71,7 @@ The balance report measures every band against the **on-curve reference
 character** — level-appropriate gear in every weighted slot. That character is
 not one a player can assemble. The gap is printed rather than argued:
 
-<!-- generated: roi-content spec items -->
+<!-- generated: roi-content spec items --levels 1,5,10,15,20,25,30,40 -->
 **The obtainable kit against the on-curve kit** — budget points, best item per slot
 
 | L | on curve | obtainable | of curve | fully enchanted | of curve |

@@ -23,6 +23,14 @@ Swift/                executable                 the bot; carries @_exported imp
 `Modules/`, not `Sources/` — `CLAUDE.md` states game code lives in `Swift/`, and
 a `Sources/` directory would contradict that.
 
+**A marker must record the FLAGS, not just the sub-command.** Fixed 2026-09-03:
+`spec-items.md` and `spec-sets.md` carried `<!-- generated: roi-content spec items -->`
+for blocks actually produced with `--levels 1,5,10,15,20,25,30,40` and
+`--levels 1,10,20,25,30,40`. Every number in them was correct — only the ROW
+SELECTION differed — but a checker cannot tell that from drift, so the blocks read
+as permanently broken. The markers now carry the full command and all 31 groups
+across the five specs reproduce from their own marker.
+
 **Gotcha when checking a generated block verbatim:** a block may quote several
 tables from ONE command that are not adjacent in its output — `spec-economy.md`
 quotes "Every ladder" and "The faucet" from `spec economy` with "The sinks that
