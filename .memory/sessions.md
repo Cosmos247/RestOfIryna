@@ -1,5 +1,137 @@
 # Session History
 
+## Session — 2026-09-07 (pre-push bug pass: the profile, the rest clock, the name, the level-up)
+
+### Goal
+Four reported bugs before the branch is pushed. Code and copy only — no content, no
+tuning, no balance. All four digest halves are byte-identical to the Phase 10 baseline
+(`records ee3fa4731c5a3a27` · `tuning 3ef097038094a4d8` · `spawns eaea309f4813dfa2` ·
+`quests 2e52ecdfa45276ec`), which is the proof rather than the claim.
+
+### 1. The profile renders one layout
+
+The character screen carried a `1 · 2 · 3` style switcher and stored the pick in
+`User.profileStyle`. Only the third layout survives; the switcher, the `pstyle:`
+callback, the two other render branches, the block-bar helper and the column itself are
+gone (`RemoveProfileStyle`, registered before `WipeForRebalance` so the wipe stays last).
+
+### 2. HP regeneration starts when the player gets home
+
+Reported as "regen doesn't start until I press Estate". The cause was neither the button
+nor the estate: regen is computed lazily from `User.lastHpTickAt`, `HealingService.tick`
+clears that stamp for as long as an `ExplorationState` row exists, and the tick only runs
+on an interaction. So the expedition ended with a nil clock, and the next tap merely
+PRIMED it — every idle minute between coming home and that tap healed nothing.
+
+Fixed at both ends of the same clock, because reading it exposed the mirror-image bug:
+
+- **`beginResting`** — starts the clock unless it is already running (so a running clock
+  never loses what it accrued). Called from RouterStore's post-dispatch check (one place
+  that covers every screen path: walked home, died, closed a report — and only for users
+  who WERE out, so an ordinary interaction still costs one query), from the passive
+  report push, and from a travel arrival at the estate. The last two are background
+  flows with no interaction to hang a tick on, which is exactly why they needed it.
+- **`suspendResting`** — stops the clock when an expedition BEGINS. Without it a passive
+  run the player never tapped through kept its pre-departure stamp, and the first tap
+  after coming back credited up to `maxIdleMinutes` (1440) at 5%/min: **the run's whole
+  HP loss refunded**. The design had always said regen pauses out on the trail; only the
+  interaction-driven half was enforced.
+
+### 3. The player is addressed by the name they chose
+
+`showMainMenu` greeted with `firstName ?? name` — the Telegram name. It now uses
+`nickname`, and the profile's fallback stopped reaching for the Telegram one too.
+Registration's step-0 welcome still uses the Telegram name, correctly: no nickname
+exists yet. Checked against the Bot API: `first_name` is REQUIRED, `username` and
+`last_name` are optional (the SDK mirrors it — `TGUser.firstName: String`), so a missing
+@username never touches any of this; the in-game nickname is written only by the name
+step and cleared only by the dev reset, which resets `routerName` in the same breath.
+
+### 4. The level-up is its own message — and so is the tier-up
+
+It used to be a suffix on whatever granted the XP (`🎉 Level N! 💪 +H maxHP +A ATK +D DEF`),
+inside a kill report or a quest payout — the easiest line to miss in the wall of text it
+sat in, and it showed three of the seven stats a level actually moves.
+
+`User.StatGrowth` now carries all seven (maxHp · maxVigor · attack · defense · accuracy ·
+dodge · crit) through `XPGrantResult` and `PassiveReport`; `LevelUpBanner` prints them as
+their own bubble from all four sites (combat victory, quest payout, passive report push,
+report re-delivery), with `(+N)` only where a stat actually grew. Labels are the profile's
+own locale keys and values are read live off the user, so the two screens cannot disagree.
+
+**The estate line in that banner could never print.** `estateLeveledUp` compared
+`estateLevel` before and after `grantXP`, which never touches it — the tier moves only
+through the paid upgrade in `EstateUpgradeService`. It was a leftover of the XP→estate
+design dropped on 2026-06-16, so the flag, `newEstateLevel` and both render sites went,
+along with `estate_up.banner`.
+
+What replaced it is the real event: `EstateUpBanner`, sent as its own message on a
+successful upgrade — new tier, plot slots and warehouse capacity with their deltas, and
+the rooms this tier opened. It had been a `postStatusBanner` toast, which the next banner
+deletes, for the most expensive purchase in the game. The room gates moved into
+`EstateTierGates` (kitchen 2 · workshop 3 · training ground 3 · tannery 4) because the
+banner and the buttons are now two readers of the same numbers — seven literals before.
+
+Locale keys: `level_up.stat_boost`, `exploration.passive.report.levelup` and
+`estate_up.banner` deleted; `estate.upgrade.banner.slots` / `.unlocked` added. 954 / 975.
+
+### 5. The player is addressed as «ви»
+
+A copy pass over the whole of `uk.json`, after the four bugs: **170 strings**
+moved from the familiar «ти» to the formal plural — pronouns, present tense,
+imperatives, and NPC speech («Показуйте, що ремонтувати»). `en.json` is
+untouched; English has no T-V distinction.
+
+**The sweep is the part worth keeping.** Reviewing 391 candidate strings caught
+most of it and missed six, all of the same shape: an imperative in the middle of
+a sentence («Спершу принеси з лісу», «забери нагороду», «поглянь на вже
+присяглі»). What found those was not another pass over the strings but a pass
+over the *vocabulary* — every distinct word in the file ending in `-и/-й/-ь/-ись`,
+537 of them, read as a list. Three sweeps in total (pronouns, 2sg present
+endings, that word list), and each caught what the previous one could not.
+
+Verified mechanically as well: placeholders and HTML tags identical in all 170
+strings, no emoji ahead of a `%{}`, no button label touched (routers match those
+by text), and locale parity checked in both directions.
+
+**Three latent gender bugs died with it.** `travel.arrived.capital` ("Ти прибув"),
+`arena.err.dead` ("Ти ледь живий") and `vigor.starving` ("Голодний") had no
+`.m`/`.f` at all and shipped masculine to every player. Plural fixes them for
+free.
+
+**Nine gendered pairs collapsed.** Under «ви» a past tense goes plural, so
+`.m`/`.f` stopped differing for nine keys — those became single keys and their
+eleven call sites moved from the `gender:` overload to the plain one. Thirteen
+pairs remain, every one of them because the copy names the player
+(намісник/-иця, воїне/войовнице). uk went 975 → 966 keys.
+
+### What the review caught, after all four already worked
+
+- The `grantXP` doc comment was mangled by my own edit — and the parenthetical it
+  mangled ("+5 maxHP / +1 ATK / +1 DEF at L2/3/5/6/9/12/15/18") described the growth
+  model Phase 5B replaced, three lines above a comment saying so. Rewritten.
+- `var xpLine` in the passive report stopped being mutated when the level-up left it.
+- The report push could buy the player a **duplicate report**: the report send is what
+  decides whether the state row survives for a retry, and a throwing banner send after
+  it would skip the delete. The banner is best-effort now.
+- Two `try?` results were unused (warnings) — a clean build had been hiding them behind
+  an incremental one.
+- The locked-room alerts still interpolated hardcoded `"2"` / `"3"` right next to the
+  gates that had just been centralised.
+
+### Worth remembering
+
+**A lazily-computed clock is only correct if both ends are stamped.** The regen bug and
+its mirror are the same defect seen from two sides: an interaction-driven tick cannot
+observe a transition that happens while nobody is interacting. The fix is not a
+background job — it is stamping the boundary where it happens.
+
+**A flag that can never be true reads exactly like a feature.** `estateLeveledUp` had
+been shipped, documented in README and TODO, and quoted back in a mock-up in this very
+session, three months after the design that fed it was dropped. Nothing executes a
+boolean that is always false.
+
+
 ## Session — 2026-09-02 (Phase 11 opens: the opening ledger)
 
 ### Goal

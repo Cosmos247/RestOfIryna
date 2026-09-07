@@ -16,6 +16,15 @@
 //  healing should accrue. The caller queries the row once and passes the
 //  presence as `inExpedition` to avoid a second DB round-trip per tick.
 //
+//  Because the tick only runs on an interaction, the two ends of an
+//  expedition are stamped explicitly instead: `suspendResting` when one
+//  begins and `beginResting` when the player lands back home (walked back,
+//  died, a passive report delivered by the scheduler, a travel arrival). A
+//  passive run is exactly the case where the player taps nothing from
+//  departure to return, so without those two stamps the clock would both
+//  bank the whole run as idle time and then start counting only from the
+//  first tap after coming home.
+//
 //  At max HP the clock is pinned to `now` on every tick — without that, if
 //  the player took damage hours after reaching full HP, we'd mistakenly
 //  credit them for the full idle window.
@@ -35,6 +44,41 @@ public enum HealingService {
     /// Cap on elapsed time credited in a single tick, to keep long-offline
     /// players from instantly topping up on their next hello.
     public static var maxIdleMinutes: Double { Catalogs.current.tuningVigor.healing.maxIdleMinutes }
+
+    /// Start the rest clock now, unless it is already running. Call it at the
+    /// moment the player lands back at the estate — a passive expedition
+    /// finishing in the background, a travel arrival, walking home, dying.
+    ///
+    /// `tick` clears the clock for as long as an `ExplorationState` row
+    /// exists, and it only runs on interaction: without this the stretch
+    /// between coming home and the player's next tap heals nothing, because
+    /// that tap merely primes a nil clock. Priming only when the clock is nil
+    /// is what makes it safe to call from anywhere — a running clock keeps its
+    /// accrued time instead of being reset to zero.
+    ///
+    /// Returns true when it actually started the clock.
+    @discardableResult
+    public static func beginResting(_ user: User, on db: any Database) async throws -> Bool {
+        guard user.lastHpTickAt == nil else { return false }
+        user.lastHpTickAt = Date()
+        try await user.saveAndCache(in: db)
+        return true
+    }
+
+    /// Stop the rest clock. Call it when an expedition begins, so the stretch
+    /// spent out on the trail cannot be credited later.
+    ///
+    /// `tick` does the same thing, but only on an interaction — and a passive
+    /// expedition is precisely the case where the player taps nothing between
+    /// leaving and coming back, which would leave the pre-departure stamp
+    /// standing and refund the whole run's damage on their next tap.
+    @discardableResult
+    public static func suspendResting(_ user: User, on db: any Database) async throws -> Bool {
+        guard user.lastHpTickAt != nil else { return false }
+        user.lastHpTickAt = nil
+        try await user.saveAndCache(in: db)
+        return true
+    }
 
     /// Apply idle-time HP regen. Writes the user back (via `saveAndCache`)
     /// whenever a field is touched. Returns amount of HP restored (0 if the

@@ -74,11 +74,9 @@ public struct PassiveReport: Codable, Sendable {
     public let xpEarned: Int
     public let levelsGained: Int
     public let newLevel: Int
-    /// Phase 5.3b — stat growth totals from the XP grant. Zero unless the
-    /// expedition's level-ups crossed at least one stat-growth level.
-    public let maxHpGained: Int
-    public let attackGained: Int
-    public let defenseGained: Int
+    /// Stat growth totals from the XP grant — all zeroes unless the
+    /// expedition levelled the player. Printed by `LevelUpBanner`.
+    public let growth: User.StatGrowth
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
@@ -96,9 +94,7 @@ public struct PassiveReport: Codable, Sendable {
         xpEarned: Int = 0,
         levelsGained: Int = 0,
         newLevel: Int = 1,
-        maxHpGained: Int = 0,
-        attackGained: Int = 0,
-        defenseGained: Int = 0
+        growth: User.StatGrowth = User.StatGrowth()
     ) {
         self.stepsTaken = stepsTaken
         self.finalDepth = finalDepth
@@ -113,15 +109,13 @@ public struct PassiveReport: Codable, Sendable {
         self.xpEarned = xpEarned
         self.levelsGained = levelsGained
         self.newLevel = newLevel
-        self.maxHpGained = maxHpGained
-        self.attackGained = attackGained
-        self.defenseGained = defenseGained
+        self.growth = growth
     }
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
         case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
-        case maxHpGained, attackGained, defenseGained
+        case growth
     }
 
     public init(from decoder: any Decoder) throws {
@@ -139,9 +133,7 @@ public struct PassiveReport: Codable, Sendable {
         xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
         levelsGained = (try? c.decode(Int.self, forKey: .levelsGained)) ?? 0
         newLevel = (try? c.decode(Int.self, forKey: .newLevel)) ?? 1
-        maxHpGained = (try? c.decode(Int.self, forKey: .maxHpGained)) ?? 0
-        attackGained = (try? c.decode(Int.self, forKey: .attackGained)) ?? 0
-        defenseGained = (try? c.decode(Int.self, forKey: .defenseGained)) ?? 0
+        growth = (try? c.decode(User.StatGrowth.self, forKey: .growth)) ?? User.StatGrowth()
     }
 }
 
@@ -221,6 +213,11 @@ public enum PassiveExpeditionService {
         let endsAt = now.addingTimeInterval(seconds)
 
         let state = try await ExplorationState.beginPassive(for: user, endsAt: endsAt, on: db)
+        // The whole point of a passive run is that the player taps nothing
+        // while it lasts, so the clock has to be stopped here rather than by
+        // the next tick — otherwise the pre-departure stamp survives the run
+        // and refunds its damage the moment they come back.
+        try await HealingService.suspendResting(user, on: db)
 
         // Snapshot HP / vigor at expedition start so the final report reads
         // "started with X HP, Y vigor" regardless of when the simulation
@@ -537,9 +534,7 @@ public enum PassiveExpeditionService {
             xpEarned: xpResult.xpAwarded,
             levelsGained: xpResult.levelsGained,
             newLevel: xpResult.newLevel,
-            maxHpGained: xpResult.maxHpGained,
-            attackGained: xpResult.attackGained,
-            defenseGained: xpResult.defenseGained
+            growth: xpResult.growth
         )
 
         do {
@@ -647,7 +642,7 @@ public enum PassiveExpeditionService {
             return
         }
         let locale = user.locale
-        let homeText = lingo.localize("exploration.passive.closed_home", gender: user.gender, locale: locale)
+        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
         let reportText = renderReport(report, gender: user.gender, lingo: lingo, locale: locale)
 
         // Single combined message — home-again line first, report body below.
@@ -660,9 +655,27 @@ public enum PassiveExpeditionService {
             parseMode: .html
         ))
 
+        // Level-up in its own bubble, under the report — same shape a kill or
+        // a quest payout produces. Best-effort on purpose: the report send
+        // above is what decides whether the state row survives for a retry,
+        // and a failed banner must not buy the player a second copy of it.
+        if report.levelsGained > 0 {
+            _ = try? await bot.sendMessage(params: TGSendMessageParams(
+                chatId: .chat(user.telegramId),
+                text: LevelUpBanner.text(for: user, newLevel: report.newLevel,
+                                         growth: report.growth, lingo: lingo, locale: locale),
+                parseMode: .html
+            ))
+        }
+
         // Auto-close the expedition cycle — delete state so the next Explore
         // tap shows a fresh mode picker and nav buttons unlock immediately.
         try? await ExplorationState.end(for: user, on: db)
+
+        // The governor is home the moment this report lands, so resting starts
+        // here rather than on the player's next tap — nothing in this flow is
+        // an interaction, and `tick` only runs on one.
+        _ = try? await HealingService.beginResting(user, on: db)
     }
 
     // MARK: Report rendering
@@ -699,21 +712,9 @@ public enum PassiveExpeditionService {
             lines.append("")
             // 📊 / 🎉 / 💪 prepended in Swift — leading supplementary-plane
             // emoji breaks Lingo's `%{var}` parser (see .memory/localization.md).
-            var xpLine = "📊 " + lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
+            let xpLine = "📊 " + lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
                 "xp": "\(report.xpEarned)"
             ])
-            if report.levelsGained > 0 {
-                xpLine += " 🎉 " + lingo.localize("exploration.passive.report.levelup", locale: locale, interpolations: [
-                    "level": "\(report.newLevel)"
-                ])
-                if report.maxHpGained > 0 {
-                    xpLine += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
-                        "hp": "\(report.maxHpGained)",
-                        "atk": "\(report.attackGained)",
-                        "def": "\(report.defenseGained)"
-                    ])
-                }
-            }
             lines.append(xpLine)
         }
         let totalEvents = report.outcomeCounts.values.reduce(0, +)

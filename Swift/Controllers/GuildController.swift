@@ -798,7 +798,7 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
         case data.hasPrefix("guild:demote:"):
             await ack(); if let id = uuid("guild:demote:") { try await ctrl.handleSetOfficer(targetId: id, makeOfficer: false, context: context) }; return true
         default:
-            // Unknown (e.g. stale pstyle:) — hand to MainController, same as
+            // Unknown (e.g. a stale inline button) — hand to MainController, same as
             // CapitalController, instead of shouting "unsupported content".
             return try await MainController.onCallbackQuery(context: context)
         }

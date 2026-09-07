@@ -53,6 +53,7 @@ actor RouterStore {
     private func dispatch(router: Router, properties: [String: Int64], update: TGUpdate, db: any Database, lingo: Lingo) async throws {
         // Rehydrate Users from IDs inside actor to avoid passing non-Sendable models across actor boundary
         var hydrated: [String: User] = [:]
+        var wereInExpedition: [User] = []
         for (k, v) in properties {
             let user = try await sessionCache.getOrFetch(tgId: v, db: db)
             // Query expedition presence once — HealingService decides whether
@@ -62,9 +63,21 @@ actor RouterStore {
             // Phase 8E: Vigor comes back from food, never from the clock.
             let inExpedition = try await ExplorationState.current(for: user, on: db) != nil
             _ = try await HealingService.tick(user, inExpedition: inExpedition, on: db)
+            if inExpedition { wereInExpedition.append(user) }
             hydrated[k] = user
         }
         try await router.process(update: update, properties: hydrated, db: db, lingo: lingo)
+
+        // This dispatch may have been the one that ended the expedition —
+        // walking home, dying, closing a passive report. The tick above ran
+        // while the row still existed, so it cleared the rest clock; start it
+        // here instead of leaving the player unhealed until their next tap.
+        // Only users who were out get the second lookup, so an ordinary
+        // estate interaction still costs one query.
+        for user in wereInExpedition {
+            guard try await ExplorationState.current(for: user, on: db) == nil else { continue }
+            try await HealingService.beginResting(user, on: db)
+        }
     }
 }
 

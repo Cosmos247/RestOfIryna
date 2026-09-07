@@ -603,8 +603,8 @@ extension InventoryController {
             return true
         }
 
-        // Anything that doesn't match an `inv:*` callback (e.g. `pstyle:`
-        // profile-style switch tapped while the player is in the inventory
+        // Anything that doesn't match an `inv:*` callback (e.g. `journal:`
+        // opened from the profile while the player is in the inventory
         // routerName, or stale `fortune:*` insurance) is forwarded to
         // MainController, which owns those prefixes and falls back to deleting
         // truly unknown inline messages. Returning `false` here used to surface

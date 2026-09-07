@@ -722,7 +722,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // Shadow Veil: full dodge this round (no enemy counter), apply
             // lingering dodge buff for the next round.
             state.applyPlayerDodgeBuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
-            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", gender: player.gender, locale: locale, interpolations: [
+            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", locale: locale, interpolations: [
                 "enemy": enemyName
             ])
 
@@ -1060,25 +1060,6 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 "xp": "\(xpResult.xpAwarded)"
             ]))
         }
-        if xpResult.levelsGained > 0 {
-            var line = "🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
-                "level": "\(xpResult.newLevel)"
-            ])
-            if xpResult.maxHpGained > 0 {
-                // 💪 prepended in Swift — same Lingo emoji-leading-template bug.
-                line += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
-                    "hp": "\(xpResult.maxHpGained)",
-                    "atk": "\(xpResult.attackGained)",
-                    "def": "\(xpResult.defenseGained)"
-                ])
-            }
-            withXP.append(line)
-        }
-        if xpResult.estateLeveledUp {
-            withXP.append("🏰 " + lingo.localize("estate_up.banner", locale: locale, interpolations: [
-                "tier": "\(xpResult.newEstateLevel)"
-            ]))
-        }
         let finalPrefix = withXP.joined(separator: "\n")
 
         state.endCombat()
@@ -1086,6 +1067,17 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         try await handBackToExploration(context: context, prefix: finalPrefix)
+
+        // The level-up gets its own bubble, sent last so it sits under the
+        // kill report and the status card rather than inside them.
+        if xpResult.levelsGained > 0 {
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: LevelUpBanner.text(for: context.session, newLevel: xpResult.newLevel,
+                                         growth: xpResult.growth, lingo: lingo, locale: locale),
+                parseMode: .html
+            )
+        }
     }
 
     /// Training Ground branch of `finishVictory`. Resets the dummy's HP to
@@ -1180,7 +1172,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // Stale: combat already ended but the router still points here.
             // Tell the player and recover a usable keyboard by routing back to
             // the exploration entry.
-            let text = context.lingo.localize("combat.ended", gender: context.session.gender, locale: context.session.locale)
+            let text = context.lingo.localize("combat.ended", locale: context.session.locale)
             try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
             context.session.routerName = Controllers.explorationController.routerName
             try await context.session.saveAndCache(in: context.db)

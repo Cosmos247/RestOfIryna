@@ -129,7 +129,13 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     public func showMainMenu(context: Context, text: String? = nil) async throws {
-        let displayName = context.session.firstName ?? context.session.name
+        // The player is addressed by the name they chose at registration, never
+        // by their Telegram one. A nil nickname only ever means "still in
+        // registration" — it is written by the name step and cleared only by
+        // the dev reset, which sets routerName back to registration in the same
+        // breath — and that flow greets the player itself, before a name
+        // exists. So the empty fallback is unreachable rather than a placeholder.
+        let displayName = context.session.nickname ?? ""
         let greeting = context.lingo.localize("greeting.message", locale: context.session.locale, interpolations: [
             "full-name": displayName
         ])
@@ -156,10 +162,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     // MARK: - Profile Display
 
     func showProfile(context: Context, editMessageId: Int? = nil) async throws {
-        let style = context.session.profileStyle
         let equipped = try await EquipmentService.equipped(for: context.session, on: context.db)
-        let text = renderProfile(session: context.session, equipped: equipped, lingo: context.lingo, style: style)
-        let keyboard = profileStyleKeyboard(currentStyle: style, lingo: context.lingo, locale: context.session.locale)
+        let text = renderProfile(session: context.session, equipped: equipped, lingo: context.lingo)
+        let keyboard = profileKeyboard(lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
             let params = TGEditMessageTextParams(
@@ -176,11 +181,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         }
     }
 
-    private func profileStyleKeyboard(currentStyle: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let buttons = (1...3).map { style in
-            let label = style == currentStyle ? "· \(style) ·" : "\(style)"
-            return TGInlineKeyboardButton(text: label, callbackData: "pstyle:\(style)")
-        }
+    private func profileKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         // Phase 9.2 — the quest journal hangs off the profile rather than the
         // capital: it's a read-only status screen the player wants from
         // anywhere, not another capital location.
@@ -188,7 +189,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             text: lingo.localize("journal.button.open", locale: locale),
             callbackData: "journal:open"
         )
-        return TGInlineKeyboardMarkup(inlineKeyboard: [buttons, [journal]])
+        return TGInlineKeyboardMarkup(inlineKeyboard: [[journal]])
     }
 
     // MARK: - Quest Journal (Phase 9.2)
@@ -266,8 +267,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Profile Rendering
 
-    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], lingo: Lingo, style: Int) -> String {
-        let nickname = session.nickname ?? session.name
+    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], lingo: Lingo) -> String {
+        let nickname = session.nickname ?? ""
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
         let estate = session.estateName ?? "?"
@@ -282,13 +283,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let silver = session.silver
         let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
 
-        // Phase 5.3a — compact XP fragment shown in every profile style. At max
-        // level the progress numbers are replaced with a "max" label.
-        let xpFragment: String = isMaxLevel
-            ? lingo.localize("profile.xp.max", locale: session.locale)
-            : "\(xp)/\(xpMax)"
-
-        // Main-hand line — shown on every style. Empty string if nothing equipped.
+        // Main-hand line. Empty string if nothing equipped.
         let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
         let mainHandName: String
         if let entry = equipped[.mainHand], let item = ItemCatalog.find(entry.itemId) {
@@ -300,7 +295,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         }
         let mainHandLine = "🗡 \(mainHandLabel): \(mainHandName)"
 
-        // Phase 6.4 — active fortune line. Renders on every style when the
+        // Phase 6.4 — active fortune line. Renders when the
         // player has an unexpired tarot draw. 🔮 prefixed in Swift (Lingo
         // template parser breaks on leading supplementary-plane emoji + var).
         let fortuneLine: String?
@@ -316,91 +311,47 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             fortuneLine = nil
         }
 
-        let body: String
-        switch style {
-        case 2:
-            let xpBar = isMaxLevel ? "" : bar(xp, xpMax)
-            let xpLine = isMaxLevel
-                ? "📊 \(lingo.localize("profile.xp.max", locale: session.locale))"
-                : "📊 \(xpBar) \(xpFragment)"
-            body = """
-            \(cls.icon()) \(className)  «<b>\(nickname)</b>»  Lv.\(level)
-            ━━━━━━━━━━━━━━━━
-
-            ❤️ \(bar(hp, maxHp)) \(hp)/\(maxHp)
-            🍖 \(bar(vigor, maxVigor)) \(vigor)/\(maxVigor)\(starvingSuffix)
-            \(xpLine)
-
-            ⚔️ \(atk)  🛡 \(def)  💥 \(crit)%
-            🎯 \(acc)  💨 \(dodge)
-
-            \(mainHandLine)
-            🪙 \(silver)
-            🏰 \(estate)
-            """
-        case 3:
-            let l = lingo
-            let loc = session.locale
-            let xpBlock: String
-            if isMaxLevel {
-                xpBlock = "📊 \(l.localize("profile.xp", locale: loc)): \(l.localize("profile.xp.max", locale: loc))"
-            } else {
-                xpBlock = """
-                📊 \(l.localize("profile.xp", locale: loc)): \(xp)/\(xpMax)
-                \(emojiBar(xp, xpMax, fill: "🟦"))
-                """
-            }
-            body = """
-            \(cls.icon()) <b>\(nickname)</b> — \(className)
-            ✨ \(l.localize("profile.level", locale: loc)) \(level)
-
-            \(xpBlock)
-
-            ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
-            \(emojiBar(hp, maxHp, fill: "🟥"))
-
-            🍖 \(l.localize("profile.vigor", locale: loc)): \(vigor)/\(maxVigor)\(starvingSuffix)
-            \(emojiBar(vigor, maxVigor, fill: "🟧"))
-
-            ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
-            🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
-            💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
-
-            \(mainHandLine)
-            🪙 \(silver) \(l.localize("profile.silver", locale: loc))
-            🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
-            """
-        default: // Style 1
-            body = """
-            \(cls.icon()) <b>\(nickname)</b> · Lv.\(level)
-            \(className)
-
-            ❤️ \(hp)/\(maxHp)  🍖 \(vigor)/\(maxVigor)\(starvingSuffix)
-            📊 XP \(xpFragment)
-
-            ⚔️\(atk)  🛡\(def)  🎯\(acc)
-            💨\(dodge)  💥\(crit)%
-
-            \(mainHandLine)
-            🪙 \(silver)
-            🏰 \(estate)
+        let l = lingo
+        let loc = session.locale
+        let xpBlock: String
+        if isMaxLevel {
+            xpBlock = "📊 \(l.localize("profile.xp", locale: loc)): \(l.localize("profile.xp.max", locale: loc))"
+        } else {
+            xpBlock = """
+            📊 \(l.localize("profile.xp", locale: loc)): \(xp)/\(xpMax)
+            \(emojiBar(xp, xpMax, fill: "🟦"))
             """
         }
+        let body = """
+        \(cls.icon()) <b>\(nickname)</b> — \(className)
+        ✨ \(l.localize("profile.level", locale: loc)) \(level)
 
-        // Append fortune line at the bottom of every style — last line so
-        // the cosmetic "today's card" stands out from the structural stats.
+        \(xpBlock)
+
+        ❤️ \(l.localize("profile.health", locale: loc)): \(hp)/\(maxHp)
+        \(emojiBar(hp, maxHp, fill: "🟥"))
+
+        🍖 \(l.localize("profile.vigor", locale: loc)): \(vigor)/\(maxVigor)\(starvingSuffix)
+        \(emojiBar(vigor, maxVigor, fill: "🟧"))
+
+        ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
+        🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
+        💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
+
+        \(mainHandLine)
+        🪙 \(silver) \(l.localize("profile.silver", locale: loc))
+        🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
+        """
+
+        // Append the fortune line last, so the cosmetic "today's card"
+        // stands out from the structural stats.
         if let fl = fortuneLine {
             return body + "\n\(fl)"
         }
         return body
     }
 
-    // MARK: - Bar Helpers
-
-    private func bar(_ current: Int, _ max: Int, length: Int = 10) -> String {
-        let filled = max > 0 ? Int(Double(current) / Double(max) * Double(length)) : 0
-        return String(repeating: "█", count: filled) + String(repeating: "░", count: length - filled)
-    }
+    // MARK: - Bar Helper
 
     private func emojiBar(_ current: Int, _ max: Int, length: Int = 10, fill: String = "🟩", empty: String = "⬛") -> String {
         let filled = max > 0 ? Int(Double(current) / Double(max) * Double(length)) : 0
@@ -414,24 +365,6 @@ extension MainController {
         guard let query = context.update.callbackQuery else { return false }
         guard let message = query.message else { return false }
         guard let data = query.data else { return false }
-
-        // Profile style switch — edit message in place
-        if data.starts(with: "pstyle:") {
-            let styleStr = data.replacingOccurrences(of: "pstyle:", with: "")
-            guard let style = Int(styleStr), (1...3).contains(style) else { return false }
-
-            context.session.profileStyle = style
-            try await context.session.saveAndCache(in: context.db)
-
-            try await Controllers.mainController.showProfile(
-                context: context,
-                editMessageId: message.messageId
-            )
-
-            let answerParams = TGAnswerCallbackQueryParams(callbackQueryId: query.id)
-            try await context.bot.answerCallbackQuery(params: answerParams)
-            return true
-        }
 
         // Quest journal — opens over the profile message and returns to it.
         // Both directions edit the same bubble, so the player never collects a

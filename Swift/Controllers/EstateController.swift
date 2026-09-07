@@ -327,10 +327,10 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let warehouse = lingo.localize("estate.warehouse", locale: locale)
         let back = lingo.localize("estate.back_root", locale: locale)
         var rows: [[TGInlineKeyboardButton]] = []
-        if estateLevel >= 3 {
+        if estateLevel >= EstateTierGates.workshop {
             rows.append([TGInlineKeyboardButton(text: workshop, callbackData: "estate:home:workshop")])
         }
-        if estateLevel >= 2 {
+        if estateLevel >= EstateTierGates.kitchen {
             rows.append([TGInlineKeyboardButton(text: kitchen, callbackData: "estate:home:kitchen")])
         }
         rows.append([TGInlineKeyboardButton(text: warehouse, callbackData: "estate:home:warehouse")])
@@ -628,7 +628,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         ])
         var lines: [String] = ["<b>\(header)</b>", ""]
         for type in PlotType.allCases {
-            if type == .trainingGround, estateLevel < 3 { continue }
+            if type == .trainingGround, estateLevel < EstateTierGates.trainingGround { continue }
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             if let tuning = PlotCatalog.tuning(for: type) {
@@ -657,7 +657,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         var rows: [[TGInlineKeyboardButton]] = []
         var pair: [TGInlineKeyboardButton] = []
         for type in PlotType.allCases {
-            if type == .trainingGround, estateLevel < 3 { continue }
+            if type == .trainingGround, estateLevel < EstateTierGates.trainingGround { continue }
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             let label = "\(icon) \(typeName)"
@@ -717,7 +717,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             // Kitchen recipes belong to the Kitchen view, not the Workshop.
             if recipe.category == .kitchen { continue }
             // Tannery unlocks at estate T4.
-            if recipe.category == .tannery, estateLevel < 4 { continue }
+            if recipe.category == .tannery, estateLevel < EstateTierGates.tannery { continue }
             let outputItem = ItemCatalog.find(recipe.output.itemId)
             let outputIcon = outputItem?.icon ?? ""
             let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
@@ -912,7 +912,7 @@ extension EstateController {
             return try await handleBagUpgradeConfirm(query: query, message: message, context: context)
         }
         // Anything that doesn't belong to the estate's own callback namespace
-        // (e.g. `pstyle:` profile-style switch, stale `explore:*` from a passive
+        // (e.g. `journal:` from the profile, stale `explore:*` from a passive
         // report pushed while the player is in the estate, `fortune:*` insurance)
         // is forwarded to MainController, which owns those prefixes and falls
         // back to deleting truly unknown inline messages. Returning `false`
@@ -1023,20 +1023,20 @@ extension EstateController {
             case "estate:home":
                 text = ctrl.renderHome(lingo: context.lingo, locale: locale)
                 inline = ctrl.homeKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: locale)
-            case "estate:home:workshop" where context.session.estateLevel < 3:
+            case "estate:home:workshop" where context.session.estateLevel < EstateTierGates.workshop:
                 // Stale callback: room not unlocked yet. Surface a clean alert
                 // and leave the screen as-is. 🔒 prepended in Swift — leading
                 // supplementary-plane emoji breaks Lingo's `%{var}` parser.
                 let alert = "🔒 " + context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
-                    "tier": "3"
+                    "tier": "\(EstateTierGates.workshop)"
                 ])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                     callbackQueryId: query.id, text: alert, showAlert: true
                 ))
                 return true
-            case "estate:home:kitchen" where context.session.estateLevel < 2:
+            case "estate:home:kitchen" where context.session.estateLevel < EstateTierGates.kitchen:
                 let alert = "🔒 " + context.lingo.localize("estate.locked.room", locale: locale, interpolations: [
-                    "tier": "2"
+                    "tier": "\(EstateTierGates.kitchen)"
                 ])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                     callbackQueryId: query.id, text: alert, showAlert: true
@@ -2101,7 +2101,7 @@ extension EstateController {
     /// `estate:upgrade:confirm` — perform one tier upgrade. Failure modes
     /// (max tier / player level too low / missing materials) surface as
     /// modal alerts and leave the screen unchanged. Success refreshes the
-    /// screen with the new "current" tier and appends a `✅` banner.
+    /// screen with the new "current" tier and sends the tier-up bubble.
     static func handleEstateUpgradeConfirm(
         query: TGCallbackQuery,
         message: TGMaybeInaccessibleMessage,
@@ -2110,6 +2110,9 @@ extension EstateController {
         let locale = context.session.locale
         let ctrl = Controllers.estateController
 
+        // Read before the upgrade — the banner reports the step it took, and
+        // the service has already moved `estateLevel` by the time it returns.
+        let previousTier = context.session.estateLevel
         let result = try await EstateUpgradeService.upgrade(for: context.session, on: context.db)
 
         switch result {
@@ -2159,11 +2162,8 @@ extension EstateController {
 
         case .success(let newTier):
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            let newName = context.lingo.localize("estate.tier.\(newTier).name", locale: locale)
-            let banner = "✅ " + context.lingo.localize("estate.upgrade.banner.success", locale: locale, interpolations: [
-                "tier": "\(newTier)",
-                "name": newName
-            ])
+            let banner = EstateUpBanner.text(newTier: newTier, previousTier: previousTier,
+                                             lingo: context.lingo, locale: locale)
 
             let (inv, wh) = try await estateUpgradeSnapshot(context: context)
             let body = ctrl.renderEstateUpgrade(
@@ -2175,7 +2175,10 @@ extension EstateController {
             let canUpgrade = EstateUpgradeCatalog.canUpgrade(from: context.session.estateLevel)
             let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
             try await editEstateMessage(message: message, text: body, inline: inline, context: context)
-            await ctrl.postStatusBanner(banner, context: context)
+            // A plain message, not a status banner: the tier-up is the most
+            // expensive thing a player buys, and `postStatusBanner` would have
+            // deleted it on the next toast.
+            try await context.bot.sendMessage(session: context.session, text: banner, parseMode: .html)
             return true
         }
     }

@@ -149,10 +149,30 @@ Rule: English stat tokens stay only in `en.json`; never copy them into `uk.json`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
-## 👫 Gender-aware feminitives (uk) — added 2026-05-21
+## 🫵 The player is addressed as «ви» (uk) — 2026-09-07
+
+Every uk string that speaks to the player uses the **formal plural**: `ви / вас /
+вам / ваш`, present tense `-єте/-ите`, imperative `-іть/-те`. 170 strings were
+converted in one pass, NPC speech included ("Показуйте, що ремонтувати"). The
+sweep that found the last six is the one worth repeating after any copy edit:
+grep for the pronouns, for the 2sg present endings (`-єш/-иш/-ешся`), and — the
+one that actually caught things — over the *vocabulary* of every word ending in
+`-и/-й/-ь/-ись`, since a mid-sentence imperative ("Спершу принеси…") hides from
+a line-oriented search.
+
+It also removed three latent gender bugs in keys that never had `.m`/`.f` at all
+and shipped masculine to everyone: `travel.arrived.capital` ("Ти прибув"),
+`arena.err.dead` ("Ти ледь живий"), `vigor.starving` ("Голодний"). Plural fixes
+them by construction.
+
+## 👫 Gender-aware feminitives (uk) — added 2026-05-21, narrowed 2026-09-07
 
 Ukrainian declines past-tense verbs, adjectives and the "намісник/намісниця"
-noun by the player's gender; English copy is gender-neutral. Player gender is
+noun by the player's gender. **Under «ви» only the NOUN still declines** — a past
+tense goes plural ("Ви повернулися") and so does an adjective ("Ви ледь живі"),
+so nine pairs collapsed into single keys and gender now survives only where the
+copy names the player: намісник/намісниця, воїне/войовнице. English copy is
+gender-neutral. Player gender is
 chosen once at **registration step 1** (ahead of the name prompt) and stored in
 `User.gender` ("m"/"f"; nil treated as male). The estate-reveal art is also
 per-gender (`CharacterClass.journeyImageName(gender:)` → `<class>_estate_<m|f>.jpg`,
@@ -170,25 +190,28 @@ other locale it short-circuits to the plain `some.key`. So **only `uk.json` gets
 - A key routed through the gendered helper **MUST** have `<key>.m` AND `<key>.f`
   in `uk.json`, and the base `<key>` in `uk.json` is removed (dead — the helper
   never reads it for uk). `en.json` keeps the single neutral base `<key>`.
-- When you add ANY new uk string that addresses the player with a gendered word
-  (past-tense `-в/-ла`, an adjective, or намісник/-иця), either give it `.m`/`.f`
-  + route the call site through the gendered helper, OR phrase it neutrally
-  (impersonal "Знайдено…", plural "Готові?", passive "ще не вивчено"). Prefer
-  neutral for short system toasts; keep `.m`/`.f` for narrative/dramatic beats.
+- When you add ANY new uk string that addresses the player, write it in «ви».
+  That alone settles past tense and adjectives (both go plural). Only a gendered
+  **noun** for the player — намісник/-иця, воїне/войовнице — still needs
+  `.m`/`.f` + the gendered helper; otherwise phrase around it (impersonal
+  "Знайдено…", passive "ще не вивчено") and use a single key.
 - Missing a `.m`/`.f` for a routed key → uk shows the raw key + a Lingo console
   warning (loud, easy to catch).
 
-### Gendered keys today (have `.m`/`.f` in uk.json)
-namespace "намісник" + verbs/adjectives: `registration.welcome`,
-`registration.name_accepted`, `registration.king_oath`,
-`registration.dog_retry`, `registration.estate.prompt`,
+### Gendered keys today (have `.m`/`.f` in uk.json) — 13 left
+All of them name the player or the governor: `registration.welcome`,
+`registration.name_accepted`, `registration.king_oath`, `registration.gender`,
 `estate.blocked_by_expedition`, `capital.blocked_by_expedition`,
-`capital.location.tavern.body`, `capital.trader.intro`, `capital.fortune.intro`,
-`exploration.outcome.trip`, `exploration.outcome.encounter.won`,
-`exploration.death`, `exploration.duration.prompt`,
-`exploration.passive.started`, `exploration.passive.closed_home`,
-`exploration.passive.report.death`, `combat.ended`,
-`combat.special_def.archer.activate`, `bot.restarted`, `journal.title`.
+`capital.location.tavern.body`, `capital.fortune.intro`,
+`exploration.duration.prompt`, `exploration.passive.started`,
+`exploration.passive.report.death`, `bot.restarted`, `journal.title`.
+
+**Collapsed on 2026-09-07** because «ви» made the two variants identical, and the
+call sites moved to the plain overload: `registration.dog_retry`,
+`registration.estate.prompt`, `capital.trader.intro`, `exploration.outcome.trip`,
+`exploration.outcome.encounter.won`, `exploration.death`,
+`exploration.passive.closed_home`, `combat.ended`,
+`combat.special_def.archer.activate`.
 
 Special-cased call sites: `capital.location.tavern.body` is routed gendered only
 for the tavern in `CapitalController.renderLocation` (other locations stay
@@ -207,7 +230,7 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
-## Current Keys (956 en / 977 uk as of 2026-08-23 — uk has +21 from the gendered `.m`/`.f` pairs)
+## Current Keys (954 en / 966 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
 

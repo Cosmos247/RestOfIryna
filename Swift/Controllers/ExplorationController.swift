@@ -170,6 +170,10 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// when the player chooses reconnaissance.
     private func beginActive(context: Context) async throws {
         let state = try await ExplorationState.begin(for: context.session, on: context.db)
+        // Out of the gate the resting clock stops — the tick would clear it on
+        // the next interaction anyway, and doing it here means an expedition
+        // the player never taps through cannot bank idle time either.
+        try await HealingService.suspendResting(context.session, on: context.db)
         context.session.routerName = routerName
         try await context.session.saveAndCache(in: context.db)
 
@@ -296,17 +300,31 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = Controllers.mainController.routerName
         try await context.session.saveAndCache(in: context.db)
 
-        let homeText = lingo.localize("exploration.passive.closed_home", gender: context.session.gender, locale: locale)
+        let homeText = lingo.localize("exploration.passive.closed_home", locale: locale)
         let text: String
+        var decoded: PassiveReport?
         if let json = reportJSON,
            let data = json.data(using: .utf8),
            let report = try? JSONDecoder().decode(PassiveReport.self, from: data) {
             let reportText = PassiveExpeditionService.renderReport(report, gender: context.session.gender, lingo: lingo, locale: locale)
             text = "\(homeText)\n\n\(reportText)"
+            decoded = report
         } else {
             text = homeText
         }
         try await Controllers.mainController.showMainMenu(context: context, text: text)
+
+        // This is the re-delivery path — the scheduler's own push failed and
+        // the player is collecting the report by tapping Explore. It owes them
+        // the level-up bubble the push would have sent.
+        if let report = decoded, report.levelsGained > 0 {
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: LevelUpBanner.text(for: context.session, newLevel: report.newLevel,
+                                         growth: report.growth, lingo: lingo, locale: locale),
+                parseMode: .html
+            )
+        }
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -550,7 +568,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
 
-        let deathText = "💀 " + lingo.localize("exploration.death", gender: context.session.gender, locale: locale, interpolations: ["cause": causeNarrative])
+        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": causeNarrative])
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
@@ -611,7 +629,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             // Leading 🦵 is prepended here (post-interpolation) because Lingo
             // drops interpolations after a multi-UTF-16 emoji in the template.
             // ❤️ rides inside the `hp` interpolation value for the same reason.
-            return "🦵 " + lingo.localize("exploration.outcome.trip", gender: gender, locale: locale, interpolations: [
+            return "🦵 " + lingo.localize("exploration.outcome.trip", locale: locale, interpolations: [
                 "hp": "❤️ −\(hpLost)"
             ])
 
@@ -620,7 +638,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             // ❤️ / 🍖 are passed as interpolation values rather than placed in
             // the template — Lingo drops `%{}` placeholders that follow a
             // multi-UTF-16 emoji in the template itself.
-            let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", gender: gender, locale: locale, interpolations: [
+            let header = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)",
                 "hp": "❤️ −\(hpLost)",
@@ -727,7 +745,7 @@ extension ExplorationController {
             context.session.routerName = Controllers.mainController.routerName
             try await context.session.saveAndCache(in: context.db)
 
-            let homeText = context.lingo.localize("exploration.passive.closed_home", gender: context.session.gender, locale: locale)
+            let homeText = context.lingo.localize("exploration.passive.closed_home", locale: locale)
             try await Controllers.mainController.showMainMenu(context: context, text: homeText)
             return true
         }

@@ -37,6 +37,24 @@ opening is not bankrupt, the **shallow** opening is. km 1 ends 374 Vigor short, 
 rather than Vigor is the binding constraint. New warning `opening.shallow_is_bankrupt`;
 `--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234.
 
+**Pre-push bug pass (2026-09-07)** — four reported bugs, code and copy only; every
+digest half held at the Phase 10 baseline. (1) The profile renders ONE layout — the
+`1 · 2 · 3` switcher, the `pstyle:` callback and `User.profileStyle` are gone
+(`RemoveProfileStyle`). (2) **HP regen now starts when the player lands home**, and stops
+when an expedition begins: `HealingService` gained `beginResting` / `suspendResting`
+because its tick only runs on an interaction and both ends of an expedition can happen
+without one — the second half also closed a refund, where a passive run the player never
+tapped through gave back its whole HP loss on the next tap. (3) The player is addressed
+by their chosen `nickname`, never the Telegram name. (4) The level-up is its own message
+listing every level-derived stat (`LevelUpBanner`), the estate tier-up likewise
+(`EstateUpBanner`, gates centralised in `EstateTierGates`) — and the estate line that
+used to ride along with the level-up was deleted, because `estateLeveledUp` could never
+be true: the tier only ever moves through the paid upgrade. Locale keys 954 / 966. (5) **The player is addressed as «ви»** — 170 uk strings
+converted from «ти», NPC speech included; three latent gender bugs went with it
+(keys with no `.m`/`.f` that shipped masculine to everyone), and nine gendered
+pairs collapsed into single keys because plural past tense is genderless, leaving
+13 pairs that name the player.
+
 **`WipeForRebalance` written (2026-09-02), not yet executed** — it runs at the next bot
 launch. Registered last in `configure.swift`; a no-op on a fresh database. Explicit table
 list rather than an FK cascade, because `tavern_game_messages` carries no foreign key, and
@@ -134,7 +152,7 @@ were superseded by Phases 4–6.
 - [x] Command system (Commands enum, Command class, ContentType matching)
 - [x] Arguments parser (Scanner-based: words, ints, doubles, rest-of-string)
 - [x] Session caching (actor-based, 5min TTL, auto-cleanup)
-- [x] User model + migrations (identity, class, nickname, estate, profile style)
+- [x] User model + migrations (identity, class, nickname, estate)
 - [x] Authorization (hardcoded allowedUsers list)
 - [x] Proper migration awaiting (try await migrator.prepareBatch().get())
 - [x] Database connection pool graceful shutdown (defer in configure)
@@ -161,8 +179,8 @@ were superseded by Phases 4–6.
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — 955 keys (2026-08-30; the two monster-silver lines went with the mechanic in 8C)
-- [x] Ukrainian (uk.json) — 976 keys (+21 gendered `.m`/`.f` variants)
+- [x] English (en.json) — 954 keys (2026-09-07)
+- [x] Ukrainian (uk.json) — 966 keys (+13 gendered `.m`/`.f` variants; the player is addressed as «ви» since 2026-09-07, which left gender only on nouns)
 
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
@@ -176,7 +194,7 @@ were superseded by Phases 4–6.
 - [x] 2.3.1 Slot design: `EquipmentSlot` enum (8 slots), `GearStats` struct, Item gains optional slot + gearStats. Starter gear wired: rusty_sword/simple_bow/wooden_staff → mainHand; leather_vest → chest.
 - [x] 2.3.2 Data layer: `equipped_slot: String?` on `inventory` + 5 cached `gear_*_bonus: Int` on `users`. Migrations `AddEquipSlotToInventory` + `AddGearBonuses`.
 - [x] 2.3.3 `EquipmentService` (equip / unequip / equipped(for:) / recomputeBonuses). Registration auto-equips the class starter weapon after the King's Oath. `User.effectiveAttack/Defense/Crit/Dodge/Accuracy` now read `base + gear − vigor penalty`.
-- [x] 2.3.4 Inventory UI toggle: gear rows carry a persistent per-item icon (`Item.icon` — ⚔️ / 🏹 / 🪄 / 🦺 ...) visible whether equipped or not; action button toggles between "🛡 Equip" and "❌ Unequip" (callbacks `inv:equip:<id>` / `inv:unequip:<id>`). Profile gains a "Main hand: <item>" line on all three styles.
+- [x] 2.3.4 Inventory UI toggle: gear rows carry a persistent per-item icon (`Item.icon` — ⚔️ / 🏹 / 🪄 / 🦺 ...) visible whether equipped or not; action button toggles between "🛡 Equip" and "❌ Unequip" (callbacks `inv:equip:<id>` / `inv:unequip:<id>`). Profile gains a "Main hand: <item>" line.
 
 ### Estate (Phase 5 — scaffolding, started out of order while Phase 3/4 are paused)
 - [x] 5.0 Navigation skeleton: `User.estateLevel` computed from player level (every 5 levels → +1 tier). `EstateController` tree nav with Root → House → room stubs / Plot stub. Per-level artwork loader (`Assets/estate/level_<N>.jpg`, text-only fallback). `MainController.onEstate` now calls `showEstate` instead of the old `showStub`; `InventoryController.onEstate` pass-through updated too. Warehouse room gets a real category browser (separate `WarehouseEntry` Fluent model + `CreateWarehouse` migration), live counts per category, drill-down item list; deposit/withdraw flows still pending.

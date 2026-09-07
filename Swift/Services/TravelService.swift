@@ -146,6 +146,13 @@ public enum TravelService {
             return
         }
 
+        // Home again — start the rest clock at the arrival, not at the next
+        // tap. No-op when it is already running, so the walk itself keeps
+        // whatever it accrued.
+        if destination == .estate {
+            _ = try? await HealingService.beginResting(user, on: db)
+        }
+
         // Push the arrival notification — single user-facing message that
         // includes the reply-keyboard for wherever they just landed.
         do {

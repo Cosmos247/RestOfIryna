@@ -52,9 +52,6 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "registration_step")
     var registrationStep: Int
 
-    @Field(key: "profile_style")
-    var profileStyle: Int
-
     // MARK: - Game Stats
 
     @Field(key: "level")
@@ -231,7 +228,6 @@ final public class User: Model, @unchecked Sendable {
         self.lastName = lastName
         self.locale = locale
         self.registrationStep = 0
-        self.profileStyle = 1
         self.level = 1
         self.xp = 0
         self.hp = 100
@@ -362,23 +358,54 @@ final public class User: Model, @unchecked Sendable {
                                  pool: Catalogs.current.tuningProgression.vigorPool)
     }
 
+    /// Everything one level-up moved. The banner prints the whole stat line,
+    /// so the growth is reported whole: `applyLevelDerivedStats` recomputes
+    /// all seven from the class curve, and the old three-field result left
+    /// the other four — the Vigor ceiling among them — invisible.
+    public struct StatGrowth: Codable, Sendable {
+        public var maxHp: Int = 0
+        public var maxVigor: Int = 0
+        public var attack: Int = 0
+        public var defense: Int = 0
+        public var accuracy: Int = 0
+        public var dodge: Int = 0
+        public var crit: Int = 0
+
+        public init() {}
+
+        /// Sum two grants — a single `grantXP` can cross several levels.
+        public mutating func add(_ other: StatGrowth) {
+            maxHp += other.maxHp
+            maxVigor += other.maxVigor
+            attack += other.attack
+            defense += other.defense
+            accuracy += other.accuracy
+            dodge += other.dodge
+            crit += other.crit
+        }
+    }
+
     /// Recompute every level-derived stat from `characterClass` and `level`.
     /// Current HP and Vigor rise by whatever the ceilings rose by, so a
     /// level-up is felt immediately rather than leaving the player at a lower
     /// fraction of a bigger bar. Returns the deltas for the UI banner.
     @discardableResult
-    func applyLevelDerivedStats() -> (maxHp: Int, attack: Int, defense: Int) {
+    func applyLevelDerivedStats() -> StatGrowth {
         guard let raw = characterClass,
               let cls = CharacterClass(rawValue: raw) else {
-            return (0, 0, 0)
+            return StatGrowth()
         }
         let next = User.baseStats(for: cls, at: level)
-        let hpDelta = next.maxHp - maxHp
-        let atkDelta = next.attack - attack
-        let defDelta = next.defense - defense
+        var growth = StatGrowth()
+        growth.maxHp = next.maxHp - maxHp
+        growth.attack = next.attack - attack
+        growth.defense = next.defense - defense
+        growth.accuracy = next.accuracy - accuracy
+        growth.dodge = next.dodge - dodge
+        growth.crit = next.crit - crit
 
         maxHp = next.maxHp
-        if hpDelta > 0 { hp += hpDelta }
+        if growth.maxHp > 0 { hp += growth.maxHp }
         hp = min(hp, maxHp)
         attack = next.attack
         defense = next.defense
@@ -387,53 +414,46 @@ final public class User: Model, @unchecked Sendable {
         accuracy = next.accuracy
 
         let newMaxVigor = User.maxVigor(at: level)
-        let vigorDelta = newMaxVigor - maxVigor
+        growth.maxVigor = newMaxVigor - maxVigor
         maxVigor = newMaxVigor
-        if vigorDelta > 0 { vigor += vigorDelta }
+        if growth.maxVigor > 0 { vigor += growth.maxVigor }
         vigor = min(vigor, maxVigor)
 
-        return (hpDelta, atkDelta, defDelta)
+        return growth
     }
 
     /// Result of a `grantXP` call. UI banners read these to decide what to show.
     public struct XPGrantResult: Sendable {
         public let xpAwarded: Int
         public let levelsGained: Int
-        public let estateLeveledUp: Bool
         public let newLevel: Int
-        public let newEstateLevel: Int
-        /// Phase 5.3b — total stat growth from this grant. Zero when no
-        /// stat-growth level was crossed (either no level-up at all, or only
-        /// estate-tier-up levels were crossed).
-        public let maxHpGained: Int
-        public let attackGained: Int
-        public let defenseGained: Int
+        /// Total stat growth from this grant, summed across every level it
+        /// crossed. All zeroes when no level-up happened.
+        public let growth: StatGrowth
     }
 
-    /// Add XP and process level-ups in a loop. Returns a result describing how
-    /// many levels were gained, whether the estate tier crossed a threshold,
-    /// and any stat growth applied (Phase 5.3b — +5 maxHP / +1 ATK / +1 DEF
-    /// at L2/3/5/6/9/12/15/18). Phase 6.4 — multiplies the incoming amount
-    /// by `activeFortuneEffect?.xpMultiplier` (1.0 if no active fortune).
-    /// Callers persist the user via `saveAndCache`.
+    /// Add XP and process level-ups in a loop. Returns how many levels were
+    /// gained and the total stat growth applied — every stat grows every level
+    /// (Phase 5B), so the growth is reported whole rather than as the three
+    /// stats a banner once happened to show. Phase 6.4 — multiplies the
+    /// incoming amount by `activeFortuneEffect?.xpMultiplier` (1.0 if no
+    /// active fortune). The estate tier is NOT part of the result: it moves
+    /// only through the paid upgrade in `EstateUpgradeService`, which sends
+    /// its own banner. Callers persist the user via `saveAndCache`.
     @discardableResult
     func grantXP(_ amount: Int) -> XPGrantResult {
         let oldLevel = level
-        let oldEstate = estateLevel
         let xpMult = activeFortuneEffect?.xpMultiplier ?? 1.0
         let amountWithFortune = Int((Double(amount) * xpMult).rounded())
         guard amountWithFortune > 0, level < User.maxLevel else {
             return XPGrantResult(
-                xpAwarded: 0, levelsGained: 0, estateLeveledUp: false,
-                newLevel: level, newEstateLevel: estateLevel,
-                maxHpGained: 0, attackGained: 0, defenseGained: 0
+                xpAwarded: 0, levelsGained: 0, newLevel: level,
+                growth: StatGrowth()
             )
         }
         xp += amountWithFortune
         let amount = amountWithFortune  // shadow for the XPGrantResult below
-        var maxHpGained = 0
-        var attackGained = 0
-        var defenseGained = 0
+        var growth = StatGrowth()
         while level < User.maxLevel, xp >= xpToNextLevel {
             xp -= xpToNextLevel
             level += 1
@@ -441,10 +461,7 @@ final public class User: Model, @unchecked Sendable {
             // old model boosted three stats on eight chosen levels and left the
             // other twelve inert; over a lifetime that was +40 HP against +32
             // DEF from a single enchant, which is why levels felt weightless.
-            let gained = applyLevelDerivedStats()
-            maxHpGained += gained.maxHp
-            attackGained += gained.attack
-            defenseGained += gained.defense
+            growth.add(applyLevelDerivedStats())
         }
         if level >= User.maxLevel {
             // Pin XP to 0 at cap so the profile doesn't keep accumulating
@@ -454,12 +471,8 @@ final public class User: Model, @unchecked Sendable {
         return XPGrantResult(
             xpAwarded: amount,
             levelsGained: level - oldLevel,
-            estateLeveledUp: estateLevel > oldEstate,
             newLevel: level,
-            newEstateLevel: estateLevel,
-            maxHpGained: maxHpGained,
-            attackGained: attackGained,
-            defenseGained: defenseGained
+            growth: growth
         )
     }
 

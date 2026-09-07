@@ -445,7 +445,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let title = lingo.localize("capital.location.trader.title", locale: locale)
         // intro carries its own inline HTML — lore prose + an italic closing
         // quote — so the renderer mustn't wrap it again.
-        let intro = lingo.localize("capital.trader.intro", gender: session.gender, locale: locale)
+        let intro = lingo.localize("capital.trader.intro", locale: locale)
         let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
             "silver": "\(session.silver)"
         ])
@@ -1015,33 +1015,25 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         switch result {
         case .paid(let def, let payout):
             let questTitle = lingo.localize(def.titleKey, locale: locale)
-            var text = "✅ " + lingo.localize("quest.banner.paid", locale: locale, interpolations: [
+            let text = "✅ " + lingo.localize("quest.banner.paid", locale: locale, interpolations: [
                 "quest": questTitle,
                 "reward": Self.rewardPhrase(
                     QuestReward(silver: payout.silver, xp: payout.xp, vigor: payout.vigor),
                     lingo: lingo, locale: locale
                 )
             ])
-            // Echo the same level-up lines a combat victory would show, so a
-            // quest that levels the player reads identically to a kill that does.
-            if let xpResult = payout.xpResult, xpResult.levelsGained > 0 {
-                text += "\n🎉 " + lingo.localize("level_up.banner", locale: locale, interpolations: [
-                    "level": "\(xpResult.newLevel)"
-                ])
-                if xpResult.maxHpGained > 0 {
-                    text += " 💪 " + lingo.localize("level_up.stat_boost", locale: locale, interpolations: [
-                        "hp": "\(xpResult.maxHpGained)",
-                        "atk": "\(xpResult.attackGained)",
-                        "def": "\(xpResult.defenseGained)"
-                    ])
-                }
-                if xpResult.estateLeveledUp {
-                    text += "\n🏰 " + lingo.localize("estate_up.banner", locale: locale, interpolations: [
-                        "tier": "\(xpResult.newEstateLevel)"
-                    ])
-                }
-            }
             await postStatusBanner(text, context: context)
+            if let xpResult = payout.xpResult, xpResult.levelsGained > 0 {
+                // A plain message, not another status banner — `postStatusBanner`
+                // deletes the previous one, and this must not eat the payout —
+                // and best-effort, because this function cannot throw.
+                _ = try? await context.bot.sendMessage(
+                    session: context.session,
+                    text: LevelUpBanner.text(for: context.session, newLevel: xpResult.newLevel,
+                                             growth: xpResult.growth, lingo: lingo, locale: locale),
+                    parseMode: .html
+                )
+            }
         case .notEnough(let have, let need):
             await postStatusBanner("❌ " + lingo.localize("quest.not_enough", locale: locale, interpolations: [
                 "have": "\(have)", "need": "\(need)"
@@ -1483,7 +1475,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         // Unknown callback prefixes — forward to MainController which
-        // owns `pstyle:` (profile style switch) + `explore:` + `combat:`
+        // owns `journal:` (the quest journal) + `explore:` + `combat:`
         // and has a default "delete stale inline message" fallback.
         // Returning false here would trigger Router's
         // unsupportedContentType ("Unsupported content type.") response,

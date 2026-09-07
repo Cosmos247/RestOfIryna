@@ -205,7 +205,9 @@ let button = TGInlineKeyboardButton(text: "Label", callbackData: "prefix:value")
 lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 ```
 
-**Gendered text (uk feminitives):** Ukrainian strings that address the player with a gendered word (past-tense `-в/-ла`, adjective, or намісник/-иця) use the gender-aware overload — `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`. It looks up `key.m`/`key.f` for `uk` and the plain `key` for English (so **never duplicate English** — only `uk.json` gets `.m`/`.f`). Player gender (`User.gender`, "m"/"f", nil=male) is chosen at registration step 1. When adding new player-facing uk copy with a gendered word, either add `.m`/`.f` + route through this overload, or phrase it neutrally (impersonal/plural/passive). Full key list + rationale in `.memory/localization.md`.
+**The player is addressed as «ви» (uk).** Every Ukrainian string that speaks to the player uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-ите`, imperative `-іть/-те` — NPC speech included. That settles past tense and adjectives on its own (both go plural), so the only thing left that declines by gender is a **noun naming the player**: намісник/-иця, воїне/войовнице.
+
+**Gendered text (uk feminitives):** Ukrainian strings that name the player with a gendered noun use the gender-aware overload — `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`. It looks up `key.m`/`key.f` for `uk` and the plain `key` for English (so **never duplicate English** — only `uk.json` gets `.m`/`.f`). Player gender (`User.gender`, "m"/"f", nil=male) is chosen at registration step 1. Thirteen keys still need it; nine collapsed to single keys on 2026-09-07 when «ви» made their two variants identical. When new copy names the player, either add `.m`/`.f` + route through this overload, or phrase around the noun. Full key list + rationale in `.memory/localization.md`.
 
 ### Daily resets (`Swift/Helpers/GameDay.swift`)
 
@@ -257,7 +259,7 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 ### Documentation Updates
 - Update `TODO.md` progress markers when tasks complete
 - Add new localization keys to both `en.json` and `uk.json` simultaneously
-- For uk strings that address the player with a gendered word, follow the gendered-text rule (see Localization above): `.m`/`.f` in `uk.json` + the `gender:` overload, or neutral phrasing
+- Write new uk player-facing copy in «ви» (see Localization above); add `.m`/`.f` + the `gender:` overload only when the string names the player with a gendered noun
 - Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`. Full table in `.memory/localization.md`.
 - If adding new controllers/models, update the file map in README.md's Project Structure section
 

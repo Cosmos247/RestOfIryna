@@ -259,7 +259,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
 
     func promptEstateName(context: Context) async throws {
         let nickname = context.session.nickname ?? "?"
-        let prompt = context.lingo.localize("registration.estate.prompt", gender: context.session.gender, locale: context.session.locale, interpolations: ["name": nickname])
+        let prompt = context.lingo.localize("registration.estate.prompt", locale: context.session.locale, interpolations: ["name": nickname])
         // Strip any leftover reply keyboard (combat buttons after the rabid-dog
         // fight) so the player can't tap a button label as their estate name.
         let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))
@@ -450,7 +450,7 @@ extension Registration {
             context.session.registrationStep = 5
             context.session.routerName = registration.routerName
             try await context.session.saveAndCache(in: context.db)
-            let retryText = context.lingo.localize("registration.dog_retry", gender: context.session.gender, locale: context.session.locale)
+            let retryText = context.lingo.localize("registration.dog_retry", locale: context.session.locale)
             // Clear the combat reply keyboard before the rabid-dog photo
             // (the photo carries an inline button, so it can't also carry
             // ReplyKeyboardRemove on the same message).
