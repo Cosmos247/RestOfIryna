@@ -97,7 +97,12 @@ public struct QuestDef: Sendable {
     public let id: String
     public let npc: QuestNPC
     public let objective: QuestObjective
+    /// Authored reward at level 1. What the player is actually paid grows with
+    /// their level — see `QuestService.scaledReward`.
     public let reward: QuestReward
+    /// Level from which the job is offered. The pool is filtered before the
+    /// daily hash, so an unreachable job is never assigned.
+    public let minLevel: Int
 
     public var titleKey: String { "quest.\(id).title" }
     public var descKey: String  { "quest.\(id).desc" }
@@ -125,19 +130,30 @@ public enum QuestCatalog {
         return Catalogs.current.questsById[id]
     }
 
-    /// The job `npc` is offering `userId` on the game day `stamp`.
+    /// The job `npc` is offering `userId` on the game day `stamp`, at `level`.
     ///
     /// Deterministic by construction: no RNG, no stored assignment. Note this
     /// deliberately avoids Swift's `Hasher`, which is seeded per process — the
     /// pick has to survive a bot restart mid-day.
-    public static func daily(npc: QuestNPC, userId: UUID, stamp: String) -> QuestDef {
-        let pool = pools[npc] ?? []
-        // Pools are compile-time constants and never empty; the fallback only
-        // exists so the signature stays non-optional at every call site.
+    ///
+    /// `level` filters the pool BEFORE the hash. Jobs whose materials live at
+    /// km 11 (iron) or behind an estate room (the forge, the kitchen) are not
+    /// offered to a player who cannot reach them — a daily that cannot be done
+    /// is a day with one fewer job, not a challenge. The validator guarantees
+    /// every pool keeps at least one level-1 job, so the filtered pool is never
+    /// empty for a real player.
+    public static func daily(npc: QuestNPC, userId: UUID, stamp: String, level: Int) -> QuestDef {
+        let all = pools[npc] ?? []
+        let pool = all.filter { $0.minLevel <= level }
+        // Pools are content and never empty; both fallbacks only exist so the
+        // signature stays non-optional at every call site.
         guard !pool.isEmpty else {
-            return QuestDef(id: "\(npc.rawValue).none", npc: npc,
-                            objective: .counter(.beastKill, target: 1),
-                            reward: QuestReward(silver: 0))
+            guard let first = all.first else {
+                return QuestDef(id: "\(npc.rawValue).none", npc: npc,
+                                objective: .counter(.beastKill, target: 1),
+                                reward: QuestReward(silver: 0), minLevel: 1)
+            }
+            return first
         }
         let key = "\(userId.uuidString):\(npc.rawValue):\(stamp)"
         return pool[Int(stableHash(key) % UInt64(pool.count))]

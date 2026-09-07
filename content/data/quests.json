@@ -5,6 +5,7 @@
       "quests" : [
         {
           "id" : "trader.hides",
+          "minLevel" : 1,
           "objective" : {
             "itemIds" : [
               "mat.hide"
@@ -13,11 +14,12 @@
             "target" : 10
           },
           "reward" : {
-            "silver" : 60
+            "silver" : 30
           }
         },
         {
           "id" : "trader.iron",
+          "minLevel" : 8,
           "objective" : {
             "itemIds" : [
               "mat.iron"
@@ -26,18 +28,47 @@
             "target" : 5
           },
           "reward" : {
-            "silver" : 100
+            "silver" : 50
           }
         },
         {
           "id" : "trader.bulk_day",
+          "minLevel" : 6,
           "objective" : {
             "counter" : "traderSilver",
             "kind" : "counter",
             "target" : 300
           },
           "reward" : {
-            "silver" : 60
+            "silver" : 30
+          }
+        },
+        {
+          "id" : "trader.lumber",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "mat.pine_lumber"
+            ],
+            "kind" : "deliver",
+            "target" : 5
+          },
+          "reward" : {
+            "silver" : 25
+          }
+        },
+        {
+          "id" : "trader.berries",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "food.forest_berries"
+            ],
+            "kind" : "deliver",
+            "target" : 6
+          },
+          "reward" : {
+            "silver" : 25
           }
         }
       ]
@@ -47,6 +78,7 @@
       "quests" : [
         {
           "id" : "master.ore",
+          "minLevel" : 10,
           "objective" : {
             "itemIds" : [
               "mat.iron"
@@ -55,32 +87,64 @@
             "target" : 8
           },
           "reward" : {
-            "silver" : 100,
-            "xp" : 40
+            "silver" : 50,
+            "xp" : 20
           }
         },
         {
           "id" : "master.smelt",
+          "minLevel" : 7,
           "objective" : {
             "counter" : "ironIngotForged",
             "kind" : "counter",
             "target" : 1
           },
           "reward" : {
-            "silver" : 120,
-            "xp" : 60
+            "silver" : 60,
+            "xp" : 30
           }
         },
         {
           "id" : "master.blade_trial",
+          "minLevel" : 1,
           "objective" : {
             "counter" : "beastKill",
             "kind" : "counter",
             "target" : 5
           },
           "reward" : {
-            "silver" : 50,
-            "xp" : 80
+            "silver" : 25,
+            "xp" : 40
+          }
+        },
+        {
+          "id" : "master.kindling",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "mat.pine_lumber"
+            ],
+            "kind" : "deliver",
+            "target" : 5
+          },
+          "reward" : {
+            "silver" : 25,
+            "xp" : 20
+          }
+        },
+        {
+          "id" : "master.whetstone",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "mat.river_pebble"
+            ],
+            "kind" : "deliver",
+            "target" : 6
+          },
+          "reward" : {
+            "silver" : 25,
+            "xp" : 20
           }
         }
       ]
@@ -90,6 +154,7 @@
       "quests" : [
         {
           "id" : "tavern.cook",
+          "minLevel" : 4,
           "objective" : {
             "itemIds" : [
               "food.roasted_meat",
@@ -99,12 +164,13 @@
             "target" : 3
           },
           "reward" : {
-            "silver" : 60,
+            "silver" : 30,
             "vigor" : 25
           }
         },
         {
           "id" : "tavern.supplies",
+          "minLevel" : 1,
           "objective" : {
             "itemIds" : [
               "food.raw_meat"
@@ -113,20 +179,51 @@
             "target" : 6
           },
           "reward" : {
-            "silver" : 60,
+            "silver" : 30,
             "vigor" : 20
           }
         },
         {
           "id" : "tavern.lucky_hand",
+          "minLevel" : 5,
           "objective" : {
             "counter" : "gambleWin",
             "kind" : "counter",
             "target" : 3
           },
           "reward" : {
-            "silver" : 50,
+            "silver" : 25,
             "vigor" : 30
+          }
+        },
+        {
+          "id" : "tavern.nuts",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "food.forest_nuts"
+            ],
+            "kind" : "deliver",
+            "target" : 6
+          },
+          "reward" : {
+            "silver" : 25,
+            "vigor" : 20
+          }
+        },
+        {
+          "id" : "tavern.berries",
+          "minLevel" : 1,
+          "objective" : {
+            "itemIds" : [
+              "food.forest_berries"
+            ],
+            "kind" : "deliver",
+            "target" : 6
+          },
+          "reward" : {
+            "silver" : 25,
+            "vigor" : 20
           }
         }
       ]

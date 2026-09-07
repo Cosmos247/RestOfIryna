@@ -881,11 +881,19 @@ public enum ContentValidator {
                 // unearnable board entry.
                 require(!pool.quests.isEmpty, file: file, path: "\(poolPath).quests", id: pool.npc,
                         rule: "quest.pool_empty", "pool is empty — daily() would hand out a synthetic job paying nothing")
+                // `daily` filters the pool by the player's level before hashing.
+                // A pool whose cheapest job starts above level 1 would leave a
+                // fresh player with a board that offers nothing at all.
+                require(pool.quests.contains { $0.minLevel <= 1 }, file: file, path: "\(poolPath).quests", id: pool.npc,
+                        rule: "quest.no_level_one_job",
+                        "every job in this pool starts above level 1 — a fresh player would be offered nothing (lowest is \(pool.quests.map(\.minLevel).min() ?? 0))")
 
                 for (index, def) in pool.quests.enumerated() {
                     let path = "\(poolPath).quests[\(index)]"
                     require(def.objective.target >= 1, file: file, path: "\(path).objective.target", id: def.id,
                             rule: "quest.target", "target must be >= 1, found \(def.objective.target)")
+                    require(def.minLevel >= 1, file: file, path: "\(path).minLevel", id: def.id,
+                            rule: "quest.min_level", "minLevel must be >= 1, found \(def.minLevel)")
                     switch def.objective.kind {
                     case .deliver:
                         require(!def.objective.itemIds.isEmpty, file: file, path: "\(path).objective.itemIds",

@@ -109,9 +109,13 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
 | 11 Wipe + final pass | ⬜ — the opening ledger (its one pre-playtest debt) landed 2026-09-02 |
 
-**Current digest baseline (Phase 10):** `records ee3fa4731c5a3a27`,
-`tuning 3ef097038094a4d8`, `spawns eaea309f4813dfa2`,
-`quests 2e52ecdfa45276ec` (schema **v10**).
+**Current digest baseline (2026-09-07):** `records 0ff4f5c01c2c7b43`,
+`tuning fa84304a356e65a0`, `spawns eaea309f4813dfa2`,
+`quests 30de20902006e3b9` (schema **v10**).
+
+The 2026-09-07 quest retune moved three of the four: `records` (halved rewards plus the new `minLevel` band), `tuning` (the quest reward curve in `economy.json` — which held on its first run, because the digest was not hashing the new knob yet; hashing it was the fix) and `quests` (the daily pick is filtered by level before the hash, and the replay sweeps levels 1/8/20 now). `spawns` held, as it must — no foraging band moved.
+
+Before it, and unmoved since Phase 10: `records ee3fa4731c5a3a27`, `tuning 3ef097038094a4d8`, `quests 2e52ecdfa45276ec`.
 
 Phase 10 moved `records` and `spawns` and held `tuning` and `quests` — the two
 halves predicted before the edit, which is the whole point of splitting them.

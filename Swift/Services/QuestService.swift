@@ -38,6 +38,10 @@ public enum QuestService {
         /// Units done: live bag count for `deliver`, stored progress for `counter`.
         public let done: Int
         public let target: Int
+        /// What this job pays THIS player — the authored reward scaled to their
+        /// level. The board and the journal must quote this, not `def.reward`,
+        /// or the screen promises one number and the payout hands over another.
+        public let reward: QuestReward
         /// The player took the job at the NPC. False = the board is showing an
         /// offer, not a job in progress.
         public let accepted: Bool
@@ -87,13 +91,13 @@ public enum QuestService {
     ) async throws -> QuestDef {
         let stamp = GameDay.stamp(now)
         guard let userId = user.id else {
-            return QuestCatalog.daily(npc: npc, userId: UUID(), stamp: stamp)
+            return QuestCatalog.daily(npc: npc, userId: UUID(), stamp: stamp, level: user.level)
         }
         if let row = try await QuestProgress.find(userId: userId, npc: npc, stamp: stamp, on: db),
            let stored = QuestCatalog.find(row.questId) {
             return stored
         }
-        return QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp)
+        return QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp, level: user.level)
     }
 
     /// Today's row, created on demand.
@@ -108,7 +112,7 @@ public enum QuestService {
         if let existing = try await QuestProgress.find(userId: userId, npc: npc, stamp: stamp, on: db) {
             return existing
         }
-        let def = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp)
+        let def = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp, level: user.level)
         let fresh = QuestProgress(userID: userId, npc: npc, questId: def.id, dayStamp: stamp)
         try await fresh.save(on: db)
         return fresh
@@ -142,6 +146,7 @@ public enum QuestService {
             done = row?.progress ?? 0
         }
         return Status(def: def, done: done, target: def.objective.target,
+                      reward: scaledReward(def.reward, level: user.level),
                       accepted: accepted, claimed: claimed)
     }
 
@@ -171,6 +176,23 @@ public enum QuestService {
         row.accepted = true
         try await row.save(on: db)
         return .taken(def: def)
+    }
+
+    // MARK: - Reward scaling
+
+    /// The authored level-1 reward, grown to `level`. One function so the board,
+    /// the journal and the payout can never disagree; the curves themselves live
+    /// in `ProgressionMath` beside the ones they ride.
+    public static func scaledReward(_ base: QuestReward, level: Int) -> QuestReward {
+        let progression = Catalogs.current.tuningProgression
+        let scaled = ProgressionMath.questReward(
+            silver: base.silver, xp: base.xp, vigor: base.vigor,
+            level: level,
+            silverPerLevel: Catalogs.current.tuningEconomy.questRewards.silverPerLevel,
+            mobXP: progression.mobXP,
+            pool: progression.vigorPool
+        )
+        return QuestReward(silver: scaled.silver, xp: scaled.xp, vigor: scaled.vigor)
     }
 
     /// Units of any of `itemIds` currently in the player's bag.
@@ -272,7 +294,7 @@ public enum QuestService {
             }
         }
 
-        let payout = try await payOut(def.reward, to: user, on: db)
+        let payout = try await payOut(scaledReward(def.reward, level: user.level), to: user, on: db)
         row.claimed = true
         try await row.save(on: db)
         return .paid(def: def, payout: payout)

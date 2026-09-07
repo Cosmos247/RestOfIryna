@@ -254,8 +254,10 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline (Phase 10, schema v10):** `records ee3fa4731c5a3a27` ·
-`tuning 3ef097038094a4d8` · `spawns eaea309f4813dfa2` · `quests 2e52ecdfa45276ec`.
+**Current digest baseline (2026-09-07, schema v10):** `records 0ff4f5c01c2c7b43` ·
+`tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+
+The 2026-09-07 quest retune moved three of the four: `records` (halved rewards plus the new `minLevel` band), `tuning` (the quest reward curve in `economy.json` — which held on its first run, because the digest was not hashing the new knob yet; hashing it was the fix) and `quests` (the daily pick is filtered by level before the hash, and the replay sweeps levels 1/8/20 now). `spawns` held, as it must — no foraging band moved.
 
 Phase 10 moved `records` and `spawns` and held `tuning` and `quests` — the two
 halves predicted *before* the edit, which is the whole point of splitting the
@@ -316,7 +318,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (958 / 970 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (970 / 982 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator reports it. Deliberate, and **deferred past the

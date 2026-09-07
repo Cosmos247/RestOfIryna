@@ -59,9 +59,21 @@ multipliers". Both halves of that need correcting before anything is authored.
 | 30 | 190 | 23% | 9.5 = 26% | 1.9 = 5% | ×1.05 | ×1.24 |
 | 40 | 236 | 23% | 11.8 = 33% | 1.9 = 5% | ×1.04 | ×1.24 |
 
+**The strength ladder** — a whole-set multiplier against the 25% ceiling
+
+| ×total | of the members' budget | of the ceiling |
+|---|---|---|
+| ×1.07 | 7.2% | 29% |
+| ×1.13 | 13.4% | 53% |
+| ×1.19 | 19.5% | 78% |
+| ×1.24 | 24.7% | 99% |
+
 `cap allows` inverts the validator's 25%-of-members ceiling: the largest
 multiplier that would pass, under each reading of what it scales.
 <!-- /generated -->
+
+`cap allows` inverts the validator's 25%-of-members ceiling: the largest
+multiplier that would pass, under each reading of what it scales.
 
 **23% at every level.** The flat bonus is stable because its denominator is
 stable: the set never climbs, so 8.4 points against 36 is the same fraction at

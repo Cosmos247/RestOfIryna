@@ -241,21 +241,44 @@ the draft band lives and where content arrives after the rebalance.
 | **every row** | **23964** | |
 | **one player** — a single weapon ladder | **21734–21936** | |
 
-**The faucet** — one job per NPC per game day
+**The sinks that are not a ladder**
 
-| NPC | jobs | average silver |
+| sink | silver | note |
 |---|---|---|
-| trader | 3 | 73 |
-| master | 3 | 90 |
-| tavern | 3 | 57 |
-| **per day** | | **220** |
+| enchant one item to +5 | 1660 | ×5 filled slots = 8300 |
+| the Master's armour | 485 | one-off |
+| repair | 50% of value | per repair, ongoing |
+| found a guild | 500 | one-off, level 5 |
+| market listing | 5 | per lot, up to 5 |
+| arena tithe | 10% of the stake | the only PvP drain |
+| tavern food | 20–200 | per dish |
+| tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |
+
+**The faucet** — one job per NPC per game day, taken at the NPC
+
+| NPC | jobs | offered from | L1 | L8 | L20 | L40 |
+|---|---|---|---|---|---|---|
+| trader | 5 | 1 / 1 / 1 / 6 / 8 | 27 | 35 | 41 | 51 |
+| master | 5 | 1 / 1 / 1 / 7 / 10 | 25 | 38 | 47 | 59 |
+| tavern | 5 | 1 / 1 / 1 / 4 / 5 | 27 | 30 | 35 | 43 |
+| **per day** | | | **78** | **103** | **123** | **153** |
 <!-- /generated -->
 
-Put beside the pace: **220 silver a day over ~90 days is ~19,800 from quests
-alone**, before a single hide is sold — and hides add roughly 2.4 silver a kill
-across 3,925 kills. Against that, **the mandatory spend is 1,600 silver**, every
-other silver cost in the game is optional, and the largest optional one is
-enchanting at 1,660 an item.
+*AMENDED 2026-09-07 — the faucet was retuned by the finding below.* The authored
+rewards were halved, a job is now offered only from its own level band and taken
+by hand at the NPC, and what it pays grows with the player: silver linearly at
+1.5% a level, XP on the `mobXP` exponent so a job stays worth the same number of
+kills, Vigor on the pool it refills. Read off the four columns above, the daily
+take runs **78 → 153** across the arc where it used to be a flat **220** — never
+above the old number at any level, and roughly **10,000 over ~90 days** against
+the ~19,800 the old table implied. Six early jobs were authored alongside the
+bands (forage deliveries a level-1 player can actually finish), so each NPC now
+offers three at level 1 rather than one — the bands would otherwise have handed
+a new player the same job every day until level 6.
+
+Against that, **the mandatory spend is 1,600 silver**, every other silver cost in
+the game is optional, and the largest optional one is enchanting at 1,660 an
+item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 
 **The trader is the economy's only real drain, and using it is a choice.** Buying
 every material rather than gathering it costs ~21,900 — which is almost exactly

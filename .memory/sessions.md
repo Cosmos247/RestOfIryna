@@ -142,6 +142,96 @@ differently from a job in progress (reward yes, progress line no — a progress
 line would imply a counter that is not running), and the journal shows
 `📜 не взято · 🎁 <reward>` instead of `⏳ 0/5`.
 
+### 8. The hint that tells the player the capital exists
+
+Taking jobs by hand needs a nudge, or the counters sit at zero all day with
+nothing on screen explaining why. The one-shot tutorial hint was rewritten to
+lead with the job boards — one job a day each from the Trader, Master and
+Innkeeper, and it starts only when taken — with selling spare loot as the
+second errand. Key renamed `tutorial.trader_hint` → `tutorial.capital_hint`;
+the DB column keeps its original name, since renaming it buys nothing.
+
+**It also fires from the passive path now.** The hint had hung off
+`handleHomeReached` alone — the active walk back from km 0/1 — so a player who
+only ever sent the governor out on passive runs was never told the capital
+existed at all. It now fires from `PassiveExpeditionService.pushReportNotification`
+(the usual passive path), from `deliverPassiveReport` (the re-delivery fallback)
+and from the active walk, all gated by the same one-shot flag.
+
+**Answered while looking: jobs do refresh daily.** `QuestCatalog.daily` hashes
+`userId:npc:dayStamp`, and the stamp rolls at 12:00 Kyiv, so a new game day
+derives a fresh job per NPC out of a pool of three (the same one recurs about a
+third of the time). Yesterday's row simply stops matching the stamp: no
+carry-over of progress, no penalty, and a job taken yesterday has to be taken
+again today.
+
+### 9. Daily jobs got level bands and a reward curve
+
+Two faults, one cause — a flat reward and an unfiltered pool.
+
+**Three of nine jobs were impossible before level 7.** `mat.iron` is foraged only
+from km 11 (the Old Wood), where a level-5 player has no business — the ledger
+puts survival, not Vigor, as the binding constraint past km 11 — and the only
+other source is a Mine plot, which needs an estate slot (T2, level 4). So
+`trader.iron`, `master.ore` and `master.smelt` (which also needs the forge, T3 =
+level 7) could be assigned to a level-1 player as their one job for the day.
+
+**And `master.blade_trial` (kill 5 beasts, +80 XP) is 67% of a level at 1 and
+0.036% at 20** — the same reward worth 1,800× more at one end of the game than
+the other, for the same five minutes of work.
+
+Fixed as: `QuestDefDTO.minLevel` filters the pool BEFORE the daily hash (trader
+1/6/8 · master 1/7/10 · tavern 1/4/5, so the level-1 board is hides, five kills
+and raw meat), and the authored reward is halved and then scaled at payout by
+`ProgressionMath.questReward`, each currency on the curve it belongs to:
+
+- **XP** on the `mobXP` exponent, so a job is worth the same NUMBER OF KILLS at
+  every level — the invariant checks out exactly (40 base = 4 level-1 kills at
+  L1, 4,156 = 4 level-20 kills at L20).
+- **Vigor** on the pool it refills, so a portion stays the same share of the bar.
+- **Silver** linearly, and slowly.
+
+**The silver rate was chosen by arithmetic, not by feel.** At the 4%/level I
+first wrote, the level-40 daily came to 282 against today's flat 220 — a "cut"
+that raised the number at the end of the game, where `spec-economy.md` says the
+surplus already is. At 1.5% the arc runs 85 → 175, under the old flat 220 at
+every level, and the lifetime take lands near 12k against ~19.8k.
+
+**The bands had a cost, and it was paid rather than argued away.** Filtering the
+pool by level left each NPC with exactly ONE reachable job below level 4 — the
+same three jobs every day until level 6 at the trader and 7 at the master. Six
+early jobs were authored to fix it (forage deliveries out of the first zone:
+5 pine lumber, 6 berries, 6 nuts, 6 river pebbles), so a level-1 board offers
+three per NPC, the same variety the late game has. This is new content in a
+release that had ruled new content out — taken deliberately, on the grounds that
+a band without an early pool behind it is worse than no band.
+
+The faucet after both changes: **78 → 153 silver a day** across the arc, against
+a flat 220 before.
+
+### What this one taught about the tools
+
+**The digest had a blind spot and the change walked straight into it.** Adding
+`questRewards.silverPerLevel` to `tuning/economy.json` moved nothing: the tuning
+half hashes named constants, and a new one is invisible until it is added. A
+balance knob outside the digest is a knob whose edits nobody can detect — so it
+is hashed now, and the half moved on the next run. Worth remembering as a rule:
+**a new tuning field is not covered until the digest names it.**
+
+**Two spec blocks never reproduced from their own markers.** The verbatim check
+run over all ten generated blocks found `spec-economy.md` and `spec-sets.md`
+quoting two fragments of one command's output with a whole section silently
+skipped between them — and `spec-sets.md` had a sentence of prose living INSIDE
+the markers, which can never reproduce. Not drift in the numbers; drift in the
+mechanism that is supposed to detect drift. Both blocks are contiguous excerpts
+now, the prose moved below its marker, and all ten reproduce.
+
+Validator rules gained `quest.min_level` and `quest.no_level_one_job` (a pool
+whose cheapest job starts above level 1 leaves a fresh player with nothing) —
+both negative-tested, and the first attempt at that test was itself wrong: it
+raised a job that was not the pool's level-1 one, so the rule stayed correctly
+silent.
+
 ### What the review caught, after all four already worked
 
 - The `grantXP` doc comment was mangled by my own edit — and the parenthetical it

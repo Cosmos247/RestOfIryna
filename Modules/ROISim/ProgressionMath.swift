@@ -45,6 +45,39 @@ public enum ProgressionMath {
         )
     }
 
+    /// What a daily job actually pays a player of `level`, from the reward the
+    /// content authors at level 1.
+    ///
+    /// Each of the three currencies rides the curve it belongs to, which is
+    /// what stops a reward from rotting the way a flat number does:
+    ///   • **XP** rides `mobXP`'s exponent, so a job is worth the same NUMBER
+    ///     OF KILLS at every level. A flat 80 XP was two thirds of a level at 1
+    ///     and 0.04% of one at 20 — the same reward, 1,800× the value.
+    ///   • **Vigor** rides the pool it refills (100 + 5L), so a portion stays
+    ///     the same share of the bar it tops up.
+    ///   • **Silver** grows linearly, and slowly: prices climb over a lifetime
+    ///     but nothing like the XP curve, and quests are already the game's
+    ///     largest silver faucet.
+    public static func questReward(
+        silver: Int, xp: Int, vigor: Int,
+        level: Int,
+        silverPerLevel: Double,
+        mobXP: MobXPDTO,
+        pool: VigorPoolDTO
+    ) -> (silver: Int, xp: Int, vigor: Int) {
+        let steps = Double(Swift.max(0, level - 1))
+        let scaledSilver = Double(silver) * (1 + silverPerLevel * steps)
+        let scaledXP = Double(xp) * pow(Double(Swift.max(1, level)), mobXP.exponent)
+        let poolNow = Double(maxVigor(at: level, pool: pool))
+        let poolAtOne = Double(Swift.max(1, maxVigor(at: 1, pool: pool)))
+        let scaledVigor = Double(vigor) * poolNow / poolAtOne
+        return (
+            silver: Int(scaledSilver.rounded()),
+            xp: Int(scaledXP.rounded()),
+            vigor: Int(scaledVigor.rounded())
+        )
+    }
+
     /// XP required to advance from `nextLevel - 1` → `nextLevel`:
     /// `max(round(c · L^e), floor · L)` where L is the level being left.
     ///

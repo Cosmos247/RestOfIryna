@@ -952,7 +952,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // is already running, and it is not.
             lines.append("📜 " + lingo.localize("quest.not_taken", locale: locale))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
         } else {
             lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
@@ -960,7 +960,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "target": "\(status.target)"
             ]))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
         }
         return lines.joined(separator: "\n")

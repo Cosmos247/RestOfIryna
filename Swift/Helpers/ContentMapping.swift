@@ -337,7 +337,8 @@ extension QuestDefDTO {
     func toDomain(npc: QuestNPC) throws -> QuestDef {
         QuestDef(id: id, npc: npc,
                  objective: try objective.toDomain(questId: id),
-                 reward: reward.domain)
+                 reward: reward.domain,
+                 minLevel: minLevel)
     }
 }
 

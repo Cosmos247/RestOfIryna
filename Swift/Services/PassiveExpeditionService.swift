@@ -668,6 +668,20 @@ public enum PassiveExpeditionService {
             ))
         }
 
+        // First trip home earns the capital nudge — same one-shot flag the
+        // active walk-back uses. This is the path that actually runs when the
+        // push succeeds, so without it a player who only ever sends the
+        // governor out passively would never be told where jobs come from.
+        if !user.tutorialTraderHintShown {
+            let hint = lingo.localize("tutorial.capital_hint", locale: locale)
+            if (try? await bot.sendMessage(params: TGSendMessageParams(
+                chatId: .chat(user.telegramId), text: hint, parseMode: .html
+            ))) != nil {
+                user.tutorialTraderHintShown = true
+                try? await user.saveAndCache(in: db)
+            }
+        }
+
         // Auto-close the expedition cycle — delete state so the next Explore
         // tap shows a fresh mode picker and nav buttons unlock immediately.
         try? await ExplorationState.end(for: user, on: db)

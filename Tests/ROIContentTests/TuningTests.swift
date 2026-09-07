@@ -160,7 +160,7 @@ final class TuningTests: XCTestCase {
                          victory: Int = 1, defeat: Int = 3, flee: Int = 3) -> EconomyTuningDTO {
         EconomyTuningDTO(gear: GearEconomyDTO(
             maxDurabilityStart: durability, repairMaxShave: shave,
-            wearBudget: WearBudgetDTO(victory: victory, defeat: defeat, flee: flee)))
+            wearBudget: WearBudgetDTO(victory: victory, defeat: defeat, flee: flee)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015))
     }
 
     private func time(scale: Double = 1.0,

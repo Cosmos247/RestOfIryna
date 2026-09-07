@@ -232,12 +232,12 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             if status.claimed {
                 stateLine = "✅ " + lingo.localize("journal.status.claimed", locale: locale)
             } else if !status.accepted {
-                let reward = Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "📜 " + lingo.localize("journal.status.not_taken", locale: locale) + " · 🎁 \(reward)"
             } else if status.isActionable {
                 stateLine = "🎁 " + lingo.localize("journal.status.ready", locale: locale)
             } else {
-                let reward = Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
             }
             lines.append(contentsOf: ["", "<b>\(npcLabel)</b>", questTitle, stateLine])

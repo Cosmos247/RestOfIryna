@@ -547,7 +547,7 @@
   "travel.cannot_start.no_hp": "💀 You are too wounded to set out. Rest first.",
   "travel.cannot_start.no_vigor": "😵 You are too exhausted for the road. Eat first.",
   "exploration.blocked_in_capital": "🏛 The wilderness only borders your estate. Return home before you set out hunting.",
-  "tutorial.trader_hint": "💡 <i>There's a Trader in the Capital — sell him the spare loot you bring back from the wilderness, so your bag doesn't fill up with junk.</i>",
+  "tutorial.capital_hint": "💡 <i>Jobs are taken in the Capital — one a day each from the Trader, the Master and the Innkeeper, and they pay in silver, XP and Vigor. A job only starts once you take it, so nothing counts until you walk in. While you're there, sell the Trader your spare loot so your bag doesn't fill up with junk.</i>",
   "combat.round": "Round %{n}",
   "menu.cmd.description": "Menu",
   "menu.cmd.help": "Help",
@@ -956,5 +956,17 @@
   "quest.tavern.supplies.title": "Hunter's supplies",
   "quest.tavern.supplies.desc": "The larder is empty. Bring 6 cuts of raw meat.",
   "quest.tavern.lucky_hand.title": "Lucky hand",
-  "quest.tavern.lucky_hand.desc": "Win 3 rounds of dice or darts at the inn."
+  "quest.tavern.lucky_hand.desc": "Win 3 rounds of dice or darts at the inn.",
+  "quest.trader.lumber.title": "Timber order",
+  "quest.trader.lumber.desc": "The carpenters are waiting on boards. Bring 5 pine beams.",
+  "quest.trader.berries.title": "Provisions for the road",
+  "quest.trader.berries.desc": "Travellers buy what keeps. Bring 6 handfuls of forest berries.",
+  "quest.master.kindling.title": "The forge is cold",
+  "quest.master.kindling.desc": "A forge does not light itself. Bring 5 pine beams.",
+  "quest.master.whetstone.title": "Whetstone",
+  "quest.master.whetstone.desc": "River stone grinds an edge best. Bring 6 river pebbles.",
+  "quest.tavern.nuts.title": "Something with the ale",
+  "quest.tavern.nuts.desc": "Nuts empty a jug faster. Bring 6 handfuls of forest nuts.",
+  "quest.tavern.berries.title": "Sweet course",
+  "quest.tavern.berries.desc": "The innkeeper promised a tart. Bring 6 handfuls of forest berries."
 }

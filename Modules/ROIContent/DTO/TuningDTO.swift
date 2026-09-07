@@ -1097,18 +1097,41 @@ public struct GearEconomyDTO: Codable, Sendable, Equatable {
     }
 }
 
-public struct EconomyTuningDTO: Codable, Sendable {
-    public let gear: GearEconomyDTO
+/// How a daily job's authored reward grows with the player's level. The XP and
+/// Vigor sides need no constant of their own: XP rides the `mobXP` exponent so
+/// a job stays worth the same number of kills at every level, and Vigor rides
+/// the pool it refills.
+public struct QuestRewardTuningDTO: Codable, Sendable, Equatable {
+    /// Silver multiplier per level above 1: `base × (1 + rate × (L − 1))`.
+    public let silverPerLevel: Double
 
-    public init(gear: GearEconomyDTO) {
-        self.gear = gear
+    public init(silverPerLevel: Double) {
+        self.silverPerLevel = silverPerLevel
     }
 
-    private enum CodingKeys: String, CodingKey { case gear }
+    private enum CodingKeys: String, CodingKey { case silverPerLevel }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        silverPerLevel = try c.decode(Double.self, forKey: .silverPerLevel)
+    }
+}
+
+public struct EconomyTuningDTO: Codable, Sendable {
+    public let gear: GearEconomyDTO
+    public let questRewards: QuestRewardTuningDTO
+
+    public init(gear: GearEconomyDTO, questRewards: QuestRewardTuningDTO) {
+        self.gear = gear
+        self.questRewards = questRewards
+    }
+
+    private enum CodingKeys: String, CodingKey { case gear, questRewards }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         gear = try c.decode(GearEconomyDTO.self, forKey: .gear)
+        questRewards = try c.decode(QuestRewardTuningDTO.self, forKey: .questRewards)
     }
 }
 

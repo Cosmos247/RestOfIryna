@@ -325,6 +325,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 parseMode: .html
             )
         }
+
+        try await showCapitalHintIfNeeded(context: context)
     }
 
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
@@ -521,18 +523,30 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     /// Clean arrival at the estate after Step Back from km 0 or km 1.
     /// Deletes the ExplorationState row and drops to main menu. On the very
-    /// first successful return, also fires a one-shot tutorial hint pointing
-    /// the player at the capital trader (gated by `tutorialTraderHintShown`).
+    /// first successful return, also fires the one-shot capital hint.
     private func handleHomeReached(context: Context, state: ExplorationState) async throws {
         try await state.delete(on: context.db)
         try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+        try await showCapitalHintIfNeeded(context: context)
+    }
 
-        if !context.session.tutorialTraderHintShown {
-            let hint = context.lingo.localize("tutorial.trader_hint", locale: context.session.locale)
-            try await context.bot.sendMessage(session: context.session, text: hint, parseMode: .html, replyMarkup: nil)
-            context.session.tutorialTraderHintShown = true
-            try await context.session.saveAndCache(in: context.db)
-        }
+    /// One-shot nudge toward the capital, sent the first time the player gets
+    /// home with something in the bag. It leads with the job boards because a
+    /// daily job does not start itself — it is taken at the NPC — so a player
+    /// who never walks into town never sees one, and the counters would sit at
+    /// zero all day with nothing on screen explaining why.
+    ///
+    /// Fires from BOTH ways home: walking back from an active expedition and
+    /// collecting a passive report. It used to hang off the active walk alone,
+    /// so a player who only ever sent the governor out on passive runs was
+    /// never told the capital existed. Gated by `tutorialTraderHintShown` —
+    /// the column keeps its original name; the hint it gates has grown.
+    fileprivate func showCapitalHintIfNeeded(context: Context) async throws {
+        guard !context.session.tutorialTraderHintShown else { return }
+        let hint = context.lingo.localize("tutorial.capital_hint", locale: context.session.locale)
+        try await context.bot.sendMessage(session: context.session, text: hint, parseMode: .html, replyMarkup: nil)
+        context.session.tutorialTraderHintShown = true
+        try await context.session.saveAndCache(in: context.db)
     }
 
     private func goToMainMenu(context: Context, text: String) async throws {

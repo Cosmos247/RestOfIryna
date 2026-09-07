@@ -328,13 +328,20 @@ enum ContentDigest {
         var questRNG = SplitMix64(seed: seed)
         var quests = OutcomeDigest()
         var questCounts: [String: Int] = [:]
+        // Levels are part of the derivation since 2026-09-07: the pool is
+        // filtered by `minLevel` before the hash, so the same player draws a
+        // different job at 1, at 8 and at 20. Replaying one level would leave a
+        // whole band of the content unfingerprinted.
+        let questLevels = [1, 8, 20]
         for _ in 0..<questDraws {
             let userId = seededUUID(&questRNG)
             for stamp in questStamps {
                 for npc in QuestNPC.allCases {
-                    let id = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp).id
-                    quests.combine(id)
-                    questCounts[id, default: 0] += 1
+                    for level in questLevels {
+                        let id = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp, level: level).id
+                        quests.combine(id)
+                        questCounts[id, default: 0] += 1
+                    }
                 }
             }
         }
@@ -345,7 +352,7 @@ enum ContentDigest {
         print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
-        print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs)")
+        print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs × \(questLevels.count) levels)")
         print("COMBINED \(digest.hexDigest)")
         print("")
         liveLookupCheck()
@@ -787,6 +794,10 @@ enum ContentDigest {
         // — but hashed so that stays a decision rather than an oversight.
         for slot in GearConditionService.durableSlots.sorted() { d.combine(slot) }
         for slot in GearConditionService.armorSlots.sorted() { d.combine(slot) }
+        // The quest reward curve: a balance knob is only guarded once it is
+        // hashed. This one was added and the half held, which is exactly the
+        // blind spot the digest exists to close.
+        d.combine("\(Catalogs.current.tuningEconomy.questRewards.silverPerLevel)")
 
         // MARK: time.json
         //
@@ -919,6 +930,7 @@ enum ContentDigest {
         return [
             def.id, def.npc.rawValue, objective, "target\(def.objective.target)",
             "silver\(def.reward.silver)/xp\(def.reward.xp)/vigor\(def.reward.vigor)",
+            "minLevel\(def.minLevel)",
             def.titleKey, def.descKey
         ].joined(separator: " · ")
     }

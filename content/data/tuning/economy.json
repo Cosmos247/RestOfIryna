@@ -7,5 +7,8 @@
       "flee" : 2,
       "victory" : 1
     }
+  },
+  "questRewards" : {
+    "silverPerLevel" : 0.015
   }
 }

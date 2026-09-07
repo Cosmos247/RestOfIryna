@@ -451,20 +451,43 @@ public enum SpecTables {
             out.append("| tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |")
         }
 
-        if let q = content.quests {
+        if let q = content.quests, let tuning = content.tuning {
+            let progression = tuning.progression
+            let economy = tuning.economy
+            // A job is offered only from its `minLevel` and its reward grows with
+            // the player, so a single average would describe nobody. The columns
+            // are the average silver across the jobs a player of that level is
+            // actually offered, scaled by the same `ProgressionMath.questReward`
+            // the payout runs.
+            let levels = [1, 8, 20, 40]
             out.append("")
-            out.append("**The faucet** — one job per NPC per game day")
+            out.append("**The faucet** — one job per NPC per game day, taken at the NPC")
             out.append("")
-            out.append("| NPC | jobs | average silver |")
-            out.append("|---|---|---|")
-            var perDay = 0.0
+            out.append("| NPC | jobs | offered from | " + levels.map { "L\($0)" }.joined(separator: " | ") + " |")
+            out.append("|---|---|---|" + String(repeating: "---|", count: levels.count))
+            var perDay = [Double](repeating: 0, count: levels.count)
             for pool in q.pools {
-                let avg = pool.quests.reduce(0.0) { $0 + Double($1.reward.silver) }
-                    / Double(max(1, pool.quests.count))
-                perDay += avg
-                out.append(String(format: "| %@ | %d | %.0f |", pool.npc, pool.quests.count, avg))
+                let bands = pool.quests.map(\.minLevel).sorted()
+                var cells: [String] = []
+                for (i, level) in levels.enumerated() {
+                    let offered = pool.quests.filter { $0.minLevel <= level }
+                    guard !offered.isEmpty else { cells.append("—"); continue }
+                    let avg = offered.reduce(0.0) { sum, def in
+                        sum + Double(ProgressionMath.questReward(
+                            silver: def.reward.silver, xp: def.reward.xp, vigor: def.reward.vigor,
+                            level: level,
+                            silverPerLevel: economy.questRewards.silverPerLevel,
+                            mobXP: progression.mobXP, pool: progression.vigorPool).silver)
+                    } / Double(offered.count)
+                    perDay[i] += avg
+                    cells.append(String(format: "%.0f", avg))
+                }
+                out.append("| \(pool.npc) | \(pool.quests.count) | "
+                           + bands.map(String.init).joined(separator: " / ") + " | "
+                           + cells.joined(separator: " | ") + " |")
             }
-            out.append(String(format: "| **per day** | | **%.0f** |", perDay))
+            out.append("| **per day** | | | "
+                       + perDay.map { String(format: "**%.0f**", $0) }.joined(separator: " | ") + " |")
         }
 
         // The opening, which is the only stretch with no estate behind it and the

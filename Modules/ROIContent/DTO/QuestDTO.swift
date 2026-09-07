@@ -113,20 +113,27 @@ public struct QuestDefDTO: Codable, Sendable, Equatable {
     public let id: String
     public let objective: QuestObjectiveDTO
     public let reward: QuestRewardDTO
+    /// Player level from which this job is offered at all. The pool is filtered
+    /// before the daily hash runs, so a job whose materials live at km 11 or
+    /// behind an estate room simply is not offered to someone who cannot reach
+    /// them. Every pool must keep at least one job at level 1.
+    public let minLevel: Int
 
-    public init(id: String, objective: QuestObjectiveDTO, reward: QuestRewardDTO) {
+    public init(id: String, objective: QuestObjectiveDTO, reward: QuestRewardDTO, minLevel: Int = 1) {
         self.id = id
         self.objective = objective
         self.reward = reward
+        self.minLevel = minLevel
     }
 
-    private enum CodingKeys: String, CodingKey { case id, objective, reward }
+    private enum CodingKeys: String, CodingKey { case id, objective, reward, minLevel }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id        = try c.decode(String.self, forKey: .id)
         objective = try c.decode(QuestObjectiveDTO.self, forKey: .objective)
         reward    = try c.decode(QuestRewardDTO.self, forKey: .reward)
+        minLevel  = (try? c.decode(Int.self, forKey: .minLevel)) ?? 1
     }
 }
 
