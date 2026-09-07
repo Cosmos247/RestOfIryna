@@ -109,6 +109,44 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
 | 11 Wipe + final pass | ⬜ — the opening ledger (its one pre-playtest debt) landed 2026-09-02 |
 
+### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
+
+Two faults with one cause — a flat reward and an unfiltered pool.
+
+**Three of nine jobs were impossible before level 7.** `mat.iron` is foraged only from
+km 11 (the Old Wood), where the opening ledger puts survival rather than Vigor as the
+binding constraint, and the only other source is a Mine plot behind an estate slot
+(T2 = player level 4). So `trader.iron`, `master.ore` and `master.smelt` (which also
+needs the forge, T3 = level 7) could be handed to a level-1 player as their one job.
+
+**And a flat XP reward is worth 1,800× more at one end of the game than the other.**
+`master.blade_trial` paid 80 XP for five kills: 67% of a level at 1, 0.036% at 20.
+
+Fixed as: `minLevel` per job, filtered BEFORE the daily hash (the pool is content, the
+filter is not a difficulty dial — a daily that cannot be done is a day with one fewer
+job); authored rewards halved; and payout scaled by `ProgressionMath.questReward`, each
+currency on the curve it belongs to — **XP on the `mobXP` exponent** so a job stays worth
+the same NUMBER OF KILLS, **Vigor on the pool it refills**, **silver linearly at 1.5% a
+level**. The silver rate came from arithmetic: at the 4% first written, the level-40 daily
+came to 282 against the old flat 220 — a cut that raises the number where the surplus
+already is.
+
+**Bands alone left one reachable job per NPC below level 4**, so six early forage
+deliveries were authored (5 lumber · 6 berries · 6 nuts · 6 pebbles, split across the
+three NPCs). That is new content in a release that ruled new content out — taken
+deliberately on the user's call, because a band with no early pool behind it is worse
+than no band. `spec-economy.md` §4 is *AMENDED* and its faucet table regenerated: the
+daily take is **78 → 153 silver across the arc** where it was a flat 220, ≈10k over a
+90-day lifetime against ~19.8k.
+
+Two tool findings came out of it. **A new tuning constant is invisible to the digest
+until the digest names it** — `questRewards.silverPerLevel` was added to `economy.json`
+and the `tuning` half did not move; hashing it was the fix. And the verbatim check over
+all ten generated spec blocks found **two that never reproduced from their own markers**
+(`spec-economy`, `spec-sets`): two fragments of one command's output with a section
+silently skipped between them, one with prose living inside the markers. Not drift in the
+numbers — drift in the mechanism meant to detect drift.
+
 **Current digest baseline (2026-09-07):** `records 0ff4f5c01c2c7b43`,
 `tuning fa84304a356e65a0`, `spawns eaea309f4813dfa2`,
 `quests 30de20902006e3b9` (schema **v10**).

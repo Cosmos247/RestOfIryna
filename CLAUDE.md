@@ -72,13 +72,33 @@ it runs at type-init and traps before `ContentBootstrap.load`.
 `tuning/time.json` splits `gameTime` (multiplied by `scale`) from `realTime` (never
 is): Telegram's 24 h dice-delete window is a protocol constant, not a balance knob.
 
+**A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides
+WHICH job each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00
+Kyiv — but the offer sits on the board until the player accepts it at the NPC
+(`QuestProgress.accepted`, `QuestService.accept`). `record` neither creates nor ticks
+an unaccepted row, so taking a job STARTS the count and never backfills the day. Each
+job also carries a `minLevel`, and the pool is filtered before the hash so a job whose
+materials sit at km 11 or behind an estate room is never offered to someone who cannot
+reach it; the validator refuses a pool whose cheapest job starts above level 1. Rewards
+are authored at level 1 and scaled at payout by `ProgressionMath.questReward` — XP on
+the `mobXP` exponent (a job is worth the same NUMBER OF KILLS at every level), Vigor on
+the pool it refills, silver linearly — so the board must quote `Status.reward`, never
+`def.reward`.
+
 **Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
 level-up grant are the only sources, and the estate's plots are the intended income —
 which is what makes the pool plus the food in the bag the real limit on how deep the
 wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
 one deliberately did not pause during an expedition, so a player could stand at km 25
 and wait out a full pool. HP regeneration is a different mechanic and stays
-(`HealingService`, and it DOES pause in the wilderness).
+(`HealingService`, and it DOES pause in the wilderness) — but it is **computed
+lazily on interaction**, so both ends of an expedition are stamped explicitly:
+`suspendResting` when one begins, `beginResting` when the player lands home
+(RouterStore's post-dispatch check covers every screen path; the passive report
+push and a travel arrival cover the background ones). Miss the first and a passive
+run refunds its own damage; miss the second and the stretch between coming home
+and the next tap heals nothing. A tick that only runs on interaction cannot
+observe a transition that happens while nobody is interacting.
 
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
 = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
@@ -94,6 +114,14 @@ Two consequences worth knowing before touching gear:
   +32 DEF is 267% of a level-1 chest and 14% of a level-40 one; the same rule caught
   `hawks_eye` granting +115% crit at level 1 and +21% at the cap. No flat number works
   at both ends, and `roi-content simulate` now audits every lift for exactly this.
+
+**A weapon ladder is ONE object.** The three upgradable weapons render through
+`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word
+in common: the player is upgrading a thing, not swapping it for a different one, and the
+screens that name a weapon generically (the Master's `capital.master.repair.weapon.<class>`)
+cannot follow a noun that changes. `locale.ladder_name_drift` warns when no word survives.
+Wherever a label describes an inventory ROW rather than a shop listing, pass the row's
+tier — `CapitalController.itemLabel(_:tier:lingo:locale:)`.
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build

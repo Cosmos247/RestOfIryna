@@ -34,7 +34,7 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 - [Session & Auth](session-auth.md) — User model, session cache, authorization flow
 - [Localization](localization.md) — Lingo setup, JSON structure, interpolation, adding locales
 
-## Phase 11 quick orientation (2026-09-02)
+## Phase 11 quick orientation (2026-09-02, extended 2026-09-07)
 
 - **The opening ledger** — `Modules/ROISim/OpeningLedger.swift`, printed by `simulate` and by
   `roi-content spec opening`. Prices levels 1–3 at every depth against the trail, the stretch
@@ -42,10 +42,35 @@ Session-persistent knowledge base. Each entry links to a detailed file.
   `spec-economy.md` §7 and inverts its prose. Warning: `opening.shallow_is_bankrupt`.
 - **`WipeForRebalance`** — `Swift/Migrations/WipeForRebalance.swift`, registered LAST, **not yet
   executed**; runs at the next bot launch. Explicit table list (a cascade would miss
-  `tavern_game_messages`, which has no FK) plus an `information_schema` self-check.
+  `tavern_game_messages`, which has no FK) plus an `information_schema` self-check. Two
+  migrations now run ahead of it in the same batch: `RemoveProfileStyle`, `AddQuestAccepted`.
 - **Read before trusting a printed number at level 1:** the report measures a full common kit
   and registration grants only the starter weapon — the absolute numbers are a ceiling. See the
   auto-memory `project-reference-character-vs-starting-kit`.
+- **The playtest is still the next action**, but the 2026-09-07 pass changed what it walks
+  into — the checklist of new surfaces is in `Prompt.md`.
+
+## The 2026-09-07 pre-push pass (four commits, no combat maths moved)
+
+Bug fixes, then a quest rebalance, then a naming audit. Full narrative in
+[Session History](sessions.md) (entries 1–12 of the 2026-09-07 session); the balance half is
+in [Rebalance](rebalance.md).
+
+- **One profile layout** (style switcher and `User.profileStyle` gone, `RemoveProfileStyle`),
+  the player addressed by their chosen nickname, a **level-up as its own message** listing all
+  seven level-derived stats, and the estate tier-up likewise (`LevelUpBanner`, `EstateUpBanner`).
+- **HP regen is stamped at both ends of an expedition** — `HealingService.beginResting` /
+  `suspendResting`. An interaction-driven tick cannot observe a transition that happens while
+  nobody is interacting, which is why one half healed nothing and the other refunded a run.
+- **Daily jobs are taken by hand**, carry a `minLevel` band, and their rewards ride curves
+  instead of being flat — see the auto-memory `project-quests-taken-by-hand`.
+- **The player is addressed as «ви»** in every uk string — auto-memory
+  `feedback-formal-address-vy`; nine gendered pairs collapsed as a result.
+- **A weapon ladder is one object** — the mage ladder used three nouns; `locale.ladder_name_drift`
+  now warns. Auto-memory `feedback-ladder-names-one-noun`.
+- **Two tool findings:** a new tuning constant is invisible to the digest until the digest
+  names it (auto-memory `feedback-digest-names-constants`), and two spec blocks never
+  reproduced from their own markers — both are contiguous excerpts now.
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

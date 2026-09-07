@@ -1005,6 +1005,33 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         Verified statically: a wiped database is not a broken one — `User._session` creates a
         row on first contact with `routerName = "registration"`, so the playtest starts at the
         actual beginning. **Not executed yet** — it runs at the next bot launch.
+  - [x] **Pre-push pass** *(2026-09-07, four commits)* — bug fixes and UX/balance work on top
+        of Phase 11, none of it moving a combat or progression number.
+        **Bugs:** the character screen renders one layout (`RemoveProfileStyle` drops
+        `profile_style`); **HP regen is stamped at both ends of an expedition**
+        (`HealingService.beginResting` / `suspendResting`) — an interaction-driven tick cannot
+        observe a transition that happens while nobody is interacting, so one half healed
+        nothing between coming home and the next tap and the other refunded a passive run's
+        whole damage; the player is addressed by their chosen nickname, never the Telegram
+        one; the level-up became its own message listing all seven level-derived stats, and
+        the estate tier-up likewise. `estateLeveledUp` was deleted — it compared a field
+        `grantXP` never touches, a leftover of the XP→estate design dropped 2026-06-16.
+        **Copy:** 170 uk strings moved to «ви»; nine gendered `.m`/`.f` pairs collapsed
+        because plural past tense is genderless; three latent gender bugs (keys with no
+        variants that shipped masculine) died with them.
+        **Quests:** a job is now **taken at the NPC** (`QuestProgress.accepted`) — `record`
+        neither creates nor ticks an unaccepted row, and taking a job starts the count rather
+        than backfilling the day; each job carries a `minLevel` filtered before the daily
+        hash; rewards were halved and now ride curves (XP on the `mobXP` exponent, Vigor on
+        the pool, silver 1.5%/level). Six early forage jobs authored so a level-1 board still
+        offers three per NPC — new content by explicit exception. Faucet 220 flat → 78–153.
+        **Naming:** the mage ladder used three nouns for one object; both ladders stay on
+        посох / Staff and `locale.ladder_name_drift` warns when no word survives a ladder.
+        The Master's screens rendered inventory rows through a tier-blind label.
+        **New screens:** an equipment sheet under the profile's journal, and the player's
+        purse on both trade screens. Digest: `records 0ff4f5c01c2c7b43` ·
+        `tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` (held) ·
+        `quests 30de20902006e3b9`. 234 tests.
   - [ ] **`scale` 60 → 1.0 — DEFERRED past the playtest** *(2026-09-02, user's call)*: the
         first-hour pass runs on compressed game time. Sound for what it measures — the opening
         has no game-time gate at all (no step cooldown, no estate below level 4, and Vigor

@@ -160,7 +160,7 @@ were superseded by Phases 4–6.
 ### Controllers
 - [x] RegistrationController — lore-driven 8-step flow (steps 0–7): language → **gender (step 1)** → Artanian welcome + name → class selection → King's Oath (grants starter weapon) → wolf encounter stub → estate naming → done. Gender (`set_gender:m|f`) is picked ahead of the name prompt so every later string renders the correct uk feminitive and the estate-reveal art picks the matching gender. "Done" is `User.registrationDoneStep` (= 7), replacing the old magic `6` in CombatController/configure. First message strips any leftover reply keyboard via `ReplyKeyboardRemove`. Nickname + estate-name inputs are validated against three character allow-lists (digits / Latin / Ukrainian) with separate error toasts for too short, too long, edge whitespace, consecutive spaces, and invalid characters; single internal spaces are permitted so two-word names work.
 - [x] Gender system (Phase 6.5) — `User.gender` ("m"/"f", nil=male) + `AddGender` migration + `CharacterGender` enum. Drives uk feminitives via the `Lingo.localize(_:gender:locale:)` overload (`.m`/`.f` in uk.json only; English stays neutral) across ~20 keys, and per-gender estate art `CharacterClass.journeyImageName(gender:)` → `Assets/registration/<class>_estate_<m|f>.jpg` (falls back to genderless file). Full rationale in `.memory/localization.md`.
-- [x] MainController — greeting, profile view (3 switchable styles), settings nav, Explore/Inventory/Estate/Capital nav buttons
+- [x] MainController — greeting (by the player's chosen nickname), profile view (one layout since 2026-09-07), settings nav, Explore/Inventory/Estate/Capital nav buttons. Two sub-screens edit the profile bubble in place: the quest journal (`journal:open`) and the equipment sheet (`gear:open` — six slots head-to-foot then hands, filled or empty, tier-aware names, `+N` enchant, `durability/max` with ⚠️ at zero)
 - [x] SettingsController — language change via inline keyboard
 - [x] GlobalCommandsController — /help, /settings, /buttons from any state
 - [x] ExplorationController — Phase 3.1 active-mode MVP: step → outcome narrative (nothing / loot / trip / encounter / starvation) with depth+HP+vigor status card, in-expedition bag view (scoped to consumables) with one-tap eat/use + in-place refresh, return-home button that ends ExplorationState, death flow that wipes non-equipped inventory and respawns at HP=1 (vigor preserved). Reply keyboard is [🚶 Step] [🎒 Bag] [🔙 Return] while expedition is active. Main/Inventory/Estate onExplore now call showExploration — resumes current ExplorationState (stepsDeep preserved across bag trips) or begins a fresh one at km 0.
@@ -179,8 +179,8 @@ were superseded by Phases 4–6.
 - [x] Dev profile reset flag for testing (resetDevProfile in configure.swift)
 
 ### Localization
-- [x] English (en.json) — 978 keys (2026-09-07)
-- [x] Ukrainian (uk.json) — 990 keys (+13 gendered `.m`/`.f` variants; the player is addressed as «ви» since 2026-09-07, which left gender only on nouns)
+- [x] English (en.json) — 975 keys (2026-09-07)
+- [x] Ukrainian (uk.json) — 987 keys (+13 gendered `.m`/`.f` variants; the player is addressed as «ви» since 2026-09-07, which left gender only on nouns)
 
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).

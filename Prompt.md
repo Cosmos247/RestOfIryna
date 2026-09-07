@@ -36,8 +36,10 @@ the maths. **This is the only work in flight.**
 ### Where we stopped
 
 **Phases 3–10 are done; Phase 11 is IN FLIGHT.** Two of its four pieces landed on
-2026-09-02 — the opening ledger and the `WipeForRebalance` migration — and the
-remaining work is a live session, not code.
+2026-09-02 — the opening ledger and the `WipeForRebalance` migration. On
+**2026-09-07** four more commits landed: a bug pass and a UX/balance pass that
+changed *what the first hour looks like* without moving a single combat or
+progression number. The remaining Phase 11 work is still a live session, not code.
 
 > ## Next action: **run the first-hour playtest.**
 >
@@ -66,7 +68,9 @@ remaining work is a live session, not code.
 > ```
 >
 > A boot failure saying `still holds N row(s)` means a table is missing from
-> `WipeForRebalance.playerTables`; the message names it. After the wipe the
+> `WipeForRebalance.playerTables`; the message names it. Two migrations run in the
+> same batch ahead of it now — `RemoveProfileStyle` (drops `profile_style`) and
+> `AddQuestAccepted` (adds `accepted` to `quest_progress`). After the wipe the
 > allowed accounts land in **registration** on their first message.
 >
 > **⚠️ Read this before trusting any printed number at level 1.** The whole
@@ -92,16 +96,66 @@ remaining work is a live session, not code.
 > | 10 | L1,4,7,10 | 2.0 | **+72** | 95% |
 > | 13 | L4,7,10,13 | 0.9 | +72 | 66% |
 >
-> **Untested surface worth touching on purpose:** a fight won, a fight lost and a
-> **flee** (the failed-Flee counter changed in 8C); Vigor only ever going down;
-> and one run of `/reload` + `/content`, which have never executed against a real
-> database — a freshly wiped one is the safest moment. Techniques unlock at levels
-> 8/11/14, so the first hour is basic attacks only, which is exactly the `.basic`
-> profile the sim measured.
+> **The 2026-09-07 pass changed the first hour — walk these on purpose:**
+>
+> - **Daily jobs are TAKEN, not handed out.** Nothing counts until the player
+>   accepts a job at the NPC in the capital, so the first hour now includes a trip
+>   to town. Watch whether the one-shot hint (fired on the first return home, from
+>   all three paths) is enough to send them there. At level 1 each NPC offers three
+>   jobs — hides / 5 kills / raw meat, plus the six new forage deliveries.
+> - **The techniques button is gone below level 8**, so the combat keyboard is
+>   `[Attack][Defend] / [Flee]` for the whole first hour — which is exactly the
+>   `.basic` profile the sim measured.
+> - **A level-up is its own message** listing every stat that moved; the estate
+>   tier-up likewise. Both are new surfaces that have never rendered live.
+> - **The profile has an equipment sheet** (`🛡` under the journal) — six slots,
+>   durability with a ⚠️ at zero.
+> - **HP regen now starts the moment the player lands home**, from all three
+>   paths, and stops when an expedition begins. Both stamps are new.
+> - **Every uk string addresses the player as «ви».** 170 strings moved; a
+>   leftover «ти» is a bug worth reporting.
+>
+> **Also untested and worth touching:** a fight won, a fight lost and a **flee**
+> (the failed-Flee counter changed in 8C); Vigor only ever going down; the trade
+> screens (both now print the player's purse); and one run of `/reload` +
+> `/content`, which have never executed against a real database — a freshly wiped
+> one is the safest moment.
 >
 > **Then, still owed before release:** `tuning/time.json` → `scale` 60 → **1.0**.
 > Deferred past the playtest on 2026-09-02 at the user's call, not cancelled — it
 > is the only error `validate --strict` still reports.
+
+### What the 2026-09-07 pass landed (four commits)
+
+Bug fixes first (`29b233c`): the character screen renders **one** layout (the
+style switcher and `User.profileStyle` are gone); **HP regen is stamped at both
+ends of an expedition** (`HealingService.beginResting` / `suspendResting`) —
+without the first stamp the stretch between coming home and the next tap healed
+nothing, without the second a passive run the player never tapped through refunded
+its whole damage; the player is addressed by their **chosen nickname**, never the
+Telegram one; and a **level-up is its own message** listing all seven
+level-derived stats. The estate line that used to ride along could never print —
+`estateLeveledUp` compared a field `grantXP` does not touch — so it was deleted and
+the real event got `EstateUpBanner`. 170 uk strings moved to «ви», nine gendered
+pairs collapsed.
+
+Then quests (`34825fc`, `f80a514`): **a job is taken at the NPC**, `record` no
+longer creates rows, and taking a job starts the count rather than backfilling it.
+Each job carries a `minLevel` (trader 1/1/1/6/8 · master 1/1/1/7/10 · tavern
+1/1/1/4/5) and the pool is filtered before the daily hash. Authored rewards were
+halved and are scaled at payout, each currency on the curve it belongs to. **Six
+early forage jobs were authored** so a level-1 board still offers three per NPC —
+new content in a release that had ruled it out, taken deliberately, because a band
+with no early pool behind it is worse than no band. The faucet went from a flat
+**220 silver a day to 78 → 153** across the arc.
+
+Finally naming and screens (`d8cfb0c`): the mage ladder read патериця → посох →
+жезл (Staff → Rod → Scepter in en) — one object under three nouns, while the
+Master's repair button names a fourth. Both ladders stay on посох / Staff, and
+`locale.ladder_name_drift` now warns when no word survives a ladder. The Master's
+repair and enchant screens rendered inventory rows through a tier-blind label, so a
+tier-5 weapon showed under its tier-1 name. Both trade screens print the player's
+purse; the profile gained an equipment sheet.
 
 **What Phase 10 changed (2026-09-01).** Six enemies re-levelled — boar 1, moose 4,
 bison 7, lynx 10, wolf 13, bear 16, rabid bear 22 — with `depth` following the
@@ -318,7 +372,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (978 / 990 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (975 / 987 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator reports it. Deliberate, and **deferred past the

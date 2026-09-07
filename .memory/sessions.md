@@ -304,6 +304,37 @@ both negative-tested, and the first attempt at that test was itself wrong: it
 raised a job that was not the pool's level-1 one, so the rule stayed correctly
 silent.
 
+### 13. The closing sweep (docs, memories, dead keys)
+
+A pass with no feature work: make every document say what is true and leave a fresh
+session able to continue without the transcript.
+
+**Three genuinely dead locale keys removed** — `consume.not_consumable`,
+`estate.plot.alert.harvested` (superseded by `harvested_to_bag` /
+`harvested_multi` when the destination picker landed) and `guild.manage.back_btn`.
+Found by scanning every key for a literal Swift reference and discounting the
+id-derived families; 975 / 987 keys after.
+
+**One gap found and deliberately NOT fixed, because it needs a decision.**
+`not.allowed.ask.invite` exists in both locales and nothing reads it: the
+unauthorized-user refusal is a **hardcoded English string** in
+`TGDispatcher.swift:54`, and it even names a different handle (`@SixPathsOfMax`)
+than the locale text does (`@TGUserName`, which reads as a stub). Wiring the
+dispatcher to Lingo would regress the message unless the handle is settled first,
+and the refusal happens before a session exists, so the locale would have to come
+from Telegram's `language_code`. Left for the user to choose between wiring it up
+(with a real handle) and dropping the key.
+
+**Documentation reoriented rather than appended to.** `Prompt.md`'s "where we
+stopped" now names the four commits and, more usefully, lists **what the
+2026-09-07 pass changed under the playtest's feet** — jobs must be taken in town,
+the techniques key is absent below level 8, the level-up and tier-up bubbles have
+never rendered live, the rest clock is stamped at both ends, and a leftover «ти»
+is now a bug. `CLAUDE.md` gained the two rules a fresh session would otherwise
+rediscover: a daily job is taken by hand, and a weapon ladder is one object.
+`TODO.md`, `.memory/{INDEX,status,rebalance,file-map,localization}.md` and four
+new auto-memories carry the rest.
+
 ### What the review caught, after all four already worked
 
 - The `grantXP` doc comment was mangled by my own edit — and the parenthetical it

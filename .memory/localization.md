@@ -251,7 +251,7 @@ row's tier: `CapitalController.itemLabel(_:tier:lingo:locale:)`. The Master's
 repair and enchant screens were showing a tier-5 weapon under its tier-1 name
 while the profile and the inventory showed the real one.
 
-## Current Keys (978 en / 990 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
+## Current Keys (975 en / 987 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
 
