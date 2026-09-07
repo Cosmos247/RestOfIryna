@@ -105,6 +105,43 @@ eleven call sites moved from the `gender:` overload to the plain one. Thirteen
 pairs remain, every one of them because the copy names the player
 (намісник/-иця, воїне/войовнице). uk went 975 → 966 keys.
 
+### 6. The techniques button is gone until level 8
+
+In a fight below level 8 the second keyboard row was `[🪄 Прийоми][Втекти]`, and
+the menu behind that first key could only ever answer "nothing yet" — a dead key
+on the busiest screen in the game. It now appears from the earliest technique
+gate, read as the minimum `requiredLevel` in `tuning/combat.json` (8 / 11 / 14),
+so moving a gate moves the button with it. A **level** check rather than the
+learned set, because `generateControllerKB` is synchronous and has no database;
+the level is also what "unlocked" means on the Training Ground. The text handler
+stays registered, so a stale keyboard from chat history still gets the polite
+"🔒 Немає готових прийомів" instead of "Unsupported content type".
+
+### 7. A daily job has to be taken at the NPC
+
+The day still decides WHICH job each NPC offers — `QuestCatalog.daily`, a stable
+hash, untouched, and the `quests` digest half confirms it did not move. What
+changed is that the offer now sits on the board until the player takes it:
+`QuestProgress.accepted` (`AddQuestAccepted`), `QuestService.accept`, and a
+`📜 Взяти замовлення` button on the board.
+
+Two consequences worth stating, because they are the design and not an accident:
+
+- **`record` no longer creates rows.** It used to derive the day's job and open
+  a row on the first matching gameplay event, which is precisely what made a job
+  auto-active. Now an absent or unaccepted row is an early exit — cheaper too,
+  since most events match no NPC at all and no longer pay for a catalog
+  derivation.
+- **Taking a job starts the count; it does not backfill.** Five kills before
+  accepting the Master's blade trial are five kills that do not count. That is
+  the honest reading of "take the job", and it is what makes the choice mean
+  something.
+
+`finish` gained `.notTaken` for a stale hand-in tap, the board renders an offer
+differently from a job in progress (reward yes, progress line no — a progress
+line would imply a counter that is not running), and the journal shows
+`📜 не взято · 🎁 <reward>` instead of `⏳ 0/5`.
+
 ### What the review caught, after all four already worked
 
 - The `grantXP` doc comment was mangled by my own edit — and the parenthetical it

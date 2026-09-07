@@ -230,7 +230,7 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
-## Current Keys (954 en / 966 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
+## Current Keys (958 en / 970 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
 

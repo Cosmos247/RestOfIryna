@@ -313,10 +313,10 @@ warehouse, workshop, kitchen, weapon/bag/estate upgrades, technique gates) ·
 capital hub (travel, Trader, Tavern with dice/darts, Fortune Teller, Master with
 durability + enchant, player Market, synchronous Trade) · Guilds (roster, invites,
 item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
-budget) · daily NPC quests derived from a stable hash + quest journal.
+budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (954 / 966 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (958 / 970 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator reports it. Deliberate, and **deferred past the

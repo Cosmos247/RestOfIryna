@@ -231,6 +231,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             let stateLine: String
             if status.claimed {
                 stateLine = "✅ " + lingo.localize("journal.status.claimed", locale: locale)
+            } else if !status.accepted {
+                let reward = Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+                stateLine = "📜 " + lingo.localize("journal.status.not_taken", locale: locale) + " · 🎁 \(reward)"
             } else if status.isActionable {
                 stateLine = "🎁 " + lingo.localize("journal.status.ready", locale: locale)
             } else {

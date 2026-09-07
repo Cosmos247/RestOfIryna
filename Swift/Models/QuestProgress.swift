@@ -10,6 +10,11 @@
 //  and copied into `questId` at creation, so a mid-day catalog edit can't swap
 //  the job out from under a player who already made progress.
 //
+//  A row existing does NOT mean the job is running: `accepted` is what starts
+//  it, and the player sets that by taking the job at the NPC. Opening the board
+//  creates the row so the offer is stable for the day; nothing counts until the
+//  job is taken.
+//
 //  Rows are never deleted — yesterday's row simply stops matching today's
 //  stamp. That leaves a cheap, permanent record of completed dailies (useful
 //  later for streaks and stats).
@@ -45,6 +50,12 @@ final public class QuestProgress: Model, @unchecked Sendable {
     @Field(key: "progress")
     public var progress: Int
 
+    /// The player took the job at the NPC. Nothing counts before this: the
+    /// row can exist merely because the board was opened, and a counter event
+    /// only ticks a row that was accepted.
+    @Field(key: "accepted")
+    public var accepted: Bool
+
     /// Reward taken. Terminal — one payout per NPC per day.
     @Field(key: "claimed")
     public var claimed: Bool
@@ -63,6 +74,7 @@ final public class QuestProgress: Model, @unchecked Sendable {
         self.questId = questId
         self.dayStamp = dayStamp
         self.progress = 0
+        self.accepted = false
         self.claimed = false
     }
 }

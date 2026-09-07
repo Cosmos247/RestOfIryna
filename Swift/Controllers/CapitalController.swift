@@ -947,6 +947,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         if status.claimed {
             // Done for today — the progress line would just restate the target.
             lines.append("✅ " + lingo.localize("quest.done_today", locale: locale))
+        } else if !status.accepted {
+            // An offer, not a job: a progress line here would imply the counter
+            // is already running, and it is not.
+            lines.append("📜 " + lingo.localize("quest.not_taken", locale: locale))
+            lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+                "reward": Self.rewardPhrase(status.def.reward, lingo: lingo, locale: locale)
+            ]))
         } else {
             lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
                 "done": "\(status.done)",
@@ -974,6 +981,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     private func questBoardKeyboard(status: QuestService.Status, npc: QuestNPC, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
+        if !status.accepted && !status.claimed {
+            rows.append([TGInlineKeyboardButton(
+                text: lingo.localize("quest.button.take", locale: locale),
+                callbackData: "quest:take:\(npc.rawValue)"
+            )])
+        }
         if status.isActionable {
             // Deliver jobs "hand in", counter jobs "collect" — same callback,
             // different word, because the player is doing a different thing.
@@ -1004,6 +1017,22 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     /// Turn in / claim, then re-render the board so it flips to its "done for
     /// today" state under the player's finger.
+    private func handleQuestTake(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let result = try await QuestService.accept(npc: npc, for: context.session, on: context.db)
+        let lingo = context.lingo, locale = context.session.locale
+        switch result {
+        case .taken(let def):
+            await postStatusBanner("📜 " + lingo.localize("quest.banner.taken", locale: locale, interpolations: [
+                "quest": lingo.localize(def.titleKey, locale: locale)
+            ]), context: context)
+        case .alreadyTaken:
+            break   // the board below already shows it as running
+        case .alreadyClaimed:
+            await postStatusBanner("❌ " + lingo.localize("quest.done_today", locale: locale), context: context)
+        }
+        try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+    }
+
     private func handleQuestFinish(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let result = try await QuestService.finish(npc: npc, for: context.session, on: context.db)
         await postQuestResultBanner(result, context: context)
@@ -1044,6 +1073,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             ]), context: context)
         case .alreadyClaimed:
             await postStatusBanner("❌ " + lingo.localize("quest.done_today", locale: locale), context: context)
+        case .notTaken:
+            await postStatusBanner("❌ " + lingo.localize("quest.not_taken", locale: locale), context: context)
         }
     }
 
@@ -1086,6 +1117,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.editToQuestBoard(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("quest:take:") {
+            let token = String(data.dropFirst("quest:take:".count))
+            guard let npc = QuestNPC(rawValue: token) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleQuestTake(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
         if data.hasPrefix("quest:do:") {

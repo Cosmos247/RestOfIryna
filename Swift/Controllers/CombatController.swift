@@ -173,14 +173,33 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = session.locale
         let attack = TGKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale))
         let defend = TGKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale))
-        let tech   = TGKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale))
         let trailing: TGKeyboardButton
         if let state = state, Self.isTraining(state) {
             trailing = TGKeyboardButton(text: lingo.localize("combat.button.training_exit", locale: locale))
         } else {
             trailing = TGKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale))
         }
+        // The techniques row only exists once the first kind is unlockable
+        // (level 8). Below that the menu behind it has nothing to list but its
+        // own "nothing yet" note, so the button is a dead key on the busiest
+        // screen in the game. Level, not the learned set: reaching the level is
+        // what "unlocked" means on the Training Ground, and the check has to
+        // stay synchronous — `generateControllerKB` has no database.
+        guard Self.techniquesUnlocked(for: session) else {
+            return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [trailing]], resizeKeyboard: true)
+        }
+        let tech = TGKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale))
         return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [tech, trailing]], resizeKeyboard: true)
+    }
+
+    /// True once the player's level reaches the earliest technique gate.
+    /// Computed, never a `static let` — it reads `tuning/combat.json` through
+    /// the live snapshot, and a stored property would run before it loads.
+    private static func techniquesUnlocked(for session: User) -> Bool {
+        let firstGate = CombatService.TechniqueKind.allCases
+            .map { CombatService.requiredLevel(for: $0) }
+            .min() ?? 0
+        return session.level >= firstGate
     }
 
     /// Wrapper for sendMessage callers that want a full TGReplyMarkup.

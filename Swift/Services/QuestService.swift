@@ -4,16 +4,22 @@
 //
 //  Created by Dmytro Ihnatyuhin on 23.08.2026.
 //
-//  Phase 9.2 — the whole daily-quest loop: read today's job, tick counters from
-//  gameplay events, hand items in, pay out.
+//  Phase 9.2 — the whole daily-quest loop: read today's job, take it at the
+//  NPC, tick counters from gameplay events, hand items in, pay out.
+//
+//  **A job has to be taken before it runs** (2026-09-07). The day still decides
+//  WHICH job each NPC offers — `QuestCatalog.daily`, a stable hash — but the
+//  offer sits on the board until the player accepts it in the capital, and
+//  `record` ticks nothing before that. Taking a job starts the count; it never
+//  backfills what happened earlier in the day.
 //
 //  Two objective shapes, two very different progress stories:
 //    • `deliver` — progress is READ LIVE from the bag, never stored. Nothing to
 //      keep in sync, and the player can gather in any order, anywhere. The
 //      items are consumed at turn-in, which also pays the reward in one step.
 //    • `counter` — progress is accumulated by `record(...)` from hook sites in
-//      combat / crafting / the trader / the tavern. Once it hits the target the
-//      player claims the reward at the NPC.
+//      combat / crafting / the trader / the tavern, and only for a row the
+//      player accepted. Once it hits the target the reward is claimed at the NPC.
 //
 //  Every payout goes through `payOut`, so silver / XP / Vigor accounting (and
 //  the level-up banner data) lives in exactly one place.
@@ -32,10 +38,13 @@ public enum QuestService {
         /// Units done: live bag count for `deliver`, stored progress for `counter`.
         public let done: Int
         public let target: Int
+        /// The player took the job at the NPC. False = the board is showing an
+        /// offer, not a job in progress.
+        public let accepted: Bool
         public let claimed: Bool
 
         /// Show the action button — the job is finishable right now.
-        public var isActionable: Bool { !claimed && done >= target }
+        public var isActionable: Bool { accepted && !claimed && done >= target }
     }
 
     /// What a payout actually moved. `xpResult` carries the level-up / estate-up
@@ -47,8 +56,17 @@ public enum QuestService {
         public let xpResult: User.XPGrantResult?
     }
 
+    /// Outcome of taking a job at the NPC.
+    public enum AcceptResult: Sendable {
+        case taken(def: QuestDef)
+        case alreadyTaken(def: QuestDef)
+        case alreadyClaimed
+    }
+
     public enum FinishResult: Sendable {
         case paid(def: QuestDef, payout: Payout)
+        /// The job was never taken — nothing to hand in.
+        case notTaken
         /// Deliver job, bag is short. `have`/`need` drive the toast.
         case notEnough(have: Int, need: Int)
         /// Counter job that hasn't reached its target yet.
@@ -112,6 +130,7 @@ public enum QuestService {
             def = try await activeQuest(for: user, npc: npc, on: db, now: now)
         }
         let claimed = row?.claimed ?? false
+        let accepted = row?.accepted ?? false
 
         let done: Int
         switch def.objective {
@@ -122,7 +141,36 @@ public enum QuestService {
         case .counter:
             done = row?.progress ?? 0
         }
-        return Status(def: def, done: done, target: def.objective.target, claimed: claimed)
+        return Status(def: def, done: done, target: def.objective.target,
+                      accepted: accepted, claimed: claimed)
+    }
+
+    // MARK: - Taking the job
+
+    /// Take today's job at `npc`. The offer itself is still decided by
+    /// `QuestCatalog.daily` — this only starts it, which is what makes a
+    /// counter event count.
+    @discardableResult
+    public static func accept(
+        npc: QuestNPC,
+        for user: User,
+        on db: any Database,
+        now: Date = Date()
+    ) async throws -> AcceptResult {
+        guard let row = try await rowForToday(user: user, npc: npc, on: db, now: now) else {
+            return .alreadyClaimed
+        }
+        let def: QuestDef
+        if let stored = QuestCatalog.find(row.questId) {
+            def = stored
+        } else {
+            def = try await activeQuest(for: user, npc: npc, on: db, now: now)
+        }
+        guard !row.claimed else { return .alreadyClaimed }
+        guard !row.accepted else { return .alreadyTaken(def: def) }
+        row.accepted = true
+        try await row.save(on: db)
+        return .taken(def: def)
     }
 
     /// Units of any of `itemIds` currently in the player's bag.
@@ -155,19 +203,15 @@ public enum QuestService {
         let stamp = GameDay.stamp(now)
 
         for npc in QuestNPC.allCases {
-            // Derive first, hit the DB second — most events match no NPC at all.
-            let derived = QuestCatalog.daily(npc: npc, userId: userId, stamp: stamp)
-            let existing = try await QuestProgress.find(userId: userId, npc: npc, stamp: stamp, on: db)
-            let def = existing.flatMap { QuestCatalog.find($0.questId) } ?? derived
+            // Only a job the player took can tick, so an absent row is an early
+            // exit rather than something to create. That also means an event
+            // fired before the job was taken is simply not counted — taking it
+            // starts the clock, it does not backfill.
+            guard let row = try await QuestProgress.find(userId: userId, npc: npc, stamp: stamp, on: db),
+                  row.accepted else { continue }
+            guard let def = QuestCatalog.find(row.questId) else { continue }
 
             guard case .counter(let wanted, let target) = def.objective, wanted == counter else { continue }
-
-            let row: QuestProgress
-            if let existing {
-                row = existing
-            } else {
-                row = QuestProgress(userID: userId, npc: npc, questId: def.id, dayStamp: stamp)
-            }
             guard !row.claimed, row.progress < target else { continue }
             row.progress = min(target, row.progress + amount)
             try await row.save(on: db)
@@ -189,6 +233,7 @@ public enum QuestService {
             return .alreadyClaimed
         }
         guard !row.claimed else { return .alreadyClaimed }
+        guard row.accepted else { return .notTaken }
         let def: QuestDef
         if let stored = QuestCatalog.find(row.questId) {
             def = stored
