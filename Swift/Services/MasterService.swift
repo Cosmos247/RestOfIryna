@@ -26,7 +26,9 @@ public enum MasterService {
     }
 
     public enum RepairResult: Sendable {
-        case success(itemId: String, cost: Int, newMax: Int)
+        /// `tier` travels with the id because the banner names the item, and
+        /// for the three upgradable weapons the name is the tier.
+        case success(itemId: String, tier: Int, cost: Int, newMax: Int)
         case alreadyFull
         case notEnoughSilver(have: Int, need: Int)
         case notArmor
@@ -111,7 +113,7 @@ public enum MasterService {
         try await row.save(on: db)
         try await EquipmentService.recomputeBonuses(for: user, on: db)
         try await user.saveAndCache(in: db)
-        return .success(itemId: row.itemId, cost: cost, newMax: newMax)
+        return .success(itemId: row.itemId, tier: row.tier, cost: cost, newMax: newMax)
     }
 
     // MARK: - Enchant

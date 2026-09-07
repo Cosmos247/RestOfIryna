@@ -58,6 +58,13 @@ public struct LocaleIndex: Sendable {
         Self.locales.filter { !has(key, locale: $0) }
     }
 
+    /// The string behind a key, or nil when the locale has no plain form for
+    /// it. Gendered keys are deliberately NOT resolved here: a caller that
+    /// wants text has to decide which variant it means.
+    public func value(_ key: String, locale: String) -> String? {
+        tables[locale]?[key]
+    }
+
     /// Every value that trips the Lingo interpolation bug.
     ///
     /// The rule (`.memory/localization.md`): any character wider than one

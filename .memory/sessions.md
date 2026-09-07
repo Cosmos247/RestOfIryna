@@ -209,6 +209,78 @@ a band without an early pool behind it is worse than no band.
 The faucet after both changes: **78 → 153 silver a day** across the arc, against
 a flat 220 before.
 
+### 10. The staff was called three different things
+
+Reported as "something is wrong with the staff name", and it was worse than one
+string. The mage ladder read **Дерев'яна патериця → Різьблений посох →
+Кришталевий посох → Магічний жезл → Жезл архімага**: three different nouns for
+one object being upgraded. English did the same at the top — Staff → Staff →
+Staff → Arcane **Rod** → Archmage's **Scepter**. And the Master's repair button
+is a per-class string that cannot follow a tier: "🔮 Наснажити посох" /
+"Re-empower staff" named an object the player no longer had. Both ladders now
+stay on посох / Staff, with the adjectives carrying the progression.
+
+**The audit found a second, structural fault.** `CapitalController.itemLabel`
+took an item id and nothing else, so it always resolved the BASE name key —
+and the Master's repair and enchant screens, its confirm prompts and its result
+banner all render inventory ROWS through it. A tier-5 weapon appeared there
+under its tier-1 name while the profile, the inventory, the trade screen and the
+workshop showed the real one. `itemLabel` takes a `tier` now, the four row-based
+call sites pass `row.tier`, and `MasterService.RepairResult.success` carries the
+tier so the banner can too (enchant is armour-only, which is why it never showed
+the fault).
+
+Everything else was already correct: the inventory, the profile's main-hand
+line, the trade screen and its offer summary, the workshop's upgrade preview all
+go through `ItemDisplay.nameKey(for:tier:)`. The loot, forage, market and guild
+vault paths use base names legitimately — none of them can hold a tiered weapon.
+
+**The bug is now mechanically detectable.** The validator already required every
+`item.<id>.t<tier>` key to exist; existence was never the problem. The new
+`locale.ladder_name_drift` warning requires a word of the first tier name to
+survive into every other tier name, in every locale — a substring match, since
+"Bow" lives on inside "Longbow" and Ukrainian declines. Negative-tested by
+restoring the old staff names: it fires on exactly that ladder and stays silent
+otherwise. `LocaleIndex` gained `value(_:locale:)` for it, since the rule needs
+the text and not just the key's presence.
+
+No digest half moved: locale VALUES are not fingerprinted (the records half
+hashes key names), and the item ids, tiers and stats are untouched.
+
+### 11. The trade screens show the player's purse
+
+Reported: at the bazaar's trade you cannot see how much silver you have. True on
+both screens — the bag screen's stake button showed only what was ALREADY
+staked, and the confirm screen showed the two offers and nothing else. The
+balance existed only inside the "how much silver?" prompt, which the player has
+to open before they can see whether opening it was worth it.
+
+Both now carry `🪙 capital.trader.silver_balance` — the same key and shape the
+trader and the Master screens use, so the number reads identically everywhere in
+the city. The confirm screen reads it fresh from the database rather than from
+`context.session`, because that render runs for BOTH sides and the session is
+only ever one of them.
+
+### 12. The profile got an equipment sheet
+
+`[🛡 Спорядження]` under the journal, opening in the same bubble the journal
+uses. It lists the six usable slots head-to-foot then hands — filled or empty, so the
+sheet answers "what am I not wearing?" as well as "what am I wearing?" — with
+the tier-aware name, `+N` enchant and `durability/max` for the slots a fight
+actually wears, ⚠️ at zero.
+
+Durability had been visible in exactly two places before: the item's detail card
+in the inventory, and the Master's repair list in the capital. A player could
+walk into the wilderness in broken armour without a screen that would have told
+them, and the profile — the screen they check before leaving — named only the
+main hand.
+
+`gear:back` shares the journal's return branch and its `journal.button.back`
+label ("🔙 До профілю"), which is where it goes. Eight new locale keys: the button, the
+title, a hint, and the five slot names the profile did not have (main hand
+already had one). The two accessory slots were dropped before the commit —
+nothing can fill them, so they were two permanent "(empty)" lines.
+
 ### What this one taught about the tools
 
 **The digest had a blind spot and the change walked straight into it.** Adding

@@ -230,7 +230,28 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
-## Current Keys (970 en / 982 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
+## 🗡 A weapon ladder is ONE object (2026-09-07)
+
+The three upgradable weapons resolve their display name through
+`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep
+a word in common: the player is upgrading a thing, not trading it for a
+different thing, and the screens that name the weapon generically — the Master's
+`capital.master.repair.weapon.<class>` ("🔮 Наснажити посох") — cannot follow a
+noun that changes. The mage ladder read **патериця → посох → посох → жезл →
+жезл** in uk and **Staff → Staff → Staff → Rod → Scepter** in en; both now stay
+on посох / Staff.
+
+`locale.ladder_name_drift` (warning) enforces it: some word of the first tier
+name must appear inside a word of every other tier name, in every locale. The
+substring test is deliberate — "Bow" survives into "Longbow", and Ukrainian
+declines ("посох" → "посоха").
+
+Where a label describes an inventory ROW rather than a shop listing, pass the
+row's tier: `CapitalController.itemLabel(_:tier:lingo:locale:)`. The Master's
+repair and enchant screens were showing a tier-5 weapon under its tier-1 name
+while the profile and the inventory showed the real one.
+
+## Current Keys (978 en / 990 uk as of 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
 

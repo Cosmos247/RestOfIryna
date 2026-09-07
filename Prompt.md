@@ -318,7 +318,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (970 / 982 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (978 / 990 keys). Auth is still gated to 4 hardcoded TG IDs.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator reports it. Deliberate, and **deferred past the

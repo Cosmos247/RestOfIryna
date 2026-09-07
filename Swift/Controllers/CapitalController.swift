@@ -680,12 +680,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     /// Localized "icon name" for an item (armor isn't tiered, so the base
     /// name key is fine).
-    private func itemLabel(_ itemId: String, lingo: Lingo, locale: String) -> String {
+    /// Icon + display name. `tier` matters only for the three upgradable
+    /// weapons, where the name IS the tier ("Wooden Staff" → "Archmage's
+    /// Staff"); everything else ignores it. Pass the row's tier whenever the
+    /// label describes a specific inventory row rather than a shop listing —
+    /// the Master's repair screen showed a tier-5 weapon under its tier-1 name
+    /// while the inventory and the profile showed the real one.
+    private func itemLabel(_ itemId: String, tier: Int = 1, lingo: Lingo, locale: String) -> String {
         guard let item = ItemCatalog.find(itemId) else { return itemId }
         // `item.icon` is optional — unwrap it, never interpolate the Optional
         // directly (that leaks "Optional(...)" into player-facing text).
         let iconPrefix = item.icon.map { "\($0) " } ?? ""
-        return "\(iconPrefix)\(lingo.localize(item.nameKey, locale: locale))"
+        return "\(iconPrefix)\(lingo.localize(ItemDisplay.nameKey(for: item, tier: tier), locale: locale))"
     }
 
     /// All owned armor rows (equipped or in the bag), sorted by slot.
@@ -754,7 +760,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // item name + current durability only.
         var rows: [[TGInlineKeyboardButton]] = needRepair.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id else { return nil }
-            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability)"
+            let label = "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")]
         }
         // The equipped weapon — its own class-flavoured label.
@@ -801,7 +807,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
             // Cost is shown on the confirm prompt — list shows just the level step.
-            let label = "\(itemLabel(row.itemId, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level)"
+            let label = "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) · +\(row.enchantLevel)→+\(step.level)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:enchant:\(id.uuidString)")]
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
@@ -844,7 +850,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let isWeapon = ItemCatalog.find(row.itemId)?.slot.map { GearConditionService.weaponSlots.contains($0.rawValue) } == true
         let cost = isWeapon ? MasterCatalog.weaponRepairCost(missing: missing) : MasterCatalog.repairCost(itemId: row.itemId, missing: missing)
         let text = lingo.localize("capital.master.confirm.repair", locale: locale, interpolations: [
-            "item": itemLabel(row.itemId, lingo: lingo, locale: locale),
+            "item": itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale),
             "cur": "\(row.durability)", "max": "\(row.maxDurability)", "cost": "🪙 \(cost)"
         ])
         let kb = masterConfirmKeyboard(yes: "master:repairok:\(entryId.uuidString)", no: "master:repairlist", lingo: lingo, locale: locale)
@@ -859,7 +865,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
         let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
         let text = lingo.localize("capital.master.confirm.enchant", locale: locale, interpolations: [
-            "item": itemLabel(row.itemId, lingo: lingo, locale: locale),
+            "item": itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale),
             "level": "\(step.level)", "cost": "🪙 \(step.silver) + \(step.materialQty)\(hideIcon)"
         ])
         let kb = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
@@ -889,8 +895,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func postMasterResultBanner(forRepair result: MasterService.RepairResult, context: Context) async {
         let lingo = context.lingo, locale = context.session.locale
         switch result {
-        case .success(let itemId, let cost, let newMax):
-            let name = itemLabel(itemId, lingo: lingo, locale: locale)
+        case .success(let itemId, let tier, let cost, let newMax):
+            let name = itemLabel(itemId, tier: tier, lingo: lingo, locale: locale)
             let text = lingo.localize("capital.master.repaired", locale: locale, interpolations: ["item": name, "silver": "🪙 \(cost)", "cur": "\(newMax)", "max": "\(newMax)"])
             await postStatusBanner("✅ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
@@ -2433,6 +2439,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         let other = session.other(for: side.telegramId)
         var body = "<b>\(lingo.localize("capital.trade.bag_title", locale: locale))</b>"
+        // The purse, on the screen where the player decides how much of it to
+        // stake. The button below shows what is already staked and the prompt
+        // shows the balance, but neither told them what they actually have
+        // while they were looking at the bag. Same key and shape the trader and
+        // the Master use, so the number reads the same everywhere in the city.
+        body += "\n\n🪙 " + lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(user.silver)"
+        ])
         body += "\n\n" + lingo.localize("capital.trade.with_player", locale: locale, interpolations: ["nick": other.nickname])
         if side.firstConfirmed {
             body += "\n\n✅ " + lingo.localize("capital.trade.ready_waiting", locale: locale, interpolations: ["nick": other.nickname])
@@ -2461,6 +2475,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let get = try await describeOffer(stacks: other.offeredStacks, gearIds: other.offeredGear, silver: other.silver, locale: locale, context: context)
 
         var body = "<b>\(lingo.localize("capital.trade.combined_title", locale: locale))</b>"
+        // The purse again on the screen that actually commits the silver — read
+        // fresh, because the other side's screen is rendered from this same
+        // call and `context.session` is only ever one of the two.
+        let purse: Int
+        if side.telegramId == context.session.telegramId { purse = context.session.silver }
+        else { purse = try await User.find(side.userId, on: context.db)?.silver ?? 0 }
+        body += "\n\n🪙 " + lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(purse)"
+        ])
         body += "\n\n<b>\(lingo.localize("capital.trade.you_give", locale: locale))</b>\n\(give)"
         body += "\n\n<b>\(lingo.localize("capital.trade.you_get", locale: locale))</b>\n\(get)"
 

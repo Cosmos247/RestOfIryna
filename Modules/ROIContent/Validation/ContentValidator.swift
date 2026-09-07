@@ -923,6 +923,16 @@ public enum ContentValidator {
 
     // MARK: - Localization
 
+    /// Words of a display name, lowercased, apostrophes and punctuation acting
+    /// as separators. Two letters or fewer are dropped — they carry no identity
+    /// ("of", "'s") and would make the ladder check pass on nothing.
+    private static func words(of name: String) -> [String] {
+        name.lowercased()
+            .split(whereSeparator: { !$0.isLetter })
+            .map(String.init)
+            .filter { $0.count > 2 }
+    }
+
     private static func validateLocalization(_ bundle: ContentBundle, _ locales: LocaleIndex) -> [ContentIssue] {
         var issues: [ContentIssue] = []
 
@@ -970,6 +980,32 @@ public enum ContentValidator {
                     require("\(item.nameKey).t\(step.tier)", .error)
                     if let descriptionKey = item.descriptionKey {
                         require("\(descriptionKey).t\(step.tier)", .warning)
+                    }
+                }
+                // The rungs of one ladder are the SAME object, upgraded. If no
+                // word survives from the first name to the last, the player is
+                // told they now carry something else — and the screens that
+                // name the weapon generically (the Master's "Re-empower staff")
+                // stop matching it. This caught the mage ladder reading
+                // патериця → посох → жезл across five tiers.
+                for locale in LocaleIndex.locales {
+                    let names = ladder.tiers.compactMap {
+                        locales.value("\(item.nameKey).t\($0.tier)", locale: locale)
+                    }
+                    guard names.count == ladder.tiers.count, names.count > 1 else { continue }
+                    // A word "survives" if it appears inside SOME word of every
+                    // other name, not only as an exact token: "Bow" lives on in
+                    // "Longbow", and Ukrainian declines ("посох" → "посоха").
+                    let wordLists = names.map { words(of: $0) }
+                    let survives = wordLists[0].contains { candidate in
+                        wordLists.dropFirst().allSatisfy { other in
+                            other.contains { $0.contains(candidate) || candidate.contains($0) }
+                        }
+                    }
+                    if !survives {
+                        issues.append(.init(severity: .warning, file: "\(locale).json", path: path, id: item.id,
+                                            rule: "locale.ladder_name_drift",
+                                            message: "no word survives every tier name (\(names.joined(separator: " → "))) — a ladder is one object being upgraded, not five different ones"))
                     }
                 }
             } else if let descriptionKey = item.descriptionKey {

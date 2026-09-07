@@ -189,7 +189,72 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             text: lingo.localize("journal.button.open", locale: locale),
             callbackData: "journal:open"
         )
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[journal]])
+        // Under the journal: the same bubble-editing trick, for the one thing
+        // the profile could never show — which slots are filled and how worn
+        // what is in them is. The profile's own line names the main hand only.
+        let gear = TGInlineKeyboardButton(
+            text: lingo.localize("gear.button.open", locale: locale),
+            callbackData: "gear:open"
+        )
+        return TGInlineKeyboardMarkup(inlineKeyboard: [[journal], [gear]])
+    }
+
+    // MARK: - Equipment sheet
+    //
+    // Every slot an item can currently occupy, whether or not one does, with
+    // the wear of what is in it. Durability lives on the inventory row and had
+    // only ever been visible in the item's detail card and on the Master's
+    // repair list — so a player could walk into the wilderness with broken
+    // armour without a screen that would have told them.
+
+    /// Slot order and glyph. Fixed here rather than derived from
+    /// `EquipmentSlot.allCases` so the sheet reads head-to-foot then hands,
+    /// which is how a person checks their own kit.
+    /// The two accessory slots are deliberately absent: nothing in the game can
+    /// fill them yet, so they were two permanent "(empty)" lines teaching the
+    /// player nothing. Restoring them is this array plus their two locale keys.
+    private static let gearSheetSlots: [(slot: EquipmentSlot, icon: String)] = [
+        (.helmet, "🪖"), (.chest, "🧥"), (.legs, "👖"), (.boots, "🥾"),
+        (.mainHand, "🗡"), (.offHand, "🛡")
+    ]
+
+    func showGear(context: Context, editMessageId: Int) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let equipped = try await EquipmentService.equipped(for: context.session, on: context.db)
+
+        var lines = ["🛡 <b>" + lingo.localize("gear.title", locale: locale) + "</b>", ""]
+        for (slot, icon) in Self.gearSheetSlots {
+            let label = lingo.localize("profile.equipped.\(slot.rawValue)", locale: locale)
+            guard let entry = equipped[slot], let item = ItemCatalog.find(entry.itemId) else {
+                lines.append("\(icon) \(label): <i>\(lingo.localize("profile.equipped.empty", locale: locale))</i>")
+                continue
+            }
+            let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: entry.tier), locale: locale)
+            let enchant = entry.enchantLevel > 0 ? " +\(entry.enchantLevel)" : ""
+            // Wear only for the slots a fight actually wears, and only once the
+            // row carries a maximum: a "0/0" would read as broken.
+            var condition = ""
+            if GearConditionService.durableSlots.contains(slot.rawValue), entry.maxDurability > 0 {
+                let warn = entry.durability == 0 ? " ⚠️" : ""
+                condition = " · \(entry.durability)/\(entry.maxDurability)\(warn)"
+            }
+            lines.append("\(icon) \(label): <b>\(name)</b>\(enchant)\(condition)")
+        }
+        lines.append("")
+        lines.append("<i>" + lingo.localize("gear.hint", locale: locale) + "</i>")
+
+        let back = TGInlineKeyboardButton(
+            text: lingo.localize("journal.button.back", locale: locale),
+            callbackData: "gear:back"
+        )
+        try await context.bot.editMessageText(params: TGEditMessageTextParams(
+            chatId: .chat(context.session.telegramId),
+            messageId: editMessageId,
+            text: lines.joined(separator: "\n"),
+            parseMode: .html,
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]])
+        ))
     }
 
     // MARK: - Quest Journal (Phase 9.2)
@@ -369,15 +434,21 @@ extension MainController {
         guard let message = query.message else { return false }
         guard let data = query.data else { return false }
 
-        // Quest journal — opens over the profile message and returns to it.
-        // Both directions edit the same bubble, so the player never collects a
-        // stack of profile screens.
+        // The two profile sub-screens — the quest journal and the equipment
+        // sheet. Each opens over the profile message and returns to it; every
+        // direction edits the same bubble, so the player never collects a stack
+        // of profile screens.
         if data == "journal:open" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await Controllers.mainController.showJournal(context: context, editMessageId: message.messageId)
             return true
         }
-        if data == "journal:back" {
+        if data == "gear:open" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await Controllers.mainController.showGear(context: context, editMessageId: message.messageId)
+            return true
+        }
+        if data == "gear:back" || data == "journal:back" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await Controllers.mainController.showProfile(context: context, editMessageId: message.messageId)
             return true
