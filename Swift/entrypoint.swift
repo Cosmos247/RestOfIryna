@@ -37,7 +37,14 @@ enum Entrypoint {
                 try ContentBootstrap.load(logger: logger)
             } catch {
                 print("❌ could not load content: \(error)")
-                fflush(stdout)
+                // `fflush(nil)` flushes every open output stream, which is what we
+                // actually want before `exit`. Naming `stdout` instead does not
+                // build on Linux: Glibc imports it as `extern FILE *stdout`, a
+                // mutable global, and Swift 6 strict concurrency refuses the
+                // reference. Darwin imports the same symbol as a computed
+                // property, so the mistake is invisible on the dev Mac and only
+                // surfaces on the Pi.
+                fflush(nil)
                 exit(1)
             }
             ContentDigest.run()

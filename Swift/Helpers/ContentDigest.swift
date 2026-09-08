@@ -395,7 +395,11 @@ enum ContentDigest {
                 print("  \(def.id.padding(toLength: 24, withPad: " ", startingAt: 0)) \(count)\(flag)")
             }
         }
-        fflush(stdout)
+        // `nil` rather than `stdout`: Glibc imports `stdout` as a mutable
+        // global that Swift 6 strict concurrency refuses, so naming it builds
+        // on macOS and fails on Linux. Flushing every stream is what the call
+        // meant anyway — the digest is usually read through a pipe.
+        fflush(nil)
     }
 
     /// Smoke test of the FAÇADE path rather than the data.
