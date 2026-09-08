@@ -55,8 +55,10 @@ converted from «ти», NPC speech included; three latent gender bugs went with
 pairs collapsed into single keys because plural past tense is genderless, leaving
 13 pairs that name the player.
 
-**`WipeForRebalance` written (2026-09-02), not yet executed** — it runs at the next bot
-launch. Registered last in `configure.swift`; a no-op on a fresh database. Explicit table
+**`WipeForRebalance` ran on 2026-09-02 at 22:14:41**, and three accounts played on the
+rebalanced build through 04.09 (dumped to `~/RestOfIryna-backups/` before anything else
+touches it). Fluent will not re-run it; deleting its `_fluent_migrations` row is what
+makes it fire again. Registered last in `configure.swift`; a no-op on a fresh database. Explicit table
 list rather than an FK cascade, because `tavern_game_messages` carries no foreign key, and
 a self-check against `information_schema` refuses to finish while any table still holds a
 row. **`scale` 60 → 1.0 is deferred past the playtest** at the user's call: the first hour
@@ -105,8 +107,8 @@ level floor enforced).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `0ff4f5c01c2c7b43` / `fa84304a356e65a0` /
-`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-07), 234 tests.
+against a real database. Digest baseline `0ff4f5c01c2c7b43` / `c44f38cf0fae5ecd` /
+`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-08), 234 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×
@@ -153,7 +155,7 @@ were superseded by Phases 4–6.
 - [x] Arguments parser (Scanner-based: words, ints, doubles, rest-of-string)
 - [x] Session caching (actor-based, 5min TTL, auto-cleanup)
 - [x] User model + migrations (identity, class, nickname, estate)
-- [x] Authorization (hardcoded allowedUsers list)
+- [x] Authorization — **`allowed_users` table + `/link` invites** (2026-09-08). Was a hardcoded array; `AccessControl` caches the table, `InviteToken` carries an encrypted timestamp in a 16-letter `/start` payload good for 5 minutes, and `developerUsers` stays compiled in as the lockout brake.
 - [x] Proper migration awaiting (try await migrator.prepareBatch().get())
 - [x] Database connection pool graceful shutdown (defer in configure)
 

@@ -31,6 +31,9 @@ let package = Package(
         .package(url: "https://github.com/thebarndog/swift-dotenv.git", from: "2.1.0"),
         // 🗺️ Lingo: A Swift package for localization.
         .package(url: "https://github.com/miroslavkovac/Lingo.git", from: "4.0.0"),
+        // 🔐 HMAC-SHA256 for the closed-test invite tokens. swift-crypto rather
+        // than CryptoKit because the bot also runs on Linux (the Pi).
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
     ],
     targets: [
         // 📦 Game content: DTOs, loader, validator and the live snapshot.
@@ -66,6 +69,7 @@ let package = Package(
                 .product(name: "SwiftTelegramBot", package: "swift-telegram-sdk"),
                 .product(name: "SwiftDotenv", package: "swift-dotenv"),
                 .product(name: "Lingo", package: "Lingo"),
+                .product(name: "Crypto", package: "swift-crypto"),
             ],
             path: "Swift", swiftSettings: swiftSettings
         ),

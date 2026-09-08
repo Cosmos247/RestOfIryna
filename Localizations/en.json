@@ -973,5 +973,11 @@
   "quest.tavern.nuts.title": "Something with the ale",
   "quest.tavern.nuts.desc": "Nuts empty a jug faster. Bring 6 handfuls of forest nuts.",
   "quest.tavern.berries.title": "Sweet course",
-  "quest.tavern.berries.desc": "The innkeeper promised a tart. Bring 6 handfuls of forest berries."
+  "quest.tavern.berries.desc": "The innkeeper promised a tart. Bring 6 handfuls of forest berries.",
+  "access.invite.required": "This bot is in closed testing. To get in you need a fresh invite: open the bot through the link, or send the invite code here as a message. Your ID: %{id}",
+  "access.invite.expired": "That invite has expired — one is only good for %{minutes} minutes. Ask for a new one and use it straight away. Your ID: %{id}",
+  "access.invite.granted": "Invite accepted. Welcome to Artania — you can begin your registration now.",
+  "access.invite.failed": "Your invite was valid, but access could not be recorded. Please try again in a minute.",
+  "access.link.ready": "Invite — valid until %{until} (%{minutes} min). Tap either block to copy.\n\nLink:\n<code>%{url}</code>\n\nOr the code alone, if the link does not carry it through — the player sends this to the bot as an ordinary message:\n<code>%{code}</code>",
+  "access.link.unavailable": "The bot's own username is unknown (<code>getMe</code> failed at boot), so no invite link can be built. Restart the bot and try again."
 }

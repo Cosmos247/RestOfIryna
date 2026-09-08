@@ -60,18 +60,42 @@ progression number. The remaining Phase 11 work is still a live session, not cod
 > locally even when the far side is dead. A crashed Xcode run sits as `STAT SX`
 > and survives `kill -9` while debugserver traces it, so kill the debugger first.
 >
-> **First thing in the log — the wipe has never run:**
+> **⚠️ The wipe ALREADY RAN — and a first-hour session already happened.**
+> `_fluent_migrations` records `WipeForRebalance` applied **2026-09-02 22:14:41**,
+> and three accounts played on the rebalanced build through **04.09** (Космос
+> archer L2 · Дарина warrior L3 · анія mage L5). Fluent never re-applies a
+> recorded migration, so **the wipe will not fire again** and there will be no
+> `removed users …` line in the log. To get a genuinely clean first hour, delete
+> its row first — `delete from _fluent_migrations where name =
+> 'RestOfIryna.WipeForRebalance'` — and it re-runs, last, in the next batch.
+> The pre-wipe database is dumped to `~/RestOfIryna-backups/roi-preplaytest-2026-09-08.sql`
+> (verified by restore); `WipeForRebalance.revert` is a deliberate no-op, so that
+> file is the only copy.
 >
 > ```
-> [warning] WipeForRebalance: removed users 4, inventory 37, ...
+> [warning] WipeForRebalance: removed users 3, inventory 15, ...
 > [info]    WipeForRebalance: verified empty — every table in the schema holds 0 rows
 > ```
 >
 > A boot failure saying `still holds N row(s)` means a table is missing from
-> `WipeForRebalance.playerTables`; the message names it. Two migrations run in the
-> same batch ahead of it now — `RemoveProfileStyle` (drops `profile_style`) and
-> `AddQuestAccepted` (adds `accepted` to `quest_progress`). After the wipe the
-> allowed accounts land in **registration** on their first message.
+> `WipeForRebalance.playerTables`; the message names it. Three migrations run in
+> the same batch ahead of it now — `RemoveProfileStyle` (drops `profile_style`),
+> `AddQuestAccepted` (adds `accepted` to `quest_progress`) and
+> `CreateAllowedUsers` (the invite table, seeded with the founding four and
+> **preserved** by the wipe). After the wipe the allowed accounts land in
+> **registration** on their first message.
+>
+> **Access is invite-only now.** Anyone not in `allowed_users` is refused before a
+> `User` row exists; the only way in is a `/link` deep link redeemed inside five
+> minutes. The founding four are seeded, so the wipe does not lock anyone out —
+> but a NEW tester needs `/link` (developer-only), not a code edit.
+>
+> **What the September session already showed, worth re-walking on purpose:**
+> all three players ended with a weapon at or near 0/30 durability against a
+> 1🪙-per-point repair (Космос: 21🪙 owed, 5🪙 held), eleven of thirteen quest rows
+> sat at progress 0 under the auto-create semantics 09-07 deleted, and Космос
+> stopped at 1 HP — the regen bug 09-07 fixed. Two of those three causes are now
+> closed; **silver at level 2 is the one that is not.**
 >
 > **⚠️ Read this before trusting any printed number at level 1.** The whole
 > balance report — TTK, win rates, the opening ledger — measures
@@ -308,8 +332,15 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline (2026-09-07, schema v10):** `records 0ff4f5c01c2c7b43` ·
-`tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+**Current digest baseline (2026-09-08, schema v10):** `records 0ff4f5c01c2c7b43` ·
+`tuning c44f38cf0fae5ecd` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+
+The 2026-09-08 change moved `tuning` alone: HP regen went **5% → 20% of max HP
+per real minute** (`tuning/vigor.json` → `healing.regenPerMinute`), so a full heal
+at the estate takes 5 minutes instead of 20. The other three halves held, as they
+must — no record, spawn band or quest pool was touched. `simulate --strict` is
+unchanged at 0 broken bands / 12 warnings: the sweep models fights, not the rest
+between them.
 
 The 2026-09-07 quest retune moved three of the four: `records` (halved rewards plus the new `minLevel` band), `tuning` (the quest reward curve in `economy.json` — which held on its first run, because the digest was not hashing the new knob yet; hashing it was the fix) and `quests` (the daily pick is filtered by level before the hash, and the replay sweeps levels 1/8/20 now). `spawns` held, as it must — no foraging band moved.
 
@@ -372,7 +403,9 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (975 / 987 keys). Auth is still gated to 4 hardcoded TG IDs.
+localization (981 / 993 keys). **Access is invite-only and lives in the database**
+(`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
+account and opens registration, and nobody else gets a `User` row at all.
 
 ⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
 compressed and the validator reports it. Deliberate, and **deferred past the

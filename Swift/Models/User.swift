@@ -515,7 +515,7 @@ extension User {
     /// True if this user's Telegram id is listed in `developerUsers`. Used to
     /// bypass enforcement-only caps (bag / warehouse) while keeping counts
     /// visible in the UI. Per-developer convenience, not a permission gate —
-    /// gating for dev commands stays on `allowedUsers`.
+    /// gating for dev commands stays on `AccessControl` / `developerUsers`.
     var isDeveloper: Bool {
         return developerUsers.contains(self.telegramId)
     }

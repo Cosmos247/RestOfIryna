@@ -1092,7 +1092,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 - [ ] Convenience items (slot expansions, speed-ups)
 
 ### 10.2 Launch Preparation
-- [ ] Remove hardcoded allowedUsers for public access
+- [x] ~~Remove hardcoded allowedUsers for public access~~ — 2026-09-08: moved to the `allowed_users` table with `/link` invites. Still a CLOSED list; opening it to the public is a separate decision (drop the gate in `TGDispatcher`)
 - [ ] Webhook mode for production (replace long polling)
 - [ ] Production deployment setup
 - [ ] Admin tools (ban, announce, debug commands)

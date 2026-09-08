@@ -1,5 +1,124 @@
 # Session History
 
+## Session — 2026-09-08 (the Pi audit, the pre-wipe dump, and invite-only access)
+
+### 1. What is actually on the Pi, and what the docs got wrong
+
+Read the Raspberry Pi (`rpi5@192.168.0.203`) for the first time in this project's
+documentation. It runs pm2 with three apps — `ROI` (**stopped**, a June-vintage debug
+build at `0f0f49d`), plus `IraBot` and `BeeBot`, which are two copies of one
+Python/Telethon codebase automating an unrelated game. Postgres 15 serves `ArtaniaDB`
+on port 5433 — the database the Mac dev build reaches through the SSH tunnel, so the
+Pi and the laptop have been sharing one database all along. A Docker `postgres:16`
+container (`vaultown-postgres`) also listens on 5432, and `pgweb` is bound to
+`0.0.0.0:8081`. A 135 MB core dump from 24.08 sits untracked in the checkout.
+
+**The finding that mattered: the first-hour playtest already happened.**
+`_fluent_migrations` records `WipeForRebalance` as applied at **2026-09-02 22:14:41**,
+and the first player registered fifteen seconds later. Three accounts played through
+**04.09**: Космос (archer L2, 5 silver, 1 HP, bow 9/30), Дарина (warrior L3, sword
+**0/30**), анія (mage L5, estate T2, **vigor 0/125**, staff 5/30). `Prompt.md`,
+`INDEX.md` and `status.md` all still said the wipe had never run and the playtest was
+the next action. Because Fluent never re-applies a recorded migration, the wipe will
+**not** fire again on its own — the next launch would have started the "first hour" on
+top of three existing characters.
+
+What the data says, before it is thrown away: **all three weapons are at or near zero
+durability**, and weapon repair is 1🪙 per point — 21🪙 for Космос, who has 5. Eleven of
+thirteen `quest_progress` rows sit at progress 0 and unclaimed, which is exactly the
+auto-created row the 09-07 pass deleted. Космос stopped at 1 HP, which is the regen bug
+the same pass fixed. The first playtest produced a near-softlocked level-2 archer, and
+two of the three causes are already closed.
+
+### 2. The dump
+
+`pg_dump` of `ArtaniaDB` → 36,513 bytes, kept on the Pi and in `~/RestOfIryna-backups/`
+(outside the repo — `.gitignore` covers neither `*.sql` nor a backups directory).
+Verified three ways rather than one: md5 identical on both sides, per-table `COPY` row
+counts inside the file matched against the live database, and a full restore into a
+throwaway `roi_dumptest` database that came back with the same three characters and the
+same numbers. Test database dropped afterwards. **`WipeForRebalance.revert` is a
+deliberate no-op**, so the dump is the only thing standing between this data and
+nothing.
+
+### 3. Access moves from an array to a table, and the door gets a key
+
+The closed test needs to admit people without a recompile, so the hardcoded
+`allowedUsers` array is gone. What replaced it:
+
+- **`allowed_users` table** (`AllowedUser`, `CreateAllowedUsers`) — telegram_id UNIQUE,
+  username (display only), source (`seed` | `invite`), created_at. The migration seeds
+  the four founding ids from `foundingUsers`, which is what stops the first boot from
+  locking out everyone already registered. Added to **`WipeForRebalance.preserved`**: a
+  wipe resets the game, not the guest list, and without that line the wipe's own
+  `information_schema` self-check would refuse to finish.
+- **`AccessControl`** — an actor caching the list, consulted before a session is
+  fetched. `developerUsers` are allowed *before* the table is read, so an empty or
+  broken `allowed_users` cannot lock out the account that issues invites.
+- **`InviteToken`** — 2 bytes nonce · 4 bytes UNIX seconds XORed with an HMAC keystream ·
+  4 bytes truncated HMAC tag, base32 over a letters-only alphabet: 16 characters of
+  noise. Key is SHA256(bot token), the derivation Telegram's own login widget uses, so
+  nothing new needs configuring. Encryption hides the date, but **the tag is the point**
+  — the token is handed to the very people it guards against, so the only real question
+  is whether they can mint one.
+- **`/link`** (developer-only) mints `https://t.me/<bot>?start=<token>`, good for five
+  minutes and naming nobody, so one link admits everyone it is forwarded to inside the
+  window.
+- **The gate lives in `TGDispatcher`, not in `RegistrationController`.** The requirement
+  was that nobody registers without a valid parameter; putting the check in front of
+  routing delivers that *and* creates no `User` row for a stranger, where a check inside
+  registration would leave one behind for every tap. One implementation, not two.
+
+`Package.swift` gained swift-crypto (not CryptoKit — the bot also runs on Linux).
+
+### 4. Two live findings, and one number turned
+
+The invite gate met reality the same evening and both halves reported honestly.
+
+**`no start payload`.** The first invited player (@Exp1re) could not get in, and the
+owner notification named the reason exactly: Telegram delivered no start parameter at
+all — the player wrote to the bot instead of coming through the link. Neither expiry
+nor forgery, and `allowed_users` proved it: four `seed` rows and no `invite` row.
+Three things followed. `/link` now prints the URL **and** the bare token, each in its
+own `<code>` block (Telegram renders those as tap-to-copy — the message exists to be
+forwarded, and a rendered hyperlink is the one thing you cannot cleanly copy out of a
+chat), plus the deadline as a wall clock rather than "5 minutes". The gate accepts a
+**pasted token** as an ordinary message, not only as a `/start` payload — the token was
+made 16 letters precisely so it could survive being copied by hand, and now it is. And
+`AccessControl.isAllowed` asks the database on a cache MISS before refusing, which is
+what makes a row added by hand in SQL take effect on that account's next message
+instead of at the next restart; without it the in-memory set was authoritative for
+refusals and a redeploy was the only way to admit anyone.
+
+**The invite window is real time, and deliberately so.** Asked whether `scale = 60`
+compresses it: it does not. `InviteToken.validity` is a plain Swift constant and the
+file reads no tuning table at all. Correct behaviour, but it means the window cannot be
+changed without a rebuild — offered as a follow-up to move it to `tuning/time.json` →
+`realTime`, where `scale` can never reach it.
+
+**HP regen 5% → 20% of max HP per real minute** (`tuning/vigor.json` →
+`healing.regenPerMinute`), at the user's request: a full rest at the estate is now 5
+minutes instead of 20. It is not gated by estate tier and never was — `HealingService`
+does not read `estateLevel` at all; the estate buys plot slots, warehouse capacity, room
+unlocks and the weapon/bag ladders, and it feeds **Vigor**, not HP. The digest behaved
+as designed: `tuning` moved `fa84304a356e65a0` → `c44f38cf0fae5ecd` and the other three
+halves held byte-identical, confirming both that the intended thing moved and that this
+knob is hashed. `simulate --strict` did not move — 0 broken bands, 12 warnings — because
+the sweep models fights, not the recovery between them.
+
+### 5. Verification
+
+Build clean, 234 tests pass, all four digest halves byte-identical (`records
+0ff4f5c01c2c7b43` · `tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` · `quests
+30de20902006e3b9`) — as they must be, since no content moved. `InviteToken` was
+exercised in a throwaway SwiftPM package built from a copy of the shipped file: shape,
+round trip, the 299s/301s boundary either side of the window, wrong secret, empty
+string, truncation, out-of-alphabet character, a future timestamp, and **all 496
+single-character mutations of a valid token rejected**. Thirteen checks, all passing.
+
+**Still untested against a real database:** `CreateAllowedUsers` and the whole invite
+flow have never run live — the next launch is their first.
+
 ## Session — 2026-09-07 (pre-push bug pass: the profile, the rest clock, the name, the level-up)
 
 ### Goal

@@ -40,8 +40,10 @@ Session-persistent knowledge base. Each entry links to a detailed file.
   `roi-content spec opening`. Prices levels 1–3 at every depth against the trail, the stretch
   the pace model must skip because it divides by an estate that does not exist yet. It answers
   `spec-economy.md` §7 and inverts its prose. Warning: `opening.shallow_is_bankrupt`.
-- **`WipeForRebalance`** — `Swift/Migrations/WipeForRebalance.swift`, registered LAST, **not yet
-  executed**; runs at the next bot launch. Explicit table list (a cascade would miss
+- **`WipeForRebalance`** — `Swift/Migrations/WipeForRebalance.swift`, registered LAST. **Already
+  executed, 2026-09-02 22:14:41**, and three accounts played on it through 04.09 — Fluent will
+  not re-run it, so a clean first hour needs its `_fluent_migrations` row deleted first. The
+  pre-wipe database is dumped to `~/RestOfIryna-backups/roi-preplaytest-2026-09-08.sql`. Explicit table list (a cascade would miss
   `tavern_game_messages`, which has no FK) plus an `information_schema` self-check. Two
   migrations now run ahead of it in the same batch: `RemoveProfileStyle`, `AddQuestAccepted`.
 - **Read before trusting a printed number at level 1:** the report measures a full common kit

@@ -64,7 +64,15 @@ struct WipeForRebalance: AsyncMigration {
     ]
 
     /// Tables the wipe must not touch and must not judge.
-    static let preserved: Set<String> = ["_fluent_migrations", "_fluent_migrations_lock"]
+    ///
+    /// `allowed_users` is here for a different reason than the other two: it is
+    /// not bookkeeping, it is the guest list. A wipe resets the GAME — who is
+    /// permitted to play it is a separate question, and truncating the answer
+    /// would lock every tester out of the session the wipe was run to start.
+    static let preserved: Set<String> = [
+        "_fluent_migrations", "_fluent_migrations_lock",
+        "allowed_users",
+    ]
 
     enum WipeError: Error, CustomStringConvertible, LocalizedError {
         case notEmpty(table: String, rows: Int64)

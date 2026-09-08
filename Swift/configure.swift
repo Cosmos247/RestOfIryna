@@ -36,7 +36,17 @@ let maxim: Int64 = 327887608
 let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
-let allowedUsers: [Int64] = [mitya, irina, maxim, basel]
+//let vanya: Int64 =
+let sklad: Int64 = 8006139480
+/// The accounts the allow list is SEEDED with, and nothing else. Access itself
+/// lives in the `allowed_users` table (`AllowedUser` / `AccessControl`) so a
+/// tester can be let in with `/link` instead of a recompile; this array only
+/// says who was already inside when the table was created.
+let foundingUsers: [Int64] = [mitya, irina, maxim, basel]
+
+/// Hardcoded on purpose — see `AccessControl`. Developers are allowed before
+/// the table is consulted, so an empty or broken `allowed_users` cannot lock
+/// out the one account that can issue new invites.
 let developerUsers: [Int64] = [mitya]
 
 /// Reset dev profile on every launch (sets mitya back to registration)
@@ -128,6 +138,13 @@ public final class AppState: Sendable {
     public let logger: Logger
     public let httpClient: HTTPClient
     public nonisolated(unsafe) var bot: TGBot!
+    /// The bot's own `@username`, fetched once via `getMe` at boot. `/link`
+    /// needs it to build a `t.me` deep link and there is no other source for
+    /// it — the token does not contain it.
+    public nonisolated(unsafe) var botUsername: String?
+    /// Key material for `InviteToken`. The bot token itself: it is already a
+    /// server-side secret, so the invite system needs none of its own.
+    public nonisolated(unsafe) var inviteSecret: String = ""
 
     public init(db: any Database, lingo: Lingo, logger: Logger, httpClient: HTTPClient) {
         self.db = db
@@ -233,6 +250,7 @@ public func configure(logger: Logger) async throws {
     migrations.add(RemoveVigorTick())
     migrations.add(RemoveProfileStyle())
     migrations.add(AddQuestAccepted())
+    migrations.add(CreateAllowedUsers())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.
@@ -266,6 +284,23 @@ public func configure(logger: Logger) async throws {
         botId: tgApi,
         log: logger
     )
+
+    // Everything the invite gate needs. `getMe` is the only source of the
+    // bot's own username, and `/link` cannot build a deep link without it —
+    // so a failure here is logged loudly rather than swallowed, but is not
+    // fatal: the rest of the bot works fine for accounts already allowed.
+    appState.inviteSecret = tgApi
+    do {
+        appState.botUsername = try await appState.bot.getMe().username
+        logger.info("Bot identified as @\(appState.botUsername ?? "unknown")")
+    } catch {
+        logger.error("getMe failed — /link cannot build invite links: \(error)")
+    }
+
+    // Warm the allow list. `isAllowed` would load it lazily on the first
+    // update anyway; doing it here means a broken table is a boot-time error
+    // instead of a silently locked door.
+    try await accessControl.load(on: db)
 
     // Create and add unified dispatcher (auth + global commands + routing)
     let dispatcher = TGDispatcher(bot: appState.bot, appState: appState)
@@ -519,7 +554,7 @@ public func configure(logger: Logger) async throws {
         resizeKeyboard: true,
         oneTimeKeyboard: true
     ))
-    for tgId in allowedUsers {
+    for tgId in await accessControl.roster(on: db).map(\.telegramId) {
         let chatId = TGChatId.chat(tgId)
         let user = try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first()
         let locale = user?.locale ?? "uk"

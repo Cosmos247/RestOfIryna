@@ -7,6 +7,7 @@
 //
 
 import Fluent
+import Foundation      // Date / DateFormatter — the /link deadline
 @preconcurrency import Lingo
 import SwiftTelegramBot
 
@@ -67,6 +68,10 @@ final class GlobalCommandsController: @unchecked Sendable {
         await dispatcher.add(TGCommandHandler(commands: ["/reload"]) { [weak self] update in
             try await self?.handleReload(update: update)
         })
+
+        await dispatcher.add(TGCommandHandler(commands: ["/link"]) { [weak self] update in
+            try await self?.handleLink(update: update)
+        })
     }
 
     // MARK: - Command Handlers
@@ -75,7 +80,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
 
         // AUTH: Comment out this block to disable authorization
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
 
@@ -87,7 +92,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
 
         // AUTH: Comment out this block to disable authorization
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
 
@@ -102,7 +107,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
 
         // AUTH: Comment out this block to disable authorization
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
 
@@ -183,12 +188,66 @@ final class GlobalCommandsController: @unchecked Sendable {
         }
     }
 
+    /// Dev-only `/link` — mint a fresh invite deep link.
+    ///
+    /// The link is the whole access-control surface of the closed test: it
+    /// carries an encrypted timestamp (`InviteToken`), it is good for five
+    /// minutes, and anyone who opens the bot through it inside that window is
+    /// added to `allowed_users` and dropped into registration. It names nobody,
+    /// so one link admits everyone the admin forwards it to before it goes
+    /// stale — send it to a group, or mint a new one per person; both work.
+    ///
+    /// Deliberately NOT localized to the caller's Telegram language: this is a
+    /// developer command with exactly one caller, and it uses his stored locale
+    /// like every other screen he sees.
+    private func handleLink(update: TGUpdate) async throws {
+        guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
+        guard developerUsers.contains(fromId.id) else { return }
+
+        let session = try await User.cachedSession(for: fromId, db: db)
+
+        guard let username = appState.botUsername, !username.isEmpty else {
+            let text = "\u{274C} " + lingo.localize("access.link.unavailable", locale: session.locale)
+            try await bot.sendMessage(session: session, text: text, parseMode: .html)
+            return
+        }
+
+        let issuedAt = Date()
+        let token = InviteToken.make(secret: appState.inviteSecret, at: issuedAt)
+        let url = "https://t.me/\(username)?start=\(token)"
+        let minutes = Int((InviteToken.validity / 60).rounded())
+
+        // The deadline as a wall clock, in the same zone every other daily
+        // system uses. "Valid for 5 minutes" is not actionable once the message
+        // has been sitting in the chat while you find the player to send it to;
+        // "until 22:41" is.
+        let clock = DateFormatter()
+        clock.dateFormat = "HH:mm"
+        clock.timeZone = TimeZone(identifier: GameDay.timeZoneID) ?? TimeZone(identifier: "UTC")!
+        let until = clock.string(from: issuedAt.addingTimeInterval(InviteToken.validity))
+
+        // Both forms are wrapped in <code>, which Telegram renders as
+        // tap-to-copy — the point of the message is to be FORWARDED, and a
+        // rendered hyperlink is the one thing you cannot cleanly copy out of a
+        // chat. The bare token is not a duplicate of the link: a deep link
+        // delivers its payload only when the client actually sends
+        // `/start <token>`, and a player who already has the chat open, or who
+        // just types to the bot, arrives with nothing (seen live as
+        // `no start payload`). Pasting the code works from any state.
+        let text = "\u{1F517} " + lingo.localize(
+            "access.link.ready",
+            locale: session.locale,
+            interpolations: ["url": url, "code": token, "minutes": minutes, "until": until]
+        )
+        try await bot.sendMessage(session: session, text: text, parseMode: .html)
+    }
+
     /// Dev-only `/grant <item_id> <quantity>` — gives items to the caller.
     /// Restricted to the mitya account (test profile).
     private func handleGrant(update: TGUpdate) async throws {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
         guard fromId.id == mitya else { return }
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
         let locale = session.locale
@@ -225,7 +284,7 @@ final class GlobalCommandsController: @unchecked Sendable {
     private func handleDrain(update: TGUpdate) async throws {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
         guard fromId.id == mitya else { return }
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
         let locale = session.locale
@@ -256,7 +315,7 @@ final class GlobalCommandsController: @unchecked Sendable {
     private func handleRevoke(update: TGUpdate) async throws {
         guard let fromId = update.message?.from ?? update.editedMessage?.from else { return }
         guard fromId.id == mitya else { return }
-        guard allowedUsers.contains(fromId.id) else { return }
+        guard await accessControl.isAllowed(fromId.id, on: db) else { return }
 
         let session = try await User.cachedSession(for: fromId, db: db)
         let locale = session.locale

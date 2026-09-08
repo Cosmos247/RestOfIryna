@@ -386,7 +386,7 @@ Two gotchas worth knowing before you go hunting:
 
 ### Finding Your Telegram User ID
 
-DM [@ForwardInfoBot](https://t.me/ForwardInfoBot) — it replies with your ID. Add it to `allowedUsers` in `configure.swift` for admin access.
+DM [@ForwardInfoBot](https://t.me/ForwardInfoBot) — it replies with your ID. Access itself is no longer compiled in: send the account a `/link` invite (developer-only command) and they are added to `allowed_users` when they open it. `developerUsers` in `configure.swift` still names the admin accounts.
 
 ---
 
@@ -481,7 +481,8 @@ let text = lingo.localize("exploration.death", gender: user.gender, locale: user
 | `PG_CONN_STR` | Full connection URL (alternative) | No |
 
 Bot-level settings in `configure.swift`:
-- `allowedUsers` — authorized IDs (remove for public access)
+- `foundingUsers` — the ids the `allowed_users` table is SEEDED with; access itself lives in that table (`/link` to add someone)
+- `developerUsers` — admin accounts; allowed unconditionally, before the table is read
 - `SupportedLocale` — enum of languages with flag emojis
 
 ---
