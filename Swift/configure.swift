@@ -36,8 +36,6 @@ let maxim: Int64 = 327887608
 let basel: Int64 = 768795585
 let mitya: Int64 = 398698463
 let irina: Int64 = 1269829617
-//let vanya: Int64 =
-let sklad: Int64 = 8006139480
 /// The accounts the allow list is SEEDED with, and nothing else. Access itself
 /// lives in the `allowed_users` table (`AllowedUser` / `AccessControl`) so a
 /// tester can be let in with `/link` instead of a recompile; this array only
