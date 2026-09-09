@@ -970,6 +970,24 @@ public enum ContentValidator {
             // every item, tiered or not.
             require(item.nameKey, .error)
 
+            // Ukrainian sentences AGREE with the item's name — "лук зламався"
+            // but "чоботи зламались" — so every name declares the gender of its
+            // own noun. Missing, the text falls back to masculine, which is
+            // right for sixteen of the shipped names and wrong for the rest;
+            // the warning is what stops a new item from shipping a broken
+            // ending nobody reads until it appears in a fight.
+            let genderKey = "\(item.nameKey).gender"
+            let declaredGender = locales.value(genderKey, locale: "uk")
+            if declaredGender == nil {
+                issues.append(.init(severity: .warning, file: "uk.json", path: path, id: item.id,
+                                    rule: "locale.item_gender_missing",
+                                    message: "missing key \"\(genderKey)\" — uk copy agreeing with this name will fall back to masculine"))
+            } else if ["m", "f", "n", "pl"].contains(declaredGender!) == false {
+                issues.append(.init(severity: .error, file: "uk.json", path: path, id: item.id,
+                                    rule: "locale.item_gender_invalid",
+                                    message: "\"\(genderKey)\" is \"\(declaredGender!)\" — expected m, f, n or pl"))
+            }
+
             if let ladder = ladders[item.id] {
                 // `ItemDisplay.nameKey(for:tier:)` / `.descriptionKey(for:tier:)`
                 // append `.t<tier>` for anything with a ladder, so these are the

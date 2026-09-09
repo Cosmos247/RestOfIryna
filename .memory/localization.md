@@ -230,6 +230,36 @@ item among many would mean plumbing gender through the whole item-desc path).
 `registration.gender.prompt` / `registration.gender.m` / `registration.gender.f`
 (both locales — the step-1 picker).
 
+## 🧤 Ukrainian copy agrees with the ITEM's name too (2026-09-09)
+
+The player's gender was never the only agreement uk needs. A sentence about a
+THING agrees with that thing's noun — «лук зламав**ся**», «шкура зламала**сь**»,
+«чоботи зламали**сь**» — and a single template cannot serve them. The first such
+string shipped in the neuter («зламалось… воно»), which fits **none** of the
+nineteen breakable items: seventeen are masculine, two are plural, and not one
+is neuter.
+
+**Where the gender lives: in `uk.json`, not in `items.json`.** It is a property
+of the WORD, not of the object — "лук" is masculine and "bow" has no gender at
+all, and English never asks. So every item carries `item.<id>.gender` in the
+Ukrainian file only: **`m` · `f` · `n` · `pl`** (33 items: 16 · 7 · 6 · 4). One
+gender per item id is enough for a ladder, because a ladder keeps one noun
+across its rungs.
+
+**The helper mirrors the player-gender one.** `ItemDisplay.localize(_:agreeingWith:lingo:locale:interpolations:)`
+looks up `<key>.m` / `.f` / `.n` / `.pl` for uk and the plain `<key>` for every
+other locale — exactly as `Lingo.localize(_:gender:locale:)` does for
+намісник/намісниця, and for the same reason: only Ukrainian needs the variants,
+so English keeps one string.
+
+**The validator stops the next one silently defaulting.** `locale.item_gender_missing`
+(warning) fires when a name declares no gender — the fallback is masculine,
+right for sixteen names and wrong for seventeen — and `locale.item_gender_invalid`
+(error) when the value is not one of the four. Negative-tested: removing the
+boots' gender names exactly the boots.
+
+Keys using it today: `gear.broken.notice` (4 variants).
+
 ## 🗡 A weapon ladder is ONE object (2026-09-07)
 
 The three upgradable weapons resolve their display name through

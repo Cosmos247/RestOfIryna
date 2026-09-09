@@ -604,7 +604,9 @@ public enum PassiveExpeditionService {
             for itemId in brokeOnRun {
                 guard let item = ItemCatalog.find(itemId) else { continue }
                 let name = lingo.localize(item.nameKey, locale: user.locale)
-                let text = "⚠️ " + lingo.localize("gear.broken.notice", locale: user.locale, interpolations: ["item": name])
+                let text = "⚠️ " + ItemDisplay.localize("gear.broken.notice", agreeingWith: item,
+                                                        lingo: lingo, locale: user.locale,
+                                                        interpolations: ["item": name])
                 _ = try? await bot.sendMessage(params: TGSendMessageParams(
                     chatId: .chat(user.telegramId), text: text, parseMode: .html
                 ))

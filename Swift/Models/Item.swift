@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Lingo
 
 // MARK: - Item Type
 
@@ -201,6 +202,39 @@ public enum ItemDisplay {
         guard let baseline = RarityCatalog.all.first?.id, item.rarity != baseline,
               let rarity = RarityCatalog.find(item.rarity) else { return "" }
         return rarity.glyph + " "
+    }
+
+    /// Grammatical gender of the item's name IN THE CURRENT LOCALE, as
+    /// `item.<id>.gender` — `m` · `f` · `n` · `pl`.
+    ///
+    /// It lives in the locale file rather than in `items.json` because it is a
+    /// property of the WORD, not of the thing: "лук" is masculine and "bow" has
+    /// no gender at all. English never asks.
+    ///
+    /// Missing key → `m`, which Lingo signals by echoing the key back. That is
+    /// the right default here: sixteen of the thirty-three shipped names are
+    /// masculine, and the failure it produces is a wrong ending rather than a
+    /// missing sentence.
+    public static func gender(for item: Item, lingo: Lingo, locale: String) -> String {
+        let key = "\(item.nameKey).gender"
+        let value = lingo.localize(key, locale: locale)
+        return ["m", "f", "n", "pl"].contains(value) ? value : "m"
+    }
+
+    /// Localize a sentence that has to AGREE with an item's name — `<key>.m` /
+    /// `.f` / `.n` / `.pl` in uk, the plain `<key>` everywhere else.
+    ///
+    /// Mirrors `Lingo.localize(_:gender:locale:)`, which does the same for the
+    /// player's own gender, and for the same reason: only Ukrainian needs the
+    /// four variants, so English keeps one string and no duplication.
+    public static func localize(_ key: String, agreeingWith item: Item,
+                                lingo: Lingo, locale: String,
+                                interpolations: [String: Any]? = nil) -> String {
+        guard locale == SupportedLocale.ua.rawValue else {
+            return lingo.localize(key, locale: locale, interpolations: interpolations)
+        }
+        let suffix = gender(for: item, lingo: lingo, locale: locale)
+        return lingo.localize("\(key).\(suffix)", locale: locale, interpolations: interpolations)
     }
 
     /// Locale key for the row's lore blurb. Same tier rule, applied to the

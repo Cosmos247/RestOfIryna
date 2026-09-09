@@ -305,12 +305,17 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
             }
-            // The job's own description, under its name. It carries what the
-            // title cannot — which item, how many — and the journal is read
-            // exactly when the player is deciding whether the trip into town
-            // is worth it, including for a job they have not taken yet.
-            let questDesc = lingo.localize(status.def.descKey, locale: locale)
-            lines.append(contentsOf: ["", "<b>\(npcLabel)</b>", questTitle, "<i>«\(questDesc)»</i>", stateLine])
+            // The job's own description — what the title cannot say: which
+            // item, how many. Shown only once the job is TAKEN: an offer the
+            // player has not accepted is meant to be read at the NPC, and the
+            // journal is a record of work in hand rather than a remote copy of
+            // the board.
+            var block = ["", "<b>\(npcLabel)</b>", questTitle]
+            if status.accepted {
+                block.append("<i>«\(lingo.localize(status.def.descKey, locale: locale))»</i>")
+            }
+            block.append(stateLine)
+            lines.append(contentsOf: block)
         }
 
         lines.append("")

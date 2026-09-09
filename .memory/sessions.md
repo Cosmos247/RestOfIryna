@@ -86,6 +86,28 @@ Fixed by deleting the second subtraction in all three, keeping the number in the
 REPORT (the trip still prints `trip + hunger`, because both left the player that
 step). Passive runs walk the same `rollStep`, so hunger was hitting twice there too.
 
+### 6. Ukrainian agrees with the item, not only with the player (after the deploy)
+
+`⚠️ Простий лук зламалось — воно нічого не додає` — the string shipped in §2 was
+written in the neuter, and the roster says that fits **nothing**: of the nineteen
+items that can break, seventeen are masculine and two are plural. Writing it
+masculine instead would have produced «Штани зламався».
+
+The gender now lives in `uk.json` as `item.<id>.gender` (m · f · n · pl), because
+it belongs to the WORD rather than the object — English never asks — and
+`ItemDisplay.localize(_:agreeingWith:)` mirrors the player-gender helper. Two new
+validator rules stop the next item defaulting silently, negative-tested by
+deleting the boots' gender and watching the boots get named.
+
+**One test failed and was fixed rather than worked around:**
+`testTieredItemNeedsPerTierKeysAndNotABaseDescription` asserts "no unexpected
+issues" and honestly caught that its own fixture now lacked a gender.
+
+The journal then went the other way on the description added in §5: it shows only
+once the job is **taken**. An offer the player has not accepted is meant to be
+read at the NPC — the journal is a record of work in hand, not a remote copy of
+the board.
+
 ### 5. Smaller
 
 The journal prints each job's description under its title, for all three NPCs

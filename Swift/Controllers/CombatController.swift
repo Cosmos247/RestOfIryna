@@ -1165,7 +1165,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return itemIds.compactMap { itemId in
             guard let item = ItemCatalog.find(itemId) else { return nil }
             let name = lingo.localize(item.nameKey, locale: locale)
-            return "⚠️ " + lingo.localize("gear.broken.notice", locale: locale, interpolations: ["item": name])
+            return "⚠️ " + ItemDisplay.localize("gear.broken.notice", agreeingWith: item,
+                                                lingo: lingo, locale: locale,
+                                                interpolations: ["item": name])
         }
     }
 

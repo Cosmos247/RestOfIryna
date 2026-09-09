@@ -99,8 +99,12 @@ final class WeaponLadderTests: XCTestCase {
                 "item.gear.rusty_sword.t2": "Очищений меч",
                 "item.gear.rusty_sword.desc.t1": "Роз'їдене лезо.",
                 "item.gear.rusty_sword.desc.t2": "Сталь повертається.",
+                // uk copy agrees with the item's name, so a clean bundle
+                // declares the gender of every noun it ships.
+                "item.gear.rusty_sword.gender": "m",
                 "item.mat.river_pebble": "Річкова галька",
-                "item.mat.river_pebble.desc": "Гладкий камінь."
+                "item.mat.river_pebble.desc": "Гладкий камінь.",
+                "item.mat.river_pebble.gender": "f"
             ]
         ])
         let bundle = sword([step(1, attack: 3), step(2, attack: 5)])
