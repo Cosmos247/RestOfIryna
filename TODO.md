@@ -1032,13 +1032,15 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         purse on both trade screens. Digest: `records 0ff4f5c01c2c7b43` ·
         `tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` (held) ·
         `quests 30de20902006e3b9`. 234 tests.
-  - [ ] **`scale` 60 → 1.0 — DEFERRED past the playtest** *(2026-09-02, user's call)*: the
-        first-hour pass runs on compressed game time. Sound for what it measures — the opening
-        has no game-time gate at all (no step cooldown, no estate below level 4, and Vigor
-        stopped regenerating), so the opening ledger's km-1-vs-km-4 answer is testable as-is.
-        What it canNOT measure on `scale: 60` is the estate pace (85–93 days), which is
-        entirely game-time. Still owed before release: it is the only error
-        `validate --strict` reports.
+  - [x] **`scale` 60 → 1.0** *(2026-09-09)* — game time is real time. Plot cycle 60 s → 1 h,
+        plot sweeper 60 s → 300 s, passive runs 30/60/90 s → 30/60/90 min, a trip to the
+        capital 2 s → 2 min. `validate --strict` reports **zero errors and zero warnings**
+        for the first time. Two digest halves moved and both were predicted: `tuning`, and
+        `records` — the latter hashes the DERIVED `PlotCatalog.intervalSeconds` on purpose,
+        a guard from Phase 4b so retiring the `testMode` flag could not silently change the
+        value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
+        the pace model always worked in per-hour rates, never in wall clock. The estate
+        pace (85–93 days) is measurable from here on; it never was before.
   - [x] **The opening ledger** *(2026-09-02)* — the debt `spec-economy.md` §7 booked before
         the playtest: `roi-content simulate` reported pace 1→40 as an aggregate and said
         nothing about the only stretch with no estate behind it, which is exactly the first

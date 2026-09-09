@@ -119,6 +119,59 @@ single-character mutations of a valid token rejected**. Thirteen checks, all pas
 **Still untested against a real database:** `CreateAllowedUsers` and the whole invite
 flow have never run live — the next launch is their first.
 
+## Session — 2026-09-09 (the Pi deploy, a Linux build bug, and game time becomes real time)
+
+### 1. The bot runs on the Pi
+
+`main` fast-forwarded over `refactoring` (34 commits, Phase 0 → the invite work; the
+project has no merge commits, so a merge commit would have been the first) and the
+branch was deleted. The Pi pulled `ff16cc8` from GitHub and now serves the game under
+pm2's existing `ROI` entry — **debug, not release**, because pm2 already pointed at
+`.build/debug/RestOfIryna` and debug reused the May artifacts: **81 seconds** against
+tens of minutes, whose slowest step would have been whole-module optimisation of the
+app target. `pm2 save` persists it; the pm2 systemd unit was already `enabled`.
+
+**The deploy found a real bug that the dev Mac cannot see.** `fflush(stdout)` in
+`entrypoint.swift` and `ContentDigest.swift` fails every Linux build: Darwin imports
+`stdout` as a computed property, Glibc imports the C symbol as it is — `extern FILE
+*stdout`, a mutable global — and Swift 6 strict concurrency refuses the reference. It
+had been in the tree since the rebalance and was invisible for three months, because
+the Pi had not been built since 22 May. Fixed with `fflush(nil)`, which flushes every
+open stream and names nothing (`b57c49d`). A green Mac build proves nothing about the
+Pi; the auto-memory `linux-build-gap` now carries that plus the deploy recipe.
+
+Two smaller traps worth keeping: an interactive SSH session takes a build down with it
+on SIGHUP, which looks exactly like the build vanishing (run it under `setsid`); and
+`pkill -f "swift build"` matches nothing, because the process is `swift-build`.
+
+### 2. `scale` 60 → 1.0 — game time is real time
+
+The last deferral from 2026-09-02 is paid. A plot cycle is an hour instead of a minute,
+the plot sweeper ticks every 300 s instead of 60, passive runs take 30 / 60 / 90
+minutes instead of seconds, and a trip to the capital is two minutes. **`validate
+--strict` reports zero errors and zero warnings for the first time.**
+
+**Two digest halves moved, and both were predicted.** `tuning`, obviously. And
+`records` — because it hashes the DERIVED `PlotCatalog.intervalSeconds`
+(`plotIntervalSeconds / timeScale`) rather than the authored number, a guard Phase 4b
+placed there so that retiring the `testMode` flag in favour of `time.scale` could not
+change the value it produced without saying so. It said so.
+`f6fc421256085066` / `941eef33f757fa6b` / `eaea309f4813dfa2` / `30de20902006e3b9`.
+
+`simulate --strict` did not move at all (0 broken bands, 12 warnings) and all ten
+generated spec blocks still reproduce: the pace model always worked in per-hour rates,
+never in wall clock. What changes is what is now MEASURABLE — the estate pace of 85–93
+days, which compressed time could never show.
+
+One lesson expired with the flip: the sweeper's `intervalDivisor` was invisible to the
+digest at scale 60, because the 60 s floor swallowed it. At 1.0, 3600/12 = 300 s clears
+the floor, so the divisor moves the hash. The equivalence check stays anyway — the next
+clamp will not announce itself either.
+
+**What the first hour looks like now:** the game finally runs at the speed it was
+designed for, and the first tester will feel that as slowness. That is the intent, not
+a regression.
+
 ## Session — 2026-09-07 (pre-push bug pass: the profile, the rest clock, the name, the level-up)
 
 ### Goal

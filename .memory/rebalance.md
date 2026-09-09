@@ -147,9 +147,15 @@ all ten generated spec blocks found **two that never reproduced from their own m
 silently skipped between them, one with prose living inside the markers. Not drift in the
 numbers — drift in the mechanism meant to detect drift.
 
-**Current digest baseline (2026-09-08):** `records 0ff4f5c01c2c7b43`,
-`tuning c44f38cf0fae5ecd`, `spawns eaea309f4813dfa2`,
+**Current digest baseline (2026-09-09):** `records f6fc421256085066`,
+`tuning 941eef33f757fa6b`, `spawns eaea309f4813dfa2`,
 `quests 30de20902006e3b9` (schema **v10**).
+
+`scale` 60 → 1.0 moved TWO halves, and both were predicted. `tuning` for the obvious
+reason. `records` because it hashes the DERIVED `PlotCatalog.intervalSeconds`
+(`plotIntervalSeconds / timeScale`) rather than the authored number — a guard Phase 4b
+placed there so that retiring the `testMode` flag in favour of `time.scale` could not
+change the value it produced without saying so. It said so.
 
 The 2026-09-08 change moved `tuning` alone (`fa84304a356e65a0` → `c44f38cf0fae5ecd`):
 HP regen 5% → 20% of max HP per real minute, `tuning/vigor.json` →
@@ -882,11 +888,15 @@ replay, not because enemy selection shifted.
   FRESH tier, quietly making re-entered rooms generous. Replaying −2…5 is what
   surfaced it.
 - **A hash cannot see a value the shipped configuration masks.** The sweeper's
-  `intervalDivisor` is invisible to the digest at `scale = 60` — the 60 s floor
-  swallows every sane divisor, and the hash is identical for 12 and for 6.
+  `intervalDivisor` WAS invisible to the digest at `scale = 60` — the 60 s floor
+  swallowed every sane divisor, and the hash was identical for 12 and for 6.
   Covered instead by a two-point equivalence check that prints on every digest
   run. When a derivation has a clamp, check the unclamped branch somewhere the
-  hash is not looking.
+  hash is not looking. **Since `scale` went to 1.0 (2026-09-09) the mask is
+  gone** — 3600/12 = 300 s clears the floor, so the divisor now moves the derived
+  value and the hash along with it. The lesson outlived the configuration that
+  taught it, which is the usual way round: the check stays, because the next
+  clamp will not announce itself either.
 - **Calibrate a derivation to reproduce BOTH existing values, and it costs
   nothing to adopt.** The first sweeper draft used a floor of 30 s, which would
   have moved the dev cadence 60 → 30 and made 4b a behaviour change. A floor of

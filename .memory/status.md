@@ -16,7 +16,7 @@ numbers below. Current state:
 | Phase | What landed |
 |---|---|
 | 3 | All 12 catalogs read `content/data/*.json`; no Swift content array remains (Zone made it 13 in 8E) |
-| 4 | Six tuning tables in `content/data/tuning/`; three `testMode` flags collapsed into one `time.scale` (still 60; Phase 11 sets 1.0) |
+| 4 | Six tuning tables in `content/data/tuning/`; three `testMode` flags collapsed into one `time.scale` (**1.0 since 2026-09-09**) |
 | 5 | Combat is ABSORPTION, not subtraction; ratings→% curves; `levelDiff`; `maxLevel` 40; proportional growth; a Vigor pool ~~+ regen~~ *(8E deleted the regen)*; enemies generated from a six-archetype table ~~and dropping silver~~ *(8C deleted the silver)*; the three special attacks rebuilt off "ignore armour" |
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
@@ -61,9 +61,10 @@ touches it). Fluent will not re-run it; deleting its `_fluent_migrations` row is
 makes it fire again. Registered last in `configure.swift`; a no-op on a fresh database. Explicit table
 list rather than an FK cascade, because `tavern_game_messages` carries no foreign key, and
 a self-check against `information_schema` refuses to finish while any table still holds a
-row. **`scale` 60 → 1.0 is deferred past the playtest** at the user's call: the first hour
-runs on compressed time, which is sound because the opening has no game-time gate — but the
-estate pace cannot be measured that way, and the flip is still owed before release.
+row. **`scale` 60 → 1.0 landed 2026-09-09** — game time is real time, and `validate
+--strict` is clean for the first time (zero errors, zero warnings). The opening ledger is
+unaffected (the opening has no game-time gate); the estate pace, 85–93 days, becomes
+measurable, which compressed time never allowed.
 
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
@@ -107,8 +108,8 @@ level floor enforced).
 
 ⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
 changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `0ff4f5c01c2c7b43` / `c44f38cf0fae5ecd` /
-`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-08), 234 tests.
+against a real database. Digest baseline `f6fc421256085066` / `941eef33f757fa6b` /
+`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-09), 234 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×

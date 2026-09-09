@@ -108,10 +108,12 @@ progression number. The remaining Phase 11 work is still a live session, not cod
 > moose at all** — the sim says 100%, with the kit. That is the load-bearing
 > claim of the whole opening design and the single most important thing to watch.
 >
-> **What the first hour can and cannot measure.** `scale` is still 60, deliberately
-> (below). The opening has no game-time gate at all — no step cooldown, no estate
-> below level 4, no Vigor regeneration — so the ledger's prediction is testable
-> as-is. The estate pace (85–93 days) is *not* measurable on compressed time.
+> **`scale` is 1.0 since 2026-09-09 — real time.** A plot cycle is an hour, a
+> passive run is 30 / 60 / 90 minutes, a trip to the capital is two minutes. The
+> opening ledger's km-1-vs-km-4 answer never depended on this (the opening has no
+> game-time gate at all — no step cooldown, no estate below level 4, no Vigor
+> regeneration), so it stands unchanged; what BECOMES measurable is the estate
+> pace, 85–93 days, which compressed time could never show.
 >
 > | km | mobs | kills to L4 | net vigor | win |
 > |---|---|---|---|---|
@@ -145,9 +147,11 @@ progression number. The remaining Phase 11 work is still a live session, not cod
 > `/content`, which have never executed against a real database — a freshly wiped
 > one is the safest moment.
 >
-> **Then, still owed before release:** `tuning/time.json` → `scale` 60 → **1.0**.
-> Deferred past the playtest on 2026-09-02 at the user's call, not cancelled — it
-> is the only error `validate --strict` still reports.
+> **`scale` 60 → 1.0 landed 2026-09-09**, and with it `validate --strict` reports
+> **zero errors and zero warnings** for the first time. Two digest halves moved,
+> both predicted: `tuning`, and `records` — the latter because it deliberately
+> hashes the DERIVED `PlotCatalog.intervalSeconds`, a guard Phase 4b put there so
+> the retirement of the old `testMode` flag could not change the value it produced.
 
 ### What the 2026-09-07 pass landed (four commits)
 
@@ -332,8 +336,8 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline (2026-09-08, schema v10):** `records 0ff4f5c01c2c7b43` ·
-`tuning c44f38cf0fae5ecd` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+**Current digest baseline (2026-09-09, schema v10):** `records f6fc421256085066` ·
+`tuning 941eef33f757fa6b` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
 
 The 2026-09-08 change moved `tuning` alone: HP regen went **5% → 20% of max HP
 per real minute** (`tuning/vigor.json` → `healing.regenPerMinute`), so a full heal
@@ -407,11 +411,10 @@ localization (981 / 993 keys). **Access is invite-only and lives in the database
 (`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
 account and opens registration, and nobody else gets a `User` row at all.
 
-⚠️ `tuning/time.json` → `scale` is **60**, so every game-time gate is 60×
-compressed and the validator reports it. Deliberate, and **deferred past the
-first-hour playtest** (2026-09-02) so that pass runs on compressed time; Phase 11
-sets it to 1.0 afterwards, and it is the only error `validate --strict` reports.
-Nothing under `realTime` is affected — Telegram's 24 h dice-delete window, the
+✅ `tuning/time.json` → `scale` is **1.0** (2026-09-09): game time is real time.
+Plot cycle 1 h, passive runs 30 / 60 / 90 min, a trip to the capital 2 min.
+`validate --strict` is clean — zero errors, zero warnings.
+Nothing under `realTime` ever was affected — Telegram's 24 h dice-delete window, the
 trade TTLs and the 12:00 rollover never scale.
 
 ## Key Files

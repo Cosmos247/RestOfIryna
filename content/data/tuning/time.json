@@ -20,5 +20,5 @@
     "tradeSessionTTL" : 300.0,
     "tradeSweepInterval" : 30.0
   },
-  "scale" : 60.0
+  "scale" : 1.0
 }
