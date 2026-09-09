@@ -12,7 +12,7 @@ text + emoji + inline keyboards.
 
 ## Stack
 
-Swift 6.2 (strict concurrency) | Hummingbird 2.22+ | Fluent 4.13+ / PostgreSQL 16 |
+Swift 6.2 (strict concurrency) | Hummingbird 2.22+ | Fluent 4.13+ / PostgreSQL 15 |
 swift-telegram-sdk 4.6+ | AsyncHTTPClient | Lingo 4 (i18n) | SwiftDotenv
 
 Router–controller state machine: each user has a `routerName` in the DB;
@@ -35,30 +35,38 @@ the maths. **This is the only work in flight.**
 
 ### Where we stopped
 
-**Phases 3–10 are done; Phase 11 is IN FLIGHT.** Two of its four pieces landed on
-2026-09-02 — the opening ledger and the `WipeForRebalance` migration. On
-**2026-09-07** four more commits landed: a bug pass and a UX/balance pass that
-changed *what the first hour looks like* without moving a single combat or
-progression number. The remaining Phase 11 work is still a live session, not code.
+**Phases 3–10 are done; Phase 11 is all but closed.** The opening ledger and
+`WipeForRebalance` landed 2026-09-02. On **2026-09-07** four commits changed *what the
+first hour looks like* without moving a combat or progression number. On **2026-09-08/09**
+the last three pieces landed: access moved out of the code into a database table with
+`/link` invites, the bot was deployed to the Raspberry Pi under pm2, and `scale` went
+60 → 1.0. **`validate --strict` now reports zero errors and zero warnings** — the first
+time it ever has. What remains is not code.
 
-> ## Next action: **run the first-hour playtest.**
+> ## Next action: **walk the first hour on purpose.**
 >
-> Everything code-side that the playtest needs is committed. What is left is to
-> launch the bot and play.
->
-> **Launching (both traps are real and both look identical — `Fatal error: Error
-> raised at top level`):**
+> **The game is already live.** It runs on the Pi under pm2 as app `ROI`, independent of
+> this laptop, and it survives a reboot (`pm2 save` done, pm2's systemd unit enabled).
+> Four accounts have played it — so the question is no longer "does it start", it is
+> "does the first hour teach what it is supposed to teach".
 >
 > ```
-> pkill -f debugserver; pkill -9 -f 'Build/Products/Debug/RestOfIryna'
-> ssh -f -N -L 5433:localhost:5433 rpi5@192.168.0.203
-> printf '\x00\x00\x00\x08\x04\xd2\x16\x2f' | nc -w2 localhost 5433 | head -c1
+> ssh rpi5@192.168.0.203 'pm2 list; tail -20 ~/.pm2/logs/ROI-out.log'
 > ```
 >
-> The last line must print `S` or `N` — that is Postgres answering behind the
-> tunnel. `nc -z` alone only proves ssh is up, because an `-L` forward listens
-> locally even when the far side is dead. A crashed Xcode run sits as `STAT SX`
-> and survives `kill -9` while debugserver traces it, so kill the debugger first.
+> **⚠️ Never start, restart or stop the bot without asking the user** — see `CLAUDE.md`
+> → "Running the bot — ASK FIRST". Prepare the change, then hand over the command. The
+> one exception is a Mac instance left polling: stop that without asking, because both
+> `.env` files carry the same token and a stray poller means a 409 for the Pi.
+>
+> **To land a change on the Pi:** commit → user pushes → `git pull --ff-only` on the Pi →
+> `swift build` (debug, detached — see README's Deployment section) → ask before
+> `pm2 restart ROI`. A content-only edit needs no restart at all: `/reload` in Telegram
+> re-reads `content/data`, tuning tables included. `/content` prints the live bundle
+> hash, which is how you check WHICH content the running process is actually serving.
+>
+> **To admit a new tester:** `/link` in Telegram (developer-only). Never a code edit —
+> the hardcoded list is gone.
 >
 > **⚠️ The wipe ALREADY RAN — and a first-hour session already happened.**
 > `_fluent_migrations` records `WipeForRebalance` applied **2026-09-02 22:14:41**,
@@ -354,11 +362,14 @@ halves predicted *before* the edit, which is the whole point of splitting the
 digest in four. Phase 9 moved nothing at all: five specifications, three new spec
 tables and a validator refactor, and every half stood still.
 
-⚠️ **No live Telegram pass since the rebalance began.** Every formula the player
-touches changed in Phase 5, every item's stat in Phase 6, the stances plus the
-failed-Flee counter in Phase 8C, Shadow Veil plus the archer's Defend in 8D, and
-the whole Vigor economy in 8E.
-`/reload` itself has never run against a real database.
+⚠️ **The live pass has begun, but nothing was walked deliberately.** Four accounts
+played 2026-09-02 → 09-09 and reached L10 / estate T4, so the rebalanced formulas have
+been exercised — but nobody stepped through the first hour against a checklist. Every
+formula the player touches changed in Phase 5, every item's stat in Phase 6, the stances
+plus the failed-Flee counter in Phase 8C, Shadow Veil plus the archer's Defend in 8D,
+and the whole Vigor economy in 8E. **`/reload` has still never run against a real
+database** — and it is now the cheapest way to ship a content edit, so it is worth
+proving early.
 
 ### How content works now
 
@@ -385,6 +396,23 @@ would have run at type-init the moment `all` started reading the snapshot.
 
 The migration loop that got us here, its verification layers and every gotcha
 live in `.memory/content-pipeline.md`.
+
+### Running locally (rare now — the Pi is production)
+
+Only needed to debug against the live database from the Mac. Both traps below look
+identical, as `Fatal error: Error raised at top level`:
+
+```
+pkill -f debugserver; pkill -9 -f 'Build/Products/Debug/RestOfIryna'
+ssh -f -N -L 5433:localhost:5433 rpi5@192.168.0.203
+printf '\x00\x00\x00\x08\x04\xd2\x16\x2f' | nc -w2 localhost 5433 | head -c1
+```
+
+The last line must print `S` or `N` — that is Postgres answering behind the tunnel.
+`nc -z` alone only proves ssh is up, because an `-L` forward listens locally even when
+the far side is dead. A crashed Xcode run sits as `STAT SX` and survives `kill -9` while
+debugserver traces it, so kill the debugger first. **And stop the Pi's instance first,
+or one of the two gets a 409** — same token in both `.env` files.
 
 ### Commands
 
@@ -435,6 +463,8 @@ trade TTLs and the 12:00 rollover never scale.
 | `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
 | `Modules/ROISim/SpecTables.swift` | What `roi-content spec` prints — the tables a content spec quotes, from the code that owns them |
 | `Modules/ROISim/OpeningLedger.swift` | **Phase 11.** Levels 1–3 priced at every depth against the trail — the stretch the pace model must skip. Raw meat is NOT income (its recipes are kitchen recipes, and the kitchen is a room of the estate this stretch ends by unlocking) |
+| `Swift/Helpers/AccessControl.swift` | **2026-09-08.** The allow list as an actor. A cache MISS queries the DB, so a row added by hand takes effect on the next message; `developerUsers` are allowed before the table is read — the lockout brake |
+| `Swift/Helpers/InviteToken.swift` | **2026-09-08.** The `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), 16 letters, five REAL minutes. Encryption hides the date; the tag is what stops anyone minting their own |
 | `Swift/Migrations/WipeForRebalance.swift` | **Phase 11.** The full wipe. LAST in `configure.swift`, no-op on a fresh DB. Explicit table list because `tavern_game_messages` has no FK, plus an `information_schema` self-check that refuses to finish while any table holds a row |
 | `content/spec/` | The five approved specifications (Phase 9, closed). Numbers in them are printed by `roi-content spec`; re-run it after any content edit and refresh the `<!-- generated -->` blocks |
 
@@ -443,6 +473,10 @@ trade TTLs and the 12:00 rollover never scale.
 - After significant work update `.memory/sessions.md`, `.memory/status.md` and `TODO.md`
 - Ask before committing; short compact messages, no co-author line
 - **Never push** — manual/user-side only
+- **Never start, restart or stop the bot without asking** (`CLAUDE.md` → "Running the
+  bot — ASK FIRST"). Builds are exempt; a Mac instance left polling is the one thing to
+  stop without asking, because it 409s the Pi
+- Admit a new tester with `/link`, never a code edit — the hardcoded list is gone
 - New locale keys go in BOTH `en.json` and `uk.json`; uk gendered copy uses `.m`/`.f`
 - Telegram `callback_data` max 64 bytes
 - Content changes: `roi-content validate --strict` must pass before commit

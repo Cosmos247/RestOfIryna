@@ -27,14 +27,20 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates
 - [Implemented vs Planned](status.md) — What exists now vs what GDD describes, plus the rebalance phase table
-- [Rebalance](rebalance.md) — **Active work.** Audit findings, locked decisions, the calibrated math model, the phase tracker (**3–10 done · 11 IN FLIGHT** — the opening ledger and `WipeForRebalance` landed 2026-09-02, `scale` 60→1.0 deferred, the live first-hour playtest is next) and the per-phase lessons
+- [Rebalance](rebalance.md) — **Active work.** Audit findings, locked decisions, the calibrated math model, the phase tracker (**3–10 done · 11 all but closed** — ledger and wipe 2026-09-02, invite-only access and the Pi deployment 09-08/09, `scale` 60→1.0 on 09-09; what remains is a deliberate first-hour walkthrough) and the per-phase lessons
 
 ## Patterns & Conventions
 - [Controller Pattern](controller-pattern.md) — How to build/register controllers, routing, keyboards
 - [Session & Auth](session-auth.md) — User model, session cache, authorization flow
 - [Localization](localization.md) — Lingo setup, JSON structure, interpolation, adding locales
 
-## Phase 11 quick orientation (2026-09-02, extended 2026-09-07)
+## Phase 11 quick orientation (2026-09-02, extended 2026-09-07 and 09-09)
+
+**Where it stands.** Every code-side piece has landed. `validate --strict` reports
+**zero errors and zero warnings** for the first time, the bot runs on the Pi under pm2,
+and four accounts have played the rebalanced build. What is NOT done is a first hour
+walked deliberately against the checklist in `Prompt.md`, and `/reload` has still never
+run against a real database.
 
 - **The opening ledger** — `Modules/ROISim/OpeningLedger.swift`, printed by `simulate` and by
   `roi-content spec opening`. Prices levels 1–3 at every depth against the trail, the stretch
@@ -49,8 +55,24 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 - **Read before trusting a printed number at level 1:** the report measures a full common kit
   and registration grants only the starter weapon — the absolute numbers are a ceiling. See the
   auto-memory `project-reference-character-vs-starting-kit`.
-- **The playtest is still the next action**, but the 2026-09-07 pass changed what it walks
-  into — the checklist of new surfaces is in `Prompt.md`.
+- **The playtest has started but was never walked on purpose.** Four accounts played
+  2026-09-02 → 09-09 (Nerif reached L10 / estate T4); what they hit is in the auto-memory
+  `first-playtest-happened`. The checklist of surfaces to walk is in `Prompt.md`.
+- **`scale` is 1.0 since 2026-09-09** — game time is real time, and the flip moved two
+  digest halves rather than one: `records` hashes the DERIVED `PlotCatalog.intervalSeconds`,
+  a guard Phase 4b placed there so retiring the `testMode` flag could not change the
+  produced value in silence.
+
+## Access control (2026-09-08)
+
+Access is **invite-only and lives in the database**, not in code. `allowed_users`
+(`AllowedUser` / `CreateAllowedUsers`) plus `AccessControl` (an actor cache whose MISS
+queries the DB) and `InviteToken` (an encrypted UNIX timestamp with an HMAC tag, 16
+letters, five real minutes). `/link` is developer-only and is how a new tester is
+admitted — never a code edit. The gate sits in `TGDispatcher` ahead of routing, so a
+refused stranger never gets a `User` row, and it takes the token as a `/start` payload
+**or** pasted as a bare message. Full rationale in the auto-memory
+`invite-only-access`; deployment context in `pi-host-layout` and `linux-build-gap`.
 
 ## The 2026-09-07 pre-push pass (four commits, no combat maths moved)
 

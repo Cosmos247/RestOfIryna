@@ -5,8 +5,8 @@
 **Rest Of Iryna (ROI)** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a wilderness plagued by rabies, build up an estate of production plots, battle beasts, and wage territorial wars. (The estate is an abstract slot-indexed plot list — the 30×30 spatial grid was removed from the roadmap on 2026-05-18 and must not be proposed again.)
 
 - **Language:** Swift 6.2 (strict concurrency, `ExistentialAny`)
-- **Platform:** macOS 14+, Telegram Bot (long polling)
-- **Database:** PostgreSQL 16 via Fluent ORM
+- **Platform:** developed on macOS 14+, **deployed on Linux/aarch64** (a Raspberry Pi 5 under pm2). Telegram Bot, long polling
+- **Database:** PostgreSQL 15 via Fluent ORM (the Pi's native cluster, port 5433)
 - **Target:** 1,000-3,000 concurrent players
 
 ## Key Documents
@@ -69,8 +69,12 @@ every duration. `CombatService.baseHitChance` and friends are computed `var`s ov
 the snapshot, so **never add a `static let` that reads a catalog or a tuning value** —
 it runs at type-init and traps before `ContentBootstrap.load`.
 
-`tuning/time.json` splits `gameTime` (multiplied by `scale`) from `realTime` (never
-is): Telegram's 24 h dice-delete window is a protocol constant, not a balance knob.
+`tuning/time.json` splits `gameTime` from `realTime`. A `gameTime` value is authored
+at scale 1 and **DIVIDED by `scale`** at the point of use, so a bigger scale means a
+faster game: at the 60 the whole rebalance ran on, a 3600 s plot cycle was 60 s.
+**`scale` is 1.0 since 2026-09-09** — game time is real time. `realTime` never scales at
+all: Telegram's 24 h dice-delete window is a protocol constant, not a balance knob, and
+so are the trade TTLs and the 12:00 rollover.
 
 **A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides
 WHICH job each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00
@@ -122,6 +126,19 @@ screens that name a weapon generically (the Master's `capital.master.repair.weap
 cannot follow a noun that changes. `locale.ladder_name_drift` warns when no word survives.
 Wherever a label describes an inventory ROW rather than a shop listing, pass the row's
 tier — `CapitalController.itemLabel(_:tier:lingo:locale:)`.
+
+**Access is invite-only and lives in the database.** The `allowed_users` table
+(`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array;
+`foundingUsers` in `configure.swift` is now only the migration's seed list. To let a new
+tester in, use **`/link`** (developer-only) — never a code edit. `/link` mints a
+16-letter `InviteToken`: an encrypted UNIX timestamp plus an HMAC tag keyed on
+SHA256(bot token), good for five REAL minutes (`time.scale` never touches it). The gate
+lives in `TGDispatcher` **ahead of routing**, so a refused stranger never gets a `User`
+row, and it accepts the token either as a `/start` payload or pasted as a bare message —
+a deep link only delivers its payload when the client actually sends `/start <token>`,
+and live it did not. `allowed_users` is listed in `WipeForRebalance.preserved`: a wipe
+resets the game, not the guest list. `developerUsers` stays hardcoded and is allowed
+before the table is read — the brake against locking yourself out of your own bot.
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build

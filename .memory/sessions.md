@@ -119,7 +119,7 @@ single-character mutations of a valid token rejected**. Thirteen checks, all pas
 **Still untested against a real database:** `CreateAllowedUsers` and the whole invite
 flow have never run live — the next launch is their first.
 
-## Session — 2026-09-09 (the Pi deploy, a Linux build bug, and game time becomes real time)
+## Session — 2026-09-09 (the Pi deploy, a Linux build bug, real time, and a rule about restarts)
 
 ### 1. The bot runs on the Pi
 
@@ -171,6 +171,52 @@ clamp will not announce itself either.
 **What the first hour looks like now:** the game finally runs at the speed it was
 designed for, and the first tester will feel that as slowness. That is the intent, not
 a regression.
+
+### 3. HP regen settles, and a standing rule about the bot
+
+Regen moved 5% → 20% (09-08) → **10%** of max HP per real minute: a full rest at the
+estate is ten minutes. Each move touched `tuning` alone, and `records` holding through
+the second one **retroactively confirmed** that the scale flip moved `records` because of
+`PlotCatalog.intervalSeconds` and nothing else.
+
+**The user set a standing rule after I restarted the live bot to apply a change without
+asking:** never start, restart or stop the bot without explicit permission — they step
+away while changes are being made and cannot always test straight away, so a restart
+chosen here lands unseen changes in a game other people may be playing. Builds are
+exempt. The Mac instance is the one exception and must be stopped, since both `.env`
+files carry the same token. Written into `CLAUDE.md` → "Running the bot — ASK FIRST" and
+the auto-memory `never-start-the-bot`.
+
+### 4. Shadow Veil's comment, and a mistake caught in review
+
+Two defects in one place: the doc comment describing the archer's dodge buff sat above
+`combatEnemyBurnRounds` (whose own comment followed it immediately) while
+`combatPlayerDodgeBuff` had none at all, and what it said — "flat +50 dodge" — had been
+untrue since Phase 8D replaced the flat lift with a multiple of the archer's own rating.
+
+**The audit then caught my own fix.** I had written "worth ~22 points of dodge chance at
+level 1 and ~8 at the cap", computed from the bare stat line — while two existing
+comments (`TuningDTO`, `CombatService`) already say "16 at level 1 and 4 at the cap".
+That is a third version of one claim, which is exactly the drift the content pipeline
+exists to prevent. Both new comments now name
+`SpecialDefense.shadowVeilDodgeMultiplier` and restate no number at all.
+
+Twice this session I nearly rewrote a FROZEN record instead of a current one — first the
+digest hashes in `TODO.md`, then the 2026-09-08 paragraph in `rebalance.md`. Both caught
+and restored. The rule that keeps working: a line saying "current baseline" is updated, a
+line describing what a dated pass produced is not.
+
+### 5. Docs and memory swept
+
+`CLAUDE.md` carried two factual errors, both from before the deployment: it said the
+database was **PostgreSQL 16** (the Pi runs 15) and that `gameTime` values are
+**multiplied** by `scale` when the code divides by it — a bigger scale means a faster
+game, which is the opposite of what the sentence implied. Platform now names Linux/aarch64
+as the deployment target, and the access subsystem got a section of its own. README gained
+the four new files in its Project Structure and a **Deployment** section (pm2 on the Pi,
+debug not release, stop the Mac first, a green Mac build proves nothing about the Pi).
+`Prompt.md` was reoriented off "launch the bot and play" — the bot is already live — onto
+walking the first hour deliberately.
 
 ## Session — 2026-09-07 (pre-push bug pass: the profile, the rest clock, the name, the level-up)
 

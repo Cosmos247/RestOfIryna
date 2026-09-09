@@ -981,7 +981,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       goes from one creature to three. Digest moved **exactly** the two predicted halves —
       `records` and `spawns`; `tuning` and `quests` held. 222 tests, `simulate --strict` 0
       broken bands.
-- [ ] Phase 11 — `WipeForRebalance` migration, `--strict` validation, live first-hour playtest
+- [ ] Phase 11 — wipe, `--strict` clean, invite-only access, Pi deployment; only the deliberate first-hour walkthrough is left
   - [x] **`WipeForRebalance`** *(2026-09-02)* — the full wipe agreed at the start of the
         rebalance. Registered **last** in `configure.swift` on purpose: it truncates every
         table the migrations above create, so anything registered after it would be wiped
@@ -1032,6 +1032,23 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         purse on both trade screens. Digest: `records 0ff4f5c01c2c7b43` ·
         `tuning fa84304a356e65a0` · `spawns eaea309f4813dfa2` (held) ·
         `quests 30de20902006e3b9`. 234 tests.
+  - [x] **Invite-only access** *(2026-09-08)* — the hardcoded `allowedUsers` array is gone.
+        `allowed_users` table (`AllowedUser` / `CreateAllowedUsers`, seeded with `foundingUsers`
+        and listed in `WipeForRebalance.preserved`), `AccessControl` (actor cache whose MISS
+        queries the DB, so a hand-added row works on the next message), `InviteToken`
+        (encrypted UNIX timestamp + HMAC tag on SHA256(bot token), 16 letters, 5 REAL minutes)
+        and developer-only `/link`. The gate is in `TGDispatcher` ahead of routing, so a refused
+        stranger never gets a `User` row, and it accepts the token as a `/start` payload **or**
+        pasted as a bare message — live, the deep link delivered no payload at all.
+  - [x] **Deployed to the Raspberry Pi** *(2026-09-09)* — pm2 app `ROI`, debug build (pm2 already
+        pointed there and it reuses artifacts: 81 s vs tens of minutes), `pm2 save` so it survives
+        a reboot. Exposed a Linux-only build error three months old: `fflush(stdout)` compiles on
+        Darwin and fails under Glibc, where `stdout` is a mutable global Swift 6 strict
+        concurrency refuses. `fflush(nil)` instead. **A green Mac build proves nothing about the
+        Pi.**
+  - [x] **HP regen retuned** *(2026-09-08/09)* — `healing.regenPerMinute` 5% → 20% → **10%** of
+        max HP per real minute; a full rest at the estate is ten minutes. `tuning` alone moved
+        each time.
   - [x] **`scale` 60 → 1.0** *(2026-09-09)* — game time is real time. Plot cycle 60 s → 1 h,
         plot sweeper 60 s → 300 s, passive runs 30/60/90 s → 30/60/90 min, a trip to the
         capital 2 s → 2 min. `validate --strict` reports **zero errors and zero warnings**

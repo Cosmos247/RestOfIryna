@@ -131,6 +131,7 @@ RestOfIryna/
 │   │
 │   ├── Models/                   # Fluent ORM models + catalog façades (roster data lives in content/data/*.json)
 │   │   ├── User.swift
+│   │   ├── AllowedUser.swift     # 2026-09-08 — `allowed_users`: who the bot answers at all (telegram_id UNIQUE, username, source seed|invite|manual). Replaced the hardcoded allowedUsers array; preserved by WipeForRebalance
 │   │   ├── Item.swift            # Item/GearStats types + ItemCatalog façade + ItemDisplay (roster in content/data/items.json; `EquipmentSlot` moved to ROIContent in rebalance Phase 8) — Phase 5.2 added the Forester's leather set; Phase 5.2.1 added 7 cooked dishes + 5 recipe scrolls + Item.teachesRecipe field
 │   │   ├── Recipe.swift          # Recipe types + RecipeCatalog façade (roster in content/data/recipes.json) (RecipeCategory forge/tannery/kitchen, RecipeIngredient, RecipeOutput, Recipe, RecipeCatalog) — Phase 5.2 + 5.2.1. Phase 6.5 (2026-05-22) raised the Forester set cost + added iron (40🦴 + 8🔩 for a full suit) to track the premium Master prices
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
@@ -163,6 +164,7 @@ RestOfIryna/
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
+│   │   ├── CreateAllowedUsers.swift  # 2026-09-08 — creates `allowed_users` and seeds the founding four from `foundingUsers`; without the seed the first boot locks out everyone already registered
 │   │   ├── AddCharacterFields.swift
 │   │   ├── AddProfileStyle.swift
 │   │   ├── AddGameStats.swift
@@ -252,6 +254,8 @@ RestOfIryna/
 │   ├── Helpers/
 │   │   ├── TGBot+Extensions.swift
 │   │   ├── SessionCache.swift
+│   │   ├── AccessControl.swift       # 2026-09-08 — actor holding the allow list; consulted before a session is fetched. A cache MISS queries the DB, so a row added by hand takes effect on the next message. developerUsers are allowed before the table is read
+│   │   ├── InviteToken.swift         # 2026-09-08 — the `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), base32 over letters only, 16 chars, valid 5 real minutes
 │   │   ├── Lingo+Locales.swift
 │   │   ├── EphemeralChatState.swift  # in-memory actor — exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), pending Market-listing (qty→price, Phase 6.5) + Trade-input (silver/qty, Phase 6.5) state, latest status-banner message ID per user
 │   │   ├── PhotoCache.swift          # Phase 6.3 (+ 2026-05-20 rework) — `[assetPath: fileId]` cache + `sendCachedPhoto(...)` helper (file_id reuse only — no deletion). Default photo path for ALL player-visible art (location backdrops, registration/lore scenes); photos stay in chat history (players keep a scrollable record; file_id dedup makes accumulation free). Was `sendScenicPhoto` with prev-photo auto-delete until the rework dropped the deletion.
@@ -383,6 +387,39 @@ Two gotchas worth knowing before you go hunting:
   not one. A run stopped at a debugger breakpoint still holds its poll: the
   process survives `kill -9` while the debugger traces it, so kill `debugserver`
   first. Check with `pgrep -fl RestOfIryna` before starting a new run.
+
+### Deployment — the bot runs on a Raspberry Pi
+
+Production is a **Raspberry Pi 5** (`rpi5@192.168.0.203`) running the bot under **pm2**
+as the app `ROI`, alongside two unrelated bots. Postgres 15 is native on the Pi at port
+**5433**, so no tunnel is needed there — the tunnel is only for reaching that database
+from the dev Mac.
+
+```bash
+# on the Pi
+cd ~/RestOfIryna && git pull --ff-only
+export PATH="$HOME/.swiftenv/shims:$HOME/.swiftenv/bin:$PATH"   # Swift 6.2
+setsid nohup swift build > /tmp/roi-build.log 2>&1 &            # detached: SSH hangup kills a foreground build
+pm2 restart ROI && pm2 save                                     # save = survives a reboot
+```
+
+Three things that are easy to get wrong:
+
+- **Build debug, not release.** pm2's `ROI` app already points at
+  `.build/debug/RestOfIryna`, so nothing needs reconfiguring, and debug reuses the
+  existing artifacts — 81 seconds against tens of minutes, whose slowest step would be
+  whole-module optimisation of the app target.
+- **Stop the Mac instance first.** Both `.env` files carry the same bot token, so a Mac
+  run left polling means a Telegram 409 for the Pi.
+- **A green Mac build proves nothing about the Pi.** Swift 6 strict concurrency rejects
+  references to Glibc's mutable globals that Darwin imports as computed properties —
+  `fflush(stdout)` compiled on macOS and failed every Linux build for three months.
+  Compile on the Pi before calling a change done.
+
+Verify from the log: `Content loaded: … hash …` (the hash says which bundle is really
+live), `Bot identified as @…` (getMe worked, so `/link` can build invite links), and
+Hummingbird listening — that last line only prints if `configure` ran to the end, so it
+doubles as proof the database and migrations were fine.
 
 ### Finding Your Telegram User ID
 

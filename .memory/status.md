@@ -106,9 +106,14 @@ simulate` measures it, and its findings were acted on (stances multiplicative, w
 budget re-spent, monster silver removed, the last two flat lifts converted, the archetype
 level floor enforced).
 
-⚠️ **No live Telegram pass since the rebalance began.** Every formula the player touches
-changed in Phase 5 and every item's stats in Phase 6; `/reload` itself is also untested
-against a real database. Digest baseline `f6fc421256085066` / `ad7bdb94d0efc668` /
+⚠️ **The live pass has begun but nothing was walked deliberately.** Four accounts played
+2026-09-02 → 09-09 and reached L10 / estate T4, so the rebalanced formulas have been
+exercised — but nobody stepped through the first hour against a checklist. Every formula
+the player touches changed in Phase 5 and every item's stats in Phase 6; **`/reload` is
+still untested against a real database**, and it is now the cheapest way to ship a content
+edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
+so it survives a reboot); deployment steps are in README's Deployment section, and the
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `f6fc421256085066` / `ad7bdb94d0efc668` /
 `eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-09), 234 tests.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
