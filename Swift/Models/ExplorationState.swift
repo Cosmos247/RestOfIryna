@@ -109,9 +109,6 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_enemy_def_debuff")
     public var combatEnemyDefDebuff: Int?
 
-    /// Rounds remaining where the player gets a flat +50 dodge against
-    /// incoming hits. Set by archer's Shadow Veil. Decremented at end of
-    /// each player action.
     /// Rounds of burn left on the enemy, and the damage each tick deals.
     /// Damage is frozen at cast time from the caster's ATK — see `AddCombatBurn`.
     @OptionalField(key: "combat_enemy_burn_rounds")
@@ -120,6 +117,13 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_enemy_burn_damage")
     public var combatEnemyBurnDamage: Int?
 
+    /// Rounds remaining of the archer's Shadow Veil "lingering shadow". While
+    /// it is up, the incoming counter is rolled against the player's dodge
+    /// MULTIPLIED by `CombatService.SpecialDefense.shadowVeilDodgeMultiplier`
+    /// — a multiple of their own rating rather than the flat +50 it was until
+    /// Phase 8D. That declaration owns the rate and the reason; restating
+    /// either here is how the two drift apart. Decremented at the end of each
+    /// player action by `tickDefenseEffects`.
     @OptionalField(key: "combat_player_dodge_buff")
     public var combatPlayerDodgeBuff: Int?
 
@@ -387,7 +391,8 @@ extension ExplorationState {
     }
 
     /// True when the archer's Shadow Veil "lingering shadow" buff is active —
-    /// the player gets +50 dodge on the incoming counter this round.
+    /// the incoming counter is rolled against the player's dodge lifted by
+    /// `SpecialDefense.shadowVeilDodgeMultiplier` this round.
     public var hasPlayerDodgeBuff: Bool {
         return (combatPlayerDodgeBuff ?? 0) > 0
     }
