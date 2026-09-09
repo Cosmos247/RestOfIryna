@@ -297,6 +297,28 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - **Never push.** Push operations are manual, user-side only.
 - Stage only relevant files, never `git add -A`
 
+### Running the bot — ASK FIRST
+
+- **Never start, restart or stop the bot without explicit permission.** This covers
+  `pm2 start / restart / stop / delete` on the Pi and killing a local run. The user
+  steps away while changes are being made and cannot always test straight away; a
+  restart chosen by the assistant lands unseen changes in a game other people may be
+  playing, with nobody watching.
+- **Do the work up to the last step, then hand over the command.** Edit, build,
+  `roi-content validate --strict`, `swift test`, `simulate`, the digest, copy files
+  where that was asked for — then stop and say plainly that the change is **not live**
+  until the user runs it:
+  - `pm2 restart ROI` (on the Pi), or
+  - `/reload` in Telegram when only `content/data` changed — tuning tables included,
+    since the catalogs are computed `var`s over the snapshot.
+- **Builds are exempt** — they disturb nobody. But a build is only ever half the job,
+  and saying so is part of the handover.
+- **The Mac instance is the one exception: stop it, don't ask.** Both `.env` files
+  carry the same bot token, so a Mac run left polling means a Telegram 409 for the Pi.
+  Stopping it is part of deploying, not a separate decision. Kill `debugserver` first —
+  a crashed Xcode run sits as `STAT SX` and survives `kill -9` while the debugger
+  traces it.
+
 ### Code Conventions
 - All controllers subclass `TGControllerBase`, mark `@unchecked Sendable`
 - Handler return type: `async throws -> Bool`

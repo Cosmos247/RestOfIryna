@@ -148,7 +148,7 @@ silently skipped between them, one with prose living inside the markers. Not dri
 numbers — drift in the mechanism meant to detect drift.
 
 **Current digest baseline (2026-09-09):** `records f6fc421256085066`,
-`tuning 941eef33f757fa6b`, `spawns eaea309f4813dfa2`,
+`tuning ad7bdb94d0efc668`, `spawns eaea309f4813dfa2`,
 `quests 30de20902006e3b9` (schema **v10**).
 
 `scale` 60 → 1.0 moved TWO halves, and both were predicted. `tuning` for the obvious
@@ -159,10 +159,15 @@ change the value it produced without saying so. It said so.
 
 The 2026-09-08 change moved `tuning` alone (`fa84304a356e65a0` → `c44f38cf0fae5ecd`):
 HP regen 5% → 20% of max HP per real minute, `tuning/vigor.json` →
-`healing.regenPerMinute`. A full rest at the estate is 5 minutes instead of 20.
+`healing.regenPerMinute`. A full rest at the estate became 5 minutes instead of 20.
 `simulate --strict` did not move at all — 0 broken bands, 12 warnings — because the
 sweep models fights, not the recovery between them, which is also the reason this knob
 can be turned without re-deriving anything.
+
+**Settled at 10% on 2026-09-09** (`941eef33f757fa6b` → `ad7bdb94d0efc668`), halfway
+between the original 5% and the 20% that replaced it: a full rest is 10 minutes.
+`tuning` alone moved, and `records` held — which retroactively confirms that the
+scale flip moved `records` because of `PlotCatalog.intervalSeconds` and nothing else.
 
 The 2026-09-07 quest retune moved three of the four: `records` (halved rewards plus the new `minLevel` band), `tuning` (the quest reward curve in `economy.json` — which held on its first run, because the digest was not hashing the new knob yet; hashing it was the fix) and `quests` (the daily pick is filtered by level before the hash, and the replay sweeps levels 1/8/20 now). `spawns` held, as it must — no foraging band moved.
 

@@ -337,11 +337,12 @@ and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
 **Current digest baseline (2026-09-09, schema v10):** `records f6fc421256085066` ·
-`tuning 941eef33f757fa6b` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+`tuning ad7bdb94d0efc668` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
 
-The 2026-09-08 change moved `tuning` alone: HP regen went **5% → 20% of max HP
-per real minute** (`tuning/vigor.json` → `healing.regenPerMinute`), so a full heal
-at the estate takes 5 minutes instead of 20. The other three halves held, as they
+HP regen is **10% of max HP per real minute** (`tuning/vigor.json` →
+`healing.regenPerMinute`), so a full rest at the estate takes 10 minutes. It went
+5% → 20% on 2026-09-08 and settled at 10% on 2026-09-09; each move touched
+`tuning` alone. The other three halves held, as they
 must — no record, spawn band or quest pool was touched. `simulate --strict` is
 unchanged at 0 broken bands / 12 warnings: the sweep models fights, not the rest
 between them.

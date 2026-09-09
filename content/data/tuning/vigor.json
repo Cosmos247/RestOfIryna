@@ -10,7 +10,7 @@
   },
   "healing" : {
     "maxIdleMinutes" : 1440.0,
-    "regenPerMinute" : 0.2
+    "regenPerMinute" : 0.1
   },
   "starvation" : {
     "hpDrainPercent" : 0.05,
