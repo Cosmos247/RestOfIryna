@@ -1,6 +1,7 @@
 {
   "eventWeightTotal" : 100,
   "passive" : {
+    "dailyBudgetMinutes" : 180,
     "freshStepCount" : 1,
     "lootMultiplier" : 1.0,
     "xpMultiplier" : 0.7

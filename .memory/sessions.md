@@ -1,5 +1,101 @@
 # Session History
 
+## Session — 2026-09-09 (part 2: one clock, three watchmen, and two ceilings that were not real)
+
+Continued from the live-play polish above. Digest after: `records f6fc421256085066`
+(held) · `tuning a23248441d58a78a` (moved twice, both predicted) ·
+`spawns eaea309f4813dfa2` (held) · `quests 30de20902006e3b9` (held).
+
+### 1. One countdown format, and no hand-written durations left
+
+`MM:SS` and `HH:MM` lived side by side, so `05:30` meant five and a half MINUTES
+on the trail and five and a half HOURS at the fortune teller — the same string,
+two readings, and no way to tell which without knowing the screen.
+`Helpers/Countdown.swift` replaces both: `2год 5хв` · `5хв` · `42сек`, hours only
+when there are any, seconds only in the last minute, no leading zeros (a whole
+hour prints `1год`, not `1год 0хв`).
+
+Then every hand-written duration in the copy was deleted, which was the larger
+half: the three expedition buttons («30 хв» — wrong for three months at scale
+60), the tarot **"Активна 6 год:" prefix in front of 17 cards × 2 locales**, and
+the invite window. All are printed from the value that owns them now — a
+`buffDurationSeconds` retune used to make 34 authored lines lie.
+
+### 2. The watchman for what finishes while nobody is looking
+
+HP regen is computed lazily on interaction, so the moment a player reaches full
+HP has **no observer** — the arithmetic that would discover it only runs when
+they come back. `RestNotificationService` is one `Task.detached` on a 60 s
+cadence (`PlotProductionService`'s shape, not one task per player) that answers
+three questions per player: HP full, the 24 h fortune cooldown elapsed, the
+12:00 job rollover. Regen runs through `HealingService.tick`, never a second
+copy, so the watchman and the player's next tap cannot disagree.
+
+**Two of the three need a flag; HP needs none** — a player at full HP is not a
+player about to reach it, so the condition guards itself.
+
+**The bug the audit caught in it:** the sweeper loaded its own `User` rows while
+the dispatcher keeps mutating the SESSION-CACHED instance. A save from the
+sweeper would write a snapshot taken before the player's last tap — a textbook
+lost update, on every column of the row. `SessionCache.peek` (added for this)
+returns the cached instance without inserting one, so the sweeper mutates what
+the dispatcher holds and never pins the whole roster in the cache.
+
+Moment-events went to their own channels instead: a pool topping out from food
+is a line in the same message, gear breaking is a line in the fight's own
+message (`drainEquippedGear` now returns what crossed zero IN THIS FIGHT), and a
+piece breaking during a passive run gets its own push — nobody watched that
+fight. Bag-full needed nothing: it was already said in five places.
+
+### 3. Two ceilings that were not real
+
+**Passive expeditions: 3 h a game day** (`passive.dailyBudgetMinutes`), counted
+in the authored minutes the choices are written in, not wall-clock seconds — a
+budget in seconds would mean a different number of runs at every `time.scale`.
+Counter plus day stamp, rolling at 12:00. The picker offers only what the day
+can still pay for, and the handler re-checks, because a picker sitting in the
+chat from an earlier run is exactly the tap that would overspend. Committed
+AFTER `beginPassive` succeeds: paying for a run that failed to start is the
+worse way to be wrong.
+
+**The warehouse cap was absent on the one path that fills the warehouse by
+itself.** Every hand deposit checked it; `PlotService.harvest(to: .warehouse)`
+wrote straight through. Measured live before touching anything: nobody was over
+(Nerif 567/1200, анія 373/800, Дарина 87/400) — the hole was real, the overflow
+had just not happened yet. Harvest is now all-or-nothing like the bag, with the
+yield left standing on the plot, and **the `isDeveloper` bypass was removed from
+all four warehouse checks** at the user's call: an unlimited warehouse on the
+account that plays most is how a ceiling stops being tested by its owner.
+
+Partial harvest was considered and rejected on a data fact: the Mine's two
+streams (pebble + iron) share one `lastHarvestedAt`, and a partial take cannot
+be written into one timestamp without over- or under-crediting the stream that
+was not taken.
+
+### 4. Starvation was charging double, and the message said otherwise
+
+Reported as "a step forward costs 10 HP, a step back 5". Direction had nothing
+to do with it. `VigorService.applyStarvationHPLoss` **mutates** — it takes the
+HP and returns what it took — and three of the four step buckets subtracted the
+returned number again: loot, encounter and trip charged 10, "nothing happens"
+charged 5. The screenshot showed exactly that pair. Worse, the report was honest
+only in the bucket that behaved: the loot step took 10 HP and printed no hunger
+line at all.
+
+Fixed by deleting the second subtraction in all three, keeping the number in the
+REPORT (the trip still prints `trip + hunger`, because both left the player that
+step). Passive runs walk the same `rollStep`, so hunger was hitting twice there too.
+
+### 5. Smaller
+
+The journal prints each job's description under its title, for all three NPCs
+including the untaken one — that is the reader who is still deciding. Checked
+while there: the numbers in all 15 descriptions match their objectives today,
+but they are prose beside a JSON number and will drift the first time a target
+is retuned. `@TGUserName` — a placeholder nobody filled — was live in the guild
+founding prompt; it is `@cosmosm` now, and the dead pre-invite refusal string
+that carried the same placeholder was deleted.
+
 ## Session — 2026-09-09 (live-play polish: five screens the first hour walks through)
 
 Five UX changes on top of the deployed build, driven by playing it. No combat,

@@ -250,6 +250,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddQuestAccepted())
     migrations.add(CreateAllowedUsers())
     migrations.add(AddFortuneOneShot())
+    migrations.add(AddNotificationFlags())
+    migrations.add(AddPassiveDailyBudget())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.
@@ -528,6 +530,14 @@ public func configure(logger: Logger) async throws {
     // deleting a private-chat dice message until it's 24 h old). This loop
     // sweeps each recorded message away the moment it ages past that limit.
     TavernCleanupService.startSweeper(on: db, bot: appState.bot)
+
+    // MARK: - Rest / ready watchman
+    //
+    // The three things that finish while the player is away: HP topping out at
+    // the estate, the fortune teller's 24 h cooldown, and the 12:00 job
+    // rollover. HP regen is computed lazily on interaction, so without this
+    // nobody is present at the moment it completes.
+    RestNotificationService.startSweeper(on: db, bot: appState.bot, lingo: lingo)
 
     // MARK: - Trade lobby / session TTL sweeper
     // Live player-to-player trades and exchange-lobby presence live in the

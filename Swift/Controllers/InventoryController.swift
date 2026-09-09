@@ -525,6 +525,15 @@ extension InventoryController {
                     "max":     "\(context.session.effectiveMaxHp)"
                 ]))
             }
+            // Topping out is worth naming: Vigor has no passive regeneration,
+            // so "full" is a ceiling the player just paid food for and every
+            // point past it is wasted.
+            if context.session.vigor >= context.session.maxVigor {
+                parts.append("🍖 " + context.lingo.localize("vigor.full", locale: locale))
+            }
+            if context.session.hp >= context.session.effectiveMaxHp {
+                parts.append("❤️ " + context.lingo.localize("hp.full", locale: locale))
+            }
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 
             // Refresh: stay in category if items remain, else pop back to root.

@@ -305,26 +305,20 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
             }
-            lines.append(contentsOf: ["", "<b>\(npcLabel)</b>", questTitle, stateLine])
+            // The job's own description, under its name. It carries what the
+            // title cannot — which item, how many — and the journal is read
+            // exactly when the player is deciding whether the trip into town
+            // is worth it, including for a job they have not taken yet.
+            let questDesc = lingo.localize(status.def.descKey, locale: locale)
+            lines.append(contentsOf: ["", "<b>\(npcLabel)</b>", questTitle, "<i>«\(questDesc)»</i>", stateLine])
         }
 
         lines.append("")
         lines.append("🕛 " + lingo.localize("journal.resets_in", locale: locale, interpolations: [
-            "time": Self.shortDuration(GameDay.secondsUntilNextRollover(), lingo: lingo, locale: locale)
+            "time": Countdown.format(GameDay.secondsUntilNextRollover(), lingo: lingo, locale: locale)
         ]))
         lines.append("<i>" + lingo.localize("journal.hint", locale: locale) + "</i>")
         return lines.joined(separator: "\n")
-    }
-
-    /// "3h 20m" / "3г 20хв" — minutes only under an hour. Unit words come from
-    /// Lingo so uk stays inside the glossary.
-    private static func shortDuration(_ seconds: Int, lingo: Lingo, locale: String) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let hourUnit = lingo.localize("journal.time.hours", locale: locale)
-        let minuteUnit = lingo.localize("journal.time.minutes", locale: locale)
-        guard hours > 0 else { return "\(minutes)\(minuteUnit)" }
-        return "\(hours)\(hourUnit) \(minutes)\(minuteUnit)"
     }
 
     /// Same reward formatting the capital quest board uses — one source so the
@@ -378,9 +372,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 ? FortuneDisplay.effectLine(for: card.effect, lingo: lingo, locale: session.locale)
                 : FortuneDisplay.oneShotLine(for: session, lingo: lingo, locale: session.locale)
             if card.effect.hasDurationEffect {
-                let h = secondsLeft / 3600
-                let m = (secondsLeft % 3600) / 60
-                let countdown = String(format: "%02d:%02d", h, m)
+                let countdown = Countdown.format(secondsLeft, lingo: lingo, locale: session.locale)
                 fortuneLine = "🔮 \(cardName) · \(countdown)\n\(effects)"
             } else {
                 // One-shot: the stamped expiry is not an effect, so no clock.

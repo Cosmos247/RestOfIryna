@@ -91,6 +91,20 @@ actor SessionCache {
         return user
     }
 
+    /// The live instance for this id if one is cached and unexpired — without
+    /// inserting one when it is not.
+    ///
+    /// For background writers (`RestNotificationService`): a player who is
+    /// mid-session already has a `User` object here, and the dispatcher will
+    /// keep mutating THAT object. A sweeper that loaded its own copy would
+    /// save a snapshot taken before the player's last tap and quietly undo it.
+    /// Peeking rather than fetching is what keeps a once-a-minute sweep from
+    /// pinning every account in the cache forever.
+    func peek(telegramId: Int64) -> User? {
+        guard let cached = cache[telegramId], !cached.isExpired else { return nil }
+        return cached.user
+    }
+
     /// Invalidate cache entry (call after user updates)
     func invalidate(telegramId: Int64) {
         cache.removeValue(forKey: telegramId)

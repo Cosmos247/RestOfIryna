@@ -108,12 +108,13 @@ public enum WarehouseService {
         guard let source = rows.first(where: { $0.equippedSlot == nil }) else { return .nothingToDeposit }
 
         // Per-unit cap check (2026-05-12). Stackable merges no longer get a
-        // free pass — every deposited unit eats one slot. Devs bypass.
-        if !user.isDeveloper {
-            let used = try await slotsUsed(for: user, on: db)
-            if used >= capForLevel(user.estateLevel) {
-                return .warehouseFull
-            }
+        // free pass — every deposited unit eats one slot. The developer
+        // account is NOT exempt (2026-09-09): an unlimited warehouse on the
+        // one account that plays the game most is how a ceiling stops being
+        // tested by the person who owns it.
+        let used = try await slotsUsed(for: user, on: db)
+        if used >= capForLevel(user.estateLevel) {
+            return .warehouseFull
         }
 
         let item = ItemCatalog.find(itemId)!
@@ -145,13 +146,12 @@ public enum WarehouseService {
             .filter(\.$user.$id, .equal, userId)
             .all()
 
-        // Per-unit usage tracker (2026-05-12). On a non-dev account we
-        // partially fill the last allowed stack instead of skipping it,
-        // so a 10-unit hide row hitting a 6-unit free cap dumps 6 and
-        // leaves 4 behind. Devs deposit everything.
+        // Per-unit usage tracker (2026-05-12). The last allowed stack is
+        // partially filled rather than skipped, so a 10-unit hide row hitting
+        // a 6-unit free cap dumps 6 and leaves 4 behind. No developer
+        // exemption since 2026-09-09.
         var used = try await slotsUsed(for: user, on: db)
         let cap = capForLevel(user.estateLevel)
-        let bypass = user.isDeveloper
 
         var movedUnits = 0
         for row in rows {
@@ -161,13 +161,7 @@ public enum WarehouseService {
             if WeaponUpgradeCatalog.isUpgradable(row.itemId) { continue }
 
             let qty = row.quantity
-            let canMove: Int
-            if bypass {
-                canMove = qty
-            } else {
-                let headroom = max(0, cap - used)
-                canMove = min(qty, headroom)
-            }
+            let canMove = min(qty, max(0, cap - used))
             guard canMove > 0 else { continue }
 
             // Drain the source row by canMove (delete if fully drained).
@@ -298,11 +292,10 @@ public enum WarehouseService {
         }
 
         // Destination preflight — refuse if the warehouse would overflow its
-        // per-tier cap. Dev accounts bypass; the warehouse may show overflow
-        // in the UI but never refuses an insert.
+        // per-tier cap. No developer exemption (2026-09-09).
         let cap = capForLevel(user.estateLevel)
         let used = try await slotsUsed(for: user, on: db)
-        let free = user.isDeveloper ? Int.max : max(0, cap - used)
+        let free = max(0, cap - used)
         guard free >= quantity else {
             return .warehouseFull(free: free)
         }

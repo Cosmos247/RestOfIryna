@@ -14,6 +14,7 @@
   "realTime" : {
     "dayRolloverHour" : 12,
     "dayTimeZoneId" : "Europe/Kyiv",
+    "restSweepInterval" : 60.0,
     "tavernDeletableAfter" : 86460.0,
     "tavernSweepInterval" : 1800.0,
     "tradeLobbyTTL" : 180.0,

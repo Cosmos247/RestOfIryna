@@ -227,11 +227,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// to the mode picker.
     fileprivate func editToDurationPicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
         let locale = session.locale
-        let prompt = lingo.localize("exploration.duration.prompt", gender: session.gender, locale: locale)
+        let left = PassiveExpeditionService.minutesLeftToday(for: session)
+
+        // The budget is part of the question, so it is on the screen that asks
+        // it — a choice the player cannot afford should not be offered and
+        // then refused.
+        var prompt = lingo.localize("exploration.duration.prompt", gender: session.gender, locale: locale)
+        prompt += "\n\n⏳ " + lingo.localize("exploration.duration.budget_left", locale: locale, interpolations: [
+            "left": Countdown.format(left * 60, lingo: lingo, locale: locale),
+            "total": Countdown.format(PassiveExpeditionService.dailyBudgetMinutes * 60, lingo: lingo, locale: locale)
+        ])
+        if left <= 0 {
+            prompt += "\n" + lingo.localize("exploration.duration.budget_reset", locale: locale, interpolations: [
+                "reset": Countdown.format(GameDay.secondsUntilNextRollover(), lingo: lingo, locale: locale)
+            ])
+        }
 
         var rows: [[TGInlineKeyboardButton]] = []
-        for duration in PassiveDuration.allCases {
-            let label = lingo.localize(duration.localeKey, locale: locale)
+        for duration in PassiveDuration.allCases where PassiveExpeditionService.canAfford(duration, for: session) {
+            // The label IS the duration, so it is formatted rather than
+            // written down: three locale strings saying "30 хв" could not
+            // follow `time.scale`, and said so for three months when it was 60.
+            let label = PassiveExpeditionService.formatDuration(duration, lingo: lingo, locale: locale)
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "explore:dur:\(duration.rawValue)")])
         }
         let backLabel = lingo.localize("exploration.duration.back", locale: locale)
@@ -274,7 +291,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let remaining = state.secondsRemaining() ?? 0
-        let time = PassiveExpeditionService.formatCountdown(remaining)
+        let time = PassiveExpeditionService.formatCountdown(remaining, lingo: lingo, locale: locale)
         let text = lingo.localize("exploration.passive.inflight", locale: locale, interpolations: ["time": time])
         try await context.bot.sendMessage(
             session: context.session,
@@ -832,6 +849,19 @@ extension ExplorationController {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
                 return true
             }
+            // Authoritative check. The picker already hides what the day cannot
+            // pay for, but a picker sitting in the chat from before an earlier
+            // run is exactly the tap that would overspend the ceiling.
+            guard PassiveExpeditionService.canAfford(duration, for: context.session) else {
+                let text = context.lingo.localize("exploration.duration.budget_exhausted", locale: context.session.locale, interpolations: [
+                    "reset": Countdown.format(GameDay.secondsUntilNextRollover(), lingo: context.lingo, locale: context.session.locale)
+                ])
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                    callbackQueryId: query.id, text: text, showAlert: true))
+                try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId,
+                                                    bot: context.bot, session: context.session, lingo: context.lingo)
+                return true
+            }
             _ = try await PassiveExpeditionService.start(
                 for: context.session,
                 duration: duration,
@@ -845,7 +875,7 @@ extension ExplorationController {
             context.session.routerName = Controllers.mainController.routerName
             try await context.session.saveAndCache(in: context.db)
 
-            let timeText = PassiveExpeditionService.formatDuration(duration)
+            let timeText = PassiveExpeditionService.formatDuration(duration, lingo: context.lingo, locale: locale)
             let confirmation = context.lingo.localize("exploration.passive.started", gender: context.session.gender, locale: locale, interpolations: ["time": timeText])
             let editParams = TGEditMessageTextParams(
                 chatId: chatId,
@@ -931,6 +961,14 @@ extension ExplorationController {
                     "current": "\(context.session.hp)",
                     "max":     "\(context.session.effectiveMaxHp)"
                 ]))
+            }
+            // Same two lines as the bag screen — a pool that just topped out
+            // is the thing this screen exists to tell you.
+            if context.session.vigor >= context.session.maxVigor {
+                parts.append("🍖 " + context.lingo.localize("vigor.full", locale: locale))
+            }
+            if context.session.hp >= context.session.effectiveMaxHp {
+                parts.append("❤️ " + context.lingo.localize("hp.full", locale: locale))
             }
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 

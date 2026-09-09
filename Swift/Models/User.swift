@@ -187,6 +187,27 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "last_fortune_vigor_restored")
     var lastFortuneVigorRestored: Bool
 
+    /// Guards for `RestNotificationService`. The draw cooldown, once elapsed,
+    /// stays elapsed — so "the cards are ready" needs a flag or it would be
+    /// said every minute; `questRolloverStamp` holds the `GameDay` key of the
+    /// last day this player was told the boards turned over.
+    @Field(key: "fortune_ready_notified")
+    var fortuneReadyNotified: Bool
+
+    @OptionalField(key: "quest_rollover_stamp")
+    var questRolloverStamp: String?
+
+    /// Minutes of passive expedition committed on `passiveDayStamp`'s game day.
+    /// Stamp-plus-counter rather than a nightly reset job, the same shape
+    /// `ArenaProfile.fightsSpentToday` uses: the day rolls at 12:00 Kyiv, and a
+    /// stored key compared against `GameDay.stamp` detects the rollover on the
+    /// next read instead of needing something awake at noon.
+    @Field(key: "passive_minutes_today")
+    var passiveMinutesToday: Int
+
+    @OptionalField(key: "passive_day_stamp")
+    var passiveDayStamp: String?
+
     /// One-shot tutorial flag — flipped to `true` the first time the player
     /// returns from an active expedition. Used by `ExplorationController.handleHomeReached`
     /// to send a single "there's a Trader in the Capital" hint and never again.
@@ -274,6 +295,10 @@ final public class User: Model, @unchecked Sendable {
         self.lastFortuneXpGain = 0
         self.lastFortuneHpRestored = false
         self.lastFortuneVigorRestored = false
+        self.fortuneReadyNotified = false
+        self.questRolloverStamp = nil
+        self.passiveMinutesToday = 0
+        self.passiveDayStamp = nil
         self.tutorialTraderHintShown = false
         self.gender = nil
         self.$guild.id = nil

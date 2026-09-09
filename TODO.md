@@ -1058,6 +1058,20 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **Live-play polish, part 2** *(2026-09-09)* — one `Countdown` format for every timer
+        (`MM:SS` and `HH:MM` were indistinguishable: `05:30` was minutes on the trail and hours
+        at the fortune teller) and no hand-written duration left in the copy — the expedition
+        buttons, the tarot "Активна 6 год" prefix on 17 cards × 2 locales and the invite window
+        are printed from the values that own them. `RestNotificationService`: a 60 s watchman for
+        HP topping out, the fortune cooldown and the 12:00 rollover, mutating the SESSION-CACHED
+        user (`SessionCache.peek`) so it cannot undo a tap made a second earlier. **3 h/day
+        ceiling on passive expeditions** (`passive.dailyBudgetMinutes`, counter + day stamp,
+        charged after the run starts). **The warehouse cap applied to plot harvest** — every hand
+        deposit checked it, the one path that fills the warehouse by itself did not — and the
+        `isDeveloper` bypass removed from all four checks. **Starvation was charging double** on
+        loot / encounter / trip (10 HP where the message said 5) because
+        `applyStarvationHPLoss` already mutates. Digest: `tuning` moved twice, both constants
+        named in it; the other three halves held.
   - [x] **Live-play polish pass** *(2026-09-09, five screens)* — driven by playing the
         deployed build; no combat, progression or content number moved (all four digest
         halves byte-identical, `validate --strict` 0/0, 234 tests).

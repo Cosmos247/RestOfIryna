@@ -62,8 +62,14 @@ public enum GearConditionService {
     /// once" cliff), and a piece hitting 0 goes "broken" (0 stats) until repaired.
     /// No-op when amount ≤ 0 or nothing armored is worn. We recompute bonuses +
     /// persist here so the durability rows and recomputed stats land together.
-    public static func drainEquippedGear(amount: Int, for user: User, on db: any Database) async throws {
-        guard amount > 0, let userId = user.id else { return }
+    ///
+    /// Returns the item ids that reached 0 IN THIS CALL — a piece going broken
+    /// is a stat cliff (armour contributes nothing, a weapon halves), and the
+    /// screens that spend the wear are the only ones positioned to say so.
+    /// Already-broken pieces are not reported again: they are not news.
+    @discardableResult
+    public static func drainEquippedGear(amount: Int, for user: User, on db: any Database) async throws -> [String] {
+        guard amount > 0, let userId = user.id else { return [] }
 
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
@@ -72,7 +78,11 @@ public enum GearConditionService {
         // across everything equipped (predictable silver sink regardless of how
         // many durable pieces are worn).
         let gear = rows.filter { $0.equippedSlot.map { durableSlots.contains($0) } == true }
-        guard !gear.isEmpty else { return }
+        guard !gear.isEmpty else { return [] }
+
+        // What was still whole when the fight started — the difference is what
+        // this call broke.
+        let wasIntact = Set(gear.filter { $0.durability > 0 }.compactMap { $0.id })
 
         var touched: Set<UUID> = []
         for _ in 0..<amount {
@@ -84,16 +94,21 @@ public enum GearConditionService {
             if let id = gear[pick].id { touched.insert(id) }
         }
 
-        guard !touched.isEmpty else { return }
+        guard !touched.isEmpty else { return [] }
         for row in gear where row.id.map({ touched.contains($0) }) == true {
             try await row.save(on: db)
         }
         try await EquipmentService.recomputeBonuses(for: user, on: db)
         try await user.saveAndCache(in: db)
+
+        return gear.filter { $0.durability <= 0 && $0.id.map({ wasIntact.contains($0) }) == true }
+                   .map { $0.itemId }
     }
 
-    /// Convenience for a single fight outcome.
-    public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws {
+    /// Convenience for a single fight outcome. Carries the broken-this-fight
+    /// list out to the caller for the same reason `drainEquippedGear` does.
+    @discardableResult
+    public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws -> [String] {
         try await drainEquippedGear(amount: event.amount, for: user, on: db)
     }
 

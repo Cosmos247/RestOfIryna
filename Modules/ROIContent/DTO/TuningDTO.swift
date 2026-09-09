@@ -757,16 +757,25 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     /// Steps past this index roll the decayed weight tier instead of the fresh
     /// one, so an unattended walk cannot keep harvesting first-visit odds.
     public let freshStepCount: Int
+    /// Minutes of passive expedition a player may commit per game day. Counted
+    /// in `PassiveDuration.rawValue` units — the same authored minutes the
+    /// three choices are written in — so `time.scale` moves the wall clock and
+    /// leaves the budget meaning exactly what it says.
+    /// Optional with a default: an older bundle still decodes (`ContentSchema`
+    /// bumps only for REQUIRED fields).
+    public let dailyBudgetMinutes: Int
 
     public init(xpMultiplier: Double,
-                lootMultiplier: Double, freshStepCount: Int) {
+                lootMultiplier: Double, freshStepCount: Int,
+                dailyBudgetMinutes: Int = 180) {
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
         self.freshStepCount = freshStepCount
+        self.dailyBudgetMinutes = dailyBudgetMinutes
     }
 
     private enum CodingKeys: String, CodingKey {
-        case xpMultiplier, lootMultiplier, freshStepCount
+        case xpMultiplier, lootMultiplier, freshStepCount, dailyBudgetMinutes
     }
 
     public init(from decoder: any Decoder) throws {
@@ -774,6 +783,7 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
         xpMultiplier     = try c.decode(Double.self, forKey: .xpMultiplier)
         lootMultiplier   = try c.decode(Double.self, forKey: .lootMultiplier)
         freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
+        dailyBudgetMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyBudgetMinutes) ?? 180
     }
 }
 
@@ -1231,24 +1241,33 @@ public struct RealTimeDTO: Codable, Sendable, Equatable {
     public let tradeSweepInterval: Double
     public let tavernDeletableAfter: Double
     public let tavernSweepInterval: Double
+    /// How often the rest watchman wakes. Real time on purpose: HP regen is
+    /// authored per REAL minute, and this is a polling cadence rather than a
+    /// gate the player waits on — the same reasoning as the two sweeps above.
+    /// Optional with a default, so an older bundle still decodes (see
+    /// `ContentSchema`: only a REQUIRED field forces a version bump).
+    public let restSweepInterval: Double
     public let dayRolloverHour: Int
     public let dayTimeZoneId: String
 
     public init(tradeLobbyTTL: Double, tradeSessionTTL: Double, tradeSweepInterval: Double,
                 tavernDeletableAfter: Double, tavernSweepInterval: Double,
+                restSweepInterval: Double = 60.0,
                 dayRolloverHour: Int, dayTimeZoneId: String) {
         self.tradeLobbyTTL = tradeLobbyTTL
         self.tradeSessionTTL = tradeSessionTTL
         self.tradeSweepInterval = tradeSweepInterval
         self.tavernDeletableAfter = tavernDeletableAfter
         self.tavernSweepInterval = tavernSweepInterval
+        self.restSweepInterval = restSweepInterval
         self.dayRolloverHour = dayRolloverHour
         self.dayTimeZoneId = dayTimeZoneId
     }
 
     private enum CodingKeys: String, CodingKey {
         case tradeLobbyTTL, tradeSessionTTL, tradeSweepInterval
-        case tavernDeletableAfter, tavernSweepInterval, dayRolloverHour, dayTimeZoneId
+        case tavernDeletableAfter, tavernSweepInterval, restSweepInterval
+        case dayRolloverHour, dayTimeZoneId
     }
 
     public init(from decoder: any Decoder) throws {
@@ -1258,6 +1277,7 @@ public struct RealTimeDTO: Codable, Sendable, Equatable {
         tradeSweepInterval   = try c.decode(Double.self, forKey: .tradeSweepInterval)
         tavernDeletableAfter = try c.decode(Double.self, forKey: .tavernDeletableAfter)
         tavernSweepInterval  = try c.decode(Double.self, forKey: .tavernSweepInterval)
+        restSweepInterval    = try c.decodeIfPresent(Double.self, forKey: .restSweepInterval) ?? 60.0
         dayRolloverHour      = try c.decode(Int.self, forKey: .dayRolloverHour)
         dayTimeZoneId        = try c.decode(String.self, forKey: .dayTimeZoneId)
     }

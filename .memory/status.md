@@ -28,6 +28,13 @@ what a one-shot handed over (`AddFortuneOneShot`), every capital shop shows an i
 before the purchase question (`ItemCard`), and selling an item a taken job needs warns
 first. All four digest halves held.
 
+**2026-09-09 part 2** — one `Countdown` format for every timer and no hand-written duration
+left in the copy; `RestNotificationService` (HP full · fortune ready · 12:00 rollover) as a
+60 s watchman, because lazy regen has no observer at the moment it completes; a **3 h/day
+ceiling on passive expeditions**; the warehouse cap enforced on plot harvest (the one path
+that filled it unchecked) with the developer bypass removed; and **starvation charged double
+on three of four step buckets** — 10 HP where the message said 5.
+
 **Phase 10 is CLOSED (2026-09-01)** — the bestiary level re-spread applied and nothing else:
 six enemies re-levelled with `xpReward` re-solved from the generator, stats deliberately
 untouched, Wild Buffalo renamed to **Wild Bison / Зубр** across `en.json` / `uk.json` /

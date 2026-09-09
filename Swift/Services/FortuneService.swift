@@ -133,6 +133,9 @@ public enum FortuneService {
         user.lastFortuneXpGain = applied.xpGained
         user.lastFortuneHpRestored = applied.hpRestored
         user.lastFortuneVigorRestored = applied.vigorRestored
+        // Re-arm the watchman: this draw starts a fresh cooldown, and its end
+        // is worth announcing again.
+        user.fortuneReadyNotified = false
 
         try await user.saveAndCache(in: db)
         return .success(card: card, oneShotApplied: applied)

@@ -190,12 +190,8 @@ public enum TravelService {
 
     // MARK: - Status / formatting
 
-    /// Format a remaining-seconds count as `MM:SS`. Matches
-    /// `PassiveExpeditionService.formatCountdown` for visual consistency.
-    public static func formatCountdown(_ seconds: Int) -> String {
-        let clamped = max(0, seconds)
-        let m = clamped / 60
-        let s = clamped % 60
-        return String(format: "%02d:%02d", m, s)
+    /// Time left on the road, on the one countdown format every screen uses.
+    public static func formatCountdown(_ seconds: Int, lingo: Lingo, locale: String) -> String {
+        return Countdown.format(seconds, lingo: lingo, locale: locale)
     }
 }

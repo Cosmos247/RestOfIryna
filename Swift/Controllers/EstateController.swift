@@ -1653,6 +1653,15 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
+        case .warehouseFull(_, _, let free, let need):
+            // Mirrors the bag case: the picker stays up, so switching the
+            // destination is one tap rather than a restart.
+            let whToast = context.lingo.localize("estate.plot.alert.warehouse_full", locale: locale, interpolations: [
+                "free": "\(free)", "need": "\(need)"
+            ])
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: whToast, showAlert: true))
+            return true
+
         case .bagFull(_, _, let free, let need):
             // Picker stays on screen — player can switch to warehouse with one
             // more tap instead of restarting from the plot list.

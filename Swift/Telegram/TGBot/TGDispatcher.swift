@@ -141,7 +141,7 @@ final class TGDispatcher: TGDefaultDispatcher, @unchecked Sendable {
         log.warning("\(concern)")
         let body = lingo.localize(key, locale: locale, interpolations: [
             "id": entity.id,
-            "minutes": Int((InviteToken.validity / 60).rounded()),
+            "validity": Countdown.format(Int(InviteToken.validity.rounded()), lingo: lingo, locale: locale),
         ])
         await send("\(icon) \(body)", to: entity.id)
         await notifyOwner(concern)

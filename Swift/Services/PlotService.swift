@@ -101,10 +101,19 @@ public enum PlotService {
         /// exceeded. Plot timestamp NOT reset — the yield stays on the plot
         /// so the player can free a slot or retry with warehouse.
         case bagFull(primary: HarvestYield, bonus: HarvestYield?, free: Int, need: Int)
+        /// Warehouse was the destination and the estate's per-unit cap would
+        /// have been exceeded. Same contract as `bagFull`: nothing moved, the
+        /// plot's timestamp untouched, so the whole yield keeps standing where
+        /// it grew.
+        case warehouseFull(primary: HarvestYield, bonus: HarvestYield?, free: Int, need: Int)
     }
 
-    /// Move accumulated yield into the player's chosen destination — bag
-    /// (capped) or warehouse (uncapped). On success resets `lastHarvestedAt
+    /// Move accumulated yield into the player's chosen destination. BOTH are
+    /// capped: the bag by `InventoryEntry.slotCap`, the warehouse by
+    /// `WarehouseService.capForLevel`. The warehouse branch used to write
+    /// straight through with no check at all — the estate cap was real
+    /// everywhere a player could deposit BY HAND and absent on the one path
+    /// that fills the warehouse by itself. On success resets `lastHarvestedAt
     /// = now` and `notifiedFull = false`. If the bag can't fit the full
     /// haul, returns `.bagFull` without touching the plot or moving any
     /// items (atomic — partial deposits would be confusing). Caller doesn't
@@ -126,6 +135,22 @@ public enum PlotService {
 
         switch destination {
         case .warehouse:
+            // Same atomic preflight the bag has had since Phase 5.1, and for
+            // the same reason: a partial haul would leave the player with a
+            // half-emptied plot and a full warehouse. The plot keeps the whole
+            // yield instead — it goes on accumulating up to its own cap, and
+            // nothing is destroyed by a store that had no room.
+            //
+            // Two streams share one `lastHarvestedAt` (the Mine's pebble and
+            // iron), which is the other reason this is all-or-nothing: a
+            // partial take cannot be expressed in one timestamp without
+            // over- or under-crediting the stream that was not taken.
+            let totalToAdd = primaryAmount + bonusAmount
+            let used = try await WarehouseService.slotsUsed(for: user, on: db)
+            let free = max(0, WarehouseService.capForLevel(user.estateLevel) - used)
+            if free < totalToAdd {
+                return .warehouseFull(primary: primaryYield, bonus: bonusYield, free: free, need: totalToAdd)
+            }
             if primaryAmount > 0 {
                 try await WarehouseEntry.add(tuning.producedItemId, quantity: primaryAmount, to: user, on: db)
             }

@@ -215,7 +215,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         let issuedAt = Date()
         let token = InviteToken.make(secret: appState.inviteSecret, at: issuedAt)
         let url = "https://t.me/\(username)?start=\(token)"
-        let minutes = Int((InviteToken.validity / 60).rounded())
+        let validity = Countdown.format(Int(InviteToken.validity.rounded()), lingo: lingo, locale: session.locale)
 
         // The deadline as a wall clock, in the same zone every other daily
         // system uses. "Valid for 5 minutes" is not actionable once the message
@@ -237,7 +237,7 @@ final class GlobalCommandsController: @unchecked Sendable {
         let text = "\u{1F517} " + lingo.localize(
             "access.link.ready",
             locale: session.locale,
-            interpolations: ["url": url, "code": token, "minutes": minutes, "until": until]
+            interpolations: ["url": url, "code": token, "validity": validity, "until": until]
         )
         try await bot.sendMessage(session: session, text: text, parseMode: .html)
     }

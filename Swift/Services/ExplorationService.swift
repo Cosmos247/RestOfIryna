@@ -163,9 +163,11 @@ public enum ExplorationService {
         }
         _ = wTrip
         let tripDmg = max(1, Int((Double(user.effectiveMaxHp) * tripDamagePercent).rounded()))
-        let totalHp = tripDmg + starvationLoss
-        user.hp = max(0, user.hp - totalHp)
-        return .trip(hpLost: totalHp)
+        // Only the trip is charged here — `applyStarvationHPLoss` above has
+        // already taken the hunger tick off `user.hp`. The REPORT still names
+        // both, because both left the player this step.
+        user.hp = max(0, user.hp - tripDmg)
+        return .trip(hpLost: tripDmg + starvationLoss)
     }
 
     // MARK: - Private rolls
@@ -187,18 +189,13 @@ public enum ExplorationService {
             // both APPLIED and REPORTED, exactly as the "nothing happens"
             // bucket above does it. Swallowing it into `.nothing` would take
             // HP off the player and tell them the room was empty.
+            // Already deducted by `applyStarvationHPLoss`; this only reports it.
             if extraStarvation > 0 {
-                user.hp = max(0, user.hp - extraStarvation)
                 return .starvationOnly(hpLost: extraStarvation)
             }
             return .nothing
         }
         let quantity = Int.random(in: 1...2)
-
-        // Apply any starvation HP loss first.
-        if extraStarvation > 0 {
-            user.hp = max(0, user.hp - extraStarvation)
-        }
 
         let canFit = try await InventoryEntry.canAccept(itemId, quantity: quantity, for: user, on: db)
         if canFit {
@@ -211,7 +208,8 @@ public enum ExplorationService {
 
     private static func rollEncounter(for user: User, kmDepth: Int, mode: ExplorationMode, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
         if extraStarvation > 0 {
-            user.hp = max(0, user.hp - extraStarvation)
+            // The tick is already off `user.hp`; all this branch decides is
+            // whether it was the one that finished the player.
             if user.hp <= 0 {
                 // Died from starvation on the step — skip the fight; callers handle death.
                 let any = EnemyCatalog.pickFor(kmDepth: kmDepth) ?? EnemyCatalog.all[0]

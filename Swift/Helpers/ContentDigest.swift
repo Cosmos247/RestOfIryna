@@ -749,7 +749,8 @@ enum ContentDigest {
         // change to the ratio that keeps unattended play below active play.
         let passive = ExplorationService.passiveTuning
         d.combine("passive xp\(passive.xpMultiplier) "
-                  + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount)")
+                  + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount) "
+                  + "daily\(PassiveExpeditionService.dailyBudgetMinutes)")
 
         // MARK: progression.json
         d.combine("progression")
@@ -830,6 +831,7 @@ enum ContentDigest {
         d.combine("\(TradeStore.sweepInterval)")
         d.combine("\(TavernCleanupService.deletableAfter)")
         d.combine("\(TavernCleanupService.sweepInterval)")
+        d.combine("\(RestNotificationService.sweepInterval)")
         d.combine(GameDay.rolloverHour)
         d.combine(GameDay.timeZoneID)
         // Replay `stamp` through the real function rather than trusting the two

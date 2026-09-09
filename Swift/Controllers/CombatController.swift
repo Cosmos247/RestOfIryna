@@ -519,7 +519,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         let success = Int.random(in: 1...100) <= CombatService.fleeChance(forClass: cls)
         if success {
-            let line = "💨 " + lingo.localize("combat.flee.success", locale: locale, interpolations: [
+            var line = "💨 " + lingo.localize("combat.flee.success", locale: locale, interpolations: [
                 "enemy": enemyName
             ])
 
@@ -535,7 +535,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             }
 
             // Phase 6.5: fleeing wears armor the hardest.
-            try await GearConditionService.wear(.flee, for: player, on: context.db)
+            let brokeOnFlee = try await GearConditionService.wear(.flee, for: player, on: context.db)
+            for broken in Self.brokenGearLines(brokeOnFlee, lingo: lingo, locale: locale) {
+                line += "\n\(broken)"
+            }
 
             // Step out of the encounter: clear combat fields, walk back one km.
             state.endCombat()
@@ -1055,7 +1058,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
 
         // Phase 6.5: equipped armor takes a small durability hit on a win.
-        try await GearConditionService.wear(.victory, for: context.session, on: context.db)
+        let brokeOnWin = try await GearConditionService.wear(.victory, for: context.session, on: context.db)
 
         // Phase 9.2: feeds the Master's "Випробування клинка" job. Training
         // dummies never reach here (finishVictory bails at the top), so every
@@ -1074,6 +1077,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // the tavern, the market, the arena — which is what a corpse full of
         // coin quietly worked against.
         var withXP = parts
+        // A piece reaching 0 is a cliff, not a slope — armour stops
+        // contributing entirely and a weapon halves — so it is said in the
+        // fight's own message rather than left for the player to notice on the
+        // equipment sheet three fights later.
+        withXP.append(contentsOf: Self.brokenGearLines(brokeOnWin, lingo: lingo, locale: locale))
         if xpResult.xpAwarded > 0 {
             withXP.append("📊 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
                 "xp": "\(xpResult.xpAwarded)"
@@ -1138,13 +1146,27 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         // Phase 6.5: a defeat wears equipped armor (more than a win, less than
         // a flee). Equipped gear survives the death wipe, only its durability drops.
-        try await GearConditionService.wear(.defeat, for: context.session, on: context.db)
+        let brokeOnLoss = try await GearConditionService.wear(.defeat, for: context.session, on: context.db)
 
         let lingo = context.lingo
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
-        let cause = "⚔️ " + lingo.localize("combat.defeat", locale: locale, interpolations: ["enemy": enemyName])
+        var cause = "⚔️ " + lingo.localize("combat.defeat", locale: locale, interpolations: ["enemy": enemyName])
+        for line in Self.brokenGearLines(brokeOnLoss, lingo: lingo, locale: locale) {
+            cause += "\n\(line)"
+        }
         try await ExplorationController.handleDeath(context: context, causeNarrative: cause)
+    }
+
+    /// "🛡 Кольчуга лісника зламалась" — one line per piece that reached zero
+    /// durability in the fight just resolved. Empty when nothing broke, so the
+    /// caller can append it unconditionally.
+    fileprivate static func brokenGearLines(_ itemIds: [String], lingo: Lingo, locale: String) -> [String] {
+        return itemIds.compactMap { itemId in
+            guard let item = ItemCatalog.find(itemId) else { return nil }
+            let name = lingo.localize(item.nameKey, locale: locale)
+            return "⚠️ " + lingo.localize("gear.broken.notice", locale: locale, interpolations: ["item": name])
+        }
     }
 
     /// After victory or successful flee: switch routerName back to

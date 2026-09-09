@@ -38,14 +38,6 @@ public enum PassiveDuration: Int, CaseIterable, Sendable {
     case medium = 60  // 1 h     → 60 s
     case long = 90    // 1.5 h   → 90 s
 
-    public var localeKey: String {
-        switch self {
-        case .short:  return "exploration.duration.30m"
-        case .medium: return "exploration.duration.1h"
-        case .long:   return "exploration.duration.1h30m"
-        }
-    }
-
     /// Number of simulated step rolls this duration buys. One "step" per 5
     /// units of duration — same count in test and prod modes, only the wall
     /// clock changes.
@@ -212,7 +204,20 @@ public enum PassiveExpeditionService {
         let seconds = Double(duration.rawValue) * secondsPerUnit
         let endsAt = now.addingTimeInterval(seconds)
 
+        // The expedition row first, the budget after it: if `beginPassive`
+        // throws, the player must not be left having paid for a run that does
+        // not exist. The reverse order costs at worst a free run, which is the
+        // cheaper way to be wrong.
         let state = try await ExplorationState.beginPassive(for: user, endsAt: endsAt, on: db)
+
+        // Committed here, at the one place every passive run starts — the
+        // controller checks the ceiling first so the player gets a reason
+        // rather than a silent refusal, but this is what makes it real.
+        // Persisted explicitly rather than left to `suspendResting` below,
+        // which saves only when it actually stopped a running clock: a player
+        // who departs with no clock running would otherwise spend nothing.
+        spend(duration, for: user, now: now)
+        try await user.saveAndCache(in: db)
         // The whole point of a passive run is that the player taps nothing
         // while it lasts, so the clock has to be stopped here rather than by
         // the next tick — otherwise the pre-departure stamp survives the run
@@ -263,6 +268,51 @@ public enum PassiveExpeditionService {
     /// (secondsPerUnit = 1 → 5 s/step) and prod (secondsPerUnit = 60 →
     /// 300 s/step).
     static var unitsPerStep: Int { Catalogs.current.tuningTime.gameTime.passiveExpedition.unitsPerStep }
+
+    // MARK: - The daily budget
+
+    /// Minutes of passive expedition a player may commit per game day.
+    /// `tuning/exploration.json` → `passive.dailyBudgetMinutes`.
+    ///
+    /// Counted in the authored minutes the three choices are written in
+    /// (`PassiveDuration.rawValue`), never in wall-clock seconds: `time.scale`
+    /// stretches how long those minutes take to elapse, and a budget measured
+    /// in seconds would silently mean a different number of expeditions at
+    /// every scale.
+    public static var dailyBudgetMinutes: Int {
+        Catalogs.current.tuningExploration.passive.dailyBudgetMinutes
+    }
+
+    /// Minutes already committed today, reading the stamp rather than trusting
+    /// the counter: a stored day key that is not today's means the counter
+    /// belongs to a day that has ended, and it reads as zero. Nothing is
+    /// written here — a screen that merely asks must not consume a rollover
+    /// the player has not acted on.
+    public static func minutesSpentToday(by user: User, now: Date = Date()) -> Int {
+        return user.passiveDayStamp == GameDay.stamp(now) ? user.passiveMinutesToday : 0
+    }
+
+    /// What is left of today's budget.
+    public static func minutesLeftToday(for user: User, now: Date = Date()) -> Int {
+        return max(0, dailyBudgetMinutes - minutesSpentToday(by: user, now: now))
+    }
+
+    /// True when this duration still fits in what is left of the day.
+    public static func canAfford(_ duration: PassiveDuration, for user: User, now: Date = Date()) -> Bool {
+        return duration.rawValue <= minutesLeftToday(for: user, now: now)
+    }
+
+    /// Commit `duration` against today's budget. Called at the moment an
+    /// expedition STARTS, not when it ends: the player is buying the time, and
+    /// a run abandoned halfway has still spent the day's share of it.
+    private static func spend(_ duration: PassiveDuration, for user: User, now: Date = Date()) {
+        let stamp = GameDay.stamp(now)
+        if user.passiveDayStamp != stamp {
+            user.passiveDayStamp = stamp
+            user.passiveMinutesToday = 0
+        }
+        user.passiveMinutesToday += duration.rawValue
+    }
 
     /// Real-world wall-clock seconds per simulated step.
     static var stepDurationSeconds: TimeInterval {
@@ -510,7 +560,7 @@ public enum PassiveExpeditionService {
         // won fight costs a little, each lost fight more (no flee in passive autobattle).
         let gearWear = outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
                      + outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
-        try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)
+        let brokeOnRun = (try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)) ?? []
 
         // Phase 9.2 — autobattle kills count toward the Master's beast-slaying
         // job, banked in one go for the whole run (same as the XP grant above).
@@ -548,6 +598,17 @@ public enum PassiveExpeditionService {
 
         do {
             try await pushReportNotification(state: state, user: user, bot: bot, lingo: lingo, db: db)
+            // A piece that broke out there gets its own message: nobody was
+            // watching the fight it broke in, and the next thing this player
+            // does is decide whether to walk back out.
+            for itemId in brokeOnRun {
+                guard let item = ItemCatalog.find(itemId) else { continue }
+                let name = lingo.localize(item.nameKey, locale: user.locale)
+                let text = "⚠️ " + lingo.localize("gear.broken.notice", locale: user.locale, interpolations: ["item": name])
+                _ = try? await bot.sendMessage(params: TGSendMessageParams(
+                    chatId: .chat(user.telegramId), text: text, parseMode: .html
+                ))
+            }
         } catch {
             appState?.logger.warning("Passive report push failed: \(error)")
         }
@@ -777,19 +838,16 @@ public enum PassiveExpeditionService {
 
     // MARK: Time formatting
 
-    /// Format a seconds-remaining countdown as `MM:SS`. Used both by the
-    /// "started" line and by the periodic in-flight status.
-    public static func formatCountdown(_ seconds: Int) -> String {
-        let clamped = max(0, seconds)
-        let m = clamped / 60
-        let s = clamped % 60
-        return String(format: "%02d:%02d", m, s)
+    /// Time left on an expedition, on the one countdown format every screen
+    /// uses.
+    public static func formatCountdown(_ seconds: Int, lingo: Lingo, locale: String) -> String {
+        return Countdown.format(seconds, lingo: lingo, locale: locale)
     }
 
-    /// Format the total duration a player is committing to. Uses the same
-    /// MM:SS format as the countdown for consistency.
-    public static func formatDuration(_ duration: PassiveDuration) -> String {
+    /// The total duration a player is committing to, in the same words the
+    /// countdown will then tick down in.
+    public static func formatDuration(_ duration: PassiveDuration, lingo: Lingo, locale: String) -> String {
         let seconds = Int(Double(duration.rawValue) * secondsPerUnit)
-        return formatCountdown(seconds)
+        return formatCountdown(seconds, lingo: lingo, locale: locale)
     }
 }

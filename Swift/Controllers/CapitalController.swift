@@ -368,7 +368,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // 🐎 prepended in Swift — leading supplementary-plane emoji breaks
         // Lingo's `%{var}` parser. See .memory/localization.md.
         let text = "🐎 " + lingo.localize(key, locale: locale, interpolations: [
-            "remaining": TravelService.formatCountdown(remaining)
+            "remaining": TravelService.formatCountdown(remaining, lingo: lingo, locale: locale)
         ])
         // While en-route the player belongs to the main hub — Profile /
         // Settings / Inventory should be usable, but Estate / Capital /
@@ -390,7 +390,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Lingo's `%{var}` parser. See .memory/localization.md.
         let text = "🐎 " + lingo.localize("travel.in_progress", locale: locale, interpolations: [
             "destination": destLabel,
-            "remaining": TravelService.formatCountdown(trip.secondsRemaining())
+            "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: nil)
     }
@@ -2746,9 +2746,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 if card.effect.hasDurationEffect {
                     lines.append(lingo.localize("capital.fortune.status.with_buff", locale: locale, interpolations: [
                         "card": cardName,
-                        "buff_remaining": formatHM(buff),
+                        "buff_remaining": Countdown.format(buff, lingo: lingo, locale: locale),
                         "effects": effects,
-                        "cooldown_remaining": formatHM(cooldown)
+                        "cooldown_remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
                     ]))
                 } else {
                     // A pure one-shot landed at draw time and nothing is
@@ -2758,12 +2758,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                     lines.append(lingo.localize("capital.fortune.status.one_shot", locale: locale, interpolations: [
                         "card": cardName,
                         "note": effects,
-                        "cooldown_remaining": formatHM(cooldown)
+                        "cooldown_remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
                     ]))
                 }
             } else {
                 lines.append(lingo.localize("capital.fortune.status.cooldown_only", locale: locale, interpolations: [
-                    "remaining": formatHM(cooldown)
+                    "remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
                 ]))
             }
         } else {
@@ -2798,15 +2798,6 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         ])
     }
 
-    /// Format a remaining-seconds count as `HH:MM` (we never need
-    /// sub-minute precision for the 4-hour fortune window).
-    private func formatHM(_ seconds: Int) -> String {
-        let clamped = max(0, seconds)
-        let h = clamped / 3600
-        let m = (clamped % 3600) / 60
-        return String(format: "%02d:%02d", h, m)
-    }
-
     /// Render the reveal screen after a successful draw. Sends a fresh
     /// photo (the card portrait) with caption: meaning + buff
     /// description + countdown (for duration cards) + one-shot deltas
@@ -2820,7 +2811,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let cardName = lingo.localize(card.nameKey, locale: locale)
         let meaning  = lingo.localize(card.meaningKey, locale: locale)
-        let buffDesc = lingo.localize(card.buffDescKey, locale: locale)
+        // The window is `FortuneCatalog.buffDurationSeconds`, so it is printed
+        // from that value: "Активна 6 год" sat hand-typed in front of all 17
+        // duration cards, in both locales, where a retune could not reach it.
+        let windowKey = card.effect.hasDurationEffect ? "fortune.buff.active_for" : "fortune.buff.instant"
+        let window = lingo.localize(windowKey, locale: locale, interpolations: [
+            "time": Countdown.format(Int(FortuneCatalog.buffDurationSeconds), lingo: lingo, locale: locale)
+        ])
+        let buffDesc = "\(window): " + lingo.localize(card.buffDescKey, locale: locale)
 
         var lines: [String] = []
         lines.append("🔮 <b>\(cardName)</b>")
@@ -2862,7 +2860,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // Countdown line for duration cards.
         if card.effect.hasDurationEffect, let secondsLeft = context.session.fortuneSecondsRemaining() {
             let line = lingo.localize("capital.fortune.applied.duration", locale: locale, interpolations: [
-                "remaining": formatHM(secondsLeft)
+                "remaining": Countdown.format(secondsLeft, lingo: lingo, locale: locale)
             ])
             lines.append("")
             lines.append(line)
@@ -2895,7 +2893,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let lingo = context.lingo
             let locale = context.session.locale
             let text = lingo.localize("capital.fortune.error.cooldown", locale: locale, interpolations: [
-                "remaining": ctrl.formatHM(secondsLeft)
+                "remaining": Countdown.format(secondsLeft, lingo: lingo, locale: locale)
             ])
             await ctrl.postStatusBanner("⏳ \(text)", context: context)
         case .notEnoughSilver(let have, let need):
