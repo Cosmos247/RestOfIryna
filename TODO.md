@@ -1058,6 +1058,26 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **Live-play polish pass** *(2026-09-09, five screens)* — driven by playing the
+        deployed build; no combat, progression or content number moved (all four digest
+        halves byte-identical, `validate --strict` 0/0, 234 tests).
+        **The expedition bag prints its occupancy** (`🎒 Сумка (6/20)`) using the inventory
+        root's own two numbers, so the screens cannot disagree.
+        **The fortune screen says what the card does** — `FortuneDisplay` generates the line
+        from the card's own `FortuneEffect`, and the profile prints the same string from the
+        same helper. It also stopped lying: a pure one-shot stamps an expiry too, so Lovers /
+        Wheel / Tower / Judgement / World counted down an effect `activeFortuneEffect` had
+        already stopped returning.
+        **What a one-shot actually paid is now remembered** (`AddFortuneOneShot`, four
+        `last_fortune_*` columns written on every draw) — the Wheel rolls 50/50 and a loss is
+        clamped to the purse, so only a stamped record can answer the question hours later.
+        **An item card before the purchase question** in all four shops (`ItemCard`): name,
+        lore, and what it grants, read from the item's own `effects` / ladder rung. The
+        "needed for" line was built and dropped on the user's call — so a raw material's card
+        is lore plus price.
+        **Selling into a job you took warns you** — `QuestService.acceptedDeliveries` reads
+        EXISTING rows only, deliberately not `status`, which lazily creates the day's row and
+        would have turned looking at a sale into a job on the books.
   - [x] **The opening ledger** *(2026-09-02)* — the debt `spec-economy.md` §7 booked before
         the playtest: `roi-content simulate` reported pace 1→40 as an aggregate and said
         nothing about the only stretch with no estate behind it, which is exactly the first

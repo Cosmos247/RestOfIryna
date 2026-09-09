@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-09 live-play polish** — five screens the first hour walks through, changed while
+playing the deployed build and moving no balance number: the expedition bag prints its
+occupancy, the fortune screen (and the profile) say what the drawn card actually does and
+what a one-shot handed over (`AddFortuneOneShot`), every capital shop shows an item card
+before the purchase question (`ItemCard`), and selling an item a taken job needs warns
+first. All four digest halves held.
+
 **Phase 10 is CLOSED (2026-09-01)** — the bestiary level re-spread applied and nothing else:
 six enemies re-levelled with `xpReward` re-solved from the generator, stats deliberately
 untouched, Wild Buffalo renamed to **Wild Bison / Зубр** across `en.json` / `uk.json` /

@@ -150,6 +150,37 @@ public enum QuestService {
                       accepted: accepted, claimed: claimed)
     }
 
+    /// Accepted, unpaid delivery jobs that want `itemId` today, with how many
+    /// units the player carries against the target.
+    ///
+    /// Reads existing rows ONLY — deliberately not `status`, which lazily
+    /// creates the day's row. A trade screen is not the job board, and a row
+    /// written from here would turn "the player looked at selling hides" into
+    /// a day whose job is already on the books.
+    public static func acceptedDeliveries(
+        of itemId: String,
+        for user: User,
+        on db: any Database,
+        now: Date = Date()
+    ) async throws -> [(def: QuestDef, done: Int, target: Int)] {
+        guard let userId = user.id else { return [] }
+        let rows = try await QuestProgress.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$dayStamp, .equal, GameDay.stamp(now))
+            .filter(\.$accepted, .equal, true)
+            .filter(\.$claimed, .equal, false)
+            .all()
+
+        var out: [(def: QuestDef, done: Int, target: Int)] = []
+        for row in rows {
+            guard let def = QuestCatalog.find(row.questId),
+                  case .deliver(let itemIds, let count) = def.objective,
+                  itemIds.contains(itemId) else { continue }
+            out.append((def, try await carried(itemIds, user: user, on: db), count))
+        }
+        return out
+    }
+
     // MARK: - Taking the job
 
     /// Take today's job at `npc`. The offer itself is still decided by

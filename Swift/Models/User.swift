@@ -169,6 +169,24 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_fortune_draw_at")
     var lastFortuneDrawAt: Date?
 
+    /// What the LAST draw's one-shot half actually handed over. The card id
+    /// above cannot answer this: the Wheel rolls 50/50 between a gift and a
+    /// loss, and a loss is clamped to the silver the player actually holds —
+    /// so "what the card does" and "what happened" are different questions,
+    /// and only the second one is worth showing hours later. Written on every
+    /// draw (zeroed for a pure duration card), read by `FortuneDisplay`.
+    @Field(key: "last_fortune_silver_delta")
+    var lastFortuneSilverDelta: Int
+
+    @Field(key: "last_fortune_xp_gain")
+    var lastFortuneXpGain: Int
+
+    @Field(key: "last_fortune_hp_restored")
+    var lastFortuneHpRestored: Bool
+
+    @Field(key: "last_fortune_vigor_restored")
+    var lastFortuneVigorRestored: Bool
+
     /// One-shot tutorial flag — flipped to `true` the first time the player
     /// returns from an active expedition. Used by `ExplorationController.handleHomeReached`
     /// to send a single "there's a Trader in the Capital" hint and never again.
@@ -252,6 +270,10 @@ final public class User: Model, @unchecked Sendable {
         self.activeFortuneCardId = nil
         self.activeFortuneExpiresAt = nil
         self.lastFortuneDrawAt = nil
+        self.lastFortuneSilverDelta = 0
+        self.lastFortuneXpGain = 0
+        self.lastFortuneHpRestored = false
+        self.lastFortuneVigorRestored = false
         self.tutorialTraderHintShown = false
         self.gender = nil
         self.$guild.id = nil

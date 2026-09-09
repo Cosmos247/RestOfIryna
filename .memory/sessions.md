@@ -1,5 +1,97 @@
 # Session History
 
+## Session — 2026-09-09 (live-play polish: five screens the first hour walks through)
+
+Five UX changes on top of the deployed build, driven by playing it. No combat,
+progression or content number moved: all four digest halves are byte-identical
+(`records f6fc421256085066` · `tuning ad7bdb94d0efc668` · `spawns eaea309f4813dfa2`
+· `quests 30de20902006e3b9`), `validate --strict` stays 0/0, 234 tests pass.
+
+### 1. The expedition bag says how full it is
+
+`ExplorationController.renderBag` prints `🎒 Сумка (6/20)`. The numbers are the
+inventory root's own — per-unit across every non-equipped row against the bag
+tier's cap — deliberately the same expression, because a player comparing two
+screens must not read two answers. No new locale key: the count is digits in
+brackets.
+
+### 2. The fortune screen says what the card is doing
+
+It named the card and counted down six hours without ever saying whether they
+were a blessing or the Moon's −15% loot. `FortuneDisplay.effectLine` generates
+the description from the card's own `FortuneEffect`, so a retune moves the line
+with it, and the profile's `🔮` row prints the same string from the same helper.
+
+**And the screen had been lying about one thing.** A pure one-shot (Lovers,
+Wheel, Tower, Judgement, World) also stamps `activeFortuneExpiresAt`, so those
+cards showed a ticking effect while `activeFortuneEffect` already returned nil.
+They now read "разова дія, вже отримано" with no clock.
+
+### 3. What the one-shot actually handed over is remembered
+
+`AddFortuneOneShot` adds four columns (`last_fortune_silver_delta`, `_xp_gain`,
+`_hp_restored`, `_vigor_restored`), written on EVERY draw so a duration card
+zeroes them rather than leaving the last draw's numbers under a new card's name.
+
+The card definition could not answer this: the **Wheel rolls 50/50** between +30
+and −15, and every silver loss is **clamped to what the player holds** — so
+"what the card does" and "what happened" are different questions, and a screen
+rendered hours later can only honestly answer the second. An empty record falls
+back to the plain note, which stays true.
+
+### 4. An item card between a shop row and the purchase question
+
+`ItemCard.body` — name, lore, `Дає:` — in all four capital shops: Trader (new
+card step before the quantity prompt), Tavern (before the one-tap dish buy),
+Master and Market (folded into the confirm screens they already had). Consumable
+numbers come from the item's `effects`, gear stats from the ladder rung or
+`gearStats`; the price line stays with each shop, since four price shapes in one
+helper is a switch over its own callers.
+
+A "Потрібен для" line naming kitchen / weapon ladder / estate / job uses was
+built and then **dropped on the user's call** — it made the card float in height
+from item to item. Its consequence, worth knowing: for a raw material the card
+is lore plus price, because that line was the part that answered "what is this
+for".
+
+### 5. Selling into a job you took warns you
+
+`QuestService.acceptedDeliveries` + `CapitalController.questWarningSuffix` append
+`⚠️ Взяте замовлення: <job> — 7/10` to the sell prompts (trader, market listing,
+and the market retry after a bad number — otherwise the warning vanishes exactly
+while the player is still deciding). No extra tap: it rides a prompt already on
+screen, because dumping loot is the most repeated action in the game.
+
+**The trap avoided:** the obvious call is `QuestService.status`, which lazily
+CREATES the day's row. From a trade screen that would turn "looked at selling
+hides" into a day whose job is already on the books, three days after the pass
+that made a job something you take by hand. `acceptedDeliveries` reads existing
+rows only.
+
+### 6. What the audit caught in my own work
+
+Two defects, both mine, both found by reading the diff rather than by a test:
+
+- **An orphaned doc comment.** `questWarningSuffix` had been inserted between
+  `openTraderBulkPrompt`'s doc comment and the function, leaving the comment on
+  the wrong function — the same defect the Shadow Veil comment had on 09-09.
+  Inserting above a `// MARK:` is not the same as inserting above a function.
+- **Two back buttons that named a destination they did not go to.** Both new
+  cards return to the LIST they were opened from, but borrowed
+  `capital.trader.button.back_to_categories` («До категорій») and
+  `capital.tavern.button.back` («До шинка»). One neutral `capital.trader.card.back`
+  («🔙 Назад») now matches where the buttons actually go.
+
+Verified rather than assumed: the Market's sell picker filters on
+`item.stackable`, and gear is not stackable, so no laddered weapon can ever
+reach a lot — which is why `ItemCard`'s `tier: 1` default is right there.
+
+### Locale
+
++11 keys in both files (en 996 / uk 1008). Every ⚠️/📊/🎒 sits in Swift or in an
+interpolated VALUE, never in a template before a `%{}` — the Lingo rule, and
+`locale.emoji_before_placeholder` confirms it.
+
 ## Session — 2026-09-08 (the Pi audit, the pre-wipe dump, and invite-only access)
 
 ### 1. What is actually on the Pi, and what the docs got wrong

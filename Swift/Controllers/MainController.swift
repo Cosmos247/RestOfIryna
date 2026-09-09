@@ -371,10 +371,21 @@ final class MainController: TGControllerBase, @unchecked Sendable {
            let card = FortuneCatalog.find(cardId),
            let secondsLeft = session.fortuneSecondsRemaining() {
             let cardName = lingo.localize(card.nameKey, locale: session.locale)
-            let h = secondsLeft / 3600
-            let m = (secondsLeft % 3600) / 60
-            let countdown = String(format: "%02d:%02d", h, m)
-            fortuneLine = "🔮 \(cardName) · \(countdown)"
+            // Same generated description the fortune screen prints, from the
+            // same helper — a card must not read one way in the capital and
+            // another here.
+            let effects = card.effect.hasDurationEffect
+                ? FortuneDisplay.effectLine(for: card.effect, lingo: lingo, locale: session.locale)
+                : FortuneDisplay.oneShotLine(for: session, lingo: lingo, locale: session.locale)
+            if card.effect.hasDurationEffect {
+                let h = secondsLeft / 3600
+                let m = (secondsLeft % 3600) / 60
+                let countdown = String(format: "%02d:%02d", h, m)
+                fortuneLine = "🔮 \(cardName) · \(countdown)\n\(effects)"
+            } else {
+                // One-shot: the stamped expiry is not an effect, so no clock.
+                fortuneLine = "🔮 \(cardName) · \(effects)"
+            }
         } else {
             fortuneLine = nil
         }

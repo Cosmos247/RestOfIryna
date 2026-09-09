@@ -543,11 +543,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             guard let item = ItemCatalog.find(listing.itemId), item.type == category else { continue }
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
             let name = lingo.localize(item.nameKey, locale: locale)
-            // Single button per listing — tap opens the "How many?" prompt.
-            // Item descriptions intentionally removed from the trader (still
-            // available in the Inventory drill-down).
+            // Single button per listing — tap opens the item's card, which
+            // carries the lore and what the thing actually does before the
+            // "How many?" prompt asks for money.
             let label = "\(iconPrefix)\(name) · 🪙 \(listing.buyPacketSilver)"
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "trader:buyN:\(listing.itemId)")])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "trader:card:\(listing.itemId)")])
         }
         let back = lingo.localize("capital.trader.button.back_to_categories", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "trader:buylist")])
@@ -557,6 +557,44 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func editToBuyItems(category: ItemType, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let text = renderBuyBody(session: context.session, lingo: context.lingo)
         let keyboard = buyItemsKeyboard(category: category, lingo: context.lingo, locale: context.session.locale)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    /// The card between a trader row and the purchase prompt: what the item
+    /// is, what it grants, what a packet costs and what the player holds.
+    /// [Buy] hands off to the existing quantity prompt unchanged.
+    private func editToBuyCard(itemId: String, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let item = ItemCatalog.find(itemId),
+              let listing = TraderCatalog.find(itemId) else {
+            try await editToBuyList(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+
+        // Every trader packet is one unit today, so the "for N" half is noise
+        // unless a listing ever sells in bundles — then it says so.
+        let price = listing.buyPacketQty > 1
+            ? lingo.localize("capital.trader.card.price_packet", locale: locale, interpolations: [
+                "price": "🪙 \(listing.buyPacketSilver)", "qty": "\(listing.buyPacketQty)"
+              ])
+            : lingo.localize("capital.trader.card.price", locale: locale, interpolations: [
+                "price": "🪙 \(listing.buyPacketSilver)"
+              ])
+        let silver = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(context.session.silver)"
+        ])
+        let text = ItemCard.body(item: item, lingo: lingo, locale: locale)
+            + "\n\n\(price)\n🪙 \(silver)"
+
+        // Back lands on the category the row was tapped from, not the picker:
+        // the player is browsing a list and expects to return to it.
+        let backSlug = item.type == .food ? "food" : "materials"
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("capital.trader.card.buy", locale: locale),
+                                   callbackData: "trader:buyN:\(itemId)"),
+            TGInlineKeyboardButton(text: lingo.localize("capital.trader.card.back", locale: locale),
+                                   callbackData: "trader:buy:\(backSlug)")
+        ]])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
@@ -834,7 +872,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         guard let price = MasterCatalog.buyPrice(for: itemId) else {
             await editToMasterBuy(messageId: messageId, isPhoto: isPhoto, context: context); return
         }
-        let text = lingo.localize("capital.master.confirm.buy", locale: locale, interpolations: [
+        // Lead with what the piece is and what it grants — four armour pieces
+        // that differ mainly in slot and stat spread cannot be told apart from
+        // a name and a price.
+        var head = ""
+        if let item = ItemCatalog.find(itemId) {
+            head = ItemCard.body(item: item, lingo: lingo, locale: locale)
+            if let slot = ItemCard.slotLine(item: item, lingo: lingo, locale: locale) {
+                head += "\n\(slot)"
+            }
+            head += "\n\n"
+        }
+        let text = head + lingo.localize("capital.master.confirm.buy", locale: locale, interpolations: [
             "item": itemLabel(itemId, lingo: lingo, locale: locale), "cost": "🪙 \(price)"
         ])
         let kb = masterConfirmKeyboard(yes: "master:buyok:\(itemId)", no: "master:buylist", lingo: lingo, locale: locale)
@@ -1195,6 +1244,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.openTraderBulkPrompt(direction: .sell, itemId: itemId, traderScreenMessageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
+        if data.hasPrefix("trader:card:") {
+            let itemId = String(data.dropFirst("trader:card:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToBuyCard(itemId: itemId, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
         if data.hasPrefix("trader:buyN:") {
             let itemId = String(data.dropFirst("trader:buyN:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1237,6 +1292,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         if data == "tavern:darts" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.editToTavernDarts(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+
+        if data.hasPrefix("tavern:food:card:") {
+            let itemId = String(data.dropFirst("tavern:food:card:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToTavernFoodCard(itemId: itemId, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
 
@@ -1580,6 +1642,27 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
+    /// "This feeds a job you took today" — one line per colliding job, ready to
+    /// append to a prompt that is about to take the items away.
+    ///
+    /// Selling into an accepted job is the one trade in the capital that buying
+    /// back does not undo: the day rolls at 12:00, and what a hide fetches is a
+    /// fraction of what the job pays. It rides prompts the player is already
+    /// looking at rather than a screen of its own, so the routine "dump the
+    /// loot" path costs no extra tap. Advisory, so a failed read stays silent
+    /// rather than blocking a sale.
+    fileprivate func questWarningSuffix(itemId: String, context: Context) async -> String {
+        let lingo = context.lingo, locale = context.session.locale
+        let jobs = (try? await QuestService.acceptedDeliveries(of: itemId, for: context.session, on: context.db)) ?? []
+        return jobs.map { job in
+            "\n⚠️ " + lingo.localize("capital.trader.bulkN.quest_warning", locale: locale, interpolations: [
+                "job": lingo.localize(job.def.titleKey, locale: locale),
+                "done": "\(job.done)",
+                "target": "\(job.target)"
+            ])
+        }.joined()
+    }
+
     // MARK: - Trader bulk-N prompt flow
 
     /// Send the "Скільки X?" prompt + cancel button, stash pending state
@@ -1591,7 +1674,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
         let promptKey = direction == .sell ? "capital.trader.bulkN.sell_prompt" : "capital.trader.bulkN.buy_prompt"
-        let promptText = lingo.localize(promptKey, locale: locale, interpolations: ["item": itemName])
+        var promptText = lingo.localize(promptKey, locale: locale, interpolations: ["item": itemName])
+
+        if direction == .sell {
+            promptText += await questWarningSuffix(itemId: itemId, context: context)
+        }
         let cancelLabel = lingo.localize("capital.trader.bulkN.cancel", locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "trader:cancelN")
@@ -1831,7 +1918,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         } ?? lot.itemId
         let seller = try await User.find(lot.$seller.id, on: context.db)
         let nick = seller?.nickname ?? "—"
-        let text = lingo.localize("capital.market.confirm.buy", locale: locale, interpolations: [
+        // A lot can hold anything another player owned, so the card matters
+        // most here: the board's row is a name, a count and a price.
+        var head = ""
+        if let item = ItemCatalog.find(lot.itemId) {
+            head = ItemCard.body(item: item, lingo: lingo, locale: locale)
+            if let slot = ItemCard.slotLine(item: item, lingo: lingo, locale: locale) {
+                head += "\n\(slot)"
+            }
+            head += "\n\n"
+        }
+        let text = head + lingo.localize("capital.market.confirm.buy", locale: locale, interpolations: [
             "item": itemName, "qty": "\(lot.quantity)",
             "total": "🪙 \(lot.price)", "unit": "🪙 \(lot.unitPrice)", "nick": nick
         ])
@@ -1924,6 +2021,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo, locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
         let promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
+            + (await questWarningSuffix(itemId: itemId, context: context))
         let cancelLabel = lingo.localize("capital.market.button.cancel", locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
@@ -1966,6 +2064,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let promptText: String
         if pending.stage == .quantity {
             promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
+                + (await questWarningSuffix(itemId: pending.itemId, context: context))
         } else {
             promptText = lingo.localize("capital.market.sell.price_prompt", locale: locale, interpolations: [
                 "item": itemName, "qty": "\(pending.quantity ?? 0)", "fee": "🪙 \(MarketCatalog.listingFee)"
@@ -2637,11 +2736,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // (show cooldown only).
             if let buff = buffLeft, let card = activeCard {
                 let cardName = lingo.localize(card.nameKey, locale: locale)
-                lines.append(lingo.localize("capital.fortune.status.with_buff", locale: locale, interpolations: [
-                    "card": cardName,
-                    "buff_remaining": formatHM(buff),
-                    "cooldown_remaining": formatHM(cooldown)
-                ]))
+                // What the card is actually doing, generated from its own
+                // effect (`FortuneDisplay`). Naming the card without naming
+                // the effect left the player guessing whether the six hours
+                // ticking away were a blessing or the Moon's −15% loot.
+                let effects = card.effect.hasDurationEffect
+                    ? FortuneDisplay.effectLine(for: card.effect, lingo: lingo, locale: locale)
+                    : FortuneDisplay.oneShotLine(for: session, lingo: lingo, locale: locale)
+                if card.effect.hasDurationEffect {
+                    lines.append(lingo.localize("capital.fortune.status.with_buff", locale: locale, interpolations: [
+                        "card": cardName,
+                        "buff_remaining": formatHM(buff),
+                        "effects": effects,
+                        "cooldown_remaining": formatHM(cooldown)
+                    ]))
+                } else {
+                    // A pure one-shot landed at draw time and nothing is
+                    // ticking — `activeFortuneEffect` returns nil for these
+                    // while the stamped expiry says otherwise, so the screen
+                    // used to count down an effect that did not exist.
+                    lines.append(lingo.localize("capital.fortune.status.one_shot", locale: locale, interpolations: [
+                        "card": cardName,
+                        "note": effects,
+                        "cooldown_remaining": formatHM(cooldown)
+                    ]))
+                }
             } else {
                 lines.append(lingo.localize("capital.fortune.status.cooldown_only", locale: locale, interpolations: [
                     "remaining": formatHM(cooldown)
@@ -2871,13 +2990,40 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             guard let item = ItemCatalog.find(listing.itemId) else { continue }
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
             let name = lingo.localize(item.nameKey, locale: locale)
-            // Format: "🥔 Baked Potato · 🪙 20". One tap = one dish.
+            // Format: "🥔 Baked Potato · 🪙 20". The tap opens the dish's card;
+            // buying is one more tap, on a screen that says what the dish does.
             let label = "\(iconPrefix)\(name) · 🪙 \(listing.priceSilver)"
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "tavern:food:buy:\(listing.itemId)")])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "tavern:food:card:\(listing.itemId)")])
         }
         let back = lingo.localize("capital.tavern.button.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "tavern:menu")])
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
+    }
+
+    /// The dish's card: what it is, what it restores, what it costs. [Buy]
+    /// keeps the old one-tap purchase behind it.
+    private func editToTavernFoodCard(itemId: String, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let item = ItemCatalog.find(itemId),
+              let listing = TavernCatalog.food.first(where: { $0.itemId == itemId }) else {
+            try await editToTavernMenu(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let price = lingo.localize("capital.trader.card.price", locale: locale, interpolations: [
+            "price": "🪙 \(listing.priceSilver)"
+        ])
+        let silver = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+            "silver": "\(context.session.silver)"
+        ])
+        let text = ItemCard.body(item: item, lingo: lingo, locale: locale)
+            + "\n\n\(price)\n🪙 \(silver)"
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("capital.trader.card.buy", locale: locale),
+                                   callbackData: "tavern:food:buy:\(itemId)"),
+            TGInlineKeyboardButton(text: lingo.localize("capital.trader.card.back", locale: locale),
+                                   callbackData: "tavern:food")
+        ]])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
     }
 
     private func editToTavernMenu(messageId: Int, isPhoto: Bool, context: Context) async throws {

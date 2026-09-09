@@ -486,9 +486,19 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let title = lingo.localize("exploration.bag.title", locale: locale)
         let backLabel = lingo.localize("exploration.bag.back", locale: locale)
 
+        // Occupancy in the title. The same two numbers the inventory root
+        // prints — per-unit across every non-equipped row, against the bag
+        // tier's cap — because a player comparing the two screens must not
+        // read different ones. On the trail it answers what this screen could
+        // not: whether the next drop still fits, while there is still food
+        // here to eat and make room with.
+        let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
+        let cap = InventoryEntry.slotCap(for: context.session)
+        let header = "🎒 <b>\(title)</b> (\(slotsUsed)/\(cap))"
+
         if sorted.isEmpty {
             let empty = lingo.localize("exploration.bag.empty", locale: locale)
-            let text = "🎒 <b>\(title)</b>\n\n\(empty)"
+            let text = "\(header)\n\n\(empty)"
             let markup = TGInlineKeyboardMarkup(inlineKeyboard: [[
                 TGInlineKeyboardButton(text: backLabel, callbackData: "explore:back")
             ]])
@@ -508,7 +518,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         }
         rows.append([TGInlineKeyboardButton(text: backLabel, callbackData: "explore:back")])
 
-        return ("🎒 <b>\(title)</b>", TGInlineKeyboardMarkup(inlineKeyboard: rows))
+        return (header, TGInlineKeyboardMarkup(inlineKeyboard: rows))
     }
 
     // MARK: - End / Death

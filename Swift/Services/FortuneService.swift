@@ -125,6 +125,15 @@ public enum FortuneService {
         user.activeFortuneExpiresAt = now.addingTimeInterval(FortuneCatalog.buffDurationSeconds)
         user.lastFortuneDrawAt = now
 
+        // Keep what the one-shot half actually handed over, so the entry
+        // screen can say it hours later. Written unconditionally — a pure
+        // duration card zeroes the record rather than leaving the previous
+        // draw's numbers standing under a new card's name.
+        user.lastFortuneSilverDelta = applied.silverDelta
+        user.lastFortuneXpGain = applied.xpGained
+        user.lastFortuneHpRestored = applied.hpRestored
+        user.lastFortuneVigorRestored = applied.vigorRestored
+
         try await user.saveAndCache(in: db)
         return .success(card: card, oneShotApplied: applied)
     }
