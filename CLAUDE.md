@@ -31,6 +31,10 @@ TGUpdate -> TGDispatcher -> Auth check -> SessionCache -> RouterStore.process(ro
 
 Each user has a `routerName` field. Updates route to the controller registered under that name. Controllers transition by setting `session.routerName` and calling `saveAndCache()`.
 
+**The router is resolved INSIDE `RouterStore`'s per-user chain, on the routerName as it stands** (2026-09-10). The SDK hands every update to its own `Task.detached`, so two quick taps are both read before either has transitioned; `TGDispatcher` still passes the key it read, but only as a fallback. Resolving it earlier is what delivered a second tap to the controller the first had just left — a step taken mid-fight, a capital tap answered by the estate, and in both cases a screen re-sending the keyboard the player no longer stands in. `[ROUTE]` in the log fires when the requested and live keys differ, which measures the race rather than arguing about it.
+
+**A refusal carries the keyboard of the router the player is actually on.** `TGControllerBase.currentKeyboard(for:lingo:)` looks it up; a "you cannot do that from here" notice sent with no markup leaves whatever was last set, so a player whose keyboard has drifted is left tapping buttons for a place they are not in. Guards re-render the screen that owns the state instead of only refusing — `ExplorationController.guardInCombat` re-draws the fight, which re-asserts the combat keyboard, so the mis-tap is also what repairs it.
+
 ## Source Layout
 
 Game code lives in `Swift/` (not `Sources/`). The content pipeline lives in `Modules/`
@@ -240,7 +244,7 @@ Swift/
 ├── Migrations/          # DB migrations
 ├── Services/            # Domain services (pure where possible)
 ├── Telegram/            # Router engine + TG client
-└── Helpers/             # TGControllerBase, SessionCache, Lingo ext, env, EphemeralChatState
+└── Helpers/             # TGControllerBase, SessionCache, ScreenEdit, PhotoCache, Countdown, Lingo ext, env, EphemeralChatState
 ```
 
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
@@ -328,6 +332,8 @@ the Arena budget and the quest of the day from drifting apart.
 ### Player-visible photos (capital / estate / location backdrops / registration / lore)
 **RULE — every player-visible image goes through `sendCachedPhoto(...)` (`Swift/Helpers/PhotoCache.swift`), no exceptions.** This is the ONLY sanctioned way to send a photo: it captures Telegram's `file_id` on first send and reuses it forever, so any newly-added art is automatically file_id-cached the first time it's shown — there is nothing extra to register. Never call `bot.sendPhoto` directly for player art, and note the `TGBot.sendMessage(session:text:…)` convenience has **no `photo:` parameter** on purpose (that bypass was removed) — if you need an image, you need `sendCachedPhoto`. The helper does one thing:
 - **file_id cache** — first send uploads the JPG/PNG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload). file_id is a global Telegram reference, so one cached entry serves every user; the cache is in-memory and refills after a restart. (After swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped and the new bytes re-upload.)
+
+**RULE — every in-place screen redraw goes through `editScreen(...)` (`Swift/Helpers/ScreenEdit.swift`).** Telegram edits a message's TEXT or its CAPTION, never either, and which one a screen has depends on whether it was sent with artwork — so `editMessageText` against a photo fails with "there is no text in the message to edit". That was **310 of the 807 API refusals** in a day and a half of Pi log, every one swallowed by `try?`: the player tapped, the screen did not change, and nothing said why. `editScreen` takes `isPhoto` as the caller's expectation and the fast path, falls back to the other field when that is wrong, and logs the recovery with the call site (`#function`). Never call `editMessageText` / `editMessageCaption` directly. Its `TelegramAPIError` also lets `HummingbirdTGClient` pick a log level by refusal, so "message is not modified" and "message to delete not found" stop burying the failures that matter.
 
 Photos are **kept in chat history** — nothing is deleted. Players asked to keep a scrollable record of where they've been (and for future stats). Because every bubble references the same server-side file_id, a long history of repeated backdrops costs no extra storage (Telegram dedups by file_id), so accumulation is cheap.
 ```swift

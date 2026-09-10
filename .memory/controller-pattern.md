@@ -66,6 +66,25 @@ Used by `/buttons` command to restore keyboards, and by the bot-restart notice i
 
 A controller can return `nil` if it owns no reply keyboard. `CombatController` used to do this (combat was inline-button driven) but since the 2026-05-27 reply-keyboard switch it returns the combat keyboard itself: `generateControllerKB` hands back the default (non-training) `[Attack][Defend]/[🪄 Techniques][Flee]` layout — used by `/buttons` and the restart greeting — while the live round messages build the state-aware version (training swaps Flee for `[🚪 Exit]`) via `combatReplyKeyboard`. The combat keyboard replaces the player's previous one for the fight and is restored to the parent controller's keyboard on victory / flee / death.
 
+**State-dependent keyboards are told, not asked.** `generateControllerKB` is
+synchronous and has no database, so anything that depends on a row has to arrive as
+a parameter — the pattern `CombatController` set (`combatReplyKeyboard(session:state:lingo:)`
+swaps Flee for Exit in training) and `MainController` follows since 2026-09-10:
+`mainKeyboard(session:lingo:traveling:)` lends the Explore slot to `↩️ Розвернутись`
+while a trip is in flight, Explore being a dead key on the road anyway. Callers
+holding the row pass true; the three async paths that can land mid-trip
+(`showMainMenu`, `/menu`, the restart broadcast in `configure.swift`) query; the
+`generateControllerKB` override keeps the resting layout. That last gap self-heals —
+one tap on Estate or Capital re-sends the countdown banner, which knows.
+
+**A refusal carries a keyboard.** `TGControllerBase.currentKeyboard(for:lingo:)`
+returns the keyboard of the router the player is actually on, and every "you cannot
+do that from here" notice sends it. A notice with no markup leaves whatever the last
+message set, so a player whose keyboard has drifted keeps tapping buttons for a place
+they are not in, with `/menu` the only way back. Better still, a guard re-renders the
+screen that owns the state rather than only refusing: `guardInCombat` re-draws the
+fight, so the mis-tap is also the tap that repairs the screen.
+
 ### Callback Queries
 - Must be `static` methods (limitation of how they're registered)
 - Always delete the inline keyboard message after processing

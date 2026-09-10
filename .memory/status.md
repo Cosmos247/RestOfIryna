@@ -21,6 +21,14 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-10 — a full warehouse said the bag was empty.** `📦 Виклати все` refused with
+«У сумці немає речей цього типу» over a bag that plainly had them: `depositAll` returned a
+bare count, and a zero there means two opposite things — nothing of this category, or
+plenty of it and no room. It returns `DepositAllResult` now (moved · cappedOut ·
+skippedUntransferable · used · cap), so a refusal names the cap with its numbers, a partial
+bulk deposit says what stayed behind, and an unequipped tiered weapon — listed on the screen
+but never movable — is named instead of blamed on the bag. Two locale keys per language.
+
 **2026-09-10 — the road can be turned around.** A trip could only be waited out. The nav
 keyboard now lends the Explore slot to `↩️ Розвернутись` for as long as a trip is in flight
 — Explore is refused mid-trip anyway, and a reply button sidesteps Telegram's

@@ -1226,4 +1226,4 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-05-11 part 5 — Phase 5.3a + 5.3b + 5.3c + 5.3d all landed. Next: 5.3e technique gates by player level + "Learn at Training Ground" flow + per-fight uses growth.*
+*Last updated: 2026-09-10 — live-play polish. Phases 3–11 are closed as code; the work in flight is fixing what playing the deployed build reveals. Five commits this session: the router race + `editScreen`, resting as a place, turn back on the road, and the warehouse refusal that blamed the bag. Next: watch the `[ROUTE]` / `[COMBAT]` / `[SCREEN]` lines the new build writes, and keep walking the first hour — a fight lost, a flee, the trade screens and one run of `/reload` are still unwalked.*

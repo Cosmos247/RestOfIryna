@@ -33,14 +33,24 @@ TGUpdate arrives via long polling
      2. TGCommandHandler("/settings") -> GlobalCommandsController.handleSettings
      3. TGCommandHandler("/buttons")  -> GlobalCommandsController.handleButtons
      4. TGBaseHandler (catch-all)     -> Auth check -> SessionCache -> RouterStore.process()
-        -> Routes to controller based on user's `routerName` field
+        -> serialize per user -> re-read `routerName` -> route
 ```
+
+**Every handler runs in its own `Task.detached`** (`TGDefaultDispatcherPrtcl.process`
+in the SDK), so updates are processed CONCURRENTLY and two quick taps are both read
+before either has transitioned. `RouterStore` chains them per user — and since
+2026-09-10 it also RESOLVES the router inside that chain, from the routerName as it
+stands after the previous tap committed. `TGDispatcher` still passes the key it read,
+but only as a fallback for a session-less dispatch. Reading it earlier is what
+delivered a second tap to the controller the first had just left: a step taken
+mid-fight, a capital tap answered by the estate. `[ROUTE]` warns when the requested
+and live keys differ, which turns the race into something measurable in the Pi log.
 
 ## Router-Controller Pattern
 
 - `RouterStore` (actor in `routes.swift`) — holds `[String: Router]` map
 - Each controller registers its Router under its `routerName` key
-- When an update arrives, `TGDispatcher` fetches user session, reads `routerName`, calls `store.process(key:)`
+- When an update arrives, `TGDispatcher` fetches the user session and calls `store.process(key:)`; the STORE decides which router runs, re-reading `routerName` inside the per-user chain
 - The Router matches the update against registered paths (commands, text, callbacks)
 - Controllers transition between each other by setting `session.routerName` and saving
 

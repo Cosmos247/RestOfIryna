@@ -41,8 +41,19 @@ work has been **live-play polish: fixing what playing the deployed build reveale
 
 **The bot is LIVE on the Pi, running `509f2db`** (restarted 2026-09-09 23:42, content hash
 `954b2608`, three migrations applied clean: `AddFortuneOneShot`, `AddNotificationFlags`,
-`AddPassiveDailyBudget`). **`04bd80d` and anything after it is NOT deployed** — it needs a
-push, a Pi build and a restart.
+`AddPassiveDailyBudget`). **Seven commits are NOT deployed** — everything from `04bd80d`
+onward. None of them adds a migration and none moves content (all four digest halves have
+stood still since 09-09), so the deploy is a push, a Pi build and a restart; `/reload`
+would not help, because every change is Swift and four are new locale keys, which need the
+restart anyway.
+
+**What a fresh session should know about the last one.** Everything below the "Next action"
+box is background; the work of 2026-09-10 was three player reports and two audits, and it
+produced no new mechanics beyond the turn-back button. All five commits are described under
+"What the live-play polish landed". The pattern worth carrying: every defect this session
+came from someone PLAYING, none from a test, and each one was a place where the code was
+right and could not say so — a race the log did not name, a refusal that blamed the wrong
+thing, a keyboard nobody re-asserted.
 
 > ## Next action: watch the log this build now writes, then keep walking
 >
@@ -85,7 +96,29 @@ push, a Pi build and a restart.
 > module); a few files is ~80 s. **Then ASK before `pm2 restart ROI`.** A content-only edit
 > needs no restart — `/reload` re-reads `content/data`; new locale strings DO need one.
 
-### What the live-play polish landed (four commits, 2026-09-09 → 10)
+### What the live-play polish landed (eight commits, 2026-09-09 → 10)
+
+**`1e99198` — a full warehouse said the bag was empty.** Reported from play with a
+screenshot. `depositAll` returned a bare count, and a zero there means two opposite things
+— nothing of this category in the bag, or plenty and no room. It returns
+`DepositAllResult` now (moved · cappedOut · skippedUntransferable · used · cap), so a
+refusal names the cap with its numbers, a PARTIAL bulk deposit says what stayed behind, and
+an unequipped tiered weapon — listed on the screen but never movable — is named rather than
+blamed on the bag.
+
+**`4766947` — the road can be turned around.** A trip could only be waited out.
+`↩️ Розвернутись` takes the Explore slot in the nav keyboard while one is in flight
+(Explore is refused mid-trip anyway), and a reply button sidesteps Telegram's
+one-markup-per-message rule. Walking back costs exactly what was walked — from `createdAt`,
+capped at one crossing — and `TravelService.turnBack` REPLACES the row so the task asleep
+on the old arrival finds nothing under its id. Keyboard state is passed into the builder,
+never looked up; the three async paths that can land mid-trip ask the database.
+
+**`3a6d5e3` — resting is a place, not a pause between fights.** HP regenerated on the road
+to the capital and while standing in it: `HealingService` only ever asked whether an
+`ExplorationState` row existed. `canRest` names all three suspensions now, and the road
+needs its own check because `location` is not flipped until arrival. Away from the estate
+the clock is cleared rather than skipped.
 
 **`75a89cc` — the router raced, and the edits were aimed at the wrong field.** Three
 reported symptoms, no game logic among them. `TGDispatcher` chose the controller from a
@@ -403,7 +436,7 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (**1002 / 1050 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
+localization (**1006 / 1054 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
 `item.<id>.gender` declarations and the four-way `gear.broken.notice`). **Access is invite-only and lives in the database**
 (`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
 account and opens registration, and nobody else gets a `User` row at all.
@@ -431,6 +464,7 @@ trade TTLs and the 12:00 rollover never scale.
 | `Modules/ROISim/BalanceFormatter.swift` | The report and its acceptance bands — what fails a build and what is only printed |
 | `Modules/ROISim/SpecTables.swift` | What `roi-content spec` prints — the tables a content spec quotes, from the code that owns them |
 | `Modules/ROISim/OpeningLedger.swift` | **Phase 11.** Levels 1–3 priced at every depth against the trail — the stretch the pace model must skip. Raw meat is NOT income (its recipes are kitchen recipes, and the kitchen is a room of the estate this stretch ends by unlocking) |
+| `Swift/Helpers/ScreenEdit.swift` | **2026-09-10.** `editScreen(...)` — the one sanctioned way to redraw a screen in place, the mirror of `sendCachedPhoto` for edits. Telegram edits TEXT or CAPTION and never either; a wrong guess falls back to the other field and logs the recovery with its call site. `TelegramAPIError` keeps the code and message apart so a refusal can be branched on |
 | `Swift/Helpers/AccessControl.swift` | **2026-09-08.** The allow list as an actor. A cache MISS queries the DB, so a row added by hand takes effect on the next message; `developerUsers` are allowed before the table is read — the lockout brake |
 | `Swift/Helpers/InviteToken.swift` | **2026-09-08.** The `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), 16 letters, five REAL minutes. Encryption hides the date; the tag is what stops anyone minting their own |
 | `Swift/Migrations/WipeForRebalance.swift` | **Phase 11.** The full wipe. LAST in `configure.swift`, no-op on a fresh DB. Explicit table list because `tavern_game_messages` has no FK, plus an `information_schema` self-check that refuses to finish while any table holds a row |

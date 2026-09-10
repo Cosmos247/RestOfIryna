@@ -37,26 +37,44 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 ## Live-play polish (2026-09-09 → 10) — the work in flight
 
 Phase 11 is closed as CODE; what is happening now is **fixing what playing the deployed
-build reveals**. Three commits, full narrative in [Session History](sessions.md)
-(the two 2026-09-09 entries).
+build reveals**. Eight commits, full narrative in [Session History](sessions.md)
+(the 2026-09-09 and 2026-09-10 entries).
 
-- **The bot is live on the Pi running `509f2db`**; `04bd80d` and later are not deployed.
-  The deploy recipe — including the swiftenv `PATH` trap that stops a non-interactive
-  `ssh` from finding `swift` at all — is in `Prompt.md` → "Next action".
+- **The bot is live on the Pi running `509f2db`**; `04bd80d` and everything after it is
+  NOT deployed — seven commits at the time of writing. The deploy recipe — including the
+  swiftenv `PATH` trap that stops a non-interactive `ssh` from finding `swift` at all — is
+  in `Prompt.md` → "Next action".
+- **The dispatcher raced itself.** The SDK gives every update its own `Task.detached`, and
+  the router used to be chosen from a `routerName` read before the previous tap had
+  transitioned — so a second quick tap reached the controller the first had just left. The
+  router is resolved inside `RouterStore`'s per-user chain now, and `[ROUTE]` measures how
+  often the race fires. See [Architecture](architecture.md).
+- **`editScreen` is the one way to redraw a screen** (`Swift/Helpers/ScreenEdit.swift`).
+  310 of the 807 API refusals in a day and a half of log were `editMessageText` against a
+  caption, each swallowed by `try?` — that is the whole "the tap did nothing" report. The
+  client classifies refusals now, so the benign 497 stop burying the rest.
+- **Resting is a place, not a pause between fights.** HP regen suspends in the wilderness,
+  on the road AND in the capital; only the wilderness was ever checked. The road needs its
+  own check because `location` is not flipped until arrival. See [Game Core](game-core.md).
+- **The road can be turned around** — the nav keyboard lends Explore's slot to
+  `↩️ Розвернутись` while a trip is in flight, and walking back costs what was walked.
+  Keyboard state is told, not asked: see [Controller Pattern](controller-pattern.md).
+- **Background writers take the session-cached `User`** (`SessionCache.peek`) or they
+  publish a pre-tap row over the player's last action — `TravelService` and
+  `PassiveExpeditionService` joined `RestNotificationService` in obeying it. See
+  [Session & Auth](session-auth.md).
 - **`Countdown.format` is the one time format** and no duration is written into copy any
   more; **`RestNotificationService`** is the 60 s watchman for what finishes while nobody
-  is looking (HP full · fortune cooldown · 12:00 rollover). A background writer must take
-  the session-cached `User` (`SessionCache.peek`) or it silently undoes the player's last
-  tap — Fluent saves whole rows.
-- **Two ceilings that were not real:** passive expeditions now cost against a 3 h/day
-  budget, and the warehouse cap finally applies to the plot harvest — the one path that
-  filled the warehouse unchecked — with no developer exemption left.
-- **Two defects the code review caught rather than a test:** starvation was charging
-  double on three of the four step buckets (10 HP where the message said 5), and the
-  broken-gear line was written in a gender that fits none of the nineteen breakable items.
-  uk now agrees with the item's own noun — see [Localization](localization.md).
-- **Still parked:** ~328 Telegram API errors a day in the live log, 162 of them an
-  `editMessageText` against a photo message that leaves the screen silently un-updated.
+  is looking (HP full · fortune cooldown · 12:00 rollover).
+- **Ceilings that were not real:** passive expeditions cost against a 3 h/day budget, the
+  warehouse cap applies to the plot harvest, and the developer exemption is gone from all
+  four warehouse checks (it survives on the BAG, a different ceiling).
+- **Two classes of defect the log could not report:** starvation charged double on three of
+  four step buckets, and a refusal that said "your bag has none of this" over a full bag —
+  `depositAll` returned a bare count, and a zero read as both "nothing here" and "no room".
+  Reasons travel with the count now.
+- **uk agrees with the item's own noun**, not only with the player — see
+  [Localization](localization.md).
 
 ## Phase 11 quick orientation (2026-09-02, extended 2026-09-07 and 09-09)
 

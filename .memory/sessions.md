@@ -1,6 +1,6 @@
 # Session History
 
-## Session — 2026-09-10 (live-play polish, part 3: the router raced, and the edits were aimed at the wrong field)
+## Session — 2026-09-10 (live-play polish, part 3: three player reports, seven fixes, no new mechanics but one button)
 
 Three symptoms, reported from live play with two screenshots: a fight starting
 while the walking keyboard stayed on screen, arriving in the capital with the

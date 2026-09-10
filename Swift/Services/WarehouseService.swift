@@ -295,8 +295,8 @@ public enum WarehouseService {
     /// in one shot. Mirror of `withdrawN`. Atomic preflight: bag has at least
     /// `quantity` (counting only unequipped rows — equipped gear is "on the
     /// body" and not transferable, same rule as single-unit `deposit`), and
-    /// warehouse has free slots for `quantity` units. Dev accounts bypass
-    /// the warehouse cap.
+    /// warehouse has free slots for `quantity` units — with no developer
+    /// exemption since 2026-09-09, as the code below says.
     @discardableResult
     public static func depositN(itemId: String, quantity: Int, for user: User, on db: any Database) async throws -> DepositNResult {
         guard quantity > 0 else { return .success }

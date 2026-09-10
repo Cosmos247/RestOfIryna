@@ -34,6 +34,19 @@ user.invalidateCache()            // Drop from cache
 - Auto-cleanup every 60 seconds via background Task
 - Global instance: `sessionCache`
 
+### Background writers must take the cached instance
+
+`saveAndCache` INSTALLS the object it saved as the next tap's session, and Fluent
+saves whole rows — so a background task holding its own freshly-loaded copy does not
+merely miss the tap the player made a second ago, it publishes the pre-tap row back
+over it. Anything writing a `User` outside a dispatch takes
+`sessionCache.peek(telegramId:)` first and falls back to its own row:
+`RestNotificationService` (since 2026-09-09), `TravelService` and
+`PassiveExpeditionService` (since 2026-09-10 — arrival writes `location` and
+`routerName`, the two fields that decide which keyboard the player is looking at).
+`peek` deliberately does not insert, so a once-a-minute sweep cannot pin every
+account in the cache forever.
+
 ## Authorization Flow
 
 ### In TGDispatcher (catch-all handler):

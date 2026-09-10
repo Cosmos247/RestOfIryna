@@ -40,6 +40,21 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Drains: room walk (2), double-speed (4), combat round (1)
 - Starvation: travel time doubles, stats -25%, HP drain per room
 - Food tiers: T1 (15) -> T4 (150)
+- **No passive Vigor regeneration at all** since Phase 8E — the pool is a stock, fed by
+  food, quests and levelling, and the estate's plots are the intended income
+
+### Rest and the road
+- **HP regen happens at the estate and nowhere else** (2026-09-10).
+  `HealingService.canRest` names the three states that suspend it: an `ExplorationState`
+  row (in the forest), a `TravelState` row (on the road) and `location == capital`.
+  Only the first was ever checked, so the manor's bed worked from anywhere in the
+  kingdom. Away from the estate the clock is CLEARED, not merely skipped. Potions are
+  the away-from-home heal; nothing in the capital can take a player to 0 HP (the arena
+  clamps both duellists to `max(1, …)`), so refusing to heal there strands nobody.
+- **A trip can be turned around** (2026-09-10). While one is in flight the nav keyboard
+  lends the Explore slot to `↩️ Розвернутись`; walking back costs exactly what has been
+  walked, measured from the row's `createdAt` and capped at one crossing. Turns are
+  symmetric — each costs only its own leg, so oscillating converges rather than compounds.
 
 ### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*
 - Manor: per-tier rooms (Warehouse → +Kitchen → +Workshop unlock as the estate tier grows; see Phase 5.3c for the actual gating). Workshop hosts Forge + Tannery + weapon-upgrade + bag-upgrade flows; Kitchen hosts cooking
