@@ -41,11 +41,13 @@ work has been **live-play polish: fixing what playing the deployed build reveale
 
 **The bot is LIVE on the Pi, running `509f2db`** (restarted 2026-09-09 23:42, content hash
 `954b2608`, three migrations applied clean: `AddFortuneOneShot`, `AddNotificationFlags`,
-`AddPassiveDailyBudget`). **Seven commits are NOT deployed** — everything from `04bd80d`
-onward. None of them adds a migration and none moves content (all four digest halves have
-stood still since 09-09), so the deploy is a push, a Pi build and a restart; `/reload`
-would not help, because every change is Swift and four are new locale keys, which need the
-restart anyway.
+`AddPassiveDailyBudget`). **Eight commits plus the working tree are NOT deployed** —
+everything from `04bd80d` onward. None adds a migration, but the newest one DOES move
+content and bumps the schema to **v11**, so it is no longer a Swift-only deploy: the Pi
+needs the new `content/data` and the new binary TOGETHER, because a v10 bundle under a v11
+binary is refused at the handshake by design. The deploy is a push, a Pi build and a
+restart; `/reload` cannot carry it, because the schema bump and the locale keys both need
+the restart.
 
 **What a fresh session should know about the last one.** Everything below the "Next action"
 box is background; the work of 2026-09-10 was three player reports and two audits, and it
@@ -96,7 +98,34 @@ thing, a keyboard nobody re-asserted.
 > module); a few files is ~80 s. **Then ASK before `pm2 restart ROI`.** A content-only edit
 > needs no restart — `/reload` re-reads `content/data`; new locale strings DO need one.
 
-### What the live-play polish landed (eight commits, 2026-09-09 → 10)
+### What the live-play polish landed (eight commits + the working tree, 2026-09-09 → 10)
+
+**Uncommitted — the forest stopped being empty on the way home.** Reported from play with
+two screenshots: three "Сліди витоптані" and three roots in six steps. The decay table was
+decaying the WRONG bucket — encounters fell 40 → 20 → 0 while forage held at 45 → 45 → 25,
+which is backwards in the fiction: a beast wanders back onto a km you passed an hour ago, a
+stripped berry bush does not regrow. The walk home is ALWAYS tier 1 by construction (every
+km on it was walked once), so 35% of its steps were empty-or-hurt and a run of three dead
+steps had a **37.9%** chance per return leg — the screenshot was not bad luck. The tier is
+now `8 / 35 / 52 / 5`: fights on the return leg 3.4 → 8.8, dead steps 35% → 13%, P(three in
+a row) 37.9% → 2.9%. The fresh tier gave up half its roots (`10 → 5`, into forage).
+
+Three things fell out of it that were NOT the ask:
+- **Tier 1 was also the whole passive expedition** (`freshStepCount` = 1, so a 90-min run is
+  1 fresh step and 17 tier-1 steps). Sharing the new row would have made the unattended mode
+  DENSER in fights than active play — 51.3% a step against 45.8% — inverting the very thing
+  `xpMultiplier 0.7` exists to prevent, and taking its daily Vigor bill from 161 to 288,
+  which is more than a tier-3 estate feeds in a day. Passive got its own `passive.weights`
+  row holding the old numbers. Required, not optional: a fallback to the tier row is exactly
+  the silent re-coupling the field exists to prevent. **Schema v10 → v11.**
+- **`BalanceFormatter` was asserting something now false** — it took the fresh tier as "the
+  CHEAPEST way to find a fight" and called the pace a floor. The walk home is cheaper now.
+  It reads the densest tier, so the claim is true by construction; the pace went 2.5 rooms →
+  1.9 and the landmark **85–93 days → 78–87**.
+- **`spec-economy.md` had a hand-pasted pace table** posing as a generated one, under a
+  sentence claiming the simulator printed it. It was accurate right up to this change and
+  stale the instant the pace moved, with nothing able to say so — the drift sweep reads
+  markers, and it had none. Now dated and labelled a quote.
 
 **`1e99198` — a full warehouse said the bag was empty.** Reported from play with a
 screenshot. `depositAll` returned a bare count, and a zero there means two opposite things
@@ -222,7 +251,7 @@ pass.
 the opening was Vigor-bankrupt — 79 boars, ~664 Vigor of deficit against a 105
 pool — and decided to **measure before retuning**. `OpeningLedger` measured it and
 inverted the conclusion: **the opening is not bankrupt, the SHALLOW opening is.**
-km 1 nets −374, km 4 nets **+40**, km 10 nets +72 and is the deepest km still won
+km 1 nets −335, km 4 nets **+44**, km 10 nets +73 and is the deepest km still won
 95% of the time; past km 11 survival rather than Vigor binds. §2 is amended, and
 both of its hand-computed numbers were wrong in opposite directions — the deficit
 credited the boar with cooked meat across a stretch where the kitchen is locked
@@ -265,7 +294,8 @@ level  estate  slots  vigor/day  portions  best mix
 ```
 
 The food plots were cut (farm 4/h cap 20 → 1/h cap 6, coop 2/h cap 12 → 1/h
-cap 5) to land the pace at **85–93 days of perfect play** — slower than the old
+cap 5) to land the pace at **85–93 days of perfect play**, which reads **78–87**
+since 2026-09-10 — slower than the old
 51–56 on purpose, so "3+ months" sits in the figure instead of in an assumption
 about imperfect play. Taps fell from 1,211/day to 513 on the way.
 
@@ -297,7 +327,7 @@ Current state of those bands: **18 of 18 level-invariance rows pass, 0 broken
 bands, 12 warnings** — seven are the off-curve roster, three are the levels with
 no estate, one is the flat food portion, and one is
 `opening.shallow_is_bankrupt`. 19,437,688 XP from
-level 1 to 40, and **85–93 days** on a tended estate — an estimate between two
+level 1 to 40, and **78–87 days** on a tended estate — an estimate between two
 opposing simplifications (every point spent on combat, but nothing except the
 estate feeding the player) rather than the floor the old number was.
 
@@ -336,11 +366,14 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline (2026-09-10, schema v10):** `records f6fc421256085066` ·
-`tuning a23248441d58a78a` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
-`tuning` moved twice on 09-09, both predicted and both named in the digest first:
-`realTime.restSweepInterval` (the watchman's cadence) and `passive.dailyBudgetMinutes`
-(the 3 h ceiling). The other three halves have not moved since 09-09.
+**Current digest baseline (2026-09-10, schema v11):** `records f6fc421256085066` ·
+`tuning ee45b18aea6b2c40` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+`tuning` moved three times, each predicted and each named before the edit:
+`realTime.restSweepInterval` and `passive.dailyBudgetMinutes` on 09-09, then the
+exploration re-weight on 09-10 — which also added a knob, `passive.weights`, and a
+knob is invisible to the digest until it is hashed, so `ContentDigest` grew a line
+for it in the same commit. **`records`, `spawns` and `quests` have not moved since
+09-09** and did not move for any of the three.
 
 HP regen is **10% of max HP per real minute** (`tuning/vigor.json` →
 `healing.regenPerMinute`), so a full rest at the estate takes 10 minutes — and

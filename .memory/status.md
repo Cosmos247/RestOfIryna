@@ -21,6 +21,21 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-10 — the forest was empty on the way home.** The revisit-decay table decayed the
+wrong bucket: encounters fell 40 → 20 → 0 while forage held at 45 → 45 → 25, which is
+backwards — a beast wanders back onto a walked km, a stripped bush does not regrow. The walk
+home is ALWAYS `priorVisits == 1` by construction, so 35% of its steps were empty-or-hurt and
+a run of three dead steps ran at 37.9% per return leg. Tier 1 → `8 / 35 / 52 / 5`; the fresh
+tier gave up half its roots into forage and kept its encounter weight, which `OpeningLedger`
+and the `simulate` pace both read. Three consequences beyond the ask: tier 1 was also the
+whole passive expedition (`freshStepCount` = 1), so passive took its own required
+`passive.weights` row rather than inherit a rate that would have made unattended play denser
+than active play — **schema v10 → v11**, plus a `ContentDigest` line, since an unhashed knob
+is unguarded; `BalanceFormatter` stopped hardcoding the fresh tier as "the cheapest way to
+find a fight" and reads the densest one, moving the pace landmark **85–93 → 78–87 days**;
+and a hand-pasted pace table in `spec-economy.md`, posing as generated, went stale the
+moment that pace moved with nothing able to catch it — now dated and labelled a quote.
+
 **2026-09-10 — a full warehouse said the bag was empty.** `📦 Виклати все` refused with
 «У сумці немає речей цього типу» over a bag that plainly had them: `depositAll` returned a
 bare count, and a zero there means two opposite things — nothing of this category, or
@@ -87,8 +102,8 @@ and `spawns` moved. **Phase 11 is next — and it carries the whole untested sur
 **opening ledger** (`Modules/ROISim/OpeningLedger.swift`) that prices levels 1–3 at every
 depth against the trail — the stretch the pace model has to skip, because it divides by an
 estate that does not exist yet. It answers `spec-economy.md` §7 and inverts its prose: the
-opening is not bankrupt, the **shallow** opening is. km 1 ends 374 Vigor short, km 4 ends
-+40, km 10 ends +72 and is the deepest km still won 95% of the time; past km 11 survival
+opening is not bankrupt, the **shallow** opening is. km 1 ends 335 Vigor short, km 4 ends
++44, km 10 ends +73 and is the deepest km still won 95% of the time; past km 11 survival
 rather than Vigor is the binding constraint. New warning `opening.shallow_is_bankrupt`;
 `--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234.
 
@@ -118,7 +133,7 @@ list rather than an FK cascade, because `tavern_game_messages` carries no foreig
 a self-check against `information_schema` refuses to finish while any table still holds a
 row. **`scale` 60 → 1.0 landed 2026-09-09** — game time is real time, and `validate
 --strict` is clean for the first time (zero errors, zero warnings). The opening ledger is
-unaffected (the opening has no game-time gate); the estate pace, 85–93 days, becomes
+unaffected (the opening has no game-time gate); the estate pace, 78–87 days, becomes
 measurable, which compressed time never allowed.
 
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
@@ -168,10 +183,10 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `f6fc421256085066` / `a23248441d58a78a` /
-`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-10), 234 tests. `tuning` moved
-twice on 09-09 — the watchman cadence and the passive daily budget, both named in the
-digest before the edit.
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `f6fc421256085066` / `ee45b18aea6b2c40` /
+`eaea309f4813dfa2` / `30de20902006e3b9` (**schema v11**, 2026-09-10), 236 tests. `tuning` has
+moved three times and nothing else has moved at all — the watchman cadence and the passive
+daily budget on 09-09, the exploration re-weight on 09-10, each named before the edit.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×
@@ -188,7 +203,7 @@ simulator's default sample size went 2000 → 8000 because `--strict` was failin
 noise. **Phase 8E then removed passive Vigor regeneration entirely** — the trickle did not pause
 during an expedition, so it was the reason depth had no gate. Vigor now comes only from food,
 quests and levelling; the estate's plots are the income, and `FoodBudget` measures what a
-tended one feeds (85–93 days to the cap after the food plots were cut to land there, down from
+tended one feeds (78–87 days to the cap after the food plots were cut to land there, down from
 1,211 to 513 taps a day). The foraging pools left Swift for `zones.json` at the same time.
 **What the report still flags:** the shipped bestiary carries ~60% of what its archetypes ask
 (Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
@@ -271,7 +286,7 @@ were superseded by Phases 4–6.
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — was flat 50 rows; now per-user `InventoryEntry.slotCap(for:User)` reading `BagCatalog.capForTier(user.bagTier)` (T1=25 → T6=85 since the 2026-05-12 per-unit pivot — slots count units, not stack rows). `add` throws `inventoryFull`; `canAccept` preflight; both bypass the cap when `user.isDeveloper`. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/Y slots`.
 - [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (5 animals across 4 tiers: wild boar / moose / buffalo + rabid lynx / wolf, with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + vigor/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
-- [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table (re-tuned 2026-05-12): fresh (10/50/30/10), reduced (20/50/20/10), bare (80/20/0/0 — `nothing` / `loot` only; encounter+trip go quiet). Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
+- [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table via `weights(forPriorVisits:)`; the weights themselves live in `content/data/tuning/exploration.json` and are deliberately not restated here. Tier 2+ zeroes encounter and trip — the anti-farm brake. Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
 - [x] Passive HP regen at the estate — `tuning/vigor.json` → `healing.regenPerMinute` of maxHp per minute (**10%** since 2026-09-09; 5% originally, 20% briefly) while the player is not on ANY expedition (active or passive) and hp < maxHp. `HealingService.tick(user:inExpedition:on:)` is called from `RouterStore.process` on every interaction (lazy compute, no background scheduler). `RouterStore` queries `ExplorationState.current` once per dispatch to derive `inExpedition`. `User.lastHpTickAt` column via `AddHpRegenTick` migration. Clock is cleared during expeditions and pinned to now at full HP, so banked regen never accumulates against future damage.
 - [x] 3.3 Passive expedition MVP (test-mode) — `AddPassiveExpeditionFields` migration adds `mode` / `ends_at` / `report_json` columns; `AddPassiveRunningReport` adds the per-step `running_report_json` snapshot so passive reports stay complete across bot restarts. `PassiveExpeditionService` handles duration picker (30/60/90 units — test mode = seconds, prod = minutes), starts via Task.detached running `runLive` (live per-step loop that sleeps between steps, tracks progress via `state.stepsDeep`, and exits early on death so the report pushes immediately instead of waiting the full timer), persists the `RunningPassiveReport` snapshot (outcome counters + loot totals + HP/vigor-at-start) on every step in the same save as `stepsDeep` and restores it on resume, serializes a final `PassiveReport` JSON on the state row, pushes the completion message to the player's chat, and re-arms itself on bot restart via `rescheduleInflight` (catches up any steps that fell during downtime). ExplorationController entry shows a mode picker [🏃 Розвідка / 🏕 Експедиція] when no state is present; countdown status for inflight; report delivery + state cleanup on re-open. Daily 2h budget and early-cancel still pending. `testMode` constant on the service — flip to prod before shipping.
 - [x] 3.4 Mode exclusivity — data-layer exclusivity from unique(user_id) on exploration_state. `showExploration` branches by state — tapping Explore during passive shows a "you're already on expedition, expected return MM:SS" message; during active it resumes the step view. Estate and Capital are both blocked during any expedition (governor is away). Idempotency guards on `explore:mode:*` / `explore:dur:*` callbacks prevent stale picker taps from silently overwriting an existing expedition. (A dynamic busy-label on the main keyboard was briefly tried in an earlier iteration; reverted in favor of the simpler gating-at-entry approach.)

@@ -157,6 +157,15 @@ public enum OpeningLedger {
                                                curve: progression.xpCurve,
                                                maxLevel: progression.maxLevel)
 
+        // The FRESH tier on purpose, and deliberately not the densest one the
+        // pace section in `BalanceFormatter` reads. The two bound the same
+        // parameter from opposite sides because their claims point opposite
+        // ways: that section calls its number a floor on the TIME, which wants
+        // the cheapest kill to find, while every row here is a floor on the
+        // opening's NET Vigor, which wants the most expensive walk. Since
+        // 2026-09-10 the walk home finds a fight in fewer rooms than this
+        // charges, so a real route beats the table — which is what "floor"
+        // means. Do not "fix" the mismatch by making them agree.
         let stepsPerEncounter = Double(exploration.eventWeightTotal) / Double(fresh.encounter)
         let walkVigor = Double(tuning.vigor.drain.walkRoom) * stepsPerEncounter
         let forageEvents = Double(fresh.loot) / Double(fresh.encounter)

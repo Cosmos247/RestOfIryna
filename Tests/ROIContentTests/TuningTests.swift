@@ -116,7 +116,8 @@ final class TuningTests: XCTestCase {
 
     private func exploration(total: Int = 100, tripDamage: Double = 0.05,
                              passiveXP: Double = 0.7,
-                             tiers: [EventWeightTierDTO]? = nil) -> ExplorationTuningDTO {
+                             tiers: [EventWeightTierDTO]? = nil,
+                             passiveWeights: EventWeightsDTO? = nil) -> ExplorationTuningDTO {
         ExplorationTuningDTO(
             eventWeightTotal: total, tripDamagePercent: tripDamage,
             weightTiers: tiers ?? [
@@ -125,7 +126,9 @@ final class TuningTests: XCTestCase {
                 EventWeightTierDTO(priorVisits: 2, nothing: 80, loot: 20, encounter: 0, trip: 0)
             ],
             passive: PassiveExpeditionTuningDTO(xpMultiplier: passiveXP,
-                                                lootMultiplier: 1.0, freshStepCount: 1))
+                                                lootMultiplier: 1.0, freshStepCount: 1,
+                                                weights: passiveWeights
+                                                    ?? EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 10)))
     }
 
     private func progression(maxLevel: Int = 40, coefficient: Double = 11.4,
@@ -495,6 +498,20 @@ final class TuningTests: XCTestCase {
         assertRule("tuning.exploration.weights_dont_sum", bundle(exploration: exploration(tiers: [
             EventWeightTierDTO(priorVisits: 0, nothing: 10, loot: 50, encounter: 30, trip: 5)
         ])))
+    }
+
+    /// The passive table rolls through the same `Int.random(in: 0..<total)` as
+    /// the tier ladder, so it needs the same two checks. The tiers are left
+    /// VALID here on purpose — otherwise the rule would fire for them and the
+    /// test would pass without the passive row ever being looked at.
+    func testPassiveWeightsThatDoNotSumAreAnError() {
+        assertRule("tuning.exploration.weights_dont_sum", bundle(exploration: exploration(
+            passiveWeights: EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 5))))
+    }
+
+    func testNegativePassiveWeightIsAnError() {
+        assertRule("tuning.exploration.negative_weight", bundle(exploration: exploration(
+            passiveWeights: EventWeightsDTO(nothing: 25, loot: 55, encounter: 20, trip: -10))))
     }
 
     // MARK: - progression.json rules

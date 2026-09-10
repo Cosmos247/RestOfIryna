@@ -104,7 +104,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 6 Rarity + sets | ✅ budget curve · rarities · sets · enchant as % |
 | 7 `/reload` hot swap | ✅ + `LiveReferenceCheck` over 10 columns |
 | 8 Simulator + constant lock-in | ✅ **8A** math into `ROISim` (digest held) · **8B** `roi-content simulate` · **8C** stances multiplicative · warrior budget re-spent · monster silver removed · **8D** last two flat lifts → multipliers, archetype `minLevel`, sample size 2000 → 8000 |
-| 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days · `zones.json` |
+| 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days (reads 78–87 since 09-10) · `zones.json` |
 | 9 Content specs (approval gate) | ✅ **5 of 5** — progression · bestiary · items · sets · economy |
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
 | 11 Wipe + final pass | ⬜ — the opening ledger (its one pre-playtest debt) landed 2026-09-02 |
@@ -241,12 +241,12 @@ shallowest km that has it.
 
 ```
 km  mob levels    xp/kill  vigor/kill    win%     kills     trail     spent  walk in       net  if cooked
-1   1                 8.5         9.1    100%      92.2       350       837        2      -374        400
-4   1,4              89.0        11.4    100%       8.9        34       101        8        40        150
-7   1,4,7           213.2        13.6     97%       3.7        14        50       14        65        114
-10  1,4,7,10        388.4        14.9     95%       2.0         8        30       20        72         95
-13  4,7,10,13       917.0        23.2     66%       0.9         3        20       26        72         80
-20  13,16          2045.9        28.1      9%       0.4         1        11       40        66         68
+1   1                 8.5         9.1    100%      92.2       389       837        2      -335        439
+4   1,4              89.0        11.4    100%       8.9        37       101        8        44        154
+7   1,4,7           213.2        13.6     97%       3.7        16        50       14        66        116
+10  1,4,7,10        388.4        14.9     95%       2.0         9        30       20        73         96
+13  4,7,10,13       917.0        23.2     66%       0.9         4        20       26        73         80
+20  13,16          2045.9        28.1      9%       0.4         2        11       40        66         68
 26  22            10020.0        15.7      0%       0.1         0         1       52        62         62
 ```
 
@@ -264,7 +264,7 @@ Three modelling choices carry the result, and each of them moves it:
   and every recipe that turns it into a portion is a `kitchen` recipe — a room
   gated on estate tier 2, which is the level the opening ENDS at. So it is
   printed as `if cooked` (the size of what the gate holds back: 774 Vigor at km
-  1, twice the deficit) and kept out of the net. `spec-economy.md` §3's ledger
+  1, more than twice the deficit) and kept out of the net. `spec-economy.md` §3's ledger
   credited the boar with 8.4 Vigor of cooked meat during a stretch where the
   oven is locked.
 - **Only forage that is edible as found counts.** Half the km 1–10 pool is
@@ -742,7 +742,9 @@ Three findings, all acted on except the one deliberately deferred:
   of perfect play, so "3+ months" lives in the figure instead of in an assumption
   about imperfect play. The food plots were cut to land there (farm 4/h cap 20 →
   **1/h cap 6**, coop 2/h cap 12 → **1/h cap 5**; forest and mine untouched, so
-  building materials keep their pace). Result: **85–93 days**. The
+  building materials keep their pace). Result: **85–93 days** as the pace then read it — **78–87** since 2026-09-10,
+  when the pace started measuring from the densest room instead of the fresh
+  one; the estate did not move at all, the yardstick did. The
   `pace.too_fast` band moved with the model, from 45 to 72 days.
 - **Taps.** 1,211 a day at the first run, against the ~390 the plan budgeted —
   because 190 portions a day is 380 button presses on their own. Cutting the

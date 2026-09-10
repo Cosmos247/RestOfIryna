@@ -519,13 +519,21 @@ public enum BalanceFormatter {
         if let tuning = content.tuning {
             let progression = tuning.progression
             let exploration = tuning.exploration
-            // Fresh rooms only. A real expedition re-enters rooms and the
-            // encounter weight decays to 20 and then to 0, so this is the
-            // CHEAPEST way to find a fight — every real route costs more, and
-            // the pace below is therefore a floor on the time, not a promise.
-            let fresh = exploration.weightTiers.first { $0.priorVisits == 0 }
-            let stepsPerEncounter = (fresh?.encounter ?? 0) > 0
-                ? Double(exploration.eventWeightTotal) / Double(fresh!.encounter) : 0
+            // The DENSEST tier, whichever row that turns out to be — the
+            // cheapest room in the game to find a fight in, so the pace below
+            // stays a floor on the time rather than a promise. This read the
+            // FRESH tier for a season, on the reasoning that re-entering a room
+            // only ever decays its encounter weight. That was true until
+            // 2026-09-10, when the walk home was given a HIGHER weight than
+            // fresh ground — a beast wanders back onto a km you passed an hour
+            // ago, a stripped berry bush does not regrow — and the hardcoded
+            // row quietly stopped being the cheapest one. Taking the max keeps
+            // the claim true BY CONSTRUCTION instead of by an assumption about
+            // which row wins, which is the same discipline as every other
+            // number in this report.
+            let densest = exploration.weightTiers.map(\.encounter).max() ?? 0
+            let stepsPerEncounter = densest > 0
+                ? Double(exploration.eventWeightTotal) / Double(densest) : 0
             let walkCost = Double(tuning.vigor.drain.walkRoom) * stepsPerEncounter
             let harvestsPerDay = FoodBudget.defaultHarvestsPerDay
 

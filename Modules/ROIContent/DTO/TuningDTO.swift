@@ -740,6 +740,34 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// The four event weights for one step, with no tier index on them.
+/// `EventWeightTierDTO` is this plus the `priorVisits` key it is looked up by;
+/// the passive table has no visit count to key on, because an unattended walk
+/// never turns around and re-enters a km.
+public struct EventWeightsDTO: Codable, Sendable, Equatable {
+    public let nothing: Int
+    public let loot: Int
+    public let encounter: Int
+    public let trip: Int
+
+    public init(nothing: Int, loot: Int, encounter: Int, trip: Int) {
+        self.nothing = nothing
+        self.loot = loot
+        self.encounter = encounter
+        self.trip = trip
+    }
+
+    private enum CodingKeys: String, CodingKey { case nothing, loot, encounter, trip }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        nothing   = try c.decode(Int.self, forKey: .nothing)
+        loot      = try c.decode(Int.self, forKey: .loot)
+        encounter = try c.decode(Int.self, forKey: .encounter)
+        trip      = try c.decode(Int.self, forKey: .trip)
+    }
+}
+
 /// How a passive (offline) expedition is discounted against active play.
 ///
 /// Without these, the mode that needs no attention was measured 53% MORE
@@ -754,9 +782,18 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
 public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     public let xpMultiplier: Double
     public let lootMultiplier: Double
-    /// Steps past this index roll the decayed weight tier instead of the fresh
-    /// one, so an unattended walk cannot keep harvesting first-visit odds.
+    /// Steps past this index roll `weights` instead of the fresh tier, so an
+    /// unattended walk cannot keep harvesting first-visit odds.
     public let freshStepCount: Int
+    /// What a passive step past `freshStepCount` rolls. This used to BE the
+    /// `priorVisits == 1` row: passive borrowed the walk-home tier, so the two
+    /// could never be tuned apart. On 2026-09-10 the walk home was made denser
+    /// in encounters than fresh ground, and borrowing that would have handed
+    /// the mode nobody watches a higher fight rate than the one they play —
+    /// exactly the inversion `xpMultiplier` exists to prevent. Required, not
+    /// optional-with-a-fallback: a fallback to the tier row is precisely the
+    /// silent re-coupling this field was added to make impossible.
+    public let weights: EventWeightsDTO
     /// Minutes of passive expedition a player may commit per game day. Counted
     /// in `PassiveDuration.rawValue` units — the same authored minutes the
     /// three choices are written in — so `time.scale` moves the wall clock and
@@ -767,15 +804,17 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
 
     public init(xpMultiplier: Double,
                 lootMultiplier: Double, freshStepCount: Int,
+                weights: EventWeightsDTO,
                 dailyBudgetMinutes: Int = 180) {
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
         self.freshStepCount = freshStepCount
+        self.weights = weights
         self.dailyBudgetMinutes = dailyBudgetMinutes
     }
 
     private enum CodingKeys: String, CodingKey {
-        case xpMultiplier, lootMultiplier, freshStepCount, dailyBudgetMinutes
+        case xpMultiplier, lootMultiplier, freshStepCount, weights, dailyBudgetMinutes
     }
 
     public init(from decoder: any Decoder) throws {
@@ -783,6 +822,7 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
         xpMultiplier     = try c.decode(Double.self, forKey: .xpMultiplier)
         lootMultiplier   = try c.decode(Double.self, forKey: .lootMultiplier)
         freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
+        weights          = try c.decode(EventWeightsDTO.self, forKey: .weights)
         dailyBudgetMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyBudgetMinutes) ?? 180
     }
 }

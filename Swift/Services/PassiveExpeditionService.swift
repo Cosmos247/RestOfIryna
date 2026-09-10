@@ -470,9 +470,12 @@ public enum PassiveExpeditionService {
                 outcome = try await ExplorationService.rollStep(
                     for: user,
                     kmDepth: nextStep,
-                    // Past the first step an unattended walk rolls the DECAYED
-                    // tier. Rolling fresh odds on every step is half of why the
-                    // mode that needs no attention out-earned the one that does.
+                    // Past the first step an unattended walk rolls
+                    // `passive.weights` — its OWN row since 2026-09-10, no longer
+                    // the walk-home tier it used to borrow. Rolling fresh odds on
+                    // every step is half of why the mode that needs no attention
+                    // out-earned the one that does; `rollStep` branches on `mode`,
+                    // so anything past `freshStepCount` means only "not fresh".
                     priorVisits: nextStep <= ExplorationService.passiveTuning.freshStepCount ? 0 : 1,
                     mode: .passive,
                     on: db

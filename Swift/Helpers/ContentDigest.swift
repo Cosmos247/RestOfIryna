@@ -744,6 +744,11 @@ enum ContentDigest {
         for priorVisits in -2...5 {
             d.combine(fingerprint(ExplorationService.weights(forPriorVisits: priorVisits)))
         }
+        // The passive table is a SEPARATE row since 2026-09-10, so replaying the
+        // tier ladder no longer reaches it. Hash it directly, and through the
+        // same lookup the game uses rather than the DTO — a digest that reads
+        // the field but not the selector would miss the branch going wrong.
+        d.combine(fingerprint(ExplorationService.weights(forPriorVisits: 1, mode: .passive)))
         // The passive discounts. Nothing else reaches them — they are applied
         // once, deep inside `finalizeAndPush`, so only a direct hash notices a
         // change to the ratio that keeps unattended play below active play.

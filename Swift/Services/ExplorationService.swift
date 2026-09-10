@@ -50,14 +50,28 @@ public struct AutobattleResult: Sendable {
 
 public enum ExplorationService {
 
-    // Event weights come from `tuning/exploration.json` — a three-tier table
-    // keyed on the room's prior visit count:
-    //   tier 0 (fresh)   — first entry ever during this expedition
-    //   tier 1 (reduced) — second entry, most of the room's events already fired
-    //   tier 2+ (bare)   — third+ entry, the room is picked clean
-    // Trip risk shares a small tier-invariant chance at tiers 0 and 1 because
-    // roots don't "learn" — it drops to zero at tier 2+ alongside every other
-    // interesting outcome. Starvation HP still ticks on every step.
+    // Event weights come from `tuning/exploration.json`, which holds TWO tables.
+    //
+    //   weightTiers — keyed on how many times THIS expedition entered that km:
+    //     tier 0 (fresh)       — first entry
+    //     tier 1 (walked once) — and therefore the whole walk home, by
+    //       construction: every km on the way back was walked once on the way
+    //       out. NOT a decay since 2026-09-10 — it carries MORE encounters than
+    //       fresh ground, because a beast wanders back onto a km you passed an
+    //       hour ago while a stripped berry bush does not regrow. Its FORAGE is
+    //       what decays.
+    //     tier 2+ (bare)       — third entry on, the km is picked clean;
+    //       encounter and trip go to zero, which is the brake on pacing between
+    //       two km to farm them.
+    //
+    //   passive.weights — what an unattended walk rolls past `freshStepCount`.
+    //     A separate row since 2026-09-10. It used to be tier 1, and leaving it
+    //     there once tier 1 got denser would have handed the mode nobody watches
+    //     a higher fight rate than the mode they play.
+    //
+    // Trip risk is the same small chance at tiers 0 and 1 because roots don't
+    // "learn" — it drops to zero at tier 2+ alongside every other interesting
+    // outcome. Starvation HP still ticks on every step.
     static var weightTotal: Int { Catalogs.current.tuningExploration.eventWeightTotal }
 
     /// Discounts and decay applied to an unattended expedition.
@@ -86,7 +100,23 @@ public enum ExplorationService {
         let trip: Int
     }
 
-    static func weights(forPriorVisits priorVisits: Int) -> EventWeights {
+    /// What a passive step past `freshStepCount` rolls. Its own row since
+    /// 2026-09-10 — it used to borrow `priorVisits == 1`, which is the walk
+    /// home, and the walk home is now DENSER in encounters than fresh ground.
+    /// Sharing that row would have given the mode nobody watches a higher fight
+    /// rate than the mode they play.
+    static var passiveWeights: EventWeights {
+        let w = Catalogs.current.tuningExploration.passive.weights
+        return EventWeights(nothing: w.nothing, loot: w.loot,
+                            encounter: w.encounter, trip: w.trip)
+    }
+
+    static func weights(forPriorVisits priorVisits: Int,
+                        mode: ExplorationMode = .active) -> EventWeights {
+        // A passive step past the fresh one has no visit count worth consulting
+        // — an unattended walk only ever goes outward, so every step after the
+        // first is "not fresh" and nothing more. It reads its own table.
+        if mode == .passive && priorVisits > 0 { return passiveWeights }
         let tiers = Catalogs.current.tuningExploration.weightTiers
         // Exact match, otherwise the LAST row — NOT "the greatest row at or
         // below the query". The switch this replaced had arms for 0 and 1 and a
@@ -117,7 +147,7 @@ public enum ExplorationService {
         let starvationLoss = VigorService.applyStarvationHPLoss(user)
 
         // Pick weights by tier.
-        let tier = weights(forPriorVisits: priorVisits)
+        let tier = weights(forPriorVisits: priorVisits, mode: mode)
         var wNothing = tier.nothing
         var wLoot = tier.loot
         let wEncounter = tier.encounter

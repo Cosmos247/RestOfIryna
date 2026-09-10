@@ -99,7 +99,8 @@ final class FoodBudgetTests: XCTestCase {
                 weightTiers: [EventWeightTierDTO(priorVisits: 0, nothing: 5, loot: 45,
                                                  encounter: 40, trip: 10)],
                 passive: PassiveExpeditionTuningDTO(xpMultiplier: 0.7, lootMultiplier: 1.0,
-                                                    freshStepCount: 1)),
+                                                    freshStepCount: 1,
+                                                    weights: EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 10))),
             progression: ProgressionTuningDTO(
                 maxLevel: 40,
                 xpCurve: XPCurveDTO(coefficient: 11.4, exponent: 3.30, floorPerLevel: 120),

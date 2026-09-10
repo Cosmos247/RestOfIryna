@@ -91,7 +91,8 @@ final class BestiaryTests: XCTestCase {
                     weightTiers: [EventWeightTierDTO(priorVisits: 0, nothing: 10, loot: 50,
                                                      encounter: 30, trip: 10)],
                     passive: PassiveExpeditionTuningDTO(xpMultiplier: 0.7,
-                                                        lootMultiplier: 1.0, freshStepCount: 1)),
+                                                        lootMultiplier: 1.0, freshStepCount: 1,
+                                                        weights: EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 10))),
                 progression: ProgressionTuningDTO(
                     maxLevel: maxLevel,
                     xpCurve: XPCurveDTO(coefficient: 11.4, exponent: 3.30, floorPerLevel: 120),

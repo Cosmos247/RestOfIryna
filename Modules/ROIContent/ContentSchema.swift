@@ -54,5 +54,11 @@ public enum ContentSchema {
     /// mechanic it drove — Vigor no longer regenerates at all. A v9 bundle
     /// still carries the field, and silently ignoring it would leave the
     /// operator believing a trickle they can no longer get.
-    public static let current: Int = 10
+    /// v11 (2026-09-10): `exploration.passive` gains a required `weights`
+    /// block. A v10 bundle has none, and passive steps read the
+    /// `priorVisits == 1` row instead — which in a v11 bundle is the walk-home
+    /// tier, now DENSER in encounters than fresh ground. Defaulting to it would
+    /// silently hand the unattended mode a higher fight rate than active play,
+    /// so the handshake has to refuse rather than fall back.
+    public static let current: Int = 11
 }

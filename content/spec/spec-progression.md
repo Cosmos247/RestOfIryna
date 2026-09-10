@@ -36,7 +36,7 @@ the rest of the document leans on them.
 | Stat growth | proportional every level: HP ×(1+0.056·(L−1)), ATK ×(1+0.100·(L−1)), ratings ×(1+0.085·(L−1)) |
 | Vigor pool | `100 + 5L`, and it does **not** regenerate (Phase 8E) — food is the only income |
 | Death | the whole unequipped backpack, unchanged |
-| Pace | 85–93 days of perfect play on a tended estate |
+| Pace | 78–87 days of perfect play on a tended estate |
 
 ---
 

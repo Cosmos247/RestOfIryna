@@ -4,23 +4,29 @@
     "dailyBudgetMinutes" : 180,
     "freshStepCount" : 1,
     "lootMultiplier" : 1.0,
+    "weights" : {
+      "encounter" : 20,
+      "loot" : 45,
+      "nothing" : 25,
+      "trip" : 10
+    },
     "xpMultiplier" : 0.7
   },
   "tripDamagePercent" : 0.05,
   "weightTiers" : [
     {
       "encounter" : 40,
-      "loot" : 45,
+      "loot" : 50,
       "nothing" : 5,
       "priorVisits" : 0,
-      "trip" : 10
+      "trip" : 5
     },
     {
-      "encounter" : 20,
-      "loot" : 45,
-      "nothing" : 25,
+      "encounter" : 52,
+      "loot" : 35,
+      "nothing" : 8,
       "priorVisits" : 1,
-      "trip" : 10
+      "trip" : 5
     },
     {
       "encounter" : 0,

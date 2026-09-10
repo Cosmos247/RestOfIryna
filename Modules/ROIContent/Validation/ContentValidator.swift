@@ -1818,15 +1818,11 @@ public enum ContentValidator {
             // Empty would crash the `tiers[count - 1]` fallback in `weights`.
             require(!exploration.weightTiers.isEmpty, file, "weightTiers",
                     "tuning.exploration.tiers_empty", "the weight table must not be empty")
-            // Contiguous from 0 is what makes "exact match, otherwise the LAST
-            // row" mean "the bare tier". A gap or a reorder silently changes
-            // which weights a re-entered room gets.
-            for (index, row) in exploration.weightTiers.enumerated() {
-                let path = "weightTiers[\(index)]"
-                require(row.priorVisits == index, file, path,
-                        "tuning.exploration.tier_not_contiguous",
-                        "expected priorVisits \(index), found \(row.priorVisits) — the tail row is the fallback for every higher and every negative count, so the run must be contiguous from 0")
-                let weights = [row.nothing, row.loot, row.encounter, row.trip]
+            // Every four-weight row gets the same two checks, wherever it
+            // lives — the tier ladder and the passive table both roll through
+            // `Int.random(in: 0..<eventWeightTotal)`, so a row that sums to
+            // anything else silently dumps the remainder in the last bucket.
+            func checkWeights(_ weights: [Int], _ path: String) {
                 for weight in weights where weight < 0 {
                     fail(file, path, "tuning.exploration.negative_weight",
                          "weights must not be negative, found \(weight)")
@@ -1836,6 +1832,18 @@ public enum ContentValidator {
                         "tuning.exploration.weights_dont_sum",
                         "weights sum to \(sum) but eventWeightTotal is \(exploration.eventWeightTotal) — the remainder silently falls into the last bucket")
             }
+            // Contiguous from 0 is what makes "exact match, otherwise the LAST
+            // row" mean "the bare tier". A gap or a reorder silently changes
+            // which weights a re-entered room gets.
+            for (index, row) in exploration.weightTiers.enumerated() {
+                let path = "weightTiers[\(index)]"
+                require(row.priorVisits == index, file, path,
+                        "tuning.exploration.tier_not_contiguous",
+                        "expected priorVisits \(index), found \(row.priorVisits) — the tail row is the fallback for every higher and every negative count, so the run must be contiguous from 0")
+                checkWeights([row.nothing, row.loot, row.encounter, row.trip], path)
+            }
+            let pw = exploration.passive.weights
+            checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip], "passive.weights")
         }
 
         // MARK: progression.json

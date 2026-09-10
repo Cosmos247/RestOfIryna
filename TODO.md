@@ -838,7 +838,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       51–56 — the estate was more generous than the regen. The call was to go SLOWER than the
       old number, so "3+ months" sits in the figure rather than in an assumption about
       imperfect play: farm 4/h cap 20 → **1/h cap 6**, coop 2/h cap 12 → **1/h cap 5** (forest
-      and mine untouched, so building materials keep their pace). **85–93 days**, and taps fell
+      and mine untouched, so building materials keep their pace). **85–93 days** as measured then,
+      **78–87** since the pace moved to the densest room on 09-10, and taps fell
       from **1,211/day to 513** on the way. The `pace.too_fast` band moved 45 → 72 days with
       the model it judges.
       · **Two findings left standing on purpose.** `restore_vigor` is flat against a pool that
@@ -1057,7 +1058,29 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         a guard from Phase 4b so retiring the `testMode` flag could not silently change the
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
-        pace (85–93 days) is measurable from here on; it never was before.
+        pace (78–87 days) is measurable from here on; it never was before.
+  - [x] **The forest was empty on the way home** *(2026-09-10, reported from play)* —
+        two screenshots: three `Сліди витоптані` and three roots inside six steps. The decay
+        table decayed the WRONG bucket — encounters 40 → 20 → 0 against forage 45 → 45 → 25,
+        backwards in the fiction, since a beast wanders back onto a walked km and a stripped
+        bush does not regrow. The walk home is ALWAYS `priorVisits == 1` by construction, so
+        35% of its steps were empty-or-hurt and a DP over the 17-step return leg puts a run
+        of three dead steps at **37.9% per expedition** — not bad luck, the shipped odds.
+        Tier 1 → `8 / 35 / 52 / 5` (return-leg fights 3.4 → 8.8, dead steps 35% → 13%,
+        P(3 in a row) → 2.9%); the fresh tier gave up half its roots into forage.
+        Three consequences, none of them the ask: **(a)** tier 1 was also the whole passive
+        expedition, and sharing it would have made unattended play denser in fights than
+        active play (51.3% vs 45.8%) while taking its daily Vigor bill 161 → 288, past what
+        a T3 estate feeds — so passive got its own required `passive.weights` row and the
+        schema went **v10 → v11**, plus a `ContentDigest` line, because an unhashed knob is
+        an unguarded one; **(b)** `BalanceFormatter` called the fresh tier "the CHEAPEST way
+        to find a fight" and the pace a floor — no longer true, so it reads the densest tier
+        and the landmark moved **85–93 → 78–87 days**; **(c)** `spec-economy.md` carried a
+        hand-pasted pace table posing as generated, under a sentence claiming the
+        simulator printed it — accurate until (b) moved the pace and stale the moment it
+        did, with nothing able to catch it. Now dated and labelled a quote.
+        `validate --strict` clean, 236 tests, `simulate --strict` 0 broken bands / 12
+        warnings, 0 drifted spec blocks, and only the `tuning` digest half moved.
   - [x] **A full warehouse said the bag was empty** *(2026-09-10, reported from play)* —
         `📦 Виклати все` answered a refusal with "У сумці немає речей цього типу" while the
         bag was visibly full: `depositAll` returned a bare count, and zero reads as both
@@ -1161,7 +1184,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         every depth against the trail — walk plus fight out, forage in — and the section it
         prints answers §7's question directly.
         **The answer inverts the spec's prose: the opening is not bankrupt, the SHALLOW
-        opening is.** km 1 ends 374 Vigor short; km 4 ends **+40**; km 10 ends **+72** and is
+        opening is.** km 1 ends 335 Vigor short; km 4 ends **+44**; km 10 ends **+73** and is
         the deepest km a level-1–3 player still wins 95% of fights at. Past km 11 survival,
         not Vigor, becomes the binding constraint (66% at km 13, 9% at km 20) — so depth has
         a measured optimum instead of an open ceiling, and the design's "walk deeper than is

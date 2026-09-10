@@ -125,21 +125,21 @@ never spent here either, so every row is a floor and not an estimate.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1 | 8.5 | 9.1 | 100% | 92.2 | 350 | 837 | 2 | **-374** | +400 |
-| 4 | 1,4 | 89.0 | 11.4 | 100% | 8.9 | 34 | 101 | 8 | **+40** | +150 |
-| 7 | 1,4,7 | 213.2 | 13.6 | 97% | 3.7 | 14 | 50 | 14 | **+65** | +114 |
-| 10 | 1,4,7,10 | 388.4 | 14.9 | 95% | 2.0 | 8 | 30 | 20 | **+72** | +95 |
-| 11 | 4,7,10 | 692.3 | 19.6 | 91% | 1.1 | 4 | 22 | 22 | **+75** | +90 |
-| 13 | 4,7,10,13 | 917.0 | 23.2 | 66% | 0.9 | 3 | 20 | 26 | **+72** | +80 |
-| 14 | 7,10,13 | 1250.1 | 27.0 | 50% | 0.6 | 2 | 17 | 28 | **+72** | +75 |
-| 16 | 7,10,13,16 | 1647.1 | 26.2 | 41% | 0.5 | 2 | 13 | 32 | **+72** | +75 |
+| 1 | 1 | 8.5 | 9.1 | 100% | 92.2 | 389 | 837 | 2 | **-335** | +439 |
+| 4 | 1,4 | 89.0 | 11.4 | 100% | 8.9 | 37 | 101 | 8 | **+44** | +154 |
+| 7 | 1,4,7 | 213.2 | 13.6 | 97% | 3.7 | 16 | 50 | 14 | **+66** | +116 |
+| 10 | 1,4,7,10 | 388.4 | 14.9 | 95% | 2.0 | 9 | 30 | 20 | **+73** | +96 |
+| 11 | 4,7,10 | 692.3 | 19.6 | 91% | 1.1 | 5 | 22 | 22 | **+75** | +90 |
+| 13 | 4,7,10,13 | 917.0 | 23.2 | 66% | 0.9 | 4 | 20 | 26 | **+73** | +80 |
+| 14 | 7,10,13 | 1250.1 | 27.0 | 50% | 0.6 | 3 | 17 | 28 | **+73** | +75 |
+| 16 | 7,10,13,16 | 1647.1 | 26.2 | 41% | 0.5 | 2 | 13 | 32 | **+72** | +76 |
 | 17 | 10,13,16 | 1774.9 | 25.9 | 34% | 0.4 | 2 | 12 | 34 | **+71** | +73 |
-| 20 | 13,16 | 2045.9 | 28.1 | 9% | 0.4 | 1 | 11 | 40 | **+66** | +68 |
+| 20 | 13,16 | 2045.9 | 28.1 | 9% | 0.4 | 2 | 11 | 40 | **+66** | +68 |
 | 22 | 13,16,22 | 2731.8 | 27.0 | 9% | 0.3 | 1 | 8 | 44 | **+64** | +66 |
-| 23 | 16,22 | 5180.6 | 20.5 | 0% | 0.2 | 1 | 3 | 46 | **+66** | +69 |
+| 23 | 16,22 | 5180.6 | 20.5 | 0% | 0.2 | 1 | 3 | 46 | **+67** | +69 |
 | 26 | 22 | 10020.0 | 15.7 | 0% | 0.1 | 0 | 1 | 52 | **+62** | +62 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 10**, at +72 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 10**, at +73 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
@@ -156,7 +156,7 @@ the deficit this section was arguing about:
 - **A kill's raw meat is not income here.** It restores nothing as found, and
   every recipe that turns it into a portion is a `kitchen` recipe — a room gated
   on estate tier 2, which is the level this stretch ENDS at. It is printed as
-  `if cooked` (774 Vigor at km 1, twice the deficit) and kept out of the net.
+  `if cooked` (774 Vigor at km 1, more than twice the deficit) and kept out of the net.
 - **Only forage that is edible as found counts.** Half the km 1–10 pool is lumber
   and river pebble, and the potato deeper in needs the same locked kitchen.
 - **Kills use the level-gap scaler.** The generated table in §2 prints 79 as the
@@ -165,9 +165,11 @@ the deficit this section was arguing about:
 
 Excluded and named rather than rounded away — silver (hide sells, quests pay, the
 trader stocks both food and the lumber a kitchen would want), the events the
-approach walk rolls on the way in, and re-entered rooms, whose encounter weight
-decays. All three push the same way, so every row is a **floor** on the opening
-rather than an estimate of it.
+approach walk rolls on the way in, and re-entered rooms, which since 2026-09-10
+carry a HIGHER encounter weight than fresh ground rather than a decaying one — so
+a kill found on the way home costs less walking than the 2.5 rooms charged here.
+All three push the same way, so every row is a **floor** on the opening rather
+than an estimate of it.
 
 The band is `opening.shallow_is_bankrupt`, and it is a warning rather than a
 broken band for the reason §7 gives: measure before retuning, so nothing here
@@ -197,14 +199,20 @@ the only factor that survives: scaling `chance` saturates at 1.0, and
 rounding a quantity of 1 collapses ×0.5/×1.0/×1.2/×1.7 into 1 or 2.
 <!-- /generated -->
 
-Against a cost the simulator prints rather than this document asserting:
+Against a cost the simulator prints. **This block is a QUOTE from `roi-content
+simulate`, not a `spec` table** — no `<!-- generated -->` marker can reproduce it,
+so it carries its own date and has to be re-pasted by hand whenever the pace
+moves — it went stale the same day the pace changed, and nothing in the drift
+check could have said so. That is the argument for keeping numbers inside markers
+wherever a `spec` command can emit them, and for dating them where none can:
 
 ```
+    (roi-content simulate, 2026-09-10)
     class     vigor/kill  kills to 40  taps to 40   days on the estate alone  taps/day
-    warrior     16.8          3925        47686       92.9                   513
-    archer      16.2          3925        46057       89.7                   513
-    mage        15.3          3925        43513       84.8                   513
-    spread 9% — the plan asks for each class within ±7% of the mean
+    warrior     15.7          3925        44413       86.5                   513
+    archer      15.1          3925        42784       83.3                   513
+    mage        14.2          3925        40240       78.4                   513
+    spread 10% — the plan asks for each class within ±7% of the mean
 ```
 
 So: **clean game roughly pays for itself, Blighted game is a pure loss, and the

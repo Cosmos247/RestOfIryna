@@ -1,5 +1,89 @@
 # Session History
 
+## Session — 2026-09-10 (live-play polish, part 4: the walk home, and three things it broke)
+
+One player report with two screenshots — three `Сліди витоптані` and three roots
+inside six steps on the way back from km 18 — and the ask was "fewer empty steps,
+more fights". The reweight was the small half. Digest after: `records`, `spawns`
+and `quests` byte-identical, only `tuning a23248441d58a78a → ee45b18aea6b2c40`.
+`validate --strict` 0/0, **236 tests** (234 + two negative tests for the new
+validator path), `simulate --strict` 0 broken bands / 12 warnings, 0 drifted spec
+blocks. Schema **v10 → v11**.
+
+### 1. The decay was on the wrong bucket, and the walk home is not a special case
+
+`priorVisits` is per km per expedition, so the return leg is **always tier 1 by
+construction** — every km on it was walked once on the way out. That tier read
+`25 / 45 / 20 / 10`: 35% of the steps home were empty-or-hurt, at half the
+encounter rate of fresh ground. A DP over the 17-step return leg puts a run of
+three dead steps at **37.9% per expedition**, four at 13.7% — the screenshot was
+the shipped odds, not bad luck, and saying so mattered more than the fix.
+
+The table decayed encounters fastest (40 → 20 → 0) and forage slowest
+(45 → 45 → 25), which is backwards: **a beast wanders back onto a km you passed an
+hour ago; a stripped berry bush does not regrow.** Tier 1 is now
+`8 / 35 / 52 / 5` — return-leg fights 3.4 → 8.8, dead steps 35% → 13%, P(three in
+a row) 2.9%. The fresh tier gave up half its roots (`10 → 5`) into forage; its
+encounter weight was deliberately NOT touched, because `OpeningLedger` and the
+`simulate` pace both read it.
+
+### 2. Tier 1 was also the entire passive expedition
+
+`freshStepCount` = 1, so a 90-min passive run is 1 fresh step and **17 tier-1
+steps** — the tier is not a detail of passive, it IS passive's economy, and the
+comment above the call site says so. Three axes, and they disagree, which is why
+the first framing (+143% fights) was the least useful of the three numbers:
+
+| | before | after (shared) |
+|---|---|---|
+| fights per step, passive | 21.1% | 51.3% |
+| fights per step, active round trip | 30.3% | 45.8% |
+| XP per Vigor, passive as % of active | 61% | 72% |
+| daily Vigor bill at the 180-min cap | 161 | 288 |
+
+Density **inverts** (active was ×1.43 denser, becomes ×0.89). XP per Vigor does
+NOT — `xpMultiplier 0.7` holds that axis, which is the one that matters, since
+Vigor is the stock. The sleeper was the third row: 288 Vigor/day is **137% of what
+a T3 estate feeds** and 89% at T4, where 161 had been 77% and 50%. A mid-game
+player firing two runs "so it does not go to waste" would go negative on food
+without pressing anything. Underneath it sits a mismatch this change only widens:
+**the passive cap is denominated in minutes and its real price is Vigor.**
+
+So passive got its own `passive.weights` block holding the old `25/45/20/10`.
+Required rather than optional-with-a-fallback: the natural fallback is the tier-1
+row, and that is precisely the silent re-coupling the field exists to prevent —
+the same argument that deleted `?? "mat.pine_lumber"`. Required field → schema
+bump, per the rule in `ContentSchema`. `ContentDigest` grew a line for it, because
+a knob is unguarded until it is hashed.
+
+### 3. Two documents that had quietly stopped being true
+
+- **`BalanceFormatter` asserted a falsehood.** It took the fresh tier because
+  "re-entry only ever decays the encounter weight — so this is the CHEAPEST way to
+  find a fight, and the pace is a floor". True until the walk home went to 52. It
+  reads the densest tier now, so the claim holds BY CONSTRUCTION rather than by an
+  assumption about which row wins. Pace 2.5 rooms → 1.9, and the landmark
+  **85–93 days → 78–87**. `OpeningLedger` deliberately keeps the fresh tier: its
+  claim is a floor on the opening's NET, which wants the most expensive walk, so
+  the two tools bound the same parameter from opposite sides on purpose.
+- **`spec-economy.md` carried a hand-pasted pace table** outside every
+  `<!-- generated -->` marker, under a sentence reading "Against a cost the
+  simulator prints rather than this document asserting". It was accurate right up
+  to this change and stale the instant the pace moved, with no check able to say
+  so — the drift sweep reads markers, and it had none. Now dated and labelled a
+  quote. The
+  same sweep found `.memory/game-core.md`, `file-map.md` and `status.md` all
+  restating the weights by hand and all stale since Phase 3 — replaced with a
+  pointer to the JSON instead of a fourth copy waiting to rot.
+
+### Worth carrying
+
+The reweight was ~10 numbers. Everything else came from asking what ELSE reads
+them: one tier fed a second game mode, one hardcoded row fed a claim in the
+report, and one table had been copied out of the report by hand. **A tuning
+number is only as local as the things that read it**, and `grep` for the field
+name is the cheap way to find out before, not after.
+
 ## Session — 2026-09-10 (live-play polish, part 3: three player reports, seven fixes, no new mechanics but one button)
 
 Three symptoms, reported from live play with two screenshots: a fight starting

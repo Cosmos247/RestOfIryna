@@ -24,7 +24,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - **Two modes**:
   - Active reconnaissance (розвідка): tap-driven, instant steps, no timer — the primary loop. Implemented in Phase 3.1 + 3.2.
   - Passive expedition (експедиція): time-gated — 5 min per room in production, 10 sec in test mode. Planned for Phase 3.3.
-- Events (fresh tier, re-tuned 2026-05-12): nothing (10%), loot (50%), combat (30%), trip (10%). Revisit tier (priorVisits=1): 20 / 50 / 20 / 10. Bare tier (priorVisits≥2): 80 / 20 / 0 / 0 — beasts and trip hazards vanish but a 1-in-5 forage chance remains.
+- Events: four buckets (nothing / loot / encounter / trip) on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and **tier 1 is also the whole passive expedition** (`passive.freshStepCount` = 1, so a 90-min run is 1 fresh step and 17 tier-1 steps). Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
 - Dungeons: guaranteed every 7th room, party-based, instanced
 - Death: respawn in town, lose expedition loot, keep gear
 
