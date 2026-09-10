@@ -1058,6 +1058,23 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **Turn back on the road** *(2026-09-10)* — a trip could only be waited out.
+        `↩️ Розвернутись` now takes the Explore slot in the nav keyboard for as long as
+        the road lasts, which is free real estate: Explore is refused mid-trip anyway
+        (`guardedByTravel`), and it dodges Telegram's one-markup-per-message rule that
+        would otherwise force the trip messages to choose between inline buttons and the
+        nav keyboard. Walking back costs exactly what has been walked — measured from
+        `createdAt`, not `travelSeconds − remaining`, since after the first turn the leg
+        is no longer a full crossing — and capped at one crossing so a trip left overdue
+        by a restart cannot price hours. `TravelService.turnBack` REPLACES the row rather
+        than editing it: `begin` inserts a new id and `arriveIfStillScheduled` looks its
+        trip up by id, so the task asleep on the old clock wakes, finds nothing and
+        returns. Turns are symmetric (the button rides every leg; each turn costs only
+        that leg, so oscillating converges rather than explodes). Keyboard state is
+        passed into the builder, never looked up — `generateControllerKB` is synchronous
+        with no database — and the three async entry points that can land
+        mid-trip ask (`showMainMenu`, `/menu`, the restart broadcast); anything colder
+        self-heals on the next Estate or Capital tap.
   - [x] **Resting is a place** *(2026-09-10)* — HP regenerated while the player walked to
         the capital and while they stood in it, because `HealingService` only ever checked
         for an `ExplorationState` row. `canRest(_:inExpedition:onTheRoad:)` now names all

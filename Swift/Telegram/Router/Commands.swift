@@ -22,6 +22,12 @@ enum Commands: String, Codable, CaseIterable {
     case estate = "commands.estate"
     case capital = "commands.capital"
     case inventory = "commands.inventory"
+    /// Takes the Explore slot for as long as the player is on the road between
+    /// the estate and the capital. Explore is refused during a trip anyway
+    /// (`MainController.guardedByTravel`), so the swap costs nothing and puts a
+    /// live key where a dead one was — the same move the combat keyboard makes
+    /// with Flee → Exit in training.
+    case turnBack = "commands.turn_back"
     
     func button(for session: User, _ lingo: Lingo) -> TGKeyboardButton {
         let startText = lingo.localize(self.rawValue, locale: session.locale)

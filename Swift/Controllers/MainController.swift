@@ -46,6 +46,12 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             let inventoryLocales = Commands.inventory.buttonsForAllLocales(lingo: lingo)
             for button in inventoryLocales { router[button.text] = onInventory }
 
+            // Only on screen while a trip is in flight, but registered always —
+            // a keyboard left over from a trip that has already landed still
+            // sends this text, and the handler answers it properly.
+            let turnBackLocales = Commands.turnBack.buttonsForAllLocales(lingo: lingo)
+            for button in turnBackLocales { router[button.text] = onTurnBack }
+
             router.unmatched                     = unmatched
             router[.callback_query(data: nil)]   = MainController.onCallbackQuery
         }
@@ -109,6 +115,25 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
+    /// Turn around mid-trip. The walk back costs exactly what has been walked
+    /// so far, so the button is cheapest the moment it appears and dearest one
+    /// step short of arriving.
+    ///
+    /// A trip that has already landed leaves the button on screen until the
+    /// next message replaces the keyboard, so a tap with no trip behind it is
+    /// expected rather than exceptional — it just re-draws the hub.
+    private func onTurnBack(context: Context) async throws -> Bool {
+        await dismissPendingPicker(context: context)
+        guard let turned = try await TravelService.turnBack(
+            for: context.session, on: context.db, bot: context.bot, lingo: context.lingo
+        ) else {
+            try await showMainMenu(context: context)
+            return true
+        }
+        try await CapitalController.showTurnedBack(context: context, trip: turned)
+        return true
+    }
+
     /// Returns `true` and posts the countdown banner if the player is
     /// currently on the road between estate and capital. Callers should
     /// short-circuit their own logic when this returns true — the player
@@ -140,16 +165,32 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             "full-name": displayName
         ])
         let text = text ?? "👋 \(greeting)!"
-        let markup = generateControllerKB(session: context.session, lingo: context.lingo)
+        // `/start` and every unmatched tap land here, and they can land in the
+        // middle of a trip — so this is one of the two paths that has to ask
+        // rather than assume, or it would quietly take the Turn back button away.
+        let traveling = try await TravelState.current(for: context.session, on: context.db) != nil
+        let markup = mainKeyboard(session: context.session, lingo: context.lingo, traveling: traveling)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
-    override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
-        // The Explore button label is static. When tapped during an
-        // expedition, `ExplorationController.showExploration` branches into
-        // a countdown or report view — no need to mutate the keyboard.
+    /// The nav keyboard. Explore keeps its slot except on the road, where it is
+    /// a dead key — `guardedByTravel` refuses it and answers with the countdown
+    /// — so the trip lends that slot to Turn back instead. Same move the combat
+    /// keyboard makes when it swaps Flee for Exit in training.
+    ///
+    /// `traveling` is passed IN rather than looked up: this has to stay
+    /// synchronous (it is a `TGControllerBase` override) and the answer lives in
+    /// a `travel_state` row. The callers that hold the trip pass true; the three
+    /// async entry points that can land mid-trip ask the database (`showMainMenu`,
+    /// `/menu`, and the restart broadcast); the rest get the plain keyboard, which
+    /// self-heals — one tap on Estate or Capital re-sends the countdown banner,
+    /// and that one knows.
+    func mainKeyboard(session: User, lingo: Lingo, traveling: Bool = false) -> TGReplyMarkup {
+        let first = traveling
+            ? Commands.turnBack.button(for: session, lingo)
+            : Commands.explore.button(for: session, lingo)
         let markup = TGReplyKeyboardMarkup(keyboard: [
-            [ Commands.explore.button(for: session, lingo),
+            [ first,
               Commands.inventory.button(for: session, lingo) ],
             [ Commands.estate.button(for: session, lingo),
               Commands.capital.button(for: session, lingo) ],
@@ -157,6 +198,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
               Commands.settings.button(for: session, lingo) ]
         ], resizeKeyboard: true)
         return TGReplyMarkup.replyKeyboardMarkup(markup)
+    }
+
+    override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
+        return mainKeyboard(session: session, lingo: lingo)
     }
 
     // MARK: - Profile Display

@@ -21,6 +21,16 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-10 — the road can be turned around.** A trip could only be waited out. The nav
+keyboard now lends the Explore slot to `↩️ Розвернутись` for as long as a trip is in flight
+— Explore is refused mid-trip anyway, and a reply button sidesteps Telegram's
+one-markup-per-message rule, which would otherwise force the trip messages to choose between
+inline buttons and the keyboard that switches the player out of the capital's. The walk back
+costs exactly what was walked (from `createdAt`, capped at one crossing), turns are
+symmetric, and `TravelService.turnBack` replaces the row rather than editing it so the task
+asleep on the old arrival cannot land the player early. Two locale keys, no migration, no
+content moved.
+
 **2026-09-10 — resting is a place.** HP regen ran while the player walked to the capital
 and while they stood in it: `HealingService` only ever checked for an `ExplorationState`
 row, so the manor's bed worked from anywhere in the kingdom. `canRest` now names all three

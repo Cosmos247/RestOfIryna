@@ -371,9 +371,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "remaining": TravelService.formatCountdown(remaining, lingo: lingo, locale: locale)
         ])
         // While en-route the player belongs to the main hub — Profile /
-        // Settings / Inventory should be usable, but Estate / Capital /
-        // Explore taps go through MainController's travel guard.
-        let markup = Controllers.mainController.generateControllerKB(session: context.session, lingo: lingo)
+        // Settings / Inventory should be usable, but Estate / Capital taps go
+        // through MainController's travel guard, and Explore lends its slot to
+        // Turn back for as long as the road lasts.
+        let markup = Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
@@ -392,8 +393,32 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "destination": destLabel,
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html,
-                                          replyMarkup: currentKeyboard(for: context.session, lingo: lingo))
+        // The trip is in hand here, so this banner is one of the two places
+        // that can put the Turn back button back if a colder path dropped it.
+        try await context.bot.sendMessage(
+            session: context.session, text: text, parseMode: .html,
+            replyMarkup: Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
+        )
+    }
+
+    /// The line the player gets for turning around: where they are headed now
+    /// and how long it takes. A fresh message rather than an edit, because the
+    /// tap arrived as one — Turn back is a keyboard key, not an inline button.
+    public static func showTurnedBack(context: Context, trip: TravelState) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let destKey = trip.destination == .capital ? "travel.destination.capital" : "travel.destination.estate"
+        // ↩️ prepended in Swift — Lingo drops every `%{var}` that follows a
+        // multi-UTF-16 character in the template, and the variation selector
+        // makes this one two units. See .memory/localization.md.
+        let text = "↩️ " + lingo.localize("travel.turned_back", locale: locale, interpolations: [
+            "destination": lingo.localize(destKey, locale: locale),
+            "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
+        ])
+        try await context.bot.sendMessage(
+            session: context.session, text: text, parseMode: .html,
+            replyMarkup: Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
+        )
     }
 
     /// Convenience for other controllers (Main, Estate, Exploration) to

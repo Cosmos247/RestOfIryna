@@ -111,8 +111,23 @@ final class GlobalCommandsController: @unchecked Sendable {
 
         let session = try await User.cachedSession(for: fromId, db: db)
 
-        if let controller = Controllers.all.first(where: { $0.routerName == session.routerName }),
-           let markup = controller.generateControllerKB(session: session, lingo: lingo) {
+        guard let controller = Controllers.all.first(where: { $0.routerName == session.routerName }) else { return }
+        // The escape hatch has to restore the keyboard the player should have,
+        // not the resting one: on the road the nav keyboard carries Turn back
+        // where Explore normally sits, and only a query knows — so this one
+        // asks, being async with a database in hand. Two routers wear that
+        // keyboard and both are reachable mid-trip: the hub itself, and the bag
+        // (opening it flips routerName without touching what is on screen).
+        let wearsNavKeyboard = [Controllers.mainController.routerName,
+                                Controllers.inventoryController.routerName]
+        let markup: TGReplyMarkup?
+        if wearsNavKeyboard.contains(controller.routerName),
+           try await TravelState.current(for: session, on: db) != nil {
+            markup = Controllers.mainController.mainKeyboard(session: session, lingo: lingo, traveling: true)
+        } else {
+            markup = controller.generateControllerKB(session: session, lingo: lingo)
+        }
+        if let markup {
             let keyboardRestored = lingo.localize("keyboard.restored", locale: session.locale)
             try await bot.sendMessage(session: session, text: "⌨️ \(keyboardRestored).", replyMarkup: markup)
         }

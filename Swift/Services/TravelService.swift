@@ -78,6 +78,43 @@ public enum TravelService {
         return state
     }
 
+    /// Turn around mid-trip: walk back the way already walked.
+    ///
+    /// The return leg is exactly as long as the elapsed part of the current
+    /// one, so a player who sets out and changes their mind pays what the
+    /// change of mind is worth and no more. Elapsed comes from `createdAt`
+    /// rather than `travelSeconds - remaining`, because after the first turn
+    /// the leg is no longer a full trip and the subtraction would price it as
+    /// though it were.
+    ///
+    /// The row is REPLACED, not edited: `TravelState.begin` deletes the old one
+    /// and inserts a new id, and `arriveIfStillScheduled` looks its trip up by
+    /// id — so the task still sleeping on the original arrival wakes, finds
+    /// nothing, and returns. Editing in place would leave that task armed on the
+    /// old clock and land the player early.
+    ///
+    /// Returns the new leg, or nil when there is no longer a trip to turn — the
+    /// arrival can land in the gap between the tap and this call, since it runs
+    /// outside the per-user dispatch chain.
+    public static func turnBack(
+        for user: User,
+        on db: any Database,
+        bot: TGBot,
+        lingo: Lingo
+    ) async throws -> TravelState? {
+        guard let trip = try await TravelState.current(for: user, on: db) else { return nil }
+        let now = Date()
+        // Capped at one full crossing: a trip whose arrival was owed while the
+        // bot was down reads as hours of walking, and the road is not that long
+        // in either direction.
+        let walked = min(travelSeconds, max(0, now.timeIntervalSince(trip.createdAt ?? now)))
+        let origin: TravelDestination = trip.destination == .capital ? .estate : .capital
+        let state = try await TravelState.begin(for: user, destination: origin,
+                                                endsAt: now.addingTimeInterval(walked), on: db)
+        scheduleArrival(stateId: state.id, endsAt: state.endsAt, db: db, bot: bot, lingo: lingo)
+        return state
+    }
+
     // MARK: - Scheduler
 
     /// Spawn a detached task that sleeps until `endsAt` and then runs the

@@ -563,6 +563,12 @@ public func configure(logger: Logger) async throws {
         resizeKeyboard: true,
         oneTimeKeyboard: true
     ))
+    // Everyone still on the road when the process went down. Queried once for
+    // the whole roster rather than per player, and needed because the nav
+    // keyboard carries Turn back only while a trip is live — re-attaching the
+    // resting one here would take the button away from exactly the players
+    // whose trip `rescheduleInflight` just re-armed.
+    let travellingIds = Set((try? await TravelState.allInflight(on: db))?.compactMap { $0.$user.id } ?? [])
     for tgId in await accessControl.roster(on: db).map(\.telegramId) {
         let chatId = TGChatId.chat(tgId)
         let user = try? await User.query(on: db).filter(\.$telegramId, .equal, tgId).first()
@@ -578,7 +584,12 @@ public func configure(logger: Logger) async throws {
             } else {
                 kbCtrl = activeCtrl ?? Controllers.mainController
             }
-            markup = kbCtrl.generateControllerKB(session: user, lingo: lingo) ?? startKB
+            if kbCtrl.routerName == Controllers.mainController.routerName,
+               let userId = user.id, travellingIds.contains(userId) {
+                markup = Controllers.mainController.mainKeyboard(session: user, lingo: lingo, traveling: true)
+            } else {
+                markup = kbCtrl.generateControllerKB(session: user, lingo: lingo) ?? startKB
+            }
         } else {
             markup = startKB
         }

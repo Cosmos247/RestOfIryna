@@ -105,6 +105,41 @@ both duellists to `max(1, …)`, the fortune teller only restores, starvation is
 charged per exploration step), so refusing to heal there cannot strand anyone who
 is unable to ride home. Potions remain the away-from-home heal.
 
+### 6. The road can be turned around
+
+A trip was a commitment: two minutes, no way out. `↩️ Розвернутись` now takes the
+Explore slot in the nav keyboard for as long as a trip is in flight.
+
+The slot is free real estate — Explore is refused mid-trip by `guardedByTravel`
+and answers with the countdown — and using a reply button rather than an inline
+one sidesteps Telegram's one-markup-per-message rule, which would otherwise have
+forced the trip messages to choose between carrying the button and carrying the
+keyboard that switches a player out of the capital's. The precedent is combat's
+own keyboard, which swaps Flee for Exit in training and hides the techniques row
+while it would be a dead key.
+
+The walk back costs exactly what has been walked. Elapsed comes from `createdAt`
+rather than `travelSeconds − remaining`, because after the first turn the leg is
+no longer a full crossing and the subtraction would price it as though it were;
+it is capped at one crossing so a trip left overdue by a restart cannot bill
+hours. Turns are symmetric — the button rides every leg — and that is safe
+because each turn costs only its own leg, so oscillating converges instead of
+compounding.
+
+`TravelService.turnBack` REPLACES the row instead of editing it: `begin` inserts
+a new id and `arriveIfStillScheduled` looks its trip up by id, so the task still
+asleep on the original arrival wakes, finds nothing and returns. Editing in place
+would have left that task armed on the old clock and landed the player early.
+
+The keyboard state is passed into the builder, never looked up: the
+`generateControllerKB` override is synchronous with no database, the same
+constraint `CombatController` documents. Callers holding the trip pass true;
+`showMainMenu`, `/menu` and the restart broadcast are async and ask — the last
+one found in the audit, and it matters because it fires for exactly the players
+whose trip `rescheduleInflight` has just re-armed. Anything colder gets the plain
+row and self-heals, because one tap on Estate or Capital re-sends the countdown
+banner and that one knows.
+
 
 ## Session — 2026-09-09 (part 2: one clock, three watchmen, and two ceilings that were not real)
 
