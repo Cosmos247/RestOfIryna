@@ -83,6 +83,28 @@ sentence the client just printed), and `HummingbirdTGClient` classifies: the 497
 benign refusals — 357 "message is not modified", 140 "message to delete not
 found" — drop to `debug`. What is left at `error` is what actually broke.
 
+### 5. Resting is a place, not a pause between fights
+
+Reported the same evening: HP regenerated on the road to the capital and in the
+capital. `HealingService` had only ever asked one question — is there an
+`ExplorationState` row — so the manor's bed worked from anywhere in the kingdom.
+
+`canRest(_:inExpedition:onTheRoad:)` names all three suspensions: the wilderness,
+the road, and `location == capital`. The road cannot fall out of the other two,
+because `location` is not flipped until arrival — someone walking to the capital
+still reads as being at the estate — so it costs a `TravelState` lookup, asked
+only while the answer could still be yes. Away from the estate the clock is
+CLEARED rather than skipped, so time banked before leaving cannot be spent on the
+way back, and `TravelService.start` stamps the departure the way an expedition
+does. `RestNotificationService` got the same rule with one bulk query beside its
+expedition one, so the watchman cannot heal — and then announce — a player it is
+meant to leave alone.
+
+Checked while making it: nothing can reach 0 HP in the capital (the arena clamps
+both duellists to `max(1, …)`, the fortune teller only restores, starvation is
+charged per exploration step), so refusing to heal there cannot strand anyone who
+is unable to ride home. Potions remain the away-from-home heal.
+
 
 ## Session — 2026-09-09 (part 2: one clock, three watchmen, and two ceilings that were not real)
 

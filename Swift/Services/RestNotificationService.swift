@@ -64,6 +64,10 @@ public enum RestNotificationService {
         // One query for everyone out on the trail, rather than one per player:
         // an expedition suspends resting, and the watchman must not undo that.
         let onTheTrail = Set(try await ExplorationState.query(on: db).all().compactMap { $0.$user.id })
+        // Same shape for the road. Resting is a place (2026-09-10), and the
+        // sweep has to apply the same rule the dispatcher does or it would
+        // heal — and then announce — the players it is meant to leave alone.
+        let onTheRoad = Set(try await TravelState.query(on: db).all().compactMap { $0.$user.id })
 
         for row in users {
             // Mutate the instance the dispatcher is holding, if there is one:
@@ -71,7 +75,10 @@ public enum RestNotificationService {
             // tap the player made a second ago.
             let user = await sessionCache.peek(telegramId: row.telegramId) ?? row
             guard let userId = user.id else { continue }
-            await notifyFullHp(user: user, inExpedition: onTheTrail.contains(userId), db: db, bot: bot, lingo: lingo)
+            let canRest = HealingService.canRest(user,
+                                                 inExpedition: onTheTrail.contains(userId),
+                                                 onTheRoad: onTheRoad.contains(userId))
+            await notifyFullHp(user: user, canRest: canRest, db: db, bot: bot, lingo: lingo)
             await notifyFortuneReady(user: user, db: db, bot: bot, lingo: lingo, now: now)
             await notifyQuestRollover(user: user, db: db, bot: bot, lingo: lingo, now: now)
         }
@@ -85,9 +92,9 @@ public enum RestNotificationService {
     /// copy of the arithmetic — so the watchman and the player's next tap can
     /// only ever agree. A player who fills up WHILE tapping gets no message,
     /// and should not: they are looking at the number.
-    private static func notifyFullHp(user: User, inExpedition: Bool, db: any Database, bot: TGBot, lingo: Lingo) async {
-        guard user.hp < user.effectiveMaxHp, inExpedition == false else { return }
-        guard (try? await HealingService.tick(user, inExpedition: false, on: db)) != nil else { return }
+    private static func notifyFullHp(user: User, canRest: Bool, db: any Database, bot: TGBot, lingo: Lingo) async {
+        guard user.hp < user.effectiveMaxHp, canRest else { return }
+        guard (try? await HealingService.tick(user, canRest: canRest, on: db)) != nil else { return }
         guard user.hp >= user.effectiveMaxHp else { return }
 
         let locale = user.locale

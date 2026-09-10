@@ -60,7 +60,19 @@ actor RouterStore {
             // exploration_state. There is no Vigor tick to run beside it since
             // Phase 8E: Vigor comes back from food, never from the clock.
             let inExpedition = try await ExplorationState.current(for: user, on: db) != nil
-            _ = try await HealingService.tick(user, inExpedition: inExpedition, on: db)
+            // The road is the one "not at the estate" that `location` cannot
+            // answer — it stays at the origin until arrival — so it costs a
+            // second lookup, asked only while the answer could still be yes.
+            let couldRest = inExpedition == false
+                && user.location != TravelDestination.capital.rawValue
+            let onTheRoad = couldRest
+                ? try await TravelState.current(for: user, on: db) != nil
+                : false
+            _ = try await HealingService.tick(
+                user,
+                canRest: HealingService.canRest(user, inExpedition: inExpedition, onTheRoad: onTheRoad),
+                on: db
+            )
             if inExpedition { wereInExpedition.append(user) }
             hydrated[k] = user
         }

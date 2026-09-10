@@ -21,6 +21,14 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-10 — resting is a place.** HP regen ran while the player walked to the capital
+and while they stood in it: `HealingService` only ever checked for an `ExplorationState`
+row, so the manor's bed worked from anywhere in the kingdom. `canRest` now names all three
+suspensions (wilderness · road · capital) and the road needs its own check, because
+`location` is not flipped until arrival. Away from the estate the clock is cleared rather
+than skipped, `TravelService.start` stamps the departure, and the watchman applies the same
+rule so it cannot heal — or announce — a player it should leave alone. No content moved.
+
 **2026-09-10 part 3 — the router raced, and the edits were aimed at the wrong field.** Three
 live-play symptoms (a fight starting under the walking keyboard, the capital screen with the
 estate keyboard, taps producing no message) were four defects, none in game logic. The SDK

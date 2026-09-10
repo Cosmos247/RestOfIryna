@@ -94,14 +94,26 @@ level-up grant are the only sources, and the estate's plots are the intended inc
 which is what makes the pool plus the food in the bag the real limit on how deep the
 wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
 one deliberately did not pause during an expedition, so a player could stand at km 25
-and wait out a full pool. HP regeneration is a different mechanic and stays
-(`HealingService`, and it DOES pause in the wilderness) — but it is **computed
-lazily on interaction**, so both ends of an expedition are stamped explicitly:
-`suspendResting` when one begins, `beginResting` when the player lands home
-(RouterStore's post-dispatch check covers every screen path; the passive report
-push and a travel arrival cover the background ones). Miss the first and a passive
-run refunds its own damage; miss the second and the stretch between coming home
-and the next tap heals nothing. A tick that only runs on interaction cannot
+and wait out a full pool.
+
+**HP regeneration is a different mechanic and stays — but it is a PLACE, not a pause
+between fights** (2026-09-10). `HealingService.canRest` names the three states that
+suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the
+road) and `location == capital` (in town). Only the first was ever checked, so the
+manor's bed worked from anywhere in the kingdom. The road needs its own check rather
+than falling out of the other two — `location` is not flipped until arrival, so
+someone walking to the capital still reads as being at the estate. Callers query the
+rows and pass the answer; `tick` does no lookups of its own. Away from the estate the
+clock is CLEARED, not merely skipped, so time banked before leaving cannot be spent on
+the way back. Potions are the away-from-home heal, and the fortune teller's one card
+still restores in full.
+
+Regen is **computed lazily on interaction**, so both ends of an absence are stamped
+explicitly: `suspendResting` when an expedition or a trip begins, `beginResting` when
+the player lands home (RouterStore's post-dispatch check covers every screen path; the
+passive report push and a travel arrival cover the background ones). Miss the first and
+a passive run refunds its own damage; miss the second and the stretch between coming
+home and the next tap heals nothing. A tick that only runs on interaction cannot
 observe a transition that happens while nobody is interacting.
 
 **What finishes while nobody is looking needs a watchman.** Lazy-on-interaction

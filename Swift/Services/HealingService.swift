@@ -4,17 +4,22 @@
 //
 //  Created by Dmytro Ihnatyuhin on 22.04.2026.
 //
-//  Lazy passive HP regeneration (5% of maxHp per minute) while the player is
-//  at the estate — outside any expedition (active or passive) and below max
-//  HP. Computed on interaction rather than by a background tick: `tick` is
-//  called from `RouterStore.process` before every controller dispatch, so
-//  the user always sees up-to-date HP in profile / status cards.
+//  Lazy passive HP regeneration while the player is at the estate — and
+//  nowhere else. Computed on interaction rather than by a background tick:
+//  `tick` is called from `RouterStore.process` before every controller
+//  dispatch, so the user always sees up-to-date HP in profile / status cards.
 //
-//  Regen is explicitly PAUSED whenever an `ExplorationState` row exists for
-//  the user (either active-mode in progress or passive-mode in flight). The
-//  governor is physically in the forest at that point, so no resting-at-home
-//  healing should accrue. The caller queries the row once and passes the
-//  presence as `inExpedition` to avoid a second DB round-trip per tick.
+//  **Resting is a PLACE, not a pause between fights** (2026-09-10). Three
+//  states suspend it and `canRest` names all three: an `ExplorationState` row
+//  (the governor is in the forest), a `TravelState` row (on the road), and
+//  `location == capital` (in town). Only the first was ever checked, so a
+//  player healed through the whole walk to the capital and the whole stay
+//  there — the manor's bed working from anywhere in the kingdom.
+//
+//  The road needs its own check rather than falling out of the other two:
+//  `location` is not flipped until arrival, so someone walking to the capital
+//  still reads as being at the estate. The caller queries the rows and passes
+//  the answer, which is what keeps `tick` free of DB round-trips of its own.
 //
 //  Because the tick only runs on an interaction, the two ends of an
 //  expedition are stamped explicitly instead: `suspendResting` when one
@@ -49,8 +54,8 @@ public enum HealingService {
     /// moment the player lands back at the estate — a passive expedition
     /// finishing in the background, a travel arrival, walking home, dying.
     ///
-    /// `tick` clears the clock for as long as an `ExplorationState` row
-    /// exists, and it only runs on interaction: without this the stretch
+    /// `tick` clears the clock for as long as the player is anywhere but the
+    /// estate, and it only runs on interaction: without this the stretch
     /// between coming home and the player's next tap heals nothing, because
     /// that tap merely primes a nil clock. Priming only when the clock is nil
     /// is what makes it safe to call from anywhere — a running clock keeps its
@@ -80,21 +85,33 @@ public enum HealingService {
         return true
     }
 
+    /// Whether the rest clock may run for this player right now.
+    ///
+    /// The estate is the only place that heals: not the wilderness, not the
+    /// road, not the capital. Both flags are queried by the caller — the
+    /// dispatcher already looks the rows up, and a sweep looks them up once
+    /// for everybody — so this stays a pure decision with the rule in one
+    /// readable line.
+    public static func canRest(_ user: User, inExpedition: Bool, onTheRoad: Bool) -> Bool {
+        guard inExpedition == false, onTheRoad == false else { return false }
+        return user.location != TravelDestination.capital.rawValue
+    }
+
     /// Apply idle-time HP regen. Writes the user back (via `saveAndCache`)
     /// whenever a field is touched. Returns amount of HP restored (0 if the
-    /// player is exploring, already full, or not enough minutes have elapsed
-    /// to round to a whole HP).
+    /// player is away from the estate, already full, or not enough minutes
+    /// have elapsed to round to a whole HP).
     ///
-    /// `inExpedition` — true when the user has an `ExplorationState` row
-    /// (active or passive). Regen is fully suspended in that case because
-    /// the governor is out in the wilderness, not resting at the manor.
+    /// `canRest` — the answer from the helper above. False clears the clock
+    /// rather than merely skipping the credit, so idle time banked before the
+    /// player left the manor cannot be spent on the way back.
     @discardableResult
-    public static func tick(_ user: User, inExpedition: Bool, on db: any Database) async throws -> Int {
+    public static func tick(_ user: User, canRest: Bool, on db: any Database) async throws -> Int {
         let now = Date()
 
-        // Suspend regen during expedition — clear the clock so banked idle
-        // time from before the expedition can't leak through.
-        if inExpedition {
+        // Away from the manor — clear the clock so banked idle time from
+        // before leaving can't leak through.
+        if canRest == false {
             if user.lastHpTickAt != nil {
                 user.lastHpTickAt = nil
                 try await user.saveAndCache(in: db)

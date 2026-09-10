@@ -68,6 +68,12 @@ public enum TravelService {
         let now = Date()
         let endsAt = now.addingTimeInterval(travelSeconds)
         let state = try await TravelState.begin(for: user, destination: destination, endsAt: endsAt, on: db)
+        // Setting out stops the rest clock, the same way beginning an
+        // expedition does. `tick` would clear it on the next interaction
+        // anyway, but a trip is exactly the stretch a player can spend
+        // tapping nothing — and the stamp is what makes the road cost time
+        // rather than bank it.
+        try await HealingService.suspendResting(user, on: db)
         scheduleArrival(stateId: state.id, endsAt: endsAt, db: db, bot: bot, lingo: lingo)
         return state
     }

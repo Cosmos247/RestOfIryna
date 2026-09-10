@@ -310,7 +310,10 @@ was serving. Lingo is NOT reloaded; new strings still need a restart.
 (the 3 h ceiling). The other three halves have not moved since 09-09.
 
 HP regen is **10% of max HP per real minute** (`tuning/vigor.json` →
-`healing.regenPerMinute`), so a full rest at the estate takes 10 minutes. It went
+`healing.regenPerMinute`), so a full rest at the estate takes 10 minutes — and
+**only at the estate** since 2026-09-10: `HealingService.canRest` suspends it in the
+wilderness, on the road AND in the capital, where for months only the wilderness
+was checked. Potions are the heal away from home. It went
 5% → 20% on 2026-09-08 and settled at 10% on 2026-09-09; each move touched
 `tuning` alone. The other three halves held, as they
 must — no record, spawn band or quest pool was touched. `simulate --strict` is

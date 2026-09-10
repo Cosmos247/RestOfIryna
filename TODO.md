@@ -1058,6 +1058,15 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **Resting is a place** *(2026-09-10)* — HP regenerated while the player walked to
+        the capital and while they stood in it, because `HealingService` only ever checked
+        for an `ExplorationState` row. `canRest(_:inExpedition:onTheRoad:)` now names all
+        three suspensions — wilderness, road, capital — and the road needs its own check
+        since `location` is not flipped until arrival. Away from the estate the clock is
+        cleared rather than skipped; `TravelService.start` stamps the departure;
+        `RestNotificationService` applies the same rule (one bulk `TravelState` query beside
+        the expedition one) so it cannot heal or announce a player it should leave alone.
+        Potions stay the away-from-home heal. No content moved.
   - [x] **Live-play polish, part 3** *(2026-09-10)* — three symptoms reported from live play
         (a fight starting under the walking keyboard, arriving in the capital with the estate
         keyboard, taps that produced no message at all) turned out to be four defects, none of
