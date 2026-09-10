@@ -138,8 +138,11 @@ blamed on the bag.
 **`4766947` — the road can be turned around.** A trip could only be waited out.
 `↩️ Розвернутись` takes the Explore slot in the nav keyboard while one is in flight
 (Explore is refused mid-trip anyway), and a reply button sidesteps Telegram's
-one-markup-per-message rule. Walking back costs exactly what was walked — from `createdAt`,
-capped at one crossing — and `TravelService.turnBack` REPLACES the row so the task asleep
+one-markup-per-message rule. Walking back costs exactly what was walked — `travelSeconds`
+minus the time still owed to the CURRENT destination, clamped to one crossing (it read
+`createdAt` until 2026-09-11, which locates only a leg that began at an endpoint, so a
+second turn-back priced a two-minute road at five seconds) — and `TravelService.turnBack`
+REPLACES the row so the task asleep
 on the old arrival finds nothing under its id. Keyboard state is passed into the builder,
 never looked up; the three async paths that can land mid-trip ask the database.
 

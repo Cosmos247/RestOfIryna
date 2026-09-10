@@ -1,5 +1,46 @@
 # Session History
 
+## Session — 2026-09-11 (deployed the nine, and the road priced itself wrong)
+
+Deployed `509f2db → 4f0b54d` to the Pi: pull, build (111 s, clean), a pre-flight
+`--content-digest` under the Linux binary that returned all four halves
+byte-identical to the Mac, then `pm2 restart ROI`. Boot clean on **schema v11**,
+content hash `4eac64ff`, no 409, error log empty. The 913 `Code: 400` refusals in
+the log all predate 00:19 — `editScreen` had never actually run on the Pi until
+this deploy, so that count is the baseline to watch, not a symptom.
+
+### Turning back twice priced a two-minute road at five seconds
+
+Reported from play with a screenshot: `↩️ Розвернутись` said "back to the estate
+— 7s", then a second tap said "back to the capital — 5s". `turnBack` took the
+walk already done as `now − createdAt`, capped at a crossing. That is the right
+answer for a trip that began at an endpoint, and only for that: a turn-back row
+is created in the MIDDLE of the road, so its elapsed time measures how far the
+player has come back, not how far they stand from either end. The second tap read
+"walked back for 5s" as "5s from the capital".
+
+It is now `travelSeconds − remaining`, with `remaining = endsAt − now` clamped to
+`[0, travelSeconds]`. `endsAt` is anchored to a destination and a destination is
+always an END, so it locates any row however the row was made; the far side is
+just the crossing minus the near one. The overdue case falls out rather than being
+special-cased — a negative remainder clamps to 0 and walking back is the whole
+road, which is where the player is.
+
+**The rejected alternative was the correct one.** The 2026-09-10 entry below
+records the original reasoning: `createdAt` "rather than `travelSeconds −
+remaining`, because after the first turn the leg is no longer a full crossing and
+the subtraction would price it as though it were". It does not — the leg's length
+never enters the subtraction. Only the distance to the current destination does,
+and that is measured to an endpoint whatever the leg. That paragraph is marked
+superseded in place rather than deleted, because a rejected alternative that is
+actually right will be re-rejected by the next reader otherwise.
+
+Checked the rest of the class: `ArenaStore`'s challenge TTL and
+`PassiveExpeditionService`'s step clock and step count also read `createdAt`, and
+all three are correct — none of those rows is ever replaced mid-flight. The turn
+is the only flow that swaps a live row, which is exactly what makes `createdAt`
+stop meaning "the start".
+
 ## Session — 2026-09-10 (live-play polish, part 4: the walk home, and three things it broke)
 
 One player report with two screenshots — three `Сліди витоптані` and three roots
@@ -206,7 +247,14 @@ The walk back costs exactly what has been walked. Elapsed comes from `createdAt`
 rather than `travelSeconds − remaining`, because after the first turn the leg is
 no longer a full crossing and the subtraction would price it as though it were;
 it is capped at one crossing so a trip left overdue by a restart cannot bill
-hours. Turns are symmetric — the button rides every leg — and that is safe
+hours. **[Superseded 2026-09-11 — this paragraph's reasoning is the bug. The
+subtraction does NOT price the leg as a crossing: the leg's length never enters
+it. `remaining` is the distance to the current DESTINATION, and a destination is
+always an end of the road, so `travelSeconds − remaining` locates any row, while
+`createdAt` locates only one that began at an endpoint. A turn-back row is made
+mid-road, so a SECOND turn-back read "walked back for 5s" as "5s from the
+capital" and offered a two-minute road in five seconds. Reported from play; see
+the entry at the top of this file.]** Turns are symmetric — the button rides every leg — and that is safe
 because each turn costs only its own leg, so oscillating converges instead of
 compounding.
 

@@ -49,7 +49,9 @@ keyboard now lends the Explore slot to `↩️ Розвернутись` for as 
 — Explore is refused mid-trip anyway, and a reply button sidesteps Telegram's
 one-markup-per-message rule, which would otherwise force the trip messages to choose between
 inline buttons and the keyboard that switches the player out of the capital's. The walk back
-costs exactly what was walked (from `createdAt`, capped at one crossing), turns are
+costs exactly what was walked (`travelSeconds` minus the time still owed to the current
+destination, clamped to one crossing — from `createdAt` until 2026-09-11, which located only
+a leg that began at an endpoint), turns are
 symmetric, and `TravelService.turnBack` replaces the row rather than editing it so the task
 asleep on the old arrival cannot land the player early. Two locale keys, no migration, no
 content moved.

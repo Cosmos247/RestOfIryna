@@ -104,10 +104,23 @@ public enum TravelService {
     ) async throws -> TravelState? {
         guard let trip = try await TravelState.current(for: user, on: db) else { return nil }
         let now = Date()
-        // Capped at one full crossing: a trip whose arrival was owed while the
-        // bot was down reads as hours of walking, and the road is not that long
-        // in either direction.
-        let walked = min(travelSeconds, max(0, now.timeIntervalSince(trip.createdAt ?? now)))
+        // How far the player still is from the CURRENT destination — which is
+        // what locates them on the road. `createdAt` cannot: it stamps when this
+        // ROW was made, and a turn-back row is made in the MIDDLE of the road,
+        // so its elapsed time measures how far the player has come back, not how
+        // far they stand from either end. The two coincide only for a trip that
+        // began at an endpoint, which is why one turn-back was right and the
+        // second offered a two-minute road in five seconds — it read "walked
+        // back for 5s" as "5s from the capital".
+        //
+        // `endsAt` is anchored to a destination, and a destination is always an
+        // end, so it locates ANY row however it was made. The far end is then
+        // just the crossing minus the near one. Clamped both ways: an arrival
+        // owed while the bot was down reads as a negative remainder (the player
+        // is at the far end, so walking back is the whole road), and no position
+        // can be further than one crossing from either side.
+        let remaining = min(travelSeconds, max(0, trip.endsAt.timeIntervalSince(now)))
+        let walked = travelSeconds - remaining
         let origin: TravelDestination = trip.destination == .capital ? .estate : .capital
         let state = try await TravelState.begin(for: user, destination: origin,
                                                 endsAt: now.addingTimeInterval(walked), on: db)

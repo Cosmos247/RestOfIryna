@@ -1059,6 +1059,19 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (78–87 days) is measurable from here on; it never was before.
+  - [x] **Turning back twice priced a two-minute road at five seconds** *(2026-09-11,
+        reported from play)* — `↩️ Розвернутись` said "back to the estate — 7s", then a
+        second tap said "back to the capital — 5s". `turnBack` read the walk already done
+        as `now − createdAt`, which is right only for a leg that began at an endpoint: a
+        turn-back row is created MID-road, so its elapsed time measures how far the player
+        has come back, not how far they stand from either end. Now `travelSeconds −
+        remaining`, `remaining = endsAt − now` clamped to one crossing — `endsAt` is
+        anchored to a destination and a destination is always an END, so it locates any
+        row. The overdue-arrival case falls out instead of being capped into place. The
+        alternative the original commit explicitly rejected was the correct one; that
+        reasoning is marked superseded in `sessions.md` rather than deleted. `ArenaStore`
+        and `PassiveExpeditionService` read `createdAt` too and are both fine — neither
+        row is ever replaced mid-flight, which is what breaks the meaning.
   - [x] **The forest was empty on the way home** *(2026-09-10, reported from play)* —
         two screenshots: three `Сліди витоптані` and three roots inside six steps. The decay
         table decayed the WRONG bucket — encounters 40 → 20 → 0 against forage 45 → 45 → 25,
