@@ -367,14 +367,7 @@ extension InventoryController {
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
             let text = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
-            let params = TGEditMessageTextParams(
-                chatId: .chat(message.chat.id),
-                messageId: message.messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
+            await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
         }
@@ -398,14 +391,7 @@ extension InventoryController {
 
             let text = ctrl.renderCategory(type: type, lingo: context.lingo, locale: locale)
             let inline = ctrl.categoryKeyboard(type: type, entries: entries, lingo: context.lingo, locale: locale)
-            let params = TGEditMessageTextParams(
-                chatId: .chat(message.chat.id),
-                messageId: message.messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
+            await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
         }
@@ -548,14 +534,7 @@ extension InventoryController {
                 refreshedBody = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
                 refreshedInline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             }
-            let editParams = TGEditMessageTextParams(
-                chatId: .chat(message.chat.id),
-                messageId: message.messageId,
-                text: refreshedBody,
-                parseMode: .html,
-                replyMarkup: refreshedInline
-            )
-            _ = try? await context.bot.editMessageText(params: editParams)
+            await editScreen(message, text: refreshedBody, replyMarkup: refreshedInline, bot: context.bot)
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
@@ -582,7 +561,7 @@ extension InventoryController {
 
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
-            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
+            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
             return true
         }
 
@@ -608,7 +587,7 @@ extension InventoryController {
 
             let itemName = context.lingo.localize(item.nameKey, locale: locale)
             let statusLine = "✅ " + context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
-            try await refreshCategory(type: .gear, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
+            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
             return true
         }
 
@@ -685,18 +664,11 @@ extension InventoryController {
         let stillInCategory = entries.contains { ItemCatalog.find($0.itemId)?.type == .artifact }
         let ctrl = Controllers.inventoryController
         if stillInCategory {
-            try await refreshCategory(type: .artifact, chatId: .chat(message.chat.id), messageId: message.messageId, context: context, statusLine: statusLine)
+            try await refreshCategory(type: .artifact, message: message, context: context, statusLine: statusLine)
         } else {
             let body = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
-            let params = TGEditMessageTextParams(
-                chatId: .chat(message.chat.id),
-                messageId: message.messageId,
-                text: body,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
+            await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
             await ctrl.postStatusBanner(statusLine, context: context)
         }
         return true
@@ -705,19 +677,12 @@ extension InventoryController {
     /// Re-render the given category view in place after an equip/unequip.
     /// `statusLine` is published as a separate banner under the inline
     /// keyboard rather than embedded in the body — see `postStatusBanner`.
-    private static func refreshCategory(type: ItemType, chatId: TGChatId, messageId: Int, context: Context, statusLine: String? = nil) async throws {
+    private static func refreshCategory(type: ItemType, message: TGMaybeInaccessibleMessage, context: Context, statusLine: String? = nil) async throws {
         let ctrl = Controllers.inventoryController
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
         let body = ctrl.renderCategory(type: type, lingo: context.lingo, locale: context.session.locale)
         let inline = ctrl.categoryKeyboard(type: type, entries: entries, lingo: context.lingo, locale: context.session.locale)
-        let params = TGEditMessageTextParams(
-            chatId: chatId,
-            messageId: messageId,
-            text: body,
-            parseMode: .html,
-            replyMarkup: inline
-        )
-        _ = try? await context.bot.editMessageText(params: params)
+        await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
         if let statusLine {
             await ctrl.postStatusBanner(statusLine, context: context)
         }

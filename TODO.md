@@ -1058,6 +1058,31 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **Live-play polish, part 3** *(2026-09-10)* — three symptoms reported from live play
+        (a fight starting under the walking keyboard, arriving in the capital with the estate
+        keyboard, taps that produced no message at all) turned out to be four defects, none of
+        them in game logic. **The router was chosen from a stale `routerName`**: the SDK gives
+        every update its own detached task, so two quick taps were both read before either had
+        transitioned, and `TGDispatcher` passed the key it read into a queue that only THEN
+        serialized — the second tap was delivered to the controller the first had just left.
+        Routing now happens inside the serialized section, on the routerName as it stands
+        (`[ROUTE]` warns when the two differ, which measures the race in production).
+        **Exploration had no in-combat guard** — a step during a fight left the beast standing
+        and an encounter one km on overwrote it; it now refuses and re-renders the fight, which
+        re-asserts the combat keyboard, so the mis-tap repairs the screen. **`TravelService` and
+        `PassiveExpeditionService` were background writers holding their own `User` copy**
+        (`RestNotificationService`'s rule, unapplied): arrival wrote the two fields that decide
+        the keyboard, so losing that race published the pre-tap row back over it. Every refusal
+        notice now carries the keyboard of the router the player is actually on
+        (`TGControllerBase.currentKeyboard`).
+        Then `Helpers/ScreenEdit.swift` — **one photo-aware `editScreen` for all 20 edit call
+        sites**, with the text↔caption fallback and the call site in the log. 310 of the 807
+        API refusals in the 09-09→09-10 Pi log were `editMessageText` against a caption, every
+        one swallowed by `try?`; the warehouse list after a withdraw-N had therefore never
+        refreshed (the estate root is artwork). `TelegramAPIError` replaces `BotError` at the
+        throw site so a refusal can be branched on rather than re-parsed, and the 497 benign
+        refusals (already-correct screen, already-gone message) drop to `debug`. No content
+        moved: all four digest halves byte-identical, `validate --strict` 0/0, 234 tests.
   - [x] **Live-play polish, part 2** *(2026-09-09)* — one `Countdown` format for every timer
         (`MM:SS` and `HH:MM` were indistinguishable: `05:30` was minutes on the trail and hours
         at the fortune teller) and no hand-written duration left in the copy — the expedition

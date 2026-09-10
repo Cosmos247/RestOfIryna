@@ -295,9 +295,14 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     /// Sent in response to anything that isn't a valid combat action while
     /// combat is in progress: pre-combat reply-keyboard taps, stale inline
-    /// buttons, free-form text. Just a one-line nudge — the previous combat
-    /// message above still carries the inline action buttons, so duplicating
-    /// the status card + buttons here would only spam the chat.
+    /// buttons, free-form text. Just a one-line nudge — the fight's status card
+    /// is already above, so duplicating it here would only spam the chat.
+    ///
+    /// It does carry the combat keyboard, though. Reaching this line at all
+    /// means the player tapped something that is not a combat button, and the
+    /// likeliest reason is that they still have the PREVIOUS screen's keyboard
+    /// in front of them — so the nudge that explains the refusal is also what
+    /// puts the right buttons back.
     private func sendInCombatNotice(context: Context) async throws {
         guard let state = try await ExplorationState.current(for: context.session, on: context.db),
               state.isInCombat,
@@ -313,7 +318,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
         let text = "⚔️ " + lingo.localize("combat.in_progress", locale: locale, interpolations: ["enemy": enemyName])
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
+        let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
     }
 
     // MARK: - Action handlers

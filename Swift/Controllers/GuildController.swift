@@ -218,10 +218,14 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
             ])
             let cancel = lingo.localize("guild.found.cancel", locale: locale)
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[TGInlineKeyboardButton(text: cancel, callbackData: "guild:cancelfound")]])
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: .chat(telegramId), messageId: pending.promptMessageId,
-                text: "\(base)\n\n❌ \(err)", parseMode: .html, replyMarkup: kb
-            ))
+            await editScreen(
+                chatId: .chat(telegramId),
+                messageId: pending.promptMessageId,
+                isPhoto: false,
+                text: "\(base)\n\n❌ \(err)",
+                replyMarkup: kb,
+                bot: context.bot
+            )
             return
         }
 
@@ -599,10 +603,14 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
             let err = lingo.localize("capital.market.invalid_number", locale: locale)
             let cancel = lingo.localize("guild.found.cancel", locale: locale)
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[TGInlineKeyboardButton(text: cancel, callbackData: "guild:cancelfound")]])
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: .chat(telegramId), messageId: pending.promptMessageId,
-                text: "\(base)\n\n❌ \(err)", parseMode: .html, replyMarkup: kb
-            ))
+            await editScreen(
+                chatId: .chat(telegramId),
+                messageId: pending.promptMessageId,
+                isPhoto: false,
+                text: "\(base)\n\n❌ \(err)",
+                replyMarkup: kb,
+                bot: context.bot
+            )
             return
         }
 
@@ -721,10 +729,14 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
             let err = lingo.localize("capital.market.invalid_number", locale: locale)
             let cancel = lingo.localize("guild.found.cancel", locale: locale)
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[TGInlineKeyboardButton(text: cancel, callbackData: "guild:cancelfound")]])
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: .chat(telegramId), messageId: pending.promptMessageId,
-                text: "\(base)\n\n❌ \(err)", parseMode: .html, replyMarkup: kb
-            ))
+            await editScreen(
+                chatId: .chat(telegramId),
+                messageId: pending.promptMessageId,
+                isPhoto: false,
+                text: "\(base)\n\n❌ \(err)",
+                replyMarkup: kb,
+                bot: context.bot
+            )
             return
         }
 

@@ -51,6 +51,12 @@ public actor EphemeralChatState {
         public let itemId: String
         public let promptMessageId: Int
         public let warehouseMessageId: Int
+        /// Whether the warehouse screen is a photo caption rather than text.
+        /// Recorded at the tap, because the number arrives as a plain message
+        /// later and the screen it must refresh is no longer in hand — and
+        /// guessing it wrong is what silently skipped the refresh: the estate
+        /// root carries per-level artwork, so it is nearly always a caption.
+        public let warehouseIsPhoto: Bool
         public var direction: Direction?
     }
 
@@ -61,12 +67,14 @@ public actor EphemeralChatState {
         itemId: String,
         promptMessageId: Int,
         warehouseMessageId: Int,
+        warehouseIsPhoto: Bool,
         direction: PendingWarehouseTransfer.Direction? = nil
     ) {
         pendingWarehouseTransfers[telegramId] = PendingWarehouseTransfer(
             itemId: itemId,
             promptMessageId: promptMessageId,
             warehouseMessageId: warehouseMessageId,
+            warehouseIsPhoto: warehouseIsPhoto,
             direction: direction
         )
     }

@@ -126,7 +126,16 @@ public enum TravelService {
             appState?.logger.warning("Travel arrival: failed to load user for state \(stateId): \(error)")
             return
         }
-        let user = state.user
+        // Fluent saves whole rows, and `saveAndCache` INSTALLS whatever object
+        // it saved as the session for the next tap. A background writer holding
+        // its own freshly-loaded copy therefore does not merely miss the tap
+        // the player made a second ago — it publishes the pre-tap row back over
+        // it. Arrival writes the two fields that decide which keyboard the
+        // player is looking at (`location`, `routerName`), so losing that race
+        // is exactly "the capital screen opened and the estate buttons stayed".
+        // Take the live session object when one exists — the rule
+        // `RestNotificationService` already follows.
+        let user = await sessionCache.peek(telegramId: state.user.telegramId) ?? state.user
         let destination = state.destination
 
         user.location = destination.rawValue

@@ -358,6 +358,19 @@ public enum PassiveExpeditionService {
 
     // MARK: Live simulation loop
 
+    /// The `User` object the rest of the process is already mutating, falling
+    /// back to the row this loop just loaded.
+    ///
+    /// A passive run walks for up to 90 minutes while the player keeps using
+    /// the bot — nav, the capital, the market all stay open. Fluent saves whole
+    /// rows and `saveAndCache` installs what it saved as the next tap's
+    /// session, so a loop writing its own copy every step would publish a
+    /// pre-tap snapshot over whatever the player did in between. Requires
+    /// `state.$user` to be loaded already (for the telegram id).
+    private static func liveUser(for state: ExplorationState) async -> User {
+        return await sessionCache.peek(telegramId: state.user.telegramId) ?? state.user
+    }
+
     /// Per-step runner. Exits early on death (pushes the report immediately
     /// instead of waiting out the remaining timer), on expedition cancellation
     /// by the player (state row gone), or on error.
@@ -407,14 +420,16 @@ public enum PassiveExpeditionService {
             let completed = state.stepsDeep
 
             if completed >= totalSteps {
-                // All steps done — finalize normally.
+                // All steps done — finalize normally. `liveUser` rather than the
+                // freshly-loaded relation: see the note at the step loop below.
                 try? await state.$user.load(on: db)
+                let finalUser = await liveUser(for: state)
                 await finalizeAndPush(
-                    state: state, user: state.user,
+                    state: state, user: finalUser,
                     outcomeCounts: outcomeCounts,
                     lootPicked: lootPicked, lootDropped: lootDropped,
-                    hpBefore: hasCapturedBefore ? hpBefore : state.user.hp,
-                    vigorBefore: hasCapturedBefore ? vigorBefore : state.user.vigor,
+                    hpBefore: hasCapturedBefore ? hpBefore : finalUser.hp,
+                    vigorBefore: hasCapturedBefore ? vigorBefore : finalUser.vigor,
                     xpEarned: xpEarned,
                     died: false, deathDepth: nil,
                     on: db, bot: bot, lingo: lingo
@@ -437,7 +452,7 @@ public enum PassiveExpeditionService {
             guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
             guard state.isPassive, state.reportJSON == nil else { return }
             try? await state.$user.load(on: db)
-            let user = state.user
+            let user = await liveUser(for: state)
 
             // Legacy fallback: if no persisted snapshot existed (pre-migration
             // row that started before this code shipped), lazy-capture the

@@ -145,7 +145,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 session: context.session,
                 text: notice,
                 parseMode: .html,
-                replyMarkup: nil
+                replyMarkup: currentKeyboard(for: context.session, lingo: context.lingo)
             )
             return
         }
@@ -1069,30 +1069,9 @@ extension EstateController {
             }
         }
 
-        // If the source message is a photo (level artwork at root), editing the text
-        // field would fail — Telegram requires editing the caption instead. Keep both
-        // branches so the controller stays correct once user drops in JPEGs.
-        let chatId = TGChatId.chat(message.chat.id)
-        let isPhoto = (message.getMessage()?.photo) != nil
-        if isPhoto {
-            let params = TGEditMessageCaptionParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                caption: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageCaption(params: params)
-        } else {
-            let params = TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
-        }
+        // The estate root is level artwork, so this screen is usually a caption
+        // rather than text — `editScreen` reads which off the message itself.
+        await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
     }
@@ -1160,26 +1139,7 @@ extension EstateController {
         let text = body
         let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
 
-        let chatId = TGChatId.chat(message.chat.id)
-        if message.getMessage()?.photo != nil {
-            let params = TGEditMessageCaptionParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                caption: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageCaption(params: params)
-        } else {
-            let params = TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
-        }
+        await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
         if isSuccess {
             await ctrl.postStatusBanner("✅ \(toast)", context: context)
         }
@@ -1275,6 +1235,7 @@ extension EstateController {
             itemId: itemId,
             promptMessageId: sent.messageId,
             warehouseMessageId: message.messageId,
+            warehouseIsPhoto: message.getMessage()?.photo != nil,
             direction: nil
         )
 
@@ -1325,14 +1286,14 @@ extension EstateController {
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
         ]])
 
-        let edit = TGEditMessageTextParams(
+        await editScreen(
             chatId: .chat(message.chat.id),
             messageId: pending.promptMessageId,
+            isPhoto: false,
             text: promptText,
-            parseMode: .html,
-            replyMarkup: inline
+            replyMarkup: inline,
+            bot: context.bot
         )
-        _ = try? await context.bot.editMessageText(params: edit)
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
     }
@@ -1390,14 +1351,14 @@ extension EstateController {
             let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
                 TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
             ]])
-            let edit = TGEditMessageTextParams(
+            await editScreen(
                 chatId: chatId,
                 messageId: pending.promptMessageId,
+                isPhoto: false,
                 text: errorText,
-                parseMode: .html,
-                replyMarkup: inline
+                replyMarkup: inline,
+                bot: context.bot
             )
-            _ = try? await context.bot.editMessageText(params: edit)
             return
         }
 
@@ -1476,14 +1437,17 @@ extension EstateController {
         let body = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
         let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
 
-        let edit = TGEditMessageTextParams(
+        // The estate root is artwork, so this refresh was an `editMessageText`
+        // against a caption for as long as it has existed: the warehouse list
+        // simply did not change after a withdraw-N, and the `try?` said nothing.
+        await editScreen(
             chatId: chatId,
             messageId: pending.warehouseMessageId,
+            isPhoto: pending.warehouseIsPhoto,
             text: body,
-            parseMode: .html,
-            replyMarkup: inline
+            replyMarkup: inline,
+            bot: context.bot
         )
-        _ = try? await context.bot.editMessageText(params: edit)
         await ctrl.postStatusBanner(banner, context: context)
     }
 
@@ -2585,26 +2549,6 @@ extension EstateController {
     /// Edit the source message in place — text or caption depending on
     /// whether the message is a photo (estate root may be artwork).
     fileprivate static func editEstateMessage(message: TGMaybeInaccessibleMessage, text: String, inline: TGInlineKeyboardMarkup, context: Context) async throws {
-        let chatId = TGChatId.chat(message.chat.id)
-        let isPhoto = (message.getMessage()?.photo) != nil
-        if isPhoto {
-            let params = TGEditMessageCaptionParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                caption: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageCaption(params: params)
-        } else {
-            let params = TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: params)
-        }
+        await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
     }
 }

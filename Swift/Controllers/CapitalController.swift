@@ -392,7 +392,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "destination": destLabel,
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: nil)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html,
+                                          replyMarkup: currentKeyboard(for: context.session, lingo: lingo))
     }
 
     /// Convenience for other controllers (Main, Estate, Exploration) to
@@ -452,29 +453,19 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return "<b>\(title)</b>\n\n\(intro)\n\n🪙 \(silverLabel)"
     }
 
-    /// Single edit helper — picks editMessageCaption when the source message
-    /// is a photo (the trader menu sends with `Assets/capital/trader.jpg`
-    /// when available), editMessageText otherwise. All `editTo*` helpers
-    /// below delegate here so the photo-vs-text decision lives in one place.
+    /// Every `editTo*` helper below goes through here, which goes through
+    /// `editScreen` — the trader menu carries `Assets/capital/trader.jpg` when
+    /// the file is there and plain text when it is not, so which field to edit
+    /// is a runtime fact, not a compile-time one.
     private func editTraderScreen(messageId: Int, isPhoto: Bool, context: Context, text: String, keyboard: TGInlineKeyboardMarkup) async {
-        let chatId = TGChatId.chat(context.session.telegramId)
-        if isPhoto {
-            _ = try? await context.bot.editMessageCaption(params: TGEditMessageCaptionParams(
-                chatId: chatId,
-                messageId: messageId,
-                caption: text,
-                parseMode: .html,
-                replyMarkup: keyboard
-            ))
-        } else {
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: messageId,
-                text: text,
-                parseMode: .html,
-                replyMarkup: keyboard
-            ))
-        }
+        await editScreen(
+            chatId: .chat(context.session.telegramId),
+            messageId: messageId,
+            isPhoto: isPhoto,
+            text: text,
+            replyMarkup: keyboard,
+            bot: context.bot
+        )
     }
 
     private func traderMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
@@ -1739,13 +1730,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
                 TGInlineKeyboardButton(text: cancelLabel, callbackData: "trader:cancelN")
             ]])
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
+            await editScreen(
                 chatId: .chat(telegramId),
                 messageId: pending.promptMessageId,
+                isPhoto: false,
                 text: "\(promptText)\n\n❌ \(invalidText)",
-                parseMode: .html,
-                replyMarkup: kb
-            ))
+                replyMarkup: kb,
+                bot: context.bot
+            )
             return
         }
 
@@ -2075,13 +2067,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
         ]])
         let full = error.map { "\(promptText)\n\n❌ \($0)" } ?? promptText
-        _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
+        await editScreen(
             chatId: .chat(context.session.telegramId),
             messageId: pending.promptMessageId,
+            isPhoto: false,
             text: full,
-            parseMode: .html,
-            replyMarkup: kb
-        ))
+            replyMarkup: kb,
+            bot: context.bot
+        )
     }
 
     fileprivate func handleMarketListingInput(text: String, pending: EphemeralChatState.PendingMarketListing, context: Context) async throws {
@@ -2220,16 +2213,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// Generic in-place edit targeting an ARBITRARY chat (the other trader's),
     /// unlike `editTraderScreen` which always targets `context.session`.
     private func editScreenFor(telegramId: Int64, messageId: Int, isPhoto: Bool, context: Context, text: String, keyboard: TGInlineKeyboardMarkup) async {
-        let chatId = TGChatId.chat(telegramId)
-        if isPhoto {
-            _ = try? await context.bot.editMessageCaption(params: TGEditMessageCaptionParams(
-                chatId: chatId, messageId: messageId, caption: text, parseMode: .html, replyMarkup: keyboard
-            ))
-        } else {
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: chatId, messageId: messageId, text: text, parseMode: .html, replyMarkup: keyboard
-            ))
-        }
+        await editScreen(
+            chatId: .chat(telegramId),
+            messageId: messageId,
+            isPhoto: isPhoto,
+            text: text,
+            replyMarkup: keyboard,
+            bot: context.bot
+        )
     }
 
     private func userByTelegramId(_ tg: Int64, on db: any Database) async throws -> User? {
@@ -2419,10 +2410,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let cancel = context.lingo.localize("capital.trade.cancel_btn", locale: context.session.locale)
             let err = context.lingo.localize("capital.market.invalid_number", locale: context.session.locale)
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[TGInlineKeyboardButton(text: cancel, callbackData: "trade:promptcancel")]])
-            _ = try? await context.bot.editMessageText(params: TGEditMessageTextParams(
-                chatId: .chat(context.session.telegramId), messageId: pending.promptMessageId,
-                text: "\(promptText)\n\n❌ \(err)", parseMode: .html, replyMarkup: kb
-            ))
+            await editScreen(
+                chatId: .chat(context.session.telegramId),
+                messageId: pending.promptMessageId,
+                isPhoto: false,
+                text: "\(promptText)\n\n❌ \(err)",
+                replyMarkup: kb,
+                bot: context.bot
+            )
             return
         }
 

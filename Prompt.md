@@ -44,23 +44,23 @@ work has been **live-play polish: fixing what playing the deployed build reveale
 `AddPassiveDailyBudget`). **`04bd80d` and anything after it is NOT deployed** — it needs a
 push, a Pi build and a restart.
 
-> ## Next action: two things, in this order
+> ## Next action: watch the log this build now writes, then keep walking
 >
-> **1. The 328 Telegram API errors a day.** Parked twice already and still unexamined —
-> measured in the Pi log on 09-09 over a single day:
+> **1. The Telegram API errors are fixed but UNPROVEN in the wild** (2026-09-10). All 20
+> edit call sites go through `editScreen`, and the client classifies refusals, so the log
+> should now be nearly empty of 400s. Three lines are the payoff and want checking after
+> the next restart:
 >
 > ```
-> 162 × "Bad Request: there is no text in the message to edit"
-> 104 × "Bad Request: message is not modified: …"
->  62 × "Bad Request: message to delete not found"
+> ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # should stop growing
+> ssh rpi5@192.168.0.203 'grep -E "\[ROUTE\]|\[COMBAT\]|\[SCREEN\]" ~/.pm2/logs/ROI-out.log'
 > ```
 >
-> The first one is a real player-visible defect: `editMessageText` against a PHOTO
-> message fails, every call site swallows it with `try?`, so **the screen silently does
-> not update**. The `isPhoto → editMessageCaption` pattern already exists in
-> `CapitalController.editTraderScreen` and `EstateController.editEstateMessage`; the
-> unguarded sites are elsewhere. Reproduce from the log, do not guess:
-> `ssh rpi5@192.168.0.203 'grep -c "no text in the message" ~/.pm2/logs/ROI-out.log'`
+> `[ROUTE]` means two taps raced and the second was re-aimed at the live controller —
+> it MEASURES the race that produced the wrong-keyboard reports. `[COMBAT]` should be
+> silent now that routing is fixed; if it appears, routerName and the expedition row are
+> disagreeing for some other reason. `[SCREEN]` names a call site whose `isPhoto` guess is
+> wrong (recovered) or an edit that failed both ways (not recovered).
 >
 > **2. Keep walking the first hour.** The user IS playing and reporting — that is how
 > every fix below was found. What has NOT been walked deliberately: a fight lost, a
@@ -85,7 +85,19 @@ push, a Pi build and a restart.
 > module); a few files is ~80 s. **Then ASK before `pm2 restart ROI`.** A content-only edit
 > needs no restart — `/reload` re-reads `content/data`; new locale strings DO need one.
 
-### What the live-play polish landed (three commits, 2026-09-09 → 10)
+### What the live-play polish landed (four commits, 2026-09-09 → 10)
+
+**`21284f0` — the router raced, and the edits were aimed at the wrong field.** Three
+reported symptoms, no game logic among them. `TGDispatcher` chose the controller from a
+`routerName` read before the previous tap had transitioned — the SDK gives every update its
+own `Task.detached` — so a second quick tap was delivered to the controller the first had
+just left; routing moved inside `RouterStore`'s per-user chain, and `[ROUTE]` now measures
+the race. Exploration refuses to walk while a beast is standing and re-renders the fight
+instead, which re-asserts the combat keyboard. `TravelService` and `PassiveExpeditionService`
+took `SessionCache.peek`. And `Helpers/ScreenEdit.swift` gave all 20 edit call sites one
+photo-aware `editScreen`: **310 of the 807 API refusals in a day and a half of log were
+`editMessageText` against a caption**, each swallowed by `try?` — which is exactly the "the
+tap did nothing" report, and why the warehouse never refreshed after a withdraw-N.
 
 **`bfc6e00` — five screens say what they were hiding.** The expedition bag prints its
 occupancy; the fortune screen and the profile say what the drawn card actually does

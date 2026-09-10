@@ -50,6 +50,23 @@ public class TGControllerBase: @unchecked Sendable {
         // }
     }
 
+    /// The reply keyboard that BELONGS to the player's current router.
+    ///
+    /// Every "you cannot do that from here" notice should carry it. A notice
+    /// sent with no markup leaves whatever the last message put on screen, so
+    /// a player whose keyboard has drifted — a background arrival, a tap read
+    /// against a routerName that had already moved — is left tapping buttons
+    /// for a place they are not in, with `/menu` the only way back. Answering
+    /// the mis-tap with the right keyboard makes the refusal self-correcting.
+    ///
+    /// Nil when the router has no keyboard of its own (registration steps),
+    /// which is the same "leave it alone" the callers had before.
+    internal func currentKeyboard(for session: User, lingo: Lingo) -> TGReplyMarkup? {
+        return Controllers.all
+            .first { $0.routerName == session.routerName }?
+            .generateControllerKB(session: session, lingo: lingo)
+    }
+
     /// If a stale Exploration mode picker is still in chat, delete it.
     /// Called at the top of main-menu handlers so that tapping e.g. Profile
     /// while the picker is open cleanly removes the picker rather than

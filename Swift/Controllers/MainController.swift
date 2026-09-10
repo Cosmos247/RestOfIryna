@@ -167,14 +167,18 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let keyboard = profileKeyboard(lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
-            let params = TGEditMessageTextParams(
+            // The profile is a plain message, so text is the right field —
+            // but it goes through `editScreen` anyway: an unhandled throw here
+            // used to take the whole dispatch down, which the player saw as a
+            // tap that did nothing at all.
+            await editScreen(
                 chatId: .chat(context.session.telegramId),
                 messageId: msgId,
+                isPhoto: false,
                 text: text,
-                parseMode: .html,
-                replyMarkup: keyboard
+                replyMarkup: keyboard,
+                bot: context.bot
             )
-            try await context.bot.editMessageText(params: params)
         } else {
             let markup = TGReplyMarkup.inlineKeyboardMarkup(keyboard)
             try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
@@ -248,13 +252,14 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             text: lingo.localize("journal.button.back", locale: locale),
             callbackData: "gear:back"
         )
-        try await context.bot.editMessageText(params: TGEditMessageTextParams(
+        await editScreen(
             chatId: .chat(context.session.telegramId),
             messageId: editMessageId,
+            isPhoto: false,
             text: lines.joined(separator: "\n"),
-            parseMode: .html,
-            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]])
-        ))
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]]),
+            bot: context.bot
+        )
     }
 
     // MARK: - Quest Journal (Phase 9.2)
@@ -270,13 +275,14 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             text: context.lingo.localize("journal.button.back", locale: context.session.locale),
             callbackData: "journal:back"
         )
-        try await context.bot.editMessageText(params: TGEditMessageTextParams(
+        await editScreen(
             chatId: .chat(context.session.telegramId),
             messageId: editMessageId,
+            isPhoto: false,
             text: text,
-            parseMode: .html,
-            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]])
-        ))
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]]),
+            bot: context.bot
+        )
     }
 
     private func renderJournal(context: Context) async throws -> String {

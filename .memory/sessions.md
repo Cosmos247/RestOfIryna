@@ -1,5 +1,89 @@
 # Session History
 
+## Session — 2026-09-10 (live-play polish, part 3: the router raced, and the edits were aimed at the wrong field)
+
+Three symptoms, reported from live play with two screenshots: a fight starting
+while the walking keyboard stayed on screen, arriving in the capital with the
+estate keyboard, and taps that produced no message at all. None of them was game
+logic. Digest after: all four halves byte-identical
+(`records f6fc421256085066` · `tuning a23248441d58a78a` ·
+`spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`), `validate --strict` 0/0,
+234 tests.
+
+### 1. The router was chosen from a `routerName` that had already moved
+
+`TGDefaultDispatcher.process` in the SDK hands EVERY update to its own
+`Task.detached`, so two quick taps are read concurrently. `TGDispatcher` read
+`session.routerName` and passed it as the key into `RouterStore.process`, which
+only THEN serialized per user — so the second tap was routed by a value read
+before the first tap transitioned, and landed in the controller the first one had
+just left. That is a step taken during a fight, a capital tap answered by the
+estate, and in both cases a screen re-sending the keyboard the player is no
+longer standing in.
+
+Routing now happens INSIDE the serialized section (`RouterStore.dispatch`), on
+the routerName as it stands after the previous tap has committed. `[ROUTE]` warns
+when the requested and live keys differ, which turns the race into something
+measurable in the Pi log rather than something argued about.
+
+### 2. Guards that repair the screen instead of only refusing
+
+`onStepForward` / `onStepBack` / `resumeActive` had no in-combat check: a step
+during a fight left the beast standing on the row while the player walked away,
+and an encounter one km on called `beginCombat` again, overwriting it. They now
+refuse and re-render the fight (`guardInCombat`, `[COMBAT]` warning) — and since
+re-rendering asserts the combat keyboard, the tap that landed in the wrong place
+is the tap that fixes the screen.
+
+Same principle applied to the three refusal notices that went out with
+`replyMarkup: nil` (blocked-in-capital, blocked-by-expedition, travel in
+progress): `TGControllerBase.currentKeyboard(for:lingo:)` looks up the controller
+matching the player's routerName, so a refusal restores the right buttons.
+`sendInCombatNotice` carries the combat keyboard for the same reason — reaching
+it at all means the player tapped something that is not a combat button.
+
+### 3. Two background writers holding their own `User`
+
+`RestNotificationService` takes `SessionCache.peek`; `TravelService` and
+`PassiveExpeditionService` did not. Fluent saves whole rows and `saveAndCache`
+INSTALLS what it saved as the next tap's session, so the arrival — which writes
+`location` and `routerName`, the two fields that decide the keyboard — could
+publish the pre-tap row back over the player's last action. Both now take the
+live session object when one exists.
+
+Note for later: background pushes still run outside `RouterStore`'s per-user
+chain, so they interleave with a dispatch. Sharing the object removes the
+whole-row rollback; routing them through the same queue would remove the
+interleaving too.
+
+### 4. `ScreenEdit.swift` — one photo-aware edit, and a log that names the failure
+
+Of the 807 API refusals in the Pi log covering 2026-09-09 01:51 → 09-10 18:36,
+**310 were `editMessageText` against a message whose body is a caption** — every
+one swallowed by `try?`. The player tapped, the screen did not change, nothing
+said why. That is the whole "sometimes there is just no message" report.
+
+`editScreen(...)` is now the one sanctioned way to redraw a screen in place, the
+mirror of `sendCachedPhoto` for edits: `isPhoto` is the caller's expectation and
+the fast path, but a wrong one falls back to the other field and logs the
+recovery with `#function`. All 20 call sites migrated (Capital 5, Estate 6,
+Inventory 5, Main 3, Exploration 4, Guild 3 — the two hand-rolled photo-aware
+helpers became delegations); no direct `editMessageText`/`editMessageCaption`
+remains outside the helper.
+
+One real defect fell out of it: `estate:wh` withdraw-N refreshed the warehouse by
+editing TEXT on `warehouseMessageId`, which is the estate root — artwork, so a
+caption. The list never refreshed after a withdrawal. `PendingWarehouseTransfer`
+now records `warehouseIsPhoto` at the tap, because the number arrives as a plain
+message later, when the screen is no longer in hand.
+
+`TelegramAPIError` replaces `BotError` at the throw site (code and message as
+separate fields, so a refusal can be branched on instead of re-parsed from the
+sentence the client just printed), and `HummingbirdTGClient` classifies: the 497
+benign refusals — 357 "message is not modified", 140 "message to delete not
+found" — drop to `debug`. What is left at `error` is what actually broke.
+
+
 ## Session — 2026-09-09 (part 2: one clock, three watchmen, and two ceilings that were not real)
 
 Continued from the live-play polish above. Digest after: `records f6fc421256085066`

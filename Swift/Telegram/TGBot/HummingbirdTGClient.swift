@@ -69,13 +69,31 @@ public final class HummingbirdTGClient: TGClientPrtcl, Sendable {
 
     private func processContainer<T: Decodable>(_ container: TGTelegramContainer<T>) throws -> T {
         guard container.ok else {
-            let desc = """
-            Response marked as `not Ok`, it seems something wrong with request
-            Code: \(container.errorCode ?? -1)
-            \(container.description ?? "Empty")
-            """
-            let error = BotError(type: .server, description: desc)
-            logger.error("\(error)")
+            // A `TelegramAPIError` rather than a `BotError`: the code and the
+            // description stay separate fields, so a caller can branch on the
+            // refusal instead of re-parsing the sentence printed just below.
+            let error = TelegramAPIError(
+                code: container.errorCode ?? -1,
+                message: container.description ?? "Empty"
+            )
+            // Telegram refuses plenty of things that are not problems: an edit
+            // whose content is already on screen, a message someone deleted
+            // before the sweeper reached it, a spinner answered after its
+            // callback expired, an edit aimed at the wrong field (which
+            // `editScreen` retries and reports itself, with the call site).
+            // Logging those at `error` is what buried the real failures: of the
+            // 807 refusals in the Pi log covering 2026-09-09 01:51 → 09-10
+            // 18:36, 357 were "not modified" and 140 "message to delete not
+            // found". They are still logged, one level down.
+            if error.isBenign || error.isWrongEditField {
+                logger.debug("Telegram refused a call: \(error)")
+            } else {
+                logger.error("""
+                    Response marked as `not Ok`, it seems something wrong with request
+                    Code: \(error.code)
+                    \(error.message)
+                    """)
+            }
             throw error
         }
 

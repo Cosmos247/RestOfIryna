@@ -124,7 +124,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 session: context.session,
                 text: notice,
                 parseMode: .html,
-                replyMarkup: nil
+                replyMarkup: currentKeyboard(for: context.session, lingo: context.lingo)
             )
             return
         }
@@ -155,6 +155,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// active expedition. Used when the player re-enters exploration after
     /// checking the bag, opening the estate, etc.
     private func resumeActive(context: Context, state: ExplorationState) async throws {
+        // Re-entering the expedition while a beast is still standing on the row
+        // would hand back the walking keyboard and leave the fight unreachable.
+        // The fight is the screen the player owes an answer to, so it wins.
+        if try await guardInCombat(context: context, state: state) { return }
+
         context.session.routerName = routerName
         try await context.session.saveAndCache(in: context.db)
 
@@ -254,14 +259,14 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let backLabel = lingo.localize("exploration.duration.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: backLabel, callbackData: "explore:mode:pick")])
 
-        let params = TGEditMessageTextParams(
+        await editScreen(
             chatId: chatId,
             messageId: messageId,
+            isPhoto: false,
             text: prompt,
-            parseMode: .html,
-            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: rows)
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: rows),
+            bot: bot
         )
-        _ = try? await bot.editMessageText(params: params)
     }
 
     fileprivate func editToModePicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
@@ -273,14 +278,14 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
             [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
         ])
-        let params = TGEditMessageTextParams(
+        await editScreen(
             chatId: chatId,
             messageId: messageId,
+            isPhoto: false,
             text: prompt,
-            parseMode: .html,
-            replyMarkup: inline
+            replyMarkup: inline,
+            bot: bot
         )
-        _ = try? await bot.editMessageText(params: params)
     }
 
     /// Countdown status shown when the player re-opens exploration while a
@@ -366,6 +371,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             try await showExploration(context: context)
             return true
         }
+        if try await guardInCombat(context: context, state: state) { return true }
 
         state.stepsDeep += 1
         let priorVisits = state.visitCount(state.stepsDeep)
@@ -406,6 +412,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             try await showExploration(context: context)
             return true
         }
+        if try await guardInCombat(context: context, state: state) { return true }
 
         if state.stepsDeep <= 1 {
             try await handleHomeReached(context: context, state: state)
@@ -437,6 +444,37 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         }
 
         try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
+        return true
+    }
+
+    /// An expedition action attempted while a fight is still standing on the
+    /// row. Returns `true` when it has handled the tap and the caller must not
+    /// proceed.
+    ///
+    /// Reachable whenever a tap is routed here while the player belongs in
+    /// combat — the classic case being a second tap read off the queue before
+    /// the first one flipped `routerName`. Proceeding is the worse of the two
+    /// options by some distance: the beast is left standing on the row while
+    /// the player walks away from it, and an encounter one km on overwrites it
+    /// outright. So the action is refused and the fight re-rendered instead,
+    /// which re-asserts the combat keyboard — the tap that landed in the wrong
+    /// place is then the same tap that repairs the screen.
+    private func guardInCombat(context: Context, state: ExplorationState) async throws -> Bool {
+        guard state.isInCombat,
+              let enemyId = state.combatEnemyId,
+              let enemy = EnemyCatalog.find(enemyId) else { return false }
+
+        appState?.logger.warning("""
+            [COMBAT] \(context.session.telegramId) tried to walk at km \(state.stepsDeep) \
+            with \(enemyId) still standing — refused, re-rendering the fight
+            """)
+
+        let combatCtrl = Controllers.combatController
+        if context.session.routerName != combatCtrl.routerName {
+            context.session.routerName = combatCtrl.routerName
+            try await context.session.saveAndCache(in: context.db)
+        }
+        try await combatCtrl.showCombat(context: context, state: state, enemy: enemy, intro: false)
         return true
     }
 
@@ -877,14 +915,7 @@ extension ExplorationController {
 
             let timeText = PassiveExpeditionService.formatDuration(duration, lingo: context.lingo, locale: locale)
             let confirmation = context.lingo.localize("exploration.passive.started", gender: context.session.gender, locale: locale, interpolations: ["time": timeText])
-            let editParams = TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                text: confirmation,
-                parseMode: .html,
-                replyMarkup: nil
-            )
-            _ = try? await context.bot.editMessageText(params: editParams)
+            await editScreen(message, text: confirmation, bot: context.bot)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             // No extra keyboard-restoring message: the player came from the
             // main menu (picker never swapped the reply keyboard) so the
@@ -973,14 +1004,7 @@ extension ExplorationController {
             let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
 
             let (body, inline) = try await ctrl.renderBag(context: context)
-            let editParams = TGEditMessageTextParams(
-                chatId: chatId,
-                messageId: message.messageId,
-                text: body,
-                parseMode: .html,
-                replyMarkup: inline
-            )
-            _ = try? await context.bot.editMessageText(params: editParams)
+            await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }

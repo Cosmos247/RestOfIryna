@@ -21,6 +21,21 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-10 part 3 — the router raced, and the edits were aimed at the wrong field.** Three
+live-play symptoms (a fight starting under the walking keyboard, the capital screen with the
+estate keyboard, taps producing no message) were four defects, none in game logic. The SDK
+gives every update its own `Task.detached`, and `TGDispatcher` chose the router from a
+`routerName` read BEFORE the previous tap transitioned — routing now happens inside
+`RouterStore`'s per-user chain, on the live value, with a `[ROUTE]` warning that measures the
+race. Exploration gained an in-combat guard that re-renders the fight instead of walking
+(which re-asserts the combat keyboard), and every refusal notice now carries the keyboard of
+the router the player is really on. `TravelService` and `PassiveExpeditionService` took
+`SessionCache.peek`, the rule `RestNotificationService` already followed. Then
+`Helpers/ScreenEdit.swift`: one photo-aware `editScreen` for all 20 edit call sites, since
+**310 of the 807 API refusals in a day and a half of Pi log were `editMessageText` against a
+caption**, each swallowed by `try?` — the warehouse list after a withdraw-N had therefore
+never refreshed. All four digest halves held.
+
 **2026-09-09 live-play polish** — five screens the first hour walks through, changed while
 playing the deployed build and moving no balance number: the expedition bag prints its
 occupancy, the fortune screen (and the profile) say what the drawn card actually does and
