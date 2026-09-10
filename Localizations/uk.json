@@ -277,6 +277,8 @@
   "estate.warehouse.button.deposit_all": "📦 Викласти все",
   "estate.warehouse.deposit_all.success": "Викладено %{count} одиниць на склад ⬆️",
   "estate.warehouse.deposit_all.nothing": "У сумці немає речей цього типу.",
+  "estate.warehouse.deposit_all.full": "Склад заповнений — %{used}/%{cap}. Заберіть щось у сумку або підніміть тир маєтку, щоб з'явилося місце.",
+  "estate.warehouse.deposit_all.partial": "Викладено %{count} одиниць — далі склад заповнений (%{used}/%{cap}).",
   "estate.warehouse.withdraw_n.prompt": "Скільки бажаєте взяти в сумку?",
   "estate.warehouse.withdraw_n.invalid": "Введіть додатне число.",
   "estate.warehouse.withdraw_n.not_enough": "Не вистачає. У вас %{have}.",

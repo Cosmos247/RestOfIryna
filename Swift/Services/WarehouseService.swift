@@ -40,6 +40,26 @@ public enum WarehouseService {
         return rows.reduce(0) { $0 + $1.quantity }
     }
 
+    /// What a bulk deposit actually did.
+    ///
+    /// `moved == 0` used to be the whole answer, and it reads as two opposite
+    /// situations: the bag holds nothing of this category, or it holds plenty
+    /// and the warehouse has no room. The player was told the first while
+    /// looking at the second (reported 2026-09-10), so the reason travels with
+    /// the count now.
+    public struct DepositAllResult: Sendable {
+        public let moved: Int
+        /// The cap is what stopped it: something eligible was still in the bag
+        /// with nowhere to go. True on a partial move as well as on a refusal.
+        public let cappedOut: Bool
+        /// A tiered weapon was passed over. It shows on the category screen as
+        /// a bag-side row, so a refusal that blamed the bag for being empty
+        /// would contradict what the player is looking at.
+        public let skippedUntransferable: Bool
+        public let used: Int
+        public let cap: Int
+    }
+
     public enum DepositResult: Sendable {
         case success
         case nothingToDeposit
@@ -86,8 +106,8 @@ public enum WarehouseService {
 
     /// Move one unit of the item from the player's backpack to the warehouse.
     /// Returns `.nothingToDeposit` if there's no unequipped row to take from,
-    /// `.warehouseFull` if the warehouse is at unit cap. Developer accounts
-    /// bypass the cap entirely (still recorded — UI just shows overflow).
+    /// `.warehouseFull` if the warehouse is at unit cap — with no exemption for
+    /// developer accounts since 2026-09-09, as the code below says.
     @discardableResult
     public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
         guard ItemCatalog.find(itemId) != nil, let userId = user.id else { return .nothingToDeposit }
@@ -135,12 +155,14 @@ public enum WarehouseService {
 
     /// Move every unequipped unit of the given category from the backpack to the
     /// warehouse in one shot. Equipped gear is skipped — to dump worn armor the
-    /// player must unequip it first. Returns the total number of units moved
-    /// (sum of stack quantities), so the caller can render
-    /// "✅ Moved N items to warehouse".
+    /// player must unequip it first. Returns what moved AND why it stopped, so
+    /// a refusal can name the cap instead of blaming the bag.
     @discardableResult
-    public static func depositAll(category: ItemType, for user: User, on db: any Database) async throws -> Int {
-        guard let userId = user.id else { return 0 }
+    public static func depositAll(category: ItemType, for user: User, on db: any Database) async throws -> DepositAllResult {
+        let cap = capForLevel(user.estateLevel)
+        guard let userId = user.id else {
+            return DepositAllResult(moved: 0, cappedOut: false, skippedUntransferable: false, used: 0, cap: cap)
+        }
 
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
@@ -151,17 +173,27 @@ public enum WarehouseService {
         // a 6-unit free cap dumps 6 and leaves 4 behind. No developer
         // exemption since 2026-09-09.
         var used = try await slotsUsed(for: user, on: db)
-        let cap = capForLevel(user.estateLevel)
 
         var movedUnits = 0
+        var cappedOut = false
+        var skippedUntransferable = false
         for row in rows {
             guard let item = ItemCatalog.find(row.itemId), item.type == category else { continue }
             guard row.equippedSlot == nil else { continue }
             // Tiered weapons stay with the player — see `deposit` for the why.
-            if WeaponUpgradeCatalog.isUpgradable(row.itemId) { continue }
+            // Recorded rather than merely skipped: an unequipped one is listed
+            // on the screen the player just tapped, so the refusal has to name
+            // this reason instead of falling through to "your bag has none".
+            if WeaponUpgradeCatalog.isUpgradable(row.itemId) {
+                skippedUntransferable = true
+                continue
+            }
 
             let qty = row.quantity
             let canMove = min(qty, max(0, cap - used))
+            // Anything eligible that does not fit — wholly or partly — is the
+            // cap talking, and the caller has to be able to say so.
+            if canMove < qty { cappedOut = true }
             guard canMove > 0 else { continue }
 
             // Drain the source row by canMove (delete if fully drained).
@@ -179,7 +211,8 @@ public enum WarehouseService {
             used += canMove
             movedUnits += canMove
         }
-        return movedUnits
+        return DepositAllResult(moved: movedUnits, cappedOut: cappedOut,
+                                skippedUntransferable: skippedUntransferable, used: used, cap: cap)
     }
 
     /// Move one unit of the item from the warehouse to the player's backpack.

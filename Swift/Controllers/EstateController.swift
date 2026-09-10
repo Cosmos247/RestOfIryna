@@ -1164,10 +1164,29 @@ extension EstateController {
             return true
         }
 
-        let moved = try await WarehouseService.depositAll(category: type, for: context.session, on: context.db)
+        let result = try await WarehouseService.depositAll(category: type, for: context.session, on: context.db)
+        // Numbers for whichever line runs — the counts are the whole point of
+        // the full-warehouse ones, and unused keys ignore them.
+        let counts = ["count": "\(result.moved)", "used": "\(result.used)", "cap": "\(result.cap)"]
 
-        if moved == 0 {
-            let toast = context.lingo.localize("estate.warehouse.deposit_all.nothing", locale: locale)
+        if result.moved == 0 {
+            // Nothing moved says nothing about WHY on its own. A full warehouse
+            // and an empty bag both land here, and telling a player holding a
+            // full bag that it is empty is how a working cap reads as a bug.
+            // Cap first when several are true: the room is the one thing the
+            // player can act on, unlike a sword that was never going in.
+            let key: String
+            if result.cappedOut {
+                key = "estate.warehouse.deposit_all.full"
+            } else if result.skippedUntransferable {
+                key = "estate.warehouse.not_transferable"
+            } else {
+                key = "estate.warehouse.deposit_all.nothing"
+            }
+            let body = context.lingo.localize(key, locale: locale, interpolations: counts)
+            // 📦 prepended in Swift — Lingo drops every `%{}` that follows a
+            // multi-UTF-16 character in the template, and this one has two.
+            let toast = result.cappedOut ? "📦 \(body)" : body
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
@@ -1175,9 +1194,11 @@ extension EstateController {
         // Silent ack — the inline status line carries the success message.
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-        let banner = "✅ " + context.lingo.localize("estate.warehouse.deposit_all.success", locale: locale, interpolations: [
-            "count": "\(moved)"
-        ])
+        // A partial move is its own outcome: some went in, the rest is still in
+        // the bag, and only the banner can say which.
+        let banner = result.cappedOut
+            ? "📦 " + context.lingo.localize("estate.warehouse.deposit_all.partial", locale: locale, interpolations: counts)
+            : "✅ " + context.lingo.localize("estate.warehouse.deposit_all.success", locale: locale, interpolations: counts)
 
         let ctrl = Controllers.estateController
         let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)

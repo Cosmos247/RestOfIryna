@@ -140,6 +140,31 @@ whose trip `rescheduleInflight` has just re-armed. Anything colder gets the plai
 row and self-heals, because one tap on Estate or Capital re-sends the countdown
 banner and that one knows.
 
+### 7. A full warehouse said the bag was empty
+
+Reported from play, with a screenshot: `📦 Виклати все` refused with «У сумці
+немає речей цього типу» over a bag that plainly had them. `depositAll` returned
+a bare `Int`, and a zero there means two opposite things — nothing of this
+category in the bag, or plenty of it and no room in the warehouse. The handler
+had to guess and guessed the one that reads as a bug.
+
+It returns `DepositAllResult` now (moved · cappedOut · used · cap). `cappedOut`
+is set whenever an eligible row does not fit whole, which also buys the partial
+case a line of its own: moving 7 and silently leaving the rest is the same
+silence one size smaller. The single `+1` and `✏️ N` paths already distinguished
+the two and needed nothing.
+
+The audit then found the same lie one case over: a tiered weapon is skipped by
+the bulk deposit but an unequipped one IS listed on the category screen, so
+"your bag has none of this" contradicted what the player was looking at.
+`skippedUntransferable` names it, reusing the `not_transferable` line the
+single-item path already had. Priority is cap first — the room is the only one
+of the three a player can do something about.
+
+Two stale doc lines went with it: `depositAll`'s comment still promised a count,
+and `deposit`'s still claimed developer accounts bypass the cap — nine lines
+above the code that says the exemption was removed on 2026-09-09.
+
 
 ## Session — 2026-09-09 (part 2: one clock, three watchmen, and two ceilings that were not real)
 

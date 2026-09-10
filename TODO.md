@@ -1058,6 +1058,17 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (85–93 days) is measurable from here on; it never was before.
+  - [x] **A full warehouse said the bag was empty** *(2026-09-10, reported from play)* —
+        `📦 Виклати все` answered a refusal with "У сумці немає речей цього типу" while the
+        bag was visibly full: `depositAll` returned a bare count, and zero reads as both
+        "nothing of this type" and "no room for any of it". It returns
+        `DepositAllResult` now — moved · cappedOut · used · cap — and the handler names the
+        cap with its numbers. A PARTIAL bulk deposit gets its own line too, because "moved
+        7" while the rest stays in the bag is the same silence one step smaller. Two locale
+        keys per language. The audit found the same lie one case over — an unequipped tiered
+        weapon is listed on the screen but never movable — so the refusal names that too,
+        reusing the existing `not_transferable` line. The single `+1` and `✏️ N` paths were
+        already correct.
   - [x] **Turn back on the road** *(2026-09-10)* — a trip could only be waited out.
         `↩️ Розвернутись` now takes the Explore slot in the nav keyboard for as long as
         the road lasts, which is free real estate: Explore is refused mid-trip anyway

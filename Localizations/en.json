@@ -237,6 +237,8 @@
   "estate.warehouse.button.deposit_all": "📦 Deposit all",
   "estate.warehouse.deposit_all.success": "Moved %{count} items to warehouse ⬆️",
   "estate.warehouse.deposit_all.nothing": "Nothing of this type in your bag.",
+  "estate.warehouse.deposit_all.full": "The warehouse is full — %{used}/%{cap}. Withdraw something or upgrade your estate to make room.",
+  "estate.warehouse.deposit_all.partial": "Moved %{count} items — then the warehouse filled up (%{used}/%{cap}).",
   "estate.warehouse.withdraw_n.prompt": "How many do you want to take to your bag?",
   "estate.warehouse.withdraw_n.invalid": "Enter a positive number.",
   "estate.warehouse.withdraw_n.not_enough": "Not enough. You have %{have}.",
