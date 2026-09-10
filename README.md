@@ -164,6 +164,9 @@ RestOfIryna/
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
+│   │   ├── AddFortuneOneShot.swift   # 2026-09-09 — four `last_fortune_*` columns: what a draw's one-shot half actually handed over. The card id cannot answer it (the Wheel rolls 50/50, a silver loss is clamped to the purse)
+│   │   ├── AddNotificationFlags.swift # 2026-09-09 — `fortune_ready_notified` + `quest_rollover_stamp`: the once-only guards behind RestNotificationService
+│   │   ├── AddPassiveDailyBudget.swift # 2026-09-09 — `passive_minutes_today` + `passive_day_stamp`: the 3 h/day ceiling on passive expeditions, counter plus the game-day key it belongs to
 │   │   ├── CreateAllowedUsers.swift  # 2026-09-08 — creates `allowed_users` and seeds the founding four from `foundingUsers`; without the seed the first boot locks out everyone already registered
 │   │   ├── AddCharacterFields.swift
 │   │   ├── AddProfileStyle.swift
@@ -215,10 +218,11 @@ RestOfIryna/
 │   │   ├── EquipmentService.swift # atomic equip/unequip, bonus recomputation. Phase 6.5: `nominalStats(of:for:)` (full-condition stats incl. armor enchant + class bonus) + `contributedStats(of:for:)` (durability-adjusted: armor broken→0, weapon at 0→half) — single source summed by `recomputeBonuses`, reused by the inventory detail card
 │   │   ├── WarehouseService.swift # deposit/withdraw between inventory and warehouse
 │   │   ├── ExplorationService.swift # step outcome roll + autobattle stub + loot drops
-│   │   ├── HealingService.swift  # passive HP regen (5%·maxHp/min) while at estate
+│   │   ├── HealingService.swift  # lazy HP regen (10%·maxHp per REAL minute) while at the estate; stamped at both ends of an expedition (`beginResting` / `suspendResting`)
+│   │   ├── RestNotificationService.swift # 2026-09-09 — the 60 s watchman for what finishes while nobody is looking: HP topping out, the fortune cooldown, the 12:00 rollover. Mutates the SESSION-CACHED user (`SessionCache.peek`), because Fluent saves whole rows
 │   │   ├── PassiveExpeditionService.swift # passive-mode duration picker + Task.sleep scheduler + simulation + report push
 │   │   ├── CombatService.swift   # Phase 4.1 + 4.2 + 4.3.1 + 5.1 — applyAttack hit/miss/crit + chipDamage; AttackModifiers / StanceModifiers; per-class special-atk/def tunings; Flee chances; trainingDummyEnemyId
-│   │   ├── PlotService.swift     # Phase 5.1 + 2026-05-18 destination picker — pure plot helpers: accumulated, bonusAccumulated, harvest(to:HarvestDestination — `.bag` / `.warehouse`), claim, slotsForLevel. New `HarvestResult.bagFull(primary:bonus:free:need:)` atomic-failure case preserves the yield on the plot so the player can retry (e.g. send to warehouse).
+│   │   ├── PlotService.swift     # Phase 5.1 + 2026-05-18 destination picker — pure plot helpers: accumulated, bonusAccumulated, harvest(to:HarvestDestination — `.bag` / `.warehouse`), claim, slotsForLevel. Two atomic-failure cases — `bagFull` and (2026-09-09) `warehouseFull` — preserve the yield on the plot so the player can retry elsewhere. The warehouse branch used to write with NO cap check at all, which made the estate's own income the one way to overflow the store; it is all-or-nothing because the Mine's two output streams share one `lastHarvestedAt`.
 │   │   ├── PlotProductionService.swift # Phase 5.1 — single Task.detached ticker; pushes "ready to harvest" notifications when plot caps are reached
 │   │   ├── CraftingService.swift # Phase 5.2 — pure: craft(_:for:on:) drains inputs from combined inventory+warehouse pool (inventory first), deposits output into inventory; CraftResult enum + Shortage struct for the modal alert
 │   │   ├── WeaponUpgradeService.swift # Phase 5.2.2 — pure: upgrade(for:on:) advances the player's equipped weapon one tier. Estate-level gate, materials drained from combined inventory+warehouse, InventoryEntry.tier bumped in place (item id never changes), EquipmentService.recomputeBonuses re-run. Result enum: success/maxTierReached/estateLevelTooLow/missingMaterials/noWeaponEquipped.
@@ -258,6 +262,9 @@ RestOfIryna/
 │   │   ├── InviteToken.swift         # 2026-09-08 — the `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), base32 over letters only, 16 chars, valid 5 real minutes
 │   │   ├── Lingo+Locales.swift
 │   │   ├── EphemeralChatState.swift  # in-memory actor — exploration mode-picker IDs, pending warehouse transfer-N state, pending trader transfer-N state (Phase 6.1), pending Market-listing (qty→price, Phase 6.5) + Trade-input (silver/qty, Phase 6.5) state, latest status-banner message ID per user
+│   │   ├── Countdown.swift           # 2026-09-09 — the one "time left" format: `2год 5хв` · `5хв` · `42сек`. Replaced an MM:SS / HH:MM pair no screen could tell apart; every countdown and every authored duration now prints from here
+│   │   ├── ItemCard.swift            # 2026-09-09 — the "what am I buying" card shown between a shop listing and the purchase question (Trader · Master · Tavern · Market). Name, lore and what it grants, read from the item's own effects / ladder rung
+│   │   ├── FortuneDisplay.swift      # 2026-09-09 — what the drawn tarot card is doing, GENERATED from its `FortuneEffect`; `oneShotLine` reads the stamped record instead, because only that knows which way the Wheel fell
 │   │   ├── PhotoCache.swift          # Phase 6.3 (+ 2026-05-20 rework) — `[assetPath: fileId]` cache + `sendCachedPhoto(...)` helper (file_id reuse only — no deletion). Default photo path for ALL player-visible art (location backdrops, registration/lore scenes); photos stay in chat history (players keep a scrollable record; file_id dedup makes accumulation free). Was `sendScenicPhoto` with prev-photo auto-delete until the rework dropped the deletion.
 │   │   ├── DotEnv+Env.swift
 │   │   └── GameDay.swift             # the shared daily-reset boundary — rolls at 12:00 Kyiv, not midnight. `GameDay.stamp(date)` is the key every daily system counts against (Arena fight budget, quest of the day)

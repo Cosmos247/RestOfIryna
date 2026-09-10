@@ -147,9 +147,16 @@ all ten generated spec blocks found **two that never reproduced from their own m
 silently skipped between them, one with prose living inside the markers. Not drift in the
 numbers — drift in the mechanism meant to detect drift.
 
-**Current digest baseline (2026-09-09):** `records f6fc421256085066`,
-`tuning ad7bdb94d0efc668`, `spawns eaea309f4813dfa2`,
+**Current digest baseline (2026-09-10):** `records f6fc421256085066`,
+`tuning a23248441d58a78a`, `spawns eaea309f4813dfa2`,
 `quests 30de20902006e3b9` (schema **v10**).
+
+`tuning` moved twice during the 2026-09-09 live-play polish, both predicted and both
+named in the digest BEFORE the edit — the 09-07 lesson applied rather than relearned:
+`realTime.restSweepInterval` (`ad7bdb94d0efc668` → `80e4b32ee7392d30`, the notification
+watchman's cadence) and `passive.dailyBudgetMinutes` (`→ a23248441d58a78a`, the 3 h/day
+ceiling on passive expeditions). `records`, `spawns` and `quests` have not moved since
+09-09: no record, spawn band or quest pool was touched by any of it.
 
 `scale` 60 → 1.0 moved TWO halves, and both were predicted. `tuning` for the obvious
 reason. `records` because it hashes the DERIVED `PlotCatalog.intervalSeconds`

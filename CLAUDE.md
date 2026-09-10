@@ -104,6 +104,43 @@ run refunds its own damage; miss the second and the stretch between coming home
 and the next tap heals nothing. A tick that only runs on interaction cannot
 observe a transition that happens while nobody is interacting.
 
+**What finishes while nobody is looking needs a watchman.** Lazy-on-interaction
+state has no observer at the moment it completes, so `RestNotificationService`
+(one `Task.detached` on `realTime.restSweepInterval`, 60 s) answers three
+questions per player: HP topped out at the estate, the fortune teller's 24 h
+cooldown elapsed, the 12:00 job rollover. It runs the regen through
+`HealingService.tick` — never a second copy of the arithmetic. **A background
+writer MUST take the session-cached `User` when one exists**
+(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy
+silently undoes the tap the player made a second earlier. Two of the three need a
+persisted flag (`fortune_ready_notified`, `quest_rollover_stamp`); HP needs none,
+because a player at full HP is not a player about to reach it.
+
+**Passive expeditions are capped at `passive.dailyBudgetMinutes` (180) per game
+day**, counted in the authored minutes the three choices are written in — a budget
+in wall-clock seconds would mean a different number of runs at every `time.scale`.
+Counter plus day stamp (`passive_minutes_today` / `passive_day_stamp`), rolling at
+12:00 like every other daily system. The picker offers only what the day can still
+pay for AND the handler re-checks, because a picker left in the chat from an
+earlier run is exactly the tap that would overspend; the charge lands after
+`beginPassive` succeeds, so a failed start never costs the player a run.
+
+**Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв`
+· `5хв` · `42сек`, hours only when there are any, seconds only in the last minute.
+The `MM:SS` / `HH:MM` pair it replaced could not be told apart: `05:30` was five
+and a half MINUTES on the trail and five and a half HOURS at the fortune teller.
+Durations are never written into copy either — the expedition buttons, the tarot
+"active for" prefix and the invite window are all printed from the values that own
+them.
+
+**The warehouse cap is enforced on every path in, including the plot harvest.**
+Hand deposits always checked it; `PlotService.harvest(to: .warehouse)` did not,
+which made the estate's own income the one way to overflow the store. Harvest is
+all-or-nothing like the bag, and the yield stays standing on the plot — partial
+cannot be expressed, because the Mine's two output streams share one
+`lastHarvestedAt`. **No account is exempt:** the `isDeveloper` bypass is gone from
+all four warehouse checks (it remains on the BAG, which is a different ceiling).
+
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
 = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
 stats ARE that budget spent at fixed exchange rates, and the validator refuses an
@@ -251,6 +288,16 @@ lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 ```
 
 **The player is addressed as «ви» (uk).** Every Ukrainian string that speaks to the player uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-ите`, imperative `-іть/-те` — NPC speech included. That settles past tense and adjectives on its own (both go plural), so the only thing left that declines by gender is a **noun naming the player**: намісник/-иця, воїне/войовнице.
+
+**Ukrainian agrees with the ITEM's name too.** A sentence about a thing agrees
+with that thing's noun — «лук зламав**ся**», «чоботи зламали**сь**» — so every
+item declares `item.<id>.gender` (`m` · `f` · `n` · `pl`) **in `uk.json` only**:
+gender belongs to the WORD, not the object, and English never asks. Route such a
+string through `ItemDisplay.localize(_:agreeingWith:lingo:locale:)`, which picks
+`<key>.m/.f/.n/.pl` for uk and the plain key elsewhere — the mirror of the
+player-gender helper below. The validator warns (`locale.item_gender_missing`)
+when a name declares no gender, because the silent fallback is masculine and that
+is wrong for seventeen of the thirty-three shipped names.
 
 **Gendered text (uk feminitives):** Ukrainian strings that name the player with a gendered noun use the gender-aware overload — `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`. It looks up `key.m`/`key.f` for `uk` and the plain `key` for English (so **never duplicate English** — only `uk.json` gets `.m`/`.f`). Player gender (`User.gender`, "m"/"f", nil=male) is chosen at registration step 1. Thirteen keys still need it; nine collapsed to single keys on 2026-09-07 when «ви» made their two variants identical. When new copy names the player, either add `.m`/`.f` + route through this overload, or phrase around the noun. Full key list + rationale in `.memory/localization.md`.
 

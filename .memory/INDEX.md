@@ -34,6 +34,30 @@ Session-persistent knowledge base. Each entry links to a detailed file.
 - [Session & Auth](session-auth.md) — User model, session cache, authorization flow
 - [Localization](localization.md) — Lingo setup, JSON structure, interpolation, adding locales
 
+## Live-play polish (2026-09-09 → 10) — the work in flight
+
+Phase 11 is closed as CODE; what is happening now is **fixing what playing the deployed
+build reveals**. Three commits, full narrative in [Session History](sessions.md)
+(the two 2026-09-09 entries).
+
+- **The bot is live on the Pi running `509f2db`**; `04bd80d` and later are not deployed.
+  The deploy recipe — including the swiftenv `PATH` trap that stops a non-interactive
+  `ssh` from finding `swift` at all — is in `Prompt.md` → "Next action".
+- **`Countdown.format` is the one time format** and no duration is written into copy any
+  more; **`RestNotificationService`** is the 60 s watchman for what finishes while nobody
+  is looking (HP full · fortune cooldown · 12:00 rollover). A background writer must take
+  the session-cached `User` (`SessionCache.peek`) or it silently undoes the player's last
+  tap — Fluent saves whole rows.
+- **Two ceilings that were not real:** passive expeditions now cost against a 3 h/day
+  budget, and the warehouse cap finally applies to the plot harvest — the one path that
+  filled the warehouse unchecked — with no developer exemption left.
+- **Two defects the code review caught rather than a test:** starvation was charging
+  double on three of the four step buckets (10 HP where the message said 5), and the
+  broken-gear line was written in a gender that fits none of the nineteen breakable items.
+  uk now agrees with the item's own noun — see [Localization](localization.md).
+- **Still parked:** ~328 Telegram API errors a day in the live log, 162 of them an
+  `editMessageText` against a photo message that leaves the screen silently un-updated.
+
 ## Phase 11 quick orientation (2026-09-02, extended 2026-09-07 and 09-09)
 
 **Where it stands.** Every code-side piece has landed. `validate --strict` reports

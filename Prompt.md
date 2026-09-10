@@ -33,133 +33,80 @@ the maths. **This is the only work in flight.**
 - Decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where we stopped
+### Where we stopped (2026-09-10)
 
-**Phases 3–10 are done; Phase 11 is all but closed.** The opening ledger and
-`WipeForRebalance` landed 2026-09-02. On **2026-09-07** four commits changed *what the
-first hour looks like* without moving a combat or progression number. On **2026-09-08/09**
-the last three pieces landed: access moved out of the code into a database table with
-`/link` invites, the bot was deployed to the Raspberry Pi under pm2, and `scale` went
-60 → 1.0. **`validate --strict` now reports zero errors and zero warnings** — the first
-time it ever has. What remains is not code.
+**Phases 3–10 are done. Phase 11 is closed as CODE** — the wipe, the opening ledger,
+invite-only access, the Pi deployment and `scale` 1.0 all landed by 09-09. Since then the
+work has been **live-play polish: fixing what playing the deployed build revealed.**
 
-> ## Next action: **walk the first hour on purpose.**
+**The bot is LIVE on the Pi, running `509f2db`** (restarted 2026-09-09 23:42, content hash
+`954b2608`, three migrations applied clean: `AddFortuneOneShot`, `AddNotificationFlags`,
+`AddPassiveDailyBudget`). **`04bd80d` and anything after it is NOT deployed** — it needs a
+push, a Pi build and a restart.
+
+> ## Next action: two things, in this order
 >
-> **The game is already live.** It runs on the Pi under pm2 as app `ROI`, independent of
-> this laptop, and it survives a reboot (`pm2 save` done, pm2's systemd unit enabled).
-> Four accounts have played it — so the question is no longer "does it start", it is
-> "does the first hour teach what it is supposed to teach".
->
-> ```
-> ssh rpi5@192.168.0.203 'pm2 list; tail -20 ~/.pm2/logs/ROI-out.log'
-> ```
->
-> **⚠️ Never start, restart or stop the bot without asking the user** — see `CLAUDE.md`
-> → "Running the bot — ASK FIRST". Prepare the change, then hand over the command. The
-> one exception is a Mac instance left polling: stop that without asking, because both
-> `.env` files carry the same token and a stray poller means a 409 for the Pi.
->
-> **To land a change on the Pi:** commit → user pushes → `git pull --ff-only` on the Pi →
-> `swift build` (debug, detached — see README's Deployment section) → ask before
-> `pm2 restart ROI`. A content-only edit needs no restart at all: `/reload` in Telegram
-> re-reads `content/data`, tuning tables included. `/content` prints the live bundle
-> hash, which is how you check WHICH content the running process is actually serving.
->
-> **To admit a new tester:** `/link` in Telegram (developer-only). Never a code edit —
-> the hardcoded list is gone.
->
-> **⚠️ The wipe ALREADY RAN — and a first-hour session already happened.**
-> `_fluent_migrations` records `WipeForRebalance` applied **2026-09-02 22:14:41**,
-> and three accounts played on the rebalanced build through **04.09** (Космос
-> archer L2 · Дарина warrior L3 · анія mage L5). Fluent never re-applies a
-> recorded migration, so **the wipe will not fire again** and there will be no
-> `removed users …` line in the log. To get a genuinely clean first hour, delete
-> its row first — `delete from _fluent_migrations where name =
-> 'RestOfIryna.WipeForRebalance'` — and it re-runs, last, in the next batch.
-> The pre-wipe database is dumped to `~/RestOfIryna-backups/roi-preplaytest-2026-09-08.sql`
-> (verified by restore); `WipeForRebalance.revert` is a deliberate no-op, so that
-> file is the only copy.
+> **1. The 328 Telegram API errors a day.** Parked twice already and still unexamined —
+> measured in the Pi log on 09-09 over a single day:
 >
 > ```
-> [warning] WipeForRebalance: removed users 3, inventory 15, ...
-> [info]    WipeForRebalance: verified empty — every table in the schema holds 0 rows
+> 162 × "Bad Request: there is no text in the message to edit"
+> 104 × "Bad Request: message is not modified: …"
+>  62 × "Bad Request: message to delete not found"
 > ```
 >
-> A boot failure saying `still holds N row(s)` means a table is missing from
-> `WipeForRebalance.playerTables`; the message names it. Three migrations run in
-> the same batch ahead of it now — `RemoveProfileStyle` (drops `profile_style`),
-> `AddQuestAccepted` (adds `accepted` to `quest_progress`) and
-> `CreateAllowedUsers` (the invite table, seeded with the founding four and
-> **preserved** by the wipe). After the wipe the allowed accounts land in
-> **registration** on their first message.
+> The first one is a real player-visible defect: `editMessageText` against a PHOTO
+> message fails, every call site swallows it with `try?`, so **the screen silently does
+> not update**. The `isPhoto → editMessageCaption` pattern already exists in
+> `CapitalController.editTraderScreen` and `EstateController.editEstateMessage`; the
+> unguarded sites are elsewhere. Reproduce from the log, do not guess:
+> `ssh rpi5@192.168.0.203 'grep -c "no text in the message" ~/.pm2/logs/ROI-out.log'`
 >
-> **Access is invite-only now.** Anyone not in `allowed_users` is refused before a
-> `User` row exists; the only way in is a `/link` deep link redeemed inside five
-> minutes. The founding four are seeded, so the wipe does not lock anyone out —
-> but a NEW tester needs `/link` (developer-only), not a code edit.
+> **2. Keep walking the first hour.** The user IS playing and reporting — that is how
+> every fix below was found. What has NOT been walked deliberately: a fight lost, a
+> **flee**, the trade screens, and one run of **`/reload` + `/content`**, which have still
+> never executed against a real database.
 >
-> **What the September session already showed, worth re-walking on purpose:**
-> all three players ended with a weapon at or near 0/30 durability against a
-> 1🪙-per-point repair (Космос: 21🪙 owed, 5🪙 held), eleven of thirteen quest rows
-> sat at progress 0 under the auto-create semantics 09-07 deleted, and Космос
-> stopped at 1 HP — the regen bug 09-07 fixed. Two of those three causes are now
-> closed; **silver at level 2 is the one that is not.**
+> **Deploying to the Pi — the recipe, with the trap that cost ten minutes on 09-09:**
 >
-> **⚠️ Read this before trusting any printed number at level 1.** The whole
-> balance report — TTK, win rates, the opening ledger — measures
-> `ReferenceCharacter`: a class stat line **plus a full common kit**. Registration
-> grants **only the class starter weapon**, and the first armour is a workshop
-> craft at estate T3 / player level 7. So a real level-1 player is weaker than
-> anything the report prints. The km-1-vs-km-4 ORDERING survives and is amplified
-> (weaker gear costs the same per kill at both depths, but km 1 needs 92 kills and
-> km 4 needs 9); **what is at risk is whether a level-1 player can beat the km-4
-> moose at all** — the sim says 100%, with the kit. That is the load-bearing
-> claim of the whole opening design and the single most important thing to watch.
+> ```
+> ssh rpi5@192.168.0.203 'cd ~/RestOfIryna && git pull --ff-only'
+> # swift is installed via SWIFTENV and its PATH lives in .bashrc, which a
+> # NON-INTERACTIVE ssh does not read. Without this the build never starts:
+> #   nohup: failed to run command 'swift': No such file or directory
+> ssh rpi5@192.168.0.203 'cd ~/RestOfIryna && setsid nohup env \
+>   PATH="$HOME/.swiftenv/bin:$HOME/.swiftenv/shims:$PATH" swift build \
+>   > /tmp/roi-build.log 2>&1 < /dev/null &'
+> # Wait on `pgrep -x swift-build` — NEVER `pgrep -f swift-build`, which matches the
+> # ssh command's own argument string and waits forever on nothing.
+> ```
 >
-> **`scale` is 1.0 since 2026-09-09 — real time.** A plot cycle is an hour, a
-> passive run is 30 / 60 / 90 minutes, a trip to the capital is two minutes. The
-> opening ledger's km-1-vs-km-4 answer never depended on this (the opening has no
-> game-time gate at all — no step cooldown, no estate below level 4, no Vigor
-> regeneration), so it stands unchanged; what BECOMES measurable is the estate
-> pace, 85–93 days, which compressed time could never show.
->
-> | km | mobs | kills to L4 | net vigor | win |
-> |---|---|---|---|---|
-> | 1 | L1 | 92.2 | **−374** | 100% |
-> | 4 | L1,4 | 8.9 | **+40** | 100% |
-> | 10 | L1,4,7,10 | 2.0 | **+72** | 95% |
-> | 13 | L4,7,10,13 | 0.9 | +72 | 66% |
->
-> **The 2026-09-07 pass changed the first hour — walk these on purpose:**
->
-> - **Daily jobs are TAKEN, not handed out.** Nothing counts until the player
->   accepts a job at the NPC in the capital, so the first hour now includes a trip
->   to town. Watch whether the one-shot hint (fired on the first return home, from
->   all three paths) is enough to send them there. At level 1 each NPC offers three
->   jobs — hides / 5 kills / raw meat, plus the six new forage deliveries.
-> - **The techniques button is gone below level 8**, so the combat keyboard is
->   `[Attack][Defend] / [Flee]` for the whole first hour — which is exactly the
->   `.basic` profile the sim measured.
-> - **A level-up is its own message** listing every stat that moved; the estate
->   tier-up likewise. Both are new surfaces that have never rendered live.
-> - **The profile has an equipment sheet** (`🛡` under the journal) — six slots,
->   durability with a ⚠️ at zero.
-> - **HP regen now starts the moment the player lands home**, from all three
->   paths, and stops when an expedition begins. Both stamps are new.
-> - **Every uk string addresses the player as «ви».** 170 strings moved; a
->   leftover «ти» is a bug worth reporting.
->
-> **Also untested and worth touching:** a fight won, a fight lost and a **flee**
-> (the failed-Flee counter changed in 8C); Vigor only ever going down; the trade
-> screens (both now print the player's purse); and one run of `/reload` +
-> `/content`, which have never executed against a real database — a freshly wiped
-> one is the safest moment.
->
-> **`scale` 60 → 1.0 landed 2026-09-09**, and with it `validate --strict` reports
-> **zero errors and zero warnings** for the first time. Two digest halves moved,
-> both predicted: `tuning`, and `records` — the latter because it deliberately
-> hashes the DERIVED `PlotCatalog.intervalSeconds`, a guard Phase 4b put there so
-> the retirement of the old `testMode` flag could not change the value it produced.
+> A full build touching `User.swift` is ~2 minutes on the Pi (it recompiles the whole app
+> module); a few files is ~80 s. **Then ASK before `pm2 restart ROI`.** A content-only edit
+> needs no restart — `/reload` re-reads `content/data`; new locale strings DO need one.
+
+### What the live-play polish landed (three commits, 2026-09-09 → 10)
+
+**`bfc6e00` — five screens say what they were hiding.** The expedition bag prints its
+occupancy; the fortune screen and the profile say what the drawn card actually does
+(generated from its own `FortuneEffect`) and what a one-shot handed over (stamped at draw
+time, because the Wheel rolls 50/50 and a silver loss is clamped to the purse); every
+capital shop shows an item card before the purchase question; selling into a job taken
+today warns first.
+
+**`509f2db` — one clock, three watchmen, two ceilings that were not real.**
+`Countdown.format` replaced the `MM:SS` / `HH:MM` pair no screen could tell apart, and
+every hand-written duration in the copy went with it. `RestNotificationService` watches
+what finishes while nobody is looking. Passive expeditions got a **3 h/day** ceiling. The
+**warehouse cap now applies to the plot harvest** — the one path that filled the warehouse
+unchecked — and no account is exempt any more. And **starvation was charging double** on
+three of the four step buckets: 10 HP where the message said 5.
+
+**`04bd80d` — Ukrainian agrees with the item, not only with the player.** The
+broken-gear line shipped in the neuter, which fits none of the nineteen breakable items
+(seventeen masculine, two plural). Gender now lives in `uk.json` as `item.<id>.gender`,
+with two validator rules behind it. The journal's job description waits until the job is
+taken.
 
 ### What the 2026-09-07 pass landed (four commits)
 
@@ -344,8 +291,11 @@ live-check → build → install** order, where `install` is the only infallible
 and last — a refused reload leaves the running game on exactly the snapshot it
 was serving. Lingo is NOT reloaded; new strings still need a restart.
 
-**Current digest baseline (2026-09-09, schema v10):** `records f6fc421256085066` ·
-`tuning ad7bdb94d0efc668` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+**Current digest baseline (2026-09-10, schema v10):** `records f6fc421256085066` ·
+`tuning a23248441d58a78a` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`.
+`tuning` moved twice on 09-09, both predicted and both named in the digest first:
+`realTime.restSweepInterval` (the watchman's cadence) and `passive.dailyBudgetMinutes`
+(the 3 h ceiling). The other three halves have not moved since 09-09.
 
 HP regen is **10% of max HP per real minute** (`tuning/vigor.json` →
 `healing.regenPerMinute`), so a full rest at the estate takes 10 minutes. It went
@@ -362,7 +312,9 @@ halves predicted *before* the edit, which is the whole point of splitting the
 digest in four. Phase 9 moved nothing at all: five specifications, three new spec
 tables and a validator refactor, and every half stood still.
 
-⚠️ **The live pass has begun, but nothing was walked deliberately.** Four accounts
+⚠️ **The live pass is under way and is finding real defects** — every fix in the
+2026-09-09/10 polish commits came out of playing the deployed build. What follows is the
+pre-playtest note, kept for the surfaces it lists that are STILL untouched. Four accounts
 played 2026-09-02 → 09-09 and reached L10 / estate T4, so the rebalanced formulas have
 been exercised — but nobody stepped through the first hour against a checklist. Every
 formula the player touches changed in Phase 5, every item's stat in Phase 6, the stances
@@ -422,7 +374,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 234 tests, ~0.16s
+swift test                                   # 234 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
@@ -436,7 +388,8 @@ item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
 budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (981 / 993 keys). **Access is invite-only and lives in the database**
+localization (**1002 / 1050 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
+`item.<id>.gender` declarations and the four-way `gear.broken.notice`). **Access is invite-only and lives in the database**
 (`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
 account and opens registration, and nobody else gets a `User` row at all.
 

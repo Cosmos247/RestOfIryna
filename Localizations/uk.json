@@ -1,6 +1,4 @@
 {
-  "yes": "Так",
-  "no": "Ні",
   "registration": "Оберіть вашу мову",
   "lang.name": "Українська",
   "welcome": "Ласкаво просимо до <b>RestOfIryna</b> – вашого помічника в Telegram",
@@ -914,7 +912,6 @@
   "exploration.passive.started.f": "Очікуваний час повернення через %{time}. Намісниця вирушила у похід 🏕.",
   "exploration.passive.inflight": "Очікуваний час прибуття через %{time}.\n\nВи ще в поході 🏕.",
   "exploration.passive.closed_home": "🏰 Ви повернулися з експедиції. Знов у маєтку.",
-  "exploration.passive.test_mode_hint": "⚙️ Тестовий режим: тривалості в секундах.",
   "exploration.passive.report.title": "🏕 <b>Звіт експедиції</b>",
   "exploration.passive.report.depth": "Досягнута глибина: <b>%{km} км</b> 📏",
   "exploration.passive.report.hp": "ОЗ: %{before} → %{after} ❤️",
@@ -926,7 +923,6 @@
   "exploration.passive.report.loot_partial": " <i>(%{dropped} лишилось у лісі — сумка повна)</i>",
   "exploration.passive.report.death.m": "Намісник поліг на %{km} км 💀. Ліс забрав усе незакріплене, що він мав при собі.",
   "exploration.passive.report.death.f": "Намісниця полягла на %{km} км 💀. Ліс забрав усе незакріплене, що вона мала при собі.",
-  "exploration.passive.report.close": "🔙 Закрити",
   "exploration.passive.outcome.nothing": "🕊 тиша",
   "exploration.passive.outcome.loot": "✨ знахідка",
   "exploration.passive.outcome.encounter_won": "⚔️ перемога",

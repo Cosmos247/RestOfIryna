@@ -127,8 +127,10 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `f6fc421256085066` / `ad7bdb94d0efc668` /
-`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-09), 234 tests.
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `f6fc421256085066` / `a23248441d58a78a` /
+`eaea309f4813dfa2` / `30de20902006e3b9` (schema v10, 2026-09-10), 234 tests. `tuning` moved
+twice on 09-09 — the watchman cadence and the passive daily budget, both named in the
+digest before the edit.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×

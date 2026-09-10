@@ -1,6 +1,4 @@
 {
-  "yes": "Yes",
-  "no": "No",
   "registration": "Please select language",
   "lang.name": "English",
   "welcome": "Welcome to <b>RestOfIryna</b> – your Telegram assistant",
@@ -868,7 +866,6 @@
   "exploration.passive.started": "Expected return in %{time}. Your governor has set off on an expedition 🏕.",
   "exploration.passive.inflight": "Expected arrival in %{time}.\n\nYour governor is still on expedition 🏕.",
   "exploration.passive.closed_home": "🏰 You've returned from the expedition. You're back at the estate.",
-  "exploration.passive.test_mode_hint": "⚙️ Test mode: durations are in seconds.",
   "exploration.passive.report.title": "🏕 <b>Expedition report</b>",
   "exploration.passive.report.depth": "Depth reached: <b>%{km} km</b> 📏",
   "exploration.passive.report.hp": "HP: %{before} → %{after} ❤️",
@@ -879,7 +876,6 @@
   "exploration.passive.report.no_loot": "<i>empty-handed</i>",
   "exploration.passive.report.loot_partial": " <i>(%{dropped} dropped — bag full)</i>",
   "exploration.passive.report.death": "Your governor fell at km %{km} 💀. The forest took every unbound thing they carried.",
-  "exploration.passive.report.close": "🔙 Close",
   "exploration.passive.outcome.nothing": "🕊 silence",
   "exploration.passive.outcome.loot": "✨ find",
   "exploration.passive.outcome.encounter_won": "⚔️ victory",
