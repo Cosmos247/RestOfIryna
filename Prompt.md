@@ -87,7 +87,7 @@ push, a Pi build and a restart.
 
 ### What the live-play polish landed (four commits, 2026-09-09 → 10)
 
-**`21284f0` — the router raced, and the edits were aimed at the wrong field.** Three
+**`75a89cc` — the router raced, and the edits were aimed at the wrong field.** Three
 reported symptoms, no game logic among them. `TGDispatcher` chose the controller from a
 `routerName` read before the previous tap had transitioned — the SDK gives every update its
 own `Task.detached` — so a second quick tap was delivered to the controller the first had
