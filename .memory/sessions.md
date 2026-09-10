@@ -9,6 +9,63 @@ content hash `4eac64ff`, no 409, error log empty. The 913 `Code: 400` refusals i
 the log all predate 00:19 — `editScreen` had never actually run on the Pi until
 this deploy, so that count is the baseline to watch, not a symptom.
 
+### One stat under two names, and gear under two stat sets
+
+Spotted by the user: `accuracy` was «Влучність» in some places and «Точність» in
+others. The systematic check found it is the ONLY stat that disagreed — attack,
+defense, crit and dodge match — but the cause is structural: `profile.*` and
+`workshop.stats.*` are two key families for one set of names, kept in step by
+hand, and the four that agree do so by luck. They also feed DIFFERENT screens, so
+the player really did see two words: the sheet, the level-up banner, the item card
+and the fortune effect against the inventory and the workshop. On the fortune
+screen the authored card prose contradicted the generated line directly beneath
+it. Unified on «Влучність», and the glossary in `localization.md` gained all three
+rating stats, since it had listed none of them — the drift lived in that gap.
+
+Auditing the gear renderers for more of the same found two:
+
+- **HP rendered on one screen of five.** Four shipped items carry it — the whole
+  Forester set, +4/+6/+5/+3 — and only `ItemCard`, the shop card shown once before
+  buying, printed it. The inventory, the workshop detail and both upgrade blocks
+  skipped it. Fixed with `profile.health` rather than a new `workshop.stats.hp`:
+  a sixth duplicated pair is the thing that caused the bug above. Two of the four
+  cannot fire today (no weapon rung carries HP and weapons are the only ladder),
+  and that is noted in place — the planned gear ladder puts the Forester set on
+  exactly those rungs.
+- **Crit was labelled a percentage and is a rating.** `+5% 💥 Крит` is 4.16% at
+  level 1 and 1.35% at 40. Dodge and accuracy are the same kind of number and
+  never carried a `%`.
+
+**Every screen shows the bare rating; the `%` is simply gone.** The sheet was
+converted to real percentages first (`CombatService.critPercent` and friends
+exist and were wired), then walked back on the user's call, and the walk-back is
+the interesting part. Percentages on the sheet alone break the only arithmetic a
+player can do: gear is priced in rating, so a `+5 Крит` item moves a level-10
+archer's sheet by 1.92 points and nothing on screen explains the gap. Showing
+BOTH fixed that, but the user preferred one unit everywhere for now — which is
+coherent, because it is the unit the item and the banner already speak.
+
+The constraint worth carrying if percentages come back: **they belong beside the
+rating, not instead of it, and the level-up banner cannot follow either way.**
+The rating grows in rounded proportional steps while the curve's denominator
+grows every level, so 93 of 351 level-up transitions (26%) would announce a drop
+of up to 0.48 points — a warrior's crit falls at nearly every early level. That
+was measured before deciding, and it is what turned "convert both screens" into
+"convert neither, for now".
+
+### A countdown between a minute and an hour hid its seconds
+
+Reported from play right after the turn-back fix, and on the same screen.
+`Countdown.format` printed the two most significant units for hours (`2год 5хв`)
+but only one for minutes, so `1хв` meant anything from 1:00 to 1:59. On a
+two-minute road that band is a whole crossing. The minutes branch now mirrors the
+hours branch — `1хв 22сек` — including the exact-value drop, which is what keeps
+the round callers clean: the five-minute invite window still reads `5хв`, the
+three-hour passive budget `3год`, an hour-long plot cycle `1год`. Nothing above an
+hour moves, nothing below a minute moves, and no locale key was needed. Checked
+all 17 call sites by mirroring the branch arithmetic over the values each one
+actually produces, since `Tests/ROIContentTests` cannot reach `Swift/Helpers`.
+
 ### Turning back twice priced a two-minute road at five seconds
 
 Reported from play with a screenshot: `↩️ Розвернутись` said "back to the estate
@@ -311,6 +368,9 @@ on the trail and five and a half HOURS at the fortune teller — the same string
 two readings, and no way to tell which without knowing the screen.
 `Helpers/Countdown.swift` replaces both: `2год 5хв` · `5хв` · `42сек`, hours only
 when there are any, seconds only in the last minute, no leading zeros (a whole
+**[Amended 2026-09-11: minutes now carry seconds too — `1хв 22сек` — because
+printing them alone made `1хв` mean anything from 1:00 to 1:59, which is a whole
+crossing of doubt on a two-minute road. An exact value still drops its tail.]**
 hour prints `1год`, not `1год 0хв`).
 
 Then every hand-written duration in the copy was deleted, which was the larger

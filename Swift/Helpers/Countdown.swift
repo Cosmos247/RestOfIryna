@@ -10,8 +10,13 @@
 //  The old `MM:SS` / `HH:MM` pair could not be read without knowing which one
 //  a screen used: `05:30` was five and a half minutes on the trail and five
 //  and a half HOURS at the fortune teller. Naming the unit removes the
-//  question, and dropping to seconds inside the last minute is where a
-//  countdown starts being watched rather than glanced at.
+//  question.
+//
+//  The rule is the TWO most significant units that carry a value. Minutes used
+//  to print alone, which made "1хв" mean anything from 1:00 to 1:59 — a whole
+//  crossing of doubt on a two-minute road, and reported from play as simply
+//  hard to read. Hours had shown two units from the start; the pair below now
+//  does the same thing for the same reason.
 //
 //  Unit words come from Lingo so uk stays inside the glossary («год · хв ·
 //  сек»), and every screen shares this one implementation — a second copy is
@@ -23,10 +28,12 @@ import Lingo
 
 enum Countdown {
 
-    /// `2год 5хв` · `5хв` · `42сек`. Hours appear only when there are any;
-    /// seconds only in the last minute, where they are the whole point. No
-    /// leading zero anywhere — this is a sentence the player reads ("arrival
-    /// in 2 min"), not a clock face they scan.
+    /// `2год 5хв` · `1хв 22сек` · `5хв` · `42сек`. The two most significant
+    /// units that carry a value, and an exact one drops its tail rather than
+    /// printing `5хв 0сек` — which is what keeps the whole-minute callers (the
+    /// five-minute invite window, the passive daily budget) clean. No leading
+    /// zero anywhere: this is a sentence the player reads ("arrival in 1хв
+    /// 22сек"), not a clock face they scan.
     static func format(_ seconds: Int, lingo: Lingo, locale: String) -> String {
         let clamped = max(0, seconds)
         let hours = clamped / 3600
@@ -39,7 +46,10 @@ enum Countdown {
             return "\(hours)\(unit("hours", lingo, locale)) \(minutes)\(unit("minutes", lingo, locale))"
         }
         if minutes > 0 {
-            return "\(minutes)\(unit("minutes", lingo, locale))"
+            // Mirrors the hours branch above, including the exact-value drop.
+            let seconds = clamped % 60
+            guard seconds > 0 else { return "\(minutes)\(unit("minutes", lingo, locale))" }
+            return "\(minutes)\(unit("minutes", lingo, locale)) \(seconds)\(unit("seconds", lingo, locale))"
         }
         return "\(clamped % 60)\(unit("seconds", lingo, locale))"
     }

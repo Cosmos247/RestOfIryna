@@ -768,8 +768,11 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             if stats.defense != 0 {
                 statLines.append("   +\(stats.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))")
             }
+            if stats.hp != 0 {
+                statLines.append("   +\(stats.hp) ❤️ \(lingo.localize("profile.health", locale: locale))")
+            }
             if stats.crit != 0 {
-                statLines.append("   +\(stats.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))")
+                statLines.append("   +\(stats.crit) 💥 \(lingo.localize("workshop.stats.crit", locale: locale))")
             }
             if stats.dodge != 0 {
                 statLines.append("   +\(stats.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))")
@@ -2539,11 +2542,18 @@ extension EstateController {
     /// Render only the non-zero stat fields of a `GearStats` value as
     /// "+N <icon> <name>" lines. Used for the current-tier block on the
     /// upgrade detail screen.
+    ///
+    /// All SIX fields, in `GearStats` order. HP was missing until 2026-09-11,
+    /// which made the doc comment above a lie by one field. It cannot fire
+    /// today — no weapon rung carries HP, and weapons are the only thing with a
+    /// ladder — but the planned gear ladder puts the Forester set on these
+    /// rungs, and the Forester set is exactly the four items that DO carry HP.
     private func formatStatLines(stats: GearStats, lingo: Lingo, locale: String, prefix: String) -> [String] {
         var out: [String] = []
         if stats.attack != 0   { out.append("\(prefix)+\(stats.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
         if stats.defense != 0  { out.append("\(prefix)+\(stats.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
-        if stats.crit != 0     { out.append("\(prefix)+\(stats.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
+        if stats.hp != 0       { out.append("\(prefix)+\(stats.hp) ❤️ \(lingo.localize("profile.health", locale: locale))") }
+        if stats.crit != 0     { out.append("\(prefix)+\(stats.crit) 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
         if stats.dodge != 0    { out.append("\(prefix)+\(stats.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
         if stats.accuracy != 0 { out.append("\(prefix)+\(stats.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
         return out
@@ -2561,7 +2571,8 @@ extension EstateController {
         var out: [String] = []
         if let l = line(from.attack,   to.attack,   "",  "⚔️ \(lingo.localize("workshop.stats.attack",   locale: locale))") { out.append(l) }
         if let l = line(from.defense,  to.defense,  "",  "🛡 \(lingo.localize("workshop.stats.defense",  locale: locale))") { out.append(l) }
-        if let l = line(from.crit,     to.crit,     "%", "💥 \(lingo.localize("workshop.stats.crit",     locale: locale))") { out.append(l) }
+        if let l = line(from.hp,       to.hp,       "",  "❤️ \(lingo.localize("profile.health",          locale: locale))") { out.append(l) }
+        if let l = line(from.crit,     to.crit,     "",  "💥 \(lingo.localize("workshop.stats.crit",     locale: locale))") { out.append(l) }
         if let l = line(from.dodge,    to.dodge,    "",  "💨 \(lingo.localize("workshop.stats.dodge",    locale: locale))") { out.append(l) }
         if let l = line(from.accuracy, to.accuracy, "",  "🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") { out.append(l) }
         return out

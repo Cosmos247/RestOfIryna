@@ -49,7 +49,17 @@ public enum LevelUpBanner {
         lines.append("🛡 \(label("profile.defense")): \(user.effectiveDefense)\(gain(growth.defense))")
         lines.append("🎯 \(label("profile.accuracy")): \(user.effectiveAccuracy)\(gain(growth.accuracy))")
         lines.append("💨 \(label("profile.dodge")): \(user.effectiveDodge)\(gain(growth.dodge))")
-        lines.append("💥 \(label("profile.crit")): \(user.effectiveCrit)%\(gain(growth.crit))")
+        // Ratings here, NOT the percentages the character sheet shows — and the
+        // `%` this line used to carry was simply false, since `effectiveCrit` is
+        // a rating. The two screens answer different questions on purpose: this
+        // one reports what the level GRANTED, which is always a gain, while the
+        // sheet reports what the ratings are currently worth. Converting this
+        // line would be worse than inconsistent, it would be wrong-feeling: the
+        // rating grows in rounded proportional steps while the curve's
+        // denominator grows every level, so **26% of level-ups would announce a
+        // DROP** (up to −0.48 points; a warrior's crit falls at nearly every
+        // early level). A celebration screen must not report a loss.
+        lines.append("💥 \(label("profile.crit")): \(user.effectiveCrit)\(gain(growth.crit))")
 
         return lines.joined(separator: "\n")
     }

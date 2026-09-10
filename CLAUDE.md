@@ -142,12 +142,39 @@ earlier run is exactly the tap that would overspend; the charge lands after
 `beginPassive` succeeds, so a failed start never costs the player a run.
 
 **Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв`
-· `5хв` · `42сек`, hours only when there are any, seconds only in the last minute.
+· `1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value,
+with an exact one dropping its tail so a whole-minute window still reads `5хв`.
+Minutes printed alone until 2026-09-11, which made `1хв` mean anything from 1:00 to
+1:59 — a whole crossing of doubt on a two-minute road.
 The `MM:SS` / `HH:MM` pair it replaced could not be told apart: `05:30` was five
 and a half MINUTES on the trail and five and a half HOURS at the fortune teller.
 Durations are never written into copy either — the expedition buttons, the tarot
 "active for" prefix and the invite window are all printed from the values that own
 them.
+
+**A rating is a rating on every screen, and is never labelled `%`.**
+`crit` · `dodge` · `accuracy` are RATINGS converted through a level-linear curve
+(`CombatMath.percent`), so the same +5 crit is 4.16% at level 1 and 1.35% at the
+cap. The character sheet printed `12%` beside a raw rating until 2026-09-11 —
+roughly true at level 1 and threefold wrong at the end, the same rot a flat bonus
+has — and four gear screens did the same. All of them print the bare rating now,
+so the three screens a player compares add up exactly against each other: an item
+grants a rating, the level-up banner reports the rating gained, the sheet shows
+the rating held. `CombatService.critPercent` / `dodgePercent` / `accuracyPercent`
+exist for when the sheet is ready to say what a rating is WORTH; when that lands
+it belongs BESIDE the rating rather than instead of it, because **the level-up
+banner cannot follow** — the rating grows in rounded proportional steps while the
+curve's denominator grows every level, so 26% of level-ups (93 of 351) would
+announce a drop of up to 0.48 points, and a celebration screen must not report a
+loss.
+
+**Every gear screen renders all six `GearStats` fields, HP included.** Four of
+the five skipped HP until 2026-09-11, which hid the whole Forester set's +18 max
+HP everywhere except the shop card a player sees once before buying. HP reuses
+`profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and
+`workshop.stats.*` are already two families for one set of names kept in step by
+hand, and that duplication is exactly how `accuracy` shipped as «Влучність» on
+two screens and «Точність» on two others.
 
 **The warehouse cap is enforced on every path in, including the plot harvest.**
 Hand deposits always checked it; `PlotService.harvest(to: .warehouse)` did not,

@@ -397,6 +397,21 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let hp = session.hp, maxHp = session.effectiveMaxHp
         let vigor = session.vigor, maxVigor = session.maxVigor
         let atk = session.effectiveAttack, def = session.effectiveDefense
+        // All three rating stats print the RATING, and none of them prints a
+        // `%`. This line used to read `12%` beside `effectiveCrit`, which is a
+        // rating and never was a percentage: +5 crit is 4.16% at level 1 and
+        // 1.35% at the cap, so the label was roughly true at the start and
+        // threefold wrong at the end — the same rot a flat bonus has.
+        //
+        // Dropping the sign rather than converting keeps every screen in ONE
+        // unit: an item grants a rating, the level-up banner reports the rating
+        // gained, and this sheet shows the rating held, so all three add up
+        // against each other. Printing what a rating is WORTH
+        // (`CombatService.critPercent` and friends, which exist) is deferred
+        // rather than rejected — and if it comes back, it belongs BESIDE the
+        // rating, not instead of it, because the banner cannot follow: the
+        // percentage falls on 26% of level-ups and a celebration screen must
+        // not report a loss.
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
         let silver = session.silver
         let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
@@ -463,7 +478,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
         ⚔️ \(l.localize("profile.attack", locale: loc)): \(atk)    🛡 \(l.localize("profile.defense", locale: loc)): \(def)
         🎯 \(l.localize("profile.accuracy", locale: loc)): \(acc)    💨 \(l.localize("profile.dodge", locale: loc)): \(dodge)
-        💥 \(l.localize("profile.crit", locale: loc)): \(crit)%
+        💥 \(l.localize("profile.crit", locale: loc)): \(crit)
 
         \(mainHandLine)
         🪙 \(silver) \(l.localize("profile.silver", locale: loc))

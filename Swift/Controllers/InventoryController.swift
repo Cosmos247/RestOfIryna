@@ -265,9 +265,18 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         // Stats at full condition (so the player sees the piece's real value).
         let s = EquipmentService.nominalStats(of: row, for: user)
         var statLines: [String] = []
+        // Same six stats, in the same order, as `ItemCard` and `GearStats`
+        // itself. HP was missing here until 2026-09-11, which hid the whole
+        // Forester set's HP everywhere except the shop card the player saw
+        // once before buying. `profile.health` rather than a new
+        // `workshop.stats.hp`: a sixth duplicated pair is what produced the
+        // Влучність / Точність split. Crit carries NO `%` — it is a rating
+        // converted through a curve, so "+5%" is 4.2% at level 1 and 1.35% at
+        // the cap.
         if s.attack   != 0 { statLines.append("   +\(s.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
         if s.defense  != 0 { statLines.append("   +\(s.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
-        if s.crit     != 0 { statLines.append("   +\(s.crit)% 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
+        if s.hp       != 0 { statLines.append("   +\(s.hp) ❤️ \(lingo.localize("profile.health", locale: locale))") }
+        if s.crit     != 0 { statLines.append("   +\(s.crit) 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
         if s.dodge    != 0 { statLines.append("   +\(s.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
         if s.accuracy != 0 { statLines.append("   +\(s.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
         if !statLines.isEmpty {

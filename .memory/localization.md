@@ -137,6 +137,21 @@ If you must keep the emoji in the template for some reason:
 | attack | `АТК` | `Атака` | ATK |
 | defense | `ЗАХ` | `Захист` | DEF |
 | loot | `здобич` / `здобичі` (e.g. "шанс здобичі") | — | loot |
+| accuracy | `влучність` | `Влучність` | Accuracy |
+| dodge | `ухилення` | `Ухилення` | Dodge |
+| crit | `крит` | `Крит` | Crit |
+
+The three rating stats were added 2026-09-11, after `accuracy` was found under two
+names: `profile.accuracy` said «Влучність» and `workshop.stats.accuracy` said
+«Точність», and the two keys feed DIFFERENT screens — the character sheet, the
+level-up banner, the item card and the fortune effect against the inventory and
+the workshop. Same 🎯, same number, two words, and on the fortune screen the
+authored card prose contradicted the generated line directly beneath it.
+«Влучність» wins: it is what the character sheet calls it and what the archer's
+whole vocabulary is built on («Влучний постріл», «влучні постріли»), while
+«точність» is exactness, not hitting. **`profile.*` and `workshop.stats.*` are two
+key families for one set of stat names and are kept in step only by hand** — attack,
+defense, crit and dodge agree today by luck rather than by anything mechanical.
 
 Rule: English stat tokens stay only in `en.json`; never copy them into `uk.json`. Numeric units use the abbreviation (`ОЗ`/`АТК`/`ЗАХ`) except XP which the user wants spelled out (`досвіду`); vigor has no abbreviation (`Снага`/`снаги`). Labels and "fully restored" status lines use full words. Mind case agreement (`здобич` is feminine → `яку`, not `який`).
 

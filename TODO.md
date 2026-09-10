@@ -1059,6 +1059,33 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (78–87 days) is measurable from here on; it never was before.
+  - [x] **The same stat had two names, and gear had two stat sets** *(2026-09-11,
+        reported from play)* — `accuracy` was «Влучність» on the character sheet, the
+        level-up banner, the item card and the fortune effect, and «Точність» in the
+        inventory and the workshop: two key families (`profile.*` / `workshop.stats.*`)
+        kept in step only by hand, and the glossary listed neither of the three rating
+        stats. Unified on «Влучність» — the sheet's word, and the root the whole archer
+        vocabulary is built on. Auditing the gear renderers for the same class turned up
+        two more: **HP was missing from four of the five**, hiding the entire Forester
+        set's HP (+4/+6/+5/+3) everywhere except the shop card seen once before buying;
+        and **crit was labelled `%` on four of them** though it is a rating worth 4.2% at
+        level 1 and 1.35% at the cap. All five now render the same six fields in
+        `GearStats` order, and the false `%` is gone from the character sheet too — every
+        screen now speaks the one unit gear is priced in, so item, banner and sheet add up
+        against each other. Converting the sheet to real percentages was built and then
+        walked back deliberately: it breaks that arithmetic on its own, and the level-up
+        banner cannot follow it in any case, because the percentage falls on **26% of
+        level-ups** (93 of 351, to −0.48 points) and a celebration screen must not announce
+        a loss. `CombatService.critPercent` and friends are there for when it returns —
+        beside the rating, not instead of it.
+  - [x] **A countdown between a minute and an hour hid its seconds** *(2026-09-11,
+        reported from play)* — `Countdown.format` printed two units for hours (`2год 5хв`)
+        and one for minutes, so `1хв` covered everything from 1:00 to 1:59. On a two-minute
+        road that is a whole crossing of doubt, and the road is where it was noticed. The
+        minutes branch now mirrors the hours branch: `1хв 22сек`, with an exact value still
+        dropping its tail, so the whole-minute callers stay clean — the five-minute invite
+        window is still `5хв` and the three-hour passive budget still `3год`. One formatter,
+        17 call sites, no new locale keys. Only non-round durations under an hour change.
   - [x] **Turning back twice priced a two-minute road at five seconds** *(2026-09-11,
         reported from play)* — `↩️ Розвернутись` said "back to the estate — 7s", then a
         second tap said "back to the capital — 5s". `turnBack` read the walk already done
