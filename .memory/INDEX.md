@@ -20,30 +20,53 @@ Session-persistent knowledge base. Each entry links to a detailed file.
     is a ladder whose top rung is the 25% ceiling, and the Forester set is its weakest rung
   - **`spec-economy.md`** — silver has almost no sink; `lootMultiplier` multiplies quantity; and
     §2 on the opening, **amended 2026-09-02 by its own measurement**: the opening is not
-    Vigor-bankrupt, the *shallow* opening is (km 1 nets −374, km 4 nets +40). Quotes
+    Vigor-bankrupt, the *shallow* opening is (km 1 nets −335, km 4 nets +44). Quotes
     `roi-content spec opening`
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is a pre-rebalance reference doc, marked SUPERSEDED
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates
 - [Implemented vs Planned](status.md) — What exists now vs what GDD describes, plus the rebalance phase table
-- [Rebalance](rebalance.md) — **Active work.** Audit findings, locked decisions, the calibrated math model, the phase tracker (**3–10 done · 11 all but closed** — ledger and wipe 2026-09-02, invite-only access and the Pi deployment 09-08/09, `scale` 60→1.0 on 09-09; what remains is a deliberate first-hour walkthrough) and the per-phase lessons
+- [Rebalance](rebalance.md) — **Active work.** Audit findings, locked decisions, the calibrated math model, the phase tracker (**3–11 done; 11 closed as CODE** — ledger and wipe 2026-09-02, invite-only access and the Pi deployment 09-08/09, `scale` 60→1.0 on 09-09) and the per-phase lessons. What follows Phase 11 is **live-play polish**, tracked in the section below and in `Prompt.md`; what is still owed is a deliberate first-hour walkthrough
 
 ## Patterns & Conventions
 - [Controller Pattern](controller-pattern.md) — How to build/register controllers, routing, keyboards
 - [Session & Auth](session-auth.md) — User model, session cache, authorization flow
 - [Localization](localization.md) — Lingo setup, JSON structure, interpolation, adding locales
 
-## Live-play polish (2026-09-09 → 10) — the work in flight
+## Live-play polish (2026-09-09 → 11) — the work in flight
 
 Phase 11 is closed as CODE; what is happening now is **fixing what playing the deployed
-build reveals**. Eight commits, full narrative in [Session History](sessions.md)
-(the 2026-09-09 and 2026-09-10 entries).
+build reveals**. Eleven commits, full narrative in [Session History](sessions.md)
+(the 2026-09-09 → 09-11 entries).
 
-- **The bot is live on the Pi running `509f2db`**; `04bd80d` and everything after it is
-  NOT deployed — seven commits at the time of writing. The deploy recipe — including the
-  swiftenv `PATH` trap that stops a non-interactive `ssh` from finding `swift` at all — is
-  in `Prompt.md` → "Next action".
+- **The bot is live on the Pi running `fea2343`** (content hash `4eac64ff`, **schema v11**),
+  and local / `origin/main` / the Pi are all on that same commit — nothing pending. The
+  deploy recipe, including the swiftenv `PATH` trap that stops a non-interactive `ssh` from
+  finding `swift` at all and the Linux `--content-digest` pre-flight worth running before
+  any restart, is in `Prompt.md` → "Next action".
+- **The forest was empty on the way home** — the revisit-decay table decayed the wrong
+  bucket: encounters fell 40→20→0 while forage held at 45→45→25, backwards in the fiction
+  since a beast wanders back onto a walked km and a stripped bush does not regrow. The walk
+  home is ALWAYS tier 1 by construction, so 35% of its steps were dead and a run of three
+  ran at 37.9% per return leg. Tier 1 is `8/35/52/5` now. **Tier 1 was also the whole
+  passive expedition**, so passive took its own required `passive.weights` row — schema
+  v10 → v11. See [Rebalance](rebalance.md) and the auto-memory
+  `project-exploration-return-leg`.
+- **A rating is a rating on every screen and is never labelled `%`** — `crit`/`dodge`/
+  `accuracy` convert through a level-linear curve, and the sheet plus four gear screens
+  printed the raw rating with a `%`. Every screen shows the bare rating now, deliberately:
+  gear is priced in rating, so percentages on the sheet alone break the only arithmetic a
+  player can do. Auto-memory `project-rating-vs-percent-display`.
+- **Every gear screen renders all six `GearStats` fields** — four of five skipped HP, which
+  hid the Forester set's +18 max HP everywhere but the shop card. Reuses `profile.health`
+  rather than adding a sixth duplicated key pair.
+- **A row created mid-flight cannot be located from `createdAt`** — `TravelService.turnBack`
+  measured the walk done as `now − createdAt`, right only for a leg that began at an
+  endpoint, so a second turn-back priced a two-minute road at five seconds. `endsAt` is
+  anchored to a destination and therefore locates any row; the alternative the original
+  commit explicitly rejected was the correct one, and its reasoning is marked superseded in
+  place rather than deleted. Auto-memory `feedback-audit-what-else-reads-it`.
 - **The dispatcher raced itself.** The SDK gives every update its own `Task.detached`, and
   the router used to be chosen from a `routerName` read before the previous tap had
   transitioned — so a second quick tap reached the controller the first had just left. The

@@ -146,7 +146,7 @@ the estate a reason to exist.
 > locked (it is an estate room, opening at the level this stretch ENDS at) and
 > counted no foraging, while 79 is the flat 788 ÷ 10 before the level-gap scaler.
 > The conclusion this paragraph draws is **strengthened, not weakened** — km 1
-> nets −374 and km 4 nets +40, so walking deeper is not merely faster, it is what
+> nets −335 and km 4 nets +44, so walking deeper is not merely faster, it is what
 > makes the opening solvent at all. Measured table in `spec-economy.md` §2,
 > printed by `roi-content spec opening`.
 

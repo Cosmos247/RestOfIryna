@@ -107,7 +107,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 8E Vigor rework — no passive regen | ✅ regen removed · `FoodBudget` pace model · food plots retuned to 85–93 days (reads 78–87 since 09-10) · `zones.json` |
 | 9 Content specs (approval gate) | ✅ **5 of 5** — progression · bestiary · items · sets · economy |
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
-| 11 Wipe + final pass | ⬜ — the opening ledger (its one pre-playtest debt) landed 2026-09-02 |
+| 11 Wipe + final pass | ✅ **closed as CODE** — opening ledger + wipe 2026-09-02 · invite-only access 09-08 · Pi deployment and `scale` 1.0 09-09. What follows is live-play polish, eleven commits 09-09 → 09-11, tracked in `sessions.md` and `Prompt.md` rather than here |
 
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 

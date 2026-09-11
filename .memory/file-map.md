@@ -49,7 +49,7 @@ RestOfIryna/
 │                                #   still holds a row, so a table added later fails the boot
 │                                #   rather than surviving the wipe
 ├── Tests/
-│   └── ROIContentTests/            # 234 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
+│   └── ROIContentTests/            # 236 tests: DTO defaults/round-trip, validator rules, ladder integrity + tier-aware locale keys, LocaleIndex gendered keys + emoji rule
 │                                #   Files: ContentDTOTests · ContentValidatorTests · WeaponLadderTests · LocaleIndexTests ·
 │                                #   CapitalCatalogTests · EstateAndNPCCatalogTests · **TuningTests** (Phase 4) ·
 │                                #   **BestiaryTests** (5A) · **BudgetTests** (6) · **LiveReferenceTests** (7) ·

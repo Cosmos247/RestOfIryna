@@ -33,52 +33,47 @@ the maths. **This is the only work in flight.**
 - Decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where we stopped (2026-09-10)
+### Where we stopped (2026-09-11)
 
 **Phases 3–10 are done. Phase 11 is closed as CODE** — the wipe, the opening ledger,
 invite-only access, the Pi deployment and `scale` 1.0 all landed by 09-09. Since then the
 work has been **live-play polish: fixing what playing the deployed build revealed.**
 
-**The bot is LIVE on the Pi, running `509f2db`** (restarted 2026-09-09 23:42, content hash
-`954b2608`, three migrations applied clean: `AddFortuneOneShot`, `AddNotificationFlags`,
-`AddPassiveDailyBudget`). **Eight commits plus the working tree are NOT deployed** —
-everything from `04bd80d` onward. None adds a migration, but the newest one DOES move
-content and bumps the schema to **v11**, so it is no longer a Swift-only deploy: the Pi
-needs the new `content/data` and the new binary TOGETHER, because a v10 bundle under a v11
-binary is refused at the handshake by design. The deploy is a push, a Pi build and a
-restart; `/reload` cannot carry it, because the schema bump and the locale keys both need
-the restart.
+**The bot is LIVE on the Pi running `fea2343`** (restarted 2026-09-11 01:26, content hash
+`4eac64ff`, **schema v11**). **Nothing is pending: local, `origin/main` and the Pi are all
+on the same commit,** and the working tree is clean. Three deploys ran on 09-10/11 and each
+booted clean with an empty error log.
 
-**What a fresh session should know about the last one.** Everything below the "Next action"
-box is background; the work of 2026-09-10 was three player reports and two audits, and it
-produced no new mechanics beyond the turn-back button. All five commits are described under
-"What the live-play polish landed". The pattern worth carrying: every defect this session
-came from someone PLAYING, none from a test, and each one was a place where the code was
-right and could not say so — a race the log did not name, a refusal that blamed the wrong
-thing, a keyboard nobody re-asserted.
+**What a fresh session should know about the last one.** Eleven commits of live-play polish
+now sit on top of `509f2db`, and every single defect came from someone PLAYING — none from
+a test. The pattern worth carrying: each one was a place where the code was right and could
+not say so, or where a number was shown in a unit it was not measured in. Three of the last
+four were found by the user glancing at a screen, not by running anything.
 
-> ## Next action: watch the log this build now writes, then keep walking
+> ## Next action: walk the three surfaces this build changed, then the untouched ones
 >
-> **1. The Telegram API errors are fixed but UNPROVEN in the wild** (2026-09-10). All 20
-> edit call sites go through `editScreen`, and the client classifies refusals, so the log
-> should now be nearly empty of 400s. Three lines are the payoff and want checking after
-> the next restart:
+> **1. The API-error fix is PROVEN, and that box can close.** `Code: 400` in the Pi log
+> stood at **913 before the `editScreen` deploy and 913 an hour after it**, with
+> `[ROUTE]` / `[COMBAT]` / `[SCREEN]` all silent. Keep the check cheap, but it is no
+> longer the open question it was:
 >
 > ```
-> ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # should stop growing
+> ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # baseline 913
 > ssh rpi5@192.168.0.203 'grep -E "\[ROUTE\]|\[COMBAT\]|\[SCREEN\]" ~/.pm2/logs/ROI-out.log'
 > ```
 >
-> `[ROUTE]` means two taps raced and the second was re-aimed at the live controller —
-> it MEASURES the race that produced the wrong-keyboard reports. `[COMBAT]` should be
-> silent now that routing is fixed; if it appears, routerName and the expedition row are
-> disagreeing for some other reason. `[SCREEN]` names a call site whose `isPhoto` guess is
-> wrong (recovered) or an edit that failed both ways (not recovered).
+> **2. Three surfaces changed on 09-10/11 and NONE has been walked yet:**
+> - **the forest on the way home** — the return leg should now be noticeably more
+>   fight-heavy than the walk out (8.8 fights over 17 km against 3.4 before). Walk to
+>   km 15–18 and back on foot. With a full bag and low HP this is a real risk: death
+>   still wipes the whole unequipped bag.
+> - **the road** — turn back twice in a row; the second should quote most of the
+>   crossing (~`1хв 58сек`), not five seconds, and now shows seconds at all.
+> - **the character sheet and any Forester piece** — three rating stats with no `%`,
+>   and a `❤️ Здоров'я` line on armour that was invisible before.
 >
-> **2. Keep walking the first hour.** The user IS playing and reporting — that is how
-> every fix below was found. What has NOT been walked deliberately: a fight lost, a
-> **flee**, the trade screens, and one run of **`/reload` + `/content`**, which have still
-> never executed against a real database.
+> **3. Still never walked, from the older list:** a fight lost, a **flee**, the trade
+> screens, and one run of **`/reload` + `/content`** against a real database.
 >
 > **Deploying to the Pi — the recipe, with the trap that cost ten minutes on 09-09:**
 >
@@ -90,17 +85,43 @@ thing, a keyboard nobody re-asserted.
 > ssh rpi5@192.168.0.203 'cd ~/RestOfIryna && setsid nohup env \
 >   PATH="$HOME/.swiftenv/bin:$HOME/.swiftenv/shims:$PATH" swift build \
 >   > /tmp/roi-build.log 2>&1 < /dev/null &'
-> # Wait on `pgrep -x swift-build` — NEVER `pgrep -f swift-build`, which matches the
-> # ssh command's own argument string and waits forever on nothing.
 > ```
 >
-> A full build touching `User.swift` is ~2 minutes on the Pi (it recompiles the whole app
-> module); a few files is ~80 s. **Then ASK before `pm2 restart ROI`.** A content-only edit
-> needs no restart — `/reload` re-reads `content/data`; new locale strings DO need one.
+> That `ssh` **blocks until the build finishes** despite the `&` — measured 111 s for a
+> full rebuild, 33 s for a few files — so a follow-up check finds it already done. If you
+> poll anyway, use `pgrep -x swift-build`, NEVER `-f`, which matches the ssh command's own
+> argument string and waits forever on nothing. A content or schema change must ship the
+> new `content/data` and the new binary TOGETHER: a v10 bundle under a v11 binary is
+> refused at the handshake by design. **Then ASK before `pm2 restart ROI`.** Worth doing
+> first, and free: run `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna
+> --content-digest` on the Pi — it exercises parse → validate → install under Linux and
+> prints all four halves to compare against the Mac, without touching the running bot.
 
-### What the live-play polish landed (eight commits + the working tree, 2026-09-09 → 10)
+### What the live-play polish landed (eleven commits, 2026-09-09 → 11)
 
-**Uncommitted — the forest stopped being empty on the way home.** Reported from play with
+**`fea2343` — one name per stat, one unit per number.** Three screen-reading reports in a
+row, none of them game logic. `Countdown.format` printed two units for hours but one for
+minutes, so `1хв` covered 1:00 to 1:59 — the whole doubt of a two-minute road; the minutes
+branch mirrors the hours branch now (`1хв 22сек`), with the exact-value drop keeping round
+callers clean. `accuracy` had TWO Ukrainian names, «Влучність» on four screens and
+«Точність» on two, because `profile.*` and `workshop.stats.*` are two key families kept in
+step by hand — the other four stats agree by luck. Auditing the gear renderers for the same
+fault found **HP rendered on one screen of five** (hiding the Forester set's +18 max HP
+everywhere but the shop card) and **crit labelled `%` though it is a rating** (+5 crit is
+4.16% at level 1 and 1.35% at the cap). All five renderers now print the same six
+`GearStats` fields, and no rating anywhere carries a `%` — the character sheet included.
+Converting the sheet to real percentages was built and then deliberately walked back: gear
+is priced in rating, so percentages there break the only arithmetic a player can do.
+
+**`9a774ae` — a turned leg starts in the middle of the road.** `turnBack` measured the walk
+already done as `now − createdAt`, which locates only a leg that BEGAN at an endpoint; a
+turn-back row is created mid-road, so a second turn-back priced a two-minute road at five
+seconds. It reads `travelSeconds − remaining` from `endsAt` now, which is anchored to a
+destination and therefore locates any row. The alternative the original commit explicitly
+rejected was the correct one, and that note is marked superseded in place rather than
+deleted.
+
+**`4f0b54d` — the forest stopped being empty on the way home.** Reported from play with
 two screenshots: three "Сліди витоптані" and three roots in six steps. The decay table was
 decaying the WRONG bucket — encounters fell 40 → 20 → 0 while forage held at 45 → 45 → 25,
 which is backwards in the fiction: a beast wanders back onto a km you passed an hour ago, a
@@ -458,7 +479,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 234 tests, ~0.2s
+swift test                                   # 236 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
