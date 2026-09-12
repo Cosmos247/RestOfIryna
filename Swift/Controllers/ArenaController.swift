@@ -283,20 +283,21 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             "today": "\(profile.fightsSpentToday())", "cap": "\(ArenaCatalog.dailyFightCap)"
         ])
 
-        // Top of the ladder.
-        let top = try await ArenaProfile.leaderboard(limit: 10, on: context.db)
+        // Top of the ladder — the SAME rows the journal's 🎖 board renders, from
+        // `LeaderboardService`, not a second query with a second idea of what a
+        // rank is. This screen used to walk the page with `var rank = 1`, so two
+        // fighters on equal honor showed as 1st and 2nd here and shared 🥇
+        // there: one ladder, two screens, two answers. It also did a
+        // `User.find` per row; the service loads the owners with the page.
+        let view = try await LeaderboardService.view(.honor, for: context.session, on: context.db)
         body += "\n\n<b>\(lingo.localize("arena.leaderboard.title", locale: locale))</b>"
-        if top.isEmpty {
+        if view.top.isEmpty {
             body += "\n<i>\(lingo.localize("arena.leaderboard.empty", locale: locale))</i>"
         } else {
-            var rank = 1
-            for p in top {
-                let owner = try await User.find(p.$user.id, on: context.db)
-                let nick = owner?.nickname ?? "—"
+            for entry in view.top {
                 body += "\n" + lingo.localize("arena.leaderboard.row", locale: locale, interpolations: [
-                    "rank": "\(rank)", "nick": nick, "honor": "\(p.honor)"
+                    "rank": "\(entry.rank)", "nick": entry.name, "honor": "\(entry.value)"
                 ])
-                rank += 1
             }
         }
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: nil)

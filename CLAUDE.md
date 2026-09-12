@@ -152,8 +152,10 @@ four boards behind the journal say «Рейтинги» to the player and `Leade
 identifier. They are ALL-TIME, which is the first period and not the only one: seasons are
 a decided direction, and a seasonal board will be a second READING of a metric with its own
 storage — **never a reset of `deepestKm` / `totalKmWalked`**, because zeroing those destroys
-the all-time board to build the seasonal one. Auto-memory
-`project-leaderboards-will-go-seasonal`.
+the all-time board to build the seasonal one. **One ladder, one implementation:** the Arena's
+own «Найкращі бійці» renders the same `LeaderboardService.view(.honor,…)` as the journal's
+board, because two screens that rank the same rows with two code paths disagreed about ties
+for four months before anyone looked. Auto-memory `project-leaderboards-will-go-seasonal`.
 
 **A lifetime counter has exactly one writer.** `deepestKm` and `totalKmWalked` are written
 only by `User.recordWalk(toKm:)`, called from `ExplorationService.rollStep` — the funnel all

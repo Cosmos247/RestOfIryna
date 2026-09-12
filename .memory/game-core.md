@@ -84,6 +84,13 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - **Two objective shapes.** "Hand over N items" is checked live against the bag and consumes the items on turn-in; "do X N times" is counted from gameplay events (beast kills, forge output, trader sales, tavern wins).
 - The journal on the profile screen is a *status* screen only — it shows progress and the countdown to the next rollover, but rewards are always collected from the NPC who gave the job, so the trip to the capital keeps its weight.
 
+### Leaderboards *(shipped 2026-09-12)*
+- Four **all-time** boards behind the quest journal, as tabs redrawing one message: ⚔️ level, 🎖 arena honor, 🌲 deepest km ever, 🚶 total km walked. Read-only, like the journal itself.
+- **Ties share a place** and rank is computed on the board's own metric — the secondary sort only orders the display, because a board headed «Рівень» that put two level-24 players at 1st and 2nd would show the same number twice with nothing explaining the gap.
+- The two walking boards read `users.deepest_km` / `users.total_km_walked`, **the first cumulative counters this game has ever stored**. Nothing could be backfilled: a depth record lived only in `exploration_state.steps_deep`, which is deleted when the expedition ends. Both started at 0 on 2026-09-12.
+- The 🎖 board and the Arena's own «Найкращі бійці» render from the SAME `LeaderboardService`, so the two screens cannot disagree about who is second.
+- **All-time is the first period, not the only one** — seasons are a decided direction, and a seasonal board will be a second reading with its own storage, never a reset of a lifetime column. Auto-memory `project-leaderboards-will-go-seasonal`.
+
 ### Pets & Taming
 - 2-5% chance on encounter -> Attempt to Cure button
 - Pet stats mirror player stats + Level, Species, Bond

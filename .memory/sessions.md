@@ -65,11 +65,41 @@ by crit/dodge/accuracy. All-time is the first period, not the only one; seasons 
 decided direction and must never be built by zeroing a lifetime column. Auto-memory
 `project-leaderboards-will-go-seasonal`.
 
+### What the pre-commit audit caught
+
+Four things, all found by reading the diff rather than by a test:
+
+1. **The doc comment for `estateLevel` was corrupted** — the new field block landed between
+   that comment and its own field, so the estate lost its documentation and the walking
+   counters inherited it. Invisible to the compiler; obvious in the diff.
+2. **The viewer was queried separately even when already on the page** — wasted queries, and
+   two snapshots of one row that could in principle disagree between the list and the line
+   under the rule. The listed row is reused now.
+3. **`LeaderboardView.board` was written three times and never read.** Removed.
+4. **The 🎖 board already existed.** `ArenaController` had been rendering the same honor
+   ladder since Phase 8.3, with `var rank = 1` (no tie-sharing) and a `User.find` per row —
+   so equal honor showed as 1st and 2nd in the Arena and shared 🥇 in the journal. One
+   ladder, two screens, two answers. The Arena now renders `LeaderboardService.view(.honor,…)`
+   and `ArenaProfile.leaderboard(limit:)` is deleted. **The grep that would have found this
+   before writing a second board is "does a screen like this already exist"** — the same
+   discipline as `feedback-audit-what-else-reads-it`, applied to a feature rather than a
+   tuning value.
+
+A fifth was a claim, not code: "two queries per view" had already reached four documents
+before the honor board's third query and the page-reuse fix made it wrong twice over. Same
+class as the previous commit's hand-counted prose.
+
 ### Verification
 
 Build clean · 236 tests · `validate --strict` 0/0 · all four digest hashes byte-identical ·
-ranking checked standalone across 9 tie shapes. **Not deployed** — new code AND a migration,
-so it needs a rebuild and a `pm2 restart`, and the migration runs on that start.
+ranking checked standalone across 9 tie shapes · no orphan locale keys · every new symbol
+referenced.
+
+**DEPLOYED 2026-09-12 19:43 Kyiv.** Linux build 64.4 s, all four digest hashes identical to
+the Mac's, `AddWalkCounters` prepare → finish in the startup log, and the database confirms
+it directly: both columns `bigint DEFAULT 0`, all four indexes present, 5 users and **zero
+NULLs** — the ADD COLUMN default backfilled exactly as expected. `Code: 400` held at its 913
+baseline, stderr empty, no `[ROUTE]` / `[COMBAT]` / `[SCREEN]`, 0 unstable restarts.
 
 ## Session — 2026-09-12 (a root that looked twice as strong)
 
@@ -154,8 +184,7 @@ Build clean · 236 tests · `validate --strict` 0/0 · **all four digest hashes 
 `simulate` not re-run: `ROISim` never referenced `StepOutcome`, and none of the four
 balance tables were touched.
 
-**Not deployed.** The Pi still runs `fea2343`; this needs a rebuild and a `pm2 restart`,
-not a `/reload` — it is game code, not content.
+**Deployed 2026-09-12 19:43 Kyiv**, in the same restart as the leaderboards.
 
 ## Session — 2026-09-12 (the docs stopped being a changelog)
 

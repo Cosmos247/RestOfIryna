@@ -32,7 +32,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 ## Where the work stands
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
-  fixing what playing the deployed build reveals. Eleven commits, 2026-09-09 → 11.
+  fixing what playing the deployed build reveals — plus the occasional small feature the
+  play surfaces a need for. Thirteen commits, 2026-09-09 → 12, all deployed.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -43,6 +44,27 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
   in the repo doc rather than moving into a memory file.
+
+## The auto-memory bank (outside the repo)
+
+Lives in `~/.claude/projects/-Users-cosmos-RestOfIryna/memory/`, indexed by its own
+`MEMORY.md`, and is **not** a second copy of this one. The split in force: **the repo doc
+keeps the RULE, the auto-memory keeps the REASON** — `CLAUDE.md` states the imperative and
+the trap, the memory holds the measurement that produced it. See `feedback-docs-keep-the-rule`
+for why every "never do X" guard stays in the repo rather than moving there.
+
+Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
+following the rule you are about to break. The ones a fresh session most often wants:
+
+- `project-damage-sources-named-separately` — a step can cost HP twice; each source prints
+  its own line, and the tick rides on `StepResult` so no branch can drop it
+- `project-leaderboards-will-go-seasonal` — all-time is v1's period, not the only one; a
+  season is a second reading, never a reset of a lifetime counter
+- `project-pi-deploy-swiftenv` + `linux-build-gap` — the deploy recipe and its two traps
+- `feedback-audit-what-else-reads-it` — grep every reader before changing a displayed
+  concept; the extra readers are where the real defects sit
+- `feedback-docs-in-english` — converse in Ukrainian, persist in English; Cyrillic in a
+  doc should only ever be quoted game copy
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

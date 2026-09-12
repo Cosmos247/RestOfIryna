@@ -22,38 +22,47 @@ Controllers transition by setting `routerName` + `saveAndCache()`.
 Game code lives in `Swift/`. The content pipeline lives in `Modules/`. Never
 `Sources/`.
 
-## ⏳ ACTIVE WORK — pre-release rebalance
+## ⏳ ACTIVE WORK — live-play polish, and small features on top
 
-The whole game is being rebalanced before release. All content has already moved
-out of Swift arrays into `content/data/*.json` (Phase 3, done); what remains is
-the maths. **This is the only work in flight.**
+**The pre-release rebalance is DONE and deployed.** Phases 3–11 all landed; Phase 11
+closed as CODE on 2026-09-09. Its decisions and calibrated maths are history worth
+reading, not work in flight: `.memory/rebalance.md`.
 
-- Plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
-- Tracker: the "Full Rebalance" section of `TODO.md`
-- Decisions + calibrated math: `.memory/rebalance.md`
+What is in flight is **fixing what playing the deployed build reveals**, plus the
+occasional small feature the play surfaces a need for. Every defect so far came from
+someone PLAYING; none from a test.
+
+- Tracker: the "Full Rebalance" section of `TODO.md` (its tail is the polish log)
+- Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
 ### Where we stopped (2026-09-12)
 
-**Phases 3–11 are done. Phase 11 is closed as CODE** — the wipe, the opening ledger,
-invite-only access, the Pi deployment and `scale` 1.0 all landed by 09-09. Since then the
-work has been **live-play polish: fixing what playing the deployed build revealed.**
+**The bot is LIVE on the Pi running `aa18f57`**, restarted 2026-09-12 19:43 Kyiv.
+Content hash `4eac64ff`, **content schema v11**. `origin/main` is at the same commit —
+nothing is unpushed, nothing is undeployed, the working tree is clean.
 
-**The bot is LIVE on the Pi running `fea2343`** (restarted 2026-09-11 01:26, content hash
-`4eac64ff`, **schema v11**), and the working tree is clean.
-
-⚠️ **Two commits are UNPUSHED and are not on the Pi: `fd98632` and the 09-12 doc pass.**
-Both are documentation only — no game code, no content, no schema — so the Pi is not behind
-on anything a player can see and **needs no restart.** `origin/main` sits at `fea2343`.
-Pushing is manual and user-side; do not push.
+That restart applied the first database migration since the wipe (`AddWalkCounters`).
+Verified in the database itself rather than from the log line: both columns present as
+`bigint DEFAULT 0`, all four indexes created, 5 users and **zero NULLs**. `Code: 400`
+held at its 913 baseline, stderr empty, no `[ROUTE]` / `[COMBAT]` / `[SCREEN]`, 0 unstable
+restarts. **A log line says what the code tried; the table says what happened — check the
+table.**
 
 **2026-09-12 part 2 — leaderboards.** Four all-time boards in the quest journal: ⚔️ level ·
 🎖 arena honor · 🌲 deepest km · 🚶 total km walked, as tabs redrawing one message. Two new
 lifetime columns (`deepest_km`, `total_km_walked`) with a single writer,
-`User.recordWalk(toKm:)`, on the `rollStep` funnel. **A migration ships with this**, so the
-Pi needs a rebuild and a restart, not `/reload`. `Leaderboard` in code, «Рейтинги» on screen
-— `rating` is taken. Seasons are a decided future direction: auto-memory
-`project-leaderboards-will-go-seasonal`.
+`User.recordWalk(toKm:)`, on the `rollStep` funnel. A migration shipped with it and **applied cleanly on the
+19:43 restart**. `Leaderboard` in code, «Рейтинги» on screen — `rating` is taken here for
+crit/dodge/accuracy.
+
+Two things the pre-commit audit caught and a fresh session should not re-learn: **the 🎖
+board already existed** inside the Arena, rendering the same ladder since Phase 8.3 with
+`var rank = 1` and no tie-sharing, so the two screens disagreed — both read one
+`LeaderboardService` now; and **the depth/distance counters started at zero for everyone**,
+because no depth record was ever stored to backfill from (`exploration_state` is deleted
+when the expedition ends). Seasons are a decided future direction: auto-memory
+`project-leaderboards-will-go-seasonal`, `project-damage-sources-named-separately`.
 
 **2026-09-12 — the roots, and what else hid behind them.** One game-code change since the
 doc pass: a player asked why a root took 22 HP when it used to take 10. It took 11; hunger
@@ -62,7 +71,7 @@ The audit found the tick was applied once in `rollStep` and then each branch had
 of the ten exits reachable while starving, two carried it, one fused it, one blamed a beast,
 and six dropped it silently. `rollStep` returns a `StepResult` now and every source
 of damage prints its own line. Reporting only — all four digest hashes byte-identical.
-**Not deployed: this is game code, so it needs a rebuild and a `pm2 restart`, not `/reload`.**
+**Deployed 2026-09-12 19:43**, in the same restart as the leaderboards.
 Full account in `.memory/sessions.md` (2026-09-12), auto-memory
 `project-damage-sources-named-separately`.
 
@@ -74,55 +83,79 @@ and the trap, then points at the record. Seven stale memory records were correct
 same pass. Full account: `.memory/sessions.md` (2026-09-12) and the auto-memory
 `feedback-docs-keep-the-rule`.
 
-**What a fresh session should know about the eleven commits before that.** Every single
+**What a fresh session should know about the eleven polish commits before those two.** Every single
 defect came from someone PLAYING — none from a test. The pattern worth carrying: each was a
 place where the code was right and could not say so, or where a number was shown in a unit
 it was not measured in. Three of the last four were found by the user glancing at a screen,
 not by running anything. **That is still the most productive way to find the next one, and
 it is exactly what has not been done to the three surfaces below.**
 
-> ## Next action: walk the three surfaces this build changed, then the untouched ones
+> ## Next action: walk what is deployed. Nothing below has been looked at.
 >
-> **1. Three surfaces changed on 09-10/11 and NONE has been walked yet.** This is the
-> whole next action — the code is deployed and nobody has looked at it:
-> - **the forest on the way home** — the return leg should now be noticeably more
->   fight-heavy than the walk out (8.8 fights over 17 km against 3.4 before). Walk to
->   km 15–18 and back on foot. With a full bag and low HP this is a real risk: death
->   still wipes the whole unequipped bag.
-> - **the road** — turn back twice in a row; the second should quote most of the
->   crossing (~`1хв 58сек`), not five seconds, and now shows seconds at all.
-> - **the character sheet and any Forester piece** — three rating stats with no `%`,
->   and a `❤️ Здоров'я` line on armour that was invisible before.
+> Thirteen commits are live and **five surfaces have never been opened by a human.**
+> That is the whole next action. Every defect this project has found came from someone
+> glancing at a screen, not from running anything — so this list is the highest-yield
+> thing available, and it costs one session in Telegram.
 >
-> **2. Still never walked, from the older list:** a fight lost, a **flee**, the trade
-> screens, and one run of **`/reload` + `/content`** against a real database.
+> **Added 2026-09-12, never walked:**
+> - **the four boards** — Profile → 📓 Нотатник → 🏆 Рейтинги. ⚔️ Рівень and 🎖 Честь have
+>   data from the first second; 🌲 Глибина and 🚶 Шлях read "порожньо" until somebody walks,
+>   because the counters started at zero (no depth record was ever stored to backfill from).
+>   Walk one km and they should both come alive. Check the tabs redraw ONE message.
+> - **the honor ladder on TWO screens** — the journal's 🎖 board and the Arena's own
+>   «Найкращі бійці» now render from the same `LeaderboardService`. They must agree, ties
+>   included; they did not before 2026-09-12.
+> - **a starving step** — walk Vigor to 0. The root and the hunger tick must print on
+>   SEPARATE lines now. Also check a starving step that finds loot, and one that starts a
+>   fight: both used to take HP and say nothing at all.
 >
-> **3. The API-error question is CLOSED, and needs no more checking.** `Code: 400` stood at
-> **913 before the `editScreen` deploy and 913 an hour after it**, with `[ROUTE]` /
-> `[COMBAT]` / `[SCREEN]` all silent — the fix is proven. If a new screen bug is ever
-> reported, this is still the cheap first look:
+> **From the older list, still never walked:**
+> - **the forest on the way home** — the return leg should be noticeably more fight-heavy
+>   than the walk out (8.8 fights over 17 km against 3.4 before). Walk to km 15–18 and back
+>   on foot. With a full bag and low HP this is a real risk: death still wipes the bag.
+> - **the road** — turn back twice in a row; the second should quote most of the crossing
+>   (~`1хв 58сек`), not five seconds.
+> - **the character sheet and any Forester piece** — three rating stats with no `%`, and a
+>   `❤️ Здоров'я` line on armour that was invisible before.
+> - **a fight lost, a flee, the trade screens**, and one run of **`/reload` + `/content`**
+>   against a real database — `/reload` has still never run against one.
+>
+> **The API-error question is CLOSED.** `Code: 400` stood at **913** before the `editScreen`
+> deploy, 913 an hour after, and 913 after the 09-12 restart, with `[ROUTE]` / `[COMBAT]` /
+> `[SCREEN]` silent throughout. If a new screen bug is ever reported, this is the cheap
+> first look:
 >
 > ```
 > ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # baseline 913
 > ssh rpi5@192.168.0.203 'grep -E "\[ROUTE\]|\[COMBAT\]|\[SCREEN\]" ~/.pm2/logs/ROI-out.log'
 > ```
 >
-> **Deploying to the Pi:** `git pull --ff-only`, build, then **ASK before
-> `pm2 restart ROI`**. Two traps that cost real time — swiftenv's `PATH` lives in `.bashrc`,
-> which a non-interactive `ssh` never reads, and `pgrep -f swift-build` matches the ssh
-> command's own argument string. The recipe with both: auto-memory
+> **Deploying to the Pi** (done successfully on 09-12; the recipe works as written):
+> `git push` — user-side, never you — then on the Pi `git pull --ff-only`, build, and
+> **ASK before `pm2 restart ROI`**. Two traps that cost real time: swiftenv's `PATH` lives
+> in `.bashrc`, which a non-interactive `ssh` never reads, and `pgrep -f swift-build` matches
+> the ssh command's own argument string (use `pgrep -x`). Auto-memory
 > `project-pi-deploy-swiftenv`, `linux-build-gap`. A content or schema change must ship the
-> new `content/data` and the new binary TOGETHER. Free pre-flight, without touching the
-> running bot: `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna
-> --content-digest` on the Pi exercises parse → validate → install under Linux.
+> new `content/data` and the new binary TOGETHER. Free pre-flight that never touches the
+> running bot or the database:
+> `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`.
+> **After a migration, verify the TABLE, not the log line.**
 
-### What the live-play polish landed (eleven commits, 2026-09-09 → 11)
+### What the live-play polish landed (eleven commits, 2026-09-09 → 11; two more on 09-12)
 
 Every defect came from someone PLAYING; none from a test. The pattern worth carrying: each
 was a place where the code was right and could not say so, or where a number was shown in a
 unit it was not measured in. Full narrative in `.memory/sessions.md` (the 09-09 → 09-11
 entries); the rules they produced are in `CLAUDE.md`.
 
+- `aa18f57` **four boards, and the first counters the game ever kept** (09-12) — the
+  leaderboards, plus `deepest_km` / `total_km_walked`, the first cumulative counters this
+  game has ever stored. The pre-commit audit found the Arena had been rendering the same
+  honor ladder since Phase 8.3 with a different idea of a tie; both read one service now.
+- `b402b81` **a root that took 11 and said 22** (09-12) — `.trip` reported
+  `trip + starvation` under the root's own label. Of `rollStep`'s ten exits reachable while
+  starving, two carried the tick, one fused it, one blamed a beast, six dropped it silently.
+  `StepResult` carries it now, and every source prints its own line.
 - `fea2343` **one name per stat, one unit per number** — `Countdown` printed one unit for
   minutes, `accuracy` had two Ukrainian names, HP rendered on one gear screen of five, and
   crit was labelled `%` though it is a rating.
@@ -267,10 +300,12 @@ warehouse, workshop, kitchen, weapon/bag/estate upgrades, technique gates) ·
 capital hub (travel, Trader, Tavern with dice/darts, Fortune Teller, Master with
 durability + enchant, player Market, synchronous Trade) · Guilds (roster, invites,
 item vault, silver treasury) · Arena (live PvP duel, Honor ELO, stakes, daily
-budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal.
+budget) · daily NPC quests derived from a stable hash, **taken by hand at the NPC** (nothing counts until the player accepts the job), + quest journal · **four all-time
+leaderboards behind that journal** (⚔️ level · 🎖 arena honor · 🌲 deepest km · 🚶 total km
+walked) as tabs redrawing one message.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (**1006 / 1054 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
+localization (**1023 / 1071 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
 `item.<id>.gender` declarations and the four-way `gear.broken.notice`). **Access is invite-only and lives in the database**
 (`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
 account and opens registration, and nobody else gets a `User` row at all.

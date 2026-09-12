@@ -94,12 +94,4 @@ extension ArenaProfile {
             fightsToday = 1
         }
     }
-
-    /// The top of the leaderboard, highest Honor first.
-    public static func leaderboard(limit: Int, on db: any Database) async throws -> [ArenaProfile] {
-        try await ArenaProfile.query(on: db)
-            .sort(\.$honor, .descending)
-            .range(..<limit)
-            .all()
-    }
 }

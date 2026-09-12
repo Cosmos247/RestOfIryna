@@ -296,7 +296,9 @@ row's tier: `CapitalController.itemLabel(_:tier:lingo:locale:)`. The Master's
 repair and enchant screens were showing a tier-5 weapon under its tier-1 name
 while the profile and the inventory showed the real one.
 
-## Current Keys (1006 en / 1054 uk as of 2026-09-12 — uk carries 13 player-gender `.m`/`.f` pairs, 33 `item.<id>.gender` declarations and the four-way `gear.broken.notice`; earlier: 975 / 987 on 2026-09-07 — uk has +13 from the gendered `.m`/`.f` pairs; parity checked both ways)
+## Current Keys (1023 en / 1071 uk as of 2026-09-12 — uk carries 13 player-gender `.m`/`.f` pairs, 33 `item.<id>.gender` declarations and the four-way `gear.broken.notice`; earlier: 1006 / 1054 before the leaderboards, 975 / 987 on 2026-09-07; parity checked both ways)
+
+Leaderboards (2026-09-12): 16 keys under `leaderboard.*` — `title`, `button.back`, `you`, `unit.km`, `empty`, `board.<level|honor|depth|distance>` plus a `.sub` subtitle for each, and `unranked.<honor|depth|distance>`. There is deliberately **no** `unranked.level`: every finished registration has a level, so that board's viewer always ranks. None of them names the player with a gendered noun, so none needs `.m`/`.f`. The board icons (🏆 and the four tab glyphs) are prepended in Swift, never placed in a template ahead of a `%{}`.
 
 Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
 

@@ -100,7 +100,8 @@ only orders the display. One query for the page, plus a COUNT only when the view
 on it. `Leaderboard` in code, «Рейтинги» on screen —
 `rating` is taken. All-time is the first period; seasons are a decided direction and must
 never be built by zeroing a lifetime column. Not a content-schema bump, and all four digest
-hashes held. **Not deployed.**
+hashes held. **Deployed 2026-09-12 19:43**; the migration applied on that start and the
+columns + four indexes are confirmed in the database, with no NULLs on the 5 existing rows.
 
 **2026-09-12 — a root that looked twice as strong.** Reported from play: a level-20 archer
 at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ` on the step that killed them. The root
@@ -115,7 +116,7 @@ an encounter step printed "the bear broke your guard after 0 rounds" about an an
 never appeared. `rollStep` now returns a `StepResult` (event + `starvationHpLost`), hunger
 gets its own line on the step screen, the death screen and before the combat hand-off, and
 its own two totals in the passive report instead of an `outcomeCounts` bucket. Reporting
-only — all four digest hashes byte-identical. **Not deployed.**
+only — all four digest hashes byte-identical. **Deployed 2026-09-12 19:43.**
 
 **2026-09-09 part 2** — one `Countdown` format for every timer and no hand-written duration
 left in the copy; `RestNotificationService` (HP full · fortune ready · 12:00 rollover) as a
@@ -298,8 +299,9 @@ were superseded by Phases 4–6.
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
+- [x] LeaderboardService (2026-09-12) — the four all-time boards behind the quest journal. One query for the page (ranks derive from it locally, since a sorted page starts at the maximum), plus a COUNT only when the viewer is not on that page. Ties share a place; rank is on the board's own metric. `ArenaController`'s «Найкращі бійці» reads it too, so one ladder cannot render two ways.
 - [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit)
-- [x] ExplorationService — rollStep (nothing / loot / trip / encounter / starvationOnly outcome), depth-aware loot pool (shallow vs medium), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
+- [x] ExplorationService — rollStep, which since 2026-09-12 returns a **`StepResult`** (the event plus `starvationHpLost`) rather than a bare outcome, so the hunger tick can never be folded into an event's number or dropped by a branch; the `.starvationOnly` case is gone. It is also the single place a walked km is counted (`User.recordWalk(toKm:)`). Depth-aware loot pool (now `zones.json`), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
 - [x] **Combat model rebuilt (Phase 5C, 2026-08-30)** — damage is ABSORBED, not subtracted: `ATK × (1 − DEF/(DEF+K(L))) × levelDiff × variance`. Crit/dodge/accuracy are ratings run through curves whose denominators grow with level, so a stat percentage holds steady instead of rotting. Hit band 85 with a floor of 40. Enemies carry real crit/dodge/accuracy (they passed literal 0/0/0 before) and a level, and their stats are generated at design time from a six-row archetype table. `maxLevel` 40, proportional stat growth, power-law XP curve, Vigor pool that grows and regenerates. Numbers live in `content/data/tuning/`.
 - [x] CombatService (Phase 4.1) — shared damage primitives used by both active CombatController and passive autobattle. `applyAttack(attackerATK,attackerCrit,attackerAcc,defenderDEF,defenderDodge) -> AttackOutcome (miss / hit / crit)` with clamp(70+acc-dodge, 10, 95)% hit chance, ×1.5 crit on roll vs `attackerCrit %`, ±10% variance. `chipDamage` for Defend's 30%-of-base parry-counter (no crit, always lands). Tuning constants exported (baseHitChance / critMultiplier / defendChipFraction / varianceRange) so both consumers stay in sync.
 

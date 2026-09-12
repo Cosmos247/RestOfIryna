@@ -164,6 +164,7 @@ RestOfIryna/
 │   │
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
+│   │   ├── AddWalkCounters.swift     # 2026-09-12 — `deepest_km` + `total_km_walked`, the first cumulative counters the game stores, plus four leaderboard indexes via raw SQL. Nothing to backfill: a depth record only ever lived in `exploration_state`, which is deleted when the expedition ends
 │   │   ├── AddFortuneOneShot.swift   # 2026-09-09 — four `last_fortune_*` columns: what a draw's one-shot half actually handed over. The card id cannot answer it (the Wheel rolls 50/50, a silver loss is clamped to the purse)
 │   │   ├── AddNotificationFlags.swift # 2026-09-09 — `fortune_ready_notified` + `quest_rollover_stamp`: the once-only guards behind RestNotificationService
 │   │   ├── AddPassiveDailyBudget.swift # 2026-09-09 — `passive_minutes_today` + `passive_day_stamp`: the 3 h/day ceiling on passive expeditions, counter plus the game-day key it belongs to
@@ -564,15 +565,22 @@ the generator it feeds.
 on a tier-4 estate, and `validate --strict` reports zero errors and zero warnings.
 
 **What is happening now is live-play polish: fixing what playing the deployed build
-reveals.** Eleven commits between 2026-09-09 and 09-11, and every single defect came from
-someone playing rather than from a test — a forest that went quiet on the walk home, a
-road that priced a second turn-back at five seconds, a rating labelled as a percentage, a
-full warehouse that claimed the bag was empty. The pattern worth knowing: each was a place
-where the code was right and could not say so, or where a number was shown in a unit it
-was not measured in.
+reveals**, plus the occasional small feature the play surfaces a need for. Thirteen
+commits between 2026-09-09 and 09-12, and every single defect came from someone playing
+rather than from a test — a forest that went quiet on the walk home, a road that priced a
+second turn-back at five seconds, a rating labelled as a percentage, a full warehouse that
+claimed the bag was empty, a tripping root that reported its own damage plus the hunger
+tick as one number. The pattern worth knowing: each was a place where the code was right
+and could not say so, or where a number was shown in a unit it was not measured in.
+
+The newest addition is **four all-time leaderboards** behind the quest journal — level,
+arena honor, deepest km and total km walked — which also gave the game the first
+cumulative counters it has ever stored.
 
 What is still owed is a **deliberate first-hour walkthrough** — nobody has stepped through
-the opening against a checklist — plus one run of `/reload` against a real database.
+the opening against a checklist — plus one run of `/reload` against a real database, and a
+walk across the five surfaces deployed but never opened (listed in
+[Prompt.md](./Prompt.md)).
 Progress lives in the "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
 [`.memory/rebalance.md`](./.memory/rebalance.md), and what a fresh session should do next
 in [Prompt.md](./Prompt.md).

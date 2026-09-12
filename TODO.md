@@ -1204,7 +1204,16 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         plus the viewer's row, suppressed when already listed; unranked and empty states have
         their own copy. `Leaderboard` in code, «Рейтинги» on screen. All-time is the first
         period, not the only one. Not a content-schema bump; all four digest halves held.
-        16 keys × 2 locales. Not deployed.
+        16 keys × 2 locales. **Deployed 2026-09-12 19:43** — Linux build 64.4 s, migration
+        prepared cleanly, columns + four indexes confirmed in the database, zero NULLs.
+        **The pre-commit audit then found the 🎖 board already existed**: `ArenaController`
+        had rendered the same honor ladder since Phase 8.3 with `var rank = 1` (no
+        tie-sharing) and a `User.find` per row, so equal honor read 1st/2nd there and shared
+        🥇 in the journal — one ladder, two screens, two answers. The Arena now renders
+        `LeaderboardService.view(.honor,…)` and `ArenaProfile.leaderboard(limit:)` is
+        deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
+        `estateLevel`'s, a viewer row queried separately even when already on the page, and
+        an unread `LeaderboardView.board`.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own
@@ -1219,7 +1228,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         screen, the death screen and before the combat hand-off, and gets its own two totals
         in the passive report instead of an `outcomeCounts` bucket (both report structs decode
         the new fields with `?? 0`, so no migration). Reporting only — all four digest halves
-        byte-identical. Not deployed.
+        byte-identical. **Deployed 2026-09-12 19:43.**
   - [x] **Live-play polish, part 3** *(2026-09-10)* — three symptoms reported from live play
         (a fight starting under the walking keyboard, arriving in the capital with the estate
         keyboard, taps that produced no message at all) turned out to be four defects, none of
