@@ -788,6 +788,10 @@ walking the first hour deliberately.
 
 ## Session — 2026-09-07 (pre-push bug pass: the profile, the rest clock, the name, the level-up)
 
+Four commits: `29b233c` (the four bug fixes) · `34825fc` + `f80a514` (quests taken by
+hand, `minLevel` bands, curve-scaled rewards) · `d8cfb0c` (the naming audit and the
+tier-blind labels).
+
 ### Goal
 Four reported bugs before the branch is pushed. Code and copy only — no content, no
 tuning, no balance. All four digest halves are byte-identical to the Phase 10 baseline

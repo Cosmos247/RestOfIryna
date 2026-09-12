@@ -23,7 +23,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Infinite linear room chain (1 room = 1 km)
 - **Two modes**:
   - Active reconnaissance (розвідка): tap-driven, instant steps, no timer — the primary loop. Implemented in Phase 3.1 + 3.2.
-  - Passive expedition (експедиція): time-gated — 5 min per room in production, 10 sec in test mode. Planned for Phase 3.3.
+  - Passive expedition (експедиція): time-gated and **shipped**. Three choices of 30 / 60 /
+    90 authored minutes, capped at `passive.dailyBudgetMinutes` (180) per game day. The
+    `testMode` flags were retired in Phase 4b; durations now come from `tuning/time.json`,
+    and `scale` is 1.0, so authored minutes are real minutes.
 - Events: four buckets (nothing / loot / encounter / trip) on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and **tier 1 is also the whole passive expedition** (`passive.freshStepCount` = 1, so a 90-min run is 1 fresh step and 17 tier-1 steps). Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
 - Dungeons: guaranteed every 7th room, party-based, instanced
 - Death: respawn in town, lose expedition loot, keep gear
@@ -53,7 +56,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   clamps both duellists to `max(1, …)`), so refusing to heal there strands nobody.
 - **A trip can be turned around** (2026-09-10). While one is in flight the nav keyboard
   lends the Explore slot to `↩️ Розвернутись`; walking back costs exactly what has been
-  walked, measured from the row's `createdAt` and capped at one crossing. Turns are
+  walked, measured as `travelSeconds − remaining` from the row's `endsAt` and capped at
+  one crossing. **`createdAt` was the bug** — it locates only a leg that began at an
+  endpoint, and a turn-back row is created mid-road, so a second turn-back priced a
+  two-minute road at five seconds (fixed 2026-09-11). Turns are
   symmetric — each costs only its own leg, so oscillating converges rather than compounds.
 
 ### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*

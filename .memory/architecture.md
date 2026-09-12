@@ -11,7 +11,8 @@
 
 1. `entrypoint.swift` — `@main enum Entrypoint` calls `configure(logger:)`
 2. `configure.swift` — Orchestrates everything:
-   - Loads `.env` via SwiftDotenv (hardcoded path: `/Users/cosmos/RestOfIryna`)
+   - Loads `.env` via SwiftDotenv from `projectPath` — read from the `ROI_PROJECT_PATH`
+     environment variable, with a dev-Mac fallback, so each deployment box points at its own tree
    - Configures Fluent + PostgreSQL (via `SQLPostgresConfiguration`)
    - Runs migrations via `Migrator`
    - Initializes Lingo from `Localizations/` directory
@@ -74,7 +75,8 @@ Three process-wide holders, all `nonisolated(unsafe)` + a lock:
 - `appState: AppState!` — global, holds bot/db/lingo/logger/httpClient
 - `store: RouterStore` — global actor, holds all registered routers
 - `sessionCache: SessionCache` — global actor, in-memory user cache (5min TTL)
-- `allowedUsers: [Int64]` — hardcoded authorized Telegram IDs
+- `AccessControl` — actor cache over the `allowed_users` table; the hardcoded `allowedUsers`
+  array is gone (2026-09-08). Only `developerUsers` stays in code, allowed before the table is read
 - In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner)
 
 ## Service Layer

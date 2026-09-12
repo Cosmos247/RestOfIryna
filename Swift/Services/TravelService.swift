@@ -82,10 +82,10 @@ public enum TravelService {
     ///
     /// The return leg is exactly as long as the elapsed part of the current
     /// one, so a player who sets out and changes their mind pays what the
-    /// change of mind is worth and no more. Elapsed comes from `createdAt`
-    /// rather than `travelSeconds - remaining`, because after the first turn
-    /// the leg is no longer a full trip and the subtraction would price it as
-    /// though it were.
+    /// change of mind is worth and no more. Elapsed comes from
+    /// `travelSeconds - remaining`, measured against `endsAt`. It read
+    /// `createdAt` until 2026-09-11 — see the comment in the body for why that
+    /// locates only a leg that began at an endpoint, and what it cost.
     ///
     /// The row is REPLACED, not edited: `TravelState.begin` deletes the old one
     /// and inserts a new id, and `arriveIfStillScheduled` looks its trip up by

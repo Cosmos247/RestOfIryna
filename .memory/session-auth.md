@@ -47,25 +47,37 @@ over it. Anything writing a `User` outside a dispatch takes
 `peek` deliberately does not insert, so a once-a-minute sweep cannot pin every
 account in the cache forever.
 
-## Authorization Flow
+## Authorization Flow — invite-only, in the database (since 2026-09-08)
+
+**The hardcoded `allowedUsers` array is gone.** Access lives in the `allowed_users` table
+(`AllowedUser` / `CreateAllowedUsers`), read through `AccessControl`, an actor cache whose
+MISS queries the database — so a row added by hand in SQL takes effect on that account's
+next message rather than at the next restart.
 
 ### In TGDispatcher (catch-all handler):
 1. Extract `TGUser` entity from update (message.from / editedMessage.from / callbackQuery.from)
-2. Check `allowedUsers.contains(entity.id)`
-3. If unauthorized: send rejection message to user + notify owner (mitya)
+2. `await accessControl.isAllowed(entity.id, on: db)` — **ahead of routing**, so a refused
+   stranger never gets a `User` row at all
+3. If unauthorized: `redeemInvite` accepts a 16-letter `InviteToken`, either as a `/start`
+   payload or pasted as a bare message; a valid one inserts the row and opens registration
 4. If authorized: fetch/create session via cache, route to controller
 
 ### In GlobalCommandsController (per-handler):
-Each handler independently checks `allowedUsers.contains(fromId.id)`
+Each handler still checks independently — `guard await accessControl.isAllowed(fromId.id, on: db)`
+for player commands, and `guard developerUsers.contains(fromId.id)` for the three dev-only
+ones (`/link`, `/reload`, `/content`).
 
-### Allowed Users (configure.swift):
+### The two lists still in `configure.swift`:
 ```swift
-let maxim: Int64 = 327887608
-let basel: Int64 = 768795585
-let mitya: Int64 = 398698463
-let irina: Int64 = 1269829617
-let allowedUsers: [Int64] = [maxim, basel, mitya, irina]
+let foundingUsers: [Int64]  = [mitya, irina, maxim, basel]  // seed list for the migration ONLY
+let developerUsers: [Int64] = [mitya]                       // allowed BEFORE the table is read
 ```
+`developerUsers` is the brake against locking yourself out of your own bot: `AccessControl`
+returns true for it before the table is read at all. `allowed_users` is in
+`WipeForRebalance.preserved` — a wipe resets the game, not the guest list.
+
+To admit a new tester, use **`/link`** — never a code edit. Token design and the three
+decisions behind it: auto-memory `invite-only-access`.
 
 ## New User Flow
 1. First interaction -> `User._session(for:)` creates new user with `routerName = "registration"`

@@ -31,9 +31,19 @@ TGUpdate -> TGDispatcher -> Auth check -> SessionCache -> RouterStore.process(ro
 
 Each user has a `routerName` field. Updates route to the controller registered under that name. Controllers transition by setting `session.routerName` and calling `saveAndCache()`.
 
-**The router is resolved INSIDE `RouterStore`'s per-user chain, on the routerName as it stands** (2026-09-10). The SDK hands every update to its own `Task.detached`, so two quick taps are both read before either has transitioned; `TGDispatcher` still passes the key it read, but only as a fallback. Resolving it earlier is what delivered a second tap to the controller the first had just left — a step taken mid-fight, a capital tap answered by the estate, and in both cases a screen re-sending the keyboard the player no longer stands in. `[ROUTE]` in the log fires when the requested and live keys differ, which measures the race rather than arguing about it.
+**The router is resolved INSIDE `RouterStore`'s per-user chain**, on the routerName as it
+stands — never earlier. The SDK hands every update to its own `Task.detached`, so two quick
+taps are both read before either has transitioned; `TGDispatcher` still passes the key it
+read, but only as a fallback. `[ROUTE]` in the log fires when the requested and live keys
+differ, which measures the race rather than arguing about it.
 
-**A refusal carries the keyboard of the router the player is actually on.** `TGControllerBase.currentKeyboard(for:lingo:)` looks it up; a "you cannot do that from here" notice sent with no markup leaves whatever was last set, so a player whose keyboard has drifted is left tapping buttons for a place they are not in. Guards re-render the screen that owns the state instead of only refusing — `ExplorationController.guardInCombat` re-draws the fight, which re-asserts the combat keyboard, so the mis-tap is also what repairs it.
+**A refusal carries the keyboard of the router the player is actually on**
+(`TGControllerBase.currentKeyboard(for:lingo:)`) — a notice sent with no markup leaves
+whatever was last set. Better still, a guard re-renders the screen that owns the state
+instead of only refusing, so the mis-tap is also what repairs it.
+
+Why both, and the symptoms each fixed: `.memory/architecture.md`,
+`.memory/controller-pattern.md`.
 
 ## Source Layout
 
@@ -80,18 +90,15 @@ faster game: at the 60 the whole rebalance ran on, a 3600 s plot cycle was 60 s.
 all: Telegram's 24 h dice-delete window is a protocol constant, not a balance knob, and
 so are the trade TTLs and the 12:00 rollover.
 
-**A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides
-WHICH job each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00
-Kyiv — but the offer sits on the board until the player accepts it at the NPC
-(`QuestProgress.accepted`, `QuestService.accept`). `record` neither creates nor ticks
-an unaccepted row, so taking a job STARTS the count and never backfills the day. Each
-job also carries a `minLevel`, and the pool is filtered before the hash so a job whose
-materials sit at km 11 or behind an estate room is never offered to someone who cannot
-reach it; the validator refuses a pool whose cheapest job starts above level 1. Rewards
-are authored at level 1 and scaled at payout by `ProgressionMath.questReward` — XP on
-the `mobXP` exponent (a job is worth the same NUMBER OF KILLS at every level), Vigor on
-the pool it refills, silver linearly — so the board must quote `Status.reward`, never
-`def.reward`.
+**A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides WHICH job
+each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00 Kyiv — but the
+offer sits on the board until the player accepts it at the NPC (`QuestProgress.accepted`,
+`QuestService.accept`). `record` neither creates nor ticks an unaccepted row, so taking a job
+STARTS the count and never backfills the day. Each job carries a `minLevel` and the pool is
+filtered before the hash; the validator refuses a pool whose cheapest job starts above level
+1. Rewards are authored at level 1 and scaled at payout by `ProgressionMath.questReward`, so
+**the board must quote `Status.reward`, never `def.reward`**. Auto-memory
+`project-quests-taken-by-hand`.
 
 **Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
 level-up grant are the only sources, and the estate's plots are the intended income —
@@ -100,89 +107,68 @@ wilderness can be walked and still walked out of. Never reintroduce a trickle: t
 one deliberately did not pause during an expedition, so a player could stand at km 25
 and wait out a full pool.
 
-**HP regeneration is a different mechanic and stays — but it is a PLACE, not a pause
-between fights** (2026-09-10). `HealingService.canRest` names the three states that
-suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the
-road) and `location == capital` (in town). Only the first was ever checked, so the
-manor's bed worked from anywhere in the kingdom. The road needs its own check rather
-than falling out of the other two — `location` is not flipped until arrival, so
-someone walking to the capital still reads as being at the estate. Callers query the
-rows and pass the answer; `tick` does no lookups of its own. Away from the estate the
-clock is CLEARED, not merely skipped, so time banked before leaving cannot be spent on
-the way back. Potions are the away-from-home heal, and the fortune teller's one card
-still restores in full.
+**HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
+pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
+suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the road) and
+`location == capital` (in town). The road needs its own check rather than falling out of the
+other two — `location` is not flipped until arrival. Callers query the rows and pass the
+answer; `tick` does no lookups of its own. Away from the estate the clock is CLEARED, not
+merely skipped. Potions are the away-from-home heal.
 
 Regen is **computed lazily on interaction**, so both ends of an absence are stamped
-explicitly: `suspendResting` when an expedition or a trip begins, `beginResting` when
-the player lands home (RouterStore's post-dispatch check covers every screen path; the
-passive report push and a travel arrival cover the background ones). Miss the first and
-a passive run refunds its own damage; miss the second and the stretch between coming
-home and the next tap heals nothing. A tick that only runs on interaction cannot
-observe a transition that happens while nobody is interacting.
+explicitly: `suspendResting` when an expedition or trip begins, `beginResting` when the
+player lands home. A tick that only runs on interaction cannot observe a transition that
+happens while nobody is interacting.
 
-**What finishes while nobody is looking needs a watchman.** Lazy-on-interaction
-state has no observer at the moment it completes, so `RestNotificationService`
-(one `Task.detached` on `realTime.restSweepInterval`, 60 s) answers three
-questions per player: HP topped out at the estate, the fortune teller's 24 h
-cooldown elapsed, the 12:00 job rollover. It runs the regen through
-`HealingService.tick` — never a second copy of the arithmetic. **A background
-writer MUST take the session-cached `User` when one exists**
-(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy
-silently undoes the tap the player made a second earlier. Two of the three need a
-persisted flag (`fortune_ready_notified`, `quest_rollover_stamp`); HP needs none,
-because a player at full HP is not a player about to reach it.
+**What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
+`Task.detached` on `realTime.restSweepInterval`, 60 s) answers three questions per player: HP
+topped out at the estate, the fortune teller's 24 h cooldown elapsed, the 12:00 job rollover.
+It runs the regen through `HealingService.tick` — never a second copy of the arithmetic.
 
-**Passive expeditions are capped at `passive.dailyBudgetMinutes` (180) per game
-day**, counted in the authored minutes the three choices are written in — a budget
-in wall-clock seconds would mean a different number of runs at every `time.scale`.
-Counter plus day stamp (`passive_minutes_today` / `passive_day_stamp`), rolling at
-12:00 like every other daily system. The picker offers only what the day can still
-pay for AND the handler re-checks, because a picker left in the chat from an
-earlier run is exactly the tap that would overspend; the charge lands after
-`beginPassive` succeeds, so a failed start never costs the player a run.
+**A background writer MUST take the session-cached `User` when one exists**
+(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently
+undoes the tap the player made a second earlier.
 
-**Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв`
-· `1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value,
-with an exact one dropping its tail so a whole-minute window still reads `5хв`.
-Minutes printed alone until 2026-09-11, which made `1хв` mean anything from 1:00 to
-1:59 — a whole crossing of doubt on a two-minute road.
-The `MM:SS` / `HH:MM` pair it replaced could not be told apart: `05:30` was five
-and a half MINUTES on the trail and five and a half HOURS at the fortune teller.
-Durations are never written into copy either — the expedition buttons, the tarot
-"active for" prefix and the invite window are all printed from the values that own
-them.
+Full reasoning: `.memory/game-core.md` §Rest and the road, `.memory/session-auth.md`;
+auto-memory `project-rest-notification-watchman`,
+`feedback-background-writers-session-cache`.
 
-**A rating is a rating on every screen, and is never labelled `%`.**
-`crit` · `dodge` · `accuracy` are RATINGS converted through a level-linear curve
-(`CombatMath.percent`), so the same +5 crit is 4.16% at level 1 and 1.35% at the
-cap. The character sheet printed `12%` beside a raw rating until 2026-09-11 —
-roughly true at level 1 and threefold wrong at the end, the same rot a flat bonus
-has — and four gear screens did the same. All of them print the bare rating now,
-so the three screens a player compares add up exactly against each other: an item
-grants a rating, the level-up banner reports the rating gained, the sheet shows
-the rating held. `CombatService.critPercent` / `dodgePercent` / `accuracyPercent`
-exist for when the sheet is ready to say what a rating is WORTH; when that lands
-it belongs BESIDE the rating rather than instead of it, because **the level-up
-banner cannot follow** — the rating grows in rounded proportional steps while the
-curve's denominator grows every level, so 26% of level-ups (93 of 351) would
-announce a drop of up to 0.48 points, and a celebration screen must not report a
-loss.
+**Passive expeditions are capped at `passive.dailyBudgetMinutes` (180) per game day**,
+counted in the authored minutes the three choices are written in — a budget in wall-clock
+seconds would mean a different number of runs at every `time.scale`. Counter plus day stamp,
+rolling at 12:00 like every other daily system. The picker offers only what the day can still
+pay for AND the handler re-checks; the charge lands after `beginPassive` succeeds, so a
+failed start never costs the player a run. Auto-memory `project-daily-and-storage-ceilings`.
 
-**Every gear screen renders all six `GearStats` fields, HP included.** Four of
-the five skipped HP until 2026-09-11, which hid the whole Forester set's +18 max
-HP everywhere except the shop card a player sees once before buying. HP reuses
-`profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and
-`workshop.stats.*` are already two families for one set of names kept in step by
-hand, and that duplication is exactly how `accuracy` shipped as «Влучність» on
-two screens and «Точність» on two others.
+**Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв` ·
+`1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value, with an
+exact one dropping its tail so a whole-minute window still reads `5хв`. Durations are never
+written into copy either — the expedition buttons, the tarot "active for" prefix and the
+invite window are all printed from the values that own them.
 
-**The warehouse cap is enforced on every path in, including the plot harvest.**
-Hand deposits always checked it; `PlotService.harvest(to: .warehouse)` did not,
-which made the estate's own income the one way to overflow the store. Harvest is
-all-or-nothing like the bag, and the yield stays standing on the plot — partial
-cannot be expressed, because the Mine's two output streams share one
-`lastHarvestedAt`. **No account is exempt:** the `isDeveloper` bypass is gone from
-all four warehouse checks (it remains on the BAG, which is a different ceiling).
+**A rating is a rating on every screen, and is never labelled `%`.** `crit` · `dodge` ·
+`accuracy` are RATINGS converted through a level-linear curve (`CombatMath.percent`), so the
+same +5 crit is 4.16% at level 1 and 1.35% at the cap. Every screen prints the bare rating,
+so the three screens a player compares add up exactly against each other: an item grants a
+rating, the level-up banner reports the rating gained, the sheet shows the rating held.
+`CombatService.critPercent` / `dodgePercent` / `accuracyPercent` exist for when a screen is
+ready to say what a rating is WORTH; it belongs BESIDE the rating, never instead of it, and
+**the level-up banner can never follow** — 26% of level-ups would announce a drop, and a
+celebration screen must not report a loss. The measurement that reversed this: auto-memory
+`project-rating-vs-percent-display`.
+
+**Every gear screen renders all six `GearStats` fields, HP included.** HP reuses
+`profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and `workshop.stats.*`
+are already two families for one set of names kept in step by hand, and that duplication is
+exactly how `accuracy` shipped under two different Ukrainian words.
+
+**The warehouse cap is enforced on every path in, including
+`PlotService.harvest(to: .warehouse)`** — the estate's own income was once the only way to
+overflow the store. Harvest is all-or-nothing like the bag, with the yield left standing on
+the plot: partial cannot be expressed, because the Mine's two output streams share one
+`lastHarvestedAt`. **No account is exempt** — the `isDeveloper` bypass is gone from all four
+warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
+`project-daily-and-storage-ceilings`.
 
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
 = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
@@ -200,25 +186,23 @@ Two consequences worth knowing before touching gear:
   at both ends, and `roi-content simulate` now audits every lift for exactly this.
 
 **A weapon ladder is ONE object.** The three upgradable weapons render through
-`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word
-in common: the player is upgrading a thing, not swapping it for a different one, and the
-screens that name a weapon generically (the Master's `capital.master.repair.weapon.<class>`)
-cannot follow a noun that changes. `locale.ladder_name_drift` warns when no word survives.
-Wherever a label describes an inventory ROW rather than a shop listing, pass the row's
-tier — `CapitalController.itemLabel(_:tier:lingo:locale:)`.
+`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
+common — the player is upgrading a thing, not swapping it for a different one, and
+`locale.ladder_name_drift` warns when no word survives. Wherever a label describes an
+inventory ROW rather than a shop listing, pass the row's tier —
+`CapitalController.itemLabel(_:tier:lingo:locale:)`. Auto-memory
+`feedback-ladder-names-one-noun`.
 
 **Access is invite-only and lives in the database.** The `allowed_users` table
 (`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array;
 `foundingUsers` in `configure.swift` is now only the migration's seed list. To let a new
-tester in, use **`/link`** (developer-only) — never a code edit. `/link` mints a
-16-letter `InviteToken`: an encrypted UNIX timestamp plus an HMAC tag keyed on
-SHA256(bot token), good for five REAL minutes (`time.scale` never touches it). The gate
-lives in `TGDispatcher` **ahead of routing**, so a refused stranger never gets a `User`
-row, and it accepts the token either as a `/start` payload or pasted as a bare message —
-a deep link only delivers its payload when the client actually sends `/start <token>`,
-and live it did not. `allowed_users` is listed in `WipeForRebalance.preserved`: a wipe
-resets the game, not the guest list. `developerUsers` stays hardcoded and is allowed
-before the table is read — the brake against locking yourself out of your own bot.
+tester in, use **`/link`** (developer-only) — never a code edit. The gate lives in
+`TGDispatcher` **ahead of routing**, so a refused stranger never gets a `User` row, and it
+accepts the 16-letter token either as a `/start` payload or pasted as a bare message.
+`allowed_users` is in `WipeForRebalance.preserved` — a wipe resets the game, not the guest
+list. `developerUsers` stays hardcoded and is allowed before the table is read: the brake
+against locking yourself out of your own bot. Token design and the three decisions behind
+it: auto-memory `invite-only-access`.
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build
@@ -228,28 +212,21 @@ live rows still point at — if you add a column that stores a content id, add i
 `LiveReferenceQuery.collect` or the hot swap will happily break it. **Lingo is NOT
 reloaded**: new locale strings still need a restart.
 
-**Content is specified before it is authored.** `content/spec/*.md` holds the
-signed-off list — what creatures exist, at what level and archetype, what items
-fill which slot, what a set bonus may cost and where silver enters and leaves —
-and content work follows it, never goes around it. All five were approved in
-Phase 9. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening>`, which reads the same
-`ProgressionMath` / `EnemyGenerator` / `BudgetMath` / `BudgetCurve` the game does,
-so a specification cannot drift from the generator it feeds. `opening` is the one
-table that ROLLS rather than solves — a fight's Vigor cost is a distribution — so
-it runs `FightSimulator` at the same seed and sample size `simulate` uses, and the
-two print the same numbers by construction. Give it `-c release`.
+**Content is specified before it is authored.** `content/spec/*.md` holds the signed-off
+list — what creatures exist, at what level and archetype, what items fill which slot, what a
+set bonus may cost and where silver enters and leaves — and content work follows it, never
+goes around it. Every number in a spec is printed by `swift run roi-content spec
+<progression|gates|bestiary|items|sets|economy|opening>`, never typed, so a specification
+cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
+`-c release`.
 
-**A spec quotes generated tables inside `<!-- generated: … -->` markers, and the
-marker records the COMPLETE command including flags** — a block produced with
-`--levels 1,10,20,25,30,40` under a bare `roi-content spec sets` marker cannot be
-reproduced, so it reads as permanently drifted even though every number in it is
-right. **After any content edit, re-run the command in the marker and refresh those
-blocks** — the markers exist so
-drift is mechanically detectable, and in Phase 10 that check caught two blocks the
-enemy re-spread had silently invalidated. It protects tables, not the prose beside
-them: a hand-counted number in a sentence is exactly where the one real error of
-Phase 9 lived.
+**A spec quotes generated tables inside `<!-- generated: … -->` markers, and the marker
+records the COMPLETE command including flags** — a block produced with extra flags under a
+bare marker cannot be reproduced. **After any content edit, re-run the command in the marker
+and refresh those blocks.** It protects tables, not the prose beside them: a hand-counted
+number in a sentence is exactly where the one real error of Phase 9 lived. See auto-memory
+`feedback-content-spec-before-authoring`,
+`feedback-printed-numbers-protect-tables-not-prose`.
 
 Full rules, the migration pattern and the verification discipline: `.memory/content-pipeline.md`.
 Run `swift run roi-content validate --strict` before committing content, and
@@ -259,7 +236,6 @@ decide every fight, and the report is the only thing that shows what moved. It b
 level invariance (a level-1 and a level-40 fight must play the same), the p90 tail,
 win rates, pace to the cap and the shipped roster against its own archetype contract;
 `--strict` exits 1 on a broken band.
-
 
 ```
 Swift/
@@ -330,19 +306,26 @@ let button = TGInlineKeyboardButton(text: "Label", callbackData: "prefix:value")
 lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 ```
 
-**The player is addressed as «ви» (uk).** Every Ukrainian string that speaks to the player uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-ите`, imperative `-іть/-те` — NPC speech included. That settles past tense and adjectives on its own (both go plural), so the only thing left that declines by gender is a **noun naming the player**: намісник/-иця, воїне/войовнице.
+**The player is addressed as «ви» (uk).** Every Ukrainian string that speaks to the player
+uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-ите`, imperative
+`-іть/-те` — NPC speech included. That settles past tense and adjectives on its own, so the
+only thing left that declines by gender is a **noun naming the player**.
 
-**Ukrainian agrees with the ITEM's name too.** A sentence about a thing agrees
-with that thing's noun — «лук зламав**ся**», «чоботи зламали**сь**» — so every
-item declares `item.<id>.gender` (`m` · `f` · `n` · `pl`) **in `uk.json` only**:
-gender belongs to the WORD, not the object, and English never asks. Route such a
-string through `ItemDisplay.localize(_:agreeingWith:lingo:locale:)`, which picks
-`<key>.m/.f/.n/.pl` for uk and the plain key elsewhere — the mirror of the
-player-gender helper below. The validator warns (`locale.item_gender_missing`)
-when a name declares no gender, because the silent fallback is masculine and that
-is wrong for seventeen of the thirty-three shipped names.
+**Ukrainian agrees with the ITEM's name too** — «лук зламав**ся**», «чоботи зламали**сь**».
+Every item declares `item.<id>.gender` (`m` · `f` · `n` · `pl`) **in `uk.json` only**:
+gender belongs to the WORD, not the object, and English never asks. Route such a string
+through `ItemDisplay.localize(_:agreeingWith:lingo:locale:)`.
 
-**Gendered text (uk feminitives):** Ukrainian strings that name the player with a gendered noun use the gender-aware overload — `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`. It looks up `key.m`/`key.f` for `uk` and the plain `key` for English (so **never duplicate English** — only `uk.json` gets `.m`/`.f`). Player gender (`User.gender`, "m"/"f", nil=male) is chosen at registration step 1. Thirteen keys still need it; nine collapsed to single keys on 2026-09-07 when «ви» made their two variants identical. When new copy names the player, either add `.m`/`.f` + route through this overload, or phrase around the noun. Full key list + rationale in `.memory/localization.md`.
+**Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
+`lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`, which
+looks up `key.m`/`key.f` for `uk` and the plain `key` for English — so **never duplicate
+English**, only `uk.json` gets `.m`/`.f`. Player gender is `User.gender` ("m"/"f", nil=male),
+chosen at registration step 1. When new copy names the player, either add `.m`/`.f` + the
+overload, or phrase around the noun.
+
+Key lists, the three-way sweep that catches a missed mid-sentence imperative, and the full
+rationale: `.memory/localization.md`; auto-memory `feedback-formal-address-vy`,
+`project-item-grammatical-gender`.
 
 ### Daily resets (`Swift/Helpers/GameDay.swift`)
 
@@ -357,12 +340,26 @@ rollover (see `ArenaProfile.fightsSpentToday` and `QuestProgress.dayStamp`).
 the Arena budget and the quest of the day from drifting apart.
 
 ### Player-visible photos (capital / estate / location backdrops / registration / lore)
-**RULE — every player-visible image goes through `sendCachedPhoto(...)` (`Swift/Helpers/PhotoCache.swift`), no exceptions.** This is the ONLY sanctioned way to send a photo: it captures Telegram's `file_id` on first send and reuses it forever, so any newly-added art is automatically file_id-cached the first time it's shown — there is nothing extra to register. Never call `bot.sendPhoto` directly for player art, and note the `TGBot.sendMessage(session:text:…)` convenience has **no `photo:` parameter** on purpose (that bypass was removed) — if you need an image, you need `sendCachedPhoto`. The helper does one thing:
-- **file_id cache** — first send uploads the JPG/PNG bytes, captures Telegram's returned `file_id`, every later send reuses the id (no repeated upload). file_id is a global Telegram reference, so one cached entry serves every user; the cache is in-memory and refills after a restart. (After swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped and the new bytes re-upload.)
 
-**RULE — every in-place screen redraw goes through `editScreen(...)` (`Swift/Helpers/ScreenEdit.swift`).** Telegram edits a message's TEXT or its CAPTION, never either, and which one a screen has depends on whether it was sent with artwork — so `editMessageText` against a photo fails with "there is no text in the message to edit". That was **310 of the 807 API refusals** in a day and a half of Pi log, every one swallowed by `try?`: the player tapped, the screen did not change, and nothing said why. `editScreen` takes `isPhoto` as the caller's expectation and the fast path, falls back to the other field when that is wrong, and logs the recovery with the call site (`#function`). Never call `editMessageText` / `editMessageCaption` directly. Its `TelegramAPIError` also lets `HummingbirdTGClient` pick a log level by refusal, so "message is not modified" and "message to delete not found" stop burying the failures that matter.
+**RULE — every player-visible image goes through `sendCachedPhoto(...)`
+(`Swift/Helpers/PhotoCache.swift`), no exceptions.** It captures Telegram's `file_id` on
+first send and reuses it forever, so newly-added art is cached the first time it is shown —
+there is nothing extra to register. Never call `bot.sendPhoto` directly for player art, and
+note `TGBot.sendMessage(session:text:…)` has **no `photo:` parameter** on purpose. (After
+swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped.)
 
-Photos are **kept in chat history** — nothing is deleted. Players asked to keep a scrollable record of where they've been (and for future stats). Because every bubble references the same server-side file_id, a long history of repeated backdrops costs no extra storage (Telegram dedups by file_id), so accumulation is cheap.
+**RULE — every in-place screen redraw goes through `editScreen(...)`
+(`Swift/Helpers/ScreenEdit.swift`).** Telegram edits a message's TEXT or its CAPTION, never
+either, and which one a screen has depends on whether it was sent with artwork — so
+`editMessageText` against a photo fails. `editScreen` takes `isPhoto` as the caller's
+expectation and the fast path, falls back to the other field when that is wrong, and logs
+the recovery with the call site (`#function`). Never call `editMessageText` /
+`editMessageCaption` directly. Its `TelegramAPIError` also lets `HummingbirdTGClient` pick a
+log level by refusal, so the benign refusals stop burying the ones that matter.
+
+Photos are **kept in chat history** — nothing is deleted. Players asked for a scrollable
+record of where they have been, and because every bubble references the same server-side
+file_id, a long history of repeated backdrops costs no extra storage.
 ```swift
 _ = try await sendCachedPhoto(
     assetPath: "\(projectPath)/Assets/capital/<id>.jpg",
@@ -372,7 +369,12 @@ _ = try await sendCachedPhoto(
     bot: context.bot
 )
 ```
-**Exception — tavern gambling rolls (24 h sweep).** Dice/darts rounds spray messages (labels, animated dice, result). Telegram forbids bots from deleting a **dice** message in a private chat until it's 24 h old (anti-cheat), so they can't be removed when the round ends — they stay as game history. Each round records every message id via `TavernCleanupService.record(...)` into the `tavern_game_messages` table; a background sweeper (`TavernCleanupService.startSweeper`, started in `configure.swift`, mirrors `PlotProductionService`) deletes each message + row once it ages past 24 h. This is the only message flow that gets cleaned up.
+**Exception — tavern gambling rolls (24 h sweep).** Telegram forbids bots from deleting a
+**dice** message in a private chat until it is 24 h old, so those rounds stay as game
+history; `TavernCleanupService.record(...)` logs every message id into
+`tavern_game_messages` and a background sweeper deletes each once it ages past 24 h. This is
+the only message flow that gets cleaned up. Auto-memory `project-tavern-dice-cleanup`,
+`reference-telegram-dice-24h-delete`.
 
 ## Environment Variables
 
