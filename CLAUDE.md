@@ -146,6 +146,15 @@ exact one dropping its tail so a whole-minute window still reads `5хв`. Durati
 written into copy either — the expedition buttons, the tarot "active for" prefix and the
 invite window are all printed from the values that own them.
 
+**One number, one source. A screen never sums two losses under one label.** A step in
+the forest can cost HP twice — the event it rolled, and the hunger tick that is charged on
+every step once Vigor hits 0 — so `ExplorationService.rollStep` returns a `StepResult`
+pairing the event with `starvationHpLost`, and each is printed on its own line. Carrying it
+on the RESULT rather than inside an enum case is the point: when it was each branch's job
+to remember, ten of `rollStep`'s exits are reachable while starving, and **two carried the tick, one fused it into the root's own number, one blamed a beast for it, and six dropped it silently**. If you add a source of damage to a step, add it
+to `StepResult` — never to another source's number. The measurement that forced this, and
+what the fused number told a player: auto-memory `project-damage-sources-named-separately`.
+
 **A rating is a rating on every screen, and is never labelled `%`.** `crit` · `dodge` ·
 `accuracy` are RATINGS converted through a level-linear curve (`CombatMath.percent`), so the
 same +5 crit is 4.16% at level 1 and 1.35% at the cap. Every screen prints the bare rating,

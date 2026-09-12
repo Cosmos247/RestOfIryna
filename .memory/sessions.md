@@ -1,5 +1,91 @@
 # Session History
 
+## Session — 2026-09-12 (a root that looked twice as strong)
+
+Found by playing, like every defect since the deploy. A level-20 archer at 211 max HP
+read `🦵 Ви перечепилися об корінь ❤️ −22 ОЗ` on the step that killed them, and asked
+why roots had got stronger and where 11 had become 11.
+
+### What was actually happening
+
+Nothing had changed. `tripDamagePercent` has been `0.05` since `341a5b6` (30 Aug) and
+never moved — `git log -S` returns the commit that created it and nothing else. The
+root took 11. Hunger took the other 11, on the same step, and
+`rollStep` returned `.trip(hpLost: tripDmg + starvationLoss)`, so the screen printed
+the sum under the root's own label and its own 🦵.
+
+Two separate knobs, both `0.05` of `effectiveMaxHp`: `exploration.tripDamagePercent`
+and `vigor.starvation.hpDrainPercent`. A trip while starving is therefore exactly
+double, which is indistinguishable from a root that hit twice as hard.
+
+The step chain off the screenshot closes with no remainder: 🍖 4 → 2 → 0, so the walk
+drained Vigor to zero and `isStarving` (checked AFTER the drain) fired on that same
+step; ❤️ 25 → 14 (root only) → 0 (root + hunger). The player was two steps from death
+from hunger alone — without the root they would have had 3 HP and died on the next one.
+
+### The audit, which is where the real damage was
+
+Only two readers: `ExplorationController` and `PassiveExpeditionService`. But the tick
+is applied once in `rollStep` and then **each branch had to remember to carry it, and most
+did not** — ten of its returns are reachable while starving, and only two carried the tick:
+
+| step rolls, while starving | HP taken | reported |
+|---|---|---|
+| `.nothing` | yes | yes, as `.starvationOnly` |
+| `.loot` — found nothing | yes | yes |
+| `.loot` — found something | yes | **nothing at all** |
+| `.trip` | yes | fused into the root's number |
+| `.encounterStarted` (active) | yes | **nothing at all** |
+| `.encounterWon/Lost` (passive) | yes | no — `hpBefore` is read after the deduction |
+
+Two carried it, one fused it, one misattributed it, six dropped it. And `rollEncounter`'s
+starvation-death branch returned
+`.encounterLost(enemy: picked, rounds: 0)`, so a hunger death printed **"the bear broke
+your guard after 0 rounds"** about an animal that never appeared.
+
+### What changed
+
+`rollStep` returns a `StepResult` — the event, plus `starvationHpLost` — instead of a
+bare `StepOutcome`. Carrying the tick on the RESULT is the fix: the branch decides the
+event, `rollStep` attaches the tick, and no branch can drop it. `.starvationOnly` is
+gone (it existed only as somewhere for the `.nothing` branch to put it), `.trip` carries
+its own damage alone, and `rollLoot` / `rollEncounter` lost their `extraStarvation`
+parameter entirely. The encounter branch now returns `.nothing` when hunger already
+finished the player, so the death screen names hunger instead of a beast.
+
+Rendering: `narrateStep` prints the event line, then `narrateStarvation` beneath it when
+hunger took anything — on the step screen, the death screen, and as its own message
+before the combat hand-off, which had no line for it at all. In the passive report
+hunger left `outcomeCounts` (it can land on ANY step, so a bucket both hid the event
+that step rolled and broke the row's total) for its own pair of totals,
+`starvationSteps` / `starvationHpLost`, on their own line. Both report structs decode
+the new fields with `?? 0`, so in-flight rows and stored reports need no migration, and
+`"starvation"` stays in `outcomeOrder` so old reports still render their tally.
+
+New key `exploration.passive.report.starvation` in both locales; 🥀 prepended in Swift
+per the Lingo emoji rule.
+
+### Why the number had moved at all
+
+Worth recording because it answers "we never discussed this". `8cf7ca9` (Phase 6, 30 Aug)
+swept `user.maxHp` → `user.effectiveMaxHp` across the codebase and took the trip with it
+— a two-line diff inside a 49-file commit whose message never says "exploration". Before
+it, the root was 5% of BASE HP and armour could not move it. After it, the rounding
+boundary between 10 and 11 sits at exactly **210** max HP, so completing the Forester set
+(+6 HP at four pieces) or repairing the piece that had worn to 0 flips the number.
+Broken armour contributes zero. Auto-memory `project-damage-sources-named-separately`.
+
+### Verification
+
+Build clean · 236 tests · `validate --strict` 0/0 · **all four digest hashes byte-identical**
+(`records f6fc421256085066` · `tuning ee45b18aea6b2c40` · `spawns eaea309f4813dfa2` ·
+`quests 30de20902006e3b9`) — no balance value moved, this is a reporting change only.
+`simulate` not re-run: `ROISim` never referenced `StepOutcome`, and none of the four
+balance tables were touched.
+
+**Not deployed.** The Pi still runs `fea2343`; this needs a rebuild and a `pm2 restart`,
+not a `/reload` — it is game code, not content.
+
 ## Session — 2026-09-12 (the docs stopped being a changelog)
 
 One commit, `1c04d6b`. No game code: the session primer, the conventions file and the

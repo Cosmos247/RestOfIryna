@@ -47,7 +47,18 @@ Both are documentation only — no game code, no content, no schema — so the P
 on anything a player can see and **needs no restart.** `origin/main` sits at `fea2343`.
 Pushing is manual and user-side; do not push.
 
-**The last session changed no game code.** It was a documentation and memory audit: the
+**2026-09-12 — the roots, and what else hid behind them.** One game-code change since the
+doc pass: a player asked why a root took 22 HP when it used to take 10. It took 11; hunger
+took the other 11 on the same step, and `.trip` reported the sum under the root's own label.
+The audit found the tick was applied once in `rollStep` and then each branch had to carry it:
+of the ten exits reachable while starving, two carried it, one fused it, one blamed a beast,
+and six dropped it silently. `rollStep` returns a `StepResult` now and every source
+of damage prints its own line. Reporting only — all four digest hashes byte-identical.
+**Not deployed: this is game code, so it needs a rebuild and a `pm2 restart`, not `/reload`.**
+Full account in `.memory/sessions.md` (2026-09-12), auto-memory
+`project-damage-sources-named-separately`.
+
+**The session before it changed no game code.** It was a documentation and memory audit: the
 session preamble was ~20,300 tokens with about 45% of it narrative the memory bank already
 held, and one narrative existed in three places at once. The split now in force is **the
 doc keeps the RULE, the memory bank keeps the REASON** — `CLAUDE.md` states the imperative

@@ -86,6 +86,21 @@ what a one-shot handed over (`AddFortuneOneShot`), every capital shop shows an i
 before the purchase question (`ItemCard`), and selling an item a taken job needs warns
 first. All four digest halves held.
 
+**2026-09-12 — a root that looked twice as strong.** Reported from play: a level-20 archer
+at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ` on the step that killed them. The root
+took 11; hunger took the other 11 on the same step, and `rollStep` returned
+`.trip(hpLost: tripDmg + starvationLoss)` so the screen printed the sum under the root's own
+label. Both are 5% of `effectiveMaxHp` from two different knobs, so a trip while starving is
+exactly double. The audit found worse: the tick was applied once and then each branch had to
+remember to carry it, and of the ten exits reachable while starving only two did. A `.loot`
+that found something and an `.encounterStarted` took the HP and said **nothing at all**; the
+passive encounter outcomes moved the report's total but attributed none of it, and a hunger death on
+an encounter step printed "the bear broke your guard after 0 rounds" about an animal that
+never appeared. `rollStep` now returns a `StepResult` (event + `starvationHpLost`), hunger
+gets its own line on the step screen, the death screen and before the combat hand-off, and
+its own two totals in the passive report instead of an `outcomeCounts` bucket. Reporting
+only — all four digest hashes byte-identical. **Not deployed.**
+
 **2026-09-09 part 2** — one `Countdown` format for every timer and no hand-written duration
 left in the copy; `RestNotificationService` (HP full · fortune ready · 12:00 rollover) as a
 60 s watchman, because lazy regen has no observer at the moment it completes; a **3 h/day

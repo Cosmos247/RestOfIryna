@@ -69,6 +69,13 @@ public struct PassiveReport: Codable, Sendable {
     /// Stat growth totals from the XP grant — all zeroes unless the
     /// expedition levelled the player. Printed by `LevelUpBanner`.
     public let growth: User.StatGrowth
+    /// Steps on which hunger bit, and the HP it took across all of them.
+    /// NOT an `outcomeCounts` bucket: hunger can land on any step, so counting
+    /// it there would hide the event that step actually rolled and stop the
+    /// buckets summing to the step count. Zero on reports written before this
+    /// pair existed.
+    public let starvationSteps: Int
+    public let starvationHpLost: Int
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
@@ -86,7 +93,9 @@ public struct PassiveReport: Codable, Sendable {
         xpEarned: Int = 0,
         levelsGained: Int = 0,
         newLevel: Int = 1,
-        growth: User.StatGrowth = User.StatGrowth()
+        growth: User.StatGrowth = User.StatGrowth(),
+        starvationSteps: Int = 0,
+        starvationHpLost: Int = 0
     ) {
         self.stepsTaken = stepsTaken
         self.finalDepth = finalDepth
@@ -102,12 +111,14 @@ public struct PassiveReport: Codable, Sendable {
         self.levelsGained = levelsGained
         self.newLevel = newLevel
         self.growth = growth
+        self.starvationSteps = starvationSteps
+        self.starvationHpLost = starvationHpLost
     }
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
         case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
-        case growth
+        case growth, starvationSteps, starvationHpLost
     }
 
     public init(from decoder: any Decoder) throws {
@@ -126,6 +137,8 @@ public struct PassiveReport: Codable, Sendable {
         levelsGained = (try? c.decode(Int.self, forKey: .levelsGained)) ?? 0
         newLevel = (try? c.decode(Int.self, forKey: .newLevel)) ?? 1
         growth = (try? c.decode(User.StatGrowth.self, forKey: .growth)) ?? User.StatGrowth()
+        starvationSteps = (try? c.decode(Int.self, forKey: .starvationSteps)) ?? 0
+        starvationHpLost = (try? c.decode(Int.self, forKey: .starvationHpLost)) ?? 0
     }
 }
 
@@ -145,12 +158,19 @@ public struct RunningPassiveReport: Codable, Sendable {
     /// in one call at finalize time. Optional in storage for backwards
     /// compatibility with pre-5.3a in-flight rows.
     public var xpEarned: Int
+    /// Hunger's running totals. Persisted with the rest so a bot restart
+    /// mid-run resumes the count instead of reporting a shorter famine than
+    /// the player actually walked through.
+    public var starvationSteps: Int
+    public var starvationHpLost: Int
 
     public init(
         hpBefore: Int, vigorBefore: Int,
         outcomeCounts: [String: Int],
         lootPicked: [String: Int], lootDropped: [String: Int],
-        xpEarned: Int = 0
+        xpEarned: Int = 0,
+        starvationSteps: Int = 0,
+        starvationHpLost: Int = 0
     ) {
         self.hpBefore = hpBefore
         self.vigorBefore = vigorBefore
@@ -158,10 +178,13 @@ public struct RunningPassiveReport: Codable, Sendable {
         self.lootPicked = lootPicked
         self.lootDropped = lootDropped
         self.xpEarned = xpEarned
+        self.starvationSteps = starvationSteps
+        self.starvationHpLost = starvationHpLost
     }
 
     enum CodingKeys: String, CodingKey {
         case hpBefore, vigorBefore, outcomeCounts, lootPicked, lootDropped, xpEarned
+        case starvationSteps, starvationHpLost
     }
 
     public init(from decoder: any Decoder) throws {
@@ -172,6 +195,8 @@ public struct RunningPassiveReport: Codable, Sendable {
         lootPicked = try c.decode([String: Int].self, forKey: .lootPicked)
         lootDropped = try c.decode([String: Int].self, forKey: .lootDropped)
         xpEarned = (try? c.decode(Int.self, forKey: .xpEarned)) ?? 0
+        starvationSteps = (try? c.decode(Int.self, forKey: .starvationSteps)) ?? 0
+        starvationHpLost = (try? c.decode(Int.self, forKey: .starvationHpLost)) ?? 0
     }
 }
 
@@ -394,6 +419,8 @@ public enum PassiveExpeditionService {
         var hpBefore: Int = 0
         var vigorBefore: Int = 0
         var xpEarned: Int = 0
+        var starvationSteps: Int = 0
+        var starvationHpLost: Int = 0
         var hasCapturedBefore = false
 
         while true {
@@ -413,6 +440,8 @@ public enum PassiveExpeditionService {
                 hpBefore      = restored.hpBefore
                 vigorBefore   = restored.vigorBefore
                 xpEarned      = restored.xpEarned
+                starvationSteps  = restored.starvationSteps
+                starvationHpLost = restored.starvationHpLost
                 hasCapturedBefore = true
             }
 
@@ -431,6 +460,7 @@ public enum PassiveExpeditionService {
                     hpBefore: hasCapturedBefore ? hpBefore : finalUser.hp,
                     vigorBefore: hasCapturedBefore ? vigorBefore : finalUser.vigor,
                     xpEarned: xpEarned,
+                    starvationSteps: starvationSteps, starvationHpLost: starvationHpLost,
                     died: false, deathDepth: nil,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -465,9 +495,9 @@ public enum PassiveExpeditionService {
             }
 
             // Roll one step.
-            let outcome: StepOutcome
+            let result: StepResult
             do {
-                outcome = try await ExplorationService.rollStep(
+                result = try await ExplorationService.rollStep(
                     for: user,
                     kmDepth: nextStep,
                     // Past the first step an unattended walk rolls
@@ -485,8 +515,10 @@ public enum PassiveExpeditionService {
                 return
             }
 
-            recordOutcome(outcome, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped,
-                          xpEarned: &xpEarned, playerLevel: user.level)
+            recordOutcome(result, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped,
+                          xpEarned: &xpEarned,
+                          starvationSteps: &starvationSteps, starvationHpLost: &starvationHpLost,
+                          playerLevel: user.level)
 
             // Persist the post-step running totals on the state row alongside
             // `stepsDeep` — single save, both fields together. Survives any
@@ -497,7 +529,9 @@ public enum PassiveExpeditionService {
                 outcomeCounts: outcomeCounts,
                 lootPicked: lootPicked,
                 lootDropped: lootDropped,
-                xpEarned: xpEarned
+                xpEarned: xpEarned,
+                starvationSteps: starvationSteps,
+                starvationHpLost: starvationHpLost
             )
             state.runningReportJSON = encodeRunningReport(snapshot)
             state.stepsDeep = nextStep
@@ -518,6 +552,7 @@ public enum PassiveExpeditionService {
                     lootPicked: lootPicked, lootDropped: lootDropped,
                     hpBefore: hpBefore, vigorBefore: vigorBefore,
                     xpEarned: xpEarned,
+                    starvationSteps: starvationSteps, starvationHpLost: starvationHpLost,
                     died: true, deathDepth: nextStep,
                     on: db, bot: bot, lingo: lingo
                 )
@@ -538,6 +573,8 @@ public enum PassiveExpeditionService {
         hpBefore: Int,
         vigorBefore: Int,
         xpEarned: Int,
+        starvationSteps: Int,
+        starvationHpLost: Int,
         died: Bool,
         deathDepth: Int?,
         on db: any Database,
@@ -602,7 +639,9 @@ public enum PassiveExpeditionService {
             xpEarned: xpResult.xpAwarded,
             levelsGained: xpResult.levelsGained,
             newLevel: xpResult.newLevel,
-            growth: xpResult.growth
+            growth: xpResult.growth,
+            starvationSteps: starvationSteps,
+            starvationHpLost: starvationHpLost
         )
 
         do {
@@ -645,18 +684,25 @@ public enum PassiveExpeditionService {
     }
 
     private static func recordOutcome(
-        _ outcome: StepOutcome,
+        _ result: StepResult,
         counts: inout [String: Int],
         picked: inout [String: Int],
         dropped: inout [String: Int],
         xpEarned: inout Int,
+        starvationSteps: inout Int,
+        starvationHpLost: inout Int,
         playerLevel: Int
     ) {
-        switch outcome {
+        // Hunger is tallied beside the buckets, not as one of them: it can land
+        // on ANY step, so a `counts["starvation"]` bump both hid the event that
+        // step rolled and made the row's own total wrong.
+        if result.starvationHpLost > 0 {
+            starvationSteps += 1
+            starvationHpLost += result.starvationHpLost
+        }
+        switch result.outcome {
         case .nothing:
             counts["nothing", default: 0] += 1
-        case .starvationOnly:
-            counts["starvation", default: 0] += 1
         case .trip:
             counts["trip", default: 0] += 1
         case .loot(let itemId, let quantity, let pickedUp):
@@ -816,6 +862,9 @@ public enum PassiveExpeditionService {
         if totalEvents > 0 {
             lines.append("")
             lines.append(lingo.localize("exploration.passive.report.events_header", locale: locale, interpolations: ["total": "\(totalEvents)"]))
+            // "starvation" is a LEGACY bucket, kept only so reports written
+            // before hunger got its own totals still render their tally. New
+            // runs never write it — see the line below the row.
             let outcomeOrder = ["nothing", "loot", "encounter_won", "encounter_lost", "trip", "starvation"]
             var parts: [String] = []
             for key in outcomeOrder {
@@ -825,6 +874,19 @@ public enum PassiveExpeditionService {
                 parts.append("\(label) × \(count)")
             }
             lines.append(parts.joined(separator: " · "))
+        }
+
+        // Hunger on its own line, with its own two numbers. It rode inside the
+        // events row before, which could not say how much HP it had cost —
+        // the same fusion that made a root look like it took 22 HP.
+        if report.starvationSteps > 0 {
+            lines.append("")
+            // 🥀 prepended in Swift: a leading supplementary-plane emoji breaks
+            // Lingo's `%{var}` parser.
+            lines.append("🥀 " + lingo.localize("exploration.passive.report.starvation", locale: locale, interpolations: [
+                "steps": "\(report.starvationSteps)",
+                "hp": "❤️ −\(report.starvationHpLost)"
+            ]))
         }
 
         // Loot section is skipped entirely when the governor died — the

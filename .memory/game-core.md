@@ -42,6 +42,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - 0 to VigorMax (scales with level, ~100-300)
 - Drains: room walk (2), double-speed (4), combat round (1)
 - Starvation: travel time doubles, stats -25%, HP drain per room
+  (5% of max HP, `tuning/vigor.json` → `starvation.hpDrainPercent`). It is charged
+  on EVERY step once Vigor is 0, whatever else the step rolled, and is **always
+  printed on its own line** — `rollStep` carries it on `StepResult`, never inside an
+  event's number. See `project-damage-sources-named-separately`.
 - Food tiers: T1 (15) -> T4 (150)
 - **No passive Vigor regeneration at all** since Phase 8E — the pool is a stock, fed by
   food, quests and levelling, and the estate's plots are the intended income

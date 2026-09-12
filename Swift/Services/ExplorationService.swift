@@ -36,7 +36,34 @@ public enum StepOutcome: Sendable {
     case encounterStarted(enemy: Enemy)
     case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int, loot: [(itemId: String, quantity: Int, picked: Bool)])
     case encounterLost(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int)
-    case starvationOnly(hpLost: Int)
+}
+
+/// One step's damage ledger: the event the forest rolled, and the hunger tick,
+/// which is charged independently of it.
+///
+/// Two fields because they are two losses. Folding them into one number is the
+/// defect this type exists to prevent: `.trip` used to report
+/// `tripDmg + starvationLoss` under the root's own label, so a player at 211
+/// max HP read "the root took 22" when the root took 11 and hunger took the
+/// other 11. Most exits were worse than fused: ten of this function's returns
+/// are reachable while starving, and only the two `.starvationOnly` ones carried
+/// the tick. One named a beast for it. The other six took the HP off `user.hp`
+/// and reported nothing at all — because carrying it was each branch's job to
+/// remember, and most branches did not.
+///
+/// Carrying it on the RESULT is what makes that unforgettable: the branch
+/// decides the event, `rollStep` attaches the tick, and every renderer prints
+/// both on their own lines.
+public struct StepResult: Sendable {
+    public let outcome: StepOutcome
+    /// HP hunger took this step, already deducted from `user.hp`. Zero unless
+    /// the walk drained vigor to 0, or it was already there.
+    public let starvationHpLost: Int
+
+    public init(outcome: StepOutcome, starvationHpLost: Int) {
+        self.outcome = outcome
+        self.starvationHpLost = starvationHpLost
+    }
 }
 
 // MARK: - Autobattle result (Phase 4 stub)
@@ -137,9 +164,12 @@ public enum ExplorationService {
     /// (loot is already added to inventory by this function though).
     ///
     /// `priorVisits` picks the weight tier: 0 = fresh, 1 = reduced, 2+ = bare
-    /// (only `.nothing` / `.starvationOnly` can fire). The controller passes
-    /// the room's current visit count *before* incrementing it for this step.
-    public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, mode: ExplorationMode = .active, on db: any Database) async throws -> StepOutcome {
+    /// (only `.nothing` can fire). The controller passes the room's current
+    /// visit count *before* incrementing it for this step.
+    ///
+    /// The hunger tick rides on the returned `StepResult`, never inside an
+    /// event's own number — see `StepResult`.
+    public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, mode: ExplorationMode = .active, on db: any Database) async throws -> StepResult {
         // Vigor drain for the walk itself.
         _ = VigorService.drain(user, action: .walkRoom)
 
@@ -179,30 +209,34 @@ public enum ExplorationService {
             }
         }
 
+        // Every exit pairs its event with the tick, so no branch can drop it.
+        func step(_ outcome: StepOutcome) -> StepResult {
+            StepResult(outcome: outcome, starvationHpLost: starvationLoss)
+        }
+
         // Pick the event bucket.
         let roll = Int.random(in: 0..<weightTotal)
         if roll < wNothing {
-            if starvationLoss > 0 { return .starvationOnly(hpLost: starvationLoss) }
-            return .nothing
+            return step(.nothing)
         }
         if roll < wNothing + wLoot {
-            return try await rollLoot(for: user, kmDepth: kmDepth, on: db, extraStarvation: starvationLoss)
+            return step(try await rollLoot(for: user, kmDepth: kmDepth, on: db))
         }
         if roll < wNothing + wLoot + wEncounter {
-            return try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db, extraStarvation: starvationLoss)
+            return step(try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db))
         }
         _ = wTrip
         let tripDmg = max(1, Int((Double(user.effectiveMaxHp) * tripDamagePercent).rounded()))
-        // Only the trip is charged here — `applyStarvationHPLoss` above has
-        // already taken the hunger tick off `user.hp`. The REPORT still names
-        // both, because both left the player this step.
+        // The root's OWN damage and nothing else. `applyStarvationHPLoss` above
+        // already took the hunger tick off `user.hp`, and it is reported on its
+        // own line from `starvationHpLost`.
         user.hp = max(0, user.hp - tripDmg)
-        return .trip(hpLost: tripDmg + starvationLoss)
+        return step(.trip(hpLost: tripDmg))
     }
 
     // MARK: - Private rolls
 
-    private static func rollLoot(for user: User, kmDepth: Int, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
+    private static func rollLoot(for user: User, kmDepth: Int, on db: any Database) async throws -> StepOutcome {
         // Depth-aware FORAGING pool, from `content/data/zones.json` since Phase
         // 8E — it was two Swift arrays and a nested ternary here, the last
         // content left in code after Phase 3 emptied every catalog. Hide and
@@ -214,15 +248,13 @@ public enum ExplorationService {
         // covers no km is a content gap the validator reports; handing out
         // lumber forever instead is the same silent-wrong-item bug that made
         // every encounter past km 35 a wild boar.
+        //
+        // Nothing to find here. The hunger tick, if there was one, rides on
+        // `StepResult` — this branch used to have to remember it, and the
+        // branch below that DID find something never did, so a starving player
+        // who picked a berry lost 5% of max HP with the screen saying only
+        // "found 2 berries".
         guard let itemId = ZoneCatalog.rollForage(atDepth: kmDepth) else {
-            // Nothing to find here — but the starvation tick still has to be
-            // both APPLIED and REPORTED, exactly as the "nothing happens"
-            // bucket above does it. Swallowing it into `.nothing` would take
-            // HP off the player and tell them the room was empty.
-            // Already deducted by `applyStarvationHPLoss`; this only reports it.
-            if extraStarvation > 0 {
-                return .starvationOnly(hpLost: extraStarvation)
-            }
             return .nothing
         }
         let quantity = Int.random(in: 1...2)
@@ -236,16 +268,15 @@ public enum ExplorationService {
         }
     }
 
-    private static func rollEncounter(for user: User, kmDepth: Int, mode: ExplorationMode, on db: any Database, extraStarvation: Int) async throws -> StepOutcome {
-        if extraStarvation > 0 {
-            // The tick is already off `user.hp`; all this branch decides is
-            // whether it was the one that finished the player.
-            if user.hp <= 0 {
-                // Died from starvation on the step — skip the fight; callers handle death.
-                let any = EnemyCatalog.pickFor(kmDepth: kmDepth) ?? EnemyCatalog.all[0]
-                return .encounterLost(enemy: any, rounds: 0, hpLost: extraStarvation, vigorLost: 0)
-            }
-        }
+    private static func rollEncounter(for user: User, kmDepth: Int, mode: ExplorationMode, on db: any Database) async throws -> StepOutcome {
+        // Nothing but `applyStarvationHPLoss` has touched HP this step, so a
+        // player at zero here was finished by hunger before anything could
+        // step out of the trees — there is no fight to have. It used to return
+        // `.encounterLost(rounds: 0)` against a beast picked for the km, and
+        // the death screen then read "the bear broke your guard after 0
+        // rounds" about an animal that never appeared. The truth is an empty
+        // step plus the tick, which `StepResult` now carries.
+        if user.hp <= 0 { return .nothing }
 
         guard let enemy = EnemyCatalog.pickFor(kmDepth: kmDepth) else {
             return .nothing

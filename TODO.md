@@ -1190,6 +1190,21 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         `RestNotificationService` applies the same rule (one bulk `TravelState` query beside
         the expedition one) so it cannot heal or announce a player it should leave alone.
         Potions stay the away-from-home heal. No content moved.
+  - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
+        A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
+        hunger took the other 11 on the same step, printed as one number under the root's own
+        label. Both are 5% of `effectiveMaxHp`, from two different knobs, so a trip while
+        starving is exactly double. The tick was applied once in `rollStep` and then each
+        branch had to remember to carry it, and of the ten exits reachable while starving only
+        two did: a `.loot` that found something and an `.encounterStarted` took the HP and said
+        nothing at all, the passive encounter outcomes moved the report's total without
+        attributing any of it, and a hunger death on an encounter step blamed a beast that never
+        appeared (`.encounterLost(rounds: 0)`). `rollStep` now returns `StepResult` (event +
+        `starvationHpLost`); `.starvationOnly` is gone; hunger prints its own line on the step
+        screen, the death screen and before the combat hand-off, and gets its own two totals
+        in the passive report instead of an `outcomeCounts` bucket (both report structs decode
+        the new fields with `?? 0`, so no migration). Reporting only — all four digest halves
+        byte-identical. Not deployed.
   - [x] **Live-play polish, part 3** *(2026-09-10)* — three symptoms reported from live play
         (a fight starting under the walking keyboard, arriving in the capital with the estate
         keyboard, taps that produced no message at all) turned out to be four defects, none of

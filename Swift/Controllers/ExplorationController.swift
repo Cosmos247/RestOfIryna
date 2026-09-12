@@ -376,7 +376,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         state.stepsDeep += 1
         let priorVisits = state.visitCount(state.stepsDeep)
 
-        let outcome = try await ExplorationService.rollStep(
+        let result = try await ExplorationService.rollStep(
             for: context.session,
             kmDepth: state.stepsDeep,
             priorVisits: priorVisits,
@@ -388,16 +388,17 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         if context.session.hp <= 0 {
-            try await handleDeath(context: context, outcome: outcome)
+            try await handleDeath(context: context, result: result)
             return true
         }
 
-        if case .encounterStarted(let enemy) = outcome {
-            try await handOffToCombat(context: context, state: state, enemy: enemy)
+        if case .encounterStarted(let enemy) = result.outcome {
+            try await handOffToCombat(context: context, state: state, enemy: enemy,
+                                      starvationHpLost: result.starvationHpLost)
             return true
         }
 
-        try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
+        try await renderOutcome(context: context, result: result, state: state, priorVisits: priorVisits)
         return true
     }
 
@@ -422,7 +423,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         state.stepsDeep -= 1
         let priorVisits = state.visitCount(state.stepsDeep)
 
-        let outcome = try await ExplorationService.rollStep(
+        let result = try await ExplorationService.rollStep(
             for: context.session,
             kmDepth: state.stepsDeep,
             priorVisits: priorVisits,
@@ -434,16 +435,17 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
 
         if context.session.hp <= 0 {
-            try await handleDeath(context: context, outcome: outcome)
+            try await handleDeath(context: context, result: result)
             return true
         }
 
-        if case .encounterStarted(let enemy) = outcome {
-            try await handOffToCombat(context: context, state: state, enemy: enemy)
+        if case .encounterStarted(let enemy) = result.outcome {
+            try await handOffToCombat(context: context, state: state, enemy: enemy,
+                                      starvationHpLost: result.starvationHpLost)
             return true
         }
 
-        try await renderOutcome(context: context, outcome: outcome, state: state, priorVisits: priorVisits)
+        try await renderOutcome(context: context, result: result, state: state, priorVisits: priorVisits)
         return true
     }
 
@@ -482,7 +484,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// CombatController, and send the intro screen with the class-flavoured
     /// keyboard. Called from the step handlers when `rollStep` rolls an
     /// encounter in active mode.
-    private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy) async throws {
+    private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy,
+                                 starvationHpLost: Int) async throws {
         let uses = CombatService.initialUsesForUser(context.session)
         state.beginCombat(enemyId: enemy.id, hp: enemy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
         try await state.save(on: context.db)
@@ -491,15 +494,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = combatCtrl.routerName
         try await context.session.saveAndCache(in: context.db)
 
+        // Hunger bit on the step that found this enemy, and the fight screen has
+        // no line for it. Say so before the beast does: the player is about to
+        // pick a stance on less HP than they last saw.
+        //
+        // AFTER the fight is stamped, not before, even though it prints first: a
+        // send that throws here leaves a player whose combat row is set and whose
+        // screen never arrived, and `guardInCombat` re-renders that on the next
+        // tap. Sending first would have made the same throw swallow the encounter
+        // outright, which is a failure mode the hand-off did not have before.
+        if let hunger = narrateStarvation(starvationHpLost, lingo: context.lingo, locale: context.session.locale) {
+            try await context.bot.sendMessage(session: context.session, text: hunger, parseMode: .html, replyMarkup: nil)
+        }
+
         try await combatCtrl.showCombat(context: context, state: state, enemy: enemy, intro: true)
     }
 
     // MARK: - Outcome rendering
 
-    private func renderOutcome(context: Context, outcome: StepOutcome, state: ExplorationState, priorVisits: Int) async throws {
+    private func renderOutcome(context: Context, result: StepResult, state: ExplorationState, priorVisits: Int) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let narrative = narrateOutcome(outcome, priorVisits: priorVisits, gender: context.session.gender, lingo: lingo, locale: locale)
+        let narrative = narrateStep(result, priorVisits: priorVisits, gender: context.session.gender, lingo: lingo, locale: locale)
         let status = renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale)
         let text = "\(narrative)\n\n\(status)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
@@ -624,8 +640,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// Hard respawn: wipe every non-equipped inventory row (equipped gear survives),
     /// set HP to 1 (vigor stays — per design), end the exploration state, and send
     /// a death screen as the main-menu text override.
-    private func handleDeath(context: Context, outcome: StepOutcome) async throws {
-        let cause = narrateOutcome(outcome, priorVisits: 0, gender: context.session.gender, lingo: context.lingo, locale: context.session.locale)
+    private func handleDeath(context: Context, result: StepResult) async throws {
+        let cause = narrateStep(result, priorVisits: 0, gender: context.session.gender, lingo: context.lingo, locale: context.session.locale)
         try await Self.handleDeath(context: context, causeNarrative: cause)
     }
 
@@ -665,6 +681,30 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         🌲 <b>\(depthLabel): \(state.stepsDeep) km</b>
         ❤️ \(user.hp)/\(user.effectiveMaxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)
         """
+    }
+
+    /// The whole step, as separate lines: what the forest did, then what
+    /// hunger did. Never one summed number — a player who reads "the root took
+    /// 22" when the root took 11 has been told the wrong thing about the only
+    /// mechanic they could have acted on.
+    fileprivate func narrateStep(_ result: StepResult, priorVisits: Int, gender: String?, lingo: Lingo, locale: String) -> String {
+        var lines = [narrateOutcome(result.outcome, priorVisits: priorVisits, gender: gender, lingo: lingo, locale: locale)]
+        if let hunger = narrateStarvation(result.starvationHpLost, lingo: lingo, locale: locale) {
+            lines.append(hunger)
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// The hunger tick's own line, or nil when hunger took nothing. Every
+    /// caller that can show HP leaving the player goes through this.
+    fileprivate func narrateStarvation(_ hpLost: Int, lingo: Lingo, locale: String) -> String? {
+        guard hpLost > 0 else { return nil }
+        // 🥀 prepended here, not in the template — Lingo drops interpolations
+        // that follow a multi-UTF-16 emoji. ❤️ rides inside the value for the
+        // same reason.
+        return "🥀 " + lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
+            "hp": "❤️ −\(hpLost)"
+        ])
     }
 
     /// Render the narrative for a rolled outcome. `.nothing` picks between
@@ -739,11 +779,6 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return "💀 " + lingo.localize("exploration.outcome.encounter.lost", locale: locale, interpolations: [
                 "enemy": enemyName,
                 "rounds": "\(rounds)"
-            ])
-
-        case .starvationOnly(let hpLost):
-            return "🥀 " + lingo.localize("exploration.outcome.starvation", locale: locale, interpolations: [
-                "hp": "❤️ −\(hpLost)"
             ])
 
         case .encounterStarted(let enemy):

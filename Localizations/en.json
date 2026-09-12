@@ -880,6 +880,7 @@
   "exploration.passive.report.no_loot": "<i>empty-handed</i>",
   "exploration.passive.report.loot_partial": " <i>(%{dropped} dropped — bag full)</i>",
   "exploration.passive.report.death": "Your governor fell at km %{km} 💀. The forest took every unbound thing they carried.",
+  "exploration.passive.report.starvation": "Hunger gnawed at you for %{steps} step(s): <b>%{hp} HP</b>",
   "exploration.passive.outcome.nothing": "🕊 silence",
   "exploration.passive.outcome.loot": "✨ find",
   "exploration.passive.outcome.encounter_won": "⚔️ victory",

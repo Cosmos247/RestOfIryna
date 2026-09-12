@@ -927,6 +927,7 @@
   "exploration.passive.report.loot_partial": " <i>(%{dropped} лишилось у лісі — сумка повна)</i>",
   "exploration.passive.report.death.m": "Намісник поліг на %{km} км 💀. Ліс забрав усе незакріплене, що він мав при собі.",
   "exploration.passive.report.death.f": "Намісниця полягла на %{km} км 💀. Ліс забрав усе незакріплене, що вона мала при собі.",
+  "exploration.passive.report.starvation": "Голод точив вас %{steps} крок(ів): <b>%{hp} ОЗ</b>",
   "exploration.passive.outcome.nothing": "🕊 тиша",
   "exploration.passive.outcome.loot": "✨ знахідка",
   "exploration.passive.outcome.encounter_won": "⚔️ перемога",
