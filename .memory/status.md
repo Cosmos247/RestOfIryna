@@ -8,7 +8,7 @@
 > numbers read the JSON; for the active work read [rebalance.md](rebalance.md).
 
 
-## Rebalance status (Phases 3–10 done · Phase 11 IN FLIGHT since 2026-09-02)
+## Rebalance status (Phases 3–11 done · Phase 11 closed as CODE · live-play polish since 2026-09-09)
 
 The pre-release rebalance is the only work in flight and has rewritten most of the
 numbers below. Current state:

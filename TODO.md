@@ -137,8 +137,15 @@ Design note: the 5-min room transition is **passive-mode-only**. Active reconnai
 - [x] `ExplorationController` mode picker [🏃 Розвідка / 🏕 Експедиція] as first screen when no state; duration picker edits message in place; countdown status for inflight; report delivery on re-open
 - [x] Background push — the detached task sends the report message directly to the player's chat when the timer fires
 - [x] Startup rescheduler in `configure.swift` picks up in-flight passive expeditions across bot restarts
-- [ ] Flip `testMode` to `false` once balance + UX validated (swap units from seconds to minutes)
-- [ ] Per-user daily expedition budget (2h, rolls over at server midnight)
+- [x] ~~Flip `testMode` to `false`~~ — **retired, not flipped.** Phase 4b deleted all three
+      `testMode` flags and folded them into one `time.scale`, which has been **1.0 since
+      2026-09-09**: the 30/60/90 authored minutes are now real minutes.
+- [x] **Per-user daily expedition budget** *(2026-09-09)* — shipped as
+      `passive.dailyBudgetMinutes` = **180** (3 h, not the drafted 2 h), counted in authored
+      minutes so the number of runs cannot change with `time.scale`, and rolling at **12:00
+      Kyiv** via `GameDay` rather than server midnight — every daily system keys off that one
+      helper. The picker offers only what the day can still pay for AND the handler re-checks;
+      the charge lands after `beginPassive` succeeds.
 - [ ] Early-cancel button for in-flight passive
 
 ### 3.4 Mode exclusivity *(landed)*
@@ -352,7 +359,9 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] `Assets/capital/welcome.jpg` + atmospheric lore + auto-loader (`renderLocation` picks up `Assets/capital/<id>.jpg` if present)
 - [x] Cross-controller guards: travel countdown in Main / Estate / Exploration; explore-from-capital blocked; estate-from-capital starts return trip
 - [x] Bugfix: inventory-from-capital no longer flips routerName (preserves capital nav); `inv:*` callbacks forwarded from CapitalController
-- [ ] Flip `TravelService.testMode = false` before shipping (currently 2 s per minute)
+- [x] ~~Flip `TravelService.testMode = false`~~ — **retired, not flipped** (Phase 4b folded
+      it into `time.scale`; at 1.0 a trip to the capital is 2 real minutes). The road also
+      gained a turn-back on 2026-09-10, priced off `endsAt` since 09-11.
 
 ### 6.1 Trader (Crамар) *(landed)*
 - [x] `TraderCatalog` static catalog — 11 listings, asymmetric (sell/buy) packets, per-tier pricing
@@ -392,7 +401,12 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] **Market** *(landed 2026-05-28)* — player-to-player marketplace. `MarketListing` model + `CreateMarketListings` migration + `MarketCatalog` (flat `listingFee = 5` silver sink, `maxActiveLots = 5`) + `MarketService` (createListing / buyListing / cancelListing, typed results, DB-only). Stackables only (gear excluded via `Item.stackable`). **Escrow at listing** — units leave the seller's bag onto the lot row; cancel returns them (fee kept). **Two-level item-grouped buy board**: Level 1 = one row per distinct item (`<item> · lots: K · from 🪙U`), Level 2 = that item's lots sorted cheapest-per-unit first (`×N · 🪙total (🪙U/ea) · @nick`) → confirm → buy. Buying debits buyer, credits seller, delivers items, deletes the lot, and pushes the seller a "sold" notification (PlotProductionService-style fire-and-forget). Sell = two-prompt flow (quantity → price, fee shown inline) via `PendingMarketListing` two-stage `EphemeralChatState` + `unmatched` text intercept. My-lots screen cancels with one tap. `onMarket` → `showMarket` (was the `renderLocation` stub). 37 locale keys × 2 (all neutral — no gendered words). `Assets/capital/market.jpg` not supplied yet → text fallback via `sendCachedPhoto`.
 - [x] **Trade** *(landed 2026-06-10)* — synchronous player-to-player exchange (MMO-style trade window), reached via the Market menu `[🤝 Обмін]` button. New `TradeStore` actor (in-memory: lobby presence + live sessions + `byUser` busy-index, TTL sweeper) + `TradeService` (offerable-items list + validate-then-mutate atomic swap) + `PendingTradeInput` in `EphemeralChatState` (silver / stack-qty text prompts). Flow: presence lobby (only players who opened the exchange; busy hidden) → invite → accept/decline push → both bags open (toggle stackables w/ qty prompt + gear by exact instance + `[+ срібло]`) → stage-1 `[✅ Погодити]` (both ready → lock) → combined-offer screen → stage-2 `[✅ Підтвердити обмін]` → commit. **Gear moves as the exact `InventoryEntry` row** (enchant/durability/tier preserved); bound starter weapon excluded (`WeaponUpgradeCatalog.isUpgradable`). No DB persistence — bot restart cancels in-flight trades. 33 locale keys × 2 (all neutral). Build clean. Known v1 limitation: a simultaneous double-confirm can briefly show a stale screen (state stays consistent, self-heals).
   - *Post-playtest polish (2026-06-15):* uk renamed Ринок→**Базар** across the locale; fixed the `🪙 Срібло: %{silver}` button (Lingo emoji-before-`%{}` bug) + dropped unused `від %U` from the buy-board row; `mutateBuilding` resets only the editor's ready-flag (1 tap each at selection — partner's «Погодити» no longer wiped by your edits); `finishTradeSuccess` posts a permanent per-side gave/got trade record at the bottom of chat (+`capital.trade.gave`/`got`, 35 keys × 2); transient numeric prompts now delete on submit/cancel while banners + the record stay.
-- [ ] **PvP Arena** — async duels (snapshot opponent stats, bot autobattles, ladder)
+- [x] **PvP Arena** *(landed Phase 8.3)* — shipped as a **live** duel, not the drafted
+      async snapshot: `ArenaStore` (actor holding lobby, challenges and in-flight duels, rolling
+      the dice inside the actor so roll and HP mutation cannot interleave) + `ArenaService` (DB
+      side: validation, Honor ELO, stake settlement, sweeper). Nothing about a live duel is
+      persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
+      Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred.
 - [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 
@@ -418,7 +432,8 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 
 ### 7.3 Player Interaction
 - [ ] Implement estate visiting (/visit @username)
-- [ ] Implement direct trading (two-player confirmation)
+- [x] ~~Implement direct trading (two-player confirmation)~~ — shipped **2026-06-10** as the
+      synchronous Trade window; see Phase 6.5 above for the full entry
 - [ ] Implement player search/lookup
 
 ---
@@ -1059,6 +1074,23 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         value it produced. `simulate --strict` did not move (0 broken bands, 12 warnings):
         the pace model always worked in per-hour rates, never in wall clock. The estate
         pace (78–87 days) is measurable from here on; it never was before.
+  - [x] **The docs stopped being a changelog** *(2026-09-12, `1c04d6b`, no game code)* —
+        `CLAUDE.md` + `Prompt.md` + the auto-memory index came to **~20,300 tokens of session
+        preamble**, about 45% of it narrative the memory bank already held in a fuller version.
+        One narrative existed in **three** places — `sessions.md`, `INDEX.md` and `Prompt.md`,
+        thirteen topics one-to-one in the same order — which is the mechanism by which they
+        drift apart. Split applied: **the doc keeps the RULE, the memory bank keeps the
+        REASON.** `Prompt.md` 547 → 287 lines, `CLAUDE.md` 440 → 442 but 4.3 KB lighter,
+        `INDEX.md` 165 → 45 and an index again. Preamble **20,300 → ~13,000 tokens**. Every
+        "never do X" guard deliberately stayed in the repo doc, because auto-memory FILES are
+        not loaded each session — only the index lines are. No deletion was accepted until
+        every backticked identifier (168) and multi-digit figure (37) in the removed text was
+        greped against the whole surviving corpus; one real loss surfaced and was fixed (four
+        2026-09-07 commit hashes that only `Prompt.md` had mapped to their work, now in
+        `sessions.md`). Seven stale records fell out of the same pass — two still documented
+        the hardcoded `allowedUsers` array, `game-core.md` priced a turn-back from `createdAt`
+        when that WAS the bug, the locale count was four low, and `turnBack`'s docblock argued
+        against its own body. Lesson: auto-memory `feedback-docs-keep-the-rule`.
   - [x] **The same stat had two names, and gear had two stat sets** *(2026-09-11,
         reported from play)* — `accuracy` was «Влучність» on the character sheet, the
         level-up banner, the item card and the fortune effect, and «Точність» in the
@@ -1289,4 +1321,13 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-10 — live-play polish. Phases 3–11 are closed as code; the work in flight is fixing what playing the deployed build reveals. Five commits this session: the router race + `editScreen`, resting as a place, turn back on the road, and the warehouse refusal that blamed the bag. Next: watch the `[ROUTE]` / `[COMBAT]` / `[SCREEN]` lines the new build writes, and keep walking the first hour — a fight lost, a flee, the trade screens and one run of `/reload` are still unwalked.*
+*Last updated: 2026-09-12 — a documentation pass, no game code. Phases 3–11 are closed as
+code and the bot is deployed; the work in flight is live-play polish, fixing what playing
+the build reveals. The session primer and the conventions file were cut back to rules plus
+pointers (preamble down 36%), and seven stale memory records were corrected. The API-error
+question the last footer named is ANSWERED: `Code: 400` stood at 913 before the `editScreen`
+deploy and 913 an hour after, with `[ROUTE]` / `[COMBAT]` / `[SCREEN]` silent. Next, and
+unchanged: walk the three surfaces the 09-10/11 build changed — the forest on the way home,
+a second turn-back on the road, the character sheet's three rating stats — then the older
+list, a fight lost, a flee, the trade screens, and one run of `/reload` against a real
+database. Two commits are unpushed.*

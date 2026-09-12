@@ -1,5 +1,115 @@
 # Session History
 
+## Session — 2026-09-12 (the docs stopped being a changelog)
+
+One commit, `1c04d6b`. No game code: the session primer, the conventions file and the
+memory index were audited for size and duplication, and seven stale records were fixed.
+Lesson in the auto-memory `feedback-docs-keep-the-rule`.
+
+### What was measured
+
+`CLAUDE.md` (31.8 KB / 440 lines), `Prompt.md` (35.8 KB / 547) and the auto-memory
+`MEMORY.md` (7.4 KB) came to **~20,300 tokens of session preamble** before a line of code
+is read. Nothing was near a readable limit — the Read cap is 2000 lines — so the problem
+was never truncation. It was duplication: about 45% of that was narrative the memory bank
+already held, in a fuller version.
+
+**The sharpest finding: one narrative in three places.** `.memory/sessions.md` (canonical),
+a condensation in `.memory/INDEX.md` §Live-play polish, and a second condensation in
+`Prompt.md` — checked item by item, **thirteen topics, one-to-one, same order, same
+conclusions.** Three copies is the mechanism by which they drift apart.
+
+### What changed
+
+The split applied throughout: **the doc keeps the RULE, the memory bank keeps the REASON.**
+
+| File | Before | After |
+|---|---|---|
+| `CLAUDE.md` | 31.8 KB / 440 | 27.5 KB / 442 — twelve sections cut to an imperative + a pointer |
+| `Prompt.md` | 35.8 KB / 547 | 16.9 KB / 287 — fourteen cuts; the 113-line commit narrative became ten bullets |
+| `.memory/INDEX.md` | 12.8 KB / 165 | 3.3 KB / 45 — an index again, giving up the narrative it was the third copy of |
+
+Preamble: **20,300 → ~13,000 tokens (−36%)**. The projection had been −43%; `CLAUDE.md`
+gave up less than planned because three of its sections turned out to state a trap rather
+than re-tell a bug (`location` is not flipped until arrival, and the like). Those stayed.
+
+**What deliberately did NOT move.** Auto-memory files are not loaded each session — only
+`MEMORY.md`'s index lines are — so a rule moved out of `CLAUDE.md` goes invisible. Every
+"never do X" guard stayed in the repo doc: "Running the bot — ASK FIRST" (whose own memory
+says it must live in the repo), the flat-bonus ban, the `static let`-reading-a-catalog
+trap, never push / never `git add -A`, and the Optional-interpolation trap.
+
+### The loss check, and the one real loss
+
+A deletion was only accepted once every backticked identifier and multi-digit figure in
+the removed text was greped against the whole surviving corpus — both memory banks plus
+every repo `*.md`. **168 identifiers and 37 figures; zero figures lost.** Eight
+identifiers looked lost and seven were false positives (`guardInCombat` survives
+unqualified in `controller-pattern.md`; five file paths are annotated in `file-map.md`).
+
+The eighth was real: deleting Prompt.md's 2026-09-07 section removed the **only** mapping
+from `29b233c` / `34825fc` / `f80a514` / `d8cfb0c` to what they did — `sessions.md` had
+the narrative and named no hashes. They are recorded in its 09-07 heading now.
+
+### Seven stale records, found because a pointer into a stale record is worse than duplication
+
+- `session-auth.md` and `architecture.md` still documented the hardcoded `allowedUsers`
+  array, gone since 2026-09-08 — rewritten around `allowed_users` / `AccessControl` /
+  `InviteToken`.
+- `architecture.md` had the `.env` path as hardcoded; it is `ROI_PROJECT_PATH` with a
+  dev-Mac fallback.
+- `game-core.md` priced a turn-back from `createdAt` — **that was the bug**; it reads
+  `travelSeconds − remaining` off `endsAt`.
+- `game-core.md` called passive expeditions "Planned for Phase 3.3" with a `testMode`
+  flag; they shipped, and the flag died in Phase 4b.
+- `localization.md` undercounted the locale keys by four (1002/1050 → **1006/1054**).
+- `MEMORY.md` and `project_rebalance_active.md` named `509f2db` as deployed; it is
+  `fea2343`. That record also still parked the Telegram API errors `editScreen` had
+  already closed.
+- `TravelService.turnBack`'s docblock still argued for `createdAt` over
+  `travelSeconds - remaining` while the body did the opposite — the inline note was
+  updated in 09-11 and the docblock above it was missed.
+
+### One defect in my own edit, caught by the audit
+
+Removing the stale `allowedUsers` mechanism from `session-auth.md` took a **still-true**
+fact with it: `GlobalCommandsController` does still check per handler, now via
+`accessControl.isAllowed(fromId.id, on: db)` for player commands and
+`developerUsers.contains` for the three dev-only ones. The subsection was restored with
+the correct mechanism. The general lesson: when a paragraph mixes a stale claim with a
+live one, correcting the mechanism beats deleting the paragraph.
+
+### Verification
+
+`swift build` clean · `roi-content validate --strict` **0 errors / 0 warnings**, hash
+`4eac64ff` · `swift test` **236 tests, 0 failures** · all 11 `.memory` links and all 21
+auto-memory pointers resolve (one was wrong: a `project-` prefix had been guessed onto
+`first-playtest-happened`, which carries no such prefix) · fences balanced, no ragged table rows.
+
+A dead-code sweep found none: `profileStyle`, `estateLeveledUp`, `vigorRegenPerMinute`,
+`sendScenicPhoto` and `--export-content` are fully gone, and the surviving `regenTick` /
+`ContentExporter` hits are historical comments that name the phase which deleted them.
+`CombatService.critPercent` / `dodgePercent` / `accuracyPercent` are NOT dead — exercised
+by `ContentDigest` at lines 575 and 677–679.
+
+### Then the second pass, on the neighbours the first one did not touch
+
+`README.md` and `TODO.md` had not been read in the first pass, and both were stale:
+
+- **`README.md` §Roadmap** described a game that no longer exists: `WipeForRebalance`
+  "written and registered but not yet run" (it ran 2026-09-02), `scale` "deferred until
+  after the playtest" (1.0 since 09-09), and "no live Telegram pass since the rebalance
+  began" (four accounts played 09-02 → 09-09, and eleven polish commits followed).
+- **`TODO.md`** carried five open boxes for work already done or retired: two asked to
+  flip a `testMode` flag deleted in Phase 4b, one asked for a passive daily budget that
+  shipped on 09-09 at 180 min / 12:00 Kyiv rather than the drafted 2 h / server midnight,
+  one asked for direct trading that shipped 2026-06-10 and is documented forty lines
+  above it, and one asked for a PvP Arena that shipped as a LIVE duel rather than the
+  drafted async-snapshot one. Its footer still said 09-10 and named the API-error question
+  that the 09-11 deploy answered (913 before, 913 an hour after, `[ROUTE]`/`[COMBAT]`/
+  `[SCREEN]` silent).
+- `status.md` still called Phase 11 "IN FLIGHT"; it is closed as code.
+
 ## Session — 2026-09-11 (deployed the nine, and the road priced itself wrong)
 
 Deployed `509f2db → 4f0b54d` to the Pi: pull, build (111 s, clean), a pre-flight

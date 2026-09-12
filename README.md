@@ -548,25 +548,33 @@ Bot-level settings in `configure.swift`:
 
 ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 includes the full game vision: exploration, combat (PvE + PvP), estates, territorial wars, guilds, dungeons, taming, and the capital city with arena.
 
-**A full pre-release rebalance is in flight** and is the only work happening right now:
-the game's mathematics is being rebuilt and all content plus all tuning has moved into
-`content/data/`. Phases 3–10 are done — data migration, tuning tables, the new combat
-model, the item budget, hot reload, the balance simulator that measures all of it, the
-Vigor rework that made the estate load-bearing, the five content specifications
-([`content/spec/`](./content/spec/), all approved) and the bestiary level re-spread they
-called for. Every number in a spec is emitted by `roi-content spec`, never typed, so a
-specification cannot drift from the generator it feeds.
+**The pre-release rebalance is done as code, and the game is deployed.** The
+mathematics was rebuilt and all content plus all tuning moved into `content/data/`.
+Phases 3–11 are closed: the data migration, the tuning tables, the new combat model, the
+item budget, hot reload, the balance simulator that measures all of it, the Vigor rework
+that made the estate load-bearing, the five content specifications
+([`content/spec/`](./content/spec/), all approved), the bestiary level re-spread they
+called for, the full wipe, invite-only access and the Pi deployment. Every number in a
+spec is emitted by `roi-content spec`, never typed, so a specification cannot drift from
+the generator it feeds.
 
-**Phase 11 is in flight, and it is the untested surface.** Two pieces landed on
-2026-09-02: an **opening ledger** that prices levels 1–3 at every depth against the trail
-(the stretch the pace model must skip, because it divides by an estate that does not exist
-yet) — it inverted the economy spec's conclusion, since the opening is not Vigor-bankrupt,
-the *shallow* opening is; and the **`WipeForRebalance` migration**, written and registered
-but not yet run. Setting `scale` back to 1.0 is deferred until after the playtest, which
-runs on compressed time deliberately — the opening has no game-time gate at all. What
-remains is to **play the first hour for real**: there has been no live Telegram pass since
-the rebalance began. Progress lives in the "Full Rebalance" section of
-[TODO.md](./TODO.md), the reasoning in [`.memory/rebalance.md`](./.memory/rebalance.md).
+**`time.scale` is 1.0 since 2026-09-09** — game time is real time. The wipe ran
+2026-09-02, four accounts played the rebalanced build through 09-09 and reached level 10
+on a tier-4 estate, and `validate --strict` reports zero errors and zero warnings.
+
+**What is happening now is live-play polish: fixing what playing the deployed build
+reveals.** Eleven commits between 2026-09-09 and 09-11, and every single defect came from
+someone playing rather than from a test — a forest that went quiet on the walk home, a
+road that priced a second turn-back at five seconds, a rating labelled as a percentage, a
+full warehouse that claimed the bag was empty. The pattern worth knowing: each was a place
+where the code was right and could not say so, or where a number was shown in a unit it
+was not measured in.
+
+What is still owed is a **deliberate first-hour walkthrough** — nobody has stepped through
+the opening against a checklist — plus one run of `/reload` against a real database.
+Progress lives in the "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
+[`.memory/rebalance.md`](./.memory/rebalance.md), and what a fresh session should do next
+in [Prompt.md](./Prompt.md).
 
 See [**GDD.md**](./GDD.md) for systems detail and scope notes — but note it predates the
 rebalance, so treat its numbers as design intent rather than what the game currently

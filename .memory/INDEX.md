@@ -39,7 +39,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - **What each commit did and why: [Session History](sessions.md)** — the 09-07 pre-push
   pass, the 09-08 Pi audit and invite-only access, and the 09-09 → 09-11 polish entries.
 - **What each phase decided: [Rebalance](rebalance.md).**
-- **The rules all of it produced: `CLAUDE.md`.**
+- **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
+  story behind each one lives here or in the auto-memory bank. See the auto-memory
+  `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
+  in the repo doc rather than moving into a memory file.
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

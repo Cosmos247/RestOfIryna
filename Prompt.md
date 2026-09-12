@@ -33,36 +33,39 @@ the maths. **This is the only work in flight.**
 - Decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where we stopped (2026-09-11)
+### Where we stopped (2026-09-12)
 
-**Phases 3–10 are done. Phase 11 is closed as CODE** — the wipe, the opening ledger,
+**Phases 3–11 are done. Phase 11 is closed as CODE** — the wipe, the opening ledger,
 invite-only access, the Pi deployment and `scale` 1.0 all landed by 09-09. Since then the
 work has been **live-play polish: fixing what playing the deployed build revealed.**
 
 **The bot is LIVE on the Pi running `fea2343`** (restarted 2026-09-11 01:26, content hash
-`4eac64ff`, **schema v11**). **Nothing is pending: local, `origin/main` and the Pi are all
-on the same commit,** and the working tree is clean. Three deploys ran on 09-10/11 and each
-booted clean with an empty error log.
+`4eac64ff`, **schema v11**), and the working tree is clean.
 
-**What a fresh session should know about the last one.** Eleven commits of live-play polish
-now sit on top of `509f2db`, and every single defect came from someone PLAYING — none from
-a test. The pattern worth carrying: each one was a place where the code was right and could
-not say so, or where a number was shown in a unit it was not measured in. Three of the last
-four were found by the user glancing at a screen, not by running anything.
+⚠️ **Two commits are UNPUSHED and are not on the Pi: `fd98632` and the 09-12 doc pass.**
+Both are documentation only — no game code, no content, no schema — so the Pi is not behind
+on anything a player can see and **needs no restart.** `origin/main` sits at `fea2343`.
+Pushing is manual and user-side; do not push.
+
+**The last session changed no game code.** It was a documentation and memory audit: the
+session preamble was ~20,300 tokens with about 45% of it narrative the memory bank already
+held, and one narrative existed in three places at once. The split now in force is **the
+doc keeps the RULE, the memory bank keeps the REASON** — `CLAUDE.md` states the imperative
+and the trap, then points at the record. Seven stale memory records were corrected in the
+same pass. Full account: `.memory/sessions.md` (2026-09-12) and the auto-memory
+`feedback-docs-keep-the-rule`.
+
+**What a fresh session should know about the eleven commits before that.** Every single
+defect came from someone PLAYING — none from a test. The pattern worth carrying: each was a
+place where the code was right and could not say so, or where a number was shown in a unit
+it was not measured in. Three of the last four were found by the user glancing at a screen,
+not by running anything. **That is still the most productive way to find the next one, and
+it is exactly what has not been done to the three surfaces below.**
 
 > ## Next action: walk the three surfaces this build changed, then the untouched ones
 >
-> **1. The API-error fix is PROVEN, and that box can close.** `Code: 400` in the Pi log
-> stood at **913 before the `editScreen` deploy and 913 an hour after it**, with
-> `[ROUTE]` / `[COMBAT]` / `[SCREEN]` all silent. Keep the check cheap, but it is no
-> longer the open question it was:
->
-> ```
-> ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # baseline 913
-> ssh rpi5@192.168.0.203 'grep -E "\[ROUTE\]|\[COMBAT\]|\[SCREEN\]" ~/.pm2/logs/ROI-out.log'
-> ```
->
-> **2. Three surfaces changed on 09-10/11 and NONE has been walked yet:**
+> **1. Three surfaces changed on 09-10/11 and NONE has been walked yet.** This is the
+> whole next action — the code is deployed and nobody has looked at it:
 > - **the forest on the way home** — the return leg should now be noticeably more
 >   fight-heavy than the walk out (8.8 fights over 17 km against 3.4 before). Walk to
 >   km 15–18 and back on foot. With a full bag and low HP this is a real risk: death
@@ -72,8 +75,18 @@ four were found by the user glancing at a screen, not by running anything.
 > - **the character sheet and any Forester piece** — three rating stats with no `%`,
 >   and a `❤️ Здоров'я` line on armour that was invisible before.
 >
-> **3. Still never walked, from the older list:** a fight lost, a **flee**, the trade
+> **2. Still never walked, from the older list:** a fight lost, a **flee**, the trade
 > screens, and one run of **`/reload` + `/content`** against a real database.
+>
+> **3. The API-error question is CLOSED, and needs no more checking.** `Code: 400` stood at
+> **913 before the `editScreen` deploy and 913 an hour after it**, with `[ROUTE]` /
+> `[COMBAT]` / `[SCREEN]` all silent — the fix is proven. If a new screen bug is ever
+> reported, this is still the cheap first look:
+>
+> ```
+> ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # baseline 913
+> ssh rpi5@192.168.0.203 'grep -E "\[ROUTE\]|\[COMBAT\]|\[SCREEN\]" ~/.pm2/logs/ROI-out.log'
+> ```
 >
 > **Deploying to the Pi:** `git pull --ff-only`, build, then **ASK before
 > `pm2 restart ROI`**. Two traps that cost real time — swiftenv's `PATH` lives in `.bashrc`,
