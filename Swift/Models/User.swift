@@ -127,6 +127,22 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_hp_tick_at")
     var lastHpTickAt: Date?
 
+    /// Lifetime walking record and tally, read by the leaderboards. Both are
+    /// written in one place — `User.recordWalk(toKm:)` — because the three ways
+    /// to walk a km (step out, step back, passive expedition) all funnel through
+    /// `ExplorationService.rollStep`, and a counter each caller has to remember
+    /// is a counter some caller forgets.
+    ///
+    /// `deepestKm` is a RECORD and never decreases, not even on death: the walk
+    /// happened. `totalKmWalked` counts the way home too — the return leg is the
+    /// more dangerous half of an expedition, and excluding it would make this
+    /// board a second copy of the depth one.
+    @Field(key: "deepest_km")
+    var deepestKm: Int
+
+    @Field(key: "total_km_walked")
+    var totalKmWalked: Int
+
     /// Phase 5.3c — estate tier is now player-controlled, not derived. Starts
     /// at 1 (the wooden hut from the King's grant) and only grows when the
     /// player spends materials at the Estate root via `EstateUpgradeService`.
@@ -285,6 +301,8 @@ final public class User: Model, @unchecked Sendable {
         self.gearCritBonus = 0
         self.gearDodgeBonus = 0
         self.gearAccuracyBonus = 0
+        self.deepestKm = 0
+        self.totalKmWalked = 0
         self.estateLevel = 1
         self.bagTier = 1
         self.location = "estate"
@@ -304,6 +322,22 @@ final public class User: Model, @unchecked Sendable {
         self.$guild.id = nil
         self.guildRole = nil
         self.createdAt = Date()
+    }
+
+    /// Record one km walked, arriving at `km`. The only writer of either
+    /// counter.
+    ///
+    /// Called from `ExplorationService.rollStep`, which every kind of step goes
+    /// through, and from `ExplorationController.handleHomeReached` for the last
+    /// stride from km 1 to the estate door — that one rolls no event, but the
+    /// player still walked it.
+    ///
+    /// `max` is what makes a homeward step safe: it arrives with a SMALLER km
+    /// than the one before it, so the record holds while the tally still rises.
+    /// Caller persists.
+    func recordWalk(toKm km: Int) {
+        totalKmWalked += 1
+        deepestKm = Swift.max(deepestKm, km)
     }
 
     // MARK: - Phase 5.3a — Player XP / level

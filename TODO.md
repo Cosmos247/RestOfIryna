@@ -1190,6 +1190,21 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         `RestNotificationService` applies the same rule (one bulk `TravelState` query beside
         the expedition one) so it cannot heal or announce a player it should leave alone.
         Potions stay the away-from-home heal. No content moved.
+  - [x] **Leaderboards in the journal** *(2026-09-12)* — four all-time boards reached from
+        the quest journal: ⚔️ level · 🎖 arena honor · 🌲 deepest km · 🚶 total km walked, as
+        tabs that redraw one message through `editScreen`. Shaped by the audit finding that
+        **the game stored no cumulative counter at all**, and that a depth record could never
+        have been recovered — it lived only in `exploration_state.steps_deep`, deleted when
+        the expedition ends. So `deepest_km` / `total_km_walked` join `users`
+        (`AddWalkCounters` + four indexes), written only by `User.recordWalk(toKm:)` from the
+        `rollStep` funnel every kind of step shares, plus `handleHomeReached` for the last
+        stride that rolls no event. The way home counts on purpose; excluding it would make
+        🚶 a copy of 🌲. Ranks tie-share on the board's own metric — the tiebreak orders the
+        display only — and a view costs two queries however many players there are. Top 10
+        plus the viewer's row, suppressed when already listed; unranked and empty states have
+        their own copy. `Leaderboard` in code, «Рейтинги» on screen. All-time is the first
+        period, not the only one. Not a content-schema bump; all four digest halves held.
+        16 keys × 2 locales. Not deployed.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own

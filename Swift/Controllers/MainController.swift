@@ -316,8 +316,15 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     func showJournal(context: Context, editMessageId: Int) async throws {
         let text = try await renderJournal(context: context)
+        let locale = context.session.locale
+        // The boards open from here and return here, over the same bubble —
+        // profile → journal → leaderboard is three screens and one message.
+        let boards = TGInlineKeyboardButton(
+            text: "🏆 " + context.lingo.localize("leaderboard.title", locale: locale),
+            callbackData: "lb:\(LeaderboardBoard.level.slug)"
+        )
         let back = TGInlineKeyboardButton(
-            text: context.lingo.localize("journal.button.back", locale: context.session.locale),
+            text: context.lingo.localize("journal.button.back", locale: locale),
             callbackData: "journal:back"
         )
         await editScreen(
@@ -325,9 +332,109 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             messageId: editMessageId,
             isPhoto: false,
             text: text,
-            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[back]]),
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[boards], [back]]),
             bot: context.bot
         )
+    }
+
+    // MARK: - Leaderboards (2026-09-12)
+    //
+    // Four all-time boards behind the journal, rendered as tabs that redraw the
+    // same message. Read-only by the same rule the journal follows: a screen
+    // that shows standings must not become somewhere to spend anything.
+    //
+    // The word in the UI is «Рейтинги»; everything in code says Leaderboard,
+    // because `rating` already means crit / dodge / accuracy here.
+
+    func showLeaderboard(context: Context, board: LeaderboardBoard, editMessageId: Int) async throws {
+        let text = try await renderLeaderboard(context: context, board: board)
+        await editScreen(
+            chatId: .chat(context.session.telegramId),
+            messageId: editMessageId,
+            isPhoto: false,
+            text: text,
+            replyMarkup: leaderboardKeyboard(active: board, lingo: context.lingo, locale: context.session.locale),
+            bot: context.bot
+        )
+    }
+
+    /// Two rows of tabs plus a way back. The active board keeps its button —
+    /// Telegram cannot grey one out, and removing it would make the grid jump
+    /// under the thumb — so it is marked instead.
+    private func leaderboardKeyboard(active: LeaderboardBoard, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        func tab(_ board: LeaderboardBoard) -> TGInlineKeyboardButton {
+            let name = lingo.localize(board.titleKey, locale: locale)
+            let label = board == active ? "· \(board.icon) \(name) ·" : "\(board.icon) \(name)"
+            return TGInlineKeyboardButton(text: label, callbackData: "lb:\(board.slug)")
+        }
+        let back = TGInlineKeyboardButton(
+            text: lingo.localize("leaderboard.button.back", locale: locale),
+            callbackData: "lb:back"
+        )
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [tab(.level), tab(.honor)],
+            [tab(.depth), tab(.distance)],
+            [back]
+        ])
+    }
+
+    private func renderLeaderboard(context: Context, board: LeaderboardBoard) async throws -> String {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let view = try await LeaderboardService.view(board, for: context.session, on: context.db)
+
+        // 🏆 and the board icon are prepended in Swift, never placed in a
+        // template ahead of a `%{}` — Lingo drops interpolations that follow a
+        // multi-UTF-16 emoji.
+        var lines = ["🏆 <b>\(lingo.localize("leaderboard.title", locale: locale))</b> · \(board.icon) <b>\(lingo.localize(board.titleKey, locale: locale))</b>",
+                     "<i>\(lingo.localize(board.subtitleKey, locale: locale))</i>",
+                     ""]
+
+        if view.top.isEmpty {
+            lines.append("<i>" + lingo.localize("leaderboard.empty", locale: locale) + "</i>")
+            return lines.joined(separator: "\n")
+        }
+
+        for entry in view.top {
+            lines.append(leaderboardRow(entry, board: board, youLabel: nil, lingo: lingo, locale: locale))
+        }
+
+        // The viewer's own line, below a rule — but only when they are not
+        // already listed above. Printing them twice would read as two players.
+        if let mine = view.viewer, !view.viewerInTop {
+            lines.append("")
+            lines.append("— — — — —")
+            lines.append(leaderboardRow(mine, board: board,
+                                        youLabel: lingo.localize("leaderboard.you", locale: locale),
+                                        lingo: lingo, locale: locale))
+        } else if view.viewer == nil {
+            lines.append("")
+            lines.append("— — — — —")
+            lines.append("<i>" + lingo.localize("leaderboard.unranked.\(board.rawValue)", locale: locale) + "</i>")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// One board row. `youLabel` replaces the name when this is the viewer's
+    /// own line under the rule.
+    private func leaderboardRow(_ entry: LeaderboardEntry, board: LeaderboardBoard, youLabel: String?,
+                                lingo: Lingo, locale: String) -> String {
+        let place: String
+        switch entry.rank {
+        case 1:  place = "🥇"
+        case 2:  place = "🥈"
+        case 3:  place = "🥉"
+        default: place = "\(entry.rank)."
+        }
+        var value = "\(entry.value)"
+        if let unitKey = board.unitKey {
+            value += " " + lingo.localize(unitKey, locale: locale)
+        }
+        let name = youLabel ?? entry.name
+        // The viewer's row is bold wherever it appears, including inside the
+        // top ten — the number a player came for should not need hunting.
+        let shown = entry.isViewer ? "<b>\(name)</b>" : name
+        return "\(place) \(shown) — \(value)"
     }
 
     private func renderJournal(context: Context) async throws -> String {
@@ -520,6 +627,19 @@ extension MainController {
         if data == "gear:open" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await Controllers.mainController.showGear(context: context, editMessageId: message.messageId)
+            return true
+        }
+        // Leaderboard tabs. `lb:back` returns to the journal rather than the
+        // profile, so the chain the player walked in on is the chain they walk
+        // back out of.
+        if data.hasPrefix("lb:") {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let slug = String(data.dropFirst(3))
+            if let board = LeaderboardBoard.from(slug: slug) {
+                try await Controllers.mainController.showLeaderboard(context: context, board: board, editMessageId: message.messageId)
+            } else {
+                try await Controllers.mainController.showJournal(context: context, editMessageId: message.messageId)
+            }
             return true
         }
         if data == "gear:back" || data == "journal:back" {

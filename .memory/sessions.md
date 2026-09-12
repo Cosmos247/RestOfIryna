@@ -1,5 +1,76 @@
 # Session History
 
+## Session — 2026-09-12 part 2 (four boards in the journal)
+
+Feature work, on request: leaderboards, reached from the quest journal.
+
+### What the data allowed, and what it did not
+
+The audit that shaped the whole design: **the game stored no cumulative counter of any
+kind.** Kills, depth, deaths, silver earned — none of it existed. Everything on a player
+row is a STATE, not a total, so the boards split into what could ship free and what cost a
+column. A depth record could never have been recovered either: it lived only in
+`exploration_state.steps_deep`, a row DELETED when the expedition ends, so the record never
+survived the walk that set it.
+
+Chosen: **⚔️ level · 🎖 arena honor · 🌲 deepest km · 🚶 total km walked.** The first two
+read existing columns; the last two are new. Estate, silver, gear, guild and completionist
+boards were offered and declined. Silver was argued against rather than offered neutrally —
+it is a stock, not an earning, and the economy already runs ~20k over a lifetime, so the
+board would have crowned a hoarder.
+
+### The two counters, and where they are written
+
+`deepest_km` and `total_km_walked` on `users`, migration `AddWalkCounters` — plus four
+indexes as insurance, since adding one to a busy table is a worse evening than adding it to
+an empty one. **Not a schema bump:** "schema vN" is the CONTENT schema
+(`ContentSchema.current`), moved only by a required field in a content DTO. Nothing under
+`content/data` was touched, which the digest then proved.
+
+One writer: `User.recordWalk(toKm:)`, called from **`ExplorationService.rollStep`** — the
+funnel that step-out, step-back and passive expeditions all share — and from
+`handleHomeReached` for the last stride from km 1 to the estate door, which rolls no event.
+Straight application of the morning's lesson: a counter each caller must remember is a
+counter some caller forgets. `max` makes the homeward step safe on its own — it arrives
+with a smaller km, so the record holds while the tally rises. The way home counts
+deliberately; excluding it would have made 🚶 a second copy of 🌲.
+
+### The ranking, which was rewritten once
+
+First draft ranked each listed row with its own COUNT — **twelve queries per tap** — and let
+the secondary sort split ranks. Both were wrong and were replaced before anything shipped:
+
+- **One query for the page now**, whatever the player count — a sorted page starts at the
+  maximum, so the listed rows' ranks derive from the page itself. A COUNT runs only when the
+  viewer is NOT on that page; a viewer in the top ten is read off the row already loaded,
+  which also stops their own line and their listing being two different snapshots. The honor
+  board needs a third query on a miss, to find the arena profile.
+- **Rank is on the board's own metric only.** The tiebreak orders the display and nothing
+  else — a board headed «Рівень» that puts two level-24 players at 1st and 2nd shows the
+  same number twice with nothing on screen explaining the gap. Ties share a place: two on
+  31 km are both 🥇 and the next is 3rd. Nine tie shapes checked standalone, all pass.
+
+### The screen
+
+Tabs that redraw one message through `editScreen`: profile → journal → leaderboard is three
+screens and one bubble. The active tab is marked `· 🌲 Глибина ·` rather than removed —
+Telegram cannot grey a button out, and removing it makes the grid jump under the thumb.
+Top 10 plus the viewer's own row under a rule, suppressed when they are already listed.
+Three states handled: in the top ten, unranked ("Ви ще не заходили в ліс"), empty board.
+Read-only, the rule the journal already follows. Names come from `nickname`, never the
+Telegram one. 16 keys × 2 locales.
+
+**Naming:** `Leaderboard` everywhere in code, «Рейтинги» to the player — `rating` is taken
+by crit/dodge/accuracy. All-time is the first period, not the only one; seasons are a
+decided direction and must never be built by zeroing a lifetime column. Auto-memory
+`project-leaderboards-will-go-seasonal`.
+
+### Verification
+
+Build clean · 236 tests · `validate --strict` 0/0 · all four digest hashes byte-identical ·
+ranking checked standalone across 9 tie shapes. **Not deployed** — new code AND a migration,
+so it needs a rebuild and a `pm2 restart`, and the migration runs on that start.
+
 ## Session — 2026-09-12 (a root that looked twice as strong)
 
 Found by playing, like every defect since the deploy. A level-20 archer at 211 max HP

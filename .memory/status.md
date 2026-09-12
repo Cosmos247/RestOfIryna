@@ -86,6 +86,22 @@ what a one-shot handed over (`AddFortuneOneShot`), every capital shop shows an i
 before the purchase question (`ItemCard`), and selling an item a taken job needs warns
 first. All four digest halves held.
 
+**2026-09-12 part 2 — leaderboards, in the journal.** Four all-time boards reached from
+the quest journal: **⚔️ level · 🎖 arena honor · 🌲 deepest km · 🚶 total km walked**, as
+tabs that redraw one message. The design was shaped by an audit finding: **the game stored
+no cumulative counter at all**, and a depth record could never have been recovered, because
+it lived only in `exploration_state.steps_deep` — a row deleted when the expedition ends. So
+the two walking boards come with `deepest_km` / `total_km_walked` on `users`
+(`AddWalkCounters`, plus four indexes), written in exactly one place —
+`User.recordWalk(toKm:)`, from the `rollStep` funnel every kind of step shares, and from
+`handleHomeReached` for the last stride. Both start at 0 for everyone: the boards begin
+measuring the day they ship. Ranks tie-share on the board's own metric; the secondary sort
+only orders the display. One query for the page, plus a COUNT only when the viewer is not
+on it. `Leaderboard` in code, «Рейтинги» on screen —
+`rating` is taken. All-time is the first period; seasons are a decided direction and must
+never be built by zeroing a lifetime column. Not a content-schema bump, and all four digest
+hashes held. **Not deployed.**
+
 **2026-09-12 — a root that looked twice as strong.** Reported from play: a level-20 archer
 at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ` on the step that killed them. The root
 took 11; hunger took the other 11 on the same step, and `rollStep` returned

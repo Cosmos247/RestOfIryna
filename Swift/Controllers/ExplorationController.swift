@@ -606,7 +606,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// Deletes the ExplorationState row and drops to main menu. On the very
     /// first successful return, also fires the one-shot capital hint.
     private func handleHomeReached(context: Context, state: ExplorationState) async throws {
+        // The last stride, km 1 → the estate door. It rolls no event, so
+        // `rollStep` never sees it, but the player walked it and the tally
+        // should say so. Guarded because this also catches km 0 — the player who
+        // opened the expedition screen and turned round without leaving.
+        // `toKm: 0` can never move the depth record; only the tally rises.
+        if state.stepsDeep >= 1 {
+            context.session.recordWalk(toKm: 0)
+        }
         try await state.delete(on: context.db)
+        // `goToMainMenu` saves the session, which is what persists the km above.
         try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
         try await showCapitalHintIfNeeded(context: context)
     }

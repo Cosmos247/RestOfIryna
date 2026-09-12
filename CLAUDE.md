@@ -146,6 +146,22 @@ exact one dropping its tail so a whole-minute window still reads `5хв`. Durati
 written into copy either — the expedition buttons, the tarot "active for" prefix and the
 invite window are all printed from the values that own them.
 
+**A leaderboard is a `Leaderboard`, never a `Rating`.** `rating` already means
+crit / dodge / accuracy in this codebase and carries a display rule of its own, so the
+four boards behind the journal say «Рейтинги» to the player and `Leaderboard` in every
+identifier. They are ALL-TIME, which is the first period and not the only one: seasons are
+a decided direction, and a seasonal board will be a second READING of a metric with its own
+storage — **never a reset of `deepestKm` / `totalKmWalked`**, because zeroing those destroys
+the all-time board to build the seasonal one. Auto-memory
+`project-leaderboards-will-go-seasonal`.
+
+**A lifetime counter has exactly one writer.** `deepestKm` and `totalKmWalked` are written
+only by `User.recordWalk(toKm:)`, called from `ExplorationService.rollStep` — the funnel all
+three kinds of step share — and from `handleHomeReached` for the last stride, which rolls no
+event. Put a new counter where the thing it counts already funnels; a counter each caller has
+to remember is a counter some caller forgets, which is exactly how the hunger tick went
+missing on six of ten exits.
+
 **One number, one source. A screen never sums two losses under one label.** A step in
 the forest can cost HP twice — the event it rolled, and the hunger tick that is charged on
 every step once Vigor hits 0 — so `ExplorationService.rollStep` returns a `StepResult`

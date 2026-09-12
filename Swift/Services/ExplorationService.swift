@@ -173,6 +173,13 @@ public enum ExplorationService {
         // Vigor drain for the walk itself.
         _ = VigorService.drain(user, action: .walkRoom)
 
+        // The km is walked the moment it is paid for, whatever the step then
+        // rolls. Here rather than in the controllers because all three ways to
+        // walk — step out, step back, passive expedition — come through this
+        // function, and the alternative is three callers each remembering a
+        // counter. Same reason `StepResult` carries the hunger tick.
+        user.recordWalk(toKm: kmDepth)
+
         // Starvation HP tick happens every room when vigor is already at 0.
         let starvationLoss = VigorService.applyStarvationHPLoss(user)
 

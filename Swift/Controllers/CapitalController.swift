@@ -1600,7 +1600,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         // Unknown callback prefixes — forward to MainController which
-        // owns `journal:` (the quest journal) + `explore:` + `combat:`
+        // owns `journal:` (the quest journal) + `lb:` (the leaderboards behind
+        // it, reachable because the capital's utility row opens the profile) +
+        // `explore:` + `combat:`
         // and has a default "delete stale inline message" fallback.
         // Returning false here would trigger Router's
         // unsupportedContentType ("Unsupported content type.") response,

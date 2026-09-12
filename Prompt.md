@@ -47,6 +47,14 @@ Both are documentation only — no game code, no content, no schema — so the P
 on anything a player can see and **needs no restart.** `origin/main` sits at `fea2343`.
 Pushing is manual and user-side; do not push.
 
+**2026-09-12 part 2 — leaderboards.** Four all-time boards in the quest journal: ⚔️ level ·
+🎖 arena honor · 🌲 deepest km · 🚶 total km walked, as tabs redrawing one message. Two new
+lifetime columns (`deepest_km`, `total_km_walked`) with a single writer,
+`User.recordWalk(toKm:)`, on the `rollStep` funnel. **A migration ships with this**, so the
+Pi needs a rebuild and a restart, not `/reload`. `Leaderboard` in code, «Рейтинги» on screen
+— `rating` is taken. Seasons are a decided future direction: auto-memory
+`project-leaderboards-will-go-seasonal`.
+
 **2026-09-12 — the roots, and what else hid behind them.** One game-code change since the
 doc pass: a player asked why a root took 22 HP when it used to take 10. It took 11; hunger
 took the other 11 on the same step, and `.trip` reported the sum under the root's own label.
