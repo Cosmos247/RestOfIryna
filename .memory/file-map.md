@@ -96,7 +96,7 @@ RestOfIryna/
 │   │   ├── manifest.json           # schemaVersion (10 since Phase 8E) + contentVersion. The loader
 │   │   │                           # REFUSES a mismatch — that is what catches "new binary, old content"
 │   │   ├── items.json              # 33 items · itemLevel / rarity / setId since Phase 6
-│   │   ├── enemies.json            # 9 enemies + the six-archetype table (rounds, HP loss, absorption,
+│   │   ├── enemies.json            # 11 enemies + the six-archetype table (rounds, HP loss, absorption,
 │   │   │                           # dodge, crit, xp/loot multipliers, spawn weight, `minLevel` since 8D)
 │   │   ├── recipes.json            # 12 recipes + starterRecipeIds
 │   │   ├── rarities.json · sets.json          # Phase 6 — budget ×1.00→×1.45, value ×1→×16; set thresholds

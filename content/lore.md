@@ -268,6 +268,13 @@ humans should be.
 Two families of wildlife, and one stand-in.
 
 ### The Wild Family (uninfected, drop meat + hide)
+- **Viper** 🐍 — Гадюка. A short thick adder of the sunlit edges, zigzag
+  down the back, coiled in leaf-litter and bracken. Slow to leave and
+  quicker than it looks. The shallowest thing that will still bite.
+- **Golden Eagle** 🦅 — Беркут. Comes out of the sun over a clearing,
+  talons first, and is gone before the second pass. Ragged and hungry
+  this far from the crags. The first creature that is genuinely hard to
+  hit.
 - **Wild Boar** 🐗 — squat, ferocious, shallow-zone king. Coarse dark
   bristles, curved tusks, small hot eyes.
 - **Wild Moose** 🫎 — tall, regal, palm-antlered. Velvet-dark coat,
@@ -280,6 +287,11 @@ Two families of wildlife, and one stand-in.
 These animals are dangerous but *clean* — their bodies are meat for
 the table, their hides are leather for the tannery, their bones useful.
 Killing them is a hunter's pride, not a crusade.
+
+*(The viper and the eagle carry no loot table at all as of 2026-09-14 —
+neither is butchered for the table, and neither has a hide. They are the
+one place the family rule above does not hold, and it is deliberate: see
+`content/spec/spec-bestiary.md` §3.)*
 
 ### The Rabid Family (Blight-infected, drop hide only — meat is poisoned)
 - **Rabid Lynx** 🐈‍⬛ — once a forest cat, now a fevered streak of

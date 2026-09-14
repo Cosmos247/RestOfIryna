@@ -57,12 +57,13 @@ boar, and both are unambiguous:
 | | |
 |---|---|
 | XP to reach level 4 | 788 |
-| `enemy.wild_boar` at level 1 | 10 XP → **79 kills** |
+| `enemy.wild_viper` at level 1 | 10 XP → **79 kills** |
 | starting Vigor pool | 105 |
-| `enemy.wild_moose` at level 4, on curve | 223 XP — 22 boars |
+| `enemy.wild_boar` at level 2, on curve | 76 XP — 8 of those |
 
-The second row is the pure-boar path at km 1–3. The last is why it is
-not the intended one: depth is the difficulty dial from the first hour.
+The second row is the path that never leaves the shallowest band. The last
+is why it is not the intended one: depth is the difficulty dial from the
+first hour.
 <!-- /generated -->
 
 At the ledger in §3 a boar costs ~16.8 Vigor and returns 8.4 as cooked meat, so
@@ -125,30 +126,50 @@ never spent here either, so every row is a floor and not an estimate.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1 | 8.5 | 9.1 | 100% | 92.2 | 389 | 837 | 2 | **-335** | +439 |
-| 4 | 1,4 | 89.0 | 11.4 | 100% | 8.9 | 37 | 101 | 8 | **+44** | +154 |
-| 7 | 1,4,7 | 213.2 | 13.6 | 97% | 3.7 | 16 | 50 | 14 | **+66** | +116 |
-| 10 | 1,4,7,10 | 388.4 | 14.9 | 95% | 2.0 | 9 | 30 | 20 | **+73** | +96 |
-| 11 | 4,7,10 | 692.3 | 19.6 | 91% | 1.1 | 5 | 22 | 22 | **+75** | +90 |
-| 13 | 4,7,10,13 | 917.0 | 23.2 | 66% | 0.9 | 4 | 20 | 26 | **+73** | +80 |
-| 14 | 7,10,13 | 1250.1 | 27.0 | 50% | 0.6 | 3 | 17 | 28 | **+73** | +75 |
-| 16 | 7,10,13,16 | 1647.1 | 26.2 | 41% | 0.5 | 2 | 13 | 32 | **+72** | +76 |
-| 17 | 10,13,16 | 1774.9 | 25.9 | 34% | 0.4 | 2 | 12 | 34 | **+71** | +73 |
-| 20 | 13,16 | 2045.9 | 28.1 | 9% | 0.4 | 2 | 11 | 40 | **+66** | +68 |
-| 22 | 13,16,22 | 2731.8 | 27.0 | 9% | 0.3 | 1 | 8 | 44 | **+64** | +66 |
-| 23 | 16,22 | 5180.6 | 20.5 | 0% | 0.2 | 1 | 3 | 46 | **+67** | +69 |
-| 26 | 22 | 10020.0 | 15.7 | 0% | 0.1 | 0 | 1 | 52 | **+62** | +62 |
+| 1 | 1,1 | 14.8 | 11.4 | 100% | 53.4 | 225 | 608 | 2 | **-270** | -270 |
+| 2 | 1,1,2 | 32.1 | 12.6 | 100% | 24.5 | 103 | 309 | 4 | **-94** | -33 |
+| 4 | 1,1,2,4 | 76.2 | 14.3 | 100% | 10.3 | 44 | 147 | 8 | **+3** | +69 |
+| 7 | 1,1,2,4,7 | 158.0 | 15.4 | 97% | 5.0 | 21 | 77 | 14 | **+45** | +83 |
+| 10 | 1,1,2,4,7,10 | 286.1 | 16.2 | 88% | 2.8 | 12 | 45 | 20 | **+62** | +80 |
+| 11 | 2,4,7,10 | 491.4 | 19.8 | 79% | 1.6 | 7 | 32 | 22 | **+68** | +86 |
+| 12 | 4,7,10 | 692.3 | 21.9 | 69% | 1.1 | 5 | 25 | 24 | **+71** | +86 |
+| 13 | 4,7,10,13 | 917.0 | 23.3 | 46% | 0.9 | 4 | 20 | 26 | **+73** | +80 |
+| 14 | 7,10,13 | 1250.1 | 24.9 | 21% | 0.6 | 3 | 16 | 28 | **+74** | +76 |
+| 16 | 7,10,13,16 | 1647.1 | 24.1 | 17% | 0.5 | 2 | 12 | 32 | **+73** | +77 |
+| 17 | 10,13,16 | 1774.9 | 23.4 | 8% | 0.4 | 2 | 10 | 34 | **+72** | +74 |
+| 20 | 13,16 | 2045.9 | 24.2 | 0% | 0.4 | 2 | 9 | 40 | **+67** | +70 |
+| 22 | 13,16,22 | 2731.8 | 23.3 | 0% | 0.3 | 1 | 7 | 44 | **+65** | +67 |
+| 23 | 16,22 | 5180.6 | 18.3 | 0% | 0.2 | 1 | 3 | 46 | **+67** | +69 |
+| 26 | 22 | 10020.0 | 13.6 | 0% | 0.1 | 0 | 1 | 52 | **+62** | +62 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 10**, at +73 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at +45 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
 will walk.** Four kilometres of walking is worth more than the entire deficit,
-and the flip lands at km 4 — the first depth where anything but the boar spawns.
-Depth then has a measured **optimum** rather than an open ceiling: Vigor stops
-being the binding constraint at about km 4, and at about km 11 survival takes
-over (95% win at km 10, 66% at km 13, 9% at km 20). What §2 argued from prose is
-now a table, and it holds.
+and the flip lands at km 4 — the first depth the moose spawns at. Depth then has
+a measured **optimum** rather than an open ceiling: Vigor stops being the binding
+constraint at about km 4, and by about km 8 survival takes over (88% win at km 10,
+79% at km 11, 46% at km 13, 0% at km 20). What §2 argued from prose is now a
+table, and it holds — but the window it leaves open is **km 4 to km 7**, four
+kilometres wide, and that is the whole of the intended opening.
+
+> *Re-measured 2026-09-14, after tier 1 was filled (`spec-bestiary.md` §3).* The
+> shape above is unchanged and every number under it moved. Km 1 costs **270**
+> rather than 335 and takes **53.4** kills rather than 92.2 — the viper and the
+> eagle are what a shallow kilometre is made of now. The middle of the band paid
+> for it: km 4 fell from +44 to **+3** and km 7 from +66 to **+45**, because a
+> level-1 creature spawns across km 1–10 and drags that whole band's average XP
+> down. Km 2 is a row at all for the first time, at −94.
+>
+> *And again the same day, after the other five creatures were re-solved.* The
+> Vigor column barely moved; the **win** column moved a great deal — km 10 from
+> 95% to 88%, km 13 from 66% to 46%, km 17 from 34% to 8%. A level 1–3 player
+> could walk much deeper than they should have been able to, because the deep
+> roster was carrying a quarter of its archetype's danger. The cheapest depth a
+> player can actually HOLD moved **km 10 → km 7**, and the profitable-and-
+> survivable window narrowed from km 4–11 to **km 4–7**. That is the design
+> asserting itself, not a regression: depth is supposed to be the dial.
 
 Three modelling choices carry that result, and each of them moves it by more than
 the deficit this section was arguing about:
@@ -156,12 +177,16 @@ the deficit this section was arguing about:
 - **A kill's raw meat is not income here.** It restores nothing as found, and
   every recipe that turns it into a portion is a `kitchen` recipe — a room gated
   on estate tier 2, which is the level this stretch ENDS at. It is printed as
-  `if cooked` (774 Vigor at km 1, more than twice the deficit) and kept out of the net.
+  `if cooked` and kept out of the net. Since 2026-09-14 that column is **0 at
+  km 1** — neither level-1 creature drops anything — and 65 Vigor at km 4. It
+  was 774 at km 1 when the boar was the only thing living there.
 - **Only forage that is edible as found counts.** Half the km 1–10 pool is lumber
   and river pebble, and the potato deeper in needs the same locked kitchen.
 - **Kills use the level-gap scaler.** The generated table in §2 prints 79 as the
-  flat 788 ÷ 10 and labels it correctly; the ledger's 92.2 is the same path with
-  the decay applied.
+  flat 788 ÷ 10 — the cheapest single creature, ground alone — and labels it
+  correctly. The ledger's 53.4 is a different path and not the same one decayed:
+  it is the whole km-1 pool by spawn weight, where the eagle's 34 XP outweighs
+  the decay applied to the viper's 10.
 
 Excluded and named rather than rounded away — silver (hide sells, quests pay, the
 trader stocks both food and the lumber a kitchen would want), the events the
@@ -184,7 +209,9 @@ fails a build on a number the project has agreed to look at first.
 
 | enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |
 |---|---|---|---|---|---|---|---|---|
-| `enemy.wild_boar` | 1 | trash | ×0.5 | 0.70 | 8.4 | 0.80 | 2.4 | 0.40 |
+| `enemy.wild_viper` | 1 | trash | ×0.5 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
+| `enemy.wild_eagle` | 1 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
+| `enemy.wild_boar` | 2 | normal | ×1.0 | 0.70 | 8.4 | 0.80 | 2.4 | 0.80 |
 | `enemy.wild_moose` | 4 | normal | ×1.0 | 1.60 | 19.2 | 0.70 | 2.1 | 0.70 |
 | `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 19.2 | 0.90 | 2.7 | 1.53 |
 | `enemy.rabid_lynx` | 10 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
@@ -216,9 +243,18 @@ wherever a `spec` command can emit them, and for dating them where none can:
 ```
 
 So: **clean game roughly pays for itself, Blighted game is a pure loss, and the
-boar — the first creature anyone meets — is the worst deal in the table.** The
-Blight starving the player as well as fighting them is the design working. The
-boar running at −8.4 is not; it is §2.
+shallowest creatures are the worst deal in the table.** The Blight starving the
+player as well as fighting them is the design working. The shallow end running at
+a loss is not; it is §2.
+
+> *Amended 2026-09-14, with tier 1 (`spec-bestiary.md` §3).* It is no longer the
+> boar that a player meets first, and the two creatures that replaced it there —
+> the viper and the eagle — return **nothing at all**, by decision. So the worst
+> deal in the table is now a kill that pays zero against a fight that costs
+> Vigor, and it is the first two kills anyone makes. The boar keeps its 0.70 meat
+> and now meets the player at km 2 instead of km 1; its `lootMultiplier` rose
+> ×0.5 → ×1.0 with the archetype, which changes nothing until §5 wires that
+> multiplier to quantity.
 
 **Past km 31 nothing edible spawns at all.** Only the rabid bear reaches that
 deep in the approved roster, and foraging nets −0.5 Vigor per fresh room in every

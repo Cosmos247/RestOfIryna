@@ -80,9 +80,51 @@
         "max" : 10,
         "min" : 1
       },
+      "icon" : "🐍",
+      "id" : "enemy.wild_viper",
+      "level" : 1,
+      "loot" : [],
+      "stats" : {
+        "accuracy" : 0,
+        "attack" : 5,
+        "crit" : 0,
+        "defense" : 6,
+        "dodge" : 0,
+        "hp" : 55
+      },
+      "tier" : 1,
+      "xpReward" : 10
+    },
+    {
+      "archetype" : "skirmisher",
+      "depth" : {
+        "max" : 10,
+        "min" : 1
+      },
+      "icon" : "🦅",
+      "id" : "enemy.wild_eagle",
+      "level" : 1,
+      "loot" : [],
+      "stats" : {
+        "accuracy" : 0,
+        "attack" : 10,
+        "crit" : 17,
+        "defense" : 7,
+        "dodge" : 18,
+        "hp" : 61
+      },
+      "tier" : 1,
+      "xpReward" : 34
+    },
+    {
+      "archetype" : "normal",
+      "depth" : {
+        "max" : 11,
+        "min" : 2
+      },
       "icon" : "🐗",
       "id" : "enemy.wild_boar",
-      "level" : 1,
+      "level" : 2,
       "loot" : [
         {
           "chance" : 0.7,
@@ -97,14 +139,14 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 5,
-        "crit" : 0,
-        "defense" : 6,
-        "dodge" : 0,
-        "hp" : 34
+        "attack" : 7,
+        "crit" : 6,
+        "defense" : 16,
+        "dodge" : 3,
+        "hp" : 88
       },
       "tier" : 1,
-      "xpReward" : 10
+      "xpReward" : 76
     },
     {
       "archetype" : "normal",
@@ -130,10 +172,10 @@
       "stats" : {
         "accuracy" : 0,
         "attack" : 8,
-        "crit" : 8,
-        "defense" : 24,
-        "dodge" : 4,
-        "hp" : 73
+        "crit" : 7,
+        "defense" : 20,
+        "dodge" : 3,
+        "hp" : 114
       },
       "tier" : 2,
       "xpReward" : 223
@@ -161,11 +203,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 13,
-        "crit" : 10,
-        "defense" : 63,
+        "attack" : 15,
+        "crit" : 8,
+        "defense" : 48,
         "dodge" : 0,
-        "hp" : 121
+        "hp" : 138
       },
       "tier" : 3,
       "xpReward" : 1008
@@ -188,11 +230,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 14,
-        "crit" : 28,
-        "defense" : 18,
-        "dodge" : 31,
-        "hp" : 75
+        "attack" : 20,
+        "crit" : 27,
+        "defense" : 17,
+        "dodge" : 30,
+        "hp" : 109
       },
       "tier" : 3,
       "xpReward" : 1199
@@ -215,11 +257,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 12,
-        "crit" : 11,
-        "defense" : 44,
-        "dodge" : 6,
-        "hp" : 124
+        "attack" : 15,
+        "crit" : 10,
+        "defense" : 38,
+        "dodge" : 5,
+        "hp" : 156
       },
       "tier" : 4,
       "xpReward" : 1385
@@ -247,11 +289,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 17,
-        "crit" : 13,
-        "defense" : 101,
+        "attack" : 20,
+        "crit" : 11,
+        "defense" : 82,
         "dodge" : 0,
-        "hp" : 183
+        "hp" : 216
       },
       "tier" : 5,
       "xpReward" : 3632
@@ -313,11 +355,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 23,
-        "crit" : 57,
-        "defense" : 82,
-        "dodge" : 23,
-        "hp" : 240
+        "attack" : 30,
+        "crit" : 53,
+        "defense" : 74,
+        "dodge" : 21,
+        "hp" : 319
       },
       "tier" : 6,
       "xpReward" : 10020

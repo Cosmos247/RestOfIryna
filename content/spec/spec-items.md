@@ -98,15 +98,35 @@ acceptance band was computed for.**
 The balance run reports the other half of this in its own words:
 
 ```
-⚠️  [content.roster_off_curve] enemy.wild_boar carries 62% of the HP and 71% of the ATK its archetype asks for at L1
+⚠️  [content.roster_off_curve] enemy.wild_buffalo carries 68% of the HP and 65% of the ATK its archetype asks for at L7
 ⚠️  [content.roster_off_curve] enemy.rabid_wolf carries 58% of the HP and 55% of the ATK its archetype asks for at L13
 ⚠️  [content.roster_off_curve] enemy.rabid_bear carries 53% of the HP and 50% of the ATK its archetype asks for at L22
 ```
 
 **The bestiary is at ~60% of its contract and the player is at ~40% of theirs.**
-The seven "100% win" rows are what those two errors produce together, and neither
-was chosen — the roster was authored before the archetype table existed, and the
+The "100% win" rows are what those two errors produce together, and neither was
+chosen — the roster was authored before the archetype table existed, and the
 wardrobe was authored before the budget curve did.
+
+> *Amended 2026-09-14.* Tier 1 no longer belongs to that ~60%. The viper, the
+> eagle, the boar and the moose carry **100% of their contract's HP and 65% of
+> its ATK** (`spec-bestiary.md` §3). The split is not a compromise between the
+> two figures above: at level 1 the player's attack is already on curve, because
+> the starter weapon already carries the ATTACK the budget prices for a
+> `main_hand` at itemLevel 1 — it is only the
+> armour that is missing, so only the ATK side needs correcting. That reasoning
+> holds where registration's kit is the whole kit, which is the opening and not
+> the band this section measures. Levels 7 and up are untouched and the paragraph
+> above still describes them.
+>
+> *And later the same day, the other five were re-solved too* — bison, lynx,
+> wolf, bear and rabid bear, to **65–78%** of contract. So the "~60% of its
+> contract" figure no longer describes any creature in the game. What survives of
+> this section is the OTHER half: the player is still at ~40% of the gear budget,
+> and that is now the number the whole bestiary is calibrated against rather than
+> a number cancelling an error. If the gear ladder lands, the bestiary has to be
+> re-solved with it — the two halves are still one correction, just no longer two
+> errors.
 
 > *Updated 2026-09-01, after Phase 10.* These figures were 50% / 40% when this
 > section was written. **The level re-spread moved the roster from ~50% to ~60%

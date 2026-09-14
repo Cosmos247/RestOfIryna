@@ -1214,6 +1214,60 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **Bestiary tier 1** *(2026-09-14)* — first content added since the rebalance shipped,
+        and the start of a tier-by-tier fill. 🐍 `enemy.wild_viper` L1 `trash` and 🦅
+        `enemy.wild_eagle` L1 `skirmisher` (km 1–10, **no loot by decision**); 🐗
+        `enemy.wild_boar` L1 `trash` → **L2 `normal`** (km 2–11, stats regenerated from the
+        contract: HP 34→88, DEF 6→16, XP 10→76); 🫎 `enemy.wild_moose` HP **73→114** so a
+        level-2 boar is not tankier than a level-4 moose. **The XP ladder was the ask, and
+        XP has exactly two inputs** — `round(26 · level^1.55 · archetype.xpMultiplier)`, with
+        HP and ATK nowhere in it — so the first step fell from **×22.3 to ×3.4**
+        (`10 → 34 → 76 → 223`) by choosing levels and archetypes, not by editing a stat.
+        Km 1 reaches level 4 in 53.4 kills instead of 92.2. **Tier 1 sits on its own stat
+        recipe — HP 100% of contract, ATK 65%** — because `gear.rusty_sword` IS the budget's
+        main_hand at itemLevel 1, so a real level-1 player's attack is on curve and only the
+        armour is missing (DEF 12 vs the reference's 30.9); a full-contract mob would cost
+        them 1.5× their archetype's share of the bar. `content.roster_off_curve` warns on
+        those four ATKs permanently and that is the intended state. Two accepted prices,
+        both measured in a sandbox before anything was written: km 1 drops no food at all,
+        and a level-1 creature spawns across km 1–10 so it drags that band's average XP down
+        — the opening ledger's km 4 fell +44 → +3, km 7 +66 → +45. **That recurs on every
+        tier added below an existing one.** Two unrelated defects fixed in the same pass:
+        `exploration.outcome.encounter.lost` was masculine past tense («Скажена рись
+        **прорвав** ваш захист», wrong since the lynx shipped) and is now present tense, and
+        `SpecTables.economy` hardcoded `enemy.wild_boar` under prose reading "the pure-boar
+        path at km 1–3" — it looks the creature up now and names none. `validate --strict`
+        0/0, `simulate --strict` exit 0 (0 broken bands, 12 → 14 warnings), 236 tests;
+        digest `records` and `spawns` moved, `tuning` and `quests` byte-identical. Spec
+        amended, not contradicted: `spec-bestiary.md` §3 and §8. **Not committed, not
+        deployed.**
+  - [x] **The rest of the roster, re-solved** *(2026-09-14, same pass)* — putting tier 1
+        on its contract made the other five measurable against it, and **danger was
+        collapsing with depth**: bison 45% of its archetype's contracted cost, lynx **21%**,
+        wolf 33%, bear 33%, rabid bear **26%**, against tier 1's 54–61%, with a 100% win
+        rate against all nine. A level-10 lynx cost the same 6% of the bar as a level-1
+        viper, and the level-1 eagle (17%) was more dangerous than the level-22 **elite**
+        (16%, contract 62%). Re-solved: bison 121/13 → **138/15**, lynx 75/14 → **109/20**,
+        wolf 124/12 → **156/15**, bear 183/17 → **216/20**, rabid bear 240/23 → **319/30**,
+        with DEF/crit/dodge off the Phase-10 freeze (the bison had been absorbing like a
+        level-11 creature, the bear like a level-21 one) — plus the moose, whose DEF 24 →
+        **20** / crit 8 → **7** / dodge 4 → **3** was the last pre-re-spread curve in the
+        file and was inconsistent with its own 114 HP, which the generator solves against
+        DEF 20. Levels, archetypes, km bands, loot
+        and XP untouched. **The figures are 65–78% of contract, not 100%, which is why this
+        did not need the gear ladder** — `project-post-rebalance-package` blocks
+        "regeneration" because regenerating to 100% doubles every enemy against a player who
+        did not move, and solving against the wardrobe that exists (40–53% of the on-curve
+        kit) is a third option: +14…+45%, not ×2. Verified on contract against that
+        wardrobe: 7.0 rnd/43%, 4.0/29%, 5.0/25%, 7.0/42%, 8.0/62%. **Provisional** — the
+        gear ladder would require re-solving. The price is in the ledger's WIN column, not
+        its Vigor column: km 10 fell 95% → 88%, km 13 66% → 46%, km 17 34% → 8%; the
+        cheapest depth a level 1–3 player can hold moved **km 10 → km 7**. `simulate
+        --strict` exit 0, `roster_off_curve` 9 → 7, total warnings back to **12** — the
+        count before any of this. What stats could not fix, and tier 2 will have to: the XP
+        ladder's biggest step is now **×4.5 between the moose (L4) and the bison (L7)**, the
+        level gap 16 → 22 is the widest in the game, and density falls from 6 candidates at
+        km 10 to 2 at km 20.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own
@@ -1360,13 +1414,16 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-12 — a documentation pass, no game code. Phases 3–11 are closed as
-code and the bot is deployed; the work in flight is live-play polish, fixing what playing
-the build reveals. The session primer and the conventions file were cut back to rules plus
-pointers (preamble down 36%), and seven stale memory records were corrected. The API-error
-question the last footer named is ANSWERED: `Code: 400` stood at 913 before the `editScreen`
-deploy and 913 an hour after, with `[ROUTE]` / `[COMBAT]` / `[SCREEN]` silent. Next, and
-unchanged: walk the three surfaces the 09-10/11 build changed — the forest on the way home,
-a second turn-back on the road, the character sheet's three rating stats — then the older
-list, a fight lost, a flee, the trade screens, and one run of `/reload` against a real
-database. Two commits are unpushed.*
+*Last updated: 2026-09-14 — bestiary tier 1, then the whole roster. Two creatures added
+(гадюка, беркут), the boar moved to level 2 and the moose re-statted, closing the ×22.3 XP
+cliff at the start of the game to ×3.4; then the other five re-solved, because tier 1 on
+its contract revealed that danger had been collapsing with depth — a level-1 eagle was
+hitting harder than the level-22 elite. Plus two defects found on the way: a masculine past-tense defeat line that
+had been wrong for every feminine creature since the lynx shipped, and a hardcoded creature
+id under prose that the boar's move would have falsified silently. **Nothing here is
+committed or deployed** — the bot still runs `aa18f57` with content hash `4eac64ff`. Next:
+walk km 1 and km 2 on a fresh character (the eagle is the spiky one — 28% of the bar median,
+47% p90 against an armourless level-1 player), then the older unwalked list — the forest on
+the way home, a second turn-back on the road, the character sheet's three rating stats, a
+fight lost, a flee, the trade screens, and one run of `/reload` against a real database.
+`c658e6c` is unpushed.*

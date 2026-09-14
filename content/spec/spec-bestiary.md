@@ -85,6 +85,122 @@ rearranging what it already has, and new species wait until after the rebalance.
 | 16 | `enemy.wild_bear` | Brown Bear | Бурий ведмідь | wild | brute | 16–25 | level 21 → 16 |
 | 22 | `enemy.rabid_bear` | Rabid Bear | Скажений ведмідь | rabid | elite | 22–**40** | level 25 → 22 |
 
+> ### AMENDED 2026-09-14 — tier 1 is filled, and the boar moves to level 2
+>
+> The table above is the roster as Phase 10 left it, and §8's "no new creatures"
+> was a decision about the **rebalance release**, which has shipped. Content is
+> now added tier by tier, weakest tier first. Tier 1:
+>
+> | L | id | EN | UA | family | archetype | km band | change |
+> |---|---|---|---|---|---|---|---|
+> | 1 | `enemy.wild_viper` | Viper | Гадюка | wild | trash | 1–10 | **new** |
+> | 1 | `enemy.wild_eagle` | Golden Eagle | Беркут | wild | skirmisher | 1–10 | **new** |
+> | 2 | `enemy.wild_boar` | Wild Boar | Дикий кабан | wild | **normal** | **2–11** | level 1 → 2, trash → normal |
+>
+> **Why the boar moved rather than being hand-buffed.** Two creatures were asked
+> for below it, and the order wanted was viper < eagle < boar — which is an order
+> in XP, and XP is `round(26 · level^1.55 · archetype.xpMultiplier)`, nothing
+> else. Level and archetype are the only two dials; the stat line follows from
+> them through `EnemyGenerator`. Moving the boar to level 2 `normal` is what
+> raises it, and it raises HP 34 → 88 and DEF 6 → 16 without a number being
+> chosen by hand.
+>
+> **The XP ladder is the point.** The first step used to be ×22.3 — 10 XP from
+> the boar, then 223 from the moose with nothing between. It is now
+> `10 → 34 → 76 → 223`, steps of ×3.4, ×2.2, ×2.9. At km 1 the opening ledger
+> falls from 92.2 kills to reach level 4 to **53.4**, and km 2 — which used to be
+> the same single boar as km 1 — becomes a rung of its own at 24.5.
+>
+> **Stats are on a different recipe from the rest of the roster, deliberately:
+> HP at 100% of contract, ATK at 65%, DEF/crit/dodge on curve at their own
+> level.** §9 explains why the shipped roster carries ~60% of both. The half of
+> that which is not an error is the ATK: the real level-1 player has the
+> **on-curve weapon** — the three starter weapons carry the ATTACK the budget
+> prices for a `main_hand` at itemLevel 1 (sword 7 against 7.56, bow 6 against
+> 6.24, staff 7 against 6.61; their accuracy is authored above curve, which does
+> not enter this) — and **no armour at all**, DEF 12 against the reference
+> character's 30.9. A mob on full contract therefore costs an actual new player
+> 1.5× the share of the bar its archetype asks for, and 0.65 cancels that. HP
+> needs no such correction, because at level 1 attack is the stat the player
+> already has. Measured: viper 3.1 rounds / 11% of the bar, eagle 4.1 / 31%,
+> boar 5.5 / 27% — against contracts of 3.0/10%, 4.0/28% and 5.0/24%.
+>
+> `roi-content simulate` will keep reporting all four as
+> `content.roster_off_curve` on ATK. That is expected rather than a defect: the
+> report measures against the reference character's full kit, and 65% is
+> calibrated against the kit registration actually grants.
+>
+> **`enemy.wild_moose` gains HP 73 → 114** and changes in no other way. Its ATK 8
+> is already 65% of its contract. Without it a level-2 boar (88 HP) would be
+> tankier than a level-4 moose, and the ladder would invert where a new player
+> walks.
+>
+> **Two consequences worth stating rather than discovering.** Km 1 now drops no
+> food at all — both new creatures were authored with an empty loot table, and
+> the boar, which was the only meat at km 1, has moved to km 2. And a level-1
+> creature covers km 1–10, so the two of them lower the average XP of every
+> kilometre in that band: the ledger's km 4 falls from +44 Vigor to **+3**, km 7
+> from +66 to **+45** (measured after the whole pass, including the re-solve below,
+> which moved each by one). **This recurs for every tier added below an existing one** — it is
+> the km rule (`level N → km N…N+9`) working as designed, not a defect.
+
+> ### AMENDED 2026-09-14, same day — the other five, re-solved
+>
+> Putting tier 1 on its contract made the rest measurable against it, and the
+> answer was that **danger collapsed with depth**. Measured share of each
+> archetype's contracted cost: bison **45%**, lynx **21%**, wolf 33%, bear 33%,
+> rabid bear **26%** — against tier 1's 54–61%. Two readings say it plainly: a
+> level-10 lynx cost the same 6% of the bar as a level-1 viper, and the level-1
+> eagle (17%) was more dangerous than the level-22 **elite** (16%), whose
+> contract is 62%. Win rate was 100% against all nine.
+>
+> | id | L | HP | ATK | DEF | crit | dodge |
+> |---|---|---|---|---|---|---|
+> | `enemy.wild_buffalo` | 7 | 121 → **138** | 13 → **15** | 63 → **48** | 10 → **8** | 0 |
+> | `enemy.rabid_lynx` | 10 | 75 → **109** | 14 → **20** | 18 → **17** | 28 → **27** | 31 → **30** |
+> | `enemy.rabid_wolf` | 13 | 124 → **156** | 12 → **15** | 44 → **38** | 11 → **10** | 6 → **5** |
+> | `enemy.wild_bear` | 16 | 183 → **216** | 17 → **20** | 101 → **82** | 13 → **11** | 0 |
+> | `enemy.rabid_bear` | 22 | 240 → **319** | 23 → **30** | 82 → **74** | 57 → **53** | 23 → **21** |
+>
+> Levels, archetypes, km bands, loot and **XP are all untouched** — only the
+> stat lines moved. The DEF/crit/dodge column is the Phase-10 freeze coming off:
+> each of these carried the defensive curve of its PRE-re-spread level, so the
+> bison absorbed like a level-11 creature and the bear like a level-21 one.
+>
+> **`enemy.wild_moose` gave up the last frozen line in the same pass** —
+> DEF 24 → **20**, crit 8 → **7**, dodge 4 → **3**. The amendment above had
+> raised only its HP, which left it the one creature still carrying a
+> pre-re-spread curve, and worse: the generator's 114 HP is solved *against*
+> DEF 20, so the pair was internally inconsistent. All eleven creatures now carry
+> the defensive curve of the level they are actually on.
+>
+> **The solved figures are 65–78% of contract, not 100%, and that is the whole
+> reason this could ship without the gear ladder.** §9 deferred the regeneration
+> because regenerating to 100% would double every enemy against a player who had
+> not moved — which is true. Solving against the wardrobe that actually exists
+> (`spec-items.md` §3: 40–53% of the on-curve kit across these levels) is a third
+> option that was never on the table, and it raises the five by **+14% to +45%**
+> rather than by ×2. Verified: against a player carrying that wardrobe all five
+> now land on contract — 7.0 rounds / 43%, 4.0 / 29%, 5.0 / 25%, 7.0 / 42%,
+> 8.0 / 62%.
+>
+> **It is a provisional calibration.** If the gear ladder ever lands and the
+> wardrobe moves toward the curve, these five have to be re-solved against it.
+>
+> **What it cost, measured rather than guessed.** In the opening ledger the Vigor
+> columns barely moved and the WIN column moved a great deal: km 10 from 95% to
+> 88%, km 13 from 66% to 46%, km 17 from 34% to 8%. The cheapest depth a level
+> 1–3 player can actually hold went **km 10 → km 7**, and the profitable-and-
+> survivable window narrowed from km 4–11 to **km 4–7**. `roster_off_curve`
+> warnings fell from 9 to 7 and the report's total returned to **12**, its count
+> before any of this.
+>
+> **What stats could not fix, and tier 2 will have to.** The XP ladder's biggest
+> remaining step is **×4.5 between the moose (L4, 223) and the bison (L7, 1008)**
+> — a content gap, not a stat one. Bison, lynx and wolf then sit within ×1.4 of
+> each other, three creatures on one rung; the level gap 16 → 22 is the widest in
+> the game; and density falls from 6 candidates at km 10 to 2 at km 20.
+
 `enemy.rabid_dog` (the registration fight) and `enemy.training_dummy` keep their
 `0…0` depth and never spawn. **No boss ships in this band** — see §5.
 
@@ -268,6 +384,13 @@ week**, which is a real change to how the opening plays and belongs in
 proposed and turned down: density comes from rearranging what exists, and new
 species wait until after the rebalance. §3 is the whole change.
 
+> *Amended 2026-09-14.* "After the rebalance" has arrived — the release shipped
+> and has been played. The decision that stands is its reason, not its letter:
+> **new species are added a tier at a time, weakest tier first, and each tier is
+> measured before the next is opened.** Tier 1 landed on 2026-09-14 (§3's
+> amendment): the viper, the eagle, and the boar moved to level 2. The roster is
+> nine spawnable creatures plus the two that never spawn.
+
 **The boss waits.** The `boss` archetype keeps its contract and no members. What
 a boss is in this world gets decided against a played game.
 
@@ -282,6 +405,12 @@ player carries about **40%** of the on-curve kit the archetype targets were
 solved against, so the roster's ~60% (~50% before Phase 10) and the wardrobe's ~40% have been holding
 each other up. Regenerating the bestiary alone would double every enemy against
 a player who did not move.
+
+> *Discharged 2026-09-14.* The regeneration happened, and it did not need the
+> gear ladder — because it was solved against the wardrobe that exists rather
+> than against the reference character. See §3's second amendment. The clause
+> below is why it waited, and the reasoning was sound; what it missed is that
+> "regenerate" and "regenerate to 100% of contract" are not the same instruction.
 
 **So Phase 10 applies §3 — the level re-spread — and nothing else.** The seven
 creatures keep the stat lines they have; the `content.roster_off_curve` warnings

@@ -14,16 +14,18 @@
 //  level and archetype, never hand-written: an enemy scaled to the player at
 //  runtime would make each gear upgrade evaporate as it was equipped.
 //
-//  Roster (2026-04-27): 7 animals across 6 tiers.
-//   - Wild family (🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
+//  Roster (2026-09-14): 9 spawnable animals across 6 tiers, plus the training
+//  dummy and the registration dog, which carry the `0…0` depth and never spawn.
+//   - Wild family (🐍 🦅 🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
+//     The viper and the eagle are the exception and drop nothing at all.
 //   - Rabid family (🐈‍⬛ 🐺 🐻‍❄️): dangerous; meat is spoiled by the plague,
 //     loot tables only yield hide.
 //
-//  Deep wilderness (km 21+) currently has only wild_bear at 21–30 and
-//  rabid_bear at 25–40, so everything past km 30 is a single elite. That is a
-//  content gap Phase 10 fills, not a bug: the roster is honest about its edges
-//  now that `pickFor` returns nil past coverage instead of quietly handing back
-//  the first enemy in the file. No boss archetype has a member yet.
+//  Deep wilderness: `rabid_bear` alone covers km 26–40, so everything past the
+//  bear's band at km 25 is a single elite. That is a content gap, not a bug —
+//  the roster is honest about its edges now that `pickFor` returns nil past
+//  coverage instead of quietly handing back the first enemy in the file. No
+//  boss archetype has a member yet.
 //
 
 import Foundation

@@ -36,6 +36,76 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
+### Where we stopped (2026-09-14) — tier 1 of the bestiary, NOT deployed
+
+**The working tree carries an undeployed content change.** Two creatures were added and
+two were re-statted; nothing is committed, nothing is on the Pi. The bot is still running
+`aa18f57` with content hash `4eac64ff`.
+
+| | |
+|---|---|
+| new | 🐍 `enemy.wild_viper` L1 `trash` · 🦅 `enemy.wild_eagle` L1 `skirmisher`, both km 1–10, **both with an empty loot table** |
+| moved | 🐗 `enemy.wild_boar` L1 `trash` → **L2 `normal`**, km 2–11, stats regenerated (HP 34→88, DEF 6→16, XP 10→76) |
+| re-statted | 🫎 `enemy.wild_moose` HP **73 → 114**, nothing else |
+| **re-solved** | the other five — 🦬 bison, 🐈‍⬛ lynx, 🐺 wolf, 🐻 bear, 🐻‍❄️ rabid bear. Stat lines only; levels, archetypes, km bands, loot and XP all untouched |
+| unfrozen | 🫎 moose DEF 24→**20**, crit 8→**7**, dodge 4→**3** — the last pre-re-spread curve in the file, and the generator's 114 HP is solved against DEF 20 anyway |
+
+**The whole point was the XP ladder, and XP has exactly two inputs.**
+`round(26 · level^1.55 · archetype.xpMultiplier)` — HP and ATK do not enter it. So the
+first step fell from **×22.3 to ×3.4** by choosing levels and archetypes, not by touching
+a stat: `10 → 34 → 76 → 223`. Km 1 costs 53.4 kills to reach level 4 instead of 92.2, and
+km 2 became a rung of its own.
+
+**Tier 1 is on a different stat recipe from the rest of the roster, on purpose: HP 100% of
+contract, ATK 65%, DEF/crit/dodge on curve.** The shipped roster carries ~60% of both, and
+the measurement behind the split is that a real level-1 player has the **on-curve weapon**
+(the starter weapons carry the ATTACK the budget prices for a `main_hand` at itemLevel 1 —
+sword 7 against 7.56, bow 6 against 6.24) and **no armour** — DEF 12
+against the reference character's 30.9. So a full-contract mob costs an actual new player
+1.5× the bar its archetype asks for; 0.65 cancels that and HP needs no correction at all.
+Expect `content.roster_off_curve` on the ATK of all four **for ever** — the report measures
+the reference's full kit, the recipe is calibrated against the kit registration grants.
+
+```
+validate --strict   ✅ 0/0 · 9 → 11 enemies · content hash 4eac64ff → 5fa9ab72
+simulate --strict   exit 0 · 0 broken bands · 12 warnings — the count it started at
+                    (roster_off_curve fell 9 → 7 when the five were re-solved)
+swift test          236 passed
+digest              records f6fc4212… → b410865d…   spawns eaea309f… → c9bdb57d…
+                    tuning and quests byte-identical
+```
+
+**Then the rest of the roster was re-solved, because tier 1 made it measurable.**
+Danger had been collapsing with depth: the five carried **21–45%** of their archetype's
+contracted cost against tier 1's 54–61%, a level-10 lynx cost the same 6% of the bar as a
+level-1 viper, and the level-1 eagle (17%) was more dangerous than the level-22 **elite**
+(16%, contract 62%). Win rate 100% against all nine. They are solved to **65–78% of
+contract — not 100%** — against the wardrobe `spec-items.md` §3 says the catalogue can
+actually fill (40–53% of the on-curve kit), which is why this could ship without the gear
+ladder: +14…+45%, not ×2. **It is provisional**: if the gear ladder ever lands, re-solve
+these five against it. DEF/crit/dodge also came off the Phase-10 freeze — the bison had
+been absorbing like a level-11 creature, the bear like a level-21 one.
+
+The cost is in the ledger's WIN column, not its Vigor column: km 10 fell 95% → 88%, km 13
+66% → 46%, km 17 34% → 8%. **The cheapest depth a level 1–3 player can hold moved km 10 →
+km 7**, and the profitable-and-survivable window narrowed from km 4–11 to **km 4–7**.
+
+**Two prices of tier 1, both measured and both accepted:** km 1 now drops **no food at all** (neither
+new creature has loot, and the boar was the only meat there), and a level-1 creature covers
+km 1–10, so it drags that whole band's average XP down — the opening ledger's km 4 fell
+from **+44 Vigor to +3**, km 7 from +66 to +45. **That second one recurs every time a tier
+is added below an existing one.** It is the km rule working, not a defect.
+
+Also in this change, and unrelated to the mobs: `exploration.outcome.encounter.lost` said
+«**прорвав** ваш захист» — masculine past tense, so «Скажена рись **прорвав**» has been
+wrong on screen since the lynx shipped. Now «проламує», present tense, which is what the
+other 28 combat strings already use. And `SpecTables.economy` had `enemy.wild_boar`
+hardcoded with prose reading "the pure-boar path at km 1–3"; it looks the creature up now
+and names none, because that sentence is exactly what the boar's move would have falsified.
+
+Full account: `.memory/sessions.md` (2026-09-14). Specification amendments:
+`content/spec/spec-bestiary.md` §3 and §8.
+
 ### Where we stopped (2026-09-12)
 
 **The bot is LIVE on the Pi running `aa18f57`**, restarted 2026-09-12 19:43 Kyiv.
@@ -96,6 +166,20 @@ it is exactly what has not been done to the three surfaces below.**
 > That is the whole next action. Every defect this project has found came from someone
 > glancing at a screen, not from running anything — so this list is the highest-yield
 > thing available, and it costs one session in Telegram.
+>
+> **Added 2026-09-14, not even built into a deploy yet — walk it FIRST:**
+> - **km 1 and km 2.** A new character should now meet 🐍 Гадюка or 🦅 Беркут, never a
+>   boar, and the boar should first appear at km 2. Check the eagle actually feels like the
+>   spiky one — its contract is 28% of the bar and it measured 28% median / 47% p90 / 72%
+>   p99 against a real armourless level-1 player. Two bad eagles in a row can kill.
+> - **the two new mobs drop nothing.** That is deliberate, not a bug; the loot line should
+>   simply be absent.
+> - **a defeat message with a feminine enemy** — «🐈‍⬛ Скажена рись проламує ваш захист».
+>   It read «прорвав» until now.
+> - **the deep half of the forest is a different game now.** Every creature from km 7 down
+>   was re-solved; the lynx gained 45% HP and the rabid bear 33%. Four accounts are
+>   mid-progression around level 10 and will feel it immediately. The ledger says a level
+>   1–3 character can no longer hold km 10 (88% win, was 95%) — km 7 is the new edge.
 >
 > **Added 2026-09-12, never walked:**
 > - **the four boards** — Profile → 📓 Нотатник → 🏆 Рейтинги. ⚔️ Рівень and 🎖 Честь have
@@ -234,8 +318,10 @@ from level 1 to 40, **78–87 days** on a tended estate. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-10, schema v11):** `records f6fc421256085066` ·
-`tuning ee45b18aea6b2c40` · `spawns eaea309f4813dfa2` · `quests 30de20902006e3b9`. A knob is
+**Current digest baseline (2026-09-14, schema v11):** `records b410865d0f536b17` ·
+`tuning ee45b18aea6b2c40` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
+is the one place the baseline is kept** — `.memory/status.md` quotes it, and
+`.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
 knob (auto-memory `feedback-digest-names-constants`).
 
@@ -305,7 +391,7 @@ leaderboards behind that journal** (⚔️ level · 🎖 arena honor · 🌲 dee
 walked) as tabs redrawing one message.
 
 Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
-localization (**1023 / 1071 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
+localization (**1025 / 1073 keys** — uk carries 13 `.m`/`.f` player-gender pairs, 33
 `item.<id>.gender` declarations and the four-way `gear.broken.notice`). **Access is invite-only and lives in the database**
 (`allowed_users`): `/link` mints a five-minute deep link, redeeming one adds the
 account and opens registration, and nobody else gets a `User` row at all.

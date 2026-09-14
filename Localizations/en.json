@@ -742,6 +742,8 @@
   "enemy.rabid_wolf": "Rabid Wolf",
   "enemy.wild_bear": "Wild Bear",
   "enemy.rabid_bear": "Rabid Bear",
+  "enemy.wild_viper": "Viper",
+  "enemy.wild_eagle": "Golden Eagle",
   "combat.button.attack.warrior": "🗡 Slash with sword",
   "combat.button.attack.archer": "🏹 Loose arrow",
   "combat.button.attack.mage": "⚡ Magic strike",

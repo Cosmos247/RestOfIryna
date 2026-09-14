@@ -1,5 +1,170 @@
 # Session History
 
+## Session — 2026-09-14 (tier 1 of the bestiary, then the whole roster re-solved)
+
+Content work, on request: add mobs, tier by tier, weakest first. The user named the
+creatures (**гадюка**, **беркут**) and their order — viper < eagle < boar — and asked for
+an explanation of the HP/ATK curve plus stat options. **Not deployed, not committed.**
+
+### The framing that did the actual work
+
+The ask mixed two things that turn out to be independent, and separating them is what
+made the rest easy:
+
+```
+xpReward = round(26 · level^1.55 · archetype.xpMultiplier)
+```
+
+**HP and ATK are not in it.** The XP gap is fixed by choosing `level` and `archetype`; the
+stat line is a separate question about how long a fight lasts and how much it hurts. Every
+option after that followed from picking two dials rather than from tuning numbers.
+
+Ladder: `10 → 34 → 76 → 223` where it was `10 → ─────── ×22.3 ─────── 223`. Steps ×3.4,
+×2.2, ×2.9. The boar was raised by moving it to L2 `normal` — not by hand-editing stats,
+which is what the project's whole content discipline is for.
+
+### What the measurement found, and it inverted the recommendation
+
+The shipped roster carries **60% HP / 59% ATK** of its archetype contract (measured, all
+seven). I first proposed matching that for the new mobs. Then two facts changed the answer:
+
+1. **The generator reproduces every shipped DEF/crit/dodge exactly — at the PRE-Phase-10
+   levels.** All 21 values, to the unit. Phase 10 moved levels and froze stats, so every
+   creature carries the defensive curve of a creature 0–5 levels higher. Worth knowing
+   before anyone "fixes" one.
+2. **The starter weapons already carry the ATTACK the budget prices for a `main_hand` at
+   itemLevel 1.** Computed 7.56 against the sword's shipped 7, 6.24 against the bow's 6,
+   6.61 against the staff's 7. (Their ACCURACY is authored above curve — the sword's 3
+   against a computed 1.08 — which does not enter this argument.) So at level 1 the real
+   player's ATTACK is already on curve and only the ARMOUR is missing — DEF 12 against the reference
+   character's 30.9, HP 120 against 143.
+
+That splits the 60% in half: **ATK needs the correction (0.65 cancels the 1.5× a full-
+contract mob costs an armourless player), HP does not.** Measured against a real level-1
+player: viper 3.1 rounds / 11% of the bar, eagle 4.1 / 31%, boar 5.5 / 27%, against
+contracts of 3.0/10%, 4.0/28%, 5.0/24%. The user chose that recipe (variant B) after seeing
+it against two alternatives.
+
+`content.roster_off_curve` now warns on the ATK of all four permanently. **That is the
+expected state, not a defect** — the report measures the reference's full kit.
+
+### Measured before authoring, in a sandbox
+
+The whole variant was assembled in a **copy** of `content/` + `Localizations/` under the
+scratchpad and run with `ROI_PROJECT_PATH`, so every number below was real before a byte of
+the repo changed. Worth repeating: `roi-content` takes that env var, so a content
+hypothesis costs nothing.
+
+It also decomposed the cost, which is the part that would have been guessed otherwise:
+
+| km | before | after | why |
+|---|---|---|---|
+| 1 | −335, 92.2 kills | **−270, 53.4 kills** | the XP ladder |
+| 2 | (no row) | **−94** | the boar arrives here now |
+| 4 | +44 | **+3** | −41 the two new L1 mobs, +11 the boar's move, −12 the moose |
+| 7 | +66 | **+45** | same dilution |
+
+**A level-1 creature covers km 1–10, so adding one lowers the average XP of that whole
+band.** It is the km rule working as designed, and it will happen on every tier added below
+an existing one. Narrower bands were tested (viper 1–5, eagle 1–6): recovers km 6+, costs a
+second exception to the km rule, declined.
+
+The other price is that **km 1 drops no food at all** — both new creatures were authored
+with an empty loot table, by decision, and the boar was the only meat there.
+
+### Two things found on the way that were nobody's feature
+
+- **`exploration.outcome.encounter.lost` was masculine past tense.** «<b>%{enemy}</b>
+  **прорвав** ваш захист» — so «Скажена рись прорвав» has been on screen since the lynx
+  shipped. The other 28 `%{enemy}` strings are all present tense and duck the problem
+  entirely; this one did not. Now «проламує». Found by checking whether a feminine creature
+  name was safe to add, which it was not.
+- **`SpecTables.economy` hardcoded `enemy.wild_boar`** and printed prose reading "the
+  pure-boar path at km 1–3". The table beside it regenerates; the sentence does not. It now
+  looks up the shallowest spawnable creature and names none. Same defect class as
+  `feedback-printed-numbers-protect-tables-not-prose`, and the boar's move is exactly what
+  would have falsified it silently.
+
+Four more stale prose passages were corrected in `spec-economy.md` §2/§3 and
+`spec-items.md` §3 — "774 Vigor at km 1" (now 0), "95% win at km 10" (now 97%), "the boar,
+the first creature anyone meets", and a pasted `simulate` line. §2's *approved* text was
+left as written and given a dated re-measurement note instead; that section is history on
+purpose.
+
+### The JSON was emitted, not hand-edited
+
+`content/data/*.json` is in Swift's `JSONEncoder` style (`"key" : value`, sorted, 2-space),
+and a python re-emit would have reformatted every line and buried the change. So the
+emitter was **verified first**: it reproduced all **26** content files byte-for-byte before
+it was allowed to write one. The diff is 50 insertions and 8 deletions, all of them real.
+
+### Then the rest of the roster, because tier 1 made it measurable
+
+Asked to review the other five against the curve. Putting tier 1 on contract turned the
+report into a comparison, and it said **danger was collapsing with depth**: bison 45% of
+its archetype's contracted cost, lynx **21%**, wolf 33%, bear 33%, rabid bear **26%**,
+against tier 1's 54–61%. Win rate 100% against all nine. The two readings that made the
+case without argument: **a level-10 lynx cost the same 6% of the bar as a level-1 viper**,
+and **the level-1 eagle (17%) was more dangerous than the level-22 elite (16%)** whose
+contract is 62%.
+
+| id | L | HP | ATK | DEF | crit | dodge |
+|---|---|---|---|---|---|---|
+| `enemy.wild_buffalo` | 7 | 121→**138** | 13→**15** | 63→**48** | 10→**8** | 0 |
+| `enemy.rabid_lynx` | 10 | 75→**109** | 14→**20** | 18→**17** | 28→**27** | 31→**30** |
+| `enemy.rabid_wolf` | 13 | 124→**156** | 12→**15** | 44→**38** | 11→**10** | 6→**5** |
+| `enemy.wild_bear` | 16 | 183→**216** | 17→**20** | 101→**82** | 13→**11** | 0 |
+| `enemy.rabid_bear` | 22 | 240→**319** | 23→**30** | 82→**74** | 57→**53** | 23→**21** |
+
+**The number that mattered: 65–78% of contract, not 100%.** `project-post-rebalance-
+package` blocks "bestiary regeneration" on the gear ladder because regenerating to 100%
+doubles every enemy against a player who did not move — correct, and it quietly assumes
+regeneration MEANS 100%. Solving against the wardrobe that actually exists
+(`spec-items.md` §3: 40–53% of the on-curve kit at these levels) is a third option nobody
+had written down. It raises the five by +14…+45%, and against a player carrying that
+wardrobe all five land on contract: 7.0 rounds / 43%, 4.0 / 29%, 5.0 / 25%, 7.0 / 42%,
+8.0 / 62%. **Provisional** — if the gear ladder lands, re-solve against it.
+
+DEF/crit/dodge came off the Phase-10 freeze in the same pass. Every one of the five had
+been carrying the defensive curve of its PRE-re-spread level: the bison absorbed like a
+level-11 creature, the bear like a level-21 one.
+
+**And the moose, which the tier-1 pass had half-treated.** Raising only its HP left it the
+one creature still on a pre-re-spread curve — and the generator's 114 HP is solved
+*against* DEF 20, so HP 114 with DEF 24 was internally inconsistent. DEF 24 → 20, crit
+8 → 7, dodge 4 → 3. **Fixing five and leaving the sixth is the kind of thing that reads as
+deliberate a year later**, which is the argument for finishing it now rather than noting
+it. All eleven creatures now carry the curve of the level they are on.
+
+**The cost showed up where it was not being watched.** The opening ledger's Vigor columns
+barely moved; its WIN column moved a great deal — km 10 from 95% to 88%, km 13 from 66% to
+46%, km 17 from 34% to 8%. The cheapest depth a level 1–3 player can hold went **km 10 →
+km 7** and the profitable-and-survivable window narrowed from km 4–11 to **km 4–7**. The
+generated block caught this on its own; the SENTENCE under it had to be corrected by hand
+for the second time in one session, which is the rule earning its keep twice in a day.
+
+**What stats could not fix and tier 2 will have to:** the XP ladder's biggest step is now
+**×4.5 between the moose (L4) and the bison (L7)**; bison, lynx and wolf then sit within
+×1.4 of each other; the level gap 16 → 22 is the widest in the game; density falls from 6
+candidates at km 10 to 2 at km 20.
+
+### Verification
+
+```
+validate --strict   ✅ 0/0 · 9 → 11 enemies · content hash 4eac64ff → 5fa9ab72
+simulate --strict   exit 0 · 0 broken bands · 12 warnings — back to the count it
+                    started at; roster_off_curve fell 9 → 7 on the re-solve
+swift test          236 passed
+digest              records f6fc4212… → b410865d…   spawns eaea309f… → c9bdb57d…
+                    tuning and quests byte-identical — exactly the two halves a
+                    bestiary edit should move, and no others
+```
+
+Locale keys 1023/1071 → **1025/1073**. Specification amended rather than contradicted:
+`spec-bestiary.md` §3 (the tier-1 table and the recipe) and §8 (the "no new creatures"
+decision, whose reason — a tier at a time, measured before the next opens — is what
+actually stands).
+
 ## Session — 2026-09-12 part 2 (four boards in the journal)
 
 Feature work, on request: leaderboards, reached from the quest journal.

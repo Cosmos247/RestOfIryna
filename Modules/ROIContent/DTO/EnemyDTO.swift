@@ -138,7 +138,7 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
     public let nameKeyOverride: String?
 
     /// Every shipped enemy uses its own id as its locale key
-    /// (`enemy.wild_boar` → `enemy.wild_boar`), verified across all 9 entries,
+    /// (`enemy.wild_boar` → `enemy.wild_boar`), verified across all 11 entries,
     /// so the id IS the key. No prefix surgery — string-stripping here would be
     /// a latent bug for any id containing the prefix twice.
     public var nameKey: String { nameKeyOverride ?? id }

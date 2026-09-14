@@ -494,9 +494,20 @@ public enum SpecTables {
         // one this spec exists to correct. Generated because the number that was
         // wrong for two weeks — "about eleven kills to reach level 4" — was typed
         // into prose beside a table that was right.
+        // The two creatures are LOOKED UP, not named. They used to be
+        // `enemy.wild_boar` and `enemy.wild_moose` hardcoded, and the prose
+        // below said "the pure-boar path at km 1-3" — which stopped being true
+        // the moment the boar moved off level 1 and a viper took the shallow
+        // slot. A generated table cannot drift; the sentence beside it can, and
+        // naming a creature in either is what lets it.
+        // "Spawnable" is spelled exactly as `ContentValidator`'s depth-coverage
+        // rule spells it, so the two cannot drift apart on what counts.
+        let spawnable = content.enemies
+            .filter { ($0.depth?.closedRange).map { $0 != 0...0 } ?? false }
+            .sorted { ($0.level, $0.xpReward) < ($1.level, $1.xpReward) }
         if let tuning = content.tuning?.progression,
-           let boar = content.enemiesById["enemy.wild_boar"],
-           let moose = content.enemiesById["enemy.wild_moose"] {
+           let shallowest = spawnable.first,
+           let deeper = spawnable.first(where: { $0.level > shallowest.level }) {
             let archXP = Dictionary(content.enemyArchetypes.map { ($0.id, $0.xpMultiplier) },
                                     uniquingKeysWith: { first, _ in first })
             func mobXP(_ level: Int, _ archetype: String) -> Double {
@@ -507,8 +518,8 @@ public enum SpecTables {
                 $0 + ProgressionMath.xpRequiredToReach($1 + 1, curve: tuning.xpCurve,
                                                        maxLevel: tuning.maxLevel)
             }
-            let boarXP = Double(boar.xpReward)
-            let kills = boarXP > 0 ? Double(toFour) / boarXP : 0
+            let shallowXP = Double(shallowest.xpReward)
+            let kills = shallowXP > 0 ? Double(toFour) / shallowXP : 0
             let pool = ProgressionMath.maxVigor(at: 1, pool: tuning.vigorPool)
             out.append("")
             out.append("**The opening** — levels 1–3, the only stretch with no estate behind it")
@@ -517,14 +528,15 @@ public enum SpecTables {
             out.append("|---|---|")
             out.append("| XP to reach level 4 | \(format(toFour)) |")
             out.append(String(format: "| `%@` at level %d | %.0f XP → **%.0f kills** |",
-                              boar.id, boar.level, boarXP, kills))
+                              shallowest.id, shallowest.level, shallowXP, kills))
             out.append("| starting Vigor pool | \(pool) |")
-            out.append(String(format: "| `%@` at level %d, on curve | %.0f XP — %.0f boars |",
-                              moose.id, moose.level, mobXP(moose.level, moose.archetype),
-                              mobXP(moose.level, moose.archetype) / max(boarXP, 1)))
+            out.append(String(format: "| `%@` at level %d, on curve | %.0f XP — %.0f of those |",
+                              deeper.id, deeper.level, mobXP(deeper.level, deeper.archetype),
+                              mobXP(deeper.level, deeper.archetype) / max(shallowXP, 1)))
             out.append("")
-            out.append("The second row is the pure-boar path at km 1–3. The last is why it is")
-            out.append("not the intended one: depth is the difficulty dial from the first hour.")
+            out.append("The second row is the path that never leaves the shallowest band. The last")
+            out.append("is why it is not the intended one: depth is the difficulty dial from the")
+            out.append("first hour.")
         }
 
         // What a kill actually returns, in both currencies. The Vigor side is
