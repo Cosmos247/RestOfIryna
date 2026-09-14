@@ -662,6 +662,7 @@ enum ContentDigest {
         d.combine(CombatService.Flee.archerChance)
         d.combine(CombatService.Flee.mageChance)
         d.combine(CombatService.Flee.mageVigorExtra)
+        d.combine(CombatService.Flee.maxFailures)
         d.combine("\(CombatService.Defend.archerChipMultiplier)")
         d.combine("\(CombatService.Defend.archerDodgeMultiplier)")
         d.combine("\(CombatService.Defend.mageBarrierDamageFraction)")

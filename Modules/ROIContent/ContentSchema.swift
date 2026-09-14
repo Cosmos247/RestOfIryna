@@ -60,5 +60,11 @@ public enum ContentSchema {
     /// tier, now DENSER in encounters than fresh ground. Defaulting to it would
     /// silently hand the unattended mode a higher fight rate than active play,
     /// so the handshake has to refuse rather than fall back.
-    public static let current: Int = 11
+    /// v12 (2026-09-15): `combat.flee` stops being a bare per-class array and
+    /// becomes a section — `byClass` plus a required `maxFailures`, the pity
+    /// ceiling that guarantees the attempt after N failures. A v11 bundle
+    /// carries an ARRAY where an object is now read, so the decode fails
+    /// outright; the handshake is what turns that into a sentence about the
+    /// bundle instead of a `typeMismatch` about a coding key.
+    public static let current: Int = 12
 }

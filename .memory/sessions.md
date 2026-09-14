@@ -1,5 +1,89 @@
 # Session History
 
+## Session — 2026-09-15 (the escape has a ceiling)
+
+A player report, arriving as a question rather than a bug: someone pressed Flee seven times,
+never escaped, and the beast killed them — "is that just the probability?"
+
+### It was the probability, and which class you are decides whether to believe it
+
+`Int.random(in: 1...100) <= fleeChance(forClass:)` is the whole roll, flat per class and
+independent every round. Nothing else enters it — not the player's level, not the enemy's,
+not the depth. So seven failures in a row is:
+
+| class | chance | 7 in a row |
+|---|---|---|
+| warrior | 40% | **2.80% — one fight in 36** |
+| archer | 70% | 0.022% — one in 4,572 |
+| mage | 90% | 0.00001% — one in 10 million |
+
+Worth keeping: the same report means three different things depending on the class, and on
+a mage it would have been evidence of a defect rather than of luck. The class was not in
+the report, so the answer had to carry all three.
+
+### What actually killed the player was the cost of failing, not the failing
+
+A failed escape is 3 Vigor **and** a `cannotMiss` counter with the player's DEF halved and
+nothing dealt back. Measured against the reference character at level 10:
+
+| | ordinary round (mean) | failed flee | |
+|---|---|---|---|
+| warrior vs rabid lynx | 10.6 HP | 15.5 HP | +45% |
+| warrior vs wild bear | 14.0 HP | 21.1 HP | +51% |
+| archer vs rabid bear | 25.9 HP | 43.7 HP | +69% |
+
+The archer's gap is the widest because the failed escape also takes away a dodge roll they
+would otherwise have had. Per failure that is 6.3% of a warrior's bar against a rabid lynx
+and **16.3% against the level-22 rabid bear — death in exactly seven**, which is the
+report, to the tap. Pressing Flee is strictly worse per round than fighting; the only thing
+it buys is the chance to end the fight.
+
+### The fix the user asked for: four failures maximum, the fifth always works
+
+`combat.json` → `flee.maxFailures = 4`. The attempt AFTER four failures is granted without
+a roll — every class, every level, every enemy. It cuts the tail and barely moves the
+average: warrior mean attempts **2.50 → 2.31**, archer and mage unchanged to two decimals,
+with 12.96% of warrior escapes now ending on the guaranteed try and 0.81% of archer ones.
+The per-class chances were left alone (they are the class fantasy — warriors are heavy,
+mages teleport) and so was the backstab: Phase 8C rebuilt it from a free 1 HP on purpose,
+and the ceiling bounds how many of them a fight can deal rather than making them cheap.
+
+Three decisions inside it:
+
+- **Per FIGHT, not per expedition.** `ExplorationState.combat_flee_fails`, 0 on
+  `beginCombat`, cleared on `endCombat`. Per expedition it becomes a resource the player
+  spends — leave one beast cheaply, pay at the next — rather than a floor under one bad run.
+  All three fight starts (exploration, registration's rabid dog, the training dummy) go
+  through `beginCombat`, so there is no path that inherits a stale count.
+- **The roll went to `CombatMath.fleeSucceeds(chance:priorFailures:rules:using:)`** even
+  though `FightSimulator` has no flee policy to measure. A roll and the ceiling over it are
+  one rule, and the second copy is the one that forgets the ceiling. First attempt put the
+  whole `FleeSectionDTO` on `CombatRules`; that struct's own doc comment says it carries
+  only `Int`/`Double` so a copy is free on a path the simulator runs millions of times, so
+  it carries `fleeMaxFailures` as a scalar instead.
+- **`flee` became a section** (`byClass` + `maxFailures`), shaped like `specialDefense`,
+  because `maxFailures` is not a property any one class has. That is a required field in a
+  changed shape: **content schema v11 → v12**.
+
+### Verification
+
+`validate --strict` 0/0 (content hash `93923ad1` → `15782bee`), `simulate --strict` exit 0
+with the same 12 warnings it started at, **246 tests** (242 + 4). Digest
+`tuning 2634076ec557de54 → 43b809a87450a3b8`; `records`, `spawns` and `quests` byte-identical
+— the only thing that moved is the constant. One migration, `AddCombatFleeFails`, nullable
+like the three per-fight counters beside it and registered before `WipeForRebalance`.
+
+The four new tests are the guarantee itself rather than its parts: the ceiling holds over
+500 seeds at a 1% chance, a ceiling of 0 escapes on the first try, the roll still decides
+below the ceiling (40% stays 40% over 2000 rolls), and a negative ceiling is a validator
+error.
+
+**Nothing is visible to the player.** No copy was added, so the ceiling reads as luck on
+the fifth try. Deliberate scope call, and the obvious follow-up if the mechanic should
+teach itself. **Not deployed** — no build has gone to the Pi.
+
+Auto-memory `project-flee-has-a-ceiling`; the rule is in `CLAUDE.md`.
+
 ## Session — 2026-09-15 (coins on the ground, and two traps in one sentence)
 
 Feature work on request: a random find event paying 2 / 5 / 10 / 20 silver, rarer as it

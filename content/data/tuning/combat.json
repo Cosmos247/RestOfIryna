@@ -28,23 +28,26 @@
     "mageBarrierDamageFraction" : 0.4
   },
   "defendChipFraction" : 0.3,
-  "flee" : [
-    {
-      "chance" : 40,
-      "class" : "warrior",
-      "extraVigor" : 0
-    },
-    {
-      "chance" : 70,
-      "class" : "archer",
-      "extraVigor" : 0
-    },
-    {
-      "chance" : 90,
-      "class" : "mage",
-      "extraVigor" : 2
-    }
-  ],
+  "flee" : {
+    "byClass" : [
+      {
+        "chance" : 40,
+        "class" : "warrior",
+        "extraVigor" : 0
+      },
+      {
+        "chance" : 70,
+        "class" : "archer",
+        "extraVigor" : 0
+      },
+      {
+        "chance" : 90,
+        "class" : "mage",
+        "extraVigor" : 2
+      }
+    ],
+    "maxFailures" : 4
+  },
   "hitChance" : {
     "base" : 85,
     "max" : 95,

@@ -101,7 +101,7 @@ rules of their own:
 
 | File | Owns |
 |---|---|
-| `combat.json` | hit/crit/variance, technique gates, 3 stances, 3 special attacks, 3 special defenses, flee, per-class Defend, the training-dummy id |
+| `combat.json` | hit/crit/variance, technique gates, 3 stances, 3 special attacks, 3 special defenses, flee (per-class chance + the per-fight `maxFailures` ceiling), per-class Defend, the training-dummy id |
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
 | `exploration.json` | the three-tier revisit weight table, trip damage |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |

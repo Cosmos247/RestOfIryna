@@ -31,7 +31,7 @@ final class SimulatorTests: XCTestCase {
         CombatCurvesDTO(mitigation: mitigation, dodge: dodge, crit: crit, accuracy: accuracy)
     }
 
-    private func combat() -> CombatTuningDTO {
+    private func combat(fleeMaxFailures: Int = 4) -> CombatTuningDTO {
         CombatTuningDTO(
             hitChance: HitChanceDTO(base: 85, min: 40, max: 95),
             curves: curves(),
@@ -54,7 +54,9 @@ final class SimulatorTests: XCTestCase {
                 effectPersistRounds: 1, ironBulwarkChipFraction: 0.5, shadowVeilDodgeMultiplier: 2.0,
                 mirrorWardReflectFraction: 0.5,
                 byClass: [SpecialDefenseClassDTO(characterClass: "warrior", vigor: 3)]),
-            flee: [FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0)],
+            flee: FleeSectionDTO(
+                maxFailures: fleeMaxFailures,
+                byClass: [FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0)]),
             defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
                                      mageBarrierDamageFraction: 0.4))
     }
@@ -163,6 +165,71 @@ final class SimulatorTests: XCTestCase {
         XCTAssertTrue(outcome.stalemate)
         XCTAssertFalse(outcome.won)
         XCTAssertEqual(outcome.rounds, 12)
+    }
+
+    // MARK: - Escape
+
+    /// The ceiling is the whole point: no run of bad luck may cost more than
+    /// `maxFailures` failed escapes, because each one is an unmissable hit with
+    /// nothing dealt back. Rolled at a 1% chance so the roll itself effectively
+    /// never lands — what the loop measures is the ceiling alone.
+    func testEscapeCannotFailMoreThanTheCeiling() {
+        let rules = CombatRules(combat(fleeMaxFailures: 4))
+        for seed in UInt64(1)...500 {
+            var rng = SplitMix64(seed: seed)
+            var failures = 0
+            // Bounded by the ceiling itself, so a broken ceiling reports one
+            // failure per seed rather than spinning out a wall of them.
+            while failures <= rules.fleeMaxFailures,
+                  !CombatMath.fleeSucceeds(chance: 1, priorFailures: failures,
+                                           rules: rules, using: &rng) {
+                failures += 1
+            }
+            XCTAssertLessThanOrEqual(failures, rules.fleeMaxFailures,
+                                     "seed \(seed) failed past the ceiling")
+        }
+    }
+
+    /// A ceiling of 0 is the documented way to switch the roll off entirely:
+    /// the first attempt always works, whatever the class chance says.
+    func testZeroCeilingAlwaysEscapesFirstTry() {
+        let rules = CombatRules(combat(fleeMaxFailures: 0))
+        var rng = SplitMix64(seed: 3)
+        for _ in 0..<100 {
+            XCTAssertTrue(CombatMath.fleeSucceeds(chance: 1, priorFailures: 0,
+                                                  rules: rules, using: &rng))
+        }
+    }
+
+    /// Below the ceiling the class chance still decides. A guarantee that fired
+    /// early would delete the mechanic it exists to bound — so 40% has to stay
+    /// 40% on the attempts the ceiling does not reach.
+    func testBelowTheCeilingTheRollStillDecides() {
+        let rules = CombatRules(combat(fleeMaxFailures: 4))
+        var rng = SplitMix64(seed: 11)
+        var escapes = 0
+        for _ in 0..<2000 {
+            if CombatMath.fleeSucceeds(chance: 40, priorFailures: 0, rules: rules, using: &rng) {
+                escapes += 1
+            }
+        }
+        // 800 expected, σ ≈ 22 — the bounds sit well past four of them, and the
+        // seed is fixed anyway.
+        XCTAssertGreaterThan(escapes, 700)
+        XCTAssertLessThan(escapes, 900)
+
+        // The rung immediately below the ceiling is the off-by-one that would
+        // hide: at 1% it must still fail nearly always, or the guarantee is
+        // firing an attempt early and the cap is really 3.
+        var edge = SplitMix64(seed: 5)
+        var escapesAtEdge = 0
+        for _ in 0..<1000 {
+            if CombatMath.fleeSucceeds(chance: 1, priorFailures: rules.fleeMaxFailures - 1,
+                                       rules: rules, using: &edge) {
+                escapesAtEdge += 1
+            }
+        }
+        XCTAssertLessThan(escapesAtEdge, 50)   // ~10 expected at 1%
     }
 
     // MARK: - Percentiles

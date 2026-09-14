@@ -152,6 +152,16 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_round")
     public var combatRound: Int?
 
+    /// Failed escape attempts in the CURRENT fight (2026-09-15). Starts at 0 on
+    /// `beginCombat`, bumped by each failed Flee, cleared in `endCombat`.
+    ///
+    /// Per fight, not per expedition: leaving one beast behind must not make
+    /// the next one easier to leave, or the ceiling becomes a resource the
+    /// player spends rather than a floor under a bad run. Read defensively as 0
+    /// — nil for fights already in flight when AddCombatFleeFails shipped.
+    @OptionalField(key: "combat_flee_fails")
+    public var combatFleeFails: Int?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -179,6 +189,7 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.combatSpecialAtkUses = nil
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
+        self.combatFleeFails = nil
     }
 }
 
@@ -337,6 +348,7 @@ extension ExplorationState {
         self.combatSpecialDefUses = specialDefUses
         self.combatSuperUses = superUses
         self.combatRound = 0
+        self.combatFleeFails = 0
     }
 
     /// Clear the combat fields without touching the rest of the row. Also
@@ -355,6 +367,7 @@ extension ExplorationState {
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
         self.combatRound = nil
+        self.combatFleeFails = nil
     }
 
     /// True when the row encodes a live Super-technique stance.

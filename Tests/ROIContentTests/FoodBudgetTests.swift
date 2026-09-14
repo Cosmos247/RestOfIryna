@@ -86,7 +86,7 @@ final class FoodBudgetTests: XCTestCase {
                 specialDefense: SpecialDefenseSectionDTO(
                     effectPersistRounds: 1, ironBulwarkChipFraction: 0.5,
                     shadowVeilDodgeMultiplier: 2.0, mirrorWardReflectFraction: 0.5, byClass: []),
-                flee: [],
+                flee: FleeSectionDTO(maxFailures: 4, byClass: []),
                 defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
                                         mageBarrierDamageFraction: 0.4)),
             vigor: VigorTuningDTO(

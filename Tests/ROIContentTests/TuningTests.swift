@@ -42,6 +42,7 @@ final class TuningTests: XCTestCase {
         mirrorWardReflect: Double = 0.5,
         persistRounds: Int = 1,
         flee: [FleeTuningDTO]? = nil,
+        fleeMaxFailures: Int = 4,
         archerChip: Double = 0.5, archerDodge: Double = 1.5, mageBarrier: Double = 0.4
     ) -> CombatTuningDTO {
         CombatTuningDTO(
@@ -94,11 +95,13 @@ final class TuningTests: XCTestCase {
                     SpecialDefenseClassDTO(characterClass: "archer", vigor: 3),
                     SpecialDefenseClassDTO(characterClass: "mage", vigor: 4)
                 ]),
-            flee: flee ?? [
-                FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0),
-                FleeTuningDTO(characterClass: "archer", chance: 70, extraVigor: 0),
-                FleeTuningDTO(characterClass: "mage", chance: 90, extraVigor: 2)
-            ],
+            flee: FleeSectionDTO(
+                maxFailures: fleeMaxFailures,
+                byClass: flee ?? [
+                    FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0),
+                    FleeTuningDTO(characterClass: "archer", chance: 70, extraVigor: 0),
+                    FleeTuningDTO(characterClass: "mage", chance: 90, extraVigor: 2)
+                ]),
             defend: DefendTuningDTO(archerChipMultiplier: archerChip,
                                     archerDodgeMultiplier: archerDodge,
                                     mageBarrierDamageFraction: mageBarrier))
@@ -438,6 +441,10 @@ final class TuningTests: XCTestCase {
             FleeTuningDTO(characterClass: "archer", chance: 70, extraVigor: 0),
             FleeTuningDTO(characterClass: "mage", chance: 90, extraVigor: 2)
         ])))
+    }
+
+    func testNegativeFleeCeilingIsAnError() {
+        assertRule("tuning.combat.flee_max_failures", bundle(combat: combat(fleeMaxFailures: -1)))
     }
 
     func testNegativeVigorCostIsAnError() {

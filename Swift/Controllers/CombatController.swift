@@ -523,8 +523,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
 
-        let success = Int.random(in: 1...100) <= CombatService.fleeChance(forClass: cls)
-        if success {
+        // Read off the ROW, not counted here: the ceiling belongs to the fight,
+        // and a player who taps Flee, trades two rounds and taps again is still
+        // in the same one. `beginCombat` sets it to 0 and `endCombat` clears it,
+        // so a fresh encounter always starts the count over.
+        let priorFailures = state.combatFleeFails ?? 0
+        if CombatService.fleeSucceeds(forClass: cls, priorFailures: priorFailures) {
             var line = "💨 " + lingo.localize("combat.flee.success", locale: locale, interpolations: [
                 "enemy": enemyName
             ])
@@ -585,6 +589,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         )
         let damage = max(1, backstab.damage)
         player.hp = max(0, player.hp - damage)
+
+        // Bumped before `finishRound`, which is what persists the row — and
+        // which may hand straight off to `handleCombatDeath`. A counter written
+        // after the save is a counter the fatal attempt never records.
+        state.combatFleeFails = priorFailures + 1
 
         let line = "❌ " + lingo.localize("combat.flee.fail", locale: locale, interpolations: [
             "enemy": enemyName,

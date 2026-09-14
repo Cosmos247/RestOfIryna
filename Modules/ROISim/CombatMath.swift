@@ -38,6 +38,11 @@ public struct CombatRules: Sendable {
     public let critMultiplier: Double
     public let variance: VarianceDTO
     public let defendChipFraction: Double
+    /// Failures one fight may deal out before the next escape is free. Lifted
+    /// out of `flee` as a SCALAR, because the invariant above is that a copy of
+    /// this struct is free — the per-class rows stay in the DTO, where a roll
+    /// never has to retain them.
+    public let fleeMaxFailures: Int
 
     public init(_ tuning: CombatTuningDTO) {
         self.hitChance = tuning.hitChance
@@ -46,6 +51,7 @@ public struct CombatRules: Sendable {
         self.critMultiplier = tuning.critMultiplier
         self.variance = tuning.variance
         self.defendChipFraction = tuning.defendChipFraction
+        self.fleeMaxFailures = tuning.flee.maxFailures
     }
 
     /// ±10% on every landed hit. `ClosedRange` TRAPS when built with min > max,
@@ -288,5 +294,31 @@ public enum CombatMath {
         let varied = raw * Double.random(in: rules.varianceRange, using: &rng)
             * rules.defendChipFraction * extraMultiplier
         return Swift.max(1, Int(varied.rounded()))
+    }
+
+    /// Does an escape attempt succeed?
+    ///
+    /// Two rules, and the second one is why this is a function rather than a
+    /// comparison at the call site. The per-class `chance` is the class
+    /// fantasy — warriors are heavy, mages teleport. `rules.fleeMaxFailures`
+    /// is the floor under all three: `priorFailures` counts the failures THIS
+    /// fight has already dealt out, and once it reaches the ceiling the roll is
+    /// skipped and the player leaves.
+    ///
+    /// The ceiling exists because the roll is flat and independent every round
+    /// while the cost of failing is not: a failed escape is an unmissable hit
+    /// at half armour with nothing dealt back. A warrior fails 60% of the
+    /// time, so seven failures in a row is 2.8% — one fight in thirty-six, and
+    /// on 2026-09-15 one of them killed a player who kept pressing the button.
+    /// An unbounded tail is a bad place for the action players reach for when
+    /// they are already losing.
+    public static func fleeSucceeds<G: RandomNumberGenerator>(
+        chance: Int,
+        priorFailures: Int,
+        rules: CombatRules,
+        using rng: inout G
+    ) -> Bool {
+        if priorFailures >= rules.fleeMaxFailures { return true }
+        return Int.random(in: 1...100, using: &rng) <= chance
     }
 }

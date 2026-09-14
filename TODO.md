@@ -1214,6 +1214,37 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **The escape has a ceiling** *(2026-09-15, on a player report)* — a player pressed
+        Flee seven times, never got away and was killed. It was the probability, for one
+        class: the roll is flat and per class (warrior 40 / archer 70 / mage 90) with no
+        level, enemy or depth input, so seven failures is **2.80% for a warrior — one fight
+        in 36** — against 0.022% for an archer and 0.00001% for a mage. What made it lethal
+        is that a failed escape is not a free round: 3 Vigor plus a `cannotMiss` counter
+        with the player's DEF HALVED and nothing dealt back, which is **43–51% more damage
+        than an ordinary enemy counter** for a warrior and 69–77% for an archer. A level-10
+        player in a full on-curve kit pays 6.3% of the bar per failure to a rabid lynx and
+        **16.3% to the level-22 rabid bear — death in exactly seven**. Fix is a CEILING, not
+        a bigger chance: `combat.json` → `flee.maxFailures = 4`, so the attempt after four
+        failures is granted without a roll, to every class at every level against every
+        enemy. It cuts the tail and barely moves the mean — warrior attempts 2.50 → 2.31,
+        archer and mage unchanged to two decimals; 12.96% of warrior escapes now end on the
+        guaranteed try. The class chances were left alone deliberately (they are the class
+        fantasy) and so was the backstab (Phase 8C rebuilt it from a free 1 HP on purpose).
+        Counter is per FIGHT — `ExplorationState.combat_flee_fails`, 0 on `beginCombat`,
+        cleared on `endCombat`; per expedition it would be a resource the player spends
+        rather than a floor under one bad run. The roll went into
+        `CombatMath.fleeSucceeds(chance:priorFailures:rules:using:)` even though the
+        simulator has no flee policy, because a roll and its ceiling are one rule and the
+        second copy forgets the ceiling; `CombatRules` carries `fleeMaxFailures` as a
+        scalar, since that struct is copied per swing and promises it holds no arrays.
+        **Content schema v11 → v12** (`flee` became a section: `byClass` + `maxFailures`).
+        One migration, `AddCombatFleeFails`. `validate --strict` 0/0 (hash `93923ad1` →
+        `15782bee`), `simulate --strict` exit 0 with the same 12 warnings, **246 tests**
+        (242 + 4: the ceiling holds over 500 seeds at a 1% chance, a 0 ceiling escapes
+        first try, the roll still decides below the ceiling, and a negative ceiling is a
+        validator error). Digest: `tuning` moved, `records` / `spawns` / `quests`
+        byte-identical. No new copy — the ceiling reads as luck on the fifth try, which is
+        the obvious follow-up. **Not deployed.**
   - [x] **Coins on the ground** *(2026-09-15)* — a fifth step event paying **2 / 5 / 10 /
         20 silver**, credited on the spot. **Not monster silver**: `feedback-no-monster-silver`
         closes coin drops from kills, and this is a find on a STEP — no tie to what was
@@ -1459,7 +1490,9 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-15 — coins on the ground, a fifth step event. Before it, on 09-14: bestiary tier 1, the whole roster, then mob XP halved on what
+*Last updated: 2026-09-15 — the escape ceiling (4 failed flees max per fight, the 5th is
+free) on a player report of seven failures and a death; before it the same day, coins on the
+ground, a fifth step event. Before those, on 09-14: bestiary tier 1, the whole roster, then mob XP halved on what
 the live database showed (an archer at level 24 in six days, earning 386,590 XP a day with
 95–100% of it from kills). Two creatures added
 (гадюка, беркут), the boar moved to level 2 and the moose re-statted, closing the ×22.3 XP

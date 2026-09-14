@@ -36,6 +36,58 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
+### Where we stopped (2026-09-15) part 2 — the escape has a ceiling, NOT deployed
+
+A player pressed **Flee seven times**, never got away, and was killed. The user asked whether
+that was simply the probability. It was — for one class.
+
+**The roll is flat and per class, and nothing else enters it.** Warrior 40 / archer 70 /
+mage 90; not the player's level, not the enemy's, not the depth. Seven failures in a row is
+**2.80% for a warrior — one fight in 36** — against 0.022% for an archer and 0.00001% for a
+mage. The same report means "ordinary bad luck", "once a year" or "there is a bug" depending
+on who sent it, which is worth asking before believing any future one.
+
+**What killed them is that a failed escape is not a free round.** It costs 3 Vigor and a
+`cannotMiss` counter with the player's DEF HALVED and nothing dealt back — **43–51% more
+damage than an ordinary enemy counter** for a warrior, 69–77% for an archer, who also loses
+a dodge roll they would otherwise have had. At level 10 in a full on-curve kit that is 6.3%
+of the bar per failure to a rabid lynx and **16.3% to the level-22 rabid bear: death in
+exactly seven.** Pressing Flee is strictly worse per round than fighting; all it buys is
+the chance to end the fight.
+
+**`combat.json` → `flee.maxFailures = 4`.** The attempt after four failures is granted
+without a roll, to every class at every level against every enemy. It cuts the tail and
+barely moves the mean — warrior attempts **2.50 → 2.31**, archer and mage unchanged to two
+decimals, 12.96% of warrior escapes now ending on the guaranteed try. **The class chances
+were not touched** (they are the class fantasy) and neither was the backstab — Phase 8C
+rebuilt it from a free 1 HP on purpose, and a ceiling bounds how many land rather than
+making them cheap.
+
+Three decisions worth not re-opening: the counter is **per FIGHT**
+(`ExplorationState.combat_flee_fails`, 0 on `beginCombat`, cleared on `endCombat`) because
+per expedition it becomes a resource the player spends rather than a floor under one bad
+run; the roll lives in **`CombatMath.fleeSucceeds`** even though the simulator has no flee
+policy, since a roll and its ceiling are one rule and the second copy forgets the ceiling;
+and `CombatRules` carries `fleeMaxFailures` as a **scalar**, because that struct is copied
+per swing and its own doc comment promises it holds no arrays.
+
+**Content schema v11 → v12** — `flee` stopped being an array and became a section
+(`byClass` + `maxFailures`). One migration, `AddCombatFleeFails`.
+
+```
+validate --strict   ✅ 0/0 · content hash 93923ad1 → 15782bee · schema v12
+simulate --strict   exit 0 · 0 broken bands · 12 warnings — the count it started at
+swift test          246 passed (242 + 4 for the ceiling)
+digest              tuning 2634076e… → 43b809a8…
+                    records, spawns and quests byte-identical
+```
+
+**Nothing about it is visible to the player** — no copy was added, so the ceiling reads as
+luck on the fifth try. Deliberate, and the obvious follow-up if it should teach itself.
+
+Full account: `.memory/sessions.md` (2026-09-15, the escape ceiling); auto-memory
+`project-flee-has-a-ceiling`; the rule is in `CLAUDE.md`.
+
 ### Where we stopped (2026-09-15) — coins on the ground, NOT deployed
 
 A fifth step event, on request. Walking a kilometre can turn up **2, 5, 10 or 20 silver**,
@@ -273,7 +325,15 @@ it is exactly what has not been done to the three surfaces below.**
 > glancing at a screen, not from running anything — so this list is the highest-yield
 > thing available, and it costs one session in Telegram.
 >
-> **Added 2026-09-14, not even built into a deploy yet — walk it FIRST:**
+> **Added 2026-09-15, not built into a deploy yet — walk it FIRST:**
+> - **fail a flee four times on a warrior.** The fifth attempt must always work, whatever
+>   the enemy. 40% means four failures happen in 13% of escapes, so this is reachable in a
+>   session rather than a curiosity — tap Flee at a beast you can survive and count. The
+>   player is told nothing, so what you are checking is that the fifth tap ends the fight.
+> - **check the counter does NOT carry between fights.** Fail twice, escape, walk into the
+>   next encounter and fail there: the second fight must start its own count from zero.
+>
+> **Added 2026-09-14, also never walked:**
 > - **km 1 and km 2.** A new character should now meet 🐍 Гадюка or 🦅 Беркут, never a
 >   boar, and the boar should first appear at km 2. Check the eagle actually feels like the
 >   spiky one — its contract is 28% of the bar and it measured 28% median / 47% p90 / 72%
@@ -424,8 +484,8 @@ from level 1 to 40, **78–87 days** on a tended estate. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-15, schema v11):** `records bef20549a700d5e0` ·
-`tuning 2634076ec557de54` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
+**Current digest baseline (2026-09-15, schema v12):** `records bef20549a700d5e0` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
 is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
@@ -481,7 +541,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 242 tests, ~0.2s
+swift test                                   # 246 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)

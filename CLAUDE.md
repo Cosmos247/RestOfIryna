@@ -173,6 +173,16 @@ to remember, ten of `rollStep`'s exits are reachable while starving, and **two c
 to `StepResult` — never to another source's number. The measurement that forced this, and
 what the fused number told a player: auto-memory `project-damage-sources-named-separately`.
 
+**An escape is `CombatService.fleeSucceeds`, never a roll against `fleeChance`.** The
+per-class chance (warrior 40 / archer 70 / mage 90) is half the rule; the other half is
+`combat.json` → `flee.maxFailures`, the per-fight ceiling that grants the attempt after
+that many failures to every class. Both live behind one function because a failed escape is
+not a free round — it is an unmissable hit at half armour with nothing dealt back, so an
+unbounded tail sits on the one button a player reaches for when already losing. The count
+is per FIGHT (`ExplorationState.combatFleeFails`, 0 on `beginCombat`, cleared on
+`endCombat`): per expedition it would become a resource the player spends rather than a
+floor under a bad run. Auto-memory `project-flee-has-a-ceiling`.
+
 **A rating is a rating on every screen, and is never labelled `%`.** `crit` · `dodge` ·
 `accuracy` are RATINGS converted through a level-linear curve (`CombatMath.percent`), so the
 same +5 crit is 4.16% at level 1 and 1.35% at the cap. Every screen prints the bare rating,

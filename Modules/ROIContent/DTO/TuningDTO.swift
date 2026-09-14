@@ -511,6 +511,40 @@ public struct FleeTuningDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// The Flee table plus the one flee constant that belongs to no class.
+///
+/// Shaped like `specialDefense` — a per-class array beside a shared scalar —
+/// rather than as a fourth pseudo-row, because `maxFailures` is not a property
+/// any one class has.
+public struct FleeSectionDTO: Codable, Sendable, Equatable {
+    /// How many times a single fight may refuse to let the player go. The
+    /// attempt AFTER this many failures always succeeds, whatever the class.
+    ///
+    /// The per-class roll is flat and independent every round, so without a
+    /// ceiling the tail is unbounded: a warrior's 60% failure compounds to
+    /// 2.8% for seven in a row, and every failure is a guaranteed backstab at
+    /// half armour. That tail killed a player on 2026-09-15 — seven taps, seven
+    /// unavoidable hits, nothing dealt back. 4 caps the worst case; 0 means the
+    /// first attempt always works and is the honest way to switch the roll off.
+    public let maxFailures: Int
+    public let byClass: [FleeTuningDTO]
+
+    public init(maxFailures: Int, byClass: [FleeTuningDTO]) {
+        self.maxFailures = maxFailures
+        self.byClass = byClass
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxFailures, byClass
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        maxFailures = try c.decode(Int.self, forKey: .maxFailures)
+        byClass     = try c.decode([FleeTuningDTO].self, forKey: .byClass)
+    }
+}
+
 public struct DefendTuningDTO: Codable, Sendable, Equatable {
     public let archerChipMultiplier: Double
     /// The archer's Defend melts into cover: dodge is multiplied by this for
@@ -555,7 +589,7 @@ public struct CombatTuningDTO: Codable, Sendable {
     public let stances: StanceSectionDTO
     public let specialAttack: [SpecialAttackTuningDTO]
     public let specialDefense: SpecialDefenseSectionDTO
-    public let flee: [FleeTuningDTO]
+    public let flee: FleeSectionDTO
     public let defend: DefendTuningDTO
 
     public init(hitChance: HitChanceDTO, curves: CombatCurvesDTO, levelDiff: LevelDiffDTO,
@@ -564,7 +598,7 @@ public struct CombatTuningDTO: Codable, Sendable {
                 techniques: [TechniqueTuningDTO], stances: StanceSectionDTO,
                 specialAttack: [SpecialAttackTuningDTO],
                 specialDefense: SpecialDefenseSectionDTO,
-                flee: [FleeTuningDTO], defend: DefendTuningDTO) {
+                flee: FleeSectionDTO, defend: DefendTuningDTO) {
         self.hitChance = hitChance
         self.curves = curves
         self.levelDiff = levelDiff
@@ -599,7 +633,7 @@ public struct CombatTuningDTO: Codable, Sendable {
         stances              = try c.decode(StanceSectionDTO.self, forKey: .stances)
         specialAttack        = try c.decode([SpecialAttackTuningDTO].self, forKey: .specialAttack)
         specialDefense       = try c.decode(SpecialDefenseSectionDTO.self, forKey: .specialDefense)
-        flee                 = try c.decode([FleeTuningDTO].self, forKey: .flee)
+        flee                 = try c.decode(FleeSectionDTO.self, forKey: .flee)
         defend               = try c.decode(DefendTuningDTO.self, forKey: .defend)
     }
 }

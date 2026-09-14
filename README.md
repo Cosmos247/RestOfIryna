@@ -165,6 +165,7 @@ RestOfIryna/
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
 │   │   ├── AddWalkCounters.swift     # 2026-09-12 — `deepest_km` + `total_km_walked`, the first cumulative counters the game stores, plus four leaderboard indexes via raw SQL. Nothing to backfill: a depth record only ever lived in `exploration_state`, which is deleted when the expedition ends
+│   │   ├── AddCombatFleeFails.swift # 2026-09-15 — `combat_flee_fails` on `exploration_state`: failed escape attempts of the CURRENT fight, so the attempt after `flee.maxFailures` is granted without a roll
 │   │   ├── AddFortuneOneShot.swift   # 2026-09-09 — four `last_fortune_*` columns: what a draw's one-shot half actually handed over. The card id cannot answer it (the Wheel rolls 50/50, a silver loss is clamped to the purse)
 │   │   ├── AddNotificationFlags.swift # 2026-09-09 — `fortune_ready_notified` + `quest_rollover_stamp`: the once-only guards behind RestNotificationService
 │   │   ├── AddPassiveDailyBudget.swift # 2026-09-09 — `passive_minutes_today` + `passive_day_stamp`: the 3 h/day ceiling on passive expeditions, counter plus the game-day key it belongs to

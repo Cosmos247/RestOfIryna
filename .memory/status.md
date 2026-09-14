@@ -217,9 +217,10 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `bef20549a700d5e0` / `2634076ec557de54` /
-`c9bdb57d456adc26` / `30de20902006e3b9` (**schema v11**, 2026-09-14 — `Prompt.md` is where
-it is kept in sync), 242 tests. Before 2026-09-14 `tuning` had
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `bef20549a700d5e0` / `43b809a87450a3b8` /
+`c9bdb57d456adc26` / `30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee`
+became a section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in
+sync), 246 tests. Before 2026-09-14 `tuning` had
 moved three times and nothing else had moved at all — the watchman cadence and the passive
 daily budget on 09-09, the exploration re-weight on 09-10, each named before the edit.
 

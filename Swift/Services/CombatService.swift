@@ -366,12 +366,39 @@ public enum CombatService {
         /// mage attempts to teleport away. Layers on after the stance vigor
         /// multiplier so an Arcane-Resonance mage still pays the teleport tax.
         public static var mageVigorExtra: Int { fleeVigorExtra(forClass: .mage) }
+
+        /// Failed attempts a single fight is allowed before the next one is
+        /// free (2026-09-15). Class-independent on purpose: the chance is the
+        /// class fantasy, this is the floor under every class's worst run.
+        public static var maxFailures: Int {
+            Catalogs.current.tuningCombat.flee.maxFailures
+        }
     }
 
     /// Per-class success chance for a Flee attempt (1–100). Failure still
-    /// triggers the existing forced full-damage counter.
+    /// triggers the existing forced full-damage counter — which is why the
+    /// chance alone does not decide an escape: see `fleeSucceeds(forClass:
+    /// priorFailures:)`, and never roll against this number directly.
     public static func fleeChance(forClass cls: CharacterClass) -> Int {
         flee(cls).chance
+    }
+
+    /// The whole escape decision: the per-class roll, floored by the per-fight
+    /// pity ceiling.
+    ///
+    /// `priorFailures` is how many times THIS fight has already refused to let
+    /// the player go. Once it reaches `Flee.maxFailures` the roll is skipped
+    /// and the escape is granted — for every class, at every level, against
+    /// every enemy.
+    ///
+    /// The controller asks THIS rather than comparing `fleeChance` itself: a
+    /// roll and the ceiling over it are one rule, and a second copy of it is
+    /// the copy that forgets the ceiling.
+    public static func fleeSucceeds(forClass cls: CharacterClass, priorFailures: Int) -> Bool {
+        var rng = SystemRandomNumberGenerator()
+        return CombatMath.fleeSucceeds(chance: fleeChance(forClass: cls),
+                                       priorFailures: priorFailures,
+                                       rules: rules, using: &rng)
     }
 
     /// Extra flat vigor drained beyond the base Flee cost. Zero for every class

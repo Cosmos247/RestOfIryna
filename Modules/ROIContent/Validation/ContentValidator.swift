@@ -1759,14 +1759,20 @@ public enum ContentValidator {
                     "specialDefense.shadowVeilDodgeMultiplier", "tuning.combat.dodge_multiplier",
                     "shadowVeilDodgeMultiplier must be at least 1.0 (1.0 = no change), found \(combat.specialDefense.shadowVeilDodgeMultiplier)")
 
-            checkClassCoverage(combat.flee.map(\.characterClass), file: file, path: "flee")
-            for (index, row) in combat.flee.enumerated() {
-                let path = "flee[\(index)]"
+            checkClassCoverage(combat.flee.byClass.map(\.characterClass), file: file, path: "flee.byClass")
+            for (index, row) in combat.flee.byClass.enumerated() {
+                let path = "flee.byClass[\(index)]"
                 require(row.chance >= 1 && row.chance <= 100, file, path, "tuning.combat.flee_chance_range",
                         "flee chance must sit inside 1...100, found \(row.chance)")
                 require(row.extraVigor >= 0, file, path, "tuning.combat.negative_vigor",
                         "extraVigor must not be negative, found \(row.extraVigor)")
             }
+            // A negative ceiling is not a disabled one — the counter is compared
+            // with `>=`, so -1 and 0 both guarantee the FIRST attempt. Refused
+            // because the author who typed -1 meant something else.
+            require(combat.flee.maxFailures >= 0, file, "flee.maxFailures",
+                    "tuning.combat.flee_max_failures",
+                    "maxFailures must not be negative (0 = the first attempt always succeeds), found \(combat.flee.maxFailures)")
 
             require(combat.defend.archerChipMultiplier >= 0, file, "defend.archerChipMultiplier",
                     "tuning.combat.negative_multiplier", "chip multiplier must not be negative")

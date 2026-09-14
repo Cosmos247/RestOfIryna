@@ -359,7 +359,7 @@ final class DomainContent: Sendable {
         self.specialDefenseVigorByClass = defenses
 
         var flees: [CharacterClass: FleeTuningDTO] = [:]
-        for row in tuning.combat.flee {
+        for row in tuning.combat.flee.byClass {
             guard let cls = CharacterClass(rawValue: row.characterClass) else {
                 throw ContentMappingError.unknownCharacterClass(row.characterClass, table: "combat.json")
             }
