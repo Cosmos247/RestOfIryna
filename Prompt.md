@@ -36,7 +36,28 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where we stopped (2026-09-15) part 2 — the escape has a ceiling, NOT deployed
+### Where things stand right now (2026-09-15)
+
+| | |
+|---|---|
+| working tree | clean |
+| HEAD | `b32ac32` — the escape ceiling |
+| pushed | through `6e3c18e`; **`7469715` and `b32ac32` are unpushed** |
+| running on the Pi | **`aa18f57`**, content hash `4eac64ff`, **schema v11**, last restarted 2026-09-12 19:43 |
+| committed but NOT deployed | **five commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` |
+
+**The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
+a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
+must travel together and the bot has to restart. Push is user-side; `pm2 restart ROI` is
+asked for, never taken (`CLAUDE.md` → "Running the bot — ASK FIRST"). After it, verify the
+TABLE rather than the log line: `combat_flee_fails` must exist on `exploration_state`.
+
+**What the five changed, newest first:** the escape ceiling · coins on the ground · mob XP
+halved · bestiary tier 1 and the re-solved roster · one honor ladder plus a doc pass. Each
+has its own section below. **None of it has been opened by a human**, which is the next
+action — see the walk list further down.
+
+### Where we stopped (2026-09-15) part 2 — the escape has a ceiling (`b32ac32`, NOT deployed)
 
 A player pressed **Flee seven times**, never got away, and was killed. The user asked whether
 that was simply the probability. It was — for one class.
@@ -88,7 +109,7 @@ luck on the fifth try. Deliberate, and the obvious follow-up if it should teach 
 Full account: `.memory/sessions.md` (2026-09-15, the escape ceiling); auto-memory
 `project-flee-has-a-ceiling`; the rule is in `CLAUDE.md`.
 
-### Where we stopped (2026-09-15) — coins on the ground, NOT deployed
+### Where we stopped (2026-09-15) — coins on the ground (`7469715`, NOT deployed)
 
 A fifth step event, on request. Walking a kilometre can turn up **2, 5, 10 or 20 silver**,
 credited on the spot.
@@ -140,7 +161,7 @@ digest              tuning c2ed0785… → 2634076e…
 
 Full design record: `content/spec/spec-economy.md` §4b.
 
-### Where we stopped (2026-09-14) part 2 — mob XP halved, NOT deployed
+### Where we stopped (2026-09-14) part 2 — mob XP halved (`6e3c18e`, NOT deployed)
 
 **Driven by the database, not by a model.** The live rows said it plainly: the archer was
 **level 24, estate T7, km 41, in 5.94 days** — 2,296,342 XP earned, **386,590 a day**,
@@ -190,11 +211,10 @@ digest            records b410865d… → bef20549…   tuning ee45b18a… → c
                   spawns and quests byte-identical
 ```
 
-### Where we stopped (2026-09-14) — tier 1 of the bestiary, NOT deployed
+### Where we stopped (2026-09-14) — tier 1 of the bestiary (`a0f90a8`, NOT deployed)
 
-**The working tree carries an undeployed content change.** Two creatures were added and
-two were re-statted; nothing is committed, nothing is on the Pi. The bot is still running
-`aa18f57` with content hash `4eac64ff`.
+Two creatures were added and two were re-statted. *(Committed since, as `a0f90a8`; still
+not on the Pi, which runs `aa18f57` with content hash `4eac64ff`.)*
 
 | | |
 |---|---|
@@ -267,8 +287,9 @@ Full account: `.memory/sessions.md` (2026-09-14). Specification amendments:
 ### Where we stopped (2026-09-12)
 
 **The bot is LIVE on the Pi running `aa18f57`**, restarted 2026-09-12 19:43 Kyiv.
-Content hash `4eac64ff`, **content schema v11**. `origin/main` is at the same commit —
-nothing is unpushed, nothing is undeployed, the working tree is clean.
+Content hash `4eac64ff`, **content schema v11**. *(True of the DEPLOYMENT to this day — but
+`origin/main` moved on afterwards: five commits have landed since, listed in the
+"Where things stand right now" table above.)*
 
 That restart applied the first database migration since the wipe (`AddWalkCounters`).
 Verified in the database itself rather than from the log line: both columns present as
@@ -318,12 +339,14 @@ it was not measured in. Three of the last four were found by the user glancing a
 not by running anything. **That is still the most productive way to find the next one, and
 it is exactly what has not been done to the three surfaces below.**
 
-> ## Next action: walk what is deployed. Nothing below has been looked at.
+> ## Next action: walk it. Nothing below has been looked at.
 >
-> Thirteen commits are live and **five surfaces have never been opened by a human.**
-> That is the whole next action. Every defect this project has found came from someone
-> glancing at a screen, not from running anything — so this list is the highest-yield
-> thing available, and it costs one session in Telegram.
+> Thirteen commits are live, **five more are committed and not deployed**, and every
+> surface listed here is unopened by a human. That is the whole next action. Every defect
+> this project has found came from someone glancing at a screen, not from running anything
+> — so this list is the highest-yield thing available, and it costs one session in Telegram.
+> The 09-14 / 09-15 items need the deploy first (schema bump + migration, see the table at
+> the top); the 09-12 and older ones are already live and can be walked today.
 >
 > **Added 2026-09-15, not built into a deploy yet — walk it FIRST:**
 > - **fail a flee four times on a warrior.** The fifth attempt must always work, whatever
@@ -439,10 +462,13 @@ on-curve budget at level 25 and the bestiary at ~60% of its archetype contract �
 half-strength errors lean the same way**, so correcting one alone is worse than correcting
 neither. The full gear-ladder + regeneration package ships together, after the rebalance.
 
-**The debt Phase 9 wrote itself is PAID.** `OpeningLedger` measured the opening and inverted
-the conclusion: it is not Vigor-bankrupt, the **shallow** opening is — km 1 nets −335, km 4
-nets **+44**, km 10 is the deepest km still won 95% of the time. What it points at is a
-first-hour *teaching* problem, not a tuning one. Auto-memory
+**The debt Phase 9 wrote itself is PAID — and its numbers have moved twice since.**
+`OpeningLedger` measured the opening instead of assuming it, and the SHAPE it found holds:
+the first hour is a teaching problem more than a tuning one. Every figure changed under the
+09-14 roster re-solve and the XP halving, though, and the finding is now
+**`opening.vigor_bankrupt`**: km 1 nets **−665**, km 4 nets **−106**, and **km 7** is the
+cheapest depth a level 1–3 player can actually hold (97% win, net −13 Vigor). Read the
+current ledger from `roi-content spec opening -c release`, never from a doc. Auto-memory
 `project-opening-is-vigor-bankrupt`, `project-world-ladder`; detail in `.memory/rebalance.md`.
 
 The rule those five documents run on: **numbers are printed, never typed** — every table is
@@ -457,7 +483,7 @@ levelling, and **the estate is the income** (auto-memory `project-vigor-no-passi
 `FoodBudget` in `ROISim` measures the estate's income by enumerating every plot layout the
 slots allow, so the pace number reads off content rather than an assumed mix. The food plots
 were cut to land the pace at **78–87 days** of perfect play — slower than the old 51–56 on
-purpose. `zones.json` landed with it: the foraging pools left `ExplorationService`, the last
+purpose, and **157–173 days since the 09-14 XP halving**. `zones.json` landed with it: the foraging pools left `ExplorationService`, the last
 content in Swift. Numbers and the layout table: `.memory/rebalance.md` §Phase 8E.
 
 #### Standing deferrals
@@ -466,8 +492,10 @@ Reported by every `simulate` run, all deliberate: **food portions are flat
 against a pool that grows** (33% of a level-1 pool, 12% of a level-40 one),
 **nothing new unlocks between level 21 and 40**, **levels 1–3 have no estate at
 all**, the **seven `content.roster_off_curve` warnings** (until the regeneration
-package lands), and **`opening.shallow_is_bankrupt`** — a warning and not a broken
-band on purpose, because §7 decided to measure before retuning. Silver is also **over-supplied** — roughly twenty
+package lands), and **`opening.vigor_bankrupt`** — renamed from
+`opening.shallow_is_bankrupt` when the XP halving removed the last depth that was both
+survivable and profitable; a warning and not a broken band on purpose, because §7 decided
+to measure before retuning. Silver is also **over-supplied** — roughly twenty
 thousand spare over a lifetime against 1,600 of mandatory spend — and the fix is
 more to buy, which is items, which is after the rebalance.
 
@@ -480,7 +508,8 @@ shipped roster against its archetype contract; `--strict` exits 1 on a broken ba
 sample size **8000 fights per cell** — 2000 crossed the invariance band on sampling noise alone.
 
 Current state: **18 of 18 invariance rows pass, 0 broken bands, 12 warnings**, 19,437,688 XP
-from level 1 to 40, **78–87 days** on a tended estate. `EnemyGenerator` is what the
+from level 1 to 40, **157–173 days** on a tended estate (warrior 173.0 / archer 166.7 / mage
+156.8 — it was 78–87 before the 09-14 XP halving; the band the report gates on is 72–200). `EnemyGenerator` is what the
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 

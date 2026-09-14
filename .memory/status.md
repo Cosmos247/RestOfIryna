@@ -21,6 +21,44 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-15 — the escape has a ceiling** (`b32ac32`, committed, NOT deployed). A player
+pressed Flee seven times, never escaped and died. The roll is flat and per class (warrior 40
+/ archer 70 / mage 90) with no level, enemy or depth input, so seven failures is 2.80% for a
+warrior — one fight in 36 — against 0.022% for an archer and 0.00001% for a mage. What made
+it lethal is that a failed escape is not a free round: 3 Vigor plus a `cannotMiss` counter at
+HALF the player's DEF with nothing dealt back, 43–51% more damage than an ordinary counter
+for a warrior and 69–77% for an archer, which is 16.3% of the bar per failure against the
+level-22 elite at level 10 — death in exactly seven. Fix is a per-fight ceiling rather than a
+bigger chance: `combat.json` → `flee.maxFailures` = 4, the attempt after four failures
+granted without a roll for every class. Mean barely moves (warrior 2.50 → 2.31 attempts); the
+tail is gone. Counter on `ExplorationState.combat_flee_fails`, roll in
+`CombatMath.fleeSucceeds`, **content schema v11 → v12** (`flee` became a section) and one
+migration, `AddCombatFleeFails`. 242 → 246 tests. Auto-memory `project-flee-has-a-ceiling`.
+
+**2026-09-15 — coins on the ground** (`7469715`, committed, NOT deployed). A fifth step
+event paying 2 / 5 / 10 / 20 silver on the spot. NOT monster silver — a find on a STEP, with
+no tie to what was killed, so `feedback-no-monster-silver` still holds. Weights 10 : 4 : 2 : 1
+are `1/amount` scaled to integers, so every denomination contributes the same expected
+silver; frequency 2 of 100 taken from `loot` in every row including passive. `UkrainianPlural`
+moved into `ROIContent` (three noun forms, 11–14 checked first) where the tests can reach it.
+Cost: the trail feeds 2% less, so km 1 went −647 → −665 Vigor.
+
+**2026-09-14 — mob XP halved on what the database said** (`6e3c18e`, committed, NOT
+deployed). The live rows: an archer at level 24 in 5.94 days, 386,590 XP a day, with 95–100%
+of everything earned coming from kills (17 claimed jobs were 2% of the archer's total).
+`mobXP.coefficient` 26.0 → 13.0 **and** every `xpReward` rebaked with it — both halves are
+required, because the game reads `xpReward` from `enemies.json` and never the coefficient.
+**Pace to the cap moved 83 / 79 days → 173 / 167**, which supersedes the 78–87 quoted
+further down this file. Quests were untouched and the `quests` digest proves it.
+
+**2026-09-14 — bestiary tier 1, then the whole roster** (`a0f90a8`, committed, NOT deployed).
+🐍 viper and 🦅 eagle added at level 1, the boar moved to level 2, the moose re-statted; the
+first XP step fell from ×22.3 to ×3.4 by choosing levels and archetypes, not by touching a
+stat. Then the other five were re-solved to 65–78% of their archetype contract, because tier
+1 on contract revealed danger had been COLLAPSING with depth — a level-1 eagle was hitting
+harder than the level-22 elite. Provisional until the gear ladder lands. The cheapest depth a
+level 1–3 player can hold moved km 10 → **km 7**.
+
 **2026-09-10 — the forest was empty on the way home.** The revisit-decay table decayed the
 wrong bucket: encounters fell 40 → 20 → 0 while forage held at 45 → 45 → 25, which is
 backwards — a beast wanders back onto a walked km, a stripped bush does not regrow. The walk
@@ -139,7 +177,10 @@ estate that does not exist yet. It answers `spec-economy.md` §7 and inverts its
 opening is not bankrupt, the **shallow** opening is. km 1 ends 335 Vigor short, km 4 ends
 +44, km 10 ends +73 and is the deepest km still won 95% of the time; past km 11 survival
 rather than Vigor is the binding constraint. New warning `opening.shallow_is_bankrupt`;
-`--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234.
+`--strict` still passes at 0 broken bands and 12 warnings. Tests 222 → 234. *(Every figure
+in this paragraph has since moved twice — the roster re-solve and the XP halving. The
+warning is now `opening.vigor_bankrupt`, km 1 ends −665, km 4 ends −106 and km 7 is the
+deepest holdable. Read them from `roi-content spec opening -c release`, never from here.)*
 
 **Pre-push bug pass (2026-09-07)** — four reported bugs, code and copy only; every
 digest half held at the Phase 10 baseline. (1) The profile renders ONE layout — the
@@ -167,8 +208,8 @@ list rather than an FK cascade, because `tavern_game_messages` carries no foreig
 a self-check against `information_schema` refuses to finish while any table still holds a
 row. **`scale` 60 → 1.0 landed 2026-09-09** — game time is real time, and `validate
 --strict` is clean for the first time (zero errors, zero warnings). The opening ledger is
-unaffected (the opening has no game-time gate); the estate pace, 78–87 days, becomes
-measurable, which compressed time never allowed.
+unaffected (the opening has no game-time gate); the estate pace — 78–87 days then, **157–173
+since the 09-14 XP halving** — becomes measurable, which compressed time never allowed.
 
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
@@ -240,7 +281,7 @@ noise. **Phase 8E then removed passive Vigor regeneration entirely** — the tri
 during an expedition, so it was the reason depth had no gate. Vigor now comes only from food,
 quests and levelling; the estate's plots are the income, and `FoodBudget` measures what a
 tended one feeds (78–87 days to the cap after the food plots were cut to land there, down from
-1,211 to 513 taps a day). The foraging pools left Swift for `zones.json` at the same time.
+1,211 to 513 taps a day — **157–173 days since the 09-14 XP halving**). The foraging pools left Swift for `zones.json` at the same time.
 **What the report still flags:** the shipped bestiary carries ~60% of what its archetypes ask
 (Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
 batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature).

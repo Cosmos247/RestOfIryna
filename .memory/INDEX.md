@@ -33,7 +33,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. Thirteen commits, 2026-09-09 → 12, all deployed.
+  play surfaces a need for. Thirteen commits, 2026-09-09 → 12, all deployed; **five more,
+  09-14 → 09-15, committed and NOT deployed** (bestiary tier 1 + the re-solved roster, mob
+  XP halved, coins on the ground, the escape ceiling, and the honor-ladder doc pass). The
+  next deploy carries a schema bump and a migration.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -58,6 +61,8 @@ following the rule you are about to break. The ones a fresh session most often w
 
 - `project-damage-sources-named-separately` — a step can cost HP twice; each source prints
   its own line, and the tick rides on `StepResult` so no branch can drop it
+- `project-flee-has-a-ceiling` — a fight may refuse an escape at most `flee.maxFailures`
+  times; the roll and the ceiling are one rule, behind `CombatService.fleeSucceeds`
 - `project-leaderboards-will-go-seasonal` — all-time is v1's period, not the only one; a
   season is a second reading, never a reset of a lifetime counter
 - `project-pi-deploy-swiftenv` + `linux-build-gap` — the deploy recipe and its two traps

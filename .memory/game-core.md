@@ -37,6 +37,15 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Extra row: Potions, Food, Artifacts, Spells (conditional)
 - PvE: AI picks actions; PvP: 30-sec timer per round
 - 5 enemy tiers (T1 hare/fox -> Boss dungeon-only)
+- **Escape — as SHIPPED, which the four bullets above are not** (2026-09-15). A flat
+  per-class chance (warrior 40 / archer 70 / mage 90, `combat.json` → `flee.byClass`) with
+  no level, enemy or depth input, floored by a per-fight ceiling: `flee.maxFailures` = 4, so
+  the attempt after four failures is granted without a roll. The ceiling exists because a
+  failed escape is not a free round — it is an unmissable hit at half armour with nothing
+  dealt back, and the unbounded tail sat on the one button a player reaches for when
+  already losing. Roll and ceiling are ONE rule behind `CombatService.fleeSucceeds`; the
+  count lives on `ExplorationState.combatFleeFails` and is scoped to the fight. See
+  `project-flee-has-a-ceiling`.
 
 ### Vigor
 - 0 to VigorMax (scales with level, ~100-300)

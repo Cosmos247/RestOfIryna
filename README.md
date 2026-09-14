@@ -82,7 +82,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 236 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 246 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -574,13 +574,20 @@ claimed the bag was empty, a tripping root that reported its own damage plus the
 tick as one number. The pattern worth knowing: each was a place where the code was right
 and could not say so, or where a number was shown in a unit it was not measured in.
 
-The newest addition is **four all-time leaderboards** behind the quest journal — level,
-arena honor, deepest km and total km walked — which also gave the game the first
-cumulative counters it has ever stored.
+Thirteen of those commits are live. **Five more are committed and not yet deployed**
+(2026-09-14 → 15): the bestiary gained its first tier and the whole roster was re-solved
+against its archetype contract, mob XP was halved on what the live database showed, a fifth
+step event pays out loose silver, and an escape can now fail at most four times in one fight
+before the next attempt is granted outright. That last one carries a content-schema bump and
+a database migration, so the next deploy has to ship the binary and `content/data` together.
+
+Before them, the newest shipped addition was **four all-time leaderboards** behind the quest
+journal — level, arena honor, deepest km and total km walked — which also gave the game the
+first cumulative counters it has ever stored.
 
 What is still owed is a **deliberate first-hour walkthrough** — nobody has stepped through
 the opening against a checklist — plus one run of `/reload` against a real database, and a
-walk across the five surfaces deployed but never opened (listed in
+walk across every surface deployed or committed but never opened (listed in
 [Prompt.md](./Prompt.md)).
 Progress lives in the "Full Rebalance" section of [TODO.md](./TODO.md), the reasoning in
 [`.memory/rebalance.md`](./.memory/rebalance.md), and what a fresh session should do next

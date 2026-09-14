@@ -1500,10 +1500,13 @@ cliff at the start of the game to ×3.4; then the other five re-solved, because 
 its contract revealed that danger had been collapsing with depth — a level-1 eagle was
 hitting harder than the level-22 elite. Plus two defects found on the way: a masculine past-tense defeat line that
 had been wrong for every feminine creature since the lynx shipped, and a hardcoded creature
-id under prose that the boar's move would have falsified silently. **Nothing here is
-committed or deployed** — the bot still runs `aa18f57` with content hash `4eac64ff`. Next:
-walk km 1 and km 2 on a fresh character (the eagle is the spiky one — 28% of the bar median,
+id under prose that the boar's move would have falsified silently. **All five are COMMITTED
+and none is DEPLOYED** — `b32ac32` · `7469715` · `6e3c18e` · `a0f90a8` · `c658e6c`, of which
+the first two are also unpushed; the Pi still runs `aa18f57` with content hash `4eac64ff`,
+last restarted 2026-09-12 19:43. The next deploy carries a **schema bump (v11 → v12) and a
+migration**, so the binary and `content/data` must ship together and `/reload` alone will not
+do it. Next: fail a flee four times on a warrior and confirm the fifth always works, walk
+km 1 and km 2 on a fresh character (the eagle is the spiky one — 28% of the bar median,
 47% p90 against an armourless level-1 player), then the older unwalked list — the forest on
 the way home, a second turn-back on the road, the character sheet's three rating stats, a
-fight lost, a flee, the trade screens, and one run of `/reload` against a real database.
-`c658e6c` is unpushed.*
+fight lost, a flee, the trade screens, and one run of `/reload` against a real database.*
