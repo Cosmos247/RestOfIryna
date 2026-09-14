@@ -719,16 +719,25 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
     public let loot: Int
     public let encounter: Int
     public let trip: Int
+    /// Coins on the ground. Optional with a default of 0 so an older bundle
+    /// still decodes — `ContentSchema` bumps only for REQUIRED fields — and so
+    /// the bucket can be switched off by deleting the key rather than by
+    /// editing five rows to zero.
+    public let silver: Int
 
-    public init(priorVisits: Int, nothing: Int, loot: Int, encounter: Int, trip: Int) {
+    public init(priorVisits: Int, nothing: Int, loot: Int, encounter: Int, trip: Int,
+                silver: Int = 0) {
         self.priorVisits = priorVisits
         self.nothing = nothing
         self.loot = loot
         self.encounter = encounter
         self.trip = trip
+        self.silver = silver
     }
 
-    private enum CodingKeys: String, CodingKey { case priorVisits, nothing, loot, encounter, trip }
+    private enum CodingKeys: String, CodingKey {
+        case priorVisits, nothing, loot, encounter, trip, silver
+    }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -737,6 +746,7 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
         loot        = try c.decode(Int.self, forKey: .loot)
         encounter   = try c.decode(Int.self, forKey: .encounter)
         trip        = try c.decode(Int.self, forKey: .trip)
+        silver      = try c.decodeIfPresent(Int.self, forKey: .silver) ?? 0
     }
 }
 
@@ -749,15 +759,18 @@ public struct EventWeightsDTO: Codable, Sendable, Equatable {
     public let loot: Int
     public let encounter: Int
     public let trip: Int
+    /// See `EventWeightTierDTO.silver`.
+    public let silver: Int
 
-    public init(nothing: Int, loot: Int, encounter: Int, trip: Int) {
+    public init(nothing: Int, loot: Int, encounter: Int, trip: Int, silver: Int = 0) {
         self.nothing = nothing
         self.loot = loot
         self.encounter = encounter
         self.trip = trip
+        self.silver = silver
     }
 
-    private enum CodingKeys: String, CodingKey { case nothing, loot, encounter, trip }
+    private enum CodingKeys: String, CodingKey { case nothing, loot, encounter, trip, silver }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -765,6 +778,7 @@ public struct EventWeightsDTO: Codable, Sendable, Equatable {
         loot      = try c.decode(Int.self, forKey: .loot)
         encounter = try c.decode(Int.self, forKey: .encounter)
         trip      = try c.decode(Int.self, forKey: .trip)
+        silver    = try c.decodeIfPresent(Int.self, forKey: .silver) ?? 0
     }
 }
 
@@ -827,26 +841,52 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// One coin denomination and how often it comes up, relative to the others.
+///
+/// The shipped weights are `10 : 4 : 2 : 1` against amounts `2 : 5 : 10 : 20`,
+/// which is not four numbers somebody liked the look of — it is
+/// `1/amount`, scaled to integers. That makes the chance inversely
+/// proportional to the find, so **every denomination contributes the same
+/// expected silver** (1.18 each, 4.71 a find). "Rarer is bigger" is then a
+/// consequence of one rule rather than a taste, and a fifth denomination can be
+/// added by writing `1/amount` again instead of re-balancing the set.
+public struct SilverDenominationDTO: Codable, Sendable, Equatable {
+    public let amount: Int
+    public let weight: Int
+
+    public init(amount: Int, weight: Int) {
+        self.amount = amount
+        self.weight = weight
+    }
+}
+
 public struct ExplorationTuningDTO: Codable, Sendable {
-    /// The RNG range a step rolls in. Every tier's four weights must sum to it,
+    /// The RNG range a step rolls in. Every tier's weights must sum to it,
     /// or the last bucket silently absorbs the remainder.
     public let eventWeightTotal: Int
     /// Trip damage as a fraction of max HP.
     public let tripDamagePercent: Double
     public let weightTiers: [EventWeightTierDTO]
     public let passive: PassiveExpeditionTuningDTO
+    /// What the `silver` bucket pays when it comes up. Optional so an older
+    /// bundle decodes; the validator refuses a bundle that gives the bucket
+    /// weight and leaves this empty, because that combination rolls an event
+    /// with nothing to award.
+    public let silverDenominations: [SilverDenominationDTO]
 
     public init(eventWeightTotal: Int, tripDamagePercent: Double,
                 weightTiers: [EventWeightTierDTO],
-                passive: PassiveExpeditionTuningDTO) {
+                passive: PassiveExpeditionTuningDTO,
+                silverDenominations: [SilverDenominationDTO] = []) {
         self.eventWeightTotal = eventWeightTotal
         self.tripDamagePercent = tripDamagePercent
         self.weightTiers = weightTiers
         self.passive = passive
+        self.silverDenominations = silverDenominations
     }
 
     private enum CodingKeys: String, CodingKey {
-        case eventWeightTotal, tripDamagePercent, weightTiers, passive
+        case eventWeightTotal, tripDamagePercent, weightTiers, passive, silverDenominations
     }
 
     public init(from decoder: any Decoder) throws {
@@ -855,6 +895,8 @@ public struct ExplorationTuningDTO: Codable, Sendable {
         tripDamagePercent = try c.decode(Double.self, forKey: .tripDamagePercent)
         weightTiers       = try c.decode([EventWeightTierDTO].self, forKey: .weightTiers)
         passive           = try c.decode(PassiveExpeditionTuningDTO.self, forKey: .passive)
+        silverDenominations = try c.decodeIfPresent([SilverDenominationDTO].self,
+                                                    forKey: .silverDenominations) ?? []
     }
 }
 

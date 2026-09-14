@@ -1840,10 +1840,44 @@ public enum ContentValidator {
                 require(row.priorVisits == index, file, path,
                         "tuning.exploration.tier_not_contiguous",
                         "expected priorVisits \(index), found \(row.priorVisits) — the tail row is the fallback for every higher and every negative count, so the run must be contiguous from 0")
-                checkWeights([row.nothing, row.loot, row.encounter, row.trip], path)
+                checkWeights([row.nothing, row.loot, row.encounter, row.trip, row.silver], path)
             }
             let pw = exploration.passive.weights
-            checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip], "passive.weights")
+            checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip, pw.silver], "passive.weights")
+
+            // The silver bucket and the table it pays from are two separate
+            // keys, so either can be present without the other. Both halves of
+            // that are bugs and neither would crash: weight with no table rolls
+            // an event that awards nothing, and a table no row can reach is
+            // content that never ships. The bucket is OPTIONAL — zero weight
+            // everywhere and no table is a perfectly good bundle — so this only
+            // fires once one half exists.
+            let silverWeighted = exploration.weightTiers.contains { $0.silver > 0 }
+                || exploration.passive.weights.silver > 0
+            let denominations = exploration.silverDenominations
+            require(!(silverWeighted && denominations.isEmpty), file, "silverDenominations",
+                    "tuning.exploration.silver_without_denominations",
+                    "a weight tier rolls the silver bucket but no denominations are defined — the event would award nothing")
+            require(!(!silverWeighted && !denominations.isEmpty), file, "silverDenominations",
+                    "tuning.exploration.silver_unreachable",
+                    "silver denominations are defined but every weight row gives the bucket 0 — nothing can ever roll them",
+                    .warning)
+            for (index, row) in denominations.enumerated() {
+                let path = "silverDenominations[\(index)]"
+                require(row.amount > 0, file, path, "tuning.exploration.silver_amount",
+                        "a find must be worth something, found \(row.amount)")
+                // `Int.random(in: 0..<total)` traps on a non-positive total, and
+                // a single zero-weight row is a denomination that cannot appear.
+                require(row.weight > 0, file, path, "tuning.exploration.silver_weight",
+                        "weight must be positive, found \(row.weight) — a zero row can never be rolled")
+            }
+            if silverWeighted, !denominations.isEmpty {
+                var seen = Set<Int>()
+                for row in denominations where !seen.insert(row.amount).inserted {
+                    fail(file, "silverDenominations", "tuning.exploration.silver_duplicate_amount",
+                         "amount \(row.amount) is listed twice — the two rows would be indistinguishable to a player and their weights silently add")
+                }
+            }
         }
 
         // MARK: progression.json

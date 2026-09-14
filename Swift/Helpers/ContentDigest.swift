@@ -756,6 +756,13 @@ enum ContentDigest {
         d.combine("passive xp\(passive.xpMultiplier) "
                   + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount) "
                   + "daily\(PassiveExpeditionService.dailyBudgetMinutes)")
+        // What the silver bucket pays. Hashed in the same commit that adds the
+        // knob, because a knob is invisible to the digest until it is — the
+        // weights above would move if the bucket's SHARE changed, and say
+        // nothing at all if someone retuned 20 coins into 200.
+        d.combine("silver " + ExplorationService.silverDenominations
+                    .map { "\($0.amount)x\($0.weight)" }
+                    .joined(separator: ","))
 
         // MARK: progression.json
         d.combine("progression")
@@ -882,7 +889,7 @@ enum ContentDigest {
     }
 
     private static func fingerprint(_ w: ExplorationService.EventWeights) -> String {
-        "n\(w.nothing)/l\(w.loot)/e\(w.encounter)/t\(w.trip)"
+        "n\(w.nothing)/l\(w.loot)/e\(w.encounter)/t\(w.trip)/s\(w.silver)"
     }
 
     // MARK: - Field-complete fingerprints

@@ -36,6 +36,58 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
+### Where we stopped (2026-09-15) — coins on the ground, NOT deployed
+
+A fifth step event, on request. Walking a kilometre can turn up **2, 5, 10 or 20 silver**,
+credited on the spot.
+
+**Not monster silver, and the distinction is what made it buildable.** Phase 8C deleted
+coin drops from kills and that stands; this is a find on a STEP — no relationship to what
+was killed, no per-creature curve, unfarmable by picking soft enemies. Hanging it off a
+victory would be the deleted mechanic in a new coat.
+
+**The denominations are a rule, not four numbers somebody liked.** Weights `10 : 4 : 2 : 1`
+against `2 : 5 : 10 : 20` — that is `1/amount` scaled to integers, so the chance is
+inversely proportional to the find and **every denomination contributes the same expected
+silver** (1.18 each, 4.71 a find). A fifth denomination is written as `1/amount` again
+rather than by re-balancing the set.
+
+Frequency **2 of 100, taken from `loot`** in every row including passive — a find is a
+second kind of loot, not a second kind of nothing. One step in fifty pays; a twenty turns
+up once every **850 km**. ≈94 silver per 1000 km against quest income of 96–152 a day.
+
+```
+🪙 Під коренем з-під землі ви помічаєте старі срібники. Схоже, якийсь Намісник
+   невдало тут спіткнувся й загубив свої монети. Ви отримуєте 🪙 <b>2 срібники</b>.
+```
+
+**Two traps this walked into, both caught before shipping.** 🪙 is U+1FA99 —
+supplementary plane, two UTF-16 units — and the sentence puts it immediately before the
+amount, which is the exact configuration where Lingo drops the `%{}` that follows it. Both
+coins are passed as interpolation VALUES so the template holds no emoji at all; rendered
+through real Lingo to prove it, because a clean build says nothing here. And Ukrainian
+needs three noun forms, so `UkrainianPlural` lives in `ROIContent` (where tests can reach
+it) with the 11–14 band checked first: 11 ends in 1 and 12 ends in 2, and a units-only
+rule calls them «срібник» and «срібники» when both are «срібників». The shipped
+denominations are 2/5/10/20 — **none of which touch the trap** — so it would have waited
+for the first eleven the game ever printed.
+
+**It makes the silver surplus worse and was added anyway.** `spec-economy` §4 measures
+~20,000 spare over a lifetime and says the fix is more to buy, not less to earn. This is
+neither; it ships as flavour, sized at the low end, and the frequency is one number if it
+ever starts to matter. The other cost is real and small: the 2 weight came out of `loot`,
+so the trail feeds 2% less — km 1 went −647 → **−665** Vigor, km 7 −11 → **−13**.
+
+```
+validate --strict   ✅ 0/0 · content hash f74773a3 → 93923ad1
+simulate --strict   exit 0 · 0 broken bands · 12 warnings
+swift test          242 passed (236 + 6 for the plural rule)
+digest              tuning c2ed0785… → 2634076e…
+                    records, spawns and quests byte-identical
+```
+
+Full design record: `content/spec/spec-economy.md` §4b.
+
 ### Where we stopped (2026-09-14) part 2 — mob XP halved, NOT deployed
 
 **Driven by the database, not by a model.** The live rows said it plainly: the archer was
@@ -372,8 +424,8 @@ from level 1 to 40, **78–87 days** on a tended estate. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-14, schema v11):** `records bef20549a700d5e0` ·
-`tuning c2ed07851857ef34` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
+**Current digest baseline (2026-09-15, schema v11):** `records bef20549a700d5e0` ·
+`tuning 2634076ec557de54` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
 is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
@@ -429,7 +481,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 236 tests, ~0.2s
+swift test                                   # 242 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)

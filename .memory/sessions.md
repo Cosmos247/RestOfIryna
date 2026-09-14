@@ -1,5 +1,81 @@
 # Session History
 
+## Session — 2026-09-15 (coins on the ground, and two traps in one sentence)
+
+Feature work on request: a random find event paying 2 / 5 / 10 / 20 silver, rarer as it
+gets bigger. The user wrote the copy; the design questions were frequency, distribution and
+where the weight comes from.
+
+### The line it had to stay on the right side of
+
+`feedback-no-monster-silver` closes coin drops from kills — Phase 8C deleted
+`enemies.silverReward` and `archetypes.silverMultiplier` on the reasoning that a corpse
+full of coin is a faucet with no sink. A find on a STEP is a different mechanic: no
+relationship to what was killed, no per-creature curve, unfarmable by picking soft enemies.
+**Hanging it off a victory would have been the deleted thing wearing a new name**, and that
+was worth saying out loud before proposing anything.
+
+The other standing fact got said once and then the work proceeded: `spec-economy` §4
+measures ~20,000 silver of lifetime surplus and prescribes "more to buy, not less to earn".
+This is a third faucet. It ships as flavour at the low end on the user's call, and the
+frequency is one number if it ever matters.
+
+### The distribution is a rule
+
+Weights `10 : 4 : 2 : 1` against amounts `2 : 5 : 10 : 20` — `1/amount` scaled to integers.
+The chance is inversely proportional to the find, so **every denomination contributes the
+same expected silver**: 1.18 each, 4.71 a find. "Rarer is bigger" stops being a taste and
+becomes a consequence, and a fifth denomination is `1/amount` again rather than a
+re-balance. Frequency 2 of 100 taken from `loot` — a find is a second kind of loot, not a
+second kind of nothing — so one step in fifty pays and a twenty turns up once every 850 km.
+
+### Two traps in one sentence, both caught before shipping
+
+**The emoji.** 🪙 is U+1FA99 — supplementary plane, two UTF-16 units — and the user's copy
+puts it immediately before the amount, which is the exact configuration where Lingo drops
+the `%{}` that follows it (`.memory/localization.md` §37). Both coins are passed as
+interpolation VALUES; the template holds no emoji at all. **Verified by rendering through
+real Lingo**, not by reading the code: the test target has no Lingo, so a throwaway package
+in the scratchpad built against it and printed all four denominations. A clean build says
+nothing about this.
+
+**The plural.** Ukrainian has three noun forms and the rule has one trap: 11 ends in 1 and
+12 ends in 2, so a units-only implementation calls them «срібник» and «срібники» when both
+are «срібників». `UkrainianPlural` therefore checks the 11–14 band FIRST, and lives in
+`ROIContent` rather than beside its `Lingo` extension purely so `Tests/ROIContentTests` can
+reach it — six tests, one of them entirely about the teens. **The shipped denominations are
+2/5/10/20 and none of them touch the trap**, so an untested rule would have waited for the
+first eleven the game ever printed.
+
+### Everything the compiler made unforgettable
+
+Adding `StepOutcome.silver` broke two exhaustive switches, which is the design working:
+`ExplorationController.narrateOutcome` and the passive accumulator both had to be told. The
+silver is credited inside `rollStep` rather than accumulated like XP — XP is accumulated
+only because `passive.xpMultiplier` must round once, and silver has no multiplier, so an
+integer add per step cannot drift. It survives a passive death for the same reason XP does:
+`applyDeath` empties the bag and silver was never in the bag.
+
+Five validator rules and a negative test for each: weight without denominations, a table no
+row can reach, a row that breaks the sum to 100, a duplicate amount, a zero or negative
+denomination. All six mutations rejected.
+
+### Cost and verification
+
+The 2 weight came out of `loot`, so the trail feeds 2% less: the opening ledger's km 1 went
+−647 → **−665** Vigor and km 7 −11 → **−13**, and `opening.vigor_bankrupt` now reads 13
+rather than 11. Two Vigor of depth traded for coins, printed in §2's table rather than
+asserted.
+
+```
+validate --strict   ✅ 0/0 · content hash f74773a3 → 93923ad1
+simulate --strict   exit 0 · 0 broken bands · 12 warnings
+swift test          242 passed (236 + 6)
+digest              tuning c2ed0785… → 2634076e… — records, spawns and quests byte-identical
+```
+
+Design record: `spec-economy.md` §4b.
+
 ## Session — 2026-09-14 part 2 (mob XP halved, on the database's evidence)
 
 The user reported players levelling too fast and asked for options, **mob XP only**. The
@@ -44,7 +120,7 @@ digest proved the constraint held — the `quests` half is byte-identical.**
 
 The finding changed identity from `opening.shallow_is_bankrupt` to
 **`opening.vigor_bankrupt`**: *"levels 1–3 end 11 Vigor short at their cheapest holdable
-depth (km 7)."* The qualifier is gone because the exemption is — no depth is now both
+depth (km 7)"* — 13 after the silver find took 2% of the loot weight later the same week. The qualifier is gone because the exemption is — no depth is now both
 survivable and profitable before the estate exists. **XP and Vigor are one currency at one
 remove**: fewer XP per kill is more kills per level, and every kill costs Vigor. Eleven
 Vigor is marginal, and the fix belongs to the opening's own knobs.

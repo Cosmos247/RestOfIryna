@@ -6,33 +6,55 @@
     "lootMultiplier" : 1.0,
     "weights" : {
       "encounter" : 20,
-      "loot" : 45,
+      "loot" : 43,
       "nothing" : 25,
+      "silver" : 2,
       "trip" : 10
     },
     "xpMultiplier" : 0.7
   },
+  "silverDenominations" : [
+    {
+      "amount" : 2,
+      "weight" : 10
+    },
+    {
+      "amount" : 5,
+      "weight" : 4
+    },
+    {
+      "amount" : 10,
+      "weight" : 2
+    },
+    {
+      "amount" : 20,
+      "weight" : 1
+    }
+  ],
   "tripDamagePercent" : 0.05,
   "weightTiers" : [
     {
       "encounter" : 40,
-      "loot" : 50,
+      "loot" : 48,
       "nothing" : 5,
       "priorVisits" : 0,
+      "silver" : 2,
       "trip" : 5
     },
     {
       "encounter" : 52,
-      "loot" : 35,
+      "loot" : 33,
       "nothing" : 8,
       "priorVisits" : 1,
+      "silver" : 2,
       "trip" : 5
     },
     {
       "encounter" : 0,
-      "loot" : 25,
+      "loot" : 23,
       "nothing" : 75,
       "priorVisits" : 2,
+      "silver" : 2,
       "trip" : 0
     }
   ]

@@ -1214,6 +1214,28 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **Coins on the ground** *(2026-09-15)* — a fifth step event paying **2 / 5 / 10 /
+        20 silver**, credited on the spot. **Not monster silver**: `feedback-no-monster-silver`
+        closes coin drops from kills, and this is a find on a STEP — no tie to what was
+        killed, no per-creature curve, unfarmable by picking soft enemies; hanging it off a
+        victory would have been the deleted mechanic renamed. Denominations are a RULE, not
+        four chosen numbers: weights **10 : 4 : 2 : 1** are `1/amount` scaled to integers,
+        so chance is inversely proportional to the find and every denomination contributes
+        the same expected silver (1.18 each, 4.71 a find). Frequency **2 of 100, taken from
+        `loot`** in every row including passive — one step in fifty pays, a twenty turns up
+        once every 850 km, ≈94 silver per 1000 km against quest income of 96–152 a day.
+        Depth deliberately does not enter. Two traps caught before shipping: 🪙 is U+1FA99
+        and sits immediately before the amount, the exact case where Lingo drops the
+        following `%{}` — both coins pass as interpolation values and it was **rendered
+        through real Lingo to prove it**; and Ukrainian needs three noun forms with the
+        11–14 band checked first, so `UkrainianPlural` moved to `ROIContent` where tests
+        reach it (the shipped 2/5/10/20 never touch the trap, so it would have waited for
+        the first eleven). Five validator rules, each negative-tested. Cost: the 2 weight
+        left `loot`, so km 1 went −647 → −665 Vigor and km 7 −11 → −13, and
+        `opening.vigor_bankrupt` reads 13 rather than 11. It makes the ~20,000 silver
+        surplus worse and ships anyway, sized low, on the user's call. `validate --strict`
+        0/0, `simulate --strict` exit 0, 242 tests; digest `tuning` moved and nothing else.
+        Design record: `spec-economy.md` §4b. **Not deployed.**
   - [x] **Mob XP halved** *(2026-09-14, on live-database evidence)* — the user reported
         players levelling too fast and asked for options, mob XP only. The rows settled it:
         the archer was **level 24, estate T7, km 41, in 5.94 days** — 2,296,342 XP at
@@ -1437,7 +1459,7 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-14 — bestiary tier 1, the whole roster, then mob XP halved on what
+*Last updated: 2026-09-15 — coins on the ground, a fifth step event. Before it, on 09-14: bestiary tier 1, the whole roster, then mob XP halved on what
 the live database showed (an archer at level 24 in six days, earning 386,590 XP a day with
 95–100% of it from kills). Two creatures added
 (гадюка, беркут), the boar moved to level 2 and the moose re-statted, closing the ×22.3 XP

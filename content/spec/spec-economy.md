@@ -126,23 +126,23 @@ never spent here either, so every row is a floor and not an estimate.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1,1 | 7.4 | 11.4 | 100% | 106.1 | 448 | 1208 | 2 | **-647** | -647 |
-| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 206 | 616 | 4 | **-299** | -175 |
-| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 88 | 297 | 8 | **-102** | +31 |
-| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 42 | 155 | 14 | **-11** | +64 |
-| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 23 | 89 | 20 | **+29** | +65 |
-| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 13 | 64 | 22 | **+43** | +80 |
-| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 10 | 50 | 24 | **+51** | +80 |
+| 1 | 1,1 | 7.4 | 11.4 | 100% | 106.1 | 430 | 1208 | 2 | **-665** | -665 |
+| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 198 | 616 | 4 | **-307** | -184 |
+| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 84 | 297 | 8 | **-106** | +27 |
+| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 41 | 155 | 14 | **-13** | +62 |
+| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 22 | 89 | 20 | **+28** | +64 |
+| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 13 | 64 | 22 | **+42** | +79 |
+| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 9 | 50 | 24 | **+50** | +80 |
 | 13 | 4,7,10,13 | 456.8 | 23.3 | 46% | 1.7 | 7 | 40 | 26 | **+56** | +71 |
-| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 5 | 32 | 28 | **+61** | +66 |
+| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 5 | 32 | 28 | **+61** | +65 |
 | 16 | 7,10,13,16 | 819.3 | 24.1 | 17% | 1.0 | 4 | 23 | 32 | **+64** | +70 |
 | 17 | 10,13,16 | 883.2 | 23.4 | 8% | 0.9 | 4 | 21 | 34 | **+64** | +67 |
 | 20 | 13,16 | 1016.5 | 24.2 | 0% | 0.8 | 3 | 19 | 40 | **+59** | +64 |
 | 22 | 13,16,22 | 1359.1 | 23.3 | 0% | 0.6 | 2 | 14 | 44 | **+60** | +63 |
 | 23 | 16,22 | 2575.8 | 18.3 | 0% | 0.3 | 1 | 6 | 46 | **+65** | +69 |
-| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 1 | 2 | 52 | **+62** | +62 |
+| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 1 | 2 | 52 | **+61** | +61 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at -11 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at -13 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
@@ -164,8 +164,10 @@ kilometres wide, and that is the whole of the intended opening.
 > *Superseded the same day by the XP halving.* `mobXP.coefficient` went **26 → 13**
 > and every `xpReward` with it, so every figure in this note is now the record of
 > an intermediate state that never shipped on its own. Current: km 1 costs
-> **106.1** kills and **−647** Vigor, km 2 −299, km 4 **−102**, km 7 **−11**, and
-> the cheapest holdable depth pays nothing at all. The causal claims above still
+> **106.1** kills and **−665** Vigor, km 2 −299, km 4 **−106**, km 7 **−13**, and
+> the cheapest holdable depth pays nothing at all. (The last two Vigor of each
+> of those went to the silver find on 2026-09-15, which took its 2% out of the
+> `loot` bucket — so the trail feeds fractionally less and pays coins instead.) The causal claims above still
 > hold — they are about the dilution a level-1 creature causes, which the XP
 > change did not touch.
 >
@@ -209,7 +211,7 @@ fails a build on a number the project has agreed to look at first.
 
 > *Changed 2026-09-14, and the report changed it rather than a person.* Halving
 > mob XP moved the finding from `opening.shallow_is_bankrupt` to
-> **`opening.vigor_bankrupt`**: *"levels 1–3 end 11 Vigor short at their cheapest
+> **`opening.vigor_bankrupt`**: *"levels 1–3 end 13 Vigor short at their cheapest
 > holdable depth (km 7) — 0.1× the entire stock a player has before the estate
 > exists."* The qualifier is gone because the exemption is: there is no longer a
 > depth that is both survivable and profitable for a level 1–3 character. It is
@@ -375,6 +377,60 @@ zero to the silver. It is a variance machine, not a sink. Whether that is right
 is §7: a gambling table that takes nothing is a strange thing for an innkeeper to
 run, but it is also the only place in the game where silver is *at risk*, which
 has its own value when silver has so little else to do.
+
+---
+
+## 4b. Coins on the ground (added 2026-09-15)
+
+A fifth step event. Walking a kilometre can turn up **2, 5, 10 or 20 silver**,
+credited on the spot.
+
+**It is not monster silver, and the distinction is the whole reason it could be
+built.** Phase 8C deleted coin drops from kills and the decision stands — a
+corpse full of coin is a faucet with no sink, and `enemies.silverReward` /
+`archetypes.silverMultiplier` are gone from the schema. This is a *find on a
+step*: it has no relationship to what was killed, needs no per-creature curve,
+and cannot be farmed by picking soft enemies. Attaching it to a victory instead
+would be the deleted mechanic wearing a new name.
+
+**The denominations are a rule, not four chosen numbers.** Weights are
+`10 : 4 : 2 : 1` against `2 : 5 : 10 : 20`, which is `1/amount` scaled to
+integers. The chance is therefore inversely proportional to the find, and **every
+denomination contributes the same expected silver** — 1.18 each, 4.71 a find. A
+fifth denomination is added by writing `1/amount` again rather than by
+re-balancing the set.
+
+| find | weight | chance in the event | once every |
+|---|---|---|---|
+| 2 | 10 | 58.8% | 85 km |
+| 5 | 4 | 23.5% | 212 km |
+| 10 | 2 | 11.8% | 425 km |
+| 20 | 1 | 5.9% | **850 km** |
+
+**Frequency is 2 of 100, taken from `loot`** in every row including the passive
+table — a find is a second kind of loot, not a second kind of nothing. So one
+step in fifty pays, and ≈94 silver arrives per 1000 km walked. Against quest
+income of 96–152 a day that is a **+28%** faucet for a player who walks hard; the
+archer measured on 2026-09-14 had covered 1,703 km in six days, which is 34
+finds and two twenties.
+
+**Depth does not enter, deliberately.** Every other reward in the forest scales
+with how deep it was taken. Making this one scale would turn flavour into a
+progression lever that has to be balanced against the estate — for a faucet §4
+has already measured as ~20,000 in surplus. A find is a find at km 1 and at km
+40, and it fades on its own as the purse grows, which is the intended life of the
+mechanic.
+
+**What it costs, and it is not silver.** The 2 weight came out of `loot`, so the
+trail feeds 2% less: the opening ledger's km 1 went −647 → **−665** Vigor and km 7
+−11 → **−13**. Two Vigor a step of depth, traded for coins. That is the honest
+shape of the trade and it is in §2's table, not asserted here.
+
+**This makes the surplus worse, and it was added anyway.** §4 says the fix for
+over-supplied silver is more to buy rather than less to earn; this is neither.
+It ships as flavour on the user's call, sized at the low end for exactly that
+reason — the frequency is the knob if the surplus ever starts to matter, and it
+is one number in `tuning/exploration.json`.
 
 ---
 

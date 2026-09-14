@@ -730,6 +730,24 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             }
             return lingo.localize(key, locale: locale)
 
+        case .silver(let amount):
+            // 🪙 twice on purpose: the leading one is the step's type marker,
+            // the same job 🦵 and 💀 do below, and it is what the eye scans a
+            // long walk for. The second marks the payout.
+            //
+            // BOTH are passed as interpolation values, neither sits in the
+            // template. 🪙 is U+1FA99 — supplementary plane, two UTF-16 units —
+            // and Lingo drops every `%{}` that follows one of those in the
+            // template itself (.memory/localization.md §37). The sentence puts
+            // the coin immediately before the amount, which is the worst case
+            // for that bug and invisible in testing if you only try 2.
+            let noun = lingo.localize("unit.silver", count: amount, locale: locale)
+            return "🪙 " + lingo.localize("exploration.outcome.silver", locale: locale,
+                                          interpolations: [
+                "icon": "🪙",
+                "coins": "\(amount) \(noun)"
+            ])
+
         case .loot(let itemId, let quantity, let picked):
             let label = itemLabelWithIcon(itemId, lingo: lingo, locale: locale)
             // Per-item foraging flavor text if one exists; Lingo returns the

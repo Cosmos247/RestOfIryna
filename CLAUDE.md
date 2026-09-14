@@ -350,6 +350,13 @@ English**, only `uk.json` gets `.m`/`.f`. Player gender is `User.gender` ("m"/"f
 chosen at registration step 1. When new copy names the player, either add `.m`/`.f` + the
 overload, or phrase around the noun.
 
+**A string whose point is a NUMBER routes through `lingo.localize(key, count:, locale:)`.**
+Ukrainian has three noun forms, so `uk.json` carries `.one`/`.few`/`.many` and English keeps
+the plain key. The rule is `UkrainianPlural.form(for:)` in `ROIContent` — there, not beside
+the Lingo extension, so the tests can reach it — and its one trap is that **11–14 take
+`many` despite ending in 1–4**: «21 срібник» but «11 срібників». The older «раунд(ів)»
+dodge stays where it is; use this where the count is the sentence.
+
 Key lists, the three-way sweep that catches a missed mid-sentence imperative, and the full
 rationale: `.memory/localization.md`; auto-memory `feedback-formal-address-vy`,
 `project-item-grammatical-gender`.

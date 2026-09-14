@@ -27,6 +27,17 @@ import Foundation
 public enum StepOutcome: Sendable {
     case nothing
     case loot(itemId: String, quantity: Int, picked: Bool)        // picked=false → bag full
+    /// Coins found on the ground, already added to `user.silver`.
+    ///
+    /// Credited inside `rollStep` rather than accumulated and granted at the
+    /// end the way passive XP is, and the difference is deliberate: XP is
+    /// accumulated because `passive.xpMultiplier` has to be applied ONCE or a
+    /// mid-run restart re-rounds every partial total. Silver has no multiplier
+    /// and no rounding, so an integer add per step cannot drift — which is the
+    /// same reason `rollLoot` puts items in the bag as it finds them. It also
+    /// means a passive run that ends in death keeps the coins, like its XP:
+    /// `applyDeath` empties the bag and silver was never in it.
+    case silver(amount: Int)
     case trip(hpLost: Int)
     /// Active mode: an enemy is in front of the player and the controller
     /// should hand off to CombatController. The fight isn't resolved yet —
@@ -125,6 +136,10 @@ public enum ExplorationService {
         let loot: Int
         let encounter: Int
         let trip: Int
+        /// Coins on the ground. Its weight comes out of `loot` in the shipped
+        /// table, because that is what a find IS — the bucket is a second kind
+        /// of loot, not a second kind of nothing.
+        let silver: Int
     }
 
     /// What a passive step past `freshStepCount` rolls. Its own row since
@@ -135,7 +150,7 @@ public enum ExplorationService {
     static var passiveWeights: EventWeights {
         let w = Catalogs.current.tuningExploration.passive.weights
         return EventWeights(nothing: w.nothing, loot: w.loot,
-                            encounter: w.encounter, trip: w.trip)
+                            encounter: w.encounter, trip: w.trip, silver: w.silver)
     }
 
     static func weights(forPriorVisits priorVisits: Int,
@@ -154,7 +169,12 @@ public enum ExplorationService {
         // the rows to a contiguous 0,1,2,… run so "last" cannot drift.
         let row = tiers.first { $0.priorVisits == priorVisits } ?? tiers[tiers.count - 1]
         return EventWeights(nothing: row.nothing, loot: row.loot,
-                            encounter: row.encounter, trip: row.trip)
+                            encounter: row.encounter, trip: row.trip, silver: row.silver)
+    }
+
+    /// What the silver bucket can pay, straight from the tuning table.
+    static var silverDenominations: [SilverDenominationDTO] {
+        Catalogs.current.tuningExploration.silverDenominations
     }
 
     // MARK: - Rolling a step
@@ -189,6 +209,7 @@ public enum ExplorationService {
         var wLoot = tier.loot
         let wEncounter = tier.encounter
         let wTrip = tier.trip
+        let wSilver = tier.silver
 
         // Phase 6.4 — Fortune Teller hook. The active card's
         // `lootChanceMultiplier` (default 1.0) reweights the `loot`
@@ -229,7 +250,10 @@ public enum ExplorationService {
         if roll < wNothing + wLoot {
             return step(try await rollLoot(for: user, kmDepth: kmDepth, on: db))
         }
-        if roll < wNothing + wLoot + wEncounter {
+        if roll < wNothing + wLoot + wSilver {
+            return step(rollSilver(for: user))
+        }
+        if roll < wNothing + wLoot + wSilver + wEncounter {
             return step(try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db))
         }
         _ = wTrip
@@ -273,6 +297,42 @@ public enum ExplorationService {
         } else {
             return .loot(itemId: itemId, quantity: quantity, picked: false)
         }
+    }
+
+    /// Coins under a root. Picks a denomination by weight and credits it.
+    ///
+    /// Depth does not enter, deliberately. Every other reward in the forest
+    /// scales with how deep it was taken, and making this one scale too would
+    /// turn a piece of flavour into a progression lever that has to be balanced
+    /// against the estate — for a faucet the economy already has a surplus of.
+    /// A find is a find at km 1 and at km 40, and it stops mattering on its own
+    /// as the player's purse grows, which is the intended life of the mechanic.
+    ///
+    /// Untouched by the Fortune Teller's `lootChanceMultiplier` for the same
+    /// reason encounters are: the card reweights what the forest GIVES, and the
+    /// bucket it names is `loot`. A card that also multiplied coin finds would
+    /// be a silver card wearing a luck card's name.
+    private static func rollSilver(for user: User) -> StepOutcome {
+        let table = silverDenominations
+        // Unreachable through a validated bundle — `silver_without_denominations`
+        // is an error. Kept because `rollStep` must return something, and the
+        // honest something is the empty step rather than a crash or a free coin.
+        let total = table.reduce(0) { $0 + max(0, $1.weight) }
+        guard total > 0 else { return .nothing }
+        var roll = Int.random(in: 0..<total)
+        for row in table {
+            roll -= max(0, row.weight)
+            if roll < 0 {
+                user.silver += row.amount
+                return .silver(amount: row.amount)
+            }
+        }
+        // Floating-point drift has no part here (the weights are Int), so this
+        // is reachable only if every row was non-positive, which `total > 0`
+        // already excluded. The last row is still the correct answer.
+        let last = table[table.count - 1]
+        user.silver += last.amount
+        return .silver(amount: last.amount)
     }
 
     private static func rollEncounter(for user: User, kmDepth: Int, mode: ExplorationMode, on db: any Database) async throws -> StepOutcome {

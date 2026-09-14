@@ -145,8 +145,10 @@ rearranging what it already has, and new species wait until after the rebalance.
 > *Superseded the same day by the XP halving.* `mobXP.coefficient` went **26 → 13**
 > and every `xpReward` with it, so every figure in this note is now the record of
 > an intermediate state that never shipped on its own. Current: km 1 costs
-> **106.1** kills and **−647** Vigor, km 2 −299, km 4 **−102**, km 7 **−11**, and
-> the cheapest holdable depth pays nothing at all. The causal claims above still
+> **106.1** kills and **−665** Vigor, km 2 −299, km 4 **−106**, km 7 **−13**, and
+> the cheapest holdable depth pays nothing at all. (The last two Vigor of each
+> of those went to the silver find on 2026-09-15, which took its 2% out of the
+> `loot` bucket — so the trail feeds fractionally less and pays coins instead.) The causal claims above still
 > hold — they are about the dilution a level-1 creature causes, which the XP
 > change did not touch. **This recurs for every tier added below an existing one** — it is
 > the km rule (`level N → km N…N+9`) working as designed, not a defect.
