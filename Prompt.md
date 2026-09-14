@@ -36,6 +36,56 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
+### Where we stopped (2026-09-14) part 2 — mob XP halved, NOT deployed
+
+**Driven by the database, not by a model.** The live rows said it plainly: the archer was
+**level 24, estate T7, km 41, in 5.94 days** — 2,296,342 XP earned, **386,590 a day**,
+3.9 levels a day. Two other accounts ran 15–27× slower, so the spread is play intensity,
+not balance — but the top of it reaches the cap in ~50 days against a design that asks for
+90+.
+
+**Kills are the whole faucet, which is what makes a mob-XP lever work at all.** The
+warrior reached level 13 in 12 days having claimed **zero** quests. The archer's 17 claimed
+jobs are ≈51k XP against 2.3M — **2%**. Between 95% and 100% of everything earned comes
+from killing things.
+
+**`mobXP.coefficient` 26.0 → 13.0, and every `xpReward` rebaked with it.** Both halves
+are required and this nearly went wrong: **the game never reads the coefficient.** It reads
+`xpReward` straight out of `enemies.json`; the coefficient is design-time input for the
+generator and the spec tables (`ContentDigest` says so in its own comment). Change only the
+coefficient and nothing moves for the player; change only the JSON and the next creature
+authored lands on the old scale.
+
+| | 🐍 5 | 🦅 17 | 🐗 38 | 🫎 110 | 🦬 500 | 🐈‍⬛ 600 | 🐺 690 | 🐻 1800 | 🐻‍❄️ 5000 |
+|---|---|---|---|---|---|---|---|---|---|
+| було | 10 | 34 | 76 | 223 | 1008 | 1199 | 1385 | 3632 | 10020 |
+
+Values are **solved then rounded to two significant figures** — a documented step, not a
+hand-edit, so a new creature is derived the same way. `spec bestiary` prints the unrounded
+number (504 where the file says 500) and neither is wrong; `Enemy.xpReward`'s doc comment
+carries the rule.
+
+**Quests were not touched, and the digest proves it** — the `quests` half is byte-identical.
+That is not luck: `questReward` rides `mobXP.exponent`, which did not move, and never sees
+the coefficient. Had the exponent been the lever, this would have been a quest change too.
+
+**The cost, named by the report rather than by me.** The finding changed identity from
+`opening.shallow_is_bankrupt` to **`opening.vigor_bankrupt`** — *"levels 1–3 end 11 Vigor
+short at their cheapest holdable depth (km 7)"*. There is no longer a depth that is both
+survivable and profitable before the estate exists. **XP and Vigor are one currency at one
+remove**: fewer XP per kill means more kills per level, and every kill costs Vigor. It is
+11 Vigor — marginal, not fatal — and it belongs to the opening's own knobs, not to the XP
+rate.
+
+```
+pace to 40        83 / 79 days → 173 / 167     (band is 72–200; c=11 would trip too_slow)
+km 1 → level 4    53.4 kills → 106.1
+validate --strict ✅ 0/0 · content hash 5fa9ab72 → f74773a3
+simulate --strict exit 0 · 0 broken bands · 12 warnings
+digest            records b410865d… → bef20549…   tuning ee45b18a… → c2ed0785…
+                  spawns and quests byte-identical
+```
+
 ### Where we stopped (2026-09-14) — tier 1 of the bestiary, NOT deployed
 
 **The working tree carries an undeployed content change.** Two creatures were added and
@@ -51,10 +101,14 @@ two were re-statted; nothing is committed, nothing is on the Pi. The bot is stil
 | unfrozen | 🫎 moose DEF 24→**20**, crit 8→**7**, dodge 4→**3** — the last pre-re-spread curve in the file, and the generator's 114 HP is solved against DEF 20 anyway |
 
 **The whole point was the XP ladder, and XP has exactly two inputs.**
-`round(26 · level^1.55 · archetype.xpMultiplier)` — HP and ATK do not enter it. So the
-first step fell from **×22.3 to ×3.4** by choosing levels and archetypes, not by touching
-a stat: `10 → 34 → 76 → 223`. Km 1 costs 53.4 kills to reach level 4 instead of 92.2, and
-km 2 became a rung of its own.
+`round(mobXP.coefficient · level^1.55 · archetype.xpMultiplier)` — HP and ATK do not enter
+it. So the first step fell from **×22.3 to ×3.4** by choosing levels and archetypes, not by
+touching a stat: `10 → 34 → 76 → 223`. Km 1 costs 53.4 kills to reach level 4 instead of
+92.2, and km 2 became a rung of its own.
+
+*(Every figure in this section is the tier-1 measurement and was superseded hours later by
+the XP halving above — the ladder is `5 → 17 → 38 → 110` now and km 1 costs 106.1 kills.
+The ratios between the rungs are what this section is about, and those did not change.)*
 
 **Tier 1 is on a different stat recipe from the rest of the roster, on purpose: HP 100% of
 contract, ATK 65%, DEF/crit/dodge on curve.** The shipped roster carries ~60% of both, and
@@ -318,8 +372,8 @@ from level 1 to 40, **78–87 days** on a tended estate. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-14, schema v11):** `records b410865d0f536b17` ·
-`tuning ee45b18aea6b2c40` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
+**Current digest baseline (2026-09-14, schema v11):** `records bef20549a700d5e0` ·
+`tuning c2ed07851857ef34` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
 is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the

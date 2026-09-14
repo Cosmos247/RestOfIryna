@@ -125,8 +125,15 @@ public struct Enemy: Sendable {
     public let icon: String
     /// XP awarded to the player on victory, BEFORE the level-gap scaling in
     /// `User.xpFromKill`. Generated at design time from
-    /// `round(mobXP.coefficient · level^mobXP.exponent · archetype.xpMultiplier)`,
-    /// which is solved as a pair with the level curve — see `MobXPDTO`.
+    /// `round(mobXP.coefficient · level^mobXP.exponent · archetype.xpMultiplier)`
+    /// **then rounded to two significant figures** — 504 ships as 500, 1816 as
+    /// 1800 — which is why `roi-content spec bestiary` prints a slightly
+    /// different number from the one in `enemies.json` and neither is wrong.
+    /// The rounding is a presentation decision taken 2026-09-14: a kill reads
+    /// as a round reward rather than an arbitrary one. It is still SOLVED, not
+    /// authored — same two inputs, one documented rounding step after them, so
+    /// a new creature is derived the same way and never typed.
+    /// Solved as a pair with the level curve — see `MobXPDTO`.
     /// The training dummy and the scripted registration dog award 0.
     public let xpReward: Int
 

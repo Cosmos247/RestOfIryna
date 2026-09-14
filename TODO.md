@@ -1214,6 +1214,29 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **Mob XP halved** *(2026-09-14, on live-database evidence)* — the user reported
+        players levelling too fast and asked for options, mob XP only. The rows settled it:
+        the archer was **level 24, estate T7, km 41, in 5.94 days** — 2,296,342 XP at
+        **386,590 a day**, 3.9 levels a day, which reaches the cap in ~50 days against a
+        design asking for 90+. `quest_progress` settled which lever could work: the
+        **warrior reached level 13 with zero claimed jobs**, and the archer's 17 jobs are
+        ≈51k against 2.3M — so kills are **95–100%** of everything earned.
+        `mobXP.coefficient` **26.0 → 13.0** and every `xpReward` rebaked with it (10→5,
+        34→17, 76→38, 223→110, 1008→500, 1199→600, 1385→690, 3632→1800, 10020→5000),
+        solved then **rounded to two significant figures** — a documented step recorded on
+        `Enemy.xpReward`, not a hand-edit. **Both halves are required**: the game never
+        reads the coefficient, it reads `xpReward` from `enemies.json`, so changing one
+        alone either moves nothing for the player or strands the next authored creature on
+        the old scale. The exponent was left alone on purpose — `questReward` rides it —
+        and the `quests` digest half came out byte-identical, which is the constraint
+        proving itself. Pace to the cap 83/79 → **173/167 days**; c=11 was measured and
+        trips `pace.too_slow`, so half is the most the design tolerates. The cost the
+        report named on its own: the opening finding changed from
+        `opening.shallow_is_bankrupt` to **`opening.vigor_bankrupt`** — no depth is now
+        both survivable and profitable before the estate exists, because XP and Vigor are
+        one currency at one remove. `validate --strict` 0/0, `simulate --strict` exit 0,
+        12 warnings, 236 tests; digest `records` + `tuning` moved, `spawns` + `quests` held.
+        **Not deployed.**
   - [x] **Bestiary tier 1** *(2026-09-14)* — first content added since the rebalance shipped,
         and the start of a tier-by-tier fill. 🐍 `enemy.wild_viper` L1 `trash` and 🦅
         `enemy.wild_eagle` L1 `skirmisher` (km 1–10, **no loot by decision**); 🐗
@@ -1414,7 +1437,9 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-14 — bestiary tier 1, then the whole roster. Two creatures added
+*Last updated: 2026-09-14 — bestiary tier 1, the whole roster, then mob XP halved on what
+the live database showed (an archer at level 24 in six days, earning 386,590 XP a day with
+95–100% of it from kills). Two creatures added
 (гадюка, беркут), the boar moved to level 2 and the moose re-statted, closing the ×22.3 XP
 cliff at the start of the game to ×3.4; then the other five re-solved, because tier 1 on
 its contract revealed that danger had been collapsing with depth — a level-1 eagle was

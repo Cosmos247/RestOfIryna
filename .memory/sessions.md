@@ -1,5 +1,76 @@
 # Session History
 
+## Session — 2026-09-14 part 2 (mob XP halved, on the database's evidence)
+
+The user reported players levelling too fast and asked for options, **mob XP only**. The
+first useful move was not modelling it — it was reading the live rows.
+
+### What the database said, against a model that was wrong by 9×
+
+| | level | estate | deepest | days | total XP | XP/day |
+|---|---|---|---|---|---|---|
+| archer | **24** | T7 | 41 km | **5.94** | 2,296,342 | **386,590** |
+| mage | 15 | T5 | 37 km | 11.94 | 295,632 | 24,760 |
+| warrior | 13 | T3 | 19 km | 11.97 | 167,824 | 14,020 |
+
+My day-per-level model had said level 25 takes 56 days. The archer did 24 in six, at 3.9
+levels a day. **Build the model, then go and look — the model was a relative instrument
+and nothing more.** The 15–27× spread between accounts is play intensity, not balance.
+
+`quest_progress` settled which lever could work: the **warrior reached level 13 having
+claimed zero jobs**, and the archer's 17 jobs are ≈51k XP against 2.3M — 2%. Kills are
+95–100% of everything earned, so a mob-XP lever moves essentially all of it.
+
+### The lever that does nothing, and the one that does
+
+**`mobXP.coefficient` is never read by the game.** `User.xpFromKill` takes
+`enemy.xpReward` straight from `enemies.json`; the coefficient is design-time input for
+`EnemyGenerator` and the spec tables, which `ContentDigest`'s own comment states. I had a
+sandbox sweep of five coefficients measured before noticing that the opening ledger's
+"kills to level 4" had not moved in ANY of them — which is what a lever that does nothing
+looks like. **A number that does not move when you move its input is the finding.**
+
+So both halves changed together: coefficient **26.0 → 13.0**, and every `xpReward` rebaked
+from it — 10→5, 34→17, 76→38, 223→110, 1008→500, 1199→600, 1385→690, 3632→1800,
+10020→5000. Solved, then **rounded to two significant figures**, which is a documented step
+rather than a hand-edit: the rule lives on `Enemy.xpReward` so a new creature is derived
+the same way, and it explains why `spec bestiary` prints 504 where the file says 500.
+
+The exponent was deliberately left alone: `questReward` rides `mobXP.exponent` and never
+sees the coefficient, so the exponent would have made this a quest change too. **The
+digest proved the constraint held — the `quests` half is byte-identical.**
+
+### What it cost, named by the report rather than by me
+
+The finding changed identity from `opening.shallow_is_bankrupt` to
+**`opening.vigor_bankrupt`**: *"levels 1–3 end 11 Vigor short at their cheapest holdable
+depth (km 7)."* The qualifier is gone because the exemption is — no depth is now both
+survivable and profitable before the estate exists. **XP and Vigor are one currency at one
+remove**: fewer XP per kill is more kills per level, and every kill costs Vigor. Eleven
+Vigor is marginal, and the fix belongs to the opening's own knobs.
+
+Pace 83/79 → **173/167 days** to the cap, inside the report's 72–200 band; c=11 was
+measured and trips `too_slow`, so **half is the most the current design tolerates**.
+`validate --strict` 0/0, `simulate --strict` exit 0, 12 warnings, 236 tests. Digest:
+`records` and `tuning` moved, `spawns` and `quests` held.
+
+### One thing the change did not break but did make louder
+
+`20_judgement` in the fortune deck grants a **flat `oneShotXpGain: 75`**. Its absolute
+value did not move — the level curve did not move — but against a kill it doubled: 75 XP
+was 7.5 level-1 creatures and is now **15**, while still being 1.5% of one rabid bear. It
+is the same defect `balance.portion_rots` names for food: a flat number against a curve
+that grows, which `CLAUDE.md` has a standing rule against. It is **out of scope here** —
+the ask was mob XP — and it is left alone deliberately rather than missed. The fix when it
+comes is the one the quest rewards already use: ride `mobXP.exponent`, so the card is worth
+the same NUMBER OF KILLS at every level. The other two XP cards are multipliers (×1.25,
+×1.35) and do not have the problem.
+
+Also: the late game is not gated by the XP rate. Nothing spawns above level 22, so by
+level 35 the level-gap scaler clamps at 0.1 and a kill pays ~1,000 against 1.16M a level —
+25 days a level, already. Halving makes that wall higher; it is fixed with creatures, not
+with this coefficient.
+
 ## Session — 2026-09-14 (tier 1 of the bestiary, then the whole roster re-solved)
 
 Content work, on request: add mobs, tier by tier, weakest first. The user named the
@@ -12,7 +83,7 @@ The ask mixed two things that turn out to be independent, and separating them is
 made the rest easy:
 
 ```
-xpReward = round(26 · level^1.55 · archetype.xpMultiplier)
+xpReward = round(mobXP.coefficient · level^1.55 · archetype.xpMultiplier)
 ```
 
 **HP and ATK are not in it.** The XP gap is fixed by choosing `level` and `archetype`; the

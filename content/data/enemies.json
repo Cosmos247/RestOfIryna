@@ -93,7 +93,7 @@
         "hp" : 55
       },
       "tier" : 1,
-      "xpReward" : 10
+      "xpReward" : 5
     },
     {
       "archetype" : "skirmisher",
@@ -114,7 +114,7 @@
         "hp" : 61
       },
       "tier" : 1,
-      "xpReward" : 34
+      "xpReward" : 17
     },
     {
       "archetype" : "normal",
@@ -146,7 +146,7 @@
         "hp" : 88
       },
       "tier" : 1,
-      "xpReward" : 76
+      "xpReward" : 38
     },
     {
       "archetype" : "normal",
@@ -178,7 +178,7 @@
         "hp" : 114
       },
       "tier" : 2,
-      "xpReward" : 223
+      "xpReward" : 110
     },
     {
       "archetype" : "brute",
@@ -210,7 +210,7 @@
         "hp" : 138
       },
       "tier" : 3,
-      "xpReward" : 1008
+      "xpReward" : 500
     },
     {
       "archetype" : "skirmisher",
@@ -237,7 +237,7 @@
         "hp" : 109
       },
       "tier" : 3,
-      "xpReward" : 1199
+      "xpReward" : 600
     },
     {
       "archetype" : "normal",
@@ -264,7 +264,7 @@
         "hp" : 156
       },
       "tier" : 4,
-      "xpReward" : 1385
+      "xpReward" : 690
     },
     {
       "archetype" : "brute",
@@ -296,7 +296,7 @@
         "hp" : 216
       },
       "tier" : 5,
-      "xpReward" : 3632
+      "xpReward" : 1800
     },
     {
       "archetype" : "trash",
@@ -362,7 +362,7 @@
         "hp" : 319
       },
       "tier" : 6,
-      "xpReward" : 10020
+      "xpReward" : 5000
     }
   ]
 }

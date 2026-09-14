@@ -57,9 +57,9 @@ boar, and both are unambiguous:
 | | |
 |---|---|
 | XP to reach level 4 | 788 |
-| `enemy.wild_viper` at level 1 | 10 XP → **79 kills** |
+| `enemy.wild_viper` at level 1 | 5 XP → **158 kills** |
 | starting Vigor pool | 105 |
-| `enemy.wild_boar` at level 2, on curve | 76 XP — 8 of those |
+| `enemy.wild_boar` at level 2, on curve | 38 XP — 8 of those |
 
 The second row is the path that never leaves the shallowest band. The last
 is why it is not the intended one: depth is the difficulty dial from the
@@ -126,23 +126,23 @@ never spent here either, so every row is a floor and not an estimate.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1,1 | 14.8 | 11.4 | 100% | 53.4 | 225 | 608 | 2 | **-270** | -270 |
-| 2 | 1,1,2 | 32.1 | 12.6 | 100% | 24.5 | 103 | 309 | 4 | **-94** | -33 |
-| 4 | 1,1,2,4 | 76.2 | 14.3 | 100% | 10.3 | 44 | 147 | 8 | **+3** | +69 |
-| 7 | 1,1,2,4,7 | 158.0 | 15.4 | 97% | 5.0 | 21 | 77 | 14 | **+45** | +83 |
-| 10 | 1,1,2,4,7,10 | 286.1 | 16.2 | 88% | 2.8 | 12 | 45 | 20 | **+62** | +80 |
-| 11 | 2,4,7,10 | 491.4 | 19.8 | 79% | 1.6 | 7 | 32 | 22 | **+68** | +86 |
-| 12 | 4,7,10 | 692.3 | 21.9 | 69% | 1.1 | 5 | 25 | 24 | **+71** | +86 |
-| 13 | 4,7,10,13 | 917.0 | 23.3 | 46% | 0.9 | 4 | 20 | 26 | **+73** | +80 |
-| 14 | 7,10,13 | 1250.1 | 24.9 | 21% | 0.6 | 3 | 16 | 28 | **+74** | +76 |
-| 16 | 7,10,13,16 | 1647.1 | 24.1 | 17% | 0.5 | 2 | 12 | 32 | **+73** | +77 |
-| 17 | 10,13,16 | 1774.9 | 23.4 | 8% | 0.4 | 2 | 10 | 34 | **+72** | +74 |
-| 20 | 13,16 | 2045.9 | 24.2 | 0% | 0.4 | 2 | 9 | 40 | **+67** | +70 |
-| 22 | 13,16,22 | 2731.8 | 23.3 | 0% | 0.3 | 1 | 7 | 44 | **+65** | +67 |
-| 23 | 16,22 | 5180.6 | 18.3 | 0% | 0.2 | 1 | 3 | 46 | **+67** | +69 |
-| 26 | 22 | 10020.0 | 13.6 | 0% | 0.1 | 0 | 1 | 52 | **+62** | +62 |
+| 1 | 1,1 | 7.4 | 11.4 | 100% | 106.1 | 448 | 1208 | 2 | **-647** | -647 |
+| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 206 | 616 | 4 | **-299** | -175 |
+| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 88 | 297 | 8 | **-102** | +31 |
+| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 42 | 155 | 14 | **-11** | +64 |
+| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 23 | 89 | 20 | **+29** | +65 |
+| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 13 | 64 | 22 | **+43** | +80 |
+| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 10 | 50 | 24 | **+51** | +80 |
+| 13 | 4,7,10,13 | 456.8 | 23.3 | 46% | 1.7 | 7 | 40 | 26 | **+56** | +71 |
+| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 5 | 32 | 28 | **+61** | +66 |
+| 16 | 7,10,13,16 | 819.3 | 24.1 | 17% | 1.0 | 4 | 23 | 32 | **+64** | +70 |
+| 17 | 10,13,16 | 883.2 | 23.4 | 8% | 0.9 | 4 | 21 | 34 | **+64** | +67 |
+| 20 | 13,16 | 1016.5 | 24.2 | 0% | 0.8 | 3 | 19 | 40 | **+59** | +64 |
+| 22 | 13,16,22 | 1359.1 | 23.3 | 0% | 0.6 | 2 | 14 | 44 | **+60** | +63 |
+| 23 | 16,22 | 2575.8 | 18.3 | 0% | 0.3 | 1 | 6 | 46 | **+65** | +69 |
+| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 1 | 2 | 52 | **+62** | +62 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at +45 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at -11 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
@@ -161,6 +161,13 @@ kilometres wide, and that is the whole of the intended opening.
 > for it: km 4 fell from +44 to **+3** and km 7 from +66 to **+45**, because a
 > level-1 creature spawns across km 1–10 and drags that whole band's average XP
 > down. Km 2 is a row at all for the first time, at −94.
+> *Superseded the same day by the XP halving.* `mobXP.coefficient` went **26 → 13**
+> and every `xpReward` with it, so every figure in this note is now the record of
+> an intermediate state that never shipped on its own. Current: km 1 costs
+> **106.1** kills and **−647** Vigor, km 2 −299, km 4 **−102**, km 7 **−11**, and
+> the cheapest holdable depth pays nothing at all. The causal claims above still
+> hold — they are about the dilution a level-1 creature causes, which the XP
+> change did not touch.
 >
 > *And again the same day, after the other five creatures were re-solved.* The
 > Vigor column barely moved; the **win** column moved a great deal — km 10 from
@@ -199,6 +206,26 @@ than an estimate of it.
 The band is `opening.shallow_is_bankrupt`, and it is a warning rather than a
 broken band for the reason §7 gives: measure before retuning, so nothing here
 fails a build on a number the project has agreed to look at first.
+
+> *Changed 2026-09-14, and the report changed it rather than a person.* Halving
+> mob XP moved the finding from `opening.shallow_is_bankrupt` to
+> **`opening.vigor_bankrupt`**: *"levels 1–3 end 11 Vigor short at their cheapest
+> holdable depth (km 7) — 0.1× the entire stock a player has before the estate
+> exists."* The qualifier is gone because the exemption is: there is no longer a
+> depth that is both survivable and profitable for a level 1–3 character. It is
+> 11 Vigor, so it is marginal rather than fatal, and it is the honest cost of the
+> XP change — **XP and Vigor are the same currency at one remove**, because XP
+> comes from kills and kills cost Vigor. The fix belongs to the opening's own
+> knobs (food, loot, the estate's first tier), not to the XP rate, and it is now
+> the oldest open item in this document.
+>
+> *Noticed in the same pass and deliberately left alone:* the fortune deck's
+> `20_judgement` grants a **flat 75 XP**. Halving mob XP did not change its
+> absolute value — the level curve did not move — but it doubled against a kill,
+> from 7.5 level-1 creatures to **15**, while still being 1.5% of one rabid bear.
+> Same shape as `balance.portion_rots`. The fix is the one quest rewards already
+> use: ride `mobXP.exponent` so the card is worth a fixed NUMBER OF KILLS at every
+> level. The other two XP cards are multipliers and do not have the problem.
 
 ---
 

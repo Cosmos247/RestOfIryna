@@ -33,7 +33,7 @@
   ],
   "maxLevel" : 40,
   "mobXP" : {
-    "coefficient" : 26.0,
+    "coefficient" : 13.0,
     "exponent" : 1.55
   },
   "statGrowth" : {

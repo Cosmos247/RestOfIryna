@@ -99,8 +99,8 @@ rearranging what it already has, and new species wait until after the rebalance.
 >
 > **Why the boar moved rather than being hand-buffed.** Two creatures were asked
 > for below it, and the order wanted was viper < eagle < boar — which is an order
-> in XP, and XP is `round(26 · level^1.55 · archetype.xpMultiplier)`, nothing
-> else. Level and archetype are the only two dials; the stat line follows from
+> in XP, and XP is `round(mobXP.coefficient · level^1.55 ·
+> archetype.xpMultiplier)`, nothing else. Level and archetype are the only two dials; the stat line follows from
 > them through `EnemyGenerator`. Moving the boar to level 2 `normal` is what
 > raises it, and it raises HP 34 → 88 and DEF 6 → 16 without a number being
 > chosen by hand.
@@ -141,7 +141,14 @@ rearranging what it already has, and new species wait until after the rebalance.
 > creature covers km 1–10, so the two of them lower the average XP of every
 > kilometre in that band: the ledger's km 4 falls from +44 Vigor to **+3**, km 7
 > from +66 to **+45** (measured after the whole pass, including the re-solve below,
-> which moved each by one). **This recurs for every tier added below an existing one** — it is
+> which moved each by one).
+> *Superseded the same day by the XP halving.* `mobXP.coefficient` went **26 → 13**
+> and every `xpReward` with it, so every figure in this note is now the record of
+> an intermediate state that never shipped on its own. Current: km 1 costs
+> **106.1** kills and **−647** Vigor, km 2 −299, km 4 **−102**, km 7 **−11**, and
+> the cheapest holdable depth pays nothing at all. The causal claims above still
+> hold — they are about the dilution a level-1 creature causes, which the XP
+> change did not touch. **This recurs for every tier added below an existing one** — it is
 > the km rule (`level N → km N…N+9`) working as designed, not a defect.
 
 > ### AMENDED 2026-09-14, same day — the other five, re-solved
