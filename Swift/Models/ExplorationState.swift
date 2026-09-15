@@ -42,6 +42,13 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @Field(key: "steps_deep")
     public var stepsDeep: Int
 
+    /// The deepest km THIS run reached \u2014 its high-water mark, which `stepsDeep`
+    /// cannot serve because the walk home counts back down. The depth
+    /// leaderboard is banked from here at the manor door, so a governor who
+    /// never came back never banks anything.
+    @Field(key: "max_depth_km")
+    public var maxDepthKm: Int
+
     /// Added in Phase 3.2. JSON-encoded map of km → visit count. Each entry
     /// into a room increments its count; the rolled event's weight table
     /// uses the *prior* count (0 = fresh, 1 = reduced, 2+ = bare).
@@ -173,6 +180,7 @@ final public class ExplorationState: Model, @unchecked Sendable {
     public init(userID: UUID, stepsDeep: Int = 0) {
         self.$user.id = userID
         self.stepsDeep = stepsDeep
+        self.maxDepthKm = stepsDeep
         self.visitedRoomsJSON = nil
         self.modeRaw = ExplorationMode.active.rawValue
         self.endsAt = nil
@@ -318,6 +326,18 @@ extension ExplorationState {
         return try await ExplorationState.query(on: db)
             .filter(\.$modeRaw, .equal, ExplorationMode.passive.rawValue)
             .all()
+    }
+
+    /// Move the expedition to `km`, keeping the run's high-water mark.
+    ///
+    /// **Every change of depth goes through here** \u2014 the step out, the step
+    /// back and the passive walk. The depth board is banked from `maxDepthKm`
+    /// when the player reaches the door, so a caller that assigns `stepsDeep`
+    /// directly is a caller that silently forgets the record, which is the
+    /// same trap `User.recordStep` exists to avoid one level up.
+    public func moveTo(km: Int) {
+        stepsDeep = km
+        maxDepthKm = Swift.max(maxDepthKm, km)
     }
 
     /// End the user's expedition. No-op if no active row.

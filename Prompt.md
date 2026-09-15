@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the Master's repair list + `GearState` on the warehouse |
+| HEAD | **this commit** — the depth board banks on arrival |
 | pushed | through `6e3c18e`; **`7469715` and `b32ac32` are unpushed** |
 | running on the Pi | **`aa18f57`**, content hash `4eac64ff`, **schema v11**, last restarted 2026-09-12 19:43 |
-| committed but NOT deployed | **six commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
+| committed but NOT deployed | **seven commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · `42e8818` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
 
 **The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
 a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
@@ -69,6 +69,22 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > — so this list is the highest-yield thing available, and it costs one session in Telegram.
 > The 09-14 / 09-15 items need the deploy first (schema bump + migration, see the table at
 > the top); the 09-12 and older ones are already live and can be walked today.
+>
+> **Added 2026-09-15 part 4 — two migrations, one of them zeroes a board:**
+> - **the depth board is empty after the deploy.** 🌲 Глибина must read «Поки порожньо» for
+>   everyone — `ResetDeepestKm` zeroed it. 🚶 Шлях must be UNTOUCHED: if that one is empty
+>   too, the wrong column was reset.
+> - **walk out and back, then look at 🌲.** It should show the deepest km of that run, and
+>   only after you are home — check it is still «порожньо» while you are standing in the
+>   forest.
+> - **die in the forest on purpose, deeper than your record.** The board must not move.
+>   Then walk a shallow run home: it must not LOWER what you already earned either.
+> - **type `/start` while walking, and again inside a fight.** Both must redraw the screen
+>   you are on — not drop you at the manor. This was a free exit from any depth and is the
+>   change most likely to be felt as a regression, so it is worth trying the way a stuck
+>   player would.
+> - **a passive run that kills nothing.** Its depth must still bank — the only save on that
+>   path used to be conditional on XP.
 >
 > **Added 2026-09-15 part 3 — needs a restart (a migration + a locale key):**
 > - **take the weapon OFF, then visit the Master.** The repair line for it must still be

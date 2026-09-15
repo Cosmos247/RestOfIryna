@@ -1219,6 +1219,43 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **The depth board banks on arrival, and the forest lost its back door**
+        *(2026-09-15, reported from play)* — 🌲 Глибина counted kilometres from expeditions
+        nobody came back from, while its own subtitle read «Найглибша миля, куди ви заходили —
+        **і поверталися**». Both halves were deliberate, which is why it survived:
+        `rollStep` raised the record the moment a step was paid for, and `User.swift` said so
+        outright — *"`deepestKm` is a RECORD and never decreases, not even on death: the walk
+        happened"*. Two decisions made months apart, contradicting each other; the user kept
+        the words. `deepestKm` is now banked by `User.bankDepth(_:)` ONLY at the manor —
+        `handleHomeReached` and the passive report's surviving branch — from
+        `ExplorationState.maxDepthKm`, because `stepsDeep` counts back down on the way home
+        and the run's deepest km is gone by the time the player reaches the door. The mark is
+        raised by **`ExplorationState.moveTo(km:)`**, the one funnel every depth change goes
+        through (step out, step back, the passive walk, the flee that pushes you back a km);
+        `rollStep` never sees the state row, so putting it there would have meant three
+        callers each remembering it. `totalKmWalked` still rises per step through
+        `recordStep()` — its own board was honest about a fatal walk all along.
+        **The escape hatch had to close, on two screens.** `/start` (and a stray Cancel)
+        force-ended an expedition from any depth with the bag intact, and
+        `CombatController.onStart` deleted the expedition row outright — so banking at the
+        door would have made `/start` the cheapest way to bank a record, and closing only the
+        walk screen would have moved the loophole one screen in (poke a beast, then `/start`).
+        Both re-render now — the walk via `showExploration`, the fight via `showCombat`, the
+        way `guardInCombat` already did — which is **strictly better for the case the hatch
+        existed for**: a lost or stale keyboard is what a redraw fixes. The one exit left is a
+        fight whose enemy id no longer resolves, which ends the expedition rather than
+        trapping the player. One trap caught on the way: in the passive path the only
+        `saveAndCache` after finalization is guarded by `if xpResult.xpAwarded > 0`, so a
+        quiet run that killed nothing would have banked the record in memory and dropped it —
+        the bank persists itself. **The board was zeroed once** (`ResetDeepestKm`, on the
+        user's call after the concern was raised): the column changed what it MEASURES, so
+        old and new values cannot share a ladder — `total_km_walked` was left standing, and
+        that is the test. `LeaderboardService` filters `metric > 0`, so 🌲 reads «Поки
+        порожньо» until somebody walks out and back; `leaderboard.unranked.depth` reworded to
+        «Ви ще не поверталися з лісу», 1 key × 2 locales. Two migrations —
+        `AddExplorationMaxDepth` (schema) and `ResetDeepestKm` (data, throws rather than
+        skipping on a non-SQL driver, `WipeForRebalance`'s reasoning). Build clean, `validate
+        --strict` 0/0, 246 tests, digest untouched. **Not deployed.**
   - [x] **The Master repairs a row, not a loadout** *(2026-09-15, reported by a tester)* —
         two screenshots a minute apart differed by exactly one button: «🏹 Перетягнути
         тятиву · 0/100» was absent while the bow lay in the bag and present once it was

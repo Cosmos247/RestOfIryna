@@ -127,16 +127,22 @@ final public class User: Model, @unchecked Sendable {
     @OptionalField(key: "last_hp_tick_at")
     var lastHpTickAt: Date?
 
-    /// Lifetime walking record and tally, read by the leaderboards. Both are
-    /// written in one place — `User.recordWalk(toKm:)` — because the three ways
-    /// to walk a km (step out, step back, passive expedition) all funnel through
-    /// `ExplorationService.rollStep`, and a counter each caller has to remember
-    /// is a counter some caller forgets.
+    /// Lifetime walking record and tally, read by the leaderboards. They are
+    /// written at DIFFERENT moments, and that difference is the rule.
     ///
-    /// `deepestKm` is a RECORD and never decreases, not even on death: the walk
-    /// happened. `totalKmWalked` counts the way home too — the return leg is the
-    /// more dangerous half of an expedition, and excluding it would make this
-    /// board a second copy of the depth one.
+    /// `totalKmWalked` is a tally, raised by `recordStep()` inside
+    /// `ExplorationService.rollStep` — the funnel all three ways to walk a km
+    /// (step out, step back, passive) share, because a counter each caller has
+    /// to remember is a counter some caller forgets. It counts the way home
+    /// too: the return leg is the more dangerous half of an expedition, and
+    /// excluding it would make that board a second copy of the depth one.
+    ///
+    /// `deepestKm` is banked by `bankDepth(_:)` only when the player REACHES
+    /// THE MANOR, from `ExplorationState.maxDepthKm` — the run's high-water
+    /// mark. A governor who died in the forest banks nothing, which is what
+    /// the board promises in words: «the deepest mile you walked — and walked
+    /// back from». Until 2026-09-15 it was raised per step, and the words were
+    /// the half that was wrong.
     @Field(key: "deepest_km")
     var deepestKm: Int
 
@@ -324,19 +330,24 @@ final public class User: Model, @unchecked Sendable {
         self.createdAt = Date()
     }
 
-    /// Record one km walked, arriving at `km`. The only writer of either
-    /// counter.
+    /// One km walked, in any direction. The only writer of `totalKmWalked`.
     ///
     /// Called from `ExplorationService.rollStep`, which every kind of step goes
     /// through, and from `ExplorationController.handleHomeReached` for the last
     /// stride from km 1 to the estate door — that one rolls no event, but the
-    /// player still walked it.
-    ///
-    /// `max` is what makes a homeward step safe: it arrives with a SMALLER km
-    /// than the one before it, so the record holds while the tally still rises.
-    /// Caller persists.
-    func recordWalk(toKm km: Int) {
+    /// player still walked it. Caller persists.
+    func recordStep() {
         totalKmWalked += 1
+    }
+
+    /// Bank a finished expedition's deepest km against the lifetime record.
+    /// The only writer of `deepestKm`, and called ONLY where the player is
+    /// standing at the manor again — `handleHomeReached` and the passive
+    /// report's surviving branch — with `ExplorationState.maxDepthKm`.
+    ///
+    /// `max` is what keeps it a record: a shallow trip banked afterwards never
+    /// lowers a deep one already earned. Caller persists.
+    func bankDepth(_ km: Int) {
         deepestKm = Swift.max(deepestKm, km)
     }
 

@@ -15,7 +15,15 @@ was shown in a unit it was not measured in.
 deploy carries a content-schema bump (v11 → v12) and a migration, so binary and
 `content/data` must travel together:
 
-- **this commit** (09-15) **a bow off the shoulder could not be mended, and the warehouse
+- **this commit** (09-15) **the depth board banks on arrival, and the forest lost its back
+  door** — 🌲 Глибина counted kilometres from expeditions nobody came back from while its
+  subtitle promised «і поверталися». `deepestKm` is banked by `User.bankDepth(_:)` at the manor
+  only, from `ExplorationState.maxDepthKm`; every depth change goes through `moveTo(km:)`.
+  `/start` and a stray Cancel re-render instead of ending an expedition — on the walk screen
+  AND in a fight, or the loophole just moves one screen in. Board zeroed once by
+  `ResetDeepestKm` because the column changed what it measures. Migrations
+  `AddExplorationMaxDepth` + `ResetDeepestKm`. Its hash goes here at the next docs pass.
+- `42e8818` (09-15) **a bow off the shoulder could not be mended, and the warehouse
   mended everything** — the Master's repair list asked armour "do you own it" and the weapon
   "is it worn", so an unequipped weapon vanished from it; one query over `durableSlots` now.
   And `WarehouseEntry` gained `GearState`, because a deposit deletes a row and a withdraw
@@ -74,6 +82,86 @@ deploy carries a content-schema bump (v11 → v12) and a migration, so binary an
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-15 part 4 (the deepest mile, and who is allowed to claim it)
+
+Reported from play: the 🌲 depth board shows kilometres from expeditions the governor never
+returned from. The user asked for OPTIONS rather than a fix, which was the right instinct —
+the answer turned out to be three decisions, not one.
+
+### Neither side was a bug
+
+The subtitle said «Найглибша миля, куди ви заходили — **і поверталися**» (reworded on
+2026-09-16 to «Найдальший кілометр, з якого ви знайшли шлях назад», because «миля» was a
+unit the game does not use and the number two lines below it reads «км»). And
+`rollStep` has always raised the record the moment a step was paid for, with `User.swift`
+stating the intent outright: *"`deepestKm` is a RECORD and never decreases, not even on
+death: the walk happened."* Two deliberate decisions, months apart, contradicting each other.
+Nothing here was an oversight, so the question was which one to keep — the user's, not mine.
+
+### Three decisions, taken as a quiz
+
+| | chosen | |
+|---|---|---|
+| the rule | bank only at the manor | over a rollback-on-death, which reaches the same result by restoring a pre-run value |
+| the `/start` hatch | close it | over letting a free exit count as a return |
+| existing records | zero the board | over grandfathering them |
+
+The second one was not a side question. `/start` force-ended an expedition from any depth
+with the bag intact — documented as "an escape hatch for dev / stuck-player cases". The
+moment depth banks on ARRIVAL, that hatch is the cheapest way to bank a record: walk to km
+30, type `/start`, be home. And `CombatController.onStart` deleted the expedition row too, so
+closing it on the walk screen alone would have moved the loophole exactly one screen in.
+
+**The close is strictly better than the hatch for the case the hatch existed for.** Both now
+re-render — `showExploration` for the walk, `showCombat` for the fight, which is what
+`guardInCombat` already did when a beast was left standing. A lost or stale keyboard is the
+real stuck case, and a redraw is its actual fix; ending the expedition never was. The one
+exit left is a fight whose enemy id no longer resolves (a `/reload` that dropped it), which
+ends the expedition rather than trapping anyone.
+
+### Where the mark lives
+
+`stepsDeep` cannot be the record: the walk home counts it back down, so by the door the
+deepest km of the run is gone. Hence `max_depth_km` on `exploration_state`, raised by
+**`ExplorationState.moveTo(km:)`** — the one funnel every depth change goes through, the
+flee that pushes the player back a km included. The alternative was threading the state row
+into `ExplorationService.rollStep`, which does not receive it; that would have put the mark
+behind three callers each remembering to raise it, which is the trap `rollStep` exists to
+avoid one level up.
+
+`User.recordWalk(toKm:)` split in two along the same seam: `recordStep()` for the tally,
+`bankDepth(_:)` for the record. The two counters now write at different MOMENTS, and that
+difference is the semantics of the two boards.
+
+### The trap it nearly shipped with
+
+In the passive path, the only `saveAndCache` after finalization is guarded by
+`if xpResult.xpAwarded > 0`. A quiet run that killed nothing would have banked the record in
+memory and dropped it on the floor. The bank persists itself now — the same explicit save,
+for the same reason, that `spend` carries a few hundred lines up.
+
+### The reset, and the rule it bends
+
+`ResetDeepestKm` zeroes `deepest_km` for everyone, once. [[project-leaderboards-will-go-seasonal]]
+says never to reset a lifetime counter, the concern was put to the user in the quiz, and they
+chose the reset anyway — with a justification that holds: **the column changed what it
+measures**, so old and new values are different quantities that cannot share a ladder.
+`total_km_walked` was deliberately left standing because it still measures what it always
+did. That contrast is now written into the memory as the test, so the rule survives its own
+exception.
+
+`LeaderboardService` filters `metric > 0`, so the board reads «Поки порожньо» until somebody
+walks out and back — and `leaderboard.unranked.depth` was reworded from «Ви ще не заходили в
+ліс» to «Ви ще не поверталися з лісу», which is now the thing being measured.
+
+### Verification
+
+Build clean · `validate --strict` 0/0, hash `15782bee` unchanged · **246 tests** · digest
+untouched. No `simulate`: no balance table moved. Two migrations, so this ships with the
+binary — `AddExplorationMaxDepth` (schema) and `ResetDeepestKm` (data, which throws rather
+than skipping on a non-SQL driver, following `WipeForRebalance` rather than `AddWalkCounters`:
+a skipped index costs a scan, a skipped reset records itself as done and never runs again).
 
 ## Session — 2026-09-15 part 3 (a bow that could not be mended, and a warehouse that mended everything)
 

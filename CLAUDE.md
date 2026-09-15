@@ -152,17 +152,37 @@ four boards behind the journal say «Рейтинги» to the player and `Leade
 identifier. They are ALL-TIME, which is the first period and not the only one: seasons are
 a decided direction, and a seasonal board will be a second READING of a metric with its own
 storage — **never a reset of `deepestKm` / `totalKmWalked`**, because zeroing those destroys
-the all-time board to build the seasonal one. **One ladder, one implementation:** the Arena's
+the all-time board to build the seasonal one. The single exception, 2026-09-15: `deepestKm`
+stopped counting steps and started counting RETURNS, and a column whose meaning changed is
+not the same ladder, so `ResetDeepestKm` zeroed it once. `totalKmWalked` was left standing —
+it still measures what it always measured, which is the test to apply before ever doing this
+again. **One ladder, one implementation:** the Arena's
 own «Найкращі бійці» renders the same `LeaderboardService.view(.honor,…)` as the journal's
 board, because two screens that rank the same rows with two code paths disagreed about ties
 for four months before anyone looked. Auto-memory `project-leaderboards-will-go-seasonal`.
 
-**A lifetime counter has exactly one writer.** `deepestKm` and `totalKmWalked` are written
-only by `User.recordWalk(toKm:)`, called from `ExplorationService.rollStep` — the funnel all
-three kinds of step share — and from `handleHomeReached` for the last stride, which rolls no
-event. Put a new counter where the thing it counts already funnels; a counter each caller has
-to remember is a counter some caller forgets, which is exactly how the hunger tick went
-missing on six of ten exits.
+**A lifetime counter has exactly one writer — and WHEN it writes is half the rule.**
+`totalKmWalked` is a tally: `User.recordStep()`, called from `ExplorationService.rollStep`,
+the funnel all three kinds of step share, plus `handleHomeReached` for the last stride, which
+rolls no event. `deepestKm` is a RETURN: `User.bankDepth(_:)`, called only where the player is
+standing at the manor again — `handleHomeReached` and the passive report's surviving branch —
+from `ExplorationState.maxDepthKm`, the run's high-water mark, because `stepsDeep` counts back
+down on the way home. Until 2026-09-15 depth was raised per step, so a governor who died at
+km 31 kept the record while the board promised a kilometre walked back from; the words were
+the half that was right. **Every change of depth goes through `ExplorationState.moveTo(km:)`**
+— step out, step back, passive walk, the flee that pushes you back a km — for the same reason
+the tally lives in `rollStep`. Put a new counter where the thing it counts already funnels;
+a counter each caller has to remember is a counter some caller forgets, which is exactly how
+the hunger tick went missing on six of ten exits. Auto-memory `project-depth-is-banked-on-arrival`.
+
+**The forest is left on foot, or not at all.** `/start` and a stray Cancel used to force-end
+an expedition from any depth with the bag intact, and `/start` inside a fight deleted the
+expedition row outright. Both re-render instead — the walk screen, or the fight — which
+serves the case the hatch was really there for (a lost or stale keyboard) without ending the
+walk. It has to be closed on BOTH screens: banking depth at the door makes any free exit the
+cheapest way to bank a record, and a hatch closed in one controller just moves one screen in.
+The one real escape left is a fight whose enemy id no longer resolves, which ends the
+expedition rather than trapping the player.
 
 **One number, one source. A screen never sums two losses under one label.** A step in
 the forest can cost HP twice — the event it rolled, and the hunger tick that is charged on

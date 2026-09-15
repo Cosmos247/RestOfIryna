@@ -198,7 +198,10 @@ public enum ExplorationService {
         // walk — step out, step back, passive expedition — come through this
         // function, and the alternative is three callers each remembering a
         // counter. Same reason `StepResult` carries the hunger tick.
-        user.recordWalk(toKm: kmDepth)
+        // The TALLY only. The depth record is banked at the manor door from
+        // `ExplorationState.maxDepthKm`, because a km walked is not a km
+        // returned from — see `User.bankDepth`.
+        user.recordStep()
 
         // Starvation HP tick happens every room when vigor is already at 0.
         let starvationLoss = VigorService.applyStarvationHPLoss(user)

@@ -21,6 +21,21 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-15 — the depth board banks on arrival, and the forest lost its back door**
+(uncommitted). 🌲 Глибина counted kilometres from expeditions nobody returned from, while
+its subtitle promised «і поверталися». Both halves were deliberate — `rollStep` banked the
+record the moment a step was paid for, and `User.swift` said "never decreases, not even on
+death" — so the user chose which to keep. `deepestKm` is now written only by
+`User.bankDepth(_:)` at the manor (`handleHomeReached`, and the passive report's surviving
+branch) from `ExplorationState.maxDepthKm`, a new column raised by `moveTo(km:)`, the one
+funnel every depth change goes through. `totalKmWalked` still rises per step via
+`recordStep()`. The `/start` escape hatch closed on BOTH screens — walk and fight — because
+banking at the door makes any free exit the cheapest way to bank a record; both re-render
+instead, which is what a lost keyboard actually needed. The board was zeroed once
+(`ResetDeepestKm`) on the user's call: the column changed what it measures, so old and new
+values cannot share a ladder — `total_km_walked` left standing, which is the test. Two
+migrations, ships with the binary. Auto-memory `project-depth-is-banked-on-arrival`.
+
 **2026-09-15 — a bow you took off could not be mended, and a warehouse mended everything**
 (committed, NOT deployed). A tester reported that the Master offers no repair for an item that is not
 worn. Two screenshots a minute apart differ by one button: `editToMasterRepair` listed armour

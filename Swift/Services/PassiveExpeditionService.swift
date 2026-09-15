@@ -552,7 +552,7 @@ public enum PassiveExpeditionService {
                 starvationHpLost: starvationHpLost
             )
             state.runningReportJSON = encodeRunningReport(snapshot)
-            state.stepsDeep = nextStep
+            state.moveTo(km: nextStep)
             try? await state.save(on: db)
             try? await user.saveAndCache(in: db)
 
@@ -600,6 +600,19 @@ public enum PassiveExpeditionService {
         bot: TGBot,
         lingo: Lingo
     ) async {
+        // A governor who came back banks the run's deepest km; one who did not
+        // banks nothing, which is the same rule the active walk applies at the
+        // manor door (`ExplorationController.handleHomeReached`).
+        //
+        // Persisted right here rather than left to the XP save below, which
+        // fires only when `xpAwarded > 0` — a quiet run that killed nothing
+        // would bank the record in memory and drop it. Same reasoning as the
+        // explicit save in `spend`.
+        if !died {
+            user.bankDepth(state.maxDepthKm)
+            try? await user.saveAndCache(in: db)
+        }
+
         // If the governor died, the bag stays with the corpse — the report
         // must not claim "brought back" anything. `applyDeath` already wiped
         // the non-equipped inventory rows in the DB; zero the report's loot

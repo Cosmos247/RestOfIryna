@@ -58,8 +58,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize(Self.bagKey,      locale: loc)] = onBag
             }
 
-            // A stray Cancel press (from another controller's keyboard) is a
-            // hard exit — force-end the expedition rather than taking a step.
+            // A stray Cancel press (from another controller's keyboard) is not
+            // a way out of the forest — it re-renders the expedition, like
+            // `/start`. See `onForceEnd`.
             let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
             for button in cancelLocales { router[button.text] = onForceEnd }
 
@@ -70,8 +71,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     }
 
     public func onStart(context: Context) async throws -> Bool {
-        // /start force-exits the expedition and returns to the manor. It does
-        // NOT walk back — it's an escape hatch for dev / stuck-player cases.
+        // /start does NOT leave the forest any more — it redraws the expedition
+        // screen and its keyboard. See `onForceEnd` for why the hatch closed.
         return try await onForceEnd(context: context)
     }
 
@@ -373,7 +374,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         }
         if try await guardInCombat(context: context, state: state) { return true }
 
-        state.stepsDeep += 1
+        state.moveTo(km: state.stepsDeep + 1)
         let priorVisits = state.visitCount(state.stepsDeep)
 
         let result = try await ExplorationService.rollStep(
@@ -420,7 +421,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        state.stepsDeep -= 1
+        state.moveTo(km: state.stepsDeep - 1)
         let priorVisits = state.visitCount(state.stepsDeep)
 
         let result = try await ExplorationService.rollStep(
@@ -594,11 +595,17 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - End / Death
 
-    /// Force-end the expedition without walking back (e.g. /start or a stray
-    /// Cancel button press from another controller's keyboard).
+    /// `/start`, and a stray Cancel press from another controller's keyboard.
+    ///
+    /// It used to force-end the expedition from any depth with the bag intact
+    /// — an escape hatch for dev and stuck-player cases. Since the depth board
+    /// is banked on ARRIVAL (2026-09-15) that hatch became the cheapest way to
+    /// bank a record: walk to km 30, type `/start`, be home. So it re-renders
+    /// the expedition instead, which also serves the case the hatch was really
+    /// there for — a lost or stale keyboard — without ending the walk. The
+    /// forest is left the way it is left: on foot, or not at all.
     private func onForceEnd(context: Context) async throws -> Bool {
-        try await ExplorationState.end(for: context.session, on: context.db)
-        try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+        try await showExploration(context: context)
         return true
     }
 
@@ -610,10 +617,12 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         // `rollStep` never sees it, but the player walked it and the tally
         // should say so. Guarded because this also catches km 0 — the player who
         // opened the expedition screen and turned round without leaving.
-        // `toKm: 0` can never move the depth record; only the tally rises.
         if state.stepsDeep >= 1 {
-            context.session.recordWalk(toKm: 0)
+            context.session.recordStep()
         }
+        // The door is the ONLY place an active run banks its depth. Everything
+        // above this line is a walk; only this line is a return.
+        context.session.bankDepth(state.maxDepthKm)
         try await state.delete(on: context.db)
         // `goToMainMenu` saves the session, which is what persists the km above.
         try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))

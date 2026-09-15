@@ -109,21 +109,38 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         await processRouterForEachName(router)
     }
 
-    /// /start force-ends the fight. During registration this drops the
-    /// player back to the rabid-dog prompt (the registration-bound retry path);
-    /// otherwise it exits to the main menu and clears the expedition row.
+    /// `/start` during a fight. In registration it still drops the player back
+    /// to the rabid-dog prompt (the registration-bound retry path), because the
+    /// tutorial fight is not an expedition and a stuck beginner has nowhere
+    /// else to go.
+    ///
+    /// In a real fight it re-renders the fight instead of ending it. It used to
+    /// delete the expedition row — leaving the forest from inside a fight, bag
+    /// intact — which since 2026-09-15 would also have been the way to bank a
+    /// depth record without walking home: the hatch `ExplorationController`
+    /// closed would simply have moved one screen in. A fight is left by
+    /// winning, fleeing or dying.
     public func onStart(context: Context) async throws -> Bool {
-        if let state = try await ExplorationState.current(for: context.session, on: context.db) {
-            try await state.delete(on: context.db)
-        }
         if context.session.registrationStep < User.registrationDoneStep {
+            if let state = try await ExplorationState.current(for: context.session, on: context.db) {
+                try await state.delete(on: context.db)
+            }
             try await Registration.handleCombatEnd(context: context, won: false)
             return true
         }
-        let mainCtrl = Controllers.mainController
-        context.session.routerName = mainCtrl.routerName
-        try await context.session.saveAndCache(in: context.db)
-        try await mainCtrl.showMainMenu(context: context, text: nil)
+        guard let state = try await ExplorationState.current(for: context.session, on: context.db),
+              let enemyId = state.combatEnemyId,
+              let enemy = EnemyCatalog.find(enemyId) else {
+            // No fight to redraw — an out-of-band end. Falling back to the main
+            // menu is the honest answer, and no expedition row is left behind.
+            try await ExplorationState.end(for: context.session, on: context.db)
+            let mainCtrl = Controllers.mainController
+            context.session.routerName = mainCtrl.routerName
+            try await context.session.saveAndCache(in: context.db)
+            try await mainCtrl.showMainMenu(context: context, text: nil)
+            return true
+        }
+        try await showCombat(context: context, state: state, enemy: enemy, intro: false)
         return true
     }
 
@@ -551,8 +568,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             }
 
             // Step out of the encounter: clear combat fields, walk back one km.
+            // Through `moveTo` like every other depth change — it only lowers
+            // here, so the run's high-water mark is untouched, but a rule with
+            // one exception is a rule nobody checks.
             state.endCombat()
-            state.stepsDeep = max(0, state.stepsDeep - 1)
+            state.moveTo(km: max(0, state.stepsDeep - 1))
             try await state.save(on: context.db)
             try await player.saveAndCache(in: context.db)
 
