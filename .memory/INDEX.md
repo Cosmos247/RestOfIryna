@@ -40,8 +40,11 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
-- **What each commit did and why: [Session History](sessions.md)** — the 09-07 pre-push
-  pass, the 09-08 Pi audit and invite-only access, and the 09-09 → 09-11 polish entries.
+- **What each commit did and why: [Session History](sessions.md)** — its **Commit index**
+  at the top is the single changelog (hash → what it did, 2026-09-09 onward), moved there
+  from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
+  entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
+  and the 09-09 → 09-15 polish entries.
 - **What each phase decided: [Rebalance](rebalance.md).**
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory

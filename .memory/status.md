@@ -408,7 +408,7 @@ were superseded by Phases 4–6.
 - [ ] Crafting system (recipes, room tiers)
 - [ ] NPC and player market
 - [ ] Pet taming and management
-- [ ] Territorial warfare
+- [-] Territorial warfare — **closed 2026-09-15**; it stood on the 30×30 grid removed in May (auto-memory `feedback-territorial-warfare-closed`)
 - [ ] Dungeon system (instancing, party invites)
 - [ ] Tutorial/onboarding quest
 

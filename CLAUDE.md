@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Rest Of Iryna (ROI)** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a wilderness plagued by rabies, build up an estate of production plots, battle beasts, and wage territorial wars. (The estate is an abstract slot-indexed plot list — the 30×30 spatial grid was removed from the roadmap on 2026-05-18 and must not be proposed again.)
+**Rest Of Iryna (ROI)** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a wilderness plagued by rabies, build up an estate of production plots, battle beasts, band together in guilds and duel in the capital's arena. (The estate is an abstract slot-indexed plot list — the 30×30 spatial grid was removed from the roadmap on 2026-05-18 and must not be proposed again, and **territorial warfare went with it on 2026-09-15**: it stood entirely on map tiles. `GDD.md` §11 is SUPERSEDED.)
 
 - **Language:** Swift 6.2 (strict concurrency, `ExistentialAny`)
 - **Platform:** developed on macOS 14+, **deployed on Linux/aarch64** (a Raspberry Pi 5 under pm2). Telegram Bot, long polling
@@ -483,4 +483,7 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Follow existing file header format (Created by / Maintained by)
 - New models need corresponding migrations
 - Keep Telegram callback_data under 64 bytes
+- Hand-edit `content/data/*.json` in the Swift `JSONEncoder` style already there
+  (`"key" : value`, keys sorted, 2-space indent) — a python-style re-emit reformats
+  every line and buries the real change
 - Never interpolate an Optional directly into a player-facing string (`"\(item.icon)"` prints `Optional("🪖")`) — unwrap it (`item.icon.map { "\($0) " } ?? ""`). A clean build won't catch this; verify new strings actually render. (Same vigilance as the Lingo emoji-before-`%{}` rule in `.memory/localization.md`.)

@@ -1,5 +1,185 @@
 # Session History
 
+## Commit index — live-play polish and after (2026-09-09 → 09-15)
+
+Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
+file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
+`3a6d5e3`, `75a89cc`, `bfc6e00`) existed nowhere else in either bank. The narrative for each
+is the dated session entry below; the rules they produced are in `CLAUDE.md`.
+
+Every defect in this range came from someone PLAYING; none from a test. The pattern worth
+carrying: each was a place where the code was right and could not say so, or where a number
+was shown in a unit it was not measured in.
+
+**Committed and NOT deployed as of 2026-09-15** — the Pi still runs `aa18f57`. The next
+deploy carries a content-schema bump (v11 → v12) and a migration, so binary and
+`content/data` must travel together:
+
+- `b32ac32` (09-15) **a ceiling on the escape, after seven taps killed a player** —
+  `combat.json` → `flee.maxFailures = 4`; the attempt after four failures is granted without
+  a roll, to every class at every level against every enemy. The per-class chances (warrior
+  40 / archer 70 / mage 90) were not touched. Counter is per FIGHT
+  (`ExplorationState.combatFleeFails`). **Content schema v11 → v12**, migration
+  `AddCombatFleeFails`. Nothing about it is visible to the player.
+- `7469715` (09-15) **coins under a root, and a plural rule that survives eleven** — a fifth
+  step event: 2 / 5 / 10 / 20 silver at a frequency of 2 in 100 taken from `loot`, weights
+  `10 : 4 : 2 : 1` which is `1/amount` scaled, so every denomination contributes the same
+  expected silver. Not monster silver — it is a find on a STEP, with no relationship to what
+  was killed. `UkrainianPlural.form(for:)` landed in `ROIContent` with the 11–14 band.
+- `6e3c18e` (09-14) **halve mob XP, on what the database said rather than what the model
+  did** — `mobXP.coefficient` 26.0 → 13.0 AND every `xpReward` rebaked with it, because the
+  game reads `xpReward` from `enemies.json` and never reads the coefficient. Pace to level 40
+  went 83 / 79 days → 173 / 167. Quests were untouched and the digest proved it.
+- `a0f90a8` (09-14) **two creatures at km 1, and a roster where depth means danger again** —
+  🐍 `enemy.wild_viper` and 🦅 `enemy.wild_eagle` added at L1 with empty loot tables, the boar
+  moved to L2, the moose re-statted, then the other five re-solved to 65–78% of their
+  archetype contract. Tier 1 runs on its own stat recipe (HP 100% of contract, ATK 65%).
+- `c658e6c` (09-12) **one honor ladder, and docs that match the deployment**.
+
+**Deployed** — the Pi restarted 2026-09-12 19:43 Kyiv on `aa18f57`:
+
+- `aa18f57` **four boards, and the first counters the game ever kept** (09-12) — the
+  leaderboards, plus `deepest_km` / `total_km_walked`, the first cumulative counters this
+  game has ever stored. The pre-commit audit found the Arena had been rendering the same
+  honor ladder since Phase 8.3 with a different idea of a tie; both read one service now.
+- `b402b81` **a root that took 11 and said 22** (09-12) — `.trip` reported
+  `trip + starvation` under the root's own label. Of `rollStep`'s ten exits reachable while
+  starving, two carried the tick, one fused it, one blamed a beast, six dropped it silently.
+  `StepResult` carries it now, and every source prints its own line.
+- `fea2343` **one name per stat, one unit per number** — `Countdown` printed one unit for
+  minutes, `accuracy` had two Ukrainian names, HP rendered on one gear screen of five, and
+  crit was labelled `%` though it is a rating.
+- `9a774ae` **a turned leg starts in the middle of the road** — `turnBack` measured from
+  `createdAt`, which locates only a leg that began at an endpoint.
+- `4f0b54d` **the forest stopped being empty on the way home** — the decay table decayed the
+  wrong bucket; tier 1 is `8/35/52/5` now, and passive took its own `passive.weights` row
+  (**schema v10 → v11**).
+- `1e99198` **a full warehouse said the bag was empty** — `depositAll` returned a bare count,
+  and a zero meant two opposite things.
+- `4766947` **the road can be turned around** — `↩️ Розвернутись` takes the Explore slot
+  while a trip is in flight.
+- `3a6d5e3` **resting is a place, not a pause between fights** — `canRest` names all three
+  suspensions.
+- `75a89cc` **the router raced, and the edits were aimed at the wrong field** — routing moved
+  inside `RouterStore`'s chain; `editScreen` gave all 20 edit call sites one photo-aware path.
+- `bfc6e00` **five screens say what they were hiding** — bag occupancy, what a drawn card
+  does, an item card before the purchase question.
+- `509f2db` **one clock, three watchmen, two ceilings that were not real** — `Countdown`,
+  `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
+- `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
+  in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-15 part 2 (the primer stopped being a changelog, again)
+
+No game code changed. A documentation audit, asked for as "check whether the md files are
+getting too large" — the same question as 2026-09-12, and the answer was that the fix from
+that day had not held.
+
+### The measurement
+
+`CLAUDE.md` 31,164 B · `Prompt.md` 40,504 B · `MEMORY.md` 8,466 B — **~19,400 tokens of
+preamble**, against the 20,300 that triggered the previous audit and the ~13,000 it achieved.
+The regrowth was not evenly spread:
+
+| file | at `1c04d6b` (09-12) | now (09-15) | |
+|---|---|---|---|
+| `CLAUDE.md` | 27,537 B | 31,164 B | +13%, and all of it genuine new rules |
+| `Prompt.md` | 18,689 B | 40,504 B | **+117% in three days** |
+
+**87% of the regrowth was `Prompt.md` alone**, and it had returned to the exact failure mode
+[[feedback-docs-keep-the-rule]] names: five `### Where we stopped` sections, one per commit,
+each a full narrative. All five already existed — fuller — in this file and in the
+auto-memory bank. Third copy. Five narratives plus the eleven-commits list were **65% of the
+primer**.
+
+`Prompt.md` had also crossed a real tool limit: `cat -n Prompt.md` exceeded the Bash output
+cap at 43.9 KB and spilled to a temp file, so reading it cost three passes.
+
+### The one real loss the audit caught
+
+Before cutting, every backticked identifier and multi-digit figure in the candidate blocks
+was extracted and grepped against the surviving corpus (1,160 `.md` files, both banks).
+106 identifiers + 111 figures → 8 misses, of which **6 were real**: commit hashes
+`9a774ae`, `1e99198`, `4766947`, `3a6d5e3`, `75a89cc`, `bfc6e00` existed **nowhere but
+`Prompt.md`**. Exactly the class the 09-12 pass caught once already (that time it was the
+09-07 section holding the only hash→description mapping).
+
+**A second gap in the checker itself:** the identifier regex reads `` `inline` `` spans and
+missed FENCED CODE BLOCKS entirely — which is where every commit's `validate` / `simulate` /
+`swift test` / digest verification block lived. A separate fenced-block pass was written and
+run; all 14 content and digest hashes proved to survive in `sessions.md` / `status.md` /
+`TODO.md`, and the coin locale string in `Localizations/uk.json`. Two misses were real
+formatting variants only. **The lesson generalises: a survival checker that reads one markup
+form silently passes the other** — [[feedback-verify-migration-not-just-roundtrip]].
+
+Three near-misses proved to be false positives on exact-string matching, not facts:
+`5 → 17 → 38 → 110` (sessions.md carries `10→5, 34→17, 76→38, 223→110`), the router chain
+(CLAUDE.md has the ASCII variant), and three library version pins written `2.22+` here but
+`2.22.0+` in `tech-stack.md` — which is why the `Stack` section was left alone.
+
+### What was done
+
+- **Commit index** added at the top of this file: 17 commits, 2026-09-09 → 09-15, hash → what
+  it did, split by deployed / not deployed. It is now the only changelog.
+- `Prompt.md` **40,504 → 16,893 B** (635 → 280 lines). Kept: the state table, the walk list,
+  the digest baseline, standing deferrals, the simulator reading, commands, key files. Cut to
+  pointers: the five narratives, the eleven-commits list, the rebalance recap, the local-run
+  recipe, "what works now".
+- `CLAUDE.md` gained the `JSONEncoder` hand-edit rule, which had been living only in
+  `Prompt.md`'s Rules tail — a guard is invisible in a file nothing auto-loads.
+- Final audit: **200 identifiers, 144 figures, 14 hashes — zero unexplained losses.**
+
+Preamble **~19,400 → ~13,800 tokens**.
+
+### The backlog pass, which the same audit provoked
+
+Asked separately for the long-deferred items, dated by their introducing commit. Six were
+closed on the user's call, written as `[-]` entries with the reason rather than deleted
+([[feedback-docs-keep-the-rule]]):
+
+- **Territorial warfare (7.2, five bullets) + non-aggression pacts** — deferred 2026-04-17,
+  and dead since 2026-05-18 without anyone noticing: all five stood on map TILES and
+  ADJACENCY, and `GDD.md` §11 opens with *"the mechanic that makes the shared grid matter."*
+  The grid was removed in May. The plan outlived its own substrate by four months because
+  the two lived in different documents. `CLAUDE.md` and `README.md` had gone on promising
+  "wage territorial wars" in their opening pitch. New auto-memory
+  [[feedback-territorial-warfare-closed]].
+- **The 2026-05-11 clean-sheet placeholder survives and was NOT closed** — "a different
+  estate-attack PvP mechanic, design TBD, Phase 7+". What died is the adjacency model, not
+  the idea of attacking an estate. Caught by reading `game-core.md`, which said *design
+  pivoted*, not *abandoned*; the first draft of the closure would have buried it.
+- **Phase 9.1's five tuning bullets** — the section was already marked "superseded by the
+  Full Rebalance" while its items still read `[ ]`. `content/tuning.md` is obsolete: tuning
+  is six JSON tables, not a doc.
+- **Manor 7×7 interior rooms** and **L21 max-level perk** — the first is the grid's
+  substrate, the second names a cap that has been 40 since the rebalance.
+- **Production deployment setup** — done since 2026-09-09; the Pi runs it.
+
+### Verification, and what the verification itself caught
+
+No code changed, so nothing to build. The checks that mattered were structural:
+
+- **Nothing lost:** 200 identifiers, 144 figures, 14 content/digest hashes from the old
+  `Prompt.md`, each grepped against the whole surviving corpus — **zero unexplained
+  losses**. Three residual misses proved to be exact-string artefacts (a ladder written
+  `5 → 17 → 38 → 110` against `10→5, 34→17` elsewhere; the router chain in its ASCII
+  variant; version pins written `2.22+` here and `2.22.0+` in `tech-stack.md` — which is
+  why the `Stack` section was left alone).
+- **Every memory pointer resolves.** This caught **two pointers I broke myself**:
+  "tidying" the correct `linux-build-gap` and `roi-local-run-setup` into
+  `project-linux-build-gap` / `project-roi-local-run-setup`. Six records carry no type
+  prefix although their FILE does. The identical mistake is recorded at 2026-09-11 against
+  `first-playtest-happened` — **third occurrence of one trap**, now written up in
+  [[feedback-docs-keep-the-rule]] with the three-line check that finds it.
+- The same sweep found a **pre-existing** dangling `[[feedback-never-start-the-bot]]` inside
+  `project-flee-has-a-ceiling`; fixed. All 48 memories, all `[[links]]`, all index entries
+  now resolve both ways.
+- Fences balanced and no ragged tables across all eight changed files.
+- **A half-marked section was worse than either choice.** `GDD.md` §"Estate Placement in the
+  Global Grid" had been struck through one bullet at a time; the whole subsection stands on
+  the grid abandoned 2026-05-11, so it now carries one banner and its original prose
+  underneath, like §11.
+
 ## Session — 2026-09-15 (the escape has a ceiling)
 
 A player report, arriving as a question rather than a bug: someone pressed Flee seven times,

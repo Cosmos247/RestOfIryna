@@ -25,7 +25,7 @@ the game does: combat, progression, the economy and all item stats were rebuilt 
 8. [Resources, Economy & Crafting](#8-resources-economy--crafting)
 9. [The Capital](#9-the-capital)
 10. [Pets & Taming](#10-pets--taming)
-11. [Territorial Warfare](#11-territorial-warfare)
+11. [Territorial Warfare](#11-territorial-warfare) — **SUPERSEDED 2026-09-15**
 12. [Progression](#12-progression)
 13. [Social Systems](#13-social-systems)
 14. [Monetization](#14-monetization)
@@ -70,7 +70,7 @@ At the session-to-session level:
 6. **Upgrade** — expand manor, improve plots, unlock crafting tiers.
 7. **Trade** — buy/sell at the capital or peer-to-peer.
 8. **Raid** — guild dungeons, PvP arena, neighbor skirmishes.
-9. **Expand** — win territorial wars, claim more tiles.
+9. **Expand** — ~~win territorial wars, claim more tiles~~ **(SUPERSEDED 2026-09-15 — see §11)**.
 
 ---
 
@@ -367,7 +367,13 @@ Plots are bought/unlocked with resources and assigned a purpose:
 
 Each plot has its own tier and produces on a **real-time timer** (hourly → daily cycles `⚙️ TBD`). Plots can be upgraded individually.
 
-### Estate Placement in the Global Grid
+### Estate Placement in the Global Grid — **SUPERSEDED (grid abandoned 2026-05-11)**
+
+> **This subsection is no longer the design.** The shared 30×30 world grid was abandoned on
+> 2026-05-11 and removed from the roadmap on 2026-05-18 (`TODO.md` 5.4). An estate is an
+> abstract slot-indexed plot list with **no location at all**, so there is no frontier, no
+> placement, no adjacency and no relocation question. Kept as design provenance; §11, which
+> depended on it, was closed on 2026-09-15.
 
 Estates are placed into a **single shared world grid** of estates. Placement rules for v1:
 
@@ -485,7 +491,13 @@ Only one pet can be "active buff" at a time `⚙️ TBD`. Multiple can be housed
 
 ---
 
-## 11. Territorial Warfare
+## 11. Territorial Warfare — **SUPERSEDED (2026-09-15)**
+
+> **This section is no longer the design.** It stands entirely on the shared 30×30 spatial
+> grid, which was removed from the roadmap on 2026-05-18; the estate is an abstract
+> slot-indexed plot list with no location, so no two estates can be adjacent. The whole of
+> §11 was closed on 2026-09-15 and is kept here as design provenance only. Do not propose
+> reviving it without first reviving the grid — itself a closed direction.
 
 The mechanic that makes the shared grid matter.
 

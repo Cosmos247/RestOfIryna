@@ -250,7 +250,7 @@ All 9 class techniques across all 3 classes are wired up. Submenu UX, per-fight 
 
 ### 5.1 Plot system *(landed 2026-04-30)*
 
-Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; that's deferred to Phase 7 territorial PvP design). Plus a Training Ground non-producing plot that opens a sparring fight with a dummy.
+Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid — closed 2026-05-18, and the adjacency-based territorial PvP that depended on it closed 2026-09-15). Plus a Training Ground non-producing plot that opens a sparring fight with a dummy.
 
 - [x] `Plot` Fluent model + `CreatePlots` migration (user_id FK, slot_index, plot_type, tier, last_harvested_at, notified_full)
 - [x] `PlotCatalog` code-based config (5 types: Farm 🌾 / Lumberyard 🪚 / Mine ⛏ / Coop 🐔 / Training Ground 🥋); `PlotTuning` with optional `bonusOutput` for Mine's iron-alongside-pebble drop
@@ -262,7 +262,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid yet; 
 - [x] Iron resource overhaul: `mat.iron` (Iron Lump 🔩, raw — foraging + Mine bonus) + `mat.iron_ingot` (Iron Ingot 🔳, placeholder for Phase 5.x Workshop crafting); legacy `mat.old_iron` retired with `RemoveOldIron` data migration
 - [x] Foraging pool → weighted (`pickWeighted` helper); iron weight 2 vs 10 staples = ~5% medium-zone drop
 - [-] 30×30 spatial estate grid — **removed from the roadmap (2026-05-18).** User explicitly closed this design direction; the abstract slot-index Plot model is the final design, NOT a placeholder. Do not propose this as a future feature. See line further down ("do not resurrect this approach") for the long-form rationale.
-- [-] Manor 7×7 interior rooms — *deferred; current model uses abstract House nav*
+- [-] Manor 7×7 interior rooms — **closed 2026-09-15**, same substrate as the 30×30 grid above; abstract House nav is the final model
 - [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 
 ### 5.2 Workshop crafting *(landed — Forge + Tannery + 5.2.1 Kitchen + 5.2.2 Weapon upgrade; bag upgrade lives in 5.3d)*
@@ -341,7 +341,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 **Phase 5.3 series complete.** All sub-phases (a/b/c/d/e) landed. Next: Phase 6.
 
 #### 5.3 — Future / deferred
-- [ ] L21 max-level perk (TBD — large stat boost, cosmetic, or unique skin)
+- [-] L21 max-level perk — **closed 2026-09-15**: `maxLevel` is 40, not 21, and "nothing new unlocks between 21 and 40" is a deliberate standing deferral of the rebalance
 - [ ] Granular per-stat curve tuning (ATK/DEF growth rates may need rebalance after playtesting)
 
 ### 5.4 Estate Placement *(abandoned 2026-05-11)*
@@ -420,15 +420,20 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] **Guild vault (shared storage)** *(landed 2026-06-16)* — item vault `🏦` (stackables only, deposit any member / withdraw leader+officers, cap 3000) **and** silver treasury `🪙` (deposit any member / withdraw leader+officers, `Guild.treasury`).
 - [ ] Guild chat (bot-proxied broadcast) — deferred (rate-limit-aware fan-out)
 - [ ] Guild banner on estate (cosmetic) — deferred
-- [ ] Implement non-aggression pacts — deferred (depends on territorial PvP, 7.2)
+- [-] Non-aggression pacts — **closed 2026-09-15** with its only dependency: territorial PvP (7.2) is off the roadmap
 - [ ] Leadership transfer (currently the leader must disband; no hand-off)
 
-### 7.2 Territorial Warfare
-- [ ] Implement territorial challenge initiation (adjacent only)
-- [ ] Implement win/loss counter per attacker-defender pair
-- [ ] Implement tile loss on 10 consecutive losses
-- [ ] Implement cooldown between challenges
-- [ ] Implement counter reset on defender win
+### 7.2 Territorial Warfare — **removed from the roadmap (2026-09-15)**
+- [-] Territorial challenge / win-loss counters / tile loss / cooldown / counter reset —
+**closed as a design direction.** All five stood on map TILES, and the estate has had no
+location since the 30×30 spatial grid was removed on 2026-05-18 (see 5.4 and 5.1 above):
+an abstract slot-index plot list cannot be adjacent to anything, so there is nothing to
+challenge for. Reviving this means reviving the grid first, which is itself a closed
+direction. Original five bullets kept in git history; `GDD.md` §11 is marked SUPERSEDED.
+- [ ] **Estate-attack PvP, clean sheet** — the 2026-05-11 placeholder (see 5.4) is NOT closed
+by the above: what died is the adjacency model, not the idea of attacking an estate. Design
+TBD, Phase 7+, and it must stand on something the game actually has — honor, the arena, a
+guild — never on a map.
 
 ### 7.3 Player Interaction
 - [ ] Implement estate visiting (/visit @username)
@@ -472,11 +477,11 @@ The original five bullets turned out to be under-scoped: an audit (2026-08-29) f
 math itself is broken, not merely mistuned. Kept here for provenance; the work now lives in
 the phased plan.
 
-- [ ] Create `content/tuning.md` — XP curves, vigor scaling, stat growth
-- [ ] Balance damage formula through playtesting
-- [ ] Tune exploration event weights per depth
-- [ ] Tune vigor drain vs food availability
-- [ ] Balance economy (silver sinks vs sources)
+- [-] Create `content/tuning.md` — **obsolete**: tuning is data, not a doc. Six tables in `content/data/tuning/`
+- [-] Balance damage formula through playtesting — done by the rebalance (`CombatMath`, `roi-content simulate`)
+- [-] Tune exploration event weights per depth — done (three-tier visit decay + `passive.weights`)
+- [-] Tune vigor drain vs food availability — done (Phase 8E: no regen; `FoodBudget` models estate income)
+- [-] Balance economy (silver sinks vs sources) — measured in `spec-economy.md`; the open half is sinks, tracked there
 
 ---
 
@@ -1473,7 +1478,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 ### 10.2 Launch Preparation
 - [x] ~~Remove hardcoded allowedUsers for public access~~ — 2026-09-08: moved to the `allowed_users` table with `/link` invites. Still a CLOSED list; opening it to the public is a separate decision (drop the gate in `TGDispatcher`)
 - [ ] Webhook mode for production (replace long polling)
-- [ ] Production deployment setup
+- [x] Production deployment setup — the Pi under pm2 since 2026-09-09; recipe in auto-memory `linux-build-gap`
 - [ ] Admin tools (ban, announce, debug commands)
 - [ ] Monitoring and alerting
 
@@ -1490,7 +1495,13 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-15 — the escape ceiling (4 failed flees max per fight, the 5th is
+*Last updated: 2026-09-15 part 2 — a documentation and backlog pass, no game code. `Prompt.md`
+cut 40.5 KB → 16.9 KB (it had become a changelog again, 65% of it a third copy of
+`sessions.md`); a Commit index moved to the top of `sessions.md` because six hashes lived
+nowhere else. Six long-deferred items closed: territorial warfare 7.2 and its pacts (they
+stood on the map grid removed in May — the clean-sheet estate-attack placeholder from
+2026-05-11 survives), Phase 9.1's five tuning bullets, Manor 7×7, the L21 perk, and
+production deployment which is long done. Before that, on 2026-09-15 — the escape ceiling (4 failed flees max per fight, the 5th is
 free) on a player report of seven failures and a death; before it the same day, coins on the
 ground, a fifth step event. Before those, on 09-14: bestiary tier 1, the whole roster, then mob XP halved on what
 the live database showed (an archer at level 24 in six days, earning 386,590 XP a day with

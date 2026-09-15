@@ -4,7 +4,7 @@
 [![Swift](https://img.shields.io/badge/Swift-6.2-orange)](https://github.com/swiftlang/swift/releases/tag/swift-6.2-RELEASE)
 [![Hummingbird](https://img.shields.io/badge/Hummingbird-2.10-blue)](https://github.com/hummingbird-project/hummingbird)
 
-**ROI** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a kingdom plagued by an epidemic of rabies spreading through its wildlife, expanding their personal estates, battling mad beasts, and waging territorial wars against neighbors.
+**ROI** is a massively-multiplayer medieval text RPG for Telegram, built in Swift. Players explore a kingdom plagued by an epidemic of rabies spreading through its wildlife, expanding their personal estates, battling mad beasts, banding together in guilds and duelling in the capital's arena. (Territorial warfare was removed from the roadmap on 2026-09-15 along with the shared grid it stood on — `GDD.md` §11 is SUPERSEDED.)
 
 > 📖 **Full game design lives in [GDD.md](./GDD.md).** This README covers the project, the stack, and how to run it.
 
@@ -549,7 +549,7 @@ Bot-level settings in `configure.swift`:
 
 ## 🗺️ Roadmap
 
-ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 includes the full game vision: exploration, combat (PvE + PvP), estates, territorial wars, guilds, dungeons, taming, and the capital city with arena.
+ROI targets **1,000–3,000 concurrent players** in a shared world. Version 1 includes the full game vision: exploration, combat (PvE + PvP), estates, guilds, dungeons, taming, and the capital city with arena. (Territorial wars were part of that vision until 2026-09-15; see `GDD.md` §11.)
 
 **The pre-release rebalance is done as code, and the game is deployed.** The
 mathematics was rebuilt and all content plus all tuning moved into `content/data/`.
