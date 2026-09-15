@@ -380,10 +380,15 @@ uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-
 `-іть/-те` — NPC speech included. That settles past tense and adjectives on its own, so the
 only thing left that declines by gender is a **noun naming the player**.
 
-**Ukrainian agrees with the ITEM's name too** — «лук зламав**ся**», «чоботи зламали**сь**».
-Every item declares `item.<id>.gender` (`m` · `f` · `n` · `pl`) **in `uk.json` only**:
-gender belongs to the WORD, not the object, and English never asks. Route such a string
-through `ItemDisplay.localize(_:agreeingWith:lingo:locale:)`.
+**Ukrainian agrees with the NOUN being named** — «лук зламав**ся**», «чоботи зламали**сь**»,
+«Шахта заповнен**а**» but «Курник заповнен**ий**». Items declare `item.<id>.gender` and plots
+`plot.type.<type>.gender` (`m` · `f` · `n` · `pl`), **in `uk.json` only**: gender belongs to
+the WORD, not the object, and English never asks. The suffix rule itself is
+`Lingo.localize(_:agreeingWith:locale:)` — ONE implementation, which
+`ItemDisplay.localize(_:agreeingWith:lingo:locale:)` wraps for items; a new kind of noun
+looks its gender up and calls the same function rather than copying three lines and
+forgetting `pl`. The validator warns on a missing declaration and errors on a bad one, for
+both kinds.
 
 **Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
 `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`, which

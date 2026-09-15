@@ -233,8 +233,11 @@ public enum ItemDisplay {
         guard locale == SupportedLocale.ua.rawValue else {
             return lingo.localize(key, locale: locale, interpolations: interpolations)
         }
-        let suffix = gender(for: item, lingo: lingo, locale: locale)
-        return lingo.localize("\(key).\(suffix)", locale: locale, interpolations: interpolations)
+        // The suffix rule itself lives on `Lingo` — plots agree with their own
+        // nouns too, and two copies is two places to forget `pl`. The guard
+        // stays here so the English path never pays for a gender lookup.
+        return lingo.localize(key, agreeingWith: gender(for: item, lingo: lingo, locale: locale),
+                              locale: locale, interpolations: interpolations)
     }
 
     /// Locale key for the row's lore blurb. Same tier rule, applied to the

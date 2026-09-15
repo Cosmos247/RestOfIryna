@@ -1063,8 +1063,26 @@ public enum ContentValidator {
         }
 
         for (index, row) in (bundle.plots?.types ?? []).enumerated() {
-            requireKey("plot.type.\(row.type).name", file: "plots.json", path: "types[\(index)]", id: row.type)
-            requireKey("plot.type.\(row.type).desc", file: "plots.json", path: "types[\(index)]", id: row.type)
+            let path = "types[\(index)]"
+            requireKey("plot.type.\(row.type).name", file: "plots.json", path: path, id: row.type)
+            requireKey("plot.type.\(row.type).desc", file: "plots.json", path: path, id: row.type)
+
+            // Ukrainian agrees with the PLOT's name the same way it agrees with
+            // an item's — «Шахта заповнена» but «Курник заповнений». The ready
+            // notification hardcoded the feminine ending until 2026-09-15,
+            // which was right for three of the four producing plots and wrong
+            // for the coop. uk only: English never asks.
+            let genderKey = "plot.type.\(row.type).gender"
+            let declaredGender = locales.value(genderKey, locale: "uk")
+            if declaredGender == nil {
+                issues.append(.init(severity: .warning, file: "uk.json", path: path, id: row.type,
+                                    rule: "locale.plot_gender_missing",
+                                    message: "missing key \"\(genderKey)\" — uk copy agreeing with this name will fall back to masculine"))
+            } else if ["m", "f", "n", "pl"].contains(declaredGender!) == false {
+                issues.append(.init(severity: .error, file: "uk.json", path: path, id: row.type,
+                                    rule: "locale.plot_gender_invalid",
+                                    message: "\"\(genderKey)\" is \"\(declaredGender!)\" — expected m, f, n or pl"))
+            }
         }
 
         for (index, card) in (bundle.fortune?.cards ?? []).enumerated() {

@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the depth board banks on arrival |
+| HEAD | **this commit** — the Mine runs on one clock, and every slot has a card |
 | pushed | through `6e3c18e`; **`7469715` and `b32ac32` are unpushed** |
 | running on the Pi | **`aa18f57`**, content hash `4eac64ff`, **schema v11**, last restarted 2026-09-12 19:43 |
-| committed but NOT deployed | **seven commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · `42e8818` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
+| committed but NOT deployed | **eight commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · `42e8818` · `a0d668c` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
 
 **The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
 a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
@@ -69,6 +69,26 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > — so this list is the highest-yield thing available, and it costs one session in Telegram.
 > The 09-14 / 09-15 items need the deploy first (schema bump + migration, see the table at
 > the top); the 09-12 and older ones are already live and can be walked today.
+>
+> **Added 2026-09-15 part 5 — a content change plus new locale keys, so a restart, not `/reload`:**
+> - **claim a slot and read the Mine's line.** It must now be two lines: «Річкова галька,
+>   8/год, єм 40» and «і 🔩 Шматок заліза, 2/год, єм 10» — «єм», not «cap», and «8/год»
+>   with no space.
+> - **let a Mine fill (5 h).** Both numbers must cap together now, `40/40 🪨 · 10/10 🔩`,
+>   and the notification must name both.
+> - **let a Курник fill.** It must read «Курник (слот N) заповнений» — masculine. Three of
+>   the four plots are feminine, which is why this read wrong for months without anyone
+>   noticing.
+> - **collect 10 iron and check the forge** — a full Mine should be exactly one Залізний
+>   злиток.
+> - **read the plot picker.** Every type must now carry its lore under the numbers, the
+>   Mine's must mention iron, and the Training Ground's blurb must have moved onto its own
+>   line like everyone else's.
+> - **tap a claimed slot, full and empty.** Both must open a card — «⛏ Ділянка 3 · Шахта»,
+>   the lore, then each stream against its ceiling. Empty shows «💤 Ще нічого не
+>   накопичилось» and only [🔙 До ділянок]; full also shows the two destinations, and
+>   collecting must still land you on the plot list with the usual ✅ banner. This replaces
+>   the old «Куди покласти?» screen, so it is the change most likely to be felt.
 >
 > **Added 2026-09-15 part 4 — two migrations, one of them zeroes a board:**
 > - **the depth board is empty after the deploy.** 🌲 Глибина must read «Поки порожньо» for

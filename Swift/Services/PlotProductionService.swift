@@ -88,7 +88,7 @@ public enum PlotProductionService {
         let plots = try await Plot.allUnfull(on: db)
         for plot in plots {
             guard PlotService.isFull(plot, at: now) else { continue }
-            try await sendReadyNotification(plot: plot, bot: bot, lingo: lingo)
+            try await sendReadyNotification(plot: plot, at: now, bot: bot, lingo: lingo)
             plot.notifiedFull = true
             try? await plot.save(on: db)
         }
@@ -97,19 +97,43 @@ public enum PlotProductionService {
     /// Push a single "your plot is full" message to the owner's chat. Best-
     /// effort; failures are swallowed so the ticker stays robust against a
     /// closed chat / blocked bot / etc.
-    private static func sendReadyNotification(plot: Plot, bot: TGBot, lingo: Lingo) async throws {
+    private static func sendReadyNotification(plot: Plot, at now: Date, bot: TGBot, lingo: Lingo) async throws {
         guard let type = PlotType(rawValue: plot.plotType),
               let tuning = PlotCatalog.tuning(for: type, tier: plot.tier) else { return }
         let user = plot.user  // eager-loaded by `allUnfull`
         let locale = user.locale
         let icon = PlotCatalog.icon(for: type)
         let plotName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
-        let itemName = ItemCatalog.find(tuning.producedItemId).map { lingo.localize($0.nameKey, locale: locale) } ?? tuning.producedItemId
-        let body = lingo.localize("plot.ready.notification", locale: locale, interpolations: [
+        // Both streams, in the order the harvest screen lists them, so the
+        // player reads the same pair twice. The Mine used to announce 40 pebble
+        // and say nothing of the iron waiting beside it; since 2026-09-15 the
+        // two caps are reached at the same minute, which is what makes one
+        // sentence honest. The bonus amount is the LIVE accumulator, not its
+        // cap: the notification fires on the primary being full, and a future
+        // plot whose bonus fills slower must not be over-reported.
+        //
+        // Icons are Optional — unwrap, never interpolate raw.
+        func line(_ itemId: String, _ amount: Int) -> String {
+            let item = ItemCatalog.find(itemId)
+            let itemIcon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            return "<b>\(amount)</b> \(itemIcon)\(name)"
+        }
+        var yields = [line(tuning.producedItemId, tuning.capacity)]
+        if let bonus = tuning.bonusOutput {
+            let bonusAmount = PlotService.bonusAccumulated(for: plot, at: now)
+            if bonusAmount > 0 { yields.append(line(bonus.producedItemId, bonusAmount)) }
+        }
+        // The sentence agrees with the PLOT's noun — «Шахта заповнена» but
+        // «Курник заповнений». It read «заповнена» for every type until
+        // 2026-09-15, which was right for three of the four producing plots.
+        // A missing declaration echoes the key back and falls through to
+        // masculine, exactly as it does for items.
+        let plotGender = lingo.localize(PlotCatalog.genderKey(for: type), locale: locale)
+        let body = lingo.localize("plot.ready.notification", agreeingWith: plotGender, locale: locale, interpolations: [
             "plot":   plotName,
             "slot":   "\(plot.slotIndex + 1)",
-            "amount": "\(tuning.capacity)",
-            "item":   itemName
+            "yields": yields.joined(separator: ", ")
         ])
         let text = "\(icon) \(body)"
         let params = TGSendMessageParams(

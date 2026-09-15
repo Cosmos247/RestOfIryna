@@ -641,14 +641,107 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 // scale 1, 60s → /min at the dev bundle's 60.
                 let perHour = PlotCatalog.intervalSeconds >= 3600
                 let intervalLabel = lingo.localize(perHour ? "estate.plot.rate.per_hour" : "estate.plot.rate.per_minute", locale: locale)
-                lines.append("\(icon) <b>\(typeName)</b> — \(itemName), \(tuning.ratePerInterval) \(intervalLabel), cap \(tuning.capacity)")
+                // "cap" was an English literal in a Ukrainian sentence until
+                // 2026-09-15; the label is a locale key now («єм» / "cap"), and
+                // the rate reads as one token — «8/год», not «8 /год».
+                let capLabel = lingo.localize("estate.plot.capacity_label", locale: locale)
+                lines.append("\(icon) <b>\(typeName)</b> — \(itemName), \(tuning.ratePerInterval)\(intervalLabel), \(capLabel) \(tuning.capacity)")
+                // A second stream gets its own line, built from `bonusOutput`
+                // rather than written into the copy — the Mine's iron was
+                // invisible here until 2026-09-15, so a player chose a plot
+                // without knowing half of what it produces. Any future plot
+                // with a bonus gets the line for free, and it cannot drift
+                // from the JSON. Icons are Optional; unwrap, never interpolate.
+                if let bonus = tuning.bonusOutput {
+                    let bonusItem = ItemCatalog.find(bonus.producedItemId)
+                    let bonusIcon = bonusItem?.icon.map { "\($0) " } ?? ""
+                    let bonusName = bonusItem.map { lingo.localize($0.nameKey, locale: locale) } ?? bonus.producedItemId
+                    let also = lingo.localize("estate.plot.bonus_prefix", locale: locale)
+                    lines.append("     \(also) \(bonusIcon)\(bonusName), \(bonus.ratePerInterval)\(intervalLabel), \(capLabel) \(bonus.capacity)")
+                }
             } else {
-                // Non-producing plot (Training Ground) — show its lore blurb.
-                let desc = lingo.localize(PlotCatalog.descriptionKey(for: type), locale: locale)
-                lines.append("\(icon) <b>\(typeName)</b> — \(desc)")
+                // Non-producing plot (Training Ground) — name only; its blurb
+                // goes on the shared line below, like everyone else's.
+                lines.append("\(icon) <b>\(typeName)</b>")
             }
+            // The lore, for EVERY type. Until 2026-09-15 this branch ran only
+            // for plots that produce nothing, so four of the five blurbs were
+            // written, translated, required by the validator — and rendered
+            // nowhere. Indented under the numbers, like the bonus line.
+            lines.append("     \(lingo.localize(PlotCatalog.descriptionKey(for: type), locale: locale))")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// The card behind a claimed slot: what this plot IS, and what is standing
+    /// on it right now.
+    ///
+    /// Opened by a tap on the slot, ALWAYS — an empty plot used to answer with
+    /// a toast that vanished, so the one screen a player visits daily said
+    /// nothing about the plot it belonged to. The destination buttons sit on
+    /// this card rather than behind it, which keeps the harvest exactly as many
+    /// taps as it has always been: slot → where.
+    /// `now` is passed in rather than taken here: the caller decides whether
+    /// the destination buttons appear, and a second `Date()` could read one
+    /// unit more than the text does.
+    fileprivate func renderPlotCard(slot: Int, type: PlotType, tuning: PlotTuning, plot: Plot,
+                                    at now: Date, lingo: Lingo, locale: String) -> String {
+        let icon = PlotCatalog.icon(for: type)
+        let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+        let header = lingo.localize("estate.plot.card.header", locale: locale, interpolations: [
+            "slot": "\(slot + 1)", "type": typeName
+        ])
+        let perHour = PlotCatalog.intervalSeconds >= 3600
+        let intervalLabel = lingo.localize(perHour ? "estate.plot.rate.per_hour" : "estate.plot.rate.per_minute", locale: locale)
+
+        // One row per stream, standing amount against its own ceiling. Icons
+        // are Optional — unwrap, never interpolate raw.
+        func stream(_ itemId: String, amount: Int, cap: Int, rate: Int) -> String {
+            let item = ItemCatalog.find(itemId)
+            let itemIcon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            return "\(itemIcon)\(name) — <b>\(amount)/\(cap)</b> · \(rate)\(intervalLabel)"
+        }
+
+        let primaryAmount = PlotService.accumulated(for: plot, at: now)
+        var lines = [
+            "\(icon) \(header)",
+            "",
+            lingo.localize(PlotCatalog.descriptionKey(for: type), locale: locale),
+            "",
+            stream(tuning.producedItemId, amount: primaryAmount, cap: tuning.capacity, rate: tuning.ratePerInterval)
+        ]
+        var standing = primaryAmount
+        if let bonus = tuning.bonusOutput {
+            let bonusAmount = PlotService.bonusAccumulated(for: plot, at: now)
+            standing += bonusAmount
+            lines.append(stream(bonus.producedItemId, amount: bonusAmount, cap: bonus.capacity, rate: bonus.ratePerInterval))
+        }
+        if standing == 0 {
+            lines.append("")
+            // 💤 in Swift, not in the template — the house rule for a leading
+            // emoji, and the same one the toast this replaces followed.
+            lines.append("💤 " + lingo.localize("estate.plot.card.empty", locale: locale))
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Card keyboard. The two destinations only appear when there is something
+    /// to take; the way back is always there, and goes where the picker's own
+    /// Back goes.
+    fileprivate func plotCardKeyboard(slot: Int, hasYield: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        if hasYield {
+            rows.append([
+                TGInlineKeyboardButton(text: lingo.localize("estate.plot.harvest.button.to_bag", locale: locale),
+                                       callbackData: "estate:plot:hvbag:\(slot)"),
+                TGInlineKeyboardButton(text: lingo.localize("estate.plot.harvest.button.to_warehouse", locale: locale),
+                                       callbackData: "estate:plot:hvwh:\(slot)")
+            ])
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("estate.plot.card.back", locale: locale),
+                                            callbackData: "estate:plot")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     /// Picker keyboard — one button per plot type + Back to plot list. Phase
@@ -1579,43 +1672,30 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
-        guard let tuning = PlotCatalog.tuning(forRaw: plot.plotType, tier: plot.tier) else {
+        guard let type = PlotType(rawValue: plot.plotType),
+              let tuning = PlotCatalog.tuning(forRaw: plot.plotType, tier: plot.tier) else {
             let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-            return true
-        }
-
-        // Peek at the yield without taking it. Picker is suppressed when
-        // there's nothing on the plot — saves a redundant "Where?" tap.
-        let primaryAmount = PlotService.accumulated(for: plot)
-        let bonusAmount = PlotService.bonusAccumulated(for: plot)
-        if primaryAmount == 0 && bonusAmount == 0 {
-            let toast = "💤 " + context.lingo.localize("estate.plot.alert.harvest_empty", locale: locale, interpolations: ["slot": "\(slot + 1)"])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-        let primaryYield = PlotService.HarvestYield(itemId: tuning.producedItemId, amount: primaryAmount)
-        let bonusYield: PlotService.HarvestYield? = (tuning.bonusOutput != nil && bonusAmount > 0)
-            ? PlotService.HarvestYield(itemId: tuning.bonusOutput!.producedItemId, amount: bonusAmount)
-            : nil
-        let yieldsText = formatYields(primary: primaryYield, bonus: bonusYield, lingo: context.lingo, locale: locale)
-        // 🚜 prepended in Swift since Lingo's `%{var}` parser breaks on a
-        // leading supplementary-plane emoji in the template.
-        let body = "🚜 " + context.lingo.localize("estate.plot.harvest.where_prompt", locale: locale, interpolations: [
-            "slot": "\(slot + 1)",
-            "yields": yieldsText
-        ])
-        let bagLabel = context.lingo.localize("estate.plot.harvest.button.to_bag",       locale: locale)
-        let whLabel  = context.lingo.localize("estate.plot.harvest.button.to_warehouse", locale: locale)
-        let cancel   = context.lingo.localize("estate.plot.harvest.button.cancel",       locale: locale)
-        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: bagLabel, callbackData: "estate:plot:hvbag:\(slot)"),
-             TGInlineKeyboardButton(text: whLabel,  callbackData: "estate:plot:hvwh:\(slot)")],
-            [TGInlineKeyboardButton(text: cancel, callbackData: "estate:plot")]
-        ])
+        // The card opens whatever is standing on the plot — an empty one used
+        // to answer with a toast and no screen at all. The destinations ride on
+        // the card, so a harvest is still slot → where, and they are hidden
+        // when there is nothing to send anywhere.
+        let ctrl = Controllers.estateController
+        // One clock for the card and for the buttons under it — two `Date()`
+        // calls can land on either side of a tick, and then the text says 0
+        // while the keyboard offers to collect it.
+        let now = Date()
+        let standing = PlotService.accumulated(for: plot, at: now)
+            + PlotService.bonusAccumulated(for: plot, at: now)
+        let body = ctrl.renderPlotCard(slot: slot, type: type, tuning: tuning, plot: plot,
+                                       at: now, lingo: context.lingo, locale: locale)
+        let inline = ctrl.plotCardKeyboard(slot: slot, hasYield: standing > 0,
+                                           lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
         return true
     }
@@ -1623,7 +1703,7 @@ extension EstateController {
     /// `estate:plot:hvbag:<slot>` / `estate:plot:hvwh:<slot>` — actual
     /// harvest with chosen destination. Refreshes the plot list with a
     /// success banner; on bag-full surfaces a modal alert and leaves the
-    /// picker on screen so the player can switch to warehouse.
+    /// slot card on screen so the player can switch to warehouse.
     static func handlePlotHarvestTo(destination: PlotService.HarvestDestination, data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let prefix = destination == .bag ? "estate:plot:hvbag:" : "estate:plot:hvwh:"
         let slot = Int(String(data.dropFirst(prefix.count))) ?? -1
@@ -1642,7 +1722,7 @@ extension EstateController {
             return true
 
         case .warehouseFull(_, _, let free, let need):
-            // Mirrors the bag case: the picker stays up, so switching the
+            // Mirrors the bag case: the slot card stays up, so switching the
             // destination is one tap rather than a restart.
             let whToast = context.lingo.localize("estate.plot.alert.warehouse_full", locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
@@ -1651,8 +1731,8 @@ extension EstateController {
             return true
 
         case .bagFull(_, _, let free, let need):
-            // Picker stays on screen — player can switch to warehouse with one
-            // more tap instead of restarting from the plot list.
+            // The slot card stays on screen — the player can switch to the
+            // warehouse with one more tap instead of restarting from the list.
             let toast = context.lingo.localize("estate.plot.alert.bag_full", locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])

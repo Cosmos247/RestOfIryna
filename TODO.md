@@ -1219,6 +1219,55 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **The Mine runs on one clock, and says out loud that it holds iron**
+        *(2026-09-15, asked for after reading the plot screens)* — iron was 1/hr against
+        pebble's 8, capped at 20 against 40, so the two streams that share one
+        `lastHarvestedAt` filled in **5 h and 20 h**. The cap was therefore unreachable
+        without loss: iron accrues at a flat rate whatever the cadence, so harvesting on
+        the pebble clock yielded the same 20 iron per 20 h as idling for it — and four
+        times the pebble. Reaching the iron cap was never anything but a mistake. Now
+        **2/hr (8 ÷ 4) capped at 10**, so both fill at exactly **5 h**, iron output per
+        pebble-clock cycle doubles (5 → 10), and a full Mine is exactly one
+        `recipe.iron_ingot` (10 → 1). **The picker names the second stream** — a line built
+        from `bonusOutput`, so any future two-stream plot gets it free and it cannot drift
+        from the JSON; a player used to choose the Mine knowing half of what it makes.
+        **The ready notification lists both**, with the bonus read from the LIVE accumulator
+        rather than its cap, so a future slower bonus is not over-reported. Three copy
+        defects went with it: **`cap` was an English literal** inside a Ukrainian sentence
+        (now `estate.plot.capacity_label` — «єм» / "cap", and «8/год» instead of «8 /год»);
+        **«заповнена» was hardcoded feminine** though the same template serves Курник (now
+        `plot.type.<type>.gender` in uk only, with `.m`/`.f` variants); and **«40 Річкова
+        галька готові»** was a nominative where the count needed a case — rephrased so the
+        name is a list label, the shape `formatYields` already uses, which is the
+        "phrase around the noun" half of the rule rather than a declension table for the
+        whole catalogue. The suffix rule moved onto `Lingo.localize(_:agreeingWith:)` and
+        `ItemDisplay` now wraps it: plots were the second kind of noun to need it and will
+        not be the last. Validator gained `locale.plot_gender_missing` / `_invalid`,
+        mirroring the item rule, **negative-tested by hand** (key removed → warning; «ж» →
+        error, `--strict` exit 1) and locked in by two tests. `validate --strict` 0/0
+        (hash `15782bee` → `b1a1af00`), **248 tests** (246 + 2); digest `records
+        bef20549a700d5e0 → a5eca6451d8f6236`, `tuning` / `spawns` / `quests` byte-identical
+        — exactly the two plot numbers moved.
+        **Then the lore stopped being dead copy.** All five `plot.type.<t>.desc` blurbs are
+        written, translated and required by the validator, and exactly one was rendered:
+        the Training Ground's, because `descriptionKey` was read only in the branch for
+        plots that produce NOTHING. The picker now prints the blurb for every type (the
+        Training Ground's moved off its own line onto the shared one), and the Mine's gained
+        the iron it never mentioned — «Кар'єр на березі: галька для фундаменту і стін, і час
+        від часу кайло дзвенить об залізо», with no number in the prose, where drift lives.
+        **Every claimed slot got a card.** A tap used to open the "where?" prompt, or — on
+        an empty plot — a toast that vanished, so the screen a player visits daily never
+        said what the plot was. The card carries the name, the lore and every stream against
+        its own ceiling, and the two destinations ride ON it rather than behind it, so a
+        harvest is still slot → where. They are hidden when there is nothing to send
+        anywhere, and the way back reads «🔙 До ділянок». `estate.plot.harvest.where_prompt`
+        and `…button.cancel` lost their last reader and were deleted from both locales;
+        `alert.harvest_empty` stays, it still serves the race where a harvest finds the plot
+        already taken. One defect caught in review: the card's text and its keyboard each
+        called `Date()`, so a tick landing between them would print 0 under a button
+        offering to collect it — one `now` is passed to both now, and the sweeper hands its
+        own `now` to the notification for the same reason. **Not deployed** (a content
+        change AND new locale keys, so `/reload` alone will not do it).
   - [x] **The depth board banks on arrival, and the forest lost its back door**
         *(2026-09-15, reported from play)* — 🌲 Глибина counted kilometres from expeditions
         nobody came back from, while its own subtitle read «Найглибша миля, куди ви заходили —

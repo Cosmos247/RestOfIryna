@@ -15,7 +15,14 @@ was shown in a unit it was not measured in.
 deploy carries a content-schema bump (v11 → v12) and a migration, so binary and
 `content/data` must travel together:
 
-- **this commit** (09-15) **the depth board banks on arrival, and the forest lost its back
+- **this commit** (09-15) **the Mine runs on one clock, and says out loud that it holds
+  iron** — iron 1/hr cap 20 → **2/hr cap 10**, so both streams fill in 5 h and a full Mine is
+  exactly one ingot; the iron cap used to be reachable only by wasting pebble. The picker
+  prints the second stream from `bonusOutput` and the ready notification lists both. Copy:
+  `cap` → «єм», `plot.type.<type>.gender` + `.m`/`.f` (Курник read «заповнена»), and the
+  count rephrased into a list label. `Lingo.localize(_:agreeingWith:)` is now the one suffix
+  rule. Its hash goes here at the next docs pass.
+- `a0d668c` (09-15) **the depth board banks on arrival, and the forest lost its back
   door** — 🌲 Глибина counted kilometres from expeditions nobody came back from while its
   subtitle promised «і поверталися». `deepestKm` is banked by `User.bankDepth(_:)` at the manor
   only, from `ExplorationState.maxDepthKm`; every depth change goes through `moveTo(km:)`.
@@ -82,6 +89,92 @@ deploy carries a content-schema bump (v11 → v12) and a migration, so binary an
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-15 part 5 (the Mine had a second clock nobody could use)
+
+Asked to see how the Mine's description reads and how it accumulates. Showing it was the
+work: four surfaces describe that plot and three of them were wrong or silent.
+
+### What the numbers said
+
+Pebble 8/hr cap 40 → full in 5 h. Iron 1/hr cap 20 → full in **20 h**. Both read the same
+`lastHarvestedAt`, and harvest resets both.
+
+The consequence is not "iron is slow", it is that **the iron cap could not be reached
+without paying for it**:
+
+| cadence | per 20 h |
+|---|---|
+| every 5 h (4×) | **160** 🪨 + **20** 🔩 |
+| once at 20 h | 40 🪨 + **20** 🔩 |
+
+Iron accrues flat whatever the cadence, so idling for its cap bought nothing and cost three
+pebble harvests. A ceiling that is only ever reached by mistake is not a balance knob.
+
+**2/hr cap 10** puts both streams on the same 5-hour clock, doubles iron per pebble-clock
+cycle, and lands on `recipe.iron_ingot` exactly: 10 scraps → 1 ingot, so a full Mine is one
+ingot.
+
+### Three copy defects in one screen family
+
+- **`cap` was an English literal** in the Swift line that builds the picker row, so Ukrainian
+  read «8 /год, cap 40». Now `estate.plot.capacity_label`, plus the stray space.
+- **«заповнена» was hardcoded feminine** while the same template serves Курник. Fixed the way
+  items already were: `plot.type.<type>.gender` in uk only, `.m`/`.f` on the notification.
+  The suffix rule moved to `Lingo.localize(_:agreeingWith:)` and `ItemDisplay` wraps it —
+  plots were the second kind of noun to need it and will not be the last.
+- **«40 Річкова галька готові»** — a nominative where the count needs a case. Rephrased so
+  the name is a list label after a colon, which is what `formatYields` already prints on the
+  harvest screen. `CLAUDE.md` sanctions exactly this as the alternative to a declension
+  table, and a table for the whole item catalogue is what the other road meant.
+
+### The silence
+
+`plot.type.mine.desc` is written and translated in both locales and **rendered nowhere** —
+the only reader of `descriptionKey` is the branch for plots that do NOT produce. So the only
+place the Mine describes itself, the picker, named one of its two outputs. The user chose the
+numeric fix over reviving the lore: a second line built from `bonusOutput`, which any future
+two-stream plot gets for free and which cannot drift from the JSON. The ready notification
+lists both too, with the bonus read from the LIVE accumulator rather than its cap, so a
+future slower bonus is not over-reported.
+
+### Then the silence got a voice
+
+The user asked to see the Mine's description, then whether the other plots had lore, then
+whether ANY of it reached a player. The answer took three greps and was worth them: all five
+blurbs exist in both locales and the validator REQUIRES them, while `descriptionKey` was read
+in exactly one branch — the one for plots that produce nothing. Four of five were enforced
+dead copy.
+
+Two screens now carry it:
+
+- **The picker** prints the blurb for every type, so the Training Ground stopped being the
+  special case and its own blurb moved onto the shared line. The Mine's gained the iron it
+  never mentioned, with no number in the prose — prose is where drift lives
+  ([[feedback-printed-numbers-protect-tables-not-prose]]).
+- **Every claimed slot got a card.** A tap opened the "where?" prompt, or on an empty plot a
+  toast that vanished; the screen a player visits daily never said what the plot WAS. The
+  card carries name, lore and each stream against its own ceiling, and the two destinations
+  ride ON it rather than behind it — the user's own amendment, and the reason the harvest is
+  still slot → where rather than one tap deeper. `where_prompt` and `button.cancel` lost
+  their last reader and went; `alert.harvest_empty` stayed, because it still answers the race
+  where a harvest finds the plot already emptied.
+
+### Verification
+
+The new validator rule was **negative-tested by hand before being trusted** — mine's gender
+key removed → warning, coop's set to «ж» → error, `--strict` exit 1 — then locked in with two
+tests (246 → 248). `validate --strict` 0/0, hash `15782bee` → `b1a1af00`; digest `records`
+moved and `tuning` / `spawns` / `quests` came out byte-identical, which is the constraint
+proving only the two plot numbers changed.
+
+**The review pass found one real defect**: the card built its text and its keyboard from two
+separate `Date()` calls, so a tick landing between them would print `0/40` under a button
+offering to collect it. One `now` is threaded through both, and the plot sweeper hands its
+own `now` to the notification for the same reason. A dead-key sweep over all 48 plot locale
+keys came back clean.
+
+**Not deployed**, and not a `/reload`: new locale keys need a restart.
 
 ## Session — 2026-09-15 part 4 (the deepest mile, and who is allowed to claim it)
 

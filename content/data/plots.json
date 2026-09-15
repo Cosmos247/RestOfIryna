@@ -22,9 +22,9 @@
       "icon" : "⛏",
       "tuning" : {
         "bonusOutput" : {
-          "capacity" : 20,
+          "capacity" : 10,
           "producedItemId" : "mat.iron",
-          "ratePerInterval" : 1
+          "ratePerInterval" : 2
         },
         "capacity" : 40,
         "producedItemId" : "mat.river_pebble",

@@ -219,6 +219,47 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         XCTAssertTrue(rules(bundle(plots: allPlots())).isEmpty)
     }
 
+    /// Ukrainian agrees with the plot's own noun — «Шахта заповнена» but
+    /// «Курник заповнений» — so every plot name declares its gender, in uk
+    /// only. Missing, the ready notification falls back to masculine, which is
+    /// wrong for three of the four producing plots.
+    func testPlotWithoutADeclaredGenderWarns() {
+        let report = ContentValidator.validate(bundle(plots: allPlots()),
+                                               localizations: plotLocales(genders: ["farm": "f"]))
+        XCTAssertTrue(report.issues.contains {
+            $0.rule == "locale.plot_gender_missing" && $0.id == "mine"
+        })
+        XCTAssertFalse(report.issues.contains {
+            $0.rule == "locale.plot_gender_missing" && $0.id == "farm"
+        })
+    }
+
+    func testPlotGenderOutsideTheFourFormsIsAnError() {
+        let report = ContentValidator.validate(
+            bundle(plots: allPlots()),
+            localizations: plotLocales(genders: ["farm": "f", "forest": "f", "mine": "f",
+                                                 "coop": "ж", "training_ground": "m"]))
+        XCTAssertTrue(report.errors.contains {
+            $0.rule == "locale.plot_gender_invalid" && $0.id == "coop"
+        })
+    }
+
+    /// Name + desc in both locales (so the plain key check stays quiet), and
+    /// whichever genders the caller wants declared, uk only.
+    private func plotLocales(genders: [String: String]) -> LocaleIndex {
+        let types = ["farm", "forest", "mine", "coop", "training_ground"]
+        var en: [String: String] = [:]
+        var uk: [String: String] = [:]
+        for t in types {
+            en["plot.type.\(t).name"] = t
+            en["plot.type.\(t).desc"] = t
+            uk["plot.type.\(t).name"] = t
+            uk["plot.type.\(t).desc"] = t
+            if let g = genders[t] { uk["plot.type.\(t).gender"] = g }
+        }
+        return LocaleIndex(tables: ["en": en, "uk": uk])
+    }
+
     // MARK: - Fortune rules
 
     /// The wheel only fires when both sides are set, so setting one alone is an

@@ -115,4 +115,12 @@ public enum PlotCatalog {
     public static func descriptionKey(for type: PlotType) -> String {
         return "plot.type.\(type.rawValue).desc"
     }
+
+    /// Locale key for the grammatical gender of the plot's NAME — `m` · `f` ·
+    /// `n` · `pl`, in `uk.json` only. Same rule as items: gender belongs to the
+    /// WORD, not the thing («Шахта заповнена» but «Курник заповнений»), and
+    /// English never asks. Derived like `nameKey`, and checked by the validator.
+    public static func genderKey(for type: PlotType) -> String {
+        return "plot.type.\(type.rawValue).gender"
+    }
 }

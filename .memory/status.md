@@ -21,6 +21,24 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-15 — the Mine runs on one clock** (uncommitted). Iron was 1/hr cap 20 against
+pebble's 8/hr cap 40, so the two streams sharing one `lastHarvestedAt` filled in 5 h and
+20 h — and the iron cap was unreachable without wasting pebble, since iron accrues flat
+whatever the cadence. Now **2/hr cap 10**: both fill in 5 h, iron per cycle doubles, and a
+full Mine is exactly one iron ingot. The picker now prints the second stream from
+`bonusOutput` (it was invisible — players chose the Mine knowing half of what it makes) and
+the ready notification lists both. Copy: `cap` → `estate.plot.capacity_label` («єм» / "cap"),
+`plot.type.<type>.gender` in uk with `.m`/`.f` on the notification (Курник read «заповнена»),
+and the count rephrased into a list label instead of a bad nominative. The suffix rule is now
+`Lingo.localize(_:agreeingWith:)` with `ItemDisplay` wrapping it. Validator:
+`locale.plot_gender_missing` / `_invalid`, negative-tested. **And the lore stopped being dead
+copy**: all five `plot.type.<t>.desc` blurbs existed in both locales and the validator
+required them, but `descriptionKey` was read only for plots that produce nothing — the picker
+prints every blurb now, the Mine's mentions iron, and **every claimed slot opens a card**
+(name · lore · each stream against its ceiling) with the two destinations on the card itself,
+so a harvest is still slot → where. `estate.plot.harvest.where_prompt` / `…button.cancel`
+deleted as dead. 248 tests; digest `records` moved and nothing else.
+
 **2026-09-15 — the depth board banks on arrival, and the forest lost its back door**
 (uncommitted). 🌲 Глибина counted kilometres from expeditions nobody returned from, while
 its subtitle promised «і поверталися». Both halves were deliberate — `rollStep` banked the

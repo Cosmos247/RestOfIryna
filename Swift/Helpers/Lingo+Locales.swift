@@ -43,6 +43,25 @@ extension Lingo {
                              locale: locale, interpolations: interpolations)
     }
 
+    /// Localize a sentence that must AGREE with the grammatical gender of a
+    /// WORD rather than of the player — an item's noun, a plot's noun. `gender`
+    /// is `m` · `f` · `n` · `pl`; anything else (including a missing
+    /// declaration, which Lingo signals by echoing the key back) falls back to
+    /// `m`, so the failure is a wrong ending rather than a missing sentence.
+    ///
+    /// The core of `ItemDisplay.localize(_:agreeingWith:)`, which now delegates
+    /// here: items were the first nouns to need this and are not the last, and
+    /// a second copy of the suffix rule is a second place to forget `pl`.
+    /// English short-circuits to the plain key — no per-locale duplication.
+    public func localize(_ key: LocalizationKey, agreeingWith gender: String,
+                         locale: LocaleIdentifier, interpolations: [String: Any]? = nil) -> String {
+        guard locale == SupportedLocale.ua.rawValue else {
+            return self.localize(key, locale: locale, interpolations: interpolations)
+        }
+        let suffix = ["m", "f", "n", "pl"].contains(gender) ? gender : "m"
+        return self.localize("\(key).\(suffix)", locale: locale, interpolations: interpolations)
+    }
+
     /// Gender-aware localization. Ukrainian declines past-tense verbs,
     /// adjectives and the "намісник/намісниця" noun by gender, so every key
     /// routed through this helper MUST have `<key>.m` and `<key>.f` variants
