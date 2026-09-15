@@ -82,7 +82,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 246 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 248 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -166,6 +166,9 @@ RestOfIryna/
 │   │   ├── CreateUser.swift
 │   │   ├── AddWalkCounters.swift     # 2026-09-12 — `deepest_km` + `total_km_walked`, the first cumulative counters the game stores, plus four leaderboard indexes via raw SQL. Nothing to backfill: a depth record only ever lived in `exploration_state`, which is deleted when the expedition ends
 │   │   ├── AddCombatFleeFails.swift # 2026-09-15 — `combat_flee_fails` on `exploration_state`: failed escape attempts of the CURRENT fight, so the attempt after `flee.maxFailures` is granted without a roll
+│   │   ├── AddWarehouseGearState.swift # 2026-09-15 — `tier` / `durability` / `max_durability` / `enchant_level` on `warehouse`, the four columns `inventory` has carried since Phase 6.5. Without them a deposit→withdraw round-trip handed back a factory-fresh piece: a free repair that also undid the max shave, and a silently burned enchant
+│   │   ├── AddExplorationMaxDepth.swift # 2026-09-15 — `max_depth_km` on `exploration_state`, the CURRENT run's high-water mark. `steps_deep` counts back down on the way home, so the depth record is banked from this column at the manor door
+│   │   ├── ResetDeepestKm.swift    # 2026-09-15 — one-shot `UPDATE users SET deepest_km = 0`. Not a season: the column stopped measuring the deepest km REACHED and started measuring the deepest RETURNED FROM, so old and new values are different quantities. `total_km_walked` untouched
 │   │   ├── AddFortuneOneShot.swift   # 2026-09-09 — four `last_fortune_*` columns: what a draw's one-shot half actually handed over. The card id cannot answer it (the Wheel rolls 50/50, a silver loss is clamped to the purse)
 │   │   ├── AddNotificationFlags.swift # 2026-09-09 — `fortune_ready_notified` + `quest_rollover_stamp`: the once-only guards behind RestNotificationService
 │   │   ├── AddPassiveDailyBudget.swift # 2026-09-09 — `passive_minutes_today` + `passive_day_stamp`: the 3 h/day ceiling on passive expeditions, counter plus the game-day key it belongs to

@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-15 — the Mine runs on one clock** (uncommitted). Iron was 1/hr cap 20 against
+**2026-09-15 — the Mine runs on one clock** (`78393aa`, **deployed 2026-09-16 00:32**). Iron was 1/hr cap 20 against
 pebble's 8/hr cap 40, so the two streams sharing one `lastHarvestedAt` filled in 5 h and
 20 h — and the iron cap was unreachable without wasting pebble, since iron accrues flat
 whatever the cadence. Now **2/hr cap 10**: both fill in 5 h, iron per cycle doubles, and a
@@ -40,7 +40,8 @@ so a harvest is still slot → where. `estate.plot.harvest.where_prompt` / `…b
 deleted as dead. 248 tests; digest `records` moved and nothing else.
 
 **2026-09-15 — the depth board banks on arrival, and the forest lost its back door**
-(uncommitted). 🌲 Глибина counted kilometres from expeditions nobody returned from, while
+(`c9ec209`, **deployed 2026-09-16 00:32**). 🌲 Глибина counted kilometres from expeditions
+nobody returned from, while
 its subtitle promised «і поверталися». Both halves were deliberate — `rollStep` banked the
 record the moment a step was paid for, and `User.swift` said "never decreases, not even on
 death" — so the user chose which to keep. `deepestKm` is now written only by
@@ -55,7 +56,7 @@ values cannot share a ladder — `total_km_walked` left standing, which is the t
 migrations, ships with the binary. Auto-memory `project-depth-is-banked-on-arrival`.
 
 **2026-09-15 — a bow you took off could not be mended, and a warehouse mended everything**
-(committed, NOT deployed). A tester reported that the Master offers no repair for an item that is not
+(`42e8818`, **deployed 2026-09-16 00:32**). A tester reported that the Master offers no repair for an item that is not
 worn. Two screenshots a minute apart differ by one button: `editToMasterRepair` listed armour
 from every owned row but looked the WEAPON up by its slot, so an unequipped weapon dropped
 off the list with nothing said. `MasterService.repair` never had the restriction — only the
@@ -70,7 +71,7 @@ new columns via `AddWarehouseGearState` defaulting to what a withdraw was alread
 back. **A migration, so it ships with the binary, not through `/reload`.** Auto-memory
 `project-gear-state-travels-with-the-unit`.
 
-**2026-09-15 — the escape has a ceiling** (`b32ac32`, committed, NOT deployed). A player
+**2026-09-15 — the escape has a ceiling** (`b32ac32`, **deployed 2026-09-16 00:32**). A player
 pressed Flee seven times, never escaped and died. The roll is flat and per class (warrior 40
 / archer 70 / mage 90) with no level, enemy or depth input, so seven failures is 2.80% for a
 warrior — one fight in 36 — against 0.022% for an archer and 0.00001% for a mage. What made
@@ -84,7 +85,7 @@ tail is gone. Counter on `ExplorationState.combat_flee_fails`, roll in
 `CombatMath.fleeSucceeds`, **content schema v11 → v12** (`flee` became a section) and one
 migration, `AddCombatFleeFails`. 242 → 246 tests. Auto-memory `project-flee-has-a-ceiling`.
 
-**2026-09-15 — coins on the ground** (`7469715`, committed, NOT deployed). A fifth step
+**2026-09-15 — coins on the ground** (`7469715`, **deployed 2026-09-16 00:32**). A fifth step
 event paying 2 / 5 / 10 / 20 silver on the spot. NOT monster silver — a find on a STEP, with
 no tie to what was killed, so `feedback-no-monster-silver` still holds. Weights 10 : 4 : 2 : 1
 are `1/amount` scaled to integers, so every denomination contributes the same expected
@@ -307,12 +308,14 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline `bef20549a700d5e0` / `43b809a87450a3b8` /
-`c9bdb57d456adc26` / `30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee`
-became a section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in
-sync), 246 tests. Before 2026-09-14 `tuning` had
-moved three times and nothing else had moved at all — the watchman cadence and the passive
-daily budget on 09-09, the exploration re-weight on 09-10, each named before the edit.
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
+`records a5eca6451d8f6236` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
+`quests 30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee` became a
+section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync),
+**248 tests**. `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
+time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
+three times and nothing else had moved at all — the watchman cadence and the passive daily
+budget on 09-09, the exploration re-weight on 09-10, each named before the edit.
 
 **Balance is now measurable.** `swift run roi-content simulate` rolls the real
 `CombatMath` — the same code the bot calls — over levels × archetypes × classes ×

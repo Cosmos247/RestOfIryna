@@ -11,10 +11,16 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Committed and NOT deployed as of 2026-09-16** — the Pi runs `6e3c18e` (schema v11). The
-next deploy carries a content-schema bump (v11 → v12) and **four migrations**
-(`AddCombatFleeFails`, `AddWarehouseGearState`, `AddExplorationMaxDepth` and the one-shot
-`ResetDeepestKm`), so binary and `content/data` must travel together:
+**Nothing is committed and undeployed.** The Pi took the tip on 2026-09-16 00:32.
+
+**Deployed 2026-09-16 00:32 Kyiv** — the Pi took `201f093`, schema **v12**, content hash
+`b1a1af00`. Four migrations ran and were checked against the TABLES, not the log line:
+`combat_flee_fails` nullable on `exploration_state`, `max_depth_km` NOT NULL default 0 with
+zero NULLs, all four `warehouse` gear columns NOT NULL across 32 rows with zero NULLs, and
+`deepest_km` zero for all 8 users while `total_km_walked` survived (max 3149, sum 7344).
+`Code: 400` held at 913, the baseline, and no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared
+after the restart. Linux build 113 s; the pre-flight digest matched the Mac's byte for byte
+before the restart was ordered:
 
 - `78393aa` (09-15) **the Mine runs on one clock, and says out loud that it holds
   iron** — iron 1/hr cap 20 → **2/hr cap 10**, so both streams fill in 5 h and a full Mine is
@@ -49,7 +55,7 @@ next deploy carries a content-schema bump (v11 → v12) and **four migrations**
   expected silver. Not monster silver — it is a find on a STEP, with no relationship to what
   was killed. `UkrainianPlural.form(for:)` landed in `ROIContent` with the 11–14 band.
 
-**Deployed** — the Pi took `6e3c18e` and restarted **2026-09-14 22:14** Kyiv (schema v11,
+**Deployed earlier** — the Pi took `6e3c18e` and restarted **2026-09-14 22:14** Kyiv (schema v11,
 digest `records bef20549a700d5e0` · `tuning c2ed07851857ef34`). Read off the machine on
 2026-09-16, because this index had gone on calling the three below undeployed and a patch
 note for the testers was written from it. **A restart this index does not witness makes it
@@ -98,6 +104,71 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-16 (the deploy, and the record that was two days behind it)
+
+Three things, in the order they happened: a patch note that was wrong, the deploy that made
+it right, and a consolidation pass over both banks.
+
+### The patch note was built from a stale bank
+
+Asked for a list of undeployed changes to forward to the testers, I built it from the Commit
+index and `Prompt.md`'s state table. Both said the Pi ran `aa18f57` from 09-12 with five
+commits waiting. The user replied that the viper, the eagle and the halved mob XP were
+already live — and they were: the machine had taken `6e3c18e` and restarted **2026-09-14
+22:14**, and nothing here had recorded it.
+
+**A deploy is the one fact nothing writes down by itself.** A commit records itself; a
+`validate` run prints its own hash; a restart on another machine leaves the last written line
+standing, and the error always points the same way — the bank under-reports what is live. The
+four read-only commands that settle it (`git log -1`, `pm2 jlist` for the uptime, the
+manifest's `schemaVersion`, `--content-digest`) are now
+[[feedback-ask-the-machine-not-the-record]], and the Commit index states the failure
+direction in its own heading so the next reader distrusts it correctly.
+
+`git log` alone would not have been enough: a pull without a restart leaves the old binary
+serving, so the pm2 uptime is the fact that matters.
+
+### The deploy
+
+Mac clean (no second poller, so no 409), push confirmed, `git pull --ff-only` to `201f093`,
+schema v12. Linux build **113 s**, detached with swiftenv's PATH — both traps from
+[[project-pi-deploy-swiftenv]] avoided rather than rediscovered. The Pi's own
+`--content-digest` matched the Mac's byte for byte **before** the restart was ordered.
+
+Four migrations, each checked against the TABLE rather than the log line: `combat_flee_fails`
+nullable as designed, `max_depth_km` NOT NULL default 0 with zero NULLs, all four `warehouse`
+gear columns NOT NULL across **32 rows with zero NULLs** — which is what proves `ADD COLUMN …
+DEFAULT` backfilled rather than leaving NULLs a non-optional `@Field` would refuse to decode —
+and `deepest_km` zero for all 8 users while `total_km_walked` survived intact (max 3149, sum
+7344). That last pair is the whole promise of `ResetDeepestKm` in one query.
+
+`Code: 400` held at **913**, its baseline since the `editScreen` deploy. The only `[SCREEN]`
+lines in the log are 8 `StreamClosed` redraw failures dated 09-15 — HTTP/2 transport, not
+screen logic — and none appeared after the restart. Nobody was mid-expedition, so no run was
+cut short.
+
+### The consolidation
+
+Two memories were missing and are now written:
+[[feedback-ask-the-machine-not-the-record]] and [[project-plot-streams-and-dead-lore]] (the
+Mine's two streams, the ceiling reachable only by idling, and the defect class the plot work
+exposed — **a key the validator REQUIRES is not a key anything renders**, which is now also a
+`CLAUDE.md` rule). The bank verifies clean: 52 files, 52 indexed, no orphans, and the two
+broken `[[wiki]]` links it had — one of them mine, one from an older entry — resolve now.
+
+Staleness swept out of the repo docs: the test count (246 → **248**) in four files, the digest
+baseline (`records bef20549… → a5eca645…`) in `Prompt.md` and `status.md`, the three new
+migrations added to README's structure, `INDEX.md`'s "five commits not deployed", and
+`TODO.md`'s footer, which still had the Pi on `aa18f57`. `Prompt.md` gained an **Open,
+decided but not done** section so a fresh session inherits the two loose ends rather than
+rediscovering them.
+
+**Dead code found, deliberately not touched:** six functions unreferenced since April —
+`renderStub`, `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
+(ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
+None is from this work; removing them is a standalone cleanup and does not belong in a docs
+commit.
 
 ## Session — 2026-09-15 part 5 (the Mine had a second clock nobody could use)
 

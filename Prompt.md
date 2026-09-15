@@ -33,45 +33,50 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-16)
+### Where things stand right now (2026-09-16, after the 00:32 deploy)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the deployment record caught up with the machine |
-| pushed | through `6e3c18e`; **eight commits are unpushed** — `7469715` · `b32ac32` · `40e3c03` · `c9b8b59` · `42e8818` · `c9ec209` · `78393aa` · **this one**. A hash written into the commit that carries it is stale the moment it is written, which is why this row names the tip rather than numbering it. |
-| running on the Pi | **`6e3c18e`**, **schema v11**, digest `records bef20549a700d5e0` · `tuning c2ed07851857ef34`, last restarted **2026-09-14 22:14** (read off the Pi 2026-09-16, after this table claimed `aa18f57` for two days) |
-| committed but NOT deployed | **five commits** — `7469715` · `b32ac32` · `42e8818` · `c9ec209` · `78393aa` |
+| HEAD | **this commit** — the docs pass that recorded the 09-16 deploy |
+| pushed | everything — `origin/main` is at the tip |
+| running on the Pi | **`201f093`** — the tip — **schema v12**, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
+| committed but NOT deployed | **none** — everything committed is live as of 2026-09-16 00:32 |
 
-**The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
-a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
-must travel together and the bot has to restart. Push is user-side; `pm2 restart ROI` is
-asked for, never taken (`CLAUDE.md` → "Running the bot — ASK FIRST"). After it, verify the
-TABLE rather than the log line: `combat_flee_fails` must exist on `exploration_state`.
+**Nothing is waiting on a deploy.** The 09-16 00:32 restart took the schema bump
+(**v11 → v12**) and four migrations — `AddCombatFleeFails`, `AddWarehouseGearState`,
+`AddExplorationMaxDepth` and the one-shot `ResetDeepestKm` — and all four were verified
+against the TABLES, not the log line. What is waiting is a human opening the screens.
 
-### What the five undeployed commits did
+**Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
+the testers listed three already-shipped commits as new, because every doc here said the Pi
+still ran `aa18f57` while it had taken `6e3c18e` two days earlier. A deploy is the one fact
+nothing writes down by itself. Four read-only commands, none of which touch the bot or the
+database, are in auto-memory `feedback-ask-the-machine-not-the-record`.
 
-`b32ac32` the escape ceiling · `7469715` coins on the ground · `6e3c18e` mob XP halved ·
-`a0f90a8` bestiary tier 1 and the re-solved roster · `c658e6c` one honor ladder plus a doc
-pass. **None of it has been opened by a human**, which is the next action.
+### What the 09-16 deploy carried
+
+`78393aa` the Mine on one clock + the plot card · `c9ec209` depth banked on arrival and the
+forest's back door closed · `42e8818` the Master's repair list + `GearState` on the warehouse
+· `b32ac32` the escape ceiling · `7469715` coins on the ground. **None of it has been opened
+by a human**, which is the next action.
 
 Each one's account — what it changed, why, and its `validate` / `simulate` / `swift test` /
 digest block — is the **Commit index** at the top of `.memory/sessions.md` plus the dated
 entry under it. The rules they produced are in `CLAUDE.md`; the reasons are in the
-auto-memories `project-flee-has-a-ceiling`, `feedback-no-monster-silver` (§where the line
-actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
+auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-arrival`,
+`project-gear-state-travels-with-the-unit`, `project-flee-has-a-ceiling`,
+`feedback-no-monster-silver` (§where the line actually is).
 
 ### Next action: walk it. Nothing below has been looked at.
 >
-> Thirteen commits are live, **five more are committed and not deployed**, and every
-> surface listed here is unopened by a human. That is the whole next action. Every defect
-> this project has found came from someone glancing at a screen, not from running anything
-> — so this list is the highest-yield thing available, and it costs one session in Telegram.
-> The 09-15 items need the deploy first (schema bump + migrations, see the table at the
-> top); **everything dated 09-14 and earlier is LIVE** — the Pi took `6e3c18e` on
-> 2026-09-14 22:14, which this file did not know until 09-15.
+> **Every surface listed here is live and unopened by a human.** The Pi took the tip on
+> 2026-09-16 00:32, so nothing below waits on a deploy — it waits on someone looking. Every
+> defect this project has found came from glancing at a screen, not from running anything,
+> so this list is the highest-yield thing available and it costs one session in Telegram.
+> It is also the whole backlog.
 >
-> **Added 2026-09-15 part 5 — a content change plus new locale keys, so a restart, not `/reload`:**
+> **Added 2026-09-15 part 5 — LIVE since the 09-16 00:32 deploy, never walked:**
 > - **claim a slot and read the Mine's line.** It must now be two lines: «Річкова галька,
 >   8/год, єм 40» and «і 🔩 Шматок заліза, 2/год, єм 10» — «єм», not «cap», and «8/год»
 >   with no space.
@@ -91,7 +96,7 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 >   collecting must still land you on the plot list with the usual ✅ banner. This replaces
 >   the old «Куди покласти?» screen, so it is the change most likely to be felt.
 >
-> **Added 2026-09-15 part 4 — two migrations, one of them zeroes a board:**
+> **Added 2026-09-15 part 4 — LIVE since 09-16 00:32. The board IS zeroed; that is the migration, not a bug:**
 > - **the depth board is empty after the deploy.** 🌲 Глибина must read «Поки порожньо» for
 >   everyone — `ResetDeepestKm` zeroed it. 🚶 Шлях must be UNTOUCHED: if that one is empty
 >   too, the wrong column was reset.
@@ -107,7 +112,7 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > - **a passive run that kills nothing.** Its depth must still bank — the only save on that
 >   path used to be conditional on XP.
 >
-> **Added 2026-09-15 part 3 — needs a restart (a migration + a locale key):**
+> **Added 2026-09-15 part 3 — LIVE since 09-16 00:32, never walked:**
 > - **take the weapon OFF, then visit the Master.** The repair line for it must still be
 >   there, named by the item («Мисливський довгий лук · 0/100») rather than by the verb;
 >   put it back on and the verb («🏹 Перетягнути тятиву») returns. Both must repair.
@@ -118,7 +123,7 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > - **verify the columns**, not the log line: `tier` · `durability` · `max_durability` ·
 >   `enchant_level` must exist on `warehouse`.
 >
-> **Added 2026-09-15, not built into a deploy yet — walk it FIRST:**
+> **Added 2026-09-15 — LIVE since 09-16 00:32, never walked. Walk it FIRST:**
 > - **fail a flee four times on a warrior.** The fifth attempt must always work, whatever
 >   the enemy. 40% means four failures happen in 13% of escapes, so this is reachable in a
 >   session rather than a curiosity — tap Flee at a beast you can survive and count. The
@@ -164,9 +169,10 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 >   against a real database — `/reload` has still never run against one.
 >
 > **The API-error question is CLOSED.** `Code: 400` stood at **913** before the `editScreen`
-> deploy, 913 an hour after, and 913 after the 09-12 restart, with `[ROUTE]` / `[COMBAT]` /
-> `[SCREEN]` silent throughout. If a new screen bug is ever reported, this is the cheap
-> first look:
+> deploy, 913 an hour after, 913 after the 09-12 restart and **913 after the 09-16 one**. The
+> only `[SCREEN]` lines in the whole log are **8 `StreamClosed` redraw failures dated
+> 09-15** — HTTP/2 transport, not screen logic — and none appeared after the restart. If a
+> new screen bug is ever reported, this is the cheap first look:
 >
 > ```
 > ssh rpi5@192.168.0.203 'grep -c "^Code: 400" ~/.pm2/logs/ROI-out.log'   # baseline 913
@@ -181,6 +187,20 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > **After a migration, verify the TABLE, not the log line.** The two traps that cost real
 > time — swiftenv's `PATH` living in `.bashrc`, and `pgrep -f` matching its own ssh command
 > — are in auto-memory `project-pi-deploy-swiftenv`, `linux-build-gap`.
+
+### Open, decided but not done
+
+- **The estate calls one place three words.** «Слот» in the plot-list rows, «наділів» in the
+  picker's Back button, «Ділянка» in the list title and the new slot card. The user leans to
+  «ділянка»; unifying is ~6 locale keys in two files and no code. Raised 2026-09-16, left
+  open on purpose rather than folded into an unrelated commit.
+- **Six dead functions from April**, none touched since: `renderStub`,
+  `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
+  (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
+  Found by the 09-16 sweep; deleting them is a standalone cleanup, not part of any feature.
+- **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, no
+  estate at levels 1–3, seven `roster_off_curve` warnings and `opening.vigor_bankrupt` —
+  are all reported by every `simulate` run and all deliberate.
 
 ### Where the changelog went
 
@@ -235,8 +255,9 @@ from level 1 to 40, **157–173 days** on a tended estate (warrior 173.0 / arche
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-15, schema v12):** `records bef20549a700d5e0` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **This
+**Current digest baseline (2026-09-16, schema v12):** `records a5eca6451d8f6236` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` — matched
+byte for byte against the Pi's own `--content-digest` before the 00:32 restart. **This
 is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
@@ -281,7 +302,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 246 tests, ~0.2s
+swift test                                   # 248 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)

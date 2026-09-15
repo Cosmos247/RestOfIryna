@@ -33,10 +33,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. Thirteen commits, 2026-09-09 → 12, all deployed; **five more,
-  09-14 → 09-15, committed and NOT deployed** (bestiary tier 1 + the re-solved roster, mob
-  XP halved, coins on the ground, the escape ceiling, and the honor-ladder doc pass). The
-  next deploy carries a schema bump and a migration.
+  play surfaces a need for. **Everything committed is deployed** as of **2026-09-16 00:32**
+  (schema v12, four migrations applied and verified against the tables). Nothing is waiting
+  on a restart; what is waiting is a human opening the screens.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -69,6 +68,14 @@ following the rule you are about to break. The ones a fresh session most often w
 - `project-leaderboards-will-go-seasonal` — all-time is v1's period, not the only one; a
   season is a second reading, never a reset of a lifetime counter
 - `project-pi-deploy-swiftenv` + `linux-build-gap` — the deploy recipe and its two traps
+- `feedback-ask-the-machine-not-the-record` — a deploy is the one fact nothing writes down
+  by itself; read HEAD, pm2 uptime, schema and digest off the Pi before claiming what is live
+- `project-gear-state-travels-with-the-unit` — tier / wear / enchant are per-instance; a
+  transfer that re-creates a row hands back a factory-fresh item
+- `project-depth-is-banked-on-arrival` — `deepestKm` counts only what was walked back from,
+  which is also why the forest has no free exit any more
+- `project-plot-streams-and-dead-lore` — a ceiling only reachable by idling is not a balance
+  knob, and a locale key the validator requires is not a key anything renders
 - `feedback-audit-what-else-reads-it` — grep every reader before changing a displayed
   concept; the extra readers are where the real defects sit
 - `feedback-docs-in-english` — converse in Ukrainian, persist in English; Cyrillic in a

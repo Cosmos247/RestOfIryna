@@ -281,6 +281,17 @@ live rows still point at — if you add a column that stores a content id, add i
 `LiveReferenceQuery.collect` or the hot swap will happily break it. **Lingo is NOT
 reloaded**: new locale strings still need a restart.
 
+**A key the validator REQUIRES is not a key anything renders.** `ContentValidator`'s
+`requireKey` proves a string exists in both locales, never that a player can reach it: four
+of the five `plot.type.<t>.desc` blurbs were enforced in `uk.json` and `en.json` for months
+while `PlotCatalog.descriptionKey` was read only in the branch for plots that produce
+nothing. When you add a `requireKey`, name the screen that renders it — and when a screen
+describes a thing, it must describe ALL of it: the Mine's second output stream was invisible
+on the one screen where the plot is chosen, so the choice was made on half the information.
+Both lines are built from the data (`bonusOutput`, `descriptionKey`) rather than written
+into copy, so a future two-stream plot gets them free. Auto-memory
+`project-plot-streams-and-dead-lore`.
+
 **Content is specified before it is authored.** `content/spec/*.md` holds the signed-off
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never

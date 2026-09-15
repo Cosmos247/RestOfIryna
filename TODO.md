@@ -1621,29 +1621,23 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-15 part 2 — a documentation and backlog pass, no game code. `Prompt.md`
-cut 40.5 KB → 16.9 KB (it had become a changelog again, 65% of it a third copy of
-`sessions.md`); a Commit index moved to the top of `sessions.md` because six hashes lived
-nowhere else. Six long-deferred items closed: territorial warfare 7.2 and its pacts (they
-stood on the map grid removed in May — the clean-sheet estate-attack placeholder from
-2026-05-11 survives), Phase 9.1's five tuning bullets, Manor 7×7, the L21 perk, and
-production deployment which is long done. Before that, on 2026-09-15 — the escape ceiling (4 failed flees max per fight, the 5th is
-free) on a player report of seven failures and a death; before it the same day, coins on the
-ground, a fifth step event. Before those, on 09-14: bestiary tier 1, the whole roster, then mob XP halved on what
-the live database showed (an archer at level 24 in six days, earning 386,590 XP a day with
-95–100% of it from kills). Two creatures added
-(гадюка, беркут), the boar moved to level 2 and the moose re-statted, closing the ×22.3 XP
-cliff at the start of the game to ×3.4; then the other five re-solved, because tier 1 on
-its contract revealed that danger had been collapsing with depth — a level-1 eagle was
-hitting harder than the level-22 elite. Plus two defects found on the way: a masculine past-tense defeat line that
-had been wrong for every feminine creature since the lynx shipped, and a hardcoded creature
-id under prose that the boar's move would have falsified silently. **All five are COMMITTED
-and none is DEPLOYED** — `b32ac32` · `7469715` · `6e3c18e` · `a0f90a8` · `c658e6c`, of which
-the first two are also unpushed; the Pi still runs `aa18f57` with content hash `4eac64ff`,
-last restarted 2026-09-12 19:43. The next deploy carries a **schema bump (v11 → v12) and a
-migration**, so the binary and `content/data` must ship together and `/reload` alone will not
-do it. Next: fail a flee four times on a warrior and confirm the fifth always works, walk
-km 1 and km 2 on a fresh character (the eagle is the spiky one — 28% of the bar median,
-47% p90 against an armourless level-1 player), then the older unwalked list — the forest on
-the way home, a second turn-back on the road, the character sheet's three rating stats, a
-fight lost, a flee, the trade screens, and one run of `/reload` against a real database.*
+*Last updated: 2026-09-16 — **everything committed is deployed.** The Pi took the tip at
+**00:32** with the schema bump (v11 → v12) and four migrations — `AddCombatFleeFails`,
+`AddWarehouseGearState`, `AddExplorationMaxDepth` and the one-shot `ResetDeepestKm` — each
+verified against the TABLES rather than the log line: no NULLs in the new NOT NULL columns
+across 32 warehouse rows, `deepest_km` zero for all 8 users, `total_km_walked` intact (max
+3149). `Code: 400` held at its 913 baseline. Linux build 113 s; the Pi's own
+`--content-digest` matched the Mac's byte for byte before the restart was ordered.
+
+The five that shipped, newest first: the Mine on one clock plus a card for every claimed
+slot; depth banked on arrival with the forest's back door closed; the Master's repair list
+and `GearState` on the warehouse; the escape ceiling; coins on the ground. Before them, live
+since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
+live database showed.
+
+**Next is not code — it is one session in Telegram.** Nothing below waits on a deploy; it
+waits on a human opening the screens. The walk list, grouped by what shipped when, is in
+`Prompt.md`; every defect this project has found came from someone glancing at a screen.
+
+Left open on purpose: the estate calls one place three words («Слот» / «наділ» / «Ділянка»),
+and six functions dead since April. Both are in `Prompt.md` → Open, decided but not done.*

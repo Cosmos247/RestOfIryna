@@ -299,13 +299,29 @@ Ukrainian file only: **`m` · `f` · `n` · `pl`** (33 items: 16 · 7 · 6 · 4)
 gender per item id is enough for a ladder, because a ladder keeps one noun
 across its rungs.
 
-**The helper mirrors the player-gender one.** `ItemDisplay.localize(_:agreeingWith:lingo:locale:interpolations:)`
+**Plots agree too, since 2026-09-15.** `plot.type.<type>.gender` in `uk.json` only, same
+four values — «Шахта заповнен**а**» but «Курник заповнен**ий**», and the ready notification
+carries `.m`/`.f` variants. Three of the four producing plots are feminine, which is why the
+hardcoded «заповнена» read correctly for months. Five declarations: farm · forest · mine
+feminine, coop · training_ground masculine.
+
+**One suffix rule, two kinds of noun.** The rule itself is
+`Lingo.localize(_:agreeingWith:locale:interpolations:)` — it takes a gender STRING, falls
+back to `m` for anything that is not `m`/`f`/`n`/`pl` (a missing declaration echoes the key
+back, which lands there), and short-circuits to the plain key outside uk. Items reach it
+through a wrapper; plots look their gender up and call it directly. A third kind of noun does
+the same rather than copying three lines and forgetting `pl`.
+
+**The item wrapper mirrors the player-gender one.** `ItemDisplay.localize(_:agreeingWith:lingo:locale:interpolations:)`
 looks up `<key>.m` / `.f` / `.n` / `.pl` for uk and the plain `<key>` for every
 other locale — exactly as `Lingo.localize(_:gender:locale:)` does for
 намісник/намісниця, and for the same reason: only Ukrainian needs the variants,
 so English keeps one string.
 
-**The validator stops the next one silently defaulting.** `locale.item_gender_missing`
+**The validator stops the next one silently defaulting**, for both kinds:
+`locale.plot_gender_missing` / `locale.plot_gender_invalid` mirror the item rules and were
+negative-tested before being trusted — key removed → warning, «ж» → error, `--strict` exit 1.
+`locale.item_gender_missing`
 (warning) fires when a name declares no gender — the fallback is masculine,
 right for sixteen names and wrong for seventeen — and `locale.item_gender_invalid`
 (error) when the value is not one of the four. Negative-tested: removing the
@@ -334,7 +350,7 @@ row's tier: `CapitalController.itemLabel(_:tier:lingo:locale:)`. The Master's
 repair and enchant screens were showing a tier-5 weapon under its tier-1 name
 while the profile and the inventory showed the real one.
 
-## Current Keys (1023 en / 1071 uk as of 2026-09-12 — uk carries 13 player-gender `.m`/`.f` pairs, 33 `item.<id>.gender` declarations and the four-way `gear.broken.notice`; earlier: 1006 / 1054 before the leaderboards, 975 / 987 on 2026-09-07; parity checked both ways)
+## Current Keys (1032 en / 1088 uk as of 2026-09-16 — uk carries 15 player-gender `.m`/`.f` pairs, 33 `item.<id>.gender` and 5 `plot.type.<type>.gender` declarations)
 
 Leaderboards (2026-09-12): 16 keys under `leaderboard.*` — `title`, `button.back`, `you`, `unit.km`, `empty`, `board.<level|honor|depth|distance>` plus a `.sub` subtitle for each, and `unranked.<honor|depth|distance>`. There is deliberately **no** `unranked.level`: every finished registration has a level, so that board's viewer always ranks. None of them names the player with a gendered noun, so none needs `.m`/`.f`. The board icons (🏆 and the four tab glyphs) are prepended in Swift, never placed in a template ahead of a `%{}`.
 
