@@ -33,15 +33,15 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-15)
+### Where things stand right now (2026-09-16)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the Mine runs on one clock, and every slot has a card |
-| pushed | through `6e3c18e`; **`7469715` and `b32ac32` are unpushed** |
-| running on the Pi | **`aa18f57`**, content hash `4eac64ff`, **schema v11**, last restarted 2026-09-12 19:43 |
-| committed but NOT deployed | **eight commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · `42e8818` · `a0d668c` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
+| HEAD | **this commit** — the deployment record caught up with the machine |
+| pushed | through `6e3c18e`; **eight commits are unpushed** — `7469715` · `b32ac32` · `40e3c03` · `c9b8b59` · `42e8818` · `c9ec209` · `78393aa` · **this one**. A hash written into the commit that carries it is stale the moment it is written, which is why this row names the tip rather than numbering it. |
+| running on the Pi | **`6e3c18e`**, **schema v11**, digest `records bef20549a700d5e0` · `tuning c2ed07851857ef34`, last restarted **2026-09-14 22:14** (read off the Pi 2026-09-16, after this table claimed `aa18f57` for two days) |
+| committed but NOT deployed | **five commits** — `7469715` · `b32ac32` · `42e8818` · `c9ec209` · `78393aa` |
 
 **The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
 a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
@@ -67,8 +67,9 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > surface listed here is unopened by a human. That is the whole next action. Every defect
 > this project has found came from someone glancing at a screen, not from running anything
 > — so this list is the highest-yield thing available, and it costs one session in Telegram.
-> The 09-14 / 09-15 items need the deploy first (schema bump + migration, see the table at
-> the top); the 09-12 and older ones are already live and can be walked today.
+> The 09-15 items need the deploy first (schema bump + migrations, see the table at the
+> top); **everything dated 09-14 and earlier is LIVE** — the Pi took `6e3c18e` on
+> 2026-09-14 22:14, which this file did not know until 09-15.
 >
 > **Added 2026-09-15 part 5 — a content change plus new locale keys, so a restart, not `/reload`:**
 > - **claim a slot and read the Mine's line.** It must now be two lines: «Річкова галька,
@@ -125,7 +126,7 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > - **check the counter does NOT carry between fights.** Fail twice, escape, walk into the
 >   next encounter and fail there: the second fight must start its own count from zero.
 >
-> **Added 2026-09-14, also never walked:**
+> **Added 2026-09-14 — LIVE since the 09-14 22:14 restart, walkable today, never walked:**
 > - **km 1 and km 2.** A new character should now meet 🐍 Гадюка or 🦅 Беркут, never a
 >   boar, and the boar should first appear at km 2. Check the eagle actually feels like the
 >   spiky one — its contract is 28% of the bar and it measured 28% median / 47% p90 / 72%
@@ -139,7 +140,7 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 >   mid-progression around level 10 and will feel it immediately. The ledger says a level
 >   1–3 character can no longer hold km 10 (88% win, was 95%) — km 7 is the new edge.
 >
-> **Added 2026-09-12, never walked:**
+> **Added 2026-09-12 — live, never walked:**
 > - **the four boards** — Profile → 📓 Нотатник → 🏆 Рейтинги. ⚔️ Рівень and 🎖 Честь have
 >   data from the first second; 🌲 Глибина and 🚶 Шлях read "порожньо" until somebody walks,
 >   because the counters started at zero (no depth record was ever stored to backfill from).

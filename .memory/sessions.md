@@ -11,31 +11,32 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Committed and NOT deployed as of 2026-09-15** — the Pi still runs `aa18f57`. The next
-deploy carries a content-schema bump (v11 → v12) and a migration, so binary and
-`content/data` must travel together:
+**Committed and NOT deployed as of 2026-09-16** — the Pi runs `6e3c18e` (schema v11). The
+next deploy carries a content-schema bump (v11 → v12) and **four migrations**
+(`AddCombatFleeFails`, `AddWarehouseGearState`, `AddExplorationMaxDepth` and the one-shot
+`ResetDeepestKm`), so binary and `content/data` must travel together:
 
-- **this commit** (09-15) **the Mine runs on one clock, and says out loud that it holds
+- `78393aa` (09-15) **the Mine runs on one clock, and says out loud that it holds
   iron** — iron 1/hr cap 20 → **2/hr cap 10**, so both streams fill in 5 h and a full Mine is
   exactly one ingot; the iron cap used to be reachable only by wasting pebble. The picker
   prints the second stream from `bonusOutput` and the ready notification lists both. Copy:
   `cap` → «єм», `plot.type.<type>.gender` + `.m`/`.f` (Курник read «заповнена»), and the
   count rephrased into a list label. `Lingo.localize(_:agreeingWith:)` is now the one suffix
-  rule. Its hash goes here at the next docs pass.
-- `a0d668c` (09-15) **the depth board banks on arrival, and the forest lost its back
+  rule.
+- `c9ec209` (09-15) **the depth board banks on arrival, and the forest lost its back
   door** — 🌲 Глибина counted kilometres from expeditions nobody came back from while its
   subtitle promised «і поверталися». `deepestKm` is banked by `User.bankDepth(_:)` at the manor
   only, from `ExplorationState.maxDepthKm`; every depth change goes through `moveTo(km:)`.
   `/start` and a stray Cancel re-render instead of ending an expedition — on the walk screen
   AND in a fight, or the loophole just moves one screen in. Board zeroed once by
   `ResetDeepestKm` because the column changed what it measures. Migrations
-  `AddExplorationMaxDepth` + `ResetDeepestKm`. Its hash goes here at the next docs pass.
+  `AddExplorationMaxDepth` + `ResetDeepestKm`.
 - `42e8818` (09-15) **a bow off the shoulder could not be mended, and the warehouse
   mended everything** — the Master's repair list asked armour "do you own it" and the weapon
   "is it worn", so an unequipped weapon vanished from it; one query over `durableSlots` now.
   And `WarehouseEntry` gained `GearState`, because a deposit deletes a row and a withdraw
   creates one, which made storage a free repair that also undid the max shave and burned the
-  enchant. Migration `AddWarehouseGearState`. Its hash goes here at the next docs pass.
+  enchant. Migration `AddWarehouseGearState`.
 - `b32ac32` (09-15) **a ceiling on the escape, after seven taps killed a player** —
   `combat.json` → `flee.maxFailures = 4`; the attempt after four failures is granted without
   a roll, to every class at every level against every enemy. The per-class chances (warrior
@@ -47,6 +48,14 @@ deploy carries a content-schema bump (v11 → v12) and a migration, so binary an
   `10 : 4 : 2 : 1` which is `1/amount` scaled, so every denomination contributes the same
   expected silver. Not monster silver — it is a find on a STEP, with no relationship to what
   was killed. `UkrainianPlural.form(for:)` landed in `ROIContent` with the 11–14 band.
+
+**Deployed** — the Pi took `6e3c18e` and restarted **2026-09-14 22:14** Kyiv (schema v11,
+digest `records bef20549a700d5e0` · `tuning c2ed07851857ef34`). Read off the machine on
+2026-09-16, because this index had gone on calling the three below undeployed and a patch
+note for the testers was written from it. **A restart this index does not witness makes it
+wrong in the one direction that matters** — ask the Pi, do not trust the last line written
+here:
+
 - `6e3c18e` (09-14) **halve mob XP, on what the database said rather than what the model
   did** — `mobXP.coefficient` 26.0 → 13.0 AND every `xpReward` rebaked with it, because the
   game reads `xpReward` from `enemies.json` and never reads the coefficient. Pace to level 40
@@ -57,7 +66,7 @@ deploy carries a content-schema bump (v11 → v12) and a migration, so binary an
   archetype contract. Tier 1 runs on its own stat recipe (HP 100% of contract, ATK 65%).
 - `c658e6c` (09-12) **one honor ladder, and docs that match the deployment**.
 
-**Deployed** — the Pi restarted 2026-09-12 19:43 Kyiv on `aa18f57`:
+Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 
 - `aa18f57` **four boards, and the first counters the game ever kept** (09-12) — the
   leaderboards, plus `deepest_km` / `total_km_walked`, the first cumulative counters this

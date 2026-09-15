@@ -92,15 +92,15 @@ silver; frequency 2 of 100 taken from `loot` in every row including passive. `Uk
 moved into `ROIContent` (three noun forms, 11–14 checked first) where the tests can reach it.
 Cost: the trail feeds 2% less, so km 1 went −647 → −665 Vigor.
 
-**2026-09-14 — mob XP halved on what the database said** (`6e3c18e`, committed, NOT
-deployed). The live rows: an archer at level 24 in 5.94 days, 386,590 XP a day, with 95–100%
+**2026-09-14 — mob XP halved on what the database said** (`6e3c18e`, **deployed 2026-09-14
+22:14**). The live rows: an archer at level 24 in 5.94 days, 386,590 XP a day, with 95–100%
 of everything earned coming from kills (17 claimed jobs were 2% of the archer's total).
 `mobXP.coefficient` 26.0 → 13.0 **and** every `xpReward` rebaked with it — both halves are
 required, because the game reads `xpReward` from `enemies.json` and never the coefficient.
 **Pace to the cap moved 83 / 79 days → 173 / 167**, which supersedes the 78–87 quoted
 further down this file. Quests were untouched and the `quests` digest proves it.
 
-**2026-09-14 — bestiary tier 1, then the whole roster** (`a0f90a8`, committed, NOT deployed).
+**2026-09-14 — bestiary tier 1, then the whole roster** (`a0f90a8`, **deployed 2026-09-14 22:14**).
 🐍 viper and 🦅 eagle added at level 1, the boar moved to level 2, the moose re-statted; the
 first XP step fell from ×22.3 to ×3.4 by choosing levels and archetypes, not by touching a
 stat. Then the other five were re-solved to 65–78% of their archetype contract, because tier
