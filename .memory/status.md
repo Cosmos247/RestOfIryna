@@ -21,6 +21,22 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-15 — a bow you took off could not be mended, and a warehouse mended everything**
+(committed, NOT deployed). A tester reported that the Master offers no repair for an item that is not
+worn. Two screenshots a minute apart differ by one button: `editToMasterRepair` listed armour
+from every owned row but looked the WEAPON up by its slot, so an unequipped weapon dropped
+off the list with nothing said. `MasterService.repair` never had the restriction — only the
+screen did. One query over `GearConditionService.durableSlots` now; the title said «Ремонт
+броні» while repairing weapons and now says «Ремонт спорядження». Reading the system to
+answer that turned up the larger hole: `WarehouseEntry` carried only `item_id` + `quantity`,
+and since a deposit deletes the backpack row while a withdraw creates a new one, **a
+round-trip was a free full repair that also restored the shaved maximum** — undoing
+`repairMaxShave` and the Master's silver sink — while burning the enchant silently.
+`GearState` (tier · durability · max · enchant) is now a value both tables carry, with four
+new columns via `AddWarehouseGearState` defaulting to what a withdraw was already handing
+back. **A migration, so it ships with the binary, not through `/reload`.** Auto-memory
+`project-gear-state-travels-with-the-unit`.
+
 **2026-09-15 — the escape has a ceiling** (`b32ac32`, committed, NOT deployed). A player
 pressed Flee seven times, never escaped and died. The roll is flat and per class (warrior 40
 / archer 70 / mage 90) with no level, enemy or depth input, so seven failures is 2.80% for a
@@ -343,7 +359,7 @@ were superseded by Phases 4–6.
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
 - [x] LeaderboardService (2026-09-12) — the four all-time boards behind the quest journal. One query for the page (ranks derive from it locally, since a sorted page starts at the maximum), plus a COUNT only when the viewer is not on that page. Ties share a place; rank is on the board's own metric. `ArenaController`'s «Найкращі бійці» reads it too, so one ladder cannot render two ways.
-- [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit)
+- [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit). **2026-09-15**: tier / durability / max / enchant ride along as `GearState`, so a round-trip no longer hands back a factory-fresh item
 - [x] ExplorationService — rollStep, which since 2026-09-12 returns a **`StepResult`** (the event plus `starvationHpLost`) rather than a bare outcome, so the hunger tick can never be folded into an event's number or dropped by a branch; the `.starvationOnly` case is gone. It is also the single place a walked km is counted (`User.recordWalk(toKm:)`). Depth-aware loot pool (now `zones.json`), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
 - [x] **Combat model rebuilt (Phase 5C, 2026-08-30)** — damage is ABSORBED, not subtracted: `ATK × (1 − DEF/(DEF+K(L))) × levelDiff × variance`. Crit/dodge/accuracy are ratings run through curves whose denominators grow with level, so a stat percentage holds steady instead of rotting. Hit band 85 with a floor of 40. Enemies carry real crit/dodge/accuracy (they passed literal 0/0/0 before) and a level, and their stats are generated at design time from a six-row archetype table. `maxLevel` 40, proportional stat growth, power-law XP curve, Vigor pool that grows and regenerates. Numbers live in `content/data/tuning/`.
 - [x] CombatService (Phase 4.1) — shared damage primitives used by both active CombatController and passive autobattle. `applyAttack(attackerATK,attackerCrit,attackerAcc,defenderDEF,defenderDodge) -> AttackOutcome (miss / hit / crit)` with clamp(70+acc-dodge, 10, 95)% hit chance, ×1.5 crit on roll vs `attackerCrit %`, ±10% variance. `chipDamage` for Defend's 30%-of-base parry-counter (no crit, always lands). Tuning constants exported (baseHitChance / critMultiplier / defendChipFraction / varianceRange) so both consumers stay in sync.

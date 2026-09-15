@@ -11,6 +11,37 @@
 import Fluent
 import Foundation
 
+/// The per-instance state a gear row carries that its item id does NOT imply:
+/// upgrade tier, wear and enchant. It exists as a VALUE so a piece can move
+/// between the backpack and the warehouse without the move resetting it — a
+/// warehouse round-trip used to hand back a fresh 30/30 unenchanted piece,
+/// which repaired worn armor for free (undoing the max shave that is the only
+/// reason gear wears out at all) and burned the enchant without a word.
+/// `TradeService` never had the problem: it reassigns the row's owner instead
+/// of re-creating it, which is the same rule stated a different way.
+public struct GearState: Sendable, Equatable {
+    public var tier: Int
+    public var durability: Int
+    public var maxDurability: Int
+    public var enchantLevel: Int
+
+    public init(tier: Int, durability: Int, maxDurability: Int, enchantLevel: Int) {
+        self.tier = tier
+        self.durability = durability
+        self.maxDurability = maxDurability
+        self.enchantLevel = enchantLevel
+    }
+
+    /// What a brand-new row is stamped with: tier 1, full durability, no
+    /// enchant. Computed, never a `static let` — it reads a tuning table.
+    public static var fresh: GearState {
+        GearState(tier: 1,
+                  durability: GearConditionService.maxDurabilityStart,
+                  maxDurability: GearConditionService.maxDurabilityStart,
+                  enchantLevel: 0)
+    }
+}
+
 final public class InventoryEntry: Model, @unchecked Sendable {
     public static let schema = "inventory"
 
@@ -66,14 +97,26 @@ final public class InventoryEntry: Model, @unchecked Sendable {
 
     public init() {}
 
-    public init(userID: UUID, itemId: String, quantity: Int) {
+    public init(userID: UUID, itemId: String, quantity: Int, carrying state: GearState = .fresh) {
         self.$user.id = userID
         self.itemId = itemId
         self.quantity = quantity
-        self.tier = 1
-        self.durability = GearConditionService.maxDurabilityStart
-        self.maxDurability = GearConditionService.maxDurabilityStart
-        self.enchantLevel = 0
+        self.tier = state.tier
+        self.durability = state.durability
+        self.maxDurability = state.maxDurability
+        self.enchantLevel = state.enchantLevel
+    }
+
+    /// This row's per-instance state as a value, so it can be handed to the
+    /// warehouse table and back without a reset.
+    public var gearState: GearState {
+        get { GearState(tier: tier, durability: durability, maxDurability: maxDurability, enchantLevel: enchantLevel) }
+        set {
+            tier = newValue.tier
+            durability = newValue.durability
+            maxDurability = newValue.maxDurability
+            enchantLevel = newValue.enchantLevel
+        }
     }
 }
 
@@ -126,7 +169,13 @@ extension InventoryEntry {
     /// non-stackable items create a new row per unit. Throws `InventoryError.inventoryFull`
     /// if the slot cap would be exceeded — caller must surface that to the UI.
     /// Developer accounts skip the cap check entirely.
-    public static func add(_ itemId: String, quantity: Int = 1, to user: User, on db: any Database) async throws {
+    ///
+    /// `carrying` stamps the per-instance state onto every row this call
+    /// CREATES (a stackable merge has no new row to stamp). Pass it whenever
+    /// the unit is coming back from somewhere it was stored rather than being
+    /// minted — otherwise a worn, enchanted piece returns as a fresh one.
+    public static func add(_ itemId: String, quantity: Int = 1, to user: User, on db: any Database,
+                           carrying state: GearState = .fresh) async throws {
         guard quantity > 0 else { return }
         guard let item = ItemCatalog.find(itemId) else {
             throw InventoryError.unknownItem(itemId)
@@ -151,11 +200,11 @@ extension InventoryEntry {
                 try await existing.save(on: db)
                 return
             }
-            try await InventoryEntry(userID: userId, itemId: itemId, quantity: quantity).save(on: db)
+            try await InventoryEntry(userID: userId, itemId: itemId, quantity: quantity, carrying: state).save(on: db)
         } else {
             // Non-stackable — each unit is its own row.
             for _ in 0..<quantity {
-                try await InventoryEntry(userID: userId, itemId: itemId, quantity: 1).save(on: db)
+                try await InventoryEntry(userID: userId, itemId: itemId, quantity: 1, carrying: state).save(on: db)
             }
         }
     }

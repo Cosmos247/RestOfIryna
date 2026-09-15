@@ -748,14 +748,29 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return "\(iconPrefix)\(lingo.localize(ItemDisplay.nameKey(for: item, tier: tier), locale: locale))"
     }
 
-    /// All owned armor rows (equipped or in the bag), sorted by slot.
-    private func ownedArmorRows(for user: User, on db: any Database) async throws -> [InventoryEntry] {
+    /// All owned rows whose item sits in one of `slots` — equipped or in the
+    /// bag alike — sorted stably so a piece coming off doesn't reshuffle a
+    /// screen the player is looking at.
+    private func ownedRows(inSlots slots: Set<String>, for user: User, on db: any Database) async throws -> [InventoryEntry] {
         guard let userId = user.id else { return [] }
         let rows = try await InventoryEntry.query(on: db).filter(\.$user.$id, .equal, userId).all()
         return rows.filter {
             guard let slot = ItemCatalog.find($0.itemId)?.slot else { return false }
-            return GearConditionService.armorSlots.contains(slot.rawValue)
+            return slots.contains(slot.rawValue)
         }.sorted { ($0.itemId, $0.id?.uuidString ?? "") < ($1.itemId, $1.id?.uuidString ?? "") }
+    }
+
+    /// All owned armor rows (equipped or in the bag), sorted by slot.
+    private func ownedArmorRows(for user: User, on db: any Database) async throws -> [InventoryEntry] {
+        try await ownedRows(inSlots: GearConditionService.armorSlots, for: user, on: db)
+    }
+
+    /// True when the row's item occupies an armor slot (the four worn pieces),
+    /// as opposed to the main-hand weapon — the two differ in label and in what
+    /// 0 durability costs, so the repair screen asks per row.
+    private func isArmorRow(_ row: InventoryEntry) -> Bool {
+        guard let slot = ItemCatalog.find(row.itemId)?.slot else { return false }
+        return GearConditionService.armorSlots.contains(slot.rawValue)
     }
 
     // MARK: Buy
@@ -783,15 +798,6 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: Repair
 
-    /// The player's currently-equipped main-hand weapon row, if any.
-    private func equippedWeaponRow(for user: User, on db: any Database) async throws -> InventoryEntry? {
-        guard let userId = user.id else { return nil }
-        return try await InventoryEntry.query(on: db)
-            .filter(\.$user.$id, .equal, userId)
-            .filter(\.$equippedSlot, .equal, EquipmentSlot.mainHand.rawValue)
-            .first()
-    }
-
     /// Class-specific repair-button label for the weapon (sword/bow/staff each
     /// get a fitting verb). Unknown/nil class falls back to the warrior label.
     private static func weaponRepairLabelKey(for user: User) -> String {
@@ -802,26 +808,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
+    /// The Master repairs a ROW, not a loadout. `MasterService.repair` never
+    /// asked for the piece to be equipped, but this screen used to look the
+    /// weapon up by its slot while listing armor from the whole bag — so a bow
+    /// taken off vanished from the list with nothing said, while the armor
+    /// beside it stayed (reported 2026-09-15). One query over `durableSlots`
+    /// now, and the two kinds differ only in their label.
     private func editToMasterRepair(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        let armor = try await ownedArmorRows(for: context.session, on: context.db)
-        let needRepair = armor.filter { $0.durability < $0.maxDurability }
-        let weapon = try await equippedWeaponRow(for: context.session, on: context.db)
-        let weaponNeedsRepair = weapon.map { $0.durability < $0.maxDurability } == true
-        let hintKey = (needRepair.isEmpty && !weaponNeedsRepair) ? "capital.master.repair.empty" : "capital.master.repair.hint"
+        let durable = try await ownedRows(inSlots: GearConditionService.durableSlots,
+                                          for: context.session, on: context.db)
+        let needRepair = durable.filter { $0.durability < $0.maxDurability }
+        let hintKey = needRepair.isEmpty ? "capital.master.repair.empty" : "capital.master.repair.hint"
         let text = sectionBody("capital.master.repair.title", hintKey: hintKey, session: context.session, lingo: lingo)
         // Cost is shown on the confirm prompt, so the list buttons stay clean:
-        // item name + current durability only.
-        var rows: [[TGInlineKeyboardButton]] = needRepair.compactMap { row -> [TGInlineKeyboardButton]? in
+        // item name + current durability only. Armor first, then weapons.
+        let ordered = needRepair.filter(isArmorRow) + needRepair.filter { !isArmorRow($0) }
+        var rows: [[TGInlineKeyboardButton]] = ordered.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id else { return nil }
-            let label = "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) · \(row.durability)/\(row.maxDurability)"
+            // The class-flavoured verb ("restring the bow") addresses the weapon
+            // in hand; a spare lying in the bag is named instead.
+            let name = (!isArmorRow(row) && row.equippedSlot == EquipmentSlot.mainHand.rawValue)
+                ? lingo.localize(Self.weaponRepairLabelKey(for: context.session), locale: locale)
+                : itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)
+            let label = "\(name) · \(row.durability)/\(row.maxDurability)"
             return [TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")]
-        }
-        // The equipped weapon — its own class-flavoured label.
-        if let weapon, weaponNeedsRepair, let id = weapon.id {
-            let name = lingo.localize(Self.weaponRepairLabelKey(for: context.session), locale: locale)
-            let label = "\(name) · \(weapon.durability)/\(weapon.maxDurability)"
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "master:repair:\(id.uuidString)")])
         }
         rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale), callbackData: "master:menu")])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: TGInlineKeyboardMarkup(inlineKeyboard: rows))

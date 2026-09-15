@@ -207,6 +207,18 @@ the plot: partial cannot be expressed, because the Mine's two output streams sha
 warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
 `project-daily-and-storage-ceilings`.
 
+**A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
+are per-instance (`GearState`), so a path that deletes a row here and calls `add` there hands
+back a factory-fresh item — which is how a warehouse round-trip was a free repair that also
+undid the max shave, and burned the enchant silently, until 2026-09-15. Both `InventoryEntry`
+and `WarehouseEntry` carry `GearState` now and every create-path takes it as `carrying:`;
+`TradeService` shows the other correct shape — it REASSIGNS the row's owner and never
+re-creates it. A new per-instance column belongs IN `GearState`, not beside it. The same
+day's other defect is the screen half of the rule: **the Master repairs a ROW, not a
+loadout** — a list must ask the same question of every kind it lists, and asking armour "do
+you own it" while asking the weapon "is it worn" is how an unequipped bow silently lost the
+right to be mended. Auto-memory `project-gear-state-travels-with-the-unit`.
+
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
 = slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
 stats ARE that budget spent at fixed exchange rates, and the validator refuses an

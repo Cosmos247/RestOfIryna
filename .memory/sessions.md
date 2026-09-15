@@ -15,6 +15,12 @@ was shown in a unit it was not measured in.
 deploy carries a content-schema bump (v11 → v12) and a migration, so binary and
 `content/data` must travel together:
 
+- **this commit** (09-15) **a bow off the shoulder could not be mended, and the warehouse
+  mended everything** — the Master's repair list asked armour "do you own it" and the weapon
+  "is it worn", so an unequipped weapon vanished from it; one query over `durableSlots` now.
+  And `WarehouseEntry` gained `GearState`, because a deposit deletes a row and a withdraw
+  creates one, which made storage a free repair that also undid the max shave and burned the
+  enchant. Migration `AddWarehouseGearState`. Its hash goes here at the next docs pass.
 - `b32ac32` (09-15) **a ceiling on the escape, after seven taps killed a player** —
   `combat.json` → `flee.maxFailures = 4`; the attempt after four failures is granted without
   a roll, to every class at every level against every enemy. The per-class chances (warrior
@@ -68,6 +74,88 @@ deploy carries a content-schema bump (v11 → v12) and a migration, so binary an
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-15 part 3 (a bow that could not be mended, and a warehouse that mended everything)
+
+A tester's screenshot, tagged `#баг`: «Немає в опціях поремонтувати річ яка на тобі не
+одягнена». The user's own reading was different — "items aren't unequipped at 0 durability,
+is that right?" — so the session began by separating the two.
+
+### The question that was asked
+
+**Correct, and deliberate.** Nothing anywhere sets `equippedSlot = nil` on wear. At 0
+durability armour stays worn and contributes `GearStats()` — zero — and the main-hand weapon
+stays worn and keeps HALF its stats (`EquipmentService.contributedStats`, the King's weapon
+cannot truly break). The on-screen hint already says both. That was not the defect.
+
+### The defect that was reported
+
+The two screenshots are a minute apart (02:24, 02:25) and differ by **exactly one button**:
+«🏹 Перетягнути тятиву · 0/100». The four forester pieces (0/17 · 0/21 · 0/19 · 0/20 — each
+13 repairs into a 30-point ceiling) are listed in both.
+
+`editToMasterRepair` was asymmetric:
+
+| | source | filter |
+|---|---|---|
+| armour | `ownedArmorRows` | every owned row, worn or in the bag |
+| weapon | `equippedWeaponRow` | `equipped_slot == main_hand` only |
+
+So a weapon taken off vanished from the repair list. `MasterService.repair(entryId:)` never
+cared — it repairs any row the player owns — so **only the screen was broken**, which also
+means the workaround (wear it, then repair) existed and was unguessable. One query over
+`GearConditionService.durableSlots` now; the class-flavoured verb stays for the weapon IN
+HAND, a spare is named through `itemLabel(_:tier:)` with the row's tier. Title corrected too:
+it said «Ремонт броні» while repairing weapons.
+
+### The bigger hole, found on the way
+
+Reading the durability system end to end turned up what the tester could have hit next.
+`WarehouseEntry` carried `item_id` + `quantity` and nothing else. A deposit **deletes** the
+backpack row; a withdraw **creates** a new one through `InventoryEntry.add`, whose `init`
+stamps tier 1, 30/30, enchant 0.
+
+**Two taps on 0/17 boots returned 30/30 boots** — a free full repair that also restored the
+max the Master had shaved away over thirteen repairs, undoing the only mechanic that makes
+armour wear out and bypassing the silver sink entirely. The price, unannounced, was the
+enchant. The weapon was already refused, and the comment said why: *"warehouse rows don't
+track tier"*. The same sentence was true of durability and enchant and nobody had said it.
+
+`GearState` (tier · durability · maxDurability · enchantLevel) is now a VALUE both tables
+carry and every create-path takes as `carrying:`. Migration `AddWarehouseGearState` adds the
+four columns with exactly the defaults a withdraw was already handing back, so no stored item
+changes value on deploy.
+
+Two things the fix had to notice beyond the obvious:
+
+- **Every path that PICKS a row.** With per-instance state the choice became observable, and
+  three queries had no `sort` at all: `withdraw`, `deposit` (two hoods at 5/17 and 30/30 are
+  no longer interchangeable) and `depositAll` (whose sweep the warehouse cap can cut short).
+  All three are oldest-first now, matching `InventoryEntry.remove` and `WarehouseEntry.remove`.
+- **The two N-flows transfer by ID, not by row.** For a non-stackable that hands back N fresh
+  pieces. They route through the per-row path now — the `[✏️ N]` button only renders on
+  stackables today, and that is a UI fact this service should not depend on.
+
+### What did NOT have the bug, and why that is the rule
+
+`TradeService` moves gear by **reassigning the row's owner** and says so in a comment from
+the day it was written. The Market cannot have the bug at all: it takes stackables only.
+The shape generalises — *a transfer that re-creates a row resets everything the row knew*,
+which is now `CLAUDE.md`'s rule and [[project-gear-state-travels-with-the-unit]].
+
+### Verification
+
+Build clean · `roi-content validate --strict` 0/0, hash `15782bee` unchanged (no content
+touched) · **246 tests**, 0 failures · digest untouched, all four halves. No `simulate` run:
+nothing in `tuning/combat|progression|budget` or the archetype table moved.
+
+**Not unit-tested, on purpose** — `Tests/ROIContentTests` keeps Fluent out of its graph, so
+both fixes are walk-it-in-Telegram checks. Added to the walk list.
+
+### Not deployed
+
+Both changes are code, one is a **migration**, and a locale key moved — so this is a restart,
+not a `/reload`. It joins the five commits already committed-and-undeployed.
 
 ## Session — 2026-09-15 part 2 (the primer stopped being a changelog, again)
 

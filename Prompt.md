@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | `b32ac32` — the escape ceiling |
+| HEAD | **this commit** — the Master's repair list + `GearState` on the warehouse |
 | pushed | through `6e3c18e`; **`7469715` and `b32ac32` are unpushed** |
 | running on the Pi | **`aa18f57`**, content hash `4eac64ff`, **schema v11**, last restarted 2026-09-12 19:43 |
-| committed but NOT deployed | **five commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` |
+| committed but NOT deployed | **six commits** — `c658e6c` · `a0f90a8` · `6e3c18e` · `7469715` · `b32ac32` · **this one** (its hash lands in `sessions.md`'s Commit index at the next docs pass) |
 
 **The next deploy is NOT a `/reload`.** It carries a content-schema bump (**v11 → v12**) and
 a database migration (`AddCombatFleeFails`), so the new binary and the new `content/data`
@@ -69,6 +69,17 @@ actually is), `project-bestiary-tier-fill`, `project-opening-is-vigor-bankrupt`.
 > — so this list is the highest-yield thing available, and it costs one session in Telegram.
 > The 09-14 / 09-15 items need the deploy first (schema bump + migration, see the table at
 > the top); the 09-12 and older ones are already live and can be walked today.
+>
+> **Added 2026-09-15 part 3 — needs a restart (a migration + a locale key):**
+> - **take the weapon OFF, then visit the Master.** The repair line for it must still be
+>   there, named by the item («Мисливський довгий лук · 0/100») rather than by the verb;
+>   put it back on and the verb («🏹 Перетягнути тятиву») returns. Both must repair.
+> - **take off a WORN-DOWN piece of armour** (equipped gear cannot be stored), **deposit it
+>   in the warehouse and withdraw it again.** It must come back in the condition it went in
+>   — same `x/y`, same `+N` enchant. Before this it came back 30/30 with the enchant gone,
+>   which was a free repair and the reason to check it first on a piece you do not mind.
+> - **verify the columns**, not the log line: `tier` · `durability` · `max_durability` ·
+>   `enchant_level` must exist on `warehouse`.
 >
 > **Added 2026-09-15, not built into a deploy yet — walk it FIRST:**
 > - **fail a flee four times on a warrior.** The fifth attempt must always work, whatever

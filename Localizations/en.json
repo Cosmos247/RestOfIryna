@@ -529,7 +529,7 @@
   "capital.master.confirm.buy": "Buy %{item} for %{cost}?",
   "capital.master.confirm.repair": "Repair %{item} (%{cur}/%{max}) for %{cost}?",
   "capital.master.confirm.enchant": "Improve %{item} to +%{level} for %{cost}?",
-  "capital.master.repair.title": "⚒️ Repair armor",
+  "capital.master.repair.title": "⚒️ Repair gear",
   "capital.master.repair.hint": "Armor stops giving its bonus at 0 durability, and each repair shaves its max a little so it eventually wears out. A weapon at 0 keeps half its power until honed — and its repair never wears it down.",
   "capital.master.repair.empty": "All your gear is in good repair.",
   "capital.master.repair.weapon.warrior": "🗡 Sharpen blade",

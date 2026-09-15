@@ -63,10 +63,11 @@ public enum WarehouseService {
     public enum DepositResult: Sendable {
         case success
         case nothingToDeposit
-        /// Item is in `WeaponUpgradeCatalog` — depositing it would lose the
-        /// per-instance tier (warehouse rows don't track tier). Returned so
-        /// the UI can surface a clean "weapons stay with you" alert instead
-        /// of silently downgrading the player's progress.
+        /// Item is in `WeaponUpgradeCatalog`. The warehouse has carried tier
+        /// since 2026-09-15, so this is now the design rule it always also was
+        /// — the King's weapon stays with the player — and no longer a fence
+        /// around a missing column. Returned so the UI can say "weapons stay
+        /// with you" rather than refuse without a reason.
         case notTransferable
         /// Phase 5.3c — warehouse is at its `capForLevel(estateLevel)` and the
         /// deposit would create a new row. Stackable items merging into an
@@ -97,9 +98,9 @@ public enum WarehouseService {
         case success
         case notEnoughInBag(available: Int)
         case warehouseFull(free: Int)
-        /// Item lives in `WeaponUpgradeCatalog` (per-instance tier) and can't
-        /// be warehoused — same restriction the single-unit `deposit` returns
-        /// as `notTransferable`. The `[✏️ N]` flow only renders for stackable
+        /// Item lives in `WeaponUpgradeCatalog` and stays with the player —
+        /// same design rule the single-unit `deposit` returns as
+        /// `notTransferable`. The `[✏️ N]` flow only renders for stackable
         /// items so this case is defensive; surface as a modal alert if hit.
         case notTransferable
     }
@@ -112,16 +113,21 @@ public enum WarehouseService {
     public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
         guard ItemCatalog.find(itemId) != nil, let userId = user.id else { return .nothingToDeposit }
 
-        // Tiered weapons can't be warehoused — `WarehouseEntry` doesn't carry
-        // the tier column, so storing one would silently demote a T5 sword to
-        // T1 on withdraw. By design these weapons stay with the player anyway.
+        // Tiered weapons stay with the player. The storage table carries tier
+        // now, so nothing technical stops it — this is the design rule the old
+        // comment leaned on ("by design these weapons stay with the player
+        // anyway") standing on its own.
         if WeaponUpgradeCatalog.isUpgradable(itemId) {
             return .notTransferable
         }
 
+        // Oldest first, like `InventoryEntry.remove` and `withdraw`. Two hoods
+        // at 5/17 and 30/30 are no longer interchangeable, so WHICH one this
+        // takes has to be an answer rather than whatever the heap returned.
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .filter(\.$itemId, .equal, itemId)
+            .sort(\.$createdAt, .ascending)
             .all()
 
         // Pick the first unequipped row — equipped gear is not transferable.
@@ -137,6 +143,10 @@ public enum WarehouseService {
             return .warehouseFull
         }
 
+        // Tier, wear and enchant travel with the unit. Storage used to drop
+        // them, which turned a round-trip into a free repair and burned the
+        // enchant (reported 2026-09-15).
+        let state = source.gearState
         let item = ItemCatalog.find(itemId)!
         if item.stackable {
             if source.quantity <= 1 {
@@ -149,7 +159,7 @@ public enum WarehouseService {
             try await source.delete(on: db)
         }
 
-        try await WarehouseEntry.add(itemId, quantity: 1, to: user, on: db)
+        try await WarehouseEntry.add(itemId, quantity: 1, to: user, on: db, carrying: state)
         return .success
     }
 
@@ -164,8 +174,12 @@ public enum WarehouseService {
             return DepositAllResult(moved: 0, cappedOut: false, skippedUntransferable: false, used: 0, cap: cap)
         }
 
+        // Oldest first, so a sweep the cap cuts short leaves the SAME pieces
+        // behind twice running — with per-instance state on gear rows, "some of
+        // them moved" is otherwise an arbitrary answer.
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
+            .sort(\.$createdAt, .ascending)
             .all()
 
         // Per-unit usage tracker (2026-05-12). The last allowed stack is
@@ -190,6 +204,7 @@ public enum WarehouseService {
             }
 
             let qty = row.quantity
+            let state = row.gearState
             let canMove = min(qty, max(0, cap - used))
             // Anything eligible that does not fit — wholly or partly — is the
             // cap talking, and the caller has to be able to say so.
@@ -207,7 +222,7 @@ public enum WarehouseService {
             // Non-stackable categories (gear) ALWAYS produce one warehouse
             // row per unit through `WarehouseEntry.add` (it's already
             // stackable-aware). We just pass the moved count.
-            try await WarehouseEntry.add(row.itemId, quantity: canMove, to: user, on: db)
+            try await WarehouseEntry.add(row.itemId, quantity: canMove, to: user, on: db, carrying: state)
             used += canMove
             movedUnits += canMove
         }
@@ -228,12 +243,17 @@ public enum WarehouseService {
             return .inventoryFull
         }
 
+        // Oldest row first, matching `WarehouseEntry.remove`. With per-instance
+        // state on the row this is now observable — which piece comes back is
+        // an answer, not an accident.
         let rows = try await WarehouseEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .filter(\.$itemId, .equal, itemId)
+            .sort(\.$createdAt, .ascending)
             .all()
 
         guard let source = rows.first else { return .nothingToWithdraw }
+        let state = source.gearState
 
         if item.stackable {
             if source.quantity <= 1 {
@@ -246,8 +266,9 @@ public enum WarehouseService {
             try await source.delete(on: db)
         }
 
-        // Withdrawn items land in the backpack unequipped — player must go equip them.
-        try await InventoryEntry.add(itemId, quantity: 1, to: user, on: db)
+        // Withdrawn items land in the backpack unequipped — player must go equip
+        // them — and in exactly the condition they were stored in.
+        try await InventoryEntry.add(itemId, quantity: 1, to: user, on: db, carrying: state)
         return .success
     }
 
@@ -278,6 +299,27 @@ public enum WarehouseService {
             return .inventoryFull(free: free)
         }
 
+        // A non-stackable unit IS its row, tier and wear and enchant included,
+        // so it moves through the single-unit path — the by-id bulk transfer
+        // below would hand back N fresh pieces. The N-button only renders on
+        // stackables today; routing instead of refusing keeps that a UI choice
+        // rather than a rule this service quietly depends on.
+        if let item = ItemCatalog.find(itemId), !item.stackable {
+            for _ in 0..<quantity {
+                switch try await withdraw(itemId: itemId, for: user, on: db) {
+                case .success:
+                    continue
+                case .nothingToWithdraw:
+                    let left = try await WarehouseEntry.totalQuantity(of: itemId, for: userId, on: db)
+                    return .notEnoughInWarehouse(available: left)
+                case .inventoryFull:
+                    let usedNow = try await InventoryEntry.slotsUsed(for: user, on: db)
+                    return .inventoryFull(free: max(0, InventoryEntry.slotCap(for: user) - usedNow))
+                }
+            }
+            return .success
+        }
+
         // Both sides cleared — perform the transfer. `remove` already returns
         // `false` only when the available count drops below the request, but
         // we've already preflighted so a `false` here would be a race we can't
@@ -304,7 +346,7 @@ public enum WarehouseService {
             return .notEnoughInBag(available: 0)
         }
 
-        // Tiered weapons can't ride the warehouse table (no tier column).
+        // Tiered weapons stay with the player — same design rule as `deposit`.
         // The N-flow button only renders on stackable items so this is a
         // defensive guard — keeps the service honest if a stale callback
         // ever reaches it.
@@ -331,6 +373,29 @@ public enum WarehouseService {
         let free = max(0, cap - used)
         guard free >= quantity else {
             return .warehouseFull(free: free)
+        }
+
+        // Non-stackables move one row at a time so their state travels with
+        // them — mirror of `withdrawN`, and the same reasoning.
+        if let item = ItemCatalog.find(itemId), !item.stackable {
+            for _ in 0..<quantity {
+                switch try await deposit(itemId: itemId, for: user, on: db) {
+                case .success:
+                    continue
+                case .nothingToDeposit:
+                    let bagNow = try await InventoryEntry.query(on: db)
+                        .filter(\.$user.$id, .equal, userId)
+                        .filter(\.$itemId, .equal, itemId)
+                        .all()
+                    return .notEnoughInBag(available: bagNow.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity })
+                case .warehouseFull:
+                    let usedNow = try await slotsUsed(for: user, on: db)
+                    return .warehouseFull(free: max(0, cap - usedNow))
+                case .notTransferable:
+                    return .notTransferable
+                }
+            }
+            return .success
         }
 
         // Both sides cleared — drain the bag, fill the warehouse. Same race

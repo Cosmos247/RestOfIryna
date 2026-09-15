@@ -1219,6 +1219,46 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         deleted. Three smaller audit fixes went with it: a doc comment that had swallowed
         `estateLevel`'s, a viewer row queried separately even when already on the page, and
         an unread `LeaderboardView.board`.
+  - [x] **The Master repairs a row, not a loadout** *(2026-09-15, reported by a tester)* —
+        two screenshots a minute apart differed by exactly one button: «🏹 Перетягнути
+        тятиву · 0/100» was absent while the bow lay in the bag and present once it was
+        worn. `editToMasterRepair` listed armour through `ownedArmorRows` — every owned row,
+        worn or not — but looked the WEAPON up by its slot, so an unequipped weapon dropped
+        off the repair list with nothing said while the four forester pieces at 0/17 · 0/21 ·
+        0/19 · 0/20 stayed listed throughout. `MasterService.repair` never had the
+        restriction: it repairs any row the player owns, so only the SCREEN was broken and
+        the workaround (put it back on, then repair) was one the player had no way to guess.
+        One query over `GearConditionService.durableSlots` now, armour first then weapons;
+        the class-flavoured verb («Нагострити меч») still addresses the weapon IN HAND, while
+        a spare in the bag is named through `itemLabel(_:tier:)` with the ROW's tier, per
+        `feedback-ladder-names-one-noun`. The title said «⚒️ Ремонт броні» while repairing
+        weapons too — «⚒️ Ремонт спорядження» / "⚒️ Repair gear", 1 key × 2 locales, so it
+        needs a restart rather than a `/reload`. Build clean, `validate --strict` 0/0, 246
+        tests. **Not deployed.**
+  - [x] **Gear state travels with the unit** *(2026-09-15, found while reading the durability
+        system for the report above)* — `WarehouseEntry` carried only `item_id` + `quantity`,
+        and a deposit DELETES the backpack row while a withdraw CREATES a new one through
+        `InventoryEntry.add`, whose `init` stamps tier 1, 30/30 and enchant 0. So storing a
+        worn piece and taking it back was a **free full repair that also restored the shaved
+        maximum** — undoing `repairMaxShave`, the one mechanic that makes armour wear out at
+        all, and walking around the Master's silver sink — while **burning the enchant
+        without a word**. The tester's boots at 0/17 would have come back 30/30 for nothing.
+        `GearState` (tier · durability · maxDurability · enchantLevel) is now a value both
+        tables carry and every row-creating path takes as `carrying:`; four columns on
+        `warehouse` via `AddWarehouseGearState`, defaulting to exactly what a withdraw was
+        already handing back, so nothing a player is holding changes value. all three paths that
+        PICK a row — `withdraw`, `deposit`, `depositAll` — take the OLDEST one now that WHICH
+        instance moves is observable (none of the three had a `sort`), and the two N-flows
+        route non-stackables through the per-row path
+        instead of the by-id bulk transfer, which would have handed back N fresh pieces.
+        `TradeService` never had the bug — it reassigns the row's owner instead of
+        re-creating it — and the Market cannot have it: it takes stackables only. The
+        weapon's storage ban stays, but it is now the design rule it always also was rather
+        than a fence around a missing column, and three comments claiming the latter were
+        corrected. Build clean, `validate --strict` 0/0 (hash `15782bee`, unchanged — no
+        content touched), **246 tests**; all four digest halves untouched. Not unit-tested:
+        `Tests/ROIContentTests` has no Fluent in its graph by design, so this is checked by
+        walking it. **A DB migration, so it ships with the binary. Not deployed.**
   - [x] **The escape has a ceiling** *(2026-09-15, on a player report)* — a player pressed
         Flee seven times, never got away and was killed. It was the probability, for one
         class: the roll is flat and per class (warrior 40 / archer 70 / mage 90) with no

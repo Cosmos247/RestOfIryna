@@ -571,7 +571,7 @@
   "capital.master.confirm.buy": "Бажаєте купити %{item} за %{cost}?",
   "capital.master.confirm.repair": "Бажаєте відремонтувати %{item} (%{cur}/%{max}) за %{cost}?",
   "capital.master.confirm.enchant": "Бажаєте покращити %{item} до +%{level} за %{cost}?",
-  "capital.master.repair.title": "⚒️ Ремонт броні",
+  "capital.master.repair.title": "⚒️ Ремонт спорядження",
   "capital.master.repair.hint": "При 0 міцності броня не дає бонусу, і кожен ремонт трохи зрізає її максимум, тож річ колись зноситься. Зброя при 0 зберігає половину сили, доки не направите — а її ремонт не зношує.",
   "capital.master.repair.empty": "Усе ваше спорядження ціле.",
   "capital.master.repair.weapon.warrior": "🗡 Нагострити меч",
