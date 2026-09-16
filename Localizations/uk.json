@@ -418,7 +418,7 @@
   "capital.market.listed": "Лот виставлено: %{item} ×%{qty} за %{total}.",
   "capital.market.bought": "Куплено: %{item} ×%{qty} за %{total}.",
   "capital.market.canceled": "Лот знято: %{item} ×%{qty} повернено в сумку.",
-  "capital.market.sold_notification": "Ваш лот продано: %{item} ×%{qty} за %{total}. Срібло зараховано.",
+  "capital.market.sold_notification": "Ваш лот продано: %{item} ×%{qty} за %{total}. Купує %{nick}. Срібло зараховано.",
   "capital.market.err.not_sellable": "Цей предмет не можна виставити на базар.",
   "capital.market.err.too_many_lots": "Досягнуто ліміту активних лотів (%{max}).",
   "capital.market.err.not_enough_bag": "У сумці лише %{have}, а треба %{need}.",

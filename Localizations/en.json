@@ -376,7 +376,7 @@
   "capital.market.listed": "Lot listed: %{item} ×%{qty} for %{total}.",
   "capital.market.bought": "Bought: %{item} ×%{qty} for %{total}.",
   "capital.market.canceled": "Lot pulled: %{item} ×%{qty} returned to your bag.",
-  "capital.market.sold_notification": "Your lot sold: %{item} ×%{qty} for %{total}. Silver credited.",
+  "capital.market.sold_notification": "Your lot sold: %{item} ×%{qty} for %{total}. Buyer: %{nick}. Silver credited.",
   "capital.market.err.not_sellable": "This item can't be listed on the market.",
   "capital.market.err.too_many_lots": "You've hit the active-lot limit (%{max}).",
   "capital.market.err.not_enough_bag": "Your bag only has %{have}, but %{need} are needed.",

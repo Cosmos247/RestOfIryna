@@ -38,14 +38,14 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the kitchen repair: a full bag no longer breaks a craft, and the recipe screen finally shows what you hold |
-| pushed | **no** — `origin/main` is two commits behind. Push is user-side |
-| running on the Pi | **`201f093`** — **two commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
-| committed but NOT deployed | **two commits** — `dc5f037` (two ladders + the bag's Turn back button) and this one |
+| HEAD | **this commit** — a Profile key on the walk keyboard, and the seller finally learns who bought the lot |
+| pushed | **no** — `origin/main` is three commits behind. Push is user-side |
+| running on the Pi | **`201f093`** — **three commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
+| committed but NOT deployed | **three commits** — `dc5f037` (two ladders + the bag's Turn back button), `5e55139` (the kitchen repair) and this one |
 
 **A deploy is waiting, and `/reload` cannot carry any of it.** `dc5f037` moves `plots.json`
-and `bags.json` — which the hot swap could take on its own — but both commits also move
-Swift, and this one moves **locale strings**, which are not hot-reloaded at all. Binary,
+and `bags.json` — which the hot swap could take on its own — but all three commits also move
+Swift, and two of them move **locale strings**, which are not hot-reloaded at all. Binary,
 content and Lingo have to land together: pull, build, `pm2 restart ROI`. **No migration, no
 schema bump — v12 stands.** The 09-16 00:32 restart's four migrations are history, not
 something these commits repeat. What is still waiting besides this is a human opening the
@@ -78,6 +78,14 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
 > It is also the whole backlog.
+>
+> **Added 2026-09-16 part 2 — NOT deployed:**
+> - **walk into the forest and tap 👤 Профіль.** It must open over the walk screen, and the
+>   step buttons must still work underneath. Then 📓 Нотатник → switch a leaderboard tab →
+>   🔙 back → step forward. Every one of those taps was silent before: the profile's buttons
+>   answered nothing at all on the trail, so they spun forever.
+> - **sell something on the market and wait for it to sell.** The push must now name the
+>   buyer: «Ваш лот продано: … Купує <нік>. Срібло зараховано.»
 >
 > **Added 2026-09-16 — NOT deployed. Walk after the restart; two came from players:**
 > - **cook with a full bag.** It must now cook and say «— сумка повна, тож на склад 📦»,

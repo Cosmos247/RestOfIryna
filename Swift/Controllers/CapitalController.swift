@@ -2230,8 +2230,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         guard case .success(let itemId, let qty, let price, let sellerTelegramId, let sellerLocale, _) = result else { return }
         let lingo = context.lingo
         let name = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: sellerLocale) } ?? itemId
+        // `context.session` IS the buyer — this runs in the `market:buyok:`
+        // handler, which passed the same session to `buyListing`. So naming
+        // them costs no query and no change to the service. The market row the
+        // buyer tapped already carried the SELLER's nickname; until now the
+        // seller learned nothing about the other side, which is the asymmetry
+        // this closes.
+        //
+        // Nicknames are letters, digits and spaces only (RegistrationController
+        // validates), so there is nothing to escape for `parseMode: .html`.
+        let buyerNick = context.session.nickname ?? "—"
         let text = lingo.localize("capital.market.sold_notification", locale: sellerLocale, interpolations: [
-            "item": name, "qty": "\(qty)", "total": "🪙 \(price)"
+            "item": name, "qty": "\(qty)", "total": "🪙 \(price)", "nick": buyerNick
         ])
         _ = try? await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(sellerTelegramId),

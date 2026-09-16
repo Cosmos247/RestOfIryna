@@ -58,6 +58,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize(Self.bagKey,      locale: loc)] = onBag
             }
 
+            // The profile is on the walk keyboard since 2026-09-16. Registering
+            // `Commands.profile.command()` above only ever matched `/profile`
+            // typed out; a reply-keyboard tap arrives as its localized TEXT and
+            // needs its own registration, in every locale.
+            let profileLocales = Commands.profile.buttonsForAllLocales(lingo: lingo)
+            for button in profileLocales { router[button.text] = onProfile }
+
             // A stray Cancel press (from another controller's keyboard) is not
             // a way out of the forest — it re-renders the expedition, like
             // `/start`. See `onForceEnd`.
@@ -357,8 +364,14 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let forward  = TGKeyboardButton(text: lingo.localize(Self.stepKey,     locale: locale))
         let backward = TGKeyboardButton(text: lingo.localize(Self.stepBackKey, locale: locale))
         let bag      = TGKeyboardButton(text: lingo.localize(Self.bagKey,      locale: locale))
+        // Profile sits beside the bag rather than getting a key of its own: it
+        // is the SAME button as on the main keyboard, so it reuses
+        // `Commands.profile` and reads identically wherever the player meets
+        // it. `onProfile` renders over the walk screen without touching
+        // `routerName`, so the steps stay live underneath.
+        let profile  = Commands.profile.button(for: session, lingo)
         let markup = TGReplyKeyboardMarkup(
-            keyboard: [[forward, backward], [bag]],
+            keyboard: [[forward, backward], [bag, profile]],
             resizeKeyboard: true
         )
         return .replyKeyboardMarkup(markup)
@@ -865,7 +878,26 @@ extension ExplorationController {
             return try await CombatController.onCallbackQuery(context: context)
         }
 
-        guard data.hasPrefix("explore:") else { return false }
+        // Anything that is not ours goes to MainController, which owns the
+        // profile's own buttons — `journal:`, `gear:` and the `lb:` leaderboard
+        // tabs — and carries a stale-inline-message fallback for buttons whose
+        // screen is long gone. `CapitalController` ends exactly the same way
+        // and for the same reason: the profile is reachable from both.
+        //
+        // Returning false instead is SILENCE, not a refusal. `Router.process`
+        // only falls through to `unmatched` when `update.message != nil`, which
+        // a callback query never has — so nothing would answer the query and
+        // the button would spin forever. That is what the profile's two buttons
+        // did on the trail for anyone who typed `/profile`; the Profile key on
+        // the walk keyboard would have made it a daily complaint.
+        //
+        // A catch-all rather than a list of prefixes, so the next button added
+        // to the profile works here without anyone remembering this file.
+        // `explore:*` never leaves, so Main's own `explore:` forward cannot
+        // bounce anything back.
+        guard data.hasPrefix("explore:") else {
+            return try await MainController.onCallbackQuery(context: context)
+        }
 
         let ctrl = Controllers.explorationController
         let locale = context.session.locale

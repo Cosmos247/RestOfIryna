@@ -11,9 +11,29 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Two commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the two entries
-below it are newer and have not shipped. Both touch Swift and one touches Lingo, so
-`/reload` cannot carry either.
+**Three commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the three
+entries below it are newer and have not shipped. All touch Swift and two touch Lingo, so
+`/reload` cannot carry any of them.
+
+- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **a Profile
+  key on the trail, and a name on the sale** — two asks, and the first one uncovered a third
+  instance of the callback-silence class. The walk keyboard's second row is now
+  `[🎒 Сумка] [👤 Профіль]`, reusing `Commands.profile` so it is literally the same button as
+  on the main keyboard; `onProfile` already existed and already left `routerName` alone, but
+  was registered only for a typed `/profile`, and a reply-keyboard tap arrives as TEXT. The
+  find: the profile's own buttons — `journal:`, `gear:`, the `lb:` tabs — were answered by
+  nobody during an expedition, and `ExplorationController` returned false, which is silence
+  rather than a refusal (`Router.process` reaches `unmatched` only when
+  `update.message != nil`; a callback query never has one). Fixed by ending the function the
+  way `CapitalController` already ends its own — a CATCH-ALL forward to `MainController`,
+  not the list of three prefixes written first, so the next button added to the profile needs
+  no edit here. Combat deliberately untouched: it has no bag either, and its keyboard is
+  four keys pressed under pressure. Second ask: the market's sold push now names the buyer
+  — `context.session` in the `market:buyok:` handler IS the buyer, so no query and no service
+  change, and the buy board had shown the SELLER's nickname all along, so this closed a
+  one-way asymmetry. Copy uses «Купує %{nick}»: the present tense does not decline by gender,
+  where «Покупець» and «Купив» both would. `validate --strict` 0/0, digest unmoved,
+  **248 tests**.
 
 - **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **the
   kitchen could not say no, and could not say what you had** — two player reports, one
@@ -143,6 +163,40 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-16 part 4 (a button, and the silence behind it)
+
+Asked for a Profile key beside the bag on the walk screen. The plumbing was already right —
+`showProfile` renders inline, `ExplorationController.onProfile` leaves `routerName` alone —
+so the button itself was four lines. The investigation was the work.
+
+**The profile's buttons were dead on the trail.** `journal:`, `gear:` and the `lb:` tabs are
+MainController's, and `ExplorationController.onCallbackQuery` gated on
+`hasPrefix("explore:")` and returned false for everything else. Returning false from a
+callback handler is not a refusal — it is nothing at all, because `Router.process` only
+reaches `unmatched` when `update.message != nil`, which a callback never has. Third sighting
+of this class in two days, after the kitchen's thrown error and the bag's swallowed Turn
+back tap. Reachable today by typing `/profile` mid-walk; the button would have made it
+routine.
+
+First fix listed three prefixes. The audit before committing found `CapitalController`
+already solving it properly — a catch-all forward at the end of the function, with a comment
+explaining that returning false makes the router shout "Unsupported content type" at the
+player. Switched to match: one pattern in two controllers, and the next profile button works
+without anyone remembering this file. **The outlier was the bug, again** — the same tell as
+`CraftingService` being the only place that hand-rolled a fit check.
+
+Two things I asserted without checking and had to correct, both caught by the user:
+combat has **no bag button** (I put one in a mock-up), and it has no room for a Profile key
+either — its second row is Techniques + Flee from level 8. Bag in combat turns out to be a
+real absence rather than an oversight I should quietly fill: you cannot eat mid-fight. Left
+alone, noted.
+
+**The market ask was smaller and cleaner.** The seller's sold notification did not name the
+buyer. The buy board has always named the SELLER, so this was an asymmetry rather than a new
+disclosure, and the buyer was already in hand at the call site. The only real decision was
+grammatical: «Покупець» is masculine and «Купив» declines, so the copy uses «Купує», the
+present tense, which does not. The person emoji was dropped at the user's request.
 
 ## Session — 2026-09-16 part 3 (the kitchen, twice, both times from someone playing)
 

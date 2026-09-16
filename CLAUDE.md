@@ -233,7 +233,13 @@ units.** `InventoryEntry.add` counts UNITS and throws when it will not fit;
 and treated "a row of this item already exists" as room. The prediction said yes, the writer
 said no, and the throw escaped the callback handler. **A throw out of a callback handler is
 an inline button that spins forever**: nothing answers `answerCallbackQuery`, the SDK logs a
-`BotError` nobody reads, and the player taps again. Here it also ate the ingredients, because
+`BotError` nobody reads, and the player taps again. **A callback NO handler claims is
+just as silent** — `Router.process` reaches `unmatched` only when `update.message != nil`,
+which a callback query never has — so a controller that renders another controller's screen
+must end by forwarding what it does not recognise (`ExplorationController` and
+`CapitalController` both hand the rest to `MainController`, which owns the profile's
+`journal:` / `gear:` / `lb:` buttons and the stale-button fallback). A list of prefixes is
+the version that rots; the catch-all is the one that survives the next button. Here it also ate the ingredients, because
 the drain runs before the add and there is no transaction. `TradeService` has the shape to
 copy — `used − outgoing + incoming ≤ cap`, in units, with the dev bypass matching the
 writer's. **A full bag is no longer a refusal to craft**: the output goes to the warehouse

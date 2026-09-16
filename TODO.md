@@ -1621,7 +1621,13 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-16 — **two commits are undeployed.** The newer one repairs the
+*Last updated: 2026-09-16 — **three commits are undeployed.** The newest adds a Profile key
+to the walk keyboard — and, in doing so, closes the silence behind it: the profile's own
+buttons answered nothing during an expedition, because a callback no controller claims never
+reaches `unmatched`. The market's sold-notification also names the buyer now; the buy board
+had always named the seller.
+
+Before it, one repairs the
 kitchen: cooking with a full bag hung the button forever and ate the ingredients (a fit
 check counted rows against a cap counted in units), and a full bag now routes the dish to
 the warehouse instead of refusing. The recipe screen also shows what you hold per
