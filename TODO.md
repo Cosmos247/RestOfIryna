@@ -1621,7 +1621,12 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-16 — **everything committed is deployed.** The Pi took the tip at
+*Last updated: 2026-09-16 — **one commit is undeployed.** The farm went to 2/h cap 10, the
+bag's top two steps were re-spread to +15 each (T6 now 90 slots), and the Turn back button
+that the bag swallowed mid-trip was fixed. Swift changed, so **`/reload` cannot carry it** —
+the Pi needs a pull, a build and `pm2 restart ROI`. No migration: **schema stays v12**.
+
+Before it, everything committed was deployed. The Pi took `201f093` at
 **00:32** with the schema bump (v11 → v12) and four migrations — `AddCombatFleeFails`,
 `AddWarehouseGearState`, `AddExplorationMaxDepth` and the one-shot `ResetDeepestKm` — each
 verified against the TABLES rather than the log line: no NULLs in the new NOT NULL columns

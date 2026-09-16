@@ -144,7 +144,7 @@ RestOfIryna/
 │   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
 │   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 5 tiers, stats + materials); ItemDisplay namespace lives in Item.swift. Phase 6.5 (2026-05-22) added `durabilityByTier` [30,40,50,70,100] + `durability(forTier:)` — weapon durability ceiling climbs with tier
 │   │   ├── EstateUpgradeCatalog.swift # Phase 5.3c — estate-tier progression (6 transitions T1→T2 … T6→T7, player-level gates 4/7/10/13/16/19, materials + gold cost for T3+)
-│   │   ├── BagCatalog.swift      # Phase 5.3d — bag tier ladder (6 tiers: 25/35/45/60/80/85 slots since 2026-05-12 per-unit pivot — was 5 tiers 20/30/40/55/75), estate-tier gates per step, hide + iron materials only
+│   │   ├── BagCatalog.swift      # Phase 5.3d — bag tier ladder (6 tiers: 25/35/45/60/75/90 slots — top two steps re-spread to +15 each on 2026-09-16; per-unit since the 2026-05-12 pivot, which replaced 5 tiers of 20/30/40/55/75), estate-tier gates per step, hide + iron materials only
 │   │   ├── TravelState.swift     # Phase 6.0 — Fluent model: per-user in-flight trip between estate and capital (user_id unique, destination, ends_at)
 │   │   ├── TraderCatalog.swift   # Phase 6.1 + v2 economy rebase — 11 trader listings, per-unit pricing (1g/2g/3g/5g/10g/100g sell), flat 2× sell:buy spread
 │   │   ├── TavernCatalog.swift   # Phase 6.2 — 7 cooked-dish prices (20-200g), shared wager tiers [10, 25, 50] for dice + darts

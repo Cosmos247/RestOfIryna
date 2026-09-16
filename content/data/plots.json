@@ -3,9 +3,9 @@
     {
       "icon" : "🌾",
       "tuning" : {
-        "capacity" : 6,
+        "capacity" : 10,
         "producedItemId" : "food.potato",
-        "ratePerInterval" : 1
+        "ratePerInterval" : 2
       },
       "type" : "farm"
     },

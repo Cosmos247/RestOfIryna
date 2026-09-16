@@ -50,7 +50,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             // a keyboard left over from a trip that has already landed still
             // sends this text, and the handler answers it properly.
             let turnBackLocales = Commands.turnBack.buttonsForAllLocales(lingo: lingo)
-            for button in turnBackLocales { router[button.text] = onTurnBack }
+            for button in turnBackLocales { router[button.text] = handleTurnBack }
 
             router.unmatched                     = unmatched
             router[.callback_query(data: nil)]   = MainController.onCallbackQuery
@@ -122,7 +122,14 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     /// A trip that has already landed leaves the button on screen until the
     /// next message replaces the keyboard, so a tap with no trip behind it is
     /// expected rather than exceptional — it just re-draws the hub.
-    private func onTurnBack(context: Context) async throws -> Bool {
+    ///
+    /// Internal rather than private because `InventoryController` routes its
+    /// own Turn back tap here: the bag renders on an INLINE keyboard, so the
+    /// road's reply keyboard survives underneath it and the button stays
+    /// tappable on a screen this controller no longer owns. One trip, one
+    /// implementation — the alternative was a second copy of the refund math
+    /// living in the bag.
+    func handleTurnBack(context: Context) async throws -> Bool {
         await dismissPendingPicker(context: context)
         guard let turned = try await TravelService.turnBack(
             for: context.session, on: context.db, bot: context.bot, lingo: context.lingo

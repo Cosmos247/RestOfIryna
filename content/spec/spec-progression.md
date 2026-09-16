@@ -110,8 +110,8 @@ game*, and for revisiting them before anyone reaches them rather than after.
 | T2 | T3 | 35 |
 | T3 | T4 | 45 |
 | T4 | T5 | 60 |
-| T5 | T6 | 80 |
-| T6 | T7 | 85 |
+| T5 | T6 | 75 |
+| T6 | T7 | 90 |
 <!-- /generated -->
 
 Three things are worth noticing in that table before approving it.

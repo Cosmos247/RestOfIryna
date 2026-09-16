@@ -4,8 +4,8 @@
     35,
     45,
     60,
-    80,
-    85
+    75,
+    90
   ],
   "maxTier" : 6,
   "progression" : [
@@ -55,7 +55,7 @@
       "toTier" : 4
     },
     {
-      "capacity" : 80,
+      "capacity" : 75,
       "inputs" : [
         {
           "itemId" : "mat.hide",
@@ -70,7 +70,7 @@
       "toTier" : 5
     },
     {
-      "capacity" : 85,
+      "capacity" : 90,
       "inputs" : [
         {
           "itemId" : "mat.hide",

@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-15)
+## Commit index — live-play polish and after (2026-09-09 → 09-16)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,27 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Nothing is committed and undeployed.** The Pi took the tip on 2026-09-16 00:32.
+**One commit is undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the entry below it
+is newer and has not shipped. It touches Swift, so `/reload` cannot carry it.
+
+- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **two
+  ladders retuned, and the one button the bag could not answer** — farm 1/h cap 6 → **2/h
+  cap 10** (fills in 5 h like every other plot; pace 157–173 → **117–129 days**, taps/day
+  513 → 690, which returns about half of the Phase 8E cut), bag steps 4 and 5 re-spread from
+  +20/+5 to **+15/+15** (T5 80 → 75, T6 85 → **90**), and `turnBack` registered in
+  `InventoryController`. The bug: the bag draws its categories on an INLINE keyboard, so the
+  road's reply keyboard survives underneath it, while `onInventory` moves `routerName` — the
+  tap hit a router with no handler for it and `unmatched` re-drew the bag, which reads as a
+  dead button. It is the only screen that can do this: every other controller reachable
+  mid-trip either replaces the reply keyboard (Settings) or keeps the player on main
+  (Profile), and Estate/Capital are refused by their own travel guards. `MainController`'s
+  handler went `private onTurnBack` → `handleTurnBack` so there is one implementation of the
+  refund, not two. `validate --strict` 0/0, hash `b1a1af00` → `83dd8a9a`; digest `records
+  a5eca6451d8f6236` → `14d4fdd6442626ae` with `tuning`/`spawns`/`quests` byte-identical;
+  `simulate --strict` 0 broken bands / 12 warnings; **248 tests**. The `spec gates` block
+  quotes the bag ladder, so it was regenerated; three prose citations of `25/35/45/60/80/85`
+  in README / status / file-map were corrected by hand — the generated-block rule protects
+  tables, not the sentences beside them.
 
 **Deployed 2026-09-16 00:32 Kyiv** — the Pi took `201f093`, schema **v12**, content hash
 `b1a1af00`. Four migrations ran and were checked against the TABLES, not the log line:
@@ -104,6 +124,39 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-16 part 2 (two ladders, and a button that answered with the wrong screen)
+
+Three changes, all asked for while reading the game rather than the code.
+
+**The farm.** Asked what potatoes grow at: 1/h, cap 6, 6 h to fill — the only plot that was
+not on a 5 h cycle. Set to **2/h cap 10** on request. `FoodBudget` reads `plots.json`, so
+this is not cosmetic: the best two-slot mix flipped from coop+coop to farm+forest, the
+estate's daily Vigor rose 29–67% per tier, and the pace went **157–173 → 117–129 days** with
+taps/day **513 → 690**. Flagged at the time that Phase 8E had cut the farm from 4/h cap 20 to
+1/h cap 6 *deliberately*, to buy exactly that pace; this returns about half of it. The band
+gates at 72 days, so `--strict` still passes.
+
+**The bag.** Asked what each upgrade grants. The ladder was +10/+10/+15/**+20**/**+5** —
+the last step cost the most (25 hide, 12 ingots = 120 iron) and gave the least, five times
+the price per slot of any other step. Re-spread to **+15/+15** on request: T5 80 → 75,
+T6 85 → **90**. Two fields had to move, not one: `capacities[]` is what the bag ENFORCES
+(`InventoryEntry.slotCap`), `progression[].capacity` is what the upgrade screen PROMISES,
+and the validator errors when they disagree — which is the check that makes editing one of
+them safe.
+
+**The button.** Reported from play: travel to the capital, open the bag, tap Turn back —
+the bag redraws. Cause and the reason it is unique to this screen are in the commit index
+entry above. The fix is a pass-through, not a second implementation: `MainController`'s
+`onTurnBack` became internal `handleTurnBack`, and the bag routes to it and moves
+`routerName` with it, so the player ends on the travel banner routed to the controller that
+owns the road. Checked the same shape in the forest: the expedition registers all three of
+its own buttons and never hands routing away, so it is clean.
+
+The lesson worth keeping is the one the audit produced, not the fix: **a controller that
+takes over routing while leaving someone else's reply keyboard on screen inherits that
+keyboard's buttons whether it registers them or not.** The bag is the only one today. The
+next inline-only screen that changes `routerName` will be the next one.
 
 ## Session — 2026-09-16 (the deploy, and the record that was two days behind it)
 

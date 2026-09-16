@@ -258,8 +258,9 @@ list rather than an FK cascade, because `tavern_game_messages` carries no foreig
 a self-check against `information_schema` refuses to finish while any table still holds a
 row. **`scale` 60 → 1.0 landed 2026-09-09** — game time is real time, and `validate
 --strict` is clean for the first time (zero errors, zero warnings). The opening ledger is
-unaffected (the opening has no game-time gate); the estate pace — 78–87 days then, **157–173
-since the 09-14 XP halving** — becomes measurable, which compressed time never allowed.
+unaffected (the opening has no game-time gate); the estate pace — 78–87 days then, 157–173
+after the 09-14 XP halving, **117–129 since the farm was doubled on 2026-09-16** — becomes
+measurable, which compressed time never allowed.
 
 **Phase 9 is CLOSED (2026-09-01) — all five content specs approved**
 (`content/spec/spec-progression.md`, `spec-bestiary.md`, `spec-items.md`, `spec-sets.md`,
@@ -309,7 +310,7 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records a5eca6451d8f6236` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
+`records 14d4fdd6442626ae` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
 `quests 30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee` became a
 section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync),
 **248 tests**. `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
@@ -333,7 +334,9 @@ noise. **Phase 8E then removed passive Vigor regeneration entirely** — the tri
 during an expedition, so it was the reason depth had no gate. Vigor now comes only from food,
 quests and levelling; the estate's plots are the income, and `FoodBudget` measures what a
 tended one feeds (78–87 days to the cap after the food plots were cut to land there, down from
-1,211 to 513 taps a day — **157–173 days since the 09-14 XP halving**). The foraging pools left Swift for `zones.json` at the same time.
+1,211 to 513 taps a day — then 157–173 after the 09-14 XP halving, and **117–129 at 690
+taps/day since the farm went back to 2/h cap 10 on 2026-09-16**, which returned about half of
+that original cut). The foraging pools left Swift for `zones.json` at the same time.
 **What the report still flags:** the shipped bestiary carries ~60% of what its archetypes ask
 (Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
 batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature).
@@ -414,7 +417,7 @@ were superseded by Phases 4–6.
 - [ ] 5.4 Global estate placement + adjacency
 
 ### Exploration (Phase 3 — started)
-- [x] 3.0 Backpack slot cap — was flat 50 rows; now per-user `InventoryEntry.slotCap(for:User)` reading `BagCatalog.capForTier(user.bagTier)` (T1=25 → T6=85 since the 2026-05-12 per-unit pivot — slots count units, not stack rows). `add` throws `inventoryFull`; `canAccept` preflight; both bypass the cap when `user.isDeveloper`. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/Y slots`.
+- [x] 3.0 Backpack slot cap — was flat 50 rows; now per-user `InventoryEntry.slotCap(for:User)` reading `BagCatalog.capForTier(user.bagTier)` (T1=25 → T6=90 since the 2026-09-16 re-spread; per-unit since the 2026-05-12 pivot — slots count units, not stack rows). `add` throws `inventoryFull`; `canAccept` preflight; both bypass the cap when `user.isDeveloper`. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/Y slots`.
 - [x] 3.1 Active exploration MVP — ExplorationState Fluent model (one row per active expedition, `stepsDeep` = current km, unique on user_id, deleted on return/death), EnemyCatalog code-based bestiary (5 animals across 4 tiers: wild boar / moose / buffalo + rabid lynx / wolf, with depth ranges and loot tables), ExplorationService (rollStep + autobattle stub + loot drops + vigor/starvation integration), rewritten ExplorationController with step/bag/return/death flow. Callbacks use `explore:` prefix. Pass-through on main/inventory/estate now resumes or begins an expedition instead of showing the stub.
 - [x] 3.2 Return path with per-room visit decay — migration `AddExplorationReturnState` adds a `visited_rooms` TEXT column (JSON dict of km → visit count) and a dormant `returning` column (added in an earlier 3.2 design pass, now unused). `ExplorationService.rollStep` takes `priorVisits:Int` and picks a three-tier weight table via `weights(forPriorVisits:)`; the weights themselves live in `content/data/tuning/exploration.json` and are deliberately not restated here. Tier 2+ zeroes encounter and trip — the anti-farm brake. Expedition reply keyboard is `[🚶 Step fwd] [🔙 Step back]` / `[🎒 Bag]` — direction is implicit in the button. Step Back at km ≥ 2 decrements + rolls with prior visits; at km ≤ 1 it ends the expedition cleanly with no event. Each step increments the entered room's counter, so oscillating between two rooms deplete them fast (tier 2+ = bare). Three `.nothing` narrative variants (fresh / thinned / bare). /start and stray Cancel presses force-end without walking back.
 - [x] Passive HP regen at the estate — `tuning/vigor.json` → `healing.regenPerMinute` of maxHp per minute (**10%** since 2026-09-09; 5% originally, 20% briefly) while the player is not on ANY expedition (active or passive) and hp < maxHp. `HealingService.tick(user:inExpedition:on:)` is called from `RouterStore.process` on every interaction (lazy compute, no background scheduler). `RouterStore` queries `ExplorationState.current` once per dispatch to derive `inExpedition`. `User.lastHpTickAt` column via `AddHpRegenTick` migration. Clock is cleared during expeditions and pinned to now at full HP, so banked regen never accumulates against future damage.

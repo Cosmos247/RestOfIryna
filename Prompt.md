@@ -38,15 +38,17 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the docs pass that recorded the 09-16 deploy |
-| pushed | everything — `origin/main` is at the tip |
-| running on the Pi | **`201f093`** — the tip — **schema v12**, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
-| committed but NOT deployed | **none** — everything committed is live as of 2026-09-16 00:32 |
+| HEAD | **this commit** — the farm and bag ladders retuned, and the bag's dead Turn back button |
+| pushed | **no** — `origin/main` is one commit behind. Push is user-side |
+| running on the Pi | **`201f093`** — **one commit behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
+| committed but NOT deployed | **this commit** — two content tables and a controller fix |
 
-**Nothing is waiting on a deploy.** The 09-16 00:32 restart took the schema bump
-(**v11 → v12**) and four migrations — `AddCombatFleeFails`, `AddWarehouseGearState`,
-`AddExplorationMaxDepth` and the one-shot `ResetDeepestKm` — and all four were verified
-against the TABLES, not the log line. What is waiting is a human opening the screens.
+**A deploy is waiting, and `/reload` will not carry it.** This commit moves `plots.json`
+and `bags.json` — which the hot swap could take on its own — AND two controllers, which it
+cannot. Binary and content have to land together, the rule for every mixed change: pull,
+build, `pm2 restart ROI`. **No migration, no schema bump — v12 stands.** The 09-16 00:32
+restart's four migrations are history, not something this commit repeats. What is still
+waiting besides this is a human opening the screens.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -250,14 +252,19 @@ shipped roster against its archetype contract; `--strict` exits 1 on a broken ba
 sample size **8000 fights per cell** — 2000 crossed the invariance band on sampling noise alone.
 
 Current state: **18 of 18 invariance rows pass, 0 broken bands, 12 warnings**, 19,437,688 XP
-from level 1 to 40, **157–173 days** on a tended estate (warrior 173.0 / archer 166.7 / mage
-156.8 — it was 78–87 before the 09-14 XP halving; the band the report gates on is 72–200). `EnemyGenerator` is what the
+from level 1 to 40, **117–129 days** on a tended estate (warrior 128.7 / archer 124.0 / mage
+116.6 — it was 157–173 until the farm was doubled to 2/h cap 10 on 2026-09-16, and 78–87
+before the 09-14 XP halving; the band the report gates on is 72–200, and taps/day went 513 →
+690 with the same edit). `EnemyGenerator` is what the
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-16, schema v12):** `records a5eca6451d8f6236` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` — matched
-byte for byte against the Pi's own `--content-digest` before the 00:32 restart. **This
+**Current digest baseline (2026-09-16, schema v12):** `records 14d4fdd6442626ae` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. The
+`records` half moved twice in one sitting — the farm's rate and cap, then the bag ladder's
+top two steps — and the other three did not move at all, which is the whole point of
+splitting them. **Until the Pi is restarted it will still report `a5eca6451d8f6236`**: that
+disagreement is the undeployed commit, not a fault. **This
 is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the

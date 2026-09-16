@@ -52,6 +52,14 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             let inventoryLocales = Commands.inventory.buttonsForAllLocales(lingo: lingo)
             for button in inventoryLocales { router[button.text] = onRefresh }
 
+            // Turn back belongs to the trip, not to the bag — but the bag is the
+            // one screen that can be open while a trip is in flight AND leaves
+            // the road's reply keyboard standing, because its categories are
+            // inline. Unregistered, the tap fell to `unmatched` and re-drew the
+            // bag, which reads exactly like a dead button.
+            let turnBackLocales = Commands.turnBack.buttonsForAllLocales(lingo: lingo)
+            for button in turnBackLocales { router[button.text] = onTurnBack }
+
             router.unmatched = unmatched
             router[.callback_query(data: nil)] = InventoryController.onCallbackQuery
         }
@@ -100,6 +108,17 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = ctrl.routerName
         try await context.session.saveAndCache(in: context.db)
         return true
+    }
+
+    /// Hands the trip back to `MainController`, which owns the road, and moves
+    /// the router with it — the player is looking at a travel banner once this
+    /// returns, not at their bag. Same shape as `onProfile` / `onSettings`.
+    private func onTurnBack(context: Context) async throws -> Bool {
+        let ctrl = Controllers.mainController
+        let handled = try await ctrl.handleTurnBack(context: context)
+        context.session.routerName = ctrl.routerName
+        try await context.session.saveAndCache(in: context.db)
+        return handled
     }
 
     private func onSettings(context: Context) async throws -> Bool {
