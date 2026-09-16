@@ -21,6 +21,51 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-16 — the arena invite stopped outliving itself** (`b63f835`, **deployed 2026-09-17
+00:10**). Reported by a tester with a screenshot. The duel invite was sent with
+`_ = try? await bot.sendMessage(...)`, so its message id was discarded and nothing could ever
+edit or delete it: an answered, declined or expired invite kept live buttons forever and every
+tap replied «недійсний». `PendingChallenge.inviteMessageId` is now filled by
+`ArenaStore.attachInvite` and `closeInvite` edits the bubble on all six closing paths, leaving
+the outcome where the question was. Second, independent cause of the same report:
+`ArenaStore.challenge` deleted both players' lobby entries with no path to restore them, so a
+declined challenge made both invisible to every opponent list — removed, since `lobbyMembers`
+already filters on `byUser` and the sweeper already ages presence out. Also: decline on a dead
+invite returned in silence, `opponentLocale` was a literal `""`, and the capital's Master now
+opens «Столична майстерня» so it stops sharing a word and an icon with the estate's room.
+**`CapitalController.pushTradeInvite` has the identical discarded-id defect, untouched.**
+
+**2026-09-16 — a Profile key on the trail, and a name on the sale** (`6eefe85`, **deployed
+2026-09-17 00:10**). The walk keyboard's second row is `[🎒 Сумка] [👤 Профіль]`, reusing
+`Commands.profile`. Adding it exposed that the profile's own buttons — `journal:`, `gear:`,
+the `lb:` tabs — were answered by nobody during an expedition: returning false from a callback
+handler is silence, because `Router.process` reaches `unmatched` only when
+`update.message != nil`. `ExplorationController` now ends with a catch-all forward to
+`MainController`, matching `CapitalController`. The market's sold notification names the
+buyer; the buy board had shown the seller's nickname all along.
+
+**2026-09-16 — the kitchen could not say no, and could not say what you had** (`5e55139`,
+**deployed 2026-09-17 00:10**). Cooking with a full bag hung the button forever and ate the
+ingredients: the fit check predicted in ROWS against a cap counted in UNITS, and a stackable
+output whose row already existed skipped the capacity test entirely, so the drain ran and
+`InventoryEntry.add` threw out of the callback. Now unit arithmetic against the post-drain
+state of each store, and **a full bag routes the output to the warehouse** instead of refusing
+(`.inventoryFull` → `.noRoom`, reachable only when both are full and only before any drain).
+The same row arithmetic also refused crafts that did fit. Second report, not a bug: the recipe
+screen printed what a dish requires and never what the player holds, so the shortage modal was
+the only way to read your own pantry — both screen and craft now read
+`CraftingService.stock`, two queries whatever is asked about.
+
+**2026-09-16 — two ladders retuned, and the button the bag could not answer** (`dc5f037`,
+**deployed 2026-09-17 00:10**). Farm 1/h cap 6 → **2/h cap 10** (fills in 5 h like every other
+plot; pace 157–173 → **117–129 days**, taps/day 513 → 690, returning about half of the Phase 8E
+cut). Bag steps 4 and 5 re-spread from +20/+5 to **+15/+15** — T5 80 → 75, T6 85 → **90** — in
+both `capacities[]` (what the bag enforces) and `progression[].capacity` (what the upgrade
+screen promises), which the validator cross-checks. And `turnBack` registered in
+`InventoryController`: the bag draws its categories on an INLINE keyboard, so the road's reply
+keyboard survives underneath while `onInventory` moves `routerName`, and the tap hit a router
+with no handler for it.
+
 **2026-09-15 — the Mine runs on one clock** (`78393aa`, **deployed 2026-09-16 00:32**). Iron was 1/hr cap 20 against
 pebble's 8/hr cap 40, so the two streams sharing one `lastHarvestedAt` filled in 5 h and
 20 h — and the iron cap was unreachable without wasting pebble, since iron accrues flat

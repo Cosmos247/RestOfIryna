@@ -11,14 +11,21 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Four commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the four entries
-below it are newer and have not shipped. All touch Swift and three touch Lingo, so `/reload`
-cannot carry any of them.
+**Nothing is committed and undeployed.** The Pi took the tip on 2026-09-17 00:10.
 
-- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **the invite
+**Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
+these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
+`--content-digest` matched the Mac byte for byte BEFORE the restart was ordered —
+`records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` ·
+`quests 30de20902006e3b9`, all four self-checks ✅. `Code: 400` held at its 913 baseline and
+no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared after the restart. The four entries below
+are what it carried.
+
+- `b63f835` (09-16) **the invite
   outlived the challenge, and took both fighters off the board with it** — from a tester, with
-  a screenshot: a duel invite whose buttons never died, «недійсний» on every tap, and «після
-  цього мене не видно в списку опонентів». Two independent causes. The bubble: the invite was
+  a screenshot: a duel invite whose buttons never died, «недійсний» on every tap, and the
+  report that after it happened he was no longer visible in anyone's opponent list. Two
+  independent causes. The bubble: the invite was
   sent with `_ = try? await bot.sendMessage(...)`, so its message id was discarded and NOTHING
   could ever edit or delete it. Now `PendingChallenge.inviteMessageId` is filled by
   `attachInvite` right after the send, and `closeInvite` edits the bubble on all six closing
@@ -37,7 +44,7 @@ cannot carry any of them.
   **`CapitalController.pushTradeInvite` has the identical discarded-id defect and is
   untouched.**
 
-- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **a Profile
+- `6eefe85` (09-16) **a Profile
   key on the trail, and a name on the sale** — two asks, and the first one uncovered a third
   instance of the callback-silence class. The walk keyboard's second row is now
   `[🎒 Сумка] [👤 Профіль]`, reusing `Commands.profile` so it is literally the same button as
@@ -57,7 +64,7 @@ cannot carry any of them.
   where «Покупець» and «Купив» both would. `validate --strict` 0/0, digest unmoved,
   **248 tests**.
 
-- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **the
+- `5e55139` (09-16) **the
   kitchen could not say no, and could not say what you had** — two player reports, one
   defect and one absence. The defect: cooking with a full bag spun the button forever and
   ate the ingredients. `CraftingService` predicted the fit in ROWS while the bag counts
@@ -75,7 +82,7 @@ cannot carry any of them.
   unmoved (no content data), **248 tests**. Same-direction defect fixed on the way: the row
   arithmetic also refused crafts that DID fit.
 
-- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **two
+- `dc5f037` (09-16) **two
   ladders retuned, and the one button the bag could not answer** — farm 1/h cap 6 → **2/h
   cap 10** (fills in 5 h like every other plot; pace 157–173 → **117–129 days**, taps/day
   513 → 690, which returns about half of the Phase 8E cut), bag steps 4 and 5 re-spread from
@@ -189,8 +196,8 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 ## Session — 2026-09-16 part 5 (an invite that would not die)
 
 A tester's screenshot: a duel invite, both buttons still live, «❌ Виклик уже недійсний» under
-it, and the note «і після цього мене не видно в списку опонентів». Two sentences, two
-unrelated bugs.
+it, and a note saying that afterwards he no longer appeared in anyone's opponent list. Two
+sentences, two unrelated bugs.
 
 **The bubble.** `_ = try? await context.bot.sendMessage(...)` — the id thrown away at the
 moment of sending. Nothing downstream could edit or delete that message, so the buttons

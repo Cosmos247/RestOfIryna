@@ -231,19 +231,24 @@ warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
 units.** `InventoryEntry.add` counts UNITS and throws when it will not fit;
 `CraftingService` predicted in ROWS — left over from before the 2026-05-12 per-unit pivot —
 and treated "a row of this item already exists" as room. The prediction said yes, the writer
-said no, and the throw escaped the callback handler. **A throw out of a callback handler is
-an inline button that spins forever**: nothing answers `answerCallbackQuery`, the SDK logs a
-`BotError` nobody reads, and the player taps again. **A callback NO handler claims is
-just as silent** — `Router.process` reaches `unmatched` only when `update.message != nil`,
-which a callback query never has — so a controller that renders another controller's screen
-must end by forwarding what it does not recognise (`ExplorationController` and
-`CapitalController` both hand the rest to `MainController`, which owns the profile's
-`journal:` / `gear:` / `lb:` buttons and the stale-button fallback). A list of prefixes is
-the version that rots; the catch-all is the one that survives the next button. Here it also ate the ingredients, because
-the drain runs before the add and there is no transaction. `TradeService` has the shape to
+said no, the throw escaped the callback handler, and because the drain runs before the add
+with no transaction, it ate the ingredients on the way out. `TradeService` has the shape to
 copy — `used − outgoing + incoming ≤ cap`, in units, with the dev bypass matching the
-writer's. **A full bag is no longer a refusal to craft**: the output goes to the warehouse
-and the success banner names where it landed, which the banner always did.
+writer's. Predict for EVERY store the write could land in: the warehouse half of the same
+check had to account for its own drain too. **A full bag is no longer a refusal to craft** —
+the output goes to the warehouse and the success banner names where it landed, which that
+banner always did. Auto-memory `project-fit-check-matches-the-writer`.
+
+**A dead inline button is the house symptom, and it has two causes.** A **throw** out of a
+callback handler spins the button forever: nothing answers `answerCallbackQuery`, the SDK
+logs a `BotError` nobody reads, and the player taps again. A callback **no handler claims**
+is just as silent — `Router.process` reaches `unmatched` only when `update.message != nil`,
+which a callback query never has — so a controller that renders another controller's screen
+must END by forwarding what it does not recognise. `ExplorationController` and
+`CapitalController` both hand the rest to `MainController`, which owns the profile's
+`journal:` / `gear:` / `lb:` buttons and the stale-button fallback; a list of prefixes is the
+version that rots, the catch-all survives the next button. Three player reports in two days
+were this one shape. Auto-memory `project-dead-inline-buttons`.
 
 **A screen that can answer a question should answer it before the player gets it wrong.**
 The recipe screen printed what a dish REQUIRES and never what the player HELD, so the only

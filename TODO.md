@@ -1621,10 +1621,19 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-16 — **four commits are undeployed.** The newest repairs the arena
-invite, reported by a tester: the bubble kept live buttons forever because its message id was
-thrown away, and issuing a challenge deleted both players from the lobby with nothing to put
-them back. **The trade invite still has the first half of that defect** and is untouched.
+*Last updated: 2026-09-17 — **everything committed is deployed.** The Pi took `b63f835` at
+**00:10** with no migration (schema v12 stands); the Linux build ran 66.6 s and the Pi's own
+`--content-digest` matched the Mac byte for byte before the restart was ordered. `Code: 400`
+held at its 913 baseline.
+
+**Per-entry "Not deployed" markers in the polish log below are as-of-writing and are all
+superseded** — the authority on what is live is this footer and `Prompt.md`, never a line in
+the log.
+
+That deploy carried four commits. The newest repairs the arena invite, reported by a tester:
+the bubble kept live buttons forever because its message id was thrown away, and issuing a
+challenge deleted both players from the lobby with nothing to put them back. **The trade
+invite still has the first half of that defect** and is untouched.
 
 Before it, one adds a Profile key
 to the walk keyboard — and, in doing so, closes the silence behind it: the profile's own

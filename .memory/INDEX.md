@@ -33,11 +33,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. The Pi took `201f093` on **2026-09-16 00:32** (schema v12, four
-  migrations applied and verified against the tables); **four commits sit on top of it,
-  undeployed** — two retuned ladders, the crafting repair, a Profile key on the walk keyboard
-  and the arena invite repair, none of which `/reload` can carry.
-  Besides that restart, what is waiting is a human opening the screens.
+  play surfaces a need for. The Pi runs **`b63f835`** since **2026-09-17 00:10** (schema v12,
+  no migration in that batch; the Pi's own digest was matched byte for byte before the
+  restart was ordered). **Nothing is committed and undeployed.** What is waiting is a human
+  opening the screens — a backlog now spanning two deploys and never walked.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -82,6 +81,16 @@ following the rule you are about to break. The ones a fresh session most often w
   concept; the extra readers are where the real defects sit
 - `feedback-docs-in-english` — converse in Ukrainian, persist in English; Cyrillic in a
   doc should only ever be quoted game copy
+- `feedback-redundant-guard-becomes-the-defect` — the belt-and-braces line that outlives its
+  reason is where the bug is; the differently-shaped implementation is the suspect
+- `project-dead-inline-buttons` — a throw OR an unclaimed callback; neither reaches
+  `unmatched`, so both spin forever. Forward with a catch-all, never a prefix list
+- `project-fit-check-matches-the-writer` — predict in the writer's units, for every store the
+  write can land in
+- `project-close-the-bubble-you-opened` — keep the message id of any button you will later
+  need to remove, and close on every path that ends the state
+- `project-inline-screens-inherit-the-keyboard` — an inline-only screen that changes
+  `routerName` inherits the reply buttons it did not replace
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

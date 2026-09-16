@@ -33,23 +33,24 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-16, after the 00:32 deploy)
+### Where things stand right now (2026-09-17, after the 00:10 deploy)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the arena invite stops outliving itself, and stops hiding both fighters |
-| pushed | **no** — `origin/main` is four commits behind. Push is user-side |
-| running on the Pi | **`201f093`** — **four commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
-| committed but NOT deployed | **four commits** — `dc5f037` (two ladders + the bag's Turn back button), `5e55139` (the kitchen repair), `6eefe85` (Profile on the trail + the buyer's name) and this one |
+| HEAD | **this commit** — the docs pass that recorded the 09-17 deploy |
+| pushed | `origin/main` was at `b63f835` when it shipped; **this docs commit is not pushed yet**. Push is user-side |
+| running on the Pi | **`b63f835`** — **the tip** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-17 00:10** |
+| committed but NOT deployed | **none of the code** — everything that changes behaviour is live as of 2026-09-17 00:10 |
 
-**A deploy is waiting, and `/reload` cannot carry any of it.** `dc5f037` moves `plots.json`
-and `bags.json` — which the hot swap could take on its own — but all four commits also move
-Swift, and three of them move **locale strings**, which are not hot-reloaded at all. Binary,
-content and Lingo have to land together: pull, build, `pm2 restart ROI`. **No migration, no
-schema bump — v12 stands.** The 09-16 00:32 restart's four migrations are history, not
-something these commits repeat. What is still waiting besides this is a human opening the
-screens.
+**Nothing is waiting on a deploy.** The 09-17 00:10 restart took four commits and **no
+migration — schema v12 stands**, because none of them adds a column. The Linux build ran in
+66.6 s and the Pi's own `--content-digest` matched the Mac byte for byte BEFORE the restart
+was ordered, which is the order that decision has to happen in. `Code: 400` held at its 913
+baseline and no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
+
+**What is waiting is a human opening the screens** — and that backlog is now large, because
+four commits' worth of surfaces have never been looked at.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -57,12 +58,17 @@ still ran `aa18f57` while it had taken `6e3c18e` two days earlier. A deploy is t
 nothing writes down by itself. Four read-only commands, none of which touch the bot or the
 database, are in auto-memory `feedback-ask-the-machine-not-the-record`.
 
-### What the 09-16 deploy carried
+### What the 09-17 deploy carried
 
-`78393aa` the Mine on one clock + the plot card · `c9ec209` depth banked on arrival and the
-forest's back door closed · `42e8818` the Master's repair list + `GearState` on the warehouse
-· `b32ac32` the escape ceiling · `7469715` coins on the ground. **None of it has been opened
-by a human**, which is the next action.
+`dc5f037` the farm and bag ladders retuned + the bag's dead Turn back button ·
+`5e55139` the kitchen repair (a full bag no longer breaks a craft; the recipe screen shows
+what you hold) · `6eefe85` a Profile key on the walk keyboard + the buyer's name on a sale ·
+`b63f835` the arena invite stops outliving itself and stops hiding both fighters, plus the
+capital's «Столична майстерня».
+
+Three of those four came from somebody PLAYING — two from a tester — and the 09-16 deploy
+before them (`78393aa` · `c9ec209` · `42e8818` · `b32ac32` · `7469715`) has **still** not been
+walked. **None of either batch has been opened by a human**, which is the next action.
 
 Each one's account — what it changed, why, and its `validate` / `simulate` / `swift test` /
 digest block — is the **Commit index** at the top of `.memory/sessions.md` plus the dated
@@ -71,15 +77,15 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 `project-gear-state-travels-with-the-unit`, `project-flee-has-a-ceiling`,
 `feedback-no-monster-silver` (§where the line actually is).
 
-### Next action: walk it. Nothing below has been looked at.
+### Next action: walk it. Nothing below has been looked at, across two deploys.
 >
 > **Every surface listed here is live and unopened by a human.** The Pi took the tip on
-> 2026-09-16 00:32, so nothing below waits on a deploy — it waits on someone looking. Every
+> 2026-09-17 00:10, so nothing below waits on a deploy — it waits on someone looking. Every
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
-> It is also the whole backlog.
+> It is also the whole backlog, and it now spans two deploys.
 >
-> **Added 2026-09-16 part 3 — NOT deployed. The arena one came from a tester:**
+> **Added 2026-09-16 part 3 — LIVE since the 09-17 00:10 deploy. The arena one came from a tester:**
 > - **send a duel invite and decline it.** The bubble must lose its buttons and become
 >   «🏳 Виклик від <нік> — відхилено. Ставка була 🪙 N.» Tapping it again must be impossible;
 >   before this the buttons stayed live forever and every tap said «недійсний».
@@ -88,12 +94,13 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > - **then look at the opponents list.** BOTH players must be back in it within their 180 s
 >   presence window — this is the other half of the report. A challenge used to delete both
 >   lobby entries with nothing to restore them.
-> - **a bubble from BEFORE the restart is beyond saving** — its id was never stored, so its
->   buttons stay. Tapping gives an honest «недійсний». Only new invites are clean.
+> - **a bubble from BEFORE the 00:10 restart is beyond saving** — its id was never stored,
+>   so its buttons stay, and the actor's `pending` was emptied by the restart anyway. Tapping
+>   gives an honest «недійсний». Only invites created after 00:10 are clean.
 > - **the capital's Master** must now read «Столична майстерня, що гучніша за кузню…
 >   З вашої сировини тут нічого не зроблять…», while the estate keeps «🛠 Майстерня».
 >
-> **Added 2026-09-16 part 2 — NOT deployed:**
+> **Added 2026-09-16 part 2 — LIVE since 09-17 00:10, never walked:**
 > - **walk into the forest and tap 👤 Профіль.** It must open over the walk screen, and the
 >   step buttons must still work underneath. Then 📓 Нотатник → switch a leaderboard tab →
 >   🔙 back → step forward. Every one of those taps was silent before: the profile's buttons
@@ -101,7 +108,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > - **sell something on the market and wait for it to sell.** The push must now name the
 >   buyer: «Ваш лот продано: … Купує <нік>. Срібло зараховано.»
 >
-> **Added 2026-09-16 — NOT deployed. Walk after the restart; two came from players:**
+> **Added 2026-09-16 — LIVE since 09-17 00:10, never walked; two came from players:**
 > - **cook with a full bag.** It must now cook and say «— сумка повна, тож на склад 📦»,
 >   and the dish must really be in the warehouse. Before this the button spun forever and
 >   the ingredients were eaten. The worst case to try is the one that broke: ingredients on
@@ -236,6 +243,15 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
   picker's Back button, «Ділянка» in the list title and the new slot card. The user leans to
   «ділянка»; unifying is ~6 locale keys in two files and no code. Raised 2026-09-16, left
   open on purpose rather than folded into an unrelated commit.
+- **`CapitalController.pushTradeInvite` discards its message id**, exactly as the arena's
+  duel invite did before `b63f835`, so a trade invite keeps live buttons after the session it
+  belongs to is gone. Found by the pre-commit audit on 2026-09-16 and left alone on purpose:
+  the fix is mechanical but the trade flow has its own delete-vs-keep policy, so which shape
+  the closed bubble takes is a design call. Auto-memory `project-close-the-bubble-you-opened`.
+- **Two forms of one sentence on the estate.** The recipe screen says
+  «❌ 1× 🥩 Сире м'ясо — маєте 0»; the weapon- and estate-upgrade screens say
+  «1× 🪵 Соснова дошка  (12/1)» (`EstateController:277`). Same concept, two renderings. The
+  new form was chosen deliberately, but the older two were not migrated — ~2 lines each.
 - **Six dead functions from April**, none touched since: `renderStub`,
   `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
   (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
@@ -299,13 +315,12 @@ before the 09-14 XP halving; the band the report gates on is 72–200, and taps/
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-16, schema v12):** `records 14d4fdd6442626ae` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. The
+**Current digest baseline (2026-09-17, schema v12):** `records 14d4fdd6442626ae` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` — **matched
+byte for byte against the Pi's own `--content-digest` before the 00:10 restart**. The
 `records` half moved twice in one sitting — the farm's rate and cap, then the bag ladder's
 top two steps — and the other three did not move at all, which is the whole point of
-splitting them. **Until the Pi is restarted it will still report `a5eca6451d8f6236`**: that
-disagreement is the undeployed commit, not a fault. **This
-is the one place the baseline is kept** — `.memory/status.md` quotes it, and
+splitting them. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
 knob (auto-memory `feedback-digest-names-constants`).
