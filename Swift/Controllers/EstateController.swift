@@ -828,7 +828,8 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// initial detail view and for the in-place refresh after a successful craft
     /// (the `✅ Crafted ...` banner is appended to the bottom by the caller so
     /// it's visible without scrolling past a tall recipe list).
-    fileprivate func renderRecipeDetail(recipe: Recipe, lingo: Lingo, locale: String) -> String {
+    fileprivate func renderRecipeDetail(recipe: Recipe, stock: [String: CraftingService.StockLine],
+                                       lingo: Lingo, locale: String) -> String {
         let outputItem = ItemCatalog.find(recipe.output.itemId)
         let outputIcon = outputItem?.icon ?? ""
         let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
@@ -844,11 +845,26 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // Recipe section.
         lines.append("")
         lines.append("<b>" + lingo.localize("workshop.detail.recipe", locale: locale) + "</b>")
+        // Each input carries what the player actually holds. The number is the
+        // COMBINED bag + warehouse total, because that is what `craft` spends —
+        // quoting the bag alone would refuse to add up against the button. Both
+        // read `CraftingService.stock`, so they cannot drift apart.
+        //
+        // Added 2026-09-16 from a player report: the only place this figure
+        // appeared was the shortage modal, so the way to read your own pantry
+        // was to try to cook and fail. A screen that answers a question only
+        // when you get it wrong is a screen that has the answer and is sitting
+        // on it.
         for input in recipe.inputs {
             let item = ItemCatalog.find(input.itemId)
             let icon = item?.icon ?? ""
             let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
-            lines.append("   \(input.quantity)× \(icon) \(name)")
+            let have = stock[input.itemId]?.total ?? 0
+            let mark = have >= input.quantity ? "✅" : "❌"
+            let haveText = lingo.localize("workshop.detail.have", locale: locale, interpolations: [
+                "have": "\(have)"
+            ])
+            lines.append("   \(mark) \(input.quantity)× \(icon) \(name) — \(haveText)")
         }
 
         // Stats section — gear (gearStats). Mutually exclusive with effects
@@ -1942,7 +1958,8 @@ extension EstateController {
         }
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-        let body = ctrl.renderRecipeDetail(recipe: recipe, lingo: context.lingo, locale: locale)
+        let stock = try await CraftingService.stock(for: context.session, on: context.db)
+        let body = ctrl.renderRecipeDetail(recipe: recipe, stock: stock, lingo: context.lingo, locale: locale)
         let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
         return true
@@ -1951,8 +1968,9 @@ extension EstateController {
     /// `craft:<recipe.id>` — performs the craft and refreshes the detail screen
     /// with a status banner at the BOTTOM of the body (so the player sees the
     /// "✅ Crafted ..." line without scrolling past the recipe + stats).
-    /// Failures (missing materials / inventory full) raise a modal alert and
-    /// leave the screen unchanged.
+    /// Failures (missing materials / nowhere to put the output) raise a modal
+    /// alert and leave the screen unchanged. A full BAG is not a failure — the
+    /// craft goes to the warehouse and the banner says so.
     static func handleCraft(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let recipeId = String(data.dropFirst("craft:".count))
         let locale = context.session.locale
@@ -2004,16 +2022,22 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
-        case .inventoryFull:
-            let toast = context.lingo.localize("workshop.alert.bag_full", locale: locale)
+        case .noRoom:
+            let toast = context.lingo.localize("workshop.alert.no_room", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
-        case .success(let outputItemId, let qty):
+        case .success(let outputItemId, let qty, let destination):
             let item = ItemCatalog.find(outputItemId)
             let icon = item?.icon ?? ""
             let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? outputItemId
-            let statusLine = "✅ " + context.lingo.localize(recipe.category.craftedAlertKey, locale: locale, interpolations: [
+            // A bag with no room sends the craft to the warehouse instead of
+            // refusing it; the banner is the whole notice, because it already
+            // named a destination on every craft the player has ever made.
+            let alertKey = destination == .warehouse
+                ? recipe.category.craftedToWarehouseAlertKey
+                : recipe.category.craftedAlertKey
+            let statusLine = "✅ " + context.lingo.localize(alertKey, locale: locale, interpolations: [
                 "qty":  "\(qty)",
                 "icon": icon,
                 "name": name
@@ -2023,7 +2047,11 @@ extension EstateController {
 
             // Stay on the detail screen; banner published as a standalone
             // message under the inline keyboard so it can't be missed.
-            let body = ctrl.renderRecipeDetail(recipe: recipe, lingo: context.lingo, locale: locale)
+            // Re-read AFTER the craft, never before: this redraw is the one
+            // that has to show the ingredients going down, and a snapshot taken
+            // above would quote the pantry the player had a moment ago.
+            let stock = try await CraftingService.stock(for: context.session, on: context.db)
+            let body = ctrl.renderRecipeDetail(recipe: recipe, stock: stock, lingo: context.lingo, locale: locale)
             let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
             try await editEstateMessage(message: message, text: body, inline: inline, context: context)
             await ctrl.postStatusBanner(statusLine, context: context)

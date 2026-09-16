@@ -34,8 +34,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
   play surfaces a need for. The Pi took `201f093` on **2026-09-16 00:32** (schema v12, four
-  migrations applied and verified against the tables); **one commit sits on top of it,
-  undeployed** — two retuned ladders and a controller fix, so `/reload` cannot carry it.
+  migrations applied and verified against the tables); **two commits sit on top of it,
+  undeployed** — two retuned ladders, a controller fix, and the crafting repair, none of
+  which `/reload` can carry.
   Besides that restart, what is waiting is a human opening the screens.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next

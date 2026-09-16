@@ -38,17 +38,18 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the farm and bag ladders retuned, and the bag's dead Turn back button |
-| pushed | **no** — `origin/main` is one commit behind. Push is user-side |
-| running on the Pi | **`201f093`** — **one commit behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
-| committed but NOT deployed | **this commit** — two content tables and a controller fix |
+| HEAD | **this commit** — the kitchen repair: a full bag no longer breaks a craft, and the recipe screen finally shows what you hold |
+| pushed | **no** — `origin/main` is two commits behind. Push is user-side |
+| running on the Pi | **`201f093`** — **two commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
+| committed but NOT deployed | **two commits** — `dc5f037` (two ladders + the bag's Turn back button) and this one |
 
-**A deploy is waiting, and `/reload` will not carry it.** This commit moves `plots.json`
-and `bags.json` — which the hot swap could take on its own — AND two controllers, which it
-cannot. Binary and content have to land together, the rule for every mixed change: pull,
-build, `pm2 restart ROI`. **No migration, no schema bump — v12 stands.** The 09-16 00:32
-restart's four migrations are history, not something this commit repeats. What is still
-waiting besides this is a human opening the screens.
+**A deploy is waiting, and `/reload` cannot carry any of it.** `dc5f037` moves `plots.json`
+and `bags.json` — which the hot swap could take on its own — but both commits also move
+Swift, and this one moves **locale strings**, which are not hot-reloaded at all. Binary,
+content and Lingo have to land together: pull, build, `pm2 restart ROI`. **No migration, no
+schema bump — v12 stands.** The 09-16 00:32 restart's four migrations are history, not
+something these commits repeat. What is still waiting besides this is a human opening the
+screens.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -77,6 +78,23 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
 > It is also the whole backlog.
+>
+> **Added 2026-09-16 — NOT deployed. Walk after the restart; two came from players:**
+> - **cook with a full bag.** It must now cook and say «— сумка повна, тож на склад 📦»,
+>   and the dish must really be in the warehouse. Before this the button spun forever and
+>   the ingredients were eaten. The worst case to try is the one that broke: ingredients on
+>   the WAREHOUSE, bag at exactly its cap, and a dish you already own a portion of.
+> - **fill the warehouse too, then cook.** One modal: «🎒 Сумка і 📦 склад повні» — and
+>   nothing may be consumed. Check the ingredient count is unchanged afterwards.
+> - **open any recipe.** Every ingredient line must carry ✅/❌ and «маєте N», where N is
+>   bag + warehouse TOGETHER. Cook once without leaving the screen: the numbers must tick
+>   down in place.
+> - **a recipe you cannot afford.** The ❌ lines must match what the shortage modal says if
+>   you tap Cook anyway — they are the same reading now, so a disagreement is a real bug.
+> - **the ladders from `dc5f037`** — a farm at 2/год, єм 10 filling in 5 h, and the bag
+>   upgrade screen quoting **+15** at both of the top two steps (T6 now 90).
+> - **turn back from inside the bag.** Travel to the capital, open 🎒 Сумка, tap
+>   «↩️ Розвернутись». It must turn you around, not redraw the bag.
 >
 > **Added 2026-09-15 part 5 — LIVE since the 09-16 00:32 deploy, never walked:**
 > - **claim a slot and read the Mine's line.** It must now be two lines: «Річкова галька,

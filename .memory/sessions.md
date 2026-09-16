@@ -11,8 +11,27 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**One commit is undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the entry below it
-is newer and has not shipped. It touches Swift, so `/reload` cannot carry it.
+**Two commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the two entries
+below it are newer and have not shipped. Both touch Swift and one touches Lingo, so
+`/reload` cannot carry either.
+
+- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **the
+  kitchen could not say no, and could not say what you had** — two player reports, one
+  defect and one absence. The defect: cooking with a full bag spun the button forever and
+  ate the ingredients. `CraftingService` predicted the fit in ROWS while the bag counts
+  UNITS, and a stackable output whose row already existed skipped the capacity test outright
+  (`outputFits = (existing != nil) || …`) — so the drain ran and `InventoryEntry.add` threw,
+  the callback was never answered, and the SDK swallowed the throw as a `BotError`. Found in
+  the live log: three `InventoryError error 2` at 20:21:27 / :31 / :38 on 09-10, four and
+  seven seconds apart — one player tapping. Fixed in unit arithmetic against the post-drain
+  state of each store, and **a full bag now routes the output to the warehouse** rather than
+  refusing; `.inventoryFull` became `.noRoom`, reachable only when both are full and only
+  before any drain. The absence: the recipe screen printed the requirement and never the
+  stock, so the shortage modal was the only place to read your own pantry — a player said
+  she tapped until it failed. Both now read `CraftingService.stock`, two queries whatever is
+  asked about, replacing a `totalQuantity` pair per input. `validate --strict` 0/0, digest
+  unmoved (no content data), **248 tests**. Same-direction defect fixed on the way: the row
+  arithmetic also refused crafts that DID fit.
 
 - **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **two
   ladders retuned, and the one button the bag could not answer** — farm 1/h cap 6 → **2/h
@@ -124,6 +143,50 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-16 part 3 (the kitchen, twice, both times from someone playing)
+
+Two reports, and the second one is the more interesting.
+
+**«Кнопка просто безкінечно завантажується».** Cooking with a full bag hung. Nothing hangs
+in this codebase — the handler THREW, and a throw out of a callback handler means nobody
+calls `answerCallbackQuery`, so Telegram spins the button until its own timeout. The SDK
+logs it as `[SwiftTelegramBot] BotError` and moves on. The log had three, seconds apart,
+dated 09-10: the shape of a person tapping a dead button.
+
+Cause: `outputFits = (existing != nil) || (postDrainUsed + 1 <= slotCap)`. Three defects in
+one expression — an `existing` row treated as room (rows stopped meaning slots on
+2026-05-12), `freedSlots` counted in rows against a `slotsUsed` counted in units, and a
+hardcoded `+ 1` where the output quantity belonged. The first made it too lenient and hung;
+the second made it too strict and refused crafts that fit; the third was latent. And because
+the drain precedes the add with no transaction, the lenient failure ATE the ingredients.
+
+Every other path that adds to the bag was checked and every one was already correct —
+`canAccept` in Market, Guild and Exploration, and `TradeService`'s own `used − outgoing +
+incoming ≤ cap`. `CraftingService` was the only place that hand-rolled the prediction, which
+is the tell worth remembering: the outlier was the bug.
+
+Offered four fixes; the user picked the one that was not on my list as a fix at all —
+**stop refusing**. A full bag now sends the dish to the warehouse, and the success banner
+says where it went. That worked because the banner had named a destination on every craft
+since Phase 5.2.1 («— у сумку 🎒»), so a changed destination reads as information rather
+than as a surprise. Chosen over a modal, a confirm step and a destination toggle.
+
+**«Я просто тицяю, поки не зʼявиться повідомлення, що закінчились ресурси».** The second
+report is not a bug and is the better finding: the recipe screen shows what a dish REQUIRES
+and never what the player HOLDS, and the only place that number appears is the shortage
+modal. So the documented way to read your own pantry was to try to cook and fail. The
+weapon-upgrade screen two rooms over had been showing have/need since Phase 5.2.2.
+
+Both screen and craft now read one function. That was a condition rather than a nicety: a
+screen computing its own total will eventually promise something the button refuses, which
+is the shape of the leaderboard tie bug. Cost fell out of it — `stock` is two queries for
+everything, where the old per-input pair was ten for the Governor's Feast.
+
+One thing I got wrong in the asking: I offered a format choice without checking that two
+sibling screens already had a house format (`(12/1)`), and only found it afterwards. The
+user's pick stands and is better, but the estate now speaks two dialects of the same
+sentence — left open rather than folded in silently.
 
 ## Session — 2026-09-16 part 2 (two ladders, and a button that answered with the wrong screen)
 

@@ -227,6 +227,25 @@ the plot: partial cannot be expressed, because the Mine's two output streams sha
 warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
 `project-daily-and-storage-ceilings`.
 
+**A fit check must be the SAME arithmetic as the writer it is predicting, in the same
+units.** `InventoryEntry.add` counts UNITS and throws when it will not fit;
+`CraftingService` predicted in ROWS — left over from before the 2026-05-12 per-unit pivot —
+and treated "a row of this item already exists" as room. The prediction said yes, the writer
+said no, and the throw escaped the callback handler. **A throw out of a callback handler is
+an inline button that spins forever**: nothing answers `answerCallbackQuery`, the SDK logs a
+`BotError` nobody reads, and the player taps again. Here it also ate the ingredients, because
+the drain runs before the add and there is no transaction. `TradeService` has the shape to
+copy — `used − outgoing + incoming ≤ cap`, in units, with the dev bypass matching the
+writer's. **A full bag is no longer a refusal to craft**: the output goes to the warehouse
+and the success banner names where it landed, which the banner always did.
+
+**A screen that can answer a question should answer it before the player gets it wrong.**
+The recipe screen printed what a dish REQUIRES and never what the player HELD, so the only
+way to read your own pantry was to tap Cook and fail — the shortage modal was the one place
+the number appeared. `CraftingService.stock(for:on:)` is now that number for both the screen
+and the craft itself (two queries, whatever is asked about), so a screen cannot quote a total
+the button then disagrees with.
+
 **A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
 are per-instance (`GearState`), so a path that deletes a row here and calls `add` there hands
 back a factory-fresh item — which is how a warehouse round-trip was a free repair that also

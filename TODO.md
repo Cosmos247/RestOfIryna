@@ -1621,7 +1621,14 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-16 — **one commit is undeployed.** The farm went to 2/h cap 10, the
+*Last updated: 2026-09-16 — **two commits are undeployed.** The newer one repairs the
+kitchen: cooking with a full bag hung the button forever and ate the ingredients (a fit
+check counted rows against a cap counted in units), and a full bag now routes the dish to
+the warehouse instead of refusing. The recipe screen also shows what you hold per
+ingredient — until now that number existed only in the shortage modal. Locale strings
+changed, and Lingo is not hot-reloaded, so this needs a restart even more than the last one.
+
+Before it: the farm went to 2/h cap 10, the
 bag's top two steps were re-spread to +15 each (T6 now 90 slots), and the Turn back button
 that the bag swallowed mid-trip was fixed. Swift changed, so **`/reload` cannot carry it** —
 the Pi needs a pull, a build and `pm2 restart ROI`. No migration: **schema stays v12**.

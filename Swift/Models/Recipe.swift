@@ -79,6 +79,17 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         case .kitchen:         return "kitchen.alert.cooked"
         }
     }
+
+    /// Same banner for a craft that landed in the WAREHOUSE because the bag had
+    /// no room. A sibling key rather than an interpolated destination: both
+    /// templates already end in the place the item went, and a player reads the
+    /// whole line, not a variable inside it.
+    public var craftedToWarehouseAlertKey: String {
+        switch self {
+        case .forge, .tannery: return "workshop.alert.crafted_warehouse"
+        case .kitchen:         return "kitchen.alert.cooked_warehouse"
+        }
+    }
 }
 
 // MARK: - Ingredient / Output
