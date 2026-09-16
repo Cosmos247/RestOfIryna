@@ -11,9 +11,31 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Three commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the three
-entries below it are newer and have not shipped. All touch Swift and two touch Lingo, so
-`/reload` cannot carry any of them.
+**Four commits are undeployed.** The Pi took `201f093` on 2026-09-16 00:32; the four entries
+below it are newer and have not shipped. All touch Swift and three touch Lingo, so `/reload`
+cannot carry any of them.
+
+- **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **the invite
+  outlived the challenge, and took both fighters off the board with it** — from a tester, with
+  a screenshot: a duel invite whose buttons never died, «недійсний» on every tap, and «після
+  цього мене не видно в списку опонентів». Two independent causes. The bubble: the invite was
+  sent with `_ = try? await bot.sendMessage(...)`, so its message id was discarded and NOTHING
+  could ever edit or delete it. Now `PendingChallenge.inviteMessageId` is filled by
+  `attachInvite` right after the send, and `closeInvite` edits the bubble on all six closing
+  paths — accepted, declined, expired, aborted — stripping the buttons and putting the outcome
+  where the question was. Edited, not deleted, by the user's choice and the house rule that
+  history stays. The lobby: `ArenaStore.challenge` ended with two `lobby.removeValue` calls and
+  no path ever restored them, so a declined or expired challenge left BOTH players invisible to
+  every opponent list until they re-opened the arena. Deleted — `lobbyMembers` already filters
+  on `byUser`, and the sweeper already prunes stale presence, so the lines were belt-and-braces
+  that outlived their reason. Two more found while reading: decline on a dead invite returned in
+  silence (now a banner), and `opponentLocale` was a literal `""` masked by an `isEmpty ? "uk"`
+  fallback, so a challenged English player was always addressed in Ukrainian. Also in this
+  commit: the capital's Master now opens «Столична майстерня…» instead of «Майстерня…», with a
+  line saying nothing is made from your own materials there — the estate room and the capital
+  NPC were one word and one icon apart. `validate --strict` 0/0, digest unmoved, **248 tests**.
+  **`CapitalController.pushTradeInvite` has the identical discarded-id defect and is
+  untouched.**
 
 - **this commit** (09-16, NOT deployed — the hash lands in the next docs pass) **a Profile
   key on the trail, and a name on the sale** — two asks, and the first one uncovered a third
@@ -163,6 +185,43 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-16 part 5 (an invite that would not die)
+
+A tester's screenshot: a duel invite, both buttons still live, «❌ Виклик уже недійсний» under
+it, and the note «і після цього мене не видно в списку опонентів». Two sentences, two
+unrelated bugs.
+
+**The bubble.** `_ = try? await context.bot.sendMessage(...)` — the id thrown away at the
+moment of sending. Nothing downstream could edit or delete that message, so the buttons
+outlived the challenge by design, not by accident. Every tap found an empty `pending` and
+answered honestly; the honesty was the only part working. Fixed by keeping the id on the
+`PendingChallenge` and closing the bubble on every path that ends the challenge — six of
+them, which is the number that matters: closing only the happy path would have left the same
+complaint for expiry.
+
+**The lobby.** `challenge` ended with `lobby.removeValue` for both players, and `cancelPending`
+freed `byUser` without ever putting them back. So a declined invite erased both fighters from
+everyone's opponent list until they re-entered the arena. The line was redundant the day it
+was written — `lobbyMembers` already filters on `byUser` — which is the recurring shape here:
+**the defensive extra that outlives its reason becomes the defect.** Same as `freedSlots` in
+the kitchen and the `existing != nil` short-circuit beside it.
+
+Two more surfaced while reading: decline on a dead invite returned in total silence, and
+`opponentLocale` was a hardcoded `""`. I first reported the locale as breaking the message and
+had to correct myself — there is an `isEmpty ? "uk"` fallback at the call site, so it never
+broke, it just always spoke Ukrainian to the challenged player.
+
+**The audit before committing found the twin.** `CapitalController.pushTradeInvite` discards
+its message id exactly the same way, so trade invites keep live buttons too. Left alone —
+outside the scope of this fix and the trade flow has its own delete/keep policy — but it is
+in `CLAUDE.md`, the file map and `TODO.md` now, because a known twin that nobody wrote down is
+just the next bug report.
+
+Also in this commit, from earlier in the session: the capital's Master screen called itself a
+«Майстерня» under the same 🛠 as the estate's room. It now opens «Столична майстерня» and says
+plainly that nothing is made from your own materials there — the naming was half the fix, the
+function was the other half.
 
 ## Session — 2026-09-16 part 4 (a button, and the silence behind it)
 

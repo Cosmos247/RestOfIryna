@@ -1621,7 +1621,12 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-16 — **three commits are undeployed.** The newest adds a Profile key
+*Last updated: 2026-09-16 — **four commits are undeployed.** The newest repairs the arena
+invite, reported by a tester: the bubble kept live buttons forever because its message id was
+thrown away, and issuing a challenge deleted both players from the lobby with nothing to put
+them back. **The trade invite still has the first half of that defect** and is untouched.
+
+Before it, one adds a Profile key
 to the walk keyboard — and, in doing so, closes the silence behind it: the profile's own
 buttons answered nothing during an expedition, because a callback no controller claims never
 reaches `unmatched`. The market's sold-notification also names the buyer now; the buy board

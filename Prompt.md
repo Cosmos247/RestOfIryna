@@ -38,14 +38,14 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — a Profile key on the walk keyboard, and the seller finally learns who bought the lot |
-| pushed | **no** — `origin/main` is three commits behind. Push is user-side |
-| running on the Pi | **`201f093`** — **three commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
-| committed but NOT deployed | **three commits** — `dc5f037` (two ladders + the bag's Turn back button), `5e55139` (the kitchen repair) and this one |
+| HEAD | **this commit** — the arena invite stops outliving itself, and stops hiding both fighters |
+| pushed | **no** — `origin/main` is four commits behind. Push is user-side |
+| running on the Pi | **`201f093`** — **four commits behind** — schema v12, content hash `b1a1af00`, digest `records a5eca6451d8f6236` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-16 00:32** with all four migrations applied and verified against the tables |
+| committed but NOT deployed | **four commits** — `dc5f037` (two ladders + the bag's Turn back button), `5e55139` (the kitchen repair), `6eefe85` (Profile on the trail + the buyer's name) and this one |
 
 **A deploy is waiting, and `/reload` cannot carry any of it.** `dc5f037` moves `plots.json`
-and `bags.json` — which the hot swap could take on its own — but all three commits also move
-Swift, and two of them move **locale strings**, which are not hot-reloaded at all. Binary,
+and `bags.json` — which the hot swap could take on its own — but all four commits also move
+Swift, and three of them move **locale strings**, which are not hot-reloaded at all. Binary,
 content and Lingo have to land together: pull, build, `pm2 restart ROI`. **No migration, no
 schema bump — v12 stands.** The 09-16 00:32 restart's four migrations are history, not
 something these commits repeat. What is still waiting besides this is a human opening the
@@ -78,6 +78,20 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
 > It is also the whole backlog.
+>
+> **Added 2026-09-16 part 3 — NOT deployed. The arena one came from a tester:**
+> - **send a duel invite and decline it.** The bubble must lose its buttons and become
+>   «🏳 Виклик від <нік> — відхилено. Ставка була 🪙 N.» Tapping it again must be impossible;
+>   before this the buttons stayed live forever and every tap said «недійсний».
+> - **accept one**, and **let one expire** (120 s). Same thing: «⚔️ …прийнято» and
+>   «⌛ …протерміновано», no buttons. The challenger still gets their own «⌛ не відповів».
+> - **then look at the opponents list.** BOTH players must be back in it within their 180 s
+>   presence window — this is the other half of the report. A challenge used to delete both
+>   lobby entries with nothing to restore them.
+> - **a bubble from BEFORE the restart is beyond saving** — its id was never stored, so its
+>   buttons stay. Tapping gives an honest «недійсний». Only new invites are clean.
+> - **the capital's Master** must now read «Столична майстерня, що гучніша за кузню…
+>   З вашої сировини тут нічого не зроблять…», while the estate keeps «🛠 Майстерня».
 >
 > **Added 2026-09-16 part 2 — NOT deployed:**
 > - **walk into the forest and tap 👤 Профіль.** It must open over the walk screen, and the

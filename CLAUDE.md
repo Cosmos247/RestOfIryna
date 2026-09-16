@@ -474,6 +474,15 @@ the recovery with the call site (`#function`). Never call `editMessageText` /
 `editMessageCaption` directly. Its `TelegramAPIError` also lets `HummingbirdTGClient` pick a
 log level by refusal, so the benign refusals stop burying the ones that matter.
 
+**A message whose buttons you will one day need to take away must have its id kept.**
+`sendMessage` returns the message; `_ = try? await bot.sendMessage(...)` throws away the only
+handle on it, and an invite answered, declined or expired then keeps live buttons forever —
+the arena's duel invite did exactly that until 2026-09-16, and every tap on it answered
+«недійсний». Store the id beside the state the buttons act on (`PendingChallenge.inviteMessageId`)
+and close the bubble on EVERY path that ends that state, not just the happy one. Closing means
+`editScreen(..., replyMarkup: nil)` with the outcome in place of the question — the buttons go,
+the record stays. `CapitalController.pushTradeInvite` still has the original defect.
+
 Photos are **kept in chat history** — nothing is deleted. Players asked for a scrollable
 record of where they have been, and because every bubble references the same server-side
 file_id, a long history of repeated backdrops costs no extra storage.

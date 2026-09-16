@@ -76,6 +76,12 @@ public actor ArenaStore {
         public let opponentNickname: String
         public let opponentLocale: String
         public var createdAt: Date
+        /// The invite bubble in the OPPONENT's chat, so every path that closes
+        /// this challenge can strip its buttons. Optional only because the
+        /// message is sent after the challenge exists; `attachInvite` fills it
+        /// in a beat later. A challenge whose send failed keeps nil and simply
+        /// has no bubble to close.
+        public var inviteMessageId: Int?
     }
 
     public enum DuelPhase: Sendable { case active, finished }
@@ -150,7 +156,8 @@ public actor ArenaStore {
 
     /// Challenger issues a wagered duel to a lobby member. Both become busy
     /// immediately so a third fighter can't grab either during the request.
-    public func challenge(challenger: Combatant, stake: Int, targetTelegramId tg: Int64, now: Date = Date()) -> ChallengeResult {
+    public func challenge(challenger: Combatant, stake: Int, targetTelegramId tg: Int64,
+                          opponentLocale: String, now: Date = Date()) -> ChallengeResult {
         if byUser[challenger.telegramId] != nil { return .selfBusy }
         if byUser[tg] != nil { return .targetBusy }
         guard let entry = lobby[tg], now.timeIntervalSince(entry.lastSeen) < ArenaCatalog.lobbyTTL else {
@@ -158,15 +165,28 @@ public actor ArenaStore {
         }
         let pc = PendingChallenge(
             id: UUID(), stake: stake, challenger: challenger,
-            opponentTelegramId: tg, opponentNickname: entry.nickname, opponentLocale: "",
-            createdAt: now
+            opponentTelegramId: tg, opponentNickname: entry.nickname, opponentLocale: opponentLocale,
+            createdAt: now, inviteMessageId: nil
         )
         pending[pc.id] = pc
         byUser[challenger.telegramId] = pc.id
         byUser[tg] = pc.id
-        lobby.removeValue(forKey: challenger.telegramId)
-        lobby.removeValue(forKey: tg)
+        // Both are hidden from every opponent list by `byUser` alone —
+        // `lobbyMembers` filters on it. Until 2026-09-16 this ALSO deleted both
+        // lobby entries, and nothing ever put them back: once a challenge was
+        // declined or expired, both players were invisible to everyone until
+        // they re-opened the arena screen. A belt-and-braces line that outlived
+        // its own reason and became a presence leak. Presence now ages out
+        // through `lastSeen` and `lobbyTTL`, which is the only thing that
+        // should ever end it.
         return .created(pc)
+    }
+
+    /// Remember which message carries this challenge's buttons, so accept,
+    /// decline, expiry and abort can all strip them. Sent after the challenge
+    /// is created, hence the second step.
+    public func attachInvite(_ id: UUID, messageId: Int) {
+        pending[id]?.inviteMessageId = messageId
     }
 
     /// Look up a pending challenge (the accept/decline handler resolves it).

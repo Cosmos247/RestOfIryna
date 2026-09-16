@@ -88,6 +88,10 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             return
         }
         if let pc = await ArenaStore.shared.cancelPendingInvolving(tg) {
+            // Whoever leaves, the bubble in the opponent's chat still holds live
+            // buttons — strip them. When the LEAVER is the opponent it is their
+            // own bubble being closed, which is right either way.
+            await Self.closeInvite(pc, key: "arena.invite.closed_aborted", icon: "🚫", bot: context.bot, lingo: context.lingo)
             // Tell whichever party is NOT the leaver that the challenge is off.
             let otherTg = pc.challenger.telegramId == tg ? pc.opponentTelegramId : pc.challenger.telegramId
             let otherLocale = pc.challenger.telegramId == tg ? pc.opponentLocale : pc.challenger.locale
@@ -170,7 +174,8 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             return
         case .ok(let challengerHonor, _):
             let challenger = ArenaService.snapshot(for: context.session, stake: stake, honor: challengerHonor)
-            switch await ArenaStore.shared.challenge(challenger: challenger, stake: stake, targetTelegramId: opponentTg) {
+            switch await ArenaStore.shared.challenge(challenger: challenger, stake: stake, targetTelegramId: opponentTg,
+                                                     opponentLocale: opponent.locale) {
             case .created(let pc):
                 // Push the invite to the opponent's chat.
                 let text = "⚔️ " + lingo.localize("arena.invite.push", locale: opponent.locale, interpolations: [
@@ -180,7 +185,13 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                     TGInlineKeyboardButton(text: lingo.localize("arena.invite.accept", locale: opponent.locale), callbackData: "arena:acc:\(pc.id.uuidString)"),
                     TGInlineKeyboardButton(text: lingo.localize("arena.invite.decline", locale: opponent.locale), callbackData: "arena:dec:\(pc.id.uuidString)")
                 ]])
-                _ = try? await context.bot.sendMessage(params: TGSendMessageParams(chatId: .chat(opponentTg), text: text, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(kb)))
+                // Keep the message id: it is the only handle on the bubble that
+                // carries the buttons, and every path that closes this challenge
+                // has to strip them. Discarding it is why an answered invite
+                // stayed tappable forever.
+                if let sent = try? await context.bot.sendMessage(params: TGSendMessageParams(chatId: .chat(opponentTg), text: text, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(kb))) {
+                    await ArenaStore.shared.attachInvite(pc.id, messageId: sent.messageId)
+                }
                 await postStatusBanner("✅ \(lingo.localize("arena.challenge.sent", locale: locale, interpolations: ["nick": opponent.nickname ?? "—"]))", context: context)
             case .selfBusy:
                 await postStatusBanner("❌ \(lingo.localize("arena.challenge.self_busy", locale: locale))", context: context)
@@ -190,6 +201,33 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                 await postStatusBanner("❌ \(lingo.localize("arena.challenge.gone", locale: locale))", context: context)
             }
         }
+    }
+
+    // MARK: - Closing the invite bubble
+
+    /// Strip the buttons off the invite in the opponent's chat and replace the
+    /// question with what actually happened. Edited rather than deleted: this
+    /// bot keeps chat history, and a duel someone was invited to is a record,
+    /// not a transient prompt.
+    ///
+    /// Silent when there is no message id — a send that failed leaves nothing
+    /// to close — and best-effort otherwise, because a bubble the player has
+    /// deleted themselves must not take a decline down with it.
+    static func closeInvite(_ pc: ArenaStore.PendingChallenge, key: String, icon: String,
+                            bot: TGBot, lingo: Lingo) async {
+        guard let messageId = pc.inviteMessageId else { return }
+        let locale = pc.opponentLocale.isEmpty ? "uk" : pc.opponentLocale
+        let text = icon + " " + lingo.localize(key, locale: locale, interpolations: [
+            "nick": pc.challenger.nickname, "stake": "🪙 \(pc.stake)"
+        ])
+        _ = await editScreen(
+            chatId: .chat(pc.opponentTelegramId),
+            messageId: messageId,
+            isPhoto: false,
+            text: text,
+            replyMarkup: nil,
+            bot: bot
+        )
     }
 
     // MARK: - Accept / decline
@@ -202,6 +240,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         }
         guard let challengerUser = try await User.find(pc.challenger.userId, on: context.db) else {
             _ = await ArenaStore.shared.cancelPending(pendingId)
+            await Self.closeInvite(pc, key: "arena.invite.closed_aborted", icon: "🚫", bot: context.bot, lingo: lingo)
             await postStatusBanner("❌ \(lingo.localize("arena.invite.expired", locale: locale))", context: context)
             return
         }
@@ -209,6 +248,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         switch try await ArenaService.validateMatch(challenger: challengerUser, opponent: context.session, stake: pc.stake, on: context.db) {
         case .failed(let problem):
             _ = await ArenaStore.shared.cancelPending(pendingId)
+            await Self.closeInvite(pc, key: "arena.invite.closed_aborted", icon: "🚫", bot: context.bot, lingo: lingo)
             await postStatusBanner("❌ \(Self.matchProblemText(problem, lingo: lingo, locale: locale))", context: context)
             _ = try? await context.bot.sendMessage(params: TGSendMessageParams(chatId: .chat(challengerUser.telegramId), text: "❌ " + lingo.localize("arena.invite.aborted", locale: challengerUser.locale), parseMode: .html))
         case .ok(let challengerHonor, let opponentHonor):
@@ -218,6 +258,9 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                 await postStatusBanner("❌ \(lingo.localize("arena.invite.expired", locale: locale))", context: context)
                 return
             }
+            // Close the invite BEFORE the scoreboard so the duel screen is the
+            // last thing in the chat, not a question the player already answered.
+            await Self.closeInvite(pc, key: "arena.invite.closed_accepted", icon: "⚔️", bot: context.bot, lingo: lingo)
             // Both fighters get the opening scoreboard + fight keyboard.
             await Self.pushDuelState(duel, log: [], actorTelegramId: nil, bot: context.bot, lingo: context.lingo)
         }
@@ -225,7 +268,14 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     func declineChallenge(pendingId: UUID, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        guard let pc = await ArenaStore.shared.cancelPending(pendingId) else { return }
+        // A dead invite used to return in silence — the player tapped and
+        // nothing whatsoever happened, which reads worse than a refusal. It is
+        // reachable whenever the bubble outlives the challenge.
+        guard let pc = await ArenaStore.shared.cancelPending(pendingId) else {
+            await postStatusBanner("❌ \(lingo.localize("arena.invite.expired", locale: locale))", context: context)
+            return
+        }
+        await Self.closeInvite(pc, key: "arena.invite.closed_declined", icon: "🏳", bot: context.bot, lingo: lingo)
         await postStatusBanner(lingo.localize("arena.invite.you_declined", locale: locale), context: context)
         _ = try? await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(pc.challenger.telegramId),
@@ -444,6 +494,9 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     /// A challenge went unanswered — tell the challenger and free both.
     static func pushChallengeExpired(_ pc: ArenaStore.PendingChallenge, bot: TGBot, lingo: Lingo) async {
+        // The challenged player is told by their own bubble turning into the
+        // outcome — no second message. One event, one trace each side.
+        await closeInvite(pc, key: "arena.invite.closed_expired", icon: "⌛", bot: bot, lingo: lingo)
         let locale = pc.challenger.locale
         _ = try? await bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(pc.challenger.telegramId),
