@@ -33,21 +33,26 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-17, after the 00:10 deploy)
+### Where things stand right now (2026-09-17, after the 00:10 deploy — and one fix behind it)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the docs pass that recorded the 09-17 deploy |
-| pushed | `origin/main` was at `b63f835` when it shipped; **this docs commit is not pushed yet**. Push is user-side |
+| HEAD | **this commit** — a death stopped taking the class weapon; one format for every «треба / маєш» line |
+| pushed | `origin/main` is at `b63f835`; the 09-17 docs commit `7050933` **and this one are not pushed**. Push is user-side |
 | running on the Pi | **`b63f835`** — **the tip** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-17 00:10** |
-| committed but NOT deployed | **none of the code** — everything that changes behaviour is live as of 2026-09-17 00:10 |
+| committed but NOT deployed | **this commit** — the death wipe **and** the requirement-line unification. Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries neither half |
 
-**Nothing is waiting on a deploy.** The 09-17 00:10 restart took four commits and **no
-migration — schema v12 stands**, because none of them adds a column. The Linux build ran in
-66.6 s and the Pi's own `--content-digest` matched the Mac byte for byte BEFORE the restart
-was ordered, which is the order that decision has to happen in. `Code: 400` held at its 913
-baseline and no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
+**A deploy is waiting — and until it lands, a death on the Pi still destroys a class weapon
+left in the bag.** Two changes sit uncommitted-to-the-Pi; everything from the 09-17 00:10
+restart is live. `pm2 restart ROI` is the only way to carry them: one is Swift and the other
+also moves locale strings, and Lingo is not hot-reloaded, so `/reload` will not do.
+
+The 09-17 00:10 restart itself took four commits and **no migration — schema v12 stands**,
+because none of them adds a column. The Linux build ran in 66.6 s and the Pi's own
+`--content-digest` matched the Mac byte for byte BEFORE the restart was ordered, which is the
+order that decision has to happen in. `Code: 400` held at its 913 baseline and no
+`[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
 
 **What is waiting is a human opening the screens** — and that backlog is now large, because
 four commits' worth of surfaces have never been looked at.
@@ -84,6 +89,37 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
 > It is also the whole backlog, and it now spans two deploys.
+>
+> **Added 2026-09-17 part 2 — NOT LIVE until the Pi is restarted. Ten screens, one sentence:**
+> - **open any recipe in the kitchen or the workshop.** Every ingredient must now read
+>   «✅ 1× 🪵 Соснова дошка  (12/1)» — the «1×» is what the recipe asks for, the bracket is
+>   what you hold against it, and «маєте N» is gone. The ✅/❌ is what you scan; the numbers
+>   only matter where it is ❌.
+> - **open the estate, weapon and bag upgrade screens.** The material lines must match the
+>   recipe exactly, and the gate lines above them must now read «✅ Рівень гравця  (4/3)»,
+>   «❌ 🪙 Срібло  (120/250)», «✅ Рівень маєтку  (3/3)». ⛔ must not appear anywhere.
+> - **the bag screen used to say «Тир маєтку» where the weapon screen said «Рівень маєтку»**
+>   for the very same gate. Both now read «Рівень маєтку» from one key.
+> - **tap Cook / Upgrade without the materials.** The modal rows must be the same line as the
+>   screen behind them — «❌ 🔩 Шматок заліза  (1/3)» — and no longer «• … треба ще 2 (1/3)».
+>   All four modals (kitchen, weapon, estate, bag) share one function now, so if one of them
+>   differs, that is a real bug.
+> - **the two modals that used to show NOTHING at all.** Tap Готувати on 🍲 Бенкет Намісника
+>   with an empty bag, and Покращити on any estate step from T4 up. Both were over
+>   Telegram's 200-character alert ceiling and were silently refused; the feast must now show
+>   all six rows, and the biggest estate step five rows and «… +1».
+> - **check the English side too** — the three new labels are «Player level», «Silver»,
+>   «Estate level», and the fraction itself needs no translation at all.
+>
+> **Added 2026-09-17 — NOT LIVE until the Pi is restarted. This one came from the owner's own account:**
+> - **die with the class weapon in the bag.** Take the weapon off, walk out, and die on
+>   purpose; a passive run that dies counts too. Everything else in the bag must be gone and
+>   the weapon must still be there, unequipped — re-equip it and watch the profile's ⚔️ move.
+>   Before this, one tap on «❌ Зняти» plus one death destroyed it permanently, and nothing in
+>   the game grants a second one.
+> - **die with spare gear in the bag.** A crafted hood, a potion, loot — all of it must still
+>   be wiped. The exception is the bound weapon and nothing else, so if armour survives too,
+>   the predicate is wrong.
 >
 > **Added 2026-09-16 part 3 — LIVE since the 09-17 00:10 deploy. The arena one came from a tester:**
 > - **send a duel invite and decline it.** The bubble must lose its buttons and become
@@ -243,15 +279,21 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
   picker's Back button, «Ділянка» in the list title and the new slot card. The user leans to
   «ділянка»; unifying is ~6 locale keys in two files and no code. Raised 2026-09-16, left
   open on purpose rather than folded into an unrelated commit.
+- **`InventoryEntry.remove` does not look at `equipped_slot`** — not when it counts
+  (`totalQuantity` sums worn rows too) and not when it deletes (oldest row first, and a
+  starter weapon is the oldest row an account owns). Nothing reachable in play passes a worn
+  item's id to it today: the trader lists no gear, the market and the guild vault take
+  stackables only, the warehouse and a trade refuse the bound weapon. But `/revoke
+  gear.simple_bow 1` would take the bow straight off the body, and so would the first gear
+  item ever given a trader listing. Raised 2026-09-17 beside the death fix and deliberately
+  not folded into it — same shape as `feedback-fit-check-matches-the-writer`: the check
+  counts something the writer does not. The bag also still offers «❌ Зняти» on the class
+  weapon, left alone on purpose now that taking it off is no longer fatal.
 - **`CapitalController.pushTradeInvite` discards its message id**, exactly as the arena's
   duel invite did before `b63f835`, so a trade invite keeps live buttons after the session it
   belongs to is gone. Found by the pre-commit audit on 2026-09-16 and left alone on purpose:
   the fix is mechanical but the trade flow has its own delete-vs-keep policy, so which shape
   the closed bubble takes is a design call. Auto-memory `project-close-the-bubble-you-opened`.
-- **Two forms of one sentence on the estate.** The recipe screen says
-  «❌ 1× 🥩 Сире м'ясо — маєте 0»; the weapon- and estate-upgrade screens say
-  «1× 🪵 Соснова дошка  (12/1)» (`EstateController:277`). Same concept, two renderings. The
-  new form was chosen deliberately, but the older two were not migrated — ~2 lines each.
 - **Six dead functions from April**, none touched since: `renderStub`,
   `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
   (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).

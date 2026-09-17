@@ -19,8 +19,8 @@
 //    - Enemy HP ≤ 0 → award loot via ExplorationService.awardEncounterDrops,
 //      send victory narrative, clear combat fields, hand player back to
 //      ExplorationController at the same km (encounter consumed).
-//    - Player HP ≤ 0 → ExplorationController.handleDeath (wipe non-equipped
-//      inventory, hp = 1, back to estate).
+//    - Player HP ≤ 0 → ExplorationController.handleDeath (wipe the bag bar
+//      worn gear and the bound class weapon, hp = 1, back to estate).
 //    - Successful flee → clear combat fields, decrement stepsDeep by 1,
 //      hand player back to ExplorationController one room shallower.
 //    - Failed flee → enemy lands a forced hit (no dodge, no crit), combat

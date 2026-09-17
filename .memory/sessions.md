@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Nothing is committed and undeployed.** The Pi took the tip on 2026-09-17 00:10.
+**Two changes are undeployed** — the 09-17 death-wipe fix and the requirement-line
+unification (Swift + locale keys). The Pi took the tip on 2026-09-17 00:10 and has not been
+restarted since.
 
 **Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
 these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
@@ -192,6 +194,121 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-17 part 2 (one sentence, said four ways)
+
+Follow-on from a recall question: "we changed how something is shown to the player and the
+choice was between something and, for example, 15/20 — what was that?" It was yesterday's
+recipe screen, where «маєте N» won over the fraction. Having seen it in play, the user
+reversed the decision — **the fraction everywhere** — and asked for the ✅/❌ marker, which
+they did like, to be extended to every screen of the same kind.
+
+**The survey was the work.** Asked to change one screen, I listed every surface that asks
+"do you have enough?" and found ten, in four dialects: the recipe in words, three upgrade
+screens in `(12/1)`, four byte-identical shortage modals in both at once, and four gate lines
+of which two called the SAME gate «Рівень маєтку» and «Тир маєтку» — two rows of code apart,
+neither aware of the other. The reversal was worth about two lines; the survey is what made
+it worth doing.
+
+**Offered as a quiz with rendered previews**, which paid for itself: the user took option 1
+but with brackets, a combination I had not put on the list. Two of the three questions were
+answered from the list as offered (✅/❌ everywhere, and the scope — the quest board's
+«📊 Прогрес: 3/5» was deliberately left out, being "how much have you done", not "what do you
+still need").
+
+**What the format decides.** I argued the count prefix away — «3×» and «/3» being the same
+number twice — built it that way, and the user stopped me mid-implementation and put it back.
+They are right and the argument was thin: «3×» is what the RECIPE asks for and reads on its
+own, while the fraction answers a different question, how close you are. The reversal cost
+one line in `item` because the count was never `render`'s to add: a gate has no count. The
+marker stays although the fraction already answers it — the point is a column of ✅ you can
+scan, with numbers that only matter where one is ❌. And ⛔ is retired: it meant "a gate"
+where ❌ meant "a shortage", a distinction nothing on screen explained and the same action
+answers.
+
+**A fraction needs no words.** That is what removed six locale keys for three plain labels,
+and it is also the root of the «Тир/Рівень маєтку» drift — a sentence in a locale file is a
+place two screens can disagree, a fraction is not.
+
+`RequirementLine` (`Swift/Helpers/`) renders all twelve — four material lists, four gate
+lines, four copies of one modal. `EstateController` loses 83 lines to it; the helper is 91,
+over half of them the rationale above. One thing checked
+rather than assumed along the way: `inputItem?.icon ?? ""` on a `String?` property of an
+optional — I talked myself into believing it produced `String?` and would print
+`Optional("🪵")` on four live screens; a five-line scratch file proved Swift flattens it.
+The house rule about interpolating Optionals is real, but this was not an instance of it.
+
+**The pre-commit review found a live bug underneath the change.** Asked to verify before
+committing, I measured the new modal against Telegram's 200-character ceiling for
+`answerCallbackQuery.text` — and found the OLD one had been over it in five cases: the
+Governor's Feast at 243 and every estate step from T4 up, to 262. Every call site answers
+with `_ = try? await`, so those taps produced **no modal at all**: the one screen whose whole
+job is to explain a refusal was silent for the biggest recipe in the game. The new format was
+shorter — the feast dropped to 189, under on its own — but still over on the three biggest
+estate steps, so `shortageModal` now drops rows until it fits and
+ends with a wordless `… +N` — wordless because a count takes three noun forms in Ukrainian
+and this one does not need any. **Only the Ukrainian side ever overflowed**; English was 20
+under, which is how it stayed invisible. Swept the other 50 `showAlert: true` sites: none
+composes multiple rows and the longest reachable string is 140, so this was the only one.
+
+Two numbers in the first draft of this entry were wrong and are corrected above: it is twelve
+call sites, not ten (the modal is four of them, not one), and the change is not a net
+deletion — `EstateController` loses 83 lines and the helper adds 91.
+
+Verification: build clean with no warnings, `swift test` 248/248, `roi-content validate
+--strict` ✅ 0 warnings (content hash `83dd8a9a`, untouched — this change does not go near
+`content/data`). A locale-parity sweep of both files afterwards: every `en`-only key has uk
+gendered or plural variants, so there is no key a Ukrainian player would read in English, and
+every static `localize("…")` literal in `Swift/` resolves in both files.
+
+## Session — 2026-09-17 (the weapon a death was allowed to take)
+
+Report, in one sentence: "my weapon disappeared somewhere". The owner's own account — archer,
+level 4, and the profile's main hand empty.
+
+**The database answered before the code did.** `Космос` held **zero** `gear.%` rows: nothing
+worn, nothing carried. Every other player's `main_hand` was occupied. The 09-08 dump on the Pi
+(`roi-preplaytest-2026-09-08.sql`) still had the row — `gear.simple_bow`, `main_hand`, tier 1,
+9/30 — so the bow was destroyed somewhere between 08-09 21:26 and today, and destroyed rather
+than moved: the only `gear.simple_bow` alive belongs to another player and has a different
+created-at. Reading the machine first is what made the rest of the session narrow; auto-memory
+`feedback-ask-the-machine-not-the-record` earned its keep again.
+
+**Eliminating, not guessing.** `resetDevProfile` / `seedDevInventory` are both `false`, and 11
+restarts of log since 09-09 carry no "Dev profile reset" and no "orphaned inventory row" —
+besides, a dev reset deletes warehouse rows and one from 09-03 is still sitting there. No
+migration touches gear. The warehouse answers `.notTransferable` for tiered weapons, a trade
+filters `isUpgradable`, the market and the guild vault take stackables only, no trader row and
+no Master listing sells a weapon, no recipe makes one.
+
+**That left exactly two paths, and the player confirmed the first.** A death wipes every
+non-equipped row — `for row in rows where row.equippedSlot == nil` — with no exception for the
+one item the rest of the codebase treats as bound. So «❌ Зняти» plus one bad step, and the
+character can never be armed again. (The second was `/revoke`, whose `InventoryEntry.remove`
+does not look at `equipped_slot` at all; left open on purpose, written down in `Prompt.md`.)
+
+**The fix is one function, not two filters.** `InventoryEntry.wipeOnDeath` now owns what a
+death takes, and both paths call it — the active `handleDeath` (which `CombatController`
+already shared) and the passive `applyDeath`. Copying the predicate into two loops would have
+been three lines shorter and exactly the mistake this project keeps writing memories about:
+the hunger tick went missing on six of ten exits that way. Docs at both sites, plus the two
+header comments that described the old rule, were corrected in the same pass — and one stale
+line went with them: `ExplorationController`'s header still advertised `/start` as a "dev
+escape hatch", closed on 2026-09-15.
+
+**What the fix deliberately does NOT do.** Three of the four options were declined by the
+owner and are recorded rather than done: teach `remove` to skip worn rows, hide «Зняти» on the
+class weapon, and re-grant a T1 weapon at login to anyone missing one. The first is the one
+that matters — it is the general shape of the defect, and today nothing reachable in play
+exercises it.
+
+Recovery was `/grant gear.simple_bow 1` + re-equip, typed by the owner: no SQL in production
+and no restart, at the cost of a T1 30/30 where the lost bow stood at 9/30.
+
+Verification: `swift build` clean, `swift test` 248/248, and all four `--content-digest`
+halves unmoved (`records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` ·
+`spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`) — a code-only change should move
+nothing, and saying so is cheaper than wondering. No migration: schema v12 stands.
 
 ## Session — 2026-09-16 part 5 (an invite that would not die)
 

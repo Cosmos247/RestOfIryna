@@ -1621,7 +1621,25 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-17 — **everything committed is deployed.** The Pi took `b63f835` at
+*Last updated: 2026-09-17 — **undeployed work sits in the tree.** Second: every
+"what it costs / what you have" line in the game is now one sentence —
+`✅ 🪵 Соснова дошка  (12/1)` — rendered by `RequirementLine` for all four material lists,
+all four gate lines and all four shortage modals. Twelve call sites had said it four ways, and
+two gate lines disagreed about the word for the estate level. ⛔ is retired in favour of ❌.
+Locale keys moved, and Lingo is not hot-reloaded, so this needs the restart even more than
+the first.
+
+First: a death no longer destroys the
+bound class weapon left in the bag. It came from the owner's own account, whose bow was gone
+with no way in the game to obtain another; `InventoryEntry.wipeOnDeath` is now the single
+implementation of what a death takes, called by both the active and the passive path. Code
+only — no migration (schema v12 stands) and no content moved (all four digest halves
+unchanged) — so **`/reload` cannot carry it**; the Pi needs a pull, a build and
+`pm2 restart ROI`. Three sibling fixes were declined and are recorded in `Prompt.md` → Open,
+decided but not done, the one that matters being that `InventoryEntry.remove` still ignores
+`equipped_slot` altogether.
+
+Before it, everything committed was deployed. The Pi took `b63f835` at
 **00:10** with no migration (schema v12 stands); the Linux build ran 66.6 s and the Pi's own
 `--content-digest` matched the Mac byte for byte before the restart was ordered. `Code: 400`
 held at its 913 baseline.
@@ -1667,8 +1685,9 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is not code — it is one session in Telegram.** Nothing below waits on a deploy; it
-waits on a human opening the screens. The walk list, grouped by what shipped when, is in
+**Next is a restart, then one session in Telegram.** Everything in the walk list below is
+already live and waits only on a human opening the screens; the death-wipe fix waits on
+`pm2 restart ROI` first. The walk list, grouped by what shipped when, is in
 `Prompt.md`; every defect this project has found came from someone glancing at a screen.
 
 Left open on purpose: the estate calls one place three words («Слот» / «наділ» / «Ділянка»),

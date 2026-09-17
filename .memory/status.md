@@ -21,6 +21,36 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-17 — one sentence, one format** (**NOT DEPLOYED**; Swift + locale keys, so
+`/reload` cannot carry it). The game asks "do you have enough of this?" on ten screens and
+answered in four dialects: the recipe in words («2× 🥩 Сире м'ясо — маєте 3», chosen only the
+day before), three upgrade screens in a fraction («1× 🪵 Соснова дошка (12/1)»), the shortage
+modal in both at once, and two gate lines that called the SAME gate «Рівень маєтку» and «Тир
+маєтку» two rows of code apart. `RequirementLine` (`Swift/Helpers/`) is now the single
+rendering — marker, the count the recipe asks for, label, fraction in brackets (the count
+rides on the item lines only; a gate has none). ⛔ retired in favour of ❌: it meant "a gate" where ❌
+meant "a shortage", which no screen explained and the same tap answers. Six locale keys
+removed, three plain labels added; a fraction needs no words, which is what let the two gate
+labels drift in the first place. **The pre-commit review then found a live bug under it:** the
+shortage modal exceeded Telegram's 200-character alert ceiling in five cases (worst 262), and
+because every call site answers with `try?`, the tap produced no modal whatsoever — Cook on
+the Governor's Feast, Upgrade on any estate step from T4 up. Now capped, with a wordless
+`… +N` tail. Only the Ukrainian side ever overflowed; English was under by 20. `EstateController` loses 83 lines; the helper is 91, over half of them the rationale.
+
+**2026-09-17 — a death stopped taking the class weapon** (**NOT DEPLOYED** — needs
+`pm2 restart ROI`; Swift only, schema v12 stands, no digest half moved). Reported by the
+owner, whose archer had no bow and no `gear.%` row at all; the Pi's 09-08 dump still held it
+(`gear.simple_bow`, main_hand, 9/30), so it was destroyed between then and now. A death wiped
+every non-equipped row in two places, with no exception for the one item the rest of the code
+treats as bound — the warehouse answers `.notTransferable`, a trade filters `isUpgradable`,
+the market and the guild vault take stackables only. Since the class weapon is granted once at
+registration and no shop, recipe or ladder can produce a second, «❌ Зняти» plus one bad step
+was permanent. `InventoryEntry.wipeOnDeath` is now the single implementation of what a death
+takes, called by both `ExplorationController.handleDeath` and
+`PassiveExpeditionService.applyDeath`. Three sibling fixes were declined and written down
+instead (`Prompt.md`): `InventoryEntry.remove` still ignores `equipped_slot` in both its count
+and its delete, which is what makes `/revoke <worn item>` take it off the body.
+
 **2026-09-16 — the arena invite stopped outliving itself** (`b63f835`, **deployed 2026-09-17
 00:10**). Reported by a tester with a screenshot. The duel invite was sent with
 `_ = try? await bot.sendMessage(...)`, so its message id was discarded and nothing could ever

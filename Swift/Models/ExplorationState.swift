@@ -8,7 +8,8 @@
 //  at the estate. `stepsDeep` is the current km distance from the manor.
 //  Loot collected during the expedition lives in the regular `inventory`
 //  table (per design — inventory IS the expedition bag). On death the caller
-//  wipes non-equipped inventory rows directly.
+//  wipes it through `InventoryEntry.wipeOnDeath`, which spares worn gear and
+//  the bound class weapon.
 //
 //  Phase 3.2 additions:
 //    - `visited_rooms` — JSON dict of km → visit count. Rolled events pick

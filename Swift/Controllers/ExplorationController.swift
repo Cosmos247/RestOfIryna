@@ -21,9 +21,10 @@
 //                  km with prior visits, record the visit, render.
 //    Bag         — inline consumables list (food + potion only). One-tap
 //                  eat/use refreshes the message in place.
-//    Death       — wipe non-equipped inventory, respawn at HP = 1 (vigor
-//                  kept), end state, drop back to main with a death screen.
-//    /start      — force-end without walking back (dev escape hatch).
+//    Death       — wipe the bag bar the bound class weapon, respawn at HP = 1
+//                  (vigor kept), end state, drop back to main with a death
+//                  screen.
+//    /start      — redraws the walk screen; the forest is left on foot.
 //
 
 import Fluent
@@ -668,28 +669,23 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await context.session.saveAndCache(in: context.db)
     }
 
-    /// Hard respawn: wipe every non-equipped inventory row (equipped gear survives),
-    /// set HP to 1 (vigor stays — per design), end the exploration state, and send
-    /// a death screen as the main-menu text override.
+    /// Hard respawn: wipe the bag through `InventoryEntry.wipeOnDeath` (worn
+    /// gear and the bound class weapon survive), set HP to 1 (vigor stays — per
+    /// design), end the exploration state, and send a death screen as the
+    /// main-menu text override.
     private func handleDeath(context: Context, result: StepResult) async throws {
         let cause = narrateStep(result, priorVisits: 0, gender: context.session.gender, lingo: context.lingo, locale: context.session.locale)
         try await Self.handleDeath(context: context, causeNarrative: cause)
     }
 
-    /// Static death helper so CombatController can reuse the wipe + respawn
-    /// flow without duplicating the inventory query / HP reset.
+    /// Static death helper so CombatController can reuse the respawn sequence
+    /// without duplicating it. The wipe itself is `InventoryEntry.wipeOnDeath`,
+    /// the one the passive report calls too.
     static func handleDeath(context: Context, causeNarrative: String) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
 
-        if let userId = context.session.id {
-            let rows = try await InventoryEntry.query(on: context.db)
-                .filter(\.$user.$id, .equal, userId)
-                .all()
-            for row in rows where row.equippedSlot == nil {
-                try await row.delete(on: context.db)
-            }
-        }
+        try await InventoryEntry.wipeOnDeath(for: context.session, on: context.db)
 
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)

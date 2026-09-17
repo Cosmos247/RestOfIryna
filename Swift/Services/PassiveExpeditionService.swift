@@ -614,8 +614,8 @@ public enum PassiveExpeditionService {
         }
 
         // If the governor died, the bag stays with the corpse — the report
-        // must not claim "brought back" anything. `applyDeath` already wiped
-        // the non-equipped inventory rows in the DB; zero the report's loot
+        // must not claim "brought back" anything. `applyDeath` has already
+        // emptied it in the DB (bar the bound weapon); zero the report's loot
         // list to match.
         let loot: [PassiveReport.LootEntry]
         if died {
@@ -772,16 +772,11 @@ public enum PassiveExpeditionService {
         }
     }
 
-    /// On simulated death: wipe non-equipped inventory, respawn at HP = 1
-    /// (same rules as active-mode death). Vigor is preserved per design.
+    /// On simulated death: wipe the bag (`InventoryEntry.wipeOnDeath` — worn
+    /// gear and the bound class weapon survive), respawn at HP = 1, same rules
+    /// as active-mode death. Vigor is preserved per design.
     private static func applyDeath(to user: User, on db: any Database) async throws {
-        guard let userId = user.id else { return }
-        let rows = try await InventoryEntry.query(on: db)
-            .filter(\.$user.$id, .equal, userId)
-            .all()
-        for row in rows where row.equippedSlot == nil {
-            try await row.delete(on: db)
-        }
+        try await InventoryEntry.wipeOnDeath(for: user, on: db)
         user.hp = 1
     }
 

@@ -258,38 +258,30 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         ]))
 
         // Player-level requirement.
-        let levelOK = session.level >= nextStep.requiredPlayerLevel
-        let levelMark = levelOK ? "✅" : "⛔"
         lines.append("")
-        lines.append("\(levelMark) " + lingo.localize("estate.upgrade.level_required", locale: locale, interpolations: [
-            "required": "\(nextStep.requiredPlayerLevel)",
-            "current":  "\(session.level)"
-        ]))
+        lines.append(RequirementLine.render(
+            label: lingo.localize("estate.upgrade.level_label", locale: locale),
+            have: session.level, need: nextStep.requiredPlayerLevel, indent: ""))
 
         // Materials list.
         lines.append("")
         lines.append("<b>" + lingo.localize("estate.upgrade.recipe_header", locale: locale) + "</b>")
         for input in nextStep.inputs {
-            let inputItem = ItemCatalog.find(input.itemId)
-            let inputIcon = inputItem?.icon ?? ""
-            let inputName = inputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
             let have = (invSnapshot[input.itemId, default: 0]) + (whSnapshot[input.itemId, default: 0])
-            lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
+            lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity,
+                                              lingo: lingo, locale: locale))
         }
 
         // Phase 5.3c — silver cost line. Hidden when the step is silver-free
         // (early transitions). Drawn outside the materials block so the
         // player sees the wallet check as a separate gate.
         if nextStep.silverCost > 0 {
-            let silverOK = session.silver >= nextStep.silverCost
-            let silverMark = silverOK ? "✅" : "⛔"
             lines.append("")
             // 🪙 prepended in Swift — Lingo's `%{var}` parser breaks on
             // a leading supplementary-plane emoji in the template.
-            lines.append("\(silverMark) 🪙 " + lingo.localize("estate.upgrade.silver_required", locale: locale, interpolations: [
-                "required": "\(nextStep.silverCost)",
-                "have":     "\(session.silver)"
-            ]))
+            lines.append(RequirementLine.render(
+                label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+                have: session.silver, need: nextStep.silverCost, indent: ""))
         }
 
         return lines.joined(separator: "\n")
@@ -856,15 +848,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // when you get it wrong is a screen that has the answer and is sitting
         // on it.
         for input in recipe.inputs {
-            let item = ItemCatalog.find(input.itemId)
-            let icon = item?.icon ?? ""
-            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
             let have = stock[input.itemId]?.total ?? 0
-            let mark = have >= input.quantity ? "✅" : "❌"
-            let haveText = lingo.localize("workshop.detail.have", locale: locale, interpolations: [
-                "have": "\(have)"
-            ])
-            lines.append("   \(mark) \(input.quantity)× \(icon) \(name) — \(haveText)")
+            lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity,
+                                              lingo: lingo, locale: locale))
         }
 
         // Stats section — gear (gearStats). Mutually exclusive with effects
@@ -2003,22 +1989,7 @@ extension EstateController {
             return true
 
         case .missingMaterials(let shortages):
-            // Compose a single multi-line alert: header + one row per missing input.
-            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
-            let rows: [String] = shortages.map { shortage in
-                let item = ItemCatalog.find(shortage.itemId)
-                let icon = item?.icon ?? ""
-                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
-                let needed = max(0, shortage.need - shortage.have)
-                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
-                    "icon":   icon,
-                    "name":   name,
-                    "needed": "\(needed)",
-                    "have":   "\(shortage.have)",
-                    "need":   "\(shortage.need)"
-                ])
-            }
-            let toast = ([header] + rows).joined(separator: "\n")
+            let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
@@ -2125,23 +2096,7 @@ extension EstateController {
             return true
 
         case .missingMaterials(let shortages):
-            // Mirror the craft handler: a multi-line modal that lists every
-            // input the player still needs.
-            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
-            let rows: [String] = shortages.map { shortage in
-                let item = ItemCatalog.find(shortage.itemId)
-                let icon = item?.icon ?? ""
-                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
-                let needed = max(0, shortage.need - shortage.have)
-                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
-                    "icon":   icon,
-                    "name":   name,
-                    "needed": "\(needed)",
-                    "have":   "\(shortage.have)",
-                    "need":   "\(shortage.need)"
-                ])
-            }
-            let toast = ([header] + rows).joined(separator: "\n")
+            let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
@@ -2246,22 +2201,7 @@ extension EstateController {
             return true
 
         case .missingMaterials(let shortages):
-            // Reuse the workshop shortage modal format — one row per missing item.
-            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
-            let rows: [String] = shortages.map { shortage in
-                let item = ItemCatalog.find(shortage.itemId)
-                let icon = item?.icon ?? ""
-                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
-                let needed = max(0, shortage.need - shortage.have)
-                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
-                    "icon":   icon,
-                    "name":   name,
-                    "needed": "\(needed)",
-                    "have":   "\(shortage.have)",
-                    "need":   "\(shortage.need)"
-                ])
-            }
-            let toast = ([header] + rows).joined(separator: "\n")
+            let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
@@ -2358,21 +2298,7 @@ extension EstateController {
             return true
 
         case .missingMaterials(let shortages):
-            let header = context.lingo.localize("workshop.alert.short_header", locale: locale)
-            let rows: [String] = shortages.map { shortage in
-                let item = ItemCatalog.find(shortage.itemId)
-                let icon = item?.icon ?? ""
-                let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? shortage.itemId
-                let needed = max(0, shortage.need - shortage.have)
-                return context.lingo.localize("workshop.alert.short_row", locale: locale, interpolations: [
-                    "icon":   icon,
-                    "name":   name,
-                    "needed": "\(needed)",
-                    "have":   "\(shortage.have)",
-                    "need":   "\(shortage.need)"
-                ])
-            }
-            let toast = ([header] + rows).joined(separator: "\n")
+            let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
@@ -2533,21 +2459,17 @@ extension EstateController {
         lines.append("")
         lines.append("<b>" + lingo.localize("weapon.upgrade.recipe_header", locale: locale) + "</b>")
         for input in nextStep.inputs {
-            let inputItem = ItemCatalog.find(input.itemId)
-            let inputIcon = inputItem?.icon ?? ""
-            let inputName = inputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
             let have = (invSnapshot[input.itemId, default: 0]) + (whSnapshot[input.itemId, default: 0])
-            lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
+            lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity,
+                                              lingo: lingo, locale: locale))
         }
 
-        // Estate-level gate.
-        let gateOK = estateLevel >= nextTier
-        let mark = gateOK ? "✅" : "⛔"
+        // Estate-level gate. The bag screen shows the SAME gate — one label
+        // key, so the two screens cannot drift into two words for it again.
         lines.append("")
-        lines.append("\(mark) " + lingo.localize("weapon.upgrade.estate_required", locale: locale, interpolations: [
-            "required": "\(nextTier)",
-            "current":  "\(estateLevel)"
-        ]))
+        lines.append(RequirementLine.render(
+            label: lingo.localize("upgrade.estate_level_label", locale: locale),
+            have: estateLevel, need: nextTier, indent: ""))
 
         _ = userId  // currently unused but kept for symmetry with future per-user gates
         return lines.joined(separator: "\n")
@@ -2611,24 +2533,19 @@ extension EstateController {
             "delta": "\(delta)"
         ]))
 
-        // Estate-tier requirement.
-        let gateOK = session.estateLevel >= nextStep.requiredEstateLevel
-        let mark = gateOK ? "✅" : "⛔"
+        // Estate-level gate — same label key as the weapon screen.
         lines.append("")
-        lines.append("\(mark) " + lingo.localize("bag.upgrade.estate_required", locale: locale, interpolations: [
-            "required": "\(nextStep.requiredEstateLevel)",
-            "current":  "\(session.estateLevel)"
-        ]))
+        lines.append(RequirementLine.render(
+            label: lingo.localize("upgrade.estate_level_label", locale: locale),
+            have: session.estateLevel, need: nextStep.requiredEstateLevel, indent: ""))
 
         // Materials list.
         lines.append("")
         lines.append("<b>" + lingo.localize("bag.upgrade.recipe_header", locale: locale) + "</b>")
         for input in nextStep.inputs {
-            let inputItem = ItemCatalog.find(input.itemId)
-            let inputIcon = inputItem?.icon ?? ""
-            let inputName = inputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? input.itemId
             let have = (invSnapshot[input.itemId, default: 0]) + (whSnapshot[input.itemId, default: 0])
-            lines.append("   \(input.quantity)× \(inputIcon) \(inputName)  (\(have)/\(input.quantity))")
+            lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity,
+                                              lingo: lingo, locale: locale))
         }
 
         return lines.joined(separator: "\n")

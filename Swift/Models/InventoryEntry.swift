@@ -240,6 +240,37 @@ extension InventoryEntry {
         return true
     }
 
+    /// What a death takes: every backpack row EXCEPT the bound class weapon.
+    ///
+    /// Equipped gear always survived a death. The hole was the starter weapon
+    /// sitting in the bag rather than on the body: it is bound on every other
+    /// path — the warehouse answers `.notTransferable`, a trade skips it, the
+    /// market and the guild vault take stackables only — and it is granted once
+    /// at registration with no shop selling a second one. So a death that ate
+    /// the only copy in existence destroyed it permanently, and one tap on
+    /// «❌ Зняти» plus one bad step was the whole distance between a worn
+    /// weapon and a character who can never be armed again. Reported
+    /// 2026-09-17 by the account it happened to; the 09-08 dump still had the
+    /// row (`gear.simple_bow`, main_hand, 9/30) that is no longer anywhere.
+    ///
+    /// Both death paths call THIS one — the active walk and the passive report
+    /// — for the reason every funnel in this codebase exists: a wipe each
+    /// caller filters for itself is a wipe one caller forgets to filter.
+    /// Returns how many rows were destroyed.
+    @discardableResult
+    public static func wipeOnDeath(for user: User, on db: any Database) async throws -> Int {
+        guard let userId = user.id else { return 0 }
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .all()
+        var destroyed = 0
+        for row in rows where row.equippedSlot == nil && !WeaponUpgradeCatalog.isUpgradable(row.itemId) {
+            try await row.delete(on: db)
+            destroyed += 1
+        }
+        return destroyed
+    }
+
     /// True if the user has at least `quantity` of the item.
     public static func has(_ itemId: String, quantity: Int = 1, user: User, on db: any Database) async throws -> Bool {
         guard let userId = user.id else { return false }

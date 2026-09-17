@@ -184,6 +184,41 @@ cheapest way to bank a record, and a hatch closed in one controller just moves o
 The one real escape left is a fight whose enemy id no longer resolves, which ends the
 expedition rather than trapping the player.
 
+**"What it costs / what you have" is ONE sentence, and `RequirementLine` renders it.**
+`✅ 1× 🪵 Соснова дошка  (12/1)` — marker, the count the recipe asks for, the label, then the
+fraction in brackets. A gate line carries no count («3× Рівень гравця» is nothing), which is
+why the count belongs to `RequirementLine.item` and not to `render`. Every material list, every gate
+(player level, estate level, silver) and the shortage modal go through it, so a screen and
+the modal that refuses the same tap cannot phrase the same number two ways. **⛔ is retired**:
+it meant "a gate" where ❌ meant "a shortage", a distinction no screen explained and the same
+tap answers. A fraction needs no words, so these lines no longer reach for Lingo beyond the
+item's own name — which is how the weapon and bag screens came to call one gate «Рівень
+маєтку» and «Тир маєтку». **Current-against-maximum is a DIFFERENT sentence** — durability
+`0/100`, the bag `18/25`, a plot `40/40` — and must not grow a ✅/❌: a full bag is not a
+failed requirement.
+
+**And the shortage modal is CAPPED at 200 UTF-16 units, because Telegram refuses a longer
+`answerCallbackQuery` outright and every call site swallows that with `try?`.** Five of them
+were over — the Governor's Feast and every estate step from T4 up — so the tap that was
+supposed to explain the refusal produced no modal at all. `RequirementLine.shortageModal`
+drops rows until it fits and ends with a wordless `… +N`. **Measure an alert in UTF-16 and
+measure it in Ukrainian**: the English side of all five was comfortably under, which is
+exactly how the overflow stayed invisible to the person who wrote it. Auto-memory
+`project-requirement-line-one-format`.
+
+**A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the one
+implementation both death paths call — `ExplorationController.handleDeath` for the walk and
+the fight, `PassiveExpeditionService.applyDeath` for the autobattle. Worn gear survives as it
+always did, and so now does a bound starter weapon carried in the bag. Every other path
+already refused to take that weapon: the warehouse answers `.notTransferable`, a trade filters
+on `WeaponUpgradeCatalog.isUpgradable`, the market and the guild vault list stackables only —
+so death was the single hole in a rule the rest of the code kept, and the only one that could
+not be undone. It is granted once at registration, no shop sells a second, and no recipe makes
+one, so **one tap on «❌ Зняти» plus one bad step left a character who could never be armed
+again** — which is what happened to a live account between 2026-09-08 and 09-17. Put the next
+wipe in that function too: a rule each caller filters for itself is a rule one caller forgets.
+Auto-memory `project-death-spares-the-class-weapon`.
+
 **One number, one source. A screen never sums two losses under one label.** A step in
 the forest can cost HP twice — the event it rolled, and the hunger tick that is charged on
 every step once Vigor hits 0 — so `ExplorationService.rollStep` returns a `StepResult`
