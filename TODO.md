@@ -1621,7 +1621,15 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-17 — **undeployed work sits in the tree.** Second: every
+*Last updated: 2026-09-17 — **undeployed work sits in the tree.** Fourth: one sword had two
+names — the bag's button passed the row's tier and the equip/unequip banner under it did not,
+reported from play with a screenshot. The same shape was found one layer down, where
+`GearConditionService` reported broken pieces as bare item ids and lost the tier before any
+screen could print it. Third: choosing what to
+build on an estate slot now asks first. Nothing in the code can delete a plot or change its
+type, so the single tap on a paired picker button was permanent; it now opens that type's own
+card and asks, with the write moved to a new callback so stale picker buttons lead to the
+question. Second: every
 "what it costs / what you have" line in the game is now one sentence —
 `✅ 🪵 Соснова дошка  (12/1)` — rendered by `RequirementLine` for all four material lists,
 all four gate lines and all four shortage modals. Twelve call sites had said it four ways, and

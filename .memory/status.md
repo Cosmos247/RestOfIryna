@@ -21,6 +21,28 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-17 — one sword, two names** (**NOT DEPLOYED**). Reported from play with a
+screenshot: the bag's button read «⚔️ Очищений меч» and the banner directly under it read
+«✅ Іржавий меч — одягнено». The button passes the ROW's tier through
+`ItemDisplay.nameKey(for:tier:)`; the equip and unequip banners read the catalog's base name.
+Fixed, and the audit found the same shape once more where an id had already lost its tier
+upstream: `GearConditionService.drainEquippedGear` returned `[String]`, so a T3 sword breaking
+was announced «Іржавий меч» in the fight screen AND in the passive push. It returns
+`[BrokenPiece]` (id + tier) now. Everything else that can name a laddered weapon — the gear
+list, the detail card, the info toast, the profile, the Master, the workshop — already passed
+the tier; the warehouse, market, vault, trade, loot and quest paths cannot hold one at all.
+
+**2026-09-17 — a slot is asked before it is built** (**NOT DEPLOYED**). Reported by the
+owner as "add a confirmation when choosing what to build on a slot"; the survey found it is
+not a nicety — **no code path anywhere deletes a `Plot` row or changes its type or tier**, so
+the one tap on a paired picker button was permanent for the life of the account. The picker
+now opens the plot's own card — rate, ceiling, both streams, lore, and a line saying it cannot
+be rebuilt — with [✅ Будувати] and a Back that returns to the PICKER (the player who lands
+here by mistake wants a different type, not a different screen). `estate:plot:type:` asks,
+`estate:plot:build:` writes; the question kept the old callback so stale picker buttons in
+chat history lead to the question rather than to an irreversible build. Three locale keys,
+no migration, no content.
+
 **2026-09-17 — one sentence, one format** (**NOT DEPLOYED**; Swift + locale keys, so
 `/reload` cannot carry it). The game asks "do you have enough of this?" on ten screens and
 answered in four dialects: the recipe in words («2× 🥩 Сире м'ясо — маєте 3», chosen only the

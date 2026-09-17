@@ -11,9 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Two changes are undeployed** — the 09-17 death-wipe fix and the requirement-line
-unification (Swift + locale keys). The Pi took the tip on 2026-09-17 00:10 and has not been
-restarted since.
+**Undeployed:** `c36822a` (the death-wipe fix and the requirement-line unification) plus the
+plot build-confirm sitting in the tree. The Pi took the tip on 2026-09-17 00:10 and has not
+been restarted since.
 
 **Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
 these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
@@ -194,6 +194,71 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-17 part 4 (one sword, two names)
+
+A screenshot from play: the bag's button says «⚔️ Очищений меч», and the banner directly
+under it says «✅ Іржавий меч — одягнено». Same row, same second, two names — the clearest
+possible statement of the rule in `feedback-ladder-names-one-noun`, and the button had been
+following it since the ladder shipped. `gearRows` renders through
+`ItemDisplay.nameKey(for:tier:)`; the equip and unequip banners read `item.nameKey`, which is
+always the T1 word.
+
+**The audit found the same shape one layer down**, and that one is the more interesting half:
+`GearConditionService.drainEquippedGear` returned `[String]` — item ids of the pieces that hit
+0 durability this fight. An id cannot name a row, so by the time `brokenGearLines` and the
+passive push had it, the tier was already gone: a T3 sword breaking announced itself as
+«Іржавий меч» in the fight screen and again in the notification. It returns
+`[BrokenPiece(itemId:tier:)]` now. The lesson generalises past this ladder: **a service that
+reports ROWS must not report them as ids.**
+
+**What the sweep cleared.** Every remaining site that localizes an item's `nameKey` without
+a tier — 88 of them, counted mechanically against HEAD rather than by eye — each checked by
+one question, can a laddered weapon reach it: the gear list, detail card, info toast,
+profile, Master and workshop already pass the tier; the forest bag is food and potions only;
+the warehouse answers `.notTransferable`; the market and guild vault take stackables; a trade
+filters `isUpgradable`; no drop table, recipe or quest names a weapon. `/grant` and `/revoke`
+are the only survivors, dev-only, and `/grant` is right by construction since `add` stamps T1.
+
+Four call sites changed (two banners, two renderers of the broken notice), one service
+signature, no locale keys — the name now comes from the same function as the button. Build
+clean, 248/248, `validate --strict` 0 warnings.
+
+## Session — 2026-09-17 part 3 (the slot you cannot take back)
+
+"Add a confirmation when choosing what to build on a slot." Asked how it could be done, so the
+first thing was to find out how bad it is — and it is worse than a mis-tap. **Nothing in the
+codebase deletes a `Plot` row, changes its `plotType` or touches its `tier` after creation.**
+`PlotService` has `claim` and `harvest` and no third verb. So one tap on a button paired with
+its neighbour set that slot for the life of the account.
+
+**The framing that made the design obvious.** Everything else buildable already reads list →
+detail → act: the estate, weapon and bag upgrade screens each show the full cost and then act
+on one tap, and every purchase in the capital goes listing → `ItemCard` → question → confirm.
+The plot picker was the only place where a LIST of five alternatives committed on first
+contact. So this is not a new dialog, it is the picker joining a pattern the game already has
+— and the card for a claimed plot has existed since 09-15, so the confirm is that same card
+before the fact.
+
+**Which callback keeps its name is half the fix.** The QUESTION inherited
+`estate:plot:type:`; the write got the new `estate:plot:build:`. Had it been the other way,
+every picker message still sitting in chat history would remain a working one-tap builder.
+A stale button has to land on the safe path — the same lesson as
+[[project-dead-inline-buttons]] read from the other end.
+
+**Both halves run the same guards.** `plotChoice(prefix:…)` parses the slot and type and
+checks all three conditions (slot inside the allowance, slot still empty, type unlocked); the
+question could skip them, since the picker never draws a button for a taken slot, but a guard
+only one of two paths performs is the one that gets forgotten. It also retired the hardcoded
+`3` for `EstateTierGates.trainingGround`, which the picker was already using two functions up.
+
+Offered as a quiz with rendered previews; the user took the separate screen and the full card
+WITH the permanence warning — the strongest of the three, which also settles that demolition
+is not planned. Verified by rendering all five types from the real JSON and both locales: the
+Mine shows both streams, the Training Ground (which produces nothing) shows lore and warning
+only, and the longest callback is 35 bytes of the 64 allowed.
+
+Build clean, 248/248, `validate --strict` 0 warnings, content hash untouched.
 
 ## Session — 2026-09-17 part 2 (one sentence, said four ways)
 

@@ -587,7 +587,9 @@ extension InventoryController {
 
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            // The ROW's tier, not the catalog's base name: the button the player
+            // just tapped says «Очищений меч» and the banner said «Іржавий меч».
+            let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
             let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
             try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
             return true
@@ -613,7 +615,8 @@ extension InventoryController {
 
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
+            // Same rule as equip — the row's tier names the row.
+            let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
             let statusLine = "✅ " + context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
             try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
             return true

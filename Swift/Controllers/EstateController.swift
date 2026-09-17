@@ -736,6 +736,68 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
+    /// The card for a type the player has PICKED but not yet built: the same
+    /// shape as `renderPlotCard`, minus the standing amounts (there are none
+    /// yet) and plus the line saying the choice cannot be taken back.
+    ///
+    /// It exists because claiming a slot was one tap on a button paired with
+    /// its neighbour, and **nothing in the codebase deletes a `Plot` row or
+    /// changes its type** — `PlotService` has `claim` and `harvest` and no
+    /// third verb. A slip of the finger cost the slot for the life of the
+    /// account. Every other buildable thing already reads list → detail → act
+    /// (estate, weapon and bag upgrades; every purchase in the capital leads
+    /// with `ItemCard`), so this is the plot picker joining them, not a new
+    /// idea. Reported 2026-09-17.
+    fileprivate func renderPlotBuildConfirm(slot: Int, type: PlotType, lingo: Lingo, locale: String) -> String {
+        let icon = PlotCatalog.icon(for: type)
+        let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+        let header = lingo.localize("estate.plot.card.header", locale: locale, interpolations: [
+            "slot": "\(slot + 1)", "type": typeName
+        ])
+        let perHour = PlotCatalog.intervalSeconds >= 3600
+        let intervalLabel = lingo.localize(perHour ? "estate.plot.rate.per_hour" : "estate.plot.rate.per_minute", locale: locale)
+        let capLabel = lingo.localize("estate.plot.capacity_label", locale: locale)
+
+        // Rate and ceiling only — a plot that does not exist yet has nothing
+        // standing in it. Icons are Optional; unwrap, never interpolate raw.
+        func stream(_ itemId: String, cap: Int, rate: Int) -> String {
+            let item = ItemCatalog.find(itemId)
+            let itemIcon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            return "\(itemIcon)\(name) — \(rate)\(intervalLabel), \(capLabel) \(cap)"
+        }
+
+        var lines = [
+            "\(icon) \(header)",
+            "",
+            lingo.localize(PlotCatalog.descriptionKey(for: type), locale: locale)
+        ]
+        // Built from `bonusOutput`, like the picker: a future two-stream plot
+        // gets its second line here for free instead of being half-described.
+        if let tuning = PlotCatalog.tuning(for: type) {
+            lines.append("")
+            lines.append(stream(tuning.producedItemId, cap: tuning.capacity, rate: tuning.ratePerInterval))
+            if let bonus = tuning.bonusOutput {
+                lines.append(stream(bonus.producedItemId, cap: bonus.capacity, rate: bonus.ratePerInterval))
+            }
+        }
+        lines.append("")
+        // ⚠️ in Swift, not in the template — the house rule for a leading emoji.
+        lines.append("⚠️ " + lingo.localize("estate.plot.build.warning", locale: locale))
+        return lines.joined(separator: "\n")
+    }
+
+    /// Confirm keyboard. Back goes to the PICKER, not the plot list: the player
+    /// who lands here by mistake wants a different type, not a different screen.
+    fileprivate func plotBuildConfirmKeyboard(slot: Int, type: PlotType, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.confirm", locale: locale),
+                                   callbackData: "estate:plot:build:\(slot):\(type.rawValue)"),
+            TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.back", locale: locale),
+                                   callbackData: "estate:plot:claim:\(slot)")
+        ]])
+    }
+
     /// Picker keyboard — one button per plot type + Back to plot list. Phase
     /// 5.3c: Training Ground hidden until estate T3.
     fileprivate func plotPickerKeyboard(slot: Int, estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
@@ -1081,6 +1143,13 @@ extension EstateController {
         }
         if data.hasPrefix("estate:plot:type:") {
             return try await handlePlotTypeChosen(data: data, query: query, message: message, context: context)
+        }
+        // The QUESTION keeps the old `type:` callback and the BUILD gets the new
+        // one, deliberately: a picker message still sitting in chat history then
+        // leads to the question rather than silently building on a slot that can
+        // never be rebuilt. A stale button should land on the safe path.
+        if data.hasPrefix("estate:plot:build:") {
+            return try await handlePlotBuildConfirmed(data: data, query: query, message: message, context: context)
         }
         if data.hasPrefix("estate:plot:harvest:") {
             return try await handlePlotHarvest(data: data, query: query, message: message, context: context)
@@ -1597,27 +1666,72 @@ extension EstateController {
         return true
     }
 
-    /// `estate:plot:type:<slot>:<typeRaw>` — claim the slot with the chosen
-    /// type, then refresh the plot list with an inline `✅` status line.
+    /// Parse `<slot>:<typeRaw>` off a plot callback and run the three checks
+    /// both halves of the build flow need: the slot is inside the allowance, it
+    /// is still empty, and the type is unlocked. Answers the query with the
+    /// matching alert and returns nil when one fails, so the caller only writes
+    /// the good case.
+    ///
+    /// Both halves run it. The question could skip it — the picker never draws
+    /// a button for a taken slot or a locked type — but a stale callback from
+    /// chat history can carry anything, and a guard that only one of two paths
+    /// performs is the one that gets forgotten.
+    private static func plotChoice(prefix: String, data: String, query: TGCallbackQuery,
+                                   context: Context) async throws -> (slot: Int, type: PlotType)? {
+        let locale = context.session.locale
+        let parts = data.dropFirst(prefix.count).split(separator: ":")
+        guard parts.count == 2, let slot = Int(parts[0]), let type = PlotType(rawValue: String(parts[1])) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return nil
+        }
+        func refuse(_ key: String, _ interpolations: [String: String] = [:], lead: String = "") async {
+            let text = lead + context.lingo.localize(key, locale: locale, interpolations: interpolations)
+            _ = try? await context.bot.answerCallbackQuery(
+                params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
+        }
+        guard slot >= 0, slot < PlotService.slotsForLevel(context.session.estateLevel) else {
+            await refuse("estate.plot.alert.slot_out_of_range")
+            return nil
+        }
+        if try await Plot.find(slot: slot, for: context.session, on: context.db) != nil {
+            await refuse("estate.plot.alert.slot_taken")
+            return nil
+        }
+        // Was a hardcoded 3 in two places; the gate has a name and the picker
+        // already hides the button by it.
+        if type == .trainingGround, context.session.estateLevel < EstateTierGates.trainingGround {
+            await refuse("estate.plot.type_locked", ["tier": "\(EstateTierGates.trainingGround)"], lead: "🔒 ")
+            return nil
+        }
+        return (slot, type)
+    }
+
+    /// `estate:plot:type:<slot>:<typeRaw>` — the player picked a type. This
+    /// does NOT build: it draws the card and asks, because a built slot can
+    /// never be rebuilt. `estate:plot:build:` is the only thing that writes.
     static func handlePlotTypeChosen(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
-        let parts = data.dropFirst("estate:plot:type:".count).split(separator: ":")
+        guard let (slot, type) = try await plotChoice(prefix: "estate:plot:type:", data: data, query: query, context: context) else {
+            return true
+        }
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let ctrl = Controllers.estateController
+        let locale = context.session.locale
+        let body = ctrl.renderPlotBuildConfirm(slot: slot, type: type, lingo: context.lingo, locale: locale)
+        let inline = ctrl.plotBuildConfirmKeyboard(slot: slot, type: type, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        return true
+    }
+
+    /// `estate:plot:build:<slot>:<typeRaw>` — the second tap, and the only path
+    /// that writes a `Plot`. Claims the slot, then refreshes the plot list with
+    /// an inline `✅` status line. Every guard runs again here: the two taps can
+    /// be minutes apart, and `claim` cannot be undone.
+    static func handlePlotBuildConfirmed(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        guard let (slot, type) = try await plotChoice(prefix: "estate:plot:build:", data: data, query: query, context: context) else {
+            return true
+        }
         let locale = context.session.locale
         let ctrl = Controllers.estateController
-        guard parts.count == 2,
-              let slot = Int(parts[0]),
-              let type = PlotType(rawValue: String(parts[1])) else {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            return true
-        }
-        // Phase 5.3c — defensive: stale callback could carry trainingGround
-        // before the player hits estate T3. Surface a clean alert.
-        if type == .trainingGround, context.session.estateLevel < 3 {
-            let alert = "🔒 " + context.lingo.localize("estate.plot.type_locked", locale: locale, interpolations: [
-                "tier": "3"
-            ])
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: alert, showAlert: true))
-            return true
-        }
         let result = try await PlotService.claim(slot: slot, type: type, for: context.session, on: context.db)
         switch result {
         case .slotOutOfRange:

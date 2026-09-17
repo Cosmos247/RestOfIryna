@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — a death stopped taking the class weapon; one format for every «треба / маєш» line |
-| pushed | `origin/main` is at `b63f835`; the 09-17 docs commit `7050933` **and this one are not pushed**. Push is user-side |
+| HEAD | **this commit** — a slot is asked for before it is built; one sword, one name |
+| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a` **and this commit are not pushed**. Push is user-side |
 | running on the Pi | **`b63f835`** — **the tip** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-17 00:10** |
-| committed but NOT deployed | **this commit** — the death wipe **and** the requirement-line unification. Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries neither half |
+| committed but NOT deployed | `c36822a` (the death wipe + the requirement-line unification) **and this commit** (the plot build-confirm + the ladder names). Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries none of it |
 
 **A deploy is waiting — and until it lands, a death on the Pi still destroys a class weapon
 left in the bag.** Two changes sit uncommitted-to-the-Pi; everything from the 09-17 00:10
@@ -89,6 +89,25 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > defect this project has found came from glancing at a screen, not from running anything,
 > so this list is the highest-yield thing available and it costs one session in Telegram.
 > It is also the whole backlog, and it now spans two deploys.
+>
+> **Added 2026-09-17 part 4 — NOT LIVE until the Pi is restarted. Reported from play:**
+> - **equip and unequip an upgraded weapon.** The banner must now name the row, not the
+>   ladder's first rung: «✅ Очищений меч — одягнено», «✅ Знято: Очищений меч». The button
+>   above it always said «Очищений меч»; the banner said «Іржавий меч».
+> - **fight until a piece breaks.** The «⚠️ … зламався» line — in the fight screen and in the
+>   passive expedition's push — must name the weapon at its current tier too. Armour is
+>   unaffected (it has no ladder), so the piece to watch is the weapon.
+>
+> **Added 2026-09-17 part 3 — NOT LIVE until the Pi is restarted. From the owner:**
+> - **claim an empty slot and tap a type.** It must NOT build any more: it must open that
+>   type's card — icon, «Ділянка N · <тип>», the lore, the rate and ceiling of every stream
+>   it has, and «⚠️ Ділянку не можна перебудувати» — with [✅ Будувати] and [🔙 Назад].
+> - **tap 🔙 Назад.** It must return to the PICKER (the five types), not to the plot list.
+> - **tap ✅ Будувати.** Same result as before: the plot list plus the «✅ …» banner.
+> - **the Training Ground's card** (estate T3+) has no production lines at all — lore and
+>   warning only. That is right: it produces nothing.
+> - **an OLD picker message from before the restart** must now lead to the question too, not
+>   build — the question inherited the old callback precisely for that.
 >
 > **Added 2026-09-17 part 2 — NOT LIVE until the Pi is restarted. Ten screens, one sentence:**
 > - **open any recipe in the kitchen or the workshop.** Every ingredient must now read

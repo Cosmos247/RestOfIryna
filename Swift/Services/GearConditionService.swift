@@ -54,6 +54,20 @@ public enum GearConditionService {
         }
     }
 
+    /// A piece that reached zero in one call: its id AND the tier of the ROW
+    /// that broke. The tier is half the name — a T3 sword announced from the
+    /// catalog reads «Іржавий меч» to a player holding «Очищений меч», which is
+    /// the defect the equip banner had on 2026-09-17. An id alone cannot name
+    /// a row, so the id alone does not leave this service.
+    public struct BrokenPiece: Sendable, Equatable {
+        public let itemId: String
+        public let tier: Int
+        public init(itemId: String, tier: Int) {
+            self.itemId = itemId
+            self.tier = tier
+        }
+    }
+
     /// Spend a fight's wear budget across equipped armor. Model C: `amount` is
     /// a fixed per-fight budget (not per-piece), distributed one point at a time
     /// to a randomly-chosen equipped piece that still has durability left. This
@@ -63,12 +77,12 @@ public enum GearConditionService {
     /// No-op when amount ≤ 0 or nothing armored is worn. We recompute bonuses +
     /// persist here so the durability rows and recomputed stats land together.
     ///
-    /// Returns the item ids that reached 0 IN THIS CALL — a piece going broken
+    /// Returns the pieces that reached 0 IN THIS CALL — a piece going broken
     /// is a stat cliff (armour contributes nothing, a weapon halves), and the
     /// screens that spend the wear are the only ones positioned to say so.
     /// Already-broken pieces are not reported again: they are not news.
     @discardableResult
-    public static func drainEquippedGear(amount: Int, for user: User, on db: any Database) async throws -> [String] {
+    public static func drainEquippedGear(amount: Int, for user: User, on db: any Database) async throws -> [BrokenPiece] {
         guard amount > 0, let userId = user.id else { return [] }
 
         let rows = try await InventoryEntry.query(on: db)
@@ -102,13 +116,13 @@ public enum GearConditionService {
         try await user.saveAndCache(in: db)
 
         return gear.filter { $0.durability <= 0 && $0.id.map({ wasIntact.contains($0) }) == true }
-                   .map { $0.itemId }
+                   .map { BrokenPiece(itemId: $0.itemId, tier: $0.tier) }
     }
 
     /// Convenience for a single fight outcome. Carries the broken-this-fight
     /// list out to the caller for the same reason `drainEquippedGear` does.
     @discardableResult
-    public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws -> [String] {
+    public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws -> [BrokenPiece] {
         try await drainEquippedGear(amount: event.amount, for: user, on: db)
     }
 

@@ -206,6 +206,17 @@ measure it in Ukrainian**: the English side of all five was comfortably under, w
 exactly how the overflow stayed invisible to the person who wrote it. Auto-memory
 `project-requirement-line-one-format`.
 
+**A choice that cannot be undone is asked, not just tapped.** Claiming an estate slot was
+one tap on a button paired with its neighbour, and nothing in the codebase deletes a `Plot`
+row or changes its type — `PlotService` has `claim` and `harvest` and no third verb — so a
+slip of the finger cost that slot for the life of the account. `estate:plot:type:` now draws
+the card for the picked type (rate, ceiling, both streams, lore) and asks; only
+`estate:plot:build:` writes. **Which callback keeps its old name is part of the fix**: the
+QUESTION inherited it, so a picker message still sitting in chat history leads to the
+question instead of silently building. A stale button must land on the safe path. This is
+also the shape every other buildable thing already had — list → detail → act for the estate,
+weapon and bag upgrades, and `ItemCard` before every purchase in the capital.
+
 **A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the one
 implementation both death paths call — `ExplorationController.handleDeath` for the walk and
 the fight, `PassiveExpeditionService.applyDeath` for the autobattle. Worn gear survives as it
@@ -324,8 +335,12 @@ Two consequences worth knowing before touching gear:
 common — the player is upgrading a thing, not swapping it for a different one, and
 `locale.ladder_name_drift` warns when no word survives. Wherever a label describes an
 inventory ROW rather than a shop listing, pass the row's tier —
-`CapitalController.itemLabel(_:tier:lingo:locale:)`. Auto-memory
-`feedback-ladder-names-one-noun`.
+`CapitalController.itemLabel(_:tier:lingo:locale:)`. **An item id alone cannot name a row**,
+so a service that reports rows hands back the tier with them: `GearConditionService` returns
+`BrokenPiece(itemId:tier:)` rather than `[String]`, because a T3 sword reaching 0 durability
+was announced as «Іржавий меч» to a player holding «Очищений меч». The equip and unequip
+banners had the same hole until 2026-09-17, reported from play — the button and the banner
+directly under it naming one sword two ways. Auto-memory `feedback-ladder-names-one-noun`.
 
 **Access is invite-only and lives in the database.** The `allowed_users` table
 (`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array;

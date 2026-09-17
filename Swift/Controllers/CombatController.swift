@@ -1196,10 +1196,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// "🛡 Кольчуга лісника зламалась" — one line per piece that reached zero
     /// durability in the fight just resolved. Empty when nothing broke, so the
     /// caller can append it unconditionally.
-    fileprivate static func brokenGearLines(_ itemIds: [String], lingo: Lingo, locale: String) -> [String] {
-        return itemIds.compactMap { itemId in
-            guard let item = ItemCatalog.find(itemId) else { return nil }
-            let name = lingo.localize(item.nameKey, locale: locale)
+    fileprivate static func brokenGearLines(_ pieces: [GearConditionService.BrokenPiece], lingo: Lingo, locale: String) -> [String] {
+        return pieces.compactMap { piece in
+            guard let item = ItemCatalog.find(piece.itemId) else { return nil }
+            let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: piece.tier), locale: locale)
             return "⚠️ " + ItemDisplay.localize("gear.broken.notice", agreeingWith: item,
                                                 lingo: lingo, locale: locale,
                                                 interpolations: ["item": name])

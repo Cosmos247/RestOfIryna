@@ -691,9 +691,9 @@ public enum PassiveExpeditionService {
             // A piece that broke out there gets its own message: nobody was
             // watching the fight it broke in, and the next thing this player
             // does is decide whether to walk back out.
-            for itemId in brokeOnRun {
-                guard let item = ItemCatalog.find(itemId) else { continue }
-                let name = lingo.localize(item.nameKey, locale: user.locale)
+            for piece in brokeOnRun {
+                guard let item = ItemCatalog.find(piece.itemId) else { continue }
+                let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: piece.tier), locale: user.locale)
                 let text = "⚠️ " + ItemDisplay.localize("gear.broken.notice", agreeingWith: item,
                                                         lingo: lingo, locale: user.locale,
                                                         interpolations: ["item": name])
