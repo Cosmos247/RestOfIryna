@@ -139,12 +139,22 @@ public enum FoodBudget {
     /// order — a richer dish is fewer buttons for the same Vigor.
     ///
     /// Greedy, and therefore exact only while no two cookable recipes compete
-    /// for the same input. On the shipped bundle exactly one recipe is reachable
-    /// from plot output at all (`baked_potato`, from a farm and a lumberyard),
-    /// so the answer is optimal today. If a second one ever becomes reachable,
-    /// this can under-count by preferring a rich dish that eats inputs two
-    /// cheaper ones would have used better — it is an estimate, and it errs
-    /// toward the slower pace, which is the safe direction for a floor.
+    /// for the same input — which stopped being true on 2026-09-17, when the
+    /// Forager's Omelette was cut to 2 duck eggs + 1 pine lumber. TWO recipes
+    /// now reach plot output (`baked_potato` from a farm and a lumberyard,
+    /// `foragers_omelette` from a coop and a lumberyard) and both spend the
+    /// same board.
+    ///
+    /// The greedy takes the richer dish first, and at T6 — three farms and one
+    /// lumberyard, where boards and potatoes arrive at the same rate — that is
+    /// the wrong call. A duck egg is the ONE plot output edible raw, so an
+    /// omelette buys +2 Vigor over the two eggs it eats while spending a board
+    /// a baked potato would have turned into +9. Measured: 915 → 862 Vigor/day
+    /// at T6, +0.4 days over the whole ladder, nothing else moved.
+    ///
+    /// Left standing on purpose: the answer is now a FLOOR rather than the
+    /// optimum, and a floor errs toward the slower pace — the safe direction
+    /// for a number the plan gates on.
     private static func cook(stock: [String: Double], content: GameContent) -> (vigor: Double, portions: Double) {
         var remaining = stock
         var vigorTotal = 0.0

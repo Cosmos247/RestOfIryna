@@ -127,14 +127,6 @@
           "quantity" : 2
         },
         {
-          "itemId" : "food.forest_nuts",
-          "quantity" : 2
-        },
-        {
-          "itemId" : "food.forest_berries",
-          "quantity" : 1
-        },
-        {
           "itemId" : "mat.pine_lumber",
           "quantity" : 1
         }

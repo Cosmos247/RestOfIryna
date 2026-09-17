@@ -33,7 +33,7 @@ The **Forester's** set — first craftable armor. Uses hide drops from wild kill
 
 Recipes in this category are **gated by `LearnedRecipe`** — they only appear in the Kitchen UI if the player has learned them via a recipe-scroll artifact (`artifact.recipe.<dish_id>`, non-stackable, used through the "📖 Learn" button in the inventory), with one exception: **Baked Potato and Roasted Meat are always available** (gated through `RecipeCatalog.starterRecipeIds` rather than a learned-set row, no scroll exists for them). Every player can cook these two from day one — the Kitchen UI unions the always-available set with whatever the player has learned via scrolls.
 
-Vigor / HP effects scale with ingredient count: 1-ingredient dishes restore vigor only; 3+ ingredient dishes also restore some HP. The biggest dish stays below the Small Healing Potion (+30 HP) so food doesn't displace potions.
+Vigor and HP rise together up the ladder: the two starters restore Vigor only, every dish above them also restores some HP. The biggest one stays below the Small Healing Potion (+30 HP) so food doesn't displace potions.
 
 **Every kitchen recipe burns 1× 🪵 Pine Lumber for the cooking fire** — both for narrative authenticity (cooking on flame needs firewood) and as a soft cap on farm-cooking. Pine lumber comes from the Lumberyard plot or shallow-zone foraging.
 
@@ -41,9 +41,9 @@ Vigor / HP effects scale with ingredient count: 1-ingredient dishes restore vigo
 |---|---|---|---|---|---|
 | `recipe.baked_potato`       | 1× 🥔 Potato + 1× 🪵 Pine Lumber | 🍠 Baked Potato (`food.baked_potato`)             | +9  | — | ✅ always available |
 | `recipe.roasted_meat`       | 1× 🥩 Raw Meat + 1× 🪵 Pine Lumber | 🍗 Roasted Meat (`food.roasted_meat`)           | +12 | — | ✅ always available |
-| `recipe.foragers_omelette`  | 2× 🥚 Egg + 2× 🌰 Nuts + 1× 🫐 Berries + 1× 🪵 Lumber | 🍳 Forager's Omelette (`food.foragers_omelette`) | +16 | +3 | scroll |
+| `recipe.foragers_omelette`  | 2× 🥚 Egg + 1× 🪵 Lumber | 🍳 Forager's Omelette (`food.foragers_omelette`) | +16 | +3 | scroll |
 | `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg + 1× 🪵 Lumber | 🍲 Hunter's Stew (`food.hunters_stew`)           | +20 | +5 | scroll |
-| `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts + 1× 🪵 Lumber | 🥘 Meat Ragout (`food.meat_ragout`)             | +18 | +4 | scroll |
+| `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts + 1× 🪵 Lumber | 🥘 Pot Roast (`food.meat_ragout`)             | +18 | +4 | scroll |
 | `recipe.berry_tart`         | 4× 🫐 Berries + 2× 🌰 Nuts + 1× 🥚 Egg + 1× 🪵 Lumber | 🥧 Forest Berry Tart (`food.berry_tart`)        | +16 | +6 | scroll |
 | `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts + 1× 🪵 Lumber | 🍽 Governor's Feast (`food.governors_feast`) | +35 | +10 | scroll |
 
