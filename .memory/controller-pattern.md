@@ -90,6 +90,11 @@ fight, so the mis-tap is also the tap that repairs the screen.
 - Always delete the inline keyboard message after processing
 - Parse callback data with prefix matching: `data.starts(with: "prefix:")`
 - Callback data budget: 64 bytes max (Telegram limit)
+- **When a one-tap action becomes a two-step question, the QUESTION keeps the old callback
+  and the WRITE gets the new one** (2026-09-17, `estate:plot:type:` → `estate:plot:build:`).
+  Messages already sitting in chat history keep firing the old string forever, so whichever
+  prefix they carry must be the harmless half. Both halves re-run the same guard function:
+  a check only one of two paths performs is the one that gets forgotten.
 
 ### Unmatched Handler
 Override `unmatched(context:)`. Call `super.unmatched(context:)` first — it returns `false` for global commands (/help, /settings, /buttons) so they get handled by GlobalCommandsController instead.

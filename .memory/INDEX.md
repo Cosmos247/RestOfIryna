@@ -35,8 +35,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   fixing what playing the deployed build reveals — plus the occasional small feature the
   play surfaces a need for. The Pi runs **`b63f835`** since **2026-09-17 00:10** (schema v12,
   no migration in that batch; the Pi's own digest was matched byte for byte before the
-  restart was ordered). **Nothing is committed and undeployed.** What is waiting is a human
-  opening the screens — a backlog now spanning two deploys and never walked.
+  restart was ordered). **Two commits are undeployed — `c36822a` and `bf67243`** — Swift and
+  locale strings, so `/reload` cannot carry them and only `pm2 restart ROI` will. The next
+  action is that restart, and after it a human opening the screens: a backlog spanning three
+  deploys and never walked.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -91,6 +93,16 @@ following the rule you are about to break. The ones a fresh session most often w
   need to remove, and close on every path that ends the state
 - `project-inline-screens-inherit-the-keyboard` — an inline-only screen that changes
   `routerName` inherits the reply buttons it did not replace
+- `project-death-spares-the-class-weapon` — a death takes the bag but never the bound starter
+  weapon; every other path already refused it, and no shop, recipe or ladder grants a second
+- `project-requirement-line-one-format` — «what it costs / what you have» is one sentence
+  everywhere, ⛔ is retired, and the shortage modal is capped at Telegram's 200-character
+  alert ceiling because over it the modal is silently refused
+- `feedback-ladder-names-one-noun` — every rung of a weapon ladder keeps a shared word, a
+  label that describes a ROW carries the row's tier, and a service reporting rows hands back
+  the tier with them: an id is not a row
+- `project-plot-streams-and-dead-lore` also holds the 2026-09-17 addition: an estate slot is
+  ASKED for before it is built, because nothing in the code can undo the choice
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

@@ -1621,8 +1621,8 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-17 — **undeployed work sits in the tree.** Fourth: one sword had two
-names — the bag's button passed the row's tier and the equip/unequip banner under it did not,
+*Last updated: 2026-09-17 — **two commits are built and undeployed: `c36822a` and
+`bf67243`.** Fourth: one sword had two names — the bag's button passed the row's tier and the equip/unequip banner under it did not,
 reported from play with a screenshot. The same shape was found one layer down, where
 `GearConditionService` reported broken pieces as bare item ids and lost the tier before any
 screen could print it. Third: choosing what to
@@ -1693,10 +1693,12 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is a restart, then one session in Telegram.** Everything in the walk list below is
-already live and waits only on a human opening the screens; the death-wipe fix waits on
-`pm2 restart ROI` first. The walk list, grouped by what shipped when, is in
-`Prompt.md`; every defect this project has found came from someone glancing at a screen.
+**Next is a restart, then one session in Telegram.** `c36822a` and `bf67243` are Swift plus
+locale strings, so `/reload` carries neither and `pm2 restart ROI` is the only way in; until
+it runs, a death still destroys a class weapon left in the bag, an estate slot still builds on
+one tap, and one sword still has two names. Everything older than those two is already live
+and waits only on a human opening the screens. The walk list, grouped by what shipped when, is
+in `Prompt.md`; every defect this project has found came from someone glancing at a screen.
 
 Left open on purpose: the estate calls one place three words («Слот» / «наділ» / «Ділянка»),
 and six functions dead since April. Both are in `Prompt.md` → Open, decided but not done.*

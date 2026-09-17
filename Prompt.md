@@ -33,20 +33,22 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-17, after the 00:10 deploy — and one fix behind it)
+### Where things stand right now (2026-09-17, two commits behind the Pi)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — a slot is asked for before it is built; one sword, one name |
-| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a` **and this commit are not pushed**. Push is user-side |
+| HEAD | **this commit** — the docs pass that recorded `c36822a` and `bf67243` |
+| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243` **and this commit are not pushed**. Push is user-side |
 | running on the Pi | **`b63f835`** — **the tip** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-17 00:10** |
-| committed but NOT deployed | `c36822a` (the death wipe + the requirement-line unification) **and this commit** (the plot build-confirm + the ladder names). Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries none of it |
+| committed but NOT deployed | **`c36822a`** (the death wipe + the requirement-line unification) and **`bf67243`** (the plot build-confirm + the ladder names). Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries neither |
 
-**A deploy is waiting — and until it lands, a death on the Pi still destroys a class weapon
-left in the bag.** Two changes sit uncommitted-to-the-Pi; everything from the 09-17 00:10
-restart is live. `pm2 restart ROI` is the only way to carry them: one is Swift and the other
-also moves locale strings, and Lingo is not hot-reloaded, so `/reload` will not do.
+**A deploy is waiting, and it is the next action.** Until `pm2 restart ROI` runs, the Pi is
+two commits behind: a death still destroys a class weapon left in the bag, the requirement
+lines still speak four dialects, an estate slot still builds on the first tap, and one sword
+still has two names. Both commits are Swift plus locale strings — no migration (schema v12
+stands) and no content moved — so `/reload` carries neither. Everything older than them is
+live.
 
 The 09-17 00:10 restart itself took four commits and **no migration — schema v12 stands**,
 because none of them adds a column. The Linux build ran in 66.6 s and the Pi's own
@@ -54,8 +56,8 @@ because none of them adds a column. The Linux build ran in 66.6 s and the Pi's o
 order that decision has to happen in. `Code: 400` held at its 913 baseline and no
 `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
 
-**What is waiting is a human opening the screens** — and that backlog is now large, because
-four commits' worth of surfaces have never been looked at.
+**After the restart, what is waiting is a human opening the screens** — and that backlog is
+now large, because six commits' worth of surfaces have never been looked at.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -82,13 +84,16 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 `project-gear-state-travels-with-the-unit`, `project-flee-has-a-ceiling`,
 `feedback-no-monster-silver` (§where the line actually is).
 
-### Next action: walk it. Nothing below has been looked at, across two deploys.
+### Next action: restart the Pi, then walk it. Nothing below has been looked at.
 >
-> **Every surface listed here is live and unopened by a human.** The Pi took the tip on
-> 2026-09-17 00:10, so nothing below waits on a deploy — it waits on someone looking. Every
-> defect this project has found came from glancing at a screen, not from running anything,
-> so this list is the highest-yield thing available and it costs one session in Telegram.
-> It is also the whole backlog, and it now spans two deploys.
+> **Step one is `pm2 restart ROI`** — `c36822a` and `bf67243` are built and verified but not
+> on the Pi, and the four newest blocks below go live only with that restart. They are marked
+> **NOT LIVE** for exactly that reason; everything under them has been live for days.
+>
+> **Step two is someone opening the screens.** Every defect this project has found came from
+> glancing at a screen, not from running anything, so this list is the highest-yield thing
+> available and it costs one session in Telegram. It is also the whole backlog, and it now
+> spans three deploys.
 >
 > **Added 2026-09-17 part 4 — NOT LIVE until the Pi is restarted. Reported from play:**
 > - **equip and unequip an upgraded weapon.** The banner must now name the row, not the
@@ -170,9 +175,10 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 >   the WAREHOUSE, bag at exactly its cap, and a dish you already own a portion of.
 > - **fill the warehouse too, then cook.** One modal: «🎒 Сумка і 📦 склад повні» — and
 >   nothing may be consumed. Check the ingredient count is unchanged afterwards.
-> - **open any recipe.** Every ingredient line must carry ✅/❌ and «маєте N», where N is
->   bag + warehouse TOGETHER. Cook once without leaving the screen: the numbers must tick
->   down in place.
+> - **open any recipe.** Every ingredient line must carry ✅/❌ and the number you hold,
+>   counted across bag + warehouse TOGETHER. (The wording moved on in the 09-17 part 2 block
+>   above — it is a fraction now, not «маєте N».) Cook once without leaving the screen: the
+>   numbers must tick down in place.
 > - **a recipe you cannot afford.** The ❌ lines must match what the shortage modal says if
 >   you tap Cook anyway — they are the same reading now, so a disagreement is a real bug.
 > - **the ladders from `dc5f037`** — a farm at 2/год, єм 10 filling in 5 h, and the bag

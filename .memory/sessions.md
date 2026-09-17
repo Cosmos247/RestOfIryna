@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-16)
+## Commit index — live-play polish and after (2026-09-09 → 09-17)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,9 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Undeployed:** `c36822a` (the death-wipe fix and the requirement-line unification) plus the
-plot build-confirm sitting in the tree. The Pi took the tip on 2026-09-17 00:10 and has not
-been restarted since.
+**Undeployed: `c36822a` and `bf67243`.** Both are built, tested and verified; neither is on
+the Pi, which still runs `b63f835` from the 2026-09-17 00:10 restart. Swift and locale
+strings only — no migration (schema v12 stands) and no content moved (all four digest halves
+unchanged) — so `/reload` carries neither and `pm2 restart ROI` is the only way in.
 
 **Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
 these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
@@ -23,6 +24,27 @@ these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; 
 no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared after the restart. The four entries below
 are what it carried.
 
+- `bf67243` (09-17) **a slot is asked for before it is built, and one sword got one name** —
+  two unrelated reports in one commit. Claiming an estate slot committed on the first tap of a
+  button paired with its neighbour, and nothing in the codebase deletes a `Plot` row or changes
+  its type: `estate:plot:type:` now draws the picked type's card and asks, `estate:plot:build:`
+  is the only writer, and the QUESTION kept the old callback so stale picker buttons in chat
+  history land on the safe path. Then, from a screenshot: the bag's button read «Очищений меч»
+  while the banner under it read «Іржавий меч» — the equip/unequip banners read the catalog's
+  base name instead of the row's tier. The audit found the same shape one layer down, where
+  `GearConditionService` reported broken pieces as bare ids and lost the tier before any screen
+  could print it; it returns `BrokenPiece(itemId:tier:)` now. **An id is not a row.**
+- `c36822a` (09-17) **a death stopped disarming you, and one sentence got one form** — the
+  owner's archer had no bow and no gear row at all; the Pi's 09-08 dump still held it, so a
+  death had destroyed it. Both death paths wiped every non-equipped row with no exception for
+  the one item the rest of the code treats as bound, and nothing in the game grants a second
+  class weapon. `InventoryEntry.wipeOnDeath` is the single implementation now. Same commit:
+  twelve call sites that asked "do you have enough?" in four dialects became one
+  `RequirementLine`, ⛔ was retired, and the pre-commit review found the shortage modal had
+  been over Telegram's 200-character alert ceiling in five cases — silently refused, so the
+  screen whose whole job is to explain a refusal showed nothing at all.
+- `7050933` (09-17) **record the 09-17 deploy, and split a rule I had run together** —
+  docs only.
 - `b63f835` (09-16) **the invite
   outlived the challenge, and took both fighters off the board with it** — from a tester, with
   a screenshot: a duel invite whose buttons never died, «недійсний» on every tap, and the
