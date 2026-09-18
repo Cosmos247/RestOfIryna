@@ -403,51 +403,6 @@
       "stackable" : true,
       "tier" : 3,
       "type" : "artifact"
-    },
-    {
-      "icon" : "📜",
-      "id" : "artifact.recipe.foragers_omelette",
-      "rarity" : "common",
-      "stackable" : false,
-      "teachesRecipe" : "recipe.foragers_omelette",
-      "tier" : 2,
-      "type" : "artifact"
-    },
-    {
-      "icon" : "📜",
-      "id" : "artifact.recipe.hunters_stew",
-      "rarity" : "common",
-      "stackable" : false,
-      "teachesRecipe" : "recipe.hunters_stew",
-      "tier" : 2,
-      "type" : "artifact"
-    },
-    {
-      "icon" : "📜",
-      "id" : "artifact.recipe.meat_ragout",
-      "rarity" : "common",
-      "stackable" : false,
-      "teachesRecipe" : "recipe.meat_ragout",
-      "tier" : 2,
-      "type" : "artifact"
-    },
-    {
-      "icon" : "📜",
-      "id" : "artifact.recipe.berry_tart",
-      "rarity" : "common",
-      "stackable" : false,
-      "teachesRecipe" : "recipe.berry_tart",
-      "tier" : 2,
-      "type" : "artifact"
-    },
-    {
-      "icon" : "📜",
-      "id" : "artifact.recipe.governors_feast",
-      "rarity" : "common",
-      "stackable" : false,
-      "teachesRecipe" : "recipe.governors_feast",
-      "tier" : 3,
-      "type" : "artifact"
     }
   ]
 }

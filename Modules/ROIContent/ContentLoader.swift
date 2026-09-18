@@ -146,6 +146,7 @@ public enum ContentLoader {
             gearSets: setFile.sets,
             budget: budgetTuning,
             starterRecipeIds: recipeFile.starterRecipeIds,
+            recipeUnlocks: recipeFile.unlocks,
             weaponLadders: weaponFile.ladders,
             weaponDurabilityByTier: weaponFile.durabilityByTier,
             bags: bagFile,

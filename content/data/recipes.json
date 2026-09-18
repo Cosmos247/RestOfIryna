@@ -301,5 +301,37 @@
     "recipe.baked_potato",
     "recipe.roasted_meat",
     "recipe.foragers_omelette"
+  ],
+  "unlocks" : [
+    {
+      "minEstateTier" : 2,
+      "npc" : "tavern",
+      "recipeId" : "recipe.potato_pancakes"
+    },
+    {
+      "minEstateTier" : 3,
+      "npc" : "tavern",
+      "recipeId" : "recipe.berry_tart"
+    },
+    {
+      "minEstateTier" : 4,
+      "npc" : "tavern",
+      "recipeId" : "recipe.meat_ragout"
+    },
+    {
+      "minEstateTier" : 5,
+      "npc" : "tavern",
+      "recipeId" : "recipe.hunters_stew"
+    },
+    {
+      "minEstateTier" : 6,
+      "npc" : "tavern",
+      "recipeId" : "recipe.clay_baked_meat"
+    },
+    {
+      "minEstateTier" : 7,
+      "npc" : "tavern",
+      "recipeId" : "recipe.governors_feast"
+    }
   ]
 }

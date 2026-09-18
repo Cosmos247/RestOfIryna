@@ -57,8 +57,6 @@ Clay-Baked Meat is the only dish that eats a second non-food material: 1× 🧱 
 | `recipe.clay_baked_meat`    | 3× 🥩 Meat + 2× 🥔 Potato + 1× 🧱 Clay + 1× 🪵 Lumber | 🫕 Clay-Baked Meat (`food.clay_baked_meat`) | +50 | +13 | innkeeper, estate T6 |
 | `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts + 1× 🪵 Lumber | 🍽 Governor's Feast (`food.governors_feast`) | +72 | +18 | innkeeper, estate T7 |
 
-> The Unlock column describes the innkeeper ladder that ships in the same change as this table. Until it does, all six learned recipes have no source in play at all: five have a recipe-scroll artifact that was never given a drop, and the two newest have no scroll either. That is the defect the ladder exists to fix. Delete this note when it lands.
-
 Raw ingredients, and what they are worth as found:
 - 🫐 Forest Berries — +4 Vigor (2 silver)
 - 🌰 Forest Nuts — +5 Vigor (2 silver)
@@ -66,13 +64,38 @@ Raw ingredients, and what they are worth as found:
 - 🥔 Potato — inedible raw, must be cooked (6 silver)
 - 🥩 Raw Meat — inedible raw, must be cooked (10 silver)
 
-#### Learn flow
+#### How a recipe reaches a player (2026-09-18)
 
-1. Player finds (or buys, in future Capital quests) a `📜 Recipe: <Dish>` scroll → it lands in **Inventory → Artifacts**.
-2. Tapping the row shows a `📖 Learn` button instead of the default `✨ Use`. Tap it.
-3. On a fresh learn: scroll is consumed, recipe is added to the user's `learned_recipes` row set, an inline `✅ <Dish> — recipe learned` banner appears above the refreshed Artifacts list.
-4. On a duplicate (already known): scroll stays in the bag, modal alert "📖 You already know this recipe" — tradeable in the future market once that ships.
-5. Kitchen lists only learned recipes. Cooking is the same `CraftingService.craft` as Workshop — inventory-first input pool, output to inventory, `✅ Crafted ...` banner appended at the bottom of the detail screen.
+The ladder lives in `recipes.json` → `unlocks`, one rung per recipe:
+`{recipeId, npc, minEstateTier}`. It rides on the NPC's **daily job**, so a
+recipe is earned rather than handed out by the calendar.
+
+1. The quest board quotes it before the player commits — `🎁 Нагорода: 🪙 30 ·
+   🍗 25 Снаги · 📖 Рецепт: 🍲 Юшка мисливця` — and so does the journal, because
+   both render `CapitalController.rewardPhrase`.
+2. The player takes the job and finishes it. `QuestService.payOut` writes the
+   `learned_recipes` row in the same step that moves the silver and Vigor, so
+   there is one place where a payout can happen.
+3. The innkeeper then speaks in a message of his own, separate from the
+   `✅ Замовлення виконано` banner: `postStatusBanner` deletes the previous
+   banner, and an NPC's line is not a status line. **The copy is per dish, not
+   per mechanism** — the key is the recipe id plus `.taught`
+   (`recipe.clay_baked_meat.taught`), so he says something different about every
+   one, and `%{dish}` is offered to that line but may go unused. The validator
+   refuses a rung whose line is missing in either locale, which is why the render
+   site carries no fallback to rot.
+4. **One rung per finished job**, lowest tier first. A player who built to T5
+   without ever visiting the innkeeper owes four visits, not one payout.
+5. The tier comes off the live `User.estateLevel`, not the row the job was taken
+   on — building the kitchen mid-job pays out today.
+
+Which rung is owed is `RecipeUnlockDTO.next`, and there is exactly one
+implementation because the board quotes it before the player commits and the
+payout acts on it afterwards. Ties inside a tier fall to file order, so the
+ladder's order is content, like a quest pool's.
+
+Cooking itself is unchanged: the Kitchen lists `starterRecipeIds` ∪ the learned
+set, and `CraftingService.craft` drains inventory-first from the combined pool.
 
 ## Migration history
 

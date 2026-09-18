@@ -1034,7 +1034,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // is already running, and it is not.
             lines.append("📜 " + lingo.localize("quest.not_taken", locale: locale))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
+                                            lingo: lingo, locale: locale)
             ]))
         } else {
             lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
@@ -1042,15 +1043,22 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "target": "\(status.target)"
             ]))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
+                                            lingo: lingo, locale: locale)
             ]))
         }
         return lines.joined(separator: "\n")
     }
 
-    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor" — only the non-zero parts. Unit words
-    /// come from Lingo (uk: Досвід / Снага) so the glossary stays in one place.
-    static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
+    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor · 📖 Recipe: 🍲 Hunter's Stew" — only the
+    /// non-zero parts. Unit words come from Lingo (uk: Досвід / Снага) so the
+    /// glossary stays in one place.
+    ///
+    /// The recipe rides in the same phrase rather than on a line of its own so
+    /// the board and the journal cannot disagree about what a job pays: both call
+    /// this, and the answer to "what do I get" is one sentence.
+    static func rewardPhrase(_ reward: QuestReward, recipeId: String? = nil,
+                             lingo: Lingo, locale: String) -> String {
         var parts: [String] = ["🪙 \(reward.silver)"]
         if reward.xp > 0 {
             parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
@@ -1058,7 +1066,22 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         if reward.vigor > 0 {
             parts.append("🍗 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
         }
+        if let recipeId {
+            parts.append("📖 " + lingo.localize("quest.reward.recipe", locale: locale)
+                         + ": " + dishLabel(for: recipeId, lingo: lingo, locale: locale))
+        }
         return parts.joined(separator: " · ")
+    }
+
+    /// "🍲 Юшка мисливця" for a recipe id — the DISH, not the recipe, because the
+    /// dish is the word the player will look for on the kitchen screen. Falls
+    /// back to the raw id, which can only surface if a live row outlives its
+    /// content and `LiveReferenceCheck` is what stops that.
+    static func dishLabel(for recipeId: String, lingo: Lingo, locale: String) -> String {
+        guard let recipe = RecipeCatalog.find(recipeId),
+              let item = ItemCatalog.find(recipe.output.itemId) else { return recipeId }
+        let icon = item.icon.map { "\($0) " } ?? ""
+        return icon + lingo.localize(item.nameKey, locale: locale)
     }
 
     private func questBoardKeyboard(status: QuestService.Status, npc: QuestNPC, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
@@ -1134,6 +1157,26 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 )
             ])
             await postStatusBanner(text, context: context)
+            if let recipeId = payout.learnedRecipeId {
+                // Its own message, not part of the banner: `postStatusBanner`
+                // deletes the previous banner, and this is the NPC speaking
+                // rather than a status line. Best-effort, like the level-up
+                // below — this function cannot throw, and a lost bubble must not
+                // cost the recipe, which is already written.
+                _ = try? await context.bot.sendMessage(
+                    session: context.session,
+                    // Per-RUNG copy, keyed off the recipe id (`recipe.x` →
+                    // `recipe.x.taught`), so the innkeeper can say something
+                    // different about every dish rather than one line with the
+                    // name swapped. `%{dish}` is offered and may go unused — the
+                    // validator refuses a rung whose line is missing, which is
+                    // why there is no generic fallback here to rot.
+                    text: "📖 " + lingo.localize("\(recipeId).taught", locale: locale, interpolations: [
+                        "dish": Self.dishLabel(for: recipeId, lingo: lingo, locale: locale)
+                    ]),
+                    parseMode: .html
+                )
+            }
             if let xpResult = payout.xpResult, xpResult.levelsGained > 0 {
                 // A plain message, not another status banner — `postStatusBanner`
                 // deletes the previous one, and this must not eat the payout —

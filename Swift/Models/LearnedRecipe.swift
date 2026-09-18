@@ -8,10 +8,16 @@
 //  Forge and Tannery recipes are always available; Kitchen recipes only
 //  appear in the cooking UI if the player has a row in this table.
 //
-//  Players unlock kitchen recipes by tapping "📖 Learn" on a recipe-scroll
-//  artifact (`artifact.recipe.<dish_id>`). Two starter recipes
-//  (`recipe.baked_potato`, `recipe.roasted_meat`) are auto-granted at
-//  registration so the Kitchen is never empty on day one.
+//  A row gets here one way only: an NPC taught the recipe, paid out with that
+//  NPC's daily job (`recipes.json` → `unlocks`, resolved by
+//  `RecipeUnlockDTO.next`, written by `QuestService.payOut`). The starter
+//  recipes are NOT rows — they live in `RecipeCatalog.starterRecipeIds` and the
+//  Kitchen unions the two sets, which is why a fresh account needs no seeding.
+//
+//  Until 2026-09-18 the one way in was a recipe-scroll artifact, and no drop,
+//  listing or recipe ever produced one — so five of the seven dishes could not
+//  be learned at all. The scrolls are gone; `Item.teachesRecipe` and the
+//  inventory's "📖 Learn" branch survive unused, logged for a cleanup.
 //
 
 import Fluent

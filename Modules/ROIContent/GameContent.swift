@@ -35,6 +35,7 @@ public final class GameContent: Sendable {
     public let recipes: [RecipeDTO]
     public let recipesById: [String: RecipeDTO]
     public let starterRecipeIds: Set<String>
+    public let recipeUnlocks: [RecipeUnlockDTO]
     public let rarities: [RarityDTO]
     public let gearSets: [GearSetDTO]
     public let budget: BudgetTuningDTO?
@@ -75,6 +76,7 @@ public final class GameContent: Sendable {
         self.recipes = bundle.recipes
         self.recipesById = Dictionary(bundle.recipes.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.starterRecipeIds = Set(bundle.starterRecipeIds)
+        self.recipeUnlocks = bundle.recipeUnlocks
         self.rarities = bundle.rarities
         self.gearSets = bundle.gearSets
         self.budget = bundle.budget

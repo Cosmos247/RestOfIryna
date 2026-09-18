@@ -399,14 +399,14 @@ public func configure(logger: Logger) async throws {
             ("mat.hide", 16),
             ("potion.heal_small", 2),
             ("artifact.shrine_coin", 1),
-            // Phase 5.2.1: every Kitchen scroll so dev can test the Learn
-            // flow end-to-end. Baked Potato + Roasted Meat have no scrolls —
-            // they're always-available starters cookable from day one.
-            ("artifact.recipe.foragers_omelette", 1),
-            ("artifact.recipe.hunters_stew", 1),
-            ("artifact.recipe.meat_ragout", 1),
-            ("artifact.recipe.berry_tart", 1),
-            ("artifact.recipe.governors_feast", 1),
+            // The five Kitchen scrolls that used to sit here were deleted with
+            // the items on 2026-09-18. Leaving them would have been worse than
+            // dead weight: the orphan sweep below runs BEFORE the top-up, so
+            // every boot would have deleted five unresolvable rows and added
+            // them straight back — and a `/reload` in between is refused by
+            // `LiveReferenceCheck` precisely because a live row points at an id
+            // the bundle no longer defines. Recipes come from the innkeeper now,
+            // so the dev tests that flow by doing his daily job.
         ]
 
         for developer in developerUsers {
@@ -418,6 +418,11 @@ public func configure(logger: Logger) async throws {
             // already in `learned_recipes` is dropped from this run, both for
             // inventory and warehouse. Without this the dev keeps getting the
             // same scroll back on every relaunch even after Learn deletes it.
+            //
+            // No seed entry teaches anything since the scrolls were deleted, so
+            // this loop finds nothing today. It is kept beside `teachesRecipe`
+            // and the inventory's 📖 Learn branch, for the day a recipe is worth
+            // finding in the world again.
             var skipItems: Set<String> = []
             for (itemId, _) in seed {
                 guard let item = ItemCatalog.find(itemId),

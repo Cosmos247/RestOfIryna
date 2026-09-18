@@ -121,6 +121,11 @@ enum ContentDigest {
         }
         for recipe in RecipeCatalog.all { digest.combine(fingerprint(recipe)) }
         for id in RecipeCatalog.starterRecipeIds.sorted() { digest.combine(id) }
+        // NOT sorted: ties inside a tier fall to file order, so the order of the
+        // ladder is content and a reorder has to move the digest.
+        for unlock in RecipeCatalog.unlocks {
+            digest.combine("unlock \(unlock.npc)|\(unlock.recipeId)|T\(unlock.minEstateTier)")
+        }
         for id in WeaponUpgradeCatalog.progression.keys.sorted() {
             digest.combine(id)
             for (index, step) in (WeaponUpgradeCatalog.progression[id] ?? []).enumerated() {
@@ -349,7 +354,7 @@ enum ContentDigest {
 
         digest.combine(questDigest)
 
-        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
+        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs × \(questLevels.count) levels)")
@@ -439,6 +444,9 @@ enum ContentDigest {
         for id in RecipeCatalog.starterRecipeIds where RecipeCatalog.find(id) == nil {
             problems.append("starter recipe \(id) does not resolve")
         }
+        for unlock in RecipeCatalog.unlocks where RecipeCatalog.find(unlock.recipeId) == nil {
+            problems.append("unlock rung \(unlock.npc)/\(unlock.recipeId) does not resolve")
+        }
         for characterClass in CharacterClass.allCases {
             let weaponId = characterClass.starterWeaponId
             guard let weapon = ItemCatalog.find(weaponId) else {
@@ -469,7 +477,7 @@ enum ContentDigest {
         }
 
         if problems.isEmpty {
-            print("live lookups: ✅ every recipe input/output, loot id, scroll, starter recipe and starter weapon resolves through the façades")
+            print("live lookups: ✅ every recipe input/output, loot id, starter recipe, unlock rung and starter weapon resolves through the façades")
             print("plot sweeper: ✅ derivation reproduces both shipped cadences (60s → 60s, 3600s → 300s)")
         } else {
             print("live lookups: ❌ \(problems.count) problem(s)")

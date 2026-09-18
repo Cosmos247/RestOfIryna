@@ -27,6 +27,8 @@ public struct ContentBundle: Sendable {
     /// Equipment sets and their thresholds. Empty means no set grants anything.
     public let gearSets: [GearSetDTO]
     public let starterRecipeIds: [String]
+    /// The rungs an NPC teaches recipes along. Empty means nobody teaches any.
+    public let recipeUnlocks: [RecipeUnlockDTO]
     public let weaponLadders: [WeaponLadderDTO]
     public let weaponDurabilityByTier: [Int]
     public let bags: BagFileDTO
@@ -68,6 +70,7 @@ public struct ContentBundle: Sendable {
         gearSets: [GearSetDTO] = [],
         budget: BudgetTuningDTO? = nil,
         starterRecipeIds: [String],
+        recipeUnlocks: [RecipeUnlockDTO] = [],
         weaponLadders: [WeaponLadderDTO] = [],
         weaponDurabilityByTier: [Int] = [],
         bags: BagFileDTO = BagFileDTO(maxTier: 0, capacities: [], progression: []),
@@ -94,6 +97,7 @@ public struct ContentBundle: Sendable {
         self.gearSets = gearSets
         self.budget = budget
         self.starterRecipeIds = starterRecipeIds
+        self.recipeUnlocks = recipeUnlocks
         self.weaponLadders = weaponLadders
         self.weaponDurabilityByTier = weaponDurabilityByTier
         self.bags = bags

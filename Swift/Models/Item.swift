@@ -122,6 +122,12 @@ public struct Item: Sendable {
     /// teaches the named recipe via `LearnedRecipe.add` and consumes the
     /// scroll. The inventory action button switches from "✨ Use" to
     /// "📖 Learn" whenever this is non-nil. Phase 5.2.1.
+    ///
+    /// **No shipped item sets this since 2026-09-18**, when the five scrolls
+    /// were deleted and NPCs took over teaching. The field and its inventory
+    /// branch are kept for the day a recipe is worth finding in the world; the
+    /// validator now refuses to count a scroll nothing grants as a source, so
+    /// reintroducing one without a drop cannot go unnoticed again.
     public let teachesRecipe: String?
 
     public init(

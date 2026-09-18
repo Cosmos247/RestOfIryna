@@ -40,6 +40,8 @@ final class DomainContent: Sendable {
     let recipes: [Recipe]
     let recipesById: [String: Recipe]
     let starterRecipeIds: Set<String>
+    /// The rungs an NPC teaches recipes along, in file order.
+    let recipeUnlocks: [RecipeUnlockDTO]
 
     let weaponLadders: [String: [WeaponUpgradeStep]]
     let weaponDurabilityByTier: [Int]
@@ -202,6 +204,7 @@ final class DomainContent: Sendable {
         self.enemiesById = Dictionary(enemies.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.recipesById = Dictionary(recipes.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.starterRecipeIds = content.starterRecipeIds
+        self.recipeUnlocks = content.recipeUnlocks
 
         self.weaponLadders = Dictionary(
             content.weaponLaddersByItemId.map { ($0.key, $0.value.domainSteps) },

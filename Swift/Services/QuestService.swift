@@ -46,6 +46,10 @@ public enum QuestService {
         /// offer, not a job in progress.
         public let accepted: Bool
         public let claimed: Bool
+        /// The recipe finishing this job will teach, on top of the reward above.
+        /// Nil when the NPC teaches nothing, the ladder is finished, or the job
+        /// is already claimed — a claimed row must not advertise tomorrow's rung.
+        public let recipeUnlock: String?
 
         /// Show the action button — the job is finishable right now.
         public var isActionable: Bool { accepted && !claimed && done >= target }
@@ -58,6 +62,9 @@ public enum QuestService {
         public let xp: Int
         public let vigor: Int
         public let xpResult: User.XPGrantResult?
+        /// Set when this payout also taught a recipe. Nil covers both "nothing
+        /// was owed" and "already known", which the banner treats the same.
+        public let learnedRecipeId: String?
     }
 
     /// Outcome of taking a job at the NPC.
@@ -147,7 +154,8 @@ public enum QuestService {
         }
         return Status(def: def, done: done, target: def.objective.target,
                       reward: scaledReward(def.reward, level: user.level),
-                      accepted: accepted, claimed: claimed)
+                      accepted: accepted, claimed: claimed,
+                      recipeUnlock: claimed ? nil : try await pendingUnlock(for: user, npc: npc, on: db))
     }
 
     /// Accepted, unpaid delivery jobs that want `itemId` today, with how many
@@ -224,6 +232,18 @@ public enum QuestService {
             pool: progression.vigorPool
         )
         return QuestReward(silver: scaled.silver, xp: scaled.xp, vigor: scaled.vigor)
+    }
+
+    /// The recipe `npc` will teach on the next payout, or nil.
+    ///
+    /// Reads the learned set ONLY when that NPC has rungs at all, so the Trader's
+    /// and the Master's boards cost exactly what they cost before this existed.
+    /// The estate tier comes off the live row, not the row the job was taken on:
+    /// building the kitchen mid-job should pay out today, not tomorrow.
+    private static func pendingUnlock(for user: User, npc: QuestNPC, on db: any Database) async throws -> String? {
+        guard RecipeCatalog.unlocks.contains(where: { $0.npc == npc.rawValue }) else { return nil }
+        let known = try await LearnedRecipe.allIds(for: user, on: db)
+        return RecipeCatalog.nextUnlock(npc: npc, estateTier: user.estateLevel, known: known)?.recipeId
     }
 
     /// Units of any of `itemIds` currently in the player's bag.
@@ -325,7 +345,9 @@ public enum QuestService {
             }
         }
 
-        let payout = try await payOut(scaledReward(def.reward, level: user.level), to: user, on: db)
+        let payout = try await payOut(scaledReward(def.reward, level: user.level),
+                                      teaching: try await pendingUnlock(for: user, npc: npc, on: db),
+                                      to: user, on: db)
         row.claimed = true
         try await row.save(on: db)
         return .paid(def: def, payout: payout)
@@ -334,8 +356,12 @@ public enum QuestService {
     // MARK: - Payout
 
     /// Apply a reward and persist the player. Vigor is clamped to the cap, so
-    /// the reported amount is what actually landed, not what was offered.
-    private static func payOut(_ reward: QuestReward, to user: User, on db: any Database) async throws -> Payout {
+    /// the reported amount is what actually landed, not what was offered — and
+    /// the same is true of the recipe: `teaching` is what was OWED, and the
+    /// Payout reports what was actually written, so a second claim on a recipe
+    /// already held announces nothing.
+    private static func payOut(_ reward: QuestReward, teaching recipeId: String?,
+                               to user: User, on db: any Database) async throws -> Payout {
         user.silver += reward.silver
 
         var xpResult: User.XPGrantResult?
@@ -350,12 +376,25 @@ public enum QuestService {
             vigorRestored = user.vigor - before
         }
 
+        // The recipe row goes in BEFORE the silver, and the order is the whole
+        // safety here. `finish` marks the job claimed only after this returns, so
+        // anything that throws in between leaves the job re-claimable — and if
+        // the throw came after the player was paid, the second claim pays again.
+        // Written this way the worst case is a recipe granted without its silver,
+        // which the next claim settles and `add`'s idempotence absorbs.
+        var taught: String?
+        if let recipeId, try await LearnedRecipe.add(recipeId, for: user, on: db) {
+            taught = recipeId
+        }
+
         try await user.saveAndCache(in: db)
+
         return Payout(
             silver: reward.silver,
             xp: xpResult?.xpAwarded ?? 0,
             vigor: vigorRestored,
-            xpResult: xpResult
+            xpResult: xpResult,
+            learnedRecipeId: taught
         )
     }
 }

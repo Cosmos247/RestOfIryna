@@ -16,9 +16,12 @@
 //  (inventory drained first to free slots) and deposit the output into the
 //  inventory. See `CraftingService`.
 //
-//  Forge + Tannery recipes are always available. Kitchen recipes are gated
-//  by `LearnedRecipe` — players unlock them by using a recipe-scroll artifact
-//  found in the world (or auto-learn the two starter dishes at registration).
+//  Forge + Tannery recipes are always available. Kitchen recipes are gated by
+//  `LearnedRecipe`, and a player comes by one of two ways: it is in
+//  `starterRecipeIds` (cookable from day one, no DB row), or an NPC teaches it
+//  — the `unlocks` ladder below, paid out by that NPC's daily job. The
+//  recipe-scroll artifacts this used to run on were deleted on 2026-09-18:
+//  nothing ever granted one, so five dishes were unreachable for months.
 //
 
 import Foundation
@@ -28,7 +31,7 @@ import Foundation
 public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     case forge      // Smelting and metalwork
     case tannery    // Leather and hide
-    case kitchen    // Cooked food (Phase 5.2.1, gated by LearnedRecipe)
+    case kitchen    // Cooked food: starter set ∪ what an NPC has taught
 
     public var icon: String {
         switch self {
@@ -43,8 +46,8 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         return "workshop.category.\(rawValue)"
     }
 
-    /// Recipes in this category require the player to learn them first
-    /// (via a recipe-scroll artifact) before they show up in the cooking UI.
+    /// Recipes in this category require the player to learn them first — from
+    /// the starter set or from an NPC — before they show up in the cooking UI.
     public var requiresLearning: Bool {
         switch self {
         case .forge, .tannery: return false
@@ -137,8 +140,24 @@ public struct Recipe: Sendable {
 public enum RecipeCatalog {
     public static var all: [Recipe] { Catalogs.current.recipes }
 
-    /// Recipes a fresh player can cook without finding a scroll first.
+    /// Recipes a fresh player can cook without being taught them.
     public static var starterRecipeIds: Set<String> { Catalogs.current.starterRecipeIds }
+
+    /// The rungs NPCs teach recipes along, in file order.
+    public static var unlocks: [RecipeUnlockDTO] { Catalogs.current.recipeUnlocks }
+
+    /// The recipe `npc` owes this player next, or nil when nothing is pending.
+    ///
+    /// Delegates to `RecipeUnlockDTO.next` rather than filtering here: the quest
+    /// board quotes this before the player takes the job and the payout acts on
+    /// it afterwards, so there is one implementation and no second reading.
+    ///
+    /// `known` is the player's `LearnedRecipe` set, which does NOT contain the
+    /// starters — and does not need to. A starter on the ladder is a validator
+    /// error, so a bundle carrying one never installs.
+    public static func nextUnlock(npc: QuestNPC, estateTier: Int, known: Set<String>) -> RecipeUnlockDTO? {
+        RecipeUnlockDTO.next(in: unlocks, npc: npc.rawValue, estateTier: estateTier, known: known)
+    }
 
     public static func find(_ id: String) -> Recipe? {
         return Catalogs.current.recipesById[id]

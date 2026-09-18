@@ -264,14 +264,59 @@ public enum ContentValidator {
         }
 
         // A recipe nothing teaches and nothing starts with is unreachable
-        // content — usually a scroll that was never given a drop source.
-        let taughtRecipes = Set(bundle.items.compactMap(\.teachesRecipe))
+        // content. THREE sources count now, and the scroll branch carries the
+        // lesson: this rule used to accept "some item has teachesRecipe" as a
+        // source, so five scrolls that no drop, listing or recipe ever produced
+        // kept five kitchen recipes looking reachable for months while no player
+        // could learn any of them. Proving the scroll exists is not the question;
+        // proving a player can come to hold it is. See `obtainableItemIds`.
+        let obtainable = obtainableItemIds(bundle)
+        let taughtRecipes = Set(bundle.items.filter { obtainable.contains($0.id) }.compactMap(\.teachesRecipe))
+        let unlockedRecipes = Set(bundle.recipeUnlocks.map(\.recipeId))
         for (index, recipe) in bundle.recipes.enumerated() {
-            let reachable = taughtRecipes.contains(recipe.id) || bundle.starterRecipeIds.contains(recipe.id)
+            let reachable = taughtRecipes.contains(recipe.id)
+                || unlockedRecipes.contains(recipe.id)
+                || bundle.starterRecipeIds.contains(recipe.id)
             if !reachable && recipe.category == "kitchen" {
                 issues.append(.init(severity: .warning, file: "recipes.json", path: "recipes[\(index)]", id: recipe.id,
                                     rule: "reachability.recipe.unreachable",
-                                    message: "kitchen recipe is neither a starter nor taught by any scroll"))
+                                    message: "kitchen recipe is not a starter, sits on no NPC's unlock ladder, and no obtainable scroll teaches it"))
+            }
+        }
+
+        // The unlock ladder. A rung below estate tier 2 would hand over a recipe
+        // before the kitchen exists, and a rung naming a starter would pay for
+        // something the player already has — both are refused rather than warned,
+        // because `RecipeUnlockDTO.next` deliberately does not re-check either.
+        let maxEstateTier = bundle.estateUpgrades.maxTier
+        var seenRungs: Set<String> = []
+        for (index, unlock) in bundle.recipeUnlocks.enumerated() {
+            let path = "unlocks[\(index)]"
+            if !recipeIds.contains(unlock.recipeId) {
+                issues.append(.init(severity: .error, file: "recipes.json", path: path, id: unlock.recipeId,
+                                    rule: "reference.recipe.unknown",
+                                    message: "unlock teaches unknown recipe \"\(unlock.recipeId)\""))
+            }
+            if !questNPCs.contains(unlock.npc) {
+                issues.append(.init(severity: .error, file: "recipes.json", path: path, id: unlock.recipeId,
+                                    rule: "reference.npc.unknown",
+                                    message: "unlock names unknown NPC \"\(unlock.npc)\""))
+            }
+            if unlock.minEstateTier < 2 || (maxEstateTier > 0 && unlock.minEstateTier > maxEstateTier) {
+                issues.append(.init(severity: .error, file: "recipes.json", path: path, id: unlock.recipeId,
+                                    rule: "range.unlock.estate_tier",
+                                    message: "minEstateTier \(unlock.minEstateTier) is outside 2...\(maxEstateTier) — tier 1 has no kitchen"))
+            }
+            if bundle.starterRecipeIds.contains(unlock.recipeId) {
+                issues.append(.init(severity: .error, file: "recipes.json", path: path, id: unlock.recipeId,
+                                    rule: "conflict.unlock.starter",
+                                    message: "recipe is already a starter, so the ladder would pay for what the player has"))
+            }
+            let rung = "\(unlock.npc)/\(unlock.recipeId)"
+            if !seenRungs.insert(rung).inserted {
+                issues.append(.init(severity: .warning, file: "recipes.json", path: path, id: unlock.recipeId,
+                                    rule: "duplicate.unlock",
+                                    message: "\(unlock.npc) owes this recipe twice — the higher rung can never pay out"))
             }
         }
 
@@ -678,6 +723,29 @@ public enum ContentValidator {
     /// `PlotType`, `QuestNPC` and `QuestCounter` — same arrangement as
     /// `itemTypes` above, and for the same reason: this module is
     /// Foundation-only and cannot see them.
+    /// Every item id a player can come to hold, gathered from the bundle's own
+    /// sources: beast loot, zone forage, plot output, a recipe's output, and the
+    /// four shop listings. Deliberately NOT "every id that exists" — that was
+    /// the bug (see the reachability rule above).
+    ///
+    /// Starting kit is left out on purpose: a class weapon is granted in code,
+    /// and nothing that needs this question asked is a weapon.
+    private static func obtainableItemIds(_ bundle: ContentBundle) -> Set<String> {
+        var ids: Set<String> = []
+        for enemy in bundle.enemies { for drop in enemy.loot { ids.insert(drop.itemId) } }
+        for zone in bundle.zones?.zones ?? [] { for entry in zone.forage { ids.insert(entry.itemId) } }
+        for type in bundle.plots?.types ?? [] {
+            guard let tuning = type.tuning else { continue }
+            ids.insert(tuning.producedItemId)
+            if let bonus = tuning.bonusOutput { ids.insert(bonus.producedItemId) }
+        }
+        for recipe in bundle.recipes { ids.insert(recipe.output.itemId) }
+        for listing in bundle.trader?.listings ?? [] { ids.insert(listing.itemId) }
+        for row in bundle.tavern?.food ?? [] { ids.insert(row.itemId) }
+        for row in bundle.master?.armorForSale ?? [] { ids.insert(row.itemId) }
+        return ids
+    }
+
     private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop", "training_ground"]
     private static let questNPCs: Set<String> = ["trader", "master", "tavern"]
     private static let questCounters: Set<String> = ["beastKill", "ironIngotForged", "gambleWin", "traderSilver"]
@@ -1060,6 +1128,15 @@ public enum ContentValidator {
                 issues.append(.init(severity: .error, file: "\(locale).json", path: path, id: id,
                                     rule: "locale.key.missing", message: "missing key \"\(key)\""))
             }
+        }
+
+        // Every rung the innkeeper teaches has its OWN line, because the copy is
+        // written per dish rather than per mechanism. Missing it would print the
+        // raw key stem at the player, so this is an error and the render site
+        // carries no fallback.
+        for (index, unlock) in bundle.recipeUnlocks.enumerated() {
+            requireKey("\(unlock.recipeId).taught", file: "recipes.json",
+                       path: "unlocks[\(index)]", id: unlock.recipeId)
         }
 
         for (index, row) in (bundle.plots?.types ?? []).enumerated() {
