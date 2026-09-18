@@ -39,7 +39,7 @@
     {
       "effects" : [
         {
-          "amount" : 7,
+          "amount" : 3,
           "kind" : "restore_vigor"
         }
       ],
@@ -61,7 +61,7 @@
     {
       "effects" : [
         {
-          "amount" : 9,
+          "amount" : 10,
           "kind" : "restore_vigor"
         }
       ],
@@ -75,7 +75,7 @@
     {
       "effects" : [
         {
-          "amount" : 12,
+          "amount" : 14,
           "kind" : "restore_vigor"
         }
       ],
@@ -93,8 +93,22 @@
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 3,
+          "amount" : 4,
           "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🥞",
+      "id" : "food.potato_pancakes",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 10,
+          "kind" : "restore_vigor"
         }
       ],
       "icon" : "🍳",
@@ -107,11 +121,11 @@
     {
       "effects" : [
         {
-          "amount" : 20,
+          "amount" : 42,
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 5,
+          "amount" : 11,
           "kind" : "restore_hp"
         }
       ],
@@ -125,11 +139,11 @@
     {
       "effects" : [
         {
-          "amount" : 18,
+          "amount" : 38,
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 4,
+          "amount" : 10,
           "kind" : "restore_hp"
         }
       ],
@@ -143,11 +157,11 @@
     {
       "effects" : [
         {
-          "amount" : 16,
+          "amount" : 32,
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 6,
+          "amount" : 8,
           "kind" : "restore_hp"
         }
       ],
@@ -161,11 +175,29 @@
     {
       "effects" : [
         {
-          "amount" : 35,
+          "amount" : 50,
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 10,
+          "amount" : 13,
+          "kind" : "restore_hp"
+        }
+      ],
+      "icon" : "🫕",
+      "id" : "food.clay_baked_meat",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 3,
+      "type" : "food"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 72,
+          "kind" : "restore_vigor"
+        },
+        {
+          "amount" : 18,
           "kind" : "restore_hp"
         }
       ],

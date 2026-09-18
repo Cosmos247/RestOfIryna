@@ -2,31 +2,39 @@
   "food" : [
     {
       "itemId" : "food.baked_potato",
-      "priceSilver" : 20
-    },
-    {
-      "itemId" : "food.roasted_meat",
-      "priceSilver" : 30
+      "priceSilver" : 25
     },
     {
       "itemId" : "food.foragers_omelette",
-      "priceSilver" : 50
+      "priceSilver" : 25
+    },
+    {
+      "itemId" : "food.roasted_meat",
+      "priceSilver" : 35
+    },
+    {
+      "itemId" : "food.potato_pancakes",
+      "priceSilver" : 40
     },
     {
       "itemId" : "food.berry_tart",
-      "priceSilver" : 60
-    },
-    {
-      "itemId" : "food.meat_ragout",
       "priceSilver" : 80
     },
     {
+      "itemId" : "food.meat_ragout",
+      "priceSilver" : 95
+    },
+    {
       "itemId" : "food.hunters_stew",
-      "priceSilver" : 100
+      "priceSilver" : 105
+    },
+    {
+      "itemId" : "food.clay_baked_meat",
+      "priceSilver" : 125
     },
     {
       "itemId" : "food.governors_feast",
-      "priceSilver" : 200
+      "priceSilver" : 180
     }
   ],
   "wagerTiers" : [

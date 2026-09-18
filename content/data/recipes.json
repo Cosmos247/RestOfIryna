@@ -120,11 +120,33 @@
     },
     {
       "category" : "kitchen",
+      "id" : "recipe.potato_pancakes",
+      "inputs" : [
+        {
+          "itemId" : "food.potato",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.potato_pancakes",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
       "id" : "recipe.foragers_omelette",
       "inputs" : [
         {
           "itemId" : "food.duck_egg",
-          "quantity" : 2
+          "quantity" : 1
         },
         {
           "itemId" : "mat.pine_lumber",
@@ -194,7 +216,7 @@
       "inputs" : [
         {
           "itemId" : "food.forest_berries",
-          "quantity" : 4
+          "quantity" : 3
         },
         {
           "itemId" : "food.forest_nuts",
@@ -202,7 +224,7 @@
         },
         {
           "itemId" : "food.duck_egg",
-          "quantity" : 1
+          "quantity" : 3
         },
         {
           "itemId" : "mat.pine_lumber",
@@ -211,6 +233,32 @@
       ],
       "output" : {
         "itemId" : "food.berry_tart",
+        "quantity" : 1
+      }
+    },
+    {
+      "category" : "kitchen",
+      "id" : "recipe.clay_baked_meat",
+      "inputs" : [
+        {
+          "itemId" : "food.raw_meat",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "food.potato",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "food.clay_baked_meat",
         "quantity" : 1
       }
     },
@@ -251,6 +299,7 @@
   ],
   "starterRecipeIds" : [
     "recipe.baked_potato",
-    "recipe.roasted_meat"
+    "recipe.roasted_meat",
+    "recipe.foragers_omelette"
   ]
 }

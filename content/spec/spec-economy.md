@@ -127,20 +127,20 @@ never spent here either, so every row is a floor and not an estimate.
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 1,1 | 7.4 | 11.4 | 100% | 106.1 | 430 | 1208 | 2 | **-665** | -665 |
-| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 198 | 616 | 4 | **-307** | -184 |
-| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 84 | 297 | 8 | **-106** | +27 |
-| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 41 | 155 | 14 | **-13** | +62 |
-| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 22 | 89 | 20 | **+28** | +64 |
-| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 13 | 64 | 22 | **+42** | +79 |
-| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 9 | 50 | 24 | **+50** | +80 |
-| 13 | 4,7,10,13 | 456.8 | 23.3 | 46% | 1.7 | 7 | 40 | 26 | **+56** | +71 |
-| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 5 | 32 | 28 | **+61** | +65 |
-| 16 | 7,10,13,16 | 819.3 | 24.1 | 17% | 1.0 | 4 | 23 | 32 | **+64** | +70 |
-| 17 | 10,13,16 | 883.2 | 23.4 | 8% | 0.9 | 4 | 21 | 34 | **+64** | +67 |
-| 20 | 13,16 | 1016.5 | 24.2 | 0% | 0.8 | 3 | 19 | 40 | **+59** | +64 |
-| 22 | 13,16,22 | 1359.1 | 23.3 | 0% | 0.6 | 2 | 14 | 44 | **+60** | +63 |
-| 23 | 16,22 | 2575.8 | 18.3 | 0% | 0.3 | 1 | 6 | 46 | **+65** | +69 |
-| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 1 | 2 | 52 | **+61** | +61 |
+| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 198 | 616 | 4 | **-307** | -60 |
+| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 84 | 297 | 8 | **-106** | +160 |
+| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 41 | 155 | 14 | **-13** | +138 |
+| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 22 | 89 | 20 | **+28** | +101 |
+| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 10 | 64 | 22 | **+39** | +113 |
+| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 7 | 50 | 24 | **+48** | +108 |
+| 13 | 4,7,10,13 | 456.8 | 23.3 | 46% | 1.7 | 5 | 40 | 26 | **+54** | +84 |
+| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 4 | 32 | 28 | **+59** | +69 |
+| 16 | 7,10,13,16 | 819.3 | 24.1 | 17% | 1.0 | 3 | 23 | 32 | **+63** | +75 |
+| 17 | 10,13,16 | 883.2 | 23.4 | 8% | 0.9 | 3 | 21 | 34 | **+63** | +70 |
+| 20 | 13,16 | 1016.5 | 24.2 | 0% | 0.8 | 2 | 19 | 40 | **+59** | +68 |
+| 22 | 13,16,22 | 1359.1 | 23.3 | 0% | 0.6 | 2 | 14 | 44 | **+59** | +66 |
+| 23 | 16,22 | 2575.8 | 18.3 | 0% | 0.3 | 1 | 6 | 46 | **+64** | +74 |
+| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 0 | 2 | 52 | **+61** | +61 |
 
 Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at -13 Vigor.
 <!-- /generated -->
@@ -234,18 +234,18 @@ fails a build on a number the project has agreed to look at first.
 ## 3. What a kill returns
 
 <!-- generated: roi-content spec economy -->
-**What a kill returns** — cooked meat is 12 Vigor a portion
+**What a kill returns** — cooked meat is 14 Vigor a portion
 
 | enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |
 |---|---|---|---|---|---|---|---|---|
 | `enemy.wild_viper` | 1 | trash | ×0.5 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
 | `enemy.wild_eagle` | 1 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
-| `enemy.wild_boar` | 2 | normal | ×1.0 | 0.70 | 8.4 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_moose` | 4 | normal | ×1.0 | 1.60 | 19.2 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 19.2 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_boar` | 2 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 |
+| `enemy.wild_moose` | 4 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
 | `enemy.rabid_lynx` | 10 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
 | `enemy.rabid_wolf` | 13 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_bear` | 16 | brute | ×1.7 | 1.70 | 20.4 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_bear` | 16 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
 | `enemy.rabid_bear` | 22 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
 
 `lootMult` does not apply today — no award site reads it, so `hide`
@@ -324,7 +324,7 @@ the draft band lives and where content arrives after the rebalance.
 | found a guild | 500 | one-off, level 5 |
 | market listing | 5 | per lot, up to 5 |
 | arena tithe | 10% of the stake | the only PvP drain |
-| tavern food | 20–200 | per dish |
+| tavern food | 25–180 | per dish |
 | tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |
 
 **The faucet** — one job per NPC per game day, taken at the NPC
