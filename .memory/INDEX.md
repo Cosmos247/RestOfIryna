@@ -103,6 +103,12 @@ following the rule you are about to break. The ones a fresh session most often w
   the tier with them: an id is not a row
 - `project-plot-streams-and-dead-lore` also holds the 2026-09-17 addition: an estate slot is
   ASKED for before it is built, because nothing in the code can undo the choice
+- `project-food-is-priced-not-picked` — a dish restores the trader buy-price of its ingredients
+  in Vigor and a quarter of that in HP; price a new dish's inputs, never pick its number
+- `project-npcs-teach-recipes` — the innkeeper's daily job pays the lowest unearned rung of
+  `recipes.json` → `unlocks`, one rung per job, gated on estate tier
+- `feedback-a-checker-that-cannot-fail` — the reachability rule proved a scroll EXISTED for
+  months instead of asking whether a player could hold one; every checker needs its negative test
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

@@ -97,8 +97,20 @@ offer sits on the board until the player accepts it at the NPC (`QuestProgress.a
 STARTS the count and never backfills the day. Each job carries a `minLevel` and the pool is
 filtered before the hash; the validator refuses a pool whose cheapest job starts above level
 1. Rewards are authored at level 1 and scaled at payout by `ProgressionMath.questReward`, so
-**the board must quote `Status.reward`, never `def.reward`**. Auto-memory
-`project-quests-taken-by-hand`.
+**the board must quote `Status.reward`, never `def.reward`**.
+
+**The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
+`{recipeId, npc, minEstateTier}` rungs, and finishing a job pays the lowest rung the player has
+earned and does not know — one rung per job, resolved by `RecipeUnlockDTO.next`, which is the ONLY
+resolver because the board quotes it before the player commits and `QuestService.payOut` acts on
+it afterwards. A recipe is **not** scaled: it is not a number, so it rides beside the silver and
+Vigor rather than inside them, and the payout reports what it WROTE so a recipe already held
+announces nothing. The NPC's line is a message of its own — `postStatusBanner` deletes the
+previous banner, and an NPC speaking is not a status line. **A recipe scroll is not the mechanism
+any more:** the five `artifact.recipe.*` items were deleted on 2026-09-18 because nothing ever
+granted one, which left five dishes unlearnable for months while the validator called them
+reachable. Auto-memory `project-quests-taken-by-hand`, `project-npcs-teach-recipes`,
+`project-food-is-priced-not-picked`, `feedback-a-checker-that-cannot-fail`.
 
 **Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
 level-up grant are the only sources, and the estate's plots are the intended income —
@@ -113,7 +125,11 @@ suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on t
 `location == capital` (in town). The road needs its own check rather than falling out of the
 other two — `location` is not flipped until arrival. Callers query the rows and pass the
 answer; `tick` does no lookups of its own. Away from the estate the clock is CLEARED, not
-merely skipped. Potions are the away-from-home heal.
+merely skipped. Potions were meant to be the away-from-home heal, and **`potion.heal_small`
+and `potion.heal_medium` are not obtainable anywhere** — they exist in `items.json` and in no
+shop, recipe, drop or forage table — so the real answer today is a **cooked dish**, every taught
+one of which restores a quarter of its silver price in HP. Auto-memory
+`feedback-a-checker-that-cannot-fail`.
 
 Regen is **computed lazily on interaction**, so both ends of an absence are stamped
 explicitly: `suspendResting` when an expedition or trip begins, `beginResting` when the

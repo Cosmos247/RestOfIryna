@@ -11,10 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Undeployed: `c36822a` and `bf67243`.** Both are built, tested and verified; neither is on
-the Pi, which still runs `b63f835` from the 2026-09-17 00:10 restart. Swift and locale
-strings only — no migration (schema v12 stands) and no content moved (all four digest halves
-unchanged) — so `/reload` carries neither and `pm2 restart ROI` is the only way in.
+**Undeployed: `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2` and the innkeeper commit.** All
+built, tested and verified; none is on the Pi, which still runs `b63f835` from the 2026-09-17
+00:10 restart — read that off the machine before trusting this line. The two 09-17 commits are
+Swift and locale strings only; the three food commits move `content/data` as well, so the new
+JSON and the new binary must ship TOGETHER. Locale strings changed in all of them, and Lingo is
+not hot-reloaded, so **`pm2 restart ROI` is the only way in** — `/reload` carries none of it.
 
 **Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
 these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
@@ -24,6 +26,41 @@ these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; 
 no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared after the restart. The four entries below
 are what it carried.
 
+- `dc82444` (09-18) **the innkeeper teaches cooking, and the checker learned to ask the
+  right question** — five kitchen recipes had no source in play at all: the scrolls that taught
+  them (`artifact.recipe.*`) were never given a drop, a listing or a recipe, so the only dishes
+  anyone could cook were the two starters. The fix is a ladder in `recipes.json` → `unlocks`
+  (`{recipeId, npc, minEstateTier}`) paid out by the NPC's own DAILY JOB: finishing one teaches
+  the lowest rung the player has earned and does not know, one rung per job. `RecipeUnlockDTO.next`
+  is the single resolver — the board quotes it before the player commits, the payout acts on it
+  after — and `QuestService.payOut` writes the row in the same step that moves the silver, so
+  there is still one place a payout can happen. The scrolls are deleted; `Item.teachesRecipe` and
+  the inventory's 📖 Learn branch survive unused and are logged for a cleanup.
+  **The other half is the validator.** Its reachability rule had reported every kitchen recipe as
+  reachable throughout, because it accepted "some item has `teachesRecipe`" as a source — it
+  proved the scroll EXISTED, which was never the question. It now asks whether a player can come
+  to hold that scroll (`obtainableItemIds`: loot, forage, plot output, recipe outputs, the four
+  shop lists), and counts an unlock rung as a source. `validate --strict` went from two errors to
+  **0 warnings**, and the pair of tests around it includes the negative one, because a checker
+  that cannot fail is not a checker.
+- `fa46ef2` (09-18) **every dish is worth what it costs, and the kitchen got two more** — the food
+  ladder had no policy: cheap dishes paid ~0.9 Vigor per silver of ingredients and expensive ones
+  ~0.48, so the economy of scale ran backwards and a raw nut beat a cooked Baked Potato per unit
+  gathered. Two rules now: **Vigor = the trader buy-price of the recipe's inputs**, and **HP = a
+  quarter of that price**, on the learned dishes only. The duck egg went 7 → 3 (at 7 it was the
+  most efficient food in the game, which is what made every egg dish a loss), the omelette became
+  a starter at one egg, the pie needed a third egg to clear its own forage, and Potato Pancakes
+  (T2) and Clay-Baked Meat (T6) joined. Clay-Baked Meat cannot be cooked without walking past
+  km 11 — no plot makes clay. The tavern charges a flat 2.5×, so every dish is 2.50 silver per
+  Vigor instead of 2.00–5.00. Estate income rose 11–15% a tier above T2; `simulate` held at 0
+  broken bands.
+- `4f49e2a` (09-18) **the omelette is two eggs and a board, and the ragout became a roast** — the
+  omelette lost the nuts and berry it never needed, and `food.meat_ragout` became «Мʼясна печеня»
+  / Pot Roast, which meant its uk gender went `n` → `f`: the adjective and every agreeing string
+  follow the NOUN, so a rename is never only a rename. The measured cost of the omelette edit is
+  in `FoodBudget.cook`'s comment — it made a second recipe cookable from plot output, the two now
+  compete for the same board, and the greedy's answer became a floor rather than the optimum
+  (915 → 862 Vigor/day at T6, +0.4 days over the ladder).
 - `bf67243` (09-17) **a slot is asked for before it is built, and one sword got one name** —
   two unrelated reports in one commit. Claiming an estate slot committed on the first tap of a
   button paired with its neighbour, and nothing in the codebase deletes a `Plot` row or changes
@@ -216,6 +253,47 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-18 (the kitchen nobody could use)
+
+Started from a player-facing complaint — "recipes never drop, so nobody can cook" — and it
+turned out to be three defects stacked, each hiding the next.
+
+**One: the recipes were unreachable, and the checker said otherwise.** Five of the seven
+kitchen recipes were learned from `artifact.recipe.*` scrolls, and nothing in the game ever
+produced a scroll: enemy loot is `raw_meat` + `hide`, forage is materials and berries, and no
+shop listed one. The validator's `reachability.recipe.unreachable` rule had been green the
+whole time because it accepted "an item with `teachesRecipe` exists" as proof of a source. It
+answered a question nobody asked. Fixed in `dc82444` by asking whether a player can come to
+HOLD the item (`obtainableItemIds`) — and the pair of tests around it includes the negative
+case, because that is the half that was missing the first time.
+
+**Two: the food ladder had no policy at all.** Measured in one currency — the trader's own buy
+prices — the cheap dishes paid ~0.9 Vigor per silver of ingredients and the expensive ones
+~0.48, so the economy of scale ran backwards. The owner's own example was sharper than any
+table: a raw nut (5 Vigor for 2 silver) beats a cooked Baked Potato per unit gathered. Two
+rules replaced it in `fa46ef2`: **Vigor = the buy-price of the inputs**, **HP = a quarter of
+it** on the learned dishes only. Every dish now clears its own ingredients, and the one that
+nearly could not — the Forest Pie, built mostly out of forage — is documented with the formula
+that decides it (`margin = 4 + 3·eggs + 6·potato + 10·meat − 2·berries − 3·nuts`).
+
+**Three: descriptions kept claiming ingredients the recipes no longer had.** Four of them, all
+introduced by my own edits within the same session: the omelette still spoke of nuts and a
+berry, the pie of no eggs, the clay of being a building material only. Caught by a sweep that
+compares every dish's uk description against its recipe's actual inputs — worth keeping as a
+habit, because a wrong description is invisible to every build and every test.
+
+What the day cost in balance: almost nothing, and the headline number lied twice on the way.
+Days to level 40 went 128.7 → 122.4 → 110.0 → 125.5 across the edits, and most of that swing
+is the model excluding or re-including estate tiers that feed nothing, not speed. The estate
+is 11–15% richer a tier above T2, `simulate` never left 0 broken bands, and the opening (km
+1–10) never moved at all, because berries and nuts were deliberately left alone.
+
+Two things the day surfaced and did NOT fix, both logged: `potion.heal_small` and
+`potion.heal_medium` exist in `items.json` and nowhere else — the same disease as the scrolls,
+which makes cooked food the only heal that exists away from the estate while `CLAUDE.md` still
+says potions are it; and `artifact.shrine_coin` looks like a third case. The general rule —
+"an item nothing grants" — is one step past the scroll check that now exists.
 
 ## Session — 2026-09-17 part 4 (one sword, two names)
 

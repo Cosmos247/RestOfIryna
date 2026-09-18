@@ -277,7 +277,9 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid — c
   Full set = 16 hide for +7 DEF / +1 dodge
 - [x] Workshop UI in EstateController (replaces stub) — section header per category, recipe block with `🎒 inv + 📦 wh = total/need ✅|❌` per ingredient, one `[🔨 RecipeName]` button per recipe; success → inline status banner above refreshed view, shortages → modal alert listing missing inputs, bag full → modal alert
 - [x] `RenameLeatherVest` migration — remaps existing `gear.leather_vest` rows in inventory + warehouse to `gear.forester_jerkin`
-- [x] **Phase 5.2.1 — Kitchen cooking** (seven dishes spanning 1-5 ingredients, two starters always-available, five unlocked via recipe scrolls)
+- [x] **Phase 5.2.1 — Kitchen cooking** (nine dishes; three starters always-available, six taught
+  by the innkeeper's `unlocks` ladder since 2026-09-18 — the recipe scrolls it originally ran on
+  were deleted, nothing had ever granted one, so five dishes had been unreachable the whole time)
   - `RecipeCategory.kitchen` (3rd category) gated by per-user `LearnedRecipe` set; Forge / Tannery still always available
   - 7 dishes added to `ItemCatalog` (Baked Potato / Roasted Meat = 1 food ingredient, Forager's Omelette / Hunter's Stew / Meat Ragout / Forest Berry Tart = 3, Governor's Feast = 5). **Every kitchen recipe also burns 1× 🪵 pine_lumber for the cooking fire** — authenticity + soft farm-cooking cap; lumber sourced from Lumberyard plot or shallow-zone foraging
   - Kitchen-specific success banner ("Cooked ..." / "Приготовано ...") via `RecipeCategory.craftedAlertKey` — Workshop keeps "Crafted ..." / "Викувано ..."

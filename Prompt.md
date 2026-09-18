@@ -33,22 +33,28 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-17, two commits behind the Pi)
+### Where things stand right now (2026-09-18, five commits behind the Pi)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the docs pass that recorded `c36822a` and `bf67243` |
-| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243` **and this commit are not pushed**. Push is user-side |
-| running on the Pi | **`b63f835`** — **the tip** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`, restarted **2026-09-17 00:10** |
-| committed but NOT deployed | **`c36822a`** (the death wipe + the requirement-line unification) and **`bf67243`** (the plot build-confirm + the ladder names). Swift + locale keys: no migration (schema v12 stands), no content moved, and Lingo is not hot-reloaded, so `/reload` carries neither |
+| HEAD | **this commit** — the docs pass that recorded the three food/innkeeper commits |
+| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444` **and this commit are not pushed**. Push is user-side |
+| running on the Pi | **`b63f835`** per the record, restarted **2026-09-17 00:10** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| committed but NOT deployed | **`c36822a`** (the death wipe + the requirement lines) · **`bf67243`** (the plot build-confirm + the ladder names) · **`4f49e2a`** (the omelette simplified, the ragout renamed) · **`fa46ef2`** (the food economy repriced, two dishes added) · **`dc82444`** (the innkeeper teaches cooking) |
 
-**A deploy is waiting, and it is the next action.** Until `pm2 restart ROI` runs, the Pi is
-two commits behind: a death still destroys a class weapon left in the bag, the requirement
-lines still speak four dialects, an estate slot still builds on the first tap, and one sword
-still has two names. Both commits are Swift plus locale strings — no migration (schema v12
-stands) and no content moved — so `/reload` carries neither. Everything older than them is
-live.
+**A deploy is waiting, and it is the next action.** Until `pm2 restart ROI` runs, the Pi is five
+commits behind: a death still destroys a class weapon left in the bag, the requirement lines
+still speak four dialects, an estate slot still builds on the first tap, one sword still has two
+names — and **five of the nine kitchen recipes still cannot be learned by anybody**, which is the
+oldest of the lot.
+
+**This batch is the first in a while that moves `content/data`.** The digest went
+`records 14d4fdd6442626ae` → **`6588329ab2bdbc70`** (30 items · 14 recipes · 6 unlock rungs);
+`tuning`, `spawns` and `quests` are byte-identical to what the Pi runs. **No migration** —
+`learned_recipes` already existed and schema v12 stands — but the new JSON and the new binary
+must ship TOGETHER, and because locale strings moved in every one of the five commits,
+**`pm2 restart ROI` is the only way in**. `/reload` carries none of it.
 
 The 09-17 00:10 restart itself took four commits and **no migration — schema v12 stands**,
 because none of them adds a column. The Linux build ran in 66.6 s and the Pi's own
@@ -94,6 +100,33 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > glancing at a screen, not from running anything, so this list is the highest-yield thing
 > available and it costs one session in Telegram. It is also the whole backlog, and it now
 > spans three deploys.
+>
+> **Added 2026-09-18 — NOT LIVE. The whole kitchen changed; this is the biggest walk in the list:**
+> - **do a job for the innkeeper.** Take his 📜 Замовлення, finish it, and watch two messages
+>   arrive: the usual «✅ Замовлення виконано …» banner, then the innkeeper's own bubble with a
+>   recipe. Then open 🍳 Кухня and check the dish is really cookable. **Each dish has its own
+>   line** (`<recipeId>.taught`, six of them) and the uk side is PLACEHOLDER copy the owner means
+>   to rewrite — so read all six as you climb the ladder, not just the first.
+> - **read his board BEFORE taking the job.** The reward line must already say
+>   `📖 Рецепт: <страва>` — and the journal (Profile → 📓 Нотатник) must say the same thing, since
+>   both render one function.
+> - **do a second job the same day** — there is none, one per NPC per day. So come back tomorrow:
+>   the next rung must be the next tier up, one per job, never two at once.
+> - **check the Trader's and the Master's boards are untouched** — no recipe line, and no extra
+>   database read on their behalf.
+> - **the ladder is T2 деруни · T3 пиріг · T4 печеня · T5 юшка · T6 мʼясо в глині · T7 бенкет.**
+>   An estate below T2 must be offered nothing at all.
+> - **eat everything.** Every dish's Vigor changed: печена картопля 10, омлет 10, смажене мʼясо 14,
+>   деруни 16, пиріг 32, печеня 38, юшка 42, мʼясо в глині 50, бенкет 72 — and every taught dish
+>   now heals a quarter of that. A raw качине яйце is **3** now, not 7.
+> - **open the kitchen on a fresh account.** THREE recipes must be there from day one, not two —
+>   the omelette joined the starters and is one egg plus a board.
+> - **visit the shinkar's menu.** Nine dishes, 25 · 25 · 35 · 40 · 80 · 95 · 105 · 125 · 180.
+> - **look for a recipe scroll in your bag.** There must not be one — all five items were deleted.
+>   Anyone holding one before the deploy would see an unresolvable row, which is why
+>   `LiveReferenceCheck` is what refuses a reload that would do that.
+> - **мʼясо в глині needs 🧱 дику глину**, which no plot produces — it is foraged at km 11+. That
+>   is deliberate: the T6 dish cannot be cooked without walking deep.
 >
 > **Added 2026-09-17 part 4 — NOT LIVE until the Pi is restarted. Reported from play:**
 > - **equip and unequip an upgraded weapon.** The banner must now name the row, not the
