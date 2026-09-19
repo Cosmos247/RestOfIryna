@@ -220,8 +220,11 @@ so its base `.desc` is never used and must not exist.
   resolved by `RecipeUnlockDTO.next` (`project-npcs-teach-recipes`).
 
 Every rung also needs **its own line of copy** in both locales, keyed `<recipeId>.taught`,
-because the innkeeper says something different about each dish. The validator refuses a rung
-whose line is missing, which is why the render site carries no fallback.
+because the innkeeper says something different about each dish. In uk a line may instead be a
+`.m`/`.f` pair — the lessons say «ти», so a past tense about the player is gendered — which the
+validator counts as present and the render site reaches by retrying through the gender overload.
+The validator refuses a rung whose line is missing, which is why no generic line stands in for
+one. The shared line under every lesson is `quest.recipe_learned`.
 
 **A kitchen recipe must have a source, and the rule now checks the real one.** Reachability
 counts a starter, an unlock rung, or a scroll that something in the bundle actually

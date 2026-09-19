@@ -1034,8 +1034,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // is already running, and it is not.
             lines.append("📜 " + lingo.localize("quest.not_taken", locale: locale))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
-                                            lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
         } else {
             lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
@@ -1043,32 +1042,25 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "target": "\(status.target)"
             ]))
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-                "reward": Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
-                                            lingo: lingo, locale: locale)
+                "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
         }
         return lines.joined(separator: "\n")
     }
 
-    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor · 📖 Recipe: 🍲 Hunter's Stew" — only the
-    /// non-zero parts. Unit words come from Lingo (uk: Досвід / Снага) so the
-    /// glossary stays in one place.
+    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor" — only the non-zero parts. Unit words
+    /// come from Lingo (uk: Досвід / Снага) so the glossary stays in one place.
     ///
-    /// The recipe rides in the same phrase rather than on a line of its own so
-    /// the board and the journal cannot disagree about what a job pays: both call
-    /// this, and the answer to "what do I get" is one sentence.
-    static func rewardPhrase(_ reward: QuestReward, recipeId: String? = nil,
-                             lingo: Lingo, locale: String) -> String {
+    /// No recipe here, on purpose: what the innkeeper teaches is his gift at the
+    /// payout, not a line on the board (owner's call, 2026-09-19). The board and
+    /// the journal both call this, so neither can give the surprise away.
+    static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
         var parts: [String] = ["🪙 \(reward.silver)"]
         if reward.xp > 0 {
             parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
         }
         if reward.vigor > 0 {
             parts.append("🍗 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
-        }
-        if let recipeId {
-            parts.append("📖 " + lingo.localize("quest.reward.recipe", locale: locale)
-                         + ": " + dishLabel(for: recipeId, lingo: lingo, locale: locale))
         }
         return parts.joined(separator: " · ")
     }
@@ -1163,17 +1155,40 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 // rather than a status line. Best-effort, like the level-up
                 // below — this function cannot throw, and a lost bubble must not
                 // cost the recipe, which is already written.
+                let dish = Self.dishLabel(for: recipeId, lingo: lingo, locale: locale)
+                // Per-RUNG copy, keyed off the recipe id (`recipe.x` →
+                // `recipe.x.taught`), so the innkeeper can say something
+                // different about every dish rather than one line with the
+                // name swapped. `%{dish}` and `%{name}` are offered and may go
+                // unused — the validator refuses a rung whose line is missing,
+                // which is why no generic line stands in for one here to rot. A
+                // nickname is letters, digits and single spaces only
+                // (`validateName`), so it is safe inside `.html` unescaped.
+                let key = "\(recipeId).taught"
+                let slots: [String: Any] = ["dish": dish, "name": context.session.nickname ?? ""]
+                var speech = lingo.localize(key, locale: locale, interpolations: slots)
+                // These lines say «ти» (owner's call, 2026-09-19), and under «ти»
+                // a past tense about the player declines by gender, so a line may
+                // be split into `.m`/`.f` in uk.json. The validator counts that
+                // pair as the key being present, so Lingo echoing the bare key
+                // back here means "gendered", not "missing" — and the «No
+                // localizations found» line Lingo prints for it is expected, at
+                // most once per player per recipe, since a recipe is taught once.
+                if speech == key {
+                    speech = lingo.localize(key, gender: context.session.gender, locale: locale, interpolations: slots)
+                }
+                // What was learned and where to cook it is the SAME sentence for
+                // every rung, so it is one key under the speech rather than a
+                // tail each dish's copy repeats. The repeated tail put the name
+                // where Ukrainian wants the accusative, and «готувати 🥘 Мʼясна
+                // печеня» is what it printed; after a colon the nominative the
+                // label carries is correct for all four genders.
+                let learned = "📖 " + lingo.localize("quest.recipe_learned", locale: locale, interpolations: [
+                    "dish": dish
+                ])
                 _ = try? await context.bot.sendMessage(
                     session: context.session,
-                    // Per-RUNG copy, keyed off the recipe id (`recipe.x` →
-                    // `recipe.x.taught`), so the innkeeper can say something
-                    // different about every dish rather than one line with the
-                    // name swapped. `%{dish}` is offered and may go unused — the
-                    // validator refuses a rung whose line is missing, which is
-                    // why there is no generic fallback here to rot.
-                    text: "📖 " + lingo.localize("\(recipeId).taught", locale: locale, interpolations: [
-                        "dish": Self.dishLabel(for: recipeId, lingo: lingo, locale: locale)
-                    ]),
+                    text: speech + "\n\n" + learned,
                     parseMode: .html
                 )
             }

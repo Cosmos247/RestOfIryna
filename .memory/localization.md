@@ -213,6 +213,16 @@ one that actually caught things — over the *vocabulary* of every word ending i
 `-и/-й/-ь/-ись`, since a mid-sentence imperative ("Спершу принеси…") hides from
 a line-oriented search.
 
+**The one exception (2026-09-19): the six `recipe.<id>.taught` lines say «ти».** The owner
+wants the innkeeper personal when he teaches a dish; it covers those lines only — the shared
+`quest.recipe_learned` line under them and the rest of the tavern stay «ви». The sweep above
+WILL hit them; leave them alone. Under «ти» a past tense or adjective about the player is
+gendered again ("ти допоміг / допомогла"), so a line that has one is written as
+`recipe.<id>.taught.m` + `.f` in uk.json (English keeps the plain key). The validator's
+`LocaleIndex.has` counts that pair as the key being present, and
+`CapitalController.postQuestResultBanner` retries through the gender overload when the plain
+lookup echoes the key back — so no code change per dish.
+
 It also removed three latent gender bugs in keys that never had `.m`/`.f` at all
 and shipped masculine to everyone: `travel.arrived.capital` ("Ти прибув"),
 `arena.err.dead` ("Ти ледь живий"), `vigor.starving` ("Голодний"). Plural fixes
@@ -251,13 +261,22 @@ other locale it short-circuits to the plain `some.key`. So **only `uk.json` gets
 - Missing a `.m`/`.f` for a routed key → uk shows the raw key + a Lingo console
   warning (loud, easy to catch).
 
-### Gendered keys today (have `.m`/`.f` in uk.json) — 13 left
+### Gendered keys today (have `.m`/`.f` in uk.json) — 16
 All of them name the player or the governor: `registration.welcome`,
 `registration.name_accepted`, `registration.king_oath`, `registration.gender`,
 `estate.blocked_by_expedition`, `capital.blocked_by_expedition`,
 `capital.location.tavern.body`, `capital.fortune.intro`,
 `exploration.duration.prompt`, `exploration.passive.started`,
-`exploration.passive.report.death`, `bot.restarted`, `journal.title`.
+`exploration.passive.report.death`, `bot.restarted`, `journal.title`,
+`recipe.meat_ragout.taught` (2026-09-19 — «Спробуй, наміснику / наміснице», lowercase like
+the innkeeper's own «Заходьте, наміснику!»), `recipe.clay_baked_meat.taught` («здатен /
+здатна», «наміснику / наміснице») and `recipe.governors_feast.taught` («народженим /
+народженою», «наміснику / наміснице», «заслужив / заслужила»; «для того, хто керує» stays
+generic in both). These three are the first `.taught` lines to need it, and they are reached
+by the render site's RETRY through the `gender:` overload — only after the plain lookup comes
+back as the bare key — not by an unconditional `gender:` call like the others.
+`gear.broken.notice` and `plot.ready.notification` also carry `.m`/`.f`, but as NOUN
+agreement (`agreeingWith:`, with `.n`/`.pl` beside them) — not player gender.
 
 **Collapsed on 2026-09-07** because «ви» made the two variants identical, and the
 call sites moved to the plain overload: `registration.dog_retry`,

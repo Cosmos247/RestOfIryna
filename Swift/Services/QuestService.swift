@@ -46,10 +46,6 @@ public enum QuestService {
         /// offer, not a job in progress.
         public let accepted: Bool
         public let claimed: Bool
-        /// The recipe finishing this job will teach, on top of the reward above.
-        /// Nil when the NPC teaches nothing, the ladder is finished, or the job
-        /// is already claimed — a claimed row must not advertise tomorrow's rung.
-        public let recipeUnlock: String?
 
         /// Show the action button — the job is finishable right now.
         public var isActionable: Bool { accepted && !claimed && done >= target }
@@ -154,8 +150,7 @@ public enum QuestService {
         }
         return Status(def: def, done: done, target: def.objective.target,
                       reward: scaledReward(def.reward, level: user.level),
-                      accepted: accepted, claimed: claimed,
-                      recipeUnlock: claimed ? nil : try await pendingUnlock(for: user, npc: npc, on: db))
+                      accepted: accepted, claimed: claimed)
     }
 
     /// Accepted, unpaid delivery jobs that want `itemId` today, with how many
@@ -234,10 +229,11 @@ public enum QuestService {
         return QuestReward(silver: scaled.silver, xp: scaled.xp, vigor: scaled.vigor)
     }
 
-    /// The recipe `npc` will teach on the next payout, or nil.
+    /// The recipe `npc` will teach on this payout, or nil. `finish` is the only
+    /// caller: no screen quotes the recipe in advance (`CapitalController.rewardPhrase`).
     ///
     /// Reads the learned set ONLY when that NPC has rungs at all, so the Trader's
-    /// and the Master's boards cost exactly what they cost before this existed.
+    /// and the Master's payouts cost exactly what they cost before this existed.
     /// The estate tier comes off the live row, not the row the job was taken on:
     /// building the kitchen mid-job should pay out today, not tomorrow.
     private static func pendingUnlock(for user: User, npc: QuestNPC, on db: any Database) async throws -> String? {

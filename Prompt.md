@@ -106,13 +106,17 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 >
 > **Added 2026-09-18 — NOT LIVE. The whole kitchen changed; this is the biggest walk in the list:**
 > - **do a job for the innkeeper.** Take his 📜 Замовлення, finish it, and watch two messages
->   arrive: the usual «✅ Замовлення виконано …» banner, then the innkeeper's own bubble with a
->   recipe. Then open 🍳 Кухня and check the dish is really cookable. **Each dish has its own
->   line** (`<recipeId>.taught`, six of them) and the uk side is PLACEHOLDER copy the owner means
->   to rewrite — so read all six as you climb the ladder, not just the first.
-> - **read his board BEFORE taking the job.** The reward line must already say
->   `📖 Рецепт: <страва>` — and the journal (Profile → 📓 Нотатник) must say the same thing, since
->   both render one function.
+>   arrive: the usual «✅ Замовлення виконано …» banner, then the innkeeper's own bubble — his
+>   words, then «📖 Рецепт вивчено: <страва>. Тепер ви можете готувати цю страву на 🍳 Кухні в
+>   маєтку.» Then open 🍳 Кухня and check the dish is really cookable. **Each dish has its own
+>   line** (`<recipeId>.taught`, six of them), all six written by the owner on 2026-09-19. They
+>   say «ти» ON PURPOSE and open with your nickname, and three (печеня, мʼясо в глині, бенкет)
+>   are split `.m`/`.f` — «наміснику / наміснице», «здатен / здатна», «заслужив / заслужила» —
+>   so read those on a male AND a female account, and read all six as you climb the ladder.
+> - **read his board BEFORE taking the job.** The reward line must NOT mention the recipe —
+>   silver and Vigor only, and the journal (Profile → 📓 Нотатник) the same, since both render
+>   one function. The recipe is the innkeeper's surprise at the payout (changed 2026-09-19; it
+>   used to be quoted as `📖 Рецепт: <страва>`).
 > - **do a second job the same day** — there is none, one per NPC per day. So come back tomorrow:
 >   the next rung must be the next tier up, one per job, never two at once.
 > - **check the Trader's and the Master's boards are untouched** — no recipe line, and no extra

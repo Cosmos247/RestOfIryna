@@ -462,14 +462,12 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             if status.claimed {
                 stateLine = "✅ " + lingo.localize("journal.status.claimed", locale: locale)
             } else if !status.accepted {
-                let reward = Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
-                                               lingo: lingo, locale: locale)
+                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "📜 " + lingo.localize("journal.status.not_taken", locale: locale) + " · 🎁 \(reward)"
             } else if status.isActionable {
                 stateLine = "🎁 " + lingo.localize("journal.status.ready", locale: locale)
             } else {
-                let reward = Self.rewardPhrase(status.reward, recipeId: status.recipeUnlock,
-                                               lingo: lingo, locale: locale)
+                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
                 stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
             }
             // The job's own description — what the title cannot say: which
@@ -495,9 +493,8 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     /// Same reward formatting the capital quest board uses — one source so the
     /// journal and the board can never disagree about what a job pays.
-    private static func rewardPhrase(_ reward: QuestReward, recipeId: String? = nil,
-                                     lingo: Lingo, locale: String) -> String {
-        CapitalController.rewardPhrase(reward, recipeId: recipeId, lingo: lingo, locale: locale)
+    private static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
+        CapitalController.rewardPhrase(reward, lingo: lingo, locale: locale)
     }
 
     // MARK: - Profile Rendering

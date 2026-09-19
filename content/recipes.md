@@ -70,9 +70,11 @@ The ladder lives in `recipes.json` → `unlocks`, one rung per recipe:
 `{recipeId, npc, minEstateTier}`. It rides on the NPC's **daily job**, so a
 recipe is earned rather than handed out by the calendar.
 
-1. The quest board quotes it before the player commits — `🎁 Нагорода: 🪙 30 ·
-   🍗 25 Снаги · 📖 Рецепт: 🍲 Юшка мисливця` — and so does the journal, because
-   both render `CapitalController.rewardPhrase`.
+1. **Nothing announces it in advance** (2026-09-19). The quest board and the
+   journal quote silver and Vigor only — both render
+   `CapitalController.rewardPhrase` — because the recipe is the innkeeper's gift, a
+   surprise at the payout. It used to be quoted there as `📖 Рецепт: 🍲 Юшка
+   мисливця`.
 2. The player takes the job and finishes it. `QuestService.payOut` writes the
    `learned_recipes` row in the same step that moves the silver and Vigor, so
    there is one place where a payout can happen.
@@ -81,17 +83,23 @@ recipe is earned rather than handed out by the calendar.
    banner, and an NPC's line is not a status line. **The copy is per dish, not
    per mechanism** — the key is the recipe id plus `.taught`
    (`recipe.clay_baked_meat.taught`), so he says something different about every
-   one, and `%{dish}` is offered to that line but may go unused. The validator
-   refuses a rung whose line is missing in either locale, which is why the render
-   site carries no fallback to rot.
+   one. The owner wrote all six on 2026-09-19, in «ти» (the one exception to the
+   «ви» rule) and opening with the player's nickname, `%{name}`; `%{dish}` is
+   offered too and may go unused. Three of them (печеня, мʼясо в глині, бенкет) are
+   a `.m`/`.f` pair in uk.json, because «ти» genders a past tense about the
+   player, and the render site retries through the gender overload. Under the
+   speech sits ONE shared line, `quest.recipe_learned` — «📖 Рецепт вивчено:
+   🍲 Юшка мисливця. Тепер ви можете готувати цю страву на 🍳 Кухні в маєтку.»
+   The validator refuses a rung whose line is missing in either locale (a
+   `.m`/`.f` pair counts), which is why no generic line stands in for one.
 4. **One rung per finished job**, lowest tier first. A player who built to T5
    without ever visiting the innkeeper owes four visits, not one payout.
 5. The tier comes off the live `User.estateLevel`, not the row the job was taken
    on — building the kitchen mid-job pays out today.
 
-Which rung is owed is `RecipeUnlockDTO.next`, and there is exactly one
-implementation because the board quotes it before the player commits and the
-payout acts on it afterwards. Ties inside a tier fall to file order, so the
+Which rung is owed is `RecipeUnlockDTO.next`, asked only at the payout
+(`QuestService.finish`) — one implementation, and since 2026-09-19 one caller.
+Ties inside a tier fall to file order, so the
 ladder's order is content, like a quest pool's.
 
 Cooking itself is unchanged: the Kitchen lists `starterRecipeIds` ∪ the learned

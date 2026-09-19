@@ -101,12 +101,15 @@ filtered before the hash; the validator refuses a pool whose cheapest job starts
 
 **The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
 `{recipeId, npc, minEstateTier}` rungs, and finishing a job pays the lowest rung the player has
-earned and does not know — one rung per job, resolved by `RecipeUnlockDTO.next`, which is the ONLY
-resolver because the board quotes it before the player commits and `QuestService.payOut` acts on
-it afterwards. A recipe is **not** scaled: it is not a number, so it rides beside the silver and
-Vigor rather than inside them, and the payout reports what it WROTE so a recipe already held
-announces nothing. The NPC's line is a message of its own — `postStatusBanner` deletes the
-previous banner, and an NPC speaking is not a status line. **A recipe scroll is not the mechanism
+earned and does not know — one rung per job, resolved by `RecipeUnlockDTO.next`, the ONLY
+resolver, which `QuestService.finish` asks at the payout and nothing asks earlier. **No screen
+announces the recipe in advance** (2026-09-19): it is the innkeeper's gift, so `rewardPhrase` —
+the board and the journal both — quotes silver and Vigor only. A recipe is **not** scaled: it is
+not a number, so it rides beside the silver and Vigor rather than inside them, and the payout
+reports what it WROTE so a recipe already held announces nothing. The NPC's line is a message of
+its own — `postStatusBanner` deletes the previous banner, and an NPC speaking is not a status
+line: his words (`recipe.<id>.taught`, offered `%{name}` and `%{dish}`), then the one shared
+`quest.recipe_learned` line under them. **A recipe scroll is not the mechanism
 any more:** the five `artifact.recipe.*` items were deleted on 2026-09-18 because nothing ever
 granted one, which left five dishes unlearnable for months while the validator called them
 reachable. Auto-memory `project-quests-taken-by-hand`, `project-npcs-teach-recipes`,
@@ -486,6 +489,13 @@ lingo.localize("key", locale: session.locale, interpolations: ["var": value])
 uses the formal plural — `ви / вас / вам / ваш`, present `-єте/-ите`, imperative
 `-іть/-те` — NPC speech included. That settles past tense and adjectives on its own, so the
 only thing left that declines by gender is a **noun naming the player**.
+
+**One exception, and only one** (2026-09-19): the innkeeper's recipe lessons — the six
+`recipe.<id>.taught` lines — say «ти», by the owner's decision. It covers those lines and
+nothing else: the `quest.recipe_learned` line under them, his board and the rest of the tavern
+stay «ви». Under «ти» a past tense or adjective about the player declines by gender again, so
+such a line goes into `uk.json` as `.m`/`.f` — the render site falls back to the gendered
+lookup by itself.
 
 **Ukrainian agrees with the NOUN being named** — «лук зламав**ся**», «чоботи зламали**сь**»,
 «Шахта заповнен**а**» but «Курник заповнен**ий**». Items declare `item.<id>.gender` and plots
