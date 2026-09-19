@@ -480,6 +480,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 block.append("<i>«\(lingo.localize(status.def.descKey, locale: locale))»</i>")
             }
             block.append(stateLine)
+            // Same line the board carries: a job from an earlier day is why this
+            // NPC has nothing new on offer.
+            if status.carried {
+                block.append("🔒 " + lingo.localize("quest.locked", locale: locale))
+            }
             lines.append(contentsOf: block)
         }
 

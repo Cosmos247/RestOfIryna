@@ -13,6 +13,13 @@
 //  `record` ticks nothing before that. Taking a job starts the count; it never
 //  backfills what happened earlier in the day.
 //
+//  **A taken job does not burn at noon** (2026-09-19). It stays open until it
+//  is turned in, and while it is open the NPC offers nothing new — ONE open
+//  job per NPC, so the board, the counters and the Turn in button never have
+//  to choose between two. A job carried over from an earlier day is the only
+//  kind that can be dropped (`abandon`). `QuestCarryOver` holds the one-time
+//  cleanup of the rows the old noon rule left marked as taken.
+//
 //  Two objective shapes, two very different progress stories:
 //    • `deliver` — progress is READ LIVE from the bag, never stored. Nothing to
 //      keep in sync, and the player can gather in any order, anywhere. The
@@ -46,6 +53,10 @@ public enum QuestService {
         /// offer, not a job in progress.
         public let accepted: Bool
         public let claimed: Bool
+        /// Taken on an EARLIER game day and not turned in. A taken job no longer
+        /// burns at noon (2026-09-19): it stays the NPC's one open job, today's
+        /// offer waits behind it, and it is the only kind that can be abandoned.
+        public let carried: Bool
 
         /// Show the action button — the job is finishable right now.
         public var isActionable: Bool { accepted && !claimed && done >= target }
@@ -68,6 +79,17 @@ public enum QuestService {
         case taken(def: QuestDef)
         case alreadyTaken(def: QuestDef)
         case alreadyClaimed
+        /// A job from an earlier day is still open at this NPC. Only a stale
+        /// button gets here — the board shows no Take while one is.
+        case blockedByCarried(def: QuestDef)
+    }
+
+    /// Outcome of dropping a carried job.
+    public enum AbandonResult: Sendable {
+        case abandoned(def: QuestDef)
+        /// Nothing carried at this NPC — already turned in, already dropped, or
+        /// a job taken today, which cannot be dropped.
+        case nothingToAbandon
     }
 
     public enum FinishResult: Sendable {
@@ -129,6 +151,20 @@ public enum QuestService {
         on db: any Database,
         now: Date = Date()
     ) async throws -> Status {
+        // A job carried over from an earlier day IS the board until it is
+        // turned in or dropped; today's offer waits behind it.
+        if let open = try await carriedRow(for: user, npc: npc, on: db, now: now),
+           let def = QuestCatalog.find(open.questId) {
+            let done: Int
+            switch def.objective {
+            case .deliver(let itemIds, _): done = try await carried(itemIds, user: user, on: db)
+            case .counter:                 done = open.progress
+            }
+            return Status(def: def, done: done, target: def.objective.target,
+                          reward: scaledReward(def.reward, level: user.level),
+                          accepted: true, claimed: false, carried: true)
+        }
+
         let row = try await rowForToday(user: user, npc: npc, on: db, now: now)
         let def: QuestDef
         if let stored = row.flatMap({ QuestCatalog.find($0.questId) }) {
@@ -150,11 +186,12 @@ public enum QuestService {
         }
         return Status(def: def, done: done, target: def.objective.target,
                       reward: scaledReward(def.reward, level: user.level),
-                      accepted: accepted, claimed: claimed)
+                      accepted: accepted, claimed: claimed, carried: false)
     }
 
-    /// Accepted, unpaid delivery jobs that want `itemId` today, with how many
-    /// units the player carries against the target.
+    /// Accepted, unpaid delivery jobs that want `itemId`, with how many units
+    /// the player carries against the target. Any day's: a job carried over
+    /// from yesterday wants its items exactly as much as today's does.
     ///
     /// Reads existing rows ONLY — deliberately not `status`, which lazily
     /// creates the day's row. A trade screen is not the job board, and a row
@@ -163,16 +200,9 @@ public enum QuestService {
     public static func acceptedDeliveries(
         of itemId: String,
         for user: User,
-        on db: any Database,
-        now: Date = Date()
+        on db: any Database
     ) async throws -> [(def: QuestDef, done: Int, target: Int)] {
-        guard let userId = user.id else { return [] }
-        let rows = try await QuestProgress.query(on: db)
-            .filter(\.$user.$id, .equal, userId)
-            .filter(\.$dayStamp, .equal, GameDay.stamp(now))
-            .filter(\.$accepted, .equal, true)
-            .filter(\.$claimed, .equal, false)
-            .all()
+        let rows = try await openRows(for: user, on: db)
 
         var out: [(def: QuestDef, done: Int, target: Int)] = []
         for row in rows {
@@ -188,7 +218,9 @@ public enum QuestService {
 
     /// Take today's job at `npc`. The offer itself is still decided by
     /// `QuestCatalog.daily` — this only starts it, which is what makes a
-    /// counter event count.
+    /// counter event count. Refused while a job from an earlier day is still
+    /// open here: one open job per NPC is what lets every other reader assume
+    /// there is only one.
     @discardableResult
     public static func accept(
         npc: QuestNPC,
@@ -196,6 +228,10 @@ public enum QuestService {
         on db: any Database,
         now: Date = Date()
     ) async throws -> AcceptResult {
+        if let open = try await carriedRow(for: user, npc: npc, on: db, now: now),
+           let def = QuestCatalog.find(open.questId) {
+            return .blockedByCarried(def: def)
+        }
         guard let row = try await rowForToday(user: user, npc: npc, on: db, now: now) else {
             return .alreadyClaimed
         }
@@ -252,36 +288,69 @@ public enum QuestService {
         return total
     }
 
+    // MARK: - Open jobs
+
+    /// Every job this player has taken and not turned in, whatever day it was
+    /// taken on — at most one per NPC, which `accept` guarantees and the
+    /// one-time `CloseBurnedQuestJobs` established for the rows the old rule
+    /// left behind.
+    private static func openRows(for user: User, on db: any Database) async throws -> [QuestProgress] {
+        guard let userId = user.id else { return [] }
+        return try await QuestProgress.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$accepted, .equal, true)
+            .filter(\.$claimed, .equal, false)
+            .all()
+    }
+
+    /// The open job at `npc` if it was taken on an EARLIER game day. A
+    /// `yyyy-MM-dd` stamp compares as a string exactly as it does as a date.
+    private static func carriedRow(for user: User, npc: QuestNPC, on db: any Database, now: Date) async throws -> QuestProgress? {
+        guard let userId = user.id else { return nil }
+        return try await QuestProgress.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$npc, .equal, npc.rawValue)
+            .filter(\.$accepted, .equal, true)
+            .filter(\.$claimed, .equal, false)
+            .filter(\.$dayStamp, .lessThan, GameDay.stamp(now))
+            .sort(\.$dayStamp, .descending)
+            .first()
+    }
+
+    /// Whether any NPC is holding today's offer back behind an older job — the
+    /// 12:00 notice says so when one is. Only a job the board can show counts,
+    /// which is the same test `status` applies before it shows one.
+    public static func hasCarriedJob(for user: User, on db: any Database, now: Date = Date()) async throws -> Bool {
+        let today = GameDay.stamp(now)
+        return try await openRows(for: user, on: db).contains {
+            $0.dayStamp < today && QuestCatalog.find($0.questId) != nil
+        }
+    }
+
     // MARK: - Counter events
 
     /// Tick a counter objective. Called from gameplay hook sites (combat kills,
     /// forge output, trader sales, tavern wins).
     ///
-    /// Cheap and self-contained: it derives today's job for each NPC and only
-    /// touches the DB when one of them actually counts this event. Hook sites
-    /// should call it best-effort (`try?`) — a quest counter must never be able
-    /// to break a fight, a craft or a sale.
+    /// One read of the player's open jobs — whatever day each was taken on,
+    /// since a carried job counts exactly like today's — and a write only for
+    /// the one this event counts toward. Hook sites should call it best-effort
+    /// (`try?`) — a quest counter must never be able to break a fight, a craft
+    /// or a sale.
     public static func record(
         _ counter: QuestCounter,
         amount: Int = 1,
         for user: User,
-        on db: any Database,
-        now: Date = Date()
+        on db: any Database
     ) async throws {
-        guard amount > 0, let userId = user.id else { return }
-        let stamp = GameDay.stamp(now)
+        guard amount > 0 else { return }
 
-        for npc in QuestNPC.allCases {
-            // Only a job the player took can tick, so an absent row is an early
-            // exit rather than something to create. That also means an event
-            // fired before the job was taken is simply not counted — taking it
-            // starts the clock, it does not backfill.
-            guard let row = try await QuestProgress.find(userId: userId, npc: npc, stamp: stamp, on: db),
-                  row.accepted else { continue }
-            guard let def = QuestCatalog.find(row.questId) else { continue }
-
-            guard case .counter(let wanted, let target) = def.objective, wanted == counter else { continue }
-            guard !row.claimed, row.progress < target else { continue }
+        // Only a job the player took can tick, and taking it starts the clock —
+        // an event fired before the job was taken is simply not counted.
+        for row in try await openRows(for: user, on: db) {
+            guard let def = QuestCatalog.find(row.questId),
+                  case .counter(let wanted, let target) = def.objective, wanted == counter,
+                  row.progress < target else { continue }
             row.progress = min(target, row.progress + amount)
             try await row.save(on: db)
         }
@@ -292,13 +361,22 @@ public enum QuestService {
     /// Hand in a deliver job (consumes the items) or claim a finished counter
     /// job. One entry point for both — the objective decides which path runs,
     /// and the caller just renders the result.
+    ///
+    /// The job is the NPC's ONE open job: a carried one if there is one, else
+    /// today's. So the Turn in button needs no day of its own, and one tapped
+    /// on yesterday's board after noon still hands in yesterday's job.
     public static func finish(
         npc: QuestNPC,
         for user: User,
         on db: any Database,
         now: Date = Date()
     ) async throws -> FinishResult {
-        guard let row = try await rowForToday(user: user, npc: npc, on: db, now: now) else {
+        let row: QuestProgress
+        if let open = try await carriedRow(for: user, npc: npc, on: db, now: now) {
+            row = open
+        } else if let today = try await rowForToday(user: user, npc: npc, on: db, now: now) {
+            row = today
+        } else {
             return .alreadyClaimed
         }
         guard !row.claimed else { return .alreadyClaimed }
@@ -347,6 +425,30 @@ public enum QuestService {
         row.claimed = true
         try await row.save(on: db)
         return .paid(def: def, payout: payout)
+    }
+
+    // MARK: - Dropping
+
+    /// Drop the job carried over from an earlier day: no reward, the progress
+    /// is gone, and today's offer opens. Only a CARRIED job (the owner's call,
+    /// 2026-09-19) — one taken today still has its day ahead of it. The row
+    /// goes back to being an offer nobody took, the state the old noon rule
+    /// left every unfinished job in; `accept` only ever acts on today's row,
+    /// so nothing can take it again.
+    public static func abandon(
+        npc: QuestNPC,
+        for user: User,
+        on db: any Database,
+        now: Date = Date()
+    ) async throws -> AbandonResult {
+        guard let row = try await carriedRow(for: user, npc: npc, on: db, now: now),
+              let def = QuestCatalog.find(row.questId) else {
+            return .nothingToAbandon
+        }
+        row.accepted = false
+        row.progress = 0
+        try await row.save(on: db)
+        return .abandoned(def: def)
     }
 
     // MARK: - Payout

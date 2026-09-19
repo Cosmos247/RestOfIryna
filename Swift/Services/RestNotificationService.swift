@@ -137,7 +137,13 @@ public enum RestNotificationService {
         try? await user.saveAndCache(in: db)
         guard firstEverStamp == false else { return }
 
-        let body = lingo.localize("quest.rollover.notification", locale: user.locale)
+        var body = lingo.localize("quest.rollover.notification", locale: user.locale)
+        // Since 2026-09-19 a taken job survives the rollover and holds that
+        // NPC's new offer back, so "new jobs on every board" needs qualifying
+        // for a player who has one.
+        if (try? await QuestService.hasCarriedJob(for: user, on: db, now: now)) == true {
+            body += " " + lingo.localize("quest.rollover.locked", locale: user.locale)
+        }
         await push("📜 \(body)", to: user, bot: bot)
     }
 

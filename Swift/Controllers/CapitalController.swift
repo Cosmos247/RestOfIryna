@@ -1044,6 +1044,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
                 "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
+            // A job from an earlier day holds today's offer back. The owner wanted
+            // no "from 18.09" header — the job reads like any other — but the
+            // reason there is nothing new to take has to be on the screen.
+            if status.carried {
+                lines.append("🔒 " + lingo.localize("quest.locked", locale: locale))
+            }
         }
         return lines.joined(separator: "\n")
     }
@@ -1098,6 +1104,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 callbackData: "quest:do:\(npc.rawValue)"
             )])
         }
+        // Dropping is offered only once the job has outlived the day it was
+        // taken on, and it only ASKS — `quest:abandon_ok:` is the one that acts.
+        if status.carried {
+            rows.append([TGInlineKeyboardButton(
+                text: lingo.localize("quest.button.abandon", locale: locale),
+                callbackData: "quest:abandon:\(npc.rawValue)"
+            )])
+        }
         rows.append([TGInlineKeyboardButton(
             text: lingo.localize("quest.button.back", locale: locale),
             callbackData: npc.backCallback
@@ -1126,7 +1140,57 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             break   // the board below already shows it as running
         case .alreadyClaimed:
             await postStatusBanner("❌ " + lingo.localize("quest.done_today", locale: locale), context: context)
+        case .blockedByCarried:
+            // A stale Take from before noon: the board it redraws into shows the
+            // older job and why nothing new is on offer.
+            await postStatusBanner("❌ " + lingo.localize("quest.blocked", locale: locale), context: context)
         }
+        try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+    }
+
+    /// The question before a carried job is dropped — nothing undoes it, so the
+    /// first tap only asks. Anything no longer droppable (turned in meanwhile,
+    /// or already dropped) redraws the board instead of asking about nothing.
+    private func showQuestAbandonConfirm(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
+        guard status.carried else {
+            try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let lingo = context.lingo, locale = context.session.locale
+        // What is lost differs by shape: a counter's progress is stored on the
+        // job and goes with it, while a delivery's "progress" is the bag, which
+        // stays. One warning for both would scare a player off dropping a job
+        // over items they would in fact keep.
+        let confirmKey: String
+        if case .deliver = status.def.objective {
+            confirmKey = "quest.abandon.confirm.deliver"
+        } else {
+            confirmKey = "quest.abandon.confirm.counter"
+        }
+        let text = "<b>\(lingo.localize(npc.boardTitleKey, locale: locale))</b>\n\n"
+            + lingo.localize(confirmKey, locale: locale, interpolations: [
+                "quest": lingo.localize(status.def.titleKey, locale: locale)
+            ])
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: lingo.localize("quest.button.abandon_confirm", locale: locale),
+                                    callbackData: "quest:abandon_ok:\(npc.rawValue)")],
+            [TGInlineKeyboardButton(text: lingo.localize("quest.button.back", locale: locale),
+                                    callbackData: "quest:board:\(npc.rawValue)")]
+        ])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    private func handleQuestAbandon(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let result = try await QuestService.abandon(npc: npc, for: context.session, on: context.db)
+        if case .abandoned(let def) = result {
+            let lingo = context.lingo, locale = context.session.locale
+            await postStatusBanner("📜 " + lingo.localize("quest.banner.abandoned", locale: locale, interpolations: [
+                "quest": lingo.localize(def.titleKey, locale: locale)
+            ]), context: context)
+        }
+        // Either way the board is what the player should be looking at now:
+        // today's offer after a drop, or whatever made the drop moot.
         try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
@@ -1277,6 +1341,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.handleQuestFinish(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        // Drop a carried job: the first asks, the second acts. `quest:abandon:`
+        // is not a prefix of `quest:abandon_ok:` — the colon sits where the
+        // underscore does — so the order of these two checks does not matter.
+        if data.hasPrefix("quest:abandon:") {
+            let token = String(data.dropFirst("quest:abandon:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let npc = QuestNPC(rawValue: token) else { return true }
+            try await ctrl.showQuestAbandonConfirm(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("quest:abandon_ok:") {
+            let token = String(data.dropFirst("quest:abandon_ok:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let npc = QuestNPC(rawValue: token) else { return true }
+            try await ctrl.handleQuestAbandon(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
 

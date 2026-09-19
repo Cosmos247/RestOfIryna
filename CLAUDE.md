@@ -99,6 +99,17 @@ filtered before the hash; the validator refuses a pool whose cheapest job starts
 1. Rewards are authored at level 1 and scaled at payout by `ProgressionMath.questReward`, so
 **the board must quote `Status.reward`, never `def.reward`**.
 
+**A taken job does not burn at noon** (2026-09-19, the owner's call). It stays open until it is
+turned in, and while it is open that NPC offers nothing new: **one open job per NPC**, which
+`QuestService.accept` enforces and every other reader relies on — the board, `record`, the
+Turn in button (no day in its callback: there is only one job it can mean) and the trader's
+"wanted for a job" warning. A job carried over from an earlier day reads like any other job —
+no "from 18.09" header, by request — plus «🔒 Нове замовлення відкриється, щойно здасте це.»,
+and it is the only kind that can be dropped (`QuestService.abandon`, asked first; the row goes
+back to an offer nobody took). The one-time `CloseBurnedQuestJobs` closed what the old rule left
+marked as taken, keeping per player and NPC only the newest job from today or yesterday —
+decided by `QuestCarryOver.burned`, which the tests pin.
+
 **The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
 `{recipeId, npc, minEstateTier}` rungs, and finishing a job pays the lowest rung the player has
 earned and does not know — one rung per job, resolved by `RecipeUnlockDTO.next`, the ONLY

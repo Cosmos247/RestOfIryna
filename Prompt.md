@@ -104,6 +104,22 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > available and it costs one session in Telegram. It is also the whole backlog, and it now
 > spans three deploys.
 >
+> **Added 2026-09-19 — NOT LIVE. A taken job no longer burns at noon (owner's design):**
+> - **take a job and leave it past 12:00.** The board must then show THAT job — no date header,
+>   by request — with «🔒 Нове замовлення відкриється, щойно здасте це.» and no Take button.
+>   Turn it in: the usual banner, then the board flips to today's offer in place.
+> - **tap ✅ Здати on yesterday's board message** after noon. It must hand yesterday's job in —
+>   before this it answered «Замовлення ще не взяте».
+> - **❌ Відмовитися** must appear only on a job from an earlier day, never on one taken today.
+>   It asks first; «❌ Так, відмовитися» drops it with no reward and opens today's offer, and
+>   «🔙 Назад» returns to the board with the job untouched.
+> - **the journal** (Profile → 📓 Нотатник) shows a carried job like any other, plus the 🔒 line.
+> - **the 12:00 notice** gains «Там, де лишилося незавершене замовлення, нове відкриється після
+>   його здачі.» — only for a player holding one.
+> - **after the deploy** `CloseBurnedQuestJobs` keeps only the newest open job per player and NPC
+>   from today or yesterday (a dry run on 09-19 data: 9 of 33 kept). Check the TABLE, not the
+>   log line: `SELECT day_stamp, count(*) FROM quest_progress WHERE accepted AND NOT claimed GROUP BY 1`.
+>
 > **Added 2026-09-18 — NOT LIVE. The whole kitchen changed; this is the biggest walk in the list:**
 > - **do a job for the innkeeper.** Take his 📜 Замовлення, finish it, and watch two messages
 >   arrive: the usual «✅ Замовлення виконано …» banner, then the innkeeper's own bubble — his
