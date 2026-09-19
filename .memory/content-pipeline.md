@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            248 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            263 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -207,6 +207,29 @@ values, not bytes — but it does move the bundle's content hash.)
 Locale keys are **derived** unless overridden: `item.<id>`, `<nameKey>.desc`,
 and an enemy's key is its own id. A tiered weapon resolves `.t<tier>` instead,
 so its base `.desc` is never used and must not exist.
+
+### Adding a cooked dish (2026-09-18)
+
+`recipes.json` carries three blocks, and a dish usually touches all of them:
+
+- `recipes` — the recipe itself. **Its Vigor is not a choice:** a dish restores the trader
+  buy-price of its inputs, and its HP is a quarter of that. Price the inputs
+  (`project-food-is-priced-not-picked`).
+- `starterRecipeIds` — cookable from day one, no DB row.
+- `unlocks` — `{recipeId, npc, minEstateTier}` rungs an NPC teaches through its daily job,
+  resolved by `RecipeUnlockDTO.next` (`project-npcs-teach-recipes`).
+
+Every rung also needs **its own line of copy** in both locales, keyed `<recipeId>.taught`,
+because the innkeeper says something different about each dish. The validator refuses a rung
+whose line is missing, which is why the render site carries no fallback.
+
+**A kitchen recipe must have a source, and the rule now checks the real one.** Reachability
+counts a starter, an unlock rung, or a scroll that something in the bundle actually
+produces — `obtainableItemIds` reads beast loot, zone forage, plot output, recipe outputs and
+the four shop lists. It used to accept "an item with `teachesRecipe` exists", which is how five
+scrolls that nothing granted kept five dishes looking reachable for months. If you ever
+reintroduce a findable recipe, give the scroll a source in the same commit
+(`feedback-a-checker-that-cannot-fail`).
 
 ## Verification discipline
 

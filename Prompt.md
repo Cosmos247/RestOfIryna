@@ -33,13 +33,13 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-18, five commits behind the Pi)
+### Where things stand right now (2026-09-19, five commits behind the Pi)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the docs pass that recorded the three food/innkeeper commits |
-| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444` **and this commit are not pushed**. Push is user-side |
+| HEAD | **this commit** — the sync pass over every bank after the kitchen rebuild |
+| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444`, `99799e5` **and this commit are not pushed**. Push is user-side |
 | running on the Pi | **`b63f835`** per the record, restarted **2026-09-17 00:10** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | committed but NOT deployed | **`c36822a`** (the death wipe + the requirement lines) · **`bf67243`** (the plot build-confirm + the ladder names) · **`4f49e2a`** (the omelette simplified, the ragout renamed) · **`fa46ef2`** (the food economy repriced, two dishes added) · **`dc82444`** (the innkeeper teaches cooking) |
 
@@ -63,7 +63,8 @@ order that decision has to happen in. `Code: 400` held at its 913 baseline and n
 `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
 
 **After the restart, what is waiting is a human opening the screens** — and that backlog is
-now large, because six commits' worth of surfaces have never been looked at.
+now large, because nine commits' worth of surfaces have never been looked at, the whole kitchen
+among them.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -92,9 +93,11 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 
 ### Next action: restart the Pi, then walk it. Nothing below has been looked at.
 >
-> **Step one is `pm2 restart ROI`** — `c36822a` and `bf67243` are built and verified but not
-> on the Pi, and the four newest blocks below go live only with that restart. They are marked
-> **NOT LIVE** for exactly that reason; everything under them has been live for days.
+> **Step one is `pm2 restart ROI`** — five commits are built and verified but not on the Pi
+> (`c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444`), and the five newest blocks below go
+> live only with that restart. They are marked **NOT LIVE** for exactly that reason; everything
+> under them has been live for days. This batch also moves `content/data`, so the JSON and the
+> binary ship together — no migration, schema v12 stands.
 >
 > **Step two is someone opening the screens.** Every defect this project has found came from
 > glancing at a screen, not from running anything, so this list is the highest-yield thing
@@ -352,6 +355,13 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
   belongs to is gone. Found by the pre-commit audit on 2026-09-16 and left alone on purpose:
   the fix is mechanical but the trade flow has its own delete-vs-keep policy, so which shape
   the closed bubble takes is a design call. Auto-memory `project-close-the-bubble-you-opened`.
+- **The recipe-scroll machinery is unreachable but kept**, from 2026-09-18: `Item.teachesRecipe`
+  / `ItemDTO.teachesRecipe`, `InventoryController.handleLearnRecipe` and its 📖 Learn branch, the
+  locale keys `learn.success` / `learn.already_known`, and the `skipItems` loop in the dev seed.
+  No shipped item sets `teachesRecipe` since the five scrolls were deleted, so none of it can
+  fire. Kept on purpose for the day a recipe is worth finding in the world — and the validator
+  now refuses to count a scroll nothing grants as a source, so reintroducing one without a drop
+  cannot go unnoticed again. Deleting it instead is a standalone cleanup.
 - **Six dead functions from April**, none touched since: `renderStub`,
   `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
   (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
@@ -389,7 +399,8 @@ Decisions, the calibrated math model, the phase tracker and the per-phase lesson
 #### Standing deferrals
 
 Reported by every `simulate` run, all deliberate: **food portions are flat
-against a pool that grows** (33% of a level-1 pool, 12% of a level-40 one),
+against a pool that grows** (the Feast is 69% of a level-1 pool and 24% of a
+level-40 one since the 09-18 repricing, up from 33% / 12%),
 **nothing new unlocks between level 21 and 40**, **levels 1–3 have no estate at
 all**, the **seven `content.roster_off_curve` warnings** (until the regeneration
 package lands), and **`opening.vigor_bankrupt`** — renamed from
@@ -408,19 +419,22 @@ shipped roster against its archetype contract; `--strict` exits 1 on a broken ba
 sample size **8000 fights per cell** — 2000 crossed the invariance band on sampling noise alone.
 
 Current state: **18 of 18 invariance rows pass, 0 broken bands, 12 warnings**, 19,437,688 XP
-from level 1 to 40, **117–129 days** on a tended estate (warrior 128.7 / archer 124.0 / mage
-116.6 — it was 157–173 until the farm was doubled to 2/h cap 10 on 2026-09-16, and 78–87
-before the 09-14 XP halving; the band the report gates on is 72–200, and taps/day went 513 →
-690 with the same edit). `EnemyGenerator` is what the
+from level 1 to 40, **114–126 days** on a tended estate (warrior 125.5 / archer 120.9 / mage
+113.8 after the 09-18 food repricing; the band the report gates on is 72–200, taps/day 686).
+That headline swung 128.7 → 122.4 → 110.0 → 125.5 across the 09-18 edits and **most of the
+swing was not speed**: the model drops tiers that feed nothing out of the average, so making
+the duck egg inedible and then edible again took T2 out and put it back. The real movement is
+the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is what the
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-17, schema v12):** `records 14d4fdd6442626ae` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` — **matched
-byte for byte against the Pi's own `--content-digest` before the 00:10 restart**. The
-`records` half moved twice in one sitting — the farm's rate and cap, then the bag ladder's
-top two steps — and the other three did not move at all, which is the whole point of
-splitting them. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
+**Current digest baseline (2026-09-18, schema v12):** `records 6588329ab2bdbc70` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. The Pi still
+runs the **09-17** baseline (`records 14d4fdd6442626ae`, content hash `83dd8a9a`) and matched
+the Mac byte for byte before that restart, which is the order the decision has to happen in.
+`records` has moved four times since — the farm ladder, the bag ladder, then the whole food
+repricing and the innkeeper's unlock rungs — while the other three have not moved once, which
+is the entire point of splitting them. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
 knob (auto-memory `feedback-digest-names-constants`).
@@ -464,7 +478,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 248 tests, ~0.2s
+swift test                                   # 263 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
@@ -474,7 +488,8 @@ scheduler) · turn-based PvE combat with 9 class techniques · estate (plots, wa
 workshop, kitchen, weapon/bag/estate upgrades, technique gates) · capital hub (travel,
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena
 (live PvP duel, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
-NPC** + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one
+NPC** — the innkeeper's also **teaches a cooking recipe**, one rung of the ladder per finished
+job — + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one
 message. Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
 localization. **Access is invite-only and lives in `allowed_users`**; `/link` mints a
 five-minute deep link and nobody else gets a `User` row at all.

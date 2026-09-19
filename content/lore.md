@@ -211,7 +211,7 @@ that hangs framed above the hearth (a gift from the King for some
 forgotten favour). A long, low room, smoke-blackened beams, a great
 stone fireplace, long oak tables polished by years of elbows. The
 Innkeeper is broad-shouldered, ruddy-faced, perpetually amused. He
-sells seven cooked dishes (baked potato → governor's feast) and runs
+sells nine cooked dishes (baked potato → governor's feast) and runs
 two friendly gambles: **dice** and **darts**. A tankard of dark ale is
 always within reach. NPCs and Governors mix freely — this is the one
 place in the capital where rank is left at the door.

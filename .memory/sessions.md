@@ -289,6 +289,18 @@ is the model excluding or re-including estate tiers that feed nothing, not speed
 is 11–15% richer a tier above T2, `simulate` never left 0 broken bands, and the opening (km
 1–10) never moved at all, because berries and nuts were deliberately left alone.
 
+**The sync pass the next morning found nine stale records**, which is the part worth carrying:
+a change this wide leaves false statements in places nobody edited. The test count (248) was
+stated as fact in three files; `Prompt.md` carried the OLD digest baseline in its own
+"this is the one place the baseline is kept" section while quoting the new one forty lines
+above; the pace figures, the `portion_rots` percentages and the "two commits are undeployed"
+line in `INDEX.md` were all superseded; `lore.md` still had the innkeeper selling seven
+dishes; and `game-core.md` carried "Food tiers: T1 (15) -> T4 (150)", a GDD-era line that had
+not matched the data for months. The rule that would have caught most of them: **grep the
+figures you changed, not the files you edited.** Also a real gap rather than a staleness —
+`content-pipeline.md`, the canonical doc for how content files are shaped, described no part
+of `recipes.json`, so the new `unlocks` block had nowhere to be documented until one was made.
+
 Two things the day surfaced and did NOT fix, both logged: `potion.heal_small` and
 `potion.heal_medium` exist in `items.json` and nowhere else — the same disease as the scrolls,
 which makes cooked food the only heal that exists away from the estate while `CLAUDE.md` still

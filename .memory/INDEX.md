@@ -35,10 +35,12 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   fixing what playing the deployed build reveals — plus the occasional small feature the
   play surfaces a need for. The Pi runs **`b63f835`** since **2026-09-17 00:10** (schema v12,
   no migration in that batch; the Pi's own digest was matched byte for byte before the
-  restart was ordered). **Two commits are undeployed — `c36822a` and `bf67243`** — Swift and
-  locale strings, so `/reload` cannot carry them and only `pm2 restart ROI` will. The next
-  action is that restart, and after it a human opening the screens: a backlog spanning three
-  deploys and never walked.
+  restart was ordered). **Five commits are undeployed** — `c36822a`, `bf67243`, `4f49e2a`,
+  `fa46ef2` and `dc82444`. The last three move `content/data` as well as Swift, so the JSON and
+  the binary ship together; locale strings moved in all five, so `/reload` carries none of it
+  and only `pm2 restart ROI` will. Still no migration — schema v12 stands. The next action is
+  that restart, and after it a human opening the screens: a backlog spanning four deploys and
+  never walked.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -46,7 +48,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   at the top is the single changelog (hash → what it did, 2026-09-09 onward), moved there
   from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
   entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
-  and the 09-09 → 09-15 polish entries.
+  the 09-09 → 09-17 polish entries, and the 09-18 kitchen rebuild.
 - **What each phase decided: [Rebalance](rebalance.md).**
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory

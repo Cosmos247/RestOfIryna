@@ -55,7 +55,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   on EVERY step once Vigor is 0, whatever else the step rolled, and is **always
   printed on its own line** — `rollStep` carries it on `StepResult`, never inside an
   event's number. See `project-damage-sources-named-separately`.
-- Food tiers: T1 (15) -> T4 (150)
+- **Food is priced, not picked** (2026-09-18): a cooked dish restores the trader buy-price of
+  its ingredients in Vigor and a quarter of that in HP, so the ladder runs 10 → 72 Vigor. Only
+  berries (4), nuts (5) and a duck egg (3) are edible as found; potato and raw meat are not.
+  See `project-food-is-priced-not-picked`
 - **No passive Vigor regeneration at all** since Phase 8E — the pool is a stock, fed by
   food, quests and levelling, and the estate's plots are the intended income
 
@@ -92,7 +95,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - **Scope of v1: the gathering core** — Trader, Master and Innkeeper only. All three are single-player and lean on content that already exists, so the loop works the day it ships. Arena / Fortune Teller / Guild quest-givers, story chains and weeklies were explicitly deferred.
 - **Cadence: dailies only.** One job per NPC per game day, on the `GameDay` boundary (12:00 Kyiv).
 - **No picking, no queue of active jobs** — the system assigns the day's job. The player never browses a list; they walk up to the NPC and either can finish it or can't. Assignment is derived from a hash of player + NPC + day, so every player gets their own roll and nothing has to be stored or scheduled.
-- **Rewards: silver on every job, plus a per-NPC accent** — Trader pays more silver, Master adds XP, the Innkeeper adds Vigor. Sizing intent is ~1.5–2× what selling the same materials to the Trader would earn: worth a detour, not a replacement for play.
+- **Rewards: silver on every job, plus a per-NPC accent** — Trader pays more silver, Master adds XP, the Innkeeper adds Vigor, and since 2026-09-18 the Innkeeper also TEACHES: finishing his job pays the lowest unearned rung of the recipe ladder (`project-npcs-teach-recipes`). A recipe is not scaled by level, because it is not a number. Sizing intent is ~1.5–2× what selling the same materials to the Trader would earn: worth a detour, not a replacement for play.
 - **Two objective shapes.** "Hand over N items" is checked live against the bag and consumes the items on turn-in; "do X N times" is counted from gameplay events (beast kills, forge output, trader sales, tavern wins).
 - The journal on the profile screen is a *status* screen only — it shows progress and the countdown to the next rollover, but rewards are always collected from the NPC who gave the job, so the trip to the capital keeps its weight.
 

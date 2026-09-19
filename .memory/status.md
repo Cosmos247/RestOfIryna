@@ -407,10 +407,12 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 14d4fdd6442626ae` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
+`records 6588329ab2bdbc70` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
 `quests 30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee` became a
-section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync),
-**248 tests**. `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
+section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync, and
+the Pi is still on the 09-17 `records 14d4fdd6442626ae`), **263 tests**. Pace as of
+2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
+dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
 three times and nothing else had moved at all — the watchman cadence and the passive daily
 budget on 09-09, the exploration re-weight on 09-10, each named before the edit.
