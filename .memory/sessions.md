@@ -31,7 +31,7 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
 66.6 s, digest matched first, `Code: 400` at 913): four commits, no migration, content hash
 `83dd8a9a`, digest `records 14d4fdd6442626ae`.
 
-- `972c272` (09-20) **give the walk list a home, and cut the session preamble by a third** —
+- `f702334` (09-20) **give the walk list a home, and cut the session preamble by a third** —
   docs only. The three session-loaded files had doubled since the 09-12 audit and stood 19%
   above the peak that pass was called in to fix. The walk list and "Open, decided but not
   done" moved to `TODO.md`; `INDEX.md` lost a regrown partial copy of `MEMORY.md`;

@@ -38,8 +38,8 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`972c272`** — the doc pass that moved the walk list to `TODO.md` and cut the preamble by a third |
-| pushed | `origin/main` is at **`536fbf6`**; **`328bf88`, `a604a62` and `972c272` are not pushed**. Push is user-side |
+| HEAD | **`f702334`** — the doc pass that moved the walk list to `TODO.md` and cut the preamble by a third — plus a one-line hash fill on top of it. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — `328bf88`, `a604a62`, `f702334` and the hash fill. Push is user-side |
 | running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | committed but NOT deployed | **`328bf88`** — a taken job no longer burns at noon, plus the one-time `CloseBurnedQuestJobs` |
 
