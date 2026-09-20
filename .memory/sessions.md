@@ -31,6 +31,18 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
 66.6 s, digest matched first, `Code: 400` at 913): four commits, no migration, content hash
 `83dd8a9a`, digest `records 14d4fdd6442626ae`.
 
+- `972c272` (09-20) **give the walk list a home, and cut the session preamble by a third** —
+  docs only. The three session-loaded files had doubled since the 09-12 audit and stood 19%
+  above the peak that pass was called in to fix. The walk list and "Open, decided but not
+  done" moved to `TODO.md`; `INDEX.md` lost a regrown partial copy of `MEMORY.md`;
+  `CLAUDE.md`'s 45 blocks were re-filed out of one `## Source Layout` heading into eight
+  named sections and the 18 story-carrying ones trimmed to rule + pointer. Preamble
+  26,523 → 18,514 tokens. `e625320`, `99799e5`, `bcafef3` and `a604a62` were carried into
+  this index first — they existed only in `Prompt.md`.
+- `a604a62` (09-20) **record the 09-19 deploy and the quest carry-over, and re-point every
+  bank** — docs only. Every bank still said the Pi ran `b63f835` with five commits waiting
+  while it had taken ten at 14:21 and was 20 h up; HEAD, uptime, schema and digest were
+  re-read off the machine. `536fbf6` and `328bf88` had no record at all before this pass.
 - `328bf88` (09-19) **a taken job waits for you, and the next one waits for it** — a daily job
   the player has TAKEN no longer burns at the 12:00 rollover. It stays open until it is turned
   in, and that NPC offers nothing new meanwhile: **one open job per NPC**, which `accept`
@@ -60,6 +72,15 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
   stopped quoting the recipe at all (the owner's call: it is the innkeeper's gift), which took
   `Status.recipeUnlock` and its per-board database read with it. 263 tests, `validate --strict`
   0 warnings, digest unmoved.
+- `bcafef3` (09-19) **sync every bank to the kitchen rebuild, and fix nine stale records** —
+  docs only. `Prompt.md` was quoting the OLD digest baseline inside its own "this is the one
+  place the baseline is kept" section while the new one stood forty lines above it, and
+  `content-pipeline.md` described no part of `recipes.json`, so the `unlocks` block and the
+  repaired reachability rule had nowhere to live.
+- `99799e5` (09-19) **record the food economy and the innkeeper, and fix what the banks still
+  claimed** — docs only. Three commits had landed with nothing written down. It is also where
+  the days-to-40 swing 128.7 → 122.4 → 110.0 → 125.5 is recorded as mostly the model dropping
+  estate tiers that feed nothing, not speed.
 - `dc82444` (09-18) **the innkeeper teaches cooking, and the checker learned to ask the
   right question** — five kitchen recipes had no source in play at all: the scrolls that taught
   them (`artifact.recipe.*`) were never given a drop, a listing or a recipe, so the only dishes
@@ -95,6 +116,10 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
   in `FoodBudget.cook`'s comment — it made a second recipe cookable from plot output, the two now
   compete for the same board, and the greedy's answer became a floor rather than the optimum
   (915 → 862 Vigor/day at T6, +0.4 days over the ladder).
+- `e625320` (09-17) **record the two undeployed commits, and fix what the record still
+  claimed** — docs only. The banks said nothing was committed-and-undeployed while two were,
+  and a walk item still asked a tester to verify «маєте N» on a recipe screen that prints a
+  fraction now.
 - `bf67243` (09-17) **a slot is asked for before it is built, and one sword got one name** —
   two unrelated reports in one commit. Claiming an estate slot committed on the first tap of a
   button paired with its neighbour, and nothing in the codebase deletes a `Plot` row or changes
@@ -1182,7 +1207,7 @@ No code changed, so nothing to build. The checks that mattered were structural:
   prefix although their FILE does. The identical mistake is recorded at 2026-09-11 against
   `first-playtest-happened` — **third occurrence of one trap**, now written up in
   [[feedback-docs-keep-the-rule]] with the three-line check that finds it.
-- The same sweep found a **pre-existing** dangling `[[feedback-never-start-the-bot]]` inside
+- The same sweep found a **pre-existing** dangling `[[never-start-the-bot]]` inside
   `project-flee-has-a-ceiling`; fixed. All 48 memories, all `[[links]]`, all index entries
   now resolve both ways.
 - Fences balanced and no ragged tables across all eight changed files.

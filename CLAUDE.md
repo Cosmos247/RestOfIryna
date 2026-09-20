@@ -68,6 +68,33 @@ it through the façade — never as a second implementation beside it.
 `Swift/configure.swift` carries `@_exported import ROIContent` / `ROISim`, so files under
 `Swift/` use those types without their own import line.
 
+```
+Swift/
+├── entrypoint.swift     # @main, calls configure()
+├── configure.swift      # Bootstrap: DB, Lingo, Bot, Hummingbird (projectPath read from `ROI_PROJECT_PATH` env with dev-Mac fallback)
+├── routes.swift         # RouterStore actor + per-user dispatch serialization
+├── Controllers/         # Game screen controllers
+├── Models/              # Fluent models + catalog façades (Item, Enemy, Recipe, … — data lives in content/data/*.json)
+├── Migrations/          # DB migrations
+├── Services/            # Domain services (pure where possible)
+├── Telegram/            # Router engine + TG client
+└── Helpers/             # TGControllerBase, SessionCache, ScreenEdit, PhotoCache, Countdown, Lingo ext, env, EphemeralChatState
+```
+
+Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
+
+`Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art.
+`content/data/` — the game itself as JSON. `content/spec/` — the five content specifications signed off in Phase 9 (closed). `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
+
+## Game and Content Rules
+
+Each rule below states the imperative and the trap, then names the record that holds the
+measurement behind it. **Never delete a "never do X" guard from this file** — auto-memory
+files are not loaded each session, so a rule moved out of here goes invisible
+(`feedback-docs-keep-the-rule`).
+
+### Content and tuning are data
+
 **Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
 market, guild, arena), the Master's shop, estate plots, the fortune deck, the
@@ -90,298 +117,18 @@ faster game: at the 60 the whole rebalance ran on, a 3600 s plot cycle was 60 s.
 all: Telegram's 24 h dice-delete window is a protocol constant, not a balance knob, and
 so are the trade TTLs and the 12:00 rollover.
 
-**A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides WHICH job
-each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00 Kyiv — but the
-offer sits on the board until the player accepts it at the NPC (`QuestProgress.accepted`,
-`QuestService.accept`). `record` neither creates nor ticks an unaccepted row, so taking a job
-STARTS the count and never backfills the day. Each job carries a `minLevel` and the pool is
-filtered before the hash; the validator refuses a pool whose cheapest job starts above level
-1. Rewards are authored at level 1 and scaled at payout by `ProgressionMath.questReward`, so
-**the board must quote `Status.reward`, never `def.reward`**.
-
-**A taken job does not burn at noon** (2026-09-19, the owner's call). It stays open until it is
-turned in, and while it is open that NPC offers nothing new: **one open job per NPC**, which
-`QuestService.accept` enforces and every other reader relies on — the board, `record`, the
-Turn in button (no day in its callback: there is only one job it can mean) and the trader's
-"wanted for a job" warning. A job carried over from an earlier day reads like any other job —
-no "from 18.09" header, by request — plus «🔒 Нове замовлення відкриється, щойно здасте це.»,
-and it is the only kind that can be dropped (`QuestService.abandon`, asked first; the row goes
-back to an offer nobody took). The one-time `CloseBurnedQuestJobs` closed what the old rule left
-marked as taken, keeping per player and NPC only the newest job from today or yesterday —
-decided by `QuestCarryOver.burned`, which the tests pin.
-
-**The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
-`{recipeId, npc, minEstateTier}` rungs, and finishing a job pays the lowest rung the player has
-earned and does not know — one rung per job, resolved by `RecipeUnlockDTO.next`, the ONLY
-resolver, which `QuestService.finish` asks at the payout and nothing asks earlier. **No screen
-announces the recipe in advance** (2026-09-19): it is the innkeeper's gift, so `rewardPhrase` —
-the board and the journal both — quotes silver and Vigor only. A recipe is **not** scaled: it is
-not a number, so it rides beside the silver and Vigor rather than inside them, and the payout
-reports what it WROTE so a recipe already held announces nothing. The NPC's line is a message of
-its own — `postStatusBanner` deletes the previous banner, and an NPC speaking is not a status
-line: his words (`recipe.<id>.taught`, offered `%{name}` and `%{dish}`), then the one shared
-`quest.recipe_learned` line under them. **A recipe scroll is not the mechanism
-any more:** the five `artifact.recipe.*` items were deleted on 2026-09-18 because nothing ever
-granted one, which left five dishes unlearnable for months while the validator called them
-reachable. Auto-memory `project-quests-taken-by-hand`, `project-npcs-teach-recipes`,
-`project-food-is-priced-not-picked`, `feedback-a-checker-that-cannot-fail`.
-
-**Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
-level-up grant are the only sources, and the estate's plots are the intended income —
-which is what makes the pool plus the food in the bag the real limit on how deep the
-wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
-one deliberately did not pause during an expedition, so a player could stand at km 25
-and wait out a full pool.
-
-**HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
-pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
-suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the road) and
-`location == capital` (in town). The road needs its own check rather than falling out of the
-other two — `location` is not flipped until arrival. Callers query the rows and pass the
-answer; `tick` does no lookups of its own. Away from the estate the clock is CLEARED, not
-merely skipped. Potions were meant to be the away-from-home heal, and **`potion.heal_small`
-and `potion.heal_medium` are not obtainable anywhere** — they exist in `items.json` and in no
-shop, recipe, drop or forage table — so the real answer today is a **cooked dish**, every taught
-one of which restores a quarter of its silver price in HP. Auto-memory
-`feedback-a-checker-that-cannot-fail`.
-
-Regen is **computed lazily on interaction**, so both ends of an absence are stamped
-explicitly: `suspendResting` when an expedition or trip begins, `beginResting` when the
-player lands home. A tick that only runs on interaction cannot observe a transition that
-happens while nobody is interacting.
-
-**What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
-`Task.detached` on `realTime.restSweepInterval`, 60 s) answers three questions per player: HP
-topped out at the estate, the fortune teller's 24 h cooldown elapsed, the 12:00 job rollover.
-It runs the regen through `HealingService.tick` — never a second copy of the arithmetic.
-
-**A background writer MUST take the session-cached `User` when one exists**
-(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently
-undoes the tap the player made a second earlier.
-
-Full reasoning: `.memory/game-core.md` §Rest and the road, `.memory/session-auth.md`;
-auto-memory `project-rest-notification-watchman`,
-`feedback-background-writers-session-cache`.
-
-**Passive expeditions are capped at `passive.dailyBudgetMinutes` (180) per game day**,
-counted in the authored minutes the three choices are written in — a budget in wall-clock
-seconds would mean a different number of runs at every `time.scale`. Counter plus day stamp,
-rolling at 12:00 like every other daily system. The picker offers only what the day can still
-pay for AND the handler re-checks; the charge lands after `beginPassive` succeeds, so a
-failed start never costs the player a run. Auto-memory `project-daily-and-storage-ceilings`.
-
-**Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв` ·
-`1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value, with an
-exact one dropping its tail so a whole-minute window still reads `5хв`. Durations are never
-written into copy either — the expedition buttons, the tarot "active for" prefix and the
-invite window are all printed from the values that own them.
-
-**A leaderboard is a `Leaderboard`, never a `Rating`.** `rating` already means
-crit / dodge / accuracy in this codebase and carries a display rule of its own, so the
-four boards behind the journal say «Рейтинги» to the player and `Leaderboard` in every
-identifier. They are ALL-TIME, which is the first period and not the only one: seasons are
-a decided direction, and a seasonal board will be a second READING of a metric with its own
-storage — **never a reset of `deepestKm` / `totalKmWalked`**, because zeroing those destroys
-the all-time board to build the seasonal one. The single exception, 2026-09-15: `deepestKm`
-stopped counting steps and started counting RETURNS, and a column whose meaning changed is
-not the same ladder, so `ResetDeepestKm` zeroed it once. `totalKmWalked` was left standing —
-it still measures what it always measured, which is the test to apply before ever doing this
-again. **One ladder, one implementation:** the Arena's
-own «Найкращі бійці» renders the same `LeaderboardService.view(.honor,…)` as the journal's
-board, because two screens that rank the same rows with two code paths disagreed about ties
-for four months before anyone looked. Auto-memory `project-leaderboards-will-go-seasonal`.
-
-**A lifetime counter has exactly one writer — and WHEN it writes is half the rule.**
-`totalKmWalked` is a tally: `User.recordStep()`, called from `ExplorationService.rollStep`,
-the funnel all three kinds of step share, plus `handleHomeReached` for the last stride, which
-rolls no event. `deepestKm` is a RETURN: `User.bankDepth(_:)`, called only where the player is
-standing at the manor again — `handleHomeReached` and the passive report's surviving branch —
-from `ExplorationState.maxDepthKm`, the run's high-water mark, because `stepsDeep` counts back
-down on the way home. Until 2026-09-15 depth was raised per step, so a governor who died at
-km 31 kept the record while the board promised a kilometre walked back from; the words were
-the half that was right. **Every change of depth goes through `ExplorationState.moveTo(km:)`**
-— step out, step back, passive walk, the flee that pushes you back a km — for the same reason
-the tally lives in `rollStep`. Put a new counter where the thing it counts already funnels;
-a counter each caller has to remember is a counter some caller forgets, which is exactly how
-the hunger tick went missing on six of ten exits. Auto-memory `project-depth-is-banked-on-arrival`.
-
-**The forest is left on foot, or not at all.** `/start` and a stray Cancel used to force-end
-an expedition from any depth with the bag intact, and `/start` inside a fight deleted the
-expedition row outright. Both re-render instead — the walk screen, or the fight — which
-serves the case the hatch was really there for (a lost or stale keyboard) without ending the
-walk. It has to be closed on BOTH screens: banking depth at the door makes any free exit the
-cheapest way to bank a record, and a hatch closed in one controller just moves one screen in.
-The one real escape left is a fight whose enemy id no longer resolves, which ends the
-expedition rather than trapping the player.
-
-**"What it costs / what you have" is ONE sentence, and `RequirementLine` renders it.**
-`✅ 1× 🪵 Соснова дошка  (12/1)` — marker, the count the recipe asks for, the label, then the
-fraction in brackets. A gate line carries no count («3× Рівень гравця» is nothing), which is
-why the count belongs to `RequirementLine.item` and not to `render`. Every material list, every gate
-(player level, estate level, silver) and the shortage modal go through it, so a screen and
-the modal that refuses the same tap cannot phrase the same number two ways. **⛔ is retired**:
-it meant "a gate" where ❌ meant "a shortage", a distinction no screen explained and the same
-tap answers. A fraction needs no words, so these lines no longer reach for Lingo beyond the
-item's own name — which is how the weapon and bag screens came to call one gate «Рівень
-маєтку» and «Тир маєтку». **Current-against-maximum is a DIFFERENT sentence** — durability
-`0/100`, the bag `18/25`, a plot `40/40` — and must not grow a ✅/❌: a full bag is not a
-failed requirement.
-
-**And the shortage modal is CAPPED at 200 UTF-16 units, because Telegram refuses a longer
-`answerCallbackQuery` outright and every call site swallows that with `try?`.** Five of them
-were over — the Governor's Feast and every estate step from T4 up — so the tap that was
-supposed to explain the refusal produced no modal at all. `RequirementLine.shortageModal`
-drops rows until it fits and ends with a wordless `… +N`. **Measure an alert in UTF-16 and
-measure it in Ukrainian**: the English side of all five was comfortably under, which is
-exactly how the overflow stayed invisible to the person who wrote it. Auto-memory
-`project-requirement-line-one-format`.
-
-**A choice that cannot be undone is asked, not just tapped.** Claiming an estate slot was
-one tap on a button paired with its neighbour, and nothing in the codebase deletes a `Plot`
-row or changes its type — `PlotService` has `claim` and `harvest` and no third verb — so a
-slip of the finger cost that slot for the life of the account. `estate:plot:type:` now draws
-the card for the picked type (rate, ceiling, both streams, lore) and asks; only
-`estate:plot:build:` writes. **Which callback keeps its old name is part of the fix**: the
-QUESTION inherited it, so a picker message still sitting in chat history leads to the
-question instead of silently building. A stale button must land on the safe path. This is
-also the shape every other buildable thing already had — list → detail → act for the estate,
-weapon and bag upgrades, and `ItemCard` before every purchase in the capital.
-
-**A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the one
-implementation both death paths call — `ExplorationController.handleDeath` for the walk and
-the fight, `PassiveExpeditionService.applyDeath` for the autobattle. Worn gear survives as it
-always did, and so now does a bound starter weapon carried in the bag. Every other path
-already refused to take that weapon: the warehouse answers `.notTransferable`, a trade filters
-on `WeaponUpgradeCatalog.isUpgradable`, the market and the guild vault list stackables only —
-so death was the single hole in a rule the rest of the code kept, and the only one that could
-not be undone. It is granted once at registration, no shop sells a second, and no recipe makes
-one, so **one tap on «❌ Зняти» plus one bad step left a character who could never be armed
-again** — which is what happened to a live account between 2026-09-08 and 09-17. Put the next
-wipe in that function too: a rule each caller filters for itself is a rule one caller forgets.
-Auto-memory `project-death-spares-the-class-weapon`.
-
-**One number, one source. A screen never sums two losses under one label.** A step in
-the forest can cost HP twice — the event it rolled, and the hunger tick that is charged on
-every step once Vigor hits 0 — so `ExplorationService.rollStep` returns a `StepResult`
-pairing the event with `starvationHpLost`, and each is printed on its own line. Carrying it
-on the RESULT rather than inside an enum case is the point: when it was each branch's job
-to remember, ten of `rollStep`'s exits are reachable while starving, and **two carried the tick, one fused it into the root's own number, one blamed a beast for it, and six dropped it silently**. If you add a source of damage to a step, add it
-to `StepResult` — never to another source's number. The measurement that forced this, and
-what the fused number told a player: auto-memory `project-damage-sources-named-separately`.
-
-**An escape is `CombatService.fleeSucceeds`, never a roll against `fleeChance`.** The
-per-class chance (warrior 40 / archer 70 / mage 90) is half the rule; the other half is
-`combat.json` → `flee.maxFailures`, the per-fight ceiling that grants the attempt after
-that many failures to every class. Both live behind one function because a failed escape is
-not a free round — it is an unmissable hit at half armour with nothing dealt back, so an
-unbounded tail sits on the one button a player reaches for when already losing. The count
-is per FIGHT (`ExplorationState.combatFleeFails`, 0 on `beginCombat`, cleared on
-`endCombat`): per expedition it would become a resource the player spends rather than a
-floor under a bad run. Auto-memory `project-flee-has-a-ceiling`.
-
-**A rating is a rating on every screen, and is never labelled `%`.** `crit` · `dodge` ·
-`accuracy` are RATINGS converted through a level-linear curve (`CombatMath.percent`), so the
-same +5 crit is 4.16% at level 1 and 1.35% at the cap. Every screen prints the bare rating,
-so the three screens a player compares add up exactly against each other: an item grants a
-rating, the level-up banner reports the rating gained, the sheet shows the rating held.
-`CombatService.critPercent` / `dodgePercent` / `accuracyPercent` exist for when a screen is
-ready to say what a rating is WORTH; it belongs BESIDE the rating, never instead of it, and
-**the level-up banner can never follow** — 26% of level-ups would announce a drop, and a
-celebration screen must not report a loss. The measurement that reversed this: auto-memory
-`project-rating-vs-percent-display`.
-
-**Every gear screen renders all six `GearStats` fields, HP included.** HP reuses
-`profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and `workshop.stats.*`
-are already two families for one set of names kept in step by hand, and that duplication is
-exactly how `accuracy` shipped under two different Ukrainian words.
-
-**The warehouse cap is enforced on every path in, including
-`PlotService.harvest(to: .warehouse)`** — the estate's own income was once the only way to
-overflow the store. Harvest is all-or-nothing like the bag, with the yield left standing on
-the plot: partial cannot be expressed, because the Mine's two output streams share one
-`lastHarvestedAt`. **No account is exempt** — the `isDeveloper` bypass is gone from all four
-warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
-`project-daily-and-storage-ceilings`.
-
-**A fit check must be the SAME arithmetic as the writer it is predicting, in the same
-units.** `InventoryEntry.add` counts UNITS and throws when it will not fit;
-`CraftingService` predicted in ROWS — left over from before the 2026-05-12 per-unit pivot —
-and treated "a row of this item already exists" as room. The prediction said yes, the writer
-said no, the throw escaped the callback handler, and because the drain runs before the add
-with no transaction, it ate the ingredients on the way out. `TradeService` has the shape to
-copy — `used − outgoing + incoming ≤ cap`, in units, with the dev bypass matching the
-writer's. Predict for EVERY store the write could land in: the warehouse half of the same
-check had to account for its own drain too. **A full bag is no longer a refusal to craft** —
-the output goes to the warehouse and the success banner names where it landed, which that
-banner always did. Auto-memory `project-fit-check-matches-the-writer`.
-
-**A dead inline button is the house symptom, and it has two causes.** A **throw** out of a
-callback handler spins the button forever: nothing answers `answerCallbackQuery`, the SDK
-logs a `BotError` nobody reads, and the player taps again. A callback **no handler claims**
-is just as silent — `Router.process` reaches `unmatched` only when `update.message != nil`,
-which a callback query never has — so a controller that renders another controller's screen
-must END by forwarding what it does not recognise. `ExplorationController` and
-`CapitalController` both hand the rest to `MainController`, which owns the profile's
-`journal:` / `gear:` / `lb:` buttons and the stale-button fallback; a list of prefixes is the
-version that rots, the catch-all survives the next button. Three player reports in two days
-were this one shape. Auto-memory `project-dead-inline-buttons`.
-
-**A screen that can answer a question should answer it before the player gets it wrong.**
-The recipe screen printed what a dish REQUIRES and never what the player HELD, so the only
-way to read your own pantry was to tap Cook and fail — the shortage modal was the one place
-the number appeared. `CraftingService.stock(for:on:)` is now that number for both the screen
-and the craft itself (two queries, whatever is asked about), so a screen cannot quote a total
-the button then disagrees with.
-
-**A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
-are per-instance (`GearState`), so a path that deletes a row here and calls `add` there hands
-back a factory-fresh item — which is how a warehouse round-trip was a free repair that also
-undid the max shave, and burned the enchant silently, until 2026-09-15. Both `InventoryEntry`
-and `WarehouseEntry` carry `GearState` now and every create-path takes it as `carrying:`;
-`TradeService` shows the other correct shape — it REASSIGNS the row's owner and never
-re-creates it. A new per-instance column belongs IN `GearState`, not beside it. The same
-day's other defect is the screen half of the rule: **the Master repairs a ROW, not a
-loadout** — a list must ask the same question of every kind it lists, and asking armour "do
-you own it" while asking the weapon "is it worn" is how an unequipped bow silently lost the
-right to be mended. Auto-memory `project-gear-state-travels-with-the-unit`.
-
 **Every equippable item is bounded by a stat budget.** `budget(itemLevel, slot, rarity)
-= slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's
-stats ARE that budget spent at fixed exchange rates, and the validator refuses an
-overspend. Because the combat curves were derived from this same budget, an item that
-respects it cannot move any stat's percentage — which is what makes adding items safe.
-Two consequences worth knowing before touching gear:
+= slotWeight · (6.0 + 1.5·itemLevel) · rarityBudget` in `tuning/budget.json`; an item's stats
+ARE that budget spent at fixed exchange rates, and the validator refuses an overspend. The
+combat curves were derived from the same budget, so an item that respects it cannot move any
+stat's percentage — which is what makes adding items safe. Two consequences:
 - `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–5); item level is the
   budget input (1–40). The weapon ladders map tiers to 1/10/20/30/40.
 - **Never give anything a flat bonus — items OR techniques.** Enchant is `1 + 4% × level`
   of the item's OWN stats, set bonuses are capped against their members' combined budget,
   and every Super stance lifts by a multiplier of the character's own stat. The same
-  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one; the same rule caught
-  `hawks_eye` granting +115% crit at level 1 and +21% at the cap. No flat number works
-  at both ends, and `roi-content simulate` now audits every lift for exactly this.
-
-**A weapon ladder is ONE object.** The three upgradable weapons render through
-`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
-common — the player is upgrading a thing, not swapping it for a different one, and
-`locale.ladder_name_drift` warns when no word survives. Wherever a label describes an
-inventory ROW rather than a shop listing, pass the row's tier —
-`CapitalController.itemLabel(_:tier:lingo:locale:)`. **An item id alone cannot name a row**,
-so a service that reports rows hands back the tier with them: `GearConditionService` returns
-`BrokenPiece(itemId:tier:)` rather than `[String]`, because a T3 sword reaching 0 durability
-was announced as «Іржавий меч» to a player holding «Очищений меч». The equip and unequip
-banners had the same hole until 2026-09-17, reported from play — the button and the banner
-directly under it naming one sword two ways. Auto-memory `feedback-ladder-names-one-noun`.
-
-**Access is invite-only and lives in the database.** The `allowed_users` table
-(`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array;
-`foundingUsers` in `configure.swift` is now only the migration's seed list. To let a new
-tester in, use **`/link`** (developer-only) — never a code edit. The gate lives in
-`TGDispatcher` **ahead of routing**, so a refused stranger never gets a `User` row, and it
-accepts the 16-letter token either as a `/start` payload or pasted as a bare message.
-`allowed_users` is in `WipeForRebalance.preserved` — a wipe resets the game, not the guest
-list. `developerUsers` stays hardcoded and is allowed before the table is read: the brake
-against locking yourself out of your own bot. Token design and the three decisions behind
-it: auto-memory `invite-only-access`.
+  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. No flat number works at
+  both ends, and `roi-content simulate` audits every lift for exactly this.
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build
@@ -392,14 +139,11 @@ live rows still point at — if you add a column that stores a content id, add i
 reloaded**: new locale strings still need a restart.
 
 **A key the validator REQUIRES is not a key anything renders.** `ContentValidator`'s
-`requireKey` proves a string exists in both locales, never that a player can reach it: four
-of the five `plot.type.<t>.desc` blurbs were enforced in `uk.json` and `en.json` for months
-while `PlotCatalog.descriptionKey` was read only in the branch for plots that produce
-nothing. When you add a `requireKey`, name the screen that renders it — and when a screen
-describes a thing, it must describe ALL of it: the Mine's second output stream was invisible
-on the one screen where the plot is chosen, so the choice was made on half the information.
-Both lines are built from the data (`bonusOutput`, `descriptionKey`) rather than written
-into copy, so a future two-stream plot gets them free. Auto-memory
+`requireKey` proves a string exists in both locales, never that a player can reach it — four
+of five `plot.type.<t>.desc` blurbs were enforced for months while `PlotCatalog.descriptionKey`
+was read in one dead branch. **When you add a `requireKey`, name the screen that renders it**,
+and when a screen describes a thing it must describe ALL of it: both lines are built from the
+data (`bonusOutput`, `descriptionKey`), so a future two-stream plot gets them free. Auto-memory
 `project-plot-streams-and-dead-lore`.
 
 **Content is specified before it is authored.** `content/spec/*.md` holds the signed-off
@@ -427,23 +171,247 @@ level invariance (a level-1 and a level-40 fight must play the same), the p90 ta
 win rates, pace to the cap and the shipped roster against its own archetype contract;
 `--strict` exits 1 on a broken band.
 
-```
-Swift/
-├── entrypoint.swift     # @main, calls configure()
-├── configure.swift      # Bootstrap: DB, Lingo, Bot, Hummingbird (projectPath read from `ROI_PROJECT_PATH` env with dev-Mac fallback)
-├── routes.swift         # RouterStore actor + per-user dispatch serialization
-├── Controllers/         # Game screen controllers
-├── Models/              # Fluent models + catalog façades (Item, Enemy, Recipe, … — data lives in content/data/*.json)
-├── Migrations/          # DB migrations
-├── Services/            # Domain services (pure where possible)
-├── Telegram/            # Router engine + TG client
-└── Helpers/             # TGControllerBase, SessionCache, ScreenEdit, PhotoCache, Countdown, Lingo ext, env, EphemeralChatState
-```
+### Access
 
-Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
+**Access is invite-only and lives in the database.** The `allowed_users` table
+(`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array; `foundingUsers`
+in `configure.swift` is now only the migration's seed list. **To let a new tester in use
+`/link`** (developer-only), never a code edit. The gate lives in `TGDispatcher` **ahead of
+routing**, so a refused stranger never gets a `User` row. `allowed_users` is in
+`WipeForRebalance.preserved` — a wipe resets the game, not the guest list — and
+`developerUsers` stays hardcoded and allowed before the table is read: the brake against
+locking yourself out of your own bot. Auto-memory `invite-only-access`.
 
-`Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art.
-`content/data/` — the game itself as JSON. `content/spec/` — the five content specifications signed off in Phase 9 (closed). `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
+### Quests and the daily cycle
+
+**A daily job is taken by hand** (2026-09-07). `QuestCatalog.daily` still decides WHICH job
+each NPC offers — a stable hash of `userId:npc:dayStamp`, rolling at 12:00 Kyiv — but the
+offer sits on the board until the player accepts it at the NPC (`QuestProgress.accepted`,
+`QuestService.accept`). `record` neither creates nor ticks an unaccepted row, so taking a job
+STARTS the count and never backfills the day. Each job carries a `minLevel` and the pool is
+filtered before the hash; the validator refuses a pool whose cheapest job starts above level
+1. Rewards are authored at level 1 and scaled at payout by `ProgressionMath.questReward`, so
+**the board must quote `Status.reward`, never `def.reward`**.
+
+**A taken job does not burn at noon** (2026-09-19, the owner's call). It stays open until it is
+turned in, and while it is open that NPC offers nothing new: **one open job per NPC**, which
+`QuestService.accept` enforces and every other reader relies on — the board, `record`, the Turn
+in button (no day in its callback: only one job can be meant) and the trader's "wanted for a
+job" warning. Only a carried job can be dropped (`QuestService.abandon`, asked first).
+Auto-memory `project-quests-taken-by-hand`.
+
+**The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
+`{recipeId, npc, minEstateTier}` rungs; finishing a job pays the lowest rung the player has
+earned and does not know, one per job, resolved by `RecipeUnlockDTO.next` — the ONLY resolver,
+asked by `QuestService.finish` at the payout and by nothing earlier. **No screen announces the
+recipe in advance** (2026-09-19): `rewardPhrase`, the board and the journal quote silver and
+Vigor only. A recipe is **not** scaled — it is not a number — and the NPC's line is a message
+of its own (`recipe.<id>.taught`, then the shared `quest.recipe_learned` under it), because
+`postStatusBanner` deletes the previous banner and an NPC speaking is not a status line.
+Auto-memory `project-npcs-teach-recipes`, `project-food-is-priced-not-picked`,
+`feedback-a-checker-that-cannot-fail`.
+
+### Vigor, rest and background work
+
+**Vigor does not regenerate** (Phase 8E). The pool is a stock; food, quests and the
+level-up grant are the only sources, and the estate's plots are the intended income —
+which is what makes the pool plus the food in the bag the real limit on how deep the
+wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
+one deliberately did not pause during an expedition, so a player could stand at km 25
+and wait out a full pool.
+
+**HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
+pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
+suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the road) and
+`location == capital` (in town) — the road needs its own check because `location` is not
+flipped until arrival. Callers query the rows and pass the answer; `tick` does no lookups of
+its own, and away from the estate the clock is CLEARED, not merely skipped. The away-from-home
+heal is a **cooked dish** (a quarter of its silver price in HP); `potion.heal_small` and
+`potion.heal_medium` are obtainable nowhere. Auto-memory `feedback-a-checker-that-cannot-fail`.
+
+Regen is **computed lazily on interaction**, so both ends of an absence are stamped
+explicitly: `suspendResting` when an expedition or trip begins, `beginResting` when the
+player lands home. A tick that only runs on interaction cannot observe a transition that
+happens while nobody is interacting.
+
+**What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
+`Task.detached` on `realTime.restSweepInterval`, 60 s) answers three questions per player: HP
+topped out at the estate, the fortune teller's 24 h cooldown elapsed, the 12:00 job rollover.
+It runs the regen through `HealingService.tick` — never a second copy of the arithmetic.
+
+**A background writer MUST take the session-cached `User` when one exists**
+(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently
+undoes the tap the player made a second earlier.
+
+Full reasoning: `.memory/game-core.md` §Rest and the road, `.memory/session-auth.md`;
+auto-memory `project-rest-notification-watchman`,
+`feedback-background-writers-session-cache`.
+
+### Exploration and the forest
+
+**Passive expeditions are capped at `passive.dailyBudgetMinutes` (180) per game day**,
+counted in the authored minutes the three choices are written in — a budget in wall-clock
+seconds would mean a different number of runs at every `time.scale`. Counter plus day stamp,
+rolling at 12:00 like every other daily system. The picker offers only what the day can still
+pay for AND the handler re-checks; the charge lands after `beginPassive` succeeds, so a
+failed start never costs the player a run. Auto-memory `project-daily-and-storage-ceilings`.
+
+**A leaderboard is a `Leaderboard`, never a `Rating`.** `rating` already means crit / dodge /
+accuracy here, so the four boards behind the journal say «Рейтинги» to the player and
+`Leaderboard` in every identifier. They are ALL-TIME, which is the first period and not the
+only one: a seasonal board is a second READING with its own storage — **never a reset of
+`deepestKm` / `totalKmWalked`**. The one exception was `ResetDeepestKm`, because that column's
+MEANING changed; a period changing is not a reason. **One ladder, one implementation:** the
+Arena's «Найкращі бійці» renders the same `LeaderboardService.view(.honor,…)` as the journal's
+board. Auto-memory `project-leaderboards-will-go-seasonal`.
+
+**A lifetime counter has exactly one writer — and WHEN it writes is half the rule.**
+`totalKmWalked` is a tally: `User.recordStep()` from `ExplorationService.rollStep`, the funnel
+all three kinds of step share, plus `handleHomeReached` for the last stride. `deepestKm` is a
+RETURN: `User.bankDepth(_:)`, called only where the player is standing at the manor again,
+from `ExplorationState.maxDepthKm` — `stepsDeep` counts back down on the way home, so it
+cannot serve as the record. **Every change of depth goes through
+`ExplorationState.moveTo(km:)`**, for the same reason the tally lives in `rollStep`: put a new
+counter where the thing it counts already funnels. Auto-memory
+`project-depth-is-banked-on-arrival`.
+
+**The forest is left on foot, or not at all.** `/start` and a stray Cancel used to force-end
+an expedition from any depth with the bag intact, and `/start` inside a fight deleted the
+expedition row outright. Both re-render instead — the walk screen, or the fight — which
+serves the case the hatch was really there for (a lost or stale keyboard) without ending the
+walk. It has to be closed on BOTH screens: banking depth at the door makes any free exit the
+cheapest way to bank a record, and a hatch closed in one controller just moves one screen in.
+The one real escape left is a fight whose enemy id no longer resolves, which ends the
+expedition rather than trapping the player.
+
+### Combat
+
+**One number, one source. A screen never sums two losses under one label.** A step can cost
+HP twice — the event it rolled, and the hunger tick charged on every step once Vigor hits 0 —
+so `ExplorationService.rollStep` returns a `StepResult` pairing the event with
+`starvationHpLost`, each printed on its own line. Carrying it on the RESULT rather than inside
+an enum case is the point: when each branch had to remember, six of ten starving-reachable
+exits dropped it silently. **Add a new source of damage to `StepResult`**, never to another
+source's number. Auto-memory `project-damage-sources-named-separately`.
+
+**An escape is `CombatService.fleeSucceeds`, never a roll against `fleeChance`.** The
+per-class chance (warrior 40 / archer 70 / mage 90) is half the rule; the other half is
+`combat.json` → `flee.maxFailures`, the per-fight ceiling that grants the attempt to every
+class after that many failures. Both live behind one function because a failed escape is an
+unmissable hit at half armour with nothing dealt back. The count is per FIGHT
+(`ExplorationState.combatFleeFails`, 0 on `beginCombat`, cleared on `endCombat`): per
+expedition it becomes a resource the player spends rather than a floor under a bad run.
+Auto-memory `project-flee-has-a-ceiling`.
+
+**A rating is a rating on every screen, and is never labelled `%`.** `crit` · `dodge` ·
+`accuracy` are RATINGS converted through a level-linear curve (`CombatMath.percent`), so the
+same +5 crit is 4.16% at level 1 and 1.35% at the cap. Every screen prints the bare rating, so
+the item, the level-up banner and the sheet add up against each other.
+`CombatService.critPercent` / `dodgePercent` / `accuracyPercent` exist for when a screen says
+what a rating is WORTH — BESIDE the rating, never instead of it — and **the level-up banner can
+never follow**: 26% of level-ups would announce a drop. Auto-memory
+`project-rating-vs-percent-display`.
+
+### Gear, inventory and storage
+
+**A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the ONE
+implementation both death paths call — `ExplorationController.handleDeath` and
+`PassiveExpeditionService.applyDeath`. Worn gear survives, and so does a bound starter weapon
+carried in the bag; every other path already refused to take it, so death was the single hole
+in a rule the rest of the code kept — and the only one that could not be undone. **Put the
+next wipe in that function too**: a rule each caller filters for itself is a rule one caller
+forgets. Auto-memory `project-death-spares-the-class-weapon`.
+
+**Every gear screen renders all six `GearStats` fields, HP included.** HP reuses
+`profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and `workshop.stats.*`
+are already two families for one set of names kept in step by hand, and that duplication is
+exactly how `accuracy` shipped under two different Ukrainian words.
+
+**The warehouse cap is enforced on every path in, including
+`PlotService.harvest(to: .warehouse)`** — the estate's own income was once the only way to
+overflow the store. Harvest is all-or-nothing like the bag, with the yield left standing on
+the plot: partial cannot be expressed, because the Mine's two output streams share one
+`lastHarvestedAt`. **No account is exempt** — the `isDeveloper` bypass is gone from all four
+warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
+`project-daily-and-storage-ceilings`.
+
+**A fit check must be the SAME arithmetic as the writer it is predicting, in the same
+units.** `InventoryEntry.add` counts UNITS and throws when it will not fit; `CraftingService`
+predicted in ROWS and treated "a row already exists" as room — the throw escaped the callback
+handler, and because the drain runs before the add with no transaction it ate the ingredients
+on the way out. `TradeService` has the shape to copy: `used − outgoing + incoming ≤ cap`, in
+units, with the dev bypass matching the writer's. **Predict for EVERY store the write could
+land in.** A full bag is no longer a refusal to craft — the output goes to the warehouse and
+the banner names where it landed. Auto-memory `project-fit-check-matches-the-writer`.
+
+**A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
+are per-instance (`GearState`), so a delete-here-and-`add`-there path hands back a
+factory-fresh item — which made a warehouse round-trip a free repair that also undid the max
+shave and burned the enchant. Both `InventoryEntry` and `WarehouseEntry` carry `GearState` and
+every create-path takes it as `carrying:`; `TradeService` shows the other correct shape, it
+REASSIGNS the owner. **A new per-instance column belongs IN `GearState`, not beside it.** The
+screen half: **the Master repairs a ROW, not a loadout** — a list must ask the same question of
+every kind it lists. Auto-memory `project-gear-state-travels-with-the-unit`.
+
+**A weapon ladder is ONE object.** The three upgradable weapons render through
+`ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
+common — the player is upgrading a thing, not swapping it — which `locale.ladder_name_drift`
+warns about. Wherever a label describes an inventory ROW rather than a shop listing, pass the
+row's tier (`CapitalController.itemLabel(_:tier:lingo:locale:)`). **An item id alone cannot
+name a row**, so a service that reports rows hands back the tier with them:
+`GearConditionService` returns `BrokenPiece(itemId:tier:)`, not `[String]`. Auto-memory
+`feedback-ladder-names-one-noun`.
+
+### Screens, buttons and refusals
+
+**Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв` ·
+`1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value, with an
+exact one dropping its tail so a whole-minute window still reads `5хв`. Durations are never
+written into copy either — the expedition buttons, the tarot "active for" prefix and the
+invite window are all printed from the values that own them.
+
+**"What it costs / what you have" is ONE sentence, and `RequirementLine` renders it.**
+`✅ 1× 🪵 Соснова дошка  (12/1)` — marker, the count the recipe asks for, the label, then the
+fraction in brackets. A gate line carries no count, which is why the count belongs to
+`RequirementLine.item` and not to `render`. Every material list, every gate and the shortage
+modal go through it, so a screen and the modal that refuses the same tap cannot phrase one
+number two ways. **⛔ is retired.** **Current-against-maximum is a DIFFERENT sentence** —
+durability `0/100`, the bag `18/25`, a plot `40/40` — and must not grow a ✅/❌: a full bag is
+not a failed requirement. Auto-memory `project-requirement-line-one-format`.
+
+**And the shortage modal is CAPPED at 200 UTF-16 units, because Telegram refuses a longer
+`answerCallbackQuery` outright and every call site swallows that with `try?`.** Five of them
+were over — the Governor's Feast and every estate step from T4 up — so the tap that was
+supposed to explain the refusal produced no modal at all. `RequirementLine.shortageModal`
+drops rows until it fits and ends with a wordless `… +N`. **Measure an alert in UTF-16 and
+measure it in Ukrainian**: the English side of all five was comfortably under, which is
+exactly how the overflow stayed invisible to the person who wrote it. Auto-memory
+`project-requirement-line-one-format`.
+
+**A choice that cannot be undone is asked, not just tapped.** Nothing in the codebase deletes
+a `Plot` row or changes its type (`PlotService` has `claim` and `harvest` and no third verb),
+so claiming a slot on one tap cost it for the life of the account. `estate:plot:type:` draws
+the picked type's card and asks; only `estate:plot:build:` writes. **Which callback keeps its
+old name is part of the fix**: the QUESTION inherited it, so a stale picker message in chat
+history lands on the safe path. This is the shape every buildable thing already had — list →
+detail → act, and `ItemCard` before every purchase. Auto-memory
+`project-plot-streams-and-dead-lore`.
+
+**A dead inline button is the house symptom, and it has two causes.** A **throw** out of a
+callback handler spins it forever — nothing answers `answerCallbackQuery`. A callback **no
+handler claims** is just as silent: `Router.process` reaches `unmatched` only when
+`update.message != nil`, which a callback query never has. So a controller that renders
+another controller's screen must END by forwarding what it does not recognise —
+`ExplorationController` and `CapitalController` both hand the rest to `MainController` — and
+it must be **a catch-all, never a list of prefixes**. Auto-memory
+`project-dead-inline-buttons`.
+
+**A screen that can answer a question should answer it before the player gets it wrong.**
+The recipe screen printed what a dish REQUIRES and never what the player HELD, so the only
+way to read your own pantry was to tap Cook and fail — the shortage modal was the one place
+the number appeared. `CraftingService.stock(for:on:)` is now that number for both the screen
+and the craft itself (two queries, whatever is asked about), so a screen cannot quote a total
+the button then disagrees with.
 
 ## How to Add a New Controller
 

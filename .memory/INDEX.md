@@ -40,9 +40,11 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   `ResetDeepestKm`**, so its restart writes to the database and the `quest_progress` TABLE is
   what to verify afterwards. The next action is a human opening the screens: a backlog spanning
   three deploys and never walked.
-- **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
-  the session primer and the only place the current commit, digest baseline and next
-  action are kept in sync.
+- **State of the deployment: `Prompt.md`.** That file is the session primer and the only
+  place the current commit, digest baseline and next action are kept in sync. **The
+  surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
+  surfaces nobody has opened", with "Open, decided but not done" beside it; a QA
+  checklist read at the start of every session is not a primer.
 - **What each commit did and why: [Session History](sessions.md)** — its **Commit index**
   at the top is the single changelog (hash → what it did, 2026-09-09 onward), moved there
   from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
@@ -63,59 +65,12 @@ the trap, the memory holds the measurement that produced it. See `feedback-docs-
 for why every "never do X" guard stays in the repo rather than moving there.
 
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
-following the rule you are about to break. The ones a fresh session most often wants:
-
-- `project-damage-sources-named-separately` — a step can cost HP twice; each source prints
-  its own line, and the tick rides on `StepResult` so no branch can drop it
-- `project-flee-has-a-ceiling` — a fight may refuse an escape at most `flee.maxFailures`
-  times; the roll and the ceiling are one rule, behind `CombatService.fleeSucceeds`
-- `project-leaderboards-will-go-seasonal` — all-time is v1's period, not the only one; a
-  season is a second reading, never a reset of a lifetime counter
-- `project-pi-deploy-swiftenv` + `linux-build-gap` — the deploy recipe and its two traps
-- `feedback-ask-the-machine-not-the-record` — a deploy is the one fact nothing writes down
-  by itself; read HEAD, pm2 uptime, schema and digest off the Pi before claiming what is live
-- `project-gear-state-travels-with-the-unit` — tier / wear / enchant are per-instance; a
-  transfer that re-creates a row hands back a factory-fresh item
-- `project-depth-is-banked-on-arrival` — `deepestKm` counts only what was walked back from,
-  which is also why the forest has no free exit any more
-- `project-plot-streams-and-dead-lore` — a ceiling only reachable by idling is not a balance
-  knob, and a locale key the validator requires is not a key anything renders
-- `feedback-audit-what-else-reads-it` — grep every reader before changing a displayed
-  concept; the extra readers are where the real defects sit
-- `feedback-docs-in-english` — converse in Ukrainian, persist in English; Cyrillic in a
-  doc should only ever be quoted game copy
-- `feedback-redundant-guard-becomes-the-defect` — the belt-and-braces line that outlives its
-  reason is where the bug is; the differently-shaped implementation is the suspect
-- `project-dead-inline-buttons` — a throw OR an unclaimed callback; neither reaches
-  `unmatched`, so both spin forever. Forward with a catch-all, never a prefix list
-- `project-fit-check-matches-the-writer` — predict in the writer's units, for every store the
-  write can land in
-- `project-close-the-bubble-you-opened` — keep the message id of any button you will later
-  need to remove, and close on every path that ends the state
-- `project-inline-screens-inherit-the-keyboard` — an inline-only screen that changes
-  `routerName` inherits the reply buttons it did not replace
-- `project-death-spares-the-class-weapon` — a death takes the bag but never the bound starter
-  weapon; every other path already refused it, and no shop, recipe or ladder grants a second
-- `project-requirement-line-one-format` — «what it costs / what you have» is one sentence
-  everywhere, ⛔ is retired, and the shortage modal is capped at Telegram's 200-character
-  alert ceiling because over it the modal is silently refused
-- `feedback-ladder-names-one-noun` — every rung of a weapon ladder keeps a shared word, a
-  label that describes a ROW carries the row's tier, and a service reporting rows hands back
-  the tier with them: an id is not a row
-- `project-plot-streams-and-dead-lore` also holds the 2026-09-17 addition: an estate slot is
-  ASKED for before it is built, because nothing in the code can undo the choice
-- `project-food-is-priced-not-picked` — a dish restores the trader buy-price of its ingredients
-  in Vigor and a quarter of that in HP; price a new dish's inputs, never pick its number
-- `project-npcs-teach-recipes` — the innkeeper's daily job pays the lowest unearned rung of
-  `recipes.json` → `unlocks`, one rung per job, gated on estate tier — and announced nowhere
-  in advance since 2026-09-19: it is his gift at the payout
-- `project-quests-taken-by-hand` — a job counts only once taken at the NPC, and since
-  2026-09-19 a taken job never burns: ONE open job per NPC, today's offer waits behind
-  yesterday's, and only a carried job can be dropped
-- `feedback-formal-address-vy` — every uk string speaks «ви», with ONE exception the sweep
-  must not "fix": the innkeeper's six recipe lessons, which the owner wrote in «ти»
-- `feedback-a-checker-that-cannot-fail` — the reachability rule proved a scroll EXISTED for
-  months instead of asking whether a player could hold one; every checker needs its negative test
+following the rule you are about to break — which is the only index that is needed here.
+**Do not list them in this file.** `MEMORY.md` loads automatically every session and
+already carries all 62 at one line each, so a selection copied into this file is the
+third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
+grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
+twice.
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

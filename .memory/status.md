@@ -96,7 +96,7 @@ registration and no shop, recipe or ladder can produce a second, «❌ Знят�
 was permanent. `InventoryEntry.wipeOnDeath` is now the single implementation of what a death
 takes, called by both `ExplorationController.handleDeath` and
 `PassiveExpeditionService.applyDeath`. Three sibling fixes were declined and written down
-instead (`Prompt.md`): `InventoryEntry.remove` still ignores `equipped_slot` in both its count
+instead (`TODO.md` → "Open, decided but not done"): `InventoryEntry.remove` still ignores `equipped_slot` in both its count
 and its delete, which is what makes `/revoke <worn item>` take it off the body.
 
 **2026-09-16 — the arena invite stopped outliving itself** (`b63f835`, **deployed 2026-09-17
