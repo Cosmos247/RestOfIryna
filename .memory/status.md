@@ -21,7 +21,33 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-17 — one sword, two names** (**NOT DEPLOYED**). Reported from play with a
+**2026-09-19 — a taken job waits for you** (`328bf88`, **NOT DEPLOYED**; Swift + locale keys
++ a data migration, so only `pm2 restart ROI` carries it). A daily job the player has TAKEN no
+longer burns at the 12:00 rollover: it stays open until turned in, and that NPC offers nothing
+new meanwhile. **One open job per NPC** — `QuestService.accept` refuses behind a carried one,
+and every other reader leans on it: the board, `record`, the Turn in button (no day in its
+callback) and the trader's "wanted for a job" warning. The owner rejected the first design (both
+jobs open at once), which had needed a day in every callback, a burn countdown, an "it burned"
+message and a tie-break for two same-counter jobs. A carried job reads like any other, plus
+«🔒 Нове замовлення відкриється, щойно здасте це.», and is the only kind that can be dropped —
+after a question whose wording differs by objective, because a counter's progress dies with the
+job while a delivery's is the bag and stays. `CloseBurnedQuestJobs` closed, once, the 33
+taken-but-unfinished rows (6 players) the old rule had left `accepted`, keeping per player and
+NPC only the newest from today or yesterday; `QuestCarryOver.burned` holds that rule, with 8
+tests including a DST-safe "day before". 271 tests, digest unmoved, no schema change.
+
+**2026-09-19 — the innkeeper's own words, and the recipe became a surprise** (`536fbf6`,
+**deployed 2026-09-19 14:21**). The six `.taught` lessons are the owner's copy now, opening with
+the player's nickname and written in «ти» — the one exception to the «ви» rule, scoped to those
+six lines. Three of them gender the player and are `.m`/`.f` pairs; the render site retries
+through the gender overload when the plain lookup echoes the key back, which closes a trap
+`LocaleIndex.has` would otherwise wave through (it counts a `.m`/`.f` pair as present). One
+shared line, `quest.recipe_learned`, now sits under every lesson and replaced a per-dish tail
+that had printed «готувати 🥘 Мʼясна печеня». The board and the journal stopped quoting the
+recipe at all — it is the innkeeper's gift at the payout — which removed `Status.recipeUnlock`
+and the `learned_recipes` read every board open used to cost.
+
+**2026-09-17 — one sword, two names** (`bf67243`, **deployed 2026-09-19 14:21**). Reported from play with a
 screenshot: the bag's button read «⚔️ Очищений меч» and the banner directly under it read
 «✅ Іржавий меч — одягнено». The button passes the ROW's tier through
 `ItemDisplay.nameKey(for:tier:)`; the equip and unequip banners read the catalog's base name.
@@ -32,7 +58,7 @@ was announced «Іржавий меч» in the fight screen AND in the passive p
 list, the detail card, the info toast, the profile, the Master, the workshop — already passed
 the tier; the warehouse, market, vault, trade, loot and quest paths cannot hold one at all.
 
-**2026-09-17 — a slot is asked before it is built** (**NOT DEPLOYED**). Reported by the
+**2026-09-17 — a slot is asked before it is built** (`bf67243`, **deployed 2026-09-19 14:21**). Reported by the
 owner as "add a confirmation when choosing what to build on a slot"; the survey found it is
 not a nicety — **no code path anywhere deletes a `Plot` row or changes its type or tier**, so
 the one tap on a paired picker button was permanent for the life of the account. The picker
@@ -43,7 +69,7 @@ here by mistake wants a different type, not a different screen). `estate:plot:ty
 chat history lead to the question rather than to an irreversible build. Three locale keys,
 no migration, no content.
 
-**2026-09-17 — one sentence, one format** (**NOT DEPLOYED**; Swift + locale keys, so
+**2026-09-17 — one sentence, one format** (`c36822a`, **deployed 2026-09-19 14:21**; Swift + locale keys, so
 `/reload` cannot carry it). The game asks "do you have enough of this?" on ten screens and
 answered in four dialects: the recipe in words («2× 🥩 Сире м'ясо — маєте 3», chosen only the
 day before), three upgrade screens in a fraction («1× 🪵 Соснова дошка (12/1)»), the shortage
@@ -59,7 +85,7 @@ because every call site answers with `try?`, the tap produced no modal whatsoeve
 the Governor's Feast, Upgrade on any estate step from T4 up. Now capped, with a wordless
 `… +N` tail. Only the Ukrainian side ever overflowed; English was under by 20. `EstateController` loses 83 lines; the helper is 91, over half of them the rationale.
 
-**2026-09-17 — a death stopped taking the class weapon** (**NOT DEPLOYED** — needs
+**2026-09-17 — a death stopped taking the class weapon** (`c36822a`, **deployed 2026-09-19 14:21** — it needed
 `pm2 restart ROI`; Swift only, schema v12 stands, no digest half moved). Reported by the
 owner, whose archer had no bow and no `gear.%` row at all; the Pi's 09-08 dump still held it
 (`gear.simple_bow`, main_hand, 9/30), so it was destroyed between then and now. A death wiped
@@ -410,7 +436,7 @@ rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
 `records 6588329ab2bdbc70` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
 `quests 30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee` became a
 section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync, and
-the Pi is still on the 09-17 `records 14d4fdd6442626ae`), **263 tests**. Pace as of
+the Pi has run this exact baseline since 2026-09-19 14:21), **271 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
@@ -480,7 +506,7 @@ were superseded by Phases 4–6.
 - [x] EstateController — tree nav (Phase 5.0 scaffolding): Root (estate name + level + optional per-level artwork) → [🏠 House] drilldown with Workshop/Kitchen/Warehouse stubs / [🌾 Plot] stub; main-nav pass-through; switches between editMessageText and editMessageCaption based on whether the root rendered as text or photo.
 - [x] GuildController — Phase 7.1 (Guilds, 2026-06-16). Capital `🏰 Гільдії` reply button → routerName "guild" (controller owns the keyboard, CombatController-style); membership-branched reply keyboard. **Found** (500🪙 silver sink + player-level gate 5; **tag left empty — game-creator-assigned via DB**, the name prompt points the player to `@TGUserName`), **invite** (leader/officer → nickname/@username prompt → push; invitee accepts/declines from the guildless-home invites list), **roster** (role-sorted, 👑/🎖/🧑), **kick / promote / demote** (officer cap 2; officers kick members only), **leave / disband** (leader must disband — no transfer yet), **item vault 🏦** (stackables only, deposit any member / withdraw leader+officers, cap 3000), **silver treasury 🪙** (deposit any / withdraw leader+officers, `Guild.treasury`). Models `Guild`/`GuildInvite`/`GuildVaultEntry` + `GuildCatalog` (memberCap 20, maxOfficers 2) + `GuildService` (typed result enums, validate-then-mutate, fire-and-forget pushes); 4 migrations. 82 guild locale keys × 2 (all neutral). Deferred: guild chat, banner-on-estate, non-aggression pacts (need territorial PvP), leadership transfer.
 - [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button with item-info modal showing the lore description on tap. Action acks (eat, equip, unequip) appear as an inline `✅ ...` status line above the refreshed view; warnings (raw food, no_effect, empty category, use_unavailable) appear as Telegram modal alerts via `showAlert: true`. Eat status appends current/max pool indicator ("+15 голоду (20/100)"). No top-strip toasts.
-- [x] Daily NPC quests — Phase 9.2 v1 (2026-08-23). Three quest-givers in the capital (Trader / Master / Innkeeper), 5 jobs each, **one job per NPC per game day, taken by hand** — the day decides WHICH job each NPC offers, the player decides whether to take it (2026-09-07). The offer sits on the board until accepted; `record` ticks nothing before that, and taking a job starts the count rather than backfilling the day. Still no list to pick from and no queue of active jobs. **Bands and a reward curve (2026-09-07):** every job has a `minLevel` (trader 1/1/1/6/8 · master 1/1/1/7/10 · tavern 1/1/1/4/5 — six early forage deliveries were authored so a level-1 board still offers three) and the pool is filtered before the hash, so an unreachable job is never assigned; authored rewards were halved and are scaled at payout — silver +1.5%/level, XP on the `mobXP` exponent, Vigor on the pool. Daily silver runs 85 → 175 across the arc where it was a flat 220. `QuestCatalog.daily(npc:userId:stamp:)` derives the assignment from a stable FNV-1a hash of `userId:npc:GameDay.stamp()` (verified even 1/3 spread; every player cycles all 3 jobs within 30 days), so nothing about *which* job is stored and it survives restarts; `QuestProgress` (+ `CreateQuestProgress`, unique on user+npc+day) stores only progress + claimed, and copies `quest_id` at creation so a mid-day catalog edit can't move the goalposts. Two objective shapes: **deliver** (progress read LIVE from the bag, items consumed at turn-in which also pays out) and **counter** (`QuestService.record(...)` ticked from 5 hook sites — `CombatController.finishVictory`, `PassiveExpeditionService.finalizeAndPush` (batched per run), `CraftingService.craft` (ingot only), `TraderService.sell`, `CapitalController.runRound` (wins only, ties don't count); all `try?` so a quest write can never break a fight/craft/sale). Rewards: silver on every job + per-NPC accent (Trader = bigger silver, Master = +XP, Innkeeper = +Vigor); single `payOut` applies silver/XP/Vigor (Vigor clamped to cap, reports what actually landed) and the banner echoes the combat level-up / estate-up lines. UI: `[📜 Замовлення]` on each NPC menu → board edited in place over the NPC's own message; one action button that only appears when finishable (`✅ Здати` for deliver, `🎁 Забрати` for counter). **Journal («Нотатник»)** hangs off the *profile*, not the capital: a second keyboard row under the 1/2/3 style buttons (`journal:open`) edits the same profile bubble into a read-only digest of all three jobs (state ✅ claimed / 🎁 ready / ⏳ done/target + reward, `🕛` countdown to the 12:00 rollover via `GameDay.secondsUntilNextRollover`), `journal:back` returns. Deliberately claim-free — turn-in stays at the NPC. Reachable from every router that falls through to `MainController.onCallbackQuery` (capital, estate, guild, arena, inventory). 43 locale keys × 2 (neutral except the journal title, which is gendered намісника/-иці via the `.m`/`.f` overload). Deferred: chains, weeklies, guild co-op, fortune/arena quest-givers.
+- [x] Daily NPC quests — Phase 9.2 v1 (2026-08-23). Three quest-givers in the capital (Trader / Master / Innkeeper), 5 jobs each, **one job per NPC per game day, taken by hand** — the day decides WHICH job each NPC offers, the player decides whether to take it (2026-09-07). The offer sits on the board until accepted; `record` ticks nothing before that, and taking a job starts the count rather than backfilling the day. Still no list to pick from. **A taken job no longer burns at noon (2026-09-19, `328bf88`, NOT DEPLOYED):** it stays open until turned in and that NPC offers nothing new meanwhile — one open job per NPC, enforced by `accept` — so the queue is exactly one deep; a carried job can be dropped after a confirmation, and the one-time `CloseBurnedQuestJobs` closed the rows the old rule left marked as taken. **Bands and a reward curve (2026-09-07):** every job has a `minLevel` (trader 1/1/1/6/8 · master 1/1/1/7/10 · tavern 1/1/1/4/5 — six early forage deliveries were authored so a level-1 board still offers three) and the pool is filtered before the hash, so an unreachable job is never assigned; authored rewards were halved and are scaled at payout — silver +1.5%/level, XP on the `mobXP` exponent, Vigor on the pool. Daily silver runs 85 → 175 across the arc where it was a flat 220. `QuestCatalog.daily(npc:userId:stamp:)` derives the assignment from a stable FNV-1a hash of `userId:npc:GameDay.stamp()` (verified even 1/3 spread; every player cycles all 3 jobs within 30 days), so nothing about *which* job is stored and it survives restarts; `QuestProgress` (+ `CreateQuestProgress`, unique on user+npc+day) stores only progress + claimed, and copies `quest_id` at creation so a mid-day catalog edit can't move the goalposts. Two objective shapes: **deliver** (progress read LIVE from the bag, items consumed at turn-in which also pays out) and **counter** (`QuestService.record(...)` ticked from 5 hook sites — `CombatController.finishVictory`, `PassiveExpeditionService.finalizeAndPush` (batched per run), `CraftingService.craft` (ingot only), `TraderService.sell`, `CapitalController.runRound` (wins only, ties don't count); all `try?` so a quest write can never break a fight/craft/sale). Rewards: silver on every job + per-NPC accent (Trader = bigger silver, Master = +XP, Innkeeper = +Vigor); single `payOut` applies silver/XP/Vigor (Vigor clamped to cap, reports what actually landed) and the banner echoes the combat level-up / estate-up lines. UI: `[📜 Замовлення]` on each NPC menu → board edited in place over the NPC's own message; one action button that only appears when finishable (`✅ Здати` for deliver, `🎁 Забрати` for counter). **Journal («Нотатник»)** hangs off the *profile*, not the capital: a second keyboard row under the 1/2/3 style buttons (`journal:open`) edits the same profile bubble into a read-only digest of all three jobs (state ✅ claimed / 🎁 ready / ⏳ done/target + reward, `🕛` countdown to the 12:00 rollover via `GameDay.secondsUntilNextRollover`), `journal:back` returns. Deliberately claim-free — turn-in stays at the NPC. Reachable from every router that falls through to `MainController.onCallbackQuery` (capital, estate, guild, arena, inventory). 43 locale keys × 2 (neutral except the journal title, which is gendered намісника/-иці via the `.m`/`.f` overload). Deferred: chains, weeklies, guild co-op, fortune/arena quest-givers.
 
 ### Character System
 - [x] CharacterClass enum (warrior/archer/mage) with icons

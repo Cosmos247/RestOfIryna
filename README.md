@@ -82,7 +82,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 263 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 271 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -169,6 +169,7 @@ RestOfIryna/
 │   │   ├── AddWarehouseGearState.swift # 2026-09-15 — `tier` / `durability` / `max_durability` / `enchant_level` on `warehouse`, the four columns `inventory` has carried since Phase 6.5. Without them a deposit→withdraw round-trip handed back a factory-fresh piece: a free repair that also undid the max shave, and a silently burned enchant
 │   │   ├── AddExplorationMaxDepth.swift # 2026-09-15 — `max_depth_km` on `exploration_state`, the CURRENT run's high-water mark. `steps_deep` counts back down on the way home, so the depth record is banked from this column at the manor door
 │   │   ├── ResetDeepestKm.swift    # 2026-09-15 — one-shot `UPDATE users SET deepest_km = 0`. Not a season: the column stopped measuring the deepest km REACHED and started measuring the deepest RETURNED FROM, so old and new values are different quantities. `total_km_walked` untouched
+│   │   ├── CloseBurnedQuestJobs.swift # 2026-09-19 — one-shot, no schema change: the old noon rule burned a job by never reading its row again, so 33 taken-but-unfinished rows stayed `accepted`. Clears all but the newest per player+NPC from today or yesterday (`QuestCarryOver.burned`)
 │   │   ├── AddFortuneOneShot.swift   # 2026-09-09 — four `last_fortune_*` columns: what a draw's one-shot half actually handed over. The card id cannot answer it (the Wheel rolls 50/50, a silver loss is clamped to the purse)
 │   │   ├── AddNotificationFlags.swift # 2026-09-09 — `fortune_ready_notified` + `quest_rollover_stamp`: the once-only guards behind RestNotificationService
 │   │   ├── AddPassiveDailyBudget.swift # 2026-09-09 — `passive_minutes_today` + `passive_day_stamp`: the 3 h/day ceiling on passive expeditions, counter plus the game-day key it belongs to
@@ -247,7 +248,7 @@ RestOfIryna/
 │   │   ├── TavernCleanupService.swift # 2026-05-20 — deletes tavern dice/darts clutter on a 24h delay (Telegram forbids deleting a private-chat dice message until it's >24h old). record(messageIds:telegramId:on:) persists a round's message ids; startSweeper(on:bot:) (in configure.swift, mirrors PlotProductionService) runs a Task.detached loop — catch-up sweep on boot + every 30 min — deleting each message + row once created_at passes deletableAfter (24h + 60s). Dice stay in chat as history until then.
 │   │   ├── ArenaService.swift     # Phase 8.3 — DB side of the Arena: match validation, Honor ELO, stake settlement (loser→winner minus the Crown's tithe), plus the background sweeper for challenge expiry and turn timeouts
 │   │   ├── ArenaStore.swift       # Phase 8.3 — in-memory actor holding lobby presence, pending challenges and live duels; combat rolls happen inside the actor so roll + HP mutation are atomic
-│   │   └── QuestService.swift     # Phase 9.2 (2026-08-23) — the daily-quest loop. status(for:npc:) builds the board in one read (deliver progress counted live from the bag, counter progress from the row, day's row created lazily); record(counter:amount:) is the event tick called from combat / passive expedition / forge / trader / tavern hook sites (all best-effort); finish(npc:) turns in a deliver job (drains items, pays) or claims a finished counter job; payOut applies silver + grantXP + Vigor (clamped to cap) and returns the XPGrantResult so banners can echo level-up lines
+│   │   └── QuestService.swift     # Phase 9.2 (2026-08-23) — the daily-quest loop. status(for:npc:) builds the board in one read (deliver progress counted live from the bag, counter progress from the row, day's row created lazily); record(counter:amount:) is the event tick called from combat / passive expedition / forge / trader / tavern hook sites (all best-effort); finish(npc:) turns in the NPC's ONE open job — a carried one first, else today's — draining items for a deliver job or claiming a finished counter job; **since 2026-09-19 a taken job never burns at noon**: it stays open until turned in, `accept` refuses a new one behind it, `abandon(npc:)` drops a carried one and `hasCarriedJob` feeds the 12:00 notice; payOut applies silver + grantXP + Vigor (clamped to cap) and returns the XPGrantResult so banners can echo level-up lines
 │   │
 │   ├── Telegram/
 │   │   ├── Router/               # Routing system

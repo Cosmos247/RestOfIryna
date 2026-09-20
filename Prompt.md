@@ -33,38 +33,37 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-19, five commits behind the Pi)
+### Where things stand right now (2026-09-20, one commit ahead of the Pi)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **this commit** — the sync pass over every bank after the kitchen rebuild |
-| pushed | `origin/main` is at `b63f835`; `7050933`, `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444`, `99799e5` **and this commit are not pushed**. Push is user-side |
-| running on the Pi | **`b63f835`** per the record, restarted **2026-09-17 00:10** — schema v12, content hash `83dd8a9a`, digest `records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`c36822a`** (the death wipe + the requirement lines) · **`bf67243`** (the plot build-confirm + the ladder names) · **`4f49e2a`** (the omelette simplified, the ragout renamed) · **`fa46ef2`** (the food economy repriced, two dishes added) · **`dc82444`** (the innkeeper teaches cooking) |
+| HEAD | **this commit** — the record pass over every bank after the quest carry-over |
+| pushed | `origin/main` is at **`536fbf6`**; **`328bf88` and this commit are not pushed**. Push is user-side |
+| running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| committed but NOT deployed | **`328bf88`** — a taken job no longer burns at noon, plus the one-time `CloseBurnedQuestJobs` |
 
-**A deploy is waiting, and it is the next action.** Until `pm2 restart ROI` runs, the Pi is five
-commits behind: a death still destroys a class weapon left in the bag, the requirement lines
-still speak four dialects, an estate slot still builds on the first tap, one sword still has two
-names — and **five of the nine kitchen recipes still cannot be learned by anybody**, which is the
-oldest of the lot.
+**The 09-19 deploy cleared a backlog of ten commits**, so everything in the walk list below
+except the newest block is now live and waiting only on a human opening the screens. It went
+by the recorded recipe: pull, a detached Linux build (110 s), the Pi's own `--content-digest`
+matched byte for byte BEFORE the restart was ordered, Mac instance confirmed not polling.
+After it: content hash `0fa93e96`, `Bot identified as @ROfIr_bot`, Hummingbird listening,
+`Code: 400` unmoved at its 913 baseline, no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line, and no
+restart loop 20 h later.
 
-**This batch is the first in a while that moves `content/data`.** The digest went
-`records 14d4fdd6442626ae` → **`6588329ab2bdbc70`** (30 items · 14 recipes · 6 unlock rungs);
-`tuning`, `spawns` and `quests` are byte-identical to what the Pi runs. **No migration** —
-`learned_recipes` already existed and schema v12 stands — but the new JSON and the new binary
-must ship TOGETHER, and because locale strings moved in every one of the five commits,
+**What is waiting now is `328bf88`, and it is not the same kind of deploy.** It carries the
+**first data migration since `ResetDeepestKm`** — `CloseBurnedQuestJobs`, which closes the
+taken-but-unfinished quest rows the old noon rule left behind (33 rows over 6 players; a dry
+run on 09-19 data kept 9). So: push, pull, build, restart — and then **verify the TABLE, not
+the log line**:
+
+```
+ssh rpi5@192.168.0.203 'cd ~/RestOfIryna && eval "$(grep -E "^DB_(HOST|PORT|USER|PASSWORD|NAME)=" .env | sed "s/^/export /")" && PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -At -c "SELECT day_stamp, npc, count(*) FROM quest_progress WHERE accepted AND NOT claimed GROUP BY 1,2 ORDER BY 1"'
+```
+
+No `content/data` moved in either 09-19 commit — all four digest halves are what the Pi
+already runs — but Swift and locale strings did, and Lingo is not hot-reloaded, so
 **`pm2 restart ROI` is the only way in**. `/reload` carries none of it.
-
-The 09-17 00:10 restart itself took four commits and **no migration — schema v12 stands**,
-because none of them adds a column. The Linux build ran in 66.6 s and the Pi's own
-`--content-digest` matched the Mac byte for byte BEFORE the restart was ordered, which is the
-order that decision has to happen in. `Code: 400` held at its 913 baseline and no
-`[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared afterwards.
-
-**After the restart, what is waiting is a human opening the screens** — and that backlog is
-now large, because nine commits' worth of surfaces have never been looked at, the whole kitchen
-among them.
 
 **Before ever claiming what is live, read it off the Pi.** On 2026-09-16 a patch note for
 the testers listed three already-shipped commits as new, because every doc here said the Pi
@@ -72,17 +71,21 @@ still ran `aa18f57` while it had taken `6e3c18e` two days earlier. A deploy is t
 nothing writes down by itself. Four read-only commands, none of which touch the bot or the
 database, are in auto-memory `feedback-ask-the-machine-not-the-record`.
 
-### What the 09-17 deploy carried
+### What the 09-19 deploy carried
 
-`dc5f037` the farm and bag ladders retuned + the bag's dead Turn back button ·
-`5e55139` the kitchen repair (a full bag no longer breaks a craft; the recipe screen shows
-what you hold) · `6eefe85` a Profile key on the walk keyboard + the buyer's name on a sale ·
-`b63f835` the arena invite stops outliving itself and stops hiding both fighters, plus the
-capital's «Столична майстерня».
+Ten commits in one pull, `7050933` → `536fbf6`. The six that change the game:
+`c36822a` a death stops taking the class weapon + `RequirementLine` everywhere ·
+`bf67243` an estate slot is asked for before it is built + one sword, one name ·
+`4f49e2a` the omelette simplified, the ragout renamed to «Мʼясна печеня» ·
+`fa46ef2` every dish worth what it costs, two dishes added, the duck egg 7 → 3 ·
+`dc82444` the innkeeper teaches cooking (the five unlearnable recipes) ·
+`536fbf6` his six lessons in the owner's own words, and the recipe became a surprise.
+The other four (`7050933`, `e625320`, `99799e5`, `bcafef3`) are record passes.
 
-Three of those four came from somebody PLAYING — two from a tester — and the 09-16 deploy
-before them (`78393aa` · `c9ec209` · `42e8818` · `b32ac32` · `7469715`) has **still** not been
-walked. **None of either batch has been opened by a human**, which is the next action.
+Before it, the 09-17 00:10 deploy carried `dc5f037` · `5e55139` · `6eefe85` · `b63f835`, and
+the 09-16 one `78393aa` · `c9ec209` · `42e8818` · `b32ac32` · `7469715`. **None of the three
+batches has been opened by a human**, which is why the list below is the highest-yield thing
+available.
 
 Each one's account — what it changed, why, and its `validate` / `simulate` / `swift test` /
 digest block — is the **Commit index** at the top of `.memory/sessions.md` plus the dated
@@ -91,20 +94,18 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 `project-gear-state-travels-with-the-unit`, `project-flee-has-a-ceiling`,
 `feedback-no-monster-silver` (§where the line actually is).
 
-### Next action: restart the Pi, then walk it. Nothing below has been looked at.
+### Next action: walk the game. Everything below except the first block is LIVE and unwalked.
 >
-> **Step one is `pm2 restart ROI`** — five commits are built and verified but not on the Pi
-> (`c36822a`, `bf67243`, `4f49e2a`, `fa46ef2`, `dc82444`), and the five newest blocks below go
-> live only with that restart. They are marked **NOT LIVE** for exactly that reason; everything
-> under them has been live for days. This batch also moves `content/data`, so the JSON and the
-> binary ship together — no migration, schema v12 stands.
->
-> **Step two is someone opening the screens.** Every defect this project has found came from
+> **Step one is someone opening the screens.** Every defect this project has found came from
 > glancing at a screen, not from running anything, so this list is the highest-yield thing
-> available and it costs one session in Telegram. It is also the whole backlog, and it now
-> spans three deploys.
+> available and it costs one session in Telegram. It is the whole backlog and it now spans
+> three deploys, the whole kitchen among them.
 >
-> **Added 2026-09-19 — NOT LIVE. A taken job no longer burns at noon (owner's design):**
+> **Step two is shipping `328bf88`** — push, pull, build, `pm2 restart ROI` (ask first), and
+> then check the `quest_progress` TABLE, because this one migrates data. Only the first block
+> below is waiting on it.
+>
+> **Added 2026-09-19 — NOT LIVE (`328bf88`). A taken job no longer burns at noon (owner's design):**
 > - **take a job and leave it past 12:00.** The board must then show THAT job — no date header,
 >   by request — with «🔒 Нове замовлення відкриється, щойно здасте це.» and no Take button.
 >   Turn it in: the usual banner, then the board flips to today's offer in place.
@@ -120,7 +121,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 >   from today or yesterday (a dry run on 09-19 data: 9 of 33 kept). Check the TABLE, not the
 >   log line: `SELECT day_stamp, count(*) FROM quest_progress WHERE accepted AND NOT claimed GROUP BY 1`.
 >
-> **Added 2026-09-18 — NOT LIVE. The whole kitchen changed; this is the biggest walk in the list:**
+> **Added 2026-09-18 — LIVE since 09-19 14:21, never walked. The whole kitchen changed; this is the biggest walk in the list:**
 > - **do a job for the innkeeper.** Take his 📜 Замовлення, finish it, and watch two messages
 >   arrive: the usual «✅ Замовлення виконано …» banner, then the innkeeper's own bubble — his
 >   words, then «📖 Рецепт вивчено: <страва>. Тепер ви можете готувати цю страву на 🍳 Кухні в
@@ -151,7 +152,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > - **мʼясо в глині needs 🧱 дику глину**, which no plot produces — it is foraged at km 11+. That
 >   is deliberate: the T6 dish cannot be cooked without walking deep.
 >
-> **Added 2026-09-17 part 4 — NOT LIVE until the Pi is restarted. Reported from play:**
+> **Added 2026-09-17 part 4 — LIVE since 09-19 14:21, never walked. Reported from play:**
 > - **equip and unequip an upgraded weapon.** The banner must now name the row, not the
 >   ladder's first rung: «✅ Очищений меч — одягнено», «✅ Знято: Очищений меч». The button
 >   above it always said «Очищений меч»; the banner said «Іржавий меч».
@@ -159,7 +160,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 >   passive expedition's push — must name the weapon at its current tier too. Armour is
 >   unaffected (it has no ladder), so the piece to watch is the weapon.
 >
-> **Added 2026-09-17 part 3 — NOT LIVE until the Pi is restarted. From the owner:**
+> **Added 2026-09-17 part 3 — LIVE since 09-19 14:21, never walked. From the owner:**
 > - **claim an empty slot and tap a type.** It must NOT build any more: it must open that
 >   type's card — icon, «Ділянка N · <тип>», the lore, the rate and ceiling of every stream
 >   it has, and «⚠️ Ділянку не можна перебудувати» — with [✅ Будувати] and [🔙 Назад].
@@ -170,7 +171,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > - **an OLD picker message from before the restart** must now lead to the question too, not
 >   build — the question inherited the old callback precisely for that.
 >
-> **Added 2026-09-17 part 2 — NOT LIVE until the Pi is restarted. Ten screens, one sentence:**
+> **Added 2026-09-17 part 2 — LIVE since 09-19 14:21, never walked. Ten screens, one sentence:**
 > - **open any recipe in the kitchen or the workshop.** Every ingredient must now read
 >   «✅ 1× 🪵 Соснова дошка  (12/1)» — the «1×» is what the recipe asks for, the bracket is
 >   what you hold against it, and «маєте N» is gone. The ✅/❌ is what you scan; the numbers
@@ -191,7 +192,7 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
 > - **check the English side too** — the three new labels are «Player level», «Silver»,
 >   «Estate level», and the fraction itself needs no translation at all.
 >
-> **Added 2026-09-17 — NOT LIVE until the Pi is restarted. This one came from the owner's own account:**
+> **Added 2026-09-17 — LIVE since 09-19 14:21, never walked. This one came from the owner's own account:**
 > - **die with the class weapon in the bag.** Take the weapon off, walk out, and die on
 >   purpose; a passive run that dies counts too. Everything else in the bag must be gone and
 >   the weapon must still be there, unequipped — re-equip it and watch the profile's ⚔️ move.
@@ -382,6 +383,11 @@ auto-memories `project-plot-streams-and-dead-lore`, `project-depth-is-banked-on-
   fire. Kept on purpose for the day a recipe is worth finding in the world — and the validator
   now refuses to count a scroll nothing grants as a source, so reintroducing one without a drop
   cannot go unnoticed again. Deleting it instead is a standalone cleanup.
+- **The Master's blade trial names a zone it does not mean.** «Випробуйте крицю в Пущі —
+  убийте 5 звірів» points at km 26–49, while the counter takes ANY kill and the job is offered
+  from level 1. Noticed 2026-09-19 while auditing which jobs could strand a player now that a
+  taken job blocks its NPC; it is a one-key copy fix in both locales and was left out of that
+  commit on purpose.
 - **Six dead functions from April**, none touched since: `renderStub`,
   `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
   (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
@@ -449,12 +455,12 @@ post-rebalance regeneration will lean on — run at design time and frozen, neve
 What each phase taught: `.memory/rebalance.md`.
 
 **Current digest baseline (2026-09-18, schema v12):** `records 6588329ab2bdbc70` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. The Pi still
-runs the **09-17** baseline (`records 14d4fdd6442626ae`, content hash `83dd8a9a`) and matched
-the Mac byte for byte before that restart, which is the order the decision has to happen in.
-`records` has moved four times since — the farm ladder, the bag ladder, then the whole food
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **The Pi has
+run this exact baseline since the 09-19 14:21 restart** (content hash `0fa93e96`), matched byte
+for byte before the restart was ordered, which is the order the decision has to happen in.
+`records` moved four times to get here — the farm ladder, the bag ladder, then the whole food
 repricing and the innkeeper's unlock rungs — while the other three have not moved once, which
-is the entire point of splitting them. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
+is the entire point of splitting them. Neither 09-19 commit touched `content/data` at all. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
 `.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
 invisible to the digest until it is hashed — add the line in the same commit that adds the
 knob (auto-memory `feedback-digest-names-constants`).
@@ -498,7 +504,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 263 tests, ~0.2s
+swift test                                   # 271 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
@@ -508,8 +514,9 @@ scheduler) · turn-based PvE combat with 9 class techniques · estate (plots, wa
 workshop, kitchen, weapon/bag/estate upgrades, technique gates) · capital hub (travel,
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena
 (live PvP duel, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
-NPC** — the innkeeper's also **teaches a cooking recipe**, one rung of the ladder per finished
-job — + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one
+NPC**, and since `328bf88` **a taken job never burns** — one open job per NPC, today's offer
+waiting behind it, a carried one droppable — the innkeeper's also **teaches a cooking recipe**,
+one rung of the ladder per finished job, announced nowhere in advance — + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one
 message. Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
 localization. **Access is invite-only and lives in `allowed_users`**; `/link` mints a
 five-minute deep link and nobody else gets a `User` row at all.

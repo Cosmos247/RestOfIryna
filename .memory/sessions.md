@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-17)
+## Commit index — live-play polish and after (2026-09-09 → 09-20)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,21 +11,55 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Undeployed: `c36822a`, `bf67243`, `4f49e2a`, `fa46ef2` and the innkeeper commit.** All
-built, tested and verified; none is on the Pi, which still runs `b63f835` from the 2026-09-17
-00:10 restart — read that off the machine before trusting this line. The two 09-17 commits are
-Swift and locale strings only; the three food commits move `content/data` as well, so the new
-JSON and the new binary must ship TOGETHER. Locale strings changed in all of them, and Lingo is
-not hot-reloaded, so **`pm2 restart ROI` is the only way in** — `/reload` carries none of it.
+**Undeployed: `328bf88`,** and not pushed either — `origin/main` is at `536fbf6`. It is built,
+tested and verified, and it carries the **first data migration since `ResetDeepestKm`**
+(`CloseBurnedQuestJobs`), so the next restart writes to the database: verify the TABLE
+afterwards, never the log line. Swift and locale strings only, so `/reload` carries none of it.
 
-**Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835`, schema **v12** (no migration:
-these four commits add no column), content hash `83dd8a9a`. Linux build 66.6 s; the Pi's own
-`--content-digest` matched the Mac byte for byte BEFORE the restart was ordered —
-`records 14d4fdd6442626ae` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` ·
-`quests 30de20902006e3b9`, all four self-checks ✅. `Code: 400` held at its 913 baseline and
-no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line appeared after the restart. The four entries below
-are what it carried.
+**Deployed 2026-09-19 14:21 Kyiv** — the Pi took `536fbf6`, ten commits in one pull
+(`7050933` → `536fbf6`), schema **v12**, no migration in that batch. Linux build 110 s; the
+Pi's own `--content-digest` matched the Mac byte for byte BEFORE the restart was ordered —
+`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` ·
+`quests 30de20902006e3b9`. After it: content hash `0fa93e96` in the log, `Bot identified as
+@ROfIr_bot`, Hummingbird listening (which is what proves `configure` ran to the end),
+`Code: 400` still at its 913 baseline, no `[ROUTE]`/`[COMBAT]`/`[SCREEN]` line, and the
+process still up 20 h later with the restart counter unmoved. One deviation from the recipe:
+the restart was `pm2 restart ROI --update-env`, which the recipe does not ask for —
+`ROI_PROJECT_PATH` was read back off the process afterwards and was intact.
 
+**Deployed 2026-09-17 00:10 Kyiv** — the Pi took `b63f835` on the same recipe (Linux build
+66.6 s, digest matched first, `Code: 400` at 913): four commits, no migration, content hash
+`83dd8a9a`, digest `records 14d4fdd6442626ae`.
+
+- `328bf88` (09-19) **a taken job waits for you, and the next one waits for it** — a daily job
+  the player has TAKEN no longer burns at the 12:00 rollover. It stays open until it is turned
+  in, and that NPC offers nothing new meanwhile: **one open job per NPC**, which `accept`
+  enforces and every other reader leans on — the board, `record`, the Turn in button (no day in
+  its callback, because only one job can be meant) and the trader's "wanted for a job" warning.
+  The owner's first ask was the other design — finish yesterday's AND take today's — and the
+  plan for it needed a day in every callback, a burn countdown, an "it burned" message and a
+  rule for which of two same-counter jobs a win ticks; they replaced it with this one to delete
+  all four questions. A carried job reads like any other (no date header, asked for explicitly)
+  plus «🔒 Нове замовлення відкриється, щойно здасте це.», and is the only kind that can be
+  dropped — after a question whose wording differs by objective, because a counter's progress
+  dies with the job while a delivery's "progress" is the bag and stays. One-time
+  `CloseBurnedQuestJobs` closed what the old rule had left marked as taken (33 rows, 6 players;
+  a dry run kept 9), keeping per player and NPC only the newest from today or yesterday —
+  `QuestCarryOver.burned`, with 8 tests including the DST-safe "day before". 271 tests,
+  `validate --strict` 0 warnings, digest unmoved, no schema change.
+- `536fbf6` (09-19) **the innkeeper speaks his own lines, and the recipe became his surprise** —
+  the six `.taught` lessons are the owner's copy now, each opening with the player's nickname
+  (`%{name}`) and written in «ти», the one exception to the «ви» rule and scoped to those six
+  lines. Three of them name the player in a way «ти» genders (`наміснику / наміснице`,
+  `здатен / здатна`, `заслужив / заслужила`) and are `.m`/`.f` pairs; the render site retries
+  through the gender overload when the plain lookup echoes the key back, which closes a trap the
+  validator would have waved through — `LocaleIndex.has` counts a `.m`/`.f` pair as present, so
+  a gendered line with a plain-only render site would have printed the raw key. Under the speech
+  sits ONE shared line, `quest.recipe_learned`, replacing a per-dish tail that had put the dish
+  where Ukrainian wants the accusative («готувати 🥘 Мʼясна печеня»). The board and the journal
+  stopped quoting the recipe at all (the owner's call: it is the innkeeper's gift), which took
+  `Status.recipeUnlock` and its per-board database read with it. 263 tests, `validate --strict`
+  0 warnings, digest unmoved.
 - `dc82444` (09-18) **the innkeeper teaches cooking, and the checker learned to ask the
   right question** — five kitchen recipes had no source in play at all: the scrolls that taught
   them (`artifact.recipe.*`) were never given a drop, a listing or a recipe, so the only dishes
@@ -253,6 +287,104 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-19 (the innkeeper's own words, and the job that stopped burning)
+
+### The six lessons, one dish at a time
+
+The `.taught` lines shipped on 09-18 were placeholders the owner meant to rewrite, and this
+session is that rewrite: six texts handed over one by one, each checked before it went into
+`uk.json`. The checks that earned their keep, in the order they came up:
+
+- **Gender.** Under «ти» a past tense or adjective about the player declines again, which «ви»
+  had made a non-question. Three of the six name the player that way — `наміснику / наміснице`
+  (печеня), `здатен / здатна` + the vocative (мʼясо в глині), `народженим / народженою` +
+  `заслужив / заслужила` (бенкет) — and became `.m`/`.f` pairs. The other three have no such
+  word and stayed single keys. «Для того, хто керує цими землями» was left generic in both: it
+  reads as a maxim about any ruler, not as naming this one.
+- **Ingredients against the recipe.** The pie's closing line said «яйце» where the recipe asks
+  for three, and the owner took the fix; the feast's narrative ("вбив свіже яйце", "жменю
+  горіхів" against 2 and 2) was offered and declined, which is a story, not a list.
+- **Mechanics against the text.** The stew promises «зайвий десяток кілометрів»: it restores 42
+  Vigor and a km of walking costs 2, so 21 km of pure walking — the claim holds with fights in it.
+- **Grammar and house style.** A missing comma in «думаю, тобі варто», «налю» → «наллю»,
+  «зайвих десяток» → «зайвий десяток», dish names back to the game's own capitalisation
+  («Юшки мисливця», «М'ясом у глині»), a stray leading dash dropped, and the vocative lowercased
+  to match the innkeeper's own «Заходьте, наміснику!» — the owner's call after it was raised.
+
+**«Ти» is the one exception to the «ви» rule** and it is scoped to those six lines: the owner
+chose it for the lessons and said so twice, once to keep it and once to bound it. The shared
+line under them, his board and the rest of the tavern stay «ви». `feedback-formal-address-vy`
+carries the exception so the next «ви» sweep does not "fix" it.
+
+### What the render site had to learn
+
+The lessons needed the player's nickname, so `%{name}` joined `%{dish}` (the nickname is
+letters, digits and single spaces by `validateName`, so it is safe in `.html` unescaped, and it
+goes in nominative — no vocative can be built from an arbitrary nick, exactly as the
+registration greeting does it).
+
+The gendered pairs exposed a trap worth naming: **`LocaleIndex.has` counts a `.m`/`.f` pair as
+the key being present**, so the validator would have passed a gendered lesson that the plain
+lookup at the render site could not read — Lingo echoes the key back, and the player would have
+seen `recipe.meat_ragout.taught`. `postQuestResultBanner` now retries through the gender
+overload when the plain lookup returns the key itself, which makes a per-dish split a locale
+edit with no code change. Verified against real Lingo and the real files, not by reasoning:
+36 lookups (6 dishes × m/f/nil × uk/en) all correct, and the harness was then made to fail on
+purpose (always-male + a nonexistent recipe) before it was believed.
+
+### The recipe stopped being advertised
+
+On the owner's call the board and the journal no longer quote what the innkeeper will teach:
+it is his gift at the payout, not a line in `rewardPhrase`. Both screens render that one
+function, so removing it from the board alone would have left the journal spoiling the
+surprise — and with the last reader gone, `Status.recipeUnlock` and the `learned_recipes` read
+it cost every board open went too.
+
+### A taken job stopped burning
+
+It started as a question — does an unfinished job burn at 12:00? — answered from the code: it
+did, silently, because `finish` only ever looked at today's row. The first design kept both
+jobs alive (yesterday's AND today's) and needed a day in every callback, a burn countdown, an
+"it burned" message and a rule for which of two same-counter jobs a win ticks. The owner
+replaced it with the simpler rule — **today's opens only once yesterday's is turned in** — and
+all four questions disappeared with it.
+
+What that costs, and what it buys: a job can now block its NPC indefinitely, so a carried job
+(and only a carried one — one taken today still has its day) can be dropped, after a question,
+because nothing undoes it. The question's wording differs by objective, which the pre-commit
+audit caught: a counter's progress dies with the job, but a delivery's "progress" is the bag
+and stays, and one warning for both would have scared a player off dropping a job over items
+they would keep.
+
+**The rows the old rule left behind had to be closed once.** It burned a job by never reading
+its row again, so 33 taken-but-unfinished rows across 6 players were still `accepted` — one
+player holding six at the Master and six at the trader. `CloseBurnedQuestJobs` keeps per player
+and NPC only the newest, and only if taken today or yesterday (the owner picked that of three
+options); a dry run against the live table kept 9. **A miscount on the way is worth keeping:**
+the first report of that number said "24 jobs, 8 players" — 24 was the count of `GROUP BY` rows
+the query printed and 8 the players in the whole table. Count the rows you mean, not the lines
+the query printed.
+
+### The deploy
+
+`pm2 restart ROI` at **14:21**, ten commits in one pull, on the recorded recipe: pull, detached
+Linux build (110 s), the Pi's own digest matched byte for byte BEFORE the restart was ordered,
+Mac instance confirmed not polling. After it: content hash `0fa93e96`, `Bot identified as
+@ROfIr_bot`, Hummingbird listening, `Code: 400` unmoved at 913, no `[ROUTE]`/`[COMBAT]`/`[SCREEN]`,
+and no restart loop 20 h later. Two notes for next time: the ssh that launches the build does
+not always return even with `setsid nohup`, so poll `pgrep -x swift-build` from a second
+connection rather than waiting on it; and the restart was given `--update-env`, which the recipe
+does not ask for — harmless here (`ROI_PROJECT_PATH` was read back off the process), but a
+deviation, and deviations are how a recipe stops being one.
+
+### Verification
+
+Build clean, `validate --strict` 0 warnings, **271 tests** (263 + 8 for `QuestCarryOver`), all
+four digest halves unmoved throughout — no `content/data` edit in either commit. The new tests
+were mutation-checked: breaking "newest, and only from today or yesterday" into "newest" failed
+two of them. `swift test` covers the pure rule; the buttons themselves have still never been
+pressed in Telegram, which is what the `Prompt.md` walk list is for.
 
 ## Session — 2026-09-18 (the kitchen nobody could use)
 

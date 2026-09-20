@@ -1623,8 +1623,24 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ---
 
-*Last updated: 2026-09-17 — **two commits are built and undeployed: `c36822a` and
-`bf67243`.** Fourth: one sword had two names — the bag's button passed the row's tier and the equip/unequip banner under it did not,
+*Last updated: 2026-09-20 — **one commit is built and undeployed: `328bf88`**, and it is also
+unpushed (`origin/main` is at `536fbf6`). It is the first data migration since `ResetDeepestKm`:
+a daily job the player has TAKEN no longer burns at noon but stays open until turned in, that
+NPC offering nothing new meanwhile, and `CloseBurnedQuestJobs` closes once the 33 rows the old
+rule had left marked as taken. Verify the `quest_progress` TABLE after that restart, not the log
+line.
+
+Before it: the innkeeper's six recipe lessons became the owner's own copy — «ти» by decision,
+opening with the player's nickname, three of them `.m`/`.f` because «ти» genders the player
+again — and the board and the journal stopped quoting the recipe at all, since it is his gift at
+the payout.
+
+**Deployed 2026-09-19 14:21: ten commits in one pull** (`7050933` → `536fbf6`), schema v12, no
+migration in that batch; the Pi's own `--content-digest` matched the Mac byte for byte before the
+restart was ordered, `Code: 400` held at 913, and nothing below is waiting on a deploy any more —
+only on a human opening the screens.
+
+Fourth: one sword had two names — the bag's button passed the row's tier and the equip/unequip banner under it did not,
 reported from play with a screenshot. The same shape was found one layer down, where
 `GearConditionService` reported broken pieces as bare item ids and lost the tier before any
 screen could print it. Third: choosing what to
@@ -1695,12 +1711,11 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is a restart, then one session in Telegram.** `c36822a` and `bf67243` are Swift plus
-locale strings, so `/reload` carries neither and `pm2 restart ROI` is the only way in; until
-it runs, a death still destroys a class weapon left in the bag, an estate slot still builds on
-one tap, and one sword still has two names. Everything older than those two is already live
-and waits only on a human opening the screens. The walk list, grouped by what shipped when, is
-in `Prompt.md`; every defect this project has found came from someone glancing at a screen.
+**Next is one session in Telegram, then shipping `328bf88`.** Three deploys' worth of surfaces
+have never been opened by a human — the whole kitchen among them — and every defect this project
+has found came from someone glancing at a screen. The walk list, grouped by what shipped when,
+is in `Prompt.md`.
 
 Left open on purpose: the estate calls one place three words («Слот» / «наділ» / «Ділянка»),
-and six functions dead since April. Both are in `Prompt.md` → Open, decided but not done.*
+the Master's blade trial names Пуща while any kill counts, and six functions dead since April.
+All three are in `Prompt.md` → Open, decided but not done.*

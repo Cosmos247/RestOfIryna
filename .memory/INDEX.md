@@ -33,14 +33,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. The Pi runs **`b63f835`** since **2026-09-17 00:10** (schema v12,
-  no migration in that batch; the Pi's own digest was matched byte for byte before the
-  restart was ordered). **Five commits are undeployed** — `c36822a`, `bf67243`, `4f49e2a`,
-  `fa46ef2` and `dc82444`. The last three move `content/data` as well as Swift, so the JSON and
-  the binary ship together; locale strings moved in all five, so `/reload` carries none of it
-  and only `pm2 restart ROI` will. Still no migration — schema v12 stands. The next action is
-  that restart, and after it a human opening the screens: a backlog spanning four deploys and
-  never walked.
+  play surfaces a need for. The Pi runs **`536fbf6`** since **2026-09-19 14:21** (schema v12,
+  digest `records 6588329ab2bdbc70`, matched byte for byte before the restart was ordered);
+  that deploy cleared ten commits at once. **One commit is undeployed and unpushed** —
+  `328bf88`, the quest carry-over, which carries the **first data migration since
+  `ResetDeepestKm`**, so its restart writes to the database and the `quest_progress` TABLE is
+  what to verify afterwards. The next action is a human opening the screens: a backlog spanning
+  three deploys and never walked.
 - **State of the deployment, and the surfaces still unwalked: `Prompt.md`.** That file is
   the session primer and the only place the current commit, digest baseline and next
   action are kept in sync.
@@ -108,7 +107,13 @@ following the rule you are about to break. The ones a fresh session most often w
 - `project-food-is-priced-not-picked` — a dish restores the trader buy-price of its ingredients
   in Vigor and a quarter of that in HP; price a new dish's inputs, never pick its number
 - `project-npcs-teach-recipes` — the innkeeper's daily job pays the lowest unearned rung of
-  `recipes.json` → `unlocks`, one rung per job, gated on estate tier
+  `recipes.json` → `unlocks`, one rung per job, gated on estate tier — and announced nowhere
+  in advance since 2026-09-19: it is his gift at the payout
+- `project-quests-taken-by-hand` — a job counts only once taken at the NPC, and since
+  2026-09-19 a taken job never burns: ONE open job per NPC, today's offer waits behind
+  yesterday's, and only a carried job can be dropped
+- `feedback-formal-address-vy` — every uk string speaks «ви», with ONE exception the sweep
+  must not "fix": the innkeeper's six recipe lessons, which the owner wrote in «ти»
 - `feedback-a-checker-that-cannot-fail` — the reachability rule proved a scroll EXISTED for
   months instead of asking whether a player could hold one; every checker needs its negative test
 
