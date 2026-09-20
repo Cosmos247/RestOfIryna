@@ -34,7 +34,7 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
 66.6 s, digest matched first, `Code: 400` at 913): four commits, no migration, content hash
 `83dd8a9a`, digest `records 14d4fdd6442626ae`.
 
-- `PENDING-STREETS` (09-20) **the capital became two streets** — six keyboard rows were the
+- `f57a6b9` (09-20) **the capital became two streets** — six keyboard rows were the
   constraint on adding anything else to town, so the places split across 👑 Замкова (bazaar,
   arena, guilds) and 🏘 Підзамче (trader, Master, innkeeper, fortune teller) and the arrival
   square kept none of them: three rows where there were six, with room for two more places on
