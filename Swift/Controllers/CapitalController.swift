@@ -7,15 +7,17 @@
 //
 //  The capital is the second hub city of the kingdom. The player travels to
 //  it from their estate (a two-minute trip handled by `TravelService`), and
-//  once there picks between six locations — Market, PvP Arena, Trader,
-//  Fortune Teller, Master, Tavern. Each is a stub for now; they'll grow
-//  their own controllers as Phase 6.x lands feature by feature.
+//  once there reaches seven places — Bazaar, Arena, Trader, Fortune Teller,
+//  Master, Tavern and Guildhall. The Arena and the Guildhall are controllers
+//  of their own; the rest live here as inline sub-screens.
 //
-//  Reply-keyboard nav: the six locations + Leave Capital + Inventory /
-//  Profile utility buttons take over the bottom keyboard while the player
-//  is in town. Tapping a location swaps the message body without touching
-//  the keyboard — so a player can hop from Tavern to Market in two taps
-//  without backtracking through a root menu.
+//  Reply-keyboard nav: the player lands on the SQUARE, which offers the two
+//  streets the places are split across — Castle Street above, the Lower Town
+//  under the wall — plus Inventory / Profile and Leave Capital. A street
+//  swaps the keyboard for its own places; tapping a place swaps the message
+//  body without touching the keyboard, so hopping from the Tavern to the
+//  Master is still one tap. The street lives in `User.capitalStreet` and is
+//  display state only — see `Street` below for why routerName does not move.
 //
 
 import Fluent
@@ -46,7 +48,44 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         var buttonKey: String { "capital.button.\(rawValue)" }
     }
 
+    // MARK: Streets
+
+    /// The two streets the capital's places are split across. The square the
+    /// player arrives on is the ABSENCE of a street (`User.capitalStreet ==
+    /// nil`) — it holds no place of its own, only the two roads out of it.
+    ///
+    /// A street is a KEYBOARD, not a router. `routerName` stays "capital" all
+    /// over town, so every location button and every inline callback stays
+    /// registered and reachable whichever street the player is on; the street
+    /// only decides what is VISIBLE. That is what keeps the split from
+    /// touching the trader, tavern, market and master flows at all, and what
+    /// makes a stale street keyboard — one left on screen across a restart —
+    /// still do the right thing when it is tapped.
+    ///
+    /// Which place sits where is a frequency decision before it is a
+    /// thematic one: the three job-giving NPCs and the fortune teller are the
+    /// errands of an ordinary visit, so they share one street and an ordinary
+    /// visit costs exactly one extra tap.
+    enum Street: String, CaseIterable {
+        /// Up under the palace: the stall market on the castle square, the
+        /// wax-sealed arena gate, the chartered guild halls. Everything done
+        /// before witnesses and by charter.
+        case castle
+        /// The working quarter along the wall: the trader's shop by the gate,
+        /// the Master's workshop, the inn, and the fortune teller's room off
+        /// a crooked lane. Everything done on business.
+        case lower
+
+        var titleKey: String  { "capital.street.\(rawValue).title" }
+        var bodyKey: String   { "capital.street.\(rawValue).body" }
+        var buttonKey: String { "capital.button.street.\(rawValue)" }
+        /// `Assets/capital/street_<id>.jpg`; missing art falls back to text
+        /// inside `sendCachedPhoto`, same as every other capital backdrop.
+        var assetName: String { "street_\(rawValue)" }
+    }
+
     static let leaveButtonKey = "capital.button.leave"
+    static let backToSquareButtonKey = "capital.button.back_to_square"
 
     // MARK: - Controller Lifecycle
 
@@ -88,6 +127,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize(Location.master.buttonKey,  locale: locale)] = onMaster
                 router[lingo.localize(Location.tavern.buttonKey,  locale: locale)] = onTavern
                 router[lingo.localize("capital.button.guild",     locale: locale)] = onGuild
+            }
+
+            // The two streets and the road back to the square. Three taps is
+            // the whole cost of the split: the place buttons above stay
+            // registered here whichever keyboard is on screen, so a street is
+            // only ever a narrower VIEW of this same router.
+            for locale in SupportedLocale.allCases {
+                router[lingo.localize(Street.castle.buttonKey,    locale: locale)] = onStreetCastle
+                router[lingo.localize(Street.lower.buttonKey,     locale: locale)] = onStreetLower
+                router[lingo.localize(Self.backToSquareButtonKey, locale: locale)] = onBackToSquare
             }
 
             // Leave-capital triggers the return trip back to the estate.
@@ -177,8 +226,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        // Random text falls back to re-rendering the welcome screen.
-        try await renderWelcome(context: context)
+        // Random text falls back to re-rendering the screen the player is
+        // standing on — the street if they are on one, the square otherwise.
+        // Drawing the square's prose under a street's keyboard would put the
+        // words and the buttons on two different screens.
+        try await renderCurrentScreen(context: context)
         return true
     }
 
@@ -210,6 +262,34 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = arena.routerName
         try await context.session.saveAndCache(in: context.db)
         try await arena.showArenaHome(context: context)
+    }
+
+    // MARK: - Street handlers
+
+    private func onStreetCastle(context: Context) async throws -> Bool {
+        try await enterStreet(.castle, context: context); return true
+    }
+
+    private func onStreetLower(context: Context) async throws -> Bool {
+        try await enterStreet(.lower, context: context); return true
+    }
+
+    /// Back to the square — and the square is where EVERY return path lands,
+    /// including the Arena's and the Guildhall's back buttons, which come
+    /// through `showCapital`. Remembering the street a player left from would
+    /// mean answering "and what if nobody remembers", which is a question the
+    /// square does not have.
+    private func onBackToSquare(context: Context) async throws -> Bool {
+        context.session.capitalStreet = nil
+        try await context.session.saveAndCache(in: context.db)
+        try await renderWelcome(context: context)
+        return true
+    }
+
+    private func enterStreet(_ street: Street, context: Context) async throws {
+        context.session.capitalStreet = street.rawValue
+        try await context.session.saveAndCache(in: context.db)
+        try await renderStreet(street, context: context)
     }
 
     private func onLeave(context: Context) async throws -> Bool {
@@ -245,8 +325,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         if context.session.location == "capital" {
             // Already in town — just (re-)render the welcome and ensure the
-            // routerName + capital reply-keyboard are in place.
+            // routerName + capital reply-keyboard are in place. The street is
+            // cleared here because this is the single re-entry point every
+            // other controller uses (Arena, Guildhall, Inventory, Estate), so
+            // clearing it once here is what makes "back lands on the square"
+            // true everywhere rather than in each caller.
             context.session.routerName = routerName
+            context.session.capitalStreet = nil
             try await context.session.saveAndCache(in: context.db)
             try await renderWelcome(context: context)
             return
@@ -286,6 +371,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // Estate/Capital/Explore taps fall into MainController's travel
             // guard and show the countdown banner instead of executing.
             context.session.routerName = Controllers.mainController.routerName
+            // Leaving town in either direction ends the street; arriving in
+            // the capital renders the square, and `sendWelcome` builds its
+            // keyboard from this same field.
+            context.session.capitalStreet = nil
             try await context.session.saveAndCache(in: context.db)
             try await Controllers.capitalController.renderTripStarted(
                 context: context, destination: destination, endsAt: state.endsAt
@@ -304,7 +393,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // Caller's guard should have caught this; render a neutral
             // hub view so the player isn't left without context.
             if destination == .capital {
-                try await Controllers.capitalController.renderWelcome(context: context)
+                try await Controllers.capitalController.renderCurrentScreen(context: context)
             } else {
                 try await Controllers.mainController.showMainMenu(context: context)
             }
@@ -312,6 +401,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     // MARK: - Rendering
+
+    /// Where the player is standing in town right now — a street, or the
+    /// square. Every path that has to redraw "here" without deciding where
+    /// "here" is goes through this one.
+    private func renderCurrentScreen(context: Context) async throws {
+        if let street = context.session.capitalStreet.flatMap(Street.init(rawValue:)) {
+            try await renderStreet(street, context: context)
+        } else {
+            try await renderWelcome(context: context)
+        }
+    }
 
     private func renderWelcome(context: Context) async throws {
         try await Self.sendWelcome(toUser: context.session, bot: context.bot, lingo: context.lingo)
@@ -332,6 +432,25 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             replyMarkup: markup,
             toUser: user,
             bot: bot
+        )
+    }
+
+    /// A street's own screen: backdrop, the prose that says what stands on
+    /// it, and the street's keyboard. Same shape as `renderLocation` — the
+    /// street is a place the player is standing in, not a menu.
+    private func renderStreet(_ street: Street, context: Context) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let title = lingo.localize(street.titleKey, locale: locale)
+        let body  = lingo.localize(street.bodyKey, locale: locale)
+        let text  = "<b>\(title)</b>\n\n\(body)"
+
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/capital/\(street.assetName).jpg",
+            caption: text,
+            replyMarkup: generateControllerKB(session: context.session, lingo: lingo),
+            toUser: context.session,
+            bot: context.bot
         )
     }
 
@@ -3470,26 +3589,52 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Keyboard
 
+    /// Three keyboards behind one override, picked by `session.capitalStreet`
+    /// — which is why the street is a column on `User` and not something an
+    /// actor has to be asked for: this is called synchronously, including by
+    /// `currentKeyboard(for:)` when a refusal has to carry the keyboard of
+    /// the screen the player is actually on.
+    ///
+    /// The square holds no place of its own. Six rows became three, and each
+    /// street has room for two more places before it is back to what one
+    /// screen used to carry.
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
-        let l = lingo
         let loc = session.locale
-        let market  = TGKeyboardButton(text: l.localize(Location.market.buttonKey,  locale: loc))
-        let arena   = TGKeyboardButton(text: l.localize(Location.arena.buttonKey,   locale: loc))
-        let trader  = TGKeyboardButton(text: l.localize(Location.trader.buttonKey,  locale: loc))
-        let fortune = TGKeyboardButton(text: l.localize(Location.fortune.buttonKey, locale: loc))
-        let master  = TGKeyboardButton(text: l.localize(Location.master.buttonKey,  locale: loc))
-        let tavern  = TGKeyboardButton(text: l.localize(Location.tavern.buttonKey,  locale: loc))
-        let guild   = TGKeyboardButton(text: l.localize("capital.button.guild",     locale: loc))
-        let leave   = TGKeyboardButton(text: l.localize(Self.leaveButtonKey,        locale: loc))
-        let markup = TGReplyKeyboardMarkup(keyboard: [
-            [market, arena],
-            [trader, fortune],
-            [master, tavern],
-            [guild],
-            [Commands.inventory.button(for: session, lingo),
-             Commands.profile.button(for: session, lingo)],
-            [leave]
-        ], resizeKeyboard: true)
-        return TGReplyMarkup.replyKeyboardMarkup(markup)
+        func button(_ key: String) -> TGKeyboardButton {
+            TGKeyboardButton(text: lingo.localize(key, locale: loc))
+        }
+        let utility = [Commands.inventory.button(for: session, lingo),
+                       Commands.profile.button(for: session, lingo)]
+        let back = button(Self.backToSquareButtonKey)
+
+        let rows: [[TGKeyboardButton]]
+        switch session.capitalStreet.flatMap(Street.init(rawValue:)) {
+        case .lower:
+            // The errands of an ordinary visit: sell, mend, eat, and the
+            // fortune teller, whose 24h cooldown makes her one of them.
+            rows = [
+                [button(Location.trader.buttonKey), button(Location.master.buttonKey)],
+                [button(Location.tavern.buttonKey), button(Location.fortune.buttonKey)],
+                utility,
+                [back]
+            ]
+        case .castle:
+            // Everything with another player or the Crown on the far side.
+            rows = [
+                [button(Location.market.buttonKey), button(Location.arena.buttonKey)],
+                [button("capital.button.guild"), back],
+                utility
+            ]
+        case nil:
+            // The square: the two roads out of it, and the road home.
+            rows = [
+                [button(Street.castle.buttonKey), button(Street.lower.buttonKey)],
+                utility,
+                [button(Self.leaveButtonKey)]
+            ]
+        }
+        return TGReplyMarkup.replyKeyboardMarkup(
+            TGReplyKeyboardMarkup(keyboard: rows, resizeKeyboard: true)
+        )
     }
 }

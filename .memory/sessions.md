@@ -11,10 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Undeployed: `328bf88`,** and not pushed either — `origin/main` is at `536fbf6`. It is built,
-tested and verified, and it carries the **first data migration since `ResetDeepestKm`**
-(`CloseBurnedQuestJobs`), so the next restart writes to the database: verify the TABLE
-afterwards, never the log line. Swift and locale strings only, so `/reload` carries none of it.
+**Undeployed: the capital street split and `328bf88`,** neither pushed — `origin/main` is at
+`536fbf6`. Both are built, tested and verified, and between them the next restart runs TWO
+migrations: `CloseBurnedQuestJobs` (the first DATA migration since `ResetDeepestKm` — verify the
+`quest_progress` TABLE afterwards, never the log line) and `AddCapitalStreet` (additive, one
+nullable column, nothing to verify beyond the column existing). Swift and locale strings only in
+both, so `/reload` carries neither; content schema stays v12 and all four digest halves are
+unchanged.
 
 **Deployed 2026-09-19 14:21 Kyiv** — the Pi took `536fbf6`, ten commits in one pull
 (`7050933` → `536fbf6`), schema **v12**, no migration in that batch. Linux build 110 s; the
@@ -31,6 +34,16 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
 66.6 s, digest matched first, `Code: 400` at 913): four commits, no migration, content hash
 `83dd8a9a`, digest `records 14d4fdd6442626ae`.
 
+- `PENDING-STREETS` (09-20) **the capital became two streets** — six keyboard rows were the
+  constraint on adding anything else to town, so the places split across 👑 Замкова (bazaar,
+  arena, guilds) and 🏘 Підзамче (trader, Master, innkeeper, fortune teller) and the arrival
+  square kept none of them: three rows where there were six, with room for two more places on
+  each street. The pattern: **a street is a keyboard, not a router.** `routerName` stays
+  "capital" all over town, so every location button and every inline callback stayed registered
+  and untouched, and the whole feature is one nullable column, three handlers and 7 locale keys
+  × 2 — no callback forwarding, no sub-controller, no rewiring. Placement was decided on
+  frequency before theme: the standard visit (sell, mend, eat) is one street, so it costs one
+  extra tap instead of three.
 - `f702334` (09-20) **give the walk list a home, and cut the session preamble by a third** —
   docs only. The three session-loaded files had doubled since the 09-12 audit and stood 19%
   above the peak that pass was called in to fix. The walk list and "Open, decided but not
@@ -312,6 +325,65 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-20 (the capital became two streets)
+
+Asked for by the owner, not found by playing: the capital keyboard stood at six rows and more
+buttons were coming, so the hub had to be split before it grew. The session was design first —
+street names and a placement, both chosen by the owner from options — then the build.
+
+### What the split actually costs, and where
+
+The reply keyboard of the capital is persistent, so today a hop from the trader to the Master is
+ONE tap with no backtracking. That is what a split spends, and it does not spend it evenly: a
+street keeps its own places one tap apart, but crossing streets costs two. Measured against the
+standard visit — arrive, sell the haul, mend the gear, buy food, leave — the placements ranged
+from **+1 tap to +3**, and that range decided the design more than the theme did.
+
+So the three job-giving NPCs went together. The fortune teller joined them on a second reading:
+a 24 h cooldown makes her an errand of an ordinary visit rather than an occasional stop, and a
+room behind a wool curtain belongs in a lower-town lane rather than under a palace — two
+arguments pointing the same way. The owner took that refinement.
+
+The same arithmetic said **`🏡 До маєтку` belongs on every street keyboard**, since leaving is the
+one thing a player always does; the owner chose to keep it on the square only, so a departure from
+a street is two taps. Recorded here because it is one row if it reads wrong in play.
+
+### A street is a keyboard, not a router
+
+The obvious build — a controller per street, as the Guildhall and the Arena are — would have
+meant re-registering every location button, forwarding every inline callback (`trader:` `tavern:`
+`market:` `master:` `quest:`) and re-deciding the catch-all that keeps inline buttons from going
+dead. Keeping `routerName` at `"capital"` and putting the street in `User.capitalStreet` avoids
+all of it: the capital's Router still has every button registered, so the street narrows what is
+VISIBLE and nothing about what is REACHABLE. Two things fall out of that for free — a street
+keyboard still standing on a player's screen after a restart works exactly as before, and
+`/menu` hands back the right street because it already asks `generateControllerKB`.
+
+A column and not an actor-held value, because `generateControllerKB(session:lingo:)` is
+synchronous — it is what `currentKeyboard(for:)` calls when a refusal has to carry the keyboard
+of the screen the player is on, and there is no place to await there.
+
+### The two seams worth naming
+
+**Redraw "here", not "the capital".** `unmatched` answered stray text by rendering the welcome
+screen, and `beginTrip`'s `alreadyAtDestination` did the same. With a street set, that draws the
+square's prose under the street's keyboard — words and buttons on two different screens. Both now
+go through `renderCurrentScreen`, which asks the field rather than assuming.
+
+**Clear the street in one place, not in each caller.** `showCapital` is the single re-entry point
+the Arena, the Guildhall, the bag and the estate all use, so clearing it there is what makes
+"back lands on the square" true for all of them without any of them knowing streets exist.
+`beginTrip` clears it too, because leaving town in either direction ends the street.
+
+### Verification
+
+`swift build` clean; `swift test` 271/271; `roi-content validate --strict` 0 errors 0 warnings;
+`--content-digest` unchanged on all four halves (`records 6588329ab2bdbc70` · `tuning
+43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`), which is the point of
+running it — nothing in `content/data` was touched and the digest says so. Not deployed, and the
+art (`Assets/capital/street_castle.jpg`, `street_lower.jpg`) is not supplied, so both street
+screens arrive as text until it is.
 
 ## Session — 2026-09-19 (the innkeeper's own words, and the job that stopped burning)
 

@@ -410,6 +410,39 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred.
+- [x] **Two streets** *(landed 2026-09-20, NOT DEPLOYED)* — the capital keyboard had reached
+      six rows and was the constraint on adding anything else to town, so the places split
+      across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
+      Street) carries 🛒 Базар · ⚔️ Ристалище · 🏰 Гільдії — everything with another player
+      or the Crown on the far side; **🏘 Підзамче** (the Lower Town) carries 💼 Крамар ·
+      🛠 Майстер · 🍺 Шинок · 🔮 Ворожка — the errands of an ordinary visit. The square holds
+      `[👑 Замкова][🏘 Підзамче]` + `[🎒 Сумка][👤 Профіль]` + `[🏡 До маєтку]`, three rows
+      where there were six, and each street has room for two more places before it is back
+      to what one screen used to carry.
+      **A street is a keyboard, not a router.** `routerName` stays `"capital"` all over town,
+      so every location button and every inline callback (trader, tavern, market, master,
+      quest board) stays registered on all three screens and needed no rewiring at all — and
+      a street keyboard left on a player's screen across a restart still does the right
+      thing, because the street decides what is VISIBLE, not what is reachable. The choice
+      is `User.capitalStreet` (nullable, `AddCapitalStreet`) rather than
+      something an actor holds, because `generateControllerKB` is synchronous: it is what
+      `currentKeyboard(for:)` calls on the refusal path, with nowhere to await.
+      Three new handlers, `renderStreet` mirroring `renderLocation`, and `renderCurrentScreen`
+      for the two paths that redraw "here" without deciding where here is — stray text in
+      `unmatched`, and `beginTrip`'s `alreadyAtDestination` — since drawing the square's prose
+      under a street's keyboard would put the words and the buttons on two different screens.
+      The street is cleared in exactly two places: `showCapital`, the single re-entry point
+      every other controller uses, which is what makes "back lands on the square" true for the
+      Arena and the Guildhall without either of them knowing about streets; and `beginTrip`,
+      because leaving town in either direction ends the street.
+      **Which place sits where is a frequency decision before a thematic one.** The standard
+      visit — sell the haul, mend the gear, buy food — is one street, so it costs exactly one
+      extra tap instead of three; the fortune teller joined it because a 24 h cooldown makes
+      her an errand too, and because a room behind a wool curtain belongs in the lower town
+      rather than under the palace. 7 locale keys × 2 and a rewritten `capital.welcome` that
+      names both roads and what stands on each, since nothing else tells the player what is up
+      there. `Assets/capital/street_castle.jpg` and `street_lower.jpg` are **not supplied** —
+      `sendCachedPhoto` falls back to text, and dropping the art in later auto-caches it.
 - [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 
 ---
@@ -1632,6 +1665,31 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Everything except the first block is LIVE and unwalked**; the first is waiting
 on `328bf88`.
 
+**Added 2026-09-20 — NOT LIVE. The capital is two streets now; this walk is the whole hub:**
+- **arrive in the capital.** The screen must offer `[👑 Замкова][🏘 Підзамче]` / `[🎒 Сумка]
+  [👤 Профіль]` / `[🏡 До маєтку]` and nothing else — three rows — and the welcome text must
+  name both roads and what stands on each. This is also the only place a player is told what
+  is up there, so read it as a first-timer would.
+- **walk both streets.** Підзамче: `[💼 Крамар][🛠 Майстер]` / `[🍺 Шинок][🔮 Ворожка]` /
+  `[🎒 Сумка][👤 Профіль]` / `[🏛 На площу]`. Замкова: `[🛒 Базар][⚔️ Ристалище]` /
+  `[🏰 Гільдії][🏛 На площу]` / `[🎒 Сумка][👤 Профіль]`. Each street has its own prose; there
+  is no art yet, so both arrive as text — that is the fallback working, not a defect.
+- **open every place from its street** and confirm the keyboard does not change under you:
+  the trader, the Master, the tavern and the fortune teller all keep Підзамче's keyboard, and
+  the bazaar keeps Замкова's. Hopping Крамар → Майстер → Шинок must still be one tap each.
+- **the Arena and the Guildhall come back to the SQUARE**, not to Замкова — that is the
+  decision, not a bug. Same for 🎒 Сумка → back, and for `/start` → Capital.
+- **type something random on a street.** It must redraw THAT street, not the square.
+- **`/menu` on a street** must hand back that street's keyboard.
+- **leave from a street**: 🏡 До маєтку is deliberately NOT on a street keyboard, so it is
+  `[🏛 На площу]` then `[🏡 До маєтку]` — two taps. If that reads wrong in play, it is one row.
+- **come back from the estate**: the square again, never the street you left from.
+- **EN locale** — walk the same path in English: `👑 Castle Street` / `🏘 Lower Town` /
+  `🏛 Back to the square`, and the rewritten welcome.
+- **after the deploy**: the column is nullable, so every existing player starts on the square,
+  which is exactly the screen they had. Nothing to verify in the table beyond the column
+  existing.
+
 **Added 2026-09-19 — NOT LIVE (`328bf88`). A taken job no longer burns at noon (owner's design):**
 - **take a job and leave it past 12:00.** The board must then show THAT job — no date header,
   by request — with «🔒 Нове замовлення відкриється, щойно здасте це.» and no Take button.
@@ -1902,14 +1960,34 @@ unrelated commit on purpose.
   `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
   (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
   Found by the 09-16 sweep; deleting them is a standalone cleanup, not part of any feature.
+- **A seventh: `CapitalController.renderLocation`**, dead since the last stub location grew its
+  own renderer — every one of the six now has one (`showMarket` · `onArenaEnter` · `showTrader`
+  · `showFortune` · `showMaster` · `showTavern`). Found 2026-09-20 while verifying the street
+  split, which did not cause it: it was already uncalled at `f702334`. Kept for now because
+  `renderStreet` was modelled on it and the comparison is worth more in review than the
+  twenty lines cost, but it goes with the other six whenever that cleanup happens.
 - **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, no
   estate at levels 1–3, seven `roster_off_curve` warnings and `opening.vigor_bankrupt` —
   are all reported by every `simulate` run and all deliberate.
 
 ---
 
-*Last updated: 2026-09-20 — **one commit is built and undeployed: `328bf88`**, and it is also
-unpushed (`origin/main` is at `536fbf6`). It is the first data migration since `ResetDeepestKm`:
+*Last updated: 2026-09-20 — **two commits are built and undeployed**, both also unpushed
+(`origin/main` is at `536fbf6`).
+
+The newest splits the capital into two streets, because six keyboard rows had become the
+constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
+guilds; 🏘 Підзамче takes the trader, the Master, the innkeeper and the fortune teller; the
+square keeps only the two roads and the way home. A street is a KEYBOARD and not a router —
+`routerName` stays "capital" everywhere in town — so no location flow, callback or sub-
+controller had to change, and the whole cost is one nullable column (`AddCapitalStreet`),
+three handlers and 7 locale keys × 2. It is a DB migration but an additive one, and nothing in
+`content/data` moved: **content schema stays v12** and all four digest halves are unchanged
+(`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` ·
+`quests 30de20902006e3b9`). Locale strings moved and Lingo is not hot-reloaded, so `/reload`
+carries none of it.
+
+Under it, `328bf88`. It is the first data migration since `ResetDeepestKm`:
 a daily job the player has TAKEN no longer burns at noon but stays open until turned in, that
 NPC offering nothing new meanwhile, and `CloseBurnedQuestJobs` closes once the 33 rows the old
 rule had left marked as taken. Verify the `quest_progress` TABLE after that restart, not the log

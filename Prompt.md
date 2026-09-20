@@ -33,7 +33,7 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-20, three commits ahead of the Pi, one of them code)
+### Where things stand right now (2026-09-20, four commits ahead of the Pi, two of them code)
 
 | | |
 |---|---|
@@ -41,7 +41,7 @@ someone PLAYING; none from a test.
 | HEAD | **`f702334`** — the doc pass that moved the walk list to `TODO.md` and cut the preamble by a third — plus a one-line hash fill on top of it. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
 | pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — `328bf88`, `a604a62`, `f702334` and the hash fill. Push is user-side |
 | running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`328bf88`** — a taken job no longer burns at noon, plus the one-time `CloseBurnedQuestJobs` |
+| committed but NOT deployed | **the capital street split** — 👑 Замкова / 🏘 Підзамче, `AddCapitalStreet`, six keyboard rows down to three — and **`328bf88`**, a taken job no longer burning at noon plus the one-time `CloseBurnedQuestJobs`. Two migrations in one restart; only `CloseBurnedQuestJobs` writes data. Locale strings in both, so **`/reload` carries neither** |
 
 **The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
 newest block is live and waiting only on a human opening the screens.
@@ -67,7 +67,7 @@ Ten commits in one pull, `7050933` → `536fbf6`: six change the game, and four 
 What each one changed, why, and its `validate` / `simulate` / `swift test` / digest block: the
 **Commit index** at the top of `.memory/sessions.md`, which now carries every hash above.
 
-### Next action: walk the game, then ship `328bf88`
+### Next action: walk the game, then ship the two waiting commits
 
 **Step one is someone opening the screens.** Every defect this project has found came from
 glancing at a screen, not from running anything, so this is the highest-yield thing available
@@ -76,9 +76,10 @@ them, and none of it has been opened by a human. It is fourteen blocks grouped b
 when, in **`TODO.md` → "Walk list — shipped surfaces nobody has opened"**. Everything in it
 except the newest block is LIVE.
 
-**Step two is shipping `328bf88`** — push, pull, build, `pm2 restart ROI` (ask first), then
-check the `quest_progress` TABLE with the query above, because this one migrates data. Only
-the newest walk block is waiting on it.
+**Step two is shipping the two waiting commits** — push, pull, build, `pm2 restart ROI` (ask
+first), then check the `quest_progress` TABLE with the query above, because `328bf88` migrates
+data. `AddCapitalStreet` is additive and nullable: nothing to verify past the column existing,
+and every existing player starts on the square. The two newest walk blocks are waiting on them.
 
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:

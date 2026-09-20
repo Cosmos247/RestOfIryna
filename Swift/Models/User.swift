@@ -172,6 +172,20 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "location")
     var location: String
 
+    /// Which capital street's keyboard the player has on screen right now.
+    /// Nil is the square — the capital's root junction, which holds no place
+    /// of its own, only the two roads out of it.
+    ///
+    /// This is DISPLAY state, not position. `routerName` stays "capital" on
+    /// every street, so the whole capital Router — every location button and
+    /// every inline callback — keeps working no matter which keyboard the
+    /// player happens to be looking at, and a street keyboard left standing
+    /// from before a restart still does the right thing. Cleared by
+    /// `showCapital` and by `CapitalController.beginTrip`, so the square is
+    /// what every return path lands on.
+    @OptionalField(key: "capital_street")
+    var capitalStreet: String?
+
     /// Phase 6.4 — Fortune Teller's drawn card. `activeFortuneCardId` is
     /// the card's catalogue id (e.g. "19_sun"); `activeFortuneExpiresAt`
     /// is BOTH the effect's expiry AND the next-draw cooldown gate. Nil
