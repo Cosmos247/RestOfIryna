@@ -49,6 +49,9 @@ public struct ContentBundle: Sendable {
     public let plots: PlotFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
+    /// The King's decree chain, in chain order. Optional for the same reason
+    /// as the files above; `ContentLoader` always supplies it.
+    public let king: KingFileDTO?
     /// Foraging pools by depth band. Optional so a fixture bundle can omit it.
     public let zones: ZoneFileDTO?
     /// Phase 4's six balance tables. Optional for the same reason as the files
@@ -84,6 +87,7 @@ public struct ContentBundle: Sendable {
         plots: PlotFileDTO? = nil,
         fortune: FortuneFileDTO? = nil,
         quests: QuestFileDTO? = nil,
+        king: KingFileDTO? = nil,
         zones: ZoneFileDTO? = nil,
         tuning: TuningBundleDTO? = nil,
         contentHash: String
@@ -111,6 +115,7 @@ public struct ContentBundle: Sendable {
         self.plots = plots
         self.fortune = fortune
         self.quests = quests
+        self.king = king
         self.zones = zones
         self.tuning = tuning
         self.contentHash = contentHash
@@ -125,6 +130,7 @@ public struct ContentBundle: Sendable {
             + "\(trader?.listings.count ?? 0) trader rows · \(tavern?.food.count ?? 0) dishes · "
             + "\(arena?.leagues.count ?? 0) leagues · \(fortune?.cards.count ?? 0) cards · "
             + "\(quests?.pools.reduce(0) { $0 + $1.quests.count } ?? 0) quests · "
+            + "\(king?.decrees.count ?? 0) decrees · "
             + "timeScale \(tuning?.time.scale ?? 1.0)"
     }
 }

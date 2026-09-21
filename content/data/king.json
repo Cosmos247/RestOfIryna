@@ -1,0 +1,572 @@
+{
+  "decrees" : [
+    {
+      "conditions" : [
+        {
+          "kind" : "reach_km",
+          "target" : 3
+        }
+      ],
+      "id" : "king.step_out",
+      "level" : 1,
+      "reward" : {
+        "vigor" : 25
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "beast_kills",
+          "target" : 5
+        }
+      ],
+      "id" : "king.first_blood",
+      "level" : 1,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 2
+        },
+        "vigor" : 25
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "arrive_capital"
+        }
+      ],
+      "id" : "king.present_yourself",
+      "level" : 2,
+      "reward" : {
+        "silver" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "sell_to_trader"
+        }
+      ],
+      "id" : "king.honest_scales",
+      "level" : 2,
+      "reward" : {
+        "silver" : 40
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "finish_npc_quest"
+        }
+      ],
+      "id" : "king.work_will_be_found",
+      "level" : 2,
+      "reward" : {
+        "vigor" : 30
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "reach_km",
+          "target" : 7
+        }
+      ],
+      "id" : "king.deeper_in",
+      "level" : 3,
+      "reward" : {
+        "vigor" : 30
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "beast_kills",
+          "target" : 10
+        }
+      ],
+      "id" : "king.catch_by_weight",
+      "level" : 3,
+      "reward" : {
+        "vigor" : 40,
+        "xp" : 150
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "warehouse_materials",
+          "materials" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 15
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 15
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 5
+            }
+          ]
+        }
+      ],
+      "id" : "king.forest_feeds",
+      "level" : 3,
+      "reward" : {
+        "vigor" : 40
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 4
+        }
+      ],
+      "id" : "king.worthy_steward",
+      "level" : 4,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 2
+        },
+        "silver" : 50,
+        "vigor" : 30
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 2
+        }
+      ],
+      "id" : "king.own_home",
+      "level" : 4,
+      "reward" : {
+        "vigor" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 2
+        }
+      ],
+      "id" : "king.sharp_edge",
+      "level" : 4,
+      "reward" : {
+        "vigor" : 40
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "cook_dish"
+        }
+      ],
+      "id" : "king.fire_in_the_hearth",
+      "level" : 4,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 3
+        }
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "claim_plot"
+        }
+      ],
+      "id" : "king.first_ground",
+      "level" : 4,
+      "reward" : {
+        "vigor" : 40
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "harvest_plot"
+        }
+      ],
+      "id" : "king.harvest",
+      "level" : 4,
+      "reward" : {
+        "silver" : 100
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "send_passive"
+        }
+      ],
+      "id" : "king.while_youre_away",
+      "level" : 5,
+      "reward" : {
+        "vigor" : 50
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "warehouse_materials",
+          "materials" : [
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 10
+            }
+          ]
+        }
+      ],
+      "id" : "king.stone_and_iron",
+      "level" : 5,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 3
+        },
+        "silver" : 120
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "warehouse_materials",
+          "materials" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 40
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 40
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 10
+            }
+          ]
+        }
+      ],
+      "id" : "king.full_storeroom",
+      "level" : 6,
+      "reward" : {
+        "vigor" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 7
+        }
+      ],
+      "id" : "king.strength_of_a_steward",
+      "level" : 7,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 2
+        },
+        "vigor" : 45
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 3
+        }
+      ],
+      "id" : "king.second_step",
+      "level" : 7,
+      "reward" : {
+        "vigor" : 65
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 3
+        }
+      ],
+      "id" : "king.tempered_steel",
+      "level" : 8,
+      "reward" : {
+        "vigor" : 70
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "bag_tier",
+          "target" : 2
+        }
+      ],
+      "id" : "king.more_on_the_shoulders",
+      "level" : 8,
+      "reward" : {
+        "vigor" : 70
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "craft_any"
+        }
+      ],
+      "id" : "king.hands_of_a_master",
+      "level" : 8,
+      "reward" : {
+        "silver" : 100
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "claim_plot",
+          "plotType" : "training_ground"
+        }
+      ],
+      "id" : "king.science_of_battle",
+      "level" : 9,
+      "reward" : {
+        "vigor" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "learn_technique"
+        }
+      ],
+      "id" : "king.first_technique",
+      "level" : 9,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.hunters_stew",
+          "quantity" : 3
+        }
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 10
+        }
+      ],
+      "id" : "king.maturity",
+      "level" : 10,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.roasted_meat",
+          "quantity" : 2
+        },
+        "vigor" : 45
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 4
+        }
+      ],
+      "id" : "king.third_step",
+      "level" : 10,
+      "reward" : {
+        "silver" : 150,
+        "vigor" : 75
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 4
+        }
+      ],
+      "id" : "king.forged_facets",
+      "level" : 11,
+      "reward" : {
+        "vigor" : 80
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "bag_tier",
+          "target" : 3
+        }
+      ],
+      "id" : "king.travelling_sack",
+      "level" : 11,
+      "reward" : {
+        "vigor" : 80
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 13
+        }
+      ],
+      "id" : "king.tempered_will",
+      "level" : 13,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.hunters_stew",
+          "quantity" : 3
+        },
+        "vigor" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 5
+        }
+      ],
+      "id" : "king.fourth_step",
+      "level" : 13,
+      "reward" : {
+        "vigor" : 80
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 5
+        }
+      ],
+      "id" : "king.royal_steel",
+      "level" : 14,
+      "reward" : {
+        "vigor" : 85
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "bag_tier",
+          "target" : 4
+        }
+      ],
+      "id" : "king.stewards_train",
+      "level" : 15,
+      "reward" : {
+        "vigor" : 85
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "win_duel"
+        }
+      ],
+      "id" : "king.the_lists",
+      "level" : 15,
+      "reward" : {
+        "silver" : 300,
+        "xp" : 8670
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 16
+        }
+      ],
+      "id" : "king.seasoned_steward",
+      "level" : 16,
+      "reward" : {
+        "vigor" : 75
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 6
+        }
+      ],
+      "id" : "king.fifth_step",
+      "level" : 16,
+      "reward" : {
+        "silver" : 200
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "reach_km",
+          "target" : 26
+        }
+      ],
+      "id" : "king.the_wildwood",
+      "level" : 17,
+      "reward" : {
+        "silver" : 400,
+        "xp" : 19660
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 19
+        }
+      ],
+      "id" : "king.right_hand_of_the_crown",
+      "level" : 19,
+      "reward" : {
+        "vigor" : 75
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "estate_tier",
+          "target" : 7
+        }
+      ],
+      "id" : "king.sixth_step",
+      "level" : 19,
+      "reward" : {
+        "silver" : 300
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "player_level",
+          "target" : 25
+        },
+        {
+          "kind" : "bag_tier",
+          "target" : 6
+        }
+      ],
+      "id" : "king.pillar_of_the_crown",
+      "level" : 25,
+      "reward" : {
+        "silver" : 1000,
+        "xp" : 116960
+      }
+    }
+  ]
+}

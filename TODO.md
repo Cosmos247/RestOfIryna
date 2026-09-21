@@ -414,9 +414,9 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
       Street) carries 🛒 Базар · ⚔️ Ристалище · 🏰 Гільдії — everything with another player
-      or the Crown on the far side; **🏘 Підзамче** (the Lower Town) carries 💼 Крамар ·
+      or the Crown on the far side; **🏘 Поділ** (the Lower Town) carries 💼 Крамар ·
       🛠 Майстер · 🍺 Шинок · 🔮 Ворожка — the errands of an ordinary visit. The square holds
-      `[👑 Замкова][🏘 Підзамче]` + `[🎒 Сумка][👤 Профіль]` + `[🏡 До маєтку]`, three rows
+      `[👑 Замкова][🏘 Поділ]` + `[🎒 Сумка][👤 Профіль]` + `[🏡 До маєтку]`, three rows
       where there were six, and each street has room for two more places before it is back
       to what one screen used to carry.
       **A street is a keyboard, not a router.** `routerName` stays `"capital"` all over town,
@@ -1654,6 +1654,56 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 - **Combat log persistence + replay** *(was 4.3.6)* — record round-by-round combat events (damage rolls, hit/miss, technique uses, stance state) into a Codable blob; expose a "view replay" surface. Mostly useful once the Arena (Phase 8) lands, since solo PvE replays have low replay value.
 - *(more items will be added by user as the project grows)*
 
+## The King's decrees — a tutorial spine (started 2026-09-21)
+
+Designed across the 2026-09-20 and 09-21 sessions; the motivation is the owner's, in his
+words: the first levels are hard, and a new player has nothing telling them what to aim at.
+A linear chain of **39 decrees, levels 1–25**, one open at a time, taken in the palace on
+Castle Street. Spec: `content/spec/king.md`. Every number printed by
+`roi-content spec king`.
+
+**Phase 1 — data, generator, spec. DONE 2026-09-21.**
+- [x] `content/data/king.json` — 39 decrees, array order is the chain order
+- [x] `KingDTO.swift` — tagged-union conditions (17 kinds), rewards with named food
+- [x] Loader / bundle / snapshot wiring; **schema v12 → v13** (a new required file)
+- [x] `ContentValidator.validateKingChain` — 17 rules, every one with its failing test
+- [x] `roi-content spec king`, and the fifth digest line `king`
+- [x] 19 tests (`KingChainTests`); suite 271 → 290
+- Verified: `validate --strict` clean · `simulate --strict` 0 broken bands / 12 warnings
+  (the documented baseline) · the four existing digest lines **byte-identical**
+
+**Phase 2 — the game, NOT started.** Nothing player-visible exists yet.
+- [ ] **The palace** — a location on Castle Street. Does not exist at all: no controller,
+      no locale keys, no artwork (`Assets/capital/` has fortune, tavern, trader, welcome).
+      Screen is text-only until a `palace.jpg` appears; `sendCachedPhoto` needs no
+      registration, only a restart to drop the stale file_id.
+- [ ] **Progress storage** — one row per player, a migration, and counters for the
+      event-driven conditions. **The row stores a decree id, so it has to go into
+      `LiveReferenceQuery.collect`** — otherwise `/reload` will happily install a bundle
+      that drops an id live rows point at, which is the whole reason that check exists.
+- [ ] **Four new hooks** — NPC job turned in, dish cooked, passive expedition sent,
+      anything crafted. `beast_kills` reuses the existing counter; everything else is a
+      state read.
+- [ ] **The journal** — decrees 1 and 2 arrive before the capital is reachable, so 📓
+      Нотатник carries them until the palace opens.
+- [ ] **The charter** — one message after `registration.complete`. No herald: the King
+      already speaks in person at registration step 4 and ends with «Очистіть землю,
+      збудуйте стіни», which is what the whole chain is.
+- [ ] **Locale** — `king.<id>.name` / `.desc` in both files, and the `requireKey` calls
+      land in the same commit as the screen that renders them.
+
+**Decisions worth not relitigating.** No "decree N of 39" counter on any screen. Only the
+six levels that unlock an estate tier (4, 7, 10, 13, 16, 19) carry a level decree, plus the
+finale at 25 — an unpaid step is a screen tapped through for nothing. Material conditions
+read the **warehouse only**, deliberately unlike every upgrade service, because the first one
+sits at level 3 and its job is to teach that the warehouse exists. Existing players walk the
+backlog one decree at a time.
+
+**Two decrees cut, to be restored when the content exists:** "wear something in every slot"
+(eight slots, items for five, no off-hand or accessory item in the game at all) and "join or
+found a guild" (the owner's cut — the guild is now the only shipped system the chain never
+points at). Auto-memory `project-king-decrees-deferred`.
+
 ## Walk list — shipped surfaces nobody has opened
 
 Moved here from `Prompt.md` on 2026-09-20: it had reached 261 lines, 53% of the session
@@ -1666,16 +1716,16 @@ Telegram. **Everything except the first block is LIVE and unwalked**; the first 
 on `328bf88`.
 
 **Added 2026-09-20 — NOT LIVE. The capital is two streets now; this walk is the whole hub:**
-- **arrive in the capital.** The screen must offer `[👑 Замкова][🏘 Підзамче]` / `[🎒 Сумка]
+- **arrive in the capital.** The screen must offer `[👑 Замкова][🏘 Поділ]` / `[🎒 Сумка]
   [👤 Профіль]` / `[🏡 До маєтку]` and nothing else — three rows — and the welcome text must
   name both roads and what stands on each. This is also the only place a player is told what
   is up there, so read it as a first-timer would.
-- **walk both streets.** Підзамче: `[💼 Крамар][🛠 Майстер]` / `[🍺 Шинок][🔮 Ворожка]` /
+- **walk both streets.** Поділ: `[💼 Крамар][🛠 Майстер]` / `[🍺 Шинок][🔮 Ворожка]` /
   `[🎒 Сумка][👤 Профіль]` / `[🏛 На площу]`. Замкова: `[🛒 Базар][⚔️ Ристалище]` /
   `[🏰 Гільдії][🏛 На площу]` / `[🎒 Сумка][👤 Профіль]`. Each street has its own prose; there
   is no art yet, so both arrive as text — that is the fallback working, not a defect.
 - **open every place from its street** and confirm the keyboard does not change under you:
-  the trader, the Master, the tavern and the fortune teller all keep Підзамче's keyboard, and
+  the trader, the Master, the tavern and the fortune teller all keep Поділ's keyboard, and
   the bazaar keeps Замкова's. Hopping Крамар → Майстер → Шинок must still be one tap each.
 - **the Arena and the Guildhall come back to the SQUARE**, not to Замкова — that is the
   decision, not a bug. Same for 🎒 Сумка → back, and for `/start` → Capital.
@@ -1925,9 +1975,11 @@ on `328bf88`.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-- **The estate calls one place three words.** «Слот» in the plot-list rows, «наділів» in the
-  picker's Back button, «Ділянка» in the list title and the new slot card. The user leans to
-  «ділянка»; unifying is ~6 locale keys in two files and no code. Raised 2026-09-16, left
+- **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
+  that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
+  «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
+  the titles and cards — `estate.plot.row.claimed`, `.button.claim`, `.list.header` and the
+  rest. One locale pass in two files and no code. Raised 2026-09-16, half-done 2026-09-21, left
   open on purpose rather than folded into an unrelated commit.
 - **`InventoryEntry.remove` does not look at `equipped_slot`** — not when it counts
   (`totalQuantity` sums worn rows too) and not when it deletes (oldest row first, and a
@@ -1977,7 +2029,7 @@ unrelated commit on purpose.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
-guilds; 🏘 Підзамче takes the trader, the Master, the innkeeper and the fortune teller; the
+guilds; 🏘 Поділ takes the trader, the Master, the innkeeper and the fortune teller; the
 square keeps only the two roads and the way home. A street is a KEYBOARD and not a router —
 `routerName` stays "capital" everywhere in town — so no location flow, callback or sub-
 controller had to change, and the whole cost is one nullable column (`AddCapitalStreet`),

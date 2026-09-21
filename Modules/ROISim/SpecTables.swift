@@ -117,6 +117,115 @@ public enum SpecTables {
     ///
     /// These are the numbers a named creature inherits: authoring one is
     /// choosing its level and archetype, not typing its HP.
+    // MARK: - The King's decree chain
+
+    /// `spec king` — the whole chain in walk order, plus what it pays.
+    ///
+    /// Prints ids, not names: a generated table cannot quote a localized
+    /// string without the spec drifting the moment the copy is edited, and the
+    /// house rule is that the tables are printed and the prose beside them is
+    /// not. The Vigor column carries its share of the pool at the decree's own
+    /// level, because that share is the thing the reward has to respect — a
+    /// flat number means something different at level 1 and level 25.
+    public static func king(content: GameContent) -> String {
+        guard let tuning = content.tuning else { return "" }
+        let pool = tuning.progression.vigorPool
+        var out: [String] = []
+
+        out.append("**The chain** (`king.json`) — 👑 marks a decree that asks for a level")
+        out.append("")
+        out.append("| # | id | L | conditions | 🔋 | % pool | 🍲 | 🪙 | ✨ |")
+        out.append("|---|---|---|---|---|---|---|---|---|")
+        var totalVigor = 0, totalSilver = 0, totalXP = 0
+        var foodByItem: [String: Int] = [:]
+        for (index, decree) in content.kingDecrees.enumerated() {
+            let conditions = decree.conditions.map(describe).joined(separator: " + ")
+            let ceiling = pool.maxVigor(at: decree.level)
+            let share = decree.reward.vigor == 0 ? ""
+                : String(format: "%.0f%%", 100 * Double(decree.reward.vigor) / Double(ceiling))
+            let food = decree.reward.food.map { "\($0.quantity)× `\($0.itemId)`" } ?? ""
+            out.append("| \(index + 1) | \(decree.isLevelDecree ? "👑 " : "")`\(decree.id)` | "
+                       + "\(decree.level) | \(conditions) | "
+                       + "\(decree.reward.vigor == 0 ? "" : String(decree.reward.vigor)) | \(share) | "
+                       + "\(food) | \(decree.reward.silver == 0 ? "" : String(decree.reward.silver)) | "
+                       + "\(decree.reward.xp == 0 ? "" : String(decree.reward.xp)) |")
+            totalVigor += decree.reward.vigor
+            totalSilver += decree.reward.silver
+            totalXP += decree.reward.xp
+            if let f = decree.reward.food { foodByItem[f.itemId, default: 0] += f.quantity }
+        }
+        out.append("")
+
+        // Food is counted in Vigor, not in portions. A dish is worth anywhere
+        // from 10 to 72 Vigor, so "59 portions" is a number that cannot be
+        // added to anything — which is exactly how the design draft ended up
+        // with a total nobody could check.
+        var foodVigor = 0
+        for (itemId, quantity) in foodByItem {
+            let per = content.itemsById[itemId]?.effects
+                .first { $0.kind == .restoreVigor }?.amount ?? 0
+            foodVigor += per * quantity
+        }
+
+        out.append("**What the chain pays**")
+        out.append("")
+        out.append("| | 🔋 Vigor | food | food as Vigor | Vigor-equivalent | 🪙 silver | ✨ XP |")
+        out.append("|---|---|---|---|---|---|---|")
+        let foodCell = foodByItem.keys.sorted()
+            .map { "\(foodByItem[$0] ?? 0)× `\($0)`" }.joined(separator: ", ")
+        out.append("| task decrees | \(sumVigor(content, levelDecrees: false)) | | | | "
+                   + "\(sumSilver(content, levelDecrees: false)) | \(sumXP(content, levelDecrees: false)) |")
+        out.append("| level decrees | \(sumVigor(content, levelDecrees: true)) | | | | "
+                   + "\(sumSilver(content, levelDecrees: true)) | \(sumXP(content, levelDecrees: true)) |")
+        out.append("| **total** | **\(totalVigor)** | \(foodCell) | \(foodVigor) | "
+                   + "**\(totalVigor + foodVigor)** | **\(totalSilver)** | **\(totalXP)** |")
+        out.append("")
+
+        let toTwentyFive = ProgressionMath.totalXP(toReach: 25, curve: tuning.progression.xpCurve,
+                                                   maxLevel: tuning.progression.maxLevel)
+        out.append("\(content.kingDecrees.count) decrees · "
+                   + "\(content.kingDecrees.filter(\.isLevelDecree).count) of them ask for a level · "
+                   + "the chain pays " + String(format: "%.1f%%", 100 * Double(totalXP) / Double(max(1, toTwentyFive)))
+                   + " of the XP from level 1 to 25 (\(toTwentyFive))")
+        return out.joined(separator: "\n")
+    }
+
+    private static func sumVigor(_ c: GameContent, levelDecrees: Bool) -> Int {
+        c.kingDecrees.filter { $0.isLevelDecree == levelDecrees }.reduce(0) { $0 + $1.reward.vigor }
+    }
+    private static func sumSilver(_ c: GameContent, levelDecrees: Bool) -> Int {
+        c.kingDecrees.filter { $0.isLevelDecree == levelDecrees }.reduce(0) { $0 + $1.reward.silver }
+    }
+    private static func sumXP(_ c: GameContent, levelDecrees: Bool) -> Int {
+        c.kingDecrees.filter { $0.isLevelDecree == levelDecrees }.reduce(0) { $0 + $1.reward.xp }
+    }
+
+    /// One condition as a cell. Reads as the ask, not as the wire format.
+    private static func describe(_ condition: KingConditionDTO) -> String {
+        switch condition.kind {
+        case .reachKm:            return "reach km \(condition.target ?? 0)"
+        case .beastKills:         return "\(condition.target ?? 0) beasts"
+        case .playerLevel:        return "level \(condition.target ?? 0)"
+        case .estateTier:         return "estate T\(condition.target ?? 0)"
+        case .weaponTier:         return "weapon T\(condition.target ?? 0)"
+        case .bagTier:            return "bag T\(condition.target ?? 0)"
+        case .warehouseMaterials:
+            return "warehouse " + condition.materials
+                .map { "\($0.quantity)× `\($0.itemId)`" }.joined(separator: " ")
+        case .claimPlot:
+            return condition.plotType.map { "claim `\($0)`" } ?? "claim a plot"
+        case .arriveCapital:      return "arrive in the capital"
+        case .sellToTrader:       return "sell to the Trader"
+        case .finishNpcQuest:     return "turn in an NPC job"
+        case .cookDish:           return "cook a dish"
+        case .craftAny:           return "craft anything"
+        case .sendPassive:        return "send a passive expedition"
+        case .harvestPlot:        return "harvest a plot"
+        case .learnTechnique:     return "learn a technique"
+        case .winDuel:            return "win a duel"
+        }
+    }
+
     public static func bestiary(content: GameContent, levels: [Int]) -> String {
         guard let tuning = content.tuning, let budget = content.budget else { return "" }
         let rules = CombatRules(tuning.combat)

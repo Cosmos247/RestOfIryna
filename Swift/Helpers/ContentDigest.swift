@@ -354,10 +354,43 @@ enum ContentDigest {
 
         digest.combine(questDigest)
 
+        // The King's decree chain. A FIFTH line rather than more entries in
+        // `records` for the same reason `tuning` and `spawns` were split off:
+        // the other four must be provably untouched by a new table, and the
+        // only way to prove it is to keep them comparable to the values already
+        // signed off. Walked in array order and with the order folded in,
+        // because the chain's order IS the game — reordering two decrees leaves
+        // every id and every reward identical while changing what the player
+        // meets first, and a set hash could not see it.
+        var king = OutcomeDigest()
+        for (index, decree) in GameData.current.kingDecrees.enumerated() {
+            king.combine(index)
+            king.combine(decree.id)
+            king.combine(decree.level)
+            for condition in decree.conditions {
+                king.combine(condition.kind.rawValue)
+                king.combine(condition.target ?? -1)
+                king.combine(condition.plotType ?? "-")
+                for material in condition.materials {
+                    king.combine(material.itemId)
+                    king.combine(material.quantity)
+                }
+            }
+            king.combine(decree.reward.vigor)
+            king.combine(decree.reward.silver)
+            king.combine(decree.reward.xp)
+            king.combine(decree.reward.food?.itemId ?? "-")
+            king.combine(decree.reward.food?.quantity ?? 0)
+        }
+        let kingDigest = king.hexDigest
+
+        digest.combine(kingDigest)
+
         print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs × \(questLevels.count) levels)")
+        print("king     \(kingDigest)   (\(GameData.current.kingDecrees.count) decrees in chain order · \(GameData.current.kingDecrees.filter(\.isLevelDecree).count) level steps)")
         print("COMBINED \(digest.hexDigest)")
         print("")
         liveLookupCheck()

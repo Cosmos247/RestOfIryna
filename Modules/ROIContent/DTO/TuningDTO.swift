@@ -1077,6 +1077,15 @@ public struct VigorPoolDTO: Codable, Sendable, Equatable {
         self.perLevel = perLevel
     }
 
+    /// The whole Vigor pool at `level`. Lives on the DTO rather than in
+    /// `ProgressionMath` for the same reason `UkrainianPlural` lives in this
+    /// module: `ContentValidator` has to read it and ROIContent cannot depend
+    /// on ROISim. `ProgressionMath.maxVigor` delegates here, so there is still
+    /// exactly one implementation of the curve.
+    public func maxVigor(at level: Int) -> Int {
+        Swift.max(1, base + perLevel * Swift.max(0, level))
+    }
+
     private enum CodingKeys: String, CodingKey { case base, perLevel }
 
     public init(from decoder: any Decoder) throws {

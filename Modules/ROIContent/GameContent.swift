@@ -59,6 +59,10 @@ public final class GameContent: Sendable {
     public let zones: ZoneFileDTO?
     public let fortune: FortuneFileDTO?
     public let quests: QuestFileDTO?
+    /// The King's decree chain, IN CHAIN ORDER — the array's order is the
+    /// order the player meets the decrees, so this is never sorted.
+    public let kingDecrees: [KingDecreeDTO]
+    public let kingDecreesById: [String: KingDecreeDTO]
     public let tuning: TuningBundleDTO?
 
     public init(_ bundle: ContentBundle) {
@@ -95,6 +99,9 @@ public final class GameContent: Sendable {
         self.zones = bundle.zones
         self.fortune = bundle.fortune
         self.quests = bundle.quests
+        self.kingDecrees = bundle.king?.decrees ?? []
+        self.kingDecreesById = Dictionary(
+            (bundle.king?.decrees ?? []).map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         self.tuning = bundle.tuning
     }
 }

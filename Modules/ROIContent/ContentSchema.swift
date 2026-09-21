@@ -66,5 +66,10 @@ public enum ContentSchema {
     /// carries an ARRAY where an object is now read, so the decode fails
     /// outright; the handshake is what turns that into a sentence about the
     /// bundle instead of a `typeMismatch` about a coding key.
-    public static let current: Int = 12
+    /// v13 (2026-09-21): the bundle gains a required `king.json` — the King's
+    /// decree chain. A v12 directory does not have the file at all, and the
+    /// loader would fail with a bare `missingFile("king.json")`; the handshake
+    /// turns that into the sentence that actually names the cause, which is a
+    /// binary and a content directory from different commits.
+    public static let current: Int = 13
 }

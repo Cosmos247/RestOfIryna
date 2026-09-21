@@ -38,6 +38,7 @@ public enum ContentValidator {
         issues += validateBestiary(bundle)
         issues += validateZones(bundle)
         issues += validateBudget(bundle)
+        issues += validateKingChain(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -2167,6 +2168,193 @@ public enum ContentValidator {
             require(TimeZone(identifier: real.dayTimeZoneId) != nil, file, "realTime.dayTimeZoneId",
                     "tuning.time.timezone_unknown",
                     "\"\(real.dayTimeZoneId)\" is not a known time zone — GameDay would silently fall back to UTC and move every daily reset")
+        }
+
+        return issues
+    }
+
+    // MARK: - The King's decree chain
+
+    /// `king.json` is a LINEAR chain: the player holds one decree, turns it in,
+    /// and the next one opens. Three of these rules exist because the design
+    /// drafts broke them before the file did.
+    ///
+    /// **The Vigor ceiling.** A reward is granted with `min(maxVigor, vigor +
+    /// reward)`, so anything above the pool at the decree's level is paid into
+    /// a wall and silently vanishes. Three decrees in the 2026-09-20 draft did
+    /// exactly that (🔋150/180, 🔋200/195, 🔋300/225), which is what turned the
+    /// whole reward column over. Above the pool is an ERROR; above 60% of it is
+    /// a warning, because a reward that only lands on a near-empty pool is a
+    /// number the player will see refused.
+    ///
+    /// **Every decree pays something** (2026-09-21, the owner's call). The
+    /// chain briefly carried one step per level with no reward on most of them,
+    /// and those are screens the player has to tap through for nothing.
+    ///
+    /// **`level` must agree with a `player_level` target**, and must never step
+    /// backwards down the array — the array order IS the order the player walks.
+    private static func validateKingChain(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let king = bundle.king else { return [] }
+        let file = "king.json"
+        var issues: [ContentIssue] = []
+
+        issues += duplicates(king.decrees.map(\.id), file: file, collection: "decrees")
+
+        let itemsById = Dictionary(bundle.items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let plotTypes = Set(bundle.plots?.types.map(\.type) ?? [])
+        let estateGates = Dictionary(
+            bundle.estateUpgrades.progression.map { ($0.toTier, $0.requiredPlayerLevel) },
+            uniquingKeysWith: { first, _ in first })
+        let maxWeaponTier = bundle.weaponLadders.flatMap { $0.tiers.map(\.tier) }.max() ?? 0
+        let pool = bundle.tuning?.progression.vigorPool
+
+        var previousLevel = 0
+        for (index, decree) in king.decrees.enumerated() {
+            let path = "decrees[\(index)]"
+
+            if decree.level < 1 {
+                issues.append(.init(severity: .error, file: file, path: "\(path).level", id: decree.id,
+                                    rule: "king.level_below_one",
+                                    message: "level is \(decree.level)"))
+            }
+            if decree.level < previousLevel {
+                issues.append(.init(severity: .error, file: file, path: "\(path).level", id: decree.id,
+                                    rule: "king.chain_out_of_order",
+                                    message: "level \(decree.level) comes after \(previousLevel) — the array order is the order the player walks, so it can never step back"))
+            }
+            previousLevel = max(previousLevel, decree.level)
+
+            if decree.conditions.isEmpty {
+                issues.append(.init(severity: .error, file: file, path: "\(path).conditions", id: decree.id,
+                                    rule: "king.no_conditions",
+                                    message: "a decree with no condition is already complete the moment it opens"))
+            }
+            if decree.reward.isEmpty {
+                issues.append(.init(severity: .error, file: file, path: "\(path).reward", id: decree.id,
+                                    rule: "king.empty_reward",
+                                    message: "every decree pays something — an unpaid step is a screen the player taps through for nothing"))
+            }
+            for (field, value) in [("vigor", decree.reward.vigor), ("silver", decree.reward.silver), ("xp", decree.reward.xp)] where value < 0 {
+                issues.append(.init(severity: .error, file: file, path: "\(path).reward.\(field)", id: decree.id,
+                                    rule: "king.reward_negative",
+                                    message: "\(field) is \(value)"))
+            }
+
+            if let food = decree.reward.food {
+                if let item = itemsById[food.itemId] {
+                    if item.type != "food" {
+                        issues.append(.init(severity: .error, file: file, path: "\(path).reward.food", id: decree.id,
+                                            rule: "king.reward_food_not_food",
+                                            message: "\"\(food.itemId)\" is type \"\(item.type)\""))
+                    }
+                } else {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).reward.food", id: decree.id,
+                                        rule: "king.reward_food_unknown",
+                                        message: "no item \"\(food.itemId)\""))
+                }
+                if food.quantity < 1 {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).reward.food.quantity", id: decree.id,
+                                        rule: "king.reward_food_quantity",
+                                        message: "quantity is \(food.quantity)"))
+                }
+            }
+
+            if let pool, decree.reward.vigor > 0 {
+                let ceiling = pool.maxVigor(at: decree.level)
+                if decree.reward.vigor > ceiling {
+                    issues.append(.init(severity: .error, file: file, path: "\(path).reward.vigor", id: decree.id,
+                                        rule: "king.vigor_over_pool",
+                                        message: "pays \(decree.reward.vigor) Vigor at level \(decree.level), where the whole pool is \(ceiling) — the grant clamps, so the excess can never be received"))
+                } else if Double(decree.reward.vigor) > Double(ceiling) * 0.6 {
+                    issues.append(.init(severity: .warning, file: file, path: "\(path).reward.vigor", id: decree.id,
+                                        rule: "king.vigor_near_pool",
+                                        message: "pays \(decree.reward.vigor) Vigor of a \(ceiling) pool at level \(decree.level) — only lands in full on a nearly empty pool"))
+                }
+            }
+
+            for (conditionIndex, condition) in decree.conditions.enumerated() {
+                let conditionPath = "\(path).conditions[\(conditionIndex)]"
+                let counted = KingConditionDTO.countedKinds.contains(condition.kind)
+
+                if counted && (condition.target ?? 0) < 1 {
+                    issues.append(.init(severity: .error, file: file, path: "\(conditionPath).target", id: decree.id,
+                                        rule: "king.condition_target_missing",
+                                        message: "\"\(condition.kind.rawValue)\" needs a target of at least 1"))
+                }
+                if !counted && condition.target != nil {
+                    issues.append(.init(severity: .error, file: file, path: "\(conditionPath).target", id: decree.id,
+                                        rule: "king.condition_target_unused",
+                                        message: "\"\(condition.kind.rawValue)\" is a one-shot event and never reads a target"))
+                }
+
+                switch condition.kind {
+                case .playerLevel:
+                    if let target = condition.target, target != decree.level {
+                        issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                            rule: "king.level_decree_disagrees",
+                                            message: "asks for level \(target) but the decree is filed at level \(decree.level)"))
+                    }
+                case .estateTier:
+                    if let tier = condition.target {
+                        if tier < 2 || tier > bundle.estateUpgrades.maxTier {
+                            issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                                rule: "king.estate_tier_out_of_range",
+                                                message: "T\(tier) is outside 2…\(bundle.estateUpgrades.maxTier)"))
+                        } else if let gate = estateGates[tier], decree.level < gate {
+                            issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                                rule: "king.estate_tier_before_its_gate",
+                                                message: "T\(tier) needs player level \(gate) but the decree is filed at level \(decree.level) — it could never be completed there"))
+                        }
+                    }
+                case .weaponTier:
+                    if let tier = condition.target, tier < 2 || tier > maxWeaponTier {
+                        issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                            rule: "king.weapon_tier_out_of_range",
+                                            message: "T\(tier) is outside 2…\(maxWeaponTier)"))
+                    }
+                case .bagTier:
+                    if let tier = condition.target, tier < 2 || tier > bundle.bags.maxTier {
+                        issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                            rule: "king.bag_tier_out_of_range",
+                                            message: "T\(tier) is outside 2…\(bundle.bags.maxTier)"))
+                    }
+                case .warehouseMaterials:
+                    if condition.materials.isEmpty {
+                        issues.append(.init(severity: .error, file: file, path: "\(conditionPath).materials", id: decree.id,
+                                            rule: "king.materials_empty",
+                                            message: "\"warehouse_materials\" with no materials completes itself"))
+                    }
+                    for (materialIndex, material) in condition.materials.enumerated() {
+                        if itemsById[material.itemId] == nil {
+                            issues.append(.init(severity: .error, file: file, path: "\(conditionPath).materials[\(materialIndex)]", id: decree.id,
+                                                rule: "king.material_unknown",
+                                                message: "no item \"\(material.itemId)\""))
+                        }
+                        if material.quantity < 1 {
+                            issues.append(.init(severity: .error, file: file, path: "\(conditionPath).materials[\(materialIndex)]", id: decree.id,
+                                                rule: "king.material_quantity",
+                                                message: "quantity is \(material.quantity)"))
+                        }
+                    }
+                case .claimPlot:
+                    if let type = condition.plotType, !plotTypes.isEmpty, !plotTypes.contains(type) {
+                        issues.append(.init(severity: .error, file: file, path: "\(conditionPath).plotType", id: decree.id,
+                                            rule: "king.plot_type_unknown",
+                                            message: "no plot type \"\(type)\" — known: \(sorted(plotTypes))"))
+                    }
+                default:
+                    if condition.plotType != nil {
+                        issues.append(.init(severity: .error, file: file, path: "\(conditionPath).plotType", id: decree.id,
+                                            rule: "king.plot_type_unused",
+                                            message: "\"\(condition.kind.rawValue)\" never reads a plot type"))
+                    }
+                    if !condition.materials.isEmpty {
+                        issues.append(.init(severity: .error, file: file, path: "\(conditionPath).materials", id: decree.id,
+                                            rule: "king.materials_unused",
+                                            message: "\"\(condition.kind.rawValue)\" never reads materials"))
+                    }
+                }
+            }
         }
 
         return issues

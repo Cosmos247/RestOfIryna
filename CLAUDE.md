@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | The five approved content specifications (Phase 9, closed 2026-09-01). Numbers in them are emitted by `roi-content spec`, never typed — refresh the `<!-- generated -->` blocks after any content edit |
+| `content/spec/*.md` | The five approved content specifications (Phase 9, closed 2026-09-01) plus `king.md` (the decree chain, 2026-09-21). Numbers in them are emitted by `roi-content spec`, never typed — refresh the `<!-- generated -->` blocks after any content edit |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -84,7 +84,7 @@ Swift/
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
 
 `Localizations/` — `en.json`, `uk.json`. `Assets/` — registration artwork + per-level estate art.
-`content/data/` — the game itself as JSON. `content/spec/` — the five content specifications signed off in Phase 9 (closed). `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
+`content/data/` — the game itself as JSON. `content/spec/` — the five content specifications signed off in Phase 9 (closed) and `king.md`. `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
 
 ## Game and Content Rules
 
@@ -98,7 +98,8 @@ files are not loaded each session, so a rule moved out of here goes invisible
 **Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
 market, guild, arena), the Master's shop, estate plots, the fortune deck, the
-daily quest pools, the rarity ladder (`rarities.json`), equipment sets
+daily quest pools, the King's decree chain (`king.json`), the rarity ladder
+(`rarities.json`), equipment sets
 (`sets.json`) and the foraging zones (`zones.json`) — lives in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
 in both `en.json` and `uk.json` — never a Swift array edit.
@@ -150,7 +151,7 @@ data (`bonusOutput`, `descriptionKey`), so a future two-stream plot gets them fr
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never
 goes around it. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening>`, never typed, so a specification
+<progression|gates|bestiary|items|sets|economy|opening|king>`, never typed, so a specification
 cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
 `-c release`.
 
@@ -210,6 +211,21 @@ of its own (`recipe.<id>.taught`, then the shared `quest.recipe_learned` under i
 `postStatusBanner` deletes the previous banner and an NPC speaking is not a status line.
 Auto-memory `project-npcs-teach-recipes`, `project-food-is-priced-not-picked`,
 `feedback-a-checker-that-cannot-fail`.
+
+**The King's decree chain is ONE linear list, and its array order is the game.**
+`content/data/king.json` holds 39 decrees from level 1 to 25; the player holds exactly one,
+and turning it in opens the next. Four rules the validator enforces, each of which a design
+draft broke first: **no decree pays more Vigor than the pool at its level**
+(`100 + 5·L` — the grant runs through `min(maxVigor, …)`, so the excess is a number the
+player is shown and never gets), **every decree pays something** (an unpaid step is a screen
+tapped through for nothing), **food is a named item and a count**, never "portions" (a dish
+is 10–72 Vigor, so portions cannot be added up), and **a `player_level` decree's target must
+equal its own `level`**. A decree's kind is DERIVED — it is a level decree when one of its
+conditions is `player_level` — because a second discriminator beside the conditions is a
+field that can disagree with them. No screen shows "decree N of 39". The chain is printed by
+`roi-content spec king` and hashed by the fifth digest line, `king`. Spec:
+`content/spec/king.md`; the two decrees cut on 2026-09-21 and why:
+auto-memory `project-king-decrees-deferred`.
 
 ### Vigor, rest and background work
 

@@ -33,15 +33,15 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-20, four commits ahead of the Pi, two of them code)
+### Where things stand right now (2026-09-21, four commits ahead of the Pi plus an uncommitted working tree)
 
 | | |
 |---|---|
-| working tree | clean |
+| working tree | **NOT clean** — the King's decree chain, phase 1 (content + generator + spec, no game screens) and a three-key locale pass («наділ» → «ділянка»). Built, validated, 290/290 tests, simulator on baseline. Uncommitted |
 | HEAD | **`f702334`** — the doc pass that moved the walk list to `TODO.md` and cut the preamble by a third — plus a one-line hash fill on top of it. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
 | pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — `328bf88`, `a604a62`, `f702334` and the hash fill. Push is user-side |
 | running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **the capital street split** — 👑 Замкова / 🏘 Підзамче, `AddCapitalStreet`, six keyboard rows down to three — and **`328bf88`**, a taken job no longer burning at noon plus the one-time `CloseBurnedQuestJobs`. Two migrations in one restart; only `CloseBurnedQuestJobs` writes data. Locale strings in both, so **`/reload` carries neither** |
+| committed but NOT deployed | **the capital street split** — 👑 Замкова / 🏘 Поділ, `AddCapitalStreet`, six keyboard rows down to three — and **`328bf88`**, a taken job no longer burning at noon plus the one-time `CloseBurnedQuestJobs`. Two migrations in one restart; only `CloseBurnedQuestJobs` writes data. Locale strings in both, so **`/reload` carries neither** |
 
 **The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
 newest block is live and waiting only on a human opening the screens.
@@ -164,8 +164,12 @@ the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-18, schema v12):** `records 6588329ab2bdbc70` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9`. **The Pi has
+**Current digest baseline (2026-09-21, schema v13):** `records 6588329ab2bdbc70` ·
+`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
+**`king 4326bb40aa735a50`** — a fifth line since the King's decree chain landed, and the
+four older ones are byte-identical across it, which is the entire point of the split. The
+content hash moved `0fa93e96` → `703a0404` (a new file) and the schema **v12 → v13**, so the
+content directory and the binary must now ship together or the handshake refuses the boot. **The Pi has
 run this exact baseline since the 09-19 14:21 restart** (content hash `0fa93e96`), matched byte
 for byte before the restart was ordered, which is the order the decision has to happen in.
 `records` moved four times to get here — the farm ladder, the bag ladder, then the whole food
@@ -212,7 +216,7 @@ debugger traces it. The three commands, the `S`/`N` handshake probe that proves 
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
-swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening
+swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
 swift test                                   # 271 tests, ~0.2s
 ```
@@ -252,7 +256,7 @@ handful a fresh session reaches for first.
 | `Swift/configure.swift` | Bootstrap; content loads before the DB block |
 | `Swift/Helpers/ContentDigest.swift` | `--content-digest`: run before/after any content edit to confirm ONLY the intended change moved |
 | `Modules/ROISim/CombatMath.swift` | The combat model itself. `CombatService` delegates here — add a roll THERE, never a second copy |
-| `content/spec/` | The five approved specifications (Phase 9, closed) |
+| `content/spec/` | The five approved specifications (Phase 9, closed) + `king.md` (the decree chain, 2026-09-21) |
 
 ## Rules
 

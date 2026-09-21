@@ -126,7 +126,7 @@ public enum ProgressionMath {
     /// Vigor ceiling at a level. Grows with the player so the regen rate, read
     /// as a share of the pool, stays constant instead of decaying to nothing.
     public static func maxVigor(at level: Int, pool: VigorPoolDTO) -> Int {
-        Swift.max(1, pool.base + pool.perLevel * Swift.max(0, level))
+        pool.maxVigor(at: level)
     }
 
 }

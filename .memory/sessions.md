@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+**Uncommitted on 2026-09-21: the King's decree chain, phase 1** — `king.json` + DTO +
+validator + `spec king` + the fifth digest line + 19 tests + `content/spec/king.md`, plus a
+three-key locale pass («наділ» → «ділянка»). Nothing player-visible: the palace does not
+exist yet. **Schema v12 → v13**, so the content directory and the binary must ship together.
+
 **Undeployed: the capital street split and `328bf88`,** neither pushed — `origin/main` is at
 `536fbf6`. Both are built, tested and verified, and between them the next restart runs TWO
 migrations: `CloseBurnedQuestJobs` (the first DATA migration since `ResetDeepestKm` — verify the
@@ -36,7 +41,8 @@ the restart was `pm2 restart ROI --update-env`, which the recipe does not ask fo
 
 - `f57a6b9` (09-20) **the capital became two streets** — six keyboard rows were the
   constraint on adding anything else to town, so the places split across 👑 Замкова (bazaar,
-  arena, guilds) and 🏘 Підзамче (trader, Master, innkeeper, fortune teller) and the arrival
+  arena, guilds) and 🏘 Підзамче (trader, Master, innkeeper, fortune teller — **renamed
+  🏘 Поділ on 2026-09-21**, before it was ever deployed) and the arrival
   square kept none of them: three rows where there were six, with room for two more places on
   each street. The pattern: **a street is a keyboard, not a router.** `routerName` stays
   "capital" all over town, so every location button and every inline callback stayed registered
@@ -325,6 +331,60 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-21 (the King's decrees, and a word the estate had three of)
+
+**What the session was.** Recovering the design the 09-20 disconnect left only in a
+transcript, finishing it with the owner, and building its content half.
+
+**The design, settled over eight rounds.** The ask was to merge the per-level salary into
+the main quest. The first reading — fold the salary's money into the decrees — was wrong; he
+meant it literally: **every level-up becomes a decree**. That made a 59-step chain, which he
+then pruned twice: strip the per-level reward, then drop every step that paid nothing,
+because the player would meet each one as a screen to tap through for no reason. What
+survived is **39 decrees** — 32 tasks and 7 level steps, the level steps being exactly the
+six that unlock an estate tier plus the finale at 25.
+
+**What measuring found, and what it cost the design.**
+- **A reward can exceed the Vigor pool.** The grant clamps (`QuestService.swift:473`), the
+  pool is `100 + 5·L`, and three decrees in the draft paid 150/180, 200/195 and 300/225. The
+  whole reward column was rebuilt around the ceiling, and the ceiling is now a rule.
+- **"59 portions" was a number nobody could check.** A dish is 10–72 Vigor. Food in a reward
+  is now a named item and a count, and the spec prints what it is worth.
+- **The salary paid its biggest Vigor exactly where Vigor matters least** — 30 at level 2,
+  135 at level 40, against a pool that only doubles. Merging it away cost nothing real.
+- **"Fill all six equipment slots" is unreachable.** There are EIGHT slots and items for
+  five: no off-hand item and no accessory item exists at all. Cut, with the guild decree;
+  both are in auto-memory `project-king-decrees-deferred`.
+- **The King is already in registration.** Step 4 (`promptKingOath`) hands over the charter
+  and the weapon and ends with «Очистіть землю, збудуйте стіни». The planned herald was
+  deleted — the first decree is the scroll he already gave.
+
+**What shipped (the content half only).** `content/data/king.json`; `KingDTO` with
+tagged-union conditions (17 kinds) whose unknown kind FAILS rather than defaults;
+loader / bundle / snapshot wiring; **schema v13**, because a new required file is the class
+of change the handshake exists for; `ContentValidator.validateKingChain`, 17 rules;
+`roi-content spec king`; a fifth digest line `king`; 19 tests, suite 271 → 290.
+
+**The validator earned itself on its first run** — it refused `"training"` where the game
+says `"training_ground"`. That failing case is a test now, as is every other rule.
+
+**The pool curve got one implementation.** The validator needs it and ROIContent cannot
+depend on ROISim, so `VigorPoolDTO.maxVigor(at:)` holds it and `ProgressionMath.maxVigor`
+delegates — the shape `UkrainianPlural` already uses to stay reachable from the tests.
+
+**Also: «наділ» is gone.** Three keys (`estate.plot.picker.header`, `.picker.back`,
+`.alert.slot_empty`) now say «ділянка», on the owner's call — half of the "estate calls one
+place three words" item; «Слот» still stands in 18 keys.
+
+**Verification.** `validate --strict` ✅ 0 warnings · `swift test` 290/290 ·
+`simulate --strict` 0 broken bands / 12 warnings (the documented baseline) · digest
+`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` ·
+`quests 30de20902006e3b9` — **all four unmoved** — plus the new `king 4326bb40aa735a50`;
+content hash `0fa93e96` → `703a0404`.
+
+**Not done on purpose:** the palace, progress storage, the four event hooks, the journal
+entry, the charter message and every locale key. Phase 2 in `TODO.md`.
 
 ## Session — 2026-09-20 (the capital became two streets)
 
