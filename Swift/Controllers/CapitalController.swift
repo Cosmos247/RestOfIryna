@@ -2135,29 +2135,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         guard let standing else {
             return "<b>\(title)</b>\n\n" + lingo.localize("king.finished", locale: locale)
         }
-        let decree = standing.decree
-        var out = "<b>\(title)</b>\n\n"
-        out += lingo.localize(Location.palace.bodyKey, locale: locale) + "\n\n"
-        out += "<b>" + lingo.localize(KingCatalog.nameKey(decree), locale: locale) + "</b>\n"
-        out += lingo.localize(KingCatalog.descKey(decree), locale: locale) + "\n\n"
-        // Every condition through `RequirementLine`, so "what it asks / what
-        // you have" is the same sentence here as on the kitchen and the
-        // workshop screens.
-        for condition in standing.conditions {
-            if let itemId = condition.itemId {
-                out += RequirementLine.item(itemId, have: condition.have, need: condition.need,
-                                            lingo: lingo, locale: locale) + "\n"
-            } else if let key = condition.labelKey {
-                out += RequirementLine.render(label: lingo.localize(key, locale: locale),
-                                              have: condition.have, need: condition.need) + "\n"
-            }
-        }
-        // 🎁 prepended in Swift — a leading supplementary-plane emoji breaks
-        // Lingo's `%{var}` parser. See .memory/localization.md.
-        out += "\n🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
-            "reward": Self.kingRewardPhrase(decree.reward, lingo: lingo, locale: locale)
-        ])
-        return out
+        // The decree itself is `KingCard`, shared with the journal and the
+        // charter so the three cannot drift apart.
+        return "<b>\(title)</b>\n\n"
+            + lingo.localize(Location.palace.bodyKey, locale: locale) + "\n\n"
+            + KingCard.block(standing, lingo: lingo, locale: locale)
     }
 
     /// What a decree pays, in the order the player cares about it: Vigor and

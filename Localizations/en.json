@@ -994,7 +994,7 @@
   "journal.button.open": "📓 Journal",
   "journal.button.back": "🔙 Back to profile",
   "journal.title": "Governor's Journal",
-  "journal.subtitle": "Today's jobs from the capital",
+  "journal.subtitle": "The work waiting for you",
   "journal.status.claimed": "reward taken",
   "journal.status.ready": "done — collect the reward",
   "journal.resets_in": "New jobs in %{time}",
@@ -1157,5 +1157,9 @@
   "king.sixth_step.desc": "Tier seven is everything an estate can give. Raise it one last time.",
   "king.pillar_of_the_crown.name": "Pillar of the Crown",
   "king.pillar_of_the_crown.desc": "The last thing the Crown asks: level twenty-five, and a train the whole wildwood would fit into.",
-  "king.banner.failed": "The Crown could not take the report. Try again."
+  "king.banner.failed": "The Crown could not take the report. Try again.",
+  "king.journal.title": "The King's decree",
+  "king.journal.ready": "done — report at the palace",
+  "king.charter.title": "THE ROYAL CHARTER",
+  "king.charter.body": "You unroll the scroll the King handed you. Below the seal, a line in the same hand."
 }

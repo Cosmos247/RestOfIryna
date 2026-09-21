@@ -453,6 +453,28 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         var lines = ["📓 <b>" + lingo.localize("journal.title", gender: context.session.gender, locale: locale) + "</b>",
                      "<i>" + lingo.localize("journal.subtitle", locale: locale) + "</i>"]
 
+        // The King's decree goes first, and it is the only thing here a player
+        // can see before they have ever reached the capital — decrees 1 and 2
+        // are walkable from the estate, and without this screen nothing would
+        // tell them so.
+        //
+        // READ-ONLY, like everything else on this screen. The rule above the
+        // NPC blocks holds for the Crown too: turn-in happens where the work
+        // was given out, so the journal can never become a remote control for
+        // the capital. It costs the player nothing — the chain is linear and
+        // the third decree is "present yourself at the palace", so the first
+        // three are turned in there in one visit anyway.
+        if let standing = try await KingService.standing(for: context.session, on: context.db) {
+            lines.append("")
+            lines.append("👑 <b>" + lingo.localize("king.journal.title", locale: locale) + "</b>")
+            lines.append(KingCard.block(standing, lingo: lingo, locale: locale))
+            // ✅, not 🎁: the reward line right above already carries the
+            // gift, and two of them in a row read as one muddled sentence.
+            if standing.isComplete {
+                lines.append("✅ " + lingo.localize("king.journal.ready", locale: locale))
+            }
+        }
+
         for npc in QuestNPC.allCases {
             let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
             let npcLabel = lingo.localize("capital.button.\(npc.rawValue)", locale: locale)

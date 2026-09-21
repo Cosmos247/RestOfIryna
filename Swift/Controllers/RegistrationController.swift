@@ -317,6 +317,29 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         // rather than via a `LearnedRecipe` row, so no per-player setup needed.
 
         try await mainController.showMainMenu(context: context, text: complete)
+        await sendRoyalCharter(context: context)
+    }
+
+    /// The King's first decree, as the scroll he has just handed over.
+    ///
+    /// There is no herald: step 4 of this very registration puts the player in
+    /// front of the King, who gives them the charter and the weapon and ends
+    /// with «Очистіть землю, збудуйте стіни». The chain is the rest of that
+    /// sentence, so the first decree arrives as the scroll already in hand
+    /// rather than as a stranger riding up to a gate the player just left.
+    ///
+    /// Best-effort: a failure here must not break a registration that has
+    /// already been saved. The decree is waiting in the journal either way.
+    private func sendRoyalCharter(context: Context) async {
+        let locale = context.session.locale
+        // `try?` on a function that also returns an Optional gives a double
+        // Optional; flattened here so the guard reads as one question.
+        let found = try? await KingService.standing(for: context.session, on: context.db)
+        guard let standing = found ?? nil else { return }
+        let text = "📜 <b>" + context.lingo.localize("king.charter.title", locale: locale) + "</b>\n\n"
+            + context.lingo.localize("king.charter.body", locale: locale) + "\n\n"
+            + KingCard.block(standing, lingo: context.lingo, locale: locale)
+        _ = try? await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
     }
 }
 

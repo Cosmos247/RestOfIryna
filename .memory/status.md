@@ -31,8 +31,8 @@ backlog one decree at a time. `KingService` answers 10 of the 17 condition kinds
 state and takes the other 7 through `record`, hooked beside the counters that already pass
 through combat, the trader, the quest payout, crafting, the expedition start and the
 harvest. Locale is complete in both languages — 39 names, 39 descriptions, 17 condition
-labels — and the `requireKey` rules landed with the screen that renders them. Left for 2b:
-the journal entry and the charter message after registration.
+labels — and the `requireKey` rules landed with the screen that renders them. Phase 2b
+landed the same day: `KingCard` is the one renderer all three screens use, 📓 Нотатник carries the open decree above the NPC jobs (read-only — the journal's own standing rule), and `registration.complete` is followed by the royal charter holding the first decree. **The King's chain is feature-complete and entirely undeployed.**
 
 **2026-09-21 — the King's decree chain, content half** (`978eef7`, NOT DEPLOYED). A linear spine of
 **39 decrees, levels 1–25**, one open at a time, meant to tell a new player what to aim at:

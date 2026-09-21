@@ -1692,14 +1692,24 @@ Castle Street. Spec: `content/spec/king.md`. Every number printed by
       same commit as the screen that renders them.
 - Verified: `validate --strict` clean · 292 tests · digest unmoved.
 
-**Phase 2b — what is left.** Two things, both about reaching a decree before the palace
-opens:
-- [ ] **The journal** — decrees 1 and 2 are satisfiable before the capital is reachable,
-      and right now nothing shows them until the player walks into the palace (where they
-      turn in immediately). 📓 Нотатник should carry the open decree from the first minute.
-- [ ] **The charter** — one message after `registration.complete` holding the first decree.
-      No herald: the King already speaks in person at registration step 4 and ends with
-      «Очистіть землю, збудуйте стіни», which is what the whole chain is.
+**Phase 2b — the journal and the charter. DONE 2026-09-21.**
+- [x] **`KingCard`** — ONE renderer for the decree block (name, description, conditions
+      through `RequirementLine`, reward). Three screens show the same decree now, so they
+      get one implementation rather than three that will drift.
+- [x] **The journal** — 👑 Указ Короля at the top of 📓 Нотатник, above the NPC jobs. It is
+      the only thing on that screen a player can see before ever reaching the capital.
+- [x] **The charter** — one message after `registration.complete`, carrying the first
+      decree as the scroll the King has just handed over. No herald: registration step 4
+      already puts the player in front of him.
+- **The journal stays READ-ONLY, against the quiz option that promised a report button
+  there.** `showJournal` carries a standing rule — "nothing is claimable here: turn-in
+  stays at the NPC who gave the job, so the journal can never become a remote-control for
+  the capital" — and the option text was written without having read it. It costs nothing:
+  the chain is linear and decree 3 is "present yourself at the palace", so the first three
+  are turned in there in one visit anyway.
+- Not covered by tests: the journal, the charter and the palace are game-target code, and
+  `Tests/ROIContentTests` has no Fluent or Telegram in its graph by design. What IS tested
+  is every content rule behind them.
 
 **One trap still open.** `KingProgress` stores a decree INDEX, not an id, so nothing in
 the database points at a content id and `LiveReferenceQuery.collect` needs no entry. If a

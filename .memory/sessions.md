@@ -393,8 +393,27 @@ and every condition label are now required in both locales, with a failing test 
 lines unmoved (`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` ·
 `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50`).
 
-**Left for 2b:** the journal entry and the charter message after registration — both about
-seeing a decree before the palace is reachable.
+**Phase 2b, the same day.** `KingCard` became the one renderer for the decree block, and
+the palace, the journal and the charter all call it — three screens showing one decree is
+exactly where three copies would drift. 📓 Нотатник now carries the open decree above the
+NPC jobs, and `registration.complete` is followed by the royal charter.
+
+**Two defects the audit found, and it found them by rendering the screens.** Composing
+the charter, the journal and the palace card out of the real locale file and the real
+`king.json` — no bot needed — showed both in one look:
+- **The journal's subtitle had become a lie.** «Сьогоднішні замовлення столиці» sat
+  directly above the King's decree, which is neither today's nor from an NPC. Now «Робота,
+  що на вас чекає», which covers both kinds of work on that screen.
+- **Two 🎁 in a row.** The reward line and the ready line both led with the gift and read
+  as one muddled sentence. The ready line is ✅ now.
+
+**The journal did NOT get the report button the quiz option promised.** `showJournal`
+carries a standing rule — *"nothing is claimable here: turn-in stays at the NPC who gave
+the job, so the journal can never become a remote-control for the capital"* — and the
+option text had been written without reading it. The owner asked what that parenthesis had
+meant, which is how it surfaced. It costs nothing: the chain is linear and decree 3 is
+"present yourself at the palace", so the first three are turned in there in one visit.
+The lesson is the old one — **read the screen before promising what it will do.**
 
 ## Session — 2026-09-21 (the King's decrees, and a word the estate had three of) — `978eef7`
 
