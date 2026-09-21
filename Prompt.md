@@ -33,15 +33,15 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-21, five commits ahead of the Pi, three of them code)
+### Where things stand right now (2026-09-22, the Pi is level with `origin/main`)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`065bc6e`** — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — ten commits, of which four change the game: `328bf88`, `f57a6b9`, `978eef7`, `520513e`. Push is user-side |
-| running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | Three things now. **The capital street split** — 👑 Замкова / 🏘 Поділ, `AddCapitalStreet`, six keyboard rows down to three. **`328bf88`** — a taken job no longer burning at noon, plus the one-time `CloseBurnedQuestJobs`. **`978eef7` + `520513e`** — the King's decrees, first as content (**schema v13**) and then as a playable palace on Замкова, with the `CreateKingProgress` table behind it. **Three migrations in one restart** (only `CloseBurnedQuestJobs` writes existing data; the other two are additive), and **`/reload` carries none of it**: locale strings in the first two, and a schema bump in the third means the v12 binary on the Pi will refuse the new `content/data` until it is rebuilt |
+| HEAD | **`1faaddb`** — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`1faaddb`** — everything is pushed AND deployed. Push stays user-side |
+| running on the Pi | **`1faaddb`**, restarted **2026-09-22 00:22** — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| committed but NOT deployed | **nothing.** The 09-22 00:22 deploy took the whole backlog: the street split, the quest carry-over and the King's decrees end to end |
 
 **The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
 newest block is live and waiting only on a human opening the screens.

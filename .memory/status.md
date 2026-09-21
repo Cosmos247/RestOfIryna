@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-21 — the King's decrees are playable** (phase 2a, `520513e`, NOT DEPLOYED).
+**2026-09-21 — the King's decrees are playable** (phase 2a, `520513e`, live since 2026-09-22).
 The 👑 Палац is a `Location` inside `CapitalController` on Castle Street, which now has
 four keyboard rows. It shows the ONE decree the player carries, every condition resolved
 live through `RequirementLine`, what it pays, and a `✅ Доповісти Королю` button that
@@ -32,7 +32,7 @@ state and takes the other 7 through `record`, hooked beside the counters that al
 through combat, the trader, the quest payout, crafting, the expedition start and the
 harvest. Locale is complete in both languages — 39 names, 39 descriptions, 17 condition
 labels — and the `requireKey` rules landed with the screen that renders them. Phase 2b
-landed the same day: `KingCard` is the one renderer all three screens use, 📓 Нотатник carries the open decree above the NPC jobs (read-only — the journal's own standing rule), and `registration.complete` is followed by the royal charter holding the first decree. **The King's chain is feature-complete and entirely undeployed.**
+landed the same day: `KingCard` is the one renderer all three screens use, 📓 Нотатник carries the open decree above the NPC jobs (read-only — the journal's own standing rule), and `registration.complete` is followed by the royal charter holding the first decree. **The King's chain is feature-complete and LIVE since the 2026-09-22 00:22 deploy** (`1faaddb`).
 
 **2026-09-21 — the King's decree chain, content half** (`978eef7`, NOT DEPLOYED). A linear spine of
 **39 decrees, levels 1–25**, one open at a time, meant to tell a new player what to aim at:
@@ -47,7 +47,7 @@ storage, four event hooks, journal, charter message, locale) is listed in `TODO.
 The two rules worth carrying: no decree pays more Vigor than the pool at its level holds
 (the grant clamps), and a food reward is a NAMED item, never a "portion".
 
-**2026-09-19 — a taken job waits for you** (`328bf88`, **NOT DEPLOYED**; Swift + locale keys
+**2026-09-19 — a taken job waits for you** (`328bf88`, **live since the 2026-09-22 00:22 deploy**; Swift + locale keys
 + a data migration, so only `pm2 restart ROI` carries it). A daily job the player has TAKEN no
 longer burns at the 12:00 rollover: it stays open until turned in, and that NPC offers nothing
 new meanwhile. **One open job per NPC** — `QuestService.accept` refuses behind a carried one,

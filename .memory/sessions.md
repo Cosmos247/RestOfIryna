@@ -342,6 +342,34 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Deploy — 2026-09-22 00:22 (`536fbf6` → `1faaddb`)
+
+Fourteen commits in one pull, six of which change the game: the capital street split, the
+quest carry-over, and the King's decrees end to end. The first deploy since 09-19.
+
+**Order of operations, which is the point.** Pull → build on the Pi (Linux/aarch64, 106 s,
+clean) → `--content-digest` as a free pre-flight that touches neither the bot nor the
+database → digest matched the Mac **byte for byte**, all five lines and content hash
+`703a0404`, schema v13 → only then `pm2 restart ROI`.
+
+**Three migrations ran.** `CloseBurnedQuestJobs` closed **36 of 39** open jobs — the table
+before held rows back to 09-08, after it holds three, all stamped 09-21, which is the
+current game day at 00:22. `AddCapitalStreet` and `CreateKingProgress` are additive.
+Verified on the TABLE, not on the log line: `users.capital_street` exists, `king_progress`
+has its six columns.
+
+**The chain was live within minutes.** Two `king_progress` rows already, one of them at
+`decree_index = 1` — a player had turned the first decree in before this entry was
+written.
+
+**A live defect the deploy surfaced.** The pre-restart log carried
+`No localizations found for key: recipe.meat_ragout.taught, locale: uk` — a real player was
+shown a raw key instead of the innkeeper's line. **Three of the six recipe lessons are
+missing from `uk.json`** (`meat_ragout`, `clay_baked_meat`, `governors_feast`); English has
+all six. The validator never caught it because these keys are RENDERED but were never
+`requireKey`-ed — the mirror image of the mistake `feedback-a-checker-that-cannot-fail`
+was written about. Unfixed as of this entry.
+
 ## Session — 2026-09-21 part 2 (the palace opened) — `520513e`
 
 Phase 2a of the King's chain: the content half from `978eef7` became something a player can
