@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `520513e` (09-21) **the palace opened** — phase 2a: 👑 Палац as a `Location` inside
+  `CapitalController`, `KingProgress` + `CreateKingProgress`, `KingService` (10 of 17
+  conditions are live state reads, 7 are events) and all seven hooks beside the counters
+  that already pass through those sites. Locale complete in both languages, `requireKey`
+  landed with the screen. 292 tests; the digest did not move.
 - `978eef7` (09-21) **the King's decrees became content** — a 39-decree chain in
   `king.json`, `KingDTO` (tagged-union conditions, 17 kinds, unknown kind FAILS),
   `validateKingChain` (17 rules, each with its failing test), `roi-content spec king`, a
@@ -337,7 +342,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-21 part 2 (the palace opened)
+## Session — 2026-09-21 part 2 (the palace opened) — `520513e`
 
 Phase 2a of the King's chain: the content half from `978eef7` became something a player can
 walk into.

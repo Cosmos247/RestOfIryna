@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-21 — the King's decrees are playable** (phase 2a, uncommitted, NOT DEPLOYED).
+**2026-09-21 — the King's decrees are playable** (phase 2a, `520513e`, NOT DEPLOYED).
 The 👑 Палац is a `Location` inside `CapitalController` on Castle Street, which now has
 four keyboard rows. It shows the ONE decree the player carries, every condition resolved
 live through `RequirementLine`, what it pays, and a `✅ Доповісти Королю` button that

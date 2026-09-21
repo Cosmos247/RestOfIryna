@@ -1672,7 +1672,7 @@ Castle Street. Spec: `content/spec/king.md`. Every number printed by
 - Verified: `validate --strict` clean · `simulate --strict` 0 broken bands / 12 warnings
   (the documented baseline) · the four existing digest lines **byte-identical**
 
-**Phase 2a — the palace and the engine. DONE 2026-09-21.**
+**Phase 2a — the palace and the engine. DONE 2026-09-21 (`520513e`).**
 - [x] **The palace** — `Location.palace` inside `CapitalController`, a fourth row on
       Castle Street, the decree card and the `king:report` callback. A location, not a
       controller: `routerName` stays `"capital"` all over town, so the split's own rule
