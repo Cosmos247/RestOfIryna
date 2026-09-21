@@ -1020,6 +1020,36 @@ public enum ContentValidator {
             }
         }
 
+        // The palace card prints both of these for the ONE decree the player
+        // is carrying (`CapitalController.renderPalaceBody`), so a missing key
+        // is a raw `king.first_blood.name` shown to the player. Required only
+        // now that the screen exists: a key the validator demands and nothing
+        // renders is the mistake this rule was written after.
+        for (index, decree) in (bundle.king?.decrees ?? []).enumerated() {
+            for suffix in ["name", "desc"] {
+                let key = "\(decree.id).\(suffix)"
+                for locale in locales.missing(key) {
+                    issues.append(.init(severity: .error, file: "\(locale).json",
+                                        path: "decrees[\(index)]", id: decree.id,
+                                        rule: "locale.key.missing",
+                                        message: "missing key \"\(key)\""))
+                }
+            }
+            // One label per condition kind, rendered through `RequirementLine`
+            // on the same card. A typed plot gets its own line, so it gets its
+            // own key.
+            for condition in decree.conditions where condition.kind != .warehouseMaterials {
+                let key = condition.plotType.map { "king.cond.\(condition.kind.rawValue).\($0)" }
+                    ?? "king.cond.\(condition.kind.rawValue)"
+                for locale in locales.missing(key) {
+                    issues.append(.init(severity: .error, file: "\(locale).json",
+                                        path: "decrees[\(index)].conditions", id: decree.id,
+                                        rule: "locale.key.missing",
+                                        message: "missing key \"\(key)\""))
+                }
+            }
+        }
+
         let ladders = Dictionary(bundle.weaponLadders.map { ($0.itemId, $0) },
                                  uniquingKeysWith: { _, last in last })
 

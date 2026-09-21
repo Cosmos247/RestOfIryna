@@ -250,6 +250,7 @@ public enum PassiveExpeditionService {
         // not exist. The reverse order costs at worst a free run, which is the
         // cheaper way to be wrong.
         let state = try await ExplorationState.beginPassive(for: user, endsAt: endsAt, on: db)
+        try? await KingService.record(.passiveSent, for: user, on: db)
 
         // Committed here, at the one place every passive run starts — the
         // controller checks the ceiling first so the player gets a reason
@@ -655,6 +656,7 @@ public enum PassiveExpeditionService {
         let killsThisRun = outcomeCounts["encounter_won", default: 0]
         if killsThisRun > 0 {
             try? await QuestService.record(.beastKill, amount: killsThisRun, for: user, on: db)
+            try? await KingService.record(.beastKill, amount: killsThisRun, for: user, on: db)
         }
 
         let report = PassiveReport(

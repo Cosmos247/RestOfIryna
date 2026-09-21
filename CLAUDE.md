@@ -223,8 +223,17 @@ is 10–72 Vigor, so portions cannot be added up), and **a `player_level` decree
 equal its own `level`**. A decree's kind is DERIVED — it is a level decree when one of its
 conditions is `player_level` — because a second discriminator beside the conditions is a
 field that can disagree with them. No screen shows "decree N of 39". The chain is printed by
-`roi-content spec king` and hashed by the fifth digest line, `king`. Spec:
-`content/spec/king.md`; the two decrees cut on 2026-09-21 and why:
+`roi-content spec king` and hashed by the fifth digest line, `king`.
+
+**Ten of the seventeen condition kinds are live state reads; seven are events that leave
+no trace.** `KingService.record` is the one funnel for those seven, and it ticks
+`KingProgress.counter` ONLY when the open decree is the one asking — nothing accumulates
+ahead of time, so "defeat five beasts" counts from when the decree opens. Each hook sits
+beside the counter that already passes through that site. **A harvest is an event, not a
+state**: `Plot.lastHarvestedAt` starts at the moment the plot is claimed and is reset by
+every harvest, so it can never answer "has this player ever harvested". The palace is a
+`Location` inside `CapitalController`, not a controller — `routerName` stays `"capital"`
+all over town. Spec: `content/spec/king.md`; the two decrees cut on 2026-09-21 and why:
 auto-memory `project-king-decrees-deferred`.
 
 ### Vigor, rest and background work

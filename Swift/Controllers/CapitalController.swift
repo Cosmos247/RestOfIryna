@@ -38,6 +38,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     enum Location: String, CaseIterable {
         case market
         case arena
+        /// The King's own hall, on Castle Street. Unlike every other place in
+        /// town it has no business of its own: it shows the one decree the
+        /// player is carrying and takes the report on it.
+        case palace
         case trader
         case fortune
         case master
@@ -122,6 +126,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             for locale in SupportedLocale.allCases {
                 router[lingo.localize(Location.market.buttonKey,  locale: locale)] = onMarket
                 router[lingo.localize(Location.arena.buttonKey,   locale: locale)] = onArena
+                router[lingo.localize(Location.palace.buttonKey,  locale: locale)] = onPalace
                 router[lingo.localize(Location.trader.buttonKey,  locale: locale)] = onTrader
                 router[lingo.localize(Location.fortune.buttonKey, locale: locale)] = onFortune
                 router[lingo.localize(Location.master.buttonKey,  locale: locale)] = onMaster
@@ -237,6 +242,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // MARK: - Location handlers
 
     private func onMarket(context: Context)  async throws -> Bool { try await showMarket(context: context); return true }
+    private func onPalace(context: Context)  async throws -> Bool { try await showPalace(context: context); return true }
     private func onArena(context: Context)   async throws -> Bool { try await onArenaEnter(context: context); return true }
     private func onTrader(context: Context)  async throws -> Bool { try await showTrader(context: context); return true }
     private func onFortune(context: Context) async throws -> Bool { try await showFortune(context: context); return true }
@@ -1442,6 +1448,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.editToQuestBoard(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
+        if data.hasPrefix("king:report") {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleKingReport(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
         if data.hasPrefix("quest:take:") {
             let token = String(data.dropFirst("quest:take:".count))
             guard let npc = QuestNPC(rawValue: token) else {
@@ -2083,6 +2094,156 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // flow (quantity → price) gated by a flat listing fee. Listing escrows the
     // units off the seller's bag; buying transfers them + the silver and pushes
     // the seller a "sold" notification; cancelling returns the units (fee kept).
+
+    // MARK: - The palace (the King's decrees)
+
+    /// The palace screen: the one decree the player is carrying, every
+    /// condition resolved against live state, and what turning it in pays.
+    ///
+    /// There is no "decree N of 39" counter, by the owner's decision on
+    /// 2026-09-21 — the player needs to know what is in front of them, not
+    /// where they sit in a list nobody showed them the length of.
+    func showPalace(context: Context) async throws {
+        let standing = try await KingService.standing(for: context.session, on: context.db)
+        let text = renderPalaceBody(standing: standing, session: context.session, lingo: context.lingo)
+        // Inline button only when the decree is done; otherwise refresh the
+        // street's own reply keyboard rather than leaving whatever was last
+        // set, so the screen can never be reached with a stale one.
+        let markup: TGReplyMarkup? = (standing?.isComplete ?? false)
+            ? .inlineKeyboardMarkup(palaceKeyboard(lingo: context.lingo, locale: context.session.locale))
+            : generateControllerKB(session: context.session, lingo: context.lingo)
+        _ = try await sendCachedPhoto(
+            assetPath: "\(projectPath)/Assets/capital/palace.jpg",
+            caption: text,
+            replyMarkup: markup,
+            toUser: context.session,
+            bot: context.bot
+        )
+    }
+
+    private func palaceKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("king.button.report", locale: locale),
+                                   callbackData: "king:report")
+        ]])
+    }
+
+    /// Both the card and the farewell the chain ends on.
+    private func renderPalaceBody(standing: KingService.Standing?, session: User, lingo: Lingo) -> String {
+        let locale = session.locale
+        let title = lingo.localize(Location.palace.titleKey, locale: locale)
+        guard let standing else {
+            return "<b>\(title)</b>\n\n" + lingo.localize("king.finished", locale: locale)
+        }
+        let decree = standing.decree
+        var out = "<b>\(title)</b>\n\n"
+        out += lingo.localize(Location.palace.bodyKey, locale: locale) + "\n\n"
+        out += "<b>" + lingo.localize(KingCatalog.nameKey(decree), locale: locale) + "</b>\n"
+        out += lingo.localize(KingCatalog.descKey(decree), locale: locale) + "\n\n"
+        // Every condition through `RequirementLine`, so "what it asks / what
+        // you have" is the same sentence here as on the kitchen and the
+        // workshop screens.
+        for condition in standing.conditions {
+            if let itemId = condition.itemId {
+                out += RequirementLine.item(itemId, have: condition.have, need: condition.need,
+                                            lingo: lingo, locale: locale) + "\n"
+            } else if let key = condition.labelKey {
+                out += RequirementLine.render(label: lingo.localize(key, locale: locale),
+                                              have: condition.have, need: condition.need) + "\n"
+            }
+        }
+        // 🎁 prepended in Swift — a leading supplementary-plane emoji breaks
+        // Lingo's `%{var}` parser. See .memory/localization.md.
+        out += "\n🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+            "reward": Self.kingRewardPhrase(decree.reward, lingo: lingo, locale: locale)
+        ])
+        return out
+    }
+
+    /// What a decree pays, in the order the player cares about it: Vigor and
+    /// food first (they are what the early chain is for), then silver and XP.
+    /// Food is named — a "portion" is worth anywhere from 10 to 72 Vigor, so a
+    /// bare count says nothing.
+    static func kingRewardPhrase(_ reward: KingRewardDTO, lingo: Lingo, locale: String) -> String {
+        var parts: [String] = []
+        if reward.vigor > 0 {
+            parts.append("🔋 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
+        }
+        if let food = reward.food, food.quantity > 0 {
+            let item = ItemCatalog.find(food.itemId)
+            let icon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? food.itemId
+            parts.append("\(icon)\(food.quantity)× \(name)")
+        }
+        if reward.silver > 0 { parts.append("🪙 \(reward.silver)") }
+        if reward.xp > 0 {
+            parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Report the open decree. Pays, advances, redraws the palace with the
+    /// next one, and posts the outcome as its own banner.
+    func handleKingReport(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let standing = try await KingService.standing(for: context.session, on: context.db)
+        let name = standing.map { lingo.localize(KingCatalog.nameKey($0.decree), locale: locale) } ?? ""
+
+        do {
+            let payout = try await KingService.report(for: context.session, on: context.db)
+            try await context.session.saveAndCache(in: context.db)
+
+            var earned: [String] = []
+            // What LANDED, never the authored number: the pool clamps, and a
+            // banner that quotes the reward instead of the receipt is exactly
+            // the defect the validator's ceiling rule exists for.
+            if payout.vigorLanded > 0 {
+                earned.append("🔋 \(payout.vigorLanded) " + lingo.localize("quest.reward.vigor", locale: locale))
+            }
+            if let foodId = payout.foodItemId, payout.foodQuantity > 0 {
+                let item = ItemCatalog.find(foodId)
+                let icon = item?.icon.map { "\($0) " } ?? ""
+                let foodName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? foodId
+                earned.append("\(icon)\(payout.foodQuantity)× \(foodName)")
+            }
+            if payout.silver > 0 { earned.append("🪙 \(payout.silver)") }
+            if payout.xp > 0 {
+                earned.append("📊 \(payout.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+            }
+            let banner = "✅ " + lingo.localize("king.banner.done", locale: locale,
+                                                interpolations: ["decree": name])
+                + "\n🎁 " + earned.joined(separator: " · ")
+            await postStatusBanner(banner, context: context)
+        } catch KingService.ReportFailure.bagFull(let itemId, let quantity) {
+            let item = ItemCatalog.find(itemId)
+            let foodName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+            await postStatusBanner(
+                "❌ " + lingo.localize("king.banner.bag_full", locale: locale,
+                                       interpolations: ["count": "\(quantity)", "item": foodName]),
+                context: context)
+        } catch KingService.ReportFailure.notComplete, KingService.ReportFailure.finished {
+            // The button outlived the screen it was drawn on, which a message
+            // left in chat history can always produce. Redrawing below is the
+            // answer to both.
+            await postStatusBanner(
+                "❌ " + lingo.localize("king.banner.not_complete", locale: locale), context: context)
+        } catch {
+            // Anything else is a real failure and says so. Folding it into the
+            // line above would tell the player their decree is unfinished when
+            // the truth is that the write did not happen — and they would tap
+            // forever waiting for a condition that is already met.
+            await postStatusBanner(
+                "❌ " + lingo.localize("king.banner.failed", locale: locale), context: context)
+        }
+
+        let next = try await KingService.standing(for: context.session, on: context.db)
+        _ = await editScreen(
+            chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
+            text: renderPalaceBody(standing: next, session: context.session, lingo: lingo),
+            replyMarkup: (next?.isComplete ?? false) ? palaceKeyboard(lingo: lingo, locale: locale) : nil,
+            bot: context.bot)
+    }
 
     func showMarket(context: Context) async throws {
         let activeLots = try await MarketListing.activeCount(for: context.session, on: context.db)
@@ -3622,8 +3783,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // Everything with another player or the Crown on the far side.
             rows = [
                 [button(Location.market.buttonKey), button(Location.arena.buttonKey)],
-                [button("capital.button.guild"), back],
-                utility
+                [button("capital.button.guild"), button(Location.palace.buttonKey)],
+                utility,
+                [back]
             ]
         case nil:
             // The square: the two roads out of it, and the road home.

@@ -67,6 +67,13 @@ final class DomainContent: Sendable {
     let guild: GuildFileDTO
     let arena: ArenaFileDTO
 
+    /// The King's decree chain, IN CHAIN ORDER. Carried as the DTO for the
+    /// same reason market / guild / arena are: there is nothing to parse, the
+    /// wire shape IS the domain shape, and a mirror struct would only copy
+    /// fields across. Never sorted — the array's order is the order the player
+    /// walks it.
+    let kingDecrees: [KingDecreeDTO]
+
     // Batch C. The two lookup dictionaries replace what used to be a linear
     // `first(where:)` and a `Dictionary(uniqueKeysWithValues:)` that TRAPPED on
     // a duplicate id; duplicates are now a validator error instead, so a
@@ -240,6 +247,7 @@ final class DomainContent: Sendable {
         self.tavernWagerTiers = tavern.wagerTiers
         self.market = market
         self.guild = guild
+        self.kingDecrees = content.kingDecrees
         self.arena = arena
 
         // Shop order is display order — ascending by price — so no sort here.

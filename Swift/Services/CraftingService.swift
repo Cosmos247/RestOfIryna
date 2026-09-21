@@ -195,6 +195,12 @@ public enum CraftingService {
             try await WarehouseEntry.add(recipe.output.itemId, quantity: recipe.output.quantity, to: user, on: db)
         }
 
+        // The King asks for a cooked dish and for a crafted thing as two
+        // different decrees, so the split is by the recipe's own category —
+        // firing both would let a pot of stew answer "craft something".
+        try? await KingService.record(recipe.category == .kitchen ? .dishCooked : .crafted,
+                                      for: user, on: db)
+
         // Phase 9.2 — the Master's "Виплавка" job counts forge output. Only the
         // ingot is tracked in v1; best-effort so a quest hiccup can't eat a craft.
         if recipe.output.itemId == "mat.iron_ingot" {

@@ -56,7 +56,7 @@ struct WipeForRebalance: AsyncMigration {
     static let playerTables = [
         "users", "inventory", "warehouse",
         "exploration_state", "travel_state", "plots",
-        "quest_progress", "arena_profiles",
+        "quest_progress", "arena_profiles", "king_progress",
         "learned_recipes", "learned_techniques",
         "market_listings",
         "guilds", "guild_invites", "guild_vault",

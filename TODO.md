@@ -1672,25 +1672,39 @@ Castle Street. Spec: `content/spec/king.md`. Every number printed by
 - Verified: `validate --strict` clean · `simulate --strict` 0 broken bands / 12 warnings
   (the documented baseline) · the four existing digest lines **byte-identical**
 
-**Phase 2 — the game, NOT started.** Nothing player-visible exists yet.
-- [ ] **The palace** — a location on Castle Street. Does not exist at all: no controller,
-      no locale keys, no artwork (`Assets/capital/` has fortune, tavern, trader, welcome).
-      Screen is text-only until a `palace.jpg` appears; `sendCachedPhoto` needs no
-      registration, only a restart to drop the stale file_id.
-- [ ] **Progress storage** — one row per player, a migration, and counters for the
-      event-driven conditions. **The row stores a decree id, so it has to go into
-      `LiveReferenceQuery.collect`** — otherwise `/reload` will happily install a bundle
-      that drops an id live rows point at, which is the whole reason that check exists.
-- [ ] **Four new hooks** — NPC job turned in, dish cooked, passive expedition sent,
-      anything crafted. `beast_kills` reuses the existing counter; everything else is a
-      state read.
-- [ ] **The journal** — decrees 1 and 2 arrive before the capital is reachable, so 📓
-      Нотатник carries them until the palace opens.
-- [ ] **The charter** — one message after `registration.complete`. No herald: the King
-      already speaks in person at registration step 4 and ends with «Очистіть землю,
-      збудуйте стіни», which is what the whole chain is.
-- [ ] **Locale** — `king.<id>.name` / `.desc` in both files, and the `requireKey` calls
-      land in the same commit as the screen that renders them.
+**Phase 2a — the palace and the engine. DONE 2026-09-21.**
+- [x] **The palace** — `Location.palace` inside `CapitalController`, a fourth row on
+      Castle Street, the decree card and the `king:report` callback. A location, not a
+      controller: `routerName` stays `"capital"` all over town, so the split's own rule
+      holds. Text-only until `Assets/capital/palace.jpg` exists.
+- [x] **`KingProgress` + `CreateKingProgress`** — one row per player, unique on `user_id`,
+      two numbers in it (`decreeIndex`, `counter`). Created lazily at decree 0; no
+      backfill, so every existing player starts at the top and walks the backlog one
+      decree at a time, which is what the owner chose over settling it in one screen.
+      Added to `WipeForRebalance.playerTables`.
+- [x] **`KingService`** — 10 of the 17 condition kinds are live state reads, 7 are events.
+- [x] **All seven event hooks**, each beside the counter that already passes through that
+      site: combat victory and passive kills → `beastKill`, trader sale → `traderSale`,
+      job turned in → `questTurnedIn`, craft → `dishCooked` / `crafted` split by the
+      recipe's own category, expedition sent → `passiveSent`, harvest → `plotHarvested`.
+- [x] **Locale, complete** — all 39 names and descriptions in BOTH languages, 17 condition
+      labels, the palace, and the banners. `requireKey` for every one of them landed in the
+      same commit as the screen that renders them.
+- Verified: `validate --strict` clean · 292 tests · digest unmoved.
+
+**Phase 2b — what is left.** Two things, both about reaching a decree before the palace
+opens:
+- [ ] **The journal** — decrees 1 and 2 are satisfiable before the capital is reachable,
+      and right now nothing shows them until the player walks into the palace (where they
+      turn in immediately). 📓 Нотатник should carry the open decree from the first minute.
+- [ ] **The charter** — one message after `registration.complete` holding the first decree.
+      No herald: the King already speaks in person at registration step 4 and ends with
+      «Очистіть землю, збудуйте стіни», which is what the whole chain is.
+
+**One trap still open.** `KingProgress` stores a decree INDEX, not an id, so nothing in
+the database points at a content id and `LiveReferenceQuery.collect` needs no entry. If a
+future column ever stores a decree id, it must go in there — that is the check `/reload`
+leans on.
 
 **Decisions worth not relitigating.** No "decree N of 39" counter on any screen. Only the
 six levels that unlock an estate tier (4, 7, 10, 13, 16, 19) carry a level decree, plus the

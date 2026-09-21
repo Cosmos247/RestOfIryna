@@ -21,6 +21,19 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-21 — the King's decrees are playable** (phase 2a, uncommitted, NOT DEPLOYED).
+The 👑 Палац is a `Location` inside `CapitalController` on Castle Street, which now has
+four keyboard rows. It shows the ONE decree the player carries, every condition resolved
+live through `RequirementLine`, what it pays, and a `✅ Доповісти Королю` button that
+appears only when it is done. `KingProgress` is one row per player — a decree index and a
+counter — created lazily at decree 0, so existing players start at the top and walk the
+backlog one decree at a time. `KingService` answers 10 of the 17 condition kinds off live
+state and takes the other 7 through `record`, hooked beside the counters that already pass
+through combat, the trader, the quest payout, crafting, the expedition start and the
+harvest. Locale is complete in both languages — 39 names, 39 descriptions, 17 condition
+labels — and the `requireKey` rules landed with the screen that renders them. Left for 2b:
+the journal entry and the charter message after registration.
+
 **2026-09-21 — the King's decree chain, content half** (`978eef7`, NOT DEPLOYED). A linear spine of
 **39 decrees, levels 1–25**, one open at a time, meant to tell a new player what to aim at:
 32 task decrees plus 7 level steps, and the only levels carrying a step are the six that

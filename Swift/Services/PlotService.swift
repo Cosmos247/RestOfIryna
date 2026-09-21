@@ -180,6 +180,11 @@ public enum PlotService {
         plot.lastHarvestedAt = Date()
         plot.notifiedFull = false
         try await plot.save(on: db)
+        // A harvest leaves nothing behind that can be read later —
+        // `lastHarvestedAt` starts at the moment the plot was claimed and is
+        // reset by every harvest — so the King's decree has to be told here or
+        // never.
+        try? await KingService.record(.plotHarvested, for: user, on: db)
         return .success(primary: primaryYield, bonus: bonusYield, destination: destination)
     }
 

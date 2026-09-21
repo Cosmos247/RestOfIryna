@@ -337,6 +337,60 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-21 part 2 (the palace opened)
+
+Phase 2a of the King's chain: the content half from `978eef7` became something a player can
+walk into.
+
+**What shipped.** 👑 Палац as a `Location` inside `CapitalController` — not a controller,
+because `routerName` stays `"capital"` all over town and the street split's own rule says a
+street is a keyboard. Castle Street went to four rows. The card shows the ONE decree the
+player carries, every condition resolved live through `RequirementLine`, what it pays, and a
+report button that exists only when the decree is done. `KingProgress` is one row and two
+numbers; `KingService` is the engine; all seven event hooks sit beside the counters that
+already pass through those sites. Locale is complete in both languages.
+
+**Three things the build taught, each of which changed the plan.**
+- **The split I proposed was wrong.** 2a was scoped as "13 state reads, hooks in 2b" — but
+  decree #2 is "defeat five beasts", so without hooks the chain stalls on the second step
+  and 2a would have delivered nothing walkable. The hooks came into 2a.
+- **A harvest is an event, not a state.** `Plot.lastHarvestedAt` starts at the moment the
+  plot is claimed and is reset by every harvest, so it can never answer "has this player
+  ever harvested". That made seven hooks where the design had counted four.
+- **A won duel IS a state.** `ArenaProfile.wins` is a lifetime tally that already exists,
+  so `win_duel` needed no hook at all and is true for anyone who won before the decree
+  opened.
+
+**Four decree names were renamed** — «Гідний намісник», «Сила намісника», «Досвідчений
+намісник», «Обоз намісника» → «Корона помічає», «Міцна рука», «Заслуга перед Короною»,
+«Похідний обоз». Each named the player with a gendered noun, which under the gender rule
+would have forced `.m`/`.f` on all 39 names (the gendered overload has no fallback: it
+always appends the suffix for uk). Impersonal titles read more like decrees anyway, and
+because the generated spec prints IDS rather than names, not one table moved.
+
+**`requireKey` landed with the screen**, which is the rule: the decree name, description
+and every condition label are now required in both locales, with a failing test for each.
+
+**Two defects the audit found, both fixed before the commit.**
+- **A background writer could rewind the chain.** `record` saved the whole `KingProgress`
+  row, and it runs from the passive expedition's detached sweep as well as from a tap —
+  which `RouterStore` does not serialize against each other. A whole-row save from there
+  could put back a `decreeIndex` the player had just advanced, handing them a decree they
+  had already been paid for. Now it is a targeted `UPDATE … SET counter` filtered on the
+  index it was read at, so a stale write simply matches no row. Same lesson as
+  `feedback-background-writers-session-cache`, one table over.
+- **A real failure was being reported as an unfinished decree.** The turn-in handler's
+  catch-all told the player «Указ ще не виконано» for any error, including a failed write
+  — so they would tap forever waiting on a condition that was already met. The known
+  failures now say their own thing and everything else gets `king.banner.failed`.
+
+**Verification.** `validate --strict` ✅ 0 warnings · `swift test` 292/292 · digest all five
+lines unmoved (`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` ·
+`spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50`).
+
+**Left for 2b:** the journal entry and the charter message after registration — both about
+seeing a decree before the palace is reachable.
+
 ## Session — 2026-09-21 (the King's decrees, and a word the estate had three of) — `978eef7`
 
 **What the session was.** Recovering the design the 09-20 disconnect left only in a

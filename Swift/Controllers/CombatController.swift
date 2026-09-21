@@ -1100,6 +1100,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // tick is a real beast. Best-effort — a quest write must not break the
         // victory flow.
         try? await QuestService.record(.beastKill, for: context.session, on: context.db)
+        try? await KingService.record(.beastKill, for: context.session, on: context.db)
 
         // Phase 5.3a: grant XP from the kill, append level-up + estate-up
         // banners to the victory message. Training dummies have xpReward = 0

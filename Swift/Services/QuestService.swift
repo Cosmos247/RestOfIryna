@@ -424,6 +424,7 @@ public enum QuestService {
                                       to: user, on: db)
         row.claimed = true
         try await row.save(on: db)
+        try? await KingService.record(.questTurnedIn, for: user, on: db)
         return .paid(def: def, payout: payout)
     }
 

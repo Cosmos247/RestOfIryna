@@ -200,6 +200,35 @@ final class KingChainTests: XCTestCase {
         assertRule("identity.duplicate_id", [decree("king.a"), decree("king.a")])
     }
 
+    // MARK: - The keys the palace card prints
+
+    /// Required only since the palace screen landed (2026-09-21). Both of
+    /// these fire against a locale table that is missing exactly one key,
+    /// which is the only way to know the rule is wired at all.
+    func testAMissingDecreeNameIsAnError() {
+        let decrees = [decree("king.a", conditions: [KingConditionDTO(kind: .cookDish)])]
+        let locales = LocaleIndex(tables: [
+            "en": ["king.a.desc": "d", "king.cond.cook_dish": "c"],
+            "uk": ["king.a.desc": "д", "king.cond.cook_dish": "к"],
+        ])
+        let found = ContentValidator.validate(bundle(decrees), localizations: locales)
+        let missing = found.errors.filter { $0.rule == "locale.key.missing" && $0.id == "king.a" }
+        XCTAssertEqual(missing.count, 2, "expected en + uk, got \(missing.map(\.file))")
+        XCTAssertTrue(missing.allSatisfy { $0.message.contains("king.a.name") })
+    }
+
+    func testAMissingConditionLabelIsAnError() {
+        let decrees = [decree("king.a", conditions: [KingConditionDTO(kind: .claimPlot, plotType: "farm")])]
+        let locales = LocaleIndex(tables: [
+            "en": ["king.a.name": "n", "king.a.desc": "d"],
+            "uk": ["king.a.name": "н", "king.a.desc": "д"],
+        ])
+        let found = ContentValidator.validate(bundle(decrees), localizations: locales)
+        XCTAssertTrue(found.errors.contains {
+            $0.rule == "locale.key.missing" && $0.message.contains("king.cond.claim_plot.farm")
+        }, "got \(found.errors.map(\.message))")
+    }
+
     // MARK: - Wire format
 
     /// An unknown kind FAILS rather than defaulting: a silently dropped
