@@ -1662,7 +1662,7 @@ A linear chain of **39 decrees, levels 1–25**, one open at a time, taken in th
 Castle Street. Spec: `content/spec/king.md`. Every number printed by
 `roi-content spec king`.
 
-**Phase 1 — data, generator, spec. DONE 2026-09-21.**
+**Phase 1 — data, generator, spec. DONE 2026-09-21 (`978eef7`).**
 - [x] `content/data/king.json` — 39 decrees, array order is the chain order
 - [x] `KingDTO.swift` — tagged-union conditions (17 kinds), rewards with named food
 - [x] Loader / bundle / snapshot wiring; **schema v12 → v13** (a new required file)

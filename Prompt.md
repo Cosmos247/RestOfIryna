@@ -33,15 +33,15 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-21, four commits ahead of the Pi plus an uncommitted working tree)
+### Where things stand right now (2026-09-21, five commits ahead of the Pi, three of them code)
 
 | | |
 |---|---|
-| working tree | **NOT clean** — the King's decree chain, phase 1 (content + generator + spec, no game screens) and a three-key locale pass («наділ» → «ділянка»). Built, validated, 290/290 tests, simulator on baseline. Uncommitted |
-| HEAD | **`f702334`** — the doc pass that moved the walk list to `TODO.md` and cut the preamble by a third — plus a one-line hash fill on top of it. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — `328bf88`, `a604a62`, `f702334` and the hash fill. Push is user-side |
+| working tree | clean |
+| HEAD | **`978eef7`** — the King's decree chain as content (no game screens yet) plus two locale renames, and a one-line hash fill on top of it. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`536fbf6`**; **everything after it is unpushed** — `328bf88`, `a604a62`, `f702334`, `f57a6b9`, `978eef7` and two hash fills. Push is user-side |
 | running on the Pi | **`536fbf6`**, restarted **2026-09-19 14:21** and still up — schema v12, content hash `0fa93e96`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` (identical to the Mac). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **the capital street split** — 👑 Замкова / 🏘 Поділ, `AddCapitalStreet`, six keyboard rows down to three — and **`328bf88`**, a taken job no longer burning at noon plus the one-time `CloseBurnedQuestJobs`. Two migrations in one restart; only `CloseBurnedQuestJobs` writes data. Locale strings in both, so **`/reload` carries neither** |
+| committed but NOT deployed | Three things now. **The capital street split** — 👑 Замкова / 🏘 Поділ, `AddCapitalStreet`, six keyboard rows down to three. **`328bf88`** — a taken job no longer burning at noon, plus the one-time `CloseBurnedQuestJobs`. **`978eef7`** — the King's decree chain as content, which moves the bundle to **schema v13**. Two migrations in one restart (only `CloseBurnedQuestJobs` writes data), and **`/reload` carries none of it**: locale strings in the first two, and a schema bump in the third means the v12 binary on the Pi will refuse the new `content/data` until it is rebuilt |
 
 **The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
 newest block is live and waiting only on a human opening the screens.

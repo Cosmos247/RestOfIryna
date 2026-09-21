@@ -11,10 +11,15 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-**Uncommitted on 2026-09-21: the King's decree chain, phase 1** — `king.json` + DTO +
-validator + `spec king` + the fifth digest line + 19 tests + `content/spec/king.md`, plus a
-three-key locale pass («наділ» → «ділянка»). Nothing player-visible: the palace does not
-exist yet. **Schema v12 → v13**, so the content directory and the binary must ship together.
+- `978eef7` (09-21) **the King's decrees became content** — a 39-decree chain in
+  `king.json`, `KingDTO` (tagged-union conditions, 17 kinds, unknown kind FAILS),
+  `validateKingChain` (17 rules, each with its failing test), `roi-content spec king`, a
+  fifth digest line `king`, 19 tests and `content/spec/king.md`. **Schema v12 → v13**: a new
+  required file, so the content directory and the binary must ship together from here.
+  Nothing player-visible — the palace does not exist as a location yet. Two locale passes
+  ride along: «наділ» → «ділянка» (3 keys) and «Підзамче» → «Поділ» (3 keys). Verified
+  `validate --strict` clean, 290/290 tests, `simulate --strict` on baseline, and the four
+  older digest lines byte-identical.
 
 **Undeployed: the capital street split and `328bf88`,** neither pushed — `origin/main` is at
 `536fbf6`. Both are built, tested and verified, and between them the next restart runs TWO
@@ -332,7 +337,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-21 (the King's decrees, and a word the estate had three of)
+## Session — 2026-09-21 (the King's decrees, and a word the estate had three of) — `978eef7`
 
 **What the session was.** Recovering the design the 09-20 disconnect left only in a
 transcript, finishing it with the owner, and building its content half.

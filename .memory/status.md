@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-21 — the King's decree chain, content half** (uncommitted). A linear spine of
+**2026-09-21 — the King's decree chain, content half** (`978eef7`, NOT DEPLOYED). A linear spine of
 **39 decrees, levels 1–25**, one open at a time, meant to tell a new player what to aim at:
 32 task decrees plus 7 level steps, and the only levels carrying a step are the six that
 unlock an estate tier plus the finale at 25. Shipped this session: `content/data/king.json`,
