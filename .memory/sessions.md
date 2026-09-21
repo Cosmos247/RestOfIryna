@@ -342,6 +342,10 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Deploy — 2026-09-22 00:33 (`1faaddb` → `60a8bad`)
+
+A locale-only follow-up: the owner's own copy for both capital streets. The digest did not move, which is exactly right — locale strings are not hashed — and there were no migrations. Worth doing as its own restart only because **Lingo is not hot-reloaded**, so `/reload` could not have carried two lines of text.
+
 ## Deploy — 2026-09-22 00:22 (`536fbf6` → `1faaddb`)
 
 Fourteen commits in one pull, six of which change the game: the capital street split, the

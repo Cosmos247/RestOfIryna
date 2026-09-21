@@ -38,9 +38,9 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`1faaddb`** — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`1faaddb`** — everything is pushed AND deployed. Push stays user-side |
-| running on the Pi | **`1faaddb`**, restarted **2026-09-22 00:22** — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **`60a8bad`** — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`60a8bad`** — everything is pushed AND deployed. Push stays user-side |
+| running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | committed but NOT deployed | **nothing.** The 09-22 00:22 deploy took the whole backlog: the street split, the quest carry-over and the King's decrees end to end |
 
 **The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
