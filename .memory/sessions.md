@@ -393,7 +393,7 @@ and every condition label are now required in both locales, with a failing test 
 lines unmoved (`records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` ·
 `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50`).
 
-**Phase 2b, the same day.** `KingCard` became the one renderer for the decree block, and
+**Phase 2b, the same day (`ad09c74`).** `KingCard` became the one renderer for the decree block, and
 the palace, the journal and the charter all call it — three screens showing one decree is
 exactly where three copies would drift. 📓 Нотатник now carries the open decree above the
 NPC jobs, and `registration.complete` is followed by the royal charter.

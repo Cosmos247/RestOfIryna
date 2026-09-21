@@ -1692,7 +1692,7 @@ Castle Street. Spec: `content/spec/king.md`. Every number printed by
       same commit as the screen that renders them.
 - Verified: `validate --strict` clean · 292 tests · digest unmoved.
 
-**Phase 2b — the journal and the charter. DONE 2026-09-21.**
+**Phase 2b — the journal and the charter. DONE 2026-09-21 (`ad09c74`).**
 - [x] **`KingCard`** — ONE renderer for the decree block (name, description, conditions
       through `RequirementLine`, reward). Three screens show the same decree now, so they
       get one implementation rather than three that will drift.
