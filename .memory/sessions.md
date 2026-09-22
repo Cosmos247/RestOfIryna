@@ -342,7 +342,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-22 (the sync pass after the King)
+## Session — 2026-09-22 (the sync pass after the King) — `636caa6`
 
 A records-and-sweep session: no game behaviour changed. What it found is the point.
 
