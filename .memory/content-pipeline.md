@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            271 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            292 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -61,14 +61,15 @@ content/data/*.json
    GameContent  (DTO snapshot)   → GameData.install
    DomainContent (domain snapshot) → Catalogs.install
       ↑
-  ALL 13 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade · Zone (8E)
-  Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest
+  ALL 14 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade · Zone (8E)
+  Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest · King (09-21)
   — every one reads Catalogs.current
 ```
 
-`content/data/` holds 17 files: `manifest · items · enemies · recipes ·
-weapon_upgrades · bags · estate_upgrades · trader · tavern · market · guild ·
-arena · master · plots · fortune · quests · zones`. **No Swift catalog array
+`content/data/` holds 20 files: `arena · bags · enemies · estate_upgrades · fortune · guild · items · king · manifest · market · master · plots · quests · rarities · recipes · sets · tavern · trader · weapon_upgrades · zones`.
+(The list had drifted twice before 2026-09-21: `rarities` and `sets` arrived in
+Phase 6 and were never added here, and `king` in the decree chain. Counted from the
+directory, not from memory.) **No Swift catalog array
 remains** (Phase 3 closed 2026-08-29; `zones.json` was the last holdout, two
 arrays inside `ExplorationService.rollLoot` that Phase 8E pulled out when
 foraging became part of the food economy), so `ContentExporter` and

@@ -21,25 +21,26 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Rebalance](rebalance.md) — Audit findings, locked decisions, the calibrated math model, the phase tracker and the per-phase lessons
 
 ## Content specifications (in the repo, not here)
-- [`content/spec/`](../content/spec/) — **all five approved; Phase 9 closed 2026-09-01.** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
+- [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule
   - `spec-bestiary.md` — the roster, zones and loot
   - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
+  - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
 
 ## Where the work stands
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. The Pi runs **`536fbf6`** since **2026-09-19 14:21** (schema v12,
-  digest `records 6588329ab2bdbc70`, matched byte for byte before the restart was ordered);
-  that deploy cleared ten commits at once. **One commit is undeployed and unpushed** —
-  `328bf88`, the quest carry-over, which carries the **first data migration since
-  `ResetDeepestKm`**, so its restart writes to the database and the `quest_progress` TABLE is
-  what to verify afterwards. The next action is a human opening the screens: a backlog spanning
-  three deploys and never walked.
+  play surfaces a need for. The Pi runs **`60a8bad`** since **2026-09-22 00:33** (schema
+  **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `king 4326bb40aa735a50`,
+  matched byte for byte before the restart was ordered). That deploy and the 00:22 one before
+  it cleared the whole backlog: **nothing is undeployed.** The newest feature is the **King's
+  decree chain** — 39 decrees from level 1 to 25, the palace on Castle Street, the journal and
+  the charter. The next action is a human opening the screens: a backlog spanning four deploys
+  and never walked.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -67,7 +68,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 62 at one line each, so a selection copied into this file is the
+already carries all 66 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

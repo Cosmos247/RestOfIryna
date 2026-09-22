@@ -410,7 +410,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred.
-- [x] **Two streets** *(landed 2026-09-20, NOT DEPLOYED)* — the capital keyboard had reached
+- [x] **Two streets** *(landed 2026-09-20, live since the 2026-09-22 00:22 deploy)* — the capital keyboard had reached
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
       Street) carries 🛒 Базар · ⚔️ Ристалище · 🏰 Гільдії — everything with another player
@@ -1736,10 +1736,32 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Everything except the first block is LIVE and unwalked**; the first is waiting
-on `328bf88`.
+Telegram. **Every block below is LIVE and unwalked** — the 2026-09-22 deploys took the whole
+backlog, so nothing here is waiting on a restart any more.
 
-**Added 2026-09-20 — NOT LIVE. The capital is two streets now; this walk is the whole hub:**
+**Added 2026-09-22 — the King's decree chain, which no human has seen at all:**
+- **a NEW character, start to finish.** The royal charter must arrive as its own message
+  right after the welcome, carrying decree 1 — and the main keyboard must survive it (the
+  charter is sent with no markup on purpose). Read it: it should read as the scroll the King
+  handed over in step 4, not as a stranger's errand.
+- **📓 Нотатник from the first minute.** 👑 Указ Короля stands above the NPC jobs, with the
+  condition line and the reward. It is READ-ONLY by that screen's own standing rule; when the
+  decree is done the line says «готово — доповісти в палаці» and there is no button.
+- **👑 Палац on Замкова.** Text-only until `Assets/capital/palace.jpg` exists. The
+  `✅ Доповісти Королю` button must appear ONLY when every condition is met.
+- **an EXISTING character's first visit.** The chain starts at decree 1 for everyone, so the
+  early ones are already satisfied and turn in back to back. Check that the banner quotes
+  what LANDED, not what was authored — Vigor clamps to the pool, and tapping five in a row on
+  a full bar is meant to waste it.
+- **a decree that asks for materials** (`Ліс годує`, `Камінь і залізо`, `Повна комора`) —
+  they read the WAREHOUSE, deliberately unlike every upgrade service, which read the combined
+  pool. The first sits at level 3 and its job is to teach that the warehouse exists.
+- **a food reward into a full bag.** It must refuse, leave the decree open and take nothing.
+- **the seven event hooks**, one each: a kill, a sale to the trader, an NPC job turned in, a
+  dish cooked, anything crafted, a passive expedition sent, a plot harvested. Each should tick
+  only while the decree asking for it is the open one.
+
+**Added 2026-09-20 — the capital is two streets now; this walk is the whole hub:**
 - **arrive in the capital.** The screen must offer `[👑 Замкова][🏘 Поділ]` / `[🎒 Сумка]
   [👤 Профіль]` / `[🏡 До маєтку]` and nothing else — three rows — and the welcome text must
   name both roads and what stands on each. This is also the only place a player is told what
@@ -1999,6 +2021,16 @@ on `328bf88`.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **Three innkeeper lines are missing from `uk.json`** (found 2026-09-22 in the deploy log,
+  and a player hit it on 09-21). `recipe.meat_ragout.taught`, `recipe.clay_baked_meat.taught`
+  and `recipe.governors_feast.taught` exist in `en.json` and not in `uk.json`, so finishing
+  that rung shows the raw key instead of the innkeeper speaking. The validator never caught
+  it because those keys are **rendered but never `requireKey`-ed** — the mirror image of
+  `feedback-a-checker-that-cannot-fail`, where the key was required and never rendered. The
+  fix is three lines, a `requireKey` walking `recipes.json` → `unlocks`, and a failing test.
+  **Left for the owner** because these are an NPC's voice lines in «ти» — the one exception
+  to «ви» — and the other three rungs were written by hand, not generated.
+
 - **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
   that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
   «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
@@ -2048,8 +2080,8 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-09-20 — **two commits are built and undeployed**, both also unpushed
-(`origin/main` is at `536fbf6`).
+*Last updated: 2026-09-22 — **everything is deployed** (the Pi runs `60a8bad` since
+00:33); what sits above `origin/main` is record passes only.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
@@ -2150,11 +2182,14 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is one session in Telegram, then shipping `328bf88`.** Three deploys' worth of surfaces
-have never been opened by a human — the whole kitchen among them — and every defect this project
-has found came from someone glancing at a screen. The walk list, grouped by what shipped when,
-is the "Walk list" section above.
+**Next is one session in Telegram, and three missing locale lines.** Everything is deployed
+as of 2026-09-22 00:33 — four deploys' worth of surfaces have never been opened by a human,
+the whole kitchen and the entire King's chain among them, and every defect this project has
+found came from someone glancing at a screen. The walk list, grouped by what shipped when, is
+the "Walk list" section above.
 
-Left open on purpose: the estate calls one place three words («Слот» / «наділ» / «Ділянка»),
-the Master's blade trial names Пуща while any kill counts, and six functions dead since April.
-All six are in "Open, decided but not done" above.*
+Left open on purpose: **three innkeeper lines missing from `uk.json`** (live — a player has
+already been shown a raw key), the estate calling one place two words now that «наділ» is
+gone but «Слот» still stands in 18 keys, the Master's blade trial naming Пуща while any kill
+counts, and six functions dead since April. All of them are in "Open, decided but not done"
+above.*

@@ -21,19 +21,6 @@ enum KingCatalog {
     /// Every decree, in walk order.
     static var chain: [KingDecreeDTO] { Catalogs.current.kingDecrees }
 
-    /// How many steps the chain has. `KingProgress.decreeIndex >= count` is
-    /// the one and only meaning of "the King has fallen silent".
-    static var count: Int { chain.count }
-
-    static func decree(at index: Int) -> KingDecreeDTO? {
-        guard index >= 0, index < chain.count else { return nil }
-        return chain[index]
-    }
-
-    static func find(_ id: String) -> KingDecreeDTO? {
-        GameData.current.kingDecreesById[id]
-    }
-
     /// `king.<id>.name` / `.desc`, derived from the id the same way every
     /// other content type derives its keys.
     static func nameKey(_ decree: KingDecreeDTO) -> String { "\(decree.id).name" }

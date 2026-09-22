@@ -33,62 +33,55 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-22, the Pi is level with `origin/main`)
+### Where things stand right now (2026-09-22, two doc commits ahead of `origin/main`)
 
 | | |
 |---|---|
 | working tree | clean |
 | HEAD | **`60a8bad`** — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`** — everything is pushed AND deployed. Push stays user-side |
+| pushed | `origin/main` is at **`60a8bad`**; the two record passes after it (`8046786`, and the sync pass that filled this line) are **unpushed** and carry no game code. Push stays user-side |
 | running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **nothing.** The 09-22 00:22 deploy took the whole backlog: the street split, the quest carry-over and the King's decrees end to end |
+| committed but NOT deployed | **nothing that changes the game.** The 09-22 deploys took the whole backlog — the street split, the quest carry-over and the King's decrees end to end; what sits on top is two record passes |
 
-**The 09-19 deploy cleared a backlog of ten commits**, so the whole walk list except its
-newest block is live and waiting only on a human opening the screens.
+**Everything is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
+carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
+carry-over and the King's decree chain end to end — and 00:33 followed with a locale-only
+pass for the two street descriptions. Three migrations ran at 00:22: `CloseBurnedQuestJobs`
+(**36 of 39** open jobs closed, verified on the table, not the log line), `AddCapitalStreet`
+and `CreateKingProgress`. The chain was live within minutes — a player had turned the first
+decree in before the deploy entry was written.
 
-**What is waiting now is `328bf88`, and it is not the same kind of deploy.** It carries the
-**first data migration since `ResetDeepestKm`** — `CloseBurnedQuestJobs`, which closes the
-taken-but-unfinished quest rows the old noon rule left behind (33 rows over 6 players; a dry
-run on 09-19 data kept 9). Neither 09-19 commit moved `content/data`, but Swift and locale
-strings did and Lingo is not hot-reloaded, so **`pm2 restart ROI` is the only way in** —
-`/reload` carries none of it. After the restart, **verify the TABLE, not the log line**:
+Every deploy's hashes, what each carried and its verification block: the **Commit index** at
+the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
-```
-ssh rpi5@192.168.0.203 'cd ~/RestOfIryna && eval "$(grep -E "^DB_(HOST|PORT|USER|PASSWORD|NAME)=" .env | sed "s/^/export /")" && PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -At -c "SELECT day_stamp, npc, count(*) FROM quest_progress WHERE accepted AND NOT claimed GROUP BY 1,2 ORDER BY 1"'
-```
+### Next action: two things, in this order
 
-### What the 09-19 deploy carried
+**1 — Fix the three innkeeper lines that are missing from `uk.json`.** A live defect the
+09-22 deploy surfaced in the log: `recipe.meat_ragout.taught`, `recipe.clay_baked_meat.taught`
+and `recipe.governors_feast.taught` exist in `en.json` and **not** in `uk.json`, so a player
+finishing that rung is shown the raw key. It has already happened once, on 09-21. The
+validator never caught it because those keys are RENDERED but were never `requireKey`-ed —
+the mirror image of `feedback-a-checker-that-cannot-fail`. The fix is three lines of the
+innkeeper's own voice (**«ти», the one exception to «ви»** — see `CLAUDE.md` § Localization),
+a `requireKey` over `recipes.json` → `unlocks`, and a failing test. **The copy is the owner's
+to write**: these are an NPC's voice lines and the other three were written by hand.
 
-Ten commits in one pull, `7050933` → `536fbf6`: six change the game, and four (`7050933`,
-`e625320`, `99799e5`, `bcafef3`) are record passes. Before it the 09-17 00:10 deploy carried
-`dc5f037` · `5e55139` · `6eefe85` · `b63f835`, and the 09-16 one `78393aa` · `c9ec209` ·
-`42e8818` · `b32ac32` · `7469715`. **None of the three batches has been opened by a human.**
-
-What each one changed, why, and its `validate` / `simulate` / `swift test` / digest block: the
-**Commit index** at the top of `.memory/sessions.md`, which now carries every hash above.
-
-### Next action: walk the game, then ship the two waiting commits
-
-**Step one is someone opening the screens.** Every defect this project has found came from
-glancing at a screen, not from running anything, so this is the highest-yield thing available
-and it costs one session in Telegram. The backlog spans three deploys, the whole kitchen among
-them, and none of it has been opened by a human. It is fourteen blocks grouped by what shipped
-when, in **`TODO.md` → "Walk list — shipped surfaces nobody has opened"**. Everything in it
-except the newest block is LIVE.
-
-**Step two is shipping the two waiting commits** — push, pull, build, `pm2 restart ROI` (ask
-first), then check the `quest_progress` TABLE with the query above, because `328bf88` migrates
-data. `AddCapitalStreet` is additive and nullable: nothing to verify past the column existing,
-and every existing player starts on the square. The two newest walk blocks are waiting on them.
+**2 — Someone opens the screens.** Every defect this project has found came from glancing at
+a screen, not from running anything. The backlog now spans four deploys and includes the
+entire King's chain, which no human has seen: **`TODO.md` → "Walk list — shipped surfaces
+nobody has opened"**. All of it is LIVE.
 
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER. Free pre-flight that touches neither the running bot nor the
-database: `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`.
-**After a migration, verify the TABLE, not the log line.** The two traps that cost real time —
-swiftenv's `PATH` living in `.bashrc`, and `pgrep -f` matching its own ssh command — are in
-auto-memory `project-pi-deploy-swiftenv`, `linux-build-gap`.
+and the new binary TOGETHER — the schema handshake is at **v13** and refuses a mismatch.
+Free pre-flight that touches neither the running bot nor the database:
+`ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
+it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
+in. **After a migration, verify the TABLE, not the log line.** The traps that cost real time —
+swiftenv's `PATH` living in `.bashrc` (a non-interactive ssh needs
+`export PATH="$HOME/.swiftenv/shims:$PATH"`), and `pgrep -f` matching its own ssh command —
+are in auto-memory `project-pi-deploy-swiftenv`, `linux-build-gap`.
 
 **The API-error question is CLOSED.** `Code: 400` has held at its **913** baseline across four
 restarts, and the only `[SCREEN]` lines in the whole log are 8 `StreamClosed` redraw failures
@@ -98,14 +91,17 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Six items, each raised deliberately and each kept out of an unrelated commit on purpose: the
-estate calling one place three words; `InventoryEntry.remove` ignoring `equipped_slot`;
+Seven items, each raised deliberately and each kept out of an unrelated commit on purpose:
+**the three innkeeper lines missing from `uk.json`** (the live one — see Next action);
+the estate calling one place **two** words now that «наділ» is gone but «Слот» still stands
+in 18 keys; `InventoryEntry.remove` ignoring `equipped_slot`;
 `CapitalController.pushTradeInvite` discarding its message id; the recipe-scroll machinery
 (`Item.teachesRecipe`, `InventoryController.handleLearnRecipe`) kept unreachable on purpose;
 the Master's blade trial naming a zone it does not mean; and six functions dead since April
 (`renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`, `itemNameOrId`,
 `isPassiveInflight`, `invalidateCache`). Each one's reasoning: **`TODO.md` → "Open, decided
 but not done"**. The standing simulator deferrals are below.
+
 ### Where the changelog went
 
 Every commit from 2026-09-09 onward — hash, what it did, and the pattern behind it — is the
@@ -164,20 +160,18 @@ the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-21, schema v13):** `records 6588329ab2bdbc70` ·
+**Current digest baseline (2026-09-22, schema v13):** `records 6588329ab2bdbc70` ·
 `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
-**`king 4326bb40aa735a50`** — a fifth line since the King's decree chain landed, and the
-four older ones are byte-identical across it, which is the entire point of the split. The
-content hash moved `0fa93e96` → `703a0404` (a new file) and the schema **v12 → v13**, so the
-content directory and the binary must now ship together or the handshake refuses the boot. **The Pi has
-run this exact baseline since the 09-19 14:21 restart** (content hash `0fa93e96`), matched byte
-for byte before the restart was ordered, which is the order the decision has to happen in.
-`records` moved four times to get here — the farm ladder, the bag ladder, then the whole food
-repricing and the innkeeper's unlock rungs — while the other three have not moved once, which
-is the entire point of splitting them. Neither 09-19 commit touched `content/data` at all. **This is the one place the baseline is kept** — `.memory/status.md` quotes it, and
-`.memory/rebalance.md`'s figures are a Phase-11 record, not a current reading. A knob is
-invisible to the digest until it is hashed — add the line in the same commit that adds the
-knob (auto-memory `feedback-digest-names-constants`).
+`king 4326bb40aa735a50`, content hash `703a0404`. **The Pi has run exactly this since the
+09-22 00:22 restart**, matched byte for byte before the restart was ordered.
+
+`king` is a fifth line, added with the decree chain, and the four older ones are
+byte-identical across it — which is the entire point of splitting them. `records` moved four
+times to get to its value (the farm ladder, the bag ladder, the food repricing, the
+innkeeper's unlock rungs) and has not moved since. **This is the one place the baseline is
+kept** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
+record, not a current reading. A knob is invisible to the digest until it is hashed — add the
+line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
 HP regen is **10% of max HP per real minute** (`tuning/vigor.json` → `healing.regenPerMinute`),
 so a full rest at the estate takes 10 minutes — and **only at the estate**. `simulate --strict`
@@ -191,7 +185,7 @@ cheapest way to ship a content edit, so it is worth proving early. Auto-memory
 
 ### How content works now
 
-All 13 catalogs and all seven tuning tables are façades over a snapshot installed at boot:
+All 14 catalogs and all seven tuning tables are façades over a snapshot installed at boot:
 
 ```
 content/data/*.json → ContentLoader → ContentValidator → GameContent (DTOs)
@@ -218,14 +212,23 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 271 tests, ~0.2s
+swift test                                   # 292 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
 
+**The King's decree chain** (2026-09-21, live since 09-22) — 39 decrees from level 1 to 25,
+one open at a time, walked in `king.json`'s array order. The first arrives as the royal
+charter right after registration; the open one is always visible read-only in the journal;
+it is turned in at 👑 Палац, a `Location` on Замкова. Ten of the seventeen condition kinds
+are live state reads, seven are events funnelled through `KingService.record`. No screen
+shows "decree N of 39". Spec `content/spec/king.md`, table `roi-content spec king`.
+
 Registration · exploration (active + passive, three-tier visit decay, restart-safe
 scheduler) · turn-based PvE combat with 9 class techniques · estate (plots, warehouse,
-workshop, kitchen, weapon/bag/estate upgrades, technique gates) · capital hub (travel,
+workshop, kitchen, weapon/bag/estate upgrades, technique gates) · capital hub (travel across
+**two streets** — 👑 Замкова: Базар / Ристалище / Гільдії / Палац, 🏘 Поділ: Крамар / Майстер /
+Шинок / Ворожка, the square holding only the two roads — plus
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena
 (live PvP duel, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
 NPC**, and since `328bf88` **a taken job never burns** — one open job per NPC, today's offer

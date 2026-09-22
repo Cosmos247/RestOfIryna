@@ -342,6 +342,39 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-22 (the sync pass after the King)
+
+A records-and-sweep session: no game behaviour changed. What it found is the point.
+
+**Four symbols were dead on arrival.** `KingCatalog.count`, `.decree(at:)` and `.find`, plus
+the `GameContent.kingDecreesById` dictionary that only fed `find`, were written the day
+before and never called. Removed. This project already tracks six functions dead since
+April; adding four more on day one would be the same debt starting over.
+
+**Three documents had drifted before this session even began**, and counting from the files
+rather than from memory is what showed it:
+- `.memory/content-pipeline.md` listed **17** files in `content/data` and named them; the
+  directory holds **20**. `rarities` and `sets` arrived in Phase 6 and were never added,
+  `king` in the decree chain. The list is now generated from the directory.
+- `.memory/file-map.md` said `manifest.json` carried **schemaVersion 10** (it is 13), **33
+  items** (30) and **12 recipes** (14). All three rebuilt from the JSON.
+- The test count read **271** in four places; it is 292.
+
+**`Prompt.md` was reoriented.** Its "what is waiting" block, its next action and its digest
+paragraph all described the 09-19 deploy — and the digest paragraph contradicted itself,
+claiming a v13 baseline that the Pi had been running since a v12 restart. The next action is
+now the three missing innkeeper lines, then the walk.
+
+**Three auto-memories written:** `project-king-decree-chain` (the four shapes tried and
+rejected, so the salary merge is not re-proposed), `feedback-rendered-keys-need-requirekey`
+(the mirror of the checker-that-cannot-fail), `feedback-read-the-screen-before-promising`
+(this codebase keeps decisions in comments at the site they govern).
+
+**Left deliberately undone:** the three innkeeper lines themselves. They are an NPC's voice
+in «ти», the one exception to «ви», and the other three rungs were written by the owner —
+inventing the missing ones is not the assistant's call. Recorded in `TODO.md` → "Open,
+decided but not done", first item.
+
 ## Deploy — 2026-09-22 00:33 (`1faaddb` → `60a8bad`)
 
 A locale-only follow-up: the owner's own copy for both capital streets. The digest did not move, which is exactly right — locale strings are not hashed — and there were no migrations. Worth doing as its own restart only because **Lingo is not hot-reloaded**, so `/reload` could not have carried two lines of text.

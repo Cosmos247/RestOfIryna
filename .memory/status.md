@@ -34,7 +34,7 @@ harvest. Locale is complete in both languages — 39 names, 39 descriptions, 17 
 labels — and the `requireKey` rules landed with the screen that renders them. Phase 2b
 landed the same day: `KingCard` is the one renderer all three screens use, 📓 Нотатник carries the open decree above the NPC jobs (read-only — the journal's own standing rule), and `registration.complete` is followed by the royal charter holding the first decree. **The King's chain is feature-complete and LIVE since the 2026-09-22 00:22 deploy** (`1faaddb`).
 
-**2026-09-21 — the King's decree chain, content half** (`978eef7`, NOT DEPLOYED). A linear spine of
+**2026-09-21 — the King's decree chain, content half** (`978eef7`, live since 2026-09-22). A linear spine of
 **39 decrees, levels 1–25**, one open at a time, meant to tell a new player what to aim at:
 32 task decrees plus 7 level steps, and the only levels carrying a step are the six that
 unlock an estate tier plus the finale at 25. Shipped this session: `content/data/king.json`,
@@ -460,9 +460,9 @@ edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `p
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
 `records 6588329ab2bdbc70` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
-`quests 30de20902006e3b9` (**schema v12** since 2026-09-15, when `combat.flee` became a
-section carrying the escape ceiling — `Prompt.md` is where the baseline is kept in sync, and
-the Pi has run this exact baseline since 2026-09-19 14:21), **271 tests**. Pace as of
+`quests 30de20902006e3b9` / `king 4326bb40aa735a50` (**schema v13** since 2026-09-21, when
+`king.json` became a required file — `Prompt.md` is where the baseline is kept in sync, and
+the Pi has run this exact baseline since 2026-09-22 00:22), **292 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
