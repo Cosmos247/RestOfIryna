@@ -260,6 +260,11 @@ other locale it short-circuits to the plain `some.key`. So **only `uk.json` gets
   "Знайдено…", passive "ще не вивчено") and use a single key.
 - Missing a `.m`/`.f` for a routed key → uk shows the raw key + a Lingo console
   warning (loud, easy to catch).
+- **The reverse does not hold.** A render site that RETRIES through `gender:` after a
+  plain lookup (the innkeeper's `.taught` lines) logs a plain-key miss BY DESIGN before
+  the retry succeeds. Only a second miss, on `<key>.m`/`.f`, means a player saw a raw
+  key; the 2026-09-22 "three missing innkeeper lines" was the first miss misread
+  (auto-memory `feedback-rendered-keys-need-requirekey`).
 
 ### Gendered keys today (have `.m`/`.f` in uk.json) — 16
 All of them name the player or the governor: `registration.welcome`,

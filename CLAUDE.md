@@ -431,6 +431,17 @@ another controller's screen must END by forwarding what it does not recognise �
 it must be **a catch-all, never a list of prefixes**. Auto-memory
 `project-dead-inline-buttons`.
 
+**A number typed before its button gets a hint, never the root screen.** Every quantity is
+asked AFTER a button (a trader card's [🪙 Купити], a warehouse row's [✏️ N], a vault row),
+and `unmatched` used to answer a number nobody had asked for by re-rendering the
+controller's root, which buried the inline screen the player was on. The server never knows
+which inline screen is open, so it cannot redraw that one. A controller with a numeric
+prompt calls `answerStrayNumber` **after** its own pending-prompt checks and **before** its
+root fallback. WORDS still fall through to the re-render, because stray text is usually a
+stale reply-keyboard tap and the redraw is what repairs it; a number is never a button
+label. A prompt still waiting for a BUTTON (the warehouse's «Куди?») repeats itself with a
+hint instead. Auto-memory `project-stray-number-hint`.
+
 **A screen that can answer a question should answer it before the player gets it wrong.**
 The recipe screen printed what a dish REQUIRES and never what the player HELD, so the only
 way to read your own pantry was to tap Cook and fail — the shortage modal was the one place

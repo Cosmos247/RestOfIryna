@@ -67,6 +67,29 @@ public class TGControllerBase: @unchecked Sendable {
             .generateControllerKB(session: session, lingo: lingo)
     }
 
+    /// A bare number typed where no question is open.
+    ///
+    /// Every quantity in this game is asked AFTER a button — [🪙 Купити] on a
+    /// trader card, [✏️ N] on a warehouse row, a vault row — so a number nobody
+    /// asked for is the player answering one tap early. The fallback every
+    /// `unmatched` ends in re-renders the controller's root, and for a number
+    /// that threw away the screen the player was on: the server never knew
+    /// which inline screen was open, so it could not redraw that one. A hint
+    /// keeps it. Words still fall through to the re-render — stray text is
+    /// usually a stale reply-keyboard tap, and the redraw is what repairs that
+    /// keyboard; a number is never a button label.
+    ///
+    /// Call it AFTER the controller's own pending-prompt checks (an open prompt
+    /// owns the number) and before the root fallback.
+    internal func answerStrayNumber(context: Context) async -> Bool {
+        guard let text = context.update.message?.text,
+              Int(text.trimmingCharacters(in: .whitespacesAndNewlines)) != nil else { return false }
+        let hint = "🔢 " + context.lingo.localize("input.stray_number", locale: context.session.locale)
+        await postStatusBanner(hint, context: context,
+                               replyMarkup: currentKeyboard(for: context.session, lingo: context.lingo))
+        return true
+    }
+
     /// If a stale Exploration mode picker is still in chat, delete it.
     /// Called at the top of main-menu handlers so that tapping e.g. Profile
     /// while the picker is open cleanly removes the picker rather than

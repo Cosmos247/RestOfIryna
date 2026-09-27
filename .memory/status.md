@@ -21,6 +21,14 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-27 — a number typed one tap early gets a hint** (NOT DEPLOYED; Swift + two locale
+keys per language, digest unmoved). A quantity typed before its button — on a trader card
+before [🪙 Купити], on the warehouse's «Куди?» before a direction — used to throw the player
+to the controller's root screen. Now a bare number with no prompt open gets a `🔢` hint
+(`TGControllerBase.answerStrayNumber`, called by Estate / Capital / Guild) and the picker
+repeats itself with a `❌` line; words still fall through to the re-render. Reported by the
+tester Nerif on 09-11.
+
 **2026-09-21 — the King's decrees are playable** (phase 2a, `520513e`, live since 2026-09-22).
 The 👑 Палац is a `Location` inside `CapitalController` on Castle Street, which now has
 four keyboard rows. It shows the ONE decree the player carries, every condition resolved

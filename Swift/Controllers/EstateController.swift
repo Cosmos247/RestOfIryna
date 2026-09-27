@@ -79,14 +79,20 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // and the next text update is their answer. Consume it BEFORE the
         // generic showEstate fallback so a typed number doesn't bounce them
         // back to the estate root. Only treat the text as a quantity once
-        // the player has actually picked a direction — in the direction-
-        // picker stage we ignore typed text and let the showEstate fallback
-        // handle it.
-        if let pending = await EphemeralChatState.shared.peekPendingWarehouseTransfer(telegramId: context.session.telegramId),
-           pending.direction != nil {
-            try await EstateController.handleWarehouseTransferNText(pending: pending, context: context)
+        // the player has actually picked a direction. Before that the picker
+        // repeats itself with a hint: this stage used to fall through to
+        // showEstate, which sent the estate root over the warehouse and left
+        // the picker live but out of sight — the button reads "N", so typing
+        // the number first is the natural mistake, not a rare one.
+        if let pending = await EphemeralChatState.shared.peekPendingWarehouseTransfer(telegramId: context.session.telegramId) {
+            if pending.direction != nil {
+                try await EstateController.handleWarehouseTransferNText(pending: pending, context: context)
+            } else {
+                await EstateController.remindWarehouseTransferDirection(pending: pending, context: context)
+            }
             return true
         }
+        if await answerStrayNumber(context: context) { return true }
         try await showEstate(context: context)
         return true
     }
@@ -1400,16 +1406,7 @@ extension EstateController {
         }
 
         let prompt = context.lingo.localize("estate.warehouse.transfer_n.where_prompt", locale: locale)
-        let dirPutLabel = context.lingo.localize("estate.warehouse.transfer_n.dir_put", locale: locale)
-        let dirTakeLabel = context.lingo.localize("estate.warehouse.transfer_n.dir_take", locale: locale)
-        let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
-        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
-            [
-                TGInlineKeyboardButton(text: dirPutLabel, callbackData: "estate:wh:transferPut:\(itemId)"),
-                TGInlineKeyboardButton(text: dirTakeLabel, callbackData: "estate:wh:transferTake:\(itemId)")
-            ],
-            [TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")]
-        ])
+        let inline = transferDirectionKeyboard(itemId: itemId, lingo: context.lingo, locale: locale)
 
         let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
             chatId: .chat(message.chat.id),
@@ -1429,6 +1426,45 @@ extension EstateController {
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
+    }
+
+    /// The direction picker's buttons: `[⬆️ To warehouse] [⬇️ To bag]` over
+    /// `[❌ Cancel]`. One builder because the picker is drawn twice — when
+    /// [✏️ N] opens it, and when typed text makes it repeat itself.
+    private static func transferDirectionKeyboard(itemId: String, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let dirPutLabel = lingo.localize("estate.warehouse.transfer_n.dir_put", locale: locale)
+        let dirTakeLabel = lingo.localize("estate.warehouse.transfer_n.dir_take", locale: locale)
+        let cancelLabel = "❌ " + lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: [
+            [
+                TGInlineKeyboardButton(text: dirPutLabel, callbackData: "estate:wh:transferPut:\(itemId)"),
+                TGInlineKeyboardButton(text: dirTakeLabel, callbackData: "estate:wh:transferTake:\(itemId)")
+            ],
+            [TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")]
+        ])
+    }
+
+    /// Text typed while the direction picker is still open. No question the
+    /// text could answer has been asked yet, so the picker repeats itself in
+    /// place with a hint under it; the pending entry, its buttons and the
+    /// warehouse screen all stay as they were. The same shape as a bad number
+    /// on the quantity step, which edits that prompt the same way.
+    static func remindWarehouseTransferDirection(
+        pending: EphemeralChatState.PendingWarehouseTransfer,
+        context: Context
+    ) async {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let prompt = lingo.localize("estate.warehouse.transfer_n.where_prompt", locale: locale)
+        let hint = lingo.localize("estate.warehouse.transfer_n.pick_direction", locale: locale)
+        await editScreen(
+            chatId: .chat(context.session.telegramId),
+            messageId: pending.promptMessageId,
+            isPhoto: false,
+            text: "\(prompt)\n\n❌ \(hint)",
+            replyMarkup: transferDirectionKeyboard(itemId: pending.itemId, lingo: lingo, locale: locale),
+            bot: context.bot
+        )
     }
 
     /// `estate:wh:transferPut:<itemId>` / `estate:wh:transferTake:<itemId>` —

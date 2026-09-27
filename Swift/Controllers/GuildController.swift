@@ -86,6 +86,9 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
+        // A number before its vault or treasury button: hint, keep the screen.
+        if await answerStrayNumber(context: context) { return true }
+
         // Anything else re-renders the guild home so the player isn't stuck.
         try await showGuildHome(context: context)
         return true

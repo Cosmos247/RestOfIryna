@@ -231,6 +231,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
 
+        // A number with no prompt open is a quantity typed one tap early — on
+        // a trader card, before [🪙 Купити]. The street redraw below used to
+        // bury the card under a fresh backdrop; the hint leaves it on screen.
+        if await answerStrayNumber(context: context) { return true }
+
         // Random text falls back to re-rendering the screen the player is
         // standing on — the street if they are on one, the square otherwise.
         // Drawing the square's prose under a street's keyboard would put the

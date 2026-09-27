@@ -33,17 +33,17 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-22, two doc commits ahead of `origin/main`)
+### Where things stand right now (2026-09-27; `origin/main` is at `60a8bad`)
 
 | | |
 |---|---|
 | working tree | clean |
 | HEAD | **`636caa6`** — the sync pass: four dead King symbols swept and every record repointed at the deployed state. Under it `60a8bad` — the King's decrees, content (`978eef7`) then playable (`520513e`: the palace, the engine and all seven event hooks; `ad09c74`: the journal and the charter), plus two locale renames and the hash fills. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`**; the two record passes after it (`8046786`, and the sync pass that filled this line) are **unpushed** and carry no game code. Push stays user-side |
-| running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **nothing that changes the game.** The 09-22 deploys took the whole backlog — the street split, the quest carry-over and the King's decrees end to end; what sits on top is two record passes |
+| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the 2026-09-27 stray-number hint, the only one that changes the game. Push stays user-side |
+| running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else); the Pi itself **rebooted 2026-09-25 20:45** and pm2 brought ROI back on the same binary, built 09-22 00:20 (read off the machine 09-27) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| committed but NOT deployed | **the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
 
-**Everything is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
+**Everything before 2026-09-27 is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
 carry-over and the King's decree chain end to end — and 00:33 followed with a locale-only
 pass for the two street descriptions. Three migrations ran at 00:22: `CloseBurnedQuestJobs`
@@ -54,19 +54,14 @@ decree in before the deploy entry was written.
 Every deploy's hashes, what each carried and its verification block: the **Commit index** at
 the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
-### Next action: two things, in this order
+### Next action
 
-**1 — Fix the three innkeeper lines that are missing from `uk.json`.** A live defect the
-09-22 deploy surfaced in the log: `recipe.meat_ragout.taught`, `recipe.clay_baked_meat.taught`
-and `recipe.governors_feast.taught` exist in `en.json` and **not** in `uk.json`, so a player
-finishing that rung is shown the raw key. It has already happened once, on 09-21. The
-validator never caught it because those keys are RENDERED but were never `requireKey`-ed —
-the mirror image of `feedback-a-checker-that-cannot-fail`. The fix is three lines of the
-innkeeper's own voice (**«ти», the one exception to «ви»** — see `CLAUDE.md` § Localization),
-a `requireKey` over `recipes.json` → `unlocks`, and a failing test. **The copy is the owner's
-to write**: these are an NPC's voice lines and the other three were written by hand.
+**The "three innkeeper lines missing from `uk.json`" were a false alarm** (corrected
+2026-09-27): they are `.m`/`.f` pairs since `536fbf6`, and the Lingo miss in the log is the
+render site's plain lookup before its gendered retry, logged by design. Auto-memory
+`feedback-rendered-keys-need-requirekey`.
 
-**2 — Someone opens the screens.** Every defect this project has found came from glancing at
+**Someone opens the screens.** Every defect this project has found came from glancing at
 a screen, not from running anything. The backlog now spans four deploys and includes the
 entire King's chain, which no human has seen: **`TODO.md` → "Walk list — shipped surfaces
 nobody has opened"**. All of it is LIVE.
@@ -91,8 +86,7 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Seven items, each raised deliberately and each kept out of an unrelated commit on purpose:
-**the three innkeeper lines missing from `uk.json`** (the live one — see Next action);
+Six items, each raised deliberately and each kept out of an unrelated commit on purpose:
 the estate calling one place **two** words now that «наділ» is gone but «Слот» still stands
 in 18 keys; `InventoryEntry.remove` ignoring `equipped_slot`;
 `CapitalController.pushTradeInvite` discarding its message id; the recipe-scroll machinery

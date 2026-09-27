@@ -1736,8 +1736,19 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** — the 2026-09-22 deploys took the whole
-backlog, so nothing here is waiting on a restart any more.
+Telegram. **Every block below is LIVE and unwalked** except the first, which waits on the next
+restart — the 2026-09-22 deploys took the whole backlog before it.
+
+**Added 2026-09-27 — the stray-number hint (NOT deployed yet):**
+- **a trader card:** Крамар → Купити → any item, then type `5` without tapping
+  [🪙 Купити]. A `🔢` banner must answer and the card must stay the last screen — no street
+  backdrop. Then tap [🪙 Купити] and type `5`: the purchase goes through as before.
+- **the warehouse «Куди?»:** [✏️ N] on any row, type `5` before choosing. «Куди?» must
+  gain a `❌` line under it with both buttons still live, and no estate photo arrives. Then
+  pick a direction and type the number: the transfer goes through as before.
+- **words still redraw:** type `привіт` on the same two screens. That still sends the
+  street / the «Куди?» hint respectively — the street redraw is the stale-keyboard repair
+  and is meant to survive.
 
 **Added 2026-09-22 — the King's decree chain, which no human has seen at all:**
 - **a NEW character, start to finish.** The royal charter must arrive as its own message
@@ -2021,16 +2032,6 @@ backlog, so nothing here is waiting on a restart any more.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-- **Three innkeeper lines are missing from `uk.json`** (found 2026-09-22 in the deploy log,
-  and a player hit it on 09-21). `recipe.meat_ragout.taught`, `recipe.clay_baked_meat.taught`
-  and `recipe.governors_feast.taught` exist in `en.json` and not in `uk.json`, so finishing
-  that rung shows the raw key instead of the innkeeper speaking. The validator never caught
-  it because those keys are **rendered but never `requireKey`-ed** — the mirror image of
-  `feedback-a-checker-that-cannot-fail`, where the key was required and never rendered. The
-  fix is three lines, a `requireKey` walking `recipes.json` → `unlocks`, and a failing test.
-  **Left for the owner** because these are an NPC's voice lines in «ти» — the one exception
-  to «ви» — and the other three rungs were written by hand, not generated.
-
 - **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
   that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
   «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
@@ -2080,8 +2081,10 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-09-22 — **everything is deployed** (the Pi runs `60a8bad` since
-00:33); what sits above `origin/main` is record passes only.
+*Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
+09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
+`origin/main` sit three record passes and the stray-number hint, which waits on the next
+restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
@@ -2182,14 +2185,15 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is one session in Telegram, and three missing locale lines.** Everything is deployed
-as of 2026-09-22 00:33 — four deploys' worth of surfaces have never been opened by a human,
+**Next is one session in Telegram.** Everything before 2026-09-27 is deployed (the
+stray-number hint waits on the next restart) — four deploys' worth of surfaces have never been opened by a human,
 the whole kitchen and the entire King's chain among them, and every defect this project has
 found came from someone glancing at a screen. The walk list, grouped by what shipped when, is
 the "Walk list" section above.
 
-Left open on purpose: **three innkeeper lines missing from `uk.json`** (live — a player has
-already been shown a raw key), the estate calling one place two words now that «наділ» is
+Left open on purpose: the estate calling one place two words now that «наділ» is
 gone but «Слот» still stands in 18 keys, the Master's blade trial naming Пуща while any kill
 counts, and six functions dead since April. All of them are in "Open, decided but not done"
-above.*
+above. (The "three innkeeper lines missing from `uk.json`" that led this list on 09-22 were a
+false alarm, corrected 2026-09-27: `.m`/`.f` pairs since `536fbf6`, read through a gendered
+retry.)*

@@ -342,6 +342,44 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-27 (debugging from tester reports)
+
+A session of small fixes, fed one report at a time by the owner.
+
+**The Pi, read off the machine before anything else.** HEAD `60a8bad` and a binary built
+09-22 00:20, as recorded — but pm2 put ROI's last start at **2026-09-25 20:45**, and
+`uptime -s` said the Pi itself booted then. pm2 resurrected ROI on the same binary; nothing
+changed in the game, and nobody had written the reboot down.
+
+**The "three innkeeper lines missing from `uk.json`" were never missing.** The 09-22 deploy
+entry below read `No localizations found for key: recipe.meat_ragout.taught, locale: uk` as a
+missing key and a raw key shown to a player, and that became `Prompt.md`'s next action. But
+all three lines have been `.m`/`.f` pairs since `536fbf6` (live since 09-19 14:21), because
+under «ти» the innkeeper's speech declines by gender, and `postQuestResultBanner` looks the
+plain key up FIRST and retries through the `gender:` overload when Lingo echoes it back. The
+miss is logged by design, and the comment at that site says so. `requireKey` over the unlock
+rungs has existed since `dc82444`. None of the five misses logged since 09-21 is followed
+by a second miss on `.m`/`.f`, so every player got the right line. Corrected:
+`Prompt.md` (next action, open list), `TODO.md` (open list, closing summary),
+`localization.md` (the reverse rule), and the auto-memory rewritten around the real lesson:
+read the render site before diagnosing from a log line.
+
+**A number typed one tap early threw the player to the root screen** (the tester Nerif,
+09-11 08:50). Two flows, one cause. The warehouse's [✏️ N] opens «Куди?», and a number typed
+before a direction fell through to `showEstate`, deliberately: the comment said so. That
+sent the estate root over the warehouse and left the picker live but out of sight. A
+trader card (since `bfc6e00`) asks «Скільки?» only after [🪙 Купити], and a quantity typed on
+the card had no prompt to answer, so the street was redrawn. Every `unmatched` ends in a root
+re-render because stray words are usually a stale reply-keyboard tap and the redraw repairs
+it. The server never knows which inline screen is open, so the root is all it can redraw.
+**A number is never a button label**, which is the split: `answerStrayNumber` posts a `🔢`
+banner (with `currentKeyboard`, so the repair still happens) when a bare number reaches
+Estate, Capital or Guild with no prompt open, and «Куди?» repeats itself in place with a `❌`
+line. The owner picked both from options, and the rejected ones are in auto-memory
+`project-stray-number-hint`. Verified: build clean, `validate --strict` 0/0, 292 tests, all
+five digest lines and `703a0404` unchanged. **Not deployed** — Swift plus Lingo strings, so
+a Pi build and `pm2 restart ROI`.
+
 ## Session — 2026-09-22 (the sync pass after the King) — `636caa6`
 
 A records-and-sweep session: no game behaviour changed. What it found is the point.
@@ -405,7 +443,9 @@ shown a raw key instead of the innkeeper's line. **Three of the six recipe lesso
 missing from `uk.json`** (`meat_ragout`, `clay_baked_meat`, `governors_feast`); English has
 all six. The validator never caught it because these keys are RENDERED but were never
 `requireKey`-ed — the mirror image of the mistake `feedback-a-checker-that-cannot-fail`
-was written about. Unfixed as of this entry.
+was written about. Unfixed as of this entry. **Corrected 2026-09-27: a false alarm.** The three lines
+exist as `.m`/`.f` pairs since `536fbf6`, and this log line is the render site's plain lookup
+before its gendered retry, logged by design — see the 2026-09-27 entry.
 
 ## Session — 2026-09-21 part 2 (the palace opened) — `520513e`
 
