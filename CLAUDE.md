@@ -223,7 +223,17 @@ is 10–72 Vigor, so portions cannot be added up), and **a `player_level` decree
 equal its own `level`**. A decree's kind is DERIVED — it is a level decree when one of its
 conditions is `player_level` — because a second discriminator beside the conditions is a
 field that can disagree with them. No screen shows "decree N of 39". The chain is printed by
-`roi-content spec king` and hashed by the fifth digest line, `king`.
+`roi-content spec king` and hashed by the fifth digest line, `king`. A fifth rule came from a
+live change, not a draft: **a Training Ground or technique decree may not sit below its first
+technique's floor** (`king.technique_before_its_floor`) — «Наука бою» and «Перший прийом» sat at 9
+against a floor of 10, and the estate decree they need came after them, until the 2026-09-27
+reorder.
+
+**A player's place in the chain is a POSITION** (`KingProgress.decreeIndex`), so reordering or
+inserting decrees moves everyone standing in or past the change. Read `king_progress` off the
+machine first, and ship a migration with the edit — `RewalkReorderedDecrees` sends anyone inside
+a reordered window back to its start, because a second payout is recoverable and a skipped decree
+is not. Verify the TABLE afterwards.
 
 **Eleven of the eighteen condition kinds are live state reads; seven are events that leave
 no trace.** `KingService.record` is the one funnel for those seven, and it ticks
@@ -354,6 +364,25 @@ technique is known (`TrainingGroundLevelDTO.levelAfterCatchUp`, the one implemen
 and `TrainingGroundService` both ask). The `training_ground` plot type is gone
 (`MoveTrainingGroundOffPlots`) — do not bring back a plot that produces nothing. Auto-memory
 `project-training-ground-building`.
+
+**No technique blow hits harder than an ordinary crit, and every technique tap strikes**
+(2026-09-27). Vital Shot is a guaranteed crit AT the standard ×1.5 and
+`tuning.combat.effect_crit_above_standard` refuses more — at ×2.0 two shots killed the strongest
+beast in the game every time. The kit is tuned so it shortens an elite fight by ~20% for EVERY
+class; measure with `simulate --levels 21` and `--levels 40`, because the default sweep averages
+in levels with no techniques at all. Raising a stance swings through `strikeRound` — the tap is
+the round's attack, paid by the activation — and all three special defences deal damage back: a
+tap that takes Vigor and strikes nothing is exactly what the owner had removed, so do not add
+one. The stance lines carry no stat breakdown, on the owner's word. Auto-memory
+`project-technique-rework`.
+
+**A finished forest fight writes one `fight_log` row** (win / death / flee — not training, the
+registration dog or the passive autobattle). Its numbers gather between taps in
+`exploration_state.combat_tally`, so **a new source of player damage must feed `state.tally`** —
+the blow it rolled (for `max_blow`) and the HP it actually removed (for every sum, so overkill
+inflates nothing) — or the log quietly undercounts it, and `FightLog.record` runs with `try?`
+BEFORE `endCombat`, which clears the tally. `fight_log.enemy_id` is history and deliberately NOT
+in `LiveReferenceQuery`: a retired beast's old fights must never block a reload.
 
 ### Gear, inventory and storage
 

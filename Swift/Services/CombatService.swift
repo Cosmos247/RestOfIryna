@@ -274,17 +274,14 @@ public enum CombatService {
         return content.required(content.specialAttackByClass[cls], "specialAttack for \(cls.rawValue)")
     }
 
-    /// Per-class Special Attack modifiers folded into `applyAttack`.
-    /// - Warrior (Cleave): −10% hit chance, ignores enemy DEF entirely
-    ///   ("splits the shield"), +12 flat damage from the heavy two-handed
-    ///   weight, +20% crit (a splitting blow tends toward critical).
-    ///   Risk = miss chance; reward = peak damage when it lands.
-    /// - Archer (Vital Shot): cannot miss, +20% crit, ignores DEF entirely.
-    ///   Reliable damage, but the long aim zeroes the player's dodge for
-    ///   the enemy counter (handled by `specialAttackZeroesDodge`).
-    /// - Mage (Soulfire): cannot miss, ignores DEF, +5 flat damage. Most
-    ///   reliable of the three but costs 5 vigor instead of 4.
     /// Roll modifiers for a class's Special Attack.
+    /// - Warrior (Cleave): a hit-chance penalty; the armour break is its
+    ///   effect, applied by the controller before the swing.
+    /// - Archer (Vital Shot): cannot miss and always crits — at the STANDARD
+    ///   multiplier since 2026-09-27, the owner's cap on any technique blow
+    ///   (the validator refuses more). The long aim zeroes the player's dodge
+    ///   for the counter (`specialAttackZeroesDodge`).
+    /// - Mage (Soulfire): cannot miss; the burn is its effect.
     ///
     /// There is no "ignore armour" knob any more. All three techniques used to
     /// zero the defender's DEF, which an absorption model turns into a
@@ -333,6 +330,8 @@ public enum CombatService {
 
         /// Mirror Ward reflects this fraction of the rolled would-be enemy
         /// damage back as direct damage to the enemy (player takes nothing).
+        /// The blow cannot miss the ward since 2026-09-27, so the ward always
+        /// reflects — a miss used to spend the Vigor on nothing at all.
         public static var mirrorWardReflectFraction: Double {
             Catalogs.current.tuningCombat.specialDefense.mirrorWardReflectFraction
         }
@@ -430,6 +429,8 @@ public enum CombatService {
     //               turn should feel roughly equal in value across classes.
     public enum Defend {
         /// Multiplies `defendChipFraction`, so 0.5 = 15% of raw at the shipped 0.3.
+        /// Shadow Veil's counter is the same knife and reads the same number
+        /// (2026-09-27): the veil used to cost Vigor and strike nothing.
         public static var archerChipMultiplier: Double {
             Catalogs.current.tuningCombat.defend.archerChipMultiplier
         }

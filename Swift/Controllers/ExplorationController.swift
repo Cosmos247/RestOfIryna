@@ -502,7 +502,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy,
                                  starvationHpLost: Int) async throws {
         let uses = CombatService.initialUsesForUser(context.session)
-        state.beginCombat(enemyId: enemy.id, hp: enemy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
+        state.beginCombat(enemyId: enemy.id, hp: enemy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup,
+                          playerHP: context.session.hp)
         try await state.save(on: context.db)
 
         let combatCtrl = Controllers.combatController

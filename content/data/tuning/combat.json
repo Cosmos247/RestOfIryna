@@ -74,7 +74,7 @@
       "cannotMiss" : true,
       "class" : "archer",
       "effect" : {
-        "critMultiplier" : 2.0,
+        "critMultiplier" : 1.5,
         "kind" : "guaranteed_crit"
       },
       "hitChanceModifier" : 0,
@@ -85,7 +85,7 @@
       "cannotMiss" : true,
       "class" : "mage",
       "effect" : {
-        "fractionOfAttack" : 0.35,
+        "fractionOfAttack" : 0.15,
         "kind" : "burn",
         "rounds" : 3
       },
@@ -119,7 +119,7 @@
       {
         "accuracyMultiplier" : 1.0,
         "activationVigor" : 4,
-        "attackMultiplier" : 1.35,
+        "attackMultiplier" : 1.25,
         "class" : "warrior",
         "critMultiplier" : 1.0,
         "defenseMultiplier" : 1.15,
@@ -130,7 +130,7 @@
       {
         "accuracyMultiplier" : 1.15,
         "activationVigor" : 4,
-        "attackMultiplier" : 1.0,
+        "attackMultiplier" : 1.15,
         "class" : "archer",
         "critMultiplier" : 1.6,
         "defenseMultiplier" : 1.0,
@@ -141,7 +141,7 @@
       {
         "accuracyMultiplier" : 1.0,
         "activationVigor" : 5,
-        "attackMultiplier" : 1.5,
+        "attackMultiplier" : 1.15,
         "class" : "mage",
         "critMultiplier" : 1.0,
         "defenseMultiplier" : 1.15,

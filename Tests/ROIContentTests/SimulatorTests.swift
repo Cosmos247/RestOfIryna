@@ -167,6 +167,34 @@ final class SimulatorTests: XCTestCase {
         XCTAssertEqual(outcome.rounds, 12)
     }
 
+    // MARK: - Techniques
+
+    /// Raising a stance is a strike (2026-09-27): the opening round swings with
+    /// the stance up and is paid by the activation alone. Against a 1-HP enemy
+    /// that swing ends the fight whenever it lands, and then the fight must have
+    /// cost exactly the activation — 4, not the 4 + 6 of a free stance followed
+    /// by a Bloodlust-surcharged Cleave, which is what the old model charged.
+    func testStanceActivationIsItsOwnStrike() {
+        let simulator = FightSimulator(combat: combat(), vigor: vigor())
+        let player = CombatantStats(level: 21, maxHP: 300, attack: 60, defense: 40,
+                                    crit: 10, dodge: 8, accuracy: 30)
+        let enemy = CombatantStats(level: 21, maxHP: 1, attack: 1, defense: 0)
+        var oneRound = 0
+        for seed in UInt64(1)...200 {
+            var rng = SplitMix64(seed: seed)
+            let outcome = simulator.fight(player: player, characterClass: "warrior",
+                                          enemy: enemy, profile: .techniques, using: &rng)
+            XCTAssertTrue(outcome.won)
+            if outcome.rounds == 1 {
+                oneRound += 1
+                XCTAssertEqual(outcome.vigorSpent, 4, "seed \(seed): the stance's strike was charged twice")
+            }
+        }
+        // The swing hits at 95%, so a handful of seeds reach round two — but most
+        // must end on the stance's own strike, or the strike is not happening.
+        XCTAssertGreaterThan(oneRound, 150)
+    }
+
     // MARK: - Escape
 
     /// The ceiling is the whole point: no run of bad luck may cost more than

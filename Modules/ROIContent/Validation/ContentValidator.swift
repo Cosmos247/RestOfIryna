@@ -1851,11 +1851,20 @@ public enum ContentValidator {
                             "tuning.combat.effect_rounds",
                             "an armour break lasting \(rounds) rounds never applies")
                 case .guaranteedCrit(let multiplier):
-                    // At or below the standard multiplier the technique is a
-                    // normal hit that costs twice the Vigor.
-                    require(multiplier > combat.critMultiplier, file, "\(path).effect.critMultiplier",
-                            "tuning.combat.effect_crit_not_special",
-                            "a guaranteed crit at ×\(multiplier) is no better than the standard ×\(combat.critMultiplier) it costs double the Vigor to reach")
+                    // The owner's cap (2026-09-27): no technique blow may hit
+                    // harder than an ordinary crit. At ×2.0 a level-26 archer
+                    // killed the strongest beast in the game with two taps,
+                    // every time. The technique still pays for itself at the
+                    // cap — the crit is guaranteed and the shot cannot miss,
+                    // about half again an ordinary attack's expected damage —
+                    // which is why this used to demand MORE than the standard
+                    // and no longer does.
+                    require(multiplier <= combat.critMultiplier, file, "\(path).effect.critMultiplier",
+                            "tuning.combat.effect_crit_above_standard",
+                            "a guaranteed crit at ×\(multiplier) hits harder than the standard ×\(combat.critMultiplier) — no technique blow may exceed an ordinary crit")
+                    require(multiplier > 1.0, file, "\(path).effect.critMultiplier",
+                            "tuning.combat.effect_crit_no_lift",
+                            "a guaranteed crit at ×\(multiplier) deals no more than a plain hit")
                 case .burn(let rounds, let fraction):
                     require(rounds >= 1, file, "\(path).effect.rounds",
                             "tuning.combat.effect_rounds",
@@ -2305,6 +2314,15 @@ public enum ContentValidator {
             uniquingKeysWith: { first, _ in first })
         let maxWeaponTier = bundle.weaponLadders.flatMap { $0.tiers.map(\.tier) }.max() ?? 0
         let pool = bundle.tuning?.progression.vigorPool
+        // The Training Ground teaches one technique per level, each at its own
+        // `combat.json` floor: building it IS buying its first level, and no
+        // technique can be learned before the lowest floor it teaches.
+        let techniqueFloors = Dictionary(
+            (bundle.tuning?.combat.techniques ?? []).map { ($0.kind, $0.requiredLevel) },
+            uniquingKeysWith: { first, _ in first })
+        let groundLevels = (bundle.trainingGround?.levels ?? []).sorted { $0.level < $1.level }
+        let buildFloor = groundLevels.first.flatMap { techniqueFloors[$0.technique] }
+        let learnFloor = groundLevels.compactMap { techniqueFloors[$0.technique] }.min()
 
         var previousLevel = 0
         for (index, decree) in king.decrees.enumerated() {
@@ -2383,6 +2401,20 @@ public enum ContentValidator {
                     issues.append(.init(severity: .error, file: file, path: "\(conditionPath).target", id: decree.id,
                                         rule: "king.condition_target_unused",
                                         message: "\"\(condition.kind.rawValue)\" is a one-shot event and never reads a target"))
+                }
+
+                // The Training Ground's twin of `estate_tier_before_its_gate`.
+                // «Наука бою» and «Перший прийом» sat at level 9 against a floor
+                // of 10 from the moment the first technique moved there
+                // (2026-09-27), and nothing said so. The ground's estate gate
+                // (T4, also level 10) lives in Swift and is not seen here.
+                if condition.kind == .buildTrainingGround || condition.kind == .learnTechnique {
+                    let floor = condition.kind == .buildTrainingGround ? buildFloor : learnFloor
+                    if let floor, decree.level < floor {
+                        issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                            rule: "king.technique_before_its_floor",
+                                            message: "\"\(condition.kind.rawValue)\" needs player level \(floor) but the decree is filed at level \(decree.level) — it could never be completed there"))
+                    }
                 }
 
                 switch condition.kind {

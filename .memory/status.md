@@ -21,6 +21,29 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-27 — the King's chain asks for the estate before the Training Ground** (NOT DEPLOYED;
+content only in `king.json` plus one validator rule and one data migration; only `king` moved in
+the digest). «Наука бою» and «Перший прийом» sat at level 9 while the ground needs player level
+10 and estate T4 — and T4 was the decree AFTER them. Now «Зрілість» and «Третя сходинка» come
+first and both ground decrees are filed at 10; «Перший прийом» still closes with the same purchase,
+on the owner's call. `king.technique_before_its_floor` refuses a ground or technique decree below
+its first technique's floor (it fires on the old file, twice). `RewalkReorderedDecrees` sends
+anyone standing at 23…25 back to 22 so nobody skips a decree; nobody stood there when it was
+written.
+
+**2026-09-27 — the technique rework** (NOT DEPLOYED; content schema stays v14, two DB
+migrations `CreateFightLog` + `AddCombatTally`, only `tuning` moved in the digest). The owner:
+techniques gave too much — a level-26 archer killed the strongest beast with two Vital Shots,
+every time — and a stance took Vigor for a tap that struck nothing. Now: raising a stance IS a
+strike (the tap swings with the stance up and the enemy answers); every special defence strikes
+back (Shadow Veil's knife = the archer's Defend chip, Mirror Ward cannot be missed); no technique
+blow exceeds an ordinary crit (Vital Shot ×2.0 → ×1.5, validator
+`tuning.combat.effect_crit_above_standard`); the kit is tuned to shorten an elite fight by ~20%
+for every class at L21/L40 (warrior −20/−21 · archer −19/−19 · mage −21/−20; the mage was −52%):
+bloodlust attack ×1.25, hawks_eye gained attack ×1.15, arcane_resonance ×1.15, burn 0.15. The
+stance lines lost their stat breakdown on the owner's word (and with it the false «вдвічі»). And
+the game finally keeps a record: `fight_log`, one row per finished forest fight.
+
 **2026-09-27 — the Training Ground is a room of the house** (`1d1fec4`, NOT DEPLOYED; schema **v14**, two
 migrations, `records` / `tuning` / `king` moved). It was a plot type that cost a production
 slot and nothing else; now 🏠 Дім lists it from estate T4 and it is built and raised for
@@ -493,11 +516,11 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 33e5c6e3259d51ba` / `tuning 11797ea73591e02f` / `spawns c9bdb57d456adc26` /
-`quests 30de20902006e3b9` / `king 08733a95f4d34e68`, content hash `e99571d5` (**schema v14**
+`records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` / `spawns c9bdb57d456adc26` /
+`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `490a2d4b` (**schema v14**
 since 2026-09-27, when `training_ground.json` became a required file — `Prompt.md` is where
-the baseline is kept in sync; the Pi still runs the 09-22 v13 baseline until the four
-2026-09-27 changes are deployed), **315 tests**. Pace as of
+the baseline is kept in sync; the Pi still runs the 09-22 v13 baseline until the six
+2026-09-27 changes are deployed), **320 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

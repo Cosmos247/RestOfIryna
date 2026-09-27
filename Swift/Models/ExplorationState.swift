@@ -170,6 +170,14 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_flee_fails")
     public var combatFleeFails: Int?
 
+    /// The running numbers of the CURRENT fight — what it cost, what dealt
+    /// what — as JSON (`CombatTally`), written to `fight_log` when the fight
+    /// ends (2026-09-27). Set by `beginCombat`, cleared by `endCombat`. Read
+    /// through `combatTally`; nil for a fight already in flight when
+    /// AddCombatTally shipped, which then simply leaves no log row.
+    @OptionalField(key: "combat_tally")
+    public var combatTallyJSON: String?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -199,6 +207,7 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.combatSpecialDefUses = nil
         self.combatSuperUses = nil
         self.combatFleeFails = nil
+        self.combatTallyJSON = nil
     }
 }
 
@@ -362,7 +371,11 @@ extension ExplorationState {
     /// player's level via `CombatService.initialUses(for:playerLevel:)`,
     /// so the budget grows organically with progression (1/1/1 early,
     /// 2/2/2 at the L17/L20/L21 thresholds).
-    public func beginCombat(enemyId: String, hp: Int, specialAtkUses: Int, specialDefUses: Int, superUses: Int) {
+    ///
+    /// `playerHP` opens the fight's tally for `fight_log` — the HP the player
+    /// walked in with, which nothing else remembers once the blows start.
+    public func beginCombat(enemyId: String, hp: Int, specialAtkUses: Int, specialDefUses: Int, superUses: Int,
+                            playerHP: Int) {
         self.combatEnemyId = enemyId
         self.combatEnemyHP = hp
         self.combatSpecialAtkUses = specialAtkUses
@@ -370,6 +383,7 @@ extension ExplorationState {
         self.combatSuperUses = superUses
         self.combatRound = 0
         self.combatFleeFails = 0
+        self.combatTally = CombatTally(hpStart: playerHP)
     }
 
     /// Clear the combat fields without touching the rest of the row. Also
@@ -389,6 +403,29 @@ extension ExplorationState {
         self.combatSuperUses = nil
         self.combatRound = nil
         self.combatFleeFails = nil
+        self.combatTallyJSON = nil
+    }
+
+    /// The fight's running tally, decoded from `combat_tally`. Nil outside a
+    /// fight, and for a fight that began before the column existed.
+    public var combatTally: CombatTally? {
+        get {
+            guard let data = combatTallyJSON?.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode(CombatTally.self, from: data)
+        }
+        set {
+            combatTallyJSON = newValue
+                .flatMap { try? JSONEncoder().encode($0) }
+                .flatMap { String(data: $0, encoding: .utf8) }
+        }
+    }
+
+    /// Update the tally in place. A fight without one is left alone — it
+    /// predates the log and will not be written to it anyway.
+    public func tally(_ update: (inout CombatTally) -> Void) {
+        guard var current = combatTally else { return }
+        update(&current)
+        combatTally = current
     }
 
     /// True when the row encodes a live Super-technique stance.

@@ -197,7 +197,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             trailing = TGKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale))
         }
         // The techniques row only exists once the first kind is unlockable
-        // (level 8). Below that the menu behind it has nothing to list but its
+        // (the lowest `requiredLevel`). Below that the menu behind it has nothing to list but its
         // own "nothing yet" note, so the button is a dead key on the busiest
         // screen in the game. Level, not the learned set: reaching the level is
         // what "unlocked" means on the Training Ground, and the check has to
@@ -347,13 +347,25 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func onAttack(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
-        let isTraining = Self.isTraining(state)
-
         let mods = CombatService.stanceModifiers(for: state.combatStance)
         // Training mode is consequence-free: no vigor drain, no enemy counter.
-        if !isTraining {
-            _ = VigorService.drain(context.session, action: .combatAttack, multiplier: mods.vigorMultiplier)
+        if !Self.isTraining(state) {
+            let spent = VigorService.drain(context.session, action: .combatAttack, multiplier: mods.vigorMultiplier)
+            state.tally { $0.vigorSpent += spent }
         }
+        try await strikeRound(context: context, state: state, enemy: enemy, source: .attack, leadLines: [])
+        return true
+    }
+
+    /// One ordinary swing and the enemy's answer: the body of Attack, and since
+    /// 2026-09-27 of raising a stance too, whose tap IS this strike. `source`
+    /// tells the fight log which of the two it was; `leadLines` go above the
+    /// swing (the stance's own line). Vigor is the caller's — Attack pays for
+    /// the swing, and the stance's activation already has.
+    private func strikeRound(context: Context, state: ExplorationState, enemy: Enemy,
+                             source: FightBlowSource, leadLines: [String]) async throws {
+        let isTraining = Self.isTraining(state)
+        let mods = CombatService.stanceModifiers(for: state.combatStance)
 
         // Player strikes — stance modifiers folded into ATK / Crit / Acc.
         // Iron Bulwark's "armor split" debuff (if active) zeroes enemy DEF.
@@ -374,21 +386,28 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             defenderLevel: enemy.level,
             modifiers: swingMods
         )
-        var enemyHP = state.combatEnemyHP ?? enemy.hp
+        let hpBefore = state.combatEnemyHP ?? enemy.hp
+        var enemyHP = hpBefore
         let playerLine = renderPlayerHit(playerHit, enemy: enemy, lingo: context.lingo, locale: context.session.locale, enemyHPAfter: { d in
             enemyHP = max(0, enemyHP - d)
             return enemyHP
         })
+        let inStance = state.hasActiveStance
+        state.tally {
+            $0.actions += 1
+            $0.dealt(playerHit.damage, removed: hpBefore - enemyHP, by: source, inStance: inStance)
+        }
 
         if enemyHP <= 0 {
-            try await finishVictory(context: context, state: state, enemy: enemy, headerLines: [playerLine])
-            return true
+            state.tally { $0.killingBlow = source }
+            try await finishVictory(context: context, state: state, enemy: enemy, headerLines: leadLines + [playerLine])
+            return
         }
 
         if isTraining {
             // Skip the enemy counter entirely — dummy never strikes back.
-            try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine])
-            return true
+            try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: leadLines + [playerLine])
+            return
         }
 
         // Enemy counter — DEF / Dodge get the stance buffs, plus Shadow Veil's
@@ -409,8 +428,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case .hit(let d), .crit(let d): player.hp = max(0, player.hp - d)
         }
 
-        try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP, lines: [playerLine, enemyLine])
-        return true
+        try await finishRound(context: context, state: state, enemy: enemy, enemyHP: enemyHP,
+                              lines: leadLines + [playerLine, enemyLine])
     }
 
     private func onDefend(context: Context) async throws -> Bool {
@@ -419,7 +438,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
         let mods = CombatService.stanceModifiers(for: state.combatStance)
         if !isTraining {
-            _ = VigorService.drain(context.session, action: .combatDefend, multiplier: mods.vigorMultiplier)
+            let spent = VigorService.drain(context.session, action: .combatDefend, multiplier: mods.vigorMultiplier)
+            state.tally { $0.vigorSpent += spent }
         }
 
         // Per-class basic Defend (2026-05-15):
@@ -448,7 +468,14 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case .mage:
             chip = 0
         }
-        let enemyHP = max(0, (state.combatEnemyHP ?? enemy.hp) - chip)
+        let hpBefore = state.combatEnemyHP ?? enemy.hp
+        let enemyHP = max(0, hpBefore - chip)
+        let inStance = state.hasActiveStance
+        state.tally {
+            $0.actions += 1
+            $0.dealt(chip, removed: hpBefore - enemyHP, by: .defend, inStance: inStance)
+            if enemyHP <= 0 { $0.killingBlow = .defend }
+        }
         let playerLine: String
         if chip > 0 {
             playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
@@ -532,12 +559,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let mods = CombatService.stanceModifiers(for: state.combatStance)
-        _ = VigorService.drain(player, action: .combatFlee, multiplier: mods.vigorMultiplier)
+        var spent = VigorService.drain(player, action: .combatFlee, multiplier: mods.vigorMultiplier)
         // Per-class extra vigor (mage teleport tax) layers on top, scaled by
         // the same stance multiplier so Arcane Resonance still pays the toll.
         let extra = CombatService.fleeVigorExtra(forClass: cls)
         if extra > 0 {
-            VigorService.drain(player, amount: Int((Double(extra) * mods.vigorMultiplier).rounded()))
+            spent += VigorService.drain(player, amount: Int((Double(extra) * mods.vigorMultiplier).rounded()))
+        }
+        state.tally {
+            $0.actions += 1
+            $0.vigorSpent += spent
         }
 
         let lingo = context.lingo
@@ -564,6 +595,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 try await Registration.handleCombatEnd(context: context, won: false)
                 return true
             }
+
+            // Before `endCombat`, which clears the tally the row is built from.
+            try? await FightLog.record(.flee, state: state, enemy: enemy, user: player, on: context.db)
 
             // Phase 6.5: fleeing wears armor the hardest.
             let brokeOnFlee = try await GearConditionService.wear(.flee, for: player, on: context.db)
@@ -729,9 +763,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     /// Phase 4.2.3 class Special Defense — Iron Bulwark (warrior) / Shadow
     /// Veil (archer) / Mirror Ward (mage). All three skip the regular enemy
-    /// counter (full block / dodge / reflect). Iron Bulwark and Shadow Veil
-    /// also apply a 1-round persistent effect that the next player action
-    /// will consume (armor-split DEF debuff / lingering dodge buff).
+    /// counter (full block / dodge / reflect) and all three strike back: the
+    /// bulwark's counter, the veil's knife and the ward's reflection. The veil
+    /// used to strike nothing and the ward nothing on a miss, so the Vigor went
+    /// on a round with no blow in it — both closed on 2026-09-27. Iron Bulwark
+    /// and Shadow Veil also apply a 1-round persistent effect that the next
+    /// player action will consume (armor-split DEF debuff / lingering dodge buff).
     private func onSpecialDefense(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
         if try await sendLockedToastIfUnlearned(kind: .specialDef, context: context) { return true }
@@ -751,15 +788,17 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         if !isTraining {
             let baseVigor = CombatService.specialDefenseVigor(forClass: cls)
             let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
-            VigorService.drain(player, amount: actualDrain)
+            let spent = VigorService.drain(player, amount: actualDrain)
+            state.tally { $0.vigorSpent += spent }
         }
 
         let lingo = context.lingo
         let locale = player.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
 
-        var enemyHP = state.combatEnemyHP ?? enemy.hp
-        let activateLine: String
+        let hpBefore = state.combatEnemyHP ?? enemy.hp
+        var enemyHP = hpBefore
+        let struck: Int
 
         switch cls {
         case .warrior:
@@ -771,51 +810,50 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: bulwarkEnemyDEF, defenderLevel: enemy.level)
             // The basic chipDamage uses 30% of base — Iron Bulwark scales it
             // up to 50% (defendChipFraction = 0.3, ironBulwarkChipFraction = 0.5).
-            let scaledChip = max(1, Int((Double(chip) * (CombatService.SpecialDefense.ironBulwarkChipFraction / CombatService.defendChipFraction)).rounded()))
-            enemyHP = max(0, enemyHP - scaledChip)
+            struck = max(1, Int((Double(chip) * (CombatService.SpecialDefense.ironBulwarkChipFraction / CombatService.defendChipFraction)).rounded()))
             // Apply armor-split for the next swing (after the tick).
             state.applyEnemyDefDebuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
-            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.warrior.activate", locale: locale, interpolations: [
-                "enemy": enemyName,
-                "damage": "\(scaledChip)"
-            ])
 
         case .archer:
-            // Shadow Veil: full dodge this round (no enemy counter), apply
-            // lingering dodge buff for the next round.
+            // Shadow Veil: full dodge this round (no enemy counter), a knife on
+            // the way out, then a lingering dodge buff for the next round. The
+            // knife is Quick Manoeuvre's own chip — the same knob, so the two
+            // cannot drift apart.
+            let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
+            let veilEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
+            struck = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: veilEnemyDEF,
+                                              defenderLevel: enemy.level,
+                                              extraMultiplier: CombatService.Defend.archerChipMultiplier)
             state.applyPlayerDodgeBuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
-            activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.archer.activate", locale: locale, interpolations: [
-                "enemy": enemyName
-            ])
 
         case .mage:
-            // Mirror Ward: roll the would-be enemy hit, reflect a fraction
-            // back at them. Player takes 0.
+            // Mirror Ward: the would-be enemy hit cannot miss the ward, and a
+            // fraction of it goes back. Player takes 0.
+            var wardMods = CombatService.AttackModifiers()
+            wardMods.cannotMiss = true
             let wouldBeHit = CombatService.applyAttack(
                 attackerATK: enemy.attack, attackerCrit: enemy.crit, attackerAcc: enemy.accuracy,
                 attackerLevel: enemy.level,
                 defenderDEF: Int((Double(player.effectiveDefense) * stanceMods.defenseMultiplier).rounded()),
                 defenderDodge: 0,
-                defenderLevel: player.level
+                defenderLevel: player.level,
+                modifiers: wardMods
             )
-            let raw: Int
-            switch wouldBeHit {
-            case .miss:               raw = 0
-            case .hit(let d):         raw = d
-            case .crit(let d):        raw = d
-            }
-            if raw > 0 {
-                let reflected = max(1, Int((Double(raw) * CombatService.SpecialDefense.mirrorWardReflectFraction).rounded()))
-                enemyHP = max(0, enemyHP - reflected)
-                activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.mage.activate", locale: locale, interpolations: [
-                    "enemy": enemyName,
-                    "damage": "\(reflected)"
-                ])
-            } else {
-                activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.mage.no_damage", locale: locale, interpolations: [
-                    "enemy": enemyName
-                ])
-            }
+            struck = max(1, Int((Double(wouldBeHit.damage) * CombatService.SpecialDefense.mirrorWardReflectFraction).rounded()))
+        }
+        enemyHP = max(0, enemyHP - struck)
+        // One template shape for all three: the enemy's name is the subject
+        // after a dash, the only place a nominative-only name can stand.
+        let activateLine = "\(Self.specialDefEmoji(for: cls)) " + lingo.localize("combat.special_def.\(cls.rawValue).activate", locale: locale, interpolations: [
+            "enemy": enemyName,
+            "damage": "\(struck)"
+        ])
+        let inStance = state.hasActiveStance
+        state.tally {
+            $0.actions += 1
+            $0.specialDefUses += 1
+            $0.dealt(struck, removed: hpBefore - enemyHP, by: .specialDef, inStance: inStance)
+            if enemyHP <= 0 { $0.killingBlow = .specialDef }
         }
 
         if enemyHP <= 0 {
@@ -855,7 +893,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         if !isTraining {
             let baseVigor = CombatService.specialAttackVigor(forClass: cls)
             let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
-            VigorService.drain(player, amount: actualDrain)
+            let spent = VigorService.drain(player, amount: actualDrain)
+            state.tally { $0.vigorSpent += spent }
         }
 
         // Player swing — stance buffs + special-attack modifiers compose.
@@ -900,7 +939,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
         let keyPrefix = "combat.special_atk.\(cls.rawValue)"
 
-        var enemyHP = state.combatEnemyHP ?? enemy.hp
+        let hpBefore = state.combatEnemyHP ?? enemy.hp
+        var enemyHP = hpBefore
         let playerLine: String
         switch playerHit {
         case .miss:
@@ -914,6 +954,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
 
         let openingLines = [playerLine]
+        let inStance = state.hasActiveStance
+        state.tally {
+            $0.actions += 1
+            $0.specialAtkUses += 1
+            $0.dealt(playerHit.damage, removed: hpBefore - enemyHP, by: .specialAtk, inStance: inStance)
+            if enemyHP <= 0 { $0.killingBlow = .specialAtk }
+        }
 
         if enemyHP <= 0 {
             try await finishVictory(context: context, state: state, enemy: enemy, headerLines: openingLines)
@@ -949,10 +996,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
-    /// Phase 4.2 Super-technique activation. Drains the activation vigor,
-    /// stamps the stance fields on the expedition row, and re-renders the
-    /// combat screen with the activate narrative + buff status. The enemy
-    /// does NOT strike on activation — Super is a free action by design.
+    /// Phase 4.2 Super-technique activation: drains the activation vigor,
+    /// stamps the stance fields and strikes — the tap IS the round's attack,
+    /// swung with the stance already up, and the enemy answers as it does to
+    /// any attack. Until 2026-09-27 it was a free action that charged Vigor and
+    /// hit nothing, which is what the owner asked to fix. The stance's count
+    /// starts on this strike, so it still powers exactly three actions.
     /// Tapping Super while a stance is already active is a no-op + toast.
     private func onSuper(context: Context) async throws -> Bool {
         guard let (state, enemy) = try await loadCombat(context: context) else { return true }
@@ -975,21 +1024,20 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let player = context.session
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceId = CombatService.stanceId(forClass: cls)
-        // Activation vigor skipped in training mode (consequence-free practice).
+        // The activation pays for the strike below as well — it is one tap.
+        // Skipped in training mode (consequence-free practice).
         if !Self.isTraining(state) {
-            VigorService.drain(player, amount: CombatService.stanceActivationVigor(for: stanceId))
+            let spent = VigorService.drain(player, amount: CombatService.stanceActivationVigor(for: stanceId))
+            state.tally { $0.vigorSpent += spent }
         }
+        state.tally { $0.stanceUses += 1 }
         state.beginStance(stanceId, rounds: CombatService.stanceDurationRounds)
-        try await state.save(on: context.db)
-        try await player.saveAndCache(in: context.db)
 
-        let activate = "\(Self.superEmoji(for: cls)) " + lingo.localize("combat.super.\(cls.rawValue).activate", locale: locale, interpolations: [
-            "rounds": "\(CombatService.stanceDurationRounds)"
-        ])
-        let status = renderStatusCard(user: player, enemy: enemy, enemyHP: state.combatEnemyHP ?? enemy.hp, state: state, lingo: lingo, locale: locale)
-        let text = "\(activate)\n\n\(status)"
-        let markup = combatReplyKeyboard(session: player, state: state, lingo: lingo)
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        // No numbers in the line: the owner's call on 2026-09-27 — the player
+        // does not need the stance decoded, and the rounds left are on the
+        // status card anyway.
+        let activate = "\(Self.superEmoji(for: cls)) " + lingo.localize("combat.super.\(cls.rawValue).activate", locale: locale)
+        try await strikeRound(context: context, state: state, enemy: enemy, source: .stance, leadLines: [activate])
         return true
     }
 
@@ -1023,6 +1071,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         if burnDamage > 0 {
             remainingEnemyHP = max(0, remainingEnemyHP - burnDamage)
             state.combatEnemyHP = remainingEnemyHP
+            let inStance = state.hasActiveStance
+            state.tally {
+                $0.dealt(burnDamage, removed: enemyHP - remainingEnemyHP, by: .burn, inStance: inStance)
+                if remainingEnemyHP <= 0 { $0.killingBlow = .burn }
+            }
             let enemyName = "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale)
             allLines.append("🔥 " + context.lingo.localize("combat.burn.tick", locale: context.session.locale,
                                                            interpolations: ["enemy": enemyName,
@@ -1045,13 +1098,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // killed. Dropping them here meant the screen before read ❤️ 45/150 and
         // the next one «Ви полягли», with nothing in between (2026-09-27).
         if context.session.hp <= 0 {
-            try await handleCombatDeath(context: context, enemy: enemy, roundLines: allLines, enemyHP: remainingEnemyHP)
+            try await handleCombatDeath(context: context, state: state, enemy: enemy,
+                                        roundLines: allLines, enemyHP: remainingEnemyHP)
             return
         }
 
         let lingo = context.lingo
         let locale = context.session.locale
-        let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: enemyHP, state: state, lingo: lingo, locale: locale)
+        // After the burn: the card used to draw the HP from before the tick,
+        // so on a burn round it contradicted the line right above it.
+        let status = renderStatusCard(user: context.session, enemy: enemy, enemyHP: remainingEnemyHP, state: state, lingo: lingo, locale: locale)
         let text = (allLines + [status]).joined(separator: "\n\n")
         let markup = combatReplyKeyboard(session: context.session, state: state, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
@@ -1099,6 +1155,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             try await Registration.handleCombatEnd(context: context, won: true)
             return
         }
+
+        // Written before the XP below, so the row carries the level the fight
+        // was fought at rather than the one it paid out.
+        try? await FightLog.record(.win, state: state, enemy: enemy, user: context.session, on: context.db)
 
         // Phase 6.5: equipped armor takes a small durability hit on a win.
         let brokeOnWin = try await GearConditionService.wear(.victory, for: context.session, on: context.db)
@@ -1183,14 +1243,17 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// `roundLines` are the last round as it would have printed — the player's
     /// action, the blow that killed, a burn tick — and `enemyHP` is what the
     /// enemy had left, so the death screen says how close the fight was.
-    private func handleCombatDeath(context: Context, enemy: Enemy, roundLines: [String], enemyHP: Int) async throws {
+    private func handleCombatDeath(context: Context, state: ExplorationState, enemy: Enemy,
+                                   roundLines: [String], enemyHP: Int) async throws {
         if context.session.registrationStep < User.registrationDoneStep {
-            if let state = try await ExplorationState.current(for: context.session, on: context.db) {
-                try await state.delete(on: context.db)
-            }
+            try await state.delete(on: context.db)
             try await Registration.handleCombatEnd(context: context, won: false)
             return
         }
+
+        // Before the death wipe below, which resets HP and ends the expedition
+        // the tally lives on.
+        try? await FightLog.record(.death, state: state, enemy: enemy, user: context.session, on: context.db)
 
         // Phase 6.5: a defeat wears equipped armor (more than a win, less than
         // a flee). Equipped gear survives the death wipe, only its durability drops.

@@ -231,8 +231,9 @@ public enum BalanceFormatter {
 
         // MARK: profiles
         out.append("── what techniques are worth ─────────────────────────────────────────────────")
-        out.append("   basic = the passive autobattle. techniques = super on the opening action,")
-        out.append("   then special attacks. The gap is the measured value of playing actively.")
+        out.append("   basic = the passive autobattle. techniques = the stance's own strike on the")
+        out.append("   opening action, then special attacks. The gap is the measured value of")
+        out.append("   playing actively. Special defences are not modelled, so it is a floor.")
         out.append("")
         out.append("   The policy is NAIVE — it spends the whole kit on every fight, including a")
         out.append("   trash mob nobody would burn a Super on. So read the trash rows as \"what the")

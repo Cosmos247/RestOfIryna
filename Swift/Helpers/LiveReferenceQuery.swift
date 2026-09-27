@@ -26,7 +26,7 @@ public enum LiveReferenceQuery {
     /// the hot swap will happily break.
     ///
     /// Derived by walking every `@Field` in `Swift/Models`, not from the design
-    /// document — which listed six of these ten. Four columns are deliberately
+    /// document — which listed six of these ten. Six columns are deliberately
     /// NOT here, each for a stated reason:
     ///
     /// - `quest_progress.npc` — covered transitively. A row's `quest_id` comes
@@ -38,6 +38,9 @@ public enum LiveReferenceQuery {
     ///   without the install failing first.
     /// - `users.location` / `travel_state.destination` — `TravelState`'s enum
     ///   ("estate" / "capital"), not content at all.
+    /// - `fight_log.enemy_id` — history, not a live reference. A row about a
+    ///   beast a later bundle retires records a fight that happened; refusing a
+    ///   reload over it would freeze the bestiary for as long as the log grows.
     public static func collect(on db: any Database) async throws -> [LiveReferenceCheck.LiveIds] {
         func ids(_ table: String, _ column: String, _ kind: LiveReferenceCheck.Kind,
                  _ values: [String]) -> LiveReferenceCheck.LiveIds {

@@ -366,6 +366,101 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-27 part 7 (the King asks for the estate before the Training Ground)
+
+**The owner's ask:** «Перестав укази і додай завдання на підвищення маєтку». Every estate tier
+T2–T7 already has its decree; T4's is «Третя сходинка», which stood AFTER the two ground
+decrees it is a precondition of. Asked, not assumed: move the existing decree rather than add a
+second one (a duplicate would close itself and shift every player past it), and leave «Перший
+прийом» as it is although the same purchase closes it — both the owner's picks.
+
+**Read off the machine first:** `king_progress` stood at 1, 3, 14, 14, 31 and 39 — nobody inside
+positions 22–25, so the permutation moves nobody today. It still ships with
+`RewalkReorderedDecrees`, because the index is a POSITION and players move before a deploy does:
+anyone at 23…25 goes back to 22 and re-walks four live-read decrees (at worst a second payout of
+60 + 45 Vigor, 2 meat, 3 stew) rather than skipping «Третя сходинка» and its 150 silver.
+
+**The guard that was missing:** `estate_tier_before_its_gate` existed, its Training Ground twin
+did not, so the level-9 filing stood for a day with nothing to say so. `king.technique_before_its_floor`
+reads the floor off `combat.json` through `training_ground.json` (building = its first level;
+learning = the lowest floor it teaches); run against the pre-reorder file it fires on exactly the
+two decrees. The ground's estate gate (T4) is a Swift constant and stays out of the validator's
+sight — both gates are level 10 today.
+
+**Verified:** 320 tests (two new), `validate --strict` clean, `simulate --strict` unchanged, `spec
+king` block refreshed (four rows moved, science's pool share 41% → 40% at its new level), digest:
+only `king` moved (`08733a95f4d34e68` → `5dbddfd689f3cede`), content hash `45e9bfa5` → `490a2d4b`.
+**Not deployed** — rides the same restart as the rest of 09-27; verify `king_progress` after it.
+
+**The pre-commit audit** (the owner's ritual, plus an independent reviewer over the combat, log and
+migration logic) found no correctness bug and two things worth fixing before the first log row
+exists: the log's sums counted a finishing blow's overkill (they now count the HP removed;
+`max_blow` stays the raw roll), and the status card on a burn round drew the beast's HP from
+before the tick — a display defect since the burn shipped, one word in `finishRound`. Recorded,
+not changed: a Mac boot of this build would spend `RewalkReorderedDecrees` against the Pi's
+database while the Pi still walks the old order — boot the Pi first.
+
+## Session — 2026-09-27 part 6 (the technique rework)
+
+**The owner's ask:** the techniques give too much — players kill the strongest beast in one blow
+— and one technique takes Vigor for a tap that strikes nothing; look at the technique logs in the
+database and propose fixes, as a quiz.
+
+**Read off the machine first.** There were NO logs: no table and no pm2 line records a combat
+event (the log holds Telegram refusals and boots). The database only says who learned what — five
+players: Nerif (archer 26), Дарина (warrior 20), анія (mage 16) with all three, Володимир (archer
+13) with two, Amae (warrior 10) with one. So their live stats went through the same formulas as
+`CombatMath` (40,000 rolls a case): nobody one-shot the strongest beast (Скажений ведмідь, 319 HP
+— Nerif's Vital Shot took 61%), but two Vital Shots killed it EVERY time (the weakest pair rolls
+349), one killed the Дикий ведмідь 74% of the time, and the mage's stance + Soulfire killed a wolf
+in the first round, always. Half of each one-shot was not the technique: Nerif out-levels the
+wild bear by 10 (×1.6 from `levelDiff`) and the roster carries 71–74% of its intended HP.
+
+**Decided over three quizzes and a mockup pass:** keep every mechanic, trim numbers to one
+target — the full kit shortens an elite fight by ~20% for every class, and no technique blow
+exceeds an ordinary crit; raising a stance strikes; Shadow Veil and Mirror Ward stop being
+Vigor spent on a round with no blow in it; a fight log table for live fights only; all three
+special-defence lines rewritten to the nominative-only rule. The owner cut the stat breakdown
+from the stance lines («гравцю не треба бачити розшифрування»).
+
+**Found by the validator, not by me:** `tuning.combat.effect_crit_not_special` REQUIRED a
+guaranteed crit above ×1.5 — the owner's cap refused outright. Its reasoning ("a normal hit at
+double the Vigor") was wrong at the cap: a crit that is guaranteed on a shot that cannot miss is
+~1.55× a plain attack's expected damage. Replaced by `effect_crit_above_standard` (≤ standard,
+the cap) and `effect_crit_no_lift` (> 1.0).
+
+**Numbers were found in a scratch copy of the simulator** (the three Foundation targets built
+in the scratchpad, the stance-strike model patched in, `--content` pointed at a copied bundle),
+so nothing in the repo moved before the owner saw the table. Shipped: bloodlust attack ×1.35 →
+×1.25; hawks_eye gained attack ×1.15 (its crit lift did nothing for a shot that always crits, and
+the archer could not reach 20% without a big single blow otherwise); arcane_resonance ×1.5 →
+×1.15; Vital Shot ×2.0 → ×1.5; Soulfire's burn 0.35 → 0.15. Elite at L21/L40: warrior −20/−21 ·
+archer −19/−19 · mage −21/−20 (was −25 · −24 · −52); L14, stance and one special: −19 · −13 ·
+−16. On the live players: Nerif's one-shot of the wild bear 74% → 0%, two Vital Shots on the
+rabid bear 100% → 0%.
+
+**Shipped:** `strikeRound` (split out of `onAttack`; the stance's tap swings through it, paid by
+the activation alone, and the stance still powers three actions); Shadow Veil's knife reuses
+`Defend.archerChipMultiplier`; Mirror Ward rolls with `cannotMiss`; one `activate` template shape
+with `%{damage}` for all three special defences, `combat.special_def.mage.no_damage` deleted;
+`FightSimulator` models the stance strike (`testStanceActivationIsItsOwnStrike`, failed on
+purpose against the old model: 10 Vigor instead of 4); `FightLog` + `CombatTally` (JSON on
+`exploration_state.combat_tally` between taps, written with `try?` before `endCombat` at win /
+death / flee), `CreateFightLog` + `AddCombatTally` registered before `WipeForRebalance`, which
+also lists `fight_log` now; `LiveReferenceQuery` says why `fight_log.enemy_id` is not read.
+Stale comments fixed on the way: the special-attack doc still described Cleave's "+12 flat"
+from before Phase 5D, and the keyboard comment said level 8.
+
+**Verified:** build clean with no warnings in any touched file, 318 tests, `validate --strict`
+clean, `simulate --strict` 0 broken bands / 12 warnings with the invariance and tail sections
+byte-identical, the new strings rendered, the nominative sweep down from eight lines to four.
+Digest: only `tuning` moved (`11797ea73591e02f` → `fe05ceaa38e03c6b`), content hash `e99571d5` →
+`45e9bfa5`. **Not deployed** — code, locale and two migrations: `pm2 restart ROI` with the other
+09-27 changes, then the table.
+
+**Raised, not touched:** decrees 23–24 now ask for level 10 and estate T4 at level 9, and the
+kit still never saves Vigor (+35 / +16 / +36% on an elite). Both in `TODO.md` → Open.
+
 ## Session — 2026-09-27 part 5 (the sync pass)
 
 Records only, plus one visibility fix. Every stale count and hash found by a sweep of the repo

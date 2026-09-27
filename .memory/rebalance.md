@@ -580,6 +580,12 @@ hawks_eye crit ×1.60 accuracy ×1.15 dodge ×1.15, arcane_resonance attack ×1.
 defence ×1.15. The warrior's techniques went from saving 5% of a fight to saving
 13–21%, and the audit that found this now runs on every report.
 
+*Superseded 2026-09-27 — these are Phase 8C's values, not today's.* The technique rework
+tuned the kit to shorten an elite fight by ~20% for every class (the mage's was 52%) and
+capped any technique blow at an ordinary crit: bloodlust attack ×1.25, hawks_eye gained attack
+×1.15, arcane_resonance attack ×1.15, Vital Shot ×2.0 → ×1.5, Soulfire's burn 0.35 → 0.15.
+Read the live values from `tuning/combat.json`; the why is in `sessions.md`.
+
 **The warrior's budget was re-spent toward offence.** Weapon attack 0.72 → 0.80
 (accuracy 0.14 → 0.06, which was overshooting the 95% hit cap by level 40 anyway),
 armour defence 0.82 → 0.78 into HP, base attack 10 → 12. Days-to-cap spread fell

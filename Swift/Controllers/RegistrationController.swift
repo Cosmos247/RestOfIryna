@@ -446,7 +446,8 @@ extension Registration {
 
         let state = try await ExplorationState.begin(for: context.session, on: context.db)
         let uses = CombatService.initialUsesForUser(context.session)
-        state.beginCombat(enemyId: dog.id, hp: dog.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
+        state.beginCombat(enemyId: dog.id, hp: dog.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup,
+                          playerHP: context.session.hp)
         try await state.save(on: context.db)
 
         let combatCtrl = Controllers.combatController

@@ -1736,8 +1736,26 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the four 2026-09-27 blocks on top,
+Telegram. **Every block below is LIVE and unwalked** except the five 2026-09-27 blocks on top,
 which wait on the next restart — the 2026-09-22 deploys took the whole backlog before them.
+
+**Added 2026-09-27 — the technique rework (NOT deployed yet):**
+- **after the deploy, the tables first**: `fight_log` exists and fills as fights end
+  (`SELECT outcome, enemy_id, rounds, max_blow, max_blow_source FROM fight_log ORDER BY
+  created_at DESC LIMIT 10`), and `exploration_state.combat_tally` exists.
+- **tap a stance** (🩸 / 🦅 / ✨): ONE message — the stance's line (no numbers in brackets any
+  more), then «Ви влучаєте — X втрачає N ОЗ» and the beast's answer; the status card reads
+  «🩸 Кровна жага — 2» after it; Vigor drops by the activation alone (4 / 4 / 5).
+- **🌑 Тінь лісу** (archer): «Ніж зачіпає на відході — X втрачає N ОЗ», the beast does not hit
+  that round, next round dodge ×2. **🪞 Дзеркальний щит** (mage): always reflects — «Бар'єр
+  витримує» can no longer appear. **🏰 Залізна стіна**: «Контрудар — X втрачає N ОЗ».
+- **🎯 Влучний постріл** hits about half again a plain hit now, not double: Nerif (26) against a
+  Дикий ведмідь should no longer kill it in one shot.
+- **one row per fight**: win, death and a successful escape each leave a `fight_log` row; a
+  training bout and the registration dog leave none. On a win `damage_dealt` equals the beast's
+  HP (the sums count HP removed); `max_blow` is the raw roll.
+- **a burn round** (🔥 «X горить — втрачає N ОЗ»): the status card under it shows the beast's
+  HP AFTER the tick — it used to show the HP from before it.
 
 **Added 2026-09-27 — the Training Ground as a house room (NOT deployed yet):**
 - **after the deploy, the table first**: `SELECT count(*) FROM plots WHERE plot_type =
@@ -1750,7 +1768,11 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
   next two with their levels; [⬆️ Покращити до рівня 2] opens a card, a short player level is
   a modal, not a spent payment. [🥋 Тренувальний бій] runs the dummy and comes back here.
 - **the freed plot slot** is empty and claimable; the plot picker offers four types.
-- **«Наука бою»** (decree 23) asks «🤺 Збудувати тренувальний майданчик».
+- **«Наука бою»** (now decree 25) asks «🤺 Збудувати тренувальний майданчик», and it comes after
+  «Зрілість» (level 10) and «Третя сходинка» (estate T4) since the reorder the same day — the
+  ground needs both. «Перший прийом» follows it and closes with the same purchase, on purpose.
+- **after the deploy, the table**: `SELECT count(*) FROM king_progress WHERE decree_index
+  BETWEEN 23 AND 25` is 0 (`RewalkReorderedDecrees` sends anyone standing there back to 22).
 
 **Added 2026-09-27 — combat lines and the death screen (NOT deployed yet):**
 - **an archer's 🎯 Влучний постріл** (it always crits): «Стріла впивається в живу плоть!
@@ -2066,21 +2088,28 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **The kit still never saves Vigor** (measured 2026-09-27, the owner told, prices untouched).
+  After the rework an elite fight with the full kit costs +35% (warrior), +16% (archer) and
+  +36% (mage) more Vigor than plain attacks, for ~20% fewer rounds. The prices (4/4/5, 3/3/4,
+  stance 4/4/5) were left alone on purpose until the owner says otherwise.
 - **A mage can win a fight at 0 HP** (found 2026-09-27, not touched). `finishRound` ticks the
   burn BEFORE it checks the player's HP, so when the enemy's counter drops the player to 0 and
   that same round's burn finishes the enemy, the fight is a victory and the player walks on at
   0 HP — the next step (`rollStep` returns `.nothing` at 0 HP) kills them with an empty step
-  narrative. Needs the owner's call on who loses such a round before the order changes.
+  narrative. Needs the owner's call on who loses such a round before the order changes. From the
+  09-27 deploy on, `fight_log` records such a round as `win` with `hp_end = 0` — rarer now the
+  burn is 0.15 of ATK.
 - **`/menu` is missing from the base `unmatched` filter** (found 2026-09-27, not touched). The
   SDK runs EVERY matching handler, so `/menu` both restores the keyboard (global handler) and
   falls through to the current controller's root re-render. `TGControllerBase.unmatched`
   filters `/buttons`, `/help`, `/settings` only; adding `/menu` is one line.
-- **Eight lines still put an enemy's name after a preposition or as an object**, which the
+- **Four lines still put an enemy's name after a preposition or as an object**, which the
   nominative-only name cannot carry («Ви подолали Скажений ведмідь»): `exploration.outcome.
-  encounter.won`, `combat.defend.absorbed`, `combat.flee.success`, `combat.in_progress`, the
-  three `combat.special_def.*.activate` and `combat.special_def.mage.no_damage`. Raised
+  encounter.won`, `combat.defend.absorbed`, `combat.flee.success`, `combat.in_progress`. Raised
   2026-09-27 while fixing the attack lines; the owner scoped that fix to the attacks, so these
-  wait. The rule and the sweep: `.memory/localization.md`.
+  wait. There were eight — the technique rework the same day rewrote the three
+  `combat.special_def.*.activate` lines and deleted `combat.special_def.mage.no_damage`. The
+  rule and the sweep: `.memory/localization.md`.
 - **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
   that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
   «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
@@ -2132,9 +2161,10 @@ unrelated commit on purpose.
 
 *Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
 09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and four game changes — the stray-number hint, the
-workshop's «Розібрати», the combat lines with the death screen, and the Training Ground as a
-house room (schema v14, two migrations) — which wait on the next restart.
+`origin/main` sit three record passes and six game changes — the stray-number hint, the
+workshop's «Розібрати», the combat lines with the death screen, the Training Ground as a house
+room, the technique rework with its fight log, and the decree reorder (schema v14, five
+migrations) — which wait on the next restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the

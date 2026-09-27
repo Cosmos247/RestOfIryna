@@ -90,10 +90,10 @@ to 72 Vigor, so a portion count cannot be added to anything — the design draft
 | 20 | `king.tempered_steel` | 8 | weapon T3 | 70 | 50% |  |  |  |
 | 21 | `king.more_on_the_shoulders` | 8 | bag T2 | 70 | 50% |  |  |  |
 | 22 | `king.hands_of_a_master` | 8 | craft anything |  |  |  | 100 |  |
-| 23 | `king.science_of_battle` | 9 | build the training ground | 60 | 41% |  |  |  |
-| 24 | `king.first_technique` | 9 | learn a technique |  |  | 3× `food.hunters_stew` |  |  |
-| 25 | 👑 `king.maturity` | 10 | level 10 | 45 | 30% | 2× `food.roasted_meat` |  |  |
-| 26 | `king.third_step` | 10 | estate T4 | 75 | 50% |  | 150 |  |
+| 23 | 👑 `king.maturity` | 10 | level 10 | 45 | 30% | 2× `food.roasted_meat` |  |  |
+| 24 | `king.third_step` | 10 | estate T4 | 75 | 50% |  | 150 |  |
+| 25 | `king.science_of_battle` | 10 | build the training ground | 60 | 40% |  |  |  |
+| 26 | `king.first_technique` | 10 | learn a technique |  |  | 3× `food.hunters_stew` |  |  |
 | 27 | `king.forged_facets` | 11 | weapon T4 | 80 | 52% |  |  |  |
 | 28 | `king.travelling_sack` | 11 | bag T3 | 80 | 52% |  |  |  |
 | 29 | 👑 `king.tempered_will` | 13 | level 13 | 60 | 36% | 3× `food.hunters_stew` |  |  |

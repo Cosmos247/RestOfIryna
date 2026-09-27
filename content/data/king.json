@@ -333,33 +333,6 @@
     {
       "conditions" : [
         {
-          "kind" : "build_training_ground"
-        }
-      ],
-      "id" : "king.science_of_battle",
-      "level" : 9,
-      "reward" : {
-        "vigor" : 60
-      }
-    },
-    {
-      "conditions" : [
-        {
-          "kind" : "learn_technique"
-        }
-      ],
-      "id" : "king.first_technique",
-      "level" : 9,
-      "reward" : {
-        "food" : {
-          "itemId" : "food.hunters_stew",
-          "quantity" : 3
-        }
-      }
-    },
-    {
-      "conditions" : [
-        {
           "kind" : "player_level",
           "target" : 10
         }
@@ -386,6 +359,33 @@
       "reward" : {
         "silver" : 150,
         "vigor" : 75
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "build_training_ground"
+        }
+      ],
+      "id" : "king.science_of_battle",
+      "level" : 10,
+      "reward" : {
+        "vigor" : 60
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "learn_technique"
+        }
+      ],
+      "id" : "king.first_technique",
+      "level" : 10,
+      "reward" : {
+        "food" : {
+          "itemId" : "food.hunters_stew",
+          "quantity" : 3
+        }
       }
     },
     {

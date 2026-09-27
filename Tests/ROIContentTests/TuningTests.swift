@@ -66,13 +66,13 @@ final class TuningTests: XCTestCase {
                 durationRounds: stanceDuration, defaultActivationVigor: 4,
                 byId: stances ?? [
                     StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                                    attackMultiplier: 1.35, defenseMultiplier: 1.15,
+                                    attackMultiplier: 1.25, defenseMultiplier: 1.15,
                                     vigorMultiplier: 1.5),
                     StanceTuningDTO(id: "hawks_eye", characterClass: "archer", activationVigor: 4,
-                                    critMultiplier: 1.6, accuracyMultiplier: 1.15,
-                                    dodgeMultiplier: 1.15),
+                                    attackMultiplier: 1.15, critMultiplier: 1.6,
+                                    accuracyMultiplier: 1.15, dodgeMultiplier: 1.15),
                     StanceTuningDTO(id: "arcane_resonance", characterClass: "mage", activationVigor: 5,
-                                    attackMultiplier: 1.5, defenseMultiplier: 1.15)
+                                    attackMultiplier: 1.15, defenseMultiplier: 1.15)
                 ]),
             specialAttack: specialAttack ?? [
                 SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
@@ -80,10 +80,10 @@ final class TuningTests: XCTestCase {
                                        effect: .armourBreak(rounds: 3)),
                 SpecialAttackTuningDTO(characterClass: "archer", vigor: 4, hitChanceModifier: 0,
                                        cannotMiss: true, zeroesDodge: true,
-                                       effect: .guaranteedCrit(critMultiplier: 2.0)),
+                                       effect: .guaranteedCrit(critMultiplier: 1.5)),
                 SpecialAttackTuningDTO(characterClass: "mage", vigor: 5, hitChanceModifier: 0,
                                        cannotMiss: true, zeroesDodge: false,
-                                       effect: .burn(rounds: 3, fractionOfAttack: 0.35))
+                                       effect: .burn(rounds: 3, fractionOfAttack: 0.15))
             ],
             specialDefense: SpecialDefenseSectionDTO(
                 effectPersistRounds: persistRounds,
@@ -372,26 +372,27 @@ final class TuningTests: XCTestCase {
     func testMissingStanceForAClassIsAnError() {
         assertRule("tuning.class_missing", bundle(combat: combat(stances: [
             StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                            attackMultiplier: 1.35, defenseMultiplier: 1.15, vigorMultiplier: 1.5)
+                            attackMultiplier: 1.25, defenseMultiplier: 1.15, vigorMultiplier: 1.5)
         ])))
     }
 
     func testDuplicateStanceIdIsAnError() {
         assertRule("identity.duplicate_id", bundle(combat: combat(stances: [
             StanceTuningDTO(id: "bloodlust", characterClass: "warrior", activationVigor: 4,
-                            attackMultiplier: 1.35, defenseMultiplier: 1.15, vigorMultiplier: 1.5),
+                            attackMultiplier: 1.25, defenseMultiplier: 1.15, vigorMultiplier: 1.5),
             StanceTuningDTO(id: "bloodlust", characterClass: "archer", activationVigor: 4,
-                            critMultiplier: 1.6, accuracyMultiplier: 1.15, dodgeMultiplier: 1.15),
+                            attackMultiplier: 1.15, critMultiplier: 1.6,
+                            accuracyMultiplier: 1.15, dodgeMultiplier: 1.15),
             StanceTuningDTO(id: "arcane_resonance", characterClass: "mage", activationVigor: 5,
-                            attackMultiplier: 1.5, defenseMultiplier: 1.15)
+                            attackMultiplier: 1.15, defenseMultiplier: 1.15)
         ])))
     }
 
     /// The three effects that replaced "ignore armour". Each is checked in its
-    /// own envelope, because a zero means something different in each: no
-    /// rounds is a debuff that never applies, a crit multiplier at or below the
-    /// standard one is a normal hit at double the Vigor, and a zero burn
-    /// fraction is a technique with no effect at all.
+    /// own envelope, because a bad value means something different in each: no
+    /// rounds is a debuff that never applies, a crit multiplier above the
+    /// standard one is the one-tap burst the owner capped on 2026-09-27, and a
+    /// zero burn fraction is a technique with no effect at all.
     private func withEffect(_ effect: SpecialAttackEffectDTO,
                             for cls: String = "warrior") -> [SpecialAttackTuningDTO] {
         [SpecialAttackTuningDTO(characterClass: "warrior", vigor: 4, hitChanceModifier: -10,
@@ -399,10 +400,10 @@ final class TuningTests: XCTestCase {
                                 effect: cls == "warrior" ? effect : .armourBreak(rounds: 3)),
          SpecialAttackTuningDTO(characterClass: "archer", vigor: 4, hitChanceModifier: 0,
                                 cannotMiss: true, zeroesDodge: true,
-                                effect: cls == "archer" ? effect : .guaranteedCrit(critMultiplier: 2.0)),
+                                effect: cls == "archer" ? effect : .guaranteedCrit(critMultiplier: 1.5)),
          SpecialAttackTuningDTO(characterClass: "mage", vigor: 5, hitChanceModifier: 0,
                                 cannotMiss: true, zeroesDodge: false,
-                                effect: cls == "mage" ? effect : .burn(rounds: 3, fractionOfAttack: 0.35))]
+                                effect: cls == "mage" ? effect : .burn(rounds: 3, fractionOfAttack: 0.15))]
     }
 
     func testZeroRoundEffectIsAnError() {
@@ -410,12 +411,29 @@ final class TuningTests: XCTestCase {
                    bundle(combat: combat(specialAttack: withEffect(.armourBreak(rounds: 0)))))
     }
 
-    /// A "guaranteed crit" no bigger than the crit the player already rolls for
-    /// free is a normal hit that costs twice the Vigor.
-    func testGuaranteedCritNoBetterThanStandardIsAnError() {
-        assertRule("tuning.combat.effect_crit_not_special",
+    /// The owner's cap: no technique blow may hit harder than an ordinary crit.
+    /// ×2.0 is the value that shipped before it and let two Vital Shots kill the
+    /// strongest beast in the game every time.
+    func testGuaranteedCritAboveStandardIsAnError() {
+        assertRule("tuning.combat.effect_crit_above_standard",
                    bundle(combat: combat(specialAttack:
-                       withEffect(.guaranteedCrit(critMultiplier: 1.5), for: "archer"))))
+                       withEffect(.guaranteedCrit(critMultiplier: 2.0), for: "archer"))))
+    }
+
+    /// Exactly the standard multiplier is the shipped value and must pass — the
+    /// rule that preceded the cap refused it.
+    func testGuaranteedCritAtStandardIsClean() {
+        let report = ContentValidator.validate(bundle(combat: combat(specialAttack:
+            withEffect(.guaranteedCrit(critMultiplier: 1.5), for: "archer"))))
+        XCTAssertFalse(report.errors.contains { $0.rule.hasPrefix("tuning.combat.effect_crit") },
+                       "got \(report.errors.map(\.rule))")
+    }
+
+    /// A "crit" that multiplies by 1 or less is a plain hit with a crit's name.
+    func testGuaranteedCritWithoutLiftIsAnError() {
+        assertRule("tuning.combat.effect_crit_no_lift",
+                   bundle(combat: combat(specialAttack:
+                       withEffect(.guaranteedCrit(critMultiplier: 1.0), for: "archer"))))
     }
 
     func testZeroBurnIsAnError() {

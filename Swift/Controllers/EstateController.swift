@@ -2134,7 +2134,8 @@ extension EstateController {
         // is restored to the estate keyboard by `onTrainingExit`.
         let state = ExplorationState(userID: userId, stepsDeep: 0)
         let uses = CombatService.initialUsesForUser(context.session)
-        state.beginCombat(enemyId: dummy.id, hp: dummy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup)
+        state.beginCombat(enemyId: dummy.id, hp: dummy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup,
+                          playerHP: context.session.hp)
         try await state.save(on: context.db)
 
         context.session.routerName = Controllers.combatController.routerName

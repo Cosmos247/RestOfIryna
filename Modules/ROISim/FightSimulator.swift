@@ -22,10 +22,12 @@
 //      stance tick, then defence-effect tick
 //      player dead? defeat
 //
-//  Super activation is a FREE action in the shipped controller — it stamps the
-//  stance and returns without calling `finishRound`, so the enemy does not get
-//  a counter for it. That is modelled, not smoothed over: it is worth real
-//  damage and the balance report would be wrong without it.
+//  Raising a stance is a STRIKE since 2026-09-27: the tap pays the activation
+//  Vigor, raises the stance and swings an ordinary attack with it already up,
+//  and the enemy answers as it does every round. It used to be a free action
+//  that charged Vigor and hit nothing — the owner's complaint — and the model
+//  follows the controller: the opening round here is that strike, paid by the
+//  activation alone, and it is the first of the stance's rounds.
 //
 //  Special DEFENCE is not modelled. It is a reactive choice whose value depends
 //  on a policy ("defend when the next hit could kill me") that no table
@@ -41,8 +43,9 @@ public enum PlayerProfile: String, Sendable, CaseIterable {
     /// Attack every round, no techniques. Exactly what the passive autobattle
     /// does — so this row is the unattended expedition's true difficulty.
     case basic
-    /// Super on the opening action, then Special Attack while uses remain,
-    /// then basic attacks. The ceiling a player who knows the kit reaches.
+    /// The stance's own strike on the opening action, then Special Attack while
+    /// uses remain, then basic attacks. The ceiling a player who knows the kit
+    /// reaches.
     case techniques
 }
 
@@ -108,13 +111,16 @@ public struct FightSimulator: Sendable {
         var burnDamage = 0
         var defDebuffRounds = 0
         var specialUses = profile == .techniques ? uses("special_atk", level: p.level) : 0
+        var stanceStrike = false
 
-        // Opening: raise the stance. Free of a counter, but not of Vigor.
+        // Opening: raise the stance. Its tap is the first round's strike, and
+        // the activation is all that strike costs.
         if profile == .techniques, uses("super", level: p.level) > 0,
            let row = stanceByClass[characterClass] {
             stance = row
             stanceRoundsLeft = combat.stances.durationRounds
             vigorSpent += row.activationVigor
+            stanceStrike = true
         }
 
         while p.isAlive && e.isAlive && rounds < maxRounds {
@@ -127,7 +133,10 @@ public struct FightSimulator: Sendable {
             // Choose the action.
             var swingMods = CombatMath.AttackModifiers()
             var special: SpecialAttackTuningDTO?
-            if specialUses > 0, let row = specialByClass[characterClass] {
+            if stanceStrike {
+                // An ordinary swing with the stance already up — already paid.
+                stanceStrike = false
+            } else if specialUses > 0, let row = specialByClass[characterClass] {
                 special = row
                 specialUses -= 1
                 swingMods = CombatMath.modifiers(forSpecialAttack: row)

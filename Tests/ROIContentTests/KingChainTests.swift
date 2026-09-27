@@ -40,7 +40,11 @@ final class KingChainTests: XCTestCase {
         KingDecreeDTO(id: id, level: level, conditions: conditions, reward: reward)
     }
 
-    private func bundle(_ decrees: [KingDecreeDTO], withTuning: Bool = true) -> ContentBundle {
+    /// `withGround` adds a two-level Training Ground and the technique floors
+    /// it teaches at (10 and 11, the shipped pair) — everything else leaves both
+    /// out, so the ground's rule stays silent.
+    private func bundle(_ decrees: [KingDecreeDTO], withTuning: Bool = true,
+                        withGround: Bool = false) -> ContentBundle {
         ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [roast(), lumber()],
@@ -56,7 +60,11 @@ final class KingChainTests: XCTestCase {
                               EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)]),
             plots: PlotFileDTO(types: [PlotTypeDTO(type: "farm", icon: "🌾")]),
             king: KingFileDTO(decrees: decrees),
-            tuning: withTuning ? tuning() : nil,
+            trainingGround: withGround ? TrainingGroundFileDTO(levels: [
+                TrainingGroundLevelDTO(level: 1, technique: "special_atk", silverCost: 150, inputs: []),
+                TrainingGroundLevelDTO(level: 2, technique: "special_def", silverCost: 400, inputs: [])
+            ]) : nil,
+            tuning: withTuning ? tuning(withGround: withGround) : nil,
             contentHash: "test")
     }
 
@@ -151,6 +159,29 @@ final class KingChainTests: XCTestCase {
     func testAnEstateTierBeforeItsOwnGateIsAnError() {
         assertRule("king.estate_tier_before_its_gate",
                    [decree(level: 2, conditions: [KingConditionDTO(kind: .estateTier, target: 2)])])
+    }
+
+    /// The Training Ground's twin of the estate rule. «Наука бою» and «Перший
+    /// прийом» sat at level 9 against a floor of 10 for a day with nothing to
+    /// say so: building the ground is buying its first level, and no technique
+    /// can be learned below the lowest floor the ground teaches.
+    func testATrainingGroundDecreeBelowItsFloorIsAnError() {
+        for kind in [KingConditionDTO.Kind.buildTrainingGround, .learnTechnique] {
+            let found = ContentValidator.validate(bundle(
+                [decree(level: 9, conditions: [KingConditionDTO(kind: kind)])], withGround: true))
+            XCTAssertTrue(found.errors.contains { $0.rule == "king.technique_before_its_floor" },
+                          "\(kind.rawValue) at level 9: got \(found.errors.map(\.rule))")
+        }
+    }
+
+    /// At the floor itself the decree can be met, and must pass.
+    func testATrainingGroundDecreeAtItsFloorIsClean() {
+        for kind in [KingConditionDTO.Kind.buildTrainingGround, .learnTechnique] {
+            let found = ContentValidator.validate(bundle(
+                [decree(level: 10, conditions: [KingConditionDTO(kind: kind)])], withGround: true))
+            XCTAssertFalse(found.issues.contains { $0.rule == "king.technique_before_its_floor" },
+                           "\(kind.rawValue) at level 10")
+        }
     }
 
     func testTiersOutsideTheirLaddersAreErrors() {
@@ -269,7 +300,7 @@ final class KingChainTests: XCTestCase {
     /// Only `progression.vigorPool` is read by these rules, but
     /// `TuningBundleDTO` is all-or-nothing, so the rest is filled with the
     /// shipped values and never consulted.
-    private func tuning() -> TuningBundleDTO {
+    private func tuning(withGround: Bool = false) -> TuningBundleDTO {
         TuningBundleDTO(
             combat: CombatTuningDTO(
                 hitChance: HitChanceDTO(base: 85, min: 40, max: 95),
@@ -280,7 +311,11 @@ final class KingChainTests: XCTestCase {
                     accuracy: RatingCurveDTO(scale: 30, kBase: 33.38, kPerLevel: 1.457)),
                 levelDiff: LevelDiffDTO(perLevel: 0.06, min: 0.25, max: 2.5),
                 critMultiplier: 1.5, variance: VarianceDTO(min: 0.9, max: 1.1),
-                defendChipFraction: 0.3, trainingDummyEnemyId: "enemy.x", techniques: [],
+                defendChipFraction: 0.3, trainingDummyEnemyId: "enemy.x",
+                techniques: withGround
+                    ? [TechniqueTuningDTO(kind: "special_atk", requiredLevel: 10, secondUseAtLevel: 17),
+                       TechniqueTuningDTO(kind: "special_def", requiredLevel: 11, secondUseAtLevel: 20)]
+                    : [],
                 stances: StanceSectionDTO(durationRounds: 3, defaultActivationVigor: 4, byId: []),
                 specialAttack: [],
                 specialDefense: SpecialDefenseSectionDTO(
