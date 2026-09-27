@@ -39,6 +39,7 @@ public enum ContentValidator {
         issues += validateZones(bundle)
         issues += validateBudget(bundle)
         issues += validateKingChain(bundle)
+        issues += validateTrainingGround(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -747,7 +748,9 @@ public enum ContentValidator {
         return ids
     }
 
-    private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop", "training_ground"]
+    // `training_ground` left this list on 2026-09-27: the Training Ground is a
+    // building of the house now (`training_ground.json`), not a plot.
+    private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop"]
     private static let questNPCs: Set<String> = ["trader", "master", "tavern"]
     private static let questCounters: Set<String> = ["beastKill", "ironIngotForged", "gambleWin", "traderSilver"]
 
@@ -2228,6 +2231,66 @@ public enum ContentValidator {
     ///
     /// **`level` must agree with a `player_level` target**, and must never step
     /// backwards down the array — the array order IS the order the player walks.
+    /// `training_ground.json` — one technique per level, in the order the
+    /// techniques' own player-level floors come. Every rule here has a failing
+    /// case in `TrainingGroundTests`.
+    private static func validateTrainingGround(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let ground = bundle.trainingGround else { return [] }
+        let file = "training_ground.json"
+        var issues: [ContentIssue] = []
+        func fail(_ path: String, _ rule: String, _ message: String, id: String? = nil) {
+            issues.append(.init(severity: .error, file: file, path: path, id: id, rule: rule, message: message))
+        }
+
+        let levels = ground.levels
+        if levels.isEmpty {
+            fail("levels", "training.no_levels", "the ground has no levels, so no technique can ever be learned")
+        }
+        // Levels are 1…N in file order: the building is raised one level at a
+        // time, and a gap would be a level nobody can buy.
+        for (index, row) in levels.enumerated() where row.level != index + 1 {
+            fail("levels[\(index)]", "training.level_sequence", "level \(row.level) where \(index + 1) belongs")
+        }
+
+        let techniques = bundle.tuning?.combat.techniques ?? []
+        let floors = Dictionary(techniques.map { ($0.kind, $0.requiredLevel) }, uniquingKeysWith: { first, _ in first })
+        var seen: Set<String> = []
+        for (index, row) in levels.enumerated() {
+            let path = "levels[\(index)]"
+            if !techniques.isEmpty, floors[row.technique] == nil {
+                fail(path + ".technique", "training.technique_unknown",
+                     "no technique \"\(row.technique)\" in combat.json", id: row.technique)
+            }
+            if !seen.insert(row.technique).inserted {
+                fail(path + ".technique", "training.technique_twice",
+                     "\"\(row.technique)\" is taught by two levels", id: row.technique)
+            }
+            if row.silverCost < 0 {
+                fail(path + ".silverCost", "training.negative_silver", "silverCost is \(row.silverCost)")
+            }
+            for (inputIndex, input) in row.inputs.enumerated() {
+                if !bundle.items.contains(where: { $0.id == input.itemId }) {
+                    fail(path + ".inputs[\(inputIndex)]", "training.unknown_item", "no item \"\(input.itemId)\"", id: input.itemId)
+                }
+                if input.quantity < 1 {
+                    fail(path + ".inputs[\(inputIndex)]", "training.input_quantity", "quantity is \(input.quantity)")
+                }
+            }
+            // A later level must not open earlier than the one before it: the
+            // floor comes from the technique, and the building is bought in order.
+            if index > 0, let previous = floors[levels[index - 1].technique], let floor = floors[row.technique], floor < previous {
+                fail(path + ".technique", "training.floor_order",
+                     "\"\(row.technique)\" opens at level \(floor), before level \(index)'s \(previous)")
+            }
+        }
+        // A technique no level teaches can never be learned at all.
+        for technique in techniques where !seen.contains(technique.kind) && !levels.isEmpty {
+            fail("levels", "training.technique_unreachable",
+                 "no level teaches \"\(technique.kind)\"", id: technique.kind)
+        }
+        return issues
+    }
+
     private static func validateKingChain(_ bundle: ContentBundle) -> [ContentIssue] {
         guard let king = bundle.king else { return [] }
         let file = "king.json"

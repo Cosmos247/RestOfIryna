@@ -21,8 +21,9 @@ public enum EstateTierGates {
     public static let kitchen = 2
     /// Workshop — crafting, and the first armour a player can own.
     public static let workshop = 3
-    /// Training Ground — the plot type that teaches techniques.
-    public static let trainingGround = 3
+    /// Training Ground — a room of the house since 2026-09-27 (it was a plot
+    /// type from T3); built and raised for silver, one technique per level.
+    public static let trainingGround = 4
     /// Tannery recipes inside the workshop.
     public static let tannery = 4
 }

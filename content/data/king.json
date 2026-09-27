@@ -333,8 +333,7 @@
     {
       "conditions" : [
         {
-          "kind" : "claim_plot",
-          "plotType" : "training_ground"
+          "kind" : "build_training_ground"
         }
       ],
       "id" : "king.science_of_battle",

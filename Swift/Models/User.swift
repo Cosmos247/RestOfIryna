@@ -164,6 +164,13 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "bag_tier")
     var bagTier: Int
 
+    /// 2026-09-27 — the Training Ground's level: 0 until built, then one level
+    /// per technique it has taught (`training_ground.json`). It used to be a
+    /// plot type costing a production slot; `MoveTrainingGroundOffPlots` freed
+    /// those slots and left everyone at 0 with their techniques intact.
+    @Field(key: "training_ground_level")
+    var trainingGroundLevel: Int
+
     /// Phase 6.0 — where the player is right now. "estate" (default) or
     /// "capital". Flips only when a `TravelState` timer elapses; never set
     /// directly from a controller. Used by `MainController` / `EstateController`
@@ -325,6 +332,7 @@ final public class User: Model, @unchecked Sendable {
         self.totalKmWalked = 0
         self.estateLevel = 1
         self.bagTier = 1
+        self.trainingGroundLevel = 0
         self.location = "estate"
         self.activeFortuneCardId = nil
         self.activeFortuneExpiresAt = nil

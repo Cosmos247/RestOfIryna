@@ -80,7 +80,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 
 ### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*
 - Manor: per-tier rooms (Warehouse → +Kitchen → +Workshop unlock as the estate tier grows; see Phase 5.3c for the actual gating). Workshop hosts Forge + Tannery + weapon-upgrade + bag-upgrade flows; Kitchen hosts cooking
-- Plots: abstract list (no spatial layout), slot count grows with estate tier `[0,1,2,3,4,5,6]`. Types: Farm / Lumberyard / Mine / Coop / Training Ground
+- Plots: abstract list (no spatial layout), slot count grows with estate tier `[0,1,2,3,4,5,6]`. Types: Farm / Lumberyard / Mine / Coop — the Training Ground left the plots on 2026-09-27 and is a house room (estate T4), built and raised for silver + materials, one technique per level
 - **A claim is permanent.** `PlotService` has `claim` and `harvest` and no third verb — no
   code path deletes a `Plot` row or changes its type or tier — so since 2026-09-17 the picker
   shows the chosen type's card and asks before it writes

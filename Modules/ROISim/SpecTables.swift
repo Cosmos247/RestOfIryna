@@ -84,6 +84,24 @@ public enum SpecTables {
         }
         out.append("")
 
+        // The Training Ground (2026-09-27): each technique is bought as a level
+        // of a house room, from estate T4; the player-level floor is the
+        // technique's own row above, read rather than restated.
+        if !content.trainingGroundLevels.isEmpty {
+            let floors = Dictionary(tuning.combat.techniques.map { ($0.kind, $0.requiredLevel) },
+                                    uniquingKeysWith: { first, _ in first })
+            out.append("**Training Ground** (`training_ground.json`) — a room of the house, one technique per level")
+            out.append("")
+            out.append("| level | teaches | player level | silver | materials |")
+            out.append("|---|---|---|---|---|")
+            for row in content.trainingGroundLevels {
+                let materials = row.inputs.map { "\($0.quantity)× `\($0.itemId)`" }.joined(separator: " ")
+                let floor = floors[row.technique].map(String.init) ?? "?"
+                out.append("| \(row.level) | `\(row.technique)` | \(floor) | \(row.silverCost) | \(materials) |")
+            }
+            out.append("")
+        }
+
         out.append("**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget")
         out.append("")
         out.append("| tier | player level | plot slots | warehouse cap |")
@@ -222,6 +240,7 @@ public enum SpecTables {
         case .sendPassive:        return "send a passive expedition"
         case .harvestPlot:        return "harvest a plot"
         case .learnTechnique:     return "learn a technique"
+        case .buildTrainingGround: return "build the training ground"
         case .winDuel:            return "win a duel"
         }
     }
@@ -521,6 +540,13 @@ public enum SpecTables {
         let bagCost = content.bags.progression.reduce(0.0) { $0 + priced($1.inputs) }
         total += bagCost
         out.append(String(format: "| bag, every step | %.0f | 0 |", bagCost))
+        // The Training Ground (2026-09-27): a house room bought one level at a
+        // time — the only way to a technique, so its silver is mandatory spend.
+        for row in content.trainingGroundLevels {
+            let m = priced(row.inputs)
+            total += m + Double(row.silverCost)
+            out.append(String(format: "| training ground L%d | %.0f | %d |", row.level, m, row.silverCost))
+        }
         for (id, ladder) in content.weaponLaddersByItemId.sorted(by: { $0.key < $1.key }) {
             let c = ladder.tiers.reduce(0.0) { $0 + priced($1.inputs) }
             total += c

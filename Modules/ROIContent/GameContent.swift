@@ -62,6 +62,7 @@ public final class GameContent: Sendable {
     /// The King's decree chain, IN CHAIN ORDER — the array's order is the
     /// order the player meets the decrees, so this is never sorted.
     public let kingDecrees: [KingDecreeDTO]
+    public let trainingGroundLevels: [TrainingGroundLevelDTO]
     public let tuning: TuningBundleDTO?
 
     public init(_ bundle: ContentBundle) {
@@ -99,6 +100,7 @@ public final class GameContent: Sendable {
         self.fortune = bundle.fortune
         self.quests = bundle.quests
         self.kingDecrees = bundle.king?.decrees ?? []
+        self.trainingGroundLevels = (bundle.trainingGround?.levels ?? []).sorted { $0.level < $1.level }
         self.tuning = bundle.tuning
     }
 }

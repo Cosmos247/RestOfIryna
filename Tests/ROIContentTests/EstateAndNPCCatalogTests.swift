@@ -9,8 +9,9 @@
 //  Three properties in this batch cannot be seen by a round-trip and are the
 //  reason most of these tests exist:
 //
-//  * a plot's ABSENT tuning is a value, not a gap — it is how the estate
-//    controller knows to open a training fight instead of a harvest;
+//  * a plot's ABSENT tuning is a value, not a gap — the DTO keeps it optional
+//    even though every shipped type produces since the Training Ground
+//    left the plots (2026-09-27);
 //  * a fortune multiplier's no-op is 1.0, not 0, so "skip the default" cannot
 //    be one condition across the effect struct;
 //  * a quest objective is a tagged union whose unknown `kind` must FAIL rather
@@ -25,7 +26,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     // MARK: - Plot tuning: absence is a value
 
     func testPlotRowWithoutTuningDecodesAsNilRatherThanEmpty() throws {
-        let json = Data(#"{"type":"training_ground","icon":"🥋"}"#.utf8)
+        let json = Data(#"{"type":"shrine","icon":"⛩"}"#.utf8)
         let row = try JSONDecoder().decode(PlotTypeDTO.self, from: json)
         XCTAssertNil(row.tuning, "a nil tuning is how a non-producing plot is recognised")
     }
@@ -34,7 +35,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         let original = PlotFileDTO(types: [
             PlotTypeDTO(type: "farm", icon: "🌾",
                         tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20)),
-            PlotTypeDTO(type: "training_ground", icon: "🥋")
+            PlotTypeDTO(type: "shrine", icon: "⛩")
         ])
         let encoder = ContentLoader.makeEncoder()
         let first = try encoder.encode(original)
@@ -147,8 +148,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
             PlotTypeDTO(type: "mine", icon: "⛏",
                         tuning: PlotTuningDTO(producedItemId: "mat.hide", ratePerInterval: 8, capacity: 40)),
             PlotTypeDTO(type: "coop", icon: "🐔",
-                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 2, capacity: 12)),
-            PlotTypeDTO(type: "training_ground", icon: "🥋")
+                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 2, capacity: 12))
         ])
     }
 
@@ -238,7 +238,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         let report = ContentValidator.validate(
             bundle(plots: allPlots()),
             localizations: plotLocales(genders: ["farm": "f", "forest": "f", "mine": "f",
-                                                 "coop": "ж", "training_ground": "m"]))
+                                                 "coop": "ж"]))
         XCTAssertTrue(report.errors.contains {
             $0.rule == "locale.plot_gender_invalid" && $0.id == "coop"
         })
@@ -247,7 +247,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// Name + desc in both locales (so the plain key check stays quiet), and
     /// whichever genders the caller wants declared, uk only.
     private func plotLocales(genders: [String: String]) -> LocaleIndex {
-        let types = ["farm", "forest", "mine", "coop", "training_ground"]
+        let types = ["farm", "forest", "mine", "coop"]
         var en: [String: String] = [:]
         var uk: [String: String] = [:]
         for t in types {

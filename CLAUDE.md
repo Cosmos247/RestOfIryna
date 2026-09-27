@@ -98,7 +98,7 @@ files are not loaded each session, so a rule moved out of here goes invisible
 **Game content AND balance numbers are data, not code.** ALL of it — items, enemies, recipes, the
 weapon / bag / estate ladders, the five capital institutions (trader, tavern,
 market, guild, arena), the Master's shop, estate plots, the fortune deck, the
-daily quest pools, the King's decree chain (`king.json`), the rarity ladder
+daily quest pools, the King's decree chain (`king.json`), the Training Ground ladder (`training_ground.json`), the rarity ladder
 (`rarities.json`), equipment sets
 (`sets.json`) and the foraging zones (`zones.json`) — lives in `content/data/*.json`; the `*Catalog` types are façades over
 a validated snapshot loaded at boot. Adding content is a JSON edit plus locale keys
@@ -225,7 +225,7 @@ conditions is `player_level` — because a second discriminator beside the condi
 field that can disagree with them. No screen shows "decree N of 39". The chain is printed by
 `roi-content spec king` and hashed by the fifth digest line, `king`.
 
-**Ten of the seventeen condition kinds are live state reads; seven are events that leave
+**Eleven of the eighteen condition kinds are live state reads; seven are events that leave
 no trace.** `KingService.record` is the one funnel for those seven, and it ticks
 `KingProgress.counter` ONLY when the open decree is the one asking — nothing accumulates
 ahead of time, so "defeat five beasts" counts from when the decree opens. Each hook sits
@@ -343,6 +343,17 @@ tick — together with the enemy's HP left, and the shared `ExplorationControlle
 names what the wipe took: `InventoryEntry.wipeOnDeath` returns `[DeathLoss]`, not a count.
 Before, the screen ahead of a death read ❤️ 45/150 and the next one «Ви полягли», with
 nothing in between. Auto-memory `project-combat-lines-and-death-screen`.
+
+**Techniques are bought with the Training Ground** (2026-09-27). It is a room of the house
+(`EstateTierGates.trainingGround`, T4), not a plot: `training_ground.json` sells one technique
+per level for silver + materials, and the player-level floor of each level is the technique's
+own `requiredLevel` in `combat.json` (10 / 11 / 14) — read, never restated, so the building,
+the simulator and `spec gates` quote one number. **Paying never charges for a technique the
+player already knows**: after the paid level the building climbs through every next level whose
+technique is known (`TrainingGroundLevelDTO.levelAfterCatchUp`, the one implementation the card
+and `TrainingGroundService` both ask). The `training_ground` plot type is gone
+(`MoveTrainingGroundOffPlots`) — do not bring back a plot that produces nothing. Auto-memory
+`project-training-ground-building`.
 
 ### Gear, inventory and storage
 

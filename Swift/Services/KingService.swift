@@ -263,6 +263,9 @@ enum KingService {
                 .first()?.wins ?? 0
             return view(min(wins, 1), 1, key: key)
 
+        case .buildTrainingGround:
+            return view(min(user.trainingGroundLevel, 1), 1, key: key)
+
         case .learnTechnique:
             let known = try await LearnedTechnique.query(on: db)
                 .filter(\.$user.$id, .equal, user.id ?? UUID())

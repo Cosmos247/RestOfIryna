@@ -37,9 +37,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   play surfaces a need for. The Pi runs **`60a8bad`** since **2026-09-22 00:33** (schema
   **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `king 4326bb40aa735a50`,
   matched byte for byte before the restart was ordered). That deploy and the 00:22 one before
-  it cleared the whole backlog; the three game changes committed since on 2026-09-27 — the
-  stray-number hint, the workshop's «Розібрати» with gear lists that name rows, and combat
-  lines with a death screen that shows the last round — wait on the next restart. The newest
+  it cleared the whole backlog; the four game changes committed since on 2026-09-27 — the
+  stray-number hint, the workshop's «Розібрати» with gear lists that name rows, combat lines
+  with a death screen that shows the last round, and the Training Ground as a house room
+  (schema v14) — wait on the next restart. The newest
   feature is the **King's decree chain** — 39 decrees from level 1 to 25, the palace on Castle
   Street, the journal and the charter. The next action is a human opening the screens: a
   backlog spanning four deploys and never walked.

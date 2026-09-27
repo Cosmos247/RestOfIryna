@@ -29,10 +29,8 @@ public enum PlotType: String, CaseIterable, Sendable {
     case forest         = "forest"
     case mine           = "mine"
     case coop           = "coop"
-    /// Phase 5.1: non-producing plot. Tap → opens combat against a
-    /// Training Dummy so the player can see their damage output without
-    /// risk. Detected by `PlotCatalog.tuning(for:)` returning nil.
-    case trainingGround = "training_ground"
+    // `training_ground` was a fifth, non-producing type until 2026-09-27;
+    // it is a building of the house now (`TrainingGroundCatalog`).
 }
 
 /// Per-tier configuration for one plot type.
@@ -83,9 +81,9 @@ public enum PlotCatalog {
     }
 
     /// Lookup tuning for a given type + tier. Returns the T1 row regardless
-    /// of `tier` for now — higher tiers ship in a later subphase. Returns nil
-    /// for `trainingGround`, which is how the estate controller decides to
-    /// route a tap to combat instead of a harvest.
+    /// of `tier` for now — higher tiers ship in a later subphase. Nil only for
+    /// a type the content gives no tuning; none ships since the Training
+    /// Ground became a house room (2026-09-27).
     public static func tuning(for type: PlotType, tier: Int = 1) -> PlotTuning? {
         return Catalogs.current.plotTunings[type]
     }

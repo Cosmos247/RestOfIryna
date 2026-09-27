@@ -143,6 +143,14 @@ enum ContentDigest {
         digest.combine(EstateUpgradeCatalog.maxTier)
         digest.combine("slots" + EstateUpgradeCatalog.plotSlotsByTier.map(String.init).joined(separator: "/"))
         for step in EstateUpgradeCatalog.progression { digest.combine(fingerprint(step)) }
+        // The Training Ground ladder (2026-09-27): each level's technique, its
+        // price, and the player-level floor it resolves to through combat.json —
+        // the floor is read, not stored, so it is hashed as the building sees it.
+        digest.combine("training \(EstateTierGates.trainingGround)/\(TrainingGroundCatalog.maxLevel)")
+        for step in TrainingGroundCatalog.levels {
+            digest.combine("\(step.level):\(step.technique):\(step.silverCost):\(TrainingGroundCatalog.playerLevel(for: step))")
+            for input in step.inputs { digest.combine("\(input.itemId)x\(input.quantity)") }
+        }
 
         for listing in TraderCatalog.all {
             digest.combine("\(listing.itemId) s\(listing.sellPacketQty)@\(listing.sellPacketSilver) b\(listing.buyPacketQty)@\(listing.buyPacketSilver)")
@@ -386,7 +394,7 @@ enum ContentDigest {
 
         digest.combine(kingDigest)
 
-        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
+        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(TrainingGroundCatalog.maxLevel) training levels · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs × \(questLevels.count) levels)")

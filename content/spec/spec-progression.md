@@ -86,9 +86,17 @@ game*, and for revisiting them before anyone reaches them rather than after.
 
 | technique | unlocks at | second use at |
 |---|---|---|
-| `special_atk` | 8 | 17 |
+| `special_atk` | 10 | 17 |
 | `special_def` | 11 | 20 |
 | `super` | 14 | 21 |
+
+**Training Ground** (`training_ground.json`) — a room of the house, one technique per level
+
+| level | teaches | player level | silver | materials |
+|---|---|---|---|---|
+| 1 | `special_atk` | 10 | 150 | 30× `mat.pine_lumber` 20× `mat.river_pebble` 5× `mat.hide` |
+| 2 | `special_def` | 11 | 400 | 40× `mat.pine_lumber` 30× `mat.river_pebble` 10× `mat.iron` 8× `mat.hide` |
+| 3 | `super` | 14 | 800 | 60× `mat.pine_lumber` 40× `mat.river_pebble` 15× `mat.iron` 3× `mat.iron_ingot` 10× `mat.hide` |
 
 **Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget
 
@@ -207,8 +215,9 @@ fixes the level↔km rule they must all obey.
 
 **The authored band is levels 1–25**, not the plan's 1–15. That is 12.8% of the
 climb rather than 1.3%, and it covers the whole period in which a player is still
-learning the game: every technique gate (8 / 11 / 14, second uses at 17 / 20 /
-21) and every estate tier (to T7 at level 19) lands inside it. Levels 26–40 stay
+learning the game: every technique gate (10 / 11 / 14 — bought as levels of the
+Training Ground since 2026-09-27, the first one moved from 8 with the room's T4
+gate — second uses at 17 / 20 / 21) and every estate tier (to T7 at level 19) lands inside it. Levels 26–40 stay
 a generated draft from the same curves. `spec-bestiary.md`, `spec-items.md` and
 `spec-sets.md` all author to 25.
 

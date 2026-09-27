@@ -361,6 +361,36 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-27 part 4 (the Training Ground became a room of the house)
+
+**The owner's ask:** move the Training Ground off the plots into the estate, make building it
+paid, and let its levels — not the player's — bring the techniques. **Read off the machine
+first:** five players held a ground-plot (everyone at estate T4+), each had learned techniques
+by level, silver ran from 113 to 14,491, and Дарина / Amae (decree 14), анія (3) and Космос (1)
+have «Наука бою» still ahead of them.
+
+**Decided with the owner, over two quizzes and a mockup pass:** a room in 🏠 Дім, from estate
+**T4**; level N teaches technique N at its own player-level floor, which stays in `combat.json`
+(the special attack's moved **8 → 10** so the floor matches the T4 gate); second uses keep their
+player levels; silver + materials at 150 / 400 / 800 🪙 (materials about half an estate step of
+the same band); the ground-plots are deleted, learned techniques kept, the building bought anew
+— and building it **catches its level up** to what the player knows, so nobody pays for a
+technique twice. The spar button stopped saying «Спарити» («🥋 Тренувальний бій»).
+
+**Shipped:** `training_ground.json` + `TrainingGroundDTO` (schema **v14**, a required file) with
+eight validator rules, each failed on purpose in `TrainingGroundTests` against the real shipped
+bundle, and `levelAfterCatchUp` as the one catch-up rule; `users.training_ground_level` +
+`MoveTrainingGroundOffPlots`; `TrainingGroundService` (gate → level → floor → silver → materials →
+teach → catch up); the room's screen and its build/upgrade card in the estate-upgrade format;
+stale plot-ground buttons land on the building; `PlotType.trainingGround` and nine dead locale
+keys removed; «Наука бою» on a new `build_training_ground` condition. Digest: `records`,
+`tuning` and `king` moved and nothing else did; `simulate --strict` is byte-identical with the
+floor at 8 or 10 (the sweep samples neither 8 nor 9); `spec gates` and `spec economy` print the
+ladder, the gates / king / economy blocks were refreshed (the economy one is an EXCERPT, cut
+back to its own first and last line), and the hand-typed «1,600 of mandatory spend» became
+2,950 in the spec's prose and in `Prompt.md`. 315 tests. **Not deployed** — schema v14 and two migrations:
+content and binary together, then verify the `plots` table.
+
 ## Session — 2026-09-27 part 3 (combat lines, and the round a death dropped) — `d1e2ccd`
 
 **The report:** «💥 Влучний у живу плоть! 🐻‍❄️ Скажений ведмідь валиться на 157 ОЗ.» — unclear

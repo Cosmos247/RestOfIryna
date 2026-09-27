@@ -45,7 +45,7 @@ public enum EstateUpBanner {
         if opened(EstateTierGates.kitchen) { unlocked.append(label("estate.kitchen")) }
         if opened(EstateTierGates.workshop) { unlocked.append(label("estate.workshop")) }
         if opened(EstateTierGates.trainingGround) {
-            unlocked.append("\(PlotCatalog.icon(for: .trainingGround)) " + label("plot.type.training_ground.name"))
+            unlocked.append(label("estate.training.title"))
         }
         if opened(EstateTierGates.tannery) {
             unlocked.append("🧵 " + label("workshop.category.tannery"))

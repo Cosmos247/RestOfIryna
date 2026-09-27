@@ -39,9 +39,9 @@ someone PLAYING; none from a test.
 |---|---|
 | working tree | clean |
 | HEAD | **`d1e2ccd`** — combat lines say what they did («X втрачає N ОЗ», a crit named in words) and a death shows the round that caused it, the enemy's HP left and what the forest took. Under it `df6d341` — the workshop's «Розібрати» and gear lists by row — `254967b` — the stray-number hint — and `60a8bad`, the last deploy. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the three 2026-09-27 game changes: the stray-number hint, the workshop's «Розібрати», and the combat lines with the death screen. Push stays user-side |
+| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the four 2026-09-27 game changes: the stray-number hint, the workshop's «Розібрати», the combat lines with the death screen, and the Training Ground as a house room. Push stays user-side |
 | running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else); the Pi itself **rebooted 2026-09-25 20:45** and pm2 brought ROI back on the same binary, built 09-22 00:20 (read off the machine 09-27) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **Combat lines and the death screen** (2026-09-27): the special attacks, the burn tick and the plain hit end in «X втрачає N ОЗ» and name a crit; a death shows the last round (it used to be dropped), «Ворогу лишалося ❤️ N/M» and what the forest took. Swift + locale only, digest unmoved. **The workshop takes armour apart** (2026-09-27): 🔨 «Розібрати» returns the recipe × `gear.salvageFraction` × max/30, and the bag's and the warehouse's gear lists print each copy's wear and act on the ROW. One new tuning knob, so `tuning` moved (`b7f9e298e930986d`, content hash `43d791f8`) and nothing else did. **And the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
+| committed but NOT deployed | **The Training Ground is a house room** (2026-09-27): built and raised for silver + materials, one technique per level (10 / 11 / 14), from estate T4; the plot type is gone. **Schema v14, and two migrations** (`AddTrainingGroundLevel`, `MoveTrainingGroundOffPlots` — verify `plots` has no `training_ground` row afterwards). **Combat lines and the death screen** (2026-09-27): the special attacks, the burn tick and the plain hit end in «X втрачає N ОЗ» and name a crit; a death shows the last round (it used to be dropped), «Ворогу лишалося ❤️ N/M» and what the forest took. Swift + locale only, digest unmoved. **The workshop takes armour apart** (2026-09-27): 🔨 «Розібрати» returns the recipe × `gear.salvageFraction` × max/30, and the bag's and the warehouse's gear lists print each copy's wear and act on the ROW. One new tuning knob, so `tuning` moved (`b7f9e298e930986d`, content hash `43d791f8`) and nothing else did. **And the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
 
 **Everything before 2026-09-27 is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -69,7 +69,7 @@ nobody has opened"**. All of it is LIVE.
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER — the schema handshake is at **v13** and refuses a mismatch.
+and the new binary TOGETHER — the schema handshake is at **v14** (the Pi still runs v13) and refuses a mismatch.
 Free pre-flight that touches neither the running bot nor the database:
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
 it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
@@ -133,7 +133,8 @@ package lands), and **`opening.vigor_bankrupt`** — renamed from
 `opening.shallow_is_bankrupt` when the XP halving removed the last depth that was both
 survivable and profitable; a warning and not a broken band on purpose, because §7 decided
 to measure before retuning. Silver is also **over-supplied** — roughly twenty
-thousand spare over a lifetime against 1,600 of mandatory spend — and the fix is
+thousand spare over a lifetime against 2,950 of mandatory spend (the estate's 1,600 plus the
+Training Ground's 1,350 since 2026-09-27) — and the fix is
 more to buy, which is items, which is after the rebalance.
 
 #### The simulator, and what it currently says
@@ -154,11 +155,13 @@ the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-27, schema v13):** `records 6588329ab2bdbc70` ·
-`tuning b7f9e298e930986d` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
-`king 4326bb40aa735a50`, content hash `43d791f8`. Only `tuning` moved from the 09-22 line,
-for `gear.salvageFraction`. **The Pi still runs the 09-22 baseline** (`tuning
-43b809a87450a3b8`, hash `703a0404`) until the salvage commit is deployed; its own
+**Current digest baseline (2026-09-27, schema v14):** `records 33e5c6e3259d51ba` ·
+`tuning 11797ea73591e02f` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
+`king 08733a95f4d34e68`, content hash `e99571d5`. Three lines moved on 09-27: `tuning` for
+`gear.salvageFraction` and the special attack's floor 8 → 10, `records` for the Training
+Ground ladder, `king` for «Наука бою»'s new condition. **The Pi still runs the 09-22
+baseline** (schema v13, `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `king
+4326bb40aa735a50`, hash `703a0404`) until these commits are deployed; its own
 `--content-digest` must read the new line BEFORE the restart is ordered.
 
 `king` is a fifth line, added with the decree chain, and the four older ones are
@@ -208,7 +211,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 302 tests, ~0.2s
+swift test                                   # 315 tests, ~0.3s
 ```
 
 ## What Works Now (shipped game)
@@ -216,7 +219,7 @@ swift test                                   # 302 tests, ~0.2s
 **The King's decree chain** (2026-09-21, live since 09-22) — 39 decrees from level 1 to 25,
 one open at a time, walked in `king.json`'s array order. The first arrives as the royal
 charter right after registration; the open one is always visible read-only in the journal;
-it is turned in at 👑 Палац, a `Location` on Замкова. Ten of the seventeen condition kinds
+it is turned in at 👑 Палац, a `Location` on Замкова. Eleven of the eighteen condition kinds
 are live state reads, seven are events funnelled through `KingService.record`. No screen
 shows "decree N of 39". Spec `content/spec/king.md`, table `roi-content spec king`.
 

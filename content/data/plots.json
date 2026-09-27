@@ -40,10 +40,6 @@
         "ratePerInterval" : 1
       },
       "type" : "coop"
-    },
-    {
-      "icon" : "🥋",
-      "type" : "training_ground"
     }
   ]
 }

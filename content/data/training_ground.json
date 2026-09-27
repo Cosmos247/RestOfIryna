@@ -1,0 +1,73 @@
+{
+  "levels" : [
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 30
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 20
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 5
+        }
+      ],
+      "level" : 1,
+      "silverCost" : 150,
+      "technique" : "special_atk"
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 40
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 30
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 8
+        }
+      ],
+      "level" : 2,
+      "silverCost" : 400,
+      "technique" : "special_def"
+    },
+    {
+      "inputs" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 60
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 40
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 15
+        },
+        {
+          "itemId" : "mat.iron_ingot",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 10
+        }
+      ],
+      "level" : 3,
+      "silverCost" : 800,
+      "technique" : "super"
+    }
+  ]
+}

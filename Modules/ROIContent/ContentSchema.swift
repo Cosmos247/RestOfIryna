@@ -71,5 +71,10 @@ public enum ContentSchema {
     /// loader would fail with a bare `missingFile("king.json")`; the handshake
     /// turns that into the sentence that actually names the cause, which is a
     /// binary and a content directory from different commits.
-    public static let current: Int = 13
+    /// v14 (2026-09-27): the bundle gains a required `training_ground.json` —
+    /// the Training Ground left the plot list to become a building of the
+    /// house, raised for silver and materials, one technique per level. A v13
+    /// directory has no such file and still lists `training_ground` as a plot
+    /// type the new binary no longer knows.
+    public static let current: Int = 14
 }

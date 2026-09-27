@@ -73,6 +73,7 @@ final class DomainContent: Sendable {
     /// fields across. Never sorted — the array's order is the order the player
     /// walks it.
     let kingDecrees: [KingDecreeDTO]
+    let trainingGroundLevels: [TrainingGroundLevelDTO]
 
     // Batch C. The two lookup dictionaries replace what used to be a linear
     // `first(where:)` and a `Dictionary(uniqueKeysWithValues:)` that TRAPPED on
@@ -248,6 +249,7 @@ final class DomainContent: Sendable {
         self.market = market
         self.guild = guild
         self.kingDecrees = content.kingDecrees
+        self.trainingGroundLevels = content.trainingGroundLevels
         self.arena = arena
 
         // Shop order is display order — ascending by price — so no sort here.
@@ -267,9 +269,9 @@ final class DomainContent: Sendable {
         for row in plots.types {
             let type = try row.toPlotType()
             icons[type] = row.icon
-            // Absent stays absent: `tuning(for:)` returning nil is how the
-            // estate controller knows to open a training fight instead of a
-            // harvest, so `training_ground` must NOT gain an entry here.
+            // Absent stays absent. Every shipped type produces since the
+            // Training Ground left the plots (2026-09-27), but a row without
+            // tuning is still legal content and must not invent a yield.
             if let tuning = row.tuning { tunings[type] = tuning.domain }
         }
         self.plotIcons = icons

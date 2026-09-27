@@ -12,10 +12,11 @@
 //  `super`) because every class has exactly one of each — the user's
 //  `characterClass` field resolves which concrete technique fires.
 //
-//  Unlock flow: player must (1) reach the kind's player-level threshold
-//  (8 / 11 / 14) and (2) visit the Training Ground plot at the estate
-//  (which itself unlocks at estate T3). Tapping "📖 Learn" in the
-//  Training Ground UI calls `add(_:for:on:)`.
+//  Unlock flow (2026-09-27): the Training Ground is a room of the house
+//  (estate T4), and each level of it — bought for silver and materials —
+//  teaches one kind through `TrainingGroundService`, gated by that kind's
+//  player-level floor (10 / 11 / 14). Rows learned on the old plot-based
+//  ground were kept when it went.
 //
 
 import Fluent

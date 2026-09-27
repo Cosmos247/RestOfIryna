@@ -260,6 +260,8 @@ public func configure(logger: Logger) async throws {
     migrations.add(CloseBurnedQuestJobs())
     migrations.add(AddCapitalStreet())
     migrations.add(CreateKingProgress())
+    migrations.add(AddTrainingGroundLevel())
+    migrations.add(MoveTrainingGroundOffPlots())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

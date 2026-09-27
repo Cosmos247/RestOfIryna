@@ -64,7 +64,6 @@ to 72 Vigor, so a portion count cannot be added to anything — the design draft
 ## 3. The chain
 
 <!-- generated: roi-content spec king -->
-
 **The chain** (`king.json`) — 👑 marks a decree that asks for a level
 
 | # | id | L | conditions | 🔋 | % pool | 🍲 | 🪙 | ✨ |
@@ -91,7 +90,7 @@ to 72 Vigor, so a portion count cannot be added to anything — the design draft
 | 20 | `king.tempered_steel` | 8 | weapon T3 | 70 | 50% |  |  |  |
 | 21 | `king.more_on_the_shoulders` | 8 | bag T2 | 70 | 50% |  |  |  |
 | 22 | `king.hands_of_a_master` | 8 | craft anything |  |  |  | 100 |  |
-| 23 | `king.science_of_battle` | 9 | claim `training_ground` | 60 | 41% |  |  |  |
+| 23 | `king.science_of_battle` | 9 | build the training ground | 60 | 41% |  |  |  |
 | 24 | `king.first_technique` | 9 | learn a technique |  |  | 3× `food.hunters_stew` |  |  |
 | 25 | 👑 `king.maturity` | 10 | level 10 | 45 | 30% | 2× `food.roasted_meat` |  |  |
 | 26 | `king.third_step` | 10 | estate T4 | 75 | 50% |  | 150 |  |
@@ -118,7 +117,6 @@ to 72 Vigor, so a portion count cannot be added to anything — the design draft
 | **total** | **1520** | 6× `food.hunters_stew`, 14× `food.roasted_meat` | 448 | **1968** | **2820** | **145440** |
 
 39 decrees · 7 of them ask for a level · the chain pays 5.8% of the XP from level 1 to 25 (2491517)
-
 <!-- /generated -->
 
 ## 4. What is deliberately not here

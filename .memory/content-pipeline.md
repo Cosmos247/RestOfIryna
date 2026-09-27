@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            302 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            315 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -66,7 +66,7 @@ content/data/*.json
   — every one reads Catalogs.current
 ```
 
-`content/data/` holds 20 files: `arena · bags · enemies · estate_upgrades · fortune · guild · items · king · manifest · market · master · plots · quests · rarities · recipes · sets · tavern · trader · weapon_upgrades · zones`.
+`content/data/` holds 21 files: `arena · bags · enemies · estate_upgrades · fortune · guild · items · king · manifest · market · master · plots · quests · rarities · recipes · sets · tavern · trader · training_ground · weapon_upgrades · zones` (`training_ground` since schema v14, 2026-09-27).
 (The list had drifted twice before 2026-09-21: `rarities` and `sets` arrived in
 Phase 6 and were never added here, and `king` in the decree chain. Counted from the
 directory, not from memory.) **No Swift catalog array

@@ -303,7 +303,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let required = CombatService.requiredLevel(for: kind)
         // 🔒 prepended in Swift — leading supplementary-plane emoji breaks
         // Lingo's `%{var}` parser (see .memory/localization.md).
+        // The building level that teaches it — since 2026-09-27 a technique is
+        // bought with the Training Ground, gated by its own player level.
+        let rung = TrainingGroundCatalog.level(teaching: kind.rawValue) ?? 1
         let text = "🔒 " + context.lingo.localize("combat.tech.locked", locale: context.session.locale, interpolations: [
+            "rung": "\(rung)",
             "level": "\(required)"
         ])
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
@@ -697,8 +701,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// Phase 5.1: clean exit from a Training Ground session. Wipes the
     /// ExplorationState row that was holding the dummy fight, restores the
     /// estate routerName + main reply keyboard (combat replaced it while
-    /// sparring), and re-renders the plot list so the Training Ground row is
-    /// visible again. No HP / vigor / inventory changes — training is
+    /// sparring), and re-renders the Training Ground's screen. No HP / vigor / inventory changes — training is
     /// consequence-free.
     private func onTrainingExit(context: Context) async throws -> Bool {
         if let state = try await ExplorationState.current(for: context.session, on: context.db) {
@@ -711,11 +714,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let prefix = "🥋 " + lingo.localize("estate.plot.alert.training_exited", locale: locale)
-        let plots = try await Plot.list(for: context.session, on: context.db)
-        let body = estate.renderPlotList(plots: plots, session: context.session, lingo: lingo, locale: locale)
-        let markup = estate.plotListKeyboard(plots: plots, session: context.session, lingo: lingo, locale: locale)
+        // Back to the Training Ground's own screen — the fight started there
+        // since the ground became a room of the house (2026-09-27).
+        let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
+        let body = estate.renderTrainingGround(session: context.session, learned: learned, lingo: lingo, locale: locale)
+        let markup = estate.trainingGroundKeyboard(session: context.session, lingo: lingo, locale: locale)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(markup))
-        // The plot list carries inline markup, so the combat reply keyboard
+        // The ground's screen carries inline markup, so the combat reply keyboard
         // would otherwise linger — restore the main keyboard on the banner.
         let mainKB = estate.generateControllerKB(session: context.session, lingo: lingo)
         await estate.postStatusBanner(prefix, context: context, replyMarkup: mainKB)

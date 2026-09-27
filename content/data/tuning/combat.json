@@ -156,7 +156,7 @@
   "techniques" : [
     {
       "kind" : "special_atk",
-      "requiredLevel" : 8,
+      "requiredLevel" : 10,
       "secondUseAtLevel" : 17
     },
     {

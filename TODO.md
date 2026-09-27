@@ -1739,6 +1739,19 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Every block below is LIVE and unwalked** except the first, which waits on the next
 restart — the 2026-09-22 deploys took the whole backlog before it.
 
+**Added 2026-09-27 — the Training Ground as a house room (NOT deployed yet):**
+- **after the deploy, the table first**: `SELECT count(*) FROM plots WHERE plot_type =
+  'training_ground'` is 0, and `users.training_ground_level` exists at 0 for everyone.
+- **🏠 Дім at T4+** lists 🥋 Тренувальний майданчик; below T4 it does not. Unbuilt, it opens
+  the build card (🪙 150 · 🪵 30 · 🪨 20 · 🟫 5, player level 10) with [🔨 Збудувати].
+- **a player who already knows techniques** (Nerif, Дарина, анія know all three): the card
+  says the ground goes straight to level 3, and after paying the build it IS level 3.
+- **a new player**: build → «Вивчено …» for the special attack; the screen shows 🔒 for the
+  next two with their levels; [⬆️ Покращити до рівня 2] opens a card, a short player level is
+  a modal, not a spent payment. [🥋 Тренувальний бій] runs the dummy and comes back here.
+- **the freed plot slot** is empty and claimable; the plot picker offers four types.
+- **«Наука бою»** (decree 23) asks «🤺 Збудувати тренувальний майданчик».
+
 **Added 2026-09-27 — combat lines and the death screen (NOT deployed yet):**
 - **an archer's 🎯 Влучний постріл** (it always crits): «Стріла впивається в живу плоть!
   Критичний постріл — X втрачає N ОЗ». Then a warrior's 🪓 and a mage's 🔥, a burn tick «X
@@ -2110,9 +2123,9 @@ unrelated commit on purpose.
 
 *Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
 09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and three game changes — the stray-number hint, the
-workshop's «Розібрати», and the combat lines with the death screen — which wait on the next
-restart.
+`origin/main` sit three record passes and four game changes — the stray-number hint, the
+workshop's «Розібрати», the combat lines with the death screen, and the Training Ground as a
+house room (schema v14, two migrations) — which wait on the next restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the

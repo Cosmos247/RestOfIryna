@@ -20,7 +20,8 @@ the pool is a stock, food and the estate are the income, and how deep the
 wilderness can be walked and walked out of is decided by how much of it a player
 is carrying. **Silver gates nothing.** It buys convenience — materials the player
 could have foraged, an enchant, a repair — and the mandatory ladders cost 1,600
-silver in total across the entire game.
+silver in total across the entire game (2,950 since 2026-09-27, when the Training Ground's
+1,350 joined them: techniques are bought now).
 
 That asymmetry decides this document's shape. §2 and §3 are about Vigor, because
 that is where the game is won or lost; §4 is about silver, where the question is
@@ -308,11 +309,14 @@ the draft band lives and where content arrives after the rebalance.
 | estate →T6 | 3630 | 400 |
 | estate →T7 | 5100 | 1000 |
 | bag, every step | 6090 | 0 |
+| training ground L1 | 190 | 150 |
+| training ground L2 | 468 | 400 |
+| training ground L3 | 1280 | 800 |
 | `gear.rusty_sword` T1→T5 | 1188 | 0 |
 | `gear.simple_bow` T1→T5 | 1042 | 0 |
 | `gear.wooden_staff` T1→T5 | 986 | 0 |
-| **every row** | **23964** | |
-| **one player** — a single weapon ladder | **21734–21936** | |
+| **every row** | **27252** | |
+| **one player** — a single weapon ladder | **25022–25224** | |
 
 **The sinks that are not a ladder**
 
@@ -349,7 +353,7 @@ bands (forage deliveries a level-1 player can actually finish), so each NPC now
 offers three at level 1 rather than one — the bands would otherwise have handed
 a new player the same job every day until level 6.
 
-Against that, **the mandatory spend is 1,600 silver**, every other silver cost in
+Against that, **the mandatory spend is 1,600 silver** (2,950 with the Training Ground since 2026-09-27), every other silver cost in
 the game is optional, and the largest optional one is enchanting at 1,660 an
 item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 
@@ -539,7 +543,7 @@ are recorded and left alone.** None of them is broken; all three are shapes
 nobody chose, and each is a lever available when silver is given something to do.
 
 **Silver is over-supplied and that is deferred.** Roughly 20,000 surplus over a
-lifetime, against 1,600 of mandatory spend. The fix is more to buy, not less to
+lifetime, against 1,600 of mandatory spend (2,950 with the Training Ground since 2026-09-27). The fix is more to buy, not less to
 earn — which is items, which is after the rebalance.
 
 ---

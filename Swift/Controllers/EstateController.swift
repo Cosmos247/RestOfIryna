@@ -332,6 +332,11 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             rows.append([TGInlineKeyboardButton(text: kitchen, callbackData: "estate:home:kitchen")])
         }
         rows.append([TGInlineKeyboardButton(text: warehouse, callbackData: "estate:home:warehouse")])
+        // 2026-09-27 — the Training Ground moved off the plots into the house.
+        if estateLevel >= EstateTierGates.trainingGround {
+            let training = lingo.localize("estate.training.title", locale: locale)
+            rows.append([TGInlineKeyboardButton(text: training, callbackData: "estate:home:training")])
+        }
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:root")])
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
@@ -613,18 +618,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let plotsBySlot = Dictionary(uniqueKeysWithValues: plots.map { ($0.slotIndex, $0) })
         var buttons: [TGInlineKeyboardButton] = []
         for slot in 0..<slotsAllowance {
-            if let plot = plotsBySlot[slot], let type = PlotType(rawValue: plot.plotType) {
-                if PlotCatalog.tuning(for: type) == nil {
-                    // Training plot — leads to combat instead of harvest.
-                    let label = "🥋 " + lingo.localize("estate.plot.button.train", locale: locale, interpolations: ["slot": "\(slot + 1)"])
-                    buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:train:\(slot)"))
-                } else {
-                    // Production plot — harvest. Emoji prepended in Swift —
-                    // Lingo's `%{var}` parser breaks on leading supplementary-
-                    // plane emoji (🚜 is U+1F69C).
-                    let label = "🚜 " + lingo.localize("estate.plot.button.harvest", locale: locale, interpolations: ["slot": "\(slot + 1)"])
-                    buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:harvest:\(slot)"))
-                }
+            if let plot = plotsBySlot[slot], PlotType(rawValue: plot.plotType) != nil {
+                // Every plot type produces since the Training Ground moved
+                // into the house (2026-09-27). Emoji prepended in Swift —
+                // Lingo's `%{var}` parser breaks on leading supplementary-
+                // plane emoji (🚜 is U+1F69C).
+                let label = "🚜 " + lingo.localize("estate.plot.button.harvest", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+                buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:harvest:\(slot)"))
             } else {
                 let label = lingo.localize("estate.plot.button.claim", locale: locale, interpolations: ["slot": "\(slot + 1)"])
                 buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:claim:\(slot)"))
@@ -646,7 +646,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         ])
         var lines: [String] = ["<b>\(header)</b>", ""]
         for type in PlotType.allCases {
-            if type == .trainingGround, estateLevel < EstateTierGates.trainingGround { continue }
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             if let tuning = PlotCatalog.tuning(for: type) {
@@ -830,7 +829,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         var rows: [[TGInlineKeyboardButton]] = []
         var pair: [TGInlineKeyboardButton] = []
         for type in PlotType.allCases {
-            if type == .trainingGround, estateLevel < EstateTierGates.trainingGround { continue }
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             let label = "\(icon) \(typeName)"
@@ -1118,6 +1116,12 @@ extension EstateController {
         if data.hasPrefix("estate:salvage:") {
             return try await handleSalvage(data: data, query: query, message: message, context: context)
         }
+        // The Training Ground, a house room since 2026-09-27. The plot-based
+        // ground's buttons (`estate:plot:train:<slot>`, `estate:training:learn:`)
+        // still sit in chat history, and they land here on the building's screen.
+        if data == "estate:home:training" || data.hasPrefix("estate:training:") || data.hasPrefix("estate:plot:train:") {
+            return try await handleTraining(data: data, query: query, message: message, context: context)
+        }
 
         let text: String
         let inline: TGInlineKeyboardMarkup
@@ -1194,16 +1198,6 @@ extension EstateController {
         }
         if data.hasPrefix("estate:plot:hvwh:") {
             return try await handlePlotHarvestTo(destination: .warehouse, data: data, query: query, message: message, context: context)
-        }
-        if data.hasPrefix("estate:plot:train:") {
-            return try await handlePlotTraining(data: data, query: query, message: message, context: context)
-        }
-        // Phase 5.3e Training Ground learn / spar callbacks.
-        if data.hasPrefix("estate:training:learn:") {
-            return try await handleTrainingLearn(data: data, query: query, message: message, context: context)
-        }
-        if data == "estate:training:spar" {
-            return try await handleTrainingSpar(query: query, message: message, context: context)
         }
 
         if data.hasPrefix("estate:wh:") {
@@ -1799,12 +1793,6 @@ extension EstateController {
             await refuse("estate.plot.alert.slot_taken")
             return nil
         }
-        // Was a hardcoded 3 in two places; the gate has a name and the picker
-        // already hides the button by it.
-        if type == .trainingGround, context.session.estateLevel < EstateTierGates.trainingGround {
-            await refuse("estate.plot.type_locked", ["tier": "\(EstateTierGates.trainingGround)"], lead: "🔒 ")
-            return nil
-        }
         return (slot, type)
     }
 
@@ -1974,71 +1962,160 @@ extension EstateController {
         }
     }
 
-    /// `estate:plot:train:<slot>` — opens the Training Ground screen for
-    /// the given plot. Phase 5.3e: this no longer enters combat directly.
-    /// Instead the player sees per-kind technique status (✅ learned /
-    /// 📖 learnable button / 🔒 locked w/ level hint) plus a `[🥋 Spar]`
-    /// button that spawns the dummy fight and a `[🔙 Back]` button.
-    static func handlePlotTraining(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
-        let slot = Int(String(data.dropFirst("estate:plot:train:".count))) ?? -1
+    /// Every Training Ground callback. Unbuilt, the building's screen IS the
+    /// build card; built, it lists the techniques with the next level's
+    /// button, and the card behind that button is the question the confirm
+    /// answers — the list → detail → act shape every buildable thing has.
+    static func handleTraining(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let lingo = context.lingo
         let locale = context.session.locale
-        guard let plot = try await Plot.find(slot: slot, for: context.session, on: context.db),
-              let type = PlotType(rawValue: plot.plotType),
-              type == .trainingGround else {
-            let toast = context.lingo.localize("estate.plot.alert.slot_empty", locale: locale)
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+        func answer(alert: String? = nil) async {
+            let params = alert.map {
+                TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: $0, showAlert: true)
+            } ?? TGAnswerCallbackQueryParams(callbackQueryId: query.id)
+            _ = try? await context.bot.answerCallbackQuery(params: params)
+        }
+
+        // The room's own gate, as for the workshop.
+        guard context.session.estateLevel >= EstateTierGates.trainingGround else {
+            await answer(alert: "🔒 " + lingo.localize("estate.locked.room", locale: locale, interpolations: [
+                "tier": "\(EstateTierGates.trainingGround)"
+            ]))
             return true
         }
 
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        switch data {
+        case "estate:training:spar" where context.session.trainingGroundLevel >= 1:
+            return try await handleTrainingSpar(query: query, message: message, context: context)
 
-        let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
-        let ctrl = Controllers.estateController
-        let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
-        let inline = ctrl.trainingGroundKeyboard(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
-        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        case "estate:training:upgrade":
+            await answer()
+            try await showTrainingUpgrade(message: message, context: context)
+
+        case "estate:training:confirm":
+            switch try await TrainingGroundService.upgrade(for: context.session, on: context.db) {
+            case .success(let level, let taught, let built, let caughtUp):
+                await answer()
+                try await showTrainingGround(message: message, context: context)
+                var banner = "✅ " + lingo.localize(built ? "estate.training.banner.built" : "estate.training.banner.upgraded",
+                                                   locale: locale, interpolations: ["level": "\(level)"])
+                if let taught, let kind = CombatService.TechniqueKind(rawValue: taught) {
+                    let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+                    banner += " " + lingo.localize("estate.training.banner.learned", locale: locale, interpolations: [
+                        "name": lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
+                    ])
+                }
+                if caughtUp {
+                    banner += " " + lingo.localize("estate.training.banner.caught_up", locale: locale)
+                }
+                await Controllers.estateController.postStatusBanner(banner, context: context)
+            case .maxLevel:
+                await answer(alert: lingo.localize("estate.training.max_level", locale: locale))
+                try await showTrainingGround(message: message, context: context)
+            case .estateTooLow(let required):
+                await answer(alert: "🔒 " + lingo.localize("estate.locked.room", locale: locale, interpolations: [
+                    "tier": "\(required)"
+                ]))
+            case .playerLevelTooLow(let required, let current):
+                await answer(alert: lingo.localize("estate.training.level_too_low", locale: locale, interpolations: [
+                    "required": "\(required)", "current": "\(current)"
+                ]))
+            case .insufficientSilver(let required, let current):
+                await answer(alert: lingo.localize("estate.upgrade.silver_too_low", locale: locale, interpolations: [
+                    "required": "\(required)", "current": "\(current)"
+                ]))
+            case .missingMaterials(let shortages):
+                await answer(alert: RequirementLine.shortageModal(shortages, lingo: lingo, locale: locale))
+            }
+
+        default:
+            // `estate:home:training`, a spar before the building exists, and
+            // every button left from the plot-based ground: the screen that
+            // owns the answer.
+            await answer()
+            try await showTrainingGround(message: message, context: context)
+        }
         return true
     }
 
-    /// `estate:training:learn:<kind>` — record the technique as learned for
-    /// the user and refresh the Training Ground screen with a `✅ Learned X`
-    /// banner. Defensive: re-checks the player-level gate even though the
-    /// button only renders when the gate passes (so stale callbacks fail
-    /// cleanly instead of granting underage techniques).
-    static func handleTrainingLearn(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
-        let raw = String(data.dropFirst("estate:training:learn:".count))
-        let locale = context.session.locale
-        guard let kind = CombatService.TechniqueKind(rawValue: raw) else {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            return true
+    /// The building's screen, or its build card while it is not built.
+    private static func showTrainingGround(message: TGMaybeInaccessibleMessage, context: Context) async throws {
+        guard context.session.trainingGroundLevel >= 1 else {
+            try await showTrainingUpgrade(message: message, context: context)
+            return
         }
-        let required = CombatService.requiredLevel(for: kind)
-        if context.session.level < required {
-            let toast = "🔒 " + context.lingo.localize("combat.tech.locked", locale: locale, interpolations: ["level": "\(required)"])
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-            return true
-        }
-        let added = try await LearnedTechnique.add(kind.rawValue, for: context.session, on: context.db)
-
-        let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
-        let techName = context.lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
-        let banner: String
-        if added {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            banner = "✅ " + context.lingo.localize("estate.training.banner.learned", locale: locale, interpolations: ["name": techName])
-        } else {
-            // Already learned — silent ack, refresh anyway (idempotent).
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            banner = "📖 " + context.lingo.localize("estate.training.banner.already_known", locale: locale, interpolations: ["name": techName])
-        }
-
         let learned = try await LearnedTechnique.allIds(for: context.session, on: context.db)
         let ctrl = Controllers.estateController
-        let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
-        let inline = ctrl.trainingGroundKeyboard(session: context.session, learned: learned, lingo: context.lingo, locale: locale)
+        let body = ctrl.renderTrainingGround(session: context.session, learned: learned, lingo: context.lingo, locale: context.session.locale)
+        let inline = ctrl.trainingGroundKeyboard(session: context.session, lingo: context.lingo, locale: context.session.locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
-        await ctrl.postStatusBanner(banner, context: context)
-        return true
+    }
+
+    /// The card for the next level — the build card at level 0. Requirements
+    /// through `RequirementLine`, so the card and the refusal of the same tap
+    /// phrase every number the same way.
+    private static func showTrainingUpgrade(message: TGMaybeInaccessibleMessage, context: Context) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let session = context.session
+        guard let next = TrainingGroundCatalog.level(session.trainingGroundLevel + 1) else {
+            try await showTrainingGround(message: message, context: context)
+            return
+        }
+        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
+        let techniqueName = CombatService.TechniqueKind(rawValue: next.technique)
+            .map { lingo.localize(Self.techniqueNameKey(kind: $0, class: cls), locale: locale) } ?? next.technique
+        let building = session.trainingGroundLevel == 0
+
+        var lines: [String]
+        if building {
+            lines = ["<b>\(lingo.localize("estate.training.title", locale: locale))</b>", "",
+                     lingo.localize("estate.training.description", locale: locale)]
+        } else {
+            lines = ["<b>\(lingo.localize("estate.training.upgrade.title", locale: locale))</b>", "",
+                     lingo.localize("estate.training.upgrade.current", locale: locale, interpolations: [
+                        "level": "\(session.trainingGroundLevel)"
+                     ])]
+        }
+        let arrow = lingo.localize("weapon.upgrade.delta_arrow", locale: locale)
+        lines.append("")
+        lines.append("\(arrow) " + lingo.localize(building ? "estate.training.upgrade.next_with_spar" : "estate.training.upgrade.next",
+                                                  locale: locale, interpolations: ["level": "\(next.level)", "name": techniqueName]))
+        // What the player already knows counts: say where the level will land.
+        let known = try await LearnedTechnique.allIds(for: session, on: context.db)
+        let landing = TrainingGroundLevelDTO.levelAfterCatchUp(paid: next.level, in: TrainingGroundCatalog.levels,
+                                                               known: known.union([next.technique]))
+        if landing > next.level {
+            lines.append("📖 " + lingo.localize("estate.training.upgrade.catch_up", locale: locale, interpolations: [
+                "level": "\(landing)"
+            ]))
+        }
+
+        lines.append("")
+        lines.append(RequirementLine.render(
+            label: lingo.localize("estate.upgrade.level_label", locale: locale),
+            have: session.level, need: TrainingGroundCatalog.playerLevel(for: next), indent: ""))
+        let stock = try await CraftingService.stock(for: session, on: context.db)
+        lines.append("")
+        lines.append("<b>" + lingo.localize("estate.upgrade.recipe_header", locale: locale) + "</b>")
+        for input in next.inputs {
+            lines.append(RequirementLine.item(input.itemId, have: stock[input.itemId]?.total ?? 0, need: input.quantity,
+                                              lingo: lingo, locale: locale))
+        }
+        if next.silverCost > 0 {
+            lines.append("")
+            lines.append(RequirementLine.render(
+                label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+                have: session.silver, need: next.silverCost, indent: ""))
+        }
+
+        let act = lingo.localize(building ? "estate.training.button.build" : "estate.training.button.confirm", locale: locale)
+        let back = lingo.localize("estate.training.button.back", locale: locale)
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: act, callbackData: "estate:training:confirm"),
+            TGInlineKeyboardButton(text: back, callbackData: building ? "estate:home" : "estate:home:training")
+        ]])
+        try await editEstateMessage(message: message, text: lines.joined(separator: "\n"), inline: keyboard, context: context)
     }
 
     /// `estate:training:spar` — spawn the dummy fight, identical to the
@@ -2079,57 +2156,50 @@ extension EstateController {
         }
     }
 
-    /// Body of the Training Ground screen. Three per-kind lines that
-    /// either confirm the technique is known, invite the player to learn
-    /// (handled by the keyboard's `📖 Learn X` button), or note the level
-    /// at which it unlocks.
-    fileprivate func renderTrainingGround(session: User, learned: Set<String>, lingo: Lingo, locale: String) -> String {
+    /// Body of the built Training Ground: its level, then one line per level
+    /// of the ladder — ✅ learned, or 🔒 with the building level that teaches
+    /// it and that technique's own player-level floor.
+    func renderTrainingGround(session: User, learned: Set<String>, lingo: Lingo, locale: String) -> String {
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let title = lingo.localize("estate.training.title", locale: locale)
-        let intro = lingo.localize("estate.training.description", locale: locale)
-        var lines: [String] = ["<b>\(title)</b>", "", intro, ""]
-
-        for kind in CombatService.TechniqueKind.allCases {
+        let level = lingo.localize("estate.training.level", locale: locale, interpolations: [
+            "level": "\(session.trainingGroundLevel)", "max": "\(TrainingGroundCatalog.maxLevel)"
+        ])
+        var lines: [String] = ["<b>\(title)</b> · \(level)", "",
+                               lingo.localize("estate.training.description", locale: locale), ""]
+        for step in TrainingGroundCatalog.levels {
+            guard let kind = CombatService.TechniqueKind(rawValue: step.technique) else { continue }
             let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
-            let isLearned = learned.contains(kind.rawValue)
-            let required = CombatService.requiredLevel(for: kind)
-            // 📖 / 🔒 prepended in Swift — leading supplementary-plane emoji
-            // breaks Lingo's `%{var}` parser. ✅ (BMP, no VS16) is safe to
-            // keep in the template for the learned branch.
-            if isLearned {
+            if learned.contains(step.technique) {
                 lines.append(lingo.localize("estate.training.kind.learned", locale: locale, interpolations: ["name": name]))
-            } else if session.level >= required {
-                lines.append("📖 " + lingo.localize("estate.training.kind.learnable", locale: locale, interpolations: ["name": name]))
             } else {
+                // 🔒 prepended in Swift — Lingo's `%{var}` parser breaks on a
+                // leading supplementary-plane emoji in the template.
                 lines.append("🔒 " + lingo.localize("estate.training.kind.locked", locale: locale, interpolations: [
                     "name": name,
-                    "level": "\(required)"
+                    "rung": "\(step.level)",
+                    "level": "\(TrainingGroundCatalog.playerLevel(for: step))"
                 ]))
             }
         }
         return lines.joined(separator: "\n")
     }
 
-    /// Keyboard for the Training Ground screen. One `📖 Learn X` button per
-    /// kind the player can learn right now (gate passed and not yet known),
-    /// then `[🥋 Spar]` and `[🔙 Back]` rows.
-    fileprivate func trainingGroundKeyboard(session: User, learned: Set<String>, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
+    /// `[⬆️ Raise to level N]` while there is a next level, then the practice
+    /// fight and the way back to the house.
+    func trainingGroundKeyboard(session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
-
-        for kind in CombatService.TechniqueKind.allCases {
-            if learned.contains(kind.rawValue) { continue }
-            if session.level < CombatService.requiredLevel(for: kind) { continue }
-            let name = lingo.localize(Self.techniqueNameKey(kind: kind, class: cls), locale: locale)
-            // 📖 prepended in Swift — same Lingo emoji-leading-template bug.
-            let label = "📖 " + lingo.localize("estate.training.button.learn", locale: locale, interpolations: ["name": name])
-            rows.append([TGInlineKeyboardButton(text: label, callbackData: "estate:training:learn:\(kind.rawValue)")])
+        if TrainingGroundCatalog.level(session.trainingGroundLevel + 1) != nil {
+            // ⬆️ carries VS16 — prepended in Swift, never in the template.
+            let label = "⬆️ " + lingo.localize("estate.training.button.upgrade", locale: locale, interpolations: [
+                "level": "\(session.trainingGroundLevel + 1)"
+            ])
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "estate:training:upgrade")])
         }
-
-        let spar = lingo.localize("estate.training.button.spar", locale: locale)
-        let back = lingo.localize("estate.training.button.back", locale: locale)
-        rows.append([TGInlineKeyboardButton(text: spar, callbackData: "estate:training:spar")])
-        rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:plot")])
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("estate.training.button.spar", locale: locale),
+                                            callbackData: "estate:training:spar")])
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("estate.training.button.back", locale: locale),
+                                            callbackData: "estate:home")])
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 

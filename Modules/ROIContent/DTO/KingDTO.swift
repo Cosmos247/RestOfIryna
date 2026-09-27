@@ -80,6 +80,9 @@ public struct KingConditionDTO: Codable, Sendable, Equatable {
         case harvestPlot = "harvest_plot"
         /// Learned any combat technique.
         case learnTechnique = "learn_technique"
+        /// Built the Training Ground — a live read of the building's level
+        /// (2026-09-27; it was `claim_plot` of a `training_ground` plot).
+        case buildTrainingGround = "build_training_ground"
         /// Won an arena duel.
         case winDuel = "win_duel"
     }

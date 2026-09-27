@@ -52,6 +52,9 @@ public struct ContentBundle: Sendable {
     /// The King's decree chain, in chain order. Optional for the same reason
     /// as the files above; `ContentLoader` always supplies it.
     public let king: KingFileDTO?
+    /// `training_ground.json` (schema v14). Optional only so hand-built test
+    /// fixtures need not carry one.
+    public let trainingGround: TrainingGroundFileDTO?
     /// Foraging pools by depth band. Optional so a fixture bundle can omit it.
     public let zones: ZoneFileDTO?
     /// Phase 4's six balance tables. Optional for the same reason as the files
@@ -88,6 +91,7 @@ public struct ContentBundle: Sendable {
         fortune: FortuneFileDTO? = nil,
         quests: QuestFileDTO? = nil,
         king: KingFileDTO? = nil,
+        trainingGround: TrainingGroundFileDTO? = nil,
         zones: ZoneFileDTO? = nil,
         tuning: TuningBundleDTO? = nil,
         contentHash: String
@@ -116,6 +120,7 @@ public struct ContentBundle: Sendable {
         self.fortune = fortune
         self.quests = quests
         self.king = king
+        self.trainingGround = trainingGround
         self.zones = zones
         self.tuning = tuning
         self.contentHash = contentHash
