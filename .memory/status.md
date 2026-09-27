@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-27 — the workshop takes armour apart, and gear lists name rows** (NOT DEPLOYED;
+**2026-09-27 — the workshop takes armour apart, and gear lists name rows** (`df6d341`, NOT DEPLOYED;
 Swift + 14 locale keys per language + one tuning knob, `gear.salvageFraction` 0.5 — `tuning`
 moved and nothing else did). Armour repaired down to 1/1 had nowhere to go: the trader buys no
 gear, the market and the guild vault take stackables only, and one tester carried 15 spare and

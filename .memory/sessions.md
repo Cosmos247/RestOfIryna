@@ -11,6 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `df6d341` (09-27) **the workshop takes armour apart, and gear lists name the copy they act on**
+  — armour repaired to 1/1 had no exit at all. 🛠 → 🔨 «Розібрати» returns the recipe ×
+  `gear.salvageFraction` (0.5, validated 0…1, hashed) × max/30 via `SalvageMath`, so 1/1
+  gives nothing but still leaves; fit predicted in units, bag then warehouse. The bag's and
+  the warehouse's gear lists print each copy's wear and act on the ROW — [Одягнути] used to
+  take the heap's first copy. 302 tests; only `tuning` moved (`b7f9e298e930986d`).
 - `254967b` (09-27) **a number typed before its button gets a hint** — the tester Nerif's 09-11
   report: a quantity typed on a trader card before [🪙 Купити], or on the warehouse's «Куди?»
   before a direction, threw the player to the controller's root screen. `answerStrayNumber`
@@ -349,7 +355,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-27 part 2 (the workshop takes armour apart)
+## Session — 2026-09-27 part 2 (the workshop takes armour apart) — `df6d341`
 
 **The report:** armour cannot be taken apart — a piece worn to "0/0" has nowhere to go. The
 floor is actually 1 (`MasterService.repair` shaves the max by 1 but never below 1), so a
