@@ -493,11 +493,11 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 6588329ab2bdbc70` / `tuning b7f9e298e930986d` / `spawns c9bdb57d456adc26` /
-`quests 30de20902006e3b9` / `king 4326bb40aa735a50` (**schema v13** since 2026-09-21, when
-`king.json` became a required file — `Prompt.md` is where the baseline is kept in sync; the
-Pi still runs `tuning 43b809a87450a3b8` until the 2026-09-27 salvage commit is deployed),
-**302 tests**. Pace as of
+`records 33e5c6e3259d51ba` / `tuning 11797ea73591e02f` / `spawns c9bdb57d456adc26` /
+`quests 30de20902006e3b9` / `king 08733a95f4d34e68`, content hash `e99571d5` (**schema v14**
+since 2026-09-27, when `training_ground.json` became a required file — `Prompt.md` is where
+the baseline is kept in sync; the Pi still runs the 09-22 v13 baseline until the four
+2026-09-27 changes are deployed), **315 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

@@ -37,13 +37,11 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   play surfaces a need for. The Pi runs **`60a8bad`** since **2026-09-22 00:33** (schema
   **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `king 4326bb40aa735a50`,
   matched byte for byte before the restart was ordered). That deploy and the 00:22 one before
-  it cleared the whole backlog; the four game changes committed since on 2026-09-27 — the
-  stray-number hint, the workshop's «Розібрати» with gear lists that name rows, combat lines
-  with a death screen that shows the last round, and the Training Ground as a house room
-  (schema v14) — wait on the next restart. The newest
-  feature is the **King's decree chain** — 39 decrees from level 1 to 25, the palace on Castle
-  Street, the journal and the charter. The next action is a human opening the screens: a
-  backlog spanning four deploys and never walked.
+  it cleared the whole backlog. **Four game changes were committed on 2026-09-27 and wait on
+  the next restart** (schema **v14**, two migrations): the stray-number hint, the workshop's
+  «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
+  last round, and the Training Ground as a house room. The next actions are that deploy, then
+  a human walking the screens — the 09-27 blocks head `TODO.md`'s walk list.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -71,7 +69,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 66 at one line each, so a selection copied into this file is the
+already carries all 71 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

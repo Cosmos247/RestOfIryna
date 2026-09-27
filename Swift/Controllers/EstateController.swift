@@ -555,7 +555,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// Keyboard `plotListKeyboard` carries the action buttons. Internal
     /// (not fileprivate) so CombatController's training-exit can refresh
     /// the same view after a Back tap.
-    func renderPlotList(plots: [Plot], session: User, lingo: Lingo, locale: String) -> String {
+    fileprivate func renderPlotList(plots: [Plot], session: User, lingo: Lingo, locale: String) -> String {
         let slotsAllowance = PlotService.slotsForLevel(session.estateLevel)
         let title = lingo.localize("estate.plot.list.title", locale: locale)
         let header = lingo.localize("estate.plot.list.header", locale: locale, interpolations: [
@@ -613,7 +613,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// Claim for empty), paired in rows of 2 to keep the keyboard compact,
     /// plus a Back row at the bottom. Internal so CombatController's
     /// training-exit can rebuild the keyboard.
-    func plotListKeyboard(plots: [Plot], session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    fileprivate func plotListKeyboard(plots: [Plot], session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let slotsAllowance = PlotService.slotsForLevel(session.estateLevel)
         let plotsBySlot = Dictionary(uniqueKeysWithValues: plots.map { ($0.slotIndex, $0) })
         var buttons: [TGInlineKeyboardButton] = []

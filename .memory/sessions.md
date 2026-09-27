@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-20)
+## Commit index — live-play polish and after (2026-09-09 → 09-27)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -365,6 +365,19 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-27 part 5 (the sync pass)
+
+Records only, plus one visibility fix. Every stale count and hash found by a sweep of the repo
+docs was repointed at the committed state: 14 → 15 catalogs, 66 → 71 auto-memories, the
+status baseline (v14, `records 33e5c6e3259d51ba` · `tuning 11797ea73591e02f` · `king
+08733a95f4d34e68`, 315 tests), «11 of the 18 condition kinds», and `CLAUDE.md`'s "nothing
+deletes a Plot row" (the retiring migration now does). `renderPlotList` / `plotListKeyboard`
+went back to `fileprivate` — they were internal only for the practice fight's exit, which now
+returns to the Training Ground. Two findings from the day that had lived only in chat were
+written down in `TODO.md` → Open: a mage can win a fight at 0 HP (the burn ticks before the
+player's death check), and `/menu` is missing from the base `unmatched` filter. `Prompt.md`
+now opens on the deploy of the four 09-27 changes, then the walk, then the owner's decisions.
 
 ## Session — 2026-09-27 part 4 (the Training Ground became a room of the house) — `1d1fec4`
 

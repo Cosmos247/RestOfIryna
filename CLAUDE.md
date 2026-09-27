@@ -444,8 +444,9 @@ measure it in Ukrainian**: the English side of all five was comfortably under, w
 exactly how the overflow stayed invisible to the person who wrote it. Auto-memory
 `project-requirement-line-one-format`.
 
-**A choice that cannot be undone is asked, not just tapped.** Nothing in the codebase deletes
-a `Plot` row or changes its type (`PlotService` has `claim` and `harvest` and no third verb),
+**A choice that cannot be undone is asked, not just tapped.** Nothing a player can do deletes
+a `Plot` row or changes its type (the one deletion ever was the 2026-09-27 migration that retired
+the `training_ground` type) (`PlotService` has `claim` and `harvest` and no third verb),
 so claiming a slot on one tap cost it for the life of the account. `estate:plot:type:` draws
 the picked type's card and asks; only `estate:plot:build:` writes. **Which callback keeps its
 old name is part of the fix**: the QUESTION inherited it, so a stale picker message in chat

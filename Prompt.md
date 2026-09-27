@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`1d1fec4`** — the Training Ground became a room of the house (schema v14, two migrations). Under it `d1e2ccd` (combat lines and the death screen), `df6d341` (the workshop's «Розібрати»), `254967b` (the stray-number hint) and `60a8bad`, the last deploy. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the four 2026-09-27 game changes: the stray-number hint, the workshop's «Розібрати», the combat lines with the death screen, and the Training Ground as a house room. Push stays user-side |
+| HEAD | the 2026-09-27 sync pass (records only) on top of **`bd25699`**, the hash fill for **`1d1fec4`** — the Training Ground as a house room (schema v14, two migrations). Under it `d1e2ccd` (combat lines and the death screen), `df6d341` (the workshop's «Розібрати» and gear lists by row), `254967b` (the stray-number hint), each with its hash fill, and `60a8bad`, the last deploy. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three 09-22 record passes, the four 2026-09-27 game changes with their hash fills, and the sync pass. Push stays user-side |
 | running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else); the Pi itself **rebooted 2026-09-25 20:45** and pm2 brought ROI back on the same binary, built 09-22 00:20 (read off the machine 09-27) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **The Training Ground is a house room** (2026-09-27): built and raised for silver + materials, one technique per level (10 / 11 / 14), from estate T4; the plot type is gone. **Schema v14, and two migrations** (`AddTrainingGroundLevel`, `MoveTrainingGroundOffPlots` — verify `plots` has no `training_ground` row afterwards). **Combat lines and the death screen** (2026-09-27): the special attacks, the burn tick and the plain hit end in «X втрачає N ОЗ» and name a crit; a death shows the last round (it used to be dropped), «Ворогу лишалося ❤️ N/M» and what the forest took. Swift + locale only, digest unmoved. **The workshop takes armour apart** (2026-09-27): 🔨 «Розібрати» returns the recipe × `gear.salvageFraction` × max/30, and the bag's and the warehouse's gear lists print each copy's wear and act on the ROW. One new tuning knob, so `tuning` moved (`b7f9e298e930986d`, content hash `43d791f8`) and nothing else did. **And the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
+| committed but NOT deployed | **Four game changes, 2026-09-27** — (1) a number typed before its button gets a `🔢` hint instead of the root screen; (2) the workshop's 🔨 «Розібрати» (recipe × `gear.salvageFraction` × max/30) and gear lists that act on the ROW; (3) attack lines that end «X втрачає N ОЗ» and name a crit, and a death screen with the last round, the enemy's HP left and the loss by name; (4) **the Training Ground as a house room** — T4, 150 / 400 / 800 🪙 + materials, one technique per level (10 / 11 / 14), catch-up for techniques already known. **Schema v14 and two migrations** (`AddTrainingGroundLevel`, `MoveTrainingGroundOffPlots`) plus new Lingo strings: content and binary together, then `pm2 restart ROI` — `/reload` cannot carry it |
 
 **Everything before 2026-09-27 is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -56,15 +56,26 @@ the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each re
 
 ### Next action
 
-**The "three innkeeper lines missing from `uk.json`" were a false alarm** (corrected
-2026-09-27): they are `.m`/`.f` pairs since `536fbf6`, and the Lingo miss in the log is the
-render site's plain lookup before its gendered retry, logged by design. Auto-memory
-`feedback-rendered-keys-need-requirekey`.
+**1 — Deploy the four 2026-09-27 changes** (user-side from the push on). `git push`, then on the
+Pi `git pull --ff-only` and build; its `--content-digest` must read **`records
+33e5c6e3259d51ba` · `tuning 11797ea73591e02f` · `spawns c9bdb57d456adc26` · `quests
+30de20902006e3b9` · `king 08733a95f4d34e68`, content hash `e99571d5`** BEFORE the restart is
+ordered. After `pm2 restart ROI`, verify the TABLES: `SELECT count(*) FROM plots WHERE
+plot_type = 'training_ground'` is 0, and `users.training_ground_level` exists at 0 for every row.
+Then record the deploy (Commit index + a `## Deploy —` entry in `.memory/sessions.md`).
 
-**Someone opens the screens.** Every defect this project has found came from glancing at
-a screen, not from running anything. The backlog now spans four deploys and includes the
-entire King's chain, which no human has seen: **`TODO.md` → "Walk list — shipped surfaces
-nobody has opened"**. All of it is LIVE.
+**2 — Someone opens the screens.** Every defect this project has found came from glancing at a
+screen, not from running anything. **`TODO.md` → "Walk list"**: the four 2026-09-27 blocks sit
+on top (the Training Ground build and catch-up, salvage and the gear rows, the stray-number
+hint, combat lines and the death screen), then the older backlog — the whole King's chain
+included, which no human has seen.
+
+**3 — Decisions waiting on the owner**, all in `TODO.md` → "Open, decided but not done": the
+eight lines that put an enemy's name in an oblique case; a mage winning a fight at 0 HP (the
+burn ticks before the player's death check); `/menu` missing from the base `unmatched` filter.
+Ideas raised and not asked yet: a «Відновити» service at the Master (reset max for silver, keep
+the enchant — a silver sink), the Master refusing to mend a piece worn to 1/1, and the passive
+report naming its losses the way the death screen now does.
 
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
@@ -86,15 +97,16 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Six items, each raised deliberately and each kept out of an unrelated commit on purpose:
-the estate calling one place **two** words now that «наділ» is gone but «Слот» still stands
-in 18 keys; `InventoryEntry.remove` ignoring `equipped_slot`;
-`CapitalController.pushTradeInvite` discarding its message id; the recipe-scroll machinery
-(`Item.teachesRecipe`, `InventoryController.handleLearnRecipe`) kept unreachable on purpose;
-the Master's blade trial naming a zone it does not mean; and six functions dead since April
-(`renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`, `itemNameOrId`,
-`isPassiveInflight`, `invalidateCache`). Each one's reasoning: **`TODO.md` → "Open, decided
-but not done"**. The standing simulator deferrals are below.
+Nine items, each raised deliberately and kept out of an unrelated commit on purpose: the eight
+enemy-name lines in an oblique case, a mage winning at 0 HP, and `/menu` missing from the base
+`unmatched` filter (all three from 2026-09-27); the estate calling one place **two** words now
+that «наділ» is gone but «Слот» still stands in 18 keys; `InventoryEntry.remove` ignoring
+`equipped_slot`; `CapitalController.pushTradeInvite` discarding its message id; the recipe-scroll
+machinery (`Item.teachesRecipe`, `InventoryController.handleLearnRecipe`) kept unreachable on
+purpose; the Master's blade trial naming a zone it does not mean; and six functions dead since
+April (`renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`, `itemNameOrId`,
+`isPassiveInflight`, `invalidateCache`). Each one's reasoning: **`TODO.md` → "Open, decided but
+not done"**. The standing simulator deferrals are below.
 
 ### Where the changelog went
 
@@ -184,7 +196,7 @@ cheapest way to ship a content edit, so it is worth proving early. Auto-memory
 
 ### How content works now
 
-All 14 catalogs and all seven tuning tables are façades over a snapshot installed at boot:
+All 15 catalogs and all seven tuning tables are façades over a snapshot installed at boot:
 
 ```
 content/data/*.json → ContentLoader → ContentValidator → GameContent (DTOs)

@@ -1736,8 +1736,8 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the first, which waits on the next
-restart — the 2026-09-22 deploys took the whole backlog before it.
+Telegram. **Every block below is LIVE and unwalked** except the four 2026-09-27 blocks on top,
+which wait on the next restart — the 2026-09-22 deploys took the whole backlog before them.
 
 **Added 2026-09-27 — the Training Ground as a house room (NOT deployed yet):**
 - **after the deploy, the table first**: `SELECT count(*) FROM plots WHERE plot_type =
@@ -2066,6 +2066,15 @@ restart — the 2026-09-22 deploys took the whole backlog before it.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **A mage can win a fight at 0 HP** (found 2026-09-27, not touched). `finishRound` ticks the
+  burn BEFORE it checks the player's HP, so when the enemy's counter drops the player to 0 and
+  that same round's burn finishes the enemy, the fight is a victory and the player walks on at
+  0 HP — the next step (`rollStep` returns `.nothing` at 0 HP) kills them with an empty step
+  narrative. Needs the owner's call on who loses such a round before the order changes.
+- **`/menu` is missing from the base `unmatched` filter** (found 2026-09-27, not touched). The
+  SDK runs EVERY matching handler, so `/menu` both restores the keyboard (global handler) and
+  falls through to the current controller's root re-render. `TGControllerBase.unmatched`
+  filters `/buttons`, `/help`, `/settings` only; adding `/menu` is one line.
 - **Eight lines still put an enemy's name after a preposition or as an object**, which the
   nominative-only name cannot carry («Ви подолали Скажений ведмідь»): `exploration.outcome.
   encounter.won`, `combat.defend.absorbed`, `combat.flee.success`, `combat.in_progress`, the

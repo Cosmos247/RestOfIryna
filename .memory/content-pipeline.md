@@ -61,8 +61,8 @@ content/data/*.json
    GameContent  (DTO snapshot)   → GameData.install
    DomainContent (domain snapshot) → Catalogs.install
       ↑
-  ALL 14 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade · Zone (8E)
-  Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest · King (09-21)
+  ALL 15 catalogs — Item · Enemy · Recipe · WeaponUpgrade · Bag · EstateUpgrade · Zone (8E)
+  Trader · Tavern · Market · Guild · Arena · Master · Plot · Fortune · Quest · King (09-21) · TrainingGround (09-27)
   — every one reads Catalogs.current
 ```
 
