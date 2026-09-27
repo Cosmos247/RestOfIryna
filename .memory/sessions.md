@@ -349,6 +349,44 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-27 part 2 (the workshop takes armour apart)
+
+**The report:** armour cannot be taken apart — a piece worn to "0/0" has nowhere to go. The
+floor is actually 1 (`MasterService.repair` shaves the max by 1 but never below 1), so a
+repaired-out piece lives forever between 0/1 and 1/1, and the Master will mend a 0/1 jerkin
+for 3 🪙 so it can break again in the next fight. There was no exit for gear at all: the
+inventory offers equip/unequip/use/info, the trader buys none, the market and the guild vault
+take stackables only. **Read off the live database:** one player carried 17 Forester pieces,
+15 of them loose in a 75-slot bag, several at max 1–9; enchants up to +5 exist, so any exit
+had to say what it destroys.
+
+**A second defect under it:** the gear list addressed ITEMS. `inv:equip:<itemId>` put on
+`rows.first(where: unequipped)` with no ordering, and `inv:info:` always showed the worn copy
+— the comment defended it as "visually identical, so indistinguishable", which wear made false
+in Phase 6.5. The warehouse's gear rows had the same shape (moving the oldest copy since
+09-15 — stable, but not the player's choice). A destructive action on that list would have
+taken an arbitrary copy, so rows came first.
+
+**What the owner chose, from options:** «Розібрати» for materials, in the estate workshop,
+wear printed on every row. Rejected: «Викинути» (nothing back), selling to the Master (silver
+is over-supplied already), the inventory card (the owner wanted the workshop), grouping copies
+behind a picker.
+
+**Shipped:** `SalvageMath` in ROISim (recipe × share × max/start, floored per line, an epsilon
+for exact products) with 8 tests; `gear.salvageFraction` 0.5 in `economy.json`, validated
+0…1 with two failing-case tests and hashed in the digest — `tuning` moved to
+`b7f9e298e930986d` and no other line did; `CraftingService.salvage` predicting the fit in
+units like `craft`, bag first then warehouse; the workshop's list → card → act (the question
+and the write are two callbacks, and every callback names a ROW); inventory and warehouse
+gear rows by row id. An item-id [Одягнути] left in chat acts only when one copy qualifies
+(it used to take the heap's first); the warehouse's old item-id buttons keep moving the
+oldest copy — deterministic and reversible, so left alone.
+Priced on the live data, one player's 15 loose pieces would return 31 hide and 5 iron — the
+dead ones nothing or a single hide, the spares most of it. **Not deployed:** Swift, Lingo
+strings and a tuning knob together, so a Pi build and `pm2 restart ROI`, with the Pi's digest
+checked first. Schema stays v13: a new required field in an existing tuning file did not bump
+it on 09-07 (`questRewards`) either.
+
 ## Session — 2026-09-27 (debugging from tester reports) — `254967b`
 
 A session of small fixes, fed one report at a time by the owner.

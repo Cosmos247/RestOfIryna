@@ -16,7 +16,7 @@ snapshot.
 Modules/ROIContent    library, Foundation ONLY   DTOs · loader · validator · GameData snapshot · LocaleIndex
 Modules/ROISim        library → ROIContent       the combat/progression/budget MATHS + the simulator
 Modules/roi-content   executable                 CLI: validate · simulate
-Tests/ROIContentTests                            292 tests; fast because no Fluent/Postgres/Telegram
+Tests/ROIContentTests                            302 tests; fast because no Fluent/Postgres/Telegram
 Swift/                executable                 the bot; carries @_exported import ROIContent / ROISim
 ```
 
@@ -106,7 +106,7 @@ rules of their own:
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
 | `exploration.json` | the three-tier revisit weight table, trip damage |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
-| `economy.json` | durability start, repair shave, per-fight wear budget |
+| `economy.json` | durability start, repair shave, salvage share (2026-09-27), per-fight wear budget |
 | `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |
 
 - **Everything decodes as REQUIRED.** No `decodeIfPresent` anywhere in

@@ -426,31 +426,51 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         var keyboard: [[TGInlineKeyboardButton]] = []
 
         if type == .gear {
+            // Each copy is its own piece (2026-09-27): the label carries the
+            // ROW's name, enchant and wear, and the move button carries the
+            // row's id. By item id, a tap moved the oldest copy, which is a
+            // stable answer but not the one the player chose.
+            func label(_ item: Item, _ state: GearState) -> String {
+                let icon = item.icon.map { "\($0) " } ?? ""
+                let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: state.tier), locale: locale)
+                var condition = ""
+                if let slot = item.slot, GearConditionService.armorSlots.contains(slot.rawValue), state.enchantLevel > 0 {
+                    condition += " +\(state.enchantLevel)"
+                }
+                if let slot = item.slot, GearConditionService.durableSlots.contains(slot.rawValue) {
+                    condition += " \(state.durability)/\(state.maxDurability)"
+                }
+                return "\(icon)\(name)\(condition)"
+            }
+            func byPiece(_ lhs: (id: String, state: GearState), _ rhs: (id: String, state: GearState)) -> Bool {
+                if lhs.id != rhs.id { return lhs.id < rhs.id }
+                if lhs.state.maxDurability != rhs.state.maxDurability { return lhs.state.maxDurability > rhs.state.maxDurability }
+                return lhs.state.durability > rhs.state.durability
+            }
+
             let invGear: [(entry: InventoryEntry, item: Item)] = invEntries.compactMap { entry in
                 guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
                 guard entry.equippedSlot == nil else { return nil }
                 return (entry, item)
-            }.sorted { $0.item.id < $1.item.id }
+            }.sorted { byPiece(($0.item.id, $0.entry.gearState), ($1.item.id, $1.entry.gearState)) }
 
             let whGear: [(entry: WarehouseEntry, item: Item)] = whEntries.compactMap { entry in
                 guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
                 return (entry, item)
-            }.sorted { $0.item.id < $1.item.id }
+            }.sorted { byPiece(($0.item.id, $0.entry.gearState), ($1.item.id, $1.entry.gearState)) }
 
             for pair in invGear {
-                let name = lingo.localize(pair.item.nameKey, locale: locale)
-                let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+                let target = pair.entry.id?.uuidString ?? pair.item.id
                 keyboard.append([
-                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(pair.item.id)"),
-                    TGInlineKeyboardButton(text: "🎒 ⬆️", callbackData: "estate:wh:deposit:\(pair.item.id)")
+                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState), callbackData: "estate:wh:info:\(pair.item.id)"),
+                    TGInlineKeyboardButton(text: "🎒 ⬆️", callbackData: "estate:wh:deposit:\(target)")
                 ])
             }
             for pair in whGear {
-                let name = lingo.localize(pair.item.nameKey, locale: locale)
-                let iconPrefix = pair.item.icon.map { "\($0) " } ?? ""
+                let target = pair.entry.id?.uuidString ?? pair.item.id
                 keyboard.append([
-                    TGInlineKeyboardButton(text: "\(iconPrefix)\(name)", callbackData: "estate:wh:info:\(pair.item.id)"),
-                    TGInlineKeyboardButton(text: "📦 ⬇️", callbackData: "estate:wh:withdraw:\(pair.item.id)")
+                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState), callbackData: "estate:wh:info:\(pair.item.id)"),
+                    TGInlineKeyboardButton(text: "📦 ⬇️", callbackData: "estate:wh:withdraw:\(target)")
                 ])
             }
         } else {
@@ -866,6 +886,11 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let bagUpgradeLabel = lingo.localize("bag.upgrade.button", locale: locale)
         rows.append([TGInlineKeyboardButton(text: bagUpgradeLabel, callbackData: "bag:upgrade:detail")])
 
+        // 2026-09-27 — taking a crafted piece apart, the reverse of the recipes
+        // below and the only way to be rid of armour worn to 1/1.
+        let salvageLabel = lingo.localize("workshop.salvage.button", locale: locale)
+        rows.append([TGInlineKeyboardButton(text: salvageLabel, callbackData: "estate:salvage:list")])
+
         for recipe in RecipeCatalog.all {
             // Kitchen recipes belong to the Kitchen view, not the Workshop.
             if recipe.category == .kitchen { continue }
@@ -1090,6 +1115,10 @@ extension EstateController {
         let ctrl = Controllers.estateController
         let locale = context.session.locale
 
+        if data.hasPrefix("estate:salvage:") {
+            return try await handleSalvage(data: data, query: query, message: message, context: context)
+        }
+
         let text: String
         let inline: TGInlineKeyboardMarkup
 
@@ -1250,8 +1279,10 @@ extension EstateController {
     }
 
     /// Perform one deposit/withdraw and refresh the current category drill-down
-    /// in place. Callback data is either `estate:wh:deposit:<item_id>` or
-    /// `estate:wh:withdraw:<item_id>`.
+    /// in place. Callback data is `estate:wh:deposit:<target>` or
+    /// `estate:wh:withdraw:<target>`, where the target is a gear ROW's id
+    /// (2026-09-27) or, for stackables and buttons left in chat from before,
+    /// an item id.
     static func handleWarehouseTransfer(
         data: String,
         query: TGCallbackQuery,
@@ -1261,7 +1292,42 @@ extension EstateController {
         let locale = context.session.locale
         let isDeposit = data.hasPrefix("estate:wh:deposit:")
         let prefix = isDeposit ? "estate:wh:deposit:" : "estate:wh:withdraw:"
-        let itemId = String(data.dropFirst(prefix.count))
+        let target = String(data.dropFirst(prefix.count))
+
+        // A row id names its item through the row. A row that is gone — moved
+        // or taken apart since this screen was drawn — redraws the gear list,
+        // the screen that knows where every piece is now.
+        let rowId = UUID(uuidString: target)
+        var itemId = target
+        if let rowId {
+            guard let userId = context.session.id else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                return true
+            }
+            let resolved: String?
+            if isDeposit {
+                resolved = try await InventoryEntry.query(on: context.db)
+                    .filter(\.$user.$id, .equal, userId)
+                    .filter(\.$id, .equal, rowId)
+                    .first()?.itemId
+            } else {
+                resolved = try await WarehouseEntry.query(on: context.db)
+                    .filter(\.$user.$id, .equal, userId)
+                    .filter(\.$id, .equal, rowId)
+                    .first()?.itemId
+            }
+            guard let resolved else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                let ctrl = Controllers.estateController
+                let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+                let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+                let body = ctrl.renderWarehouseCategory(type: .gear, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+                let inline = ctrl.warehouseCategoryKeyboard(type: .gear, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+                await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
+                return true
+            }
+            itemId = resolved
+        }
 
         guard let item = ItemCatalog.find(itemId) else {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1276,7 +1342,7 @@ extension EstateController {
         let toastKey: String
         let isSuccess: Bool
         if isDeposit {
-            let result = try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db)
+            let result = try await WarehouseService.deposit(itemId: itemId, entryId: rowId, for: context.session, on: context.db)
             switch result {
             case .success:           toastKey = "estate.warehouse.deposited";          isSuccess = true
             case .nothingToDeposit:  toastKey = "estate.warehouse.nothing_to_deposit";  isSuccess = false
@@ -1284,7 +1350,7 @@ extension EstateController {
             case .warehouseFull:     toastKey = "estate.warehouse.full";                isSuccess = false
             }
         } else {
-            let result = try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db)
+            let result = try await WarehouseService.withdraw(itemId: itemId, entryId: rowId, for: context.session, on: context.db)
             switch result {
             case .success:           toastKey = "estate.warehouse.withdrawn";           isSuccess = true
             case .nothingToWithdraw: toastKey = "estate.warehouse.nothing_to_withdraw"; isSuccess = false
@@ -2178,6 +2244,186 @@ extension EstateController {
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
+    }
+
+    // MARK: - Salvage callback handlers (2026-09-27)
+    //
+    //   estate:salvage:list              — the pieces the workshop can take apart
+    //   estate:salvage:ask:<b|w>:<uuid>  — one piece's card: what it gives, what is lost
+    //   estate:salvage:do:<b|w>:<uuid>   — take it apart; the only one that writes
+    //
+    // The question and the write are two callbacks, as for every irreversible
+    // action here: a card left in chat history must land on the question. Every
+    // callback names a ROW (`b` bag / `w` warehouse + its id), because two
+    // copies of one item are two different pieces and this destroys one.
+
+    private static func salvageCode(_ source: CraftingService.SalvageSource) -> String {
+        switch source {
+        case .bag(let id):       return "b:\(id.uuidString)"
+        case .warehouse(let id): return "w:\(id.uuidString)"
+        }
+    }
+
+    private static func salvageSource(_ code: Substring) -> CraftingService.SalvageSource? {
+        let parts = code.split(separator: ":", maxSplits: 1)
+        guard parts.count == 2, let id = UUID(uuidString: String(parts[1])) else { return nil }
+        switch parts[0] {
+        case "b": return .bag(id)
+        case "w": return .warehouse(id)
+        default:  return nil
+        }
+    }
+
+    /// The row's own name (tier-aware), enchant and wear — so two copies of
+    /// one item read as the two different pieces they are.
+    private static func salvagePieceLabel(_ candidate: CraftingService.SalvageCandidate, lingo: Lingo, locale: String) -> String {
+        guard let item = ItemCatalog.find(candidate.itemId) else { return candidate.itemId }
+        let icon = ItemDisplay.rarityPrefix(for: item) + (item.icon.map { "\($0) " } ?? "")
+        let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: candidate.state.tier), locale: locale)
+        let enchant = candidate.state.enchantLevel > 0 ? " +\(candidate.state.enchantLevel)" : ""
+        return "\(icon)\(name)\(enchant) \(candidate.state.durability)/\(candidate.state.maxDurability)"
+    }
+
+    /// `🟫 Шкура ×3` per line.
+    private static func salvageYieldLines(_ yield: [SalvageMath.Line], lingo: Lingo, locale: String) -> [String] {
+        yield.map { line in
+            let item = ItemCatalog.find(line.itemId)
+            let icon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? line.itemId
+            return "\(icon)\(name) ×\(line.quantity)"
+        }
+    }
+
+    private static func showSalvageList(message: TGMaybeInaccessibleMessage, context: Context) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let candidates = try await CraftingService.salvageCandidates(for: context.session, on: context.db)
+
+        var text = "<b>\(lingo.localize("workshop.salvage.title", locale: locale))</b>\n"
+            + lingo.localize("workshop.salvage.intro", locale: locale)
+        if candidates.isEmpty {
+            text += "\n\n" + lingo.localize("workshop.salvage.empty", locale: locale)
+        }
+
+        var rows: [[TGInlineKeyboardButton]] = candidates.map { candidate in
+            let place: String
+            switch candidate.source {
+            case .bag:       place = "🎒"
+            case .warehouse: place = "📦"
+            }
+            return [TGInlineKeyboardButton(text: "\(salvagePieceLabel(candidate, lingo: lingo, locale: locale)) \(place)",
+                                           callbackData: "estate:salvage:ask:\(salvageCode(candidate.source))")]
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("workshop.detail.button.back", locale: locale),
+                                            callbackData: "estate:home:workshop")])
+        try await editEstateMessage(message: message, text: text,
+                                    inline: TGInlineKeyboardMarkup(inlineKeyboard: rows), context: context)
+    }
+
+    static func handleSalvage(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        func answer(alert: String? = nil) async {
+            let params = alert.map {
+                TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: $0, showAlert: true)
+            } ?? TGAnswerCallbackQueryParams(callbackQueryId: query.id)
+            _ = try? await context.bot.answerCallbackQuery(params: params)
+        }
+
+        // The same gate as the workshop that holds the button.
+        guard context.session.estateLevel >= EstateTierGates.workshop else {
+            await answer(alert: "🔒 " + lingo.localize("estate.locked.room", locale: locale, interpolations: [
+                "tier": "\(EstateTierGates.workshop)"
+            ]))
+            return true
+        }
+
+        if data == "estate:salvage:list" {
+            await answer()
+            try await showSalvageList(message: message, context: context)
+            return true
+        }
+
+        let gone = lingo.localize("workshop.salvage.gone", locale: locale)
+
+        if data.hasPrefix("estate:salvage:ask:") {
+            guard let source = salvageSource(data.dropFirst("estate:salvage:ask:".count)),
+                  let candidate = try await CraftingService.salvageCandidate(source, for: context.session, on: context.db) else {
+                // A stale card: the list is the screen that owns the answer.
+                await answer(alert: gone)
+                try await showSalvageList(message: message, context: context)
+                return true
+            }
+            await answer()
+
+            let item = ItemCatalog.find(candidate.itemId)
+            let icon = item.map { ItemDisplay.rarityPrefix(for: $0) + ($0.icon.map { "\($0) " } ?? "") } ?? ""
+            let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: candidate.state.tier), locale: locale) }
+                ?? candidate.itemId
+            var header = "\(icon)<b>\(name)</b> · \(candidate.state.durability)/\(candidate.state.maxDurability)"
+            if candidate.state.enchantLevel > 0 { header += " · ✨+\(candidate.state.enchantLevel)" }
+            var lines = [header, "", "🔨 <b>\(lingo.localize("workshop.salvage.confirm", locale: locale))</b>"]
+            if candidate.yield.isEmpty {
+                lines.append(lingo.localize("workshop.salvage.yield_none", locale: locale))
+            } else {
+                lines.append(lingo.localize("workshop.salvage.yield_header", locale: locale))
+                lines += salvageYieldLines(candidate.yield, lingo: lingo, locale: locale).map { "   \($0)" }
+            }
+            if candidate.state.enchantLevel > 0 {
+                lines.append("✨ " + lingo.localize("workshop.salvage.enchant_lost", locale: locale, interpolations: [
+                    "level": "\(candidate.state.enchantLevel)"
+                ]))
+            }
+            let code = salvageCode(candidate.source)
+            let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+                TGInlineKeyboardButton(text: lingo.localize("workshop.salvage.do", locale: locale),
+                                       callbackData: "estate:salvage:do:\(code)"),
+                TGInlineKeyboardButton(text: lingo.localize("workshop.detail.button.back", locale: locale),
+                                       callbackData: "estate:salvage:list")
+            ]])
+            try await editEstateMessage(message: message, text: lines.joined(separator: "\n"),
+                                        inline: keyboard, context: context)
+            return true
+        }
+
+        if data.hasPrefix("estate:salvage:do:") {
+            guard let source = salvageSource(data.dropFirst("estate:salvage:do:".count)) else {
+                await answer(alert: gone)
+                try await showSalvageList(message: message, context: context)
+                return true
+            }
+            switch try await CraftingService.salvage(source, for: context.session, on: context.db) {
+            case .gone:
+                await answer(alert: gone)
+                try await showSalvageList(message: message, context: context)
+            case .noRoom(let units):
+                // Nothing moved, so the card stays; the modal says why.
+                await answer(alert: lingo.localize("workshop.salvage.no_room", locale: locale, interpolations: [
+                    "units": "\(units)"
+                ]))
+            case .success(let itemId, let tier, let yield, let destination):
+                await answer()
+                let item = ItemCatalog.find(itemId)
+                let name = (item?.icon.map { "\($0) " } ?? "")
+                    + (item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: tier), locale: locale) } ?? itemId)
+                let key: String
+                switch destination {
+                case .bag?:       key = "workshop.salvage.done_bag"
+                case .warehouse?: key = "workshop.salvage.done_warehouse"
+                case nil:         key = "workshop.salvage.done_nothing"
+                }
+                let banner = "✅ " + lingo.localize(key, locale: locale, interpolations: [
+                    "item": name,
+                    "yield": salvageYieldLines(yield, lingo: lingo, locale: locale).joined(separator: ", ")
+                ])
+                try await showSalvageList(message: message, context: context)
+                await Controllers.estateController.postStatusBanner(banner, context: context)
+            }
+            return true
+        }
+
+        await answer()
+        return true
     }
 
     // MARK: - Weapon upgrade callback handlers (Phase 5.2.2)

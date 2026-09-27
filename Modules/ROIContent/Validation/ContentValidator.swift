@@ -2134,6 +2134,11 @@ public enum ContentValidator {
             require(gear.repairMaxShave < gear.maxDurabilityStart, file, "gear.repairMaxShave",
                     "tuning.economy.shave_destroys_gear",
                     "a shave of \(gear.repairMaxShave) against a starting durability of \(gear.maxDurabilityStart) destroys the piece on its first repair")
+            // Above 1 a piece taken apart returns more than its recipe cost,
+            // which turns the workshop into a mint for whatever the Master sells.
+            require(gear.salvageFraction >= 0 && gear.salvageFraction <= 1, file, "gear.salvageFraction",
+                    "tuning.economy.salvage_out_of_range",
+                    "salvage share must be within 0…1, found \(gear.salvageFraction)")
             let wear = gear.wearBudget
             for (name, value) in [("victory", wear.victory), ("defeat", wear.defeat), ("flee", wear.flee)]
             where value < 0 {

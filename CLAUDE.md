@@ -378,6 +378,19 @@ REASSIGNS the owner. **A new per-instance column belongs IN `GearState`, not bes
 screen half: **the Master repairs a ROW, not a loadout** — a list must ask the same question of
 every kind it lists. Auto-memory `project-gear-state-travels-with-the-unit`.
 
+**A gear list names ROWS, and the workshop is the one place a piece is destroyed**
+(2026-09-27). Copies differ by wear, so the bag's gear list and the warehouse's gear rows
+print each copy's wear and every button carries the ROW's id (`inv:info|equip|unequip:<uuid>`,
+`estate:wh:deposit|withdraw:<uuid>`). An item-id [Одягнути] left in chat acts only when one
+copy qualifies and otherwise redraws the list — it used to take whichever copy the heap
+returned; the warehouse's old item-id buttons still move the OLDEST copy, which is
+deterministic and reversible, so they were left as they were.
+**«Розібрати»** (`CraftingService.salvage`, workshop → 🔨) returns the piece's recipe ×
+`gear.salvageFraction` × max/`maxDurabilityStart`, floored per line by `SalvageMath` —
+derived, never a picked number — so armour repaired down to 1/1 gives nothing back but still
+leaves the bag. It predicts the fit in units for both stores, like `craft`, and names the
+row it destroys. Auto-memory `project-salvage-and-gear-rows`.
+
 **A weapon ladder is ONE object.** The three upgradable weapons render through
 `ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
 common — the player is upgrading a thing, not swapping it — which `locale.ladder_name_drift`

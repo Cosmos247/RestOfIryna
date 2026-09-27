@@ -845,6 +845,7 @@ enum ContentDigest {
         d.combine("economy")
         d.combine(GearConditionService.maxDurabilityStart)
         d.combine(GearConditionService.repairMaxShave)
+        d.combine("\(GearConditionService.salvageFraction)")
         for event in GearConditionService.WearEvent.allCases {
             d.combine(event.rawValue)
             d.combine(event.amount)

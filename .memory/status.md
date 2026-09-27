@@ -21,6 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-27 — the workshop takes armour apart, and gear lists name rows** (NOT DEPLOYED;
+Swift + 14 locale keys per language + one tuning knob, `gear.salvageFraction` 0.5 — `tuning`
+moved and nothing else did). Armour repaired down to 1/1 had nowhere to go: the trader buys no
+gear, the market and the guild vault take stackables only, and one tester carried 15 spare and
+dead pieces in a 75-slot bag. «Розібрати» in the workshop returns the recipe × share × max/30
+(`SalvageMath`), so a 1/1 piece gives nothing but leaves. The bag's gear list and the
+warehouse's gear rows now print each copy's wear and act on the ROW — [Одягнути] used to
+put on whichever copy Postgres returned first.
+
 **2026-09-27 — a number typed one tap early gets a hint** (`254967b`, NOT DEPLOYED; Swift + two locale
 keys per language, digest unmoved). A quantity typed before its button — on a trader card
 before [🪙 Купити], on the warehouse's «Куди?» before a direction — used to throw the player
@@ -467,10 +476,11 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 6588329ab2bdbc70` / `tuning 43b809a87450a3b8` / `spawns c9bdb57d456adc26` /
+`records 6588329ab2bdbc70` / `tuning b7f9e298e930986d` / `spawns c9bdb57d456adc26` /
 `quests 30de20902006e3b9` / `king 4326bb40aa735a50` (**schema v13** since 2026-09-21, when
-`king.json` became a required file — `Prompt.md` is where the baseline is kept in sync, and
-the Pi has run this exact baseline since 2026-09-22 00:22), **292 tests**. Pace as of
+`king.json` became a required file — `Prompt.md` is where the baseline is kept in sync; the
+Pi still runs `tuning 43b809a87450a3b8` until the 2026-09-27 salvage commit is deployed),
+**302 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

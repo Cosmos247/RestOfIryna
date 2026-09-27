@@ -1739,6 +1739,17 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Every block below is LIVE and unwalked** except the first, which waits on the next
 restart — the 2026-09-22 deploys took the whole backlog before it.
 
+**Added 2026-09-27 — the workshop takes armour apart (NOT deployed yet):**
+- **🎒 the gear list with two copies of one piece** (buy a spare hood from the Master): each
+  row prints its own wear, and [Одягнути] on the worse one puts on THAT one. An old inventory
+  message in chat with two copies must redraw the list rather than pick one.
+- **🛠 → 🔨 Розібрати спорядження** at estate T3+: worn pieces first, 🎒/📦 says where each
+  lies. The card must match `SalvageMath` — a fresh Жилет лісника 7 шкур + 2 заліза, one at
+  15/15 3 + 1, one at 1/1 «нічого» — and name a lost enchant. After [✅ Розібрати] the piece is
+  gone and the banner says where the materials landed; with the bag full they go to the
+  warehouse.
+- **the warehouse's gear rows**: each copy with its wear; ⬆️/⬇️ moves exactly that copy.
+
 **Added 2026-09-27 — the stray-number hint (NOT deployed yet):**
 - **a trader card:** Крамар → Купити → any item, then type `5` without tapping
   [🪙 Купити]. A `🔢` banner must answer and the card must stay the last screen — no street
@@ -2083,8 +2094,8 @@ unrelated commit on purpose.
 
 *Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
 09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and the stray-number hint, which waits on the next
-restart.
+`origin/main` sit three record passes and two game changes — the stray-number hint and the
+workshop's «Розібрати» — which wait on the next restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the

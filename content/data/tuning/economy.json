@@ -2,6 +2,7 @@
   "gear" : {
     "maxDurabilityStart" : 30,
     "repairMaxShave" : 1,
+    "salvageFraction" : 0.5,
     "wearBudget" : {
       "defeat" : 3,
       "flee" : 2,

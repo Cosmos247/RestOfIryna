@@ -1212,22 +1212,30 @@ public struct GearEconomyDTO: Codable, Sendable, Equatable {
     public let maxDurabilityStart: Int
     /// Permanent max-durability loss per repair, so armor eventually wears out.
     public let repairMaxShave: Int
+    /// Share of a crafted piece's recipe that taking it apart at the workshop
+    /// returns, for a piece still at `maxDurabilityStart`. The share shrinks
+    /// with the piece's max, so a piece worn to 1/1 gives back nothing
+    /// (`SalvageMath`). Must stay within 0…1: above 1 a piece would be worth
+    /// more taken apart than the recipe that made it.
+    public let salvageFraction: Double
     public let wearBudget: WearBudgetDTO
 
-    public init(maxDurabilityStart: Int, repairMaxShave: Int, wearBudget: WearBudgetDTO) {
+    public init(maxDurabilityStart: Int, repairMaxShave: Int, salvageFraction: Double, wearBudget: WearBudgetDTO) {
         self.maxDurabilityStart = maxDurabilityStart
         self.repairMaxShave = repairMaxShave
+        self.salvageFraction = salvageFraction
         self.wearBudget = wearBudget
     }
 
     private enum CodingKeys: String, CodingKey {
-        case maxDurabilityStart, repairMaxShave, wearBudget
+        case maxDurabilityStart, repairMaxShave, salvageFraction, wearBudget
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         maxDurabilityStart = try c.decode(Int.self, forKey: .maxDurabilityStart)
         repairMaxShave     = try c.decode(Int.self, forKey: .repairMaxShave)
+        salvageFraction    = try c.decode(Double.self, forKey: .salvageFraction)
         wearBudget         = try c.decode(WearBudgetDTO.self, forKey: .wearBudget)
     }
 }

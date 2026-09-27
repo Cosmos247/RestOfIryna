@@ -103,7 +103,7 @@ final class BestiaryTests: XCTestCase {
                     vigorPool: VigorPoolDTO(base: 100, perLevel: 5),
                     classes: [], warehouseCapByEstateLevel: [200]),
                 economy: EconomyTuningDTO(gear: GearEconomyDTO(
-                    maxDurabilityStart: 30, repairMaxShave: 1,
+                    maxDurabilityStart: 30, repairMaxShave: 1, salvageFraction: 0.5,
                     wearBudget: WearBudgetDTO(victory: 1, defeat: 3, flee: 3)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015)),
                 time: TimeTuningDTO(
                     scale: 1,

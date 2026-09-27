@@ -27,6 +27,9 @@ public enum GearConditionService {
     /// (30 for now — tuned for a felt repair cadence vs the −1/−3/−5 drain.)
     public static var maxDurabilityStart: Int { Catalogs.current.tuningEconomy.gear.maxDurabilityStart }
     public static var repairMaxShave: Int { Catalogs.current.tuningEconomy.gear.repairMaxShave }
+    /// Share of the recipe a piece at full max returns when taken apart at the
+    /// workshop — see `SalvageMath` for how wear scales it down.
+    public static var salvageFraction: Double { Catalogs.current.tuningEconomy.gear.salvageFraction }
 
     /// Equipment slots that carry durability. Armor (4 slots) plus the main-hand
     /// weapon. `durableSlots` is the full set that wears in a fight; `armorSlots`

@@ -162,10 +162,10 @@ final class TuningTests: XCTestCase {
             warehouseCapByEstateLevel: warehouse ?? [200, 400, 600, 800, 1200, 1600, 2000])
     }
 
-    private func economy(durability: Int = 30, shave: Int = 1,
+    private func economy(durability: Int = 30, shave: Int = 1, salvage: Double = 0.5,
                          victory: Int = 1, defeat: Int = 3, flee: Int = 3) -> EconomyTuningDTO {
         EconomyTuningDTO(gear: GearEconomyDTO(
-            maxDurabilityStart: durability, repairMaxShave: shave,
+            maxDurabilityStart: durability, repairMaxShave: shave, salvageFraction: salvage,
             wearBudget: WearBudgetDTO(victory: victory, defeat: defeat, flee: flee)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015))
     }
 
@@ -603,6 +603,15 @@ final class TuningTests: XCTestCase {
     func testShaveThatDestroysGearIsAnError() {
         assertRule("tuning.economy.shave_destroys_gear",
                    bundle(economy: economy(durability: 30, shave: 30)))
+    }
+
+    /// Above 1 the workshop would pay out more than the recipe cost.
+    func testSalvageAboveOneIsAnError() {
+        assertRule("tuning.economy.salvage_out_of_range", bundle(economy: economy(salvage: 1.5)))
+    }
+
+    func testNegativeSalvageIsAnError() {
+        assertRule("tuning.economy.salvage_out_of_range", bundle(economy: economy(salvage: -0.1)))
     }
 
     // MARK: - time.json rules

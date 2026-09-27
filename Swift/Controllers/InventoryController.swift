@@ -216,22 +216,29 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Gear rows — gear is non-stackable, so every unit is its own physical row
-    /// (InventoryEntry). Each row renders as a separate button pair — no `× N`
-    /// aggregate since that's always `× 1` anyway. Two unequipped rusty swords
-    /// therefore show as two identical buttons. Callbacks stay itemId-based:
-    /// the server picks "first matching row" which, for visually identical
-    /// gear, is indistinguishable from targeting a specific one.
+    /// (InventoryEntry), and each renders as its own button pair addressed by
+    /// the ROW's id (2026-09-27). Callbacks used to carry the item id, on the
+    /// reasoning that two copies were "visually identical, so indistinguishable
+    /// from targeting a specific one". Wear made that false: two hoods at 1/1
+    /// and 30/30 are different pieces, and [Одягнути] put on whichever one
+    /// Postgres returned first. So every durable row prints its own wear, and
+    /// every action names the row it acts on.
     private func gearRows(entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
         let pairs: [(entry: InventoryEntry, item: Item)] = entries.compactMap { entry in
             guard let item = ItemCatalog.find(entry.itemId), item.type == .gear else { return nil }
             return (entry, item)
         }
-        // Equipped rows first, then alphabetical by item id for stability across refreshes.
+        // Equipped rows first, then by item id, then the best-kept copy first —
+        // a stable order across refreshes, so a row does not jump under the
+        // player's thumb between two taps.
         let sorted = pairs.sorted { lhs, rhs in
             let lhsEquipped = lhs.entry.equippedSlot != nil
             let rhsEquipped = rhs.entry.equippedSlot != nil
             if lhsEquipped != rhsEquipped { return lhsEquipped }
-            return lhs.item.id < rhs.item.id
+            if lhs.item.id != rhs.item.id { return lhs.item.id < rhs.item.id }
+            if lhs.entry.maxDurability != rhs.entry.maxDurability { return lhs.entry.maxDurability > rhs.entry.maxDurability }
+            if lhs.entry.durability != rhs.entry.durability { return lhs.entry.durability > rhs.entry.durability }
+            return (lhs.entry.id?.uuidString ?? "") < (rhs.entry.id?.uuidString ?? "")
         }
 
         let equipLabel = lingo.localize("inventory.action.gear", locale: locale)
@@ -245,22 +252,28 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // a ⚪ on every common item is noise, not information.
             let iconPrefix = ItemDisplay.rarityPrefix(for: pair.item)
                 + (pair.item.icon.map { "\($0) " } ?? "")
-            // Phase 6.5 — keep the list label clean: only the enchant level
-            // (as a plain "+N", no icon) for armor. Durability / broken / dulled
-            // state lives in the tap-through detail card and the Master's repair
-            // screen, not crammed into the button (it truncates the name).
+            // The enchant as a plain "+N" for armor, then the row's wear for
+            // anything a fight wears. Wear was kept out of the label on
+            // 2026-05-21 so the name would not truncate; it came back on
+            // 2026-09-27 because without it two copies cannot be told apart.
             var condition = ""
             if let slot = pair.item.slot, GearConditionService.armorSlots.contains(slot.rawValue),
                pair.entry.enchantLevel > 0 {
                 condition += " +\(pair.entry.enchantLevel)"
             }
+            if let slot = pair.item.slot, GearConditionService.durableSlots.contains(slot.rawValue) {
+                condition += " \(pair.entry.durability)/\(pair.entry.maxDurability)"
+            }
             let itemLabel = "\(iconPrefix)\(name)\(condition)"
             let isEquipped = pair.entry.equippedSlot != nil
             let actionLabel = isEquipped ? unequipLabel : equipLabel
             let actionPrefix = isEquipped ? "inv:unequip:" : "inv:equip:"
+            // The row's id; the item id only for a row that has none yet, which
+            // a row read back from the database never is.
+            let target = pair.entry.id?.uuidString ?? pair.item.id
             return [
-                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(pair.item.id)"),
-                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(pair.item.id)")
+                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(target)"),
+                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(target)")
             ]
         }
     }
@@ -424,6 +437,22 @@ extension InventoryController {
             return true
         }
 
+        // A gear ROW (2026-09-27): the card of that copy, not of whichever one
+        // is worn. A row that is gone by now redraws the list, which is the
+        // screen that knows what the bag holds.
+        if data.starts(with: "inv:info:"),
+           let rowId = UUID(uuidString: String(data.dropFirst("inv:info:".count))) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let row = try await ownedRow(rowId, context: context),
+                  let item = ItemCatalog.find(row.itemId) else {
+                try await refreshCategory(type: .gear, message: message, context: context)
+                return true
+            }
+            let card = Self.gearDetailCard(row: row, item: item, user: context.session, lingo: context.lingo, locale: locale)
+            try await context.bot.sendMessage(session: context.session, text: card, parseMode: .html, replyMarkup: nil)
+            return true
+        }
+
         // Item info — if the item has a lore description, show it as a modal
         // alert (readable, dismissable). Otherwise fall back to the generic
         // "description coming soon" toast.
@@ -567,7 +596,24 @@ extension InventoryController {
             return true
         }
 
-        // Equip gear — finds the first unequipped row of the item and equips it via EquipmentService.
+        // Equip a gear ROW (2026-09-27) — the copy the player tapped.
+        if data.starts(with: "inv:equip:"),
+           let rowId = UUID(uuidString: String(data.dropFirst("inv:equip:".count))) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let target = try await ownedRow(rowId, context: context), target.equippedSlot == nil,
+                  let item = ItemCatalog.find(target.itemId), item.slot != nil else {
+                // Gone, already worn, or not wearable — the list is the answer.
+                try await refreshCategory(type: .gear, message: message, context: context)
+                return true
+            }
+            try await EquipmentService.equip(target, for: context.session, on: context.db)
+            let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
+            let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
+            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
+            return true
+        }
+
+        // Equip by item id — a button left in chat from before rows had ids.
         if data.starts(with: "inv:equip:") {
             let itemId = String(data.dropFirst("inv:equip:".count))
             guard let item = ItemCatalog.find(itemId), item.slot != nil,
@@ -579,8 +625,16 @@ extension InventoryController {
                 .filter(\.$user.$id, .equal, userId)
                 .filter(\.$itemId, .equal, itemId)
                 .all()
-            guard let target = rows.first(where: { $0.equippedSlot == nil }) else {
+            // An item-id button left in chat from before rows had ids. One
+            // unworn copy is unambiguous; with several, guessing is exactly
+            // the defect the row ids replaced, so the list is redrawn with a
+            // button per copy instead.
+            let unworn = rows.filter { $0.equippedSlot == nil }
+            guard unworn.count == 1, let target = unworn.first else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                if unworn.count > 1 {
+                    try await refreshCategory(type: .gear, message: message, context: context)
+                }
                 return true
             }
             try await EquipmentService.equip(target, for: context.session, on: context.db)
@@ -595,7 +649,24 @@ extension InventoryController {
             return true
         }
 
-        // Unequip gear — finds the equipped row of the item and unequips it.
+        // Unequip a gear ROW (2026-09-27).
+        if data.starts(with: "inv:unequip:"),
+           let rowId = UUID(uuidString: String(data.dropFirst("inv:unequip:".count))) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let target = try await ownedRow(rowId, context: context), target.equippedSlot != nil,
+                  let item = ItemCatalog.find(target.itemId) else {
+                try await refreshCategory(type: .gear, message: message, context: context)
+                return true
+            }
+            try await EquipmentService.unequip(target, for: context.session, on: context.db)
+            let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
+            let statusLine = "✅ " + context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
+            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
+            return true
+        }
+
+        // Unequip gear by item id — a button left in chat from before rows had
+        // ids. Unambiguous: one slot holds one piece.
         if data.starts(with: "inv:unequip:") {
             let itemId = String(data.dropFirst("inv:unequip:".count))
             guard let item = ItemCatalog.find(itemId),
@@ -703,6 +774,17 @@ extension InventoryController {
             await ctrl.postStatusBanner(statusLine, context: context)
         }
         return true
+    }
+
+    /// One of this player's bag rows by its id — nil when it is gone or was
+    /// never theirs. Ownership is part of the lookup, not a later check: a row
+    /// id arrives in callback data, which the client sends.
+    private static func ownedRow(_ rowId: UUID, context: Context) async throws -> InventoryEntry? {
+        guard let userId = context.session.id else { return nil }
+        return try await InventoryEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$id, .equal, rowId)
+            .first()
     }
 
     /// Re-render the given category view in place after an equip/unequip.

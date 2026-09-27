@@ -109,8 +109,12 @@ public enum WarehouseService {
     /// Returns `.nothingToDeposit` if there's no unequipped row to take from,
     /// `.warehouseFull` if the warehouse is at unit cap — with no exemption for
     /// developer accounts since 2026-09-09, as the code below says.
+    ///
+    /// `entryId` names the exact gear row the player tapped (2026-09-27). It
+    /// never falls back to another copy: a row that is gone or worn means
+    /// nothing to deposit, not "some other hood".
     @discardableResult
-    public static func deposit(itemId: String, for user: User, on db: any Database) async throws -> DepositResult {
+    public static func deposit(itemId: String, entryId: UUID? = nil, for user: User, on db: any Database) async throws -> DepositResult {
         guard ItemCatalog.find(itemId) != nil, let userId = user.id else { return .nothingToDeposit }
 
         // Tiered weapons stay with the player. The storage table carries tier
@@ -130,8 +134,16 @@ public enum WarehouseService {
             .sort(\.$createdAt, .ascending)
             .all()
 
-        // Pick the first unequipped row — equipped gear is not transferable.
-        guard let source = rows.first(where: { $0.equippedSlot == nil }) else { return .nothingToDeposit }
+        // Pick the first unequipped row — equipped gear is not transferable —
+        // or exactly the row the player named.
+        let unworn = rows.filter { $0.equippedSlot == nil }
+        let picked: InventoryEntry?
+        if let entryId {
+            picked = unworn.first { $0.id == entryId }
+        } else {
+            picked = unworn.first
+        }
+        guard let source = picked else { return .nothingToDeposit }
 
         // Per-unit cap check (2026-05-12). Stackable merges no longer get a
         // free pass — every deposited unit eats one slot. The developer
@@ -234,8 +246,10 @@ public enum WarehouseService {
     /// `.nothingToWithdraw` if the warehouse has zero of it; `.inventoryFull` if
     /// the backpack can't fit another row. Both failure modes leave state unchanged —
     /// the source row is only touched after the inventory side is pre-flighted.
+    /// `entryId` names the exact gear row (2026-09-27), with no fallback to
+    /// another copy — see `deposit`.
     @discardableResult
-    public static func withdraw(itemId: String, for user: User, on db: any Database) async throws -> WithdrawResult {
+    public static func withdraw(itemId: String, entryId: UUID? = nil, for user: User, on db: any Database) async throws -> WithdrawResult {
         guard let item = ItemCatalog.find(itemId), let userId = user.id else { return .nothingToWithdraw }
 
         // Preflight: make sure the backpack can accept one more.
@@ -252,7 +266,13 @@ public enum WarehouseService {
             .sort(\.$createdAt, .ascending)
             .all()
 
-        guard let source = rows.first else { return .nothingToWithdraw }
+        let picked: WarehouseEntry?
+        if let entryId {
+            picked = rows.first { $0.id == entryId }
+        } else {
+            picked = rows.first
+        }
+        guard let source = picked else { return .nothingToWithdraw }
         let state = source.gearState
 
         if item.stackable {

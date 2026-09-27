@@ -39,9 +39,9 @@ someone PLAYING; none from a test.
 |---|---|
 | working tree | clean |
 | HEAD | **`254967b`** — the stray-number hint (a number typed before its button gets a hint, not the controller's root screen) and the 09-22 innkeeper false alarm corrected across the records. Under it `636caa6` — the 09-22 sync pass — and `60a8bad`, the last deploy. **A commit cannot carry its own hash**, so the newest entry here always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the 2026-09-27 stray-number hint, the only one that changes the game. Push stays user-side |
+| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three record passes (`8046786`, `636caa6`, `2f39a85`) and the two 2026-09-27 game changes, the stray-number hint and the workshop's «Розібрати». Push stays user-side |
 | running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else); the Pi itself **rebooted 2026-09-25 20:45** and pm2 brought ROI back on the same binary, built 09-22 00:20 (read off the machine 09-27) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
+| committed but NOT deployed | **the workshop takes armour apart** (2026-09-27): 🔨 «Розібрати» returns the recipe × `gear.salvageFraction` × max/30, and the bag's and the warehouse's gear lists print each copy's wear and act on the ROW. One new tuning knob, so `tuning` moved (`b7f9e298e930986d`, content hash `43d791f8`) and nothing else did. **And the stray-number hint** (2026-09-27): a number typed before its button gets a `🔢` hint instead of the controller's root screen, and the warehouse's «Куди?» repeats itself with a hint. Swift plus two locale keys per language; the digest did not move. Needs a Pi build and `pm2 restart ROI` — Lingo is not hot-reloaded, so `/reload` cannot carry it |
 
 **Everything before 2026-09-27 is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -154,10 +154,12 @@ the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-22, schema v13):** `records 6588329ab2bdbc70` ·
-`tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
-`king 4326bb40aa735a50`, content hash `703a0404`. **The Pi has run exactly this since the
-09-22 00:22 restart**, matched byte for byte before the restart was ordered.
+**Current digest baseline (2026-09-27, schema v13):** `records 6588329ab2bdbc70` ·
+`tuning b7f9e298e930986d` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
+`king 4326bb40aa735a50`, content hash `43d791f8`. Only `tuning` moved from the 09-22 line,
+for `gear.salvageFraction`. **The Pi still runs the 09-22 baseline** (`tuning
+43b809a87450a3b8`, hash `703a0404`) until the salvage commit is deployed; its own
+`--content-digest` must read the new line BEFORE the restart is ordered.
 
 `king` is a fifth line, added with the decree chain, and the four older ones are
 byte-identical across it — which is the entire point of splitting them. `records` moved four
@@ -206,7 +208,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 292 tests, ~0.2s
+swift test                                   # 302 tests, ~0.2s
 ```
 
 ## What Works Now (shipped game)
