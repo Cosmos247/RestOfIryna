@@ -11,6 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `d1e2ccd` (09-27) **combat lines say what they did, and a death shows the round that caused it**
+  — the special attacks, the burn tick and the plain hit end in «X втрачає N ОЗ» and name a
+  crit («Влучний у живу плоть! … валиться на 157 ОЗ» was every archer special, which always
+  crits). `finishRound` used to drop its lines on a death, so the killing blow never printed;
+  now the round, «Ворогу лишалося ❤️ N/M» and the loss by name (`wipeOnDeath` → `[DeathLoss]`).
+  302 tests; the digest did not move.
 - `df6d341` (09-27) **the workshop takes armour apart, and gear lists name the copy they act on**
   — armour repaired to 1/1 had no exit at all. 🛠 → 🔨 «Розібрати» returns the recipe ×
   `gear.salvageFraction` (0.5, validated 0…1, hashed) × max/30 via `SalvageMath`, so 1/1
@@ -355,7 +361,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-27 part 3 (combat lines, and the round a death dropped)
+## Session — 2026-09-27 part 3 (combat lines, and the round a death dropped) — `d1e2ccd`
 
 **The report:** «💥 Влучний у живу плоть! 🐻‍❄️ Скажений ведмідь валиться на 157 ОЗ.» — unclear
 what happened and how much. It is `combat.special_atk.archer.crit`, and since Vital Shot is

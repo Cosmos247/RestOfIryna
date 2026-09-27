@@ -22,7 +22,7 @@ numbers below. Current state:
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
 **2026-09-27 — combat lines say what they did, and a death shows the round that caused it**
-(NOT DEPLOYED; Swift + locale, digest unmoved). The special attacks, the burn tick and the
+(`d1e2ccd`, NOT DEPLOYED; Swift + locale, digest unmoved). The special attacks, the burn tick and the
 plain hit end in «%{enemy} втрачає N ОЗ» and name a crit in words — «Влучний у живу плоть!
 … валиться на 157 ОЗ» was what EVERY archer special printed, since it always crits. A death
 in a fight now shows the last round (it was dropped), «Ворогу лишалося ❤️ N/M» and, on
