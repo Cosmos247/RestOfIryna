@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-27 — a number typed one tap early gets a hint** (NOT DEPLOYED; Swift + two locale
+**2026-09-27 — a number typed one tap early gets a hint** (`254967b`, NOT DEPLOYED; Swift + two locale
 keys per language, digest unmoved). A quantity typed before its button — on a trader card
 before [🪙 Купити], on the warehouse's «Куди?» before a direction — used to throw the player
 to the controller's root screen. Now a bare number with no prompt open gets a `🔢` hint

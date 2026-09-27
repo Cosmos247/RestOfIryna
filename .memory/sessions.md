@@ -11,6 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `254967b` (09-27) **a number typed before its button gets a hint** — the tester Nerif's 09-11
+  report: a quantity typed on a trader card before [🪙 Купити], or on the warehouse's «Куди?»
+  before a direction, threw the player to the controller's root screen. `answerStrayNumber`
+  (Estate / Capital / Guild, after their pending checks) posts a `🔢` banner instead and the
+  screen stays; «Куди?» repeats itself with a `❌` line; words still re-render. Same commit:
+  the 09-22 "three innkeeper lines missing from `uk.json`" corrected across the records as a
+  false alarm. 292 tests; the digest did not move.
 - `520513e` (09-21) **the palace opened** — phase 2a: 👑 Палац as a `Location` inside
   `CapitalController`, `KingProgress` + `CreateKingProgress`, `KingService` (10 of 17
   conditions are live state reads, 7 are events) and all seven hooks beside the counters
@@ -342,7 +349,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-27 (debugging from tester reports)
+## Session — 2026-09-27 (debugging from tester reports) — `254967b`
 
 A session of small fixes, fed one report at a time by the owner.
 
