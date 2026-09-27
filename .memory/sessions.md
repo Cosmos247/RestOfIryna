@@ -11,6 +11,14 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `1b10572` (09-27) **techniques trimmed to one target, every technique tap strikes, fights leave a
+  log, and the King asks for the estate first** — the full kit shortens an elite fight by ~20%
+  for every class (L21: warrior −20 · archer −19 · mage −21; the mage was −52), no technique blow
+  above an ordinary crit (Vital Shot ×2.0 → ×1.5, `effect_crit_above_standard`), a stance's tap
+  swings, Shadow Veil and Mirror Ward always strike back; `fight_log` built from `CombatTally`;
+  «Зрілість» and «Третя сходинка» moved ahead of the two Training Ground decrees (both 9 → 10),
+  guarded by `king.technique_before_its_floor` and `RewalkReorderedDecrees`. Three migrations;
+  `tuning` and `king` moved; 320 tests; `simulate --strict` 0 broken bands.
 - `1d1fec4` (09-27) **the Training Ground became a room of the house** — off the plots into 🏠 Дім
   (estate T4), bought per level for silver + materials (150 / 400 / 800 🪙), one technique per
   level at its `combat.json` floor (special attack 8 → 10); building catches up to techniques
@@ -366,7 +374,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-27 part 7 (the King asks for the estate before the Training Ground)
+## Session — 2026-09-27 part 7 (the King asks for the estate before the Training Ground) — `1b10572`
 
 **The owner's ask:** «Перестав укази і додай завдання на підвищення маєтку». Every estate tier
 T2–T7 already has its decree; T4's is «Третя сходинка», which stood AFTER the two ground
@@ -400,7 +408,7 @@ before the tick — a display defect since the burn shipped, one word in `finish
 not changed: a Mac boot of this build would spend `RewalkReorderedDecrees` against the Pi's
 database while the Pi still walks the old order — boot the Pi first.
 
-## Session — 2026-09-27 part 6 (the technique rework)
+## Session — 2026-09-27 part 6 (the technique rework) — `1b10572`
 
 **The owner's ask:** the techniques give too much — players kill the strongest beast in one blow
 — and one technique takes Vigor for a tap that strikes nothing; look at the technique logs in the

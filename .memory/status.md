@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-27 — the King's chain asks for the estate before the Training Ground** (NOT DEPLOYED;
+**2026-09-27 — the King's chain asks for the estate before the Training Ground** (`1b10572`, NOT DEPLOYED;
 content only in `king.json` plus one validator rule and one data migration; only `king` moved in
 the digest). «Наука бою» and «Перший прийом» sat at level 9 while the ground needs player level
 10 and estate T4 — and T4 was the decree AFTER them. Now «Зрілість» and «Третя сходинка» come
@@ -31,7 +31,7 @@ its first technique's floor (it fires on the old file, twice). `RewalkReorderedD
 anyone standing at 23…25 back to 22 so nobody skips a decree; nobody stood there when it was
 written.
 
-**2026-09-27 — the technique rework** (NOT DEPLOYED; content schema stays v14, two DB
+**2026-09-27 — the technique rework** (`1b10572`, NOT DEPLOYED; content schema stays v14, two DB
 migrations `CreateFightLog` + `AddCombatTally`, only `tuning` moved in the digest). The owner:
 techniques gave too much — a level-26 archer killed the strongest beast with two Vital Shots,
 every time — and a stance took Vigor for a tap that struck nothing. Now: raising a stance IS a
