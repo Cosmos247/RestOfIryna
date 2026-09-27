@@ -202,6 +202,21 @@ Rule: English stat tokens stay only in `en.json`; never copy them into `uk.json`
 let text = lingo.localize("key", locale: SupportedLocale.en)
 ```
 
+## 🐻 Enemy names are nominative only (uk) — 2026-09-27
+
+`enemy.<id>.name` holds one form, the nominative, and enemies declare no gender. So a combat
+line must use the name as its SUBJECT ("%{enemy} втрачає N ОЗ", "%{enemy} падає") or after a
+dash or colon — never after a preposition or as a direct object: "Ви влучаєте по %{enemy}"
+printed «по Скажений ведмідь» on every plain hit until 2026-09-27, and «Ворогу лишалося» is
+written without a pronoun because «у нього / у неї» would need a gender the enemy lacks.
+
+Still breaking it (raised 2026-09-27, outside that day's scope): `exploration.outcome.encounter.won`
+(«Ви подолали %{enemy}»), `combat.defend.absorbed` («зачіпаєте %{enemy}»),
+`combat.flee.success` («від %{enemy}»), `combat.in_progress` («з %{enemy}»), the three
+`combat.special_def.*.activate` and `combat.special_def.mage.no_damage` («удар %{enemy}»).
+The sweep: load `uk.json`, and for every value holding `%{enemy}` flag the ones where the text
+before it does not end in nothing, a dash, a colon or a sentence end.
+
 ## 🫵 The player is addressed as «ви» (uk) — 2026-09-07
 
 Every uk string that speaks to the player uses the **formal plural**: `ви / вас /

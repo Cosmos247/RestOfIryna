@@ -337,6 +337,13 @@ what a rating is WORTH — BESIDE the rating, never instead of it — and **the 
 never follow**: 26% of level-ups would announce a drop. Auto-memory
 `project-rating-vs-percent-display`.
 
+**A death screen carries the round that caused it** (2026-09-27). `finishRound` hands its own
+lines to `handleCombatDeath` — the player's action, the killing blow, a failed flee, a burn
+tick — together with the enemy's HP left, and the shared `ExplorationController.handleDeath`
+names what the wipe took: `InventoryEntry.wipeOnDeath` returns `[DeathLoss]`, not a count.
+Before, the screen ahead of a death read ❤️ 45/150 and the next one «Ви полягли», with
+nothing in between. Auto-memory `project-combat-lines-and-death-screen`.
+
 ### Gear, inventory and storage
 
 **A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the ONE
@@ -534,6 +541,12 @@ the WORD, not the object, and English never asks. The suffix rule itself is
 looks its gender up and calls the same function rather than copying three lines and
 forgetting `pl`. The validator warns on a missing declaration and errors on a bad one, for
 both kinds.
+
+**An enemy's name is nominative only.** Content stores one form, so a line must make the name
+its SUBJECT or set it after a dash — «… — %{enemy} втрачає N ОЗ» — never after a preposition
+or as an object: «по %{enemy}» printed «по Скажений ведмідь» on every plain hit until
+2026-09-27. Eight lines still break it (`TODO.md` → "Open, decided but not done"); the list
+and the one-liner that finds them are in `.memory/localization.md`.
 
 **Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
 `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`, which

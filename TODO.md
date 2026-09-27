@@ -1739,6 +1739,16 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Every block below is LIVE and unwalked** except the first, which waits on the next
 restart — the 2026-09-22 deploys took the whole backlog before it.
 
+**Added 2026-09-27 — combat lines and the death screen (NOT deployed yet):**
+- **an archer's 🎯 Влучний постріл** (it always crits): «Стріла впивається в живу плоть!
+  Критичний постріл — X втрачає N ОЗ». Then a warrior's 🪓 and a mage's 🔥, a burn tick «X
+  горить — втрачає N ОЗ» and a plain hit «Ви влучаєте — X втрачає N ОЗ».
+- **die in a fight**: the death screen shows the last round (your action and the blow that
+  killed), «Ворогу лишалося ❤️ N/M», any piece that broke, and «Ліс забрав усе, що ви
+  несли:» with one line per item. With an empty bag: «Сумка була порожня, тож ліс нічого не
+  забрав.»
+- **die in the forest without a fight** (hunger, a trap): the same list of what was taken.
+
 **Added 2026-09-27 — the workshop takes armour apart (NOT deployed yet):**
 - **🎒 the gear list with two copies of one piece** (buy a spare hood from the Master): each
   row prints its own wear, and [Одягнути] on the worse one puts on THAT one. An old inventory
@@ -2043,6 +2053,12 @@ restart — the 2026-09-22 deploys took the whole backlog before it.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **Eight lines still put an enemy's name after a preposition or as an object**, which the
+  nominative-only name cannot carry («Ви подолали Скажений ведмідь»): `exploration.outcome.
+  encounter.won`, `combat.defend.absorbed`, `combat.flee.success`, `combat.in_progress`, the
+  three `combat.special_def.*.activate` and `combat.special_def.mage.no_damage`. Raised
+  2026-09-27 while fixing the attack lines; the owner scoped that fix to the attacks, so these
+  wait. The rule and the sweep: `.memory/localization.md`.
 - **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
   that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
   «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
@@ -2094,8 +2110,9 @@ unrelated commit on purpose.
 
 *Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
 09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and two game changes — the stray-number hint and the
-workshop's «Розібрати» — which wait on the next restart.
+`origin/main` sit three record passes and three game changes — the stray-number hint, the
+workshop's «Розібрати», and the combat lines with the death screen — which wait on the next
+restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the

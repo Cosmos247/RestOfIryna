@@ -355,6 +355,33 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-27 part 3 (combat lines, and the round a death dropped)
+
+**The report:** «💥 Влучний у живу плоть! 🐻‍❄️ Скажений ведмідь валиться на 157 ОЗ.» — unclear
+what happened and how much. It is `combat.special_atk.archer.crit`, and since Vital Shot is
+`guaranteed_crit` in `combat.json`, it was what EVERY archer special printed: an adjective with
+no noun (a pun on the button «🎯 Влучний постріл»), «валиться на N ОЗ» reading as "falls" right
+above the line that says the enemy falls, and no word that it was a crit. The same family:
+«хитає на N ОЗ», «згоряє на N ОЗ», «розтинає броню X на N ОЗ», and a burn tick with no unit.
+
+**What the owner chose, from options, after seeing mockups:** keep the flavor, end every line
+in the enemy lines' own clause «X втрачає N ОЗ», name a crit in words. Also taken: the plain
+hit, which printed «Ви влучаєте по Скажений ведмідь» in every fight — enemy names are
+nominative only, so the fix is to make the name the subject. Eight lines with the same case
+problem were left for later (`TODO.md` → Open).
+
+**The death screen, looked at on the owner's request, had a real defect:** `finishRound`
+called `handleCombatDeath(context:enemy:)` without its lines, so the killing blow never reached
+the player — the screen before read ❤️ 45/150 and the next one «Ви полягли». Now the round's
+lines ride along, the defeat line adds «Ворогу лишалося ❤️ N/M», and `wipeOnDeath` returns
+what it destroyed so every death path lists the loss («Ліс забрав усе, що ви несли:» + one line
+per item). Not chosen by the owner: a line saying what survived and ❤️ 1/150.
+
+Verified: build clean with the touched files recompiled, 302 tests, `validate --strict` 0/0,
+the digest unmoved from `df6d341`; every changed template rendered from `uk.json` and checked
+against the Lingo rule. **Not deployed** — Swift and Lingo strings, so a Pi build and
+`pm2 restart ROI`.
+
 ## Session — 2026-09-27 part 2 (the workshop takes armour apart) — `df6d341`
 
 **The report:** armour cannot be taken apart — a piece worn to "0/0" has nowhere to go. The

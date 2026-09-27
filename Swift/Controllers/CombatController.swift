@@ -1036,8 +1036,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
+        // The round's own lines go with the death: they hold the blow that
+        // killed. Dropping them here meant the screen before read ❤️ 45/150 and
+        // the next one «Ви полягли», with nothing in between (2026-09-27).
         if context.session.hp <= 0 {
-            try await handleCombatDeath(context: context, enemy: enemy)
+            try await handleCombatDeath(context: context, enemy: enemy, roundLines: allLines, enemyHP: remainingEnemyHP)
             return
         }
 
@@ -1171,7 +1174,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     /// instead gets a soft retry (full HP, re-show the rabid-dog prompt) since
     /// dying mid-tutorial would otherwise leave them at HP=1 and unable to
     /// finish the fight.
-    private func handleCombatDeath(context: Context, enemy: Enemy) async throws {
+    ///
+    /// `roundLines` are the last round as it would have printed — the player's
+    /// action, the blow that killed, a burn tick — and `enemyHP` is what the
+    /// enemy had left, so the death screen says how close the fight was.
+    private func handleCombatDeath(context: Context, enemy: Enemy, roundLines: [String], enemyHP: Int) async throws {
         if context.session.registrationStep < User.registrationDoneStep {
             if let state = try await ExplorationState.current(for: context.session, on: context.db) {
                 try await state.delete(on: context.db)
@@ -1187,11 +1194,14 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
-        var cause = "⚔️ " + lingo.localize("combat.defeat", locale: locale, interpolations: ["enemy": enemyName])
-        for line in Self.brokenGearLines(brokeOnLoss, lingo: lingo, locale: locale) {
-            cause += "\n\(line)"
-        }
-        try await ExplorationController.handleDeath(context: context, causeNarrative: cause)
+        // ❤️ rides inside the value: it is two UTF-16 units, and Lingo drops a
+        // placeholder that follows one in the template.
+        let defeat = "⚔️ " + lingo.localize("combat.defeat", locale: locale, interpolations: ["enemy": enemyName])
+            + " " + lingo.localize("combat.defeat.enemy_left", locale: locale, interpolations: [
+                "hp": "❤️ \(enemyHP)/\(enemy.hp)"
+            ])
+        let cause = roundLines + [defeat] + Self.brokenGearLines(brokeOnLoss, lingo: lingo, locale: locale)
+        try await ExplorationController.handleDeath(context: context, causeNarrative: cause.joined(separator: "\n"))
     }
 
     /// "🛡 Кольчуга лісника зламалась" — one line per piece that reached zero

@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-27 — combat lines say what they did, and a death shows the round that caused it**
+(NOT DEPLOYED; Swift + locale, digest unmoved). The special attacks, the burn tick and the
+plain hit end in «%{enemy} втрачає N ОЗ» and name a crit in words — «Влучний у живу плоть!
+… валиться на 157 ОЗ» was what EVERY archer special printed, since it always crits. A death
+in a fight now shows the last round (it was dropped), «Ворогу лишалося ❤️ N/M» and, on
+every death path, the list of what the forest took.
+
 **2026-09-27 — the workshop takes armour apart, and gear lists name rows** (`df6d341`, NOT DEPLOYED;
 Swift + 14 locale keys per language + one tuning knob, `gear.salvageFraction` 0.5 — `tuning`
 moved and nothing else did). Armour repaired down to 1/1 had nowhere to go: the trader buys no

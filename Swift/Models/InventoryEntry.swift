@@ -256,19 +256,36 @@ extension InventoryEntry {
     /// Both death paths call THIS one — the active walk and the passive report
     /// — for the reason every funnel in this codebase exists: a wipe each
     /// caller filters for itself is a wipe one caller forgets to filter.
-    /// Returns how many rows were destroyed.
+    ///
+    /// Returns WHAT it destroyed (2026-09-27), not how many rows: the death
+    /// screen names the loss instead of saying "the forest took everything".
+    /// One line per item and tier, largest loss first.
     @discardableResult
-    public static func wipeOnDeath(for user: User, on db: any Database) async throws -> Int {
-        guard let userId = user.id else { return 0 }
+    public static func wipeOnDeath(for user: User, on db: any Database) async throws -> [DeathLoss] {
+        guard let userId = user.id else { return [] }
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
-        var destroyed = 0
+        var lost: [String: DeathLoss] = [:]
         for row in rows where row.equippedSlot == nil && !WeaponUpgradeCatalog.isUpgradable(row.itemId) {
             try await row.delete(on: db)
-            destroyed += 1
+            let key = "\(row.itemId)#\(row.tier)"
+            let prior = lost[key]?.quantity ?? 0
+            lost[key] = DeathLoss(itemId: row.itemId, tier: row.tier, quantity: prior + row.quantity)
         }
-        return destroyed
+        return lost.values.sorted {
+            if $0.quantity != $1.quantity { return $0.quantity > $1.quantity }
+            if $0.itemId != $1.itemId { return $0.itemId < $1.itemId }
+            return $0.tier < $1.tier
+        }
+    }
+
+    /// One line of what a death took. The tier rides along because an item id
+    /// alone cannot name a row (`CLAUDE.md` § the weapon ladder).
+    public struct DeathLoss: Sendable, Equatable {
+        public let itemId: String
+        public let tier: Int
+        public let quantity: Int
     }
 
     /// True if the user has at least `quantity` of the item.

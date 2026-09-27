@@ -685,12 +685,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
 
-        try await InventoryEntry.wipeOnDeath(for: context.session, on: context.db)
+        let lost = try await InventoryEntry.wipeOnDeath(for: context.session, on: context.db)
 
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
 
-        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: ["cause": causeNarrative])
+        // What the forest took, by name (2026-09-27) — it used to say only
+        // "everything you carried", which a player cannot check against a bag
+        // they no longer have. The row's tier names the row.
+        let lostLines = lost.map { loss -> String in
+            let item = ItemCatalog.find(loss.itemId)
+            let icon = item?.icon.map { "\($0) " } ?? ""
+            let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: loss.tier), locale: locale) } ?? loss.itemId
+            return "   \(icon)\(name) ×\(loss.quantity)"
+        }
+        let loss = lostLines.isEmpty
+            ? lingo.localize("exploration.death.loss_none", locale: locale)
+            : lingo.localize("exploration.death.loss", locale: locale) + "\n" + lostLines.joined(separator: "\n")
+
+        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: [
+            "cause": causeNarrative,
+            "loss": loss
+        ])
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
