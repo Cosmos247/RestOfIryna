@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `1d1fec4` (09-27) **the Training Ground became a room of the house** — off the plots into 🏠 Дім
+  (estate T4), bought per level for silver + materials (150 / 400 / 800 🪙), one technique per
+  level at its `combat.json` floor (special attack 8 → 10); building catches up to techniques
+  already known. Schema **v14**, `AddTrainingGroundLevel` + `MoveTrainingGroundOffPlots`;
+  `records` / `tuning` / `king` moved; 315 tests; `simulate --strict` unchanged.
 - `d1e2ccd` (09-27) **combat lines say what they did, and a death shows the round that caused it**
   — the special attacks, the burn tick and the plain hit end in «X втрачає N ОЗ» and name a
   crit («Влучний у живу плоть! … валиться на 157 ОЗ» was every archer special, which always
@@ -361,7 +366,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-27 part 4 (the Training Ground became a room of the house)
+## Session — 2026-09-27 part 4 (the Training Ground became a room of the house) — `1d1fec4`
 
 **The owner's ask:** move the Training Ground off the plots into the estate, make building it
 paid, and let its levels — not the player's — bring the techniques. **Read off the machine

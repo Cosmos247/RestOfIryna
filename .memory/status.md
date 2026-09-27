@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-27 — the Training Ground is a room of the house** (NOT DEPLOYED; schema **v14**, two
+**2026-09-27 — the Training Ground is a room of the house** (`1d1fec4`, NOT DEPLOYED; schema **v14**, two
 migrations, `records` / `tuning` / `king` moved). It was a plot type that cost a production
 slot and nothing else; now 🏠 Дім lists it from estate T4 and it is built and raised for
 silver + materials (`training_ground.json`: 150 / 400 / 800 🪙), each level teaching one
