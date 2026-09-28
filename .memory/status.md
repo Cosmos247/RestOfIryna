@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-09-28 — the workshop no longer makes armour** (NOT DEPLOYED; Swift + two locale lines per
+**2026-09-28 — the workshop no longer makes armour** (`ada1ae7`, NOT DEPLOYED; Swift + two locale lines per
 language, no content file touched — the digest does not move). The owner's call, over a quiz:
 armour comes from the Master alone, at his old prices (60 / 95 / 150 / 180 🪙), and the workshop
 keeps the ingot, the weapon and bag upgrades and salvage. The four Forester recipes stay in

@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `ada1ae7` (09-28) **the workshop stops making armour** — the Master is the only source, at his old
+  prices (485 🪙 a set); the four Forester recipes stay as patterns because salvage reads them
+  (`RecipeCategory.isCraftable` false for the tannery, asked by the list, the detail callback and
+  `CraftingService.craft`); `EstateTierGates.tannery` and the T4 banner line gone; the workshop's
+  description and the Master's hint rewritten. Swift + locale, digest unchanged; 320 tests.
 - `1b10572` (09-27) **techniques trimmed to one target, every technique tap strikes, fights leave a
   log, and the King asks for the estate first** — the full kit shortens an elite fight by ~20%
   for every class (L21: warrior −20 · archer −19 · mage −21; the mage was −52), no technique blow
@@ -374,7 +379,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-09-28 (the workshop stops making armour)
+## Session — 2026-09-28 (the workshop stops making armour) — `ada1ae7`
 
 **The owner's ask:** remove armour crafting from the workshop entirely — how, and what to ask
 first. A read-only investigation (an agent, plus the live tables) found the facts that shaped the
