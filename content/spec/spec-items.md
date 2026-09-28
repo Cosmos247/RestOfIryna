@@ -47,10 +47,12 @@ deferral note.
 | `accessory_2` | 0.5 | 0 | **none** |
 <!-- /generated -->
 
-Seven items: three starting weapons and the four-piece Forester set. The Forester
-pieces are craftable (four of the twelve recipes make them; the other eight make
-one material and seven dishes) and the Master sells them for silver — so the
-armour has **two** acquisition routes and **one** power level. Those seven items
+Seven items: three starting weapons and the four-piece Forester set. **Since
+2026-09-28 the Master is the only way to get the armour** — it sells all four pieces
+for silver, and the estate no longer crafts them. `recipes.json` still carries the
+four Forester patterns (14 recipes in all: those four, one ingot, nine dishes), but
+only so salvage knows what a piece is made of; nothing lists or crafts them. So the
+armour has **one** acquisition route and **one** power level. Those seven items
 are not a starting point a player builds past. They are the whole wardrobe, for
 forty levels.
 
@@ -199,8 +201,9 @@ edit later:
   The ladder gets the same progression for the four items that already exist.
 - **A later set is a new ladder beside it**, not a change to this one. Adding
   "the Houndsman set, rungs at 10/20/30" is one array append plus locale keys.
-- **Not a recipe per rung.** The armour is already craftable, so the obvious
-  alternative is a higher-tier recipe producing a stronger piece — but a recipe's
+- **Not a recipe per rung.** The armour was craftable when this was written (it is
+  bought from the Master alone since 2026-09-28), so the obvious
+  alternative was a higher-tier recipe producing a stronger piece — but a recipe's
   output is an item id, so five rungs is five new items per slot. That is the
   path this document just decided against; upgrading in place is the one that
   needs none.

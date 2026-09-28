@@ -342,7 +342,7 @@ The manor is itself a 2D grid — 49 cells for rooms. Starting rooms:
 
 Upgrades unlock additional rooms:
 - **Smithy** — weapon crafting (warriors, archers)
-- **Armory bench** — armor crafting
+- **Armory bench** — armor crafting *(dropped 2026-09-28: armour comes from the Master alone)*
 - **Alchemy lab** — potion brewing
 - **Enchanter's table** — magical gear (mages)
 - **Pet pen** — houses tamed animals (see §10)

@@ -21,6 +21,17 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-09-28 — the workshop no longer makes armour** (NOT DEPLOYED; Swift + two locale lines per
+language, no content file touched — the digest does not move). The owner's call, over a quiz:
+armour comes from the Master alone, at his old prices (60 / 95 / 150 / 180 🪙), and the workshop
+keeps the ingot, the weapon and bag upgrades and salvage. The four Forester recipes stay in
+`recipes.json` as patterns — `RecipeCategory.isCraftable` is false for the tannery, so no list
+shows them, a stale [Craft] in chat gets «Невідомий рецепт.» and `CraftingService.craft`
+refuses them — because salvage reads them; deleting them would have left armour worn to 1/1
+with no exit again. `EstateTierGates.tannery` and the T4 banner's «🧵 Кравецька» are gone; the
+workshop's description and the Master's hint were rewritten. Nothing is taken from anyone: six
+players hold Forester pieces (five full sets, one player 15 spares).
+
 **2026-09-27 — the King's chain asks for the estate before the Training Ground** (`1b10572`, NOT DEPLOYED;
 content only in `king.json` plus one validator rule and one data migration; only `king` moved in
 the digest). «Наука бою» and «Перший прийом» sat at level 9 while the ground needs player level

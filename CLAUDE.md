@@ -438,6 +438,13 @@ derived, never a picked number — so armour repaired down to 1/1 gives nothing 
 leaves the bag. It predicts the fit in units for both stores, like `craft`, and names the
 row it destroys. Auto-memory `project-salvage-and-gear-rows`.
 
+**Armour is not crafted** (2026-09-28, the owner's call): the Master is the only source, at the
+prices he always had. The four Forester recipes stay in `recipes.json` as PATTERNS —
+`RecipeCategory.isCraftable` is false for the tannery, so no list shows them and
+`CraftingService.craft` refuses them — because salvage reads them to know what a piece gives
+back. **Deleting them as unused breaks «Розібрати» for every armour piece**, and with it the only
+way to be rid of armour worn to 1/1.
+
 **A weapon ladder is ONE object.** The three upgradable weapons render through
 `ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
 common — the player is upgrading a thing, not swapping it — which `locale.ladder_name_drift`

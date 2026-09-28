@@ -7,16 +7,19 @@
 //  Static crafting catalog used by the Workshop (Phase 5.2). Recipes live in
 //  code, not the DB — same convention as `ItemCatalog` and `EnemyCatalog`.
 //
-//  v1 ships three categories:
+//  Three categories:
 //    🔥 Forge   — smelting / metalwork (Iron Lump → Iron Ingot)
-//    🧵 Tannery — leather armor (Forester's Hood / Jerkin / Breeches / Boots)
+//    🧵 Tannery — the Forester armour's PATTERNS: what each piece is made of.
+//                 Nobody crafts armour since 2026-09-28 (the Master is the only
+//                 source); salvage still reads these to know what a piece
+//                 gives back, which is the whole reason they are kept.
 //    🍳 Kitchen — cooked food (Phase 5.2.1, gated by per-user learned set)
 //
 //  All recipes pull inputs from the player's inventory + warehouse pool
 //  (inventory drained first to free slots) and deposit the output into the
 //  inventory. See `CraftingService`.
 //
-//  Forge + Tannery recipes are always available. Kitchen recipes are gated by
+//  Forge recipes are always available. Kitchen recipes are gated by
 //  `LearnedRecipe`, and a player comes by one of two ways: it is in
 //  `starterRecipeIds` (cookable from day one, no DB row), or an NPC teaches it
 //  — the `unlocks` ladder below, paid out by that NPC's daily job. The
@@ -38,6 +41,19 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         case .forge:   return "🔥"
         case .tannery: return "🧵"
         case .kitchen: return "🍳"
+        }
+    }
+
+    /// Whether the player can MAKE this. False for the tannery since
+    /// 2026-09-28, on the owner's call: armour comes from the Master alone, and
+    /// the patterns stay only so salvage knows what a piece is made of. Every
+    /// craft path asks this — the workshop list, the recipe-detail callback (a
+    /// stale button in chat must not open a craft screen) and
+    /// `CraftingService.craft` itself, which is what the [Craft] callback reaches.
+    public var isCraftable: Bool {
+        switch self {
+        case .forge, .kitchen: return true
+        case .tannery:         return false
         }
     }
 

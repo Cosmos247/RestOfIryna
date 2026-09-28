@@ -865,10 +865,11 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
 
     /// Workshop keyboard — one `[<icon> <name>]` button per recipe (opens detail)
     /// + Back. Buttons are grouped visually by category via their declaration
-    /// order in `RecipeCatalog.all`. Phase 5.3c: Tannery sub-category gated by
-    /// estate tier (unlocks at T4). Kitchen recipes never appear here (they
-    /// live in the Kitchen view, gated by the room's T2 unlock).
-    fileprivate func workshopKeyboard(estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// order in `RecipeCatalog.all`. The tannery's armour patterns are not
+    /// listed since 2026-09-28 — nobody crafts armour, the Master sells it.
+    /// Kitchen recipes never appear here (they live in the Kitchen view, gated
+    /// by the room's T2 unlock).
+    fileprivate func workshopKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         // Phase 5.2.2 weapon-upgrade entry. One universal button at the top —
         // the player has only one upgradable weapon (their class starter),
@@ -884,16 +885,17 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let bagUpgradeLabel = lingo.localize("bag.upgrade.button", locale: locale)
         rows.append([TGInlineKeyboardButton(text: bagUpgradeLabel, callbackData: "bag:upgrade:detail")])
 
-        // 2026-09-27 — taking a crafted piece apart, the reverse of the recipes
-        // below and the only way to be rid of armour worn to 1/1.
+        // 2026-09-27 — taking a piece apart, the reverse of its pattern and the
+        // only way to be rid of armour worn to 1/1. The armour patterns stayed
+        // in the data for this when crafting armour went (2026-09-28).
         let salvageLabel = lingo.localize("workshop.salvage.button", locale: locale)
         rows.append([TGInlineKeyboardButton(text: salvageLabel, callbackData: "estate:salvage:list")])
 
         for recipe in RecipeCatalog.all {
             // Kitchen recipes belong to the Kitchen view, not the Workshop.
             if recipe.category == .kitchen { continue }
-            // Tannery unlocks at estate T4.
-            if recipe.category == .tannery, estateLevel < EstateTierGates.tannery { continue }
+            // Armour patterns are kept for salvage, not listed (2026-09-28).
+            guard recipe.category.isCraftable else { continue }
             let outputItem = ItemCatalog.find(recipe.output.itemId)
             let outputIcon = outputItem?.icon ?? ""
             let outputName = outputItem.map { lingo.localize($0.nameKey, locale: locale) } ?? recipe.output.itemId
@@ -1244,7 +1246,7 @@ extension EstateController {
                 inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             case "estate:home:workshop":
                 text = ctrl.renderWorkshop(lingo: context.lingo, locale: locale)
-                inline = ctrl.workshopKeyboard(estateLevel: context.session.estateLevel, lingo: context.lingo, locale: locale)
+                inline = ctrl.workshopKeyboard(lingo: context.lingo, locale: locale)
             case "estate:home:kitchen":
                 let learnedIds = try await LearnedRecipe.allIds(for: context.session, on: context.db)
                 // Always-available starters union with player-learned recipes.
@@ -2216,6 +2218,14 @@ extension EstateController {
         let ctrl = Controllers.estateController
 
         guard let recipe = RecipeCatalog.find(recipeId) else {
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        // A stale armour button left in chat: the pattern still exists for
+        // salvage, the craft does not (2026-09-28). `CraftingService.craft`
+        // refuses it too, so the [Craft] behind this screen could not work.
+        guard recipe.category.isCraftable else {
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true

@@ -374,6 +374,29 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-09-28 (the workshop stops making armour)
+
+**The owner's ask:** remove armour crafting from the workshop entirely — how, and what to ask
+first. A read-only investigation (an agent, plus the live tables) found the facts that shaped the
+questions: the four Forester recipes are the only armour in the workshop (tannery, T4); the Master
+already sells all four with no level gate (485 🪙 a set); nothing else — no loot, quest or decree
+— gives armour; six players hold pieces. And the trap: **salvage computes its yield from the
+item's recipe**, so deleting the recipes would have turned «Розібрати» into "nothing to dismantle"
+and brought back the 09-27 problem of armour worn to 1/1 with no exit (a plain discard and
+selling to the Master were both rejected that day).
+
+**Decided (quiz):** the Master is the only source; his prices stay (silver is over-supplied, so
+armour becomes a sink); the mocked-up copy as shown. **Shipped:** `RecipeCategory.isCraftable`
+(false for the tannery), asked by the workshop list, the recipe-detail callback and
+`CraftingService.craft`; the recipes kept as patterns for salvage; `EstateTierGates.tannery` and
+the T4 banner line removed (`workshopKeyboard` lost its now-unused `estateLevel`); the workshop's
+description and the Master's hint rewritten in both languages; the Master's catalog comment
+("≈4× the crafted value") and `spec-items.md`'s prose (it claimed two acquisition routes, and its
+hand count said twelve recipes where there are fourteen) corrected.
+
+**Verified:** build clean, 320 tests, `validate --strict` clean, digest unchanged (no content file
+moved). **Not deployed** — Swift and Lingo: a restart, not `/reload`.
+
 ## Session — 2026-09-27 part 7 (the King asks for the estate before the Training Ground) — `1b10572`
 
 **The owner's ask:** «Перестав укази і додай завдання на підвищення маєтку». Every estate tier

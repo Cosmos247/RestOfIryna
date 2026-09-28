@@ -37,12 +37,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   play surfaces a need for. The Pi runs **`60a8bad`** since **2026-09-22 00:33** (schema
   **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `king 4326bb40aa735a50`,
   matched byte for byte before the restart was ordered). That deploy and the 00:22 one before
-  it cleared the whole backlog. **Six game changes were committed on 2026-09-27 and wait on
+  it cleared the whole backlog. **Seven game changes were committed on 2026-09-27/28 and wait on
   the next restart** (schema **v14**, five migrations): the stray-number hint, the workshop's
   «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
   last round, the Training Ground as a house room, the technique rework with its fight log,
-  and the King's chain asking for the estate before the ground. The next actions are that
-  deploy, then a human walking the screens — the 09-27 blocks head `TODO.md`'s walk list.
+  the King's chain asking for the estate before the ground, and a workshop that no longer
+  makes armour. The next actions are that deploy, then a human walking the screens — the
+  09-27/28 blocks head `TODO.md`'s walk list.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped

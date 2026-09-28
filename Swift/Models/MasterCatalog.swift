@@ -22,12 +22,12 @@ public enum MasterCatalog {
 
     // MARK: - Buyable armor
 
-    /// Armor the Master sells ready-made for silver — a premium "convenience
-    /// tax" over crafting it at the estate. Ready-made costs ≈ 4× the crafted
-    /// material value (no hides, no iron, no zone travel, instant), so the shop
-    /// is the lazy/no-stock path while crafting stays the economical one. Pieces
-    /// arrive at full durability, enchant level 0. Repair cost derives from this
-    /// price, so it scales with the premium too.
+    /// Armor the Master sells ready-made for silver — since 2026-09-28 the
+    /// ONLY way to get armour: the estate no longer crafts it (the patterns stay
+    /// in `recipes.json` for salvage alone). It used to be the premium path
+    /// beside crafting; the owner kept the prices when it became the only one,
+    /// because silver is over-supplied and this is a sink. Pieces arrive at full
+    /// durability, enchant level 0. Repair cost derives from this price.
     public struct ArmorListing: Sendable {
         public let itemId: String
         public let priceSilver: Int

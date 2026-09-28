@@ -10,7 +10,8 @@
 //  It used to be a `postStatusBanner` toast — one line, deleted by the next
 //  status banner — for the single most expensive thing a player buys. The
 //  tier is also the game's real gate list (the kitchen, the workshop, the
-//  training ground, the tannery), and none of that was ever said out loud:
+//  training ground — the tannery too, until armour stopped being crafted on
+//  2026-09-28), and none of that was ever said out loud:
 //  the player had to notice a new button had appeared.
 //
 //  Slots and capacity come from the same façades the estate screen reads,
@@ -46,9 +47,6 @@ public enum EstateUpBanner {
         if opened(EstateTierGates.workshop) { unlocked.append(label("estate.workshop")) }
         if opened(EstateTierGates.trainingGround) {
             unlocked.append(label("estate.training.title"))
-        }
-        if opened(EstateTierGates.tannery) {
-            unlocked.append("🧵 " + label("workshop.category.tannery"))
         }
         if !unlocked.isEmpty {
             lines.append("")

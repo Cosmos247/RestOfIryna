@@ -120,6 +120,8 @@ public enum CraftingService {
     @discardableResult
     public static func craft(_ recipe: Recipe, for user: User, on db: any Database) async throws -> CraftResult {
         guard user.id != nil else { return .unknownRecipe }
+        // An armour pattern is kept for salvage, never made (2026-09-28).
+        guard recipe.category.isCraftable else { return .unknownRecipe }
         // Existence check only — the fit no longer depends on the item's shape,
         // so there is nothing to bind.
         guard ItemCatalog.find(recipe.output.itemId) != nil else {

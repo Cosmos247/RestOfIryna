@@ -265,7 +265,7 @@ Pragmatic MVP path — abstract per-user plot list (no 30×30 spatial grid — c
 - [-] Manor 7×7 interior rooms — **closed 2026-09-15**, same substrate as the 30×30 grid above; abstract House nav is the final model
 - [-] Slot count formula → logarithmic table — *currently flat 5 override; restore once XP-to-Estate progression lands*
 
-### 5.2 Workshop crafting *(landed — Forge + Tannery + 5.2.1 Kitchen + 5.2.2 Weapon upgrade; bag upgrade lives in 5.3d)*
+### 5.2 Workshop crafting *(landed — Forge + Tannery + 5.2.1 Kitchen + 5.2.2 Weapon upgrade; bag upgrade lives in 5.3d. **Armour crafting removed 2026-09-28** — the Master is the only source; the tannery recipes stay as patterns for salvage)*
 - [x] `Recipe` code-based catalog (id, category, inputs, output) — `Swift/Models/Recipe.swift`. Two categories shipped: 🔥 Forge (smelting) + 🧵 Tannery (leather armor)
 - [x] `CraftingService.craft(...)` — pure: pulls inputs from inventory + warehouse pool (inventory first to free slots), output lands in inventory; `CraftResult` enum (success / missingMaterials / inventoryFull / unknownRecipe / unknownItem); post-drain slot accept-check so a craft never refuses spuriously
 - [x] First recipe: `mat.iron × 10 → mat.iron_ingot × 1` (Forge)
@@ -313,7 +313,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] Banner suffix: combat → "🎉 Level N! 💪 +H maxHP +A ATK +D DEF"; passive report rebuilt from 3 composable fragments behind separate locale keys (shared `level_up.stat_boost`)
 
 #### 5.3c Room / plot-type / plot-slot gates + manual estate upgrade *(landed 2026-05-11 part 3)*
-- [x] Kitchen unlocks at estate T2; Workshop at T3; Tannery sub-category in Workshop at T4
+- [x] Kitchen unlocks at estate T2; Workshop at T3; ~~Tannery sub-category in Workshop at T4~~ (gone with armour crafting, 2026-09-28)
 - [x] Training Ground plot type unlocks at estate T3 (other 4 types available from T2 with the first plot slot)
 - [x] First plot slot at T2; slot count `[0,1,2,3,4,5,6]` by tier — restored from flat 5; registration auto-Farm grant dropped
 - [x] `WarehouseService` capacity by tier: T1=50, T2=100, T3=150, T4=200, T5=300, T6=400, T7=500. New `.warehouseFull` only blocks creating new rows (stackable merges always succeed). Warehouse root UI shows `📦 X/Y slots`
@@ -1736,8 +1736,18 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the five 2026-09-27 blocks on top,
+Telegram. **Every block below is LIVE and unwalked** except the six 2026-09-27/28 blocks on top,
 which wait on the next restart — the 2026-09-22 deploys took the whole backlog before them.
+
+**Added 2026-09-28 — the workshop no longer makes armour (NOT deployed yet):**
+- **🛠 the workshop** lists [weapon upgrade] [bag upgrade] [🔨 Розібрати спорядження] and the
+  ingot — no Forester piece — and its description reads «…зброя — гострішою, сумка — місткішою,
+  а зношене спорядження — знову сировиною.»
+- **an old armour [Craft] button** still in chat answers «Невідомий рецепт.» and crafts nothing.
+- **🔨 Розібрати** still takes a Forester piece apart for hide and iron, exactly as on 09-27.
+- **the Master's armour section** reads «Броню в цих краях робить лише Майстер — і бере за це
+  чесну ціну.», prices 60 / 95 / 150 / 180 🪙.
+- **the T4 estate banner** no longer lists «🧵 Кравецька».
 
 **Added 2026-09-27 — the technique rework (NOT deployed yet):**
 - **after the deploy, the tables first**: `fight_log` exists and fills as fights end
@@ -2161,10 +2171,10 @@ unrelated commit on purpose.
 
 *Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
 09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and six game changes — the stray-number hint, the
+`origin/main` sit three record passes and seven game changes — the stray-number hint, the
 workshop's «Розібрати», the combat lines with the death screen, the Training Ground as a house
-room, the technique rework with its fight log, and the decree reorder (schema v14, five
-migrations) — which wait on the next restart.
+room, the technique rework with its fight log, the decree reorder (schema v14, five
+migrations), and the workshop no longer making armour — which wait on the next restart.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
