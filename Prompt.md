@@ -33,17 +33,17 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-09-27; `origin/main` is at `60a8bad`)
+### Where things stand right now (2026-09-28; `origin/main` is at `8ae6772`)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`ada1ae7`** — the workshop stops making armour (the Master is the only source; the Forester recipes stay as patterns for salvage). Under it `2689764`, the hash fill for `1b10572` — techniques trimmed to one target, every technique tap strikes, a `fight_log`, and the King's chain asking for the estate first (three migrations) — then the 09-27 sync pass, `bd25699` (the hash fill for `1d1fec4`, the Training Ground as a house room), `d1e2ccd` (combat lines and the death screen), `df6d341` (the workshop's «Розібрати» and gear lists by row), `254967b` (the stray-number hint), each with its hash fill, and `60a8bad`, the last deploy. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`60a8bad`**; everything after it is **unpushed** — three 09-22 record passes, the six 2026-09-27 game changes and the 09-28 one, with their hash fills, and the sync pass. Push stays user-side |
-| running on the Pi | **`60a8bad`**, restarted **2026-09-22 00:33** (a locale-only follow-up to the 00:22 deploy that carried everything else); the Pi itself **rebooted 2026-09-25 20:45** and pm2 brought ROI back on the same binary, built 09-22 00:20 (read off the machine 09-27) — schema **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 4326bb40aa735a50` (matched the Mac byte for byte BEFORE the restart was ordered, which is the order the decision has to happen in). **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **Seven game changes, 2026-09-27 and 09-28** — (1) a number typed before its button gets a `🔢` hint instead of the root screen; (2) the workshop's 🔨 «Розібрати» (recipe × `gear.salvageFraction` × max/30) and gear lists that act on the ROW; (3) attack lines that end «X втрачає N ОЗ» and name a crit, and a death screen with the last round, the enemy's HP left and the loss by name; (4) **the Training Ground as a house room** — T4, 150 / 400 / 800 🪙 + materials, one technique per level (10 / 11 / 14), catch-up for techniques already known; (5) **the technique rework** — a stance's tap strikes, every special defence strikes back, no technique blow above an ordinary crit (Vital Shot ×1.5), the kit tuned to ~20% off an elite fight for every class, and a `fight_log` row per forest fight; (6) **the King's chain asks for the estate before the Training Ground** — «Зрілість» and «Третя сходинка» moved ahead of «Наука бою» / «Перший прийом», both lifted 9 → 10; (7) **the workshop no longer makes armour** (09-28) — the Master is the only source, the Forester recipes kept as patterns for salvage. **Schema v14 and five migrations** (`AddTrainingGroundLevel`, `MoveTrainingGroundOffPlots`, `CreateFightLog`, `AddCombatTally`, `RewalkReorderedDecrees`) plus new Lingo strings: content and binary together, then `pm2 restart ROI` — `/reload` cannot carry it |
+| HEAD | the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys) on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`** — everything is pushed (the owner, 2026-09-28). Push stays user-side |
+| running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| committed but NOT deployed | nothing — the seven 2026-09-27/28 changes went live with the 09-28 22:11 restart (the `## Deploy — 2026-09-28` entry in `.memory/sessions.md`) |
 
-**Everything before 2026-09-27 is deployed.** Two restarts on 2026-09-22 took the whole backlog: 00:22
+**Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
 carry-over and the King's decree chain end to end — and 00:33 followed with a locale-only
 pass for the two street descriptions. Three migrations ran at 00:22: `CloseBurnedQuestJobs`
@@ -56,18 +56,11 @@ the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each re
 
 ### Next action
 
-**1 — Deploy the seven 2026-09-27/28 changes** (user-side from the push on). `git push`, then on the
-Pi `git pull --ff-only` and build; its `--content-digest` must read **`records
-33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests
-30de20902006e3b9` · `king 5dbddfd689f3cede`, content hash `490a2d4b`** BEFORE the restart is
-ordered. After `pm2 restart ROI`, verify the TABLES: `SELECT count(*) FROM plots WHERE
-plot_type = 'training_ground'` is 0, `users.training_ground_level` exists at 0 for every row,
-`fight_log` exists and gains a row when a forest fight ends, `exploration_state.combat_tally`
-exists, and `SELECT count(*) FROM king_progress WHERE decree_index BETWEEN 23 AND 25` is 0.
-**Do not boot this build on the Mac first**: the Mac reaches the Pi's database through the
-tunnel, so its first boot would run all five migrations — `RewalkReorderedDecrees` included —
-while the Pi still serves the old decree order.
-Then record the deploy (Commit index + a `## Deploy —` entry in `.memory/sessions.md`).
+**1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
+measurement. `SELECT nickname, character_class, player_level, enemy_id, outcome, rounds,
+max_blow, max_blow_source, special_atk_uses, stance_uses FROM fight_log ORDER BY created_at DESC`
+— a one-tap kill of an on-level beast (`rounds = 1`, a `win`, `max_blow` from a technique) is the
+thing the rework was for. The deploy itself is done and recorded (2026-09-28 22:11, tables verified).
 
 **2 — Someone opens the screens.** Every defect this project has found came from glancing at a
 screen, not from running anything. **`TODO.md` → "Walk list"**: the six 2026-09-27/28 blocks sit
@@ -87,7 +80,7 @@ report naming its losses the way the death screen now does.
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER — the schema handshake is at **v14** (the Pi still runs v13) and refuses a mismatch.
+and the new binary TOGETHER — the schema handshake is at **v14** (the Pi too, since 2026-09-28) and refuses a mismatch.
 Free pre-flight that touches neither the running bot nor the database:
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
 it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
@@ -175,16 +168,14 @@ the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is wha
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
 What each phase taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-09-27, schema v14):** `records 33e5c6e3259d51ba` ·
+**Current digest baseline (2026-09-28, schema v14 — live on the Pi):** `records 33e5c6e3259d51ba` ·
 `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` ·
 `king 5dbddfd689f3cede`, content hash `490a2d4b`. Three lines moved on 09-27: `tuning` for
 `gear.salvageFraction`, the special attack's floor 8 → 10 and then the technique rework's
 five numbers (`11797ea73591e02f` → `fe05ceaa38e03c6b`), `records` for the Training
 Ground ladder, `king` for «Наука бою»'s new condition and then the reorder that put the estate
-before the ground (`08733a95f4d34e68` → `5dbddfd689f3cede`). **The Pi still runs the 09-22
-baseline** (schema v13, `records 6588329ab2bdbc70` · `tuning 43b809a87450a3b8` · `king
-4326bb40aa735a50`, hash `703a0404`) until these commits are deployed; its own
-`--content-digest` must read the new line BEFORE the restart is ordered.
+before the ground (`08733a95f4d34e68` → `5dbddfd689f3cede`). **The Pi runs exactly this baseline** since the 2026-09-28 22:11 restart — its own
+`--content-digest` matched the Mac byte for byte before the restart was ordered.
 
 `king` is a fifth line, added with the decree chain, and the four older ones are
 byte-identical across it — which is the entire point of splitting them. `records` moved four
@@ -246,8 +237,10 @@ are live state reads, seven are events funnelled through `KingService.record`. N
 shows "decree N of 39". Spec `content/spec/king.md`, table `roi-content spec king`.
 
 Registration · exploration (active + passive, three-tier visit decay, restart-safe
-scheduler) · turn-based PvE combat with 9 class techniques · estate (plots, warehouse,
-workshop, kitchen, weapon/bag/estate upgrades, technique gates) · capital hub (travel across
+scheduler) · turn-based PvE combat with 9 class techniques (since 2026-09-27 the full kit shortens an
+elite fight by ~20% for every class, every technique tap strikes, and each forest fight leaves a
+`fight_log` row) · estate (plots, warehouse, workshop — ingots, upgrades, salvage; armour only from the
+Master since 09-28 — kitchen, weapon/bag/estate upgrades, the Training Ground room at T4) · capital hub (travel across
 **two streets** — 👑 Замкова: Базар / Ристалище / Гільдії / Палац, 🏘 Поділ: Крамар / Майстер /
 Шинок / Ворожка, the square holding only the two roads — plus
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena

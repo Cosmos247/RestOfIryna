@@ -1736,10 +1736,10 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the six 2026-09-27/28 blocks on top,
-which wait on the next restart — the 2026-09-22 deploys took the whole backlog before them.
+Telegram. **Every block below is LIVE and unwalked** — the six 2026-09-27/28 blocks on top
+included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-09-28 — the workshop no longer makes armour (NOT deployed yet):**
+**Added 2026-09-28 — the workshop no longer makes armour (live since 2026-09-28 22:11):**
 - **🛠 the workshop** lists [weapon upgrade] [bag upgrade] [🔨 Розібрати спорядження] and the
   ingot — no Forester piece — and its description reads «…зброя — гострішою, сумка — місткішою,
   а зношене спорядження — знову сировиною.»
@@ -1749,7 +1749,7 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
   чесну ціну.», prices 60 / 95 / 150 / 180 🪙.
 - **the T4 estate banner** no longer lists «🧵 Кравецька».
 
-**Added 2026-09-27 — the technique rework (NOT deployed yet):**
+**Added 2026-09-27 — the technique rework (live since 2026-09-28 22:11):**
 - **after the deploy, the tables first**: `fight_log` exists and fills as fights end
   (`SELECT outcome, enemy_id, rounds, max_blow, max_blow_source FROM fight_log ORDER BY
   created_at DESC LIMIT 10`), and `exploration_state.combat_tally` exists.
@@ -1767,7 +1767,7 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
 - **a burn round** (🔥 «X горить — втрачає N ОЗ»): the status card under it shows the beast's
   HP AFTER the tick — it used to show the HP from before it.
 
-**Added 2026-09-27 — the Training Ground as a house room (NOT deployed yet):**
+**Added 2026-09-27 — the Training Ground as a house room (live since 2026-09-28 22:11):**
 - **after the deploy, the table first**: `SELECT count(*) FROM plots WHERE plot_type =
   'training_ground'` is 0, and `users.training_ground_level` exists at 0 for everyone.
 - **🏠 Дім at T4+** lists 🥋 Тренувальний майданчик; below T4 it does not. Unbuilt, it opens
@@ -1784,7 +1784,7 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
 - **after the deploy, the table**: `SELECT count(*) FROM king_progress WHERE decree_index
   BETWEEN 23 AND 25` is 0 (`RewalkReorderedDecrees` sends anyone standing there back to 22).
 
-**Added 2026-09-27 — combat lines and the death screen (NOT deployed yet):**
+**Added 2026-09-27 — combat lines and the death screen (live since 2026-09-28 22:11):**
 - **an archer's 🎯 Влучний постріл** (it always crits): «Стріла впивається в живу плоть!
   Критичний постріл — X втрачає N ОЗ». Then a warrior's 🪓 and a mage's 🔥, a burn tick «X
   горить — втрачає N ОЗ» and a plain hit «Ви влучаєте — X втрачає N ОЗ».
@@ -1794,7 +1794,7 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
   забрав.»
 - **die in the forest without a fight** (hunger, a trap): the same list of what was taken.
 
-**Added 2026-09-27 — the workshop takes armour apart (NOT deployed yet):**
+**Added 2026-09-27 — the workshop takes armour apart (live since 2026-09-28 22:11):**
 - **🎒 the gear list with two copies of one piece** (buy a spare hood from the Master): each
   row prints its own wear, and [Одягнути] on the worse one puts on THAT one. An old inventory
   message in chat with two copies must redraw the list rather than pick one.
@@ -1805,7 +1805,7 @@ which wait on the next restart — the 2026-09-22 deploys took the whole backlog
   warehouse.
 - **the warehouse's gear rows**: each copy with its wear; ⬆️/⬇️ moves exactly that copy.
 
-**Added 2026-09-27 — the stray-number hint (NOT deployed yet):**
+**Added 2026-09-27 — the stray-number hint (live since 2026-09-28 22:11):**
 - **a trader card:** Крамар → Купити → any item, then type `5` without tapping
   [🪙 Купити]. A `🔢` banner must answer and the card must stay the last screen — no street
   backdrop. Then tap [🪙 Купити] and type `5`: the purchase goes through as before.
@@ -2169,12 +2169,11 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-09-27 — **everything up to `60a8bad` is deployed** (the Pi runs it since
-09-22 00:33, and came back on the same binary after a reboot on 09-25 20:45); above
-`origin/main` sit three record passes and seven game changes — the stray-number hint, the
+*Last updated: 2026-09-29 — **everything up to `8ae6772` is deployed** (the Pi runs it since
+the 2026-09-28 22:11 restart): the seven game changes of 09-27/28 — the stray-number hint, the
 workshop's «Розібрати», the combat lines with the death screen, the Training Ground as a house
-room, the technique rework with its fight log, the decree reorder (schema v14, five
-migrations), and the workshop no longer making armour — which wait on the next restart.
+room, the technique rework with its fight log, the decree reorder and the workshop no longer
+making armour — went live together, five migrations, the tables checked after.
 
 The newest splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the

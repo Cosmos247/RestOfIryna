@@ -36,14 +36,6 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     case tannery    // Leather and hide
     case kitchen    // Cooked food: starter set ∪ what an NPC has taught
 
-    public var icon: String {
-        switch self {
-        case .forge:   return "🔥"
-        case .tannery: return "🧵"
-        case .kitchen: return "🍳"
-        }
-    }
-
     /// Whether the player can MAKE this. False for the tannery since
     /// 2026-09-28, on the owner's call: armour comes from the Master alone, and
     /// the patterns stay only so salvage knows what a piece is made of. Every
@@ -55,11 +47,6 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         case .forge, .kitchen: return true
         case .tannery:         return false
         }
-    }
-
-    /// Localization key for the section header in the workshop view.
-    public var nameKey: String {
-        return "workshop.category.\(rawValue)"
     }
 
     /// Recipes in this category require the player to learn them first — from

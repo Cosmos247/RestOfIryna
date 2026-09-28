@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-27)
+## Commit index — live-play polish and after (2026-09-09 → 09-29)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -63,13 +63,9 @@ was shown in a unit it was not measured in.
   `validate --strict` clean, 290/290 tests, `simulate --strict` on baseline, and the four
   older digest lines byte-identical.
 
-**Undeployed: the capital street split and `328bf88`,** neither pushed — `origin/main` is at
-`536fbf6`. Both are built, tested and verified, and between them the next restart runs TWO
-migrations: `CloseBurnedQuestJobs` (the first DATA migration since `ResetDeepestKm` — verify the
-`quest_progress` TABLE afterwards, never the log line) and `AddCapitalStreet` (additive, one
-nullable column, nothing to verify beyond the column existing). Swift and locale strings only in
-both, so `/reload` carries neither; content schema stays v12 and all four digest halves are
-unchanged.
+**Deployed since (2026-09-22 00:22):** the capital street split and `328bf88`, which waited here
+with two migrations (`CloseBurnedQuestJobs`, `AddCapitalStreet`) — see the `## Deploy —` entries
+below. The latest deploy is 2026-09-28 22:11 (`60a8bad` → `8ae6772`).
 
 **Deployed 2026-09-19 14:21 Kyiv** — the Pi took `536fbf6`, ten commits in one pull
 (`7050933` → `536fbf6`), schema **v12**, no migration in that batch. Linux build 110 s; the
@@ -378,6 +374,38 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-09-29 (the sync pass)
+
+Records only, plus dead code the 09-28 change left behind. `RecipeCategory.icon` and
+`RecipeCategory.nameKey` had no reader anywhere, and the three `workshop.category.*` keys they
+named (both languages) had none either once the T4 banner stopped announcing the tannery —
+all removed. Stale lines repointed: `CLAUDE.md`'s "eight" enemy-name lines (four since the
+rework), `Prompt.md`'s "the Pi still runs v13" and the 09-22 baseline paragraph (the Pi runs
+v14 and this baseline since 09-28 22:11), its leftover "then record the deploy", `TODO.md`'s
+footer (it still said `60a8bad`), this file's "Undeployed" paragraph from 09-19, the Commit
+index's date range, and the file map's `ExplorationState` line (now names `combat_tally`).
+`Prompt.md` opens on reading the first `fight_log` rows, then the walk list, then the owner's
+open decisions.
+
+## Deploy — 2026-09-28 22:11 (`60a8bad` → `8ae6772`)
+
+The owner pushed and asked for the pull and the restart. One pull carried the seven game changes
+of 09-27/28 — the stray-number hint, salvage and gear rows, combat lines and the death screen,
+the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder,
+the workshop without armour — and their records.
+
+**Order of operations.** No Mac instance polling → `git pull --ff-only` → build on the Pi
+(Linux/aarch64, 130 s, clean; only the environment's swift-backtrace notices) →
+`--content-digest` matched the Mac **byte for byte** (all five lines, content hash `490a2d4b`,
+schema v14) → a snapshot of the tables the migrations touch → only then `pm2 restart ROI`.
+
+**Five migrations ran, and the TABLES say so, not the log line:** `MoveTrainingGroundOffPlots`
+5 → 0 `training_ground` plots; `AddTrainingGroundLevel` 0 for all 10 users; `CreateFightLog` and
+`AddCombatTally` — the table and the column exist, 0 rows; `RewalkReorderedDecrees` moved 0
+players (positions 0, 1, 3, 14, 14, 33, 39 before and after); `_fluent_migrations` 64 → 69.
+Nobody was in a fight at the restart, so no tally was cut short. pm2: online, 0 unstable
+restarts. Next: the first `fight_log` rows, then the walk list.
 
 ## Session — 2026-09-28 (the workshop stops making armour) — `ada1ae7`
 

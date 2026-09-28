@@ -34,15 +34,14 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. The Pi runs **`60a8bad`** since **2026-09-22 00:33** (schema
-  **v13**, content hash `703a0404`, digest `records 6588329ab2bdbc70` · `king 4326bb40aa735a50`,
-  matched byte for byte before the restart was ordered). That deploy and the 00:22 one before
-  it cleared the whole backlog. **Seven game changes were committed on 2026-09-27/28 and wait on
-  the next restart** (schema **v14**, five migrations): the stray-number hint, the workshop's
+  play surfaces a need for. The Pi runs **`8ae6772`** since **2026-09-28 22:11** (schema
+  **v14**, content hash `490a2d4b`, digest `tuning fe05ceaa38e03c6b` · `king 5dbddfd689f3cede`,
+  matched byte for byte before the restart was ordered). **Seven game changes of 2026-09-27/28 went live with that
+  restart** (schema **v14**, five migrations, the tables checked after): the stray-number hint, the workshop's
   «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
   last round, the Training Ground as a house room, the technique rework with its fight log,
   the King's chain asking for the estate before the ground, and a workshop that no longer
-  makes armour. The next actions are that deploy, then a human walking the screens — the
+  makes armour. The next actions are reading the first `fight_log` rows and a human walking the screens — the
   09-27/28 blocks head `TODO.md`'s walk list.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
@@ -53,7 +52,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   at the top is the single changelog (hash → what it did, 2026-09-09 onward), moved there
   from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
   entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
-  the 09-09 → 09-17 polish entries, and the 09-18 kitchen rebuild.
+  the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
+  entries and the `## Deploy — 2026-09-28` restart.
 - **What each phase decided: [Rebalance](rebalance.md).**
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory

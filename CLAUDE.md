@@ -593,7 +593,7 @@ both kinds.
 **An enemy's name is nominative only.** Content stores one form, so a line must make the name
 its SUBJECT or set it after a dash — «… — %{enemy} втрачає N ОЗ» — never after a preposition
 or as an object: «по %{enemy}» printed «по Скажений ведмідь» on every plain hit until
-2026-09-27. Eight lines still break it (`TODO.md` → "Open, decided but not done"); the list
+2026-09-27. Four lines still break it (`TODO.md` → "Open, decided but not done"); the list
 and the one-liner that finds them are in `.memory/localization.md`.
 
 **Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
