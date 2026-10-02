@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-02 — tier 2 of the bestiary** (committed, NOT deployed; needs `pm2 restart ROI` — the
+**2026-10-02 — tier 2 of the bestiary** (`f03d502`, NOT deployed; needs `pm2 restart ROI` — the
 validator is code, five locale strings are new and four oblique-case lines were rewritten; no migration). `spec-bestiary.md` §10:
 - **The roster.** Fourteen creatures numbered in order, five of them new: Скажена лисиця,
   Олень-рогач, Вепр-сікач, Тур and Скажена зграя. A creature's number is its level and its

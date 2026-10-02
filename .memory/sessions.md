@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 09-29)
+## Commit index — live-play polish and after (2026-09-09 → 10-02)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,6 +11,16 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `f03d502` (10-02) **tier 2 of the bestiary**:
+  - fourteen creatures numbered in order, five of them new: Скажена лисиця, Олень-рогач,
+    Вепр-сікач, Тур and Скажена зграя;
+  - bands km 3N−3…3N+1, with the rabid bear stretched to km 49;
+  - XP by the number alone (every archetype multiplier 1.0);
+  - the XP level-gap penalty off, with `enemy.xp_falls_with_depth` replacing the guard that
+    forbade it;
+  - the four oblique-case enemy-name lines rewritten in the owner's wording.
+
+  `records` / `tuning` / `spawns` moved; 324 tests; `simulate --strict` 0 broken bands.
 - `ada1ae7` (09-28) **the workshop stops making armour** — the Master is the only source, at his old
   prices (485 🪙 a set); the four Forester recipes stay as patterns because salvage reads them
   (`RecipeCategory.isCraftable` false for the tannery, asked by the list, the detail callback and
@@ -375,7 +385,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-02 (tier 2 of the bestiary)
+## Session — 2026-10-02 (tier 2 of the bestiary) — `f03d502`
 
 **Recovered first.** The design was drafted in session `cf3769f0` ("Rest Of Iryna new enemies",
 09-28 → 10-01), and the owner had lost the thread. Nothing of it had been written to the repo;
