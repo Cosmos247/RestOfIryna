@@ -162,10 +162,14 @@ forever safe: respect the budget and no stat's PERCENTAGE can drift.
 
 `enemies.json` carries an `archetypes` table beside the roster: six rows of
 design input (rounds-to-kill, HP loss per encounter, absorption / dodge / crit
-targets, XP / loot / silver multipliers, default spawn weight). Every enemy's
-stats are GENERATED from its level and archetype at design time, never scaled to
-the player at runtime — runtime scaling makes each gear upgrade evaporate as it
-is equipped.
+targets, XP / loot multipliers, default spawn weight). The silver multiplier went
+with monster coins in 8C, and since tier 2 (2026-10-02) the XP multiplier is 1.0 for
+every archetype: XP follows the creature's number alone. Every enemy's stats are
+GENERATED from its level and archetype at design time, never scaled to the player at
+runtime — runtime scaling makes each gear upgrade evaporate as it is equipped. The
+owner's 2026-10-02 decision to scale creature strength by the ESTATE tier is a coarse
+exception whose spec still has to justify itself against this rule
+(`rebalance.md` → "Tier 2 of the bestiary and the expedition model").
 
 - **`pickFor` returns nil past coverage.** The old `?? all.first` tail answered
   any uncovered km with the first enemy in the file, so everything past km 35 was
@@ -203,7 +207,11 @@ It is a data edit. There is no Swift array to touch.
 indent, `"key" : value` WITH the space before the colon, keys sorted, empty array
 as `[]`. A tool that re-emits them python-style reformats every line and buries
 the real change in a 900-line diff. (It cannot move the digest — that hashes
-values, not bytes — but it does move the bundle's content hash.)
+values, not bytes — but it does move the bundle's content hash.) The one exception
+is a re-emit proven byte-for-byte: `json.dumps(obj, indent=2, sort_keys=True,
+ensure_ascii=False, separators=(',', ' : ')) + "\n"` reproduces all 28 files
+(2026-10-02, tier 2 was emitted this way). Swift's `JSONEncoder` on the Mac and a DTO
+round-trip do not.
 
 Locale keys are **derived** unless overridden: `item.<id>`, `<nameKey>.desc`,
 and an enemy's key is its own id. A tiered weapon resolves `.t<tier>` instead,

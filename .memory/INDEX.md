@@ -22,8 +22,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 ## Content specifications (in the repo, not here)
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
-  - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule
-  - `spec-bestiary.md` — the roster, zones and loot
+  - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
+  - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off
   - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
@@ -43,8 +43,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
   last round, the Training Ground as a house room, the technique rework with its fight log,
   the King's chain asking for the estate before the ground, and a workshop that no longer
-  makes armour. The next actions are reading the first `fight_log` rows and a human walking the screens — the
-  09-27/28 blocks head `TODO.md`'s walk list.
+  makes armour.
+- **Next actions.**
+  - The owner deploys tier 2.
+  - Then the estate-scaling spec the owner decided on 2026-10-02: creature HP and ATK +10% per
+    estate tier, strength only, T6 left as it is.
+  - Then the first `fight_log` rows, and a human walking the screens. Tier 2's block heads
+    `TODO.md`'s walk list and waits for its deploy.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -55,8 +60,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
   entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
   the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
-  entries and the `## Deploy — 2026-09-28` restart.
-- **What each phase decided: [Rebalance](rebalance.md).**
+  entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry and the 10-03 sync pass.
+- **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
+  tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
+  figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
@@ -73,7 +80,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 72 at one line each, so a selection copied into this file is the
+already carries all 77 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

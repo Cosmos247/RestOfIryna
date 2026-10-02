@@ -385,6 +385,45 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-03 (the sync pass)
+
+Records only: no code, no content and no locale string changed. This was the owner's long-form
+close-out after tier 2's commit: analyse everything, persist every decision and result in both
+memory banks, sync every `*.md`, reorient `Prompt.md`, sweep for dead code, then commit.
+
+- **The research now lives in the repo bank.** `.memory/rebalance.md` → "Tier 2 of the bestiary
+  and the expedition model" holds what existed only in chat and in a scratch directory that is
+  gone:
+  - the expedition model's definition and calibration;
+  - every figure: the variants table, the sensitivity runs, the band-versus-multiplier
+    decomposition, depth per level and the real-gear pace;
+  - the reconstructed 09-14 stat method, with its per-level shares;
+  - the estate-scaling measurement, with the upgrade check;
+  - a recipe for rebuilding the harness.
+- **Stale current-state lines repointed:**
+  - `Prompt.md`: the opening finding (`opening.vigor_bankrupt` → `opening.shallow_is_bankrupt`),
+    12 → 18 warnings, seven → thirteen `roster_off_curve`;
+  - `TODO.md`: its standing deferrals, and a footer that still said "everything before 09-27
+    is deployed, the stray-number hint waits";
+  - `content-pipeline.md`: a silver multiplier gone since 8C;
+  - `game-core.md`: the bestiary, now an as-SHIPPED bullet;
+  - `INDEX.md`: its next actions, the spec descriptions, and the memory count (72 → 77).
+- **Auto-memory.**
+  - Three new: `feedback-headline-every-cost`, `reference-session-transcripts`,
+    `project-expedition-model`.
+  - Five refreshed: `project-opening-is-vigor-bankrupt`, `project-bestiary-tier-fill`,
+    `feedback-no-new-content-in-rebalance`, `project-post-rebalance-package` and
+    `project-rebalance-active`. The last still said the digest had four halves.
+  - `feedback-clarifications-as-quiz` now names "(Recommended)", the label the tool requires.
+- **English only.** The owner's Ukrainian quotes were translated in twelve memory files and in
+  twelve places in this log; quoted game copy stays as it is. Five places that called the owner
+  "he" now say "they".
+- **Dead code found and recorded, not deleted:** `walkRoomDoubleSpeed`, a Vigor drain no step
+  ever charges (`TODO.md` → "Open, decided but not done").
+- **`Prompt.md` reoriented** for a fresh session, in this order: deploy tier 2; the
+  estate-scaling spec and what it must settle; `fight_log`; the walk list; the owner's open
+  decisions.
+
 ## Session — 2026-10-02 (tier 2 of the bestiary) — `f03d502`
 
 **Recovered first.** The design was drafted in session `cf3769f0` ("Rest Of Iryna new enemies",
@@ -528,7 +567,7 @@ moved). **Not deployed** — Swift and Lingo: a restart, not `/reload`.
 
 ## Session — 2026-09-27 part 7 (the King asks for the estate before the Training Ground) — `1b10572`
 
-**The owner's ask:** «Перестав укази і додай завдання на підвищення маєтку». Every estate tier
+**The owner's ask:** "reorder the decrees and add a task for raising the estate". Every estate tier
 T2–T7 already has its decree; T4's is «Третя сходинка», which stood AFTER the two ground
 decrees it is a precondition of. Asked, not assumed: move the existing decree rather than add a
 second one (a duplicate would close itself and shift every player past it), and leave «Перший
@@ -581,7 +620,7 @@ target — the full kit shortens an elite fight by ~20% for every class, and no 
 exceeds an ordinary crit; raising a stance strikes; Shadow Veil and Mirror Ward stop being
 Vigor spent on a round with no blow in it; a fight log table for live fights only; all three
 special-defence lines rewritten to the nominative-only rule. The owner cut the stat breakdown
-from the stance lines («гравцю не треба бачити розшифрування»).
+from the stance lines ("the player doesn't need to see the breakdown").
 
 **Found by the validator, not by me:** `tuning.combat.effect_crit_not_special` REQUIRED a
 guaranteed crit above ×1.5 — the owner's cap refused outright. Its reasoning ("a normal hit at
@@ -3990,8 +4029,8 @@ only Phase 11 left.
 ### Phase 9 — the three remaining specifications
 
 **`spec-items.md` — a FRAME, not a list.** The user ruled out new items for the rebalance
-("зроби каркас для майбутнього додавання різного рівню сетів, але все це після
-ребалансу"), so the document specifies the grid a future item lands on rather than the
+("build a framework for adding sets of different levels later, but all of that after
+the rebalance"), so the document specifies the grid a future item lands on rather than the
 items. Extended `roi-content spec items` with two printed tables — slot coverage and the
 obtainable kit against the on-curve kit — and what they printed reset the phase plan:
 
@@ -4518,9 +4557,9 @@ Stand up the capital as a real second hub. Travel from estate takes 2 min (place
 
 ### Design decisions (with user)
 - **2-minute trip duration** is the placeholder; will tune later. `testMode = true` makes it 2 s for dogfooding.
-- **No cancel** — once you've set out, you wait it out. Decided via AskUserQuestion early in the session ("чесно з точки зору гри"); avoids the "speedrun by tap-tap-tap-tap" anti-pattern.
+- **No cancel** — once you've set out, you wait it out. Decided via AskUserQuestion early in the session ("fair from the game's point of view"); avoids the "speedrun by tap-tap-tap-tap" anti-pattern.
 - **Guards on start**: HP > 0 AND vigor > 0. Death + starvation both block setting out (matches the "you can't even walk to the gates" fantasy).
-- **Reply-keyboard nav, not inline** for the 6 locations. User asked mid-session ("Кнопки в столиці повинні бути не інлайн кнопками, а заміняти основні"). Original plan was inline buttons; refactored before any code shipped.
+- **Reply-keyboard nav, not inline** for the 6 locations. User asked mid-session ("the buttons in the capital should not be inline buttons — they should replace the main ones"). Original plan was inline buttons; refactored before any code shipped.
 - **No 6-button "drilldown" hierarchy** — each location is a peer. Tapping any location swaps the message body; the keyboard never changes. No "back to capital root" — every location button is one tap away.
 - **Utility buttons** (Inventory + Profile) kept on the capital keyboard so the player isn't forced back to main for them. Settings stays reachable via `/settings` but not promoted as a button (rare action).
 - **Estate / Capital / Explore taps during travel** all show the same countdown banner. Inventory / Profile / Settings keep working (no narrative reason to block them).
@@ -4753,7 +4792,7 @@ Build clean. Next: 5.3e — technique gates by player level + Learn-at-Training-
 ## Session N+3 — 2026-05-11 part 4 (Phase 5.3c gold polish)
 
 ### What was done:
-Follow-up polish on the 5.3c manual estate upgrade: gold sink for T3+ transitions. User wanted gold to gate later upgrades but **not** appear in the inventory ("матеріали в сумці") since slot pressure already matters — gold stays a User-level field surfaced only in the profile.
+Follow-up polish on the 5.3c manual estate upgrade: gold sink for T3+ transitions. User wanted gold to gate later upgrades but **not** appear in the inventory ("materials in the bag") since slot pressure already matters — gold stays a User-level field surfaced only in the profile.
 
 - `EstateUpgradeStep.goldCost: Int` (default 0 for backwards-compat). Catalog: T1→T2 + T2→T3 = 0g (free onramp), T3→T4 = 50g, T4→T5 = 150g, T5→T6 = 400g, T6→T7 = 1000g. Cumulative endgame spend ~1600g.
 - Gold drained directly from `User.gold` — never an item id, never a `WarehouseEntry` / `InventoryEntry` row. Designed deliberately so the bag stays uncluttered.
@@ -4761,7 +4800,7 @@ Follow-up polish on the 5.3c manual estate upgrade: gold sink for T3+ transition
 - `EstateController.renderEstateUpgrade` appends a `⛔ 💰 50 gold (30/50)` line (with ✅/⛔ matching the player-level gate style) outside the `📜 Materials` block when goldCost > 0. `handleEstateUpgradeConfirm` handles the new case with a modal alert via `estate.upgrade.gold_too_low`.
 - 2 new locale keys × 2 locales (`estate.upgrade.gold_required`, `estate.upgrade.gold_too_low`); parity 442/442.
 
-**Source of gold:** quest rewards in Phase 6+ (Capital). Explicitly NOT dropped from mobs ("поки не треба додавати дроп золота з мобів"). Dev grants gold via Postico for testing.
+**Source of gold:** quest rewards in Phase 6+ (Capital). Explicitly NOT dropped from mobs ("no need to add gold drops from mobs for now"). Dev grants gold via Postico for testing.
 
 Build clean. 5.3c is now fully landed (gates + manual upgrade + gold sink). Next: 5.3d (smaller starter bag + craftable bag upgrade in Workshop).
 
@@ -5863,7 +5902,7 @@ That polymorphism let me share `renderRecipeDetail` + `recipeDetailKeyboard` + `
 
 ### Phase 5.2.1 follow-up (same day, post-playtest tuning)
 
-**Hunger numbers retuned ×3 deeper.** Initial Phase 5.2.1 numbers were ~70% of the original Phase 5.2.1 proposal; user feedback "ріж ще більше" cut them again to roughly half of even those. Final values:
+**Hunger numbers retuned ×3 deeper.** Initial Phase 5.2.1 numbers were ~70% of the original Phase 5.2.1 proposal; user feedback "cut even more" cut them again to roughly half of even those. Final values:
 
 | Item | Original (5.2.1) | Final |
 |---|---|---|
@@ -5881,7 +5920,7 @@ Drain context: typical session burns ~50-100 hunger (walk + combat). Berry refil
 
 **Starter recipes refactored.** The original 5.2.1 design auto-learned Baked Potato + Roasted Meat into `LearnedRecipe` rows at registration via a now-deleted `LearnedRecipe.ensureStarters` helper, with corresponding scroll artifacts (`artifact.recipe.baked_potato` + `artifact.recipe.roasted_meat`) that were redundant — using one would always hit the "already known" modal.
 
-User correctly flagged this as messy: "видали рецепт печеної картоплі та смаженого мʼяса; це гравець може зробити на кухні одразу". Refactor:
+User correctly flagged this as messy: "remove the baked potato and roasted meat recipes; the player can make those in the kitchen straight away". Refactor:
 
 - Removed both starter scrolls from `ItemCatalog` and dev seed.
 - Removed the four locale keys for those scrolls (en + uk).
@@ -5896,7 +5935,7 @@ Net result: same player-facing behaviour ("can cook potato/meat from day one"), 
 
 **Carryforward to commit:** the refactor (starter cleanup + retune + Meat Ragout) is small and self-contained; it lands as a follow-up commit on top of the Phase 5.2.1 commit `8e55ef1`.
 
-**Firewood requirement added.** Per user feedback "додай в рецепт приготування кожної страви по 1 брусу" — every kitchen recipe (including the always-available Baked Potato and Roasted Meat) now also consumes `1× mat.pine_lumber` for the cooking fire. Two reasons: narrative authenticity (cooking on flame needs firewood) and a soft cap on farm-cooking — players need lumberyard production or shallow-zone foraging to keep cooking. Dev seed pine_lumber bumped 5 → 15 so dev can cook through the catalog on first launch. CraftingService unchanged — pine_lumber drains from the same combined inventory + warehouse pool as everything else.
+**Firewood requirement added.** Per user feedback "add one plank to the cooking recipe of every dish" — every kitchen recipe (including the always-available Baked Potato and Roasted Meat) now also consumes `1× mat.pine_lumber` for the cooking fire. Two reasons: narrative authenticity (cooking on flame needs firewood) and a soft cap on farm-cooking — players need lumberyard production or shallow-zone foraging to keep cooking. Dev seed pine_lumber bumped 5 → 15 so dev can cook through the catalog on first launch. CraftingService unchanged — pine_lumber drains from the same combined inventory + warehouse pool as everything else.
 
 **Cooking banner verb split.** Kitchen success banner originally inherited `workshop.alert.crafted` ("Викувано ..." / "Crafted ..."), which read strangely for a kitchen pot ("forged a stew"). Added `RecipeCategory.craftedAlertKey` — Workshop returns `workshop.alert.crafted`, Kitchen returns the new `kitchen.alert.cooked` ("Приготовано ..." / "Cooked ..."). `EstateController.handleCraft` now reads the banner key from `recipe.category.craftedAlertKey` so the verb tracks the room.
 
@@ -6026,7 +6065,7 @@ Deliberately did NOT clear `runningReportJSON` separately — the row gets delet
 
 User's new design pillar: each class gets ONE weapon from the King at registration that **cannot be replaced — only upgraded**. Workshop becomes the place where iron is refined, edges are honed, and limbs are layered. Five-tier ladder per class, narrative naming (rust scrubbed → blade sharpened → spine reforged → master-tempered), gated by estate level (T2 = estate lv 2 ... T5 = estate lv 5). No skip-ahead — sequential progression.
 
-### Stat tables (after the user's "крит з T2, більше з кожним рівнем" tweak on the sword)
+### Stat tables (after the user's "crit from T2, more with every level" tweak on the sword)
 
 | Tier | Sword (warrior) | Bow (archer) | Staff/Rod (mage) |
 |---|---|---|---|
@@ -6278,7 +6317,7 @@ Queue auto-pairing (2nd half of the "both modes" decision — lobby-challenge sh
 ## Session — 2026-08-29 (Full pre-release rebalance — design + Phase 0)
 
 ### Context
-User: "гра абсолютно незбалансована", asked for a rebalance plan that must also cover adding
+User: "the game is completely unbalanced", asked for a rebalance plan that must also cover adding
 new items / sets / monsters in future. Audit (3 parallel explorers) found the math is broken,
 not mistuned — see TODO.md "Full Rebalance" for the evidence list.
 

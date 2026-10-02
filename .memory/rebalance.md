@@ -109,6 +109,166 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 | 10 Apply the bestiary level re-spread — **and nothing else** | ✅ six enemies re-levelled + `xpReward` re-solved · Bison rename · elite band kept stretched to km 40 |
 | 11 Wipe + final pass | ✅ **closed as CODE** — opening ledger + wipe 2026-09-02 · invite-only access 09-08 · Pi deployment and `scale` 1.0 09-09. What follows is live-play polish (and small features on top), thirteen commits 09-09 → 09-12, tracked in `sessions.md` and `Prompt.md` rather than here |
 
+### Tier 2 of the bestiary and the expedition model (2026-10-02)
+
+**What shipped (`f03d502`, committed, not yet deployed):**
+- 14 creatures numbered in order, five of them new;
+- bands km 3N−3…3N+1, with the rabid bear stretched to km 49;
+- XP by the number alone (every archetype `xpMultiplier` is 1.0);
+- the XP level-gap penalty off (`xpLevelDiff.perLevel` 0), with the damage shift `levelDiff`
+  kept;
+- `enemy.xp_falls_with_depth` replacing the guard that forbade a zero penalty.
+
+The decision record is `content/spec/spec-bestiary.md` §10. This section keeps the research
+behind it — the model and every figure it produced — because the harness lived in a scratch
+directory and is gone.
+
+**Why a new model.** `simulate`'s pace prices every kill as an on-level `normal` fight plus
+1.9 rooms of walking. It never walks from the manor and never meets the shallower bands on
+the way, so it cannot see depth and a roster change does not move it.
+
+The first model, built in the lost 09-28 → 10-01 session, made two errors:
+- it charged the walk to a band as empty walking, and ignored HP;
+- its report headlined the variant without the walk (L14 in 26 days against today's 32),
+  which made a table paying LESS XP look faster.
+
+With the walk included, that model gave 66 against 46. The owner caught it with one question,
+and both models were replaced.
+
+**The expedition model.**
+- **Trip.** Manor → km D → manor, one km per step, 2 Vigor a step (`walkRoom`). Encounters
+  come on 40% of the fresh steps going in (weight tier 0) and 52% of the steps coming home
+  (tier 1, the first revisit). Trip events hit 5% of steps for 5% of max HP. The turnaround
+  km counts once.
+- **Encounter.** A spawn-weighted pick among the creatures whose band covers the km, as
+  `pickFor` does. Archetype weights: trash 100, normal 60, skirmisher 40, brute 25, elite 8.
+- **Fights.** The game's own `FightSimulator` with the `.basic` profile, 1,000 fights per
+  player level 1–40 × class × creature, giving win rate, rounds, Vigor and HP%.
+- **Players.** Either of two:
+  - the simulator's on-curve reference character against creatures generated on contract at
+    their own level, which on level is equivalent to real kit against lines solved for the
+    real kit;
+  - a player built from the real items: class base stats, the class weapon at its ladder
+    rung (itemLevel ≤ level, rungs 1/10/20/30/40), and from level 4 the four Forester pieces
+    with the 4-piece bonus (HP +24, DEF +14, crit +4, dodge +5).
+- **XP.** `xpReward` × the variant's level-gap multiplier × the win rate.
+- **Depth.** Per level, the D with the best XP per Vigor subject to two limits:
+  - mean HP lost over the trip, minus healing, is at most 90% of max HP. Dishes eaten for the
+    trip's Vigor above the pool heal a quarter of that Vigor in HP;
+  - the odds of getting home are at least 90%, taken as the product over encounters.
+- **Days.** Vigor needed ÷ the tended estate's food per day, from `FoodBudget`: 0 / 45 / 300
+  / 600 / 900 / 990 / 1200 for T1–T7, reached at levels 1 / 4 / 7 / 10 / 13 / 16 / 19.
+  Levels 1–3 cost no days, as in `simulate`. XP need is the `progression.json` curve
+  (19,437,688 to L40).
+- **Calibration.** An on-level `normal` fight costs 11.1 Vigor, which is the simulator's 15.0
+  per kill minus its 4 of walking. Every creature's on-level fight lands on its archetype
+  contract.
+
+**What it measured.** Days to L14 / L25 / L40, mean of the three classes, on-contract
+creatures against the reference. In brackets, the figure before the rabid bear was stretched
+to km 49:
+
+| case | L14 | L25 | L40 |
+|---|---|---|---|
+| today's roster, today's rules | 75 | 159 | 642 |
+| tier 2, XP penalty kept | 97 | 367 (389) | ~3,070 (~3,430) — the wall |
+| tier 2, no level comparison at all | 99 | 246 | 811 |
+| **tier 2, XP penalty off, damage shift kept — shipped** | 67 | 128 (129) | 399 (434) |
+| the same, archetype XP multiplier kept | — | — | 229 (277) |
+
+- **Sensitivity**, run with HP budgets from 60% / 95% odds up to 250% / 70% odds. Today's
+  rule walls every time (L40 3,218 → 2,947). The shipped variant beats today's game at L14
+  and at L40 every time: L40 424 against 813 at 60%, and 365 against 509 at 250%. At 250%,
+  today's game pulls ahead at L25–30 (91 against 94, 120 against 147).
+- **Why tier 2 trailed today's game in the first two variants.** Decomposed on the
+  no-comparison variant:
+  - bands as today (km N…N+9): L14 69, L40 600;
+  - archetype multiplier kept: L14 94, L40 634;
+  - both: L40 403.
+  Two roughly equal causes: the 3-km bands make every trip fight through the weaker bands,
+  and dropping the multiplier pays brutes and the elite less.
+- **Depth under the shipped rules.** About 10 km at L5, ~19 at L10, ~28 at L14 and ~40 at
+  L20, and the whole forest (km 49) from about L25.
+  - An L20 trip is ~80 steps and ~36 fights, and costs ~320 Vigor against a pool of 200.
+  - From L25 a trip is ~45 fights and 320–390 Vigor.
+  - Levels 22–40 take ~290 days of that same walk.
+  No shallow farming appeared with the penalty off: the chosen depth grows about 2 km a level.
+- **XP per Vigor at L10–14** stays about where it is today: 11.0 against 10.8 at L10, 19.8
+  against 17.0 at L14.
+
+**Real gear with the authored lines — the most realistic reading.** Days to L10 / 14 / 19 / 25
+/ 30 / 40:
+- today's roster: 64 / 78 / 105 / 152 / 218 / 598;
+- tier 2: 60 / 73 / 97 / 132 / 181 / 392.
+
+**The stat method, reconstructed — 09-14 never wrote it down.**
+- **№1–4 use the tier-1 recipe.** `EnemyGenerator` solves against the on-curve reference at
+  level N for HP, ATK is round(0.65 × the solved ATK), and DEF/crit/dodge sit on curve. It
+  reproduces the viper exactly (55/5/6).
+- **№5 and up.** `EnemyGenerator` solves against the on-curve reference built with
+  `rarityMultiplier` equal to the obtainable-kit share at level N, computed exactly as
+  `spec items` prints it: Σ `SpecTables.bestPoints` ÷ Σ `BudgetMath.points` at rarity 1.0.
+  - The shares: L5 0.448 · L6 0.403 · L7 0.366 · L8 0.336 · L9 0.310 · L10 0.481 · L11 0.449 ·
+    L12 0.421 · L13 0.396 · L14 0.374.
+  - This lands within 2–8% of the 09-14 lines. The shares have fallen since: the 09-14 lines
+    imply ~0.39–0.51, which is the "40–53%" its notes quote.
+  - A player built from the real items does NOT reproduce the 09-14 lines, because the L10
+    weapon rung overshoots (lynx HP 136 against 109).
+- **Every creature's DEF, crit and dodge sit exactly on the curves.** `SimulatorTests` now pins
+  all fourteen.
+- **The sandbox fight check**, each creature against the player it was solved for:
+  - №5–14 land on contract, and run lighter against real gear, clearly so from №10;
+  - №3–4 run above contract for an armourless player: the boar takes 29% of a bar against 24%,
+    the fox 36% against 28%. Today's moose sat at 29%;
+  - an L9 player without the L10 weapon meets 56–69% of a bar per fight from №10–11;
+  - the moose's HP (94) is below the boar's (101), yet the fight ladder does not invert: to an
+    L5 player the boar costs 12% and the moose 20%.
+
+**Estate-tier scaling — decided 2026-10-02, spec pending.** The owner's call: creatures grow
+with the ESTATE tier, strength only, with XP unchanged. It was measured with real gear and the
+authored lines, scaling by s = estate tier − 1, the tier a player of that level can have.
+
+Days to L14 / L19 / L25 / L40:
+- unscaled: 73 / 97 / 132 / 392;
+- **A, +10% HP/ATK per tier: 96 / 130 / 184 / 477 — chosen**;
+- C, one creature level per tier (regenerated by the tier-2 recipe at № + s): 103 / 148 / 212
+  / 506;
+- B, +20% per tier: 120 / 173 / 249 / 652.
+
+Depth at L20 falls from 41 to 32 under A and to 27 under B or C, and with A the whole forest
+opens around L30.
+
+The upgrade check compares XP per day with the next estate tier (stronger creatures, more
+food) against XP per day without it:
+- T2→T3 ×5.2–5.8, T3→T4 ×1.6–1.7, T4→T5 ×1.3–1.4;
+- **T5→T6 ×0.9–1.0**, because T6 adds only 90 food a day (900 → 990);
+- T6→T7 ×1.0–1.2.
+
+The owner left T6 as it is, expecting new estate tiers to add food. One thing the spec must
+answer: `Enemy.swift`'s header and `content-pipeline.md` argue against scaling enemies to the
+PLAYER at runtime, because each gear upgrade would evaporate as it is equipped. Coarse scaling
+by estate tier is a different thing, and the spec has to say why.
+
+**Rebuilding the harness.** The repo's SwiftPM targets are not library products, so a scratch
+package copied `Modules/ROIContent` and `Modules/ROISim` into its own `Sources/`; both are
+Foundation-only. Its executables:
+- a fight-table roller, writing one CSV row per player level × class × creature: win, rounds,
+  Vigor, HP%;
+- a stat-line solver. `SpecTables.bestPoints` had to be made public in the copy to compute the
+  share;
+- a CLI copy of `Modules/roi-content/main.swift` whose validator copy carried the new rule.
+  `--content DIR --locales DIR` point it at a sandbox.
+
+The expedition model itself was about 150 lines of Python over the fight CSVs. The
+no-comparison variant is a content copy with `combat.json` → `levelDiff.perLevel` at 0.
+Swift 6 trap: a top-level `var` cache is main-actor isolated, so the function that uses it
+must be `@MainActor`.
+
+**Emitting the JSON.** Python's `json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False,
+separators=(',', ' : ')) + "\n"` reproduces all 28 `content/data` files byte for byte. Swift's
+`JSONEncoder` does not, and neither does a DTO round-trip. The rule is in `CLAUDE.md`, the
+detail in auto-memory `reference-house-json-style`.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

@@ -37,6 +37,13 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Extra row: Potions, Food, Artifacts, Spells (conditional)
 - PvE: AI picks actions; PvP: 30-sec timer per round
 - 5 enemy tiers (T1 hare/fox -> Boss dungeon-only)
+- **Bestiary — as SHIPPED, which the bullet above is not** (tier 2, 2026-10-02, committed
+  `f03d502`). Fourteen creatures, real animals of medieval Ukraine, numbered 1–14 by depth:
+  the number is the level, and the band is km 3N−3…3N+1, with the rabid bear stretched to km
+  49. XP depends on the number alone, and there is no XP penalty for out-levelling a creature;
+  damage still shifts by the level gap. Wild creatures drop meat and hide, rabid ones hide
+  only, and the viper and the eagle drop nothing. The boss archetype has no members.
+  `content/spec/spec-bestiary.md` §10.
 - **Escape — as SHIPPED, which the four bullets above are not** (2026-09-15). A flat
   per-class chance (warrior 40 / archer 70 / mage 90, `combat.json` → `flee.byClass`) with
   no level, enemy or depth input, floored by a per-fight ceiling: `flee.maxFailures` = 4, so

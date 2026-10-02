@@ -2,14 +2,15 @@
 
 > ⚠️ **SUPERSEDED — every number below is from before the rebalance.** This file
 > describes Phase 4 combat, a level cap of 21, tier bands of five kilometres and
-> stats that no longer exist (it lists the boar at 18 HP; it carries 34 today and
-> will be regenerated again in Phase 10). Its instruction to "adjust here, then
+> stats that no longer exist (it lists the boar at 18 HP; it carries 101 today, as
+> creature №3 of the tier-2 roster of 2026-10-02). Its instruction to "adjust here, then
 > mirror in `Enemy.swift`" is wrong twice over: there are no Swift arrays left,
 > and stats are no longer authored at all — they are solved from the archetype
 > table.
 >
 > **Where the truth lives now:** `content/data/enemies.json` for the data,
-> `content/spec/spec-bestiary.md` for what the roster is meant to be and why,
+> `content/spec/spec-bestiary.md` for what the roster is meant to be and why (§10 is the
+> current fourteen-creature roster),
 > `content/lore.md` §8 for the families and their flavour, and
 > `swift run roi-content spec bestiary` for what an archetype asks for at a
 > level. Kept unedited because the FAMILY design below — Wild drops meat and

@@ -33,13 +33,13 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-10-02; `origin/main` is at `8ae6772`)
+### Where things stand right now (2026-10-03; `origin/main` is at `8ae6772`)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`f03d502`** — tier 2 of the bestiary (2026-10-02), on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f` and tier 2 are not pushed yet. Push stays user-side |
+| HEAD | the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`) on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840` and the 10-03 sync pass are not pushed yet. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf` — match the Pi's `--content-digest` against these BEFORE the restart. The 09-29 sync pass (`ce8ef2f`) is unpushed under it |
 
@@ -56,31 +56,52 @@ the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each re
 
 ### Next action
 
-**0 — Deploy tier 2 of the bestiary** (2026-10-02) once the owner has audited and committed
-it: push (user-side), pull and build on the Pi, match `--content-digest` against the values in
-the table above, then the owner runs `pm2 restart ROI`. Then **write the estate-scaling spec**,
-as its own change. The owner decided it on 2026-10-02 after tier 2 was implemented:
-- creature HP and ATK ×(1 + 0.10·(estate tier − 1)), XP unchanged (strength only);
+**0 — Deploy tier 2 of the bestiary.** It is committed (`f03d502` + `b407840`) and audited, and
+the owner has it.
+- Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
+- The owner pushes. On the Pi: `git pull --ff-only`, then build.
+- Match its `--content-digest` against `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` ·
+  `spawns 0cf31905171d7944` · content hash `cd9d73bf` BEFORE the restart.
+- The owner runs `pm2 restart ROI`. A restart is needed, not a `/reload`, because validator code
+  and locale strings changed. No migration.
+- Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
+  the testers at the tier-2 block of the walk list.
+
+**1 — Write the estate-scaling spec, as its own change, and show it before any code.** The owner
+decided it on 2026-10-02, after tier 2 was implemented and at their request:
+- creature HP and ATK ×(1 + 0.10·(estate tier − 1)), XP unchanged (strength only, against my
+  advice to scale XP with it);
 - T6 left as it is.
 
-Measured in a scratch sandbox: L40 in ~477 days against 392 unscaled, with the whole forest open
-around L30. The T5→T6 upgrade gains about nothing per day (×0.9–1.0), because T6 adds only 90
-food; the owner accepts that until new estate tiers add food. Details are in auto-memory
-`project-new-beasts-draft`. Nothing is implemented before the spec is approved.
+Measured in the tier-2 sandbox, with real gear and the authored lines: L40 in ~477 days against
+392 unscaled, and the whole forest opens around L30 instead of L25. Every upgrade from T2 to T5
+stays clearly worth it, but T5→T6 gains about nothing per day (×0.9–1.0), because T6 adds only
+90 food; the owner accepts that until new estate tiers add food. The spec has to settle:
+- where the knob lives (one tuning value), and the ONE place it is applied — where the enemy's
+  combat stats are built for a fight, a passive autobattle, a rehydrated fight and `fight_log`;
+- the exclusions: the training dummy and the registration dog;
+- what the validator, the digest line and the tests check;
+- why coarse scaling by estate tier does not repeat the "runtime scaling makes gear evaporate"
+  trap that `Enemy.swift`'s header and `content-pipeline.md` warn about.
 
-**1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
+Measuring the implementation needs the expedition harness rebuilt. Its recipe and every figure
+are in `.memory/rebalance.md` → "Tier 2 of the bestiary and the expedition model"; auto-memory
+`project-expedition-model`, `project-new-beasts-draft`. It goes into `spec-bestiary.md` as a new
+section, and nothing is implemented before the owner approves it.
+
+**2 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
 measurement. `SELECT nickname, character_class, player_level, enemy_id, outcome, rounds,
 max_blow, max_blow_source, special_atk_uses, stance_uses FROM fight_log ORDER BY created_at DESC`
 — a one-tap kill of an on-level beast (`rounds = 1`, a `win`, `max_blow` from a technique) is the
 thing the rework was for. The deploy itself is done and recorded (2026-09-28 22:11, tables verified).
 
-**2 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the six 2026-09-27/28 blocks sit
-on top (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
+**3 — Someone opens the screens.** Every defect this project has found came from glancing at a
+screen, not from running anything. **`TODO.md` → "Walk list"**: tier 2's block on top (after its
+deploy), then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
 older backlog — the whole King's chain included, which no human has seen.
 
-**3 — Decisions waiting on the owner**, all in `TODO.md` → "Open, decided but not done": the
+**4 — Decisions waiting on the owner**, all in `TODO.md` → "Open, decided but not done": the
 kit still costing more Vigor than
 plain attacks (+35 / +16 / +36% on an elite, prices untouched); a mage winning a fight at 0 HP
 (the burn ticks before the player's death check); `/menu` missing from the base `unmatched`
@@ -109,8 +130,9 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Thirteen items, each raised deliberately and kept out of an unrelated commit on purpose. From
-2026-10-02, tier 2's leftovers:
+Fourteen items, each raised deliberately and kept out of an unrelated commit on purpose. From
+2026-10-02, tier 2's leftovers, plus a dead knob found while modelling — `walkRoomDoubleSpeed`,
+the cost of a double-speed walk that does not exist:
 - creature strength scaling with the estate tier (decided: +10% HP/ATK per tier, strength only; spec next);
 - №3–4 running above contract for a player without armour;
 - the opening ledger fighting with the armoured reference;
@@ -145,8 +167,11 @@ sources, and the estate is the intended income. The wardrobe sits at ~40% of the
 budget and the bestiary at 65–78% of its archetype contract; **both half-strength errors
 lean the same way**, so the gear ladder and a roster re-solve ship together, afterwards.
 
-The debt Phase 9 wrote itself is paid, and its finding is now **`opening.vigor_bankrupt`**.
-Read the current ledger from `roi-content spec opening -c release`, never from a doc.
+The debt Phase 9 wrote itself is paid. Its finding is **`opening.shallow_is_bankrupt`** again since
+tier 2 (2026-10-02; it read `opening.vigor_bankrupt` from the 09-14 XP halving until then). It
+comes with a caveat: the ledger's profitable window at km 12–17 is held by the ARMOURED reference
+character, not by a level-3 player in the registration kit. Read the current ledger from
+`roi-content spec opening -c release`, never from a doc.
 
 The rule all five specifications run on: **numbers are printed, never typed** — and the
 corollary learned the hard way, **the rule protects tables, not the prose beside them**.
@@ -162,11 +187,12 @@ Reported by every `simulate` run, all deliberate: **food portions are flat
 against a pool that grows** (the Feast is 69% of a level-1 pool and 24% of a
 level-40 one since the 09-18 repricing, up from 33% / 12%),
 **nothing new unlocks between level 21 and 40**, **levels 1–3 have no estate at
-all**, the **seven `content.roster_off_curve` warnings** (until the regeneration
-package lands), and **`opening.vigor_bankrupt`** — renamed from
-`opening.shallow_is_bankrupt` when the XP halving removed the last depth that was both
-survivable and profitable; a warning and not a broken band on purpose, because §7 decided
-to measure before retuning. Silver is also **over-supplied** — roughly twenty
+all**, the **thirteen `content.roster_off_curve` warnings** (since tier 2, every stat line is
+solved against the kit players actually carry, so all read light against the reference
+character; they stay until the gear ladder moves the wardrobe), and
+**`opening.shallow_is_bankrupt`** — back since tier 2, after reading `opening.vigor_bankrupt` from
+the 09-14 XP halving; a warning and not a broken band on purpose, because §7 decided to measure
+before retuning. Silver is also **over-supplied** — roughly twenty
 thousand spare over a lifetime against 2,950 of mandatory spend (the estate's 1,600 plus the
 Training Ground's 1,350 since 2026-09-27) — and the fix is
 more to buy, which is items, which is after the rebalance.
@@ -179,7 +205,8 @@ gear offsets and bands level invariance, the p90 tail, win rates, pace to the ca
 shipped roster against its archetype contract; `--strict` exits 1 on a broken band. Default
 sample size **8000 fights per cell** — 2000 crossed the invariance band on sampling noise alone.
 
-Current state: **18 of 18 invariance rows pass, 0 broken bands, 12 warnings**, 19,437,688 XP
+Current state: **18 of 18 invariance rows pass, 0 broken bands, 18 warnings** (12 until tier 2; the
+six added are all `roster_off_curve`), 19,437,688 XP
 from level 1 to 40, **114–126 days** on a tended estate (warrior 125.5 / archer 120.9 / mage
 113.8 after the 09-18 food repricing; the band the report gates on is 72–200, taps/day 686).
 That headline swung 128.7 → 122.4 → 110.0 → 125.5 across the 09-18 edits and **most of the
@@ -187,7 +214,10 @@ swing was not speed**: the model drops tiers that feed nothing out of the averag
 the duck egg inedible and then edible again took T2 out and put it back. The real movement is
 the estate being 11–15% richer on every tier above T2. `EnemyGenerator` is what the
 post-rebalance regeneration will lean on — run at design time and frozen, never at runtime.
-What each phase taught: `.memory/rebalance.md`.
+**The pace section cannot see depth.** It prices every kill as an on-level fight and never walks
+from the manor, so no roster or band change moves it. The tier-2 expedition model can see it, and
+put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
+taught: `.memory/rebalance.md`.
 
 **Current digest baseline (2026-10-02, schema v14 — committed, NOT yet on the Pi):**
 `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944` ·
@@ -213,7 +243,7 @@ line in the same commit that adds the knob (auto-memory `feedback-digest-names-c
 
 HP regen is **10% of max HP per real minute** (`tuning/vigor.json` → `healing.regenPerMinute`),
 so a full rest at the estate takes 10 minutes — and **only at the estate**. `simulate --strict`
-stands at 0 broken bands / 12 warnings: the sweep models fights, not the rest between them.
+stands at 0 broken bands / 18 warnings: the sweep models fights, not the rest between them.
 
 ⚠️ **Four accounts played 2026-09-02 → 09-09** and reached L10 / estate T4, so the
 rebalanced formulas have been exercised — but nobody stepped through the first hour against

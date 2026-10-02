@@ -66,7 +66,7 @@ RestOfIryna/
 │                                #   **OpeningLedgerTests** (11 — that the stretch ends where the ESTATE LADDER says,
 │                                #   that meat is priced per unit CONSUMED and reported as locked rather than earned,
 │                                #   that only forage edible as found counts, and that the best depth ignores rows the
-│                                #   player cannot hold; the load-bearing one is the level-gap scaler, which is the
+│                                #   player cannot hold; the load-bearing one is the level-gap scaler (the shipped one is 1.0 since 2026-10-02), which is the
 │                                #   17% an approved spec's flat XP ÷ reward missed)
 │                                #   ContentDTOTests also pins the SCHEMA HANDSHAKE (v9): a wrong version throws
 │                                #   `schemaMismatch`, the right one gets past the guard and fails on the next file —

@@ -1510,6 +1510,38 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         ladder's biggest step is now **×4.5 between the moose (L4) and the bison (L7)**, the
         level gap 16 → 22 is the widest in the game, and density falls from 6 candidates at
         km 10 to 2 at km 20.
+  - [x] **Bestiary tier 2** *(2026-10-02, `f03d502`, committed, NOT deployed)* — the
+        owner's own design, recovered from a lost session's transcript.
+
+        **What it is.** Fourteen creatures numbered in order, five of them new from
+        Ukrainian lore: Скажена лисиця, Олень-рогач, Вепр-сікач, Тур, Скажена зграя.
+        - The number is the level, and the band is km 3N−3…3N+1. The rabid bear is stretched
+          to km 49, the owner's choice over an empty km 44–49.
+        - XP comes from the number alone: every archetype `xpMultiplier` is 1.0.
+        - **The XP level-gap penalty is off** (`xpLevelDiff.perLevel` 0), because a creature's
+          number is a depth rung, not a player level. The damage shift `levelDiff` is kept.
+        - The validator guard that forbade a zero penalty became `enemy.xp_falls_with_depth`.
+
+        **How it was measured.** An expedition model that walks every trip from the manor,
+        built because `simulate`'s pace cannot see depth. Days to L40:
+        - penalty kept: a wall, ~3,070;
+        - no comparison at all: 811;
+        - **shipped: 399**;
+        - real gear with the authored lines: 392, against today's 598.
+
+        **The stat lines.** The tier-1 recipe for №1–4; for №5+ the reconstructed 09-14
+        wardrobe method, solving against the reference kit scaled to the obtainable share.
+
+        **Also in the change.** The four oblique-case enemy-name lines were rewritten in the
+        owner's wording. Five stale code comments and the `SimulatorTests` fixture were fixed
+        by the audit.
+
+        **Verified.** `validate --strict` 0/0; `simulate --strict` 0 broken bands, 18 warnings
+        (+6 `roster_off_curve`); the opening finding is back to `opening.shallow_is_bankrupt`;
+        324 tests; `records` / `tuning` / `spawns` moved.
+
+        Spec `spec-bestiary.md` §10, research `.memory/rebalance.md`. Next: the
+        estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own
@@ -1656,7 +1688,7 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 ## The King's decrees — a tutorial spine (started 2026-09-21)
 
-Designed across the 2026-09-20 and 09-21 sessions; the motivation is the owner's, in his
+Designed across the 2026-09-20 and 09-21 sessions; the motivation is the owner's, in their
 words: the first levels are hard, and a new player has nothing telling them what to aim at.
 A linear chain of **39 decrees, levels 1–25**, one open at a time, taken in the palace on
 Castle Street. Spec: `content/spec/king.md`. Every number printed by
@@ -2209,14 +2241,26 @@ unrelated commit on purpose.
   split, which did not cause it: it was already uncalled at `f702334`. Kept for now because
   `renderStreet` was modelled on it and the comparison is worth more in review than the
   twenty lines cost, but it goes with the other six whenever that cleanup happens.
+- **`walkRoomDoubleSpeed` is a dead knob** (found 2026-10-02 while modelling expeditions).
+  `tuning/vigor.json` → `drain.walkRoomDoubleSpeed` (4) is decoded, validated, hashed into the
+  digest and mapped by `VigorAction.walkRoomDoubleSpeed`, but nothing ever drains it: no
+  double-speed walk exists, and every step goes through `.walkRoom`. Deleting it changes a
+  required DTO field, so it is a standalone cleanup with the dead functions above, not part of
+  any feature.
 - **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, no
-  estate at levels 1–3, seven `roster_off_curve` warnings and `opening.vigor_bankrupt` —
-  are all reported by every `simulate` run and all deliberate.
+  estate at levels 1–3, thirteen `roster_off_curve` warnings (since tier 2, every line is solved
+  against the real kit) and `opening.shallow_is_bankrupt` (back since tier 2) — are all
+  reported by every `simulate` run and all deliberate.
 
 ---
 
-*Last updated: 2026-09-29 — **everything up to `8ae6772` is deployed** (the Pi runs it since
-the 2026-09-28 22:11 restart): the seven game changes of 09-27/28 — the stray-number hint, the
+*Last updated: 2026-10-03 — **tier 2 of the bestiary is committed** (`f03d502`, hash fill
+`b407840`) **and NOT deployed**; it needs a restart, not a `/reload`. Its walk-list block heads
+the list above, and the estate-scaling spec the owner decided on 2026-10-02 is the next piece of
+work.
+
+**Everything up to `8ae6772` is deployed** (the Pi runs it since the 2026-09-28 22:11 restart):
+the seven game changes of 09-27/28 — the stray-number hint, the
 workshop's «Розібрати», the combat lines with the death screen, the Training Ground as a house
 room, the technique rework with its fight log, the decree reorder and the workshop no longer
 making armour — went live together, five migrations, the tables checked after.
@@ -2320,8 +2364,8 @@ and `GearState` on the warehouse; the escape ceiling; coins on the ground. Befor
 since 09-14 22:14: bestiary tier 1 and the re-solved roster, and mob XP halved on what the
 live database showed.
 
-**Next is one session in Telegram.** Everything before 2026-09-27 is deployed (the
-stray-number hint waits on the next restart) — four deploys' worth of surfaces have never been opened by a human,
+**Next is one session in Telegram.** Everything up to `8ae6772` is deployed (tier 2 waits on the
+next restart) — five deploys' worth of surfaces have never been opened by a human,
 the whole kitchen and the entire King's chain among them, and every defect this project has
 found came from someone glancing at a screen. The walk list, grouped by what shipped when, is
 the "Walk list" section above.
