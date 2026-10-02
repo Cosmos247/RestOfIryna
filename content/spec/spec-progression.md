@@ -38,6 +38,12 @@ the rest of the document leans on them.
 | Death | the whole unequipped backpack, unchanged |
 | Pace | 78–87 days of perfect play on a tended estate |
 
+> *Amended 2026-10-02.* Mob XP is no longer scaled by the level gap: `xpLevelDiff.perLevel`
+> is 0, so a kill pays its full reward at any player level, and the archetype multiplier
+> is 1.0 for every archetype, so XP depends on the creature's number alone
+> (`spec-bestiary.md` §10.2, §10.4). The table above is the state this spec was approved
+> in.
+
 ---
 
 ## 2. The ladder
@@ -176,6 +182,11 @@ The wilderness is measured in kilometres of depth, and the shipped roster alread
 implies a rule that has never been written down:
 
 > **An enemy of level N spawns from km N to km N+9.**
+
+> *Superseded 2026-10-02 by `spec-bestiary.md` §10.* A creature's number is its rung on
+> the depth ladder, not a player level, and its band is km 3N−3…3N+1. The last
+> creature's band is stretched to the horizon at km 49. Everything below in this section
+> is the rule as approved and as it shipped until then.
 
 Every shipped band obeys it — as of Phase 10, boar L1 at km 1–10, moose L4 at km
 4–13, bison L7 at km 7–16, lynx L10 at km 10–19, wolf L13 at km 13–22, bear L16

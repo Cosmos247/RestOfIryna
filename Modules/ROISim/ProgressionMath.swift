@@ -106,9 +106,14 @@ public enum ProgressionMath {
 
     /// XP multiplier for killing a monster this far below your level.
     ///
-    /// Required, not polish: without it, farming ten levels down keeps 67% of
-    /// the XP for a fight that is 35% faster and 40% safer, which makes shallow
-    /// farming strictly optimal and the whole depth ladder dead content.
+    /// Switched off by data since 2026-10-02 (`xpLevelDiff.perLevel` is 0,
+    /// `spec-bestiary.md` §10.4), and kept rather than deleted so the penalty can
+    /// come back with one number and a `/reload`. It was added because farming
+    /// ten levels down kept 67% of the XP for a fight that was 35% faster and 40%
+    /// safer, which made shallow farming optimal and the depth ladder dead
+    /// content. What guards the ladder now is the roster: every trip walks out
+    /// through the weaker bands, a deeper creature pays more, and the validator's
+    /// `enemy.xp_falls_with_depth` keeps it that way.
     public static func xpMultiplier(playerLevel: Int, monsterLevel: Int,
                                     spec: XPLevelDiffDTO) -> Double {
         let raw = 1 - spec.perLevel * Double(playerLevel - monsterLevel)

@@ -319,6 +319,18 @@ cheapest way to bank a record, and a hatch closed in one controller just moves o
 The one real escape left is a fight whose enemy id no longer resolves, which ends the
 expedition rather than trapping the player.
 
+**A creature's number is its rung, and a kill pays its full XP at any player level**
+(2026-10-02, tier 2). Bands run km 3N−3…3N+1, no longer "level N → km N…N+9", and the
+last creature is stretched to the horizon at km 49. `xpLevelDiff.perLevel` is 0. The knob
+stays, so the penalty can come back by `/reload`, and so does the damage shift
+(`levelDiff`): an outgrown creature dies faster and hurts less. What keeps the depth ladder
+alive is the roster, because every trip walks out from the manor through the weaker
+bands. The validator guards it: **a creature whose band starts deeper may never pay less XP
+than one whose band starts shallower** (`enemy.xp_falls_with_depth`, which replaced the
+guard that demanded a positive penalty). `simulate`'s pace table cannot see any of this:
+it assumes on-level fights and never walks from the manor. `content/spec/spec-bestiary.md`
+§10.5 describes the expedition model that can. Auto-memory `project-new-beasts-draft`.
+
 ### Combat
 
 **One number, one source. A screen never sums two losses under one label.** A step can cost
@@ -593,8 +605,9 @@ both kinds.
 **An enemy's name is nominative only.** Content stores one form, so a line must make the name
 its SUBJECT or set it after a dash — «… — %{enemy} втрачає N ОЗ» — never after a preposition
 or as an object: «по %{enemy}» printed «по Скажений ведмідь» on every plain hit until
-2026-09-27. Four lines still break it (`TODO.md` → "Open, decided but not done"); the list
-and the one-liner that finds them are in `.memory/localization.md`.
+2026-09-27. The last four lines that broke it were rewritten on 2026-10-02, with tier 2's
+five new names, in the owner's wording. The one-liner that finds a new one is in
+`.memory/localization.md` — run it after any copy edit that touches `%{enemy}`.
 
 **Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
 `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`, which
@@ -737,5 +750,10 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Keep Telegram callback_data under 64 bytes
 - Hand-edit `content/data/*.json` in the Swift `JSONEncoder` style already there
   (`"key" : value`, keys sorted, 2-space indent) — a python-style re-emit reformats
-  every line and buries the real change
+  every line and buries the real change. The one exception is a re-emit that has proven
+  itself byte-for-byte: `json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False,
+  separators=(',', ' : ')) + "\n"` reproduces all 28 files (2026-10-02). Swift's own
+  `JSONEncoder` on the Mac does NOT (`10` for `10.0`, `[\n\n]` for `[]`), and neither
+  does a DTO round-trip, because `EnemyStatsDTO` drops the zero stats most rows keep.
+  Auto-memory `reference-house-json-style`.
 - Never interpolate an Optional directly into a player-facing string (`"\(item.icon)"` prints `Optional("🪖")`) — unwrap it (`item.icon.map { "\($0) " } ?? ""`). A clean build won't catch this; verify new strings actually render. (Same vigilance as the Lingo emoji-before-`%{}` rule in `.memory/localization.md`.)

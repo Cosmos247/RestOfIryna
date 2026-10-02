@@ -67,7 +67,7 @@ damage     = ATK · (1 − mitigation) · levelDiff · U(0.9, 1.1) · (crit ? 1.
 growth (proportional):  HP ×(1+0.056·(L−1)) · ATK ×(1+0.100·(L−1)) · DEF/ratings ×(1+0.085·(L−1))
 maxVigor(L) = 100 + 5L        regen = maxVigor(L)/6h
 xpToNext(L) = max(11.4·L^3.30, 120L)      mobXP(L) = 26·L^1.55·archXP
-xpLevelDiffMult = clamp(1 − 0.08·(playerLvl − mobLvl), 0.10, 1.00)   // REQUIRED
+xpLevelDiffMult = clamp(1 − 0.08·(playerLvl − mobLvl), 0.10, 1.00)   // REQUIRED — OFF since 2026-10-02 (perLevel 0, spec-bestiary §10.4)
 value(iLvl, slot, rarity) = 7.9 · slotWeight · iLvl^1.55 · rarityValue
 ```
 

@@ -646,10 +646,12 @@ enum ContentDigest {
                 problems.append("xpToNext(L\(level - 1)): got \(Int(got)), design says \(Int(want))")
             }
         }
-        // Out-levelling must cost XP, and never below the floor.
-        let xpGap = Catalogs.current.tuningProgression.xpLevelDiff
+        // Out-levelling costs no XP since 2026-10-02 (`xpLevelDiff.perLevel` is 0,
+        // `spec-bestiary.md` §10.4): a level-40 player gets the full reward from a
+        // level-1 creature. If the penalty ever comes back, the second anchor goes
+        // back to expecting `xpLevelDiff.min` — this is the line that will say so.
         near(User.xpMultiplier(playerLevel: 10, monsterLevel: 10), 1.0, 0.001, "xp parity")
-        near(User.xpMultiplier(playerLevel: 40, monsterLevel: 1), xpGap.min, 0.001, "xp floor")
+        near(User.xpMultiplier(playerLevel: 40, monsterLevel: 1), 1.0, 0.001, "xp at any gap")
 
         if problems.isEmpty {
             print("combat model: ✅ mitigation, dodge, levelDiff and the XP curve all reproduce the design anchors")

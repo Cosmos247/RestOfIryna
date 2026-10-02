@@ -1661,10 +1661,14 @@ public enum ContentValidator {
 
         // MARK: depth coverage
         //
-        // Walked up to the player level cap, because the design invariant is
-        // "km tracks level": a player who can reach level N must find something
-        // to fight at km N. Enemies with the `0...0` sentinel never spawn and
-        // are excluded — counting them would hide the very gap this looks for.
+        // Walked up to the player level cap. The original invariant was "km tracks
+        // level" — an enemy of level N spawned from km N — and since 2026-10-02 it
+        // is not: a creature's number is its rung, and its band is km 3N−3…3N+1
+        // (`spec-bestiary.md` §10.2), so the roster reaches km 49 and this walk
+        // covers only its first 40 km. What survives is the plain reading: a km
+        // with nothing on it rolls no encounter at all. Enemies with the `0...0`
+        // sentinel never spawn and are excluded — counting them would hide the
+        // very gap this looks for.
         if let horizon = maxLevel, !bundle.enemies.isEmpty {
             let spawnable = bundle.enemies.compactMap { enemy -> (ClosedRange<Int>, Double?)? in
                 guard let range = enemy.depth?.closedRange, range != 0...0 else { return nil }
@@ -1690,6 +1694,27 @@ public enum ContentValidator {
                 fail("enemies", "enemy.band_all_zero_weight",
                      "every enemy that can spawn at km \(km) is weighted 0")
                 break
+            }
+        }
+
+        // MARK: XP never falls with depth
+        //
+        // Since 2026-10-02 a kill pays its full `xpReward` whatever the player's level
+        // (`xpLevelDiff.perLevel` is 0, `spec-bestiary.md` §10.4). What used to stop a
+        // player farming the shallow end was that penalty; what stops it now is that
+        // every trip walks out from the manor through the weaker bands and a deeper
+        // creature pays more. That second half is a property of the roster, so it is
+        // checked here: a creature whose band starts deeper may not pay less than one
+        // whose band starts shallower. Creatures sharing a starting km are not ordered.
+        let spawning = bundle.enemies.compactMap { enemy -> (id: String, km: Int, xp: Int)? in
+            guard let range = enemy.depth?.closedRange, range != 0...0 else { return nil }
+            return (enemy.id, range.lowerBound, enemy.xpReward)
+        }
+        for deeper in spawning {
+            for shallower in spawning where shallower.km < deeper.km && shallower.xp > deeper.xp {
+                fail("enemies", "enemy.xp_falls_with_depth",
+                     "\(deeper.id) starts at km \(deeper.km) and pays \(deeper.xp) XP — less than \(shallower.id), which starts at km \(shallower.km) and pays \(shallower.xp)",
+                     id: deeper.id)
             }
         }
 
@@ -2054,10 +2079,15 @@ public enum ContentValidator {
                     "tuning.progression.mob_xp_outruns_curve",
                     "monster XP grows at L^\(mob.exponent) against a curve of L^\(curve.exponent) — kills per level would fall as the player levels up")
 
+            // Zero is a legal penalty since 2026-10-02 (`spec-bestiary.md` §10.4): a kill
+            // pays its full XP at any player level, and the depth ladder is guarded by
+            // `enemy.xp_falls_with_depth` instead. This rule used to demand a positive
+            // penalty; what it still refuses is a negative one, which would PAY extra for
+            // farming below your level.
             let xpGap = progression.xpLevelDiff
-            require(xpGap.perLevel > 0, file, "xpLevelDiff.perLevel",
-                    "tuning.progression.xp_level_diff_absent",
-                    "without a per-level penalty, farming far below your level stays fully rewarding and the depth ladder becomes dead content")
+            require(xpGap.perLevel >= 0, file, "xpLevelDiff.perLevel",
+                    "tuning.progression.xp_level_diff_negative",
+                    "a negative per-level penalty pays extra for every level the player stands above the creature, which rewards farming the shallowest band")
             require(xpGap.min >= 0 && xpGap.min <= xpGap.max, file, "xpLevelDiff",
                     "tuning.progression.xp_level_diff_range",
                     "expected 0 <= min <= max, found \(xpGap.min) / \(xpGap.max)")

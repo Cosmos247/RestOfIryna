@@ -558,11 +558,19 @@ final class TuningTests: XCTestCase {
                    bundle(progression: progression(exponent: 3.3, mobExponent: 4.0)))
     }
 
-    /// Without a level-gap penalty, farming ten levels down stays fully
-    /// rewarding and the depth ladder becomes dead content.
-    func testAbsentXPLevelDiffIsAnError() {
-        assertRule("tuning.progression.xp_level_diff_absent",
-                   bundle(progression: progression(xpGapPerLevel: 0)))
+    /// A zero level-gap penalty is legal since 2026-10-02 — every kill pays its
+    /// full XP and the depth ladder is guarded by `enemy.xp_falls_with_depth`
+    /// (`BestiaryTests`). A NEGATIVE one would pay extra for farming below your
+    /// level, and is still refused.
+    func testNegativeXPLevelDiffIsAnError() {
+        assertRule("tuning.progression.xp_level_diff_negative",
+                   bundle(progression: progression(xpGapPerLevel: -0.01)))
+    }
+
+    func testZeroXPLevelDiffIsLegal() {
+        let report = ContentValidator.validate(bundle(progression: progression(xpGapPerLevel: 0)))
+        XCTAssertFalse(report.errors.contains { $0.rule.hasPrefix("tuning.progression.xp_level_diff") },
+                       "a zero penalty was refused: \(report.errors.map(\.rule))")
     }
 
     func testNegativeGrowthRateIsAnError() {

@@ -210,7 +210,12 @@ dash or colon — never after a preposition or as a direct object: "Ви влу�
 printed «по Скажений ведмідь» on every plain hit until 2026-09-27, and «Ворогу лишалося» is
 written without a pronoun because «у нього / у неї» would need a gender the enemy lacks.
 
-Still breaking it (raised 2026-09-27, outside that day's scope): `exploration.outcome.encounter.won`
+**All four fixed on 2026-10-02** (with tier 2's five new names, owner's wording over a quiz):
+`exploration.outcome.encounter.won` «%{enemy} — перемога за N раунд(ів).»,
+`combat.defend.absorbed` «…зачіпаєте у відповідь — %{enemy} втрачає N ОЗ.»,
+`combat.flee.success` «Ви відриваєтеся й відступаєте — %{enemy} лишається позаду.»,
+`combat.in_progress` «Ви зараз у бою — %{enemy} не відступить. …». The sweep below now finds
+nothing. History — they were: `exploration.outcome.encounter.won`
 («Ви подолали %{enemy}»), `combat.defend.absorbed` («зачіпаєте %{enemy}»),
 `combat.flee.success` («від %{enemy}»), `combat.in_progress` («з %{enemy}»). Four, not eight:
 the technique rework later the same day rewrote the three `combat.special_def.*.activate`

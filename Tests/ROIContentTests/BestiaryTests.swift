@@ -44,10 +44,10 @@ final class BestiaryTests: XCTestCase {
         ["trash", "normal", "skirmisher", "brute", "elite", "boss"].map { archetype($0) }
     }
 
-    private func enemy(_ id: String = "enemy.x", level: Int = 1, archetype: String = "trash",
+    private func enemy(_ id: String = "enemy.x", xp: Int = 5, level: Int = 1, archetype: String = "trash",
                        depth: IntRangeDTO? = IntRangeDTO(min: 1, max: 40),
                        weight: Double? = nil) -> EnemyDTO {
-        EnemyDTO(id: id, tier: 1, icon: "🐗", xpReward: 5,
+        EnemyDTO(id: id, tier: 1, icon: "🐗", xpReward: xp,
                  stats: EnemyStatsDTO(hp: 10, attack: 3, defense: 1),
                  depth: depth, level: level, archetype: archetype,
                  spawnWeight: weight)
@@ -272,5 +272,43 @@ final class BestiaryTests: XCTestCase {
     /// draw — the weights would be silently ignored rather than obeyed.
     func testBandWhereEveryCandidateIsWeightedZeroIsAnError() {
         assertRule("enemy.band_all_zero_weight", bundle(enemies: [enemy(weight: 0)]))
+    }
+
+    // MARK: - XP never falls with depth
+
+    /// The guard that replaced the level-gap XP penalty on 2026-10-02. Every kill
+    /// pays its full XP at any player level, so what keeps the depth ladder
+    /// alive is that a deeper creature pays more. The failing case is the one the
+    /// sandbox used: a wolf starting at km 24 cut to 300 XP under a lynx at km 21
+    /// paying 330.
+    func testDeeperCreaturePayingLessIsAnError() {
+        assertRule("enemy.xp_falls_with_depth", bundle(enemies: [
+            enemy("enemy.lynx", xp: 330, depth: IntRangeDTO(min: 21, max: 25)),
+            enemy("enemy.wolf", xp: 300, depth: IntRangeDTO(min: 24, max: 28)),
+        ]))
+    }
+
+    /// Rising XP is clean, and two creatures sharing a starting km are not ordered
+    /// at all — the viper and the eagle both started at km 1 for a release, paying
+    /// 5 and 17.
+    func testXPRisingWithDepthIsClean() {
+        let report = ContentValidator.validate(bundle(enemies: [
+            enemy("enemy.eagle", xp: 17, depth: IntRangeDTO(min: 1, max: 10)),
+            enemy("enemy.viper", xp: 5, depth: IntRangeDTO(min: 1, max: 10)),
+            enemy("enemy.bear", xp: 780, depth: IntRangeDTO(min: 11, max: 40)),
+        ]))
+        XCTAssertFalse(report.errors.contains { $0.rule == "enemy.xp_falls_with_depth" },
+                       "rising XP was refused: \(report.errors.map(\.message))")
+    }
+
+    /// The `0...0` sentinels never spawn, so they are never ordered against the
+    /// roster: the registration dog pays nothing and sits nowhere.
+    func testSentinelsAreNotOrderedByXP() {
+        let report = ContentValidator.validate(bundle(enemies: [
+            enemy("enemy.boar", xp: 71, depth: IntRangeDTO(min: 1, max: 40)),
+            enemy("enemy.dog", xp: 0, depth: IntRangeDTO(min: 0, max: 0)),
+        ]))
+        XCTAssertFalse(report.errors.contains { $0.rule == "enemy.xp_falls_with_depth" },
+                       "a sentinel was ordered: \(report.errors.map(\.message))")
     }
 }

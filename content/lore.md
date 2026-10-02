@@ -231,8 +231,8 @@ Crown flying from its top.
 Past the perimeter of any estate, the kingdom thins into deep forest
 and then into the wilderness proper. Wilderness is measured in
 kilometres of *depth* from the homestead (1 km = a long walk to the
-treeline; 49 km = the horizon of the world, where a level-40 beast is the
-deepest thing that can live). Foraging,
+treeline; 49 km = the horizon of the world, where the rabid bear walks
+alone). Foraging,
 encounters, and ambient resources scale by depth.
 
 **Three wilderness zones for art reference.** The bands are the ones
@@ -279,10 +279,20 @@ Two families of wildlife, and one stand-in.
   bristles, curved tusks, small hot eyes.
 - **Wild Moose** 🫎 — tall, regal, palm-antlered. Velvet-dark coat,
   long melancholy face. Will charge if cornered.
+- **Red Stag** 🦌 — Олень-рогач. A crown of antlers carried like a war
+  standard, neck swollen in the autumn rut. It bells through the Old Wood
+  in September and charges anything that moves — horse, hound or Governor.
 - **Wild Bison** 🦬 — heavy-shouldered, shaggy, slow but
   immovable. The kingdom's old herd-beast turned wild.
+- **Old Tusker** 🐗 — Вепр-сікач. The boar that outlived its sounder:
+  grey-muzzled, scarred, tusks worn down to blades. A lone old male, and
+  the classic death of hunters at the edge of the Deep Wood.
 - **Wild Bear** 🐻 — full-grown brown bear, deep-chested, claws like
   carving knives. Deep-zone apex of the uninfected wild.
+- **Aurochs** 🐂 — Тур. A wild bull taller at the shoulder than a man,
+  black coat with a pale stripe down the spine, horns curved like a lyre.
+  Gone from our world since 1627; in Artania it still grazes the Deep
+  Wood's clearings, and it tosses horse and rider alike.
 
 These animals are dangerous but *clean* — their bodies are meat for
 the table, their hides are leather for the tannery, their bones useful.
@@ -293,13 +303,24 @@ neither is butchered for the table, and neither has a hide. They are the
 one place the family rule above does not hold, and it is deliberate: see
 `content/spec/spec-bestiary.md` §3.)*
 
+*(The stag, the old tusker and the aurochs joined on 2026-10-02 — tier 2,
+`spec-bestiary.md` §10. Three of the hunt's dangers Volodymyr Monomakh
+lists in his «Повчання»: aurochs that tossed him and his horse, a stag
+that gored him, a boar that tore the sword from his thigh.)*
+
 ### The Rabid Family (Blight-infected, drop hide only — meat is poisoned)
+- **Rabid Fox** 🦊 — Скажена лисиця. The Blight's first messenger: a
+  vixen that walks up to people in broad daylight, tail low, jaw slack,
+  and bites. The first rabid thing a Governor meets, at the thicket's edge.
 - **Rabid Lynx** 🐈‍⬛ — once a forest cat, now a fevered streak of
   matted fur and too-bright eyes. Faster than it should be.
 - **Rabid Wolf** 🐺 — the symbol of the Blight. Once-grey coat now
   patchy and yellow-streaked, foam on the muzzle, ribs showing,
   eyes unblinking. The first creature the player ever fights at
   registration.
+- **Rabid Pack** 🐺 — Скажена зграя. Wolves the Blight stripped of fear.
+  They come as one animal with many mouths, circling until the gap in the
+  ring closes, and there is always one more than you counted.
 - **Rabid Bear** 🐻‍❄️ — a bear in the late stages of the disease.
   Fur half-shed, raw greyish skin showing through, gait halting but
   the bite still lethal. The kingdom's nightmare made flesh.

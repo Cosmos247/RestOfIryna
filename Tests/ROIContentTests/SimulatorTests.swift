@@ -72,17 +72,26 @@ final class SimulatorTests: XCTestCase {
     // MARK: - The generator's claim
 
     /// Every roster enemy's DEF, crit and dodge, rebuilt from its archetype's
-    /// target percentages and its level. Values copied from `enemies.json`.
+    /// target percentages and its level. Values copied from `enemies.json` —
+    /// the tier-2 roster of 2026-10-02 (`spec-bestiary.md` §10), all fourteen
+    /// spawnable creatures on the level each is actually on.
     func testInversionsReproduceTheShippedRoster() {
         // (level, mitigation%, dodge%, crit%, shipped DEF, dodge, crit)
         let roster: [(String, Int, Double, Double, Double, Int, Int, Int)] = [
-            ("wild_boar",     1, 10, 0,  0,   6,  0,  0),
-            ("wild_moose",    6, 20, 3,  5,  24,  4,  8),
-            ("wild_buffalo", 11, 32, 0,  5,  63,  0, 10),
-            ("rabid_lynx",   11, 12, 15, 12, 18, 31, 28),
-            ("rabid_wolf",   16, 20, 3,  5,  44,  6, 11),
-            ("wild_bear",    21, 32, 0,  5, 101,  0, 13),
-            ("rabid_bear",   25, 25, 8,  15, 82, 23, 57),
+            ("wild_viper",    1, 10, 0,  0,   6,  0,  0),
+            ("wild_eagle",    2, 12, 15, 12,  9, 19, 18),
+            ("wild_boar",     3, 20, 3,  5,  18,  3,  7),
+            ("rabid_fox",     4, 12, 15, 12, 11, 22, 20),
+            ("wild_moose",    5, 20, 3,  5,  22,  4,  8),
+            ("wild_stag",     6, 20, 3,  5,  24,  4,  8),
+            ("wild_buffalo",  7, 32, 0,  5,  48,  0,  8),
+            ("rabid_lynx",    8, 12, 15, 12, 15, 27, 25),
+            ("rabid_wolf",    9, 20, 3,  5,  30,  4,  9),
+            ("wild_tusker",  10, 32, 0,  5,  60,  0,  9),
+            ("wild_bear",    11, 32, 0,  5,  63,  0, 10),
+            ("wild_aurochs", 12, 32, 0,  5,  67,  0, 10),
+            ("rabid_pack",   13, 12, 15, 12, 21, 34, 30),
+            ("rabid_bear",   14, 25, 8,  15, 53, 16, 42),
         ]
         for (id, level, mit, dod, cri, wantDEF, wantDodge, wantCrit) in roster {
             XCTAssertEqual(EnemyGenerator.defense(forMitigationPercent: mit, level: level,

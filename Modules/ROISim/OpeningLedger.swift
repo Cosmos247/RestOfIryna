@@ -15,9 +15,10 @@
 //
 //  `spec-economy.md` §7 asked for exactly one thing: **can these levels be
 //  completed, and at what depth.** Depth is the variable because depth is the
-//  answer the design gives — an enemy of level N spawns from km N, so walking
-//  further is the only way to raise XP per kill, and the spec states that as
-//  the intended opening. The table exists to check whether it actually is.
+//  answer the design gives — a deeper band holds a higher-numbered creature that
+//  pays more (since tier 2, 2026-10-02: km 3N−3…3N+1; before that, level N from
+//  km N), so walking further is the only way to raise XP per kill, and the spec
+//  states that as the intended opening. The table exists to check whether it actually is.
 //
 //  The ledger is deliberately narrow, and every exclusion is a whole loop
 //  rather than a rounding:

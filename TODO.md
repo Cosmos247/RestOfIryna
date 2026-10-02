@@ -1736,8 +1736,24 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** — the six 2026-09-27/28 blocks on top
-included, live since the 2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the 2026-10-02 tier-2 block on
+top, which waits for its deploy — the six 2026-09-27/28 blocks under it included, live since
+the 2026-09-28 22:11 restart.
+
+**Added 2026-10-02 — tier 2 of the bestiary (committed, NOT deployed):**
+- **after the deploy, the data first**: `/content` shows 16 enemies and content hash `cd9d73bf`;
+  nothing in `fight_log` breaks on the old creature ids (history, not a live reference).
+- **km 1–2** roll only 🐍 Гадюка; **km 3** brings 🦅 Беркут; the boar first appears at **km 6**,
+  so km 1–5 drop no meat.
+- **the five new names** render in every combat line, in the nominative and at the head of the
+  sentence — «🦊 Скажена лисиця вистрибує з кущів», «… — Скажена зграя втрачає N ОЗ»: the fox at
+  km 9–13, the stag 15–19, the tusker 27–31, the aurochs 33–37, the pack 36–40.
+- **a victory pays the number's XP in full** at any level: a level-20 player killing the boar
+  (№3) gets 71, not the 10% floor. The rabid bear pays 780 now, not 5,000.
+- **km 41–49** roll the rabid bear alone; before tier 2 (its band was km 22–40) they rolled nothing at all.
+- **the King's depth decrees** (km 3 at level 1, km 7 at level 3, km 26 at level 17): reachable,
+  and what is met on the way is the new roster.
+- **a passive run** reports the new names and full XP (× its own 0.7).
 
 **Added 2026-09-28 — the workshop no longer makes armour (live since 2026-09-28 22:11):**
 - **🛠 the workshop** lists [weapon upgrade] [bag upgrade] [🔨 Розібрати спорядження] and the
@@ -2098,6 +2114,34 @@ included, live since the 2026-09-28 22:11 restart.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **Creatures grow stronger with the player's ESTATE tier — decided, spec next.** The owner's
+  own idea (2026-10-02), asked after tier 2 was implemented, at their request. Decided: creature
+  HP and ATK ×(1 + 0.10·(estate tier − 1)), XP unchanged (strength only, against my advice to
+  scale both), and T6 left as it is.
+
+  Measured in a scratch sandbox with real gear (days to L40): unscaled 392, +10% per tier 477,
+  +20% per tier 652, +1 creature level per tier 506. With +10% the whole forest opens around L30
+  instead of L25. The upgrade check shows why T6 is a problem: T2–T5 upgrades stay clearly
+  worth it (×5 / ×1.7 / ×1.4 XP per day), but T5→T6 gains about nothing (×0.9–1.0), because T6
+  adds only 90 food a day; the owner accepts that until new estate tiers add food.
+
+  Storage: one knob in the tuning, applied where the enemy's combat stats are built (fight,
+  passive, rehydration, `fight_log`), with the dummy and the registration dog excluded. Note
+  that `Enemy.swift`'s header argues against runtime scaling by the PLAYER; this is coarse
+  scaling by the estate, and the spec has to say why it differs. Auto-memory
+  `project-new-beasts-draft`.
+- **№3–4 run above contract for a player without armour** (tier-2 sandbox, 2026-10-02). The boar
+  takes 29% of a bar and the fox 36%, against 24% and 28%. Today's moose sat at 29% on the same
+  tier-1 recipe, and the fox is 24% once the Forester set is worn. Kept as it is: the recipe is
+  §3's, and the opening's own knobs are where this gets fixed.
+- **The opening ledger fights with the armoured reference character.** That is why tier 2 can
+  show km 12–17 as "holdable" for levels 1–3 when a real level-3 player loses ~47% of a bar per
+  moose there. The same was true before tier 2; the finding's text just never said so.
+- **`simulate`'s pace cannot see depth.** It prices every kill as an on-level fight with 1.9 rooms
+  of walking and never walks from the manor, so a roster change cannot move it. The
+  expedition model of `spec-bestiary.md` §10.5 was built in a scratch package on 2026-10-02 and
+  is not in the repo. Building it into `simulate` is separate work, offered and not asked for.
+
 - **The kit still never saves Vigor** (measured 2026-09-27, the owner told, prices untouched).
   After the rework an elite fight with the full kit costs +35% (warrior), +16% (archer) and
   +36% (mage) more Vigor than plain attacks, for ~20% fewer rounds. The prices (4/4/5, 3/3/4,
@@ -2113,8 +2157,10 @@ unrelated commit on purpose.
   SDK runs EVERY matching handler, so `/menu` both restores the keyboard (global handler) and
   falls through to the current controller's root re-render. `TGControllerBase.unmatched`
   filters `/buttons`, `/help`, `/settings` only; adding `/menu` is one line.
-- **Four lines still put an enemy's name after a preposition or as an object**, which the
-  nominative-only name cannot carry («Ви подолали Скажений ведмідь»): `exploration.outcome.
+- ~~**Four lines still put an enemy's name after a preposition or as an object**~~ — **fixed
+  2026-10-02 with tier 2**, in the owner's wording (`.memory/localization.md` has the four new
+  lines). The original note, kept for the record: the nominative-only name cannot carry
+  them («Ви подолали Скажений ведмідь»): `exploration.outcome.
   encounter.won`, `combat.defend.absorbed`, `combat.flee.success`, `combat.in_progress`. Raised
   2026-09-27 while fixing the attack lines; the owner scoped that fix to the attacks, so these
   wait. There were eight — the technique rework the same day rewrote the three

@@ -14,18 +14,21 @@
 //  level and archetype, never hand-written: an enemy scaled to the player at
 //  runtime would make each gear upgrade evaporate as it was equipped.
 //
-//  Roster (2026-09-14): 9 spawnable animals across 6 tiers, plus the training
-//  dummy and the registration dog, which carry the `0…0` depth and never spawn.
-//   - Wild family (🐍 🦅 🐗 🫎 🦬 🐻): killable + cookable; drop raw meat + hide.
-//     The viper and the eagle are the exception and drop nothing at all.
-//   - Rabid family (🐈‍⬛ 🐺 🐻‍❄️): dangerous; meat is spoiled by the plague,
+//  Roster (2026-10-02, tier 2 — `spec-bestiary.md` §10): 14 spawnable animals
+//  numbered 1–14, the number being the level, each in the band km 3N−3…3N+1,
+//  plus the training dummy and the registration dog, which carry the `0…0`
+//  depth and never spawn.
+//   - Wild family (🐍 🦅 🐗 🫎 🦌 🦬 🐗 🐻 🐂): killable + cookable; drop raw meat
+//     + hide. The viper and the eagle are the exception and drop nothing at all.
+//   - Rabid family (🦊 🐈‍⬛ 🐺 🐺 🐻‍❄️): dangerous; meat is spoiled by the plague,
 //     loot tables only yield hide.
 //
-//  Deep wilderness: `rabid_bear` alone covers km 26–40, so everything past the
-//  bear's band at km 25 is a single elite. That is a content gap, not a bug —
-//  the roster is honest about its edges now that `pickFor` returns nil past
-//  coverage instead of quietly handing back the first enemy in the file. No
-//  boss archetype has a member yet.
+//  Deep wilderness: the band rule ends the roster at km 43, and the rabid bear's
+//  band is stretched to the zones' horizon at km 49 so no km of the Пуща rolls
+//  an empty step — the rule's one exception, shrinking as №15–16 are authored.
+//  The roster is honest about its edges: `pickFor` returns nil past coverage
+//  instead of quietly handing back the first enemy in the file. No boss
+//  archetype has a member yet.
 //
 
 import Foundation

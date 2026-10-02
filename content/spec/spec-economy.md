@@ -58,9 +58,9 @@ boar, and both are unambiguous:
 | | |
 |---|---|
 | XP to reach level 4 | 788 |
-| `enemy.wild_viper` at level 1 | 5 XP → **158 kills** |
+| `enemy.wild_viper` at level 1 | 13 XP → **61 kills** |
 | starting Vigor pool | 105 |
-| `enemy.wild_boar` at level 2, on curve | 38 XP — 8 of those |
+| `enemy.wild_eagle` at level 2, on curve | 38 XP — 3 of those |
 
 The second row is the path that never leaves the shallowest band. The last
 is why it is not the intended one: depth is the difficulty dial from the
@@ -127,23 +127,35 @@ never spent here either, so every row is a floor and not an estimate.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1,1 | 7.4 | 11.4 | 100% | 106.1 | 430 | 1208 | 2 | **-665** | -665 |
-| 2 | 1,1,2 | 16.1 | 12.6 | 100% | 48.9 | 198 | 616 | 4 | **-307** | -60 |
-| 4 | 1,1,2,4 | 37.8 | 14.3 | 100% | 20.8 | 84 | 297 | 8 | **-106** | +160 |
-| 7 | 1,1,2,4,7 | 78.3 | 15.4 | 97% | 10.1 | 41 | 155 | 14 | **-13** | +138 |
-| 10 | 1,1,2,4,7,10 | 142.6 | 16.2 | 88% | 5.5 | 22 | 89 | 20 | **+28** | +101 |
-| 11 | 2,4,7,10 | 244.8 | 19.8 | 79% | 3.2 | 10 | 64 | 22 | **+39** | +113 |
-| 12 | 4,7,10 | 344.8 | 21.9 | 69% | 2.3 | 7 | 50 | 24 | **+48** | +108 |
-| 13 | 4,7,10,13 | 456.8 | 23.3 | 46% | 1.7 | 5 | 40 | 26 | **+54** | +84 |
-| 14 | 7,10,13 | 623.2 | 24.9 | 21% | 1.3 | 4 | 32 | 28 | **+59** | +69 |
-| 16 | 7,10,13,16 | 819.3 | 24.1 | 17% | 1.0 | 3 | 23 | 32 | **+63** | +75 |
-| 17 | 10,13,16 | 883.2 | 23.4 | 8% | 0.9 | 3 | 21 | 34 | **+63** | +70 |
-| 20 | 13,16 | 1016.5 | 24.2 | 0% | 0.8 | 2 | 19 | 40 | **+59** | +68 |
-| 22 | 13,16,22 | 1359.1 | 23.3 | 0% | 0.6 | 2 | 14 | 44 | **+59** | +66 |
-| 23 | 16,22 | 2575.8 | 18.3 | 0% | 0.3 | 1 | 6 | 46 | **+64** | +74 |
-| 26 | 22 | 5000.0 | 13.6 | 0% | 0.2 | 0 | 2 | 52 | **+61** | +61 |
+| 1 | 1 | 13.0 | 11.0 | 100% | 60.6 | 245 | 664 | 2 | **-305** | -305 |
+| 3 | 1,2 | 20.1 | 11.7 | 100% | 39.1 | 158 | 458 | 6 | **-191** | -191 |
+| 5 | 2 | 38.0 | 13.6 | 100% | 20.7 | 84 | 282 | 10 | **-93** | -93 |
+| 6 | 2,3 | 57.8 | 15.9 | 100% | 13.6 | 55 | 217 | 12 | **-59** | +79 |
+| 8 | 3 | 71.0 | 17.5 | 100% | 11.1 | 45 | 194 | 16 | **-50** | +136 |
+| 9 | 3,4 | 86.6 | 17.3 | 100% | 9.1 | 37 | 158 | 18 | **-24** | +68 |
+| 11 | 4 | 110.0 | 17.1 | 100% | 7.2 | 21 | 123 | 22 | **-8** | -8 |
+| 12 | 4,5 | 140.0 | 17.8 | 100% | 5.6 | 17 | 100 | 24 | **+8** | +137 |
+| 14 | 5 | 160.0 | 18.3 | 100% | 4.9 | 15 | 90 | 28 | **+12** | +201 |
+| 15 | 5,6 | 185.0 | 19.1 | 100% | 4.3 | 13 | 81 | 30 | **+17** | +180 |
+| 17 | 6 | 210.0 | 19.8 | 100% | 3.8 | 11 | 74 | 34 | **+18** | +162 |
+| 18 | 6,7 | 227.6 | 21.8 | 94% | 3.5 | 10 | 75 | 36 | **+14** | +147 |
+| 20 | 7 | 270.0 | 26.5 | 79% | 2.9 | 9 | 77 | 40 | **+6** | +118 |
+| 21 | 7,8 | 306.9 | 22.7 | 84% | 2.6 | 8 | 58 | 42 | **+23** | +60 |
+| 23 | 8 | 330.0 | 20.2 | 88% | 2.4 | 7 | 48 | 46 | **+28** | +28 |
+| 24 | 8,9 | 366.0 | 23.7 | 86% | 2.2 | 6 | 51 | 48 | **+22** | +22 |
+| 26 | 9 | 390.0 | 26.1 | 85% | 2.0 | 3 | 53 | 52 | **+14** | +14 |
+| 27 | 9,10 | 410.6 | 26.0 | 60% | 1.9 | 3 | 50 | 54 | **+14** | +36 |
+| 29 | 10 | 460.0 | 25.9 | 2% | 1.7 | 3 | 44 | 58 | **+15** | +81 |
+| 30 | 10,11 | 495.0 | 25.0 | 1% | 1.6 | 3 | 40 | 60 | **+18** | +81 |
+| 32 | 11 | 530.0 | 24.1 | 0% | 1.5 | 3 | 36 | 64 | **+18** | +78 |
+| 33 | 11,12 | 570.0 | 23.8 | 0% | 1.4 | 2 | 33 | 66 | **+18** | +75 |
+| 35 | 12 | 610.0 | 23.4 | 0% | 1.3 | 2 | 30 | 70 | **+17** | +70 |
+| 36 | 12,13 | 659.2 | 21.3 | 0% | 1.2 | 2 | 25 | 72 | **+20** | +38 |
+| 38 | 13 | 690.0 | 19.9 | 0% | 1.1 | 2 | 23 | 76 | **+18** | +18 |
+| 39 | 13,14 | 705.0 | 19.7 | 0% | 1.1 | 2 | 22 | 78 | **+17** | +17 |
+| 41 | 14 | 780.0 | 18.3 | 0% | 1.0 | 2 | 18 | 82 | **+16** | +16 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 7**, at -13 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 17**, at +18 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
@@ -180,6 +192,18 @@ kilometres wide, and that is the whole of the intended opening.
 > player can actually HOLD moved **km 10 → km 7**, and the profitable-and-
 > survivable window narrowed from km 4–11 to **km 4–7**. That is the design
 > asserting itself, not a regression: depth is supposed to be the dial.
+>
+> *Re-measured 2026-10-02, after tier 2 (`spec-bestiary.md` §10).* The roster was
+> re-numbered and re-banded, and the opening moved with it. Km 1–2 hold the viper
+> alone at 13 XP, so km 1 takes **60.6** kills and ends **−305** Vigor short instead of
+> 106.1 and −665. Km 1–5 drop no meat at all, because the boar now starts at km 6.
+> The first row that is both profitable and held at 100% is km 12, at +8, and the
+> ledger's cheapest holdable depth is **km 17 at +18**. **That window is the ledger's,
+> not a newcomer's.** The ledger fights with the armoured on-curve reference, while a
+> real level-3 player in the registration kit loses about 47% of a bar to every
+> moose on km 12–16 (measured in the tier-2 sandbox). The third modelling choice below
+> no longer moves anything either: the level-gap scaler has been 1.0 since the same
+> day.
 
 Three modelling choices carry that result, and each of them moves it by more than
 the deficit this section was arguing about:
@@ -222,6 +246,13 @@ fails a build on a number the project has agreed to look at first.
 > knobs (food, loot, the estate's first tier), not to the XP rate, and it is now
 > the oldest open item in this document.
 >
+> *Changed back 2026-10-02, by tier 2.* The finding is `opening.shallow_is_bankrupt`
+> again: *"km 1 ends the opening 305 Vigor short where km 17 ends it +18 — the stretch
+> is solvable only by walking deeper than a new player will."* A depth that is both
+> survivable and profitable exists in the ledger again — but see the note above: it is
+> survivable for the reference character, not for a level-3 player without armour. The
+> open item stands, and so does where it gets fixed: the opening's own knobs.
+>
 > *Noticed in the same pass and deliberately left alone:* the fortune deck's
 > `20_judgement` grants a **flat 75 XP**. Halving mob XP did not change its
 > absolute value — the level curve did not move — but it doubled against a kill,
@@ -240,14 +271,19 @@ fails a build on a number the project has agreed to look at first.
 | enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |
 |---|---|---|---|---|---|---|---|---|
 | `enemy.wild_viper` | 1 | trash | ×0.5 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
-| `enemy.wild_eagle` | 1 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
-| `enemy.wild_boar` | 2 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_moose` | 4 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_eagle` | 2 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
+| `enemy.wild_boar` | 3 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 |
+| `enemy.rabid_fox` | 4 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
+| `enemy.wild_moose` | 5 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_stag` | 6 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
 | `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_lynx` | 10 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.rabid_wolf` | 13 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_bear` | 16 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_bear` | 22 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
+| `enemy.rabid_lynx` | 8 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
+| `enemy.rabid_wolf` | 9 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
+| `enemy.wild_tusker` | 10 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_bear` | 11 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_aurochs` | 12 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
+| `enemy.rabid_pack` | 13 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.80 | 2.4 | 0.96 |
+| `enemy.rabid_bear` | 14 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
 
 `lootMult` does not apply today — no award site reads it, so `hide`
 is what the table says regardless of archetype. `hide ×mult` is what

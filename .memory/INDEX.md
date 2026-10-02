@@ -36,7 +36,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   fixing what playing the deployed build reveals — plus the occasional small feature the
   play surfaces a need for. The Pi runs **`8ae6772`** since **2026-09-28 22:11** (schema
   **v14**, content hash `490a2d4b`, digest `tuning fe05ceaa38e03c6b` · `king 5dbddfd689f3cede`,
-  matched byte for byte before the restart was ordered). **Seven game changes of 2026-09-27/28 went live with that
+  matched byte for byte before the restart was ordered). **Tier 2 of the bestiary (2026-10-02)
+  is committed and NOT deployed**: 14 creatures, XP penalty off, content hash `cd9d73bf`
+  (`spec-bestiary.md` §10). **Seven game changes of 2026-09-27/28 went live with that
   restart** (schema **v14**, five migrations, the tables checked after): the stray-number hint, the workshop's
   «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
   last round, the Training Ground as a house room, the technique rework with its fight log,

@@ -21,6 +21,24 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-02 — tier 2 of the bestiary** (committed, NOT deployed; needs `pm2 restart ROI` — the
+validator is code, five locale strings are new and four oblique-case lines were rewritten; no migration). `spec-bestiary.md` §10:
+- **The roster.** Fourteen creatures numbered in order, five of them new: Скажена лисиця,
+  Олень-рогач, Вепр-сікач, Тур and Скажена зграя. A creature's number is its level and its
+  rung, and its band is km 3N−3…3N+1; the rabid bear is stretched to km 49 as the one exception.
+- **XP.** It follows the number alone: every archetype's `xpMultiplier` is 1.0, and the values
+  are the `normal` row at two significant figures.
+- **The level gap.** The XP penalty is off (`xpLevelDiff.perLevel` 0). The damage shift
+  `levelDiff` stays, and the validator rule `enemy.xp_falls_with_depth` replaced
+  `tuning.progression.xp_level_diff_absent`.
+- **Stat lines.** Tier-1 recipe for №1–4; for №5+, solved against the on-curve kit scaled to the
+  obtainable share — the 09-14 method, reconstructed.
+- **Measured.** `simulate` shows 0 broken bands and 18 warnings, +6 `roster_off_curve`. Opening
+  finding back to `opening.shallow_is_bankrupt`. 324 tests. Real-gear pace to L40: 392 days
+  against today's 598.
+- **Next.** The estate-tier scaling, decided after implementation: +10% HP/ATK per tier,
+  strength only, T6 as is. Its spec comes as its own change.
+
 **2026-09-28 — the workshop no longer makes armour** (`ada1ae7`, live since the 2026-09-28 22:11 restart; Swift + two locale lines per
 language, no content file touched — the digest does not move). The owner's call, over a quiz:
 armour comes from the Master alone, at his old prices (60 / 95 / 150 / 180 🪙), and the workshop
@@ -527,10 +545,13 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` / `spawns c9bdb57d456adc26` /
-`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `490a2d4b` (**schema v14**
+`records 696d3c25c1a74d98` / `tuning c01ccfdb585f4a68` / `spawns 0cf31905171d7944` /
+`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `cd9d73bf` (**schema v14**
 since 2026-09-27, when `training_ground.json` became a required file — `Prompt.md` is where
-the baseline is kept in sync; the Pi runs it since the 2026-09-28 22:11 restart), **320 tests**. Pace as of
+the baseline is kept in sync). That is tier 2, committed 2026-10-02 and **not yet on the Pi**,
+which still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
+`spawns c9bdb57d456adc26`, content hash `490a2d4b`, since the 2026-09-28 22:11 restart.
+**324 tests**. Pace as of
 2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
 dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

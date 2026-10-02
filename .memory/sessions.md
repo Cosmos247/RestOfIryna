@@ -375,6 +375,92 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-02 (tier 2 of the bestiary)
+
+**Recovered first.** The design was drafted in session `cf3769f0` ("Rest Of Iryna new enemies",
+09-28 → 10-01), and the owner had lost the thread. Nothing of it had been written to the repo;
+the table existed only in that chat. It was read back out of the transcript.
+
+**The roster.** The owner asked for creatures from Ukrainian lore that are a real threat to a
+person. Five were proposed, three of them from Monomakh's «Повчання»: Скажена лисиця,
+Олень-рогач, Вепр-сікач, Тур, Скажена зграя. The owner kept them and their order, then set
+four rules: numbers run 1–14 in order; bands go km 1–4, 3–7, 6–10, and so on; the viper is
+alone on km 1–2; XP rises with the number alone. When the plain band rule left km 44–49 empty,
+the owner stretched the rabid bear to km 39–49, against my recommendation.
+
+**The level gap was the real decision.** In the owner's words, a creature's number is a rung on
+the depth ladder, not a player level — depth follows the estate's food. The code compared the
+two in XP (−8% a level, floored at 10%) and in damage (±6% a level). Three variants were
+measured with an expedition model built on the game's own `FightSimulator` in a scratch
+package. Every trip walks from the manor to km D and back with 40%/52% encounters, and depth
+is limited by HP. Days to L40:
+- XP penalty kept: a wall after ~L22, ~3,070 days;
+- no comparison at all: 811;
+- **XP penalty off, damage shift kept: 399** — the owner's pick.
+
+The guard `tuning.progression.xp_level_diff_absent` was REPLACED, not deleted, by
+`enemy.xp_falls_with_depth`. The purpose stands (a living depth ladder) and only the mechanism
+changed.
+
+**Two of my own errors, caught on the way.** The 10-01 report headlined a variant without the
+walk, which made a table paying LESS XP look faster. The owner caught it with one question —
+"how do the days drop if the XP drops?" — and with the walk included the table was slower. The
+model that replaced it also fixed the old one's other flaw: it had treated the walk as empty
+and ignored HP. In this game the walk is mostly fights with the shallower bands.
+
+**The 09-14 stat method was never written down**, so it was reconstructed. It is
+`EnemyGenerator` against the on-curve reference with `rarityMultiplier` set to the obtainable
+share `spec items` prints, and it lands within 2–8% of the 09-14 lines; the shares have
+dropped since. A player built from the real items did NOT reproduce them, because the
+level-10 weapon rung overshoots.
+
+**The JSON was emitted, not hand-edited.** Python's `json.dumps(indent=2, sort_keys=True,
+ensure_ascii=False, separators=(',', ' : '))` reproduces all 28 content files byte for byte.
+Swift's `JSONEncoder` does not (`10` for `10.0`, `[\n\n]` for `[]`), and neither does a DTO
+round-trip, because `EnemyStatsDTO` drops zero stats. That went into `CLAUDE.md` and auto-memory
+`reference-house-json-style`.
+
+**Measured:**
+- `validate --strict` 0/0, and the new rule's failing case fires;
+- 324 tests;
+- `simulate --strict` 0 broken bands, 18 warnings — the +6 are all `roster_off_curve`;
+- digest: `records` / `tuning` / `spawns` moved, `quests` / `king` did not;
+- three `spec-economy.md` blocks refreshed, all of them in sync before the change;
+- opening finding back to `opening.shallow_is_bankrupt`, with a caveat: the ledger fights with
+  the armoured reference, so km 12–17 being "holdable" belongs to the reference, not to a
+  newcomer;
+- real-gear pace to L40: 392 days against today's 598.
+
+**The audit before the commit found eight things, all fixed in the same commit:**
+- five code comments still describing the old roster: `Enemy.swift`'s header ("rabid_bear alone
+  covers km 26–40"), `EnemyDTO`'s "11 entries", `EnemyGenerator`'s worked example (a level-22
+  bear), and the "level N spawns from km N" claim in `OpeningLedger` and in `BalanceFormatter`;
+- `SimulatorTests` claiming its fixture was copied from `enemies.json` while holding the
+  Phase 9 roster. It now carries the fourteen tier-2 creatures, all on the curves exactly;
+- the parked scaling question still sitting in `Prompt.md`, `TODO.md`, `status.md` and here,
+  though it had been answered;
+- the spec still saying "Proposed", and a walk-list line that named the wrong empty km.
+
+**Patterns worth carrying.**
+- Headline every cost, or the comparison lies.
+- `simulate`'s pace cannot see depth.
+- A guard's purpose can outlive its mechanism, so replace the guard rather than delete it.
+
+**The four oblique-case enemy-name lines** were rewritten in the same change. The mockups came
+first, per the audit protocol, and the owner picked the wording over a quiz, amending one
+line to «%{enemy} — перемога за …». The sweep now finds nothing.
+
+**Asked after implementation, as the owner had requested:** should creatures grow stronger with
+the estate tier? The owner chose strength only, against my advice to scale XP with it. Three
+steps were measured in the sandbox, with real gear (days to L40):
+- unscaled: 392;
+- **+10% HP/ATK per tier: 477** — picked;
+- +20%: 652;
+- +1 creature level per tier: 506.
+
+The T5→T6 upgrade gains about nothing per day (×0.9–1.0), because T6 adds only 90 food; the
+owner left T6 as it is. The spec comes as its own change after this commit.
+
 ## Session — 2026-09-29 (the sync pass)
 
 Records only, plus dead code the 09-28 change left behind. `RecipeCategory.icon` and

@@ -1,7 +1,8 @@
 # Content spec — Bestiary
 
 **Status: approved 2026-08-31.** Phase 9. The decisions are in §8; §7 was applied
-in the same pass.
+in the same pass. **§10 — tier 2, fourteen creatures numbered in order — was approved
+and applied on 2026-10-02.** §3–§4 describe the roster before it.
 
 Scope: **levels 1–25**, the authored band fixed in `spec-progression.md`. Levels
 26–40 stay a generated draft from the same archetype table.
@@ -69,6 +70,10 @@ flavour are authored; HP, ATK, DEF, crit, dodge and XP are solved.
 ---
 
 ## 3. The roster — levels 1–25
+
+> **Superseded 2026-10-02 by §10.** This section and both of its amendments describe
+> the roster before tier 2. They stay as written, because they are the history that
+> §10's numbers were measured against.
 
 **Decided: no new creatures.** The seven that exist are re-spread across the
 whole path instead, overlapping at the edges of their bands. Nine invented
@@ -255,6 +260,8 @@ that matter:
 
 ## 4. What that does to a walk
 
+> **Superseded 2026-10-02 by §10.6.** Since tier 2, no km holds more than two creatures.
+
 | km | candidates | archetypes on offer |
 |---|---|---|
 | 1–3 | 1 | trash |
@@ -440,3 +447,294 @@ re-spreading the roster rather than inventing one. The only string that changes
 is `enemy.wild_buffalo` — and it changes in **`en.json`, `uk.json` and
 `lore.md`** (Buffalo → Bison, «Дикий буйвіл» → «Зубр»), not in `en.json` alone as
 this section originally said. See the correction in §3.
+
+---
+
+## 10. Tier 2 — fourteen creatures, numbered in order
+
+**Status: APPROVED and APPLIED 2026-10-02.** The four open points were decided the
+same day (§10.9), and the sandbox and the authoring measurements are in §10.10. On approval this section supersedes §3's roster and both of its amendments,
+§4's walk table, and two rules in `spec-progression.md`: the km rule in §4 (**an enemy
+of level N spawns from km N to km N+9**) and the level-gap scaling of mob XP in §1.
+
+The contract every creature below is generated from is printed by the same command as
+the rest of this document, at every number the roster uses:
+
+```
+swift run roi-content spec bestiary --levels 1,2,3,4,5,6,7,8,9,10,11,12,13,14
+```
+
+### 10.1 What was asked
+
+The owner asked for new creatures that belong to Ukraine's lore and are a real threat
+to a person, because a lizard or anything else harmless attacking makes no sense. Five
+were proposed on 2026-09-28 and placed between the nine that exist. The owner kept all
+five and their order, and then asked for three changes:
+
+- **numbers run in order from 1**, one per creature, so the list is easy to edit;
+- **bands follow one fixed step**: the first creature lives on km 1–4, the second on
+  3–7, the third on 6–10, and so on;
+- **km 1–2 hold the viper alone.**
+
+Bosses are out of scope for this tier, so the `boss` archetype still has no members
+(§5 stands).
+
+### 10.2 The roster
+
+| № | id | EN | UA | family | archetype | km band | today |
+|---|---|---|---|---|---|---|---|
+| 1 | `enemy.wild_viper` | Viper | Гадюка | wild | trash | 1–4 | L1 · km 1–10 |
+| 2 | `enemy.wild_eagle` | Golden Eagle | Беркут | wild | skirmisher | 3–7 | L1 · km 1–10 |
+| 3 | `enemy.wild_boar` | Wild Boar | Дикий кабан | wild | normal | 6–10 | L2 · km 2–11 |
+| 4 | `enemy.rabid_fox` | Rabid Fox | Скажена лисиця | rabid | skirmisher | 9–13 | **new** |
+| 5 | `enemy.wild_moose` | Wild Moose | Дикий лось | wild | normal | 12–16 | L4 · km 4–13 |
+| 6 | `enemy.wild_stag` | Red Stag | Олень-рогач | wild | normal | 15–19 | **new** |
+| 7 | `enemy.wild_buffalo` | Wild Bison | Зубр | wild | brute | 18–22 | L7 · km 7–16 |
+| 8 | `enemy.rabid_lynx` | Rabid Lynx | Скажена рись | rabid | skirmisher | 21–25 | L10 · km 10–19 |
+| 9 | `enemy.rabid_wolf` | Rabid Wolf | Скажений вовк | rabid | normal | 24–28 | L13 · km 13–22 |
+| 10 | `enemy.wild_tusker` | Old Tusker | Вепр-сікач | wild | brute | 27–31 | **new** |
+| 11 | `enemy.wild_bear` | Wild Bear | Дикий ведмідь | wild | brute | 30–34 | L16 · km 16–25 |
+| 12 | `enemy.wild_aurochs` | Aurochs | Тур | wild | brute | 33–37 | **new** |
+| 13 | `enemy.rabid_pack` | Rabid Pack | Скажена зграя | rabid | skirmisher | 36–40 | **new** |
+| 14 | `enemy.rabid_bear` | Rabid Bear | Скажений ведмідь | rabid | elite | 39–**49** | L22 · km 22–40 |
+
+Three rules produce the table, and nothing else in it is chosen:
+
+- **The number is the level.** It feeds the generated stat line, the damage shift
+  (`levelDiff`) and the rating curves — but no longer the XP a kill pays (§10.4).
+- **The band is km 3N−3 … 3N+1, with №1 starting at km 1.** A new creature every three
+  km, each band four km wide, neighbours overlapping by two. No km holds more than two
+  creatures; km 1–2, every third km from km 5 on (5, 8, 11 …) and km 41–49 hold only
+  one. **One exception, chosen over an empty forest edge:** the last creature's band
+  stretches to the zones' horizon at km 49, exactly as today's rabid bear stretches to
+  km 40. By the plain rule it would end at km 43 and leave km 44–49 without a single
+  encounter. The stretch shrinks back as №15 (km 42–46) and №16 (km 45–49) are
+  authored. The horizon holds exactly sixteen creatures, and a seventeenth would need
+  it moved.
+- **XP depends on the number alone:** every creature pays the `normal` row's XP at its
+  number, rounded to two significant figures as the shipped roster already is. To make
+  the generator and `spec bestiary` print what the roster pays, every archetype's
+  `xpMultiplier` becomes **1.0** — the archetype keeps deciding how a fight goes, and
+  stops deciding what it pays. With the multiplier the renumbered bison (№7) would pay
+  more than the lynx above it (№8), and the aurochs (№12) more than the pack (№13). The
+  price of dropping it is that brutes and the elite no longer pay extra for a longer
+  fight; their reward is the meat and the hide.
+
+The ids of the nine existing creatures stay — ids are a database contract. Spawn
+weights stay inherited from the archetype (§5); nothing overrides one. The rabid bear
+sits exactly on the elite floor of level 14. The tusker is a `brute`, because an elite
+below level 14 is refused (`enemy.below_archetype_floor`).
+
+### 10.3 Why these five
+
+All five are animals of medieval Ukraine that maim people. Three of them come from one
+source: in his «Повчання» (12th c.) Volodymyr Monomakh lists what befell him on the
+hunt — two aurochs tossed him and his horse on their horns, a stag gored him, an elk
+trampled him, a boar tore the sword from his thigh, a bear bit at his knee. The elk,
+the boar and the bear already live here; the aurochs, the stag and the old tusker join
+them.
+
+- **Rabid fox** — the main natural carrier of rabies in Ukraine; a sick fox walks up
+  to a person in daylight and bites. At km 9–13 it is the first sighting of the Blight,
+  at the thicket's edge, which is what `content/lore.md` asks of the middle band.
+- **Red stag** — in the rut, September to October, it charges anything that moves.
+- **Old tusker** — the old solitary boar, the classic danger to a hunter.
+- **Aurochs** — a wild bull up to 1.8 m at the shoulder. It died out in our world in
+  1627 and still walks in Artania.
+- **Rabid pack** — wolves the Blight stripped of fear. The name is singular on purpose:
+  combat lines make it the subject («%{enemy} втрачає N ОЗ»).
+
+Turned down: harmless animals (lizards, grass snakes, hedgehogs, hares, a healthy fox);
+the jackal and the raccoon dog, which reached Ukraine only in the 20th century; and the
+upyr, the mavka, the drowner and the Zmiy, because `lore.md` §2 says the Blight is
+neither skeletal nor demonic. Held in reserve: a hornet swarm, feral dogs, the tarpan,
+and for №15 onward the rabid doubles of the bison, the tusker, the stag and the aurochs,
+plus the Vovkulaka — what villagers call the pack's leader.
+
+### 10.4 The level gap: XP stops shrinking, damage keeps shifting
+
+Today a kill pays 8% less XP for every level the player stands above the creature,
+down to 10% (`tuning/progression.json` → `xpLevelDiff`), and every swing between them
+shifts by 6% a level, clamped to ×0.25–×2.5 (`tuning/combat.json` → `levelDiff`).
+
+**Decided: `xpLevelDiff.perLevel` goes 0.08 → 0, and `levelDiff` stays.** Every kill
+pays its full `xpReward`; a creature the player has outgrown still dies faster and
+hurts less.
+
+**Why, in the owner's words reduced to a rule:** a creature's number is its rung on the
+depth ladder, not a player level, and how deep a player can go is paid for by the
+estate's food, not granted by their level.
+
+**Why, measured.** Under today's rule a level-22 player already stands above all
+fourteen creatures, and from level 26 every one of them pays the 10% floor, so the
+climb stops. The damage shift is what keeps the walk alive: outgrown creatures die in a
+round or two and barely scratch, so a trip reaches deeper as the player grows. Without
+it, the weak creatures on the way hit at full strength and the trips stay short.
+
+**The guard this replaces.** Until this change the validator refused a zero `perLevel`
+(`tuning.progression.xp_level_diff_absent`), because without the penalty "farming far
+below your level stays fully rewarding and the depth ladder becomes dead content". The
+purpose stands and the mechanism changes. Every trip starts at the manor and walks
+through the weaker bands, and a deeper creature pays more, so depth is what pays. The
+rule that replaces it guards exactly that: **no creature may pay less XP than one whose
+band starts shallower.** It ships with its failing case in the same commit. The
+`xpLevelDiff` knob stays in the data, so if live play shows shallow farming after all,
+the penalty comes back with one number and a `/reload`.
+
+### 10.5 Measured, not reproducible from `roi-content` yet
+
+These figures come from a scratch expedition model built on 2026-10-02. Each trip walks
+from the manor to a chosen km and back, one km per step, and fights what the steps roll:
+40% of steps going in, 52% coming home, matching `tuning/exploration.json`. Fights are
+the game's own `FightSimulator`, rolled 1,000 times for every level 1–40 × class ×
+creature, against creatures generated on contract and the on-curve reference character.
+Each level takes the depth with the best XP per Vigor that the character survives: mean
+HP lost no more than 90% of a bar after dishes eaten on the way, and at least 90% odds
+of getting home. Days are Vigor ÷ a tended estate's food, as in `simulate`.
+
+Days to level 14 / 25 / 40, mean of the three classes, with the rabid bear's band
+stretched to km 49:
+- today's roster under today's rules: 75 / 159 / 642;
+- this roster under today's rules: 97 / 367 / ~3,070 (the wall);
+- this roster with no level comparison at all: 99 / 246 / 811;
+- **this roster as proposed (XP penalty off, damage shift kept): 67 / 128 / 399**;
+- the same, keeping the archetype XP multiplier: L40 in 229.
+
+The conclusions held across healing assumptions from 60% to 250% of a bar per trip.
+Today's rule still walls, and the proposal still beats today's game at levels 14 and
+40. The absolute days moved, and at 250% today's game pulls ahead at levels 25–30.
+
+**What `simulate` cannot see.** Its pace section assumes every fight is with an on-level
+`normal` creature at 1.9 rooms of walking. It never sees the walk from the manor through
+the weaker bands, which is the mechanism this whole section turns on. That is why the
+absolute days above exceed `simulate`'s 114–126, and why `simulate` will barely move on
+this change apart from its roster check and the opening ledger. Building the expedition
+model into `simulate` is separate work and not part of this amendment.
+
+### 10.6 What a walk looks like
+
+- **Depth grows about two km a level:** ~10 at level 5, ~19 at 10, ~28 at 14, ~40 at 20,
+  and the whole forest, to km 49, from ~25.
+- **Trips get long.** At level 20 a trip is ~80 steps and ~36 fights, and costs ~320
+  Vigor against a pool of 200. The rest is eaten from the bag on the way.
+- **Past km 40 the rabid bear walks alone**, to the horizon at km 49 (§10.2's one
+  exception). From ~level 25 the player walks the whole forest, and levels 22–40 take
+  ~290 days of that walk. Nothing new appears there until №15.
+- **The opening changes.** Km 1–2 hold the viper, km 3–4 add the eagle at level 2, and
+  the boar starts at km 6. The viper and the eagle drop nothing, so **km 1–5 yield no
+  meat**; today the first meat is at km 2. Wild meat then runs to km 37, the aurochs'
+  last km. Past it live only the pack and the rabid bear.
+- **The Blight thickens with depth by ratio.** The thicket holds one rabid creature, the
+  fox, on its last two km. The Old Wood holds the fox, the lynx and the wolf against the
+  moose, the stag and the bison. The Пуща ends in the pack and the rabid bear.
+
+### 10.7 What changes for players already playing
+
+- The creatures they know move deeper and pay differently: the bison 500 → 270 at km
+  18–22, the lynx 600 → 330 at 21–25, the wolf 690 → 390 at 24–28, the bear 1,800 → 530
+  at 30–34, the rabid bear 5,000 → 780 at 39–49.
+- XP per Vigor at levels 10–14 stays about where it is today (§10.5's model). The trips
+  that earn it are deeper and longer.
+- No level and no XP is taken. No id is removed, so there is no migration and the live
+  reference check has nothing to refuse. `fight_log.enemy_id` keeps its history.
+- The King's three depth decrees — km 3 at level 1, km 7 at level 3, km 26 at level 17 —
+  stay reachable. In the sandbox the opening ledger holds km 3 and km 7 at a 100% win,
+  and a level-17 player's best trip already goes to about km 33. The ledger fights with
+  the armoured reference, though, so the first two are easier there than for a player
+  in the registration kit.
+
+### 10.8 What authoring touches, once approved
+
+1. `tuning/progression.json`: `xpLevelDiff.perLevel` 0.08 → 0.
+2. `ContentValidator`: `tuning.progression.xp_level_diff_absent` is replaced by the
+   depth-XP rule in §10.4, with its failing case. The test that asserts the old rule
+   moves with it.
+3. `enemies.json`: all six archetypes get `xpMultiplier` 1.0. The nine creatures are
+   re-numbered, re-banded, re-solved and re-priced (the rabid bear's band is 39–49), and
+   five rows are added. `tier` is a legacy field no game code reads (the digest hashes it
+   and the validator only checks it is not negative), and the new rows take a
+   neighbour's. The JSON is emitted in the house style, by an emitter that first
+   reproduced all 28 content files byte for byte.
+4. **Stat lines**, solved per creature against the kit a player of that number actually
+   carries. That is the tier-1 recipe up to №4, where today's moose already sits on it:
+   HP 100%, ATK 65%, DEF/crit/dodge on curve (§3's first amendment). Above №4 it is the
+   wardrobe re-solve of §3's second amendment. **That method was never written down,
+   so it was reconstructed on 2026-10-02.** `EnemyGenerator` solves against the on-curve
+   reference character, with its kit scaled to the share of the on-curve kit that
+   `spec items` prints as obtainable at that level (`ReferenceCharacter`'s
+   `rarityMultiplier`). That reproduces the 09-14 lines to within 2–8%, and the gap is
+   the obtainable shares having fallen since. A player built from the real items —
+   laddered weapon plus the Forester set — does NOT reproduce them, because the
+   level-10 weapon rung overshoots. The sandbox has to show on-contract rounds and bar
+   shares before anything is committed.
+5. Five names in `en.json` and `uk.json`, nominative only. The four lines that still put
+   an enemy's name in an oblique case (`TODO.md`) are fixed in the same commit, because
+   five new names make that defect more visible, not less.
+6. `content/lore.md`: the five creatures join the bestiary.
+7. Documents: `spec-progression.md` §1 and §4, `CLAUDE.md` (the rule and its guard),
+   `Prompt.md` (the world-ladder line), the comment on `ProgressionMath.xpMultiplier`,
+   and the `enemy.depth_gap` comment, which said "km tracks level". The audit before the
+   commit found five more code comments that described the old roster (`Enemy.swift`'s
+   header, `EnemyDTO`, `EnemyGenerator`'s worked example, `OpeningLedger`,
+   `BalanceFormatter`), and they were rewritten in the same commit.
+8. Tests pinned to today's roster, and a new digest baseline. `records`, `tuning` and
+   `spawns` move; `quests` and `king` do not. The digest's printed self-check
+   `xp floor` expects a level-40 player to get the floor from a level-1 creature, and
+   is rewritten to expect the full reward.
+9. Verification: `validate --strict`, `simulate --strict`, `spec opening -c release`
+   with `spec-economy.md`'s blocks refreshed, `swift test`, and `--content-digest`.
+10. Deploy needs a restart, not a `/reload`: the validator is code, and Lingo does not
+    reload new strings.
+
+### 10.9 Decided 2026-10-02
+
+The owner settled the four open points the same day:
+
+1. **The archetype XP multiplier goes to 1.0**, as the approved table has it. Keeping it
+   would reach level 40 in 229 days instead of 399 (§10.5), but brutes would again pay
+   more than the creatures numbered above them.
+2. **Stat lines are solved against the real kit** (§10.8, step 4).
+3. **The four oblique-case lines are fixed in the same commit.**
+4. **The rabid bear's band stretches to km 49** rather than leaving km 44–49 empty —
+   the one exception to the band rule (§10.2), shrinking as №15–16 arrive.
+
+### 10.10 Applied 2026-10-02 — what the sandbox and the authoring measured
+
+`content/data` was first built in a scratch copy, then applied unchanged. The emitter
+re-wrote all 28 content files byte for byte before it was allowed to write one.
+
+- **Validation.** `validate --strict` is clean, 0 errors and 0 warnings, with
+  `enemy.xp_falls_with_depth` replacing `tuning.progression.xp_level_diff_absent`. The
+  old validator refuses this bundle on that one rule and nothing else. The new rule's
+  failing case fires: a wolf cut to 300 XP under a 330 XP lynx.
+- **Tests.** 320 → 324 (`BestiaryTests` +3, `TuningTests` +1). `SimulatorTests`'
+  inversion check now carries the fourteen tier-2 creatures. Its fixture was still the
+  Phase 9 roster while claiming to be copied from `enemies.json`. All fourteen land on the
+  DEF, crit and dodge curves exactly.
+- **`simulate --strict`.** 0 broken bands and 18 warnings instead of 12. The six extra are
+  all `content.roster_off_curve`, the same deliberate finding today's seven creatures
+  carry: lines solved against the real kit read light against the reference character.
+  The pace section did not move, because it never reads the roster.
+- **Digest.** `records`, `tuning` and `spawns` moved; `quests` and `king` did not. The
+  printed `combat model` check passes with its XP anchor now expecting the full reward.
+- **Fights.** №5–14 land on contract against the player they were solved for, and run
+  lighter against a player in real gear, clearly so from №10, where the level-10
+  weapon rung arrives. №3–4 run heavy for a player without armour: the boar takes
+  29% of a bar and the fox 36%, against contracts of 24% and 28%. Today's moose already
+  sits at 29%, and the fox drops to 24% once the Forester set is worn. A level-9 player
+  without the level-10 weapon who walks into №10–11 meets 56–69% of a bar per fight. In
+  practice that band, km 27 on, is reached around level 14.
+- **The opening.** The finding is back to `opening.shallow_is_bankrupt` (`spec-economy.md`
+  carries the re-measured ledger). Km 1 takes 60.6 kills to level 4 instead of 106.1. The
+  ledger's holdable window is km 12–17, but it is held by the armoured reference
+  character. A real level-3 player loses ~47% of a bar to every moose there.
+- **Loot of the five new creatures**, copied from their nearest kin: the fox from the
+  lynx, the stag from the moose, the tusker from the bison, the aurochs from the bear,
+  the pack from the wolf.
+- **The four oblique-case lines** were rewritten in the owner's wording, picked over a
+  quiz: «%{enemy} — перемога за N раунд(ів).», «…зачіпаєте у відповідь — %{enemy} втрачає N
+  ОЗ.», «…— %{enemy} лишається позаду.», «Ви зараз у бою — %{enemy} не відступить. …». The
+  sweep for an enemy name in an oblique position now finds nothing.
+- **Pace with the authored lines.** This uses §10.5's expedition model with a player built
+  from the real items. Days to level 14 / 25 / 40: today's roster 78 / 152 / 598, tier 2
+  73 / 132 / 392.

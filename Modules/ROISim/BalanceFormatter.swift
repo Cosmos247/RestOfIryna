@@ -496,9 +496,10 @@ public enum BalanceFormatter {
                         message: String(format: "km %d ends the opening %.0f Vigor short where km %d ends it %+.0f — the stretch is solvable only by walking deeper than a new player will, and nothing in the game says so",
                                         shallowest.km, -shallowest.net, best.km, best.net)))
                 }
-                // The design's own claim, checked rather than repeated: an enemy
-                // of level N spawns from km N, so depth is meant to be BOTH the
-                // difficulty dial and the reward for turning it. If the
+                // The design's own claim, checked rather than repeated: a deeper
+                // band holds a stronger creature that pays more (since tier 2 its
+                // band starts at km 3N−3, before that at km N), so depth is meant
+                // to be BOTH the difficulty dial and the reward for turning it. If the
                 // shallowest row is also the cheapest, that claim is not true of
                 // the shipped numbers.
                 if let shallowest = opening.shallowest, opening.depths.count > 1,
