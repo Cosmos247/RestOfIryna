@@ -414,6 +414,18 @@ is read live, not stored on the row, which is safe only because nothing can rais
 expedition row stands — keep it that way. No screen announces the strength, on the owner's word;
 `fight_log.estate_level` records it. Auto-memory `project-estate-scaling`.
 
+**The arena duel is played in simultaneous rounds** (2026-10-03). Both fighters choose blind;
+the round is played on the second choice, or when the clock (`arena.json` → `turnSeconds`, 15 s)
+runs out with a missing choice played as a forced Defend — and both blows are rolled against the
+state the round STARTED with. Alternating, the challenger's first blow won 60–66% of mirror
+duels, so **never resolve one side's blow before the other's**. The round is
+`DuelMath.resolveRound` in `ROISim`, reached only through `CombatService.resolveDuelRound`: a
+Defend braces against the same round's attack, and when both fall the heavier blow wins
+(equal blows draw). `sweepInterval` (1 s) is the clock's precision — at 10 s a 15 s round would
+last up to 25. Every ending goes through `ArenaController.finish`, and settlement is a write the player
+did not tap, so it takes the session-cached `User` (`ArenaService.liveUser`). Auto-memory
+`project-arena-simultaneous-rounds`.
+
 ### Gear, inventory and storage
 
 **A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the ONE
@@ -624,8 +636,11 @@ both kinds.
 its SUBJECT or set it after a dash — «… — %{enemy} втрачає N ОЗ» — never after a preposition
 or as an object: «по %{enemy}» printed «по Скажений ведмідь» on every plain hit until
 2026-09-27. The last four lines that broke it were rewritten on 2026-10-02, with tier 2's
-five new names, in the owner's wording. The one-liner that finds a new one is in
-`.memory/localization.md` — run it after any copy edit that touches `%{enemy}`.
+five new names, in the owner's wording. **A player's nick is the same** — free-form, so no
+declension can be computed: fifteen lines that broke it («проти / від / у / із %{nick}»,
+«Очікуємо %{nick}») were rewritten on 2026-10-03, six of them in the arena. The one-liner
+that finds a new one is in `.memory/localization.md` — run it after any copy edit that touches
+`%{enemy}` or `%{nick}`.
 
 **Gendered text (uk feminitives):** a string that names the player with a gendered noun uses
 `lingo.localize("key", gender: session.gender, locale: ..., interpolations: ...)`, which

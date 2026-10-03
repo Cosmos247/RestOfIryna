@@ -50,8 +50,12 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     tier, strength only, with T6 left as it is, no player notice, and
     `fight_log.estate_level`. It brings content schema v15 and one migration. The testers
     should hear about it first, because the game announces nothing.
-  - Then the first `fight_log` rows, and a human walking the screens. The estate and tier-2
-    blocks head `TODO.md`'s walk list and wait for their deploy.
+  - The same restart takes the arena in simultaneous rounds (2026-10-03, committed, NOT
+    deployed): both fighters choose blind, a 15 s clock defends for the silent one, both blows
+    land together and the heavier one wins when both fall. The alternating duel gave the
+    challenger 60–66% of mirror duels.
+  - Then the first `fight_log` rows, and a human walking the screens. The arena, estate and
+    tier-2 blocks head `TODO.md`'s walk list and wait for their deploy.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped

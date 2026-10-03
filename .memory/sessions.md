@@ -394,6 +394,82 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-03 (the arena duel in simultaneous rounds)
+
+**The question first.** The owner asked how the arena works and in what order players move.
+Answered from the code, then measured on `CombatMath` in a scratch package (copies of
+`ROIContent` + `ROISim`; the repo untouched):
+- the challenger struck first and won 60–66% of mirror duels at every level;
+- Defend won 0.0% against Attack;
+- L10 against L12 won 2.5% of duels, and the warrior beat the archer and the mage 73–90%;
+- the result screen received the final blow and never printed it.
+
+**The ask.** "Players should not move in turn — it is not fair — but at once. 10–15 seconds a
+move; whoever misses defends. And the final blow shown as in PvE."
+
+**Measured before deciding.** Simultaneous rounds put both fighters down in the same round in
+20–32% of mirror duels, so that became the first question. The quiz:
+- both fall → **the heavier blow wins**, and equal blows (1–4% of duels) draw, with stakes and
+  Honor unchanged;
+- **three** missed rounds in a row → a technical defeat;
+- the screens: neither the PvE-style sentences nor the old compact lines. The owner asked for
+  something between them, rejected two preview quizzes to ask for a few rounds played out with
+  random events, and approved a seven-round duel rolled on the real math (archer against mage,
+  a Defend, a missed timer, two crits, both falling) as it stood:
+  «⚔️ Ви: удар — 26 ОЗ» over «🩸 Petro: удар — 32 ОЗ».
+
+**Implemented:**
+- `DuelMath` (ROISim): `resolveRound` rolls both blows against the round's starting state; a
+  Defend braces against the same round's attack (×2, never against a chip); the heavier blow
+  wins when both fall; `walkover` is the missed-rounds rule. `CombatService.resolveDuelRound` is
+  its façade;
+- `ArenaStore`: `choose` locks a choice and plays the round on the second; `sweep` plays a round
+  whose clock ran out, with forced Defends, after `walkover`; `RoundReport`, and `Ending`
+  (knockout / surrender / forfeit / draw / abandoned). The stale "escrow at accept" header and
+  the "±3 bracket" comment were corrected;
+- `ArenaService.settle`: draws (HP and the day's count, nothing else), abandoned duels (nothing),
+  and `liveUser` — the session-cached `User` first, because settling on fresh copies left the
+  dispatcher's session stale and `/start` mid-duel saved it straight after;
+- `ArenaController`: `handleChoice`; `pushDuelOpening` / `pushRound` / `pushDuelFrame` (a stray
+  message redraws the asking fighter's chat only); `finish` as the one exit; a result screen that
+  opens with the final round. Accepting an invite sets `routerName` to "arena";
+- `arena.json`: `turnSeconds` 45 → 15, `maxMissedTurns` 2 → 3, `sweepInterval` 10 → 1;
+- locales: 34 keys added in uk and 28 in en (the three count keys have one form in English), 9
+  removed (`arena.log.*` and the four turn keys), three rewritten (`win_body` and `loss_body`
+  lost their nick sentence, `loss_title` gained a full stop);
+- `DuelMathTests` (+8);
+- fifteen older lines that put the nick where Ukrainian needs a case it cannot take, rewritten
+  in the owner's approved wording so the nick stays nominative. Six were in the arena — the
+  stake picker, the four closed invites («%{nick} викликає вас на герць — прийнято / відхилено
+  / час на відповідь минув / скасовано») and the challenger's «%{nick} не відповідає на ваш
+  виклик.» Nine more the sweep found: the bazaar's buy confirmation, six trade lines and two
+  guild banners. Asked about after the arena six, approved from a table;
+
+**Verified:**
+- 344 tests; `validate --strict` 0/0; a touched-file recompile with no warning in any of them;
+- the nick sweep (`.memory/localization.md`) flags only three lines, all with the nick as the
+  subject. My first version of it passed everything, because `endswith(('', …))` is always
+  true; it was caught when it did not flag the six lines already known to be broken;
+- each new test mutation-tested: an inverted heavier blow, an ignored brace, a brace on chips and
+  the old first-strike edge (b's blow skipped when a's kills) all fail it;
+- the digest: `records` alone moved (`696d3c25c1a74d98` → `259f6cb6ca152450`) and the content
+  hash `be4350a5` → `7f6a7317`. With HEAD's `arena.json` the new code reads the old baseline byte
+  for byte, so the code moved nothing;
+- every arena key the controller reads exists in both locales, the placeholders match, and
+  nothing is orphaned; every new screen was rendered from the real templates in both languages.
+
+**A correction.** The mockup note said a Defend cuts "about 8%" of a mage's hit. The mitigation
+curve gives ~12% (DEF 20 → 40 at L10: 0.864 → 0.760 of a hit). The point stands: one hit's ±10%
+variance can hide it.
+
+**Not done, written down** in `TODO.md` → "Open, decided but not done":
+- Defend is still a dead choice, and its ×2 is a constant;
+- level and class decide a duel, with no bracket;
+- a challenger who leaves by `/settings` while waiting is not moved back on accept.
+
+The time prints as «15сек» through `Countdown.format`, not the mockup's «15 с». Not deployed:
+needs `pm2 restart ROI`.
+
 ## Session — 2026-10-03 (the second sync pass)
 
 The owner's long-form close-out after `4be2758` + `c28a3e5`. No behaviour changed.

@@ -46,12 +46,16 @@ public enum ArenaCatalog {
     /// Honor can't drop below this (no negative rating).
     public static var minHonor: Int { Catalogs.current.arena.minHonor }
 
-    // MARK: - Turn timing
+    // MARK: - Round timing
 
-    /// Seconds a fighter has to act before the turn is auto-resolved.
+    /// Seconds a round stays open for both fighters to choose. A round is
+    /// played the moment both have, so this is a ceiling rather than a wait;
+    /// whoever has not chosen by then defends. The name is from the
+    /// alternating duel this replaced on 2026-10-03.
     public static var turnSeconds: TimeInterval { Catalogs.current.arena.turnSeconds }
 
-    /// Consecutive missed turns before the idle fighter forfeits the duel.
+    /// Rounds in a row a fighter may let run out before it is a technical
+    /// defeat. Both reaching it in the same round abandons the duel.
     public static var maxMissedTurns: Int { Catalogs.current.arena.maxMissedTurns }
 
     /// A pending challenge with no answer is swept after this long.
@@ -60,7 +64,9 @@ public enum ArenaCatalog {
     /// Lobby presence drops out of the challenge list after this idle window.
     public static var lobbyTTL: TimeInterval { Catalogs.current.arena.lobbyTTL }
 
-    /// How often the background sweeper scans (turn timeouts + stale presence).
+    /// How often the background sweeper scans (round clocks + stale presence).
+    /// It is the precision of `turnSeconds` — a round can only run out on a
+    /// sweep — so it sits at 1 s against a 15 s round.
     public static var sweepInterval: TimeInterval { Catalogs.current.arena.sweepInterval }
 
     // MARK: - Daily budget

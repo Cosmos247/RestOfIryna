@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`) on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5` and the second 10-03 sync pass are not pushed yet. Push stays user-side |
+| HEAD | **the arena duel in simultaneous rounds** (2026-10-03) on top of `790560f`, the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`), on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5`, `790560f` and the arena change are not pushed yet. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
+| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**The arena in simultaneous rounds** (2026-10-03) sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
 
 **Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -56,23 +56,26 @@ the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each re
 
 ### Next action
 
-**0 — Deploy tier 2 and the estate scaling,** both committed and audited (`spec-bestiary.md`
-§10 and §11; §11.12 has every figure of the scaling). One restart takes both from HEAD.
+**0 — Deploy tier 2, the estate scaling and the simultaneous arena,** all committed and audited
+(`spec-bestiary.md` §10 and §11; §11.12 has every figure of the scaling; the arena's figures are
+in `TODO.md`'s polish log, 2026-10-03). One restart takes all three from HEAD.
 Shipping tier 2 alone would mean the Pi stops at `7a6b458`.
 - Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
 - The owner pushes. On the Pi: `git pull --ff-only`, then build.
 - Match its `--content-digest` BEFORE the restart:
-  - both together (HEAD): `records 696d3c25c1a74d98` · `tuning 605fd06bd8abdfda` · `spawns
-    0cf31905171d7944` · content hash `be4350a5`, schema v15;
+  - all three (HEAD): `records 259f6cb6ca152450` · `tuning 605fd06bd8abdfda` · `spawns
+    0cf31905171d7944` · content hash `7f6a7317`, schema v15;
+  - without the arena (`790560f`): `records 696d3c25c1a74d98` and content hash `be4350a5`;
   - tier 2 alone (`7a6b458`): `tuning c01ccfdb585f4a68` and content hash `cd9d73bf`, schema v14.
 - **Tell the testers above T1 first.** The game announces nothing (the owner's call), and from
-  the first fight after the restart a T4 player loses ~75% more HP to the same creature.
-- The owner runs `pm2 restart ROI`. A `/reload` is not enough, because of validator and combat
-  code, tier 2's locale strings and the content schema.
+  the first fight after the restart a T4 player loses ~75% more HP to the same creature. Tell
+  them the arena changed too: rounds are simultaneous, 15 s a choice.
+- The owner runs `pm2 restart ROI`. A `/reload` is not enough, because of validator, combat and
+  arena code, the new locale strings and the content schema.
 - The estate scaling brings one migration, `AddFightLogEstateLevel`. Verify the TABLE:
   `fight_log` has a nullable `estate_level`.
 - Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
-  the testers at the two new walk-list blocks.
+  the testers at the three new walk-list blocks.
 
 **1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
@@ -83,8 +86,8 @@ whether players hold an upgrade back to keep the forest soft (T6 gains nothing p
 rework's own deploy is done and recorded (2026-09-28 22:11, tables verified).
 
 **2 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the estate block and tier 2's on
-top (after their deploy), then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
+screen, not from running anything. **`TODO.md` → "Walk list"**: the arena block, the estate block and tier 2's on
+top (after their deploy; the arena one needs two accounts), then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
 older backlog — the whole King's chain included, which no human has seen.
 
@@ -117,8 +120,13 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Fifteen items, each raised deliberately and kept out of an unrelated commit on purpose. From
-2026-10-03, the estate scaling's two accepted costs:
+Eighteen items, each raised deliberately and kept out of an unrelated commit on purpose. From
+2026-10-03, the arena's three:
+- Defend is still a dead choice (0% against Attack), and the ×2 brace is a constant, not data;
+- level and class decide a duel (L10 against L12 wins 2.5%), with no bracket and no queue;
+- a challenger who leaves by `/settings` while waiting is not moved back on accept.
+
+The estate scaling's two accepted costs:
 - T5→T6 gains no XP per day (×0.9) until new estate tiers add food;
 - «Пуща» (km 26 at level 17) has no margin left for the mage.
 
@@ -212,9 +220,15 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**Current digest baseline (2026-10-03, schema v15 — the estate scaling, committed, NOT yet on the Pi):**
-`records 696d3c25c1a74d98` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
-`quests 30de20902006e3b9` · `king 5dbddfd689f3cede`, content hash `be4350a5`. The estate
+**Current digest baseline (2026-10-03, schema v15 — the simultaneous arena, committed, NOT yet on the Pi):**
+`records 259f6cb6ca152450` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king 5dbddfd689f3cede`, content hash `7f6a7317`. The arena moved
+`records` alone (`696d3c25c1a74d98` → `259f6cb6ca152450`: `turnSeconds` 45 → 15,
+`maxMissedTurns` 2 → 3, `sweepInterval` 10 → 1); with the old `arena.json` the new code reads
+the estate scaling's baseline byte for byte.
+
+**The estate scaling's baseline** (`4be2758`) is the same with `records 696d3c25c1a74d98` and
+content hash `be4350a5`. The estate
 scaling moved `tuning` alone (`c01ccfdb585f4a68` → `605fd06bd8abdfda`). It replays
 `estateScale` and the façade on a synthetic pair, and no record, band, quest or decree changed.
 
@@ -281,7 +295,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 336 tests, ~0.3s
+swift test                                   # 344 tests, ~0.8s
 ```
 
 ## What Works Now (shipped game)
@@ -301,7 +315,7 @@ Master since 09-28 — kitchen, weapon/bag/estate upgrades, the Training Ground 
 **two streets** — 👑 Замкова: Базар / Ристалище / Гільдії / Палац, 🏘 Поділ: Крамар / Майстер /
 Шинок / Ворожка, the square holding only the two roads — plus
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena
-(live PvP duel, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
+(live PvP duel in simultaneous rounds since 2026-10-03, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
 NPC**, and since `328bf88` **a taken job never burns** — one open job per NPC, today's offer
 waiting behind it, a carried one droppable — the innkeeper's also **teaches a cooking recipe**,
 one rung of the ladder per finished job, announced nowhere in advance — + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one

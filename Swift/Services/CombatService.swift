@@ -209,6 +209,17 @@ public enum CombatService {
                                      rules: rules, using: &rng)
     }
 
+    /// One round of the Arena duel, both blows at once. The rule — blows
+    /// rolled against the round's starting state, the brace, the heavier blow
+    /// when both fall — is `DuelMath`'s; this supplies the live tuning and the
+    /// system generator, like every roll above it.
+    public static func resolveDuelRound(a: CombatantStats, aAction: DuelMath.Action,
+                                        b: CombatantStats, bAction: DuelMath.Action) -> DuelMath.Round {
+        var rng = SystemRandomNumberGenerator()
+        return DuelMath.resolveRound(a: a, aAction: aAction, b: b, bAction: bAction,
+                                     rules: rules, using: &rng)
+    }
+
     // MARK: - Phase 4.2 stance modifiers
 
     /// Per-round modifiers applied while a Super-technique stance is active.

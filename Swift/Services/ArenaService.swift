@@ -19,10 +19,13 @@
 //                        Users (non-lethal: floored at 1, no death penalty), update
 //                        both Honor ratings (ELO), bump win/loss + the daily
 //                        counter. Validate-then-mutate, mirroring TradeService.
+//                        A draw carries the HP and the daily count and moves
+//                        nothing else; an abandoned duel is not settled at all.
 //
-//  The background sweeper (started from configure) handles turn timeouts and
-//  challenge expiry, settling any duel that ends by forfeit and pushing the
-//  round updates to both chats via `ArenaController`'s render helpers.
+//  The background sweeper (started from configure) runs the round clocks and
+//  challenge expiry: it plays every round whose time ran out, settles any duel
+//  that ends on the clock, and pushes every update to both chats through
+//  `ArenaController`'s render helpers.
 //
 
 import Fluent
@@ -102,79 +105,111 @@ public enum ArenaService {
     // MARK: - Settlement
 
     public struct Settlement: Sendable {
-        public let winnerTelegramId: Int64
-        public let loserTelegramId: Int64
-        public let winnerNickname: String
-        public let loserNickname: String
-        public let winnerLocale: String
-        public let loserLocale: String
+        /// One fighter's side of the outcome, as their own result screen reads it.
+        public struct Side: Sendable {
+            public let telegramId: Int64
+            public let nickname: String
+            public let locale: String
+            public let honorBefore: Int
+            public let honorAfter: Int
+            public let hp: Int
+            public let maxHp: Int
+        }
+
+        public let a: Side
+        public let b: Side
+        public let ending: ArenaStore.Ending
         public let stake: Int
-        public let payout: Int          // silver the winner actually gained (stake − tithe)
+        public let payout: Int          // silver the winner actually gained (transfer − tithe); 0 on a draw
         public let tithe: Int
-        public let winnerHonorBefore: Int
-        public let winnerHonorAfter: Int
-        public let loserHonorBefore: Int
-        public let loserHonorAfter: Int
-        public let winnerHp: Int
-        public let winnerMaxHp: Int
-        public let loserHp: Int
-        public let loserMaxHp: Int
-        public let reason: ArenaStore.EndReason
+        /// The round that ended the duel — the result screen opens with it.
+        public let finalRound: ArenaStore.RoundReport?
+
+        public func side(_ tg: Int64) -> Side { tg == a.telegramId ? a : b }
+        public func other(_ tg: Int64) -> Side { tg == a.telegramId ? b : a }
     }
 
     /// Apply the outcome of a finished duel. Idempotency is guaranteed upstream:
     /// `ArenaStore` tears the duel down before this runs, so it can fire only once.
+    /// Nil for an abandoned duel, which writes nothing, and when a fighter's row
+    /// is gone.
     public static func settle(_ ended: ArenaStore.Ended, on db: any Database) async throws -> Settlement? {
-        let winnerC = ended.winnerTelegramId == ended.a.telegramId ? ended.a : ended.b
-        let loserC  = ended.winnerTelegramId == ended.a.telegramId ? ended.b : ended.a
+        if ended.ending == .abandoned { return nil }
+        guard let userA = try await liveUser(ended.a, on: db),
+              let userB = try await liveUser(ended.b, on: db) else { return nil }
+        let profileA = try await ArenaProfile.forUser(ended.a.userId, on: db)
+        let profileB = try await ArenaProfile.forUser(ended.b.userId, on: db)
 
-        guard let winnerU = try await User.find(winnerC.userId, on: db),
-              let loserU  = try await User.find(loserC.userId, on: db) else { return nil }
+        let stake = ended.a.stake
+        var payout = 0, tithe = 0
+        var honorA = ended.a.honor, honorB = ended.b.honor
 
-        let stake = winnerC.stake
-        // The wager transfers loser → winner; the King's tithe is burned.
-        let transfer = min(stake, loserU.silver)
-        let tithe = ArenaCatalog.tithe(onPot: transfer)
-        let payout = transfer - tithe
+        if let (winner, _) = ended.ending.winnerAndLoser {
+            let aWon = winner == ended.a.telegramId
+            let winnerU = aWon ? userA : userB, loserU = aWon ? userB : userA
 
-        // Silver.
-        loserU.silver = max(0, loserU.silver - transfer)
-        winnerU.silver += payout
+            // The wager transfers loser → winner; the King's tithe is burned.
+            let transfer = min(stake, loserU.silver)
+            tithe = ArenaCatalog.tithe(onPot: transfer)
+            payout = transfer - tithe
+            loserU.silver = max(0, loserU.silver - transfer)
+            winnerU.silver += payout
 
-        // HP carry-over (non-lethal — floored at 1, no death penalty).
-        winnerU.hp = max(1, min(winnerC.hp, winnerU.effectiveMaxHp))
-        loserU.hp  = max(1, min(loserC.hp, loserU.effectiveMaxHp))
+            let (wNew, lNew) = honorAfter(winner: aWon ? ended.a.honor : ended.b.honor,
+                                          loser: aWon ? ended.b.honor : ended.a.honor)
+            honorA = aWon ? wNew : lNew
+            honorB = aWon ? lNew : wNew
+            (aWon ? profileA : profileB).wins += 1
+            (aWon ? profileB : profileA).losses += 1
+        }
 
-        try await winnerU.saveAndCache(in: db)
-        try await loserU.saveAndCache(in: db)
+        // HP carry-over (non-lethal — floored at 1, no death penalty). A draw
+        // lands here too: both fell, both walk out on 1.
+        userA.hp = max(1, min(ended.a.hp, userA.effectiveMaxHp))
+        userB.hp = max(1, min(ended.b.hp, userB.effectiveMaxHp))
+        try await userA.saveAndCache(in: db)
+        try await userB.saveAndCache(in: db)
 
-        // Honor + tallies + daily counter.
-        let (wNew, lNew) = honorAfter(winner: winnerC.honor, loser: loserC.honor)
-        let wProfile = try await ArenaProfile.forUser(winnerC.userId, on: db)
-        let lProfile = try await ArenaProfile.forUser(loserC.userId, on: db)
-        wProfile.honor = wNew; wProfile.wins += 1; wProfile.bumpDailyCounter()
-        lProfile.honor = lNew; lProfile.losses += 1; lProfile.bumpDailyCounter()
-        try await wProfile.save(on: db)
-        try await lProfile.save(on: db)
+        // Honor + the daily counter. A draw is a fight fought, so it spends a
+        // fight from the day's budget and leaves the rating where it was.
+        profileA.honor = honorA; profileA.bumpDailyCounter()
+        profileB.honor = honorB; profileB.bumpDailyCounter()
+        try await profileA.save(on: db)
+        try await profileB.save(on: db)
 
+        func side(_ c: ArenaStore.Combatant, _ u: User, honorAfter: Int) -> Settlement.Side {
+            Settlement.Side(telegramId: c.telegramId, nickname: c.nickname, locale: c.locale,
+                            honorBefore: c.honor, honorAfter: honorAfter,
+                            hp: u.hp, maxHp: u.effectiveMaxHp)
+        }
         return Settlement(
-            winnerTelegramId: winnerC.telegramId, loserTelegramId: loserC.telegramId,
-            winnerNickname: winnerC.nickname, loserNickname: loserC.nickname,
-            winnerLocale: winnerC.locale, loserLocale: loserC.locale,
-            stake: stake, payout: payout, tithe: tithe,
-            winnerHonorBefore: winnerC.honor, winnerHonorAfter: wNew,
-            loserHonorBefore: loserC.honor, loserHonorAfter: lNew,
-            winnerHp: winnerU.hp, winnerMaxHp: winnerU.effectiveMaxHp,
-            loserHp: loserU.hp, loserMaxHp: loserU.effectiveMaxHp,
-            reason: ended.reason
+            a: side(ended.a, userA, honorAfter: honorA),
+            b: side(ended.b, userB, honorAfter: honorB),
+            ending: ended.ending, stake: stake, payout: payout, tithe: tithe,
+            finalRound: ended.finalRound
         )
+    }
+
+    /// The fighter's live session object when one is cached, a fresh row
+    /// otherwise. Settlement is a write the player did not tap — the round
+    /// that ended the duel may have been played by the other fighter's tap or
+    /// by the sweeper — so it follows the background-writer rule.
+    /// `saveAndCache` installs whatever object it saved as the session for the
+    /// next tap, so a settlement working on its own copy leaves the dispatcher
+    /// holding a stale one: `/start` mid-duel settles and then saves that very
+    /// session, which put the pre-settlement silver and HP back in the cache
+    /// as the player's live state.
+    private static func liveUser(_ c: ArenaStore.Combatant, on db: any Database) async throws -> User? {
+        if let live = await sessionCache.peek(telegramId: c.telegramId) { return live }
+        return try await User.find(c.userId, on: db)
     }
 
     // MARK: - Sweeper
 
     /// Background loop (mirrors TradeStore.startSweeper). Handles challenge
-    /// expiry, turn timeouts, and timeout-forfeits — settling the latter and
-    /// pushing every update to both chats through ArenaController render helpers.
+    /// expiry and the round clocks — playing every round whose time ran out and
+    /// settling every duel that ends on the clock — pushing every update to
+    /// both chats through ArenaController's render helpers.
     public static func startSweeper(on db: any Database, bot: TGBot, lingo: Lingo) {
         Task.detached {
             while true {
@@ -184,13 +219,11 @@ public enum ArenaService {
                 for pc in out.expiredChallenges {
                     await ArenaController.pushChallengeExpired(pc, bot: bot, lingo: lingo)
                 }
-                for (duel, log, actorTg) in out.timedOutTurns {
-                    await ArenaController.pushDuelState(duel, log: log, actorTelegramId: actorTg, bot: bot, lingo: lingo)
+                for (report, next) in out.playedRounds {
+                    await ArenaController.pushRound(report, next: next, bot: bot, lingo: lingo)
                 }
-                for (ended, log) in out.forfeits {
-                    if let settlement = try? await settle(ended, on: db) {
-                        await ArenaController.pushDuelResult(settlement, finalLog: log, bot: bot, lingo: lingo)
-                    }
+                for ended in out.ended {
+                    await ArenaController.finish(ended, db: db, bot: bot, lingo: lingo)
                 }
             }
         }

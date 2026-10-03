@@ -224,6 +224,24 @@ miss it described.
 The sweep: load `uk.json`, and for every value holding `%{enemy}` flag the ones where the text
 before it does not end in nothing, a dash, a colon or a sentence end.
 
+**Nicks too (2026-10-03).** A player's nick is just as fixed — free-form letters, digits and
+spaces, Latin or Cyrillic, with no declension anyone can compute — so run the sweep over
+`%{nick}` as well. Six arena lines broke it («Ставка на герць проти %{nick}», four «Виклик від
+%{nick} …», «Виклик до %{nick} …») and were rewritten that day: «Суперник — %{nick}. …», «%{nick}
+викликає вас на герць — прийнято / відхилено / час на відповідь минув / скасовано», «%{nick} не
+відповідає на ваш виклик.» **The nine others followed the same day**, from a table the owner approved:
+`capital.market.confirm.buy` «…? Продавець — %{nick}.», `capital.trade.with_player` «Обмін —
+%{nick}», `ready_waiting` «Ви готові. %{nick} ще думає…», `waiting_final` «Чекаємо, поки
+підтвердить %{nick}…», the three `capital.trade.err.*` «%{nick} більше не має предмета / не має
+досить срібла / не має місця в сумці — обмін скасовано.», `guild.invite.sent` «Запрошення
+надіслано: %{nick}.» and `guild.kicked` «Вигнано з гільдії: %{nick}.» (the last two also lost
+«гравцю / гравця», a gendered noun for another player). The sweep now flags three lines, all
+fine: «Купує %{nick}» and «поки підтвердить %{nick}» (the nick is an inverted subject) and «⏳
+%{nick} вже очікує» (an emoji before the subject). Nothing of the kind is left open.
+**Write the sweep so it can fail:** the first version tested `before.endswith(('', '—', …))`,
+and every string ends with `''`, so it passed everything — caught only because it did not flag
+the six lines everyone already knew about.
+
 ## 🫵 The player is addressed as «ви» (uk) — 2026-09-07
 
 Every uk string that speaks to the player uses the **formal plural**: `ви / вас /
@@ -406,6 +424,19 @@ Arena (Phase 8.3): 53 keys under `arena.*` — `arena.button.*` (reply-keyboard
 labels for hub and live fight), `arena.hub.*`, `arena.log.*` (per-round lines),
 `arena.result.*`, `arena.honor.*`, `arena.leaderboard.*`, `arena.league.*`. All
 neutral; the fight labels are matched by text, so they must stay static.
+
+**2026-10-03 — simultaneous rounds: 82 keys in uk, 76 in en** (57 in each before).
+`arena.log.*` and the four turn keys (`arena.duel.scoreline` / `your_turn` /
+`their_turn` / `not_your_turn`) are gone. A round is two `arena.round.*` lines
+written from the VIEWER's side, `%{who}` being `arena.duel.you` («Ви») or the
+opponent's nick and `%{dmg}` what landed on the OTHER fighter — so no line needs a
+second name, and the nick is always the subject (the nominative rule).
+`arena.duel.{opening,board,prompt,chosen,already_chosen}` frame the round; the
+action in `arena.duel.chosen` is an interpolated value («⚔️ Атаку»), so no emoji
+sits in a template. `arena.result.{forfeit.you,forfeit.them,abandoned}` are
+COUNT keys (`.one`/`.few`/`.many` in uk, `lingo.localize(_:count:…)`), since the
+number of missed rounds is tunable. The abandoned line says «Ніхто не обирає дію»
+rather than «Обидва бійці»: «обидва» and «бійці» both decline by gender.
 
 Quests + journal (Phase 9.2): 33 keys under `quest.*` and 10/11 under `journal.*`.
 Quest keys split into UI (`quest.button.*`, `quest.progress`, `quest.reward*`,

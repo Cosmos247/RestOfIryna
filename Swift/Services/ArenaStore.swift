@@ -17,10 +17,16 @@
 //                     initiation is trivially blocked.
 //
 //  Nothing is persisted. A bot restart drops every duel ⇒ the fight simply
-//  cancels; the escrowed stakes are refunded by `configure`'s restart handling
-//  path (in-flight duels don't survive, so no settlement fires). The ONLY DB
-//  writes in the whole flow are the stake escrow at accept and the settlement at
-//  the end — both in `ArenaService`.
+//  cancels, and since no silver is taken until a winner exists (see
+//  `ArenaService`) there is nothing to refund. The ONLY DB write in the whole
+//  flow is the settlement at the end.
+//
+//  Since 2026-10-03 a duel is played in SIMULTANEOUS rounds: both fighters
+//  choose blind, the first tap locks the choice, and the round is played the
+//  moment the second choice arrives — or when the round's clock runs out, with
+//  every missing choice played as a forced Defend. The alternating duel it
+//  replaced gave the challenger the first blow, which was worth 60–66% of mirror
+//  duels (`DuelMath` has the measurement and the rule).
 //
 //  Every mutation is an actor method returning a decision-snapshot; all Telegram
 //  I/O happens in `ArenaController` AFTER the actor call returns, so the actor
@@ -57,15 +63,24 @@ public actor ArenaStore {
         public let dodge: Int
         public let acc: Int
         /// Player level. Every combat curve's denominator is read at the level
-        /// of whoever owns the stat, so a duel needs both sides' levels; the
-        /// matchmaker's ±3 bracket keeps `levelDiff` close to 1 in practice.
+        /// of whoever owns the stat, so a duel needs both sides' levels. Nothing
+        /// brackets them yet: a lobby challenge can pair any two levels, and
+        /// `levelDiff` applies in full.
         public let level: Int
         public let maxHp: Int
         public var hp: Int
         public let stake: Int
         public let honor: Int          // pre-duel rating, for the ELO settle
-        public var defending: Bool = false   // set on this fighter's Defend, consumed by the next incoming Attack
-        public var missedTurns: Int = 0
+        /// Rounds in a row this fighter let the clock run out on. Any choice
+        /// resets it; reaching `ArenaCatalog.maxMissedTurns` is a technical
+        /// defeat.
+        public var missedRounds: Int = 0
+
+        /// The sheet as `DuelMath` reads it.
+        var stats: CombatantStats {
+            CombatantStats(level: level, maxHP: maxHp, hp: hp, attack: atk, defense: def,
+                           crit: crit, dodge: dodge, accuracy: acc)
+        }
     }
 
     public struct PendingChallenge: Sendable {
@@ -89,16 +104,74 @@ public actor ArenaStore {
     public struct Duel: Sendable {
         public let id: UUID
         public var phase: DuelPhase
-        public var a: Combatant        // challenger — strikes first
+        public var a: Combatant        // challenger
         public var b: Combatant        // challenged
-        public var turn: Int64         // telegramId of the fighter to act
+        /// The round being chosen now, from 1.
         public var round: Int
-        public var turnDeadline: Date
+        /// When the round is played with whatever has been chosen by then.
+        public var roundDeadline: Date
+        /// The choices locked in for this round — hidden from the other side
+        /// until the round is played.
+        public var choiceA: DuelMath.Action?
+        public var choiceB: DuelMath.Action?
         public var lastActivity: Date
 
         public func me(_ tg: Int64) -> Combatant { tg == a.telegramId ? a : b }
         public func opp(_ tg: Int64) -> Combatant { tg == a.telegramId ? b : a }
         public func isA(_ tg: Int64) -> Bool { tg == a.telegramId }
+        public func choice(of tg: Int64) -> DuelMath.Action? { isA(tg) ? choiceA : choiceB }
+    }
+
+    /// One played round, as the screens need it: both blows, who was forced
+    /// into Defend by the clock, and both fighters as the round left them.
+    public struct RoundReport: Sendable {
+        public let round: Int
+        public let a: Combatant
+        public let b: Combatant
+        /// `a`'s blow on `b`, and `b`'s on `a`.
+        public let blowA: DuelMath.Blow
+        public let blowB: DuelMath.Blow
+        public let forcedA: Bool
+        public let forcedB: Bool
+        /// Both fell this round; the heavier blow decided it (or drew).
+        public let bothFell: Bool
+
+        public func me(_ tg: Int64) -> Combatant { tg == a.telegramId ? a : b }
+        public func opp(_ tg: Int64) -> Combatant { tg == a.telegramId ? b : a }
+        /// The viewer's own blow and the opponent's, each with whether the
+        /// clock forced it.
+        public func blows(seenBy tg: Int64) -> (mine: DuelMath.Blow, mineForced: Bool,
+                                                theirs: DuelMath.Blow, theirsForced: Bool) {
+            tg == a.telegramId
+                ? (blowA, forcedA, blowB, forcedB)
+                : (blowB, forcedB, blowA, forcedA)
+        }
+    }
+
+    /// How a duel ended. Every ending with a winner names both sides; the two
+    /// without one are distinct because only one of them is settled.
+    public enum Ending: Sendable, Equatable {
+        /// A round's blows ended it — including both falling, where the
+        /// heavier blow wins.
+        case knockout(winner: Int64, loser: Int64)
+        case surrender(winner: Int64, loser: Int64)
+        /// The loser let `maxMissedTurns` rounds in a row run out.
+        case forfeit(winner: Int64, loser: Int64)
+        /// Both fell to blows of the same size. Settled — HP and the day's
+        /// count — with nothing changing hands.
+        case draw
+        /// Both let the clock run out to the limit in the same round. Nothing
+        /// is written at all, as if the bot had restarted.
+        case abandoned
+
+        public var winnerAndLoser: (winner: Int64, loser: Int64)? {
+            switch self {
+            case .knockout(let w, let l), .surrender(let w, let l), .forfeit(let w, let l):
+                return (w, l)
+            case .draw, .abandoned:
+                return nil
+            }
+        }
     }
 
     /// Both fighters' final snapshots — returned by teardown so the controller
@@ -106,14 +179,11 @@ public actor ArenaStore {
     public struct Ended: Sendable {
         public let a: Combatant
         public let b: Combatant
-        public let winnerTelegramId: Int64
-        public let loserTelegramId: Int64
-        public let reason: EndReason
+        public let ending: Ending
+        /// The round that ended the duel, for the result screen. Nil when no
+        /// round did: a surrender, a forfeit, an abandoned duel.
+        public let finalRound: RoundReport?
     }
-
-    public enum EndReason: Sendable { case knockout, surrender, forfeit }
-
-    public enum FighterAction: Sendable { case attack, defend }
 
     // MARK: - Lobby
 
@@ -209,17 +279,17 @@ public actor ArenaStore {
         return cancelPending(id)
     }
 
-    // MARK: - Start (after escrow succeeds)
+    // MARK: - Start
 
     /// Promote a pending challenge into a live duel. The controller re-snapshots
     /// BOTH fighters fresh at accept-time (stats current as of the answer) and
-    /// passes them in. Returns the fresh duel (challenger acts first).
+    /// passes them in. Returns the fresh duel, its first round open.
     public func startDuel(pendingId: UUID, challenger a: Combatant, opponent b: Combatant, now: Date = Date()) -> Duel? {
         guard pending.removeValue(forKey: pendingId) != nil else { return nil }
         let duel = Duel(
             id: UUID(), phase: .active, a: a, b: b,
-            turn: a.telegramId, round: 1,
-            turnDeadline: now.addingTimeInterval(ArenaCatalog.turnSeconds), lastActivity: now
+            round: 1, roundDeadline: now.addingTimeInterval(ArenaCatalog.turnSeconds),
+            choiceA: nil, choiceB: nil, lastActivity: now
         )
         duels[duel.id] = duel
         byUser[a.telegramId] = duel.id
@@ -227,96 +297,102 @@ public actor ArenaStore {
         return duel
     }
 
-    // MARK: - Combat resolution
+    // MARK: - Choosing and playing a round
 
-    public enum ActionResult: Sendable {
-        /// The action resolved; `duel` reflects the new state, `log` is the
-        /// narrative of what just happened, `nextTurn` is who acts now.
-        case continued(duel: Duel, log: [String])
-        case ended(Ended, log: [String])
-        case notYourTurn
+    public enum ChoiceResult: Sendable {
+        /// Locked in; the opponent has not chosen yet.
+        case waiting(round: Int)
+        /// This fighter already chose this round — the first tap stands.
+        case alreadyChosen(round: Int)
+        /// Both had chosen, the round was played and the duel goes on;
+        /// `next` has the following round open.
+        case played(RoundReport, next: Duel)
+        case ended(Ended)
         case noDuel
     }
 
-    /// Resolve `tg`'s Attack / Defend. Dice + HP mutation happen atomically here.
-    public func resolve(action: FighterAction, tg: Int64, now: Date = Date()) -> ActionResult {
+    /// Lock in `tg`'s choice for the current round, and play the round if it
+    /// was the second choice. A tap that arrives just after the clock played
+    /// the round lands in the NEXT one — the reply keyboard cannot say which
+    /// round it meant — which is why the confirmation names the round.
+    public func choose(_ action: DuelMath.Action, tg: Int64, now: Date = Date()) -> ChoiceResult {
         guard let id = byUser[tg], var duel = duels[id], duel.phase == .active else { return .noDuel }
-        guard duel.turn == tg else { return .notYourTurn }
+        if duel.choice(of: tg) != nil { return .alreadyChosen(round: duel.round) }
 
-        let attackerIsA = duel.isA(tg)
-        var attacker = attackerIsA ? duel.a : duel.b
-        var defender = attackerIsA ? duel.b : duel.a
-        attacker.missedTurns = 0
-        var log: [String] = []
-
-        switch action {
-        case .defend:
-            // Brace: buff DEF against the next incoming hit + a chip counter.
-            attacker.defending = true
-            let chip = CombatService.chipDamage(attackerATK: attacker.atk, defenderDEF: defender.def,
-                                                defenderLevel: defender.level)
-            defender.hp = max(0, defender.hp - chip)
-            log.append("🛡|\(chip)")   // controller expands into localized copy
-        case .attack:
-            let effectiveDEF = defender.defending ? defender.def * 2 : defender.def
-            defender.defending = false
-            let outcome = CombatService.applyAttack(
-                attackerATK: attacker.atk, attackerCrit: attacker.crit, attackerAcc: attacker.acc,
-                attackerLevel: attacker.level,
-                defenderDEF: effectiveDEF, defenderDodge: defender.dodge,
-                defenderLevel: defender.level
-            )
-            switch outcome {
-            case .miss:            log.append("miss|0")
-            case .hit(let dmg):    defender.hp = max(0, defender.hp - dmg); log.append("hit|\(dmg)")
-            case .crit(let dmg):   defender.hp = max(0, defender.hp - dmg); log.append("crit|\(dmg)")
-            }
+        if duel.isA(tg) {
+            duel.choiceA = action
+            duel.a.missedRounds = 0
+        } else {
+            duel.choiceB = action
+            duel.b.missedRounds = 0
         }
-
-        // Write the mutated fighters back.
-        if attackerIsA { duel.a = attacker; duel.b = defender } else { duel.b = attacker; duel.a = defender }
-
-        // Knockout?
-        if defender.hp <= 0 {
-            let ended = teardownDuel(id, winner: attacker.telegramId, loser: defender.telegramId, reason: .knockout, from: duel)
-            return .ended(ended, log: log)
-        }
-
-        // Pass the turn.
-        duel.turn = defender.telegramId
-        duel.round += 1
-        duel.turnDeadline = now.addingTimeInterval(ArenaCatalog.turnSeconds)
         duel.lastActivity = now
-        duels[id] = duel
-        return .continued(duel: duel, log: log)
+
+        guard let actionA = duel.choiceA, let actionB = duel.choiceB else {
+            duels[id] = duel
+            return .waiting(round: duel.round)
+        }
+        return play(id, duel, actionA: actionA, actionB: actionB, forcedA: false, forcedB: false, now: now)
     }
 
-    /// A fighter throws in the towel (allowed on or off their turn).
+    /// Roll the round and either open the next one or tear the duel down.
+    private func play(_ id: UUID, _ duel: Duel,
+                      actionA: DuelMath.Action, actionB: DuelMath.Action,
+                      forcedA: Bool, forcedB: Bool, now: Date) -> ChoiceResult {
+        var duel = duel
+        let rolled = CombatService.resolveDuelRound(a: duel.a.stats, aAction: actionA,
+                                                    b: duel.b.stats, bAction: actionB)
+        duel.a.hp = rolled.aHP
+        duel.b.hp = rolled.bHP
+        let report = RoundReport(round: duel.round, a: duel.a, b: duel.b,
+                                 blowA: rolled.a, blowB: rolled.b,
+                                 forcedA: forcedA, forcedB: forcedB,
+                                 bothFell: rolled.bothFell)
+
+        let a = duel.a.telegramId, b = duel.b.telegramId
+        switch rolled.verdict {
+        case .continues:
+            duel.round += 1
+            duel.choiceA = nil
+            duel.choiceB = nil
+            duel.roundDeadline = now.addingTimeInterval(ArenaCatalog.turnSeconds)
+            duel.lastActivity = now
+            duels[id] = duel
+            return .played(report, next: duel)
+        case .aWins:
+            return .ended(teardownDuel(id, ending: .knockout(winner: a, loser: b), finalRound: report, from: duel))
+        case .bWins:
+            return .ended(teardownDuel(id, ending: .knockout(winner: b, loser: a), finalRound: report, from: duel))
+        case .draw:
+            return .ended(teardownDuel(id, ending: .draw, finalRound: report, from: duel))
+        }
+    }
+
+    /// A fighter throws in the towel (allowed whether or not they have chosen).
     public func surrender(tg: Int64) -> Ended? {
         guard let id = byUser[tg], let duel = duels[id], duel.phase == .active else { return nil }
         let opp = duel.opp(tg)
-        return teardownDuel(id, winner: opp.telegramId, loser: tg, reason: .surrender, from: duel)
+        return teardownDuel(id, ending: .surrender(winner: opp.telegramId, loser: tg), finalRound: nil, from: duel)
     }
 
     // MARK: - Teardown
 
-    private func teardownDuel(_ id: UUID, winner: Int64, loser: Int64, reason: EndReason, from duel: Duel) -> Ended {
+    private func teardownDuel(_ id: UUID, ending: Ending, finalRound: RoundReport?, from duel: Duel) -> Ended {
         duels.removeValue(forKey: id)
         byUser.removeValue(forKey: duel.a.telegramId)
         byUser.removeValue(forKey: duel.b.telegramId)
-        return Ended(a: duel.a, b: duel.b, winnerTelegramId: winner, loserTelegramId: loser, reason: reason)
+        return Ended(a: duel.a, b: duel.b, ending: ending, finalRound: finalRound)
     }
 
-    // MARK: - Sweep (TTL + turn timeouts)
+    // MARK: - Sweep (TTL + round clocks)
 
     /// Result of one sweep pass for the background loop to act on.
     public struct SweepOutput: Sendable {
         public var expiredChallenges: [PendingChallenge] = []
-        /// A turn timed out: the idle fighter auto-defended and the turn passed.
-        /// `actorTelegramId` is the fighter who was forced to defend.
-        public var timedOutTurns: [(duel: Duel, log: [String], actorTelegramId: Int64)] = []
-        /// A fighter forfeited by repeated timeout.
-        public var forfeits: [(Ended, [String])] = []
+        /// Rounds the clock played; each duel goes on with its next round open.
+        public var playedRounds: [(report: RoundReport, next: Duel)] = []
+        /// Duels the clock ended — by the round it played, or by a walkover.
+        public var ended: [Ended] = []
     }
 
     public func sweep(now: Date = Date()) -> SweepOutput {
@@ -332,42 +408,35 @@ public actor ArenaStore {
             if let expired = cancelPending(id) { out.expiredChallenges.append(expired) }
         }
 
-        // Turn timeouts on active duels.
-        for (id, var duel) in duels where duel.phase == .active && now >= duel.turnDeadline {
-            let idleTg = duel.turn
-            let idleIsA = duel.isA(idleTg)
-            var idle = idleIsA ? duel.a : duel.b
-            idle.missedTurns += 1
+        // Rounds whose clock ran out: whoever has not chosen defends.
+        for (id, var duel) in duels where duel.phase == .active && now >= duel.roundDeadline {
+            let missedA = duel.choiceA == nil
+            let missedB = duel.choiceB == nil
+            if missedA { duel.a.missedRounds += 1 }
+            if missedB { duel.b.missedRounds += 1 }
 
-            if idle.missedTurns >= ArenaCatalog.maxMissedTurns {
-                // Forfeit — the active fighter wins by walkover.
-                let opp = duel.opp(idleTg)
-                if idleIsA { duel.a = idle } else { duel.b = idle }
-                let ended = teardownDuel(id, winner: opp.telegramId, loser: idleTg, reason: .forfeit, from: duel)
-                out.forfeits.append((ended, ["forfeit|0"]))
+            let a = duel.a.telegramId, b = duel.b.telegramId
+            switch DuelMath.walkover(missedA: duel.a.missedRounds, missedB: duel.b.missedRounds,
+                                     limit: ArenaCatalog.maxMissedTurns) {
+            case .abandoned:
+                out.ended.append(teardownDuel(id, ending: .abandoned, finalRound: nil, from: duel))
                 continue
+            case .aForfeits:
+                out.ended.append(teardownDuel(id, ending: .forfeit(winner: b, loser: a), finalRound: nil, from: duel))
+                continue
+            case .bForfeits:
+                out.ended.append(teardownDuel(id, ending: .forfeit(winner: a, loser: b), finalRound: nil, from: duel))
+                continue
+            case .none:
+                break
             }
 
-            // Auto-defend for the idle fighter, then pass the turn.
-            var opp = idleIsA ? duel.b : duel.a
-            idle.defending = true
-            let chip = CombatService.chipDamage(attackerATK: idle.atk, defenderDEF: opp.def,
-                                                defenderLevel: opp.level)
-            opp.hp = max(0, opp.hp - chip)
-            if idleIsA { duel.a = idle; duel.b = opp } else { duel.b = idle; duel.a = opp }
-
-            if opp.hp <= 0 {
-                let ended = teardownDuel(id, winner: idle.telegramId, loser: opp.telegramId, reason: .knockout, from: duel)
-                out.forfeits.append((ended, ["autodefend|\(chip)"]))
-                continue
+            switch play(id, duel, actionA: duel.choiceA ?? .defend, actionB: duel.choiceB ?? .defend,
+                        forcedA: missedA, forcedB: missedB, now: now) {
+            case .played(let report, let next): out.playedRounds.append((report, next))
+            case .ended(let ended):             out.ended.append(ended)
+            case .waiting, .alreadyChosen, .noDuel: break
             }
-
-            duel.turn = opp.telegramId
-            duel.round += 1
-            duel.turnDeadline = now.addingTimeInterval(ArenaCatalog.turnSeconds)
-            duel.lastActivity = now
-            duels[id] = duel
-            out.timedOutTurns.append((duel, ["timeout|\(chip)"], idleTg))
         }
 
         return out

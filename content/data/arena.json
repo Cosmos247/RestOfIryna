@@ -21,7 +21,7 @@
     }
   ],
   "lobbyTTL" : 180,
-  "maxMissedTurns" : 2,
+  "maxMissedTurns" : 3,
   "minHonor" : 0,
   "stakeTiers" : [
     25,
@@ -29,7 +29,7 @@
     500
   ],
   "startingHonor" : 1000,
-  "sweepInterval" : 10,
+  "sweepInterval" : 1,
   "tithePercent" : 10,
-  "turnSeconds" : 45
+  "turnSeconds" : 15
 }

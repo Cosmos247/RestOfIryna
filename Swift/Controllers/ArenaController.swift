@@ -11,11 +11,17 @@
 //  Two surfaces share the same reply keyboard, guarded by whether the player is
 //  currently in a live duel:
 //    • hub  → [⚔️ Виклик] [🏆 Честь] / [🔙 Столиця]   (browse + challenge)
-//    • duel → [⚔️ Атака] [🛡 Оборона] / [🏳 Здатися]   (alternating live герць)
+//    • duel → [⚔️ Атака] [🛡 Оборона] / [🏳 Здатися]   (simultaneous rounds)
 //  The live fight is a two-party in-memory object in `ArenaStore`; `ArenaService`
-//  does the DB work (stake transfer, Honor/ELO, HP carry-over). Turn timeouts +
+//  does the DB work (stake transfer, Honor/ELO, HP carry-over). Round clocks +
 //  challenge expiry are driven by ArenaService's background sweeper, which reuses
 //  the static `push*` render helpers at the bottom of this file.
+//
+//  Every line of a round is written from the viewer's side — «⚔️ Ви: удар —
+//  26 ОЗ» over «🩸 Petro: удар — 32 ОЗ» — and the result screen opens with the
+//  round that ended the duel, the way a forest death screen carries the
+//  killing blow (2026-09-27). It used to end on «Перемога!» with the blow
+//  nowhere in the chat.
 //
 
 import Foundation
@@ -82,9 +88,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
     private func forfeitIfDueling(context: Context) async {
         let tg = context.session.telegramId
         if let ended = await ArenaStore.shared.surrender(tg: tg) {
-            if let settlement = try? await ArenaService.settle(ended, on: context.db) {
-                await Self.pushDuelResult(settlement, finalLog: ["forfeit|0"], bot: context.bot, lingo: context.lingo)
-            }
+            await Self.finish(ended, db: context.db, bot: context.bot, lingo: context.lingo)
             return
         }
         if let pc = await ArenaStore.shared.cancelPendingInvolving(tg) {
@@ -108,9 +112,10 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
     /// Entry point from CapitalController (after it flips routerName to "arena").
     func showArenaHome(context: Context) async throws {
         let tg = context.session.telegramId
-        // Reconnect: if a duel is somehow still live, re-render its state.
+        // Reconnect: if a duel is still live, re-draw its round for this
+        // fighter alone.
         if let duel = await ArenaStore.shared.activeDuel(for: tg) {
-            await Self.pushDuelState(duel, log: [], actorTelegramId: nil, bot: context.bot, lingo: context.lingo)
+            await Self.pushDuelFrame(duel, to: tg, bot: context.bot, lingo: context.lingo)
             return
         }
         await ArenaStore.shared.touchLobby(telegramId: tg, nickname: context.session.nickname ?? "—")
@@ -258,11 +263,22 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                 await postStatusBanner("❌ \(lingo.localize("arena.invite.expired", locale: locale))", context: context)
                 return
             }
+            // The answer can come from the main hub or the capital — both
+            // forward `arena:` callbacks here — while the fight keyboard's
+            // buttons are registered on this router alone. Without the switch
+            // every tap of the duel would land on the controller the player
+            // answered from, and the clock would forfeit them. Best-effort: the
+            // in-memory session already carries it, and a failed write must
+            // not stop the duel from opening.
+            if context.session.routerName != routerName {
+                context.session.routerName = routerName
+                try? await context.session.saveAndCache(in: context.db)
+            }
             // Close the invite BEFORE the scoreboard so the duel screen is the
             // last thing in the chat, not a question the player already answered.
             await Self.closeInvite(pc, key: "arena.invite.closed_accepted", icon: "⚔️", bot: context.bot, lingo: lingo)
-            // Both fighters get the opening scoreboard + fight keyboard.
-            await Self.pushDuelState(duel, log: [], actorTelegramId: nil, bot: context.bot, lingo: context.lingo)
+            // Both fighters get the opening frame + fight keyboard.
+            await Self.pushDuelOpening(duel, bot: context.bot, lingo: lingo)
         }
     }
 
@@ -286,21 +302,24 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Fight actions
 
-    private func onAttackTapped(context: Context) async throws -> Bool { try await handleAction(.attack, context: context); return true }
-    private func onDefendTapped(context: Context) async throws -> Bool { try await handleAction(.defend, context: context); return true }
+    private func onAttackTapped(context: Context) async throws -> Bool { try await handleChoice(.attack, context: context); return true }
+    private func onDefendTapped(context: Context) async throws -> Bool { try await handleChoice(.defend, context: context); return true }
 
-    private func handleAction(_ action: ArenaStore.FighterAction, context: Context) async throws {
+    /// Lock in this round's choice. The round is played the moment the
+    /// second choice arrives, so the tap that completes it draws the round
+    /// for both fighters; the first tap only gets its confirmation.
+    private func handleChoice(_ action: DuelMath.Action, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        let tg = context.session.telegramId
-        switch await ArenaStore.shared.resolve(action: action, tg: tg) {
-        case .continued(let duel, let log):
-            await Self.pushDuelState(duel, log: log, actorTelegramId: tg, bot: context.bot, lingo: context.lingo)
-        case .ended(let ended, let log):
-            if let settlement = try? await ArenaService.settle(ended, on: context.db) {
-                await Self.pushDuelResult(settlement, finalLog: log, bot: context.bot, lingo: context.lingo)
-            }
-        case .notYourTurn:
-            await postStatusBanner("⏳ \(lingo.localize("arena.duel.not_your_turn", locale: locale))", context: context)
+        switch await ArenaStore.shared.choose(action, tg: context.session.telegramId) {
+        case .waiting(let round):
+            await postStatusBanner("✅ " + Self.chosenLine(action, round: round, lingo: lingo, locale: locale), context: context)
+        case .alreadyChosen(let round):
+            await postStatusBanner("⏳ " + lingo.localize("arena.duel.already_chosen", locale: locale,
+                                                          interpolations: ["round": "\(round)"]), context: context)
+        case .played(let report, let next):
+            await Self.pushRound(report, next: next, bot: context.bot, lingo: lingo)
+        case .ended(let ended):
+            await Self.finish(ended, db: context.db, bot: context.bot, lingo: lingo)
         case .noDuel:
             try await showArenaHome(context: context)
         }
@@ -312,9 +331,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             try await showArenaHome(context: context)
             return true
         }
-        if let settlement = try? await ArenaService.settle(ended, on: context.db) {
-            await Self.pushDuelResult(settlement, finalLog: ["surrender|0"], bot: context.bot, lingo: context.lingo)
-        }
+        await Self.finish(ended, db: context.db, bot: context.bot, lingo: context.lingo)
         return true
     }
 
@@ -418,78 +435,235 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         return body
     }
 
-    /// Localized one-line summary of a combat-log token, prefixed with the actor.
-    private static func logLine(_ token: String, actorNick: String, lingo: Lingo, locale: String) -> String? {
-        let parts = token.split(separator: "|")
-        guard let kind = parts.first else { return nil }
-        let amount = parts.count > 1 ? String(parts[1]) : "0"
-        let line: String
-        switch kind {
-        case "hit":        line = lingo.localize("arena.log.hit", locale: locale, interpolations: ["dmg": amount])
-        case "crit":       line = lingo.localize("arena.log.crit", locale: locale, interpolations: ["dmg": amount])
-        case "miss":       line = lingo.localize("arena.log.miss", locale: locale)
-        case "🛡":          line = lingo.localize("arena.log.defend", locale: locale, interpolations: ["dmg": amount])
-        case "timeout":    line = lingo.localize("arena.log.timeout", locale: locale, interpolations: ["dmg": amount])
-        default:           return nil
-        }
-        return "\(actorNick): \(line)"
+    /// «❤️ Ви 118/150 · Petro 124/150» — the viewer first, as in every line
+    /// of the round.
+    private static func board(me: ArenaStore.Combatant, opp: ArenaStore.Combatant,
+                              lingo: Lingo, locale: String) -> String {
+        "❤️ " + lingo.localize("arena.duel.board", locale: locale, interpolations: [
+            "me": "\(me.hp)/\(me.maxHp)", "nick": opp.nickname, "them": "\(opp.hp)/\(opp.maxHp)"
+        ])
     }
 
-    /// Push the current scoreboard + whose-turn line + fight keyboard to BOTH
-    /// fighters. `actorTelegramId` is who just acted (nil for the opening frame).
-    static func pushDuelState(_ duel: ArenaStore.Duel, log: [String], actorTelegramId: Int64?, bot: TGBot, lingo: Lingo) async {
-        let actorNick = actorTelegramId.map { duel.me($0).nickname } ?? ""
+    /// «🗡 Раунд 4: оберіть дію — 15сек.» The time is printed from the value
+    /// that owns it, through `Countdown`, like every duration a player sees.
+    private static func prompt(round: Int, secondsLeft: Int, lingo: Lingo, locale: String) -> String {
+        "🗡 " + lingo.localize("arena.duel.prompt", locale: locale, interpolations: [
+            "round": "\(round)", "time": Countdown.format(secondsLeft, lingo: lingo, locale: locale)
+        ])
+    }
+
+    private static func header(round: Int, lingo: Lingo, locale: String) -> String {
+        "<b>\(lingo.localize("arena.duel.header", locale: locale, interpolations: ["round": "\(round)"]))</b>"
+    }
+
+    /// «Раунд 4: ви обрали ⚔️ Атаку — чекаємо на суперника.» It names the
+    /// round because a tap that arrives just after the clock played one lands
+    /// in the next.
+    private static func chosenLine(_ action: DuelMath.Action, round: Int, lingo: Lingo, locale: String) -> String {
+        let label = action == .attack
+            ? "⚔️ " + lingo.localize("arena.duel.chosen.attack", locale: locale)
+            : "🛡 " + lingo.localize("arena.duel.chosen.defend", locale: locale)
+        return lingo.localize("arena.duel.chosen", locale: locale, interpolations: [
+            "round": "\(round)", "action": label
+        ])
+    }
+
+    /// A played round's two lines, the viewer's own first. The number is
+    /// always what landed on the OTHER fighter, so a line never needs a
+    /// second name, and the nick is always the subject — a nick cannot be
+    /// declined, the same rule as an enemy's name.
+    static func roundLines(_ report: ArenaStore.RoundReport, seenBy tg: Int64,
+                           lingo: Lingo, locale: String) -> [String] {
+        let blows = report.blows(seenBy: tg)
+        return [
+            blowLine(blows.mine, forced: blows.mineForced, mine: true,
+                     who: lingo.localize("arena.duel.you", locale: locale), lingo: lingo, locale: locale),
+            blowLine(blows.theirs, forced: blows.theirsForced, mine: false,
+                     who: report.opp(tg).nickname, lingo: lingo, locale: locale)
+        ]
+    }
+
+    /// ⚔️ is the viewer's own hit and 🩸 a hit on them, as in a forest fight;
+    /// a crit is 💥 and a miss 💨 whoever threw it, so the name carries the
+    /// side.
+    private static func blowLine(_ blow: DuelMath.Blow, forced: Bool, mine: Bool, who: String,
+                                 lingo: Lingo, locale: String) -> String {
+        func line(_ key: String) -> String {
+            lingo.localize(key, locale: locale, interpolations: ["who": who, "dmg": "\(blow.damage)"])
+        }
+        switch blow.outcome {
+        case nil:
+            // A Defend — chosen, or forced by the clock.
+            return forced ? "⌛ " + line("arena.round.timeout") : "🛡 " + line("arena.round.defend")
+        case .miss?:
+            return "💨 " + line("arena.round.miss")
+        case .hit?:
+            return (mine ? "⚔️ " : "🩸 ") + line(blow.throughBrace ? "arena.round.hit_braced" : "arena.round.hit")
+        case .crit?:
+            return "💥 " + line(blow.throughBrace ? "arena.round.crit_braced" : "arena.round.crit")
+        }
+    }
+
+    private static func send(_ text: String, to tg: Int64, keyboard: TGReplyMarkup, bot: TGBot) async {
+        _ = try? await bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(tg), text: text, parseMode: .html, replyMarkup: keyboard
+        ))
+    }
+
+    /// The duel's first frame, to both fighters: the opponent and the stake,
+    /// the board, round 1 open.
+    static func pushDuelOpening(_ duel: ArenaStore.Duel, bot: TGBot, lingo: Lingo) async {
         for fighter in [duel.a, duel.b] {
             let locale = fighter.locale
-            var body = "<b>\(lingo.localize("arena.duel.header", locale: locale, interpolations: ["round": "\(duel.round)"]))</b>\n"
-            body += "\n" + scoreLine(duel.a, lingo: lingo, locale: locale)
-            body += "\n" + scoreLine(duel.b, lingo: lingo, locale: locale)
-            if let token = log.last, let line = logLine(token, actorNick: actorNick, lingo: lingo, locale: locale) {
-                body += "\n\n\(line)"
-            }
-            body += "\n\n" + (duel.turn == fighter.telegramId
-                ? "🗡 " + lingo.localize("arena.duel.your_turn", locale: locale)
-                : "⏳ " + lingo.localize("arena.duel.their_turn", locale: locale, interpolations: ["nick": duel.opp(fighter.telegramId).nickname]))
-            _ = try? await bot.sendMessage(params: TGSendMessageParams(
-                chatId: .chat(fighter.telegramId), text: body, parseMode: .html,
-                replyMarkup: fightKeyboard(locale: locale, lingo: lingo)
-            ))
+            let opp = duel.opp(fighter.telegramId)
+            let body = [
+                "⚔️ " + lingo.localize("arena.duel.opening", locale: locale, interpolations: [
+                    "nick": opp.nickname, "stake": "🪙 \(fighter.stake)"
+                ]),
+                board(me: fighter, opp: opp, lingo: lingo, locale: locale),
+                prompt(round: duel.round, secondsLeft: Int(ArenaCatalog.turnSeconds), lingo: lingo, locale: locale)
+            ].joined(separator: "\n\n")
+            await send(body, to: fighter.telegramId, keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
         }
     }
 
-    private static func scoreLine(_ c: ArenaStore.Combatant, lingo: Lingo, locale: String) -> String {
-        lingo.localize("arena.duel.scoreline", locale: locale, interpolations: [
-            "nick": c.nickname, "hp": "\(c.hp)", "max": "\(c.maxHp)"
-        ])
+    /// A played round, to both fighters, each from their own side: the two
+    /// blows, the board, the next round open.
+    static func pushRound(_ report: ArenaStore.RoundReport, next: ArenaStore.Duel, bot: TGBot, lingo: Lingo) async {
+        for fighter in [next.a, next.b] {
+            let locale = fighter.locale
+            let tg = fighter.telegramId
+            let body = [
+                header(round: report.round, lingo: lingo, locale: locale),
+                roundLines(report, seenBy: tg, lingo: lingo, locale: locale).joined(separator: "\n"),
+                board(me: next.me(tg), opp: next.opp(tg), lingo: lingo, locale: locale),
+                prompt(round: next.round, secondsLeft: Int(ArenaCatalog.turnSeconds), lingo: lingo, locale: locale)
+            ].joined(separator: "\n\n")
+            await send(body, to: tg, keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
+        }
     }
 
-    /// Push the final result to both fighters and restore the hub keyboard.
-    static func pushDuelResult(_ s: ArenaService.Settlement, finalLog: [String], bot: TGBot, lingo: Lingo) async {
-        // Winner.
-        let wLocale = s.winnerLocale
-        var wBody = "🏆 <b>\(lingo.localize("arena.result.win_title", locale: wLocale))</b>\n\n"
-        wBody += lingo.localize("arena.result.win_body", locale: wLocale, interpolations: [
-            "nick": s.loserNickname, "payout": "🪙 \(s.payout)", "tithe": "🪙 \(s.tithe)",
-            "hb": "\(s.winnerHonorBefore)", "ha": "\(s.winnerHonorAfter)",
-            "hp": "\(s.winnerHp)", "max": "\(s.winnerMaxHp)"
-        ])
-        _ = try? await bot.sendMessage(params: TGSendMessageParams(
-            chatId: .chat(s.winnerTelegramId), text: wBody, parseMode: .html,
-            replyMarkup: hubKeyboard(locale: wLocale, lingo: lingo)
-        ))
+    /// The round in progress, re-drawn for ONE fighter who lost the screen —
+    /// a stray message, a hub button tapped mid-duel. The other chat is left
+    /// alone: nothing happened on that side.
+    static func pushDuelFrame(_ duel: ArenaStore.Duel, to tg: Int64, now: Date = Date(),
+                              bot: TGBot, lingo: Lingo) async {
+        let me = duel.me(tg)
+        let locale = me.locale
+        var parts = [board(me: me, opp: duel.opp(tg), lingo: lingo, locale: locale)]
+        if let chosen = duel.choice(of: tg) {
+            parts.append("✅ " + chosenLine(chosen, round: duel.round, lingo: lingo, locale: locale))
+        } else {
+            let left = max(0, Int(duel.roundDeadline.timeIntervalSince(now).rounded(.up)))
+            parts.append(prompt(round: duel.round, secondsLeft: left, lingo: lingo, locale: locale))
+        }
+        await send(parts.joined(separator: "\n\n"), to: tg,
+                   keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
+    }
 
-        // Loser.
-        let lLocale = s.loserLocale
-        var lBody = "💀 <b>\(lingo.localize("arena.result.loss_title", locale: lLocale))</b>\n\n"
-        lBody += lingo.localize("arena.result.loss_body", locale: lLocale, interpolations: [
-            "nick": s.winnerNickname, "stake": "🪙 \(s.stake)",
-            "hb": "\(s.loserHonorBefore)", "ha": "\(s.loserHonorAfter)",
-            "hp": "\(s.loserHp)", "max": "\(s.loserMaxHp)"
-        ])
-        _ = try? await bot.sendMessage(params: TGSendMessageParams(
-            chatId: .chat(s.loserTelegramId), text: lBody, parseMode: .html,
-            replyMarkup: hubKeyboard(locale: lLocale, lingo: lingo)
-        ))
+    /// Settle a finished duel and tell both fighters — the one exit every
+    /// ending takes, from a tap or from the sweeper. An abandoned duel is not
+    /// settled at all; it only says so.
+    static func finish(_ ended: ArenaStore.Ended, db: any Database, bot: TGBot, lingo: Lingo) async {
+        if ended.ending == .abandoned {
+            await pushAbandoned(ended, bot: bot, lingo: lingo)
+            return
+        }
+        do {
+            guard let settlement = try await ArenaService.settle(ended, on: db) else { return }
+            await pushDuelResult(settlement, bot: bot, lingo: lingo)
+        } catch {
+            appState?.logger.warning("Arena: settling \(ended.a.telegramId) vs \(ended.b.telegramId) failed: \(error)")
+        }
+    }
+
+    /// The result, to both fighters, and the hub keyboard back: the round
+    /// that ended the duel, how it ended, what it paid or cost.
+    static func pushDuelResult(_ s: ArenaService.Settlement, bot: TGBot, lingo: Lingo) async {
+        for me in [s.a, s.b] {
+            let locale = me.locale
+            let opp = s.other(me.telegramId)
+            let winner = s.ending.winnerAndLoser?.winner
+            var parts: [String] = []
+
+            if let round = s.finalRound {
+                var lines = roundLines(round, seenBy: me.telegramId, lingo: lingo, locale: locale)
+                if round.bothFell {
+                    let key = winner == nil ? "arena.result.both_fell.even"
+                        : (winner == me.telegramId ? "arena.result.both_fell.yours" : "arena.result.both_fell.theirs")
+                    lines.append("⚖️ " + lingo.localize(key, locale: locale))
+                }
+                parts.append(header(round: round.round, lingo: lingo, locale: locale)
+                             + "\n\n" + lines.joined(separator: "\n"))
+            }
+
+            switch s.ending {
+            case .surrender(_, let loser):
+                parts.append("🏳 " + (loser == me.telegramId
+                    ? lingo.localize("arena.result.surrender.you", locale: locale)
+                    : lingo.localize("arena.result.surrender.them", locale: locale,
+                                     interpolations: ["nick": opp.nickname])))
+            case .forfeit(_, let loser):
+                let limit = ArenaCatalog.maxMissedTurns
+                parts.append("⌛ " + (loser == me.telegramId
+                    ? lingo.localize("arena.result.forfeit.you", count: limit, locale: locale,
+                                     interpolations: ["count": "\(limit)"])
+                    : lingo.localize("arena.result.forfeit.them", count: limit, locale: locale,
+                                     interpolations: ["count": "\(limit)", "nick": opp.nickname])))
+            case .knockout, .draw, .abandoned:
+                break
+            }
+
+            let hpLine = lingo.localize("arena.result.hp", locale: locale, interpolations: [
+                "hp": "\(me.hp)", "max": "\(me.maxHp)"
+            ])
+            if winner == me.telegramId {
+                var title = "🏆 <b>\(lingo.localize("arena.result.win_title", locale: locale))</b>"
+                if case .knockout = s.ending {
+                    title += " " + lingo.localize("arena.result.win_fall", locale: locale,
+                                                  interpolations: ["nick": opp.nickname])
+                }
+                parts.append(title)
+                parts.append(lingo.localize("arena.result.win_body", locale: locale, interpolations: [
+                    "payout": "🪙 \(s.payout)", "tithe": "🪙 \(s.tithe)",
+                    "hb": "\(me.honorBefore)", "ha": "\(me.honorAfter)"
+                ]) + "\n" + hpLine)
+            } else if winner != nil {
+                var title = "💀 <b>\(lingo.localize("arena.result.loss_title", locale: locale))</b>"
+                // A knockout the loser could see coming says how close it was,
+                // as the forest's death screen does. When both fell, the ⚖️
+                // line above already said it.
+                if case .knockout = s.ending, s.finalRound?.bothFell == false {
+                    title += " " + lingo.localize("arena.result.loss_left", locale: locale,
+                                                  interpolations: ["hp": "❤️ \(opp.hp)/\(opp.maxHp)"])
+                }
+                parts.append(title)
+                parts.append(lingo.localize("arena.result.loss_body", locale: locale, interpolations: [
+                    "stake": "🪙 \(s.payout + s.tithe)",
+                    "hb": "\(me.honorBefore)", "ha": "\(me.honorAfter)"
+                ]) + "\n" + hpLine)
+            } else {
+                // A draw — the one settled ending without a winner.
+                parts.append("🤝 <b>\(lingo.localize("arena.result.draw_title", locale: locale))</b> "
+                             + lingo.localize("arena.result.draw_body", locale: locale))
+                parts.append(hpLine)
+            }
+
+            await send(parts.joined(separator: "\n\n"), to: me.telegramId,
+                       keyboard: hubKeyboard(locale: locale, lingo: lingo), bot: bot)
+        }
+    }
+
+    /// Both fighters let the clock run out to the limit in the same round.
+    /// Nothing was written, so there is nothing to report but that.
+    static func pushAbandoned(_ ended: ArenaStore.Ended, bot: TGBot, lingo: Lingo) async {
+        let limit = ArenaCatalog.maxMissedTurns
+        for fighter in [ended.a, ended.b] {
+            let text = "⌛ " + lingo.localize("arena.result.abandoned", count: limit, locale: fighter.locale,
+                                             interpolations: ["count": "\(limit)"])
+            await send(text, to: fighter.telegramId,
+                       keyboard: hubKeyboard(locale: fighter.locale, lingo: lingo), bot: bot)
+        }
     }
 
     /// A challenge went unanswered — tell the challenger and free both.

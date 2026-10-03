@@ -497,6 +497,7 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 - [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejects out-of-turn taps (no keyboard swapping).
 - [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses. `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
 - [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
+- [x] **Simultaneous rounds** *(2026-10-03, committed, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
 - [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
 - [ ] Ranked vs unranked (casual/no-stake) queues
 - [ ] Seasons + end-of-season league rewards (silver / cosmetic title)
@@ -1570,6 +1571,56 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The arena duel in simultaneous rounds** *(2026-10-03, committed, NOT
+        deployed)* — the owner's ask: players should not move in turn, because that is not
+        fair; they move at once, with 10–15 s a move, whoever misses defends, and the final
+        blow shows as it does in PvE. Measured first on `CombatMath`: alternating, the
+        challenger won 60–66% of mirror duels at every level.
+
+        **What it is.**
+        - Both fighters choose blind. The first tap locks the choice and gets a banner naming
+          the round; the round is played on the second choice, or after 15 s
+          (`arena.json` → `turnSeconds` 45 → 15) with a missing choice played as a forced Defend.
+        - A Defend braces against the SAME round's attack (DEF ×2) and chips as before.
+        - Both falling in one round — 20–32% of mirror duels — goes to the heavier blow, and
+          equal blows draw: stakes and Honor unchanged, the HP and the day's count kept. The
+          owner's pick, over a quiz.
+        - Three missed rounds in a row is a technical defeat (`maxMissedTurns` 2 → 3); both at
+          once calls the duel off with nothing written.
+        - Every line is written from the viewer's side («⚔️ Ви: удар — 26 ОЗ» over «🩸 Petro:
+          удар — 32 ОЗ»), approved on a played-out mockup. The result screen opens with the
+          round that ended the duel; it used to receive the last blow and never print it.
+        - Fifteen older lines put the nick where Ukrainian needs a case it cannot take («проти
+          / від / до / у / із %{nick}», «Очікуємо %{nick}», «гравцю %{nick}»), which a Cyrillic
+          nick cannot decline. All rewritten in the owner's approved wording so the nick stays
+          nominative — six in the arena («Суперник — %{nick}. …», «%{nick} викликає вас на
+          герць — прийнято / відхилено / час на відповідь минув / скасовано», «%{nick} не
+          відповідає на ваш виклик.»), one at the bazaar («…? Продавець — %{nick}.»), six in the
+          trade («Обмін — %{nick}», «%{nick} ще думає…», «Чекаємо, поки підтвердить %{nick}…»,
+          «%{nick} більше не має предмета / не має досить срібла / не має місця в сумці — обмін
+          скасовано.») and two in the guilds («Запрошення надіслано: %{nick}.», «Вигнано з
+          гільдії: %{nick}.»).
+
+        **Where it lives.** `DuelMath` in `ROISim` (the round, the brace, the heavier blow,
+        `walkover`), with `CombatService.resolveDuelRound` as its façade; `ArenaStore.choose`
+        and `sweep` for the clock; `ArenaController.finish` as the one exit every ending takes.
+        The sweeper ticks every second (`sweepInterval` 10 → 1), which is the clock's precision.
+
+        **Fixed on the way.**
+        - Settlement loaded its own `User` copies, so `/start` mid-duel saved the stale session
+          straight after it. It now takes the session-cached `User` (`liveUser`, the
+          background-writer rule).
+        - An invite accepted from the main hub or the capital left every fight tap on that
+          controller; accepting now sets `routerName`.
+
+        **Verified.**
+        - 344 tests: +8 `DuelMathTests`, each mutation-tested — an inverted heavier blow, an
+          ignored brace, a brace on chips and the old first-strike edge all fail them;
+        - `validate --strict` 0/0;
+        - `records` alone moved (`696d3c25c1a74d98` → `259f6cb6ca152450`), and only because of
+          `arena.json`: with the old file the digest reads the HEAD baseline byte for byte;
+          content hash `7f6a7317`;
+        - every arena key rendered in both locales from the real templates.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own
@@ -1796,9 +1847,35 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the two on top — the 2026-10-03
-estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
+Telegram. **Every block below is LIVE and unwalked** except the three on top — the 2026-10-03
+arena and estate blocks and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-03 — the arena in simultaneous rounds (committed, NOT deployed):** two accounts
+in the capital, one challenging the other.
+- **the opening** reaches both chats: «⚔️ Герць почався! Суперник — …, ставка 🪙 N.», the board
+  «❤️ Ви 150/150 · … 150/150» and «🗡 Раунд 1: оберіть дію — 15сек.».
+- **tap first**: «✅ Раунд 1: ви обрали ⚔️ Атаку — чекаємо на суперника.»; a second tap in the
+  same round answers «⏳ Раунд 1: вибір уже зроблено…». The other's tap plays the round at once,
+  and both chats get it, each written from its own side.
+- **one side silent**: after 15 s the round plays with «⌛ …: пропуск, вимушена оборона — N ОЗ»;
+  three silent rounds in a row end it as a technical defeat on both screens.
+- **Defend** reads «🛡 …: оборона й підріз — N ОЗ», and an attack into it «… крізь оборону».
+- **the final screen** opens with the last round's two lines. A plain knockout adds
+  «Суперникові лишалося ❤️ N/M» for the loser; both falling adds «⚖️ Обидва удари смертельні —
+  ваш важчий» (or the opponent's).
+- **🏳 Здатися, or 🔙 Столиця mid-duel**: «🏳 Ви здаєтеся.» / «… здається.», the stake moves, and
+  the leaver's silver on the next screen is the settled figure.
+- **a stray message mid-duel** redraws the board and the time left in YOUR chat only.
+- **the invite bubble**, once answered, declined, expired or called off, reads «⚔️ / 🏳 / ⌛ / 🚫
+  … викликає вас на герць — прийнято / відхилено / час на відповідь минув / скасовано»; the
+  stake picker reads «Суперник — …. Скільки срібла ставите на герць?»; an unanswered challenge
+  tells the challenger «⌛ … не відповідає на ваш виклик.» Try it with a Cyrillic nick.
+- **the nick elsewhere, same change**: the bazaar's buy confirmation ends «…? Продавець — …»;
+  a trade window reads «Обмін — …», «✅ Ви готові. … ще думає…» and «⏳ Чекаємо, поки
+  підтвердить …», and a failed trade «… більше не має предмета / не має досить срібла / не має
+  місця в сумці — обмін скасовано.»; the guild says «✅ Запрошення надіслано: ….» and «👢
+  Вигнано з гільдії: ….».
 
 **Added 2026-10-03 — creature strength follows the estate tier (`4be2758`, NOT deployed):**
 - **After the deploy, check the data first.** `/content` shows schema v15 and content hash
@@ -2189,6 +2266,21 @@ blocks under them are included, live since the 2026-09-28 22:11 restart.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **Defend is still a dead choice in the arena** (measured 2026-10-03). Always-Defend against
+  always-Attack wins 0.0% of mirror duels, alternating or simultaneous; its one use is a
+  finishing chip that cannot miss. Under simultaneous rounds it is also what the clock plays for
+  a silent fighter, so it works as the penalty. The ×2 brace is a constant in `DuelMath`
+  (`braceDefenseMultiplier`), not data: moving it into `arena.json` is the first step whenever
+  Defend is reworked.
+- **Level and class decide a duel, and nothing brackets them** (measured 2026-10-03 on reference
+  characters). L10 against L12 wins 2.5% of duels and against L13 0.1%; at L10 the warrior beats
+  the archer 73–87% and the mage 75–90%, since the duel has no techniques. The invite shows only
+  the nick and the stake. The "±3 bracket" existed only in a comment, corrected 2026-10-03, and
+  queue matchmaking (§8.3) is still open.
+- **A challenger who leaves by `/settings` while waiting** keeps the challenge and is not moved
+  back when it is accepted, so their fight taps would land on another controller. The accepter
+  is moved (2026-10-03); the challenger is not, because that would write another player's
+  session from the accepter's tap, for a path that needs a global command mid-wait.
 - **T5→T6 gains no XP per day under the estate scaling** (×0.9, `spec-bestiary.md` §11.5),
   because T6 adds only 90 food against a full step of strength. The owner kept T6 as it is until
   new estate tiers add food. Any new tier should pass the same XP-per-day upgrade check before it
@@ -2288,7 +2380,9 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-10-03 — **creature strength follows the estate tier** (`spec-bestiary.md`
+*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed and **NOT
+deployed** (Swift, locale and `arena.json`; no migration, no schema change). Under it,
+**creature strength follows the estate tier** (`spec-bestiary.md`
 §11) is committed (`4be2758`) and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
 fill `b407840`), which is also committed and **NOT deployed**. Both need a restart, not a
 `/reload`, and the estate change also carries content schema v15 and one migration. Their
