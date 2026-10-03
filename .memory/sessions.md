@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-03)* **the quest board as a scroll**: the decree's requirement line plus an
+- `95e8492` (10-03) **the quest board as a scroll**: the decree's requirement line plus an
   8-cell bar on the NPC board (not in the journal), 🪶 / 💰 framing, 📖 for Досвід game-wide, 🍖
   for the board's Снага; `quest.counter.*` labels required by the validator.
 - `f0c1749` (10-03) **the arena duel as a cycle of three**: Attack beats the class special

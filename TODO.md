@@ -1572,7 +1572,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The quest board as a scroll** *(2026-10-03, NOT committed yet)* — the owner saw a
+  - [x] **The quest board as a scroll** *(2026-10-03, `95e8492`, NOT deployed)* — the owner saw a
         similar layout in another game and asked for a different look with different emoji.
         Three played mockups (scroll / bar / status tags); the owner took the scroll with a
         progress bar, the bar on the NPC board only.
@@ -1917,7 +1917,7 @@ Telegram. **Every block below is LIVE and unwalked** except the four on top — 
 arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-03 — the quest board as a scroll (NOT committed yet):** any account, at the three
+**Added 2026-10-03 — the quest board as a scroll (`95e8492`, NOT deployed):** any account, at the three
 NPCs and in the journal.
 - **an offer**: «📜 Замовлення ще не взяте…» and «💰 За роботу: …», no bar.
 - **a taken delivery**: «❌ 8× 🔩 Шматок заліза  (3/8)», the bar «▰▰▰▱▱▱▱▱» under it; the
