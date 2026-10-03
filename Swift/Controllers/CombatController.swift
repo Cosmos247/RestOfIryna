@@ -1184,7 +1184,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // equipment sheet three fights later.
         withXP.append(contentsOf: Self.brokenGearLines(brokeOnWin, lingo: lingo, locale: locale))
         if xpResult.xpAwarded > 0 {
-            withXP.append("📊 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
+            withXP.append("📖 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
                 "xp": "\(xpResult.xpAwarded)"
             ]))
         }

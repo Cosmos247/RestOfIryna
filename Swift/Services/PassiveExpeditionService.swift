@@ -61,7 +61,7 @@ public struct PassiveReport: Codable, Sendable {
     public let loot: [LootEntry]
     /// Phase 5.3a — XP awarded at expedition end (sum of every win's
     /// `enemy.xpReward`). Levels gained / new level captured separately so
-    /// renderer can show "📊 +N XP (Lv. M → M+L)" without re-deriving.
+    /// renderer can show "📖 +N XP (Lv. M → M+L)" without re-deriving.
     /// Optional in storage for backwards compat with pre-5.3a reports.
     public let xpEarned: Int
     /// Coins picked up along the way. Unlike `xpEarned` this was already
@@ -889,9 +889,9 @@ public enum PassiveExpeditionService {
         // so translators can reorder cleanly.
         if report.xpEarned > 0 {
             lines.append("")
-            // 📊 / 🎉 / 💪 prepended in Swift — leading supplementary-plane
+            // 📖 / 🎉 / 💪 prepended in Swift — leading supplementary-plane
             // emoji breaks Lingo's `%{var}` parser (see .memory/localization.md).
-            let xpLine = "📊 " + lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
+            let xpLine = "📖 " + lingo.localize("exploration.passive.report.xp", locale: locale, interpolations: [
                 "xp": "\(report.xpEarned)"
             ])
             lines.append(xpLine)

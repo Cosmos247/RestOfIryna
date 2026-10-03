@@ -203,6 +203,12 @@ in button (no day in its callback: only one job can be meant) and the trader's "
 job" warning. Only a carried job can be dropped (`QuestService.abandon`, asked first).
 Auto-memory `project-quests-taken-by-hand`.
 
+**A job is phrased once** (2026-10-03): the NPC board and the journal both print a taken job through
+`CapitalController.questRequirementLine` — the decree's `RequirementLine`, a delivery's items or a
+counter's `quest.counter.<c>` label (validator-required). The 8-cell bar (`questProgressBar`) is
+the BOARD's only, on the owner's word, and an untaken offer carries neither line nor bar. Досвід is
+📖 on every screen, Снага 🍖.
+
 **The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
 `{recipeId, npc, minEstateTier}` rungs; finishing a job pays the lowest rung the player has
 earned and does not know, one per job, resolved by `RecipeUnlockDTO.next` — the ONLY resolver,

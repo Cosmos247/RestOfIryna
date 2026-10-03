@@ -439,7 +439,8 @@ number of missed rounds is tunable. The abandoned line says «Ніхто не о
 rather than «Обидва бійці»: «обидва» and «бійці» both decline by gender.
 
 Quests + journal (Phase 9.2): 33 keys under `quest.*` and 10/11 under `journal.*`.
-Quest keys split into UI (`quest.button.*`, `quest.progress`, `quest.reward*`,
+Quest keys split into UI (`quest.button.*`, `quest.reward*`, `quest.counter.*` — the counter
+jobs' labels since 2026-10-03, when `quest.progress` was deleted with the old board —
 `quest.done_today`, `quest.banner.paid`, `quest.not_enough`, `quest.not_complete`)
 and content — `quest.<npc>.board_title` plus `quest.<id>.title` / `.desc` for the
 nine jobs, all built dynamically from `QuestNPC.boardTitleKey` and

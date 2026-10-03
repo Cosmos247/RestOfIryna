@@ -335,6 +335,30 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         XCTAssertTrue(rules(bundle(quests: quests)).contains("enum.quest_counter.unknown"))
     }
 
+    /// A counter job names its count on the board and in the journal, so its
+    /// label must exist in both locales. Fired against a table holding the
+    /// job's title and description and nothing else — the only way to know
+    /// the rule is wired at all.
+    func testAMissingCounterLabelIsAnError() {
+        let quests = QuestFileDTO(pools: [
+            QuestPoolDTO(npc: "trader", quests: [
+                QuestDefDTO(id: "trader.one",
+                            objective: QuestObjectiveDTO(kind: .counter, counter: "beastKill", target: 3),
+                            reward: QuestRewardDTO(silver: 60))
+            ])
+        ])
+        let present = ["quest.trader.board_title": "t", "quest.trader.one.title": "t", "quest.trader.one.desc": "d"]
+        let missing = ContentValidator.validate(bundle(quests: quests),
+                                                localizations: LocaleIndex(tables: ["en": present, "uk": present]))
+            .errors.filter { $0.rule == "locale.key.missing" && $0.message.contains("quest.counter.beastKill") }
+        XCTAssertEqual(missing.count, 2, "expected en + uk, got \(missing.map(\.file))")
+
+        let labelled = present.merging(["quest.counter.beastKill": "k"]) { a, _ in a }
+        XCTAssertFalse(ContentValidator.validate(bundle(quests: quests),
+                                                 localizations: LocaleIndex(tables: ["en": labelled, "uk": labelled]))
+            .errors.contains { $0.message.contains("quest.counter.") })
+    }
+
     func testWellFormedQuestsAreClean() {
         XCTAssertTrue(rules(bundle(quests: allPools())).isEmpty)
     }

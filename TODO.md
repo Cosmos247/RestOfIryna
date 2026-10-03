@@ -1572,6 +1572,25 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The quest board as a scroll** *(2026-10-03, NOT committed yet)* — the owner saw a
+        similar layout in another game and asked for a different look with different emoji.
+        Three played mockups (scroll / bar / status tags); the owner took the scroll with a
+        progress bar, the bar on the NPC board only.
+        - Board: «🛠 Майстер · замовлення», «🪶 <b>title</b>», the description in «», then the
+          decree's own `RequirementLine` (`❌ 8× 🔩 Шматок заліза  (3/8)`, a counter as
+          `❌ ⚔️ Переможено звірів  (2/5)`), an 8-cell bar `▰▰▰▱▱▱▱▱` (rounded down, never full
+          before the job is), and «💰 За роботу: …». An offer shows neither line nor bar.
+        - Journal: «<b>🛠 Майстер</b> — 🪶 title», the same requirement line (« — можна здавати»
+          when ready) and «💰 …»; no bar, and the quoted description is gone — the line says
+          which item and how many.
+        - Icons: Досвід is 📖 everywhere it was 📊 (profile, rewards, combat victory, passive
+          report, fortune) — the owner's pick; the board's Снага is 🍖 like the profile (its 🍗
+          was the roasted meat's icon), and so are the King's decree reward and report banner, which
+          said 🔋 (the owner's call) — one Снага icon on every player screen. The spec tables keep
+          🔋 as a column header; they are generated docs, not a screen.
+        - `CapitalController.questRequirementLine` / `questProgressBar`; four `quest.counter.*`
+          labels, required by the validator (with its failing test); `quest.progress` and
+          `journal.status.ready` deleted as dead. 353 tests; digest unmoved.
   - [x] **The arena duel as a cycle of three** *(2026-10-03, `f0c1749`, NOT deployed)* — the owner
         asked to make Defend a real choice, and whether the forest's Defend would have to change
         too. It does not: the arena's Defend was already its own code, sharing only
@@ -1897,6 +1916,16 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Every block below is LIVE and unwalked** except the four on top — the two 2026-10-03
 arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-03 — the quest board as a scroll (NOT committed yet):** any account, at the three
+NPCs and in the journal.
+- **an offer**: «📜 Замовлення ще не взяте…» and «💰 За роботу: …», no bar.
+- **a taken delivery**: «❌ 8× 🔩 Шматок заліза  (3/8)», the bar «▰▰▰▱▱▱▱▱» under it; the
+  innkeeper's cook job names both dishes «3× 🍗 Смажене мʼясо / 🍲 Юшка мисливця».
+- **a counter job**: «⚔️ Переможено звірів», «🔥 Виплавлено злитків», «🎲 Виграно раундів»,
+  «🪙 Виторг у крамаря» with the count in brackets.
+- **the journal**: one heading per NPC «🛠 Майстер — 🪶 …», the requirement line with « — можна
+  здавати» when ready, no bar; the profile and every reward say 📖 for Досвід.
 
 **Added 2026-10-03 — the arena as a cycle of three (`f0c1749`, NOT deployed):** two accounts that have
 learned the special attack, plus one that has not.

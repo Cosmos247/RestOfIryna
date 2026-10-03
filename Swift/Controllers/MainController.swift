@@ -479,29 +479,29 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
             let npcLabel = lingo.localize("capital.button.\(npc.rawValue)", locale: locale)
             let questTitle = lingo.localize(status.def.titleKey, locale: locale)
+            let reward = "💰 " + Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
 
-            let stateLine: String
+            // One heading line per NPC, then the job in the board's own
+            // sentence — `CapitalController.questRequirementLine`, so the two
+            // screens cannot phrase one job two ways. No progress bar here: the
+            // board carries it, the journal stays compact (the owner's call,
+            // 2026-10-03). The quoted description went with the old layout —
+            // it said which item and how many, which the requirement line now
+            // says itself.
+            var block = ["", "<b>\(npcLabel)</b> — 🪶 \(questTitle)"]
             if status.claimed {
-                stateLine = "✅ " + lingo.localize("journal.status.claimed", locale: locale)
+                block.append("✅ " + lingo.localize("journal.status.claimed", locale: locale))
             } else if !status.accepted {
-                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
-                stateLine = "📜 " + lingo.localize("journal.status.not_taken", locale: locale) + " · 🎁 \(reward)"
-            } else if status.isActionable {
-                stateLine = "🎁 " + lingo.localize("journal.status.ready", locale: locale)
+                // An offer is read at the NPC; the journal only says it waits.
+                block.append("📜 " + lingo.localize("journal.status.not_taken", locale: locale) + " · " + reward)
             } else {
-                let reward = Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
-                stateLine = "⏳ \(status.done)/\(status.target) · 🎁 \(reward)"
+                var requirement = CapitalController.questRequirementLine(status, lingo: lingo, locale: locale)
+                if status.isActionable {
+                    requirement += " — " + lingo.localize("journal.status.ready_short", locale: locale)
+                }
+                block.append(requirement)
+                block.append(RequirementLine.blockIndent + reward)
             }
-            // The job's own description — what the title cannot say: which
-            // item, how many. Shown only once the job is TAKEN: an offer the
-            // player has not accepted is meant to be read at the NPC, and the
-            // journal is a record of work in hand rather than a remote copy of
-            // the board.
-            var block = ["", "<b>\(npcLabel)</b>", questTitle]
-            if status.accepted {
-                block.append("<i>«\(lingo.localize(status.def.descKey, locale: locale))»</i>")
-            }
-            block.append(stateLine)
             // Same line the board carries: a job from an earlier day is why this
             // NPC has nothing new on offer.
             if status.carried {
@@ -598,10 +598,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         let loc = session.locale
         let xpBlock: String
         if isMaxLevel {
-            xpBlock = "📊 \(l.localize("profile.xp", locale: loc)): \(l.localize("profile.xp.max", locale: loc))"
+            xpBlock = "📖 \(l.localize("profile.xp", locale: loc)): \(l.localize("profile.xp.max", locale: loc))"
         } else {
             xpBlock = """
-            📊 \(l.localize("profile.xp", locale: loc)): \(xp)/\(xpMax)
+            📖 \(l.localize("profile.xp", locale: loc)): \(xp)/\(xpMax)
             \(emojiBar(xp, xpMax, fill: "🟦"))
             """
         }

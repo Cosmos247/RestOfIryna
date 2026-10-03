@@ -49,7 +49,7 @@ enum FortuneDisplay {
             guard value != 1.0 else { return }
             parts.append("\(icon) \(lingo.localize(key, locale: locale)): \(signedPercent(value))")
         }
-        multiplier(effect.xpMultiplier,         "📊", "profile.xp")
+        multiplier(effect.xpMultiplier,         "📖", "profile.xp")
         multiplier(effect.lootChanceMultiplier, "🎁", "fortune.effect.loot")
         // Vigor's own glyph: the number is a change to how fast the pool
         // drains, so "🍖 Vigor drain: −50%" reads as the good news it is.
@@ -64,7 +64,7 @@ enum FortuneDisplay {
     }
 
     /// What the last draw's one-shot half actually handed over, as
-    /// `received: 🪙 +30 · 📊 +75 XP`, read off the record `FortuneService.draw`
+    /// `received: 🪙 +30 · 📖 +75 XP`, read off the record `FortuneService.draw`
     /// stamped on the user.
     ///
     /// Not derived from the card: the Wheel rolls 50/50 and every silver loss
@@ -81,7 +81,7 @@ enum FortuneDisplay {
         if user.lastFortuneXpGain > 0 {
             // The reveal's own phrasing ("+75 XP" / "+75 досвіду"), so the two
             // screens name the same gift the same way.
-            parts.append("📊 " + lingo.localize("capital.fortune.applied.xp_gain", locale: locale, interpolations: [
+            parts.append("📖 " + lingo.localize("capital.fortune.applied.xp_gain", locale: locale, interpolations: [
                 "xp": "\(user.lastFortuneXpGain)"
             ]))
         }

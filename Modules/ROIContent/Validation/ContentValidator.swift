@@ -1233,6 +1233,11 @@ public enum ContentValidator {
                 let path = "pools[\(poolIndex)].quests[\(index)]"
                 requireKey("quest.\(def.id).title", file: "quests.json", path: path, id: def.id)
                 requireKey("quest.\(def.id).desc",  file: "quests.json", path: path, id: def.id)
+                // A counter job names its count on the board and in the journal
+                // (`CapitalController.questRequirementLine`).
+                if def.objective.kind == .counter, let counter = def.objective.counter {
+                    requireKey("quest.counter.\(counter)", file: "quests.json", path: "\(path).objective.counter", id: def.id)
+                }
             }
         }
 

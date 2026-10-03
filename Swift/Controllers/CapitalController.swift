@@ -1158,29 +1158,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // ticked them to target. Before that there's no button at all — nothing to
     // tap, nothing to mis-tap.
 
+    /// The board as a scroll (2026-10-03): the job's name under a quill, its
+    /// words in quotes, then the SAME requirement line a royal decree uses and
+    /// a progress bar under it — the bar only here, never in the journal (the
+    /// owner's call: the journal stays a compact record).
     private func renderQuestBoardBody(status: QuestService.Status, npc: QuestNPC, session: User, lingo: Lingo) -> String {
         let locale = session.locale
         let title = lingo.localize(npc.boardTitleKey, locale: locale)
         let questTitle = lingo.localize(status.def.titleKey, locale: locale)
         let desc = lingo.localize(status.def.descKey, locale: locale)
 
-        var lines = ["<b>\(title)</b>", "", "<b>\(questTitle)</b>", desc, ""]
+        var lines = ["<b>\(title)</b>", "", "🪶 <b>\(questTitle)</b>", "<i>«\(desc)»</i>", ""]
         if status.claimed {
-            // Done for today — the progress line would just restate the target.
+            // Done for today — the requirement would just restate the target.
             lines.append("✅ " + lingo.localize("quest.done_today", locale: locale))
         } else if !status.accepted {
-            // An offer, not a job: a progress line here would imply the counter
-            // is already running, and it is not.
+            // An offer, not a job: no requirement line and no bar, because the
+            // counter is not running yet and an empty bar would say it is.
             lines.append("📜 " + lingo.localize("quest.not_taken", locale: locale))
-            lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+            lines.append("💰 " + lingo.localize("quest.reward.board", locale: locale, interpolations: [
                 "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
         } else {
-            lines.append("📊 " + lingo.localize("quest.progress", locale: locale, interpolations: [
-                "done": "\(status.done)",
-                "target": "\(status.target)"
-            ]))
-            lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+            lines.append(Self.questRequirementLine(status, lingo: lingo, locale: locale))
+            lines.append(RequirementLine.blockIndent + Self.questProgressBar(done: status.done, target: status.target))
+            lines.append("💰 " + lingo.localize("quest.reward.board", locale: locale, interpolations: [
                 "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
             // A job from an earlier day holds today's offer back. The owner wanted
@@ -1193,8 +1195,41 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
-    /// "🪙 100 · 📊 40 XP · 🍗 25 Vigor" — only the non-zero parts. Unit words
-    /// come from Lingo (uk: Досвід / Снага) so the glossary stays in one place.
+    /// What a taken job asks, in the decree's sentence: `❌ 8× 🔩 Шматок
+    /// заліза  (3/8)` for a delivery (any mix of its items, named together),
+    /// `❌ ⚔️ Переможено звірів  (2/5)` for a counter. The board and the
+    /// journal both call this, so they cannot phrase one job two ways.
+    static func questRequirementLine(_ status: QuestService.Status, lingo: Lingo, locale: String) -> String {
+        switch status.def.objective {
+        case .deliver(let itemIds, let count):
+            if itemIds.count == 1 {
+                return RequirementLine.item(itemIds[0], have: status.done, need: count, lingo: lingo, locale: locale)
+            }
+            let names = itemIds.map { id -> String in
+                guard let item = ItemCatalog.find(id) else { return id }
+                return (item.icon.map { "\($0) " } ?? "") + lingo.localize(item.nameKey, locale: locale)
+            }
+            return RequirementLine.render(label: "\(count)× " + names.joined(separator: " / "),
+                                          have: status.done, need: count)
+        case .counter(let counter, let target):
+            return RequirementLine.render(label: lingo.localize("quest.counter." + counter.rawValue, locale: locale),
+                                          have: status.done, need: target)
+        }
+    }
+
+    /// `▰▰▰▱▱▱▱▱` — eight cells whatever the target, filled in proportion and
+    /// rounded down, so a bar is never full before the job is. A current-
+    /// against-maximum picture, not a requirement: it carries no ✅/❌.
+    static func questProgressBar(done: Int, target: Int) -> String {
+        let cells = 8
+        let filled = target > 0 ? min(cells, max(0, done) * cells / target) : cells
+        return String(repeating: "▰", count: filled) + String(repeating: "▱", count: cells - filled)
+    }
+
+    /// "🪙 100 · 📖 40 Досвіду · 🍖 25 Снаги" — only the non-zero parts. Unit
+    /// words come from Lingo (uk: Досвід / Снага) so the glossary stays in one
+    /// place; the icons are the profile's (📖 Досвід since 2026-10-03, 🍖 Снага
+    /// — the board's old 🍗 was the roasted meat's own icon).
     ///
     /// No recipe here, on purpose: what the innkeeper teaches is his gift at the
     /// payout, not a line on the board (owner's call, 2026-09-19). The board and
@@ -1202,10 +1237,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     static func rewardPhrase(_ reward: QuestReward, lingo: Lingo, locale: String) -> String {
         var parts: [String] = ["🪙 \(reward.silver)"]
         if reward.xp > 0 {
-            parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+            parts.append("📖 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
         }
         if reward.vigor > 0 {
-            parts.append("🍗 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
+            parts.append("🍖 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
         }
         return parts.joined(separator: " · ")
     }
@@ -2163,7 +2198,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     static func kingRewardPhrase(_ reward: KingRewardDTO, lingo: Lingo, locale: String) -> String {
         var parts: [String] = []
         if reward.vigor > 0 {
-            parts.append("🔋 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
+            parts.append("🍖 \(reward.vigor) " + lingo.localize("quest.reward.vigor", locale: locale))
         }
         if let food = reward.food, food.quantity > 0 {
             let item = ItemCatalog.find(food.itemId)
@@ -2173,7 +2208,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
         if reward.silver > 0 { parts.append("🪙 \(reward.silver)") }
         if reward.xp > 0 {
-            parts.append("📊 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+            parts.append("📖 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
         }
         return parts.joined(separator: " · ")
     }
@@ -2195,7 +2230,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             // banner that quotes the reward instead of the receipt is exactly
             // the defect the validator's ceiling rule exists for.
             if payout.vigorLanded > 0 {
-                earned.append("🔋 \(payout.vigorLanded) " + lingo.localize("quest.reward.vigor", locale: locale))
+                earned.append("🍖 \(payout.vigorLanded) " + lingo.localize("quest.reward.vigor", locale: locale))
             }
             if let foodId = payout.foodItemId, payout.foodQuantity > 0 {
                 let item = ItemCatalog.find(foodId)
@@ -2205,7 +2240,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             if payout.silver > 0 { earned.append("🪙 \(payout.silver)") }
             if payout.xp > 0 {
-                earned.append("📊 \(payout.xp) " + lingo.localize("quest.reward.xp", locale: locale))
+                earned.append("📖 \(payout.xp) " + lingo.localize("quest.reward.xp", locale: locale))
             }
             let banner = "✅ " + lingo.localize("king.banner.done", locale: locale,
                                                 interpolations: ["decree": name])
