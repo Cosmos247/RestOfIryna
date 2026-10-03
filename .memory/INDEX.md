@@ -55,7 +55,12 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     land together and the heavier one wins when both fall. The alternating duel gave the
     challenger 60–66% of mirror duels.
   - Then the first `fight_log` rows, and a human walking the screens. The arena, estate and
-    tier-2 blocks head `TODO.md`'s walk list and wait for their deploy.
+    tier-2 blocks head `TODO.md`'s walk list and wait for their deploy; the arena one needs two
+    accounts.
+  - The arena threads left open when the last session stopped: Defend is still a dead choice
+    (its ×2 is a constant, not data), and level and class decide a duel with no bracket or
+    queue. Both are in `TODO.md` → "Open, decided but not done", with the figures in
+    `rebalance.md` → "The arena duel, measured".
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -67,12 +72,15 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
   the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
   entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
-  the 10-03 estate-scaling entry (`4be2758`) and the second 10-03 sync pass.
+  the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
+  entry (`cad61c3`) and the third 10-03 sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
   2026-10-03 it adds the estate scaling: the variants measured, the upgrade check, what the
-  implementation measured, and how each derived figure was read off the model.
+  implementation measured, and how each derived figure was read off the model. Then the arena
+  duel, measured the same day: the first striker's edge, double knockouts, why Defend is a dead
+  choice, the level and class gaps, silent fighters, and how to rebuild the probe.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
@@ -89,7 +97,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 78 at one line each, so a selection copied into this file is the
+already carries all 80 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

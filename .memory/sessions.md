@@ -405,6 +405,34 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-03 (the third sync pass)
+
+The owner's long-form close-out after `cad61c3` + `2dcf87c`. No behaviour changed.
+- **Five dead arena members removed**, all in files the arena change rewrote:
+  - two the change had added and never called: `ArenaService.Settlement.side(_:)` and
+    `ArenaStore.RoundReport.me(_:)`;
+  - three carried over from Phase 8.3: `ArenaStore.isBusy` (no caller), `Duel.lastActivity`
+    (written, never read) and `DuelPhase` / `Duel.phase`. `.finished` was never assigned, so
+    every `phase == .active` guard was always true.
+- **Research made durable.** `rebalance.md` → "The arena duel, measured" holds every figure this
+  day's probes produced:
+  - the alternating first-strike table, and the simultaneous one with double knockouts;
+  - the tie-break residuals;
+  - the level and class gaps;
+  - what Defend is worth per swing, and where it would break even;
+  - silent fighters, and the seed of the mockup duel;
+  - how to rebuild the probe.
+- **Records.**
+  - `game-core.md` gained an Arena section;
+  - `session-auth.md` lists `ArenaService.settle` as a background writer;
+  - `INDEX.md` names the arena entry, this pass and the research, and counts 80 auto-memories;
+  - `Prompt.md` says where the last session stopped and which arena threads are open;
+  - `file-map.md` records the removals;
+  - auto-memory `project-arena-simultaneous-rounds` points at the research.
+- **Verified:** the build, with the arena files recompiled and no warning; 344 tests;
+  `validate --strict` 0/0; the digest unchanged (`records 259f6cb6ca152450`, content hash
+  `7f6a7317`).
+
 ## Session — 2026-10-03 (the arena duel in simultaneous rounds) — `cad61c3`
 
 **The question first.** The owner asked how the arena works and in what order players move.

@@ -494,8 +494,8 @@ guild — never on a map.
 
 ### 8.3 Arena — "Ристалище" *(live герць, started 2026-07-20)*
 Design locked with the user: name **Ристалище**, **live** real-time turn-based duel (not async), rating currency **Честь** (ELO). Matchmaking: **queue + lobby-challenge** (both). Start HP: **current** (heal before fighting). Penalties: **no gear/vigor wear** — silver stake is the only cost. Non-lethal (loser floored at 1 HP, no inventory wipe).
-- [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejects out-of-turn taps (no keyboard swapping).
-- [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses. `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
+- [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejected out-of-turn taps (no keyboard swapping) until the 2026-10-03 simultaneous rounds, where a second tap in a round is answered «вибір уже зроблено».
+- [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses — all superseded on 2026-10-03 by simultaneous rounds (entry below). `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
 - [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
 - [x] **Simultaneous rounds** *(2026-10-03, `cad61c3`, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
 - [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
@@ -1864,7 +1864,7 @@ in the capital, one challenging the other.
 - **the final screen** opens with the last round's two lines. A plain knockout adds
   «Суперникові лишалося ❤️ N/M» for the loser; both falling adds «⚖️ Обидва удари смертельні —
   ваш важчий» (or the opponent's).
-- **🏳 Здатися, or 🔙 Столиця mid-duel**: «🏳 Ви здаєтеся.» / «… здається.», the stake moves, and
+- **«🏳 Здатися», or «🔙 Столиця» mid-duel**: «🏳 Ви здаєтеся.» / «… здається.», the stake moves, and
   the leaver's silver on the next screen is the settled figure.
 - **a stray message mid-duel** redraws the board and the time left in YOUR chat only.
 - **the invite bubble**, once answered, declined, expired or called off, reads «⚔️ / 🏳 / ⌛ / 🚫
@@ -2380,11 +2380,12 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed (`cad61c3`) and **NOT
+*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed (`cad61c3`, hash
+fill `2dcf87c`, then a sync pass: records, plus five dead arena members removed) and **NOT
 deployed** (Swift, locale and `arena.json`; no migration, no schema change). Under it,
 **creature strength follows the estate tier** (`spec-bestiary.md`
 §11) is committed (`4be2758`) and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
-fill `b407840`), which is also committed and **NOT deployed**. Both need a restart, not a
+fill `b407840`), which is also committed and **NOT deployed**. All three need a restart, not a
 `/reload`, and the estate change also carries content schema v15 and one migration. Their
 walk-list blocks head the list above.
 

@@ -302,6 +302,102 @@ separators=(',', ' : ')) + "\n"` reproduces all 28 `content/data` files byte for
 `JSONEncoder` does not, and neither does a DTO round-trip. The rule is in `CLAUDE.md`, the
 detail in auto-memory `reference-house-json-style`.
 
+### The arena duel, measured (2026-10-03)
+
+Every figure behind `cad61c3` (the duel in simultaneous rounds), rolled on the shipped
+`CombatMath` against `ReferenceCharacter.build` stat lines. A cell is 40,000 duels, both fighters
+at full HP, both always attacking unless a row says otherwise. Seeds: `SplitMix64(20261003)` for
+the duels, `42` for the per-swing averages. The reference lines at L10, a rung behind the ladder
+(`gearOffset` −10): warrior HP 204 · ATK 31 · DEF 39 · crit 12 · dodge 9 · acc 19; archer
+150 · 33 · 25 · 21 · 27 · 31; mage 150 · 36 · 20 · 42 · 11 · 19.
+
+**The alternating duel it replaced: the challenger's first blow.** First striker's win rate in a
+mirror duel:
+
+| level | warrior (off 0 / −10) | archer (0 / −10) | mage (0 / −10) | actions a duel (0 / −10) |
+|---|---|---|---|---|
+| 3 | 60.9 / 60.2 | 59.4 / 59.8 | 62.6 / 63.4 | 16.0 / 15.9 |
+| 10 | 61.9 / 62.2 | 59.6 / 61.6 | 64.2 / 66.5 | 13.6 / 13.1 |
+| 20 | 62.8 / 63.9 | 60.2 / 61.2 | 65.1 / 66.0 | 12.5 / 12.0 |
+| 25 | 64.3 / 63.4 | 61.1 / 62.9 | 65.0 / 66.2 | 12.0 / 11.7 |
+
+It is structural: a short race between near-identical fighters, where whoever swings first stays a
+blow ahead. At a 500 stake the challenger's expected gain was about +90 🪙 a duel and the
+challenged player's about −140.
+
+**Simultaneous rounds.** Mirror duels, `gearOffset` −10:
+
+| level | class | a wins | b wins | both fall | rounds |
+|---|---|---|---|---|---|
+| 3 | warrior / archer / mage | 40.1 / 40.1 / 36.3 | 39.6 / 40.1 / 36.5 | 20.3 / 19.8 / 27.2 | 11.3 / 7.4 / 6.1 |
+| 10 | warrior / archer / mage | 37.8 / 38.7 / 33.5 | 37.7 / 37.9 / 34.2 | 24.5 / 23.4 / 32.3 | 9.3 / 6.2 / 5.1 |
+| 20 | warrior / archer / mage | 36.5 / 38.2 / 34.4 | 36.4 / 39.1 / 34.4 | 27.1 / 22.6 / 31.2 | 8.4 / 5.7 / 4.9 |
+| 25 | warrior / archer / mage | 36.2 / 37.7 / 34.0 | 36.5 / 37.6 / 33.9 | 27.4 / 24.6 / 32.1 | 8.1 / 5.5 / 4.9 |
+
+Fair, but both fighters fall in the same round in 20–32% of duels, which made the double-knockout
+rule the real decision. The residual tie under each candidate rule, as a share of ALL duels: the
+heavier blow ties in 1.3–4.1% (L10: 4.10 / 2.92 / 3.29%, warrior / archer / mage; L25: 2.31 /
+1.59 / 1.34%), the smaller overkill in 0.4–1.1%. The owner chose the heavier blow, which is
+visible in the round's own lines, with equal blows drawn. The 20,000-duel mirror in
+`DuelMathTests` pins the fairness.
+
+**Level and class decide a duel, and nothing brackets them.** Alternating, a L10 warrior striking
+first against a higher-level warrior won 61.9% against L10, 2.5% against L12, 0.1% against L13 and
+0.0% from L15. The level gap moves damage by `levelDiff` (±6% a level) on top of better stat
+lines, and a duel is many hits, so any edge compounds. Class at L10 (`gearOffset` −10), the row
+class's win rate:
+
+| | vs warrior | vs archer | vs mage |
+|---|---|---|---|
+| warrior, alternating (first / second) | 62.1 / 38.3 | 87.3 / 73.0 | 90.4 / 75.5 |
+| archer, alternating | 26.9 / 13.1 | 61.7 / 38.2 | 64.6 / 39.5 |
+| mage, alternating | 24.3 / 9.2 | 60.7 / 35.5 | 66.0 / 33.8 |
+
+Simultaneous, L10: archer 13.0 / warrior 73.0 / both 13.9; archer 39.8 / mage 34.8 / both 25.4;
+mage 9.4 / warrior 75.5 / both 15.1. The duel has no techniques, so the warrior's HP decides.
+
+**Defend is a dead choice.** Always-Defend against always-Attack wins 0.0% of mirror duels at L10
+for every class, alternating or simultaneous. What each tap is worth, per swing on average:
+
+| | Attack deals | Defend chip | brace saves of the other's hit |
+|---|---|---|---|
+| L10 warrior (DEF 39) | 21.5 | 7.2 | 4.1 (21.5 → 17.4, −19%) |
+| L10 archer (DEF 25) | 24.0 | 8.3 | 3.4 (24.0 → 20.6, −14%) |
+| L10 mage (DEF 20) | 29.3 | 9.4 | 3.5 (29.3 → 25.8, −12%) |
+| L20 warrior (DEF 84) | 36.9 | 12.0 | 8.3 |
+| L20 archer (DEF 54) | 39.5 | 13.8 | 6.8 |
+| L20 mage (DEF 39) | 51.7 | 15.9 | 7.1 |
+
+Doubling DEF works through the absorption curve (`DEF / (DEF + 46.65 + 8.017·level)`, capped at
+0.7): the archer's 25 → 50 at L10 lifts absorption from 16% to 28%. For always-Defend merely to
+match always-Attack, the brace would have to block more than `1 − chip / attack` of a hit, about
+65% (archer L10: 1 − 8.3 / 24.0), against the 12–19% it blocks. Its one rational use is a
+finishing chip, because a chip never misses. Under simultaneous rounds Defend is also what the
+clock plays for a silent fighter, so it works as the penalty the owner asked for. The ×2 is the
+constant `DuelMath.braceDefenseMultiplier`, and the 30% chip is `defendChipFraction`, shared with
+forest fights: moving both into `arena.json` comes first whenever Defend is reworked.
+
+**Silent fighters.** A fighter who never chooses, against one who always attacks, lasts on average
+12.2 / 7.9 / 6.4 rounds (warrior / archer / mage; worst 22 / 16 / 15) — up to five minutes at 15 s
+a round. Two silent fighters last 28.8 / 18.2 / 16.2 rounds and fall together 66 / 51 / 50% of
+the time. That is why three missed rounds in a row became a technical defeat, and both at once
+an abandoned duel.
+
+**The mockup duel.** The seven rounds the owner approved the screens on were seed 219: a L10
+archer against a L10 mage, the mage defending in round 2 and silent in round 4. The rounds went
+26 / 32, 26 through the brace / chip 9, crit 44 / crit 45, 23 through the brace / forced chip 8,
+miss / 33, 29 / miss, then crit 45 / 32 with both falling, so the heavier blow went to the archer.
+The mockup note said a brace cuts "about 8%" of the mage's hit; the curve gives 12%.
+
+**Rebuilding the harness.** It is the same scratch package as the expedition model's (above):
+`Modules/ROIContent` and `Modules/ROISim` copied into its `Sources/`, plus one `probe` executable
+target with `ExistentialAny`. It loads `content/data` with `ContentLoader.load`, then takes
+`CombatRules(tuning.combat)` and `ReferenceCharacter.build(...)`. Simultaneous rounds call
+`DuelMath.resolveRound` directly. The alternating duel no longer exists in the repo, and it was a
+20-line loop: the attacker rolls `CombatMath.applyAttack` against DEF ×2 when the defender braced
+since its last attack, and a Defend is `CombatMath.chipDamage` plus the brace flag. Built with
+`-c release`, each run took seconds.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

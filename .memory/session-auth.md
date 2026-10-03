@@ -43,7 +43,10 @@ over it. Anything writing a `User` outside a dispatch takes
 `sessionCache.peek(telegramId:)` first and falls back to its own row:
 `RestNotificationService` (since 2026-09-09), `TravelService` and
 `PassiveExpeditionService` (since 2026-09-10 — arrival writes `location` and
-`routerName`, the two fields that decide which keyboard the player is looking at).
+`routerName`, the two fields that decide which keyboard the player is looking at), and
+`ArenaService.settle` (since 2026-10-03). A duel can end on the other fighter's tap or on the
+round clock, and `/start` mid-duel saves the session straight after settling. Settlement
+loaded its own copies until then, which put the pre-settlement silver and HP back in the cache.
 `peek` deliberately does not insert, so a once-a-minute sweep cannot pin every
 account in the cache forever.
 

@@ -99,11 +99,8 @@ public actor ArenaStore {
         public var inviteMessageId: Int?
     }
 
-    public enum DuelPhase: Sendable { case active, finished }
-
     public struct Duel: Sendable {
         public let id: UUID
-        public var phase: DuelPhase
         public var a: Combatant        // challenger
         public var b: Combatant        // challenged
         /// The round being chosen now, from 1.
@@ -114,7 +111,6 @@ public actor ArenaStore {
         /// until the round is played.
         public var choiceA: DuelMath.Action?
         public var choiceB: DuelMath.Action?
-        public var lastActivity: Date
 
         public func me(_ tg: Int64) -> Combatant { tg == a.telegramId ? a : b }
         public func opp(_ tg: Int64) -> Combatant { tg == a.telegramId ? b : a }
@@ -136,7 +132,6 @@ public actor ArenaStore {
         /// Both fell this round; the heavier blow decided it (or drew).
         public let bothFell: Bool
 
-        public func me(_ tg: Int64) -> Combatant { tg == a.telegramId ? a : b }
         public func opp(_ tg: Int64) -> Combatant { tg == a.telegramId ? b : a }
         /// The viewer's own blow and the opponent's, each with whether the
         /// clock forced it.
@@ -206,8 +201,6 @@ public actor ArenaStore {
             .sorted { $0.value.lastSeen > $1.value.lastSeen }
             .map { (telegramId: $0.key, nickname: $0.value.nickname) }
     }
-
-    public func isBusy(_ tg: Int64) -> Bool { byUser[tg] != nil }
 
     /// The live duel a fighter belongs to (for reconnect re-render / surrender).
     public func activeDuel(for tg: Int64) -> Duel? {
@@ -287,9 +280,9 @@ public actor ArenaStore {
     public func startDuel(pendingId: UUID, challenger a: Combatant, opponent b: Combatant, now: Date = Date()) -> Duel? {
         guard pending.removeValue(forKey: pendingId) != nil else { return nil }
         let duel = Duel(
-            id: UUID(), phase: .active, a: a, b: b,
+            id: UUID(), a: a, b: b,
             round: 1, roundDeadline: now.addingTimeInterval(ArenaCatalog.turnSeconds),
-            choiceA: nil, choiceB: nil, lastActivity: now
+            choiceA: nil, choiceB: nil
         )
         duels[duel.id] = duel
         byUser[a.telegramId] = duel.id
@@ -316,7 +309,7 @@ public actor ArenaStore {
     /// the round lands in the NEXT one — the reply keyboard cannot say which
     /// round it meant — which is why the confirmation names the round.
     public func choose(_ action: DuelMath.Action, tg: Int64, now: Date = Date()) -> ChoiceResult {
-        guard let id = byUser[tg], var duel = duels[id], duel.phase == .active else { return .noDuel }
+        guard let id = byUser[tg], var duel = duels[id] else { return .noDuel }
         if duel.choice(of: tg) != nil { return .alreadyChosen(round: duel.round) }
 
         if duel.isA(tg) {
@@ -326,7 +319,6 @@ public actor ArenaStore {
             duel.choiceB = action
             duel.b.missedRounds = 0
         }
-        duel.lastActivity = now
 
         guard let actionA = duel.choiceA, let actionB = duel.choiceB else {
             duels[id] = duel
@@ -356,7 +348,6 @@ public actor ArenaStore {
             duel.choiceA = nil
             duel.choiceB = nil
             duel.roundDeadline = now.addingTimeInterval(ArenaCatalog.turnSeconds)
-            duel.lastActivity = now
             duels[id] = duel
             return .played(report, next: duel)
         case .aWins:
@@ -370,7 +361,7 @@ public actor ArenaStore {
 
     /// A fighter throws in the towel (allowed whether or not they have chosen).
     public func surrender(tg: Int64) -> Ended? {
-        guard let id = byUser[tg], let duel = duels[id], duel.phase == .active else { return nil }
+        guard let id = byUser[tg], let duel = duels[id] else { return nil }
         let opp = duel.opp(tg)
         return teardownDuel(id, ending: .surrender(winner: opp.telegramId, loser: tg), finalRound: nil, from: duel)
     }
@@ -409,7 +400,7 @@ public actor ArenaStore {
         }
 
         // Rounds whose clock ran out: whoever has not chosen defends.
-        for (id, var duel) in duels where duel.phase == .active && now >= duel.roundDeadline {
+        for (id, var duel) in duels where now >= duel.roundDeadline {
             let missedA = duel.choiceA == nil
             let missedB = duel.choiceB == nil
             if missedA { duel.a.missedRounds += 1 }

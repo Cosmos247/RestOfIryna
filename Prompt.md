@@ -38,8 +38,8 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | **`cad61c3`** — the arena duel in simultaneous rounds (2026-10-03) — on top of `790560f`, the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`), on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5`, `790560f`, `cad61c3` and its hash fill are not pushed yet. Push stays user-side |
+| HEAD | the third 2026-10-03 sync pass (records, plus five dead arena members removed) on top of **`2dcf87c`** — the hash fill for **`cad61c3`**, the arena duel in simultaneous rounds (2026-10-03) — on top of `790560f`, the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`), on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5`, `790560f`, `cad61c3`, `2dcf87c` and the third 10-03 sync pass are not pushed yet. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
 
@@ -54,11 +54,35 @@ decree in before the deploy entry was written.
 Every deploy's hashes, what each carried and its verification block: the **Commit index** at
 the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
+### Where the last session stopped (2026-10-03 — the arena)
+
+The owner opened the arena work asking how the duel works and in what order players move.
+Measured, the challenger's first blow won 60–66% of mirror duels, so the duel became
+SIMULTANEOUS (`cad61c3`). The owner chose the rules over a quiz:
+- both fighters choose blind, 15 s a round, and a silent fighter gets a forced Defend;
+- three missed rounds in a row are a technical defeat;
+- when both fall, the heavier blow wins.
+
+The result screen now opens with the final round, and fifteen lines were rewritten so that a
+nick stays nominative. The last thing answered was what "Defend is a dead choice" means. Per
+swing at L10, Attack deals 21–29 while Defend chips 7–9 and saves 3–4 of the other's hit, so the
+brace would have to block ~65% of a hit to break even.
+
+**Nothing is in flight.** The arena threads the owner may pick up next:
+- **Defend.** Move the ×2 brace (and an arena-own chip) into `arena.json`, then decide how Defend
+  becomes a real choice: a block near two thirds of a hit, or a third action that beats Defend.
+  Options with numbers were offered and not asked for yet.
+- **Matchmaking.** A level bracket, or the queue that `TODO.md` §8.3 still lists. Today L10 beats
+  L12 in 2.5% of duels, and the invite shows only the nick and the stake.
+
+Figures: `.memory/rebalance.md` → "The arena duel, measured". Narrative: the 2026-10-03 arena
+entry in `.memory/sessions.md`.
+
 ### Next action
 
 **0 — Deploy tier 2, the estate scaling and the simultaneous arena,** all committed and audited
-(`spec-bestiary.md` §10 and §11; §11.12 has every figure of the scaling; the arena's figures are
-in `TODO.md`'s polish log, 2026-10-03). One restart takes all three from HEAD.
+(`spec-bestiary.md` §10 and §11; §11.12 has every figure of the scaling; the arena's are in
+`.memory/rebalance.md` → "The arena duel, measured"). One restart takes all three from HEAD.
 Shipping tier 2 alone would mean the Pi stops at `7a6b458`.
 - Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
 - The owner pushes. On the Pi: `git pull --ff-only`, then build.
@@ -95,7 +119,7 @@ older backlog — the whole King's chain included, which no human has seen.
 kit still costing more Vigor than
 plain attacks (+35 / +16 / +36% on an elite, prices untouched); a mage winning a fight at 0 HP
 (the burn ticks before the player's death check); `/menu` missing from the base `unmatched`
-filter.
+filter; and for the arena, Defend and matchmaking (the section above).
 Ideas raised and not asked yet: a «Відновити» service at the Master (reset max for silver, keep
 the enchant — a silver sink), the Master refusing to mend a piece worn to 1/1, and the passive
 report naming its losses the way the death screen now does.

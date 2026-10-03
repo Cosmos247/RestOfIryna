@@ -100,6 +100,24 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Main Square, Market (NPC + player bazaar), Quest Board, Stables, Guildhall, Arena, Chapel, Bank
 - Built out so far: Trader, Tavern, Fortune Teller, Master, Market + Trade, Guildhall, Arena. Chapel / Stables / Bank remain GDD-only.
 
+### Arena *(Phase 8.3; simultaneous rounds since 2026-10-03)*
+- **Matchmaking is a lobby challenge** with a stake of 25 / 100 / 500 🪙, answered within 2 min.
+  Both fighters must have HP above 0, the stake in silver and a duel left of the day's 20.
+  Nothing brackets level or class, and the queue half of the original "both modes" decision is
+  still open.
+- **A duel is played in simultaneous rounds.** Both fighters choose ⚔️ Attack or 🛡 Defend
+  blind. The round plays on the second choice, or after 15 s with a missing choice played as a
+  forced Defend, and both blows read the state the round started with. Defend is a 30% chip that
+  cannot miss plus DEF ×2 against that round's attack. Until 2026-10-03 the duel alternated, and
+  the challenger's first blow won 60–66% of mirror duels.
+- **Both falling in one round** goes to the heavier blow; equal blows draw, with stakes and Honor
+  unchanged. **Three missed rounds in a row** are a technical defeat, and both at once call the
+  duel off with nothing written.
+- **Settlement.** The loser's stake goes to the winner minus a 10% tithe, which is burned. Honor
+  moves by ELO with K 32. HP carries over, floored at 1. There is no death and no gear wear.
+- Every figure, and the open questions (Defend is a dead choice, the level gap decides a duel):
+  `rebalance.md` → "The arena duel, measured".
+
 ### Daily quests *(design locked 2026-08-23, v1 shipped as Phase 9.2)*
 - **Scope of v1: the gathering core** — Trader, Master and Innkeeper only. All three are single-player and lean on content that already exists, so the loop works the day it ships. Arena / Fortune Teller / Guild quest-givers, story chains and weeklies were explicitly deferred.
 - **Cadence: dailies only.** One job per NPC per game day, on the `GameDay` boundary (12:00 Kyiv).

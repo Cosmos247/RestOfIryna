@@ -125,7 +125,6 @@ public enum ArenaService {
         /// The round that ended the duel — the result screen opens with it.
         public let finalRound: ArenaStore.RoundReport?
 
-        public func side(_ tg: Int64) -> Side { tg == a.telegramId ? a : b }
         public func other(_ tg: Int64) -> Side { tg == a.telegramId ? b : a }
     }
 
