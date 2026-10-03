@@ -18,6 +18,11 @@
 //  reference character and frozen into a table, the same formula does the
 //  opposite: out-gearing a zone is visible immediately.
 //
+//  The one multiplier the game applies on top of these frozen lines at
+//  runtime, `CombatMath.scaled(_:forEstateTier:spec:)` (2026-10-03,
+//  `spec-bestiary.md` §11), reads the player's ESTATE — a building they choose
+//  to raise — and never their level or gear, so it does not reopen the trap.
+//
 //  The inversions are not a guess. Fed the shipped roster's levels and
 //  archetypes they reproduce every enemy's DEF, crit and dodge to within
 //  rounding — `enemy.rabid_bear` at level 14 wants DEF 52.96 and carries 53,

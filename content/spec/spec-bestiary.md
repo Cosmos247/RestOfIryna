@@ -2,7 +2,8 @@
 
 **Status: approved 2026-08-31.** Phase 9. The decisions are in §8; §7 was applied
 in the same pass. **§10 — tier 2, fourteen creatures numbered in order — was approved
-and applied on 2026-10-02.** §3–§4 describe the roster before it.
+and applied on 2026-10-02.** §3–§4 describe the roster before it. **§11 — creature
+strength by estate tier — was approved and applied on 2026-10-03.**
 
 Scope: **levels 1–25**, the authored band fixed in `spec-progression.md`. Levels
 26–40 stay a generated draft from the same archetype table.
@@ -738,3 +739,336 @@ re-wrote all 28 content files byte for byte before it was allowed to write one.
 - **Pace with the authored lines.** This uses §10.5's expedition model with a player built
   from the real items. Days to level 14 / 25 / 40: today's roster 78 / 152 / 598, tier 2
   73 / 132 / 392.
+
+## 11. The forest grows with the manor — creature strength by estate tier
+
+**Status: APPROVED and APPLIED 2026-10-03.** The rule and its step were decided on 2026-10-02
+(§11.1), this section's two open points on 2026-10-03 (§11.11), and the implementation's
+measurements are in §11.12.
+
+### 11.1 What was asked and decided
+
+After tier 2 the owner asked whether creatures should grow stronger as the player does. The
+growth is tied to the estate tier rather than the player level, because the tier is coarse, and
+more useful estate tiers are planned. Three variants were measured (§11.4), and on 2026-10-02 the
+owner decided:
+
+- **a creature's HP and ATK are multiplied by 1 + 0.10 × (estate tier − 1)** — variant A, the
+  mildest of the three;
+- **strength only:** XP, loot and everything else a kill pays stay as authored. I advised scaling
+  XP with it, so that an upgrade never makes the forest worse value; the owner chose otherwise;
+- **T6 stays as it is**, although under this rule it is the one upgrade that gains nothing
+  (§11.5), until new estate tiers add food.
+
+### 11.2 The rule
+
+- **Input:** the estate tier of the player the creature is fighting, `User.estateLevel` (1–7).
+  Never the player's level, gear, class or depth.
+- **Multiplier:** `m = 1 + perTier × max(0, tier − 1)`, with `perTier = 0.10` in
+  `tuning/combat.json` → `estateScaling`. T1 is ×1.0 by construction, and levels 1–3 can hold
+  nothing but T1, so the opening and its ledger (`spec opening`) do not move.
+- **What scales:** HP and ATK, each rounded to a whole number half away from zero — the rounding
+  the measurement used. DEF, crit, dodge, accuracy, level, XP, loot, band and spawn weight stay as
+  authored. Because the level stays, the damage shift (`levelDiff`) and the XP a kill pays are
+  untouched, and an outgrown creature still dies faster and hurts less.
+- **Which creatures:** the forest's, meaning every creature that spawns. The two with the `0...0`
+  depth that never spawn, the training dummy and the registration dog, stay as authored at every
+  tier. The dog is met at T1 anyway.
+- **When it is read:** when an encounter is rolled, and again every time a fight in progress is
+  read back from its row. Both read the same tier, because the tier cannot change during an
+  expedition (§11.6).
+- **Future tiers:** a tier added at the top extends the line by itself, so a T8 would be ×1.7. A
+  tier inserted in the middle renumbers every tier above it, and the forest moves with them. If a
+  future tier should step differently, for instance to skip a tier that adds little food as T6
+  does now, `perTier` becomes a per-tier table beside `plotSlotsByTier`. That is a data change,
+  not a redesign.
+
+The multiplier at each tier, as `spec gates` prints it (an excerpt; the whole table is in
+`spec-progression.md` §3):
+
+<!-- generated: roi-content spec gates -->
+**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget;
+the creatures column is the forest's HP and ATK at that tier (`tuning/combat.json`
+→ `estateScaling`, `spec-bestiary.md` §11)
+
+| tier | player level | plot slots | warehouse cap | creatures |
+|---|---|---|---|---|
+| T1 | start | 0 | 200 | ×1 |
+| T2 | 4 | 1 | 400 | ×1.1 |
+| T3 | 7 | 2 | 600 | ×1.2 |
+| T4 | 10 | 3 | 800 | ×1.3 |
+| T5 | 13 | 4 | 1200 | ×1.4 |
+| T6 | 16 | 5 | 1600 | ×1.5 |
+| T7 | 19 | 6 | 2000 | ×1.6 |
+<!-- /generated -->
+
+### 11.3 Why this is not the runtime-scaling trap
+
+`Enemy.swift`, `EnemyGenerator`, `CombatMath.levelDiffMultiplier` and `content-pipeline.md` all
+warn against scaling enemies at runtime. Computed against the player, `EnemyHP = playerDPR ×
+targetRounds` gives the creature exactly what a new weapon gave the player, and the upgrade
+evaporates as it is equipped. Scaling by the estate tier is a different mechanism:
+
+1. **It reads nothing the player's power is made of.** Equipping, enchanting, repairing and
+   levelling never move the estate tier, so each of them keeps its full value against the same
+   forest. The trap is a multiplier that follows the character; this one follows a building.
+2. **It moves only when the player decides.** The estate is a manual, level-gated upgrade paid in
+   materials and silver, so the forest's strength is the price of a choice, not a shadow of the
+   character.
+3. **It is coarse and bounded:** six steps in the whole game, ×1.6 at most, known in advance.
+   Between T2 (level 4) and T7 (level 19) the forest grows ×1.45. Over the same levels the
+   player's base stats grow faster, before any gear and before the damage shift: ATK ×2.15, DEF
+   and the ratings ×2.02, HP ×1.72 (`progression.json` → `statGrowth`). A given creature still
+   gets easier as the player grows, only more slowly.
+4. **The ladder survives.** Every creature gets the same multiplier at a given tier, so a deeper
+   creature is still the stronger one. XP does not scale, so it still grows with depth, and
+   `enemy.xp_falls_with_depth` is untouched.
+5. **The stat lines stay frozen.** `enemies.json` keeps the design-time lines, and one tuning
+   value is applied on top of them. Nothing is solved at runtime.
+
+### 11.4 Measured, not reproducible from `roi-content` yet
+
+These figures come from §10.5's expedition model, with the player built from the real items
+(§10.10). Every creature's HP and ATK were scaled, with the rounding above, by the tier that the
+player's level allows. Days to each level, mean of the three classes:
+
+| | L10 | L14 | L19 | L25 | L30 | L40 |
+|---|---|---|---|---|---|---|
+| today's live roster | 64 | 78 | 105 | 152 | 218 | 598 |
+| tier 2, unscaled | 60 | 73 | 97 | 132 | 181 | 392 |
+| **tier 2 + A, +10% per tier — decided** | 74 | 96 | 130 | 184 | 249 | 477 |
+| tier 2 + C, one creature level per tier | 79 | 103 | 148 | 212 | 281 | 506 |
+| tier 2 + B, +20% per tier | 89 | 120 | 173 | 249 | 350 | 652 |
+
+- **Against the game the testers play today, A is slower at every milestone up to level 30**, and
+  faster only at the end: level 40 in 477 days against 598.
+- **Against unscaled tier 2, A costs about 22% of the road to level 40.**
+- The model was re-run on 2026-10-03 from the 2026-10-02 sandbox and reproduced A's row exactly.
+
+### 11.5 What it does to a fight, a trip and an upgrade
+
+**A fight.** Multiplying HP and ATK by m makes a fight about m times as long and costs about m² of
+the bar. In practice it costs a little more than that, for two reasons: small ATK values round up
+(the viper's 5 is 6 at T2), and a longer fight gives the creature more swings. Measured on every
+fight the real-gear player wins at least 95% of the time unscaled:
+
+| tier | × | rounds and Vigor | HP lost |
+|---|---|---|---|
+| T2 | 1.1 | ×1.09 | ×1.24 |
+| T3 | 1.2 | ×1.17 | ×1.49 |
+| T4 | 1.3 | ×1.24 | ×1.75 |
+| T5 | 1.4 | ×1.29 | ×2.01 |
+| T6 | 1.5 | ×1.34 | ×2.38 |
+| T7 | 1.6 | ×1.40 | ×2.75 |
+
+Win rates fall by at most about two points.
+
+**A trip.** Trips get shorter, and the forest opens later:
+- the best depth, mean of the three classes, falls to about km 16 at level 10 (21 unscaled), 22
+  at level 14 (29), 32 at level 20 (41) and 40 at level 25 (49);
+- the whole forest, to km 49, opens around level 30 instead of 25. That was the point: unscaled,
+  the forest has nothing new to show past level 25.
+
+**An upgrade.** XP per day with the next estate tier (stronger forest, more food), against XP per
+day without it:
+- T2→T3 ×5.8, T3→T4 ×1.7 and T4→T5 ×1.4, all clearly worth it;
+- **T5→T6 ×0.9**, because T6 adds only 90 food a day (900 → 990) against a full step of
+  strength;
+- T6→T7 ×1.2 at level 19 and ×1.1 at level 25.
+
+Every upgrade except T6 still pays, and the owner accepted T6 until new tiers add food. Any
+future tier should pass the same check before it ships.
+
+**The King's chain.** Two of its decrees meet the rule head-on:
+- «П'ята сходинка» (`king.fifth_step`, level 16) rewards the player for taking exactly the T6
+  upgrade above;
+- «Пуща» (`king.the_wildwood`, level 17) then asks for km 26. Under A, the deepest trip the model
+  survives at level 17 is km 28 / 27 / 26 (warrior / archer / mage), against 34 / 32 / 32
+  unscaled. The decree stays reachable at its level, but the mage has no margin left. One level
+  later every class makes km 28.
+
+The two earlier depth decrees, km 3 and km 7, fall at levels 1 and 3, where every player is at T1,
+so they do not move.
+
+### 11.6 Where it lives in code
+
+**One formula and one rounding, in `ROISim`,** so the bot and `simulate` run the same lines, as
+with every other roll:
+
+```swift
+// Modules/ROISim/CombatMath.swift
+public static func estateScale(tier: Int, spec: EstateScalingDTO) -> Double
+    // 1 + perTier · max(0, tier − 1)
+public static func scaled(_ stats: CombatantStats, forEstateTier tier: Int,
+                          spec: EstateScalingDTO) -> CombatantStats
+    // HP and ATK × estateScale, rounded half away from zero; every other field verbatim
+```
+
+**One façade in the game:** `Enemy.scaled(forEstateTier:)`. A creature that never spawns returns
+itself, and any other returns a copy with HP and ATK replaced. The copy is made with `var copy =
+self` (`hp` and `attack` become `private(set) var`), not by calling the initialiser again.
+`Enemy.init` gives six of its fields defaults, so re-creating the value would silently reset any
+field added later with a default of its own. That is the `GearState` lesson.
+
+**Two funnels call it, and nothing else does:**
+
+1. **Rolled:** `ExplorationService.rollEncounter`, straight after `EnemyCatalog.pickFor`. Both
+   modes start here. The active hand-off stores the scaled HP on the row (`beginCombat`), and the
+   passive autobattle fights the scaled creature.
+2. **Read back:** `ExplorationState.combatEnemy(for:)`. It replaces the five places that now
+   resolve the row's `combatEnemyId` with a bare `EnemyCatalog.find`: `CombatController.loadCombat`
+   (every combat tap), its `/start`, its stale-callback redraw, its in-combat notice, and
+   `ExplorationController.guardInCombat`. A read-back that skipped the scaling would draw a status
+   card like `❤️ 151/131`: the HP the fight started with, over a maximum the creature never had.
+
+`EnemyCatalog.find` and `pickFor` stay pure content. The digest, the validator, the registration
+dog and the training dummy read them as they are.
+
+**Why the stat is scaled and not the damage.** Seven places roll the creature's swing from
+`enemy.attack`: five in `CombatController` (the strike round, Defend, a failed flee and both
+specials), the passive autobattle and `FightSimulator`. The beast's HP is read in more places
+still. Scaling the value at its source changes none of them. Scaling the damage would mean
+changing all of them.
+
+**The tier cannot change during an expedition, so the creature cannot either.** Both funnels read
+the live `estateLevel`. That is safe because nothing can move it while an expedition row stands:
+- `showEstate` refuses while the row exists;
+- a fight answers every callback by redrawing itself;
+- on the walk, `ExplorationController` hands a foreign callback to `MainController`, and a
+  passive run leaves the player on `main` itself. `MainController` deletes an `estate:` callback
+  instead of acting on it.
+
+So no snapshot is stored on the row. The one thing that can move the multiplier mid-fight is a
+`/reload` that changes `perTier`. The creature then keeps the HP it has left, and its maximum and
+ATK follow the new value. That is dev-only and harmless.
+
+### 11.7 What the player is told — nothing (decided 2026-10-03)
+
+The owner's call: no screen announces it. The estate upgrade card and the tier-up banner stay as
+they are, and the player meets the stronger forest in the fight's own `❤️`. At T5 the rabid wolf
+reads `❤️ 162/162`, where at T1 it reads `116/116`. The fight screen does not change either, so
+the change adds no locale strings.
+
+The proposal turned down was one line on the upgrade card (`renderEstateUpgrade`), under the next
+tier's name. It came from `CLAUDE.md`'s rule that a choice that cannot be undone is asked, not just
+tapped:
+
+```
+⤴ Тир 5 — Лицарський маєток
+🐾 Звірі в лісі: ОЗ і атака ×1.3 → ×1.4
+```
+
+It is kept here in case play shows players are caught out. If it ever ships, the multipliers are
+printed from the knob with `%g`, like the shadow-veil line, so a `/reload` cannot leave a stale
+number in the copy.
+
+### 11.8 What checks it
+
+- **Validator:** `tuning.combat.estate_scaling_negative` is an error when `perTier < 0`, because
+  a forest that weakens as the manor grows inverts the decision. It ships with its failing case.
+  Zero is legal and means off, as with `xpLevelDiff.perLevel`.
+- **Content schema v14 → v15.** `estateScaling` is a required field. The handshake must refuse a
+  bundle without it rather than run the forest silently unscaled.
+- **Digest:** `tuning` moves, and only `tuning`. It replays `estateScale` over tiers −1…9, past
+  both ends, as it already does for `levelDiff`, and runs the façade itself on one synthetic
+  creature that spawns and one that does not, so the rounding and the exclusion are hashed too.
+  The synthetic pair keeps the real roster in `records`, where it belongs. `records`, `spawns`,
+  `quests` and `king` stay byte-identical, because no creature row, band, quest or decree changes.
+  The printed `combat model` check gains four anchors on the real roster: T1 leaves every creature
+  as authored, T7 is the decided ×1.6 (pinned by number, so a tier added above it does not trip
+  it), nothing but HP and ATK moves, and the dummy and the dog come back unscaled at the top
+  tier.
+- **`simulate`:** the sweep keeps measuring the unscaled contract, because level invariance is a
+  property of the curves, and this rule departs from it on purpose. A new printed section, «the
+  forest by estate tier», measures the on-level `normal` fight at the level each tier opens,
+  authored against scaled, on one seed so the pair differs only by the scaling. The pace section
+  lifts each level's fight by the factor its tier measured, so the headline moves with the knob
+  instead of hiding it. It still cannot see depth (§10.5).
+- **`spec gates`:** the estate table gains the multiplier column, quoted in §11.2. That refreshes
+  `spec-progression.md` §3's generated block.
+- **Tests:** `EstateScalingTests` pins the formula and the rounding in `ROISim`: the decided line,
+  T1 as the identity, tier 0 and below as T1, `perTier` 0 as the identity at every tier, only HP
+  and ATK moving, a fresh creature at full health, rounding half away from zero, the ladder's
+  order, and the shipped bundle. `TuningTests` adds the validator's failing case, zero as legal,
+  and the missing key refused.
+- **`fight_log` gains `estate_level`** (decided 2026-10-03). It is nullable, so a fight from
+  before this change reads null. With it, the first live rows can be grouped by tier, and the log shows whether
+  players hold back an upgrade to keep the forest soft. It takes one migration,
+  `AddFightLogEstateLevel`.
+- **The harness, rebuilt against the repo:** it calls `CombatMath.scaled` itself rather than its
+  own copy, and it must reproduce §11.4's row for A before the change is committed. It did
+  (§11.12).
+
+### 11.9 What changes for players already playing
+
+- Every player above T1 meets the stronger forest at their first encounter after the deploy. A
+  tester at T4 loses about 75% more HP to the same creature (§11.5), and their comfortable depth
+  shrinks. The game does not announce it (§11.7), so the testers should hear it from the owner
+  before the restart.
+- A fight in progress at the restart keeps its creature's remaining HP. Its maximum and ATK take
+  the multiplier on the next tap.
+- No level, XP, item or estate tier is touched. No content id is removed, so there is no content
+  migration and `LiveReferenceCheck` has nothing to refuse.
+- Tier 2 is not deployed yet. This change builds on it and can ride the same restart or a later
+  one.
+
+### 11.10 What the implementation touched
+
+1. `tuning/combat.json` → `"estateScaling" : { "perTier" : 0.1 }`, in the house JSON style, and
+   `manifest.json` → `schemaVersion` 15.
+2. `TuningDTO.swift`: `EstateScalingDTO`, required on `CombatTuningDTO`; `ContentSchema.current`
+   → 15.
+3. `CombatMath`: `estateScale` and `scaled(_:forEstateTier:spec:)`, with
+   `CombatService.estateScale(tier:)` as their façade. It is a computed accessor, never a
+   `static let`.
+4. `Enemy.swift`: `spawns`, `scaled(forEstateTier:)`, and `hp` / `attack` as `private(set) var`.
+   The header gains a paragraph that states the exception beside the rule.
+5. The two funnels (§11.6), with the five read-back sites moved onto the second.
+6. `FightLog.estateLevel`, the `AddFightLogEstateLevel` migration, and its registration in
+   `configure.swift`.
+7. No copy: the game announces nothing (§11.7), so neither locale file changes.
+8. `ContentValidator`, `ContentDigest`, `simulate`, `spec gates` and the tests (§11.8).
+9. The comments that state the old rule without exception: `EnemyGenerator`'s header,
+   `CombatMath.levelDiffMultiplier`, `CombatService.levelDiffMultiplier` and `LevelDiffDTO`.
+10. Documents: `CLAUDE.md` (a rule under Combat, and the `simulate` paragraph's level invariance
+    scoped to the contract), `content-pipeline.md`, `rebalance.md`, this section's status,
+    `Prompt.md`, `TODO.md` (a walk-list block), `.memory/status.md` and `.memory/file-map.md`.
+11. Verification: `validate --strict`; `simulate --strict`; the `spec gates` blocks refreshed;
+    `spec opening -c release` unchanged; `swift test`; `--content-digest`, where `tuning` alone
+    moves; and the rebuilt harness (§11.8).
+12. Deploy: `pm2 restart ROI`, not a `/reload`, because the change carries code, a content schema
+    bump and a database migration.
+
+### 11.11 Decided 2026-10-03
+
+1. **The player is told nothing** (§11.7): the upgrade card and the tier-up banner stay as they
+   are. A line on the card was proposed and turned down.
+2. **`fight_log` gains `estate_level`** (§11.8), with its migration.
+
+### 11.12 Applied 2026-10-03 — what the implementation measured
+
+- **Validation.** `validate --strict` is clean, 0 errors and 0 warnings. All three guards fire on
+  their failing cases, run on a scratch copy of the bundle:
+  - `perTier` −0.1 trips `tuning.combat.estate_scaling_negative`;
+  - a `combat.json` without the key is refused as `required field "estateScaling" is missing`;
+  - a v14 manifest is refused by the handshake, which `ContentDTOTests` already covers.
+- **Tests.** 324 → 336: `EstateScalingTests` +9 and `TuningTests` +3. The six fixtures that
+  build a `CombatTuningDTO` by hand now pass the knob.
+- **Digest.** `tuning` moved `c01ccfdb585f4a68` → `605fd06bd8abdfda`, and nothing else did:
+  `records`, `spawns`, `quests` and `king` are byte-identical. The content hash moved `cd9d73bf`
+  → `be4350a5`. `combat model` passes, and its estate anchors were negative-tested twice:
+  - `perTier` 0.2 prints «estate scale at T7: got 2.20, design says 1.6»;
+  - the façade with its exclusion removed prints that the dummy and the dog never spawn, yet
+    scale at T7.
+- **`simulate --strict`.** 0 broken bands and 18 warnings, the same as before. On the on-level
+  `normal` fight at T7 the new section reads 5.6 → 8.6 rounds, 11.2 → 17.1 Vigor, 22% → 58% of
+  a bar and a 100% → 98.8% win. That is the worst case: by T7 most of the forest is creatures the
+  player has outgrown, which the damage shift makes cheap.
+- **Pace.** Warrior 125.5 → 167.0 days, archer 120.9 → 159.6, mage 113.8 → 150.9. All three stay
+  inside the 72–200 band, so no warning fired.
+- **`spec gates`** prints the creatures column, and `spec-progression.md` §3 was refreshed.
+  `spec opening` is byte-identical, as T1 promised.
+- **The harness.** It was rebuilt against the repo's `ROIContent` and `ROISim`, scaling each
+  creature with `CombatMath.scaled` and the knob read from the shipped bundle. Its fight table
+  came out byte-identical to the 2026-10-02 sandbox's, all 3,234 rows, and the expedition model
+  gives the same 74 / 96 / 130 / 184 / 249 / 477 days as §11.4.

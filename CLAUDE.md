@@ -170,7 +170,9 @@ Run `swift run roi-content validate --strict` before committing content, and
 decide every fight, and the report is the only thing that shows what moved. It bands
 level invariance (a level-1 and a level-40 fight must play the same), the p90 tail,
 win rates, pace to the cap and the shipped roster against its own archetype contract;
-`--strict` exits 1 on a broken band.
+`--strict` exits 1 on a broken band. Every band measures the AUTHORED contract: the
+estate's strength (below, under Combat) is printed in a section of its own and priced into
+the pace, never banded, because it departs from level invariance on purpose.
 
 ### Access
 
@@ -395,6 +397,22 @@ the blow it rolled (for `max_blow`) and the HP it actually removed (for every su
 inflates nothing) — or the log quietly undercounts it, and `FightLog.record` runs with `try?`
 BEFORE `endCombat`, which clears the tally. `fight_log.enemy_id` is history and deliberately NOT
 in `LiveReferenceQuery`: a retired beast's old fights must never block a reload.
+
+**Creature strength follows the ESTATE tier, never the player** (2026-10-03, `spec-bestiary.md`
+§11). A spawnable creature fights with HP and ATK × `1 + perTier·(tier − 1)` (`tuning/combat.json`
+→ `estateScaling`, 0.1: ×1.0 at T1, ×1.6 at T7); XP, loot, DEF, the ratings and its level stay as
+authored. It is the one runtime multiplier on an enemy, and it does not reopen the trap the
+frozen stat lines exist for, because a building the player chooses to raise cancels no gear and no
+level. **Never key it, or anything like it, to the player's level or gear.** The formula and its
+rounding live in `CombatMath.scaled(_:forEstateTier:spec:)`; the game reaches them only through
+`Enemy.scaled(forEstateTier:)`, and **exactly two funnels call that**: `ExplorationService.rollEncounter`,
+where an encounter is born (both modes), and `ExplorationState.combatEnemy(for:)`, where a fight
+in progress is read back. **A new reader of a fight goes through the second, never through a bare
+`EnemyCatalog.find`**, or its screen draws the HP the fight started with over a maximum the creature
+never had. The dummy and the dog (`0...0`, never spawn) are not the forest and never scale. The tier
+is read live, not stored on the row, which is safe only because nothing can raise the estate while an
+expedition row stands — keep it that way. No screen announces the strength, on the owner's word;
+`fight_log.estate_level` records it. Auto-memory `project-estate-scaling`.
 
 ### Gear, inventory and storage
 

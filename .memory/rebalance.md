@@ -46,7 +46,9 @@ made to the first draft — each is a trap worth remembering:
 3. **Enemy stats are generated at DESIGN time, not runtime.** Runtime scaling
    nullifies every gear upgrade (the Oblivion trap). A separate
    `levelDiff = clamp(1 + 0.06·Δlevel, 0.25, 2.5)` multiplier is what actually
-   sells "I out-gear this zone".
+   sells "I out-gear this zone". The one runtime multiplier since 2026-10-03 reads
+   the ESTATE tier, never the player (`spec-bestiary.md` §11), so it cancels no
+   gear and no level.
 4. **The drafted boss archetype was arithmetically impossible.** Fixed HP-loss
    over rising rounds makes per-hit damage *fall*: the boss hit softer than
    trash (4.5% vs 6.6% maxHP).
@@ -224,7 +226,7 @@ to km 49:
   - the moose's HP (94) is below the boar's (101), yet the fight ladder does not invert: to an
     L5 player the boar costs 12% and the moose 20%.
 
-**Estate-tier scaling — decided 2026-10-02, spec pending.** The owner's call: creatures grow
+**Estate-tier scaling — decided 2026-10-02, implemented 2026-10-03 (`spec-bestiary.md` §11).** The owner's call: creatures grow
 with the ESTATE tier, strength only, with XP unchanged. It was measured with real gear and the
 authored lines, scaling by s = estate tier − 1, the tier a player of that level can have.
 
@@ -244,10 +246,29 @@ food) against XP per day without it:
 - **T5→T6 ×0.9–1.0**, because T6 adds only 90 food a day (900 → 990);
 - T6→T7 ×1.0–1.2.
 
-The owner left T6 as it is, expecting new estate tiers to add food. One thing the spec must
-answer: `Enemy.swift`'s header and `content-pipeline.md` argue against scaling enemies to the
-PLAYER at runtime, because each gear upgrade would evaporate as it is equipped. Coarse scaling
-by estate tier is a different thing, and the spec has to say why.
+The owner left T6 as it is, expecting new estate tiers to add food. §11.3 answers the
+runtime-scaling objection: the estate tier reads a building the player chooses to raise, never
+their level or gear; it has six coarse steps; and between T2 and T7 the forest grows ×1.45 while
+base ATK grows ×2.15.
+
+**What the implementation added on 2026-10-03.**
+- **Two more owner decisions:** no screen announces the strength (a card line was proposed and
+  turned down), and `fight_log` gains `estate_level`.
+- **Findings shown before the code:**
+  - against today's live roster, A is slower at every milestone up to L30
+    (64 / 78 / 105 / 152 / 218 / 598 against 74 / 96 / 130 / 184 / 249 / 477);
+  - a fight costs ×1.09…×1.40 rounds and ×1.24…×2.75 HP from T2 to T7. The HP cost exceeds m²
+    because small ATK values round up and longer fights give more swings;
+  - «Пуща» (km 26 at L17) keeps zero margin for the mage: the deepest safe trip is 28 / 27 / 26.
+- **The repo's own checks:**
+  - `simulate`'s pace went 125.5 / 120.9 / 113.8 → 167.0 / 159.6 / 150.9 days;
+  - the new «forest by estate tier» section shows the on-level `normal` fight at T7 going from
+    5.6 to 8.6 rounds and from 22% to 58% of a bar;
+  - `tuning` moved to `605fd06bd8abdfda`, and nothing else did.
+- **The harness, rebuilt against the repo** (a scratch package copying `Modules/ROIContent` and
+  `Modules/ROISim`, plus an `estatefights` roller that calls `CombatMath.scaled` with the shipped
+  knob), produced a fight table byte-identical to the 10-02 sandbox's `scaled_A.csv` (3,234 rows).
+  The expedition model then gave the same 74 / 96 / 130 / 184 / 249 / 477.
 
 **Rebuilding the harness.** The repo's SwiftPM targets are not library products, so a scratch
 package copied `Modules/ROIContent` and `Modules/ROISim` into its own `Sources/`; both are

@@ -43,7 +43,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   49. XP depends on the number alone, and there is no XP penalty for out-levelling a creature;
   damage still shifts by the level gap. Wild creatures drop meat and hide, rabid ones hide
   only, and the viper and the eagle drop nothing. The boss archetype has no members.
-  `content/spec/spec-bestiary.md` §10.
+  `content/spec/spec-bestiary.md` §10. **Since 2026-10-03 (§11, committed, not yet deployed
+  at the time of writing) the forest grows with the manor:** a creature fights with HP and ATK × (1 + 0.1·(estate
+  tier − 1)), so ×1.6 at T7. XP and loot are unchanged, and no screen announces it.
 - **Escape — as SHIPPED, which the four bullets above are not** (2026-09-15). A flat
   per-class chance (warrior 40 / archer 70 / mage 90, `combat.json` → `flee.byClass`) with
   no level, enemy or depth input, floored by a per-fight ceiling: `flee.maxFailures` = 4, so

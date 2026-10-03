@@ -123,6 +123,15 @@ final public class FightLog: Model, @unchecked Sendable {
     @Field(key: "enemy_level")
     public var enemyLevel: Int
 
+    /// The player's estate tier when the fight happened — the input of the
+    /// forest's strength (`spec-bestiary.md` §11), and the only record of it:
+    /// `users.estate_level` moves on, and a player holding an upgrade back to
+    /// keep the forest soft is exactly what this column has to show. Nil on
+    /// rows written before the scaling shipped (`AddFightLogEstateLevel`),
+    /// whose fights were unscaled whatever the tier was.
+    @OptionalField(key: "estate_level")
+    public var estateLevel: Int?
+
     /// `Outcome.rawValue` — win / death / flee.
     @Field(key: "outcome")
     public var outcome: String
@@ -201,6 +210,9 @@ extension FightLog {
         row.depthKm = state.stepsDeep
         row.enemyId = enemy.id
         row.enemyLevel = enemy.level
+        // The tier the fight was rolled at: nothing can raise the estate while
+        // the expedition row stands (`ExplorationState.combatEnemy(for:)`).
+        row.estateLevel = user.estateLevel
         row.outcome = outcome.rawValue
         row.rounds = tally.actions
         row.vigorSpent = tally.vigorSpent

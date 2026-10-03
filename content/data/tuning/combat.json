@@ -28,6 +28,9 @@
     "mageBarrierDamageFraction" : 0.4
   },
   "defendChipFraction" : 0.3,
+  "estateScaling" : {
+    "perTier" : 0.1
+  },
   "flee" : {
     "byClass" : [
       {

@@ -348,7 +348,12 @@ public enum ExplorationService {
         // step plus the tick, which `StepResult` now carries.
         if user.hp <= 0 { return .nothing }
 
-        guard let enemy = EnemyCatalog.pickFor(kmDepth: kmDepth) else {
+        // Born at the estate's strength (`spec-bestiary.md` §11) — the first of
+        // the scaling's two funnels, and the only one the passive autobattle
+        // ever sees. The active hand-off stores THIS creature's HP on the row,
+        // and `ExplorationState.combatEnemy(for:)` reads it back at the same tier.
+        guard let enemy = EnemyCatalog.pickFor(kmDepth: kmDepth)?
+            .scaled(forEstateTier: user.estateLevel) else {
             return .nothing
         }
 

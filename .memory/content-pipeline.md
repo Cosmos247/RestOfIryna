@@ -166,10 +166,25 @@ targets, XP / loot multipliers, default spawn weight). The silver multiplier wen
 with monster coins in 8C, and since tier 2 (2026-10-02) the XP multiplier is 1.0 for
 every archetype: XP follows the creature's number alone. Every enemy's stats are
 GENERATED from its level and archetype at design time, never scaled to the player at
-runtime — runtime scaling makes each gear upgrade evaporate as it is equipped. The
-owner's 2026-10-02 decision to scale creature strength by the ESTATE tier is a coarse
-exception whose spec still has to justify itself against this rule
-(`rebalance.md` → "Tier 2 of the bestiary and the expedition model").
+runtime — runtime scaling makes each gear upgrade evaporate as it is equipped.
+
+**The one runtime multiplier reads the ESTATE (2026-10-03, `spec-bestiary.md` §11).** A
+spawnable creature fights with HP and ATK × `1 + perTier·(tier − 1)` (`tuning/combat.json` →
+`estateScaling`, 0.1; content schema v15). It does not reopen the trap, because a building the
+player chooses to raise cancels no gear and no level. The rule's mechanics:
+- the formula and its rounding live in `CombatMath.scaled(_:forEstateTier:spec:)`;
+- the game reaches them only through `Enemy.scaled(forEstateTier:)`, which leaves the `0...0`
+  dummy and dog alone;
+- exactly two funnels call that: `ExplorationService.rollEncounter`, where an encounter is born,
+  and `ExplorationState.combatEnemy(for:)`, where a fight in progress is read back.
+
+The verification has four parts:
+- `tuning.combat.estate_scaling_negative` refuses a negative step;
+- the digest's `tuning` half replays the façade on a synthetic pair, so an edited creature row
+  never moves it;
+- `combat model` checks four anchors on the real roster;
+- `simulate` prints «the forest by estate tier» and prices it into the pace, but never bands it.
+  The bands keep measuring the authored contract.
 
 - **`pickFor` returns nil past coverage.** The old `?? all.first` tail answered
   any uncovered km with the first enemy in the file, so everything past km 35 was

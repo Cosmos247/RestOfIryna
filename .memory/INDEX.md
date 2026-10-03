@@ -23,7 +23,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 ## Content specifications (in the repo, not here)
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
-  - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off
+  - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
   - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
@@ -45,11 +45,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   the King's chain asking for the estate before the ground, and a workshop that no longer
   makes armour.
 - **Next actions.**
-  - The owner deploys tier 2.
-  - Then the estate-scaling spec the owner decided on 2026-10-02: creature HP and ATK +10% per
-    estate tier, strength only, T6 left as it is.
-  - Then the first `fight_log` rows, and a human walking the screens. Tier 2's block heads
-    `TODO.md`'s walk list and waits for its deploy.
+  - The owner deploys tier 2 and the estate scaling, both committed and NOT deployed. The
+    scaling (2026-10-03, `spec-bestiary.md` §11) makes creature HP and ATK +10% per estate
+    tier, strength only, with T6 left as it is, no player notice, and
+    `fight_log.estate_level`. It brings content schema v15 and one migration. The testers
+    should hear about it first, because the game announces nothing.
+  - Then the first `fight_log` rows, and a human walking the screens. The estate and tier-2
+    blocks head `TODO.md`'s walk list and wait for their deploy.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -80,7 +82,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 77 at one line each, so a selection copied into this file is the
+already carries all 78 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

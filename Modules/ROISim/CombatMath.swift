@@ -217,10 +217,49 @@ public enum CombatMath {
     /// enemy stats can be frozen at design time. Scaling enemies to the player
     /// at runtime would make every gear upgrade evaporate the moment it is
     /// worn; a level term does the same job without touching the enemy table.
+    /// (`scaled(_:forEstateTier:spec:)` below scales by the ESTATE, which reads
+    /// nothing the player's power is made of — see its note.)
     public static func levelDiffMultiplier(attackerLevel: Int, defenderLevel: Int,
                                            spec: LevelDiffDTO) -> Double {
         let raw = 1 + spec.perLevel * Double(attackerLevel - defenderLevel)
         return Swift.max(spec.min, Swift.min(spec.max, raw))
+    }
+
+    // MARK: Estate scaling
+
+    /// How much stronger the forest stands for a player whose estate is at
+    /// `tier`: `1 + perTier · max(0, tier − 1)` (`spec-bestiary.md` §11).
+    ///
+    /// T1 is ×1.0 by construction, and so is anything below it: the clamp means
+    /// a bad tier can never make the forest weaker than it was authored.
+    public static func estateScale(tier: Int, spec: EstateScalingDTO) -> Double {
+        1 + spec.perTier * Double(Swift.max(0, tier - 1))
+    }
+
+    /// A creature as it fights a player whose estate is at `tier`: HP and ATK
+    /// times `estateScale`, each rounded half away from zero, and every other
+    /// field verbatim.
+    ///
+    /// The one runtime change to an enemy's stats, and it does not repeat the
+    /// trap `levelDiffMultiplier` above was built to avoid: the input is a
+    /// building the player chooses to raise, never their level or their gear,
+    /// so nothing they equip is cancelled by it.
+    ///
+    /// HP and ATK only, by decision (2026-10-02). The level stays, so
+    /// `levelDiff` and the XP a kill pays are untouched and an outgrown
+    /// creature still dies fast and hurts little; DEF and the ratings are read
+    /// through level-linear curves and stay as authored. This is the ONLY
+    /// rounding the scaling has: the game reaches it through
+    /// `Enemy.scaled(forEstateTier:)` and `roi-content simulate` calls it
+    /// directly, so the two cannot disagree about a single creature.
+    public static func scaled(_ stats: CombatantStats, forEstateTier tier: Int,
+                              spec: EstateScalingDTO) -> CombatantStats {
+        let factor = estateScale(tier: tier, spec: spec)
+        var out = stats
+        out.maxHP = Int((Double(stats.maxHP) * factor).rounded())
+        out.hp = Int((Double(stats.hp) * factor).rounded())
+        out.attack = Int((Double(stats.attack) * factor).rounded())
+        return out
     }
 
     // MARK: Rolls

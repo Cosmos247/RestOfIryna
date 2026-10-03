@@ -385,6 +385,70 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-03 (creature strength follows the estate tier)
+
+**Recovered first, again from a transcript.** The owner opened with "we stopped at the mobs
+getting stronger, and I answered your question". The answers were in session `3c8d3ec2`: variant A
+(+10% HP/ATK per estate tier), strength only, T6 left as it is.
+
+**The spec, then two questions.** `spec-bestiary.md` §11 was written and shown before any code,
+with these findings:
+- against today's live roster, A is slower at every milestone up to L30;
+- one fight costs ×1.24…×2.75 HP from T2 to T7;
+- «Пуща» (km 26 at L17) is left with zero margin for the mage, at 28 / 27 / 26;
+- the testers above T1 feel it at the first fight after the deploy.
+
+The owner answered the quiz:
+- **no player notice.** The upgrade card and the banner stay as they are; the card line I
+  proposed is kept in §11.7 in case it is ever needed;
+- **`fight_log.estate_level`: add it.**
+
+Then "Так, переходь".
+
+**Implemented:**
+- the knob `tuning/combat.json` → `estateScaling.perTier` 0.1, a required field, so the content
+  schema went to v15;
+- `CombatMath.estateScale` / `scaled(_:forEstateTier:spec:)`, the one formula and rounding;
+- `Enemy.scaled(forEstateTier:)`, the façade; non-spawners return themselves, and `hp`/`attack`
+  became `private(set) var`, so the copy keeps every other field;
+- two funnels: `ExplorationService.rollEncounter` and `ExplorationState.combatEnemy(for:)`. The
+  second replaced five bare `EnemyCatalog.find` calls: `loadCombat`, `/start`, the stale-callback
+  redraw, the in-combat notice and `guardInCombat`;
+- `FightLog.estateLevel` with `AddFightLogEstateLevel`;
+- validator rule `tuning.combat.estate_scaling_negative`;
+- the digest: a `tuning` replay on a synthetic spawner and sentinel, plus four `combat model`
+  anchors;
+- `simulate`'s «the forest by estate tier» section, with the pace priced per tier;
+- `spec gates`' creatures column;
+- `EstateScalingTests` (+9) and `TuningTests` (+3).
+
+No locale string changed.
+
+**Verified:**
+- 336 tests; `validate --strict` 0/0;
+- the digest moved `tuning` alone (`c01ccfdb585f4a68` → `605fd06bd8abdfda`); the content hash
+  moved `cd9d73bf` → `be4350a5`;
+- `simulate --strict`: 0 broken bands and 18 warnings, with pace 125.5 / 120.9 / 113.8 →
+  167.0 / 159.6 / 150.9;
+- `spec opening` is byte-identical, and all 12 generated spec blocks reproduce from their
+  markers;
+- every new checker was negative-tested:
+  - `perTier` −0.1 trips the rule;
+  - a missing key is refused;
+  - `perTier` 0.2 trips the T7 anchor;
+  - a façade mutated to drop the exclusion trips the dummy and dog anchors.
+
+**The harness, rebuilt against the repo.** A scratch SwiftPM package copied `Modules/ROIContent`
+and `Modules/ROISim`, and its `estatefights` roller called `CombatMath.scaled` with the shipped
+knob. Its fight table came out byte-identical to the 10-02 sandbox's `scaled_A.csv`, all 3,234
+rows, so the expedition model again reads 74 / 96 / 130 / 184 / 249 / 477 days. The 10-02 sandbox
+had survived in `/private/tmp` and was the reference.
+
+**Documents:** `CLAUDE.md` (a rule under Combat; the `simulate` bands scoped to the authored
+contract), `content-pipeline.md`, `rebalance.md`, `status.md`, `file-map.md`, `README.md`,
+`spec-progression.md` §3, `Prompt.md`, `TODO.md` and `INDEX.md`. Auto-memory: the new
+`project-estate-scaling`.
+
 ## Session — 2026-10-03 (the sync pass)
 
 Records only: no code, no content and no locale string changed. This was the owner's long-form

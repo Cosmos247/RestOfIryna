@@ -104,17 +104,19 @@ game*, and for revisiting them before anyone reaches them rather than after.
 | 2 | `special_def` | 11 | 400 | 40× `mat.pine_lumber` 30× `mat.river_pebble` 10× `mat.iron` 8× `mat.hide` |
 | 3 | `super` | 14 | 800 | 60× `mat.pine_lumber` 40× `mat.river_pebble` 15× `mat.iron` 3× `mat.iron_ingot` 10× `mat.hide` |
 
-**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget
+**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget;
+the creatures column is the forest's HP and ATK at that tier (`tuning/combat.json`
+→ `estateScaling`, `spec-bestiary.md` §11)
 
-| tier | player level | plot slots | warehouse cap |
-|---|---|---|---|
-| T1 | start | 0 | 200 |
-| T2 | 4 | 1 | 400 |
-| T3 | 7 | 2 | 600 |
-| T4 | 10 | 3 | 800 |
-| T5 | 13 | 4 | 1200 |
-| T6 | 16 | 5 | 1600 |
-| T7 | 19 | 6 | 2000 |
+| tier | player level | plot slots | warehouse cap | creatures |
+|---|---|---|---|---|
+| T1 | start | 0 | 200 | ×1 |
+| T2 | 4 | 1 | 400 | ×1.1 |
+| T3 | 7 | 2 | 600 | ×1.2 |
+| T4 | 10 | 3 | 800 | ×1.3 |
+| T5 | 13 | 4 | 1200 | ×1.4 |
+| T6 | 16 | 5 | 1600 | ×1.5 |
+| T7 | 19 | 6 | 2000 | ×1.6 |
 
 **Bag** (`bags.json`) — gated on the ESTATE, not the player level
 

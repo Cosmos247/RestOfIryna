@@ -478,12 +478,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// place is then the same tap that repairs the screen.
     private func guardInCombat(context: Context, state: ExplorationState) async throws -> Bool {
         guard state.isInCombat,
-              let enemyId = state.combatEnemyId,
-              let enemy = EnemyCatalog.find(enemyId) else { return false }
+              let enemy = state.combatEnemy(for: context.session) else { return false }
 
         appState?.logger.warning("""
             [COMBAT] \(context.session.telegramId) tried to walk at km \(state.stepsDeep) \
-            with \(enemyId) still standing — refused, re-rendering the fight
+            with \(enemy.id) still standing — refused, re-rendering the fight
             """)
 
         let combatCtrl = Controllers.combatController

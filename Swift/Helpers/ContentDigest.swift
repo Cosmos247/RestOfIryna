@@ -638,6 +638,31 @@ enum ContentDigest {
         near(CombatService.levelDiffMultiplier(attackerLevel: 99, defenderLevel: 1), diff.max, 0.001,
              "levelDiff ceiling")
 
+        // Estate scaling (`spec-bestiary.md` §11), on the real roster: T1 leaves
+        // every creature as authored, T7 is the ×1.6 the owner decided on
+        // 2026-10-02 (a deliberate retune updates this anchor, and this is the
+        // line that will say it moved — pinned to T7 by number, so a new tier
+        // added above it does not), only HP and ATK ever change, and the two
+        // creatures that never spawn come back untouched at the top tier.
+        let topTier = EstateUpgradeCatalog.maxTier
+        near(CombatService.estateScale(tier: 1), 1.0, 1e-9, "estate scale at T1")
+        near(CombatService.estateScale(tier: 7), 1.6, 1e-9, "estate scale at T7")
+        for enemy in EnemyCatalog.all {
+            let atT1 = enemy.scaled(forEstateTier: 1)
+            if atT1.hp != enemy.hp || atT1.attack != enemy.attack {
+                problems.append("\(enemy.id) moves at T1: \(atT1.hp)/\(atT1.attack), authored \(enemy.hp)/\(enemy.attack)")
+            }
+            let atTop = enemy.scaled(forEstateTier: topTier)
+            if !enemy.spawns && (atTop.hp != enemy.hp || atTop.attack != enemy.attack) {
+                problems.append("\(enemy.id) never spawns, yet scales at T\(topTier)")
+            }
+            if atTop.defense != enemy.defense || atTop.crit != enemy.crit || atTop.dodge != enemy.dodge
+                || atTop.accuracy != enemy.accuracy || atTop.level != enemy.level
+                || atTop.xpReward != enemy.xpReward {
+                problems.append("\(enemy.id): the estate scaling moved more than HP and ATK")
+            }
+        }
+
         // XP curve — the design's published costs at four levels.
         for (level, want) in [(2, 120.0), (6, 2309.0), (11, 22746.0), (21, 224029.0)] {
             let got = Double(User.xpRequiredToReach(level))
@@ -654,7 +679,7 @@ enum ContentDigest {
         near(User.xpMultiplier(playerLevel: 40, monsterLevel: 1), 1.0, 0.001, "xp at any gap")
 
         if problems.isEmpty {
-            print("combat model: ✅ mitigation, dodge, levelDiff and the XP curve all reproduce the design anchors")
+            print("combat model: ✅ mitigation, dodge, levelDiff, the estate scaling and the XP curve all reproduce the design anchors")
         } else {
             print("combat model: ❌ \(problems.count) mismatch(es)")
             for problem in problems { print("   • \(problem)") }
@@ -734,6 +759,23 @@ enum ContentDigest {
         // Replayed past both clamps — the tails are where a changed bound hides.
         for gap in [-60, -10, 0, 10, 60] {
             d.combine("levelDiff\(gap):\(CombatService.levelDiffMultiplier(attackerLevel: 20 + gap, defenderLevel: 20))")
+        }
+        // The forest's strength by estate tier (`spec-bestiary.md` §11), replayed
+        // past both ends — below T1 the clamp, above the top tier the line a new
+        // tier would extend — and through the façade itself, on one synthetic
+        // creature that spawns and one that does not. The rounding and the
+        // exclusion are code, and a value hash of `perTier` sees neither.
+        // Synthetic on purpose: the real roster belongs to `records`, and an
+        // edited creature row must not move this half.
+        let spawner = Enemy(id: "digest.spawner", nameKey: "-", tier: 1, hp: 55, attack: 5,
+                            defense: 6, crit: 7, dodge: 3, accuracy: 2, level: 5,
+                            depthRange: 1...4, lootTable: [], icon: "", xpReward: 13)
+        let sentinel = Enemy(id: "digest.sentinel", nameKey: "-", tier: 1, hp: 34, attack: 5,
+                             defense: 6, depthRange: 0...0, lootTable: [], icon: "", xpReward: 0)
+        for tier in -1...9 {
+            d.combine("estate\(tier):\(CombatService.estateScale(tier: tier))")
+            d.combine(fingerprint(spawner.scaled(forEstateTier: tier)))
+            d.combine(fingerprint(sentinel.scaled(forEstateTier: tier)))
         }
 
         // MARK: combat.json — accessor replays

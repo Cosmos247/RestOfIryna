@@ -76,5 +76,10 @@ public enum ContentSchema {
     /// house, raised for silver and materials, one technique per level. A v13
     /// directory has no such file and still lists `training_ground` as a plot
     /// type the new binary no longer knows.
-    public static let current: Int = 14
+    /// v15 (2026-10-03): `combat.json` gains a required `estateScaling` — the
+    /// forest's creatures grow with the player's estate tier
+    /// (`spec-bestiary.md` §11). A v14 bundle has no such key, and defaulting
+    /// it to "off" would run every fight unscaled without a word, so the
+    /// handshake has to refuse rather than fall back.
+    public static let current: Int = 15
 }

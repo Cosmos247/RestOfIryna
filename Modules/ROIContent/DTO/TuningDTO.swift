@@ -144,7 +144,8 @@ public struct CombatCurvesDTO: Codable, Sendable, Equatable {
 /// warrior's absorption from 38% to 44%, which nobody notices. This one line is
 /// what sells it, and it is why enemy stats can stay frozen at design time
 /// instead of scaling to the player (the trap that makes every gear upgrade
-/// worthless the moment it is equipped).
+/// worthless the moment it is equipped). `EstateScalingDTO` below is the one
+/// runtime multiplier on a creature, and it reads the estate, not the player.
 public struct LevelDiffDTO: Codable, Sendable, Equatable {
     public let perLevel: Double
     public let min: Double
@@ -163,6 +164,31 @@ public struct LevelDiffDTO: Codable, Sendable, Equatable {
         perLevel = try c.decode(Double.self, forKey: .perLevel)
         min      = try c.decode(Double.self, forKey: .min)
         max      = try c.decode(Double.self, forKey: .max)
+    }
+}
+
+/// How much stronger the forest stands for a player whose ESTATE has grown:
+/// a spawnable creature's HP and ATK × `1 + perTier·(estate tier − 1)`
+/// (`spec-bestiary.md` §11). The one sanctioned exception to "enemy stats are
+/// frozen at design time", and it is safe for the reason the rule exists: the
+/// input is a building the player chooses to raise, never their level or their
+/// gear, so no upgrade they wear is cancelled by it.
+///
+/// Zero is legal and means off; negative is refused by
+/// `tuning.combat.estate_scaling_negative`, because a forest that weakens as the
+/// manor grows would invert the decision.
+public struct EstateScalingDTO: Codable, Sendable, Equatable {
+    public let perTier: Double
+
+    public init(perTier: Double) {
+        self.perTier = perTier
+    }
+
+    private enum CodingKeys: String, CodingKey { case perTier }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        perTier = try c.decode(Double.self, forKey: .perTier)
     }
 }
 
@@ -578,6 +604,8 @@ public struct CombatTuningDTO: Codable, Sendable {
     public let hitChance: HitChanceDTO
     public let curves: CombatCurvesDTO
     public let levelDiff: LevelDiffDTO
+    /// Required since schema v15 — see `EstateScalingDTO`.
+    public let estateScaling: EstateScalingDTO
     public let critMultiplier: Double
     public let variance: VarianceDTO
     public let defendChipFraction: Double
@@ -593,6 +621,7 @@ public struct CombatTuningDTO: Codable, Sendable {
     public let defend: DefendTuningDTO
 
     public init(hitChance: HitChanceDTO, curves: CombatCurvesDTO, levelDiff: LevelDiffDTO,
+                estateScaling: EstateScalingDTO,
                 critMultiplier: Double, variance: VarianceDTO,
                 defendChipFraction: Double, trainingDummyEnemyId: String,
                 techniques: [TechniqueTuningDTO], stances: StanceSectionDTO,
@@ -602,6 +631,7 @@ public struct CombatTuningDTO: Codable, Sendable {
         self.hitChance = hitChance
         self.curves = curves
         self.levelDiff = levelDiff
+        self.estateScaling = estateScaling
         self.critMultiplier = critMultiplier
         self.variance = variance
         self.defendChipFraction = defendChipFraction
@@ -615,7 +645,7 @@ public struct CombatTuningDTO: Codable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case hitChance, curves, levelDiff, critMultiplier, variance
+        case hitChance, curves, levelDiff, estateScaling, critMultiplier, variance
         case defendChipFraction, trainingDummyEnemyId
         case techniques, stances, specialAttack, specialDefense, flee, defend
     }
@@ -625,6 +655,7 @@ public struct CombatTuningDTO: Codable, Sendable {
         hitChance            = try c.decode(HitChanceDTO.self, forKey: .hitChance)
         curves               = try c.decode(CombatCurvesDTO.self, forKey: .curves)
         levelDiff            = try c.decode(LevelDiffDTO.self, forKey: .levelDiff)
+        estateScaling        = try c.decode(EstateScalingDTO.self, forKey: .estateScaling)
         critMultiplier       = try c.decode(Double.self, forKey: .critMultiplier)
         variance             = try c.decode(VarianceDTO.self, forKey: .variance)
         defendChipFraction   = try c.decode(Double.self, forKey: .defendChipFraction)

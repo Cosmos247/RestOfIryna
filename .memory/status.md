@@ -21,6 +21,27 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-03 — creature strength follows the estate tier** (committed, NOT deployed; needs
+`pm2 restart ROI`, because of code, content schema v15 and one migration, `AddFightLogEstateLevel`).
+`spec-bestiary.md` §11:
+- **The rule.** A spawnable creature fights with HP and ATK × `1 + 0.1·(estate tier − 1)`, which
+  is ×1.0 at T1 and ×1.6 at T7. The knob is `tuning/combat.json` → `estateScaling.perTier`. XP,
+  loot, DEF, the ratings and the level stay as authored, and the dummy and the dog never scale.
+  No screen announces it, on the owner's word.
+- **The code.** One formula and one rounding (`CombatMath.scaled(_:forEstateTier:spec:)`), one
+  façade (`Enemy.scaled(forEstateTier:)`), and two funnels: `rollEncounter` and
+  `ExplorationState.combatEnemy(for:)`, which replaced five bare `EnemyCatalog.find` calls.
+  `fight_log.estate_level` records the tier.
+- **The checks.** `tuning.combat.estate_scaling_negative`, four `combat model` anchors, a
+  `tuning` replay, `simulate`'s «the forest by estate tier» section with the pace priced by tier,
+  and `spec gates`' creatures column.
+- **Measured.**
+  - 336 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands and 18 warnings;
+  - only `tuning` moved (`605fd06bd8abdfda`), and the content hash is `be4350a5`;
+  - pace 167.0 / 159.6 / 150.9 days, up from 125.5 / 120.9 / 113.8;
+  - the harness rebuilt against the repo reproduced the 10-02 fight table byte for byte, and with
+    it 477 days to L40 against 392 unscaled.
+
 **2026-10-02 — tier 2 of the bestiary** (`f03d502`, NOT deployed; needs `pm2 restart ROI` — the
 validator is code, five locale strings are new and four oblique-case lines were rewritten; no migration). `spec-bestiary.md` §10:
 - **The roster.** Fourteen creatures numbered in order, five of them new: Скажена лисиця,
@@ -37,7 +58,7 @@ validator is code, five locale strings are new and four oblique-case lines were 
   finding back to `opening.shallow_is_bankrupt`. 324 tests. Real-gear pace to L40: 392 days
   against today's 598.
 - **Next.** The estate-tier scaling, decided after implementation: +10% HP/ATK per tier,
-  strength only, T6 as is. Its spec comes as its own change.
+  strength only, T6 as is. It was implemented on 2026-10-03 as its own change (above).
 
 **2026-09-28 — the workshop no longer makes armour** (`ada1ae7`, live since the 2026-09-28 22:11 restart; Swift + two locale lines per
 language, no content file touched — the digest does not move). The owner's call, over a quiz:
@@ -545,15 +566,16 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 696d3c25c1a74d98` / `tuning c01ccfdb585f4a68` / `spawns 0cf31905171d7944` /
-`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `cd9d73bf` (**schema v14**
-since 2026-09-27, when `training_ground.json` became a required file — `Prompt.md` is where
-the baseline is kept in sync). That is tier 2, committed 2026-10-02 and **not yet on the Pi**,
-which still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
+`records 696d3c25c1a74d98` / `tuning 605fd06bd8abdfda` / `spawns 0cf31905171d7944` /
+`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `be4350a5` (**schema v15**
+since 2026-10-03, when `combat.json` gained the required `estateScaling` — `Prompt.md` is where
+the baseline is kept in sync). That is the estate scaling, committed 2026-10-03 on top of tier 2
+(committed 2026-10-02: `tuning c01ccfdb585f4a68`, content hash `cd9d73bf`, schema v14). Neither
+is on the Pi yet, which still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
 `spawns c9bdb57d456adc26`, content hash `490a2d4b`, since the 2026-09-28 22:11 restart.
-**324 tests**. Pace as of
-2026-09-18 is **114–126 days** to level 40 (the 117–129 quoted further down this file is a
-dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
+**336 tests**. Pace as of 2026-10-03 is **151–167 days** to level 40, the estate scaling
+priced in; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
+file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
 three times and nothing else had moved at all — the watchman cadence and the passive daily
 budget on 09-09, the exploration re-weight on 09-10, each named before the edit.

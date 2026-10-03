@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 324 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 336 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -144,7 +144,7 @@ RestOfIryna/
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers. Phase 6.5 added gear `durability`/`max_durability` (init stamps 30; weapons get their per-tier ceiling 30→100) + `enchant_level` (armor, cap 5) columns
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory) + remove helper (Phase 5.2)
 │   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, running_report_json, visited_rooms)
-│   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight)
+│   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); since 2026-10-03 a spawnable creature fights with HP and ATK × the estate tier's strength (`scaled(forEstateTier:)`, §11)
 │   │   ├── Plot.swift            # Phase 5.1 — Fluent model for estate plots (user_id, slot_index, plot_type, tier, last_harvested_at, notified_full)
 │   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
 │   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 5 tiers, stats + materials); ItemDisplay namespace lives in Item.swift. Phase 6.5 (2026-05-22) added `durabilityByTier` [30,40,50,70,100] + `durability(forTier:)` — weapon durability ceiling climbs with tier
@@ -172,6 +172,7 @@ RestOfIryna/
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
 │   │   ├── RewalkReorderedDecrees.swift # 2026-09-27 — data: anyone at chain positions 23…25 goes back to 22 after the estate-before-ground reorder
+│   │   ├── AddFightLogEstateLevel.swift # 2026-10-03 — nullable `estate_level` on `fight_log`: the estate tier a fight was rolled at, the input of the creature's strength
 │   │   ├── CreateKingProgress.swift  # 2026-09-21 — `king_progress`, unique on `user_id`: "one open decree" as a database guarantee, the way `quest_progress` guarantees one job per NPC per day. No backfill on purpose
 │   │   ├── AddWalkCounters.swift     # 2026-09-12 — `deepest_km` + `total_km_walked`, the first cumulative counters the game stores, plus four leaderboard indexes via raw SQL. Nothing to backfill: a depth record only ever lived in `exploration_state`, which is deleted when the expedition ends
 │   │   ├── AddCombatFleeFails.swift # 2026-09-15 — `combat_flee_fails` on `exploration_state`: failed escape attempts of the CURRENT fight, so the attempt after `flee.maxFailures` is granted without a roll

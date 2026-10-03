@@ -14,6 +14,15 @@
 //  level and archetype, never hand-written: an enemy scaled to the player at
 //  runtime would make each gear upgrade evaporate as it was equipped.
 //
+//  One multiplier is applied at runtime, and it reads the ESTATE, not the
+//  player (2026-10-03, `spec-bestiary.md` §11): a creature that spawns fights
+//  with HP and ATK × `1 + 0.10·(estate tier − 1)`. The tier is a building the
+//  player chooses to raise, so nothing they equip or learn is cancelled by it.
+//  `scaled(forEstateTier:)` is the only way in, and exactly two funnels call
+//  it — `ExplorationService.rollEncounter`, where an encounter is born, and
+//  `ExplorationState.combatEnemy(for:)`, where a fight in progress is read
+//  back. The catalog itself (`find`, `pickFor`) stays the authored content.
+//
 //  Roster (2026-10-02, tier 2 — `spec-bestiary.md` §10): 14 spawnable animals
 //  numbered 1–14, the number being the level, each in the band km 3N−3…3N+1,
 //  plus the training dummy and the registration dog, which carry the `0…0`
@@ -106,8 +115,12 @@ public struct Enemy: Sendable {
     public let id: String
     public let nameKey: String
     public let tier: Int
-    public let hp: Int
-    public let attack: Int
+    /// Settable only so `scaled(forEstateTier:)` can copy the value and replace
+    /// these two. Re-running the initialiser instead would hand back the
+    /// defaults of any field added later — the way a re-created inventory row
+    /// once handed back a factory-fresh item (`GearState`).
+    public private(set) var hp: Int
+    public private(set) var attack: Int
     public let defense: Int
     /// Combat ratings, fed through the same diminishing-returns curves as the
     /// player's. Before Phase 5 the enemy side of every roll passed literal
@@ -174,6 +187,32 @@ public struct Enemy: Sendable {
         self.lootTable = lootTable
         self.icon = icon
         self.xpReward = xpReward
+    }
+
+    /// False for the two creatures that carry the `0...0` depth — the training
+    /// dummy and the registration dog — spelled exactly as the validator's
+    /// depth coverage spells "spawnable".
+    public var spawns: Bool { depthRange != 0...0 }
+
+    /// This creature as it fights a player whose estate stands at `tier`: HP
+    /// and ATK × `CombatService.estateScale(tier:)`, rounded by
+    /// `CombatMath.scaled`, everything else as authored (`spec-bestiary.md`
+    /// §11). A creature that never spawns is not the forest and comes back
+    /// unchanged at every tier.
+    ///
+    /// Call it through one of the two funnels named in the file header, never
+    /// beside them: a fight whose roll and whose read-back disagree draws the
+    /// HP it started with over a maximum it never had.
+    public func scaled(forEstateTier tier: Int) -> Enemy {
+        guard spawns else { return self }
+        let line = CombatMath.scaled(
+            CombatantStats(level: level, maxHP: hp, attack: attack, defense: defense,
+                           crit: crit, dodge: dodge, accuracy: accuracy),
+            forEstateTier: tier, spec: Catalogs.current.tuningCombat.estateScaling)
+        var copy = self
+        copy.hp = line.maxHP
+        copy.attack = line.attack
+        return copy
     }
 }
 

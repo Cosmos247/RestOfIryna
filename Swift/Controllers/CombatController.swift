@@ -129,8 +129,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             return true
         }
         guard let state = try await ExplorationState.current(for: context.session, on: context.db),
-              let enemyId = state.combatEnemyId,
-              let enemy = EnemyCatalog.find(enemyId) else {
+              let enemy = state.combatEnemy(for: context.session) else {
             // No fight to redraw — an out-of-band end. Falling back to the main
             // menu is the honest answer, and no expedition row is left behind.
             try await ExplorationState.end(for: context.session, on: context.db)
@@ -263,8 +262,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         if let state = try await ExplorationState.current(for: context.session, on: context.db),
            state.isInCombat,
-           let enemyId = state.combatEnemyId,
-           let enemy = EnemyCatalog.find(enemyId) {
+           let enemy = state.combatEnemy(for: context.session) {
             // Could be forwarded from another controller's router (e.g. a
             // pre-switch training session still on routerName "estate") — make
             // sure the player is on the combat router so the reply keyboard's
@@ -327,8 +325,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
     private func sendInCombatNotice(context: Context) async throws {
         guard let state = try await ExplorationState.current(for: context.session, on: context.db),
               state.isInCombat,
-              let enemyId = state.combatEnemyId,
-              let enemy = EnemyCatalog.find(enemyId) else {
+              let enemy = state.combatEnemy(for: context.session) else {
             // Combat state vanished — bail back to exploration entry.
             context.session.routerName = Controllers.explorationController.routerName
             try await context.session.saveAndCache(in: context.db)
@@ -1318,14 +1315,15 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Loaders
 
-    /// Look up the live combat state and resolve the enemy from the catalog.
-    /// If the state is missing or stale (combat fields cleared, enemy id no
-    /// longer in catalog) we bail back to the exploration entry view.
+    /// Look up the live combat state and resolve the enemy at the estate's
+    /// strength (`ExplorationState.combatEnemy(for:)` — every combat tap reads
+    /// the creature through it). If the state is missing or stale (combat
+    /// fields cleared, enemy id no longer in catalog) we bail back to the
+    /// exploration entry view.
     private func loadCombat(context: Context) async throws -> (ExplorationState, Enemy)? {
         guard let state = try await ExplorationState.current(for: context.session, on: context.db),
               state.isInCombat,
-              let enemyId = state.combatEnemyId,
-              let enemy = EnemyCatalog.find(enemyId) else {
+              let enemy = state.combatEnemy(for: context.session) else {
             // Stale: combat already ended but the router still points here.
             // Tell the player and recover a usable keyboard by routing back to
             // the exploration entry.

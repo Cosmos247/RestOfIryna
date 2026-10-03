@@ -36,6 +36,7 @@ final class SimulatorTests: XCTestCase {
             hitChance: HitChanceDTO(base: 85, min: 40, max: 95),
             curves: curves(),
             levelDiff: LevelDiffDTO(perLevel: 0.06, min: 0.25, max: 2.5),
+            estateScaling: EstateScalingDTO(perTier: 0.1),
             critMultiplier: 1.5,
             variance: VarianceDTO(min: 0.9, max: 1.1),
             defendChipFraction: 0.3,

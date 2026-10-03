@@ -366,6 +366,27 @@ extension ExplorationState {
         return combatEnemyId != nil && combatEnemyHP != nil
     }
 
+    /// The creature standing on this row, as it fights `user`: the catalog's
+    /// line at the estate's strength (`Enemy.scaled(forEstateTier:)`,
+    /// `spec-bestiary.md` §11). Nil when no fight is stamped or the id no
+    /// longer resolves.
+    ///
+    /// The second of the scaling's two funnels — the first is
+    /// `ExplorationService.rollEncounter`, where the encounter was born — and
+    /// every reader of a fight in progress goes through it. A bare
+    /// `EnemyCatalog.find` here would draw the HP the fight started with over a
+    /// maximum the creature never had.
+    ///
+    /// The tier is read live, not stored on the row, and it is the tier the
+    /// encounter was rolled at: nothing can raise the estate while an
+    /// expedition row stands. `showEstate` refuses, a fight answers every
+    /// callback by redrawing itself, and a walk or a passive run hands an
+    /// `estate:` callback to `MainController`, which deletes it.
+    public func combatEnemy(for user: User) -> Enemy? {
+        guard let enemyId = combatEnemyId else { return nil }
+        return EnemyCatalog.find(enemyId)?.scaled(forEstateTier: user.estateLevel)
+    }
+
     /// Stamp the combat fields and initialise the per-fight technique
     /// budget. Phase 5.3e: caller supplies use counts derived from the
     /// player's level via `CombatService.initialUses(for:playerLevel:)`,

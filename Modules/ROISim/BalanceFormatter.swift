@@ -86,6 +86,83 @@ public enum BalanceFormatter {
         return out
     }
 
+    // MARK: - The forest by estate tier
+
+    /// The on-level `normal` fight at the level one estate tier opens, as
+    /// authored and at that tier's strength (`spec-bestiary.md` §11).
+    public struct EstateTierCheck: Sendable {
+        public let tier: Int
+        public let level: Int
+        public let scale: Double
+        /// Class → the authored fight and the same fight at this tier.
+        public let cells: [String: (authored: CellResult, scaled: CellResult)]
+
+        /// Scaled ÷ authored, for one class and one measure — what pace
+        /// multiplies its level-invariant fight by. 1.0 when either is missing.
+        public func ratio(_ cls: String, _ measure: (CellResult) -> Double) -> Double {
+            guard let pair = cells[cls] else { return 1 }
+            let base = measure(pair.authored)
+            return base > 0 ? measure(pair.scaled) / base : 1
+        }
+    }
+
+    /// Measured, not derived: rounds, Vigor and HP do not scale as ×m and ×m²
+    /// once ATK rounds to a whole number and a longer fight hands the creature
+    /// more swings, so the factor pace applies has to come from fights.
+    ///
+    /// The creature is the archetype's contract at that level, scaled by
+    /// `CombatMath.scaled` — the same function `Enemy.scaled(forEstateTier:)`
+    /// calls in the bot. Both halves of a pair roll the SAME seed, so their
+    /// ratio measures the scaling rather than two independent samples, and T1
+    /// reads exactly ×1.
+    public static func checkEstateTiers(content: GameContent, runs: Int,
+                                        seed: UInt64) -> [EstateTierCheck] {
+        guard let tuning = content.tuning, let budget = content.budget,
+              let normal = content.enemyArchetypes.first(where: { $0.id == "normal" }) else { return [] }
+        let progression = tuning.progression
+        let rules = CombatRules(tuning.combat)
+        let simulator = FightSimulator(combat: tuning.combat, vigor: tuning.vigor)
+        let classes = progression.classes.map(\.characterClass)
+        let upgrades = content.estateUpgrades
+
+        var out: [EstateTierCheck] = []
+        for tier in 1...Swift.max(1, upgrades.maxTier) {
+            let level = upgrades.progression.first { $0.toTier == tier }?.requiredPlayerLevel ?? 1
+            let references = classes.compactMap {
+                ReferenceCharacter.build(characterClass: $0, level: level, gearOffset: 0,
+                                         progression: progression, budget: budget,
+                                         rarities: content.rarities)
+            }
+            guard references.count == classes.count else { continue }
+            let authored = EnemyGenerator.generate(archetype: normal, level: level,
+                                                   against: references.map(\.stats), rules: rules,
+                                                   mobXP: progression.mobXP).stats
+            let scaled = CombatMath.scaled(authored, forEstateTier: tier,
+                                           spec: tuning.combat.estateScaling)
+            var cells: [String: (authored: CellResult, scaled: CellResult)] = [:]
+            for reference in references {
+                let cls = reference.characterClass
+                let cellSeed = BalanceSimulator.seed(seed, ["estate", "\(tier)", cls])
+                var first = SplitMix64(seed: cellSeed)
+                var second = SplitMix64(seed: cellSeed)
+                let plain = BalanceSimulator.measure(
+                    player: reference.stats, characterClass: cls, enemy: authored,
+                    profile: .basic, level: level, archetype: normal.id, offset: 0,
+                    runs: runs, simulator: simulator, rng: &first)
+                let strong = BalanceSimulator.measure(
+                    player: reference.stats, characterClass: cls, enemy: scaled,
+                    profile: .basic, level: level, archetype: normal.id, offset: 0,
+                    runs: runs, simulator: simulator, rng: &second)
+                cells[cls] = (plain, strong)
+            }
+            out.append(EstateTierCheck(
+                tier: tier, level: level,
+                scale: CombatMath.estateScale(tier: tier, spec: tuning.combat.estateScaling),
+                cells: cells))
+        }
+        return out
+    }
+
     // MARK: - Rendering
 
     public static func render(run: BalanceRun, roster: [RosterCheck],
@@ -517,6 +594,42 @@ public enum BalanceFormatter {
             out.append("")
         }
 
+        // MARK: the forest by estate tier
+        //
+        // Every section above measures the AUTHORED contract — the thing level
+        // invariance is a claim about. The estate's strength is a deliberate
+        // departure from it, layered on top, so it gets a section of its own
+        // rather than leaking into the bands: printed, never failed on.
+        let estateTiers = checkEstateTiers(content: content, runs: run.runsPerCell, seed: run.seed)
+        if let tuning = content.tuning, !estateTiers.isEmpty {
+            let classes = run.classes
+            func meanOf(_ check: EstateTierCheck, _ pick: (CellResult) -> Double) -> (Double, Double) {
+                let pairs = classes.compactMap { check.cells[$0] }
+                return (mean(pairs.map { pick($0.authored) }), mean(pairs.map { pick($0.scaled) }))
+            }
+            out.append("── the forest by estate tier ─────────────────────────────────────────────────")
+            out.append(String(format: "   a spawnable creature fights with HP and ATK × (1 + %g·(tier − 1)),",
+                              tuning.combat.estateScaling.perTier))
+            out.append("   read off the player's ESTATE, never their level or gear (`tuning/combat.json`")
+            out.append("   → `estateScaling`, spec-bestiary §11). The on-level `normal` fight at the level")
+            out.append("   each tier opens, mean of the three classes, authored → at the tier's strength:")
+            out.append("")
+            out.append("    tier  level  ×      rounds         vigor          HP lost        win")
+            for check in estateTiers {
+                let rounds = meanOf(check) { $0.rounds.mean }
+                let vigor = meanOf(check) { $0.vigor.mean }
+                let hp = meanOf(check) { $0.hpLossPercent.mean }
+                let win = meanOf(check) { $0.winRate }
+                out.append("    " + pad("T\(check.tier)", 6) + pad("\(check.level)", 7)
+                           + pad(String(format: "%g", check.scale), 7)
+                           + pad(String(format: "%.1f → %.1f", rounds.0, rounds.1), 15)
+                           + pad(String(format: "%.1f → %.1f", vigor.0, vigor.1), 15)
+                           + pad(String(format: "%.0f%% → %.0f%%", hp.0, hp.1), 15)
+                           + String(format: "%.1f%% → %.1f%%", win.0, win.1))
+            }
+            out.append("")
+        }
+
         // MARK: pace
         if let tuning = content.tuning {
             let progression = tuning.progression
@@ -540,8 +653,9 @@ public enum BalanceFormatter {
             let harvestsPerDay = FoodBudget.defaultHarvestsPerDay
 
             out.append("── pace to the level cap ─────────────────────────────────────────────────────")
-            out.append(String(format: "   a kill is %.1f rooms of walking (%.0f vigor) plus the fight;",
+            out.append(String(format: "   a kill is %.1f rooms of walking (%.0f vigor) plus the fight, and the fight",
                               stepsPerEncounter, walkCost))
+            out.append("   is priced at the strength of the estate that level can hold (the section above);")
             out.append(String(format: "   a day is what a tended estate FEEDS you, at %.0f harvests a day.",
                               harvestsPerDay))
             out.append("   Vigor stopped regenerating in Phase 8E, so the pool is a stock and the")
@@ -585,10 +699,18 @@ public enum BalanceFormatter {
                 guard !cells.isEmpty else { continue }
                 let vigorPerFight = mean(cells.map(\.vigor.mean))
                 let roundsPerFight = mean(cells.map(\.rounds.mean))
-                let vigorPerKill = vigorPerFight + walkCost
                 guard let normal = content.enemyArchetypes.first(where: { $0.id == "normal" }) else { continue }
+                // The authored fight is level-invariant, so one mean serves every
+                // level; the estate is not, so each level's fight is lifted by the
+                // factor its tier measured above. A tier with no measurement is
+                // left authored rather than guessed.
+                var lifts: [Int: (vigor: Double, rounds: Double)] = [:]
+                for check in estateTiers {
+                    lifts[check.tier] = (check.ratio(cls) { $0.vigor.mean },
+                                         check.ratio(cls) { $0.rounds.mean })
+                }
 
-                var kills = 0.0, days = 0.0, taps = 0.0, foodTaps = 0.0, unfed = 0
+                var kills = 0.0, days = 0.0, taps = 0.0, foodTaps = 0.0, unfed = 0, spent = 0.0
                 for level in 1..<progression.maxLevel {
                     let needed = ProgressionMath.xpRequiredToReach(level + 1, curve: progression.xpCurve,
                                                                    maxLevel: progression.maxLevel)
@@ -597,8 +719,12 @@ public enum BalanceFormatter {
                         * pow(Double(level), progression.mobXP.exponent) * normal.xpMultiplier
                     guard xpPerKill > 0 else { continue }
                     let killsHere = Double(needed) / xpPerKill
+                    let tier = FoodBudget.estateTier(playerLevel: level, upgrades: content.estateUpgrades)
+                    let lift = lifts[tier] ?? (vigor: 1, rounds: 1)
+                    let vigorPerKill = vigorPerFight * lift.vigor + walkCost
                     kills += killsHere
-                    taps += killsHere * (roundsPerFight + stepsPerEncounter)
+                    spent += killsHere * vigorPerKill
+                    taps += killsHere * (roundsPerFight * lift.rounds + stepsPerEncounter)
 
                     let food = foodByLevel[level] ?? .none
                     // Levels before the first plot is cleared have NO estate at
@@ -610,6 +736,8 @@ public enum BalanceFormatter {
                     // Every portion is a button: cook it, then eat it.
                     foodTaps += killsHere * vigorPerKill / food.vigor * food.portions * 2
                 }
+                // Kill-weighted: the cost of an average kill on the way to the cap.
+                let vigorPerKill = kills > 0 ? spent / kills : vigorPerFight + walkCost
                 out.append("    " + pad(cls, 10)
                            + String(format: "%6.1f      %8.0f     %8.0f     %6.1f              %8.0f",
                                     vigorPerKill, kills, taps + foodTaps, days,

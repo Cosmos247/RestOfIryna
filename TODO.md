@@ -1542,6 +1542,33 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 
         Spec `spec-bestiary.md` §10, research `.memory/rebalance.md`. Next: the
         estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only.
+  - [x] **Creature strength follows the estate tier** *(2026-10-03, committed, NOT
+        deployed)* — the owner's 10-02 decision, specified as `spec-bestiary.md` §11 and shown
+        before any code.
+
+        **What it is.** A spawnable creature fights with HP and ATK ×
+        `1 + 0.1·(estate tier − 1)`: ×1.0 at T1, ×1.6 at T7. The knob is
+        `tuning/combat.json` → `estateScaling.perTier`, and the content schema went to v15.
+        - XP, loot, DEF, the ratings and the level stay as authored, so `levelDiff` still
+          makes an outgrown creature cheap.
+        - The dummy and the dog never scale.
+        - No screen announces it, on the owner's word.
+
+        **Where it lives.**
+        - One formula and one rounding: `CombatMath.scaled(_:forEstateTier:spec:)`.
+        - One façade: `Enemy.scaled(forEstateTier:)`.
+        - Two funnels: `rollEncounter`, and `ExplorationState.combatEnemy(for:)`, which
+          replaced five bare `EnemyCatalog.find` calls.
+        - `fight_log.estate_level`, added by the `AddFightLogEstateLevel` migration.
+
+        **Verified.**
+        - 336 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands and 18
+          warnings, with pace 167.0 / 159.6 / 150.9 days, up from 125.5 / 120.9 / 113.8;
+        - `tuning` alone moved; every new checker was negative-tested;
+        - the harness rebuilt against the repo reproduced the 10-02 fight table byte for byte,
+          giving L40 in 477 days against 392 unscaled.
+
+        Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
   - [x] **Live-play polish, part 5** *(2026-09-12)* — a root that looked twice as strong.
         A player at 211 max HP read `перечепилися об корінь ❤️ −22 ОЗ`; the root took 11 and
         hunger took the other 11 on the same step, printed as one number under the root's own
@@ -1768,12 +1795,27 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the 2026-10-02 tier-2 block on
-top, which waits for its deploy — the six 2026-09-27/28 blocks under it included, live since
-the 2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the two on top — the 2026-10-03
+estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
+blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-03 — creature strength follows the estate tier (committed, NOT deployed):**
+- **After the deploy, check the data first.** `/content` shows schema v15 and content hash
+  `be4350a5`. `fight_log` has an `estate_level` column, null on every older row:
+  `SELECT estate_level, count(*) FROM fight_log GROUP BY 1`.
+- **A T1 player** (levels 1–3) meets every creature exactly as before: 🐍 Гадюка reads ❤️ 55/55.
+- **A T4 player** meets 🐗 Дикий кабан at ❤️ 131/131 (authored 101), and it hits harder. At T5
+  the same boar reads 141, and the rabid bear at T7 reads 360.
+- **The training dummy** reads ❤️ 200/200 at any tier, and the registration dog is unchanged.
+- **A fight read back** after a restart, `/start` or a stale button keeps the maximum it was
+  shown at the intro, never «❤️ 151/131».
+- **A passive run** at T4 and above fights the stronger creatures; its report reads as before.
+- **The estate upgrade card and the tier-up banner** say nothing about the forest, by decision.
+- **The King's «Пуща»** (km 26 at level 17) stays reachable. The mage has the least margin.
 
 **Added 2026-10-02 — tier 2 of the bestiary (committed, NOT deployed):**
-- **after the deploy, the data first**: `/content` shows 16 enemies and content hash `cd9d73bf`;
+- **after the deploy, the data first**: `/content` shows 16 enemies and content hash `cd9d73bf`
+  (`be4350a5` if the estate scaling ships in the same restart);
   nothing in `fight_log` breaks on the old creature ids (history, not a live reference).
 - **km 1–2** roll only 🐍 Гадюка; **km 3** brings 🦅 Беркут; the boar first appears at **km 6**,
   so km 1–5 drop no meat.
@@ -2146,22 +2188,13 @@ the 2026-09-28 22:11 restart.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-- **Creatures grow stronger with the player's ESTATE tier — decided, spec next.** The owner's
-  own idea (2026-10-02), asked after tier 2 was implemented, at their request. Decided: creature
-  HP and ATK ×(1 + 0.10·(estate tier − 1)), XP unchanged (strength only, against my advice to
-  scale both), and T6 left as it is.
-
-  Measured in a scratch sandbox with real gear (days to L40): unscaled 392, +10% per tier 477,
-  +20% per tier 652, +1 creature level per tier 506. With +10% the whole forest opens around L30
-  instead of L25. The upgrade check shows why T6 is a problem: T2–T5 upgrades stay clearly
-  worth it (×5 / ×1.7 / ×1.4 XP per day), but T5→T6 gains about nothing (×0.9–1.0), because T6
-  adds only 90 food a day; the owner accepts that until new estate tiers add food.
-
-  Storage: one knob in the tuning, applied where the enemy's combat stats are built (fight,
-  passive, rehydration, `fight_log`), with the dummy and the registration dog excluded. Note
-  that `Enemy.swift`'s header argues against runtime scaling by the PLAYER; this is coarse
-  scaling by the estate, and the spec has to say why it differs. Auto-memory
-  `project-new-beasts-draft`.
+- **T5→T6 gains no XP per day under the estate scaling** (×0.9, `spec-bestiary.md` §11.5),
+  because T6 adds only 90 food against a full step of strength. The owner kept T6 as it is until
+  new estate tiers add food. Any new tier should pass the same XP-per-day upgrade check before it
+  ships, and `fight_log.estate_level` will show whether players hold the upgrade back.
+- **«Пуща» (km 26 at level 17) has no margin left for the mage** under the estate scaling. The
+  deepest safe trip at level 17 is km 28 / 27 / 26 (warrior / archer / mage) in the expedition
+  model, and km 28 for every class one level later. Kept as it is: the decree is reachable.
 - **№3–4 run above contract for a player without armour** (tier-2 sandbox, 2026-10-02). The boar
   takes 29% of a bar and the fox 36%, against 24% and 28%. Today's moose sat at 29% on the same
   tier-1 recipe, and the fox is 24% once the Forester set is worn. Kept as it is: the recipe is
@@ -2254,10 +2287,11 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-10-03 — **tier 2 of the bestiary is committed** (`f03d502`, hash fill
-`b407840`) **and NOT deployed**; it needs a restart, not a `/reload`. Its walk-list block heads
-the list above, and the estate-scaling spec the owner decided on 2026-10-02 is the next piece of
-work.
+*Last updated: 2026-10-03 — **creature strength follows the estate tier** (`spec-bestiary.md`
+§11) is committed and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
+fill `b407840`), which is also committed and **NOT deployed**. Both need a restart, not a
+`/reload`, and the estate change also carries content schema v15 and one migration. Their
+walk-list blocks head the list above.
 
 **Everything up to `8ae6772` is deployed** (the Pi runs it since the 2026-09-28 22:11 restart):
 the seven game changes of 09-27/28 — the stray-number hint, the

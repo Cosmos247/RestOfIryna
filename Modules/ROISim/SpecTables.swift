@@ -102,17 +102,21 @@ public enum SpecTables {
             out.append("")
         }
 
-        out.append("**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget")
+        out.append("**Estate** (`estate_upgrades.json`) — the plot slots are the daily Vigor budget;")
+        out.append("the creatures column is the forest's HP and ATK at that tier (`tuning/combat.json`")
+        out.append("→ `estateScaling`, `spec-bestiary.md` §11)")
         out.append("")
-        out.append("| tier | player level | plot slots | warehouse cap |")
-        out.append("|---|---|---|---|")
+        out.append("| tier | player level | plot slots | warehouse cap | creatures |")
+        out.append("|---|---|---|---|---|")
         let caps = tuning.progression.warehouseCapByEstateLevel
         let slots = content.estateUpgrades.plotSlotsByTier
         for tier in 1...content.estateUpgrades.maxTier {
             let gate = content.estateUpgrades.progression.first { $0.toTier == tier }?.requiredPlayerLevel
             let slot = tier - 1 < slots.count ? slots[tier - 1] : (slots.last ?? 0)
             let cap = tier - 1 < caps.count ? caps[tier - 1] : (caps.last ?? 0)
-            out.append("| T\(tier) | \(gate.map(String.init) ?? "start") | \(slot) | \(cap) |")
+            let creatures = CombatMath.estateScale(tier: tier, spec: tuning.combat.estateScaling)
+            out.append("| T\(tier) | \(gate.map(String.init) ?? "start") | \(slot) | \(cap) | "
+                       + String(format: "×%g", creatures) + " |")
         }
         out.append("")
 

@@ -1805,6 +1805,12 @@ public enum ContentValidator {
             require(enemyIds.contains(combat.trainingDummyEnemyId), file, "trainingDummyEnemyId",
                     "tuning.combat.dummy_unknown",
                     "references unknown enemy \"\(combat.trainingDummyEnemyId)\"")
+            // The forest grows with the manor (`spec-bestiary.md` §11). A negative
+            // step would make every upgrade WEAKEN the creatures, which inverts the
+            // decision rather than tuning it. Zero is legal: it is the off switch.
+            require(combat.estateScaling.perTier >= 0, file, "estateScaling.perTier",
+                    "tuning.combat.estate_scaling_negative",
+                    "a negative step makes the forest weaker as the estate grows, found \(combat.estateScaling.perTier)")
 
             for kind in knownKinds where !combat.techniques.contains(where: { $0.kind == kind }) {
                 fail(file, "techniques", "tuning.combat.technique_missing", "no row for technique \"\(kind)\"")

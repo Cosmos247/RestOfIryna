@@ -144,9 +144,19 @@ public enum CombatService {
     /// enemy stats can be frozen at design time. Scaling enemies to the player
     /// at runtime would make every gear upgrade evaporate the moment it is
     /// worn; a level term does the same job without touching the enemy table.
+    /// (`estateScale(tier:)` below scales by the ESTATE, never the player.)
     public static func levelDiffMultiplier(attackerLevel: Int, defenderLevel: Int) -> Double {
         CombatMath.levelDiffMultiplier(attackerLevel: attackerLevel, defenderLevel: defenderLevel,
                                        spec: Catalogs.current.tuningCombat.levelDiff)
+    }
+
+    /// The forest's strength at an estate tier — ×1.0 at T1, +`perTier` a tier
+    /// above it (`spec-bestiary.md` §11). Applied to a creature by
+    /// `Enemy.scaled(forEstateTier:)`; exposed here for the digest and the
+    /// screens that may one day quote it. Computed, never stored: it reads
+    /// the live snapshot, so a `/reload` moves it.
+    public static func estateScale(tier: Int) -> Double {
+        CombatMath.estateScale(tier: tier, spec: Catalogs.current.tuningCombat.estateScaling)
     }
 
     /// Roll a single attack.

@@ -31,6 +31,7 @@ final class TuningTests: XCTestCase {
         critMultiplier: Double = 1.5,
         varianceMin: Double = 0.9, varianceMax: Double = 1.1,
         defendChip: Double = 0.3,
+        estateScalingPerTier: Double = 0.1,
         dummyId: String = "enemy.training_dummy",
         techniques: [TechniqueTuningDTO]? = nil,
         stanceDuration: Int = 3,
@@ -53,6 +54,7 @@ final class TuningTests: XCTestCase {
                 crit: RatingCurveDTO(scale: 50, kBase: 51.89, kPerLevel: 3.213),
                 accuracy: RatingCurveDTO(scale: 30, kBase: 33.38, kPerLevel: 1.457)),
             levelDiff: LevelDiffDTO(perLevel: 0.06, min: 0.25, max: 2.5),
+            estateScaling: EstateScalingDTO(perTier: estateScalingPerTier),
             critMultiplier: critMultiplier,
             variance: VarianceDTO(min: varianceMin, max: varianceMax),
             defendChipFraction: defendChip,
@@ -345,6 +347,32 @@ final class TuningTests: XCTestCase {
 
     func testUnknownTrainingDummyIsAnError() {
         assertRule("tuning.combat.dummy_unknown", bundle(combat: combat(dummyId: "enemy.ghost")))
+    }
+
+    /// The forest grows with the manor (`spec-bestiary.md` §11). A negative step
+    /// would make every upgrade WEAKEN the creatures, which inverts the decision
+    /// rather than tuning it, so it is refused.
+    func testNegativeEstateScalingIsAnError() {
+        assertRule("tuning.combat.estate_scaling_negative",
+                   bundle(combat: combat(estateScalingPerTier: -0.1)))
+    }
+
+    /// Zero is the off switch, like `xpLevelDiff.perLevel`, and stays legal.
+    func testZeroEstateScalingIsLegal() {
+        let report = ContentValidator.validate(bundle(combat: combat(estateScalingPerTier: 0)))
+        XCTAssertFalse(report.errors.contains { $0.rule == "tuning.combat.estate_scaling_negative" },
+                       "a zero step was refused: \(report.errors.map(\.rule))")
+    }
+
+    /// Required, never defaulted: a bundle without the key must be refused
+    /// rather than run every fight unscaled without a word.
+    func testMissingEstateScalingThrows() throws {
+        let encoded = try ContentLoader.makeEncoder().encode(combat())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertNotNil(object.removeValue(forKey: "estateScaling"))
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(try JSONDecoder().decode(CombatTuningDTO.self, from: stripped),
+                             "a bundle without the estate's strength must be refused, not run unscaled")
     }
 
     func testMissingTechniqueIsAnError() {
