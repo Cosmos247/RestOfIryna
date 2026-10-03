@@ -62,10 +62,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
   entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
   the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
-  entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry and the 10-03 sync pass.
+  entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
+  the 10-03 estate-scaling entry (`4be2758`) and the second 10-03 sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
-  figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness.
+  figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
+  2026-10-03 it adds the estate scaling: the variants measured, the upgrade check, what the
+  implementation measured, and how each derived figure was read off the model.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays

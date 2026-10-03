@@ -1541,7 +1541,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         324 tests; `records` / `tuning` / `spawns` moved.
 
         Spec `spec-bestiary.md` §10, research `.memory/rebalance.md`. Next: the
-        estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only.
+        estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only — done
+        2026-10-03 as `4be2758`, the next entry.
   - [x] **Creature strength follows the estate tier** *(2026-10-03, `4be2758`, NOT
         deployed)* — the owner's 10-02 decision, specified as `spec-bestiary.md` §11 and shown
         before any code.
@@ -2244,7 +2245,7 @@ unrelated commit on purpose.
   stackables only, the warehouse and a trade refuse the bound weapon. But `/revoke
   gear.simple_bow 1` would take the bow straight off the body, and so would the first gear
   item ever given a trader listing. Raised 2026-09-17 beside the death fix and deliberately
-  not folded into it — same shape as `feedback-fit-check-matches-the-writer`: the check
+  not folded into it — same shape as `project-fit-check-matches-the-writer`: the check
   counts something the writer does not. The bag also still offers «❌ Зняти» on the class
   weapon, left alone on purpose now that taking it off is no longer fatal.
 - **`CapitalController.pushTradeInvite` discards its message id**, exactly as the arena's

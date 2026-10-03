@@ -411,10 +411,10 @@ public enum ExplorationService {
     /// Simulate rounds until one side dies or a safety cap hits. Mutates
     /// `player.hp` / `player.vigor` directly. Shares hit / miss / crit
     /// primitives with the active CombatController via `CombatService.applyAttack`,
-    /// so the same fight resolves with the same odds in both modes. Enemies
-    /// don't carry crit/dodge/accuracy stats yet, so we pass 0 for the enemy
-    /// side — the player gets effectiveDodge against incoming hits and crits
-    /// against the enemy.
+    /// so the same fight resolves with the same odds in both modes. Both sides
+    /// roll with their real crit / dodge / accuracy (since Phase 5A), and the
+    /// creature arrives already at the estate's strength — `rollEncounter`
+    /// scaled it before handing it over.
     public static func resolveAutobattle(player: User, enemy: Enemy) -> AutobattleResult {
         var enemyHP = enemy.hp
         var rounds = 0

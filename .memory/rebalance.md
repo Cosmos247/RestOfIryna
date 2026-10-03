@@ -269,12 +269,24 @@ base ATK grows ×2.15.
   `Modules/ROISim`, plus an `estatefights` roller that calls `CombatMath.scaled` with the shipped
   knob), produced a fight table byte-identical to the 10-02 sandbox's `scaled_A.csv` (3,234 rows).
   The expedition model then gave the same 74 / 96 / 130 / 184 / 249 / 477.
+- **How the three derived figures were read off the model**, so they can be read again:
+  - **per-fight cost by tier.** Over every fight the real-gear player wins at least 95% of the
+    time unscaled, compare the row at the player's own tier step with the unscaled row for the
+    same level, class and creature, and average the ratios of rounds, Vigor and HP%;
+  - **the upgrade check.** At each tier's opening level, take the best XP per Vigor at that
+    tier times its food against the same at the tier below times its food;
+  - **a depth decree.** It needs the DEEPEST trip that passes both limits (HP budget and 90%
+    odds), not the best-XP one. That is how «Пуща» read 28 / 27 / 26 at L17 against 34 / 32 /
+    32 unscaled, and 29 / 28 / 28 at L18.
 
 **Rebuilding the harness.** The repo's SwiftPM targets are not library products, so a scratch
 package copied `Modules/ROIContent` and `Modules/ROISim` into its own `Sources/`; both are
 Foundation-only. Its executables:
 - a fight-table roller, writing one CSV row per player level × class × creature: win, rounds,
-  Vigor, HP%;
+  Vigor, HP%. For a scaled variant it writes two rows per cell, at the player's tier step and the
+  one below, seeded by FNV-1a over `[variant, creature, class, level, step]`. The 10-03 rebuild
+  (`estatefights`) calls `CombatMath.scaled(_:forEstateTier:spec:)` with the bundle's knob and
+  keeps those seeds, which is what let its table be compared byte for byte;
 - a stat-line solver. `SpecTables.bestPoints` had to be made public in the copy to compute the
   share;
 - a CLI copy of `Modules/roi-content/main.swift` whose validator copy carried the new rule.

@@ -394,6 +394,30 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-03 (the second sync pass)
+
+The owner's long-form close-out after `4be2758` + `c28a3e5`. No behaviour changed.
+- **Three stale code comments fixed**, all in files the estate change had touched:
+  - `Enemy.swift`'s header still called the bestiary "code-based" and promised combat UI "in
+    Phase 4";
+  - `pickFor`'s doc kept a paragraph saying the `?? all.first` fallback was "preserved
+    deliberately", directly above the paragraph that records its removal;
+  - `resolveAutobattle`'s doc said enemies pass 0 for crit, dodge and accuracy, which has not
+    been true since Phase 5A.
+
+  `EnemyCatalog.find` and `pickFor` now also say that they return the AUTHORED creature, and
+  that a fight in progress reads through `combatEnemy(for:)`.
+- **Research made reproducible.** `rebalance.md` now says how the three derived figures were
+  read off the expedition model — per-fight cost by tier, the upgrade check, and the deepest
+  survivable trip behind the «Пуща» finding — and how the 10-03 roller kept the 10-02 seeds.
+- **Records.**
+  - `INDEX.md` names the 10-03 entries and the estate research.
+  - `spec-bestiary.md` §10.5 notes that `simulate`'s pace reads 151–167 since §11.
+  - Two owner quotes left in Ukrainian were translated (this log and
+    `project-new-beasts-draft`).
+  - Auto-memory: `project-expedition-model` records the re-run, and `project-world-ladder`
+    links to `project-estate-scaling`.
+
 ## Session — 2026-10-03 (creature strength follows the estate tier) — `4be2758`
 
 **Recovered first, again from a transcript.** The owner opened with "we stopped at the mobs
@@ -412,7 +436,7 @@ The owner answered the quiz:
   proposed is kept in §11.7 in case it is ever needed;
 - **`fight_log.estate_level`: add it.**
 
-Then "Так, переходь".
+Then the go-ahead: "yes, go ahead".
 
 **Implemented:**
 - the knob `tuning/combat.json` → `estateScaling.perTier` 0.1, a required field, so the content

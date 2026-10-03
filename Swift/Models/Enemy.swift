@@ -4,11 +4,12 @@
 //
 //  Created by Dmytro Ihnatyuhin on 21.04.2026.
 //
-//  Static bestiary, code-based like `ItemCatalog`. Enemies aren't persisted
-//  per-instance anywhere — they're rolled on demand during exploration events
-//  and resolved in a single autobattle pass. Real combat UI (Attack / Defend /
-//  Auto) arrives in Phase 4; until then enemies die to the stub resolver in
-//  `ExplorationService.resolveAutobattle`.
+//  The bestiary's types and its catalog façade; the roster itself lives in
+//  `content/data/enemies.json`. Enemies aren't persisted per-instance: an
+//  encounter is rolled on demand by `ExplorationService.rollEncounter`, the
+//  passive mode resolves it on the spot (`resolveAutobattle`), and an active
+//  fight keeps only the creature's id and its HP left on the expedition row,
+//  reading the rest back through `ExplorationState.combatEnemy(for:)`.
 //
 //  Since Phase 5 every stat below is GENERATED at design time from the enemy's
 //  level and archetype, never hand-written: an enemy scaled to the player at
@@ -239,17 +240,15 @@ public enum EnemyCatalog {
         return pickFor(kmDepth: kmDepth, using: &generator)
     }
 
-    /// Seedable variant used by the migration digest and, later, the balance
-    /// simulator. Selection is `filter().randomElement(using:)`, so the
-    /// DECLARATION ORDER of `all` decides which enemy a given roll returns — a
-    /// reordered roster changes every encounter in the game even when every
-    /// record stays byte-identical. That is why the loader never sorts.
+    /// Seedable variant used by the content digest, which replays it with a
+    /// fixed seed. Selection walks `all` in DECLARATION ORDER, so a reordered
+    /// roster changes every encounter in the game even when every record stays
+    /// byte-identical. That is why the loader never sorts.
     ///
-    /// The `?? all.first` fallback is preserved deliberately: past km 35 no
-    /// `depthRange` matches and every encounter becomes a wild boar. A real
-    /// bug, listed for the Phase 5 combat rework — changing it here would make
-    /// the migration non-neutral.
-    /// Weighted roll among the enemies whose band covers `kmDepth`.
+    /// Weighted roll among the enemies whose band covers `kmDepth`. It returns
+    /// the AUTHORED creature; the forest's strength is applied by the caller
+    /// (`ExplorationService.rollEncounter`), never here, so the digest's
+    /// `spawns` half stays a pure function of the roster.
     ///
     /// Two changes from the shipped implementation, both deliberate:
     ///
@@ -281,6 +280,9 @@ public enum EnemyCatalog {
         return eligible.last
     }
 
+    /// The AUTHORED creature for an id. A fight in progress must not read its
+    /// creature from here — it goes through `ExplorationState.combatEnemy(for:)`,
+    /// which applies the estate's strength the encounter was rolled with.
     public static func find(_ id: String) -> Enemy? {
         return Catalogs.current.enemiesById[id]
     }

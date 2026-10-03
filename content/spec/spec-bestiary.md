@@ -608,9 +608,10 @@ Today's rule still walls, and the proposal still beats today's game at levels 14
 **What `simulate` cannot see.** Its pace section assumes every fight is with an on-level
 `normal` creature at 1.9 rooms of walking. It never sees the walk from the manor through
 the weaker bands, which is the mechanism this whole section turns on. That is why the
-absolute days above exceed `simulate`'s 114–126, and why `simulate` will barely move on
-this change apart from its roster check and the opening ledger. Building the expedition
-model into `simulate` is separate work and not part of this amendment.
+absolute days above exceed `simulate`'s 114–126 (151–167 since §11 priced the estate's
+strength into the pace), and why `simulate` will barely move on this change apart from its
+roster check and the opening ledger. Building the expedition model into `simulate` is
+separate work and not part of this amendment.
 
 ### 10.6 What a walk looks like
 

@@ -605,8 +605,10 @@ That includes:
 
 **Tier 2 of the bestiary is committed and not yet deployed** (2026-10-02). Fourteen creatures
 are numbered by depth, five of them new animals from Ukrainian lore, and a kill pays its full
-XP at any player level. The deployed commit, the digest baseline and the next step are kept
-in [Prompt.md](./Prompt.md).
+XP at any player level. **On top of it, also committed and not yet deployed** (2026-10-03),
+the forest grows with the manor: a creature's HP and ATK rise 10% with every estate tier,
+while its XP and loot stay as they were. Both ship in one restart. The deployed commit, the
+digest baseline and the next step are kept in [Prompt.md](./Prompt.md).
 
 What is still owed is a **deliberate first-hour walkthrough** — nobody has stepped through
 the opening against a checklist — plus one run of `/reload` against a real database, and a
