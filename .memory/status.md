@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-03 — creature strength follows the estate tier** (committed, NOT deployed; needs
+**2026-10-03 — creature strength follows the estate tier** (`4be2758`, NOT deployed; needs
 `pm2 restart ROI`, because of code, content schema v15 and one migration, `AddFightLogEstateLevel`).
 `spec-bestiary.md` §11:
 - **The rule.** A spawnable creature fights with HP and ATK × `1 + 0.1·(estate tier − 1)`, which

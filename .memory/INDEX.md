@@ -46,7 +46,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   makes armour.
 - **Next actions.**
   - The owner deploys tier 2 and the estate scaling, both committed and NOT deployed. The
-    scaling (2026-10-03, `spec-bestiary.md` §11) makes creature HP and ATK +10% per estate
+    scaling (`4be2758`, 2026-10-03, `spec-bestiary.md` §11) makes creature HP and ATK +10% per estate
     tier, strength only, with T6 left as it is, no player notice, and
     `fight_log.estate_level`. It brings content schema v15 and one migration. The testers
     should hear about it first, because the game announces nothing.

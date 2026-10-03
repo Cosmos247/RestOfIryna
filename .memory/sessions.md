@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-02)
+## Commit index — live-play polish and after (2026-09-09 → 10-03)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,6 +11,15 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `4be2758` (10-03) **creatures grow with the estate**:
+  - a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), strength only, with no
+    player notice and T6 left as it is;
+  - one formula in `CombatMath`, one façade (`Enemy.scaled(forEstateTier:)`) and two funnels
+    (`rollEncounter`, `ExplorationState.combatEnemy(for:)`);
+  - `fight_log.estate_level` (`AddFightLogEstateLevel`), content schema v15;
+  - `simulate` prints «the forest by estate tier» and prices it into the pace.
+
+  `tuning` alone moved; 336 tests; `simulate --strict` 0 broken bands.
 - `f03d502` (10-02) **tier 2 of the bestiary**:
   - fourteen creatures numbered in order, five of them new: Скажена лисиця, Олень-рогач,
     Вепр-сікач, Тур and Скажена зграя;
@@ -385,7 +394,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-03 (creature strength follows the estate tier)
+## Session — 2026-10-03 (creature strength follows the estate tier) — `4be2758`
 
 **Recovered first, again from a transcript.** The owner opened with "we stopped at the mobs
 getting stronger, and I answered your question". The answers were in session `3c8d3ec2`: variant A

@@ -1542,7 +1542,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 
         Spec `spec-bestiary.md` §10, research `.memory/rebalance.md`. Next: the
         estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only.
-  - [x] **Creature strength follows the estate tier** *(2026-10-03, committed, NOT
+  - [x] **Creature strength follows the estate tier** *(2026-10-03, `4be2758`, NOT
         deployed)* — the owner's 10-02 decision, specified as `spec-bestiary.md` §11 and shown
         before any code.
 
@@ -1799,7 +1799,7 @@ Telegram. **Every block below is LIVE and unwalked** except the two on top — t
 estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-03 — creature strength follows the estate tier (committed, NOT deployed):**
+**Added 2026-10-03 — creature strength follows the estate tier (`4be2758`, NOT deployed):**
 - **After the deploy, check the data first.** `/content` shows schema v15 and content hash
   `be4350a5`. `fight_log` has an `estate_level` column, null on every older row:
   `SELECT estate_level, count(*) FROM fight_log GROUP BY 1`.
@@ -2288,7 +2288,7 @@ unrelated commit on purpose.
 ---
 
 *Last updated: 2026-10-03 — **creature strength follows the estate tier** (`spec-bestiary.md`
-§11) is committed and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
+§11) is committed (`4be2758`) and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
 fill `b407840`), which is also committed and **NOT deployed**. Both need a restart, not a
 `/reload`, and the estate change also carries content schema v15 and one migration. Their
 walk-list blocks head the list above.
