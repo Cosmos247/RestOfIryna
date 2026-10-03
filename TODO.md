@@ -497,7 +497,7 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 - [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejects out-of-turn taps (no keyboard swapping).
 - [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses. `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
 - [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
-- [x] **Simultaneous rounds** *(2026-10-03, committed, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
+- [x] **Simultaneous rounds** *(2026-10-03, `cad61c3`, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
 - [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
 - [ ] Ranked vs unranked (casual/no-stake) queues
 - [ ] Seasons + end-of-season league rewards (silver / cosmetic title)
@@ -1571,7 +1571,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The arena duel in simultaneous rounds** *(2026-10-03, committed, NOT
+  - [x] **The arena duel in simultaneous rounds** *(2026-10-03, `cad61c3`, NOT
         deployed)* — the owner's ask: players should not move in turn, because that is not
         fair; they move at once, with 10–15 s a move, whoever misses defends, and the final
         blow shows as it does in PvE. Measured first on `CombatMath`: alternating, the
@@ -1851,7 +1851,7 @@ Telegram. **Every block below is LIVE and unwalked** except the three on top —
 arena and estate blocks and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-03 — the arena in simultaneous rounds (committed, NOT deployed):** two accounts
+**Added 2026-10-03 — the arena in simultaneous rounds (`cad61c3`, NOT deployed):** two accounts
 in the capital, one challenging the other.
 - **the opening** reaches both chats: «⚔️ Герць почався! Суперник — …, ставка 🪙 N.», the board
   «❤️ Ви 150/150 · … 150/150» and «🗡 Раунд 1: оберіть дію — 15сек.».
@@ -2380,7 +2380,7 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed and **NOT
+*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed (`cad61c3`) and **NOT
 deployed** (Swift, locale and `arena.json`; no migration, no schema change). Under it,
 **creature strength follows the estate tier** (`spec-bestiary.md`
 §11) is committed (`4be2758`) and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash

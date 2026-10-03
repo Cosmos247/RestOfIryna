@@ -50,7 +50,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     tier, strength only, with T6 left as it is, no player notice, and
     `fight_log.estate_level`. It brings content schema v15 and one migration. The testers
     should hear about it first, because the game announces nothing.
-  - The same restart takes the arena in simultaneous rounds (2026-10-03, committed, NOT
+  - The same restart takes the arena in simultaneous rounds (`cad61c3`, 2026-10-03, NOT
     deployed): both fighters choose blind, a 15 s clock defends for the silent one, both blows
     land together and the heavier one wins when both fall. The alternating duel gave the
     challenger 60–66% of mirror duels.

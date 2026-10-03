@@ -11,6 +11,17 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- `cad61c3` (10-03) **the arena duel in simultaneous rounds**:
+  - both fighters choose blind; a round plays on the second choice or after 15 s, a missing
+    choice as a forced Defend; three missed rounds in a row are a technical defeat;
+  - both falling goes to the heavier blow, equal blows draw; the result screen opens with the
+    round that ended the duel;
+  - `DuelMath` in `ROISim` behind `CombatService.resolveDuelRound`; settlement on the
+    session-cached `User`; an accepted invite moves the accepter to the arena router;
+  - fifteen lines keep the nick nominative — six in the arena, nine in the bazaar, the trade and
+    the guilds.
+
+  `records` alone moved; 344 tests.
 - `4be2758` (10-03) **creatures grow with the estate**:
   - a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), strength only, with no
     player notice and T6 left as it is;
@@ -394,7 +405,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-03 (the arena duel in simultaneous rounds)
+## Session — 2026-10-03 (the arena duel in simultaneous rounds) — `cad61c3`
 
 **The question first.** The owner asked how the arena works and in what order players move.
 Answered from the code, then measured on `CombatMath` in a scratch package (copies of
