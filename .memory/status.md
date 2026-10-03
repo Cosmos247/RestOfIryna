@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-03 — the arena duel is a cycle of three** (NOT committed, NOT deployed; needs
+**2026-10-03 — the arena duel is a cycle of three** (`f0c1749`, NOT deployed; needs
 `pm2 restart ROI` — code, locale strings and content schema v16, no migration):
 - **The rule.** Attack beats the class special attack, the technique breaks Defend (it cannot
   miss a defender), Defend turns Attack (65% blocked, 60% riposte). Free and unlimited in the

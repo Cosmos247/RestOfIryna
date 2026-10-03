@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-03)* **the arena duel as a cycle of three**: Attack beats the class special
+- `f0c1749` (10-03) **the arena duel as a cycle of three**: Attack beats the class special
   attack, the technique breaks Defend, Defend turns Attack (block 65%, riposte 60%); the
   technique free and unlimited; the clock's Defend answers nothing; the arena admits only those
   who learned the special attack; arena-own numbers in `arena.json` → `duel`, schema v16.
@@ -411,7 +411,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-03 (the arena duel as a cycle of three) — hash after commit
+## Session — 2026-10-03 (the arena duel as a cycle of three) — `f0c1749`
 
 The owner asked to make Defend a real choice at the Ristalyshche, and whether that meant
 changing the forest's Defend too. It did not: the arena's Defend was its own code already, and
@@ -439,7 +439,7 @@ door and the arena's home, the third button and eight new lines in `ArenaControl
 the warrior still wins 75–76% against the other classes — recorded in the open list, not fixed.
 
 **Verified.** 352 tests (the cycle test fails on a riposte of 0.2); `validate --strict` 0/0;
-`records` alone moved to `1b5577693d8733af`, content hash `6963c31b`. Not committed, not deployed.
+`records` alone moved to `1b5577693d8733af`, content hash `6963c31b`. Committed, not deployed. The audit before the commit found one hole: «⚔️ Виклик» on a stale hub keyboard reached the lobby without the admission check — `onChallengeTapped` now asks too.
 
 ## Session — 2026-10-03 (the third sync pass)
 
