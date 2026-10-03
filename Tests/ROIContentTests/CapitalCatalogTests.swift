@@ -55,6 +55,7 @@ final class CapitalCatalogTests: XCTestCase {
             {"stakeTiers":[25],"tithePercent":10,"startingHonor":1000,"honorKFactor":32,
              "minHonor":0,"turnSeconds":\#(turn),"maxMissedTurns":2,"challengeTTL":120,
              "lobbyTTL":180,"sweepInterval":10,"dailyFightCap":20,
+             "duel":{"blockFraction":0.65,"riposteFraction":0.6,"chipFraction":0.3,"techniqueMultiplier":1},
              "leagues":[{"fromHonor":0,"key":"arena.league.novice"}]}
             """#.utf8)
             return try JSONDecoder().decode(ArenaFileDTO.self, from: json)
@@ -93,11 +94,14 @@ final class CapitalCatalogTests: XCTestCase {
     }
 
     private func validArena(leagues: [ArenaLeagueDTO]? = nil, minHonor: Int = 0,
-                            sweepInterval: Double = 10) -> ArenaFileDTO {
+                            sweepInterval: Double = 10,
+                            duel: ArenaDuelDTO = ArenaDuelDTO(blockFraction: 0.65, riposteFraction: 0.6,
+                                                              chipFraction: 0.3, techniqueMultiplier: 1.0)) -> ArenaFileDTO {
         ArenaFileDTO(
             stakeTiers: [25, 100, 500], tithePercent: 10, startingHonor: 1000,
             honorKFactor: 32, minHonor: minHonor, turnSeconds: 45, maxMissedTurns: 2,
             challengeTTL: 120, lobbyTTL: 180, sweepInterval: sweepInterval, dailyFightCap: 20,
+            duel: duel,
             leagues: leagues ?? [
                 ArenaLeagueDTO(fromHonor: 0, key: "arena.league.novice"),
                 ArenaLeagueDTO(fromHonor: 1000, key: "arena.league.fighter")
@@ -218,6 +222,45 @@ final class CapitalCatalogTests: XCTestCase {
     func testArenaSweeperSlowerThanATurnIsAWarning() {
         let report = ContentValidator.validate(bundle(arena: validArena(sweepInterval: 60)))
         XCTAssertTrue(report.warnings.contains { $0.rule == "arena.sweep_slower_than_turn" })
+        XCTAssertFalse(report.hasErrors)
+    }
+
+    /// A v15 `arena.json` has no `duel` section, and nothing in it may stand
+    /// in for one.
+    func testArenaFileRejectsAMissingDuelSection() {
+        let json = Data(#"""
+        {"stakeTiers":[25],"tithePercent":10,"startingHonor":1000,"honorKFactor":32,
+         "minHonor":0,"turnSeconds":45,"maxMissedTurns":2,"challengeTTL":120,
+         "lobbyTTL":180,"sweepInterval":10,"dailyFightCap":20,
+         "leagues":[{"fromHonor":0,"key":"arena.league.novice"}]}
+        """#.utf8)
+        XCTAssertThrowsError(try JSONDecoder().decode(ArenaFileDTO.self, from: json))
+    }
+
+    func testArenaDuelBlockMustBeAShareOfTheHit() {
+        for block in [0.0, 1.0, 1.2] {
+            let duel = ArenaDuelDTO(blockFraction: block, riposteFraction: 0.6, chipFraction: 0.3,
+                                    techniqueMultiplier: 1)
+            XCTAssertTrue(rules(bundle(arena: validArena(duel: duel))).contains("arena.duel_block_range"),
+                          "block \(block)")
+        }
+    }
+
+    /// The technique crits at the standard multiplier, so above ×1 its crit
+    /// out-hits an ordinary one — the forest's rule, held in the arena too.
+    func testArenaTechniqueAboveAnOrdinaryCritIsAnError() {
+        let duel = ArenaDuelDTO(blockFraction: 0.65, riposteFraction: 0.6, chipFraction: 0.3,
+                                techniqueMultiplier: 1.5)
+        XCTAssertTrue(rules(bundle(arena: validArena(duel: duel))).contains("arena.duel_technique_above_crit"))
+    }
+
+    /// A riposte that does not outweigh what gets through the block hands the
+    /// duel back to Attack — the shape every two-choice brace had.
+    func testArenaDefendThatLosesToAttackIsAWarning() {
+        let duel = ArenaDuelDTO(blockFraction: 0.5, riposteFraction: 0.3, chipFraction: 0.3,
+                                techniqueMultiplier: 1)
+        let report = ContentValidator.validate(bundle(arena: validArena(duel: duel)))
+        XCTAssertTrue(report.warnings.contains { $0.rule == "arena.duel_defend_loses" })
         XCTAssertFalse(report.hasErrors)
     }
 

@@ -181,6 +181,11 @@ enum ContentDigest {
         digest.combine("\(ArenaCatalog.lobbyTTL)")
         digest.combine("\(ArenaCatalog.sweepInterval)")
         digest.combine(ArenaCatalog.dailyFightCap)
+        // The duel's round (2026-10-03) — a knob is invisible until hashed.
+        digest.combine("\(ArenaCatalog.duelRules.blockFraction)")
+        digest.combine("\(ArenaCatalog.duelRules.riposteFraction)")
+        digest.combine("\(ArenaCatalog.duelRules.chipFraction)")
+        digest.combine("\(ArenaCatalog.duelRules.techniqueMultiplier)")
         // Replay the league boundaries rather than trusting the thresholds:
         // `leagueKey` is a switch today and a table after the move, so only
         // exercising it across the range proves the two agree.

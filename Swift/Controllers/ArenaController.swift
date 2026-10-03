@@ -11,7 +11,10 @@
 //  Two surfaces share the same reply keyboard, guarded by whether the player is
 //  currently in a live duel:
 //    • hub  → [⚔️ Виклик] [🏆 Честь] / [🔙 Столиця]   (browse + challenge)
-//    • duel → [⚔️ Атака] [🛡 Оборона] / [🏳 Здатися]   (simultaneous rounds)
+//    • duel → [⚔️ Атака] [🛡 Оборона] / [🪓 прийом] [🏳 Здатися]   (simultaneous rounds)
+//  The third button is the fighter's class special attack — the duel is a cycle
+//  of three (Attack beats it, it breaks Defend, Defend turns Attack), so the
+//  arena admits only those who have learned it (`ArenaCatalog.admissionTechnique`).
 //  The live fight is a two-party in-memory object in `ArenaStore`; `ArenaService`
 //  does the DB work (stake transfer, Honor/ELO, HP carry-over). Round clocks +
 //  challenge expiry are driven by ArenaService's background sweeper, which reuses
@@ -44,6 +47,11 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                 router[lingo.localize("arena.button.attack",     locale: locale)] = onAttackTapped
                 router[lingo.localize("arena.button.defend",     locale: locale)] = onDefendTapped
                 router[lingo.localize("arena.button.surrender",  locale: locale)] = onSurrenderTapped
+                // Every class's label: the router is shared, and the label is
+                // only ever on the keyboard of the class it names.
+                for cls in CharacterClass.allCases {
+                    router[Self.techniqueLabel(cls, lingo: lingo, locale: locale.rawValue)] = onTechniqueTapped
+                }
             }
 
             router[.callback_query(data: nil)] = ArenaController.onCallbackQuery
@@ -118,6 +126,16 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             await Self.pushDuelFrame(duel, to: tg, bot: context.bot, lingo: context.lingo)
             return
         }
+        // The capital refuses the door already; this catches a player whose
+        // routerName was left on "arena" from before the arena needed a
+        // technique — they go back to the square with the reason.
+        guard try await ArenaService.isAdmitted(context.session, on: context.db) else {
+            context.session.routerName = Controllers.capitalController.routerName
+            try await context.session.saveAndCache(in: context.db)
+            try await Controllers.capitalController.showCapital(context: context)
+            await postStatusBanner(Self.lockedText(lingo: context.lingo, locale: context.session.locale), context: context)
+            return
+        }
         await ArenaStore.shared.touchLobby(telegramId: tg, nickname: context.session.nickname ?? "—")
 
         let lingo = context.lingo, locale = context.session.locale
@@ -133,6 +151,13 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo, locale = context.session.locale
         let tg = context.session.telegramId
         if await ArenaStore.shared.activeDuel(for: tg) != nil { try await showArenaHome(context: context); return true }
+        // The hub keyboard can outlive the door: a player left on "arena"
+        // without the technique must not reach the lobby through «Виклик».
+        // The home screen sends them back to the capital with the reason.
+        guard try await ArenaService.isAdmitted(context.session, on: context.db) else {
+            try await showArenaHome(context: context)
+            return true
+        }
         await ArenaStore.shared.touchLobby(telegramId: tg, nickname: context.session.nickname ?? "—")
 
         let members = await ArenaStore.shared.lobbyMembers(excluding: tg)
@@ -304,6 +329,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     private func onAttackTapped(context: Context) async throws -> Bool { try await handleChoice(.attack, context: context); return true }
     private func onDefendTapped(context: Context) async throws -> Bool { try await handleChoice(.defend, context: context); return true }
+    private func onTechniqueTapped(context: Context) async throws -> Bool { try await handleChoice(.technique, context: context); return true }
 
     /// Lock in this round's choice. The round is played the moment the
     /// second choice arrives, so the tap that completes it draws the round
@@ -312,7 +338,8 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo, locale = context.session.locale
         switch await ArenaStore.shared.choose(action, tg: context.session.telegramId) {
         case .waiting(let round):
-            await postStatusBanner("✅ " + Self.chosenLine(action, round: round, lingo: lingo, locale: locale), context: context)
+            let cls = CharacterClass(rawValue: context.session.characterClass ?? "") ?? .warrior
+            await postStatusBanner("✅ " + Self.chosenLine(action, of: cls, round: round, lingo: lingo, locale: locale), context: context)
         case .alreadyChosen(let round):
             await postStatusBanner("⏳ " + lingo.localize("arena.duel.already_chosen", locale: locale,
                                                           interpolations: ["round": "\(round)"]), context: context)
@@ -415,12 +442,41 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         ], resizeKeyboard: true))
     }
 
-    static func fightKeyboard(locale: String, lingo: Lingo) -> TGReplyMarkup {
+    static func fightKeyboard(_ cls: CharacterClass, locale: String, lingo: Lingo) -> TGReplyMarkup {
         .replyKeyboardMarkup(TGReplyKeyboardMarkup(keyboard: [
             [TGKeyboardButton(text: lingo.localize("arena.button.attack", locale: locale)),
              TGKeyboardButton(text: lingo.localize("arena.button.defend", locale: locale))],
-            [TGKeyboardButton(text: lingo.localize("arena.button.surrender", locale: locale))]
+            [TGKeyboardButton(text: techniqueLabel(cls, lingo: lingo, locale: locale)),
+             TGKeyboardButton(text: lingo.localize("arena.button.surrender", locale: locale))]
         ], resizeKeyboard: true))
+    }
+
+    // MARK: - The technique
+
+    /// «🪓 Розкол» — the forest's own button, so a technique has one name
+    /// wherever it is used.
+    static func techniqueLabel(_ cls: CharacterClass, lingo: Lingo, locale: String) -> String {
+        lingo.localize("combat.button.special_atk." + cls.rawValue, locale: locale)
+    }
+
+    /// The label split into its icon and its name, for the round's lines:
+    /// the icon leads the line (an emoji may not sit before a `%{}` in a
+    /// template) and the name goes into the sentence. Split here rather than
+    /// stored twice, so the lines cannot drift from the button.
+    private static func technique(_ cls: CharacterClass, lingo: Lingo, locale: String) -> (icon: String, name: String) {
+        let label = techniqueLabel(cls, lingo: lingo, locale: locale)
+        guard let first = label.first, first.unicodeScalars.contains(where: { $0.properties.isEmojiPresentation }) else {
+            return ("⚡", label)
+        }
+        return (String(first), label.dropFirst().trimmingCharacters(in: .whitespaces))
+    }
+
+    /// «🏟 Ристалище пускає лише тих, хто опанував перший прийом…» — the floor
+    /// is printed from the technique's own `requiredLevel`.
+    static func lockedText(lingo: Lingo, locale: String) -> String {
+        "🏟 " + lingo.localize("arena.locked", locale: locale, interpolations: [
+            "level": "\(CombatService.requiredLevel(for: ArenaCatalog.admissionTechnique))"
+        ])
     }
 
     // MARK: - Render helpers (shared with the sweeper)
@@ -458,11 +514,16 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     /// «Раунд 4: ви обрали ⚔️ Атаку — чекаємо на суперника.» It names the
     /// round because a tap that arrives just after the clock played one lands
-    /// in the next.
-    private static func chosenLine(_ action: DuelMath.Action, round: Int, lingo: Lingo, locale: String) -> String {
-        let label = action == .attack
-            ? "⚔️ " + lingo.localize("arena.duel.chosen.attack", locale: locale)
-            : "🛡 " + lingo.localize("arena.duel.chosen.defend", locale: locale)
+    /// in the next. A technique is named by its button: all three names read
+    /// the same in the accusative.
+    private static func chosenLine(_ action: DuelMath.Action, of cls: CharacterClass, round: Int,
+                                   lingo: Lingo, locale: String) -> String {
+        let label: String
+        switch action {
+        case .attack:    label = "⚔️ " + lingo.localize("arena.duel.chosen.attack", locale: locale)
+        case .defend:    label = "🛡 " + lingo.localize("arena.duel.chosen.defend", locale: locale)
+        case .technique: label = techniqueLabel(cls, lingo: lingo, locale: locale)
+        }
         return lingo.localize("arena.duel.chosen", locale: locale, interpolations: [
             "round": "\(round)", "action": label
         ])
@@ -475,32 +536,52 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
     static func roundLines(_ report: ArenaStore.RoundReport, seenBy tg: Int64,
                            lingo: Lingo, locale: String) -> [String] {
         let blows = report.blows(seenBy: tg)
+        let me = tg == report.a.telegramId ? report.a : report.b
+        let opp = report.opp(tg)
         return [
-            blowLine(blows.mine, forced: blows.mineForced, mine: true,
+            blowLine(blows.mine, forced: blows.mineForced, mine: true, cls: me.characterClass,
                      who: lingo.localize("arena.duel.you", locale: locale), lingo: lingo, locale: locale),
-            blowLine(blows.theirs, forced: blows.theirsForced, mine: false,
-                     who: report.opp(tg).nickname, lingo: lingo, locale: locale)
+            blowLine(blows.theirs, forced: blows.theirsForced, mine: false, cls: opp.characterClass,
+                     who: opp.nickname, lingo: lingo, locale: locale)
         ]
     }
 
     /// ⚔️ is the viewer's own hit and 🩸 a hit on them, as in a forest fight;
     /// a crit is 💥 and a miss 💨 whoever threw it, so the name carries the
-    /// side.
-    private static func blowLine(_ blow: DuelMath.Blow, forced: Bool, mine: Bool, who: String,
-                                 lingo: Lingo, locale: String) -> String {
+    /// side. A technique leads with its own icon, 💢 when it came to nothing.
+    private static func blowLine(_ blow: DuelMath.Blow, forced: Bool, mine: Bool, cls: CharacterClass,
+                                 who: String, lingo: Lingo, locale: String) -> String {
+        let tech = technique(cls, lingo: lingo, locale: locale)
         func line(_ key: String) -> String {
-            lingo.localize(key, locale: locale, interpolations: ["who": who, "dmg": "\(blow.damage)"])
+            lingo.localize(key, locale: locale, interpolations: [
+                "who": who, "dmg": "\(blow.damage)", "technique": tech.name
+            ])
         }
-        switch blow.outcome {
-        case nil:
-            // A Defend — chosen, or forced by the clock.
-            return forced ? "⌛ " + line("arena.round.timeout") : "🛡 " + line("arena.round.defend")
-        case .miss?:
-            return "💨 " + line("arena.round.miss")
-        case .hit?:
-            return (mine ? "⚔️ " : "🩸 ") + line(blow.throughBrace ? "arena.round.hit_braced" : "arena.round.hit")
-        case .crit?:
-            return "💥 " + line(blow.throughBrace ? "arena.round.crit_braced" : "arena.round.crit")
+        switch blow.kind {
+        case .strike:
+            switch blow.outcome {
+            case .miss?, nil:
+                return "💨 " + line("arena.round.miss")
+            case .hit?:
+                return (mine ? "⚔️ " : "🩸 ") + line(blow.throughBrace ? "arena.round.hit_braced" : "arena.round.hit")
+            case .crit?:
+                return "💥 " + line(blow.throughBrace ? "arena.round.crit_braced" : "arena.round.crit")
+            }
+        case .riposte:
+            return "🛡 " + line("arena.round.riposte")
+        case .chip:
+            return "🛡 " + line("arena.round.defend")
+        case .braced:
+            return "⌛ " + line("arena.round.timeout")
+        case .guardBroken:
+            return forced ? "⌛ " + line("arena.round.timeout_broken") : "🛡 " + line("arena.round.guard_broken")
+        case .technique:
+            if case .crit? = blow.outcome { return "💥 " + line("arena.round.technique_crit") }
+            return tech.icon + " " + line("arena.round.technique")
+        case .interrupted:
+            return "💢 " + line("arena.round.interrupted")
+        case .clashed:
+            return "💢 " + line("arena.round.clashed")
         }
     }
 
@@ -519,11 +600,12 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
             let body = [
                 "⚔️ " + lingo.localize("arena.duel.opening", locale: locale, interpolations: [
                     "nick": opp.nickname, "stake": "🪙 \(fighter.stake)"
-                ]),
+                ]) + "\n" + lingo.localize("arena.duel.cycle", locale: locale),
                 board(me: fighter, opp: opp, lingo: lingo, locale: locale),
                 prompt(round: duel.round, secondsLeft: Int(ArenaCatalog.turnSeconds), lingo: lingo, locale: locale)
             ].joined(separator: "\n\n")
-            await send(body, to: fighter.telegramId, keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
+            await send(body, to: fighter.telegramId,
+                       keyboard: fightKeyboard(fighter.characterClass, locale: locale, lingo: lingo), bot: bot)
         }
     }
 
@@ -539,7 +621,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
                 board(me: next.me(tg), opp: next.opp(tg), lingo: lingo, locale: locale),
                 prompt(round: next.round, secondsLeft: Int(ArenaCatalog.turnSeconds), lingo: lingo, locale: locale)
             ].joined(separator: "\n\n")
-            await send(body, to: tg, keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
+            await send(body, to: tg, keyboard: fightKeyboard(fighter.characterClass, locale: locale, lingo: lingo), bot: bot)
         }
     }
 
@@ -552,13 +634,13 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         let locale = me.locale
         var parts = [board(me: me, opp: duel.opp(tg), lingo: lingo, locale: locale)]
         if let chosen = duel.choice(of: tg) {
-            parts.append("✅ " + chosenLine(chosen, round: duel.round, lingo: lingo, locale: locale))
+            parts.append("✅ " + chosenLine(chosen, of: me.characterClass, round: duel.round, lingo: lingo, locale: locale))
         } else {
             let left = max(0, Int(duel.roundDeadline.timeIntervalSince(now).rounded(.up)))
             parts.append(prompt(round: duel.round, secondsLeft: left, lingo: lingo, locale: locale))
         }
         await send(parts.joined(separator: "\n\n"), to: tg,
-                   keyboard: fightKeyboard(locale: locale, lingo: lingo), bot: bot)
+                   keyboard: fightKeyboard(me.characterClass, locale: locale, lingo: lingo), bot: bot)
     }
 
     /// Settle a finished duel and tell both fighters — the one exit every

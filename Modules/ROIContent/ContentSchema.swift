@@ -81,5 +81,10 @@ public enum ContentSchema {
     /// (`spec-bestiary.md` §11). A v14 bundle has no such key, and defaulting
     /// it to "off" would run every fight unscaled without a word, so the
     /// handshake has to refuse rather than fall back.
-    public static let current: Int = 15
+    /// v16 (2026-10-03): `arena.json` gains a required `duel` section — the
+    /// arena's own block, riposte, chip and technique numbers, for the duel
+    /// played as a cycle with the class special attack as its third choice.
+    /// A v15 bundle has no such key, and the forest's Defend numbers are not a
+    /// fallback for it: they are a different move.
+    public static let current: Int = 16
 }

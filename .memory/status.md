@@ -21,6 +21,16 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-03 — the arena duel is a cycle of three** (NOT committed, NOT deployed; needs
+`pm2 restart ROI` — code, locale strings and content schema v16, no migration):
+- **The rule.** Attack beats the class special attack, the technique breaks Defend (it cannot
+  miss a defender), Defend turns Attack (65% blocked, 60% riposte). Free and unlimited in the
+  arena; two techniques fizzle; the clock's Defend blocks and answers nothing. The arena admits
+  only those who have learned the special attack.
+- **Why.** With two blind choices no brace made Defend a choice — it measured 0% or 100%.
+- **Measured.** Mirror equilibria ~50/36/14 (A/D/T), duels 1.6× longer; warrior vs archer/mage
+  still 75–76% (open). 352 tests; `records` → `1b5577693d8733af`, content hash `6963c31b`.
+
 **2026-10-03 — the arena duel plays in simultaneous rounds** (`cad61c3`, NOT deployed; needs
 `pm2 restart ROI` for the code and the locale strings — no migration, no schema change):
 - **The rule.** Both fighters choose blind; the round is played on the second choice or after

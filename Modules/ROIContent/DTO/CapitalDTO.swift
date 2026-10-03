@@ -221,6 +221,46 @@ public struct ArenaLeagueDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// How one round of the duel plays (2026-10-03). The duel is a cycle — Attack
+/// beats a technique, a technique breaks a Defend, a Defend turns an Attack —
+/// because with two blind choices one of them always dominates whatever the
+/// numbers: every brace that was measured was either never worth taking or
+/// always worth taking. These are the arena's OWN numbers: the forest's Defend
+/// reads `combat.json` → `defendChipFraction`, which three other forest moves
+/// share, so the arena could not tune it without moving them.
+public struct ArenaDuelDTO: Codable, Sendable, Equatable {
+    /// Share of an Attack a Defend stops — chosen or forced by the clock.
+    public let blockFraction: Double
+    /// A chosen Defend's answer to an Attack, as a fraction of a clean hit
+    /// through armour. A forced Defend blocks and answers nothing.
+    public let riposteFraction: Double
+    /// A chosen Defend's chip when the other side defended too.
+    public let chipFraction: Double
+    /// A technique that meets a Defend lands as an ordinary blow times this.
+    /// It can crit, so above 1 its crit would out-hit an ordinary one.
+    public let techniqueMultiplier: Double
+
+    public init(blockFraction: Double, riposteFraction: Double, chipFraction: Double,
+                techniqueMultiplier: Double) {
+        self.blockFraction = blockFraction
+        self.riposteFraction = riposteFraction
+        self.chipFraction = chipFraction
+        self.techniqueMultiplier = techniqueMultiplier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case blockFraction, riposteFraction, chipFraction, techniqueMultiplier
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        blockFraction       = try c.decode(Double.self, forKey: .blockFraction)
+        riposteFraction     = try c.decode(Double.self, forKey: .riposteFraction)
+        chipFraction        = try c.decode(Double.self, forKey: .chipFraction)
+        techniqueMultiplier = try c.decode(Double.self, forKey: .techniqueMultiplier)
+    }
+}
+
 /// Top-level shape of `arena.json`.
 ///
 /// The four `TimeInterval` fields are `Double` on the wire. `45` and `45.0`
@@ -242,6 +282,8 @@ public struct ArenaFileDTO: Codable, Sendable {
     public let lobbyTTL: Double
     public let sweepInterval: Double
     public let dailyFightCap: Int
+    /// The round's rules — block, riposte, chip, the technique's blow.
+    public let duel: ArenaDuelDTO
     /// Ascending by `fromHonor`; the validator enforces both the order and that
     /// the first band starts at or below `minHonor`, which is what makes every
     /// reachable rating land in a band.
@@ -250,7 +292,7 @@ public struct ArenaFileDTO: Codable, Sendable {
     public init(stakeTiers: [Int], tithePercent: Int, startingHonor: Int, honorKFactor: Double,
                 minHonor: Int, turnSeconds: Double, maxMissedTurns: Int, challengeTTL: Double,
                 lobbyTTL: Double, sweepInterval: Double, dailyFightCap: Int,
-                leagues: [ArenaLeagueDTO]) {
+                duel: ArenaDuelDTO, leagues: [ArenaLeagueDTO]) {
         self.stakeTiers = stakeTiers
         self.tithePercent = tithePercent
         self.startingHonor = startingHonor
@@ -262,13 +304,14 @@ public struct ArenaFileDTO: Codable, Sendable {
         self.lobbyTTL = lobbyTTL
         self.sweepInterval = sweepInterval
         self.dailyFightCap = dailyFightCap
+        self.duel = duel
         self.leagues = leagues
     }
 
     private enum CodingKeys: String, CodingKey {
         case stakeTiers, tithePercent, startingHonor, honorKFactor, minHonor
         case turnSeconds, maxMissedTurns, challengeTTL, lobbyTTL, sweepInterval
-        case dailyFightCap, leagues
+        case dailyFightCap, duel, leagues
     }
 
     public init(from decoder: any Decoder) throws {
@@ -284,6 +327,7 @@ public struct ArenaFileDTO: Codable, Sendable {
         lobbyTTL       = try c.decode(Double.self, forKey: .lobbyTTL)
         sweepInterval  = try c.decode(Double.self, forKey: .sweepInterval)
         dailyFightCap  = try c.decode(Int.self, forKey: .dailyFightCap)
+        duel           = try c.decode(ArenaDuelDTO.self, forKey: .duel)
         leagues        = try c.decode([ArenaLeagueDTO].self, forKey: .leagues)
     }
 }

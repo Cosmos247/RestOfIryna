@@ -375,7 +375,8 @@ match always-Attack, the brace would have to block more than `1 − chip / attac
 finishing chip, because a chip never misses. Under simultaneous rounds Defend is also what the
 clock plays for a silent fighter, so it works as the penalty the owner asked for. The ×2 is the
 constant `DuelMath.braceDefenseMultiplier`, and the 30% chip is `defendChipFraction`, shared with
-forest fights: moving both into `arena.json` comes first whenever Defend is reworked.
+forest fights: moving both into `arena.json` comes first whenever Defend is reworked. (Done the
+same day: the duel became a cycle of three with its own numbers — next section.)
 
 **Silent fighters.** A fighter who never chooses, against one who always attacks, lasts on average
 12.2 / 7.9 / 6.4 rounds (warrior / archer / mage; worst 22 / 16 / 15) — up to five minutes at 15 s
@@ -397,6 +398,60 @@ target with `ExistentialAny`. It loads `content/data` with `ContentLoader.load`,
 20-line loop: the attacker rolls `CombatMath.applyAttack` against DEF ×2 when the defender braced
 since its last attack, and a Defend is `CombatMath.chipDamage` plus the brace flag. Built with
 `-c release`, each run took seconds.
+
+### The arena cycle, measured (2026-10-03, after `cad61c3`)
+
+Why the duel got a third choice, and what the shipped numbers play like. Rolled on `CombatMath`
+against `ReferenceCharacter.build` at `gearOffset` −10, seed `SplitMix64(20261003)`. Strategies
+were STATIONARY mixes (a fixed probability per action, not reading HP) on a grid of 0.1 (two
+choices, 3,000 duels a cell) or 0.125 (three, 600–800 a cell); the equilibrium is fictitious play
+on the win-share matrix (60,000 iterations), a draw counted as half.
+
+**Two choices: no brace works.** Equilibrium share of Defend, L10 warrior mirror (archer and mage
+alike), and the rounds a duel lasts at it:
+
+| brace | Defend in equilibrium | rounds (always-attack 9.4) |
+|---|---|---|
+| DEF ×2 (shipped until now), block 50% | 0% | 9.4 |
+| block 65% | 10% — indifference, not a choice; 0% again at L25 | 10.8 |
+| block 80%; block 50/65% + a 60% riposte; block 50% + the next Attack a sure crit | 100% | 28.8 |
+
+A symmetric two-choice game has a pure answer: the net of Defend against Attack is either
+positive (everyone defends) or negative (no one does). The HP race does not rescue it.
+
+**Three choices** (Attack beats the technique, the technique breaks Defend, Defend turns
+Attack). Equilibrium Attack / Defend / Technique, L10 warrior · archer · mage · L25 warrior:
+
+| variant | mix | rounds (always-attack 9.4 / 6.2 / 5.1 / 8.1) |
+|---|---|---|
+| A: block 65%, riposte 60%, technique ×1.0 | 48/37/15 · 46/37/17 · 51/35/15 · 47/40/14 | 15.7 / 10.3 / 8.5 / 14.0 |
+| B: block 50%, riposte 60%, technique ×1.5 | 63/29/8 · 62/29/10 · 69/22/8 · 62/30/8 | 13.3 / 8.7 / 7.0 / 11.6 |
+| C: block 65%, no riposte, technique ×1.5 | 87/13/0 · 66/34/0 · mage 100/0/0 | ≈ always-attack |
+
+The owner chose A. Under A and B always-Attack is exploited: always-Defend beats it 95–100%.
+
+**As shipped** (A, with a technique that cannot miss a defender), rolled through `DuelMath`
+itself on the 0.125 grid, 600 duels a cell:
+
+| pairing | row wins | mix (row · column) | rounds (always-attack) |
+|---|---|---|---|
+| L10 warrior mirror | 50% | 50/36/14 · 48/39/14 | 15.3 (9.4) |
+| L10 archer mirror | 50% | 51/34/15 · 50/35/15 | 9.7 (6.2) |
+| L10 mage mirror | 50% | 49/38/13 · 49/37/14 | 8.3 (5.1) |
+| L25 warrior mirror | 50% | 50/36/14 · 49/37/14 | 13.3 (8.1) |
+| L10 warrior vs archer | 76% | 53/34/13 · 43/36/21 | 11.9 (7.3) |
+| L10 warrior vs mage | 75% | 53/34/13 · 45/36/19 | 10.8 (6.7) |
+| L10 archer vs mage | 48% | 51/33/16 · 49/37/13 | 9.0 (5.6) |
+
+**The cycle does not fix class.** The warrior won 78–80% of always-attack duels against the
+archer and the mage, and still wins 75–76% at the equilibrium: 204 HP against 150 decides a duel
+that has no class effects. The owner recorded it for later; the probable cure is giving each
+class its forest effect back in the arena (armour break / sure crit / burn), balanced one by one.
+
+**The played sample the copy was approved on** was the first of six scripted seeds: a L10
+warrior (204 HP) against a L10 archer (150), ten rounds — 27/25, riposte 17 / 8 into the block,
+26 / Vital Shot cut off, guard broken / Vital Shot crit 37, Cleave 28 / guard broken, both cut
+off, chip 8/7, riposte 14 / 8, 26/28, then a Cleave crit 38 into the archer's guard at 4 HP.
 
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 

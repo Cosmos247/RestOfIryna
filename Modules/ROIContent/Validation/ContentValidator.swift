@@ -691,6 +691,29 @@ public enum ContentValidator {
             require(arena.dailyFightCap >= 1, file: file, path: "dailyFightCap",
                     rule: "arena.daily_cap", "dailyFightCap must be >= 1, found \(arena.dailyFightCap)")
 
+            // The duel's cycle. A block of 0 or 1 is not a Defend: it either
+            // stops nothing or makes the defender untouchable.
+            let duel = arena.duel
+            require(duel.blockFraction > 0 && duel.blockFraction < 1, file: file, path: "duel.blockFraction",
+                    rule: "arena.duel_block_range", "blockFraction must lie strictly between 0 and 1, found \(duel.blockFraction)")
+            require(duel.riposteFraction > 0, file: file, path: "duel.riposteFraction",
+                    rule: "arena.duel_non_positive", "riposteFraction must be positive")
+            require(duel.chipFraction > 0, file: file, path: "duel.chipFraction",
+                    rule: "arena.duel_non_positive", "chipFraction must be positive")
+            // No technique blow above an ordinary crit — the forest's rule. The
+            // technique crits at the standard multiplier, so anything above 1
+            // would let its crit out-hit every other crit in the game.
+            require(duel.techniqueMultiplier > 0 && duel.techniqueMultiplier <= 1, file: file,
+                    path: "duel.techniqueMultiplier", rule: "arena.duel_technique_above_crit",
+                    "techniqueMultiplier must be in (0, 1], found \(duel.techniqueMultiplier) — its crit would out-hit an ordinary crit")
+            // The cycle's third edge: a Defend has to come out ahead of the
+            // Attack it meets, or the duel is two choices again and Attack
+            // dominates. Per clean hit the defender answers `riposte` and takes
+            // `1 − block` — before misses and crits, so it is a warning.
+            require(duel.riposteFraction > 1 - duel.blockFraction, .warning, file: file,
+                    path: "duel.riposteFraction", rule: "arena.duel_defend_loses",
+                    "riposteFraction \(duel.riposteFraction) does not exceed the \(1 - duel.blockFraction) of a hit that gets through the block — Defend would lose to Attack and the cycle breaks")
+
             // The league table replaces a `switch`, so its shape has to carry
             // the guarantees the switch got from the compiler: total coverage
             // and unambiguous ordering.

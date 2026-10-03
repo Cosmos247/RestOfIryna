@@ -268,7 +268,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// The Arena (Ристалище) is a full controller too — flip routerName to
     /// "arena" (ArenaController takes over the reply keyboard) and render its
     /// hub. `arena.button.back` flips routerName back to "capital".
+    ///
+    /// The door admits only those who know the class special attack — the
+    /// duel's third choice. A refusal leaves the player where they stand, so
+    /// the keyboard on screen is still the right one.
     private func onArenaEnter(context: Context) async throws {
+        guard try await ArenaService.isAdmitted(context.session, on: context.db) else {
+            await postStatusBanner(ArenaController.lockedText(lingo: context.lingo, locale: context.session.locale),
+                                   context: context)
+            return
+        }
         let arena = Controllers.arenaController
         context.session.routerName = arena.routerName
         try await context.session.saveAndCache(in: context.db)

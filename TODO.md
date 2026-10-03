@@ -498,6 +498,7 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 - [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses — all superseded on 2026-10-03 by simultaneous rounds (entry below). `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
 - [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
 - [x] **Simultaneous rounds** *(2026-10-03, `cad61c3`, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
+- [x] **Defend made a real choice** *(2026-10-03, NOT committed yet)* — the duel became a cycle of three: Attack beats the class special attack, the technique breaks Defend, Defend turns Attack. Arena-own numbers in `arena.json` → `duel`; the arena admits only those who learned the special attack. Details in the polish log, 2026-10-03.
 - [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
 - [ ] Ranked vs unranked (casual/no-stake) queues
 - [ ] Seasons + end-of-season league rewards (silver / cosmetic title)
@@ -1571,6 +1572,52 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The arena duel as a cycle of three** *(2026-10-03, NOT committed yet)* — the owner
+        asked to make Defend a real choice, and whether the forest's Defend would have to change
+        too. It does not: the arena's Defend was already its own code, sharing only
+        `defendChipFraction`, which three forest moves also read.
+
+        **Measured first.** With two blind choices no brace works — every one tried (DEF ×2,
+        blocks of 50/65/80%, a block with a riposte, a block that makes the next blow a sure
+        crit) put Defend at 0% or 100% of the equilibrium, and 100% tripled the duel. A third
+        choice that beats Defend and loses to Attack is the only fix; the owner made it the class
+        special attack. Every figure: `.memory/rebalance.md` → "The arena cycle, measured".
+
+        **What it is** (each rule the owner's, over quizzes and a played sample).
+        - Attack beats the technique: the wind-up is cut off, deals nothing and takes a full hit.
+        - The technique breaks Defend: an ordinary blow ×1.0 that cannot miss a defender (it may
+          crit); the defender answers nothing.
+        - Defend turns Attack: 65% of the hit blocked and a 60% riposte. Defend against Defend
+          chips 30%. Two techniques both fizzle.
+        - The technique is free and unlimited in the arena; a use limit breaks the cycle once spent.
+        - The clock's forced Defend blocks and answers nothing, so silence never beats a choice.
+        - The arena admits only those who have LEARNED the special attack — at the capital's door
+          and again at the arena's home: «🏟 Ристалище пускає лише тих, хто опанував перший
+          прийом, — його вчать у Тренувальному дворі з 10 рівня.» The floor is printed from the
+          technique's own `requiredLevel`.
+        - The keyboard: [⚔️ Атака] [🛡 Оборона] / [🪓 Розкол | 🎯 Влучний постріл | 🔥 Полум'я
+          душі] [🏳 Здатися]; the opening adds «⚔️ б'є прийом · прийом пробиває 🛡 · 🛡 відбиває
+          ⚔️»; new lines «блок і відповідь», «оборону пробито», «<прийом> пробиває оборону[,
+          критичний удар]», «<прийом> зірвано[ — прийоми зіткнулися]», «пропуск — оборону пробито»,
+          and the forced Defend's line lost its number.
+
+        **Where it lives.** `DuelMath.Action.technique`, `DuelMath.Rules` and `Blow.Kind`;
+        `CombatMath.chipDamage(fraction:)` so the arena's chip and the forest's are one formula;
+        `ArenaFileDTO.duel` (content schema v16) with four validator rules, one of them the
+        warning `arena.duel_defend_loses`; `ArenaCatalog.duelRules` / `admissionTechnique`;
+        `ArenaService.isAdmitted`. `braceDefenseMultiplier` is gone.
+
+        **Measured as shipped** (through `DuelMath`): mirror equilibria 48–51 / 34–39 / 13–15%
+        Attack / Defend / technique at L10 and L25; duels 1.6× longer (warrior 9.4 → 15.3 rounds,
+        about 4 minutes at 15 s). Class is not fixed: the warrior wins 75–76% against the archer
+        and the mage (open list).
+
+        **Verified.** 352 tests (+8: the four cycle edges round by round, a technique against
+        10,000 dodge, the forced Defend, the shipped numbers closing the cycle over 2,000 duels
+        per edge — a riposte of 0.2 fails it — and four validator cases); `validate --strict`
+        0/0; `records` alone moved (`259f6cb6ca152450` → `1b5577693d8733af`), `tuning` held
+        through the `chipDamage` refactor; content hash `6963c31b`; every new line rendered in
+        both locales.
   - [x] **The arena duel in simultaneous rounds** *(2026-10-03, `cad61c3`, NOT
         deployed)* — the owner's ask: players should not move in turn, because that is not
         fair; they move at once, with 10–15 s a move, whoever misses defends, and the final
@@ -1847,9 +1894,24 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the three on top — the 2026-10-03
-arena and estate blocks and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
+Telegram. **Every block below is LIVE and unwalked** except the four on top — the two 2026-10-03
+arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-03 — the arena as a cycle of three (NOT committed yet):** two accounts that have
+learned the special attack, plus one that has not.
+- **the door**: the account without the technique taps «⚔️ Ристалище» and stays on the street
+  with «🏟 Ристалище пускає лише тих, хто опанував перший прийом, — його вчать у Тренувальному
+  дворі з 10 рівня.»
+- **the keyboard** in a duel has the class's own technique under Attack and Defend, beside
+  «🏳 Здатися»; the opening carries the cycle line «⚔️ б'є прийом · прийом пробиває 🛡 · 🛡
+  відбиває ⚔️»; a first tap on the technique says «ви обрали 🪓 Розкол».
+- **every pairing once**: Defend vs Attack «🛡 …: блок і відповідь — N ОЗ» over «… удар крізь
+  оборону»; technique vs Defend «🪓 …: Розкол пробиває оборону — N ОЗ» over «🛡 …: оборону
+  пробито»; technique vs Attack «💢 …: … зірвано»; both techniques «💢 …: … зірвано — прийоми
+  зіткнулися» on both lines.
+- **silent against a technique**: «⌛ …: пропуск — оборону пробито»; silent against an Attack:
+  «⌛ …: пропуск, вимушена оборона» with no number, and the attack blocked.
 
 **Added 2026-10-03 — the arena in simultaneous rounds (`cad61c3`, NOT deployed):** two accounts
 in the capital, one challenging the other.
@@ -1858,9 +1920,11 @@ in the capital, one challenging the other.
 - **tap first**: «✅ Раунд 1: ви обрали ⚔️ Атаку — чекаємо на суперника.»; a second tap in the
   same round answers «⏳ Раунд 1: вибір уже зроблено…». The other's tap plays the round at once,
   and both chats get it, each written from its own side.
-- **one side silent**: after 15 s the round plays with «⌛ …: пропуск, вимушена оборона — N ОЗ»;
+- **one side silent**: after 15 s the round plays with «⌛ …: пропуск, вимушена оборона» (the
+  number went with the cycle of three, the same day);
   three silent rounds in a row end it as a technical defeat on both screens.
-- **Defend** reads «🛡 …: оборона й підріз — N ОЗ», and an attack into it «… крізь оборону».
+- **Defend** against Defend reads «🛡 …: оборона й підріз — N ОЗ», and an attack into a Defend «…
+  крізь оборону».
 - **the final screen** opens with the last round's two lines. A plain knockout adds
   «Суперникові лишалося ❤️ N/M» for the loser; both falling adds «⚖️ Обидва удари смертельні —
   ваш важчий» (or the opponent's).
@@ -2266,16 +2330,13 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-- **Defend is still a dead choice in the arena** (measured 2026-10-03). Always-Defend against
-  always-Attack wins 0.0% of mirror duels, alternating or simultaneous; its one use is a
-  finishing chip that cannot miss. Under simultaneous rounds it is also what the clock plays for
-  a silent fighter, so it works as the penalty. The ×2 brace is a constant in `DuelMath`
-  (`braceDefenseMultiplier`), not data: moving it into `arena.json` is the first step whenever
-  Defend is reworked.
 - **Level and class decide a duel, and nothing brackets them** (measured 2026-10-03 on reference
   characters). L10 against L12 wins 2.5% of duels and against L13 0.1%; at L10 the warrior beats
-  the archer 73–87% and the mage 75–90%, since the duel has no techniques. The invite shows only
-  the nick and the stake. The "±3 bracket" existed only in a comment, corrected 2026-10-03, and
+  the archer 73–87% and the mage 75–90%, and the cycle of three left that at 75–76% — every
+  class's technique is the same blow, so 204 HP against 150 still decides. The owner's probable
+  cure, recorded for later: each class's forest effect in the arena (armour break / sure crit /
+  burn), balanced one by one; and the special defence (L11) as a class upgrade of Defend. The
+  invite shows only the nick and the stake. The "±3 bracket" existed only in a comment, corrected 2026-10-03, and
   queue matchmaking (§8.3) is still open.
 - **A challenger who leaves by `/settings` while waiting** keeps the challenge and is not moved
   back when it is accepted, so their fight taps would land on another controller. The accepter

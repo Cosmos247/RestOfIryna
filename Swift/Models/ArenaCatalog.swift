@@ -69,6 +69,17 @@ public enum ArenaCatalog {
     /// sweep — so it sits at 1 s against a 15 s round.
     public static var sweepInterval: TimeInterval { Catalogs.current.arena.sweepInterval }
 
+    // MARK: - The duel's round
+
+    /// Block, riposte, chip and the technique's blow — the arena's own
+    /// numbers, never the forest's Defend (`DuelMath` has why).
+    public static var duelRules: DuelMath.Rules { DuelMath.Rules(Catalogs.current.arena.duel) }
+
+    /// The arena admits those who know this technique: it is the duel's third
+    /// choice, so a fighter without it would hold a two-choice duel that
+    /// Attack dominates. Its player-level floor is the technique's own.
+    public static var admissionTechnique: CombatService.TechniqueKind { .specialAtk }
+
     // MARK: - Daily budget
 
     /// Completed duels a fighter may take part in per day. Generous while the

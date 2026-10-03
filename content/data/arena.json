@@ -1,6 +1,12 @@
 {
   "challengeTTL" : 120,
   "dailyFightCap" : 20,
+  "duel" : {
+    "blockFraction" : 0.65,
+    "chipFraction" : 0.3,
+    "riposteFraction" : 0.6,
+    "techniqueMultiplier" : 1.0
+  },
   "honorKFactor" : 32,
   "leagues" : [
     {

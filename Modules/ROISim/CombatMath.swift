@@ -327,11 +327,29 @@ public enum CombatMath {
         rules: CombatRules,
         using rng: inout G
     ) -> Int {
+        chipDamage(attackerATK: attackerATK, defenderDEF: defenderDEF, defenderLevel: defenderLevel,
+                   fraction: rules.defendChipFraction, extraMultiplier: extraMultiplier,
+                   rules: rules, using: &rng)
+    }
+
+    /// The same chip at a fraction the caller names — the arena's riposte and
+    /// chip, which are the arena's own numbers (`arena.json` → `duel`) and not
+    /// the forest's `defendChipFraction`. One formula for both, so the factors
+    /// multiply in the order the forest's chip always used.
+    public static func chipDamage<G: RandomNumberGenerator>(
+        attackerATK: Int,
+        defenderDEF: Int,
+        defenderLevel: Int,
+        fraction: Double,
+        extraMultiplier: Double = 1.0,
+        rules: CombatRules,
+        using rng: inout G
+    ) -> Int {
         let absorbed = mitigation(defenderDEF: defenderDEF, defenderLevel: defenderLevel,
                                   curve: rules.curves.mitigation)
         let raw = Double(attackerATK) * (1 - absorbed)
         let varied = raw * Double.random(in: rules.varianceRange, using: &rng)
-            * rules.defendChipFraction * extraMultiplier
+            * fraction * extraMultiplier
         return Swift.max(1, Int(varied.rounded()))
     }
 

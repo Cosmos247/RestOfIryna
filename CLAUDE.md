@@ -426,6 +426,19 @@ last up to 25. Every ending goes through `ArenaController.finish`, and settlemen
 did not tap, so it takes the session-cached `User` (`ArenaService.liveUser`). Auto-memory
 `project-arena-simultaneous-rounds`.
 
+**The duel's choices are a cycle of three, and must stay one** (2026-10-03): Attack beats the
+class special attack (the wind-up is cut off), the technique breaks a Defend (it cannot miss a
+defender), a Defend turns an Attack (65% blocked, a 60% riposte). With two blind choices one
+always dominates whatever the numbers — every brace measured was either never worth choosing or
+always worth it — so **never fix Defend by tuning a two-choice duel**. The technique is free and
+unlimited in the arena, because a use limit breaks the cycle once spent; a clock-forced Defend
+blocks and answers nothing; two techniques both fizzle. The numbers are the arena's own
+(`arena.json` → `duel`, content schema v16) — **never move `combat.json` →
+`defendChipFraction` for the arena**: the forest's Defend, Iron Bulwark and Shadow Veil share it.
+`arena.duel_defend_loses` warns when a riposte no longer outweighs what gets through the block.
+The arena admits only those who have LEARNED the special attack (`ArenaService.isAdmitted`, at
+the capital's door and again at the arena's home). Auto-memory `project-arena-technique-cycle`.
+
 ### Gear, inventory and storage
 
 **A death takes the bag, never the class weapon.** `InventoryEntry.wipeOnDeath` is the ONE

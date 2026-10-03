@@ -11,6 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-03)* **the arena duel as a cycle of three**: Attack beats the class special
+  attack, the technique breaks Defend, Defend turns Attack (block 65%, riposte 60%); the
+  technique free and unlimited; the clock's Defend answers nothing; the arena admits only those
+  who learned the special attack; arena-own numbers in `arena.json` → `duel`, schema v16.
+
+  `records` alone moved; 352 tests.
 - `cad61c3` (10-03) **the arena duel in simultaneous rounds**:
   - both fighters choose blind; a round plays on the second choice or after 15 s, a missing
     choice as a forced Defend; three missed rounds in a row are a technical defeat;
@@ -404,6 +410,36 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-03 (the arena duel as a cycle of three) — hash after commit
+
+The owner asked to make Defend a real choice at the Ristalyshche, and whether that meant
+changing the forest's Defend too. It did not: the arena's Defend was its own code already, and
+only `defendChipFraction` was shared — with three forest moves, so the arena got numbers of its
+own instead.
+
+**The path, each step over a quiz.**
+- Measured first (the owner's choice): every two-choice brace was dead or dominant, which is the
+  shape of a symmetric two-choice game, not a tuning miss.
+- A third choice beating Defend was proposed as a Feint; the owner asked for the class special
+  attack instead, and made the arena open only once it exists. A level-10 player may not KNOW it
+  (it is bought at the Training Ground, a T4 room), so the door asks for the learned technique,
+  not the level — the owner's call, asked once the code made the difference visible.
+- Free and unlimited in the arena; only the special attack (the special defence later, the stance
+  never); both techniques fizzle; variant A (block 65%, riposte 60%, technique ×1.0); equal
+  strength across classes with class-own effects remembered for later; the clock's Defend a block
+  with no answer; a technique that cannot miss a defender. Copy approved on a played sample.
+
+**Built.** `DuelMath` (the third action, `Rules`, `Blow.Kind`, no `braceDefenseMultiplier`),
+`CombatMath.chipDamage(fraction:)`, `arena.json` → `duel` with schema v16 and four validator
+rules, `ArenaCatalog.duelRules` / `admissionTechnique`, `ArenaService.isAdmitted` at the capital's
+door and the arena's home, the third button and eight new lines in `ArenaController`.
+
+**Measured as shipped** through `DuelMath`: mirror equilibria ~50/36/14, duels 1.6× longer;
+the warrior still wins 75–76% against the other classes — recorded in the open list, not fixed.
+
+**Verified.** 352 tests (the cycle test fails on a riposte of 0.2); `validate --strict` 0/0;
+`records` alone moved to `1b5577693d8733af`, content hash `6963c31b`. Not committed, not deployed.
 
 ## Session — 2026-10-03 (the third sync pass)
 

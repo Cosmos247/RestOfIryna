@@ -24,9 +24,11 @@
 //  Since 2026-10-03 a duel is played in SIMULTANEOUS rounds: both fighters
 //  choose blind, the first tap locks the choice, and the round is played the
 //  moment the second choice arrives — or when the round's clock runs out, with
-//  every missing choice played as a forced Defend. The alternating duel it
-//  replaced gave the challenger the first blow, which was worth 60–66% of mirror
-//  duels (`DuelMath` has the measurement and the rule).
+//  every missing choice played as a forced Defend, which blocks and answers
+//  nothing. The alternating duel it replaced gave the challenger the first
+//  blow, which was worth 60–66% of mirror duels; the choices themselves are a
+//  cycle of three — Attack, Defend, the class special attack (`DuelMath` has
+//  the measurements and the rules).
 //
 //  Every mutation is an actor method returning a decision-snapshot; all Telegram
 //  I/O happens in `ArenaController` AFTER the actor call returns, so the actor
@@ -57,6 +59,9 @@ public actor ArenaStore {
         public let userId: UUID
         public let nickname: String
         public let locale: String
+        /// Names the third button and the technique's lines; the blow itself
+        /// is the same for every class.
+        public let characterClass: CharacterClass
         public let atk: Int
         public let def: Int
         public let crit: Int
@@ -332,8 +337,8 @@ public actor ArenaStore {
                       actionA: DuelMath.Action, actionB: DuelMath.Action,
                       forcedA: Bool, forcedB: Bool, now: Date) -> ChoiceResult {
         var duel = duel
-        let rolled = CombatService.resolveDuelRound(a: duel.a.stats, aAction: actionA,
-                                                    b: duel.b.stats, bAction: actionB)
+        let rolled = CombatService.resolveDuelRound(a: duel.a.stats, aAction: actionA, aForced: forcedA,
+                                                    b: duel.b.stats, bAction: actionB, bForced: forcedB)
         duel.a.hp = rolled.aHP
         duel.b.hp = rolled.bHP
         let report = RoundReport(round: duel.round, a: duel.a, b: duel.b,
@@ -399,7 +404,8 @@ public actor ArenaStore {
             if let expired = cancelPending(id) { out.expiredChallenges.append(expired) }
         }
 
-        // Rounds whose clock ran out: whoever has not chosen defends.
+        // Rounds whose clock ran out: whoever has not chosen defends — a
+        // block with no answer.
         for (id, var duel) in duels where now >= duel.roundDeadline {
             let missedA = duel.choiceA == nil
             let missedB = duel.choiceB == nil

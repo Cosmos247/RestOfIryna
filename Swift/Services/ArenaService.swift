@@ -46,6 +46,7 @@ public enum ArenaService {
             userId: user.id ?? UUID(),
             nickname: user.nickname ?? "—",
             locale: user.locale,
+            characterClass: CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior,
             atk: user.effectiveAttack,
             def: user.effectiveDefense,
             crit: user.effectiveCrit,
@@ -57,6 +58,15 @@ public enum ArenaService {
             stake: stake,
             honor: honor
         )
+    }
+
+    // MARK: - Admission
+
+    /// Whether `user` may enter the arena: they have learned the duel's third
+    /// choice. Asked at the capital's door, and again by the arena's home for
+    /// anyone whose routerName was already "arena" before the door existed.
+    public static func isAdmitted(_ user: User, on db: any Database) async throws -> Bool {
+        try await LearnedTechnique.has(ArenaCatalog.admissionTechnique.rawValue, for: user, on: db)
     }
 
     // MARK: - Match validation (no silver moved)
