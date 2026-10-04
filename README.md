@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 366 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 370 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -147,7 +147,7 @@ RestOfIryna/
 │   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); since 2026-10-03 a spawnable creature fights with HP and ATK × the estate tier's strength (`scaled(forEstateTier:)`, §11)
 │   │   ├── Plot.swift            # Phase 5.1 — Fluent model for estate plots (user_id, slot_index, plot_type, tier, last_harvested_at, notified_full)
 │   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
-│   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 5 tiers, stats + materials); ItemDisplay namespace lives in Item.swift. Phase 6.5 (2026-05-22) added `durabilityByTier` [30,40,50,70,100] + `durability(forTier:)` — weapon durability ceiling climbs with tier
+│   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 9 tiers since 2026-10-04, each opened by a player level — one every five; stats + materials); ItemDisplay namespace lives in Item.swift. `durabilityByTier` [30 … 180] + `durability(forTier:)` — weapon durability ceiling climbs with tier; `requiredLevel(for:tier:)` and `highestTier(for:atLevel:)` read the gates
 │   │   ├── EstateUpgradeCatalog.swift # Phase 5.3c — estate-tier progression (6 transitions T1→T2 … T6→T7, player-level gates 4/7/10/13/16/19, materials + gold cost for T3+)
 │   │   ├── BagCatalog.swift      # Phase 5.3d — bag tier ladder (6 tiers: 25/35/45/60/75/90 slots — top two steps re-spread to +15 each on 2026-09-16; per-unit since the 2026-05-12 pivot, which replaced 5 tiers of 20/30/40/55/75), estate-tier gates per step, hide + iron materials only
 │   │   ├── TravelState.swift     # Phase 6.0 — Fluent model: per-user in-flight trip between estate and capital (user_id unique, destination, ends_at)

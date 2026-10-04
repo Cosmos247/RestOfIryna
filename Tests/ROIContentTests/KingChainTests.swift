@@ -206,6 +206,29 @@ final class KingChainTests: XCTestCase {
         XCTAssertFalse(onTime.issues.contains { $0.rule == "king.weapon_tier_before_its_gate" })
     }
 
+    /// The four rules that had no failing case until the 2026-10-04 audit found
+    /// them — the header of this file promised one for every rule.
+    func testLevelBelowOneIsAnError() {
+        assertRule("king.level_below_one", [decree(level: 0)])
+    }
+
+    func testNegativeRewardIsAnError() {
+        assertRule("king.reward_negative", [decree(reward: KingRewardDTO(vigor: 25, silver: -10))])
+    }
+
+    func testFoodRewardWithoutAQuantityIsAnError() {
+        assertRule("king.reward_food_quantity",
+                   [decree(reward: KingRewardDTO(vigor: 25,
+                                                 food: KingFoodRewardDTO(itemId: "food.roasted_meat", quantity: 0)))])
+    }
+
+    func testMaterialWithoutAQuantityIsAnError() {
+        assertRule("king.material_quantity",
+                   [decree(conditions: [KingConditionDTO(
+                       kind: .warehouseMaterials,
+                       materials: [MaterialCostDTO(itemId: "mat.pine_lumber", quantity: 0)])])])
+    }
+
     // MARK: - Re-seating a reordered chain
 
     /// `a b c d e` → `a c d b e`: `b` moved later. Nobody skips a decree, and a

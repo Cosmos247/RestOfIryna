@@ -202,7 +202,7 @@ final class DuelMathTests: XCTestCase {
         let budget = try XCTUnwrap(content.budget)
         let rules = CombatRules(tuning.combat), duel = try shippedDuel()
         let archer = try XCTUnwrap(ReferenceCharacter.build(
-            characterClass: "archer", level: 10, gearOffset: -ReferenceCharacter.ladderRung,
+            characterClass: "archer", level: 10, gearOffset: -ReferenceCharacter.staleGearOffset,
             progression: tuning.progression, budget: budget, rarities: content.rarities)).stats
 
         func share(_ x: DuelMath.Action, beats y: DuelMath.Action) -> Double {
@@ -286,7 +286,7 @@ final class DuelMathTests: XCTestCase {
         let budget = try XCTUnwrap(content.budget)
         let rules = CombatRules(tuning.combat), duel = try shippedDuel()
         let archer = try XCTUnwrap(ReferenceCharacter.build(
-            characterClass: "archer", level: 10, gearOffset: -ReferenceCharacter.ladderRung,
+            characterClass: "archer", level: 10, gearOffset: -ReferenceCharacter.staleGearOffset,
             progression: tuning.progression, budget: budget, rarities: content.rarities)).stats
 
         var rng = SplitMix64(seed: 20261003)

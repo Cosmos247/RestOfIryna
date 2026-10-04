@@ -9,8 +9,8 @@
 //  A level-L player is their class's proportional stat line plus a full kit of
 //  common gear. `gearOffset` is how far the kit trails the player: 0 is the
 //  on-curve character the design table describes, and a negative offset is the
-//  one real players actually are — a rung behind the ladder, because gear comes
-//  from drops and crafting rather than from levelling.
+//  one real players actually are — behind the curve, because gear comes from
+//  drops and the Master rather than from levelling.
 //
 //  The two accessory slots stay empty: no accessory has been authored, and
 //  their 1.0 of slot weight is the entire gap between this kit and the design's
@@ -29,9 +29,12 @@ public struct ReferenceCharacter: Sendable {
     /// more fields a reader has to check against the ones that are used.
     public let stats: CombatantStats
 
-    /// The weapon ladder maps tiers to item levels 1 / 10 / 20 / 30 / 40, so
-    /// "one rung behind" is ten item levels, not one.
-    public static let ladderRung = 10
+    /// How far a stale kit trails the player in the report's second gear
+    /// column: ten item levels. It was `ladderRung` while the weapon ladder sat
+    /// at 1/10/20/30/40. Since 2026-10-04 a weapon rung is five levels
+    /// (`spec-items.md` §9), and the armour is on no ladder at all, so this is a
+    /// deliberately harsh "has not re-geared" case rather than one rung.
+    public static let staleGearOffset = 10
 
     public init(characterClass: String, level: Int, gearOffset: Int = 0,
                 progression: ProgressionTuningDTO, budget: BudgetTuningDTO,

@@ -22,8 +22,10 @@
 //  `content/data` first; a Mac run through the tunnel would spend the
 //  migration against whatever the Mac has loaded.
 //
-//  The class weapon is bound: it never sits in a trade or on the market, so the
-//  bag and the warehouse are every place it can be. Verify the TABLE
+//  The class weapon is bound: no trade or market takes it, and the warehouse
+//  refuses it (`WarehouseService.deposit`), so in practice every row is worn or
+//  in the bag. The warehouse is scanned anyway, because that refusal is a rule
+//  that could change and this runs once. Verify the TABLE
 //  afterwards, not the log line — this reads 0 rows:
 //  `SELECT u.nickname, u.level, i.item_id, i.tier FROM inventory i JOIN users u
 //  ON u.id = i.user_id WHERE i.item_id IN ('gear.rusty_sword','gear.simple_bow',

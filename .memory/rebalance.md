@@ -453,6 +453,137 @@ warrior (204 HP) against a L10 archer (150), ten rounds — 27/25, riposte 17 / 
 26 / Vital Shot cut off, guard broken / Vital Shot crit 37, Cleave 28 / guard broken, both cut
 off, chip 8/7, riposte 14 / 8, 26/28, then a Cleave crit 38 into the archer's guard at 4 HP.
 
+### The weapon ladder, measured (2026-10-03/04, shipped as `9ab349c`)
+
+Why the weapon left the estate, and every variant the owner was shown before choosing. The decision
+record is `content/spec/spec-items.md` §9. This section keeps the research — and the probe, whose
+scratch copy died with /tmp when the laptop shut down mid-measurement on 10-03. The session was
+recovered from transcript `75c2311f` and finished in `a3d46812`.
+
+**The cause was the gate, not the step.**
+- The five rungs were authored at item level 1/10/20/30/40.
+- `WeaponUpgradeService` opened tier N at estate T N, and T2–T5 come at player levels 4/7/10/13,
+  so the item-level-40 sword (ATK 60) was in hand at level 13.
+- Bought together at L7, the first two rungs doubled the warrior's ATK (26 → 52).
+- The model behind tier 2 and the estate scaling (§ "Tier 2 of the bestiary" above) had assumed
+  a weapon at `itemLevel <= level` ("v1" below). Every figure approved on 10-02/03 therefore
+  assumed a weaker weapon than the game handed out.
+
+**A second live defect found while measuring.** The upgrade button lives only in the workshop
+(`EstateController.workshopKeyboard`), and the workshop opens at T3. So tier 2 could not be bought
+before level 7, although the service allowed it at T2. «Гострий край» (L4, weapon T2, chain
+position 10) therefore most likely held the live chain from L4 to L7. The 10-03 "today" figures
+at L4–6 were too light for the same reason; the 10-04 tables use the starter weapon there.
+
+**The probe** (rebuild it to re-measure).
+- **Setup.** An XCTest file in `Tests/ROIContentTests`, copied in for one `swift test --filter`
+  run and deleted at once; the test target is the only graph that reaches `ROISim` without a
+  library product. It loads `content/data` with `ContentLoader`.
+- **The player.**
+  - `ProgressionMath.baseStats` at level L;
+  - the class weapon of the variant: the shipped ladder's ATK/crit/accuracy, interpolated
+    linearly between its rungs' item levels, and for a k% variant
+    `t1 + k·(stats − t1)`, rounded half away from zero;
+  - from L4, the four Forester pieces plus their set bonus (+6 HP, +2 DEF, +2 dodge).
+- **The creature.** Spawnable creature №min(L, 14), sorted by level, scaled by
+  `CombatMath.scaled(_:forEstateTier:spec:)` at the estate tier L allows (T2 at 4, T3 at 7 … T7 at
+  19).
+- **The fight.** `FightSimulator.fight(... profile: .basic)`, 3,000 fights a cell,
+  `SplitMix64(seed: 20261003)` re-seeded per cell. One line is printed per cell (HP lost % of the
+  bar, rounds, win %).
+- **Watch out.** XCTest's own log line can split one printed row in two — re-join it before
+  parsing.
+- **Where the source lives.** Transcript `75c2311f` records 1233/1249/1296, and `a3d46812`. The
+  10-04 rebuild reproduced every checked 10-03 figure exactly.
+
+**Round 1 (10-03): which rungs, at which item levels.** Warrior, HP lost per fight with the
+creature of his number (contract in brackets). "v1" is a rung at player level = item level, the
+model's assumption. "v2" rescores the five rungs at iL 1/4/7/10/13 by estate tier. "v3" uses
+iL 1/4/7/10/13/16/19 by estate T1–T7, plus iL 30/40 by player level.
+
+| L | creature | today | v1 | v2 | v3 |
+|---|---|---|---|---|---|
+| 4 | Скажена лисиця (28%) | 16%* | 25% | 20% | 20% |
+| 7 | Зубр (42%) | 21% | 46% | 34% | 34% |
+| 10 | Вепр-сікач (42%) | 27% | 48% | 48% | 48% |
+| 13 | Скажена зграя (28%) | 18% | 38% | 33% | 33% |
+| 14 | Скажений ведмідь (62%) | 40% | 82% | 77% | 77% |
+| 19 | ведмідь | 24% | 48% | 44% | 37% |
+| 25 | ведмідь | 7% | 11% | 13% | 11% |
+
+\*Too light: the T3 workshop gate held tier 2 back to L7.
+
+The bear at L14, win % warrior/archer/mage: today 100/99/96, v1 77/48/36, v2/v3 86/63/48.
+Hidden cost: v1 breaks four decrees (`weapon_tier` 2–5 at levels 4/8/11/14).
+
+**Round 2 (10-04): "every other estate tier", the owner's idea.** Seven tiers fit only three
+upgrades, so tier 5 had no home. Two alignments, each with today's numbers or rescored to the
+level a rung opens at (A–D here were shown to the owner as А/Б/В/Г):
+
+| variant | sword ATK by rung | warrior HP%: L7 / L10 / L13 / L14 / L19 | bear L14 win % w/a/m |
+|---|---|---|---|
+| A: T2/T4/T6, numbers as shipped | 7 → 19 → 33 → 46 | 29 / 34 / 28 / 63 / 29 | 98/86/72 |
+| B: T2/T4/T6, iL 4/10/16 | 7 → 11 → 19 → 27 | 39 / 48 / 38 / 82 / 41 | 77/48/36 |
+| C: T3/T5/T7, numbers as shipped | 7 → 19 → 33 → 46 | 29 / 48 / 28 / 63 / 29 | 98/86/72 |
+| D: T3/T5/T7, iL 7/13/19 | 7 → 15 → 23 → 32 | 34 / 54 / 33 / 77 / 37 | 86/63/48 |
+
+- A and C kept the +12–14 jumps the owner disliked.
+- Every alignment moved decrees: three for T2/T4/T6, four for T3/T5/T7.
+- This round also found that the validator only range-checked `weapon_tier`.
+
+The owner then asked for something else.
+
+**Round 3 (10-04): a rung every five player levels, with smaller stats, computed to L50.**
+- S100 is the shipped ladder at item level = rung level: L10/20/30/40 ARE the old t2–t5, and
+  L5/15/25/35 sit between them.
+- S75 and S50 take that share of the growth.
+
+Warrior HP lost, with the model (v1) beside them:
+
+| L | creature (contract) | model | S100 | S75 | S50 |
+|---|---|---|---|---|---|
+| 5 | Дикий лось (24%) | 22% | 17% | 18% | 18% |
+| 7 | Зубр (42%) | 46% | 38% | 39% | 40% |
+| 10 | Вепр-сікач (42%) | 48% | 48% | 52% | 57% |
+| 13 | Скажена зграя (28%) | 38% | 38% | 41% | 44% |
+| 15 | Скажений ведмідь (62%) | 72% | 62% | 68% | 75% |
+| 19 | ведмідь | 48% | 42% | 46% | 50% |
+| 25 | ведмідь | 11% | 10% | 11% | 13% |
+
+- **The mage at L10–13** loses 1–2% of fights at S100 and in the model, 2–3% at S75, and 4–6%
+  at S50.
+- **One upgrade adds** +5–7 sword ATK at S100, +4–6 at S75 and +3–4 at S50, against +12–14
+  before.
+- **Share of the warrior's total ATK per rung:** at S100, 21% at L5 down to 5% at L50; at S75,
+  17% down to 4–5%; at S50, 12% down to 4%.
+- **The weapon's share of the warrior's total ATK** at S100 rises from 37% (L1) to about 50% from
+  L20; the old ladder stood at 70% at L13.
+- **Below S100**, the weapon falls behind the model from L10, so L10–19 run heavier than tier 2
+  was solved for. The owner took S75 as the compromise.
+
+**Decided, each over a quiz.**
+- **Measure first** (10-03), and recompute the existing weapons from the new numbers.
+- **The ladder:** S75, nine rungs to L40; L45/50 wait for a level cap of 50.
+- **Testers** are clamped to the rung their level allows.
+- **The first reforge** is a lesson at the Master — variant A of three played samples (a one-time
+  button), against a one-off job on his board and a Master who forges every rung for a fee. It
+  costs the rung's materials plus 30 🪙.
+- **Recipes** for t6–t9 are t5 × 1.5/2/2.5/3. **Names:** the staff's «Посох архімага» moved t5 →
+  t9. **The clamp** is refunded in silver at the trader's buy price. **Copy and durabilities**
+  (120/140/160/180) were approved as written.
+
+**Side measurements.**
+- **Iron is not a bottleneck.** A mine makes 2 iron/h and holds 10 (`plots.json` →
+  `bonusOutput`), so it yields 10–30 a day. A whole ladder takes 320–427 iron (an ingot is 10)
+  and 7,330–8,772 🪙 of materials at the trader's buy price, against 986–1,188 before — a sink
+  for the over-supplied silver.
+- **`spec items`' obtainable-kit share moved** (L10 48% → 44%, L40 36% → 29%). The tier-2 stat
+  lines were solved against the old share on 10-02; they are frozen and were not re-solved.
+- **The estate's upgrade value** (`spec-bestiary.md` §11.5) never counted the weapon, because the
+  model's weapon was level-gated. Nothing approved moves, but T2–T5 lost a pull players felt.
+- **`simulate`** does not read the ladder (the reference character wears on-curve gear), so its
+  pace stayed at 167.0 / 159.6 / 150.9 days.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

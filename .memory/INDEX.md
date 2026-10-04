@@ -24,7 +24,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
   - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
-  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap
+  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
@@ -45,22 +45,28 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   the King's chain asking for the estate before the ground, and a workshop that no longer
   makes armour.
 - **Next actions.**
-  - The owner deploys tier 2 and the estate scaling, both committed and NOT deployed. The
-    scaling (`4be2758`, 2026-10-03, `spec-bestiary.md` §11) makes creature HP and ATK +10% per estate
-    tier, strength only, with T6 left as it is, no player notice, and
-    `fight_log.estate_level`. It brings content schema v15 and one migration. The testers
-    should hear about it first, because the game announces nothing.
-  - The same restart takes the arena in simultaneous rounds (`cad61c3`, 2026-10-03, NOT
-    deployed): both fighters choose blind, a 15 s clock defends for the silent one, both blows
-    land together and the heavier one wins when both fall. The alternating duel gave the
-    challenger 60–66% of mirror duels.
-  - Then the first `fight_log` rows, and a human walking the screens. The arena, estate and
-    tier-2 blocks head `TODO.md`'s walk list and wait for their deploy; the arena one needs two
-    accounts.
-  - The arena threads left open when the last session stopped: Defend is still a dead choice
-    (its ×2 is a constant, not data), and level and class decide a duel with no bracket or
-    queue. Both are in `TODO.md` → "Open, decided but not done", with the figures in
-    `rebalance.md` → "The arena duel, measured".
+  - **The owner deploys everything committed since `8ae6772` in one restart** (all of it
+    NOT deployed, content schema v17 against the Pi's v14):
+    - tier 2 of the bestiary (`f03d502`);
+    - the estate scaling (`4be2758`): creature HP and ATK +10% per estate tier, one migration;
+    - the arena in simultaneous rounds (`cad61c3`) and as a cycle of three (`f0c1749`);
+    - the quest board as a scroll (`95e8492`);
+    - the weapon ladder by player level (`9ab349c`, `spec-items.md` §9).
+
+    The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
+    `ReseatDecreesById`). The digests to match and the tables to verify are in `Prompt.md`.
+    The testers should hear first — the game announces neither the stronger forest nor the
+    weapon clamp.
+  - Then the first `fight_log` rows, and a human walking the screens. The weapon, quest-board,
+    arena, estate and tier-2 blocks head `TODO.md`'s walk list and wait for their deploy; the
+    arena ones need two accounts.
+  - **Open threads**, all in `TODO.md` → "Open, decided but not done":
+    - the arena's matchmaking and class gap — Defend became a real choice with the cycle of
+      three (`f0c1749`), but the warrior still wins 75–76% against the other classes (figures
+      in `rebalance.md` → "The arena cycle, measured");
+    - the weapon ladder's leftovers: rungs 10–11 for a level cap of 50, the tier-2 lines solved
+      against the old obtainable-kit share, the workshop's T3 gate the validator cannot see, and
+      the estate's lost weapon pull.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -73,14 +79,18 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
   entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
   the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
-  entry (`cad61c3`) and the third 10-03 sync pass.
+  entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
+  entry (`9ab349c`) and the 10-04 sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
   2026-10-03 it adds the estate scaling: the variants measured, the upgrade check, what the
   implementation measured, and how each derived figure was read off the model. Then the arena
   duel, measured the same day: the first striker's edge, double knockouts, why Defend is a dead
-  choice, the level and class gaps, silent fighters, and how to rebuild the probe.
+  choice, the level and class gaps, silent fighters, and how to rebuild the probe. Since
+  2026-10-04 it holds the weapon ladder, measured: the estate gate behind the overgrowth, three
+  rounds of variants (v1–v3, every other estate tier, a rung every five levels at
+  100/75/50%), the probe's rebuild recipe, and the path to each decision.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
@@ -97,7 +107,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 80 at one line each, so a selection copied into this file is the
+already carries all 83 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

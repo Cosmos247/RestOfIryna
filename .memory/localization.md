@@ -107,6 +107,26 @@ let text = "⚔️ " + lingo.localize("exploration.outcome.encounter.won", local
 
 This bypasses the Lingo bug entirely — Lingo sees a clean placeholder-only template, interpolation works, and Swift handles the visual decoration with any emoji (surrogate-pair, BMP+VS16, or single BMP). No audit needed, no trap for new emoji swaps.
 
+**The cause, read off the source on 2026-10-04** (`.build/checkouts/Lingo/Sources/Lingo/StringInterpolator.swift`):
+- The placeholder regex runs over `NSRange(location: 0, length: rawString.count)` and returns
+  UTF-16 offsets.
+- Those offsets are then used as CHARACTER offsets (`rawString.index(_, offsetBy:
+  range.location)`).
+- So every multi-unit character ahead of a `%{…}` shifts the slice. The search range is also
+  short by that many units, which can cut a trailing placeholder off entirely.
+- The replacement itself is plain `replacingOccurrences(of: "%{key}", with: value)` on the
+  result string.
+
+**An emoji inside an interpolated VALUE is therefore safe.** That gives a second pattern for an
+emoji that sits mid-sentence before a placeholder, where prepending cannot reach it. The Master's
+lesson line (2026-10-04) needed «… у 🛠 Майстерні маєтку: наступна перековка відкриється на
+%{level} рівні»:
+- 🔨 is prepended in code;
+- the template reads «… у %{workshop}: … на %{level} рівні»;
+- `capital.master.lesson.workshop` = «🛠 Майстерні маєтку» is passed in as the `workshop` value.
+
+`locale.emoji_before_placeholder` refused the first version, which is the validator doing its job.
+
 **Applied in ROI at (2026-04-23):**
 - `ExplorationController.narrateOutcome`: `.trip` → `🦵 `, `.encounterWon` → `⚔️ `, `.encounterLost` → `💀 `, `.starvationOnly` → `🥀 `
 - `ExplorationController.handleDeath`: `"💀 " + lingo.localize("exploration.death", ...)`
@@ -418,7 +438,13 @@ while the profile and the inventory showed the real one.
 
 Leaderboards (2026-09-12): 16 keys under `leaderboard.*` — `title`, `button.back`, `you`, `unit.km`, `empty`, `board.<level|honor|depth|distance>` plus a `.sub` subtitle for each, and `unranked.<honor|depth|distance>`. There is deliberately **no** `unranked.level`: every finished registration has a level, so that board's viewer always ranks. None of them names the player with a gendered noun, so none needs `.m`/`.f`. The board icons (🏆 and the four tab glyphs) are prepended in Swift, never placed in a template ahead of a `%{}`.
 
-Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`).
+Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`). **The weapon lesson (2026-10-04)** adds:
+- `capital.master.button.lesson`;
+- `capital.master.lesson.{title,price,workshop,learned,learned_open}`;
+- `capital.master.lesson.intro.{warrior,archer,mage}` and `.done.{warrior,archer,mage}`;
+- `weapon.upgrade.{not_learned,level_too_low}`, in place of the deleted `weapon.upgrade.estate_too_low`.
+
+It also renames `weapon.upgrade.{button,title,button.confirm}` to «⚔️ Перекувати зброю» / «⚔️ Перековка зброї» / «🔨 Перекувати», and adds names and descriptions for t6–t9. The staff's «Посох архімага» moved from t5 to t9, and t5 is now «Рунний посох».
 
 Arena (Phase 8.3): 53 keys under `arena.*` — `arena.button.*` (reply-keyboard
 labels for hub and live fight), `arena.hub.*`, `arena.log.*` (per-round lines),

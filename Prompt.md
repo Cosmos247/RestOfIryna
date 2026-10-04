@@ -33,15 +33,15 @@ someone PLAYING; none from a test.
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-10-03; `origin/main` is at `8ae6772`)
+### Where things stand right now (2026-10-04; `origin/main` is at `8ae6772`)
 
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | the third 2026-10-03 sync pass (records, plus five dead arena members removed) on top of **`2dcf87c`** — the hash fill for **`cad61c3`**, the arena duel in simultaneous rounds (2026-10-03) — on top of `790560f`, the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`), on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5`, `790560f`, `cad61c3`, `2dcf87c` and the third 10-03 sync pass are not pushed yet. Push stays user-side |
+| HEAD | the 2026-10-04 sync pass (records; the weapon-ladder research made durable; `ReferenceCharacter.ladderRung` renamed `staleGearOffset`; four decree rules that had no test got one) on top of **`994c752`** — the hash fill for **`9ab349c`**, the weapon follows the player level (2026-10-04, `spec-items.md` §9). Under it, newest first: `9084528` / **`95e8492`** (the quest board as a scroll), `8b2bc4e` / **`f0c1749`** (the arena as a cycle of three), `51ec578` (the third 10-03 sync pass), `2dcf87c` / **`cad61c3`** (the arena in simultaneous rounds), `790560f` (the second 10-03 sync pass), `c28a3e5` / **`4be2758`** (the estate scaling), `7a6b458` (the 10-03 sync pass), `b407840` / **`f03d502`** (tier 2 of the bestiary), `ce8ef2f` (the 09-29 sync pass), and **`8ae6772`**, the build the Pi runs. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`**; the seventeen commits from `ce8ef2f` to `994c752` and the 10-04 sync pass are not pushed. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
+| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`95e8492`, the quest board as a scroll** (2026-10-03) sits on top: the decree's requirement line and an 8-cell bar on the NPC board, 📖 for «Досвід» and 🍖 for «Снага» on every screen. Swift and locale only, the digest unmoved; 353 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
 
 **Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -54,29 +54,39 @@ decree in before the deploy entry was written.
 Every deploy's hashes, what each carried and its verification block: the **Commit index** at
 the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
-### Where the last session stopped (2026-10-03 — the arena)
+### Where the last session stopped (2026-10-04 — the weapon ladder)
 
-The owner opened the arena work asking how the duel works and in what order players move.
-Measured, the challenger's first blow won 60–66% of mirror duels, so the duel became
-SIMULTANEOUS (`cad61c3`). The owner chose the rules over a quiz:
-- both fighters choose blind, 15 s a round, and a silent fighter gets a forced Defend;
-- three missed rounds in a row are a technical defeat;
-- when both fall, the heavier blow wins.
+The laptop shut down on 2026-10-03 in the middle of the weapon work. The session was recovered
+from its transcript (`75c2311f`; auto-memory `reference-session-transcripts`).
 
-The result screen now opens with the final round, and fifteen lines were rewritten so that a
-nick stays nominative. The last thing answered was what "Defend is a dead choice" means. Per
-swing at L10, Attack deals 21–29 while Defend chips 7–9 and saves 3–4 of the other's hit, so the
-brace would have to block ~65% of a hit to break even.
+**The finding.** The owner had found the weapon growth too big. Measured, the cause was the gate:
+- the rungs were authored at item level 1/10/20/30/40 but opened by the estate at L4/7/10/13;
+- so the item-level-40 sword was in hand at L13, and fights from L7 ran at about half their
+  contract.
 
-**Nothing is in flight.** The arena threads the owner may pick up next:
-- **Defend.** Move the ×2 brace (and an arena-own chip) into `arena.json`, then decide how Defend
-  becomes a real choice: a block near two thirds of a hit, or a third action that beats Defend.
-  Options with numbers were offered and not asked for yet.
-- **Matchmaking.** A level bracket, or the queue that `TODO.md` §8.3 still lists. Today L10 beats
-  L12 in 2.5% of duels, and the invite shows only the nick and the stake.
+**What shipped (`9ab349c`).** Over a series of quizzes the owner chose:
+- a rung every five player levels at 75% of the growth, nine rungs to L40;
+- the first reforge as a lesson at the Master;
+- the testers clamped with a silver refund.
 
-Figures: `.memory/rebalance.md` → "The arena duel, measured". Narrative: the 2026-10-03 arena
-entry in `.memory/sessions.md`.
+**A live defect fixed on the way.** The upgrade lives only in the T3 workshop, so «Гострий край»
+(L4) most likely held the King's chain until level 7.
+
+The day closed with the audit (`994c752`) and this sync pass. The decision record is
+`spec-items.md` §9, and every table is in `.memory/rebalance.md` → "The weapon ladder, measured".
+
+**Nothing is in flight.** Threads the owner may pick up:
+- **The deploy** (item 0 below) — the biggest backlog since 09-28: six changes and three
+  migrations.
+- **The t6–t9 descriptions** were written after the names were approved and shown in the report,
+  never approved on their own.
+- **The weapon's leftovers** (`TODO.md` open items 1–4):
+  - rungs 10–11 for a level cap of 50;
+  - the tier-2 stat lines against the new obtainable share;
+  - the workshop's T3 gate moved into content, where the validator could see it;
+  - whether players now hold the estate back (`fight_log.estate_level`).
+- **The arena.** Matchmaking, and the class gap: the warrior still wins 75–76% against the other
+  classes. The owner's probable cure is each class's forest effect in the arena.
 
 ### Next action
 
@@ -110,7 +120,7 @@ mean the Pi stops at `7a6b458`.
   `king_progress` positions as predicted — both queries are in the migrations' headers. Run
   `SELECT decree_index, count(*) FROM king_progress GROUP BY 1` BEFORE the restart to compare.
 - Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
-  the testers at the three new walk-list blocks.
+  the testers at the six new walk-list blocks.
 
 **1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
@@ -121,8 +131,9 @@ whether players hold an upgrade back to keep the forest soft (T6 gains nothing p
 rework's own deploy is done and recorded (2026-09-28 22:11, tables verified).
 
 **2 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the arena block, the estate block and tier 2's on
-top (after their deploy; the arena one needs two accounts), then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
+screen, not from running anything. **`TODO.md` → "Walk list"**: the weapon, quest-board, two
+arena, estate and tier-2 blocks on top (after their deploy; the arena ones need two accounts),
+then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
 older backlog — the whole King's chain included, which no human has seen.
 
@@ -130,7 +141,8 @@ older backlog — the whole King's chain included, which no human has seen.
 kit still costing more Vigor than
 plain attacks (+35 / +16 / +36% on an elite, prices untouched); a mage winning a fight at 0 HP
 (the burn ticks before the player's death check); `/menu` missing from the base `unmatched`
-filter; and for the arena, Defend and matchmaking (the section above).
+filter; for the arena, matchmaking and the class gap; and the weapon ladder's four leftovers
+(the section above).
 Ideas raised and not asked yet: a «Відновити» service at the Master (reset max for silver, keep
 the enchant — a silver sink), the Master refusing to mend a piece worn to 1/1, and the passive
 report naming its losses the way the death screen now does.
@@ -155,33 +167,40 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Eighteen items, each raised deliberately and kept out of an unrelated commit on purpose. From
-2026-10-03, the arena's three:
-- Defend is still a dead choice (0% against Attack), and the ×2 brace is a constant, not data;
-- level and class decide a duel (L10 against L12 wins 2.5%), with no bracket and no queue;
-- a challenger who leaves by `/settings` while waiting is not moved back on accept.
+Twenty-two items, each raised deliberately and kept out of an unrelated commit on purpose.
+- **From 2026-10-04, the weapon ladder's four:**
+  - rungs 10–11 (L45/50) wait for a level cap of 50;
+  - the tier-2 stat lines were solved against the old obtainable-kit share;
+  - the workshop's T3 gate is a Swift constant the validator cannot see;
+  - the estate no longer opens the weapon.
+- **From 2026-10-03, the arena's two:**
+  - level and class decide a duel (L10 against L12 wins 2.5%, the warrior beats the other
+    classes 75–76%), with no bracket and no queue;
+  - a challenger who leaves by `/settings` while waiting is not moved back on accept.
+- **The estate scaling's two accepted costs:**
+  - T5→T6 gains no XP per day (×0.9) until new estate tiers add food;
+  - «Пуща» (km 26 at level 17) has no margin left for the mage.
+- **From 2026-10-02, tier 2's leftovers**, plus a dead knob found while modelling —
+  `walkRoomDoubleSpeed`, the cost of a double-speed walk that does not exist:
+  - №3–4 running above contract for a player without armour;
+  - the opening ledger fighting with the armoured reference;
+  - `simulate`'s pace not seeing depth.
+- **From 2026-09-27:** the kit's Vigor cost, a mage winning at 0 HP, and `/menu` missing from
+  the base `unmatched` filter.
+- **Older:**
+  - the estate calling one place **two** words now that «наділ» is gone but «Слот» still stands
+    in 18 keys;
+  - `InventoryEntry.remove` ignoring `equipped_slot`;
+  - `CapitalController.pushTradeInvite` discarding its message id;
+  - the recipe-scroll machinery (`Item.teachesRecipe`, `InventoryController.handleLearnRecipe`)
+    kept unreachable on purpose;
+  - the Master's blade trial naming a zone it does not mean;
+  - seven dead functions (`renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`,
+    `itemNameOrId`, `isPassiveInflight`, `invalidateCache`, `CapitalController.renderLocation`),
+    left for a standalone cleanup.
 
-The estate scaling's two accepted costs:
-- T5→T6 gains no XP per day (×0.9) until new estate tiers add food;
-- «Пуща» (km 26 at level 17) has no margin left for the mage.
-
-From 2026-10-02, tier 2's leftovers, plus a dead knob found while modelling — `walkRoomDoubleSpeed`,
-the cost of a double-speed walk that does not exist:
-- №3–4 running above contract for a player without armour;
-- the opening ledger fighting with the armoured reference;
-- `simulate`'s pace not seeing depth.
-
-From 2026-09-27: the kit's Vigor cost, a mage winning at 0 HP, and `/menu` missing from the base
-`unmatched` filter. The four oblique-case enemy-name lines were rewritten on 2026-10-02. Then
-the estate calling one
-place **two** words now that «наділ» is gone but «Слот» still stands in 18 keys;
-`InventoryEntry.remove` ignoring `equipped_slot`; `CapitalController.pushTradeInvite` discarding
-its message id; the recipe-scroll machinery (`Item.teachesRecipe`,
-`InventoryController.handleLearnRecipe`) kept unreachable on purpose; the Master's blade trial
-naming a zone it does not mean; and six functions dead since April (`renderStub`,
-`backToRootKeyboard`, `backToHomeKeyboard`, `itemNameOrId`, `isPassiveInflight`,
-`invalidateCache`). Each one's reasoning: **`TODO.md` → "Open, decided but not done"**. The
-standing simulator deferrals are below.
+Each one's reasoning: **`TODO.md` → "Open, decided but not done"**. The standing simulator
+deferrals are below.
 
 ### Where the changelog went
 
@@ -340,7 +359,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 366 tests, ~5s
+swift test                                   # 370 tests, ~5s
 ```
 
 ## What Works Now (shipped game)
@@ -356,11 +375,14 @@ Registration · exploration (active + passive, three-tier visit decay, restart-s
 scheduler) · turn-based PvE combat with 9 class techniques (since 2026-09-27 the full kit shortens an
 elite fight by ~20% for every class, every technique tap strikes, and each forest fight leaves a
 `fight_log` row) · estate (plots, warehouse, workshop — ingots, upgrades, salvage; armour only from the
-Master since 09-28 — kitchen, weapon/bag/estate upgrades, the Training Ground room at T4) · capital hub (travel across
+Master since 09-28 — kitchen, weapon/bag/estate upgrades, the Training Ground room at T4; since
+2026-10-04 the weapon climbs nine rungs opened by the player level, the first a lesson at the
+Master) · capital hub (travel across
 **two streets** — 👑 Замкова: Базар / Ристалище / Гільдії / Палац, 🏘 Поділ: Крамар / Майстер /
 Шинок / Ворожка, the square holding only the two roads — plus
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena
-(live PvP duel in simultaneous rounds since 2026-10-03, Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
+(live PvP duel in simultaneous rounds since 2026-10-03, a cycle of three — Attack, Defend, the
+class special attack — Honor ELO, stakes, daily budget) · daily NPC quests **taken by hand at the
 NPC**, and since `328bf88` **a taken job never burns** — one open job per NPC, today's offer
 waiting behind it, a carried one droppable — the innkeeper's also **teaches a cooking recipe**,
 one rung of the ladder per finished job, announced nowhere in advance — + journal · **four all-time leaderboards** behind that journal, as tabs redrawing one

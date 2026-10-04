@@ -96,7 +96,7 @@ public enum BalanceSimulator {
     public static func run(content: GameContent, levels: [Int] = defaultLevels,
                            runs: Int, seed baseSeed: UInt64,
                            profiles: [PlayerProfile] = PlayerProfile.allCases,
-                           gearOffsets: [Int] = [0, -ReferenceCharacter.ladderRung]) -> BalanceRun? {
+                           gearOffsets: [Int] = [0, -ReferenceCharacter.staleGearOffset]) -> BalanceRun? {
         guard let tuning = content.tuning, let budget = content.budget else { return nil }
         let combat = tuning.combat
         let progression = tuning.progression

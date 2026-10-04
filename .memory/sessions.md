@@ -424,6 +424,50 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-04 (the sync pass)
+
+The owner's long-form close-out after `9ab349c` + `994c752`. No game behaviour changed.
+- **Research made durable.**
+  - `rebalance.md` → "The weapon ladder, measured" holds the estate gate behind the overgrowth
+    and the three rounds of variants (v1–v3; every other estate tier A–D; a rung every five
+    levels at 100/75/50%).
+  - It also holds the probe's rebuild recipe, the decision path and the side measurements: the
+    iron supply, the obtainable-kit share and the estate's lost pull.
+  - `localization.md` records Lingo's emoji defect read off its source, why an emoji inside a
+    VALUE is safe, and the lesson's keys.
+- **Stale records fixed.**
+  - `README.md` and `file-map.md` still said "3 weapons × 5 tiers", and the file map blamed the
+    warehouse's refusal on a missing column.
+  - `spec-items.md` §4/§5 got an amendment: the weapon ladder no longer sits at 1/10/20/30/40.
+  - `TODO.md`'s Phase 5.2.2 entry is marked superseded, and `game-core.md`'s workshop line
+    updated.
+  - The clamp migration's header and §9.6 now say the warehouse refuses the class weapon (it is
+    scanned anyway).
+  - `Prompt.md` and `INDEX.md` still called the arena's Defend a dead choice, which the cycle of
+    three had already settled.
+- **Code, no behaviour.**
+  - `ReferenceCharacter.ladderRung` → `staleGearOffset`. The value stays 10, but its comment had
+    claimed the weapon ladder's ten-level rungs; the report heading now reads "gear ten levels
+    behind".
+  - Four decree rules had no test at all, against `KingChainTests`' promise of one per rule:
+    `level_below_one`, `material_quantity`, `reward_food_quantity` and `reward_negative`. Each
+    got its failing case, mutation-tested (rename the rule, watch the test fail, restore).
+- **Records.**
+  - `Prompt.md` reoriented: where the session stopped, the deploy backlog, 22 open items.
+  - `INDEX.md`: the deploy backlog, the spec line, these entries, 83 auto-memories.
+  - Auto-memory:
+    - `project-weapon-ladder-rework` rewritten as the final record;
+    - cross-links added in `project-estate-scaling` and `project-king-decree-chain`;
+    - `reference-session-transcripts` records the crash recovery;
+    - `feedback-audit-before-commit` records zsh's unsplit `$FILES` (a false clean), mutation
+      testing, and a full generated block growing with its generator.
+- **Verified.**
+  - The build, with every touched file recompiled under bash: no warning.
+  - 370 tests; `validate --strict` 0/0.
+  - The digest unchanged (`records 1041961908ba2d3f`, `king e3a492be1b017e81`, content hash
+    `00b40443`).
+  - `simulate --strict` 0 broken bands, 18 warnings, pace unchanged.
+
 ## Session — 2026-10-04 (the weapon follows the player level) — `9ab349c`
 
 The laptop died on 2026-10-03 mid-measurement; this session recovered the weapon-ladder thread

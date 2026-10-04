@@ -170,7 +170,7 @@ public enum BalanceFormatter {
         var out: [String] = []
         var findings: [Finding] = []
         let onCurve = 0
-        let behind = -ReferenceCharacter.ladderRung
+        let behind = -ReferenceCharacter.staleGearOffset
 
         // Provenance, both halves of it. A report gets pasted into a design doc
         // and read months later, so it has to say which DATA it measured (the
@@ -334,8 +334,8 @@ public enum BalanceFormatter {
         out.append("")
 
         // MARK: gear offset
-        out.append("── one ladder rung behind ────────────────────────────────────────────────────")
-        out.append("   gear at item level L−\(ReferenceCharacter.ladderRung): what a player who has")
+        out.append("── gear ten levels behind ────────────────────────────────────────────────────")
+        out.append("   gear at item level L−\(ReferenceCharacter.staleGearOffset): what a player who has")
         out.append("   not re-geared actually walks into. Levels 1–10 are unaffected (floor at 1).")
         out.append("")
         out.append("    class     archetype    p90 HP on curve → behind    win on curve → behind")

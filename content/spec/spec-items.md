@@ -211,6 +211,11 @@ edit later:
 - **The rungs stay at 1/10/20/30/40.** They are already the weapon ladder's, the
   budget curve's natural sampling, and `ReferenceCharacter.ladderRung`.
 
+> **Amended 2026-10-04 by §9.** The weapon ladder no longer sits on these rungs. It gained a
+> rung every five levels (1/5/10 … 40), each gated by the player level, and
+> `ReferenceCharacter.ladderRung` became `staleGearOffset`. A gear ladder decided after this
+> date starts from §9, not from this paragraph.
+
 ### What A leaves behind, stated rather than discovered
 
 Armour laddered to curve fills `main_hand` (3.0) + the four armour slots (4.8) =
@@ -233,8 +238,10 @@ Because the combat denominators were derived from this same curve, an item that
 respects its budget **cannot move any stat's percentage** — which is what makes
 adding an item safe, and why the rule is not negotiable.
 
-**`itemLevel` is not `tier`.** Tier is a ladder rung (1–5); item level is the
-budget input (1–40). The ladders map one to the other at 1/10/20/30/40.
+**`itemLevel` is not `tier`.** Tier is a ladder rung (1–9 on the weapon ladder); item level
+is the budget input (1–40). Since 2026-10-04 the weapon ladder maps one to the other at
+1/5/10 … 40, each rung's item level equal to the player level it opens at (§9); it was
+1/10/20/30/40 until then.
 
 **Rarity multiplies budget ×1.00 → ×1.45 while value goes ×1 → ×16.** Decoupled
 on purpose: a legendary is worth sixteen times as much and is 45% stronger.
@@ -603,8 +610,9 @@ Measured on the order above, the result is:
 
 ### 9.6 What changes for players already playing
 
-- **Weapons.** Every row of the three ladder items — worn, in the bag or in the warehouse — is
-  clamped to the highest tier its owner's level allows.
+- **Weapons.** Every row of the three ladder items is clamped to the highest tier its owner's
+  level allows. In practice the rows are worn or in the bag (the warehouse refuses the class
+  weapon), and the warehouse is scanned anyway.
   - Its maximum durability follows the tier, current durability is capped at it, and the enchant
     stays.
   - A level-10 warrior holding today's t4 (ATK 46) is left with t3 (ATK 16).
