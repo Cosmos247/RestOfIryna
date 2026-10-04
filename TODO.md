@@ -1936,7 +1936,7 @@ the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate bl
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-05 — the Master's enchant draws from the bag alone (*uncommitted*, NOT deployed):**
+**Added 2026-10-05 — the Master's enchant draws from the bag alone (`4fe5b7a`, NOT deployed):**
 an account with armour to enchant, hides in the estate's storage and few or none in the bag.
 - **the card** («✨ Покращення броні» → a piece): «🦺 Жилет лісника +2 → +3», then «✅ 🪙 Срібло
   (540/220)» and «❌ 15× 🟫 Шкура (0/15)», counted in the BAG — hides in the estate's storage do

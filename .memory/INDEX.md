@@ -57,7 +57,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - a Vigor reward that will not fit is asked about (10-04, `47e0e8f`; Swift and locale);
     - the watchman says when a task is ready (10-04, `0b53e82`; one migration);
     - «💛 Допомога грі» in Settings (10-04, `b0c9d80`; Swift and locale);
-    - the Master's enchant draws from the bag alone (10-05, *uncommitted*; Swift and locale).
+    - the Master's enchant draws from the bag alone (10-05, `4fe5b7a`; Swift and locale).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`). The digests to match and the tables to verify are in `Prompt.md`.

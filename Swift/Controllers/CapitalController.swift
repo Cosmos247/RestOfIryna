@@ -1955,7 +1955,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
         if data == "master:lessonok" {
-            let result = try await WeaponUpgradeService.lesson(for: context.session, on: context.db)
+            // Answered by `finishMasterLesson`, never up front (a refusal is a
+            // modal), so a throw before it would leave the tap spinning — it is
+            // answered on the way out, as the enchant's is.
+            let result: WeaponUpgradeService.UpgradeResult
+            do {
+                result = try await WeaponUpgradeService.lesson(for: context.session, on: context.db)
+            } catch {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                throw error
+            }
             await ctrl.finishMasterLesson(result, query: query, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }

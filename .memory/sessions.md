@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-05)* **the Master's enchant draws from the bag alone** — the card counts in
+- `4fe5b7a` (10-05) **the Master's enchant draws from the bag alone** — the card counts in
   the bag; a refusal is a modal.
 - `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text.
 - `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
@@ -441,7 +441,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-05 (the Master's enchant draws from the bag alone) — *(uncommitted)*
+## Session — 2026-10-05 (the Master's enchant draws from the bag alone) — `4fe5b7a`
 
 A tester's report: «У столиці при покращенні спорядження пише, що треба 15 шкури, а я маю 14.
 ХОЧА В СУМЦІ 0.» The owner asked for a report first, then options.
@@ -472,8 +472,8 @@ A tester's report: «У столиці при покращенні споряд�
   - Two keys dropped (`capital.master.confirm.enchant`, `capital.master.missing_materials`).
   - The audit caught a regression of this change: with the callback no longer answered up front,
     a throw from `MasterService.enchant` would have left the tap spinning. It is answered in a
-    `catch` and rethrown. The lesson's `master:lessonok` has had the same gap since 10-04; it was
-    noted and left alone, outside this change.
+    `catch` and rethrown. The lesson's `master:lessonok` had had the same gap since 10-04; on the
+    owner's word it got the same `catch`, folded into the hash-fill commit after `4fe5b7a`.
   - Rule in CLAUDE.md: what a place can draw on is where it stands.
 - **Verified.**
   - Both files recompiled with no warning; 370 tests; `validate --strict` 0/0; the digest
