@@ -17,6 +17,8 @@ enum Commands: String, Codable, CaseIterable {
     case exit = "commands.exit"
     case settings = "commands.settings"
     case language = "commands.language"
+    /// Settings → how to support the game financially (2026-10-04).
+    case support = "commands.support"
     case profile = "commands.profile"
     case explore = "commands.explore"
     case estate = "commands.estate"

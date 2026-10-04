@@ -1930,10 +1930,19 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the nine on top — the 2026-10-04
-task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03
-arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy.
-The six 2026-09-27/28 blocks under them are included, live since the 2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the ten on top — the 2026-10-04
+support-button, task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board
+block, the two 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — which
+wait for their deploy. The six 2026-09-27/28 blocks under them are included, live since the
+2026-09-28 22:11 restart.
+
+**Added 2026-10-04 — «💛 Допомога грі» in Settings (*uncommitted*, NOT deployed):** any account.
+- **⚙️ Settings**: the keyboard reads [🌐 Мова] [💛 Допомога грі] / [🔙 Назад].
+- **the tap**: «Якщо маєте бажання фінансово допомогти у розвитку гри, ви можете звернутись до
+  @irina_chemeris1998.», the handle a tappable link; the settings keyboard stays.
+- **🔙 Назад** under it goes to the main menu, as from Settings — there is no separate help
+  screen to come back from.
+- **English**: [💛 Support the game] and its sentence.
 
 **Added 2026-10-04 — the watchman says when a task is ready (`0b53e82`, NOT deployed):** any
 account with an open decree or a taken NPC job; the notice comes within a minute.

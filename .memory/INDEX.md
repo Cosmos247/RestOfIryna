@@ -55,7 +55,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - a tarot card phrased once and 💰 for every reward, with the Chariot at −50% Vigor (10-04,
       `e861c73`; Swift, locale and `fortune.json`, no migration);
     - a Vigor reward that will not fit is asked about (10-04, `47e0e8f`; Swift and locale);
-    - the watchman says when a task is ready (10-04, `0b53e82`; one migration).
+    - the watchman says when a task is ready (10-04, `0b53e82`; one migration);
+    - «💛 Допомога грі» in Settings (10-04, *uncommitted*; Swift and locale).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`). The digests to match and the tables to verify are in `Prompt.md`.
@@ -84,7 +85,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
   the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
   entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
-  entry (`9ab349c`), the 10-04 sync pass, the 10-04 tarot entries, the Vigor-reward entry and the task-ready entry.
+  entry (`9ab349c`), the 10-04 sync pass, the 10-04 tarot entries, the Vigor-reward entry, the task-ready entry and the support-button entry.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since

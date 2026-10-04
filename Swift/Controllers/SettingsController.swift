@@ -22,6 +22,9 @@ final class SettingsController: TGControllerBase, @unchecked Sendable {
                         
             let languageLocales = Commands.language.buttonsForAllLocales(lingo: lingo)
             for button in languageLocales { router[button.text] = onLanguage }
+
+            let supportLocales = Commands.support.buttonsForAllLocales(lingo: lingo)
+            for button in supportLocales { router[button.text] = onSupport }
             
             let cancelLocales = Commands.cancel.buttonsForAllLocales(lingo: lingo)
             for button in cancelLocales { router[button.text] = onCancel }
@@ -65,6 +68,15 @@ final class SettingsController: TGControllerBase, @unchecked Sendable {
         return true
     }
         
+    /// Who to contact to support the game financially — the owner's text
+    /// (2026-10-04). Sent with the settings keyboard, so the screen stays put.
+    private func onSupport(context: Context) async throws -> Bool {
+        let text = context.lingo.localize("settings.support.text", locale: context.session.locale)
+        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html,
+                                          replyMarkup: generateControllerKB(session: context.session, lingo: context.lingo))
+        return true
+    }
+
     private func onSettingsMenu(context: Context) async throws -> Bool {
         try await showSettingsMenu(context: context)
         return true
@@ -82,10 +94,10 @@ final class SettingsController: TGControllerBase, @unchecked Sendable {
     }
     
     override public func generateControllerKB(session: User, lingo: Lingo) -> TGReplyMarkup? {
-        let markup = TGReplyKeyboardMarkup(keyboard: [[
-            Commands.language.button(for: session, lingo),
-            Commands.cancel.button(for: session, lingo)
-        ]], resizeKeyboard: true)
+        let markup = TGReplyKeyboardMarkup(keyboard: [
+            [Commands.language.button(for: session, lingo), Commands.support.button(for: session, lingo)],
+            [Commands.cancel.button(for: session, lingo)]
+        ], resizeKeyboard: true)
         return TGReplyMarkup.replyKeyboardMarkup(markup)
     }
     
