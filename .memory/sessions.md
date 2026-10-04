@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **the weapon follows the player level, and its first rung is the Master's
+- `9ab349c` (10-04) **the weapon follows the player level, and its first rung is the Master's
   lesson** (`spec-items.md` §9):
   - nine rungs, one every five levels, each with its `requiredPlayerLevel`, at 75% of the shipped
     growth;
@@ -424,7 +424,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 (the weapon follows the player level) — *(uncommitted)*
+## Session — 2026-10-04 (the weapon follows the player level) — `9ab349c`
 
 The laptop died on 2026-10-03 mid-measurement; this session recovered the weapon-ladder thread
 from transcript `75c2311f` and finished it.

@@ -1573,7 +1573,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
   - [x] **The weapon follows the player level, and its first rung is the Master's lesson**
-        *(2026-10-04, NOT committed yet)* — the owner found the weapon growth too big. Measured,
+        *(2026-10-04, `9ab349c`, NOT deployed)* — the owner found the weapon growth too big. Measured,
         the gate was the cause: rungs authored at item level 1/10/20/30/40 but opened by the
         estate at T2–T5 (L4/7/10/13). Spec `spec-items.md` §9, every decision over a quiz.
         - Nine rungs, one every five levels, each with `requiredPlayerLevel`; 75% of the shipped
@@ -1935,7 +1935,7 @@ block, the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the es
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-04 — the weapon by player level and the Master's lesson (NOT committed yet):** a
+**Added 2026-10-04 — the weapon by player level and the Master's lesson (`9ab349c`, NOT deployed):** a
 tester above level 5 at estate T3+, and a fresh account taken to level 5.
 - **after the restart**: the tester's class weapon is at the tier their level allows (L10 → t3,
   ATK 16 on the sword), with silver refunded for the rungs removed, and the King's journal shows

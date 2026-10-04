@@ -22,7 +22,7 @@ numbers below. Current state:
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
 **2026-10-04 — the weapon follows the player level, and its first rung is the Master's lesson**
-(*uncommitted*, NOT deployed; needs `pm2 restart ROI` — code, locale strings, content
+(`9ab349c`, NOT deployed; needs `pm2 restart ROI` — code, locale strings, content
 schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
 - **The rule.** Nine rungs, one every five levels (1 … 40), each with its own
   `requiredPlayerLevel` and 75% of the shipped ladder's growth at that item level; t6–t9 recipes
