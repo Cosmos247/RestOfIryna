@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **«💛 Допомога грі» in Settings** — one button, the owner's text.
+- `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text.
 - `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
   в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
 - `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
@@ -439,7 +439,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 («💛 Допомога грі» in Settings) — *(uncommitted)*
+## Session — 2026-10-04 («💛 Допомога грі» in Settings) — `b0c9d80`
 
 The owner asked for a «Допомога грі» button in Settings whose tap shows: «Якщо маєте бажання
 фінансово допомогти у розвитку гри, ви можете звернутись до @irina_chemeris1998.»
@@ -448,9 +448,11 @@ The owner asked for a «Допомога грі» button in Settings whose tap s
   грі] / [🔙 Назад]. `onSupport` sends `settings.support.text` (the owner's sentence verbatim;
   English translated) with the settings keyboard, so the screen does not change.
 - The 💛 was my choice — no other screen uses it.
-- Noticed, not changed: the Settings button itself reads «⚙️ Налаштуваня» in `uk.json`, missing
-  an «н». Renaming a reply button leaves stale keyboards in chat unmatched until redrawn, so it
-  was left for the owner to decide.
+- The Settings button itself read «⚙️ Налаштуваня» in `uk.json`, missing an «н». Fixed at the
+  owner's word, folded into the hash-fill commit after `b0c9d80`. Every controller reads the label
+  from the locale, so one line fixes it everywhere. An old keyboard left in chat still shows the
+  misspelt button; tapping it reaches that controller's `unmatched`, which redraws the screen with
+  the new keyboard.
 - Verified: both touched files recompiled with no warning; 370 tests; `validate --strict` 0/0;
   the digest unmoved; every `commands.*` label still unique in both locales.
 

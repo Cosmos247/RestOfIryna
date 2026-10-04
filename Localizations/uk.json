@@ -15,7 +15,7 @@
   "commands.start": "🔄 Почати",
   "commands.cancel": "🔙 Назад",
   "commands.exit": "🔙 Вийти",
-  "commands.settings": "⚙️ Налаштуваня",
+  "commands.settings": "⚙️ Налаштування",
   "keyboard.restored": "Клавіатура відновлена",
   "input.stray_number": "Спершу оберіть дію кнопкою, а тоді введіть кількість.",
   "commands.language": "🌐 Мова",

@@ -21,10 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-04 — «💛 Допомога грі» in Settings** (*uncommitted*, NOT deployed; needs `pm2 restart
+**2026-10-04 — «💛 Допомога грі» in Settings** (`b0c9d80`, NOT deployed; needs `pm2 restart
 ROI` — Swift and four locale strings): `Commands.support`, a third button on the settings keyboard
 ([🌐 Мова] [💛 Допомога грі] / [🔙 Назад]); the tap answers with the owner's text naming
-@irina_chemeris1998 and keeps the keyboard. 370 tests, `validate --strict` 0/0, digest unmoved.
+@irina_chemeris1998 and keeps the keyboard. The Settings button's own label was fixed with it:
+«⚙️ Налаштуваня» → «⚙️ Налаштування». 370 tests, `validate --strict` 0/0, digest unmoved.
 
 **2026-10-04 — the watchman says when a task is ready** (`0b53e82`, NOT deployed; needs
 `pm2 restart ROI` — Swift, two locale strings and one migration, digest unmoved):
