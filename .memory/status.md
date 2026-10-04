@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-04 — the watchman says when a task is ready** (*uncommitted*, NOT deployed; needs
+**2026-10-04 — the watchman says when a task is ready** (`0b53e82`, NOT deployed; needs
 `pm2 restart ROI` — Swift, two locale strings and one migration, digest unmoved):
 - **Why.** A player asked to be reminded when a task is done. Nothing said so: the journal and
   the boards showed it only to someone who thought of opening them. Most completions are not

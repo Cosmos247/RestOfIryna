@@ -55,7 +55,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - a tarot card phrased once and 💰 for every reward, with the Chariot at −50% Vigor (10-04,
       `e861c73`; Swift, locale and `fortune.json`, no migration);
     - a Vigor reward that will not fit is asked about (10-04, `47e0e8f`; Swift and locale);
-    - the watchman says when a task is ready (10-04, *uncommitted*; one migration).
+    - the watchman says when a task is ready (10-04, `0b53e82`; one migration).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`). The digests to match and the tables to verify are in `Prompt.md`.

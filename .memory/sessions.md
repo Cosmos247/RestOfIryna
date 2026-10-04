@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **the watchman says when a task is ready** — one unnamed «📓 … загляньте
+- `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
   в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
 - `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
   card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
@@ -438,7 +438,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 (the watchman says when a task is ready) — *(uncommitted)*
+## Session — 2026-10-04 (the watchman says when a task is ready) — `0b53e82`
 
 A player's request: «Додати нагадування про те, що завдання виконано, можна просити заглянути в
 нотатник, або сповіщати про те яке завдання виконано».

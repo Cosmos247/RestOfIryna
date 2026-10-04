@@ -1935,7 +1935,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy.
 The six 2026-09-27/28 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-04 — the watchman says when a task is ready (*uncommitted*, NOT deployed):** any
+**Added 2026-10-04 — the watchman says when a task is ready (`0b53e82`, NOT deployed):** any
 account with an open decree or a taken NPC job; the notice comes within a minute.
 - **a decree completes** (e.g. the charter's first, on walking home from km 3 — depth is banked
   on arrival) → a message
