@@ -1935,7 +1935,7 @@ and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03 arena bl
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (*uncommitted*, NOT deployed):** any
+**Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (`e861c73`, NOT deployed):** any
 account with 10 🪙, at the fortune teller; the journal and the palace for the 💰.
 - **the entry**: the intro says «на найближчі години», and the price line «Розклад коштує 10
   срібників · карта діє 6год».

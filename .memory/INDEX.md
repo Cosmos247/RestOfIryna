@@ -53,7 +53,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the quest board as a scroll (`95e8492`);
     - the weapon ladder by player level (`9ab349c`, `spec-items.md` §9);
     - a tarot card phrased once and 💰 for every reward, with the Chariot at −50% Vigor (10-04,
-      *uncommitted*; Swift, locale and `fortune.json`, no migration).
+      `e861c73`; Swift, locale and `fortune.json`, no migration).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`). The digests to match and the tables to verify are in `Prompt.md`.

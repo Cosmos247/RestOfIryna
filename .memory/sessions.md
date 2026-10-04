@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **a tarot card is phrased once, and 💰 marks every reward**:
+- `e861c73` (10-04) **a tarot card is phrased once, and 💰 marks every reward**:
   - the reveal prints the card through `FortuneDisplay`, like the fortune screen and the
     profile; the 22 hand-typed `buff_desc` keys are deleted;
   - silver «+🪙 30» on every fortune screen, the window printed once and on the price line,
@@ -431,7 +431,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 (a tarot card phrased once, 💰 for every reward) — *(uncommitted)*
+## Session — 2026-10-04 (a tarot card phrased once, 💰 for every reward) — `e861c73`
 
 The owner asked to see how a drawn card reads. Rendering all 22 out of the real files found
 five defects. The owner had all five fixed, after seeing the planned screens first, and asked
