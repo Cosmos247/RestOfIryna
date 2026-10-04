@@ -14,13 +14,18 @@
 //  pass with the app closed.
 //
 //  So this is one `Task.detached` that wakes every `restSweepInterval`
-//  seconds and asks three questions of the players it loads. The pattern is
+//  seconds and asks four questions of the players it loads. The fourth
+//  (2026-10-04) is a task that became ready — a decree complete, a taken job
+//  ready to hand in — which a player asked to be told about: nothing said so
+//  except the journal they had to think of opening. The pattern is
 //  `PlotProductionService`'s, for its reason: one query plus a few row
 //  updates per tick, rather than one sleeping task per player, which would
 //  multiply with the roster.
 //
-//  Each notification needs to fire ONCE. Two of them carry a flag for it —
-//  `fortuneReadyNotified`, `questRolloverStamp` — and HP needs none, because
+//  Each notification needs to fire ONCE. Three of them carry a flag for it —
+//  `fortuneReadyNotified`, `questRolloverStamp`, and the ready markers on the
+//  progress rows (`QuestProgress.readyNotified`,
+//  `KingProgress.readyNotifiedIndex`) — and HP needs none, because
 //  the condition it announces is its own guard: a player at full HP is not a
 //  player who is about to reach it.
 //
@@ -81,6 +86,7 @@ public enum RestNotificationService {
             await notifyFullHp(user: user, canRest: canRest, db: db, bot: bot, lingo: lingo)
             await notifyFortuneReady(user: user, db: db, bot: bot, lingo: lingo, now: now)
             await notifyQuestRollover(user: user, db: db, bot: bot, lingo: lingo, now: now)
+            await notifyTasksReady(user: user, db: db, bot: bot, lingo: lingo)
         }
     }
 
@@ -145,6 +151,36 @@ public enum RestNotificationService {
             body += " " + lingo.localize("quest.rollover.locked", locale: user.locale)
         }
         await push("📜 \(body)", to: user, bot: bot)
+    }
+
+    // MARK: - A task is ready
+
+    /// A decree complete or a taken job ready to hand in, not announced yet.
+    /// One message for however many turned ready since the last sweep, and it
+    /// names none of them — the owner's pick (2026-10-04): it sends the player
+    /// to the journal, which says what is ready and where to take it.
+    ///
+    /// Anywhere, the forest included: a delivery usually completes out there,
+    /// and that is when knowing helps. Readiness is each board's own test
+    /// (`KingService.standing`, `QuestService.liveDone`), so the notice cannot
+    /// announce what the palace or the NPC would then refuse.
+    ///
+    /// The markers are written BEFORE the push and the push waits on them: a
+    /// notice the sweep could not record would repeat every minute.
+    private static func notifyTasksReady(user: User, db: any Database, bot: TGBot, lingo: Lingo) async {
+        let decree = try? await KingService.readyUnannounced(for: user, on: db)
+        let jobs = (try? await QuestService.readyUnannounced(for: user, on: db)) ?? []
+        let count = (decree == nil ? 0 : 1) + jobs.count
+        guard count > 0 else { return }
+
+        do {
+            if let decree { try await KingService.markAnnounced(decree, on: db) }
+            try await QuestService.markAnnounced(jobs, on: db)
+        } catch {
+            return
+        }
+        let key = count == 1 ? "journal.ready.single" : "journal.ready.several"
+        await push("📓 " + lingo.localize(key, locale: user.locale), to: user, bot: bot)
     }
 
     // MARK: - Sending

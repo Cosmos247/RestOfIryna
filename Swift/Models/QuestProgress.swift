@@ -60,6 +60,13 @@ final public class QuestProgress: Model, @unchecked Sendable {
     @Field(key: "claimed")
     public var claimed: Bool
 
+    /// The watchman has told the player this job is ready to hand in
+    /// (`RestNotificationService`, 2026-10-04), so it says so once. Never
+    /// cleared: a delivery that dips below its target and climbs back is not
+    /// news twice.
+    @Field(key: "ready_notified")
+    public var readyNotified: Bool
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -76,6 +83,7 @@ final public class QuestProgress: Model, @unchecked Sendable {
         self.progress = 0
         self.accepted = false
         self.claimed = false
+        self.readyNotified = false
     }
 }
 

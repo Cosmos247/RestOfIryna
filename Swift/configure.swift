@@ -272,6 +272,9 @@ public func configure(logger: Logger) async throws {
     // past the four weapon decrees that moved later.
     migrations.add(ClampWeaponTiersToLevel())
     migrations.add(ReseatDecreesById())
+    // 2026-10-04: the watchman tells a player once when a decree or a taken job
+    // becomes ready — one marker on each progress row.
+    migrations.add(AddReadyNotifiedFlags())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

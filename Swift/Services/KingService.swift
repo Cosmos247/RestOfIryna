@@ -147,6 +147,28 @@ enum KingService {
         return Standing(decree: decree, index: row.decreeIndex, conditions: views)
     }
 
+    /// The open decree's progress row when the decree is complete and has not
+    /// been announced yet, nil otherwise — the watchman's question
+    /// (`RestNotificationService`). Complete is `standing`'s own test, so the
+    /// notice and the palace's report button cannot disagree.
+    static func readyUnannounced(for user: User, on db: any Database) async throws -> KingProgress? {
+        guard let standing = try await standing(for: user, on: db), standing.isComplete else { return nil }
+        let row = try await progressRow(for: user, on: db)
+        guard row.decreeIndex == standing.index, row.readyNotifiedIndex != row.decreeIndex else { return nil }
+        return row
+    }
+
+    /// Record that the decree at `row`'s position was announced. One column,
+    /// written by query: a report landing at the same moment saves the row's
+    /// position and counter, and a whole-row save here could undo it.
+    static func markAnnounced(_ row: KingProgress, on db: any Database) async throws {
+        guard let id = row.id else { return }
+        try await KingProgress.query(on: db)
+            .filter(\.$id == id)
+            .set(\.$readyNotifiedIndex, to: row.decreeIndex)
+            .update()
+    }
+
     // MARK: - Turning one in
 
     @discardableResult

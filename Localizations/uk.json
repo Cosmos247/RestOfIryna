@@ -1135,6 +1135,8 @@
   "journal.status.ready_short": "можна здавати",
   "journal.resets_in": "Нові замовлення через %{time}",
   "journal.hint": "Замовлення здаються в столиці — тому, хто їх дав.",
+  "journal.ready.single": "Одне з ваших завдань виконано — загляньте в нотатник.",
+  "journal.ready.several": "Кілька ваших завдань виконано — загляньте в нотатник.",
   "leaderboard.title": "Рейтинги",
   "leaderboard.button.back": "🔙 До нотатника",
   "leaderboard.you": "Ви",

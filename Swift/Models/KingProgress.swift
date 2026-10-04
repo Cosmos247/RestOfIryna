@@ -47,6 +47,13 @@ final public class KingProgress: Model, @unchecked Sendable {
     @Field(key: "counter")
     public var counter: Int
 
+    /// The position the watchman last announced as ready
+    /// (`RestNotificationService`, 2026-10-04). A position rather than a flag,
+    /// so an advance needs no reset: the next decree's index is never the one
+    /// stored.
+    @OptionalField(key: "ready_notified_index")
+    public var readyNotifiedIndex: Int?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 

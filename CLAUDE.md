@@ -307,9 +307,17 @@ player lands home. A tick that only runs on interaction cannot observe a transit
 happens while nobody is interacting.
 
 **What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
-`Task.detached` on `realTime.restSweepInterval`, 60 s) answers three questions per player: HP
-topped out at the estate, the fortune teller's 24 h cooldown elapsed, the 12:00 job rollover.
-It runs the regen through `HealingService.tick` — never a second copy of the arithmetic.
+`Task.detached` on `realTime.restSweepInterval`, 60 s) answers four questions per player:
+- HP topped out at the estate;
+- the fortune teller's 24 h cooldown elapsed;
+- the 12:00 job rollover;
+- a task became ready (2026-10-04): the open decree complete, or a taken job ready to hand in.
+
+It runs the regen through `HealingService.tick` — never a second copy of the arithmetic. **A
+task's readiness is its board's own test** (`KingService.standing`, `QuestService.liveDone`),
+asked through `readyUnannounced`, so the notice cannot announce what the palace or the NPC would
+refuse. It fires once per task, on markers in the progress rows. Those markers are written by a
+one-column query, never a row save, because the player may be ticking the same row.
 
 **A background writer MUST take the session-cached `User` when one exists**
 (`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently

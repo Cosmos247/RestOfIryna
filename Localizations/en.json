@@ -1074,6 +1074,8 @@
   "journal.status.ready_short": "ready to turn in",
   "journal.resets_in": "New jobs in %{time}",
   "journal.hint": "Jobs are handed in at the capital, to whoever gave them.",
+  "journal.ready.single": "One of your tasks is done — take a look in your journal.",
+  "journal.ready.several": "Several of your tasks are done — take a look in your journal.",
   "leaderboard.title": "Rankings",
   "leaderboard.button.back": "🔙 Back to the journal",
   "leaderboard.you": "You",

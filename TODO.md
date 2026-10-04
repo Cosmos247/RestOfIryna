@@ -1930,10 +1930,23 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the eight on top — the 2026-10-04
-Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03
+Telegram. **Every block below is LIVE and unwalked** except the nine on top — the 2026-10-04
+task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03
 arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy.
 The six 2026-09-27/28 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-04 — the watchman says when a task is ready (*uncommitted*, NOT deployed):** any
+account with an open decree or a taken NPC job; the notice comes within a minute.
+- **a decree completes** (e.g. the charter's first, on walking home from km 3 — depth is banked
+  on arrival) → a message
+  «📓 Одне з ваших завдань виконано — загляньте в нотатник.», once; the journal shows «✅ готово —
+  доповісти в палаці».
+- **a delivery fills** in the forest (the tenth hide) → the same message, mid-walk; the walk
+  screen still works under it.
+- **two at once** → «📓 Кілька ваших завдань виконано — загляньте в нотатник.»
+- **once only**: no second message for the same task, even after selling the hides and finding
+  them again; turning a task in within the minute sends nothing.
+- **after the restart**: anything already ready is announced once by the first sweep.
 
 **Added 2026-10-04 — a Vigor reward that will not fit is asked about (`47e0e8f`, NOT deployed):**
 any account with a finished decree or a ready NPC job that pays Vigor, at full or nearly full

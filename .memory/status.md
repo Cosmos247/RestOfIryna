@@ -21,6 +21,22 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-04 — the watchman says when a task is ready** (*uncommitted*, NOT deployed; needs
+`pm2 restart ROI` — Swift, two locale strings and one migration, digest unmoved):
+- **Why.** A player asked to be reminded when a task is done. Nothing said so: the journal and
+  the boards showed it only to someone who thought of opening them. Most completions are not
+  events either — 11 of 15 NPC jobs are deliveries that fill from the bag, and most decree
+  conditions are state reads (level, estate tier, gear).
+- **Now.** `RestNotificationService`'s fourth question: the open decree complete or a taken job
+  ready to hand in, not yet announced. It sends one unnamed «📓 Одне з ваших завдань виконано —
+  загляньте в нотатник.» (or «Кілька…») per sweep, anywhere, once per task; the owner picked the
+  unnamed form. Readiness is each board's own test (`KingService.readyUnannounced` over
+  `standing`, `QuestService.readyUnannounced` over the new shared `liveDone`).
+- **Storage.** `AddReadyNotifiedFlags`: `quest_progress.ready_notified`,
+  `king_progress.ready_notified_index` (a position). Written by one-column query before the push.
+- **Measured.** 370 tests; `validate --strict` 0/0; the digest unmoved. The migration was not
+  run against a database here; it follows `AddGearCondition`'s shape.
+
 **2026-10-04 — a Vigor reward that will not fit is asked about** (`47e0e8f`, NOT deployed;
 needs `pm2 restart ROI` — Swift and nine locale strings, no migration, digest unmoved):
 - **Why.** A tester turned a Vigor-only decree in at full Vigor: «✅ Указ виконано» over an empty

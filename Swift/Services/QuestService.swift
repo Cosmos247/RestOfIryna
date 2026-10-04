@@ -158,11 +158,7 @@ public enum QuestService {
         // turned in or dropped; today's offer waits behind it.
         if let open = try await carriedRow(for: user, npc: npc, on: db, now: now),
            let def = QuestCatalog.find(open.questId) {
-            let done: Int
-            switch def.objective {
-            case .deliver(let itemIds, _): done = try await carried(itemIds, user: user, on: db)
-            case .counter:                 done = open.progress
-            }
+            let done = try await liveDone(def, progress: open.progress, user: user, on: db)
             return Status(def: def, done: done, target: def.objective.target,
                           reward: scaledReward(def.reward, level: user.level),
                           accepted: true, claimed: false, carried: true)
@@ -178,14 +174,13 @@ public enum QuestService {
         let claimed = row?.claimed ?? false
         let accepted = row?.accepted ?? false
 
+        // Once a delivery is paid, freeze the readout at the target — the items
+        // are gone from the bag and a live count would read as "0/10 done".
         let done: Int
-        switch def.objective {
-        case .deliver(let itemIds, let count):
-            // Once paid, freeze the readout at the target — the items are gone
-            // from the bag and a live count would read as "0/10 done".
-            done = claimed ? count : (try await carried(itemIds, user: user, on: db))
-        case .counter:
-            done = row?.progress ?? 0
+        if claimed, case .deliver(_, let count) = def.objective {
+            done = count
+        } else {
+            done = try await liveDone(def, progress: row?.progress ?? 0, user: user, on: db)
         }
         return Status(def: def, done: done, target: def.objective.target,
                       reward: scaledReward(def.reward, level: user.level),
@@ -282,6 +277,16 @@ public enum QuestService {
     }
 
     /// Units of any of `itemIds` currently in the player's bag.
+    /// Units done on an open job: the live bag count for a delivery, the stored
+    /// progress for a counter. The board (`status`) and the watchman
+    /// (`readyUnannounced`) both ask this, so "ready" means one thing.
+    private static func liveDone(_ def: QuestDef, progress: Int, user: User, on db: any Database) async throws -> Int {
+        switch def.objective {
+        case .deliver(let itemIds, _): return try await carried(itemIds, user: user, on: db)
+        case .counter:                 return progress
+        }
+    }
+
     private static func carried(_ itemIds: [String], user: User, on db: any Database) async throws -> Int {
         guard let userId = user.id else { return 0 }
         var total = 0
@@ -318,6 +323,33 @@ public enum QuestService {
             .filter(\.$dayStamp, .lessThan, GameDay.stamp(now))
             .sort(\.$dayStamp, .descending)
             .first()
+    }
+
+    /// The taken jobs that are ready to hand in and have not been announced —
+    /// the watchman's question (`RestNotificationService`). Ready is the
+    /// board's own test, `liveDone` against the target, asked of every open
+    /// job (at most one per NPC).
+    public static func readyUnannounced(for user: User, on db: any Database) async throws -> [QuestProgress] {
+        var ready: [QuestProgress] = []
+        for row in try await openRows(for: user, on: db) where row.readyNotified == false {
+            guard let def = QuestCatalog.find(row.questId) else { continue }
+            if try await liveDone(def, progress: row.progress, user: user, on: db) >= def.objective.target {
+                ready.append(row)
+            }
+        }
+        return ready
+    }
+
+    /// Record that `rows` were announced. One column, written by query rather
+    /// than by saving the rows: the player may be ticking the same row's
+    /// progress at this moment, and a whole-row save would undo that.
+    public static func markAnnounced(_ rows: [QuestProgress], on db: any Database) async throws {
+        let ids = rows.compactMap(\.id)
+        guard ids.isEmpty == false else { return }
+        try await QuestProgress.query(on: db)
+            .filter(\.$id ~~ ids)
+            .set(\.$readyNotified, to: true)
+            .update()
     }
 
     /// Whether any NPC is holding today's offer back behind an older job — the

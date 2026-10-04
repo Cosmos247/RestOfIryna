@@ -11,6 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-04)* **the watchman says when a task is ready** — one unnamed «📓 … загляньте
+  в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
 - `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
   card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
 - (10-04, in the commit that fills `a91226f`'s hash) **the Hanged Man gains +15% XP**, so the Chariot no longer dominates it.
@@ -435,6 +437,48 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-04 (the watchman says when a task is ready) — *(uncommitted)*
+
+A player's request: «Додати нагадування про те, що завдання виконано, можна просити заглянути в
+нотатник, або сповіщати про те яке завдання виконано».
+- **Read off the code.**
+  - Nothing announced readiness. Only the journal («✅ готово — доповісти в палаці», «— можна
+    здавати»), the NPC boards and the palace showed it.
+  - Hooking `QuestService.record` / `KingService.record` would have missed most cases: 11 of 15
+    NPC jobs are deliveries filled from the bag, and most decree condition kinds are state
+    reads (player level 7×, estate tier 6×, weapon and bag tier 4× each, …).
+  - `RestNotificationService` already sweeps every registered player each 60 s for three
+    once-only notices, so a fourth question there covers every kind uniformly.
+- **Offered** (played samples), the owner picked the unnamed form:
+  - a named notice anywhere (recommended);
+  - the same held until the manor or the capital;
+  - a standing line on screens;
+  - an unnamed «загляньте в нотатник».
+- **Built.**
+  - `KingService.readyUnannounced`: complete per `standing` and position ≠
+    `readyNotifiedIndex`. `QuestService.readyUnannounced`: open rows, not `readyNotified`,
+    `liveDone ≥ target`. `liveDone` is new and now also feeds `status`, so "ready" has one
+    definition.
+  - Both `markAnnounced` write one column by query, never a row save: the player may be
+    ticking the same row.
+  - `notifyTasksReady` writes the markers before the push and skips the push if they fail,
+    since an unrecorded notice would repeat every minute.
+  - `journal.ready.single` / `.several` in both locales.
+  - Migration `AddReadyNotifiedFlags`: a bool with default false on `quest_progress`, a nullable
+    int on `king_progress`. Registered before `WipeForRebalance`.
+- **Known and accepted.**
+  - The first sweep after the restart announces every task already ready, once.
+  - Up to a minute's delay.
+  - The sweep now runs `standing` plus the open-job counts for every registered player each
+    minute — trivial for the testers, a cost to revisit when the roster grows (restrict to
+    recently active players).
+- **Verified.**
+  - Every touched file recompiled with no warning; 370 tests; `validate --strict` 0/0; the
+    digest unmoved.
+  - Both `QuestProgress` and `KingProgress` are only built through their inits, so the new
+    required field is always set.
+  - The migration was not run against a database (the only one is the Pi's).
 
 ## Session — 2026-10-04 (a Vigor reward that will not fit is asked about) — `47e0e8f`
 
