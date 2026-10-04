@@ -1930,10 +1930,23 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the seven on top — the 2026-10-04 tarot
-and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
-2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
-blocks under them are included, live since the 2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the eight on top — the 2026-10-04
+Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03
+arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy.
+The six 2026-09-27/28 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-04 — a Vigor reward that will not fit is asked about (*uncommitted*, NOT deployed):**
+any account with a finished decree or a ready NPC job that pays Vigor, at full or nearly full
+Vigor.
+- **the card**: under «💰 Нагорода» a line «⚠️ Снага повна (120/120) — 🍖 60 не вміститься. Указ
+  може зачекати, поки ви витратите снагу.» (or «Вміститься лише 10 з 🍖 60 (снага 110/120).»),
+  also in the journal; on the NPC board the same with «Замовлення може зачекати…».
+- **the tap**: [✅ Доповісти Королю] / [✅ Здати] / [💰 Забрати нагороду] first redraws into the
+  question with [✅ Доповісти / Здати все одно] or [💰 Забрати все одно] and [🔙 Повернуся пізніше],
+  which brings the card back.
+- **reporting anyway**: the banner «✅ Указ виконано: Свій дім» then «🍖 Снага повна (120/120) — 60
+  не вмістилось.» — no bare «💰» line; a partial fit shows «💰 🍖 10 Снаги» above it.
+- **with room**: no warning, no question, the tap pays at once as before.
 
 **Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (`e861c73`, NOT deployed):** any
 account with 10 🪙, at the fortune teller; the journal and the palace for the 💰.

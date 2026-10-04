@@ -338,7 +338,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         guard let standing = found ?? nil else { return }
         let text = "📜 <b>" + context.lingo.localize("king.charter.title", locale: locale) + "</b>\n\n"
             + context.lingo.localize("king.charter.body", locale: locale) + "\n\n"
-            + KingCard.block(standing, lingo: context.lingo, locale: locale)
+            + KingCard.block(standing, for: context.session, lingo: context.lingo, locale: locale)
         _ = try? await context.bot.sendMessage(session: context.session, text: text, parseMode: .html)
     }
 }

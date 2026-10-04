@@ -279,6 +279,19 @@ techniques, the stance activation and the mage's flee tax called it until 2026-1
 card never touched them. Base costs are 1–5, so a card multiplier must move a 2 by a whole
 point after rounding — ×0.75 moved nothing, which is why the Chariot is ×0.5.
 
+**A Vigor reward that will not fit is asked about, never silently clamped** (2026-10-04). Both
+payouts clamp to the pool, so a decree paying only Vigor (20 of 39) turned in at full Vigor
+paid nothing, over a bare «💰». `VigorRewardNotice` is the one phrasing of that loss:
+- a warning on the card once the decree is done or the job is ready;
+- a question on the turn-in tap (`king:report` → `king:report_ok`, `quest:do:` →
+  `quest:do_ok:`);
+- a banner line naming what was lost.
+
+The arithmetic is `VigorService.overflow`, the payouts' own clamp asked beforehand. A level-up
+inside the payout moves the cap and the pool by the same step, so it cannot change the answer.
+Asking costs the player nothing, because a decree and a taken job both wait. A new Vigor reward
+goes through the same three.
+
 **HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
 pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
 suspend it: an `ExplorationState` row (in the forest), a `TravelState` row (on the road) and

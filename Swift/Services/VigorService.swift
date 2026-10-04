@@ -125,6 +125,20 @@ public enum VigorService {
         return drain(user, amount: Int(scaled.rounded()))
     }
 
+    /// How much of an `amount` of Vigor would NOT fit the pool right now — the
+    /// part a reward clamps away. Both payouts that grant Vigor
+    /// (`KingService.report`, `QuestService.payOut`) write
+    /// `min(maxVigor, vigor + amount)`, and this is the same arithmetic asked
+    /// beforehand, so a screen can warn about the loss the tap would cause.
+    ///
+    /// A level-up inside the same payout does not move the answer: it raises
+    /// the cap and the pool by the same step (`applyLevelDerivedStats`), so the
+    /// room measured here is the room the payout meets.
+    public static func overflow(of amount: Int, for user: User) -> Int {
+        guard amount > 0 else { return 0 }
+        return max(0, amount - max(0, user.maxVigor - user.vigor))
+    }
+
     /// Drain an explicit amount. Used by dev tools (/drain) and any caller that wants
     /// finer control than the enum provides.
     @discardableResult

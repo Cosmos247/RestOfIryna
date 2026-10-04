@@ -90,10 +90,12 @@ enum KingService {
     }
 
     /// What a turn-in actually did. `vigorLanded` is what the pool accepted,
-    /// never the authored number.
+    /// never the authored number; `vigorLost` is the rest, which the banner
+    /// names rather than letting it vanish.
     struct Payout: Sendable {
         let decreeId: String
         let vigorLanded: Int
+        let vigorLost: Int
         let silver: Int
         let xp: Int
         let foodItemId: String?
@@ -186,6 +188,7 @@ enum KingService {
 
         return Payout(decreeId: standing.decree.id,
                       vigorLanded: vigorLanded,
+                      vigorLost: max(0, reward.vigor - vigorLanded),
                       silver: reward.silver,
                       xp: reward.xp,
                       foodItemId: reward.food?.itemId,

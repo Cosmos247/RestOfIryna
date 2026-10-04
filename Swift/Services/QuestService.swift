@@ -68,6 +68,9 @@ public enum QuestService {
         public let silver: Int
         public let xp: Int
         public let vigor: Int
+        /// The part of the Vigor reward the pool could not take — named by the
+        /// banner, never silently dropped.
+        public let vigorLost: Int
         public let xpResult: User.XPGrantResult?
         /// Set when this payout also taught a recipe. Nil covers both "nothing
         /// was owed" and "already known", which the banner treats the same.
@@ -492,6 +495,7 @@ public enum QuestService {
             silver: reward.silver,
             xp: xpResult?.xpAwarded ?? 0,
             vigor: vigorRestored,
+            vigorLost: max(0, reward.vigor - vigorRestored),
             xpResult: xpResult,
             learnedRecipeId: taught
         )

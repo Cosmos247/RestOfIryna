@@ -24,8 +24,12 @@ import Lingo
 
 enum KingCard {
 
-    /// Name, description, every condition, and what it pays.
-    static func block(_ standing: KingService.Standing, lingo: Lingo, locale: String) -> String {
+    /// Name, description, every condition, and what it pays — and, once the
+    /// decree is done, a warning when its Vigor would not fit the player's pool
+    /// (`VigorRewardNotice`). Only once it is done: before that the pool will
+    /// move, and the charter's first decree would otherwise open with a warning
+    /// to a player who has not taken a step.
+    static func block(_ standing: KingService.Standing, for user: User, lingo: Lingo, locale: String) -> String {
         let decree = standing.decree
         var lines = [
             "<b>" + lingo.localize(KingCatalog.nameKey(decree), locale: locale) + "</b>",
@@ -47,6 +51,11 @@ enum KingCard {
         lines.append("💰 " + lingo.localize("quest.reward", locale: locale, interpolations: [
             "reward": CapitalController.kingRewardPhrase(decree.reward, lingo: lingo, locale: locale)
         ]))
+        if standing.isComplete,
+           let warning = VigorRewardNotice.warning(reward: decree.reward.vigor, from: .decree,
+                                                   for: user, lingo: lingo, locale: locale) {
+            lines.append(warning)
+        }
         return lines.joined(separator: "\n")
     }
 }

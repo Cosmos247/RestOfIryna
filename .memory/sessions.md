@@ -11,6 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-04)* **a Vigor reward that will not fit is asked about** — a warning on the
+  card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
 - (10-04, in the commit that fills `a91226f`'s hash) **the Hanged Man gains +15% XP**, so the Chariot no longer dominates it.
 - `a91226f` (10-04) **a one-shot card's later line loses «отримано»** — the Tower read
   «отримано: −🪙 25»; now «Карта дня: Вежа · −🪙 25», the sign and icon carrying it.
@@ -433,6 +435,42 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-04 (a Vigor reward that will not fit is asked about) — *(uncommitted)*
+
+A tester's report: «я мала повну снагу і виконала квест у Короля, призом була снага, може додати
+сповіщення, що снага повна, або хч написати чому приза ніякого».
+- **Read off the code.** `KingService.report` and `QuestService.payOut` both write
+  `min(maxVigor, vigor + amount)` and report only what landed. A decree paying only Vigor (20 of
+  39) at full Vigor therefore posted «✅ Указ виконано» over a bare «💰» with nothing after it.
+  A partial fit dropped the rest from the banner, and NPC jobs did the same, hidden only because
+  they always pay silver too. The bag already had the opposite rule (`bagFull` → «Указ
+  зачекає»).
+- **Offered** (played samples, a full and a nearly full pool):
+  - explain after;
+  - warn on the card;
+  - warn and ask (recommended);
+  - the decree waits as for a full bag;
+  - plus whether NPC jobs follow.
+  The owner chose warn-and-ask, for both.
+- **Built.**
+  - `VigorService.overflow` is the payouts' clamp asked beforehand. A level-up inside the payout
+    adds the same 5 to the cap and the pool (`applyLevelDerivedStats`), so the room cannot move.
+  - `VigorRewardNotice` holds the three sentences: `warning` on `KingCard` once the decree is
+    complete (palace, journal; not the charter) and on the NPC board once actionable;
+    `question`, the tap's first screen; `lostLine` for the banner.
+  - Both `Payout`s gained `vigorLost`.
+  - Callbacks: `king:report` now asks (exact matches, since it is a prefix of `king:report_ok`),
+    `king:palace` redraws the card, `quest:do:` asks, `quest:do_ok:` acts, and «Повернуся
+    пізніше» on a job is the existing `quest:board:`.
+  - Nine strings in both locales.
+  - `KingCard.block` takes the user now (three callers).
+- **Verified.**
+  - Every touched file recompiled with no warning; 370 tests; `validate --strict` 0/0; the
+    digest unmoved.
+  - All screens rendered from the real locale files in both languages: full, 110/120 and roomy.
+  - The longest palace caption with the warning is ≈ 520 UTF-16 units, against the 1024 limit.
+  - No unit test: the three functions live in the app target, which the test graph cannot reach.
 
 ## Session — 2026-10-04 (the Hanged Man gains +15% XP) — folded into `a91226f`'s hash fill
 

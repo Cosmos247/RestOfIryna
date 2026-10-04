@@ -21,6 +21,19 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-04 — a Vigor reward that will not fit is asked about** (*uncommitted*, NOT deployed;
+needs `pm2 restart ROI` — Swift and nine locale strings, no migration, digest unmoved):
+- **Why.** A tester turned a Vigor-only decree in at full Vigor: «✅ Указ виконано» over an empty
+  «💰», no word of where the prize went. 20 of 39 decrees pay only Vigor; a partial fit and every
+  NPC job lost the rest silently too.
+- **Now** (`VigorRewardNotice`, `VigorService.overflow`): the decree card (palace and journal,
+  once done) and the NPC board (once ready) warn; the turn-in tap asks first (`king:report_ok`,
+  `quest:do_ok:`, «Повернуся пізніше» redraws the card); the banner names what did not fit, and
+  the bare «💰» line is gone. With room, nothing changes.
+- **Measured.** 370 tests; `validate --strict` 0/0; every new screen rendered in both languages
+  for a full, a nearly full and a roomy pool; the longest palace caption with the warning ≈ 520
+  of Telegram's 1024.
+
 **2026-10-04 — a tarot card is phrased once, and 💰 marks every reward** (`e861c73`, NOT
 deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, no migration):
 - **The reveal** prints the card through `FortuneDisplay` (`effectLine`, `wheelLine`,

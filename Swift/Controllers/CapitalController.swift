@@ -1314,6 +1314,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             lines.append("💰 " + lingo.localize("quest.reward.board", locale: locale, interpolations: [
                 "reward": Self.rewardPhrase(status.reward, lingo: lingo, locale: locale)
             ]))
+            // Ready to hand in, and its Vigor would not fit: say so before the
+            // tap, the way a decree's card does (`VigorRewardNotice`).
+            if status.isActionable,
+               let warning = VigorRewardNotice.warning(reward: status.reward.vigor, from: .job,
+                                                       for: session, lingo: lingo, locale: locale) {
+                lines.append(warning)
+            }
             // A job from an earlier day holds today's offer back. The owner wanted
             // no "from 18.09" header — the job reads like any other — but the
             // reason there is nothing new to take has to be on the screen.
@@ -1497,6 +1504,37 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
+    /// The turn-in tap. When the job's Vigor would not fit it asks first — a
+    /// lost reward cannot be undone, and the job waits, since a taken job never
+    /// burns — and otherwise hands in at once. Anything not actionable goes
+    /// straight to `handleQuestFinish`, whose refusals already explain it.
+    private func handleQuestFinishTap(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
+        let lingo = context.lingo, locale = context.session.locale
+        guard status.isActionable,
+              let question = VigorRewardNotice.question(reward: status.reward.vigor, from: .job,
+                                                        for: context.session, lingo: lingo, locale: locale) else {
+            try await handleQuestFinish(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let anywayKey: String
+        if case .deliver = status.def.objective {
+            anywayKey = "quest.button.turn_in_anyway"
+        } else {
+            anywayKey = "quest.button.claim_anyway"
+        }
+        let text = "<b>\(lingo.localize(npc.boardTitleKey, locale: locale))</b>\n\n"
+            + "🪶 <b>\(lingo.localize(status.def.titleKey, locale: locale))</b>\n"
+            + question
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: lingo.localize(anywayKey, locale: locale),
+                                    callbackData: "quest:do_ok:\(npc.rawValue)")],
+            [TGInlineKeyboardButton(text: lingo.localize("reward.button.later", locale: locale),
+                                    callbackData: "quest:board:\(npc.rawValue)")]
+        ])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
     private func handleQuestFinish(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let result = try await QuestService.finish(npc: npc, for: context.session, on: context.db)
         await postQuestResultBanner(result, context: context)
@@ -1508,13 +1546,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         switch result {
         case .paid(let def, let payout):
             let questTitle = lingo.localize(def.titleKey, locale: locale)
-            let text = "✅ " + lingo.localize("quest.banner.paid", locale: locale, interpolations: [
+            var text = "✅ " + lingo.localize("quest.banner.paid", locale: locale, interpolations: [
                 "quest": questTitle,
                 "reward": Self.rewardPhrase(
                     QuestReward(silver: payout.silver, xp: payout.xp, vigor: payout.vigor),
                     lingo: lingo, locale: locale
                 )
             ])
+            // The Vigor that did not fit, named rather than dropped.
+            if let lost = VigorRewardNotice.lostLine(lost: payout.vigorLost, for: context.session,
+                                                     lingo: lingo, locale: locale) {
+                text += "\n" + lost
+            }
             await postStatusBanner(text, context: context)
             if let recipeId = payout.learnedRecipeId {
                 // Its own message, not part of the banner: `postStatusBanner`
@@ -1626,9 +1669,23 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.editToQuestBoard(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
-        if data.hasPrefix("king:report") {
+        // The report tap asks first when the decree's Vigor would not fit;
+        // `king:report_ok` is the one that reports regardless, and
+        // `king:palace` is the question's «come back later». Exact matches —
+        // `king:report` is a prefix of `king:report_ok`.
+        if data == "king:report" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleKingReportTap(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "king:report_ok" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.handleKingReport(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "king:palace" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToPalace(messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
         if data.hasPrefix("quest:take:") {
@@ -1648,6 +1705,16 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 return true
             }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.handleQuestFinishTap(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        // The turn-in regardless of Vigor that will not fit — reached only from
+        // the question `quest:do:` asks. Not a prefix clash: `quest:do:` has a
+        // colon where this has an underscore.
+        if data.hasPrefix("quest:do_ok:") {
+            let token = String(data.dropFirst("quest:do_ok:".count))
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let npc = QuestNPC(rawValue: token) else { return true }
             try await ctrl.handleQuestFinish(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
@@ -2330,7 +2397,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // charter so the three cannot drift apart.
         return "<b>\(title)</b>\n\n"
             + lingo.localize(Location.palace.bodyKey, locale: locale) + "\n\n"
-            + KingCard.block(standing, lingo: lingo, locale: locale)
+            + KingCard.block(standing, for: session, lingo: lingo, locale: locale)
     }
 
     /// What a decree pays, in the order the player cares about it: Vigor and
@@ -2353,6 +2420,45 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             parts.append("📖 \(reward.xp) " + lingo.localize("quest.reward.xp", locale: locale))
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// The report tap. When the decree's Vigor would not fit the pool it asks
+    /// first — a lost reward cannot be undone, and the decree waits — and
+    /// otherwise reports at once. An unfinished decree goes straight to
+    /// `handleKingReport`, whose refusal already explains it.
+    func handleKingReportTap(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        guard let standing = try await KingService.standing(for: context.session, on: context.db),
+              standing.isComplete,
+              let question = VigorRewardNotice.question(reward: standing.decree.reward.vigor, from: .decree,
+                                                        for: context.session, lingo: lingo, locale: locale) else {
+            try await handleKingReport(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let text = "<b>\(lingo.localize(Location.palace.titleKey, locale: locale))</b>\n\n"
+            + "<b>\(lingo.localize(KingCatalog.nameKey(standing.decree), locale: locale))</b>\n"
+            + question
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: lingo.localize("king.button.report_anyway", locale: locale),
+                                    callbackData: "king:report_ok")],
+            [TGInlineKeyboardButton(text: lingo.localize("reward.button.later", locale: locale),
+                                    callbackData: "king:palace")]
+        ])
+        _ = await editScreen(
+            chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
+            text: text, replyMarkup: keyboard, bot: context.bot)
+    }
+
+    /// Redraw the palace card in place: after a report, and as the question's
+    /// «come back later».
+    func editToPalace(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
+        let standing = try await KingService.standing(for: context.session, on: context.db)
+        _ = await editScreen(
+            chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
+            text: renderPalaceBody(standing: standing, session: context.session, lingo: lingo),
+            replyMarkup: (standing?.isComplete ?? false) ? palaceKeyboard(lingo: lingo, locale: locale) : nil,
+            bot: context.bot)
     }
 
     /// Report the open decree. Pays, advances, redraws the palace with the
@@ -2384,9 +2490,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             if payout.xp > 0 {
                 earned.append("📖 \(payout.xp) " + lingo.localize("quest.reward.xp", locale: locale))
             }
-            let banner = "✅ " + lingo.localize("king.banner.done", locale: locale,
+            var banner = "✅ " + lingo.localize("king.banner.done", locale: locale,
                                                 interpolations: ["decree": name])
-                + "\n💰 " + earned.joined(separator: " · ")
+            // A decree paying only Vigor into a full pool lands nothing, and
+            // this line was a bare «💰» until 2026-10-04. The loss gets its own
+            // line instead.
+            if earned.isEmpty == false {
+                banner += "\n💰 " + earned.joined(separator: " · ")
+            }
+            if let lost = VigorRewardNotice.lostLine(lost: payout.vigorLost, for: context.session,
+                                                     lingo: lingo, locale: locale) {
+                banner += "\n" + lost
+            }
             await postStatusBanner(banner, context: context)
         } catch KingService.ReportFailure.bagFull(let itemId, let quantity) {
             let item = ItemCatalog.find(itemId)
@@ -2410,12 +2525,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "❌ " + lingo.localize("king.banner.failed", locale: locale), context: context)
         }
 
-        let next = try await KingService.standing(for: context.session, on: context.db)
-        _ = await editScreen(
-            chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
-            text: renderPalaceBody(standing: next, session: context.session, lingo: lingo),
-            replyMarkup: (next?.isComplete ?? false) ? palaceKeyboard(lingo: lingo, locale: locale) : nil,
-            bot: context.bot)
+        try await editToPalace(messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
     func showMarket(context: Context) async throws {

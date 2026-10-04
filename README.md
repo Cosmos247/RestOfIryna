@@ -280,6 +280,7 @@ RestOfIryna/
 │   ├── Helpers/
 │   │   ├── TGBot+Extensions.swift
 │   │   ├── SessionCache.swift
+│   │   ├── VigorRewardNotice.swift   # 2026-10-04 — a Vigor reward that will not fit: a warning on the card, a question on the turn-in tap, and a banner line naming the loss — one phrasing for decrees and NPC jobs
 │   │   ├── KingCard.swift            # 2026-09-21 — ONE renderer for the open decree's block (name, description, conditions through `RequirementLine`, reward). Three screens show the same decree — the palace card, the journal and the charter after registration — so they get one implementation rather than three that drift
 │   │   ├── AccessControl.swift       # 2026-09-08 — actor holding the allow list; consulted before a session is fetched. A cache MISS queries the DB, so a row added by hand takes effect on the next message. developerUsers are allowed before the table is read
 │   │   ├── InviteToken.swift         # 2026-09-08 — the `/link` token: encrypted UNIX timestamp + HMAC tag keyed on SHA256(bot token), base32 over letters only, 16 chars, valid 5 real minutes

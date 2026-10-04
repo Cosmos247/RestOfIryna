@@ -467,7 +467,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         if let standing = try await KingService.standing(for: context.session, on: context.db) {
             lines.append("")
             lines.append("👑 <b>" + lingo.localize("king.journal.title", locale: locale) + "</b>")
-            lines.append(KingCard.block(standing, lingo: lingo, locale: locale))
+            lines.append(KingCard.block(standing, for: context.session, lingo: lingo, locale: locale))
             // ✅, not 💰: the reward line right above already carries the
             // gift, and two of them in a row read as one muddled sentence.
             if standing.isComplete {
