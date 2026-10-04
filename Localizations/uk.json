@@ -721,7 +721,6 @@
   "fortune.effect.loot": "Здобич",
   "fortune.effect.vigor_drain": "Витрата снаги",
   "fortune.effect.one_shot_done": "разова дія, вже отримано",
-  "fortune.effect.received": "отримано",
   "fortune.effect.hp_full": "повне здоров'я",
   "fortune.effect.vigor_full": "повна снага",
   "fortune.effect.wheel": "50/50: %{win} або %{loss}",

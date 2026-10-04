@@ -34,11 +34,14 @@ deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, 
 - **💰 for what the player gets** (the owner's pick): the King's reward line (journal, palace,
   charter), the palace report banner, «💰 Забрати нагороду» and the tarot's «💰 Здобич». 🎁 is
   used nowhere now.
+- **Follow-up (*uncommitted*).** A one-shot's later line has no lead word: «Карта дня: Вежа ·
+  −🪙 25», not «отримано: −🪙 25» (`fortune.effect.received` deleted).
 - **Витрата снаги.** «Виснаження снаги» is «Витрата снаги» now. The Chariot went from −25% to
   −50% (`fortune.json`): every base cost is 1–5 and rounded half up, so ×0.75 saved nothing on a
-  step or a plain blow — 1 on a flee, a little more inside the warrior's stance. The card's multiplier now reaches the techniques, the stance activation and the
-  mage's flee tax through `VigorService.drain(_:base:multiplier:)`; they had called
-  `drain(_:amount:)` and the card never saw them.
+  step or a plain blow — 1 on a flee, a little more inside the warrior's stance. The card's
+  multiplier now reaches the techniques, the stance activation and the mage's flee tax through
+  `VigorService.drain(_:base:multiplier:)`; they had called `drain(_:amount:)` and the card never
+  saw them.
 - **Measured.** 370 tests; `validate --strict` 0/0; `records` → `e91795fe3b76c8bf`, content hash
   → `794be740`; `tuning`, `spawns`, `quests`, `king` unchanged.
 

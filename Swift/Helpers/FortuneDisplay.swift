@@ -107,10 +107,14 @@ enum FortuneDisplay {
         return parts
     }
 
-    /// The last draw's one-shot half as `received: +🪙 30 · 📖 +75 XP`, read
-    /// off the record `FortuneService.draw` stamped on the user. A row with
-    /// nothing recorded — drawn before the record existed, or a loss clamped
-    /// to zero — falls back to the plain note, which is still true.
+    /// The last draw's one-shot half as `−🪙 20 · 📖 +75 XP`, read off the
+    /// record `FortuneService.draw` stamped on the user. A row with nothing
+    /// recorded — drawn before the record existed, or a loss clamped to zero —
+    /// falls back to the plain note, which is still true.
+    ///
+    /// No lead word: the sign and the icon say which way each part went, and
+    /// «Карта дня: Вежа ·» in front of it says what it is. It read «отримано:»
+    /// until 2026-10-04, which made the Tower's loss «отримано: −🪙 25».
     static func oneShotLine(for user: User, lingo: Lingo, locale: String) -> String {
         let receipt = FortuneService.OneShotApplied(
             silverDelta: user.lastFortuneSilverDelta,
@@ -122,7 +126,7 @@ enum FortuneDisplay {
         guard parts.isEmpty == false else {
             return lingo.localize("fortune.effect.one_shot_done", locale: locale)
         }
-        return lingo.localize("fortune.effect.received", locale: locale) + ": " + parts.joined(separator: " · ")
+        return parts.joined(separator: " · ")
     }
 
     /// `+🪙 30` / `−🪙 15` — the sign BEFORE the coin, the way the tavern

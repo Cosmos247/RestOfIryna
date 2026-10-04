@@ -680,7 +680,6 @@
   "fortune.effect.loot": "Loot",
   "fortune.effect.vigor_drain": "Vigor drain",
   "fortune.effect.one_shot_done": "one-time effect, already received",
-  "fortune.effect.received": "received",
   "fortune.effect.hp_full": "full health",
   "fortune.effect.vigor_full": "full vigor",
   "fortune.effect.wheel": "50/50: %{win} or %{loss}",

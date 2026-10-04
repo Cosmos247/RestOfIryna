@@ -1945,7 +1945,8 @@ account with 10 🪙, at the fortune teller; the journal and the palace for the 
   «🪙 Ваші срібники: N»; Judgement «Миттєво: −🪙 20 · 📖 +75 досвіду»; the Lovers «Миттєво: ❤️
   повне здоров'я · 🍖 повна снага» — each said once.
 - **after the draw**: the fortune screen and the profile print the same line; a one-shot reads
-  «отримано: +🪙 30», sign before the coin.
+  «Карта дня: Колесо Фортуни · +🪙 30» — no «отримано», sign before the coin; the Tower reads
+  «· −🪙 25».
 - **💰**: the King's «💰 Нагорода: …» in the journal and at the palace, the report banner's second
   line, the NPC board's «[💰 Забрати нагороду]» on a finished counter job.
 - **the card name**: «Ієрофант».

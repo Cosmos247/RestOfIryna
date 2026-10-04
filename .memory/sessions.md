@@ -11,6 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-04)* **a one-shot card's later line loses «отримано»** — the Tower read
+  «отримано: −🪙 25»; now «Карта дня: Вежа · −🪙 25», the sign and icon carrying it.
 - `e861c73` (10-04) **a tarot card is phrased once, and 💰 marks every reward**:
   - the reveal prints the card through `FortuneDisplay`, like the fortune screen and the
     profile; the 22 hand-typed `buff_desc` keys are deleted;
@@ -430,6 +432,19 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-04 (a one-shot card without «отримано») — *(uncommitted)*
+
+The audit after `e861c73` listed «отримано: −🪙 25» as a leftover: `FortuneDisplay.oneShotLine`
+put «отримано:» in front of every receipt, a loss included, on the fortune screen and in the
+profile. Offered three fixes with played samples: no lead word (recommended), «разова дія:», or
+«отримано / втрачено» split by sign. The owner chose no lead word.
+- `oneShotLine` returns the parts alone; `fortune.effect.received` is deleted in both locales,
+  since nothing else read it. The reveal keeps «Миттєво:». The empty-receipt fallback «разова дія,
+  вже отримано» stays.
+- Verified: `FortuneDisplay` recompiled with no warning; 370 tests; `validate --strict` 0/0; the
+  digest and content hash unchanged (`records e91795fe3b76c8bf`, `794be740`); the status and
+  profile lines rendered from the real locale files in both languages.
 
 ## Session — 2026-10-04 (a tarot card phrased once, 💰 for every reward) — `e861c73`
 
