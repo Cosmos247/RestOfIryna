@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-04)
+## Commit index — live-play polish and after (2026-09-09 → 10-05)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -12,13 +12,15 @@ carrying: each was a place where the code was right and could not say so, or whe
 was shown in a unit it was not measured in.
 
 - `4fe5b7a` (10-05) **the Master's enchant draws from the bag alone** — the card counts in
-  the bag; a refusal is a modal.
-- `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text.
+  the bag; a refusal is a modal. Its fill `fd6e6e1` also has the lesson answer its tap on a throw.
+- `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text. Its fill
+  `e569bca` also fixes the Settings button's «⚙️ Налаштування».
 - `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
   в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
 - `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
   card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
-- (10-04, in the commit that fills `a91226f`'s hash) **the Hanged Man gains +15% XP**, so the Chariot no longer dominates it.
+- `c1c0570` (10-04, `a91226f`'s fill) **the Hanged Man gains +15% XP**, so the Chariot no longer
+  dominates it.
 - `a91226f` (10-04) **a one-shot card's later line loses «отримано»** — the Tower read
   «отримано: −🪙 25»; now «Карта дня: Вежа · −🪙 25», the sign and icon carrying it.
 - `e861c73` (10-04) **a tarot card is phrased once, and 💰 marks every reward**:
@@ -441,6 +443,46 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-05 (the sync pass)
+
+The owner's long-form close-out after `fd6e6e1`. It covered the whole working session of
+2026-10-04 → 10-05, which was **tester-driven polish**: every change came from the owner reading a
+screen or relaying a tester's message.
+- The arc: the tarot pass (`e861c73`, `a91226f`, `c1c0570`); a Vigor reward that will not fit
+  (`47e0e8f`); the task-ready notice (`0b53e82`); «💛 Допомога грі» (`b0c9d80`, `e569bca`); the
+  Master's enchant from the bag (`4fe5b7a`, `fd6e6e1`). Each was audited by the owner's standing
+  prompt and committed with its hash fill.
+- **The owner's working shape this session** (for the next one): a report first, then options as a
+  quiz with played samples, then the build; "check all changes, report, commit"; and «додай до
+  минулого коміту» meaning amend HEAD even when HEAD is a hash fill. Two corrections: a hint line
+  built beyond the approved sample was removed («📦 Ще 14…»), and the owner's numbers override
+  the offered ones (+15% XP, not 25).
+- **Code, no behaviour.**
+  - Stale comments fixed: `FortuneCatalog`'s "4h window" (it is 6 h) and «шість годин» lore;
+    `WeaponUpgradeService` and `WeaponUpgradeCatalog` saying every reforge draws bag + warehouse
+    (the Master's lesson takes the bag alone).
+  - The half-wheel rule's reasoning in `ContentValidator` and its test claimed the wheel never fires
+    with one side set; `FortuneService` rolls it when EITHER side is set. Comment, message and test
+    doc corrected; the rule and its id are unchanged.
+  - A dead-code sweep found nothing: every key and function added this session has a reader.
+- **Records.**
+  - `file-map.md` and `README.md`: stale annotations for `MasterService` (flat enchant, warehouse),
+    `WeaponUpgradeService` (the estate gate), `VigorService`, `QuestService`, `KingService`,
+    `KingCard`, both progress models, `Commands` (`support`, `turn_back`), `SettingsController`,
+    `FortuneService` («gold»), the reveal and the Master in `CapitalController`, the journal's 🎁.
+  - `localization.md`: the stale «33 keys under quest.*» (65 now), the Master's dropped keys, the
+    Vigor-reward, tarot and settings keys. `session-auth.md`: the watchman's markers write no
+    `User`.
+  - `rebalance.md` → "The tarot's Vigor multipliers, measured": both cost tables, the options, the
+    Hanged Man decision.
+  - `TODO.md`: the polish log's five entries and four open items (the Devil's doubled defend, the
+    tarot's flat bonuses, the watchman's cost at scale, the empty one-shot's "already received").
+  - `CLAUDE.md`: the dead-button rule gained the late-answer `catch`.
+  - `Prompt.md` reoriented; `INDEX.md` resynced.
+  - Auto-memory: three feedback/project files added and four updated (see `MEMORY.md`).
+- **Verified.** Build with every touched file recompiled; 370 tests; `validate --strict` 0/0; the
+  digest unmoved (`records 438be135e3090fb5`, content hash `73568a2a`).
+
 ## Session — 2026-10-05 (the Master's enchant draws from the bag alone) — `4fe5b7a`
 
 A tester's report: «У столиці при покращенні спорядження пише, що треба 15 шкури, а я маю 14.
@@ -473,7 +515,7 @@ A tester's report: «У столиці при покращенні споряд�
   - The audit caught a regression of this change: with the callback no longer answered up front,
     a throw from `MasterService.enchant` would have left the tap spinning. It is answered in a
     `catch` and rethrown. The lesson's `master:lessonok` had had the same gap since 10-04; on the
-    owner's word it got the same `catch`, folded into the hash-fill commit after `4fe5b7a`.
+    owner's word it got the same `catch`, folded into `fd6e6e1`, the hash fill after `4fe5b7a`.
   - Rule in CLAUDE.md: what a place can draw on is where it stands.
 - **Verified.**
   - Both files recompiled with no warning; 370 tests; `validate --strict` 0/0; the digest
@@ -491,7 +533,7 @@ The owner asked for a «Допомога грі» button in Settings whose tap s
   English translated) with the settings keyboard, so the screen does not change.
 - The 💛 was my choice — no other screen uses it.
 - The Settings button itself read «⚙️ Налаштуваня» in `uk.json`, missing an «н». Fixed at the
-  owner's word, folded into the hash-fill commit after `b0c9d80`. Every controller reads the label
+  owner's word, folded into `e569bca`, the hash fill after `b0c9d80`. Every controller reads the label
   from the locale, so one line fixes it everywhere. An old keyboard left in chat still shows the
   misspelt button; tapping it reaches that controller's `unmatched`, which redraws the screen with
   the new keyboard.
@@ -576,7 +618,7 @@ A tester's report: «я мала повну снагу і виконала кв�
   - The longest palace caption with the warning is ≈ 520 UTF-16 units, against the 1024 limit.
   - No unit test: the three functions live in the app target, which the test graph cannot reach.
 
-## Session — 2026-10-04 (the Hanged Man gains +15% XP) — folded into `a91226f`'s hash fill
+## Session — 2026-10-04 (the Hanged Man gains +15% XP) — `c1c0570` (`a91226f`'s fill)
 
 Since `e861c73` the Chariot (−50% Vigor, nothing else) strictly dominated the Hanged Man (−50%
 Vigor and −10 dodge). The owner asked for options first. Rounding limits the room: a step of 2

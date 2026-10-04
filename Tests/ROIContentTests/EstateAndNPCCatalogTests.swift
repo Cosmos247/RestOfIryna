@@ -272,8 +272,8 @@ final class EstateAndNPCCatalogTests: XCTestCase {
 
     // MARK: - Fortune rules
 
-    /// The wheel only fires when both sides are set, so setting one alone is an
-    /// effect that silently never happens.
+    /// The wheel rolls when either side is set, so setting one alone makes a
+    /// 50/50 between that side and nothing — an authoring slip worth a warning.
     func testHalfConfiguredWheelIsAWarning() {
         let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600, cooldownSeconds: 86400,
                                      cards: [FortuneCardDTO(id: "10_wheel",

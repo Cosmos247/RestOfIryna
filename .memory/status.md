@@ -27,7 +27,8 @@ needs `pm2 restart ROI` — Swift and locale):
   (May, `4a13163`) counted bag + estate warehouse and drew from both; the refusal printed the sum.
   The Master's lesson (10-04) already counted the bag alone, so one NPC ran two rules.
 - **Now.** Bag alone, as the lesson; the card is `RequirementLine`s (silver, the hides); a refusal
-  is a modal that leaves the card standing (`finishMasterEnchant`, the lesson's shape).
+  is a modal that leaves the card standing (`finishMasterEnchant`, the lesson's shape). The fill
+  `fd6e6e1` gave the lesson's tap the same answer-on-throw.
   `capital.master.confirm.enchant` and `capital.master.missing_materials` are gone.
 - **Accepted.** +4 (26 hides) needs a bag of 35, +5 (42) one of 45.
 - **Measured.** Both touched files recompiled with no warning; 370 tests; `validate --strict` 0/0;
@@ -89,7 +90,7 @@ deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, 
   multiplier now reaches the techniques, the stance activation and the mage's flee tax through
   `VigorService.drain(_:base:multiplier:)`; they had called `drain(_:amount:)` and the card never
   saw them.
-- **Follow-up (in the commit that fills `a91226f`'s hash).** The Hanged Man gains +15% XP (the owner's number, over the
+- **Follow-up (`c1c0570`, `a91226f`'s fill).** The Hanged Man gains +15% XP (the owner's number, over the
   offered 25%), so the Chariot's plain −50% no longer dominates its −50% and −10 dodge.
 - **Measured.** 370 tests; `validate --strict` 0/0; `records` → `438be135e3090fb5`, content hash
   → `73568a2a`; `tuning`, `spawns`, `quests`, `king` unchanged.

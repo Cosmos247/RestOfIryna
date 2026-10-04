@@ -438,7 +438,7 @@ while the profile and the inventory showed the real one.
 
 Leaderboards (2026-09-12): 16 keys under `leaderboard.*` — `title`, `button.back`, `you`, `unit.km`, `empty`, `board.<level|honor|depth|distance>` plus a `.sub` subtitle for each, and `unranked.<honor|depth|distance>`. There is deliberately **no** `unranked.level`: every finished registration has a level, so that board's viewer always ranks. None of them names the player with a gendered noun, so none needs `.m`/`.f`. The board icons (🏆 and the four tab glyphs) are prepended in Swift, never placed in a template ahead of a `%{}`.
 
-Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level,missing_materials}` (17 keys; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`). **The weapon lesson (2026-10-04)** adds:
+Capital Master (Phase 6.5): `capital.master.button.{buy,repair,enchant,back}`, `capital.master.{buy,repair,enchant}.{title,hint}` + `.repair.empty` / `.enchant.empty`, `capital.master.{bought,repaired,enchanted,max_level}` (17 keys at Phase 6.5; `missing_materials` and `confirm.enchant` went on 2026-10-05, when the enchant card became `RequirementLine`s and its refusal the shortage modal; reuses `capital.location.master.{title,body}` + `capital.trader.{silver_balance,not_enough_silver,bag_full}`). **The weapon lesson (2026-10-04)** adds:
 - `capital.master.button.lesson`;
 - `capital.master.lesson.{title,price,workshop,learned,learned_open}`;
 - `capital.master.lesson.intro.{warrior,archer,mage}` and `.done.{warrior,archer,mage}`;
@@ -464,7 +464,7 @@ COUNT keys (`.one`/`.few`/`.many` in uk, `lingo.localize(_:count:…)`), since t
 number of missed rounds is tunable. The abandoned line says «Ніхто не обирає дію»
 rather than «Обидва бійці»: «обидва» and «бійці» both decline by gender.
 
-Quests + journal (Phase 9.2): 33 keys under `quest.*` and 10/11 under `journal.*`.
+Quests + journal (Phase 9.2): 65 keys under `quest.*` and 11 under `journal.*` (2026-10-05 count; the 15 jobs' titles and descriptions are most of the first).
 Quest keys split into UI (`quest.button.*`, `quest.reward*`, `quest.counter.*` — the counter
 jobs' labels since 2026-10-03, when `quest.progress` was deleted with the old board —
 `quest.done_today`, `quest.banner.paid`, `quest.not_enough`, `quest.not_complete`)
@@ -474,11 +474,24 @@ nine jobs, all built dynamically from `QuestNPC.boardTitleKey` and
 `quest.reward.xp` / `quest.reward.vigor` carry the unit words (uk: `Досвіду`,
 `Снаги`) so the glossary stays in one place. Journal keys are neutral except
 `journal.title`, which names the player (намісника/-иці) and therefore has
-`.m`/`.f`.
+`.m`/`.f`. `journal.ready.single` / `.several` (2026-10-04) are the watchman's unnamed «look in the
+journal» notice.
+
+A Vigor reward that will not fit (2026-10-04): `reward.vigor.{none_fits,some_fits,lost}` and
+`reward.button.later`, shared by both payouts; `king.vigor.waits` / `quest.vigor.waits` for the
+"it can wait" sentence; `king.button.report_anyway`, `quest.button.turn_in_anyway`,
+`quest.button.claim_anyway`. The templates carry no emoji — ⚠️ and 🍖 are prepended in Swift,
+and the `🍖 60` inside `%{reward}` is a value, which is safe.
+
+The tarot (2026-10-04): a card is `fortune.card.<id>.{name,meaning}` only — what it DOES is printed
+by `FortuneDisplay`, so the 22 `buff_desc` keys, `fortune.buff.active_for`, five
+`capital.fortune.applied.*` and `fortune.effect.received` are gone. `fortune.effect.vigor_drain` is
+«Витрата снаги», `fortune.effect.wheel` the Wheel's odds, and `capital.fortune.price` carries the
+card's window as `%{time}`.
 
 ### Full historical list (may lag — grep the JSON for the source of truth)
-- UI: yes, no, commands.start/cancel/exit/settings/language/profile/explore/estate/capital/inventory
-- Settings: settings.title, settings.language.prompt
+- UI: yes, no, commands.start/cancel/exit/settings/language/support/profile/explore/estate/capital/inventory/turn_back
+- Settings: settings.title, settings.language.prompt, settings.support.text (2026-10-04)
 - Help: welcome, here.are.commands, help.*, how.to.*
 - Registration: registration.welcome (Artanian intro), registration.nickname.too_short/too_long/edge_space/consecutive_spaces/invalid_chars (validation toasts), registration.name_accepted (greeting + class intro), registration.class.prompt/warrior/archer/mage (+ .desc for each), registration.king_oath (with %{weapon}), registration.weapon.warrior/archer/mage, registration.to_estate, registration.journey_dog, registration.estate.prompt/too_short/too_long/edge_space/consecutive_spaces/invalid_chars, registration.complete, registration.gender.prompt/m/f (step-1 picker)
 - Bot lifecycle: bot.restarted (lore-flavoured restart greeting; sent on startup with the player's controller-specific reply keyboard for registered users, or a one-time `/start` button for unregistered ones — message text no longer hard-codes the `/start` hint since registered players see their normal nav)

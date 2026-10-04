@@ -45,8 +45,9 @@ public struct WeaponUpgradeStep: Sendable {
     public let itemLevel: Int
     /// The player level this rung opens at — tier 1 always at 1.
     public let requiredPlayerLevel: Int
-    /// Materials consumed from the combined inventory + warehouse pool to
-    /// REACH this tier (i.e. the cost of upgrading from tier-1 to this tier).
+    /// Materials consumed to REACH this tier (the cost of the reforge from
+    /// the tier below) — bag + warehouse at the workshop, the bag alone at the
+    /// Master's lesson (tier 2), since the capital has no warehouse.
     /// Empty for T1 — that's the starter weapon, granted by the King.
     public let inputs: [WeaponUpgradeInput]
 }

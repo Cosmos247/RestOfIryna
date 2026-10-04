@@ -1002,13 +1002,15 @@ public enum ContentValidator {
                                         rule: "fortune.non_positive_multiplier",
                                         message: "\(name) is \(value) — a zero or negative multiplier zeroes or inverts the stat it scales"))
                 }
-                // `FortuneService` only fires the wheel when BOTH sides are
-                // non-zero, so setting one alone is an effect that silently
-                // never happens.
+                // `FortuneService` rolls the wheel when EITHER side is set, so
+                // a half wheel is a 50/50 between one side and nothing —
+                // almost certainly an authoring slip. (This comment claimed the
+                // wheel then never fired until 2026-10-05; the draw never
+                // worked that way.)
                 let onlyOneSide = (e.randomSilverPositive == 0) != (e.randomSilverNegative == 0)
                 require(!onlyOneSide, .warning, file: file, path: "\(path).effect", id: card.id,
                         rule: "fortune.half_wheel",
-                        "randomSilverPositive \(e.randomSilverPositive) / randomSilverNegative \(e.randomSilverNegative) — the wheel needs both sides set or it is ignored entirely")
+                        "randomSilverPositive \(e.randomSilverPositive) / randomSilverNegative \(e.randomSilverNegative) — a half wheel rolls 50/50 between one side and nothing; set both or neither")
             }
         }
 

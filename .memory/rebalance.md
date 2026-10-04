@@ -584,6 +584,61 @@ Warrior HP lost, with the model (v1) beside them:
 - **`simulate`** does not read the ladder (the reference character wears on-curve gear), so its
   pace stayed at 167.0 / 159.6 / 150.9 days.
 
+### The tarot's Vigor multipliers, measured (2026-10-04, `e861c73` + `c1c0570`)
+
+The owner asked how the Chariot's «−25% витрати снаги» works. Read off `VigorService.drain`: the
+base cost × the stance multiplier × the card's `vigorDrainMultiplier`, then `Int(x.rounded())`, half
+away from zero (checked in Swift: 1.5 → 2, 0.75 → 1, 2.25 → 2, 4.5 → 5, 0.5 → 1).
+
+Base costs (`tuning/vigor.json`, `tuning/combat.json`): a step 2, an autobattle round 2, an attack
+2, a defend 1, a flee 3, the mage's flee tax 2, the special attack 4/4/5, the special defence 3/3/4
+and the stance activation 4/4/5 (warrior/archer/mage); Bloodlust lifts the warrior's blows ×1.5.
+
+**Before** (the card did not reach the techniques at all — they called `drain(_:amount:)`):
+
+| Action | Base | Chariot ×0.75 | Hanged Man ×0.5 | Devil ×1.5 |
+|---|---|---|---|---|
+| step · autobattle round · attack | 2 | **2** | 1 | 3 |
+| defend | 1 | 1 | 1 | **2** |
+| flee | 3 | 2 | 2 | 5 |
+| techniques, the stance, the mage's flee tax | 2–5 | not applied | not applied | not applied |
+
+- ×0.75 saved nothing on the walk, which is the card's whole point: 1 on a flee, 1–2 inside
+  Bloodlust.
+- ×1.5 doubled a defend.
+
+**Offered:** a fractional carry (recommended; one column and a migration), stochastic rounding, or
+keeping the rounding. The owner kept the rounding, moved the Chariot to ×0.5, and had the card reach
+every spend (`drain(_:base:multiplier:)`).
+
+**After** (the Chariot and the Hanged Man at ×0.5, the Devil at ×1.5):
+
+| Action | Base | ×0.5 | ×1.5 |
+|---|---|---|---|
+| step · autobattle round · attack | 2 | 1 | 3 |
+| defend | 1 | 1 | 2 |
+| flee | 3 | 2 | 5 |
+| the mage's flee tax | 2 | 1 | 3 |
+| special attack, warrior·archer / mage | 4 / 5 | 2 / 3 | 6 / 8 |
+| special defence, warrior·archer / mage | 3 / 4 | 2 / 2 | 5 / 6 |
+| stance, warrior·archer / mage | 4 / 5 | 2 / 3 | 6 / 8 |
+
+A 40-step trip costs 80 Vigor, 40 under a ×0.5 card and 120 under the Devil.
+
+**The Chariot then dominated the Hanged Man** (×0.5 against ×0.5 and −10 dodge). Rounding leaves no
+room on the walk: a step of 2 can only fall to 1 or 0. Offered:
+- the Hanged Man at ×0.25 (recommended — equal on steps and plain blows, a free defend, flees and
+  techniques at 1);
+- the Hanged Man at ×0.5 and +25% XP;
+- the road for the Chariot and the fight for the Hanged Man (a new card field, content schema v18).
+
+The owner chose XP at **+15%** (`c1c0570`). A kill worth 100 pays 115. It covers every XP source
+except the Judgement's one-shot: a draw needs the 24 h cooldown and a card lasts 6 h, so no card is
+active when the Judgement pays.
+
+**Still open:** the Devil doubles a defend; and since rounding stays half-up, a card multiplier must
+move a 2 by a whole point (×0.75 cannot) — the rule is in `CLAUDE.md`.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

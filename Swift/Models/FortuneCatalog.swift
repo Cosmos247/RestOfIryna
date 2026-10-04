@@ -11,8 +11,8 @@
 //    • `nameKey` / `meaningKey` — Lingo lookups. What the card DOES has no
 //      key: `FortuneDisplay` prints it from `effect` (the hand-typed
 //      `.buff_desc` went on 2026-10-04).
-//    • `effect: FortuneEffect` — what actually happens when drawn. All 24h
-//      effects are uniform 4h post-rebase (Phase 6.4 design call).
+//    • `effect: FortuneEffect` — what actually happens when drawn. Every
+//      duration effect lasts `buffDurationSeconds` (6 h in `fortune.json`).
 //
 //  `FortuneEffect` is a single struct with optional fields so a card sets
 //  only what it cares about. The same struct serves stat bonuses,
@@ -28,7 +28,7 @@ import Foundation
 /// (no-op); all bonus/one-shot fields default to 0 (no-op). Cards set
 /// only the slice that matches their archetype.
 public struct FortuneEffect: Sendable {
-    // Stat additive bonuses (active for the 4h window). Negative values
+    // Stat additive bonuses (active for the card's window). Negative values
     // are debuffs.
     public let attackBonus: Int
     public let defenseBonus: Int
@@ -36,21 +36,22 @@ public struct FortuneEffect: Sendable {
     public let dodgeBonus: Int
     public let accuracyBonus: Int
 
-    // Multipliers (active for the 4h window). 1.0 = no-op.
+    // Multipliers (active for the card's window). 1.0 = no-op.
     public let xpMultiplier: Double          // applied in User.grantXP
     public let lootChanceMultiplier: Double  // applied in ExplorationService.rollStep
     public let vigorDrainMultiplier: Double  // applied in VigorService.drain
 
     // One-shot effects applied immediately on draw. Don't depend on the
-    // 4h expiry window — silver lands, HP restores, etc.
+    // card's window — silver lands, HP restores, etc.
     public let oneShotSilver: Int              // positive = gift, negative = loss
     public let oneShotXpGain: Int
     public let oneShotHpRestore: Bool        // true = fully restore HP
     public let oneShotVigorRestore: Bool     // true = fully restore vigor
 
     // Wheel-style random one-shot: 50/50 between `randomSilverPositive`
-    // (gift) and `randomSilverNegative` (loss). Both must be non-zero to
-    // activate; otherwise the field is ignored.
+    // (gift) and `randomSilverNegative` (loss). It rolls when EITHER is
+    // non-zero (`FortuneService.draw`, `FortuneDisplay.wheelLine`); the
+    // validator warns on a half wheel (`fortune.half_wheel`).
     public let randomSilverPositive: Int
     public let randomSilverNegative: Int
 
@@ -117,8 +118,9 @@ public enum FortuneCatalog {
     /// scale (10/25/50 in tavern gambling).
     public static var drawPrice: Int { Catalogs.current.fortuneDrawPrice }
 
-    /// Buff/debuff effect window — matches the Ворожка's lore
-    /// ("наступні шість годин"). 6 hours.
+    /// Buff/debuff effect window — 6 hours in `fortune.json`. The fortune
+    /// teller's price line prints it; the intro's hand-typed «шість годин»
+    /// went on 2026-10-04.
     public static var buffDurationSeconds: TimeInterval { Catalogs.current.fortuneBuffDurationSeconds }
 
     /// Draw cooldown — independent of the buff window. Player can only

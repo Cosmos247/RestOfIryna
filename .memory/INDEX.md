@@ -63,16 +63,20 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`). The digests to match and the tables to verify are in `Prompt.md`.
     The testers should hear first — the game announces neither the stronger forest nor the
     weapon clamp.
-  - Then the first `fight_log` rows, and a human walking the screens. The weapon, quest-board,
-    arena, estate and tier-2 blocks head `TODO.md`'s walk list and wait for their deploy; the
-    arena ones need two accounts.
+  - Then the first `fight_log` rows, and a human walking the screens. Eleven blocks head
+    `TODO.md`'s walk list and wait for their deploy — the enchant, support-button, task-ready,
+    Vigor-reward, tarot, weapon, quest-board, two arena, estate and tier-2 blocks; the arena ones
+    need two accounts.
   - **Open threads**, all in `TODO.md` → "Open, decided but not done":
     - the arena's matchmaking and class gap — Defend became a real choice with the cycle of
       three (`f0c1749`), but the warrior still wins 75–76% against the other classes (figures
       in `rebalance.md` → "The arena cycle, measured");
     - the weapon ladder's leftovers: rungs 10–11 for a level cap of 50, the tier-2 lines solved
       against the old obtainable-kit share, the workshop's T3 gate the validator cannot see, and
-      the estate's lost weapon pull.
+      the estate's lost weapon pull;
+    - from the 10-04 tarot and watchman work: the Devil's doubled defend (half-up rounding), the
+      tarot's flat bonuses against the no-flat-bonus rule, and the watchman's per-minute cost at
+      the target roster.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -86,7 +90,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
   the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
   entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
-  entry (`9ab349c`), the 10-04 sync pass, the 10-04 tarot entries, the Vigor-reward entry, the task-ready entry, the support-button entry and the 10-05 enchant entry.
+  entry (`9ab349c`) and the 10-04 sync pass, then the tester-driven entries of 10-04/05 (the
+  tarot, the Vigor reward, the task-ready notice, the support button, the enchant) and the 10-05
+  sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
@@ -96,7 +102,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   choice, the level and class gaps, silent fighters, and how to rebuild the probe. Since
   2026-10-04 it holds the weapon ladder, measured: the estate gate behind the overgrowth, three
   rounds of variants (v1–v3, every other estate tier, a rung every five levels at
-  100/75/50%), the probe's rebuild recipe, and the path to each decision.
+  100/75/50%), the probe's rebuild recipe, and the path to each decision. Since 2026-10-04 also
+  the tarot's Vigor multipliers, measured: why −25% rounded away to nothing, both cost tables and
+  the Hanged Man decision.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
@@ -113,7 +121,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 83 at one line each, so a selection copied into this file is the
+already carries all 89 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

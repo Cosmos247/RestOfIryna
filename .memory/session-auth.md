@@ -50,6 +50,11 @@ loaded its own copies until then, which put the pre-settlement silver and HP bac
 `peek` deliberately does not insert, so a once-a-minute sweep cannot pin every
 account in the cache forever.
 
+The watchman's fourth question (2026-10-04, a task turned ready) writes no `User` at all. Its
+markers live on the progress rows (`quest_progress.ready_notified`,
+`king_progress.ready_notified_index`) and go by a one-column `query…set…update`, never a row save,
+because the player may be ticking the same row's progress at that moment.
+
 ## Authorization Flow — invite-only, in the database (since 2026-09-08)
 
 **The hardcoded `allowedUsers` array is gone.** Access lives in the `allowed_users` table

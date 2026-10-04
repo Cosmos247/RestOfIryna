@@ -625,8 +625,10 @@ handler claims** is just as silent: `Router.process` reaches `unmatched` only wh
 `update.message != nil`, which a callback query never has. So a controller that renders
 another controller's screen must END by forwarding what it does not recognise —
 `ExplorationController` and `CapitalController` both hand the rest to `MainController` — and
-it must be **a catch-all, never a list of prefixes**. Auto-memory
-`project-dead-inline-buttons`.
+it must be **a catch-all, never a list of prefixes**. A handler that answers LATE — because a
+refusal is a modal, which must be the tap's only answer (`finishMasterLesson`,
+`finishMasterEnchant`) — answers in a `catch` before rethrowing, or a throw ahead of it spins the
+button. Auto-memory `project-dead-inline-buttons`.
 
 **A number typed before its button gets a hint, never the root screen.** Every quantity is
 asked AFTER a button (a trader card's [🪙 Купити], a warehouse row's [✏️ N], a vault row),

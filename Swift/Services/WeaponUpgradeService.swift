@@ -5,10 +5,11 @@
 //  Created by Dmytro Ihnatyuhin on 06.05.2026.
 //
 //  Phase 5.2.2: weapon-upgrade flow. The player's class starter weapon is
-//  permanent — only its `InventoryEntry.tier` ever changes. Upgrade drains
-//  the next-tier materials from the combined inventory + warehouse pool
-//  (mirroring CraftingService) and bumps the tier on the same row, then
-//  recomputes the cached gear bonuses on the User.
+//  permanent — only its `InventoryEntry.tier` ever changes. The workshop
+//  drains the next-tier materials from the combined inventory + warehouse
+//  pool (mirroring CraftingService); the Master's lesson, in the capital,
+//  from the bag alone. Either way the tier bumps on the same row and the
+//  cached gear bonuses on the User are recomputed.
 //
 //  No new InventoryEntry / WarehouseEntry rows are created. The weapon
 //  stays equipped (or in-bag) on the same row throughout — visually the

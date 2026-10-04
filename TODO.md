@@ -1572,6 +1572,26 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The Master's enchant draws from the bag alone** *(2026-10-05, `4fe5b7a` + `fd6e6e1`, NOT
+        deployed)* — a tester read «треба 15 шкури, а я маю 14» with 0 in the bag: `enchant` summed
+        the bag and the estate's warehouse and drew from both, while the Master's lesson counted the
+        bag alone. Now one rule (the capital has no warehouse); the card is `RequirementLine`s, a
+        refusal a modal that keeps the card. The audit caught a regression (a late tap answer would
+        spin on a throw) and the fill commit gave the lesson the same `catch`.
+  - [x] **«💛 Допомога грі» in Settings** *(2026-10-04, `b0c9d80` + `e569bca`, NOT deployed)* — the
+        owner's text on whom to contact to support the game; the fill also fixed «⚙️ Налаштування».
+  - [x] **The watchman says when a task is ready** *(2026-10-04, `0b53e82`, NOT deployed)* — a
+        player's request. One unnamed «📓 … загляньте в нотатник» per sweep, once per decree or taken
+        job, readiness the boards' own test; `AddReadyNotifiedFlags`.
+  - [x] **A Vigor reward that will not fit is asked about** *(2026-10-04, `47e0e8f`, NOT deployed)*
+        — a tester turned a Vigor-only decree in at full Vigor and got an empty «💰». A warning on
+        the card, a question on the tap, the loss named in the banner; decrees and NPC jobs alike.
+  - [x] **The tarot, phrased once** *(2026-10-04, `e861c73` + `a91226f` + `c1c0570`, NOT deployed)* —
+        the owner asked how a card reads. The reveal prints through `FortuneDisplay` (22 hand-typed
+        `buff_desc` gone), silver «+🪙 30», the window on the price line, «Ієрофант», 💰 for every
+        reward; «Витрата снаги», the Chariot ×0.5 and the card's multiplier on the techniques
+        (−25% rounded away to nothing — `.memory/rebalance.md`); the later one-shot line without
+        «отримано»; the Hanged Man +15% XP so the Chariot no longer dominates it.
   - [x] **The weapon follows the player level, and its first rung is the Master's lesson**
         *(2026-10-04, `9ab349c`, NOT deployed)* — the owner found the weapon growth too big. Measured,
         the gate was the cause: rungs authored at item level 1/10/20/30/40 but opened by the
@@ -2467,6 +2487,21 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+- **The Devil doubles a defend** (2026-10-04). Costs round half up, so ×1.5 turns a 1-Vigor defend
+  into 2 (+100%, not +50%). The owner kept the rounding when the Chariot moved to ×0.5; a
+  fractional carry (one column) or stochastic rounding would make every card exact
+  (`.memory/rebalance.md` → "The tarot's Vigor multipliers, measured").
+- **The tarot gives flat bonuses** (2026-10-04). ±5/±10 to ATK, DEF and the ratings is a lot at
+  level 1 and almost nothing at 40 — exactly what `CLAUDE.md`'s "never a flat bonus" forbids for
+  items and techniques. Raised in the first tarot review; the owner left it out of that pass.
+- **The watchman evaluates every registered player each minute** (2026-10-04). The task-ready
+  question runs `KingService.standing` and the open jobs' bag counts per player per sweep —
+  trivial for the testers, a cost at the target roster. Restrict it to recently active players
+  when the roster grows.
+- **A one-shot that landed nothing reads «разова дія, вже отримано»** (2026-10-04). A Tower drawn
+  with an empty purse clamps its loss to 0, and the fortune screen and the profile then say
+  "already received" about nothing. Rare and harmless; the reveal shows the balance line instead.
 
 - **Weapon rungs 10 and 11 (levels 45 and 50) wait for a level cap of 50** (2026-10-04,
   `spec-items.md` §9). The owner had the ladder computed to 50 and shipped 9 rungs to L40.
