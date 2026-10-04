@@ -153,19 +153,6 @@
     {
       "conditions" : [
         {
-          "kind" : "weapon_tier",
-          "target" : 2
-        }
-      ],
-      "id" : "king.sharp_edge",
-      "level" : 4,
-      "reward" : {
-        "vigor" : 40
-      }
-    },
-    {
-      "conditions" : [
-        {
           "kind" : "cook_dish"
         }
       ],
@@ -239,6 +226,19 @@
     {
       "conditions" : [
         {
+          "kind" : "weapon_tier",
+          "target" : 2
+        }
+      ],
+      "id" : "king.sharp_edge",
+      "level" : 5,
+      "reward" : {
+        "vigor" : 40
+      }
+    },
+    {
+      "conditions" : [
+        {
           "kind" : "warehouse_materials",
           "materials" : [
             {
@@ -295,19 +295,6 @@
     {
       "conditions" : [
         {
-          "kind" : "weapon_tier",
-          "target" : 3
-        }
-      ],
-      "id" : "king.tempered_steel",
-      "level" : 8,
-      "reward" : {
-        "vigor" : 70
-      }
-    },
-    {
-      "conditions" : [
-        {
           "kind" : "bag_tier",
           "target" : 2
         }
@@ -350,6 +337,19 @@
     {
       "conditions" : [
         {
+          "kind" : "weapon_tier",
+          "target" : 3
+        }
+      ],
+      "id" : "king.tempered_steel",
+      "level" : 10,
+      "reward" : {
+        "vigor" : 70
+      }
+    },
+    {
+      "conditions" : [
+        {
           "kind" : "estate_tier",
           "target" : 4
         }
@@ -386,19 +386,6 @@
           "itemId" : "food.hunters_stew",
           "quantity" : 3
         }
-      }
-    },
-    {
-      "conditions" : [
-        {
-          "kind" : "weapon_tier",
-          "target" : 4
-        }
-      ],
-      "id" : "king.forged_facets",
-      "level" : 11,
-      "reward" : {
-        "vigor" : 80
       }
     },
     {
@@ -447,19 +434,6 @@
     {
       "conditions" : [
         {
-          "kind" : "weapon_tier",
-          "target" : 5
-        }
-      ],
-      "id" : "king.royal_steel",
-      "level" : 14,
-      "reward" : {
-        "vigor" : 85
-      }
-    },
-    {
-      "conditions" : [
-        {
           "kind" : "bag_tier",
           "target" : 4
         }
@@ -481,6 +455,19 @@
       "reward" : {
         "silver" : 300,
         "xp" : 8670
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 4
+        }
+      ],
+      "id" : "king.forged_facets",
+      "level" : 15,
+      "reward" : {
+        "vigor" : 80
       }
     },
     {
@@ -547,6 +534,19 @@
       "level" : 19,
       "reward" : {
         "silver" : 300
+      }
+    },
+    {
+      "conditions" : [
+        {
+          "kind" : "weapon_tier",
+          "target" : 5
+        }
+      ],
+      "id" : "king.royal_steel",
+      "level" : 20,
+      "reward" : {
+        "vigor" : 85
       }
     },
     {

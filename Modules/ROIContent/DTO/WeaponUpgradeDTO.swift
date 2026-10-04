@@ -28,33 +28,49 @@ public typealias WeaponUpgradeInputDTO = MaterialCostDTO
 public struct WeaponUpgradeStepDTO: Codable, Sendable, Equatable {
     public let tier: Int
     /// Item level for the stat budget at this rung. Spread across the whole
-    /// level range rather than tracking `tier`: five tiers cover forty levels,
-    /// so treating the tier number as the item level would squeeze the entire
-    /// weapon ladder into the first eight levels of the budget curve.
+    /// level range rather than tracking `tier`: nine tiers cover forty levels
+    /// (since 2026-10-04 each rung's item level equals the player level it
+    /// opens at), so treating the tier number as the item level would squeeze
+    /// the entire weapon ladder into the first nine levels of the budget curve.
     /// Absent means "same as the tier", which is only right for a fixture.
     public let itemLevel: Int?
+    /// The player level this rung opens at (`spec-items.md` §9, 2026-10-04).
+    /// The weapon follows the PLAYER, never the estate: the estate used to open
+    /// tier N at T N, which put the item-level-40 sword in hand at level 13.
+    /// Optional on the wire so a hand-built fixture still decodes, but the
+    /// validator demands it on every rung above the first
+    /// (`ladder.required_level_missing`) — a rung without a gate would open
+    /// at level 1.
+    public let requiredPlayerLevel: Int?
     public let stats: GearStatsDTO
     /// Materials consumed to REACH this tier. Empty for T1 — the starter
     /// weapon is granted at registration.
     public let inputs: [WeaponUpgradeInputDTO]
 
-    public init(tier: Int, itemLevel: Int? = nil, stats: GearStatsDTO,
-                inputs: [WeaponUpgradeInputDTO] = []) {
+    public init(tier: Int, itemLevel: Int? = nil, requiredPlayerLevel: Int? = nil,
+                stats: GearStatsDTO, inputs: [WeaponUpgradeInputDTO] = []) {
         self.tier = tier
         self.itemLevel = itemLevel
+        self.requiredPlayerLevel = requiredPlayerLevel
         self.stats = stats
         self.inputs = inputs
     }
 
-    private enum CodingKeys: String, CodingKey { case tier, itemLevel, stats, inputs }
+    private enum CodingKeys: String, CodingKey { case tier, itemLevel, requiredPlayerLevel, stats, inputs }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         tier      = try c.decode(Int.self, forKey: .tier)
         itemLevel = try c.decodeIfPresent(Int.self, forKey: .itemLevel)
+        requiredPlayerLevel = try c.decodeIfPresent(Int.self, forKey: .requiredPlayerLevel)
         stats  = try c.decode(GearStatsDTO.self, forKey: .stats)
         inputs = try c.decodeIfPresent([WeaponUpgradeInputDTO].self, forKey: .inputs) ?? []
     }
+
+    /// The level this rung opens at, as the game reads it: tier 1 is the
+    /// starter and is always open; a rung missing its gate reads as level 1,
+    /// which is exactly why the validator refuses one.
+    public var gateLevel: Int { requiredPlayerLevel ?? 1 }
 }
 
 public struct WeaponLadderDTO: Codable, Sendable, Equatable {

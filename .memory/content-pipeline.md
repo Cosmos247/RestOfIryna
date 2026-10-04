@@ -145,9 +145,10 @@ forever safe: respect the budget and no stat's PERCENTAGE can drift.
   Rounding a stat can only add half a point of it, so the error is a fixed
   number of points — a percentage tolerance would be far too tight on a level-1
   piece and far too loose on a level-40 one.
-- **`itemLevel` is not `tier`.** Tier is a crafting-ladder position (1–5); item
-  level is the budget input (1–40). The weapon ladder maps tiers to levels
-  1/10/20/30/40, because five rungs cover forty levels.
+- **`itemLevel` is not `tier`.** Tier is a crafting-ladder position (1–9 since
+  2026-10-04); item level is the budget input (1–40). The weapon ladder maps
+  tiers to levels 1/5/10 … 40, each rung's item level equal to the player level
+  it opens at (`spec-items.md` §9). Before that, five rungs sat at 1/10/20/30/40.
 - **Rarity decouples budget from value** (×1.45 against ×16 at the top). Tying
   them makes selling a legendary the largest silver faucet in the game.
 - **Enchant is a percentage of the item's own budget**, never flat points: the

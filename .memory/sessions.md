@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-03)
+## Commit index — live-play polish and after (2026-09-09 → 10-04)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,6 +11,16 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-04)* **the weapon follows the player level, and its first rung is the Master's
+  lesson** (`spec-items.md` §9):
+  - nine rungs, one every five levels, each with its `requiredPlayerLevel`, at 75% of the shipped
+    growth;
+  - tier 1 → 2 sold only by the Master (rung materials from the bag + 30 🪙), tier 3 and up in the
+    workshop;
+  - the clamp walked the testers' weapons back to their level with a silver refund;
+  - the four weapon decrees moved to L5/10/15/20, re-seated by decree;
+  - `king.weapon_tier_before_its_gate` and five ladder gate rules;
+  - schema v17, `records` and `king` moved, 366 tests.
 - `95e8492` (10-03) **the quest board as a scroll**: the decree's requirement line plus an
   8-cell bar on the NPC board (not in the journal), 🪶 / 💰 framing, 📖 for Досвід game-wide, 🍖
   for the board's Снага; `quest.counter.*` labels required by the validator.
@@ -413,6 +423,51 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-04 (the weapon follows the player level) — *(uncommitted)*
+
+The laptop died on 2026-10-03 mid-measurement; this session recovered the weapon-ladder thread
+from transcript `75c2311f` and finished it.
+
+**The finding.** The owner thought the weapon upgrade grew too much. The cause was the GATE, not
+the step:
+- the rungs are authored at item level 1/10/20/30/40, but the estate opened tier N at T N, so the
+  item-level-40 sword was in hand at level 13;
+- the model behind tier 2 and the estate scaling assumed `itemLevel <= level`;
+- measured, fights from L7 ran at about half their contract.
+
+**The path, each step over a quiz.**
+- "Measure first". Then the owner proposed "every other estate tier" (measured: either the jumps
+  stayed or the decrees broke), and then a rung every 5 player levels with smaller stats.
+- The variant was computed to L50 at 100/75/50% of the growth and measured; the owner chose 75%
+  and 9 rungs to L40.
+- **A second live defect surfaced:** the upgrade button lives only in the T3 workshop, so
+  «Гострий край» (L4, weapon T2) held the chain until L7. The owner made the first rung a lesson
+  at the Master (variant A of three played samples), for the rung's materials + 30 🪙.
+- t6–t9 recipes t5 × 1.5–3, names (the staff's «Посох архімага» moved to t9), a silver refund for
+  the clamp, and every copy line approved unchanged.
+
+**Built.**
+- **Content.** `weapon_upgrades.json` (9 rungs with `requiredPlayerLevel`, durability to 180),
+  `master.json` → `weaponLessonSilver`, schema v17; `king.json`: four decrees moved.
+- **`ROIContent`.**
+  - `WeaponLadderRules`, the one gate rule;
+  - `KingChainReseat`, the by-decree re-seat;
+  - five `ladder.*` gate rules, `king.weapon_tier_before_its_gate` and `master.lesson_silver`.
+- **Swift.**
+  - `WeaponUpgradeService`, two doors;
+  - the Master's lesson (button, card, confirm, one NPC message);
+  - the workshop's level gate and not-learned state;
+  - `GearStatLines`, moved out of `EstateController`;
+  - two migrations, `ClampWeaponTiersToLevel` and `ReseatDecreesById`.
+- **Copy.** Lingo's emoji-before-placeholder defect kept 🔨/🛠 out of the learned-line
+  templates: 🔨 in code, 🛠 through `%{workshop}`.
+
+**Verified.**
+- 366 tests (+13, every new rule with its failing case); `validate --strict` 0/0.
+- Digest: `records` 1b5577693d8733af → 1041961908ba2d3f and `king` 5dbddfd689f3cede →
+  e3a492be1b017e81, the other three unchanged; content hash 6963c31b → 00b40443.
+- Five stale generated spec blocks refreshed (king, gates, sets, economy, items).
 
 ## Session — 2026-10-03 (the arena duel as a cycle of three) — `f0c1749`
 

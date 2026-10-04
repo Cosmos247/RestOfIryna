@@ -21,6 +21,22 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-04 — the weapon follows the player level, and its first rung is the Master's lesson**
+(*uncommitted*, NOT deployed; needs `pm2 restart ROI` — code, locale strings, content
+schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
+- **The rule.** Nine rungs, one every five levels (1 … 40), each with its own
+  `requiredPlayerLevel` and 75% of the shipped ladder's growth at that item level; t6–t9 recipes
+  are t5's × 1.5/2/2.5/3; durability up to 180. Tier 1 → 2 is the Master's lesson (rung
+  materials from the bag + 30 🪙); the workshop sells tier 3 and up and refuses tier 1.
+- **Why.** The estate opened tier N at T N, so the item-level-40 sword was in hand at level 13 —
+  fights from L7 ran at about half their contract. And the upgrade button lives in the T3
+  workshop, so «Гострий край» (L4, weapon T2) held the live chain to L7.
+- **Players already playing.** `ClampWeaponTiersToLevel` walks every class weapon back to its
+  owner's level and refunds the removed rungs in silver; `ReseatDecreesById` moves the King's
+  chain past the four weapon decrees (now at L5/10/15/20) by decree, never skipping one.
+- **Measured.** 366 tests; `validate --strict` 0/0; `records` → `1041961908ba2d3f`, `king` →
+  `e3a492be1b017e81`, content hash `00b40443`; `tuning`, `spawns`, `quests` unchanged.
+
 **2026-10-03 — the arena duel is a cycle of three** (`f0c1749`, NOT deployed; needs
 `pm2 restart ROI` — code, locale strings and content schema v16, no migration):
 - **The rule.** Attack beats the class special attack, the technique breaks Defend (it cannot

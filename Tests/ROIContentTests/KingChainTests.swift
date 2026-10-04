@@ -44,14 +44,15 @@ final class KingChainTests: XCTestCase {
     /// it teaches at (10 and 11, the shipped pair) — everything else leaves both
     /// out, so the ground's rule stays silent.
     private func bundle(_ decrees: [KingDecreeDTO], withTuning: Bool = true,
-                        withGround: Bool = false) -> ContentBundle {
+                        withGround: Bool = false, weaponGate: Int? = nil) -> ContentBundle {
         ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [roast(), lumber()],
             enemies: [], recipes: [], starterRecipeIds: [],
             weaponLadders: [WeaponLadderDTO(
                 itemId: "gear.rusty_sword",
-                tiers: [WeaponUpgradeStepDTO(tier: 2, stats: GearStatsDTO(attack: 5), inputs: [])])],
+                tiers: [WeaponUpgradeStepDTO(tier: 2, requiredPlayerLevel: weaponGate,
+                                             stats: GearStatsDTO(attack: 5), inputs: [])])],
             bags: BagFileDTO(maxTier: 3, capacities: [25, 35, 45],
                              progression: []),
             estateUpgrades: EstateUpgradeFileDTO(
@@ -191,6 +192,42 @@ final class KingChainTests: XCTestCase {
                    [decree(conditions: [KingConditionDTO(kind: .weaponTier, target: 5)])])
         assertRule("king.bag_tier_out_of_range",
                    [decree(conditions: [KingConditionDTO(kind: .bagTier, target: 6)])])
+    }
+
+    /// The twin of `king.estate_tier_before_its_gate`. Its absence is how
+    /// «Гострий край» shipped at level 4 asking for a rung no level-4 player
+    /// could buy (`spec-items.md` §9.1).
+    func testWeaponDecreeBelowItsGateIsAnError() {
+        let early = ContentValidator.validate(bundle(
+            [decree(level: 4, conditions: [KingConditionDTO(kind: .weaponTier, target: 2)])], weaponGate: 5))
+        XCTAssertTrue(early.errors.contains { $0.rule == "king.weapon_tier_before_its_gate" })
+        let onTime = ContentValidator.validate(bundle(
+            [decree(level: 5, conditions: [KingConditionDTO(kind: .weaponTier, target: 2)])], weaponGate: 5))
+        XCTAssertFalse(onTime.issues.contains { $0.rule == "king.weapon_tier_before_its_gate" })
+    }
+
+    // MARK: - Re-seating a reordered chain
+
+    /// `a b c d e` → `a c d b e`: `b` moved later. Nobody skips a decree, and a
+    /// player who had passed `b` meets it once more.
+    func testReseatNeverSkipsADecree() {
+        let old = ["a", "b", "c", "d", "e"], new = ["a", "c", "d", "b", "e"]
+        for position in 0...old.count {
+            let seat = KingChainReseat.position(position, oldOrder: old, newOrder: new)
+            let done = Set(old.prefix(position))
+            // Everything before the new seat was done under the old order.
+            XCTAssertTrue(new.prefix(seat).allSatisfy(done.contains), "position \(position)")
+        }
+        XCTAssertEqual(KingChainReseat.position(1, oldOrder: old, newOrder: new), 1)   // on b → on c, b still ahead
+        XCTAssertEqual(KingChainReseat.position(2, oldOrder: old, newOrder: new), 1)   // on c → on c
+        XCTAssertEqual(KingChainReseat.askedAgain(2, oldOrder: old, newOrder: new), ["b"])
+        XCTAssertEqual(KingChainReseat.position(4, oldOrder: old, newOrder: new), 4)   // on e → on e
+        XCTAssertEqual(KingChainReseat.askedAgain(4, oldOrder: old, newOrder: new), [])
+    }
+
+    func testFinishedChainStaysFinishedUnlessADecreeIsNew() {
+        XCTAssertEqual(KingChainReseat.position(3, oldOrder: ["a", "b", "c"], newOrder: ["a", "c", "b"]), 3)
+        XCTAssertEqual(KingChainReseat.position(3, oldOrder: ["a", "b", "c"], newOrder: ["a", "x", "b", "c"]), 1)
     }
 
     func testUnknownMaterialAndEmptyMaterialsAreErrors() {

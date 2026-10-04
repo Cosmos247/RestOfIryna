@@ -4,7 +4,11 @@
     40,
     50,
     70,
-    100
+    100,
+    120,
+    140,
+    160,
+    180
   ],
   "ladders" : [
     {
@@ -13,6 +17,7 @@
         {
           "inputs" : [],
           "itemLevel" : 1,
+          "requiredPlayerLevel" : 1,
           "stats" : {
             "accuracy" : 3,
             "attack" : 7,
@@ -27,11 +32,12 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 10,
+          "itemLevel" : 5,
+          "requiredPlayerLevel" : 5,
           "stats" : {
-            "accuracy" : 7,
-            "attack" : 19,
-            "crit" : 9
+            "accuracy" : 5,
+            "attack" : 11,
+            "crit" : 5
           },
           "tier" : 2
         },
@@ -46,11 +52,12 @@
               "quantity" : 2
             }
           ],
-          "itemLevel" : 20,
+          "itemLevel" : 10,
+          "requiredPlayerLevel" : 10,
           "stats" : {
-            "accuracy" : 12,
-            "attack" : 33,
-            "crit" : 15
+            "accuracy" : 6,
+            "attack" : 16,
+            "crit" : 8
           },
           "tier" : 3
         },
@@ -69,11 +76,12 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 30,
+          "itemLevel" : 15,
+          "requiredPlayerLevel" : 15,
           "stats" : {
-            "accuracy" : 17,
-            "attack" : 46,
-            "crit" : 21
+            "accuracy" : 8,
+            "attack" : 21,
+            "crit" : 10
           },
           "tier" : 4
         },
@@ -92,13 +100,110 @@
               "quantity" : 5
             }
           ],
-          "itemLevel" : 40,
+          "itemLevel" : 20,
+          "requiredPlayerLevel" : 20,
           "stats" : {
-            "accuracy" : 22,
-            "attack" : 60,
-            "crit" : 28
+            "accuracy" : 10,
+            "attack" : 27,
+            "crit" : 12
           },
           "tier" : 5
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 15
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 8
+            }
+          ],
+          "itemLevel" : 25,
+          "requiredPlayerLevel" : 25,
+          "stats" : {
+            "accuracy" : 12,
+            "attack" : 32,
+            "crit" : 14
+          },
+          "tier" : 6
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 6
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 20
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 10
+            }
+          ],
+          "itemLevel" : 30,
+          "requiredPlayerLevel" : 30,
+          "stats" : {
+            "accuracy" : 14,
+            "attack" : 36,
+            "crit" : 17
+          },
+          "tier" : 7
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 8
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 25
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 13
+            }
+          ],
+          "itemLevel" : 35,
+          "requiredPlayerLevel" : 35,
+          "stats" : {
+            "accuracy" : 16,
+            "attack" : 42,
+            "crit" : 20
+          },
+          "tier" : 8
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 9
+            },
+            {
+              "itemId" : "mat.iron",
+              "quantity" : 30
+            },
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 15
+            }
+          ],
+          "itemLevel" : 40,
+          "requiredPlayerLevel" : 40,
+          "stats" : {
+            "accuracy" : 17,
+            "attack" : 47,
+            "crit" : 22
+          },
+          "tier" : 9
         }
       ]
     },
@@ -108,6 +213,7 @@
         {
           "inputs" : [],
           "itemLevel" : 1,
+          "requiredPlayerLevel" : 1,
           "stats" : {
             "accuracy" : 3,
             "attack" : 6,
@@ -126,11 +232,12 @@
               "quantity" : 1
             }
           ],
-          "itemLevel" : 10,
+          "itemLevel" : 5,
+          "requiredPlayerLevel" : 5,
           "stats" : {
-            "accuracy" : 10,
-            "attack" : 17,
-            "crit" : 9
+            "accuracy" : 5,
+            "attack" : 10,
+            "crit" : 5
           },
           "tier" : 2
         },
@@ -145,11 +252,12 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 20,
+          "itemLevel" : 10,
+          "requiredPlayerLevel" : 10,
           "stats" : {
-            "accuracy" : 16,
-            "attack" : 30,
-            "crit" : 16
+            "accuracy" : 8,
+            "attack" : 14,
+            "crit" : 8
           },
           "tier" : 3
         },
@@ -168,11 +276,12 @@
               "quantity" : 1
             }
           ],
-          "itemLevel" : 30,
+          "itemLevel" : 15,
+          "requiredPlayerLevel" : 15,
           "stats" : {
-            "accuracy" : 23,
-            "attack" : 42,
-            "crit" : 23
+            "accuracy" : 11,
+            "attack" : 20,
+            "crit" : 11
           },
           "tier" : 4
         },
@@ -191,13 +300,110 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 40,
+          "itemLevel" : 20,
+          "requiredPlayerLevel" : 20,
           "stats" : {
-            "accuracy" : 30,
-            "attack" : 55,
-            "crit" : 30
+            "accuracy" : 13,
+            "attack" : 24,
+            "crit" : 13
           },
           "tier" : 5
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 23
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 12
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 5
+            }
+          ],
+          "itemLevel" : 25,
+          "requiredPlayerLevel" : 25,
+          "stats" : {
+            "accuracy" : 16,
+            "attack" : 29,
+            "crit" : 16
+          },
+          "tier" : 6
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 30
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 16
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 6
+            }
+          ],
+          "itemLevel" : 30,
+          "requiredPlayerLevel" : 30,
+          "stats" : {
+            "accuracy" : 18,
+            "attack" : 33,
+            "crit" : 18
+          },
+          "tier" : 7
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 38
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 20
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 8
+            }
+          ],
+          "itemLevel" : 35,
+          "requiredPlayerLevel" : 35,
+          "stats" : {
+            "accuracy" : 21,
+            "attack" : 38,
+            "crit" : 21
+          },
+          "tier" : 8
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 45
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 24
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 9
+            }
+          ],
+          "itemLevel" : 40,
+          "requiredPlayerLevel" : 40,
+          "stats" : {
+            "accuracy" : 23,
+            "attack" : 43,
+            "crit" : 23
+          },
+          "tier" : 9
         }
       ]
     },
@@ -207,6 +413,7 @@
         {
           "inputs" : [],
           "itemLevel" : 1,
+          "requiredPlayerLevel" : 1,
           "stats" : {
             "accuracy" : 1,
             "attack" : 7,
@@ -225,11 +432,12 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 10,
+          "itemLevel" : 5,
+          "requiredPlayerLevel" : 5,
           "stats" : {
-            "accuracy" : 3,
-            "attack" : 19,
-            "crit" : 15
+            "accuracy" : 2,
+            "attack" : 11,
+            "crit" : 8
           },
           "tier" : 2
         },
@@ -248,11 +456,12 @@
               "quantity" : 3
             }
           ],
-          "itemLevel" : 20,
+          "itemLevel" : 10,
+          "requiredPlayerLevel" : 10,
           "stats" : {
-            "accuracy" : 5,
-            "attack" : 32,
-            "crit" : 26
+            "accuracy" : 3,
+            "attack" : 16,
+            "crit" : 13
           },
           "tier" : 3
         },
@@ -271,11 +480,12 @@
               "quantity" : 1
             }
           ],
-          "itemLevel" : 30,
+          "itemLevel" : 15,
+          "requiredPlayerLevel" : 15,
           "stats" : {
-            "accuracy" : 7,
-            "attack" : 45,
-            "crit" : 37
+            "accuracy" : 3,
+            "attack" : 21,
+            "crit" : 17
           },
           "tier" : 4
         },
@@ -298,13 +508,126 @@
               "quantity" : 5
             }
           ],
-          "itemLevel" : 40,
+          "itemLevel" : 20,
+          "requiredPlayerLevel" : 20,
           "stats" : {
-            "accuracy" : 10,
-            "attack" : 58,
-            "crit" : 48
+            "accuracy" : 4,
+            "attack" : 26,
+            "crit" : 21
           },
           "tier" : 5
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 12
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 15
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 5
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 8
+            }
+          ],
+          "itemLevel" : 25,
+          "requiredPlayerLevel" : 25,
+          "stats" : {
+            "accuracy" : 5,
+            "attack" : 31,
+            "crit" : 25
+          },
+          "tier" : 6
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 16
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 20
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 6
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 10
+            }
+          ],
+          "itemLevel" : 30,
+          "requiredPlayerLevel" : 30,
+          "stats" : {
+            "accuracy" : 6,
+            "attack" : 36,
+            "crit" : 29
+          },
+          "tier" : 7
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 20
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 25
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 8
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 13
+            }
+          ],
+          "itemLevel" : 35,
+          "requiredPlayerLevel" : 35,
+          "stats" : {
+            "accuracy" : 7,
+            "attack" : 41,
+            "crit" : 34
+          },
+          "tier" : 8
+        },
+        {
+          "inputs" : [
+            {
+              "itemId" : "mat.pine_lumber",
+              "quantity" : 24
+            },
+            {
+              "itemId" : "mat.river_pebble",
+              "quantity" : 30
+            },
+            {
+              "itemId" : "mat.iron_ingot",
+              "quantity" : 9
+            },
+            {
+              "itemId" : "mat.hide",
+              "quantity" : 15
+            }
+          ],
+          "itemLevel" : 40,
+          "requiredPlayerLevel" : 40,
+          "stats" : {
+            "accuracy" : 8,
+            "attack" : 45,
+            "crit" : 37
+          },
+          "tier" : 9
         }
       ]
     }

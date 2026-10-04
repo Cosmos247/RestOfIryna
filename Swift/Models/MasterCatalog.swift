@@ -69,8 +69,8 @@ public enum MasterCatalog {
 
     /// Weapon repair cost: a flat 1🪙 per missing durability point. Weapons have
     /// no buy price (they're upgraded, never sold), so the cost is keyed to the
-    /// tier's durability ceiling instead — a full repair runs 30🪙 (T1) → 100🪙
-    /// (T5). No max shave: the King's weapon is mended, not worn out.
+    /// tier's durability ceiling instead — a full repair runs 30🪙 (T1) → 180🪙
+    /// (T9). No max shave: the King's weapon is mended, not worn out.
     ///
     /// Deliberately NOT data-driven yet: there is no magic number in
     /// `max(0, missing)` to lift into JSON, and inventing a `×1` rate would mean
@@ -83,6 +83,10 @@ public enum MasterCatalog {
 
     /// Hard cap on the permanent enchant bonus a single piece can hold.
     public static var enchantCap: Int { Catalogs.current.masterEnchantCap }
+
+    /// The fee for the weapon lesson, the first reforge (`spec-items.md` §9.4),
+    /// paid on top of that rung's own materials.
+    public static var weaponLessonSilver: Int { Catalogs.current.masterWeaponLessonSilver }
 
     /// Fraction of an item's own budget each enchant level adds. Linear, and
     /// deliberately so: the non-linearity that used to live here (+1 +1 +1 +2

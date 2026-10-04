@@ -41,7 +41,7 @@ someone PLAYING; none from a test.
 | HEAD | the third 2026-10-03 sync pass (records, plus five dead arena members removed) on top of **`2dcf87c`** — the hash fill for **`cad61c3`**, the arena duel in simultaneous rounds (2026-10-03) — on top of `790560f`, the second 2026-10-03 sync pass (records, plus three stale code comments in `Enemy.swift` and `ExplorationService.swift`), on top of **`c28a3e5`** — the hash fill for **`4be2758`**, creature strength follows the estate tier (2026-10-03, `spec-bestiary.md` §11) — on top of `7a6b458`, the 2026-10-03 sync pass (records only: memory banks, primer, `TODO.md`), on top of **`b407840`** — the hash fill for **`f03d502`**, tier 2 of the bestiary (2026-10-02) — on top of `ce8ef2f`, the 2026-09-29 sync pass (records, plus two dead `RecipeCategory` members and three dead locale keys), on top of **`8ae6772`** — the hash fill for **`ada1ae7`**, the workshop that stopped making armour. Under it `2689764` / `1b10572` (the technique rework, `fight_log`, the decree reorder), the 09-27 sync pass, `bd25699` / `1d1fec4` (the Training Ground as a house room), `d1e2ccd`, `df6d341`, `254967b`, and `60a8bad`. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
 | pushed | `origin/main` is at **`8ae6772`**; `ce8ef2f`, `f03d502`, `b407840`, `7a6b458`, `4be2758`, `c28a3e5`, `790560f`, `cad61c3`, `2dcf87c` and the third 10-03 sync pass are not pushed yet. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
+| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**The weapon follows the player level** (2026-10-04, *(uncommitted)*, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
 
 **Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -80,24 +80,35 @@ entry in `.memory/sessions.md`.
 
 ### Next action
 
-**0 — Deploy tier 2, the estate scaling and the simultaneous arena,** all committed and audited
-(`spec-bestiary.md` §10 and §11; §11.12 has every figure of the scaling; the arena's are in
-`.memory/rebalance.md` → "The arena duel, measured"). One restart takes all three from HEAD.
-Shipping tier 2 alone would mean the Pi stops at `7a6b458`.
+**0 — Deploy everything committed since `8ae6772`:** tier 2, the estate scaling, the arena
+(simultaneous rounds and the cycle of three), the quest board, and the weapon ladder by player
+level (2026-10-04, `spec-items.md` §9). All of it is committed and audited (`spec-bestiary.md`
+§10 and §11; §11.12 has every figure of the scaling; the arena's are in `.memory/rebalance.md` →
+"The arena duel, measured"). One restart takes it all from HEAD. Shipping tier 2 alone would
+mean the Pi stops at `7a6b458`.
 - Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
 - The owner pushes. On the Pi: `git pull --ff-only`, then build.
 - Match its `--content-digest` BEFORE the restart:
-  - all three (HEAD): `records 259f6cb6ca152450` · `tuning 605fd06bd8abdfda` · `spawns
-    0cf31905171d7944` · content hash `7f6a7317`, schema v15;
+  - everything (HEAD): `records 1041961908ba2d3f` · `tuning 605fd06bd8abdfda` · `spawns
+    0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81` · content hash
+    `00b40443`, schema v17;
+  - without the weapon ladder (the arena cycle, `f0c1749`): `records 1b5577693d8733af`, `king
+    5dbddfd689f3cede`, content hash `6963c31b`, schema v16;
+  - without either arena change (`790560f`): see the next line, schema v15;
   - without the arena (`790560f`): `records 696d3c25c1a74d98` and content hash `be4350a5`;
   - tier 2 alone (`7a6b458`): `tuning c01ccfdb585f4a68` and content hash `cd9d73bf`, schema v14.
 - **Tell the testers above T1 first.** The game announces nothing (the owner's call), and from
   the first fight after the restart a T4 player loses ~75% more HP to the same creature. Tell
-  them the arena changed too: rounds are simultaneous, 15 s a choice.
+  them the arena changed too: rounds are simultaneous, 15 s a choice. And the weapon: every
+  class weapon comes down to the tier its owner's level allows (L10 keeps t3), with the removed
+  rungs refunded in silver; the first reforge is now a lesson at the Master.
 - The owner runs `pm2 restart ROI`. A `/reload` is not enough, because of validator, combat and
   arena code, the new locale strings and the content schema.
-- The estate scaling brings one migration, `AddFightLogEstateLevel`. Verify the TABLE:
-  `fight_log` has a nullable `estate_level`.
+- Three migrations run: `AddFightLogEstateLevel` (the estate scaling), then
+  `ClampWeaponTiersToLevel` and `ReseatDecreesById` (the weapon ladder). Verify the TABLES:
+  `fight_log` has a nullable `estate_level`; no weapon row above its owner's level and the
+  `king_progress` positions as predicted — both queries are in the migrations' headers. Run
+  `SELECT decree_index, count(*) FROM king_progress GROUP BY 1` BEFORE the restart to compare.
 - Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
   the testers at the three new walk-list blocks.
 
@@ -127,7 +138,7 @@ report naming its losses the way the death screen now does.
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER — the working tree's schema handshake is at **v16** (the arena's `duel` section; v15 was the estate scaling; the Pi runs v14) and refuses a mismatch.
+and the new binary TOGETHER — the working tree's schema handshake is at **v17** (the weapon ladder's gates and the lesson fee; v16 was the arena's `duel` section, v15 the estate scaling; the Pi runs v14) and refuses a mismatch.
 Free pre-flight that touches neither the running bot nor the database:
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
 it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
@@ -244,9 +255,15 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**HEAD digest (2026-10-03, schema v16 — the arena as a cycle of three, `f0c1749`, NOT yet on the Pi):**
-`records 1b5577693d8733af`, content hash `6963c31b`; the other four lines as below. The cycle
-moved `records` alone (the four `arena.json` → `duel` numbers).
+**HEAD digest (2026-10-04, schema v17 — the weapon follows the player level, *(uncommitted)*, NOT yet on the Pi):**
+`records 1041961908ba2d3f` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `00b40443`. The weapon ladder
+moved `records` (nine gated rungs and `weaponLessonSilver`) and `king` (four decrees moved);
+`tuning`, `spawns` and `quests` are byte-identical.
+
+**The arena cycle's baseline** (`f0c1749`, schema v16) is `records 1b5577693d8733af`, `king
+5dbddfd689f3cede` and content hash `6963c31b`, the other three lines as below. The cycle moved
+`records` alone (the four `arena.json` → `duel` numbers).
 
 **Current digest baseline (2026-10-03, schema v15 — the simultaneous arena, `cad61c3`, NOT yet on the Pi):**
 `records 259f6cb6ca152450` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
@@ -323,7 +340,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 344 tests, ~0.8s
+swift test                                   # 366 tests, ~5s
 ```
 
 ## What Works Now (shipped game)

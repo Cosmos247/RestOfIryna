@@ -123,8 +123,9 @@ so are the trade TTLs and the 12:00 rollover.
 ARE that budget spent at fixed exchange rates, and the validator refuses an overspend. The
 combat curves were derived from the same budget, so an item that respects it cannot move any
 stat's percentage — which is what makes adding items safe. Two consequences:
-- `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–5); item level is the
-  budget input (1–40). The weapon ladders map tiers to 1/10/20/30/40.
+- `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–9 on the weapon ladder); item
+  level is the budget input (1–40). Since 2026-10-04 the weapon ladders map nine tiers to
+  1/5/10 … 40, each rung's item level equal to the player level it opens at.
 - **Never give anything a flat bonus — items OR techniques.** Enchant is `1 + 4% × level`
   of the item's OWN stats, set bonuses are capped against their members' combined budget,
   and every Super stance lifts by a multiplier of the character's own stat. The same
@@ -235,13 +236,20 @@ field that can disagree with them. No screen shows "decree N of 39". The chain i
 live change, not a draft: **a Training Ground or technique decree may not sit below its first
 technique's floor** (`king.technique_before_its_floor`) — «Наука бою» and «Перший прийом» sat at 9
 against a floor of 10, and the estate decree they need came after them, until the 2026-09-27
-reorder.
+reorder. A sixth, `king.weapon_tier_before_its_gate`, came the same way. «Гострий край» asked
+at level 4 for a weapon rung nobody could buy before level 7, because the upgrade lives in
+the T3 workshop. It moved to 5 with the 2026-10-04 ladder.
 
 **A player's place in the chain is a POSITION** (`KingProgress.decreeIndex`), so reordering or
 inserting decrees moves everyone standing in or past the change. Read `king_progress` off the
-machine first, and ship a migration with the edit — `RewalkReorderedDecrees` sends anyone inside
-a reordered window back to its start, because a second payout is recoverable and a skipped decree
-is not. Verify the TABLE afterwards.
+machine first, and ship a migration with the edit. Two shapes exist, both because a second
+payout is recoverable and a skipped decree is not:
+- `RewalkReorderedDecrees` sends anyone inside a reordered window back to its start. It is safe
+  only when the window holds nothing but live state reads.
+- `ReseatDecreesById` (`KingChainReseat`) re-seats each row on the first decree of the new order
+  it had not passed. Use it when the window holds events.
+
+Verify the TABLE afterwards.
 
 **Eleven of the eighteen condition kinds are live state reads; seven are events that leave
 no trace.** `KingService.record` is the one funnel for those seven, and it ticks
@@ -514,6 +522,24 @@ row's tier (`CapitalController.itemLabel(_:tier:lingo:locale:)`). **An item id a
 name a row**, so a service that reports rows hands back the tier with them:
 `GearConditionService` returns `BrokenPiece(itemId:tier:)`, not `[String]`. Auto-memory
 `feedback-ladder-names-one-noun`.
+
+**The weapon follows the PLAYER level, and its first rung is the Master's lesson**
+(2026-10-04, `spec-items.md` §9).
+- **The ladder.** Nine rungs, one every five levels (1 … 40). Each carries its own
+  `requiredPlayerLevel` and is budgeted at that level, at 75% of the shipped growth.
+- **Why.** The estate used to open tier N at T N, which put the item-level-40 sword in hand
+  at level 13. The model behind tier 2 of the bestiary had assumed `itemLevel <= level` all
+  along.
+- **Who sells what.** Tier 1 → 2 is sold only by the Master
+  (`WeaponUpgradeService.lesson`): the rung's materials from the bag plus `master.json` →
+  `weaponLessonSilver`. The workshop refuses a tier-1 weapon as `.notLearned`.
+- **"Has learned" is derived** (tier ≥ 2), so never add a column for it.
+- **The gate is one rule**, `WeaponLadderRules.highestTier`, shared by the catalog, the
+  clamp migration and the tests.
+- **The upgrade button lives only in the workshop, which opens at T3.** That is how
+  «Гострий край» (level 4, weapon tier 2) could not be finished before level 7.
+  `king.weapon_tier_before_its_gate` now refuses a weapon decree filed below its rung's gate.
+- Auto-memory `project-weapon-ladder-rework`.
 
 ### Screens, buttons and refusals
 

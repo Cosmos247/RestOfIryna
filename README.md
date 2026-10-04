@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 344 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 366 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -172,6 +172,8 @@ RestOfIryna/
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
 │   │   ├── RewalkReorderedDecrees.swift # 2026-09-27 — data: anyone at chain positions 23…25 goes back to 22 after the estate-before-ground reorder
+│   │   ├── ClampWeaponTiersToLevel.swift # 2026-10-04 — data: every class weapon comes down to the tier its owner's level allows; the removed rungs refunded in silver at the trader's buy price
+│   │   ├── ReseatDecreesById.swift  # 2026-10-04 — data: `king_progress` positions re-seated BY DECREE after the four weapon decrees moved to L5/10/15/20 — nobody skips a decree
 │   │   ├── AddFightLogEstateLevel.swift # 2026-10-03 — nullable `estate_level` on `fight_log`: the estate tier a fight was rolled at, the input of the creature's strength
 │   │   ├── CreateKingProgress.swift  # 2026-09-21 — `king_progress`, unique on `user_id`: "one open decree" as a database guarantee, the way `quest_progress` guarantees one job per NPC per day. No backfill on purpose
 │   │   ├── AddWalkCounters.swift     # 2026-09-12 — `deepest_km` + `total_km_walked`, the first cumulative counters the game stores, plus four leaderboard indexes via raw SQL. Nothing to backfill: a depth record only ever lived in `exploration_state`, which is deleted when the expedition ends
@@ -287,6 +289,7 @@ RestOfIryna/
 │   │   ├── ItemCard.swift            # 2026-09-09 — the "what am I buying" card shown between a shop listing and the purchase question (Trader · Master · Tavern · Market). Name, lore and what it grants, read from the item's own effects / ladder rung
 │   │   ├── FortuneDisplay.swift      # 2026-09-09 — what the drawn tarot card is doing, GENERATED from its `FortuneEffect`; `oneShotLine` reads the stamped record instead, because only that knows which way the Wheel fell
 │   │   ├── PhotoCache.swift          # Phase 6.3 (+ 2026-05-20 rework) — `[assetPath: fileId]` cache + `sendCachedPhoto(...)` helper (file_id reuse only — no deletion). Default photo path for ALL player-visible art (location backdrops, registration/lore scenes); photos stay in chat history (players keep a scrollable record; file_id dedup makes accumulation free). Was `sendScenicPhoto` with prev-photo auto-delete until the rework dropped the deletion.
+│   │   ├── GearStatLines.swift       # 2026-10-04 — a weapon rung's stat lines and the "+N → +M (↑+K)" preview, shared by the workshop and the Master's weapon lesson
 │   │   ├── RequirementLine.swift     # 2026-09-17 — the one rendering of "what it costs / what you have": `✅ 1× 🪵 Соснова дошка  (12/1)`. Twelve call sites had said it four ways (a recipe in words, three upgrade screens in a fraction, a modal in both, and two gate lines that disagreed about the word for the estate level). Marker, count, label, fraction in brackets — the count rides on `item` only, since a gate has none; ⛔ retired; current-against-maximum (durability, bag, plots) is a DIFFERENT sentence and is not rendered here
 │   │   ├── ScreenEdit.swift          # 2026-09-10 — `editScreen(...)`, the one sanctioned way to redraw a screen in place (the mirror of `sendCachedPhoto` for edits) + `TelegramAPIError`. Telegram edits a message's TEXT or its CAPTION and never either, so `editMessageText` against artwork fails — 310 times in a day and a half of Pi log, every one swallowed by `try?`, which is what "the tap did nothing" was. `isPhoto` is the caller's expectation and the fast path; a wrong one falls back to the other field and logs the recovery with `#function`. All 20 edit call sites go through it
 │   │   ├── DotEnv+Env.swift

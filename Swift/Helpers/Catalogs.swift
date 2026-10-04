@@ -85,6 +85,7 @@ final class DomainContent: Sendable {
     let masterEnchantCap: Int
     let masterEnchantBudgetFraction: Double
     let masterEnchantSteps: [MasterCatalog.EnchantStep]
+    let masterWeaponLessonSilver: Int
 
     let plotIcons: [PlotType: String]
     let plotTunings: [PlotType: PlotTuning]
@@ -261,6 +262,7 @@ final class DomainContent: Sendable {
         self.masterEnchantCap = master.enchantCap
         self.masterEnchantBudgetFraction = master.enchantBudgetFractionPerLevel
         self.masterEnchantSteps = master.enchantSteps.map(\.domain)
+        self.masterWeaponLessonSilver = master.weaponLessonSilver
 
         // Built by parsing each row's `type`. A raw value the enum cannot
         // represent throws — a validator error too, so unreachable on install.

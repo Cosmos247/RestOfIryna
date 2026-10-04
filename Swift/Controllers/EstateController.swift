@@ -2528,7 +2528,7 @@ extension EstateController {
             weaponEntry: snapshot.weaponEntry,
             weaponItem: snapshot.weaponItem,
             userId: context.session.id,
-            estateLevel: context.session.estateLevel,
+            playerLevel: context.session.level,
             invSnapshot: snapshot.invHaves,
             whSnapshot: snapshot.whHaves,
             lingo: context.lingo, locale: locale
@@ -2539,7 +2539,7 @@ extension EstateController {
     }
 
     /// `weapon:upgrade:confirm` — perform one upgrade step. Failure modes
-    /// (missing materials / estate-level too low / max tier / no weapon)
+    /// (missing materials / level too low / not learned / max tier / no weapon)
     /// surface as modal alerts and leave the screen unchanged. On success
     /// the screen refreshes with a `✅ Upgraded ...` banner appended below
     /// the body, mirroring the `craft:` handler's banner placement.
@@ -2564,12 +2564,24 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
 
-        case .estateLevelTooLow(let required, let current):
-            let toast = "🏰 " + context.lingo.localize("weapon.upgrade.estate_too_low", locale: locale, interpolations: [
+        case .levelTooLow(let required, let current):
+            let toast = "🔒 " + context.lingo.localize("weapon.upgrade.level_too_low", locale: locale, interpolations: [
                 "required": "\(required)",
                 "current":  "\(current)"
             ])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .notLearned:
+            // A stale [🔨] from before the screen learned to hide it at tier 1.
+            let toast = context.lingo.localize("weapon.upgrade.not_learned", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+
+        case .alreadyLearned, .notEnoughSilver:
+            // Both belong to the Master's door; the workshop charges no fee and
+            // sells from tier 2 up. Acknowledge so the button never spins.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
 
         case .missingMaterials(let shortages):
@@ -2596,7 +2608,7 @@ extension EstateController {
                 weaponEntry: snapshot.weaponEntry,
                 weaponItem: snapshot.weaponItem,
                 userId: context.session.id,
-                estateLevel: context.session.estateLevel,
+                playerLevel: context.session.level,
                 invSnapshot: snapshot.invHaves,
                 whSnapshot: snapshot.whHaves,
                 lingo: context.lingo, locale: locale
@@ -2825,11 +2837,12 @@ extension EstateController {
         let weaponItem: Item?
         let invHaves: [String: Int]
         let whHaves: [String: Int]
-        /// True when the player has a weapon, it's below max tier, and the
-        /// catalog has a defined next step. Estate-level gate and material
-        /// shortfalls are validated by the service on confirm — the button
-        /// stays visible so the player can read the modal alert telling them
-        /// exactly what's missing.
+        /// True when the player has a weapon past tier 1 (the first reforge is
+        /// the Master's lesson), it's below max tier, and the catalog has a
+        /// defined next step. The level gate and material shortfalls are
+        /// validated by the service on confirm — the button stays visible so
+        /// the player can read the modal alert telling them exactly what's
+        /// missing.
         let canUpgrade: Bool
     }
 
@@ -2851,7 +2864,9 @@ extension EstateController {
 
         if let weapon = weapon, let item = weaponItem,
            let maxTier = WeaponUpgradeCatalog.maxTier(for: item.id) {
-            if weapon.tier < maxTier,
+            // Tier 1 is the Master's lesson, so the workshop offers no button
+            // for it — the screen says where to go instead.
+            if weapon.tier >= 2, weapon.tier < maxTier,
                let nextStep = WeaponUpgradeCatalog.step(for: item.id, tier: weapon.tier + 1) {
                 canUpgrade = true
                 for input in nextStep.inputs {
@@ -2873,13 +2888,13 @@ extension EstateController {
     /// Detail screen body for the weapon upgrade flow. Shows the player's
     /// current weapon (icon + tier-N name + current stats), the next tier
     /// (icon + tier-(N+1) name + stats with deltas), required materials,
-    /// and the estate-level requirement (with availability indicator). At
+    /// and the player-level requirement (with availability indicator). At
     /// max tier, falls back to a "fully upgraded" page.
     fileprivate func renderWeaponUpgrade(
         weaponEntry: InventoryEntry?,
         weaponItem: Item?,
         userId: UUID?,
-        estateLevel: Int,
+        playerLevel: Int,
         invSnapshot: [String: Int],
         whSnapshot: [String: Int],
         lingo: Lingo,
@@ -2906,7 +2921,7 @@ extension EstateController {
         var lines: [String] = ["<b>\(title)</b>", "", currentHeader]
 
         // Current-tier stats block.
-        let currentStatLines = formatStatLines(stats: currentStep.stats, lingo: lingo, locale: locale, prefix: "   ")
+        let currentStatLines = GearStatLines.lines(stats: currentStep.stats, lingo: lingo, locale: locale, prefix: "   ")
         if !currentStatLines.isEmpty {
             lines.append(contentsOf: currentStatLines)
         }
@@ -2915,6 +2930,15 @@ extension EstateController {
         if entry.tier >= maxTier {
             lines.append("")
             lines.append(lingo.localize("weapon.upgrade.max_tier", locale: locale))
+            return lines.joined(separator: "\n")
+        }
+
+        // Tier 1: the first reforge is the Master's lesson, never the
+        // workshop's (`spec-items.md` §9.4). The screen says where to go rather
+        // than pricing a rung it will not sell.
+        if entry.tier == 1 {
+            lines.append("")
+            lines.append(lingo.localize("weapon.upgrade.not_learned", locale: locale))
             return lines.joined(separator: "\n")
         }
 
@@ -2929,7 +2953,7 @@ extension EstateController {
         let arrow = lingo.localize("weapon.upgrade.delta_arrow", locale: locale)
         lines.append("")
         lines.append("\(arrow) \(icon) <b>\(nextName)</b>")
-        let deltaLines = formatStatDeltas(from: currentStep.stats, to: nextStep.stats, lingo: lingo, locale: locale, prefix: "   ")
+        let deltaLines = GearStatLines.deltas(from: currentStep.stats, to: nextStep.stats, lingo: lingo, locale: locale, prefix: "   ")
         lines.append(contentsOf: deltaLines)
 
         // Materials.
@@ -2941,12 +2965,13 @@ extension EstateController {
                                               lingo: lingo, locale: locale))
         }
 
-        // Estate-level gate. The bag screen shows the SAME gate — one label
-        // key, so the two screens cannot drift into two words for it again.
+        // Player-level gate since 2026-10-04 (`spec-items.md` §9) — the label
+        // the estate upgrade uses for the same gate, so the two screens cannot
+        // drift into two words for it.
         lines.append("")
         lines.append(RequirementLine.render(
-            label: lingo.localize("upgrade.estate_level_label", locale: locale),
-            have: estateLevel, need: nextTier, indent: ""))
+            label: lingo.localize("estate.upgrade.level_label", locale: locale),
+            have: playerLevel, need: nextStep.requiredPlayerLevel, indent: ""))
 
         _ = userId  // currently unused but kept for symmetry with future per-user gates
         return lines.joined(separator: "\n")
@@ -2954,7 +2979,7 @@ extension EstateController {
 
     /// Detail-screen keyboard. At max tier, only Back. Otherwise [🔨 Upgrade]
     /// + Back. The Upgrade button is always shown — the handler validates
-    /// estate level and materials and surfaces a modal alert on failure (so
+    /// the level gate and materials and surfaces a modal alert on failure (so
     /// the player can read exactly what's missing instead of guessing why
     /// the button is greyed out).
     fileprivate func weaponUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
@@ -3010,7 +3035,8 @@ extension EstateController {
             "delta": "\(delta)"
         ]))
 
-        // Estate-level gate — same label key as the weapon screen.
+        // Estate-level gate. The weapon screen moved to the player level on
+        // 2026-10-04, so this label is the bag's alone now.
         lines.append("")
         lines.append(RequirementLine.render(
             label: lingo.localize("upgrade.estate_level_label", locale: locale),
@@ -3039,45 +3065,6 @@ extension EstateController {
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
-    }
-
-    /// Render only the non-zero stat fields of a `GearStats` value as
-    /// "+N <icon> <name>" lines. Used for the current-tier block on the
-    /// upgrade detail screen.
-    ///
-    /// All SIX fields, in `GearStats` order. HP was missing until 2026-09-11,
-    /// which made the doc comment above a lie by one field. It cannot fire
-    /// today — no weapon rung carries HP, and weapons are the only thing with a
-    /// ladder — but the planned gear ladder puts the Forester set on these
-    /// rungs, and the Forester set is exactly the four items that DO carry HP.
-    private func formatStatLines(stats: GearStats, lingo: Lingo, locale: String, prefix: String) -> [String] {
-        var out: [String] = []
-        if stats.attack != 0   { out.append("\(prefix)+\(stats.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
-        if stats.defense != 0  { out.append("\(prefix)+\(stats.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
-        if stats.hp != 0       { out.append("\(prefix)+\(stats.hp) ❤️ \(lingo.localize("profile.health", locale: locale))") }
-        if stats.crit != 0     { out.append("\(prefix)+\(stats.crit) 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
-        if stats.dodge != 0    { out.append("\(prefix)+\(stats.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
-        if stats.accuracy != 0 { out.append("\(prefix)+\(stats.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
-        return out
-    }
-
-    /// Render stat deltas from `from` to `to` as "+N → +M (↑+K) <icon> <name>"
-    /// lines. Used for the next-tier preview on the upgrade detail screen.
-    private func formatStatDeltas(from: GearStats, to: GearStats, lingo: Lingo, locale: String, prefix: String) -> [String] {
-        func line(_ a: Int, _ b: Int, _ unit: String, _ iconLabel: String) -> String? {
-            guard a != 0 || b != 0 else { return nil }
-            let delta = b - a
-            let deltaPart = delta == 0 ? "" : (delta > 0 ? "  (↑+\(delta))" : "  (↓\(delta))")
-            return "\(prefix)+\(a)\(unit) → +\(b)\(unit)\(deltaPart) \(iconLabel)"
-        }
-        var out: [String] = []
-        if let l = line(from.attack,   to.attack,   "",  "⚔️ \(lingo.localize("workshop.stats.attack",   locale: locale))") { out.append(l) }
-        if let l = line(from.defense,  to.defense,  "",  "🛡 \(lingo.localize("workshop.stats.defense",  locale: locale))") { out.append(l) }
-        if let l = line(from.hp,       to.hp,       "",  "❤️ \(lingo.localize("profile.health",          locale: locale))") { out.append(l) }
-        if let l = line(from.crit,     to.crit,     "",  "💥 \(lingo.localize("workshop.stats.crit",     locale: locale))") { out.append(l) }
-        if let l = line(from.dodge,    to.dodge,    "",  "💨 \(lingo.localize("workshop.stats.dodge",    locale: locale))") { out.append(l) }
-        if let l = line(from.accuracy, to.accuracy, "",  "🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") { out.append(l) }
-        return out
     }
 
     /// Edit the source message in place — text or caption depending on

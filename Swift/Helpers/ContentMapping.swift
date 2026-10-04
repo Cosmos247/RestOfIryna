@@ -178,6 +178,7 @@ extension WeaponUpgradeStepDTO {
             // only ever right for a hand-built fixture — the validator demands
             // an ascending run on the shipped ladders.
             itemLevel: itemLevel ?? tier,
+            requiredPlayerLevel: gateLevel,
             inputs: inputs.map { WeaponUpgradeInput($0.itemId, $0.quantity) }
         )
     }

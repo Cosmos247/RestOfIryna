@@ -128,6 +128,21 @@ the creatures column is the forest's HP and ATK at that tier (`tuning/combat.jso
 | T4 | T5 | 60 |
 | T5 | T6 | 75 |
 | T6 | T7 | 90 |
+
+**Weapon** (`weapon_upgrades.json`) — gated on the PLAYER level (`spec-items.md` §9);
+the first reforge is the Master's lesson, the rest the workshop's
+
+| tier | player level | where | `gear.rusty_sword` ⚔️/💥/🎯 | `gear.simple_bow` ⚔️/💥/🎯 | `gear.wooden_staff` ⚔️/💥/🎯 | durability |
+|---|---|---|---|---|---|---|
+| t1 | 1 | starter | 7 / 3 / 3 | 6 / 3 / 3 | 7 / 5 / 1 | 30 |
+| t2 | 5 | the Master's lesson | 11 / 5 / 5 | 10 / 5 / 5 | 11 / 8 / 2 | 40 |
+| t3 | 10 | workshop | 16 / 8 / 6 | 14 / 8 / 8 | 16 / 13 / 3 | 50 |
+| t4 | 15 | workshop | 21 / 10 / 8 | 20 / 11 / 11 | 21 / 17 / 3 | 70 |
+| t5 | 20 | workshop | 27 / 12 / 10 | 24 / 13 / 13 | 26 / 21 / 4 | 100 |
+| t6 | 25 | workshop | 32 / 14 / 12 | 29 / 16 / 16 | 31 / 25 / 5 | 120 |
+| t7 | 30 | workshop | 36 / 17 / 14 | 33 / 18 / 18 | 36 / 29 / 6 | 140 |
+| t8 | 35 | workshop | 42 / 20 / 16 | 38 / 21 / 21 | 41 / 34 / 7 | 160 |
+| t9 | 40 | workshop | 47 / 22 / 17 | 43 / 23 / 23 | 45 / 37 / 8 | 180 |
 <!-- /generated -->
 
 Three things are worth noticing in that table before approving it.

@@ -266,6 +266,12 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddCombatTally())
     migrations.add(RewalkReorderedDecrees())
     migrations.add(AddFightLogEstateLevel())
+    // 2026-10-04, `spec-items.md` §9: the weapon follows the player level. The
+    // clamp walks the testers' weapons back to their level (refunding the
+    // removed rungs in silver); the re-seat moves the King's chain positions
+    // past the four weapon decrees that moved later.
+    migrations.add(ClampWeaponTiersToLevel())
+    migrations.add(ReseatDecreesById())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

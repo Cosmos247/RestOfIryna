@@ -5,14 +5,16 @@
 //  Created by Dmytro Ihnatyuhin on 06.05.2026.
 //
 //  Phase 5.2.2: per-weapon tier progression. The three class starter weapons
-//  cannot be replaced — only upgraded — so each one carries its own
-//  5-tier ladder of (stats, materials) pairs. The player's current tier
-//  lives on the `InventoryEntry.tier` column; everything else (display
-//  name, gear bonuses, upgrade cost) is derived from this catalog.
+//  cannot be replaced — only upgraded — so each one carries its own ladder of
+//  (stats, materials) rungs: nine since 2026-10-04. The player's current tier
+//  lives on the `InventoryEntry.tier` column; everything else (display name,
+//  gear bonuses, upgrade cost) is derived from this catalog.
 //
-//  Estate level gates progression: tier N needs estate level >= N. The
-//  derivation `User.estateLevel` (every 3 player levels = +1 tier — Phase
-//  5.3a) paces the upgrade ladder against natural play time.
+//  The PLAYER level gates progression since 2026-10-04 (`spec-items.md` §9):
+//  each rung carries the level it opens at, one every five levels. The estate
+//  used to open tier N at T N, which put the item-level-40 sword in hand at
+//  level 13. The first reforge is the Master's lesson in the capital; every
+//  later one is the workshop's (`WeaponUpgradeService`).
 //
 //  T1 stats are intentionally identical to the pre-existing
 //  `Item.gearStats` for each weapon, so existing players see no numeric
@@ -41,6 +43,8 @@ public struct WeaponUpgradeStep: Sendable {
     /// prices or describes the weapon — and so the migration digest can see it
     /// at all, which a DTO-only field cannot be.
     public let itemLevel: Int
+    /// The player level this rung opens at — tier 1 always at 1.
+    public let requiredPlayerLevel: Int
     /// Materials consumed from the combined inventory + warehouse pool to
     /// REACH this tier (i.e. the cost of upgrading from tier-1 to this tier).
     /// Empty for T1 — that's the starter weapon, granted by the King.
@@ -77,5 +81,18 @@ public enum WeaponUpgradeCatalog {
 
     public static func isUpgradable(_ itemId: String) -> Bool {
         return progression[itemId] != nil
+    }
+
+    /// The player level `tier` of `itemId` opens at, or nil past the ladder.
+    public static func requiredLevel(for itemId: String, tier: Int) -> Int? {
+        step(for: itemId, tier: tier)?.requiredPlayerLevel
+    }
+
+    /// The highest tier of `itemId` a player of `level` may hold — what the
+    /// workshop sells up to and what the 2026-10-04 clamp walked the testers'
+    /// weapons back to. One rule, `WeaponLadderRules.highestTier`.
+    public static func highestTier(for itemId: String, atLevel level: Int) -> Int {
+        let gates = (progression[itemId] ?? []).map(\.requiredPlayerLevel)
+        return WeaponLadderRules.highestTier(gates: gates, atLevel: level)
     }
 }

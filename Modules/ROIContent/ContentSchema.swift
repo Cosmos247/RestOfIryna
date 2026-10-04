@@ -86,5 +86,11 @@ public enum ContentSchema {
     /// played as a cycle with the class special attack as its third choice.
     /// A v15 bundle has no such key, and the forest's Defend numbers are not a
     /// fallback for it: they are a different move.
-    public static let current: Int = 16
+    /// v17 (2026-10-04): the weapon ladder follows the PLAYER level — nine
+    /// rungs, each with a `requiredPlayerLevel`, in place of five opened by the
+    /// estate — and `master.json` gains a required `weaponLessonSilver`, the
+    /// fee for the Master's lesson that sells the first rung
+    /// (`spec-items.md` §9). A v16 ladder has no gates and would open every
+    /// rung at level 1, so the handshake refuses rather than falls back.
+    public static let current: Int = 17
 }

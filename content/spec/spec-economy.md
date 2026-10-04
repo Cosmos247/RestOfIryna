@@ -348,11 +348,11 @@ the draft band lives and where content arrives after the rebalance.
 | training ground L1 | 190 | 150 |
 | training ground L2 | 468 | 400 |
 | training ground L3 | 1280 | 800 |
-| `gear.rusty_sword` T1→T5 | 1188 | 0 |
-| `gear.simple_bow` T1→T5 | 1042 | 0 |
-| `gear.wooden_staff` T1→T5 | 986 | 0 |
-| **every row** | **27252** | |
-| **one player** — a single weapon ladder | **25022–25224** | |
+| `gear.rusty_sword` T1→T9 | 8772 | 0 |
+| `gear.simple_bow` T1→T9 | 7618 | 0 |
+| `gear.wooden_staff` T1→T9 | 7330 | 0 |
+| **every row** | **47756** | |
+| **one player** — a single weapon ladder | **31366–32808** | |
 
 **The sinks that are not a ladder**
 

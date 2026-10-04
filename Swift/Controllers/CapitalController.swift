@@ -832,7 +832,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     func showMaster(context: Context) async throws {
         let text = renderMasterMenuBody(session: context.session, lingo: context.lingo)
-        let keyboard = masterMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        let lesson = try await WeaponUpgradeService.lessonAvailable(for: context.session, on: context.db)
+        let keyboard = masterMenuKeyboard(lesson: lesson, lingo: context.lingo, locale: context.session.locale)
         _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/master.jpg",
             caption: text,
@@ -850,25 +851,153 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return "<b>\(title)</b>\n\n\(body)\n\n🪙 \(silverLabel)"
     }
 
-    private func masterMenuKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// `lesson` adds the weapon lesson's button — only while the class weapon
+    /// is tier 1 and its second rung is open (`WeaponUpgradeService.
+    /// lessonAvailable`). Locked buttons are absent in this game, so a player
+    /// below the gate sees no button; the King's decree tells them when.
+    private func masterMenuKeyboard(lesson: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let buy     = lingo.localize("capital.master.button.buy",     locale: locale)
         let repair  = lingo.localize("capital.master.button.repair",  locale: locale)
         let enchant = lingo.localize("capital.master.button.enchant", locale: locale)
         let back    = lingo.localize("capital.button.back_to_capital", locale: locale)
         let quest   = lingo.localize("quest.button.open", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [
+        var rows: [[TGInlineKeyboardButton]] = [
             [TGInlineKeyboardButton(text: buy,     callbackData: "master:buylist")],
             [TGInlineKeyboardButton(text: repair,  callbackData: "master:repairlist"),
-             TGInlineKeyboardButton(text: enchant, callbackData: "master:enchantlist")],
-            [TGInlineKeyboardButton(text: quest,   callbackData: "quest:board:master")],
-            [TGInlineKeyboardButton(text: back,    callbackData: "capital:back")]
-        ])
+             TGInlineKeyboardButton(text: enchant, callbackData: "master:enchantlist")]
+        ]
+        if lesson {
+            let label = lingo.localize("capital.master.button.lesson", locale: locale)
+            rows.append([TGInlineKeyboardButton(text: label, callbackData: "master:lesson")])
+        }
+        rows.append([TGInlineKeyboardButton(text: quest, callbackData: "quest:board:master")])
+        rows.append([TGInlineKeyboardButton(text: back,  callbackData: "capital:back")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     private func editToMasterMenu(messageId: Int, isPhoto: Bool, context: Context) async {
         let text = renderMasterMenuBody(session: context.session, lingo: context.lingo)
-        let keyboard = masterMenuKeyboard(lingo: context.lingo, locale: context.session.locale)
+        // Best-effort, like every edit here: a failed lookup only hides the
+        // lesson's button, and the menu still draws.
+        let lesson = (try? await WeaponUpgradeService.lessonAvailable(for: context.session, on: context.db)) ?? false
+        let keyboard = masterMenuKeyboard(lesson: lesson, lingo: context.lingo, locale: context.session.locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    // MARK: Weapon lesson (2026-10-04, `spec-items.md` §9.4)
+
+    /// One of the three class versions of a lesson line — `part` is `intro` or
+    /// `done` — following `capital.master.repair.weapon.*`.
+    private static func lessonKey(_ part: String, for user: User) -> String {
+        switch CharacterClass(rawValue: user.characterClass ?? "") {
+        case .archer:       return "capital.master.lesson.\(part).archer"
+        case .mage:         return "capital.master.lesson.\(part).mage"
+        case .warrior, nil: return "capital.master.lesson.\(part).warrior"
+        }
+    }
+
+    /// The lesson card: the Master's opening line, the first reforge's preview
+    /// in the workshop's own words (`GearStatLines`), and its price — the
+    /// rung's materials counted from the bag, since the capital has no
+    /// warehouse, plus the fee, each a `RequirementLine`.
+    private func editToMasterLesson(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale, user = context.session
+        guard let userId = user.id,
+              try await WeaponUpgradeService.lessonAvailable(for: user, on: context.db),
+              let weapon = try await WeaponUpgradeService.equippedWeapon(for: user, on: context.db),
+              let item = ItemCatalog.find(weapon.itemId),
+              let current = WeaponUpgradeCatalog.step(for: weapon.itemId, tier: 1),
+              let next = WeaponUpgradeCatalog.step(for: weapon.itemId, tier: 2) else {
+            // A stale card: the lesson was taken, or the weapon is not worn.
+            await editToMasterMenu(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let icon = item.icon.map { "\($0) " } ?? ""
+        let from = lingo.localize(ItemDisplay.nameKey(for: item, tier: 1), locale: locale)
+        let to   = lingo.localize(ItemDisplay.nameKey(for: item, tier: 2), locale: locale)
+        var lines = [
+            "<b>" + lingo.localize("capital.master.lesson.title", locale: locale) + "</b>",
+            "",
+            lingo.localize(Self.lessonKey("intro", for: user), locale: locale),
+            "",
+            "\(icon)<b>\(from)</b> → <b>\(to)</b>"
+        ]
+        lines += GearStatLines.deltas(from: current.stats, to: next.stats, lingo: lingo, locale: locale,
+                                      prefix: RequirementLine.blockIndent)
+        lines.append("")
+        lines.append("<b>" + lingo.localize("capital.master.lesson.price", locale: locale) + "</b>")
+        for input in next.inputs {
+            let have = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
+            lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity, lingo: lingo, locale: locale))
+        }
+        lines.append(RequirementLine.render(
+            label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+            have: user.silver, need: MasterCatalog.weaponLessonSilver))
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("weapon.upgrade.button.confirm", locale: locale),
+                                   callbackData: "master:lessonok"),
+            TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale),
+                                   callbackData: "master:menu")
+        ]])
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
+                               text: lines.joined(separator: "\n"), keyboard: keyboard)
+    }
+
+    /// What the `[🔨 Перекувати]` tap ends in. A refusal is a modal and leaves
+    /// the card standing; a stale card goes back to the menu, which no longer
+    /// offers the lesson. On success: the banner, then the Master speaking with
+    /// what was learned under it — its own message, as the innkeeper's lessons
+    /// are, because `postStatusBanner` deletes the previous banner and an NPC
+    /// speaking is not a status line.
+    private func finishMasterLesson(_ result: WeaponUpgradeService.UpgradeResult, query: TGCallbackQuery,
+                                    messageId: Int, isPhoto: Bool, context: Context) async {
+        let lingo = context.lingo, locale = context.session.locale
+        func alert(_ text: String) async {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                callbackQueryId: query.id, text: text, showAlert: true))
+        }
+        switch result {
+        case .success(let newTier, let itemId):
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let item = ItemCatalog.find(itemId)
+            let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: newTier), locale: locale) } ?? itemId
+            await postStatusBanner("✅ " + lingo.localize("weapon.upgrade.banner.success", locale: locale, interpolations: [
+                "icon": item?.icon ?? "", "name": name, "tier": "\(newTier)"
+            ]), context: context)
+            let speech = lingo.localize(Self.lessonKey("done", for: context.session), locale: locale)
+            // Both emoji stay out of the templates: Lingo counts a placeholder's
+            // offset in Characters but finds it in UTF-16, so an emoji ahead of
+            // `%{…}` shifts it (`.memory/localization.md`). 🔨 is prepended here,
+            // and 🛠 arrives inside the `workshop` value, which is replaced by
+            // plain string matching and is safe.
+            let workshop = lingo.localize("capital.master.lesson.workshop", locale: locale)
+            let learned: String
+            if let next = WeaponUpgradeCatalog.requiredLevel(for: itemId, tier: newTier + 1),
+               next > context.session.level {
+                learned = "🔨 " + lingo.localize("capital.master.lesson.learned", locale: locale,
+                                                interpolations: ["workshop": workshop, "level": "\(next)"])
+            } else {
+                learned = "🔨 " + lingo.localize("capital.master.lesson.learned_open", locale: locale,
+                                                interpolations: ["workshop": workshop])
+            }
+            _ = try? await context.bot.sendMessage(session: context.session, text: speech + "\n\n" + learned,
+                                                   parseMode: .html)
+            await editToMasterMenu(messageId: messageId, isPhoto: isPhoto, context: context)
+        case .missingMaterials(let shortages):
+            await alert(RequirementLine.shortageModal(shortages, lingo: lingo, locale: locale))
+        case .notEnoughSilver(let have, let need):
+            await alert(lingo.localize("capital.trader.not_enough_silver", locale: locale,
+                                       interpolations: ["have": "\(have)", "need": "\(need)"]))
+        case .levelTooLow(let required, let current):
+            await alert("🔒 " + lingo.localize("weapon.upgrade.level_too_low", locale: locale, interpolations: [
+                "required": "\(required)", "current": "\(current)"
+            ]))
+        case .noWeaponEquipped:
+            await alert(lingo.localize("weapon.upgrade.no_weapon", locale: locale))
+        case .maxTierReached, .alreadyLearned, .notLearned:
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await editToMasterMenu(messageId: messageId, isPhoto: isPhoto, context: context)
+        }
     }
 
     /// Localized "icon name" for an item (armor isn't tiered, so the base
@@ -1722,6 +1851,19 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         if data == "master:enchantlist" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        // The weapon lesson (2026-10-04): the card, then the reforge itself.
+        // The confirm is answered by its result, never up front, so a refusal
+        // can be a modal.
+        if data == "master:lesson" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await ctrl.editToMasterLesson(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "master:lessonok" {
+            let result = try await WeaponUpgradeService.lesson(for: context.session, on: context.db)
+            await ctrl.finishMasterLesson(result, query: query, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
         // Item taps open a confirm prompt first (guard against accidental

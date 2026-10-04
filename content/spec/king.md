@@ -78,34 +78,34 @@ to 72 Vigor, so a portion count cannot be added to anything — the design draft
 | 8 | `king.forest_feeds` | 3 | warehouse 15× `mat.pine_lumber` 15× `mat.river_pebble` 5× `mat.hide` | 40 | 35% |  |  |  |
 | 9 | 👑 `king.worthy_steward` | 4 | level 4 | 30 | 25% | 2× `food.roasted_meat` | 50 |  |
 | 10 | `king.own_home` | 4 | estate T2 | 60 | 50% |  |  |  |
-| 11 | `king.sharp_edge` | 4 | weapon T2 | 40 | 33% |  |  |  |
-| 12 | `king.fire_in_the_hearth` | 4 | cook a dish |  |  | 3× `food.roasted_meat` |  |  |
-| 13 | `king.first_ground` | 4 | claim a plot | 40 | 33% |  |  |  |
-| 14 | `king.harvest` | 4 | harvest a plot |  |  |  | 100 |  |
-| 15 | `king.while_youre_away` | 5 | send a passive expedition | 50 | 40% |  |  |  |
-| 16 | `king.stone_and_iron` | 5 | warehouse 10× `mat.iron` |  |  | 3× `food.roasted_meat` | 120 |  |
+| 11 | `king.fire_in_the_hearth` | 4 | cook a dish |  |  | 3× `food.roasted_meat` |  |  |
+| 12 | `king.first_ground` | 4 | claim a plot | 40 | 33% |  |  |  |
+| 13 | `king.harvest` | 4 | harvest a plot |  |  |  | 100 |  |
+| 14 | `king.while_youre_away` | 5 | send a passive expedition | 50 | 40% |  |  |  |
+| 15 | `king.stone_and_iron` | 5 | warehouse 10× `mat.iron` |  |  | 3× `food.roasted_meat` | 120 |  |
+| 16 | `king.sharp_edge` | 5 | weapon T2 | 40 | 32% |  |  |  |
 | 17 | `king.full_storeroom` | 6 | warehouse 40× `mat.pine_lumber` 40× `mat.river_pebble` 10× `mat.hide` | 60 | 46% |  |  |  |
 | 18 | 👑 `king.strength_of_a_steward` | 7 | level 7 | 45 | 33% | 2× `food.roasted_meat` |  |  |
 | 19 | `king.second_step` | 7 | estate T3 | 65 | 48% |  |  |  |
-| 20 | `king.tempered_steel` | 8 | weapon T3 | 70 | 50% |  |  |  |
-| 21 | `king.more_on_the_shoulders` | 8 | bag T2 | 70 | 50% |  |  |  |
-| 22 | `king.hands_of_a_master` | 8 | craft anything |  |  |  | 100 |  |
-| 23 | 👑 `king.maturity` | 10 | level 10 | 45 | 30% | 2× `food.roasted_meat` |  |  |
+| 20 | `king.more_on_the_shoulders` | 8 | bag T2 | 70 | 50% |  |  |  |
+| 21 | `king.hands_of_a_master` | 8 | craft anything |  |  |  | 100 |  |
+| 22 | 👑 `king.maturity` | 10 | level 10 | 45 | 30% | 2× `food.roasted_meat` |  |  |
+| 23 | `king.tempered_steel` | 10 | weapon T3 | 70 | 47% |  |  |  |
 | 24 | `king.third_step` | 10 | estate T4 | 75 | 50% |  | 150 |  |
 | 25 | `king.science_of_battle` | 10 | build the training ground | 60 | 40% |  |  |  |
 | 26 | `king.first_technique` | 10 | learn a technique |  |  | 3× `food.hunters_stew` |  |  |
-| 27 | `king.forged_facets` | 11 | weapon T4 | 80 | 52% |  |  |  |
-| 28 | `king.travelling_sack` | 11 | bag T3 | 80 | 52% |  |  |  |
-| 29 | 👑 `king.tempered_will` | 13 | level 13 | 60 | 36% | 3× `food.hunters_stew` |  |  |
-| 30 | `king.fourth_step` | 13 | estate T5 | 80 | 48% |  |  |  |
-| 31 | `king.royal_steel` | 14 | weapon T5 | 85 | 50% |  |  |  |
-| 32 | `king.stewards_train` | 15 | bag T4 | 85 | 49% |  |  |  |
-| 33 | `king.the_lists` | 15 | win a duel |  |  |  | 300 | 8670 |
-| 34 | 👑 `king.seasoned_steward` | 16 | level 16 | 75 | 42% |  |  |  |
-| 35 | `king.fifth_step` | 16 | estate T6 |  |  |  | 200 |  |
-| 36 | `king.the_wildwood` | 17 | reach km 26 |  |  |  | 400 | 19660 |
-| 37 | 👑 `king.right_hand_of_the_crown` | 19 | level 19 | 75 | 38% |  |  |  |
-| 38 | `king.sixth_step` | 19 | estate T7 |  |  |  | 300 |  |
+| 27 | `king.travelling_sack` | 11 | bag T3 | 80 | 52% |  |  |  |
+| 28 | 👑 `king.tempered_will` | 13 | level 13 | 60 | 36% | 3× `food.hunters_stew` |  |  |
+| 29 | `king.fourth_step` | 13 | estate T5 | 80 | 48% |  |  |  |
+| 30 | `king.stewards_train` | 15 | bag T4 | 85 | 49% |  |  |  |
+| 31 | `king.the_lists` | 15 | win a duel |  |  |  | 300 | 8670 |
+| 32 | `king.forged_facets` | 15 | weapon T4 | 80 | 46% |  |  |  |
+| 33 | 👑 `king.seasoned_steward` | 16 | level 16 | 75 | 42% |  |  |  |
+| 34 | `king.fifth_step` | 16 | estate T6 |  |  |  | 200 |  |
+| 35 | `king.the_wildwood` | 17 | reach km 26 |  |  |  | 400 | 19660 |
+| 36 | 👑 `king.right_hand_of_the_crown` | 19 | level 19 | 75 | 38% |  |  |  |
+| 37 | `king.sixth_step` | 19 | estate T7 |  |  |  | 300 |  |
+| 38 | `king.royal_steel` | 20 | weapon T5 | 85 | 42% |  |  |  |
 | 39 | 👑 `king.pillar_of_the_crown` | 25 | level 25 + bag T6 |  |  |  | 1000 | 116960 |
 
 **What the chain pays**

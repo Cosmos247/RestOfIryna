@@ -129,7 +129,7 @@ enum ContentDigest {
         for id in WeaponUpgradeCatalog.progression.keys.sorted() {
             digest.combine(id)
             for (index, step) in (WeaponUpgradeCatalog.progression[id] ?? []).enumerated() {
-                digest.combine("t\(index + 1) iLvl\(step.itemLevel)")
+                digest.combine("t\(index + 1) iLvl\(step.itemLevel) L\(step.requiredPlayerLevel)")
                 digest.combine("\(step.stats.attack)/\(step.stats.defense)/\(step.stats.hp)/\(step.stats.crit)/\(step.stats.dodge)/\(step.stats.accuracy)")
                 for input in step.inputs { digest.combine("\(input.itemId)x\(input.quantity)") }
             }
@@ -212,9 +212,15 @@ enum ContentDigest {
         for itemId in ["gear.rusty_sword", "gear.simple_bow", "gear.wooden_staff", "gear.forester_hood", "nope"] {
             digest.combine("\(WeaponUpgradeCatalog.isUpgradable(itemId))")
             digest.combine(WeaponUpgradeCatalog.maxTier(for: itemId).map(String.init) ?? "-")
-            for tier in 0...6 {
+            for tier in 0...10 {
                 let stats = WeaponUpgradeCatalog.stats(for: itemId, tier: tier)
                 digest.combine(stats.map { "\($0.attack)/\($0.defense)/\($0.hp)/\($0.crit)/\($0.dodge)/\($0.accuracy)" } ?? "-")
+                digest.combine(WeaponUpgradeCatalog.requiredLevel(for: itemId, tier: tier).map(String.init) ?? "-")
+            }
+            // The level gate (2026-10-04) is a walk with an early stop, which a
+            // record hash cannot see: replay it past both ends of the level range.
+            for level in -1...45 {
+                digest.combine("hi@\(level):\(WeaponUpgradeCatalog.highestTier(for: itemId, atLevel: level))")
             }
         }
 
@@ -232,6 +238,7 @@ enum ContentDigest {
 
         digest.combine(MasterCatalog.enchantCap)
         digest.combine("\(MasterCatalog.enchantBudgetFractionPerLevel)")
+        digest.combine("lesson \(MasterCatalog.weaponLessonSilver)")
         for listing in MasterCatalog.armorForSale {
             digest.combine("\(listing.itemId)@\(listing.priceSilver)")
         }

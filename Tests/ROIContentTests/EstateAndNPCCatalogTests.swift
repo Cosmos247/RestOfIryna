@@ -204,6 +204,16 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         XCTAssertTrue(rules(bundle(master: validMaster())).isEmpty)
     }
 
+    /// The lesson's fee (`spec-items.md` §9.4): zero is a free lesson, below
+    /// zero the Master would pay the player to learn.
+    func testNegativeLessonFeeIsAnError() {
+        let master = MasterFileDTO(armorForSale: [], repairCostFraction: 0.5, enchantCap: 1,
+                                   enchantBudgetFractionPerLevel: 0.04,
+                                   enchantSteps: [EnchantStepDTO(level: 1, silver: 40, materialId: "mat.hide", materialQty: 4)],
+                                   weaponLessonSilver: -1)
+        XCTAssertTrue(rules(bundle(master: master)).contains("master.lesson_silver"))
+    }
+
     // MARK: - Plot rules
 
     /// `PlotType` raw values are persisted in `Plot.plotType`, so a type the

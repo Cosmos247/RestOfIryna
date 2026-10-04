@@ -91,7 +91,7 @@ public enum MasterService {
     ///     wears out toward a rebuy; cost scales with the buy price.
     ///   • Weapon — restores to the *same* max (lore: the King's weapon can't
     ///     break, no shave); cost is a flat 1🪙 per durability point, so a full
-    ///     repair runs from 30🪙 (T1) up to 100🪙 (T5).
+    ///     repair runs from 30🪙 (T1) up to 180🪙 (T9).
     public static func repair(entryId: UUID, for user: User, on db: any Database) async throws -> RepairResult {
         guard let row = try await ownedRow(entryId, for: user, on: db) else { return .notArmor }
         let weapon = isWeapon(row.itemId)

@@ -1572,6 +1572,23 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The weapon follows the player level, and its first rung is the Master's lesson**
+        *(2026-10-04, NOT committed yet)* — the owner found the weapon growth too big. Measured,
+        the gate was the cause: rungs authored at item level 1/10/20/30/40 but opened by the
+        estate at T2–T5 (L4/7/10/13). Spec `spec-items.md` §9, every decision over a quiz.
+        - Nine rungs, one every five levels, each with `requiredPlayerLevel`; 75% of the shipped
+          growth; t6–t9 recipes t5 × 1.5/2/2.5/3; durability to 180; new names (the staff's
+          «Посох архімага» moved to t9).
+        - Tier 1 → 2 only at the Master, as a lesson (the rung's materials from the bag +
+          30 🪙): a fifth button, a card, then the banner and one NPC message. The workshop sells
+          tier 3 and up, shows the player-level gate, and says «Ви ще не вмієте…» at tier 1.
+        - A live defect fixed on the way: the upgrade lives only in the T3 workshop, so
+          «Гострий край» (L4, weapon T2) held the chain to L7. The four weapon decrees moved to
+          L5/10/15/20, and `king.weapon_tier_before_its_gate` now refuses the slip.
+        - Migrations: `ClampWeaponTiersToLevel` (testers back to their level, silver refund),
+          `ReseatDecreesById` (positions by decree — no skip, ≤2 back).
+        - 366 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, 18 warnings,
+          pace unchanged; `records` and `king` moved, schema v17.
   - [x] **The quest board as a scroll** *(2026-10-03, `95e8492`, NOT deployed)* — the owner saw a
         similar layout in another game and asked for a different look with different emoji.
         Three played mockups (scroll / bar / status tags); the owner took the scroll with a
@@ -1913,9 +1930,33 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the four on top — the two 2026-10-03
-arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
+Telegram. **Every block below is LIVE and unwalked** except the six on top — the 2026-10-04 weapon
+block, the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
+2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-04 — the weapon by player level and the Master's lesson (NOT committed yet):** a
+tester above level 5 at estate T3+, and a fresh account taken to level 5.
+- **after the restart**: the tester's class weapon is at the tier their level allows (L10 → t3,
+  ATK 16 on the sword), with silver refunded for the rungs removed, and the King's journal shows
+  the same decree they were on (or the one before it).
+- **the Master at level 5, weapon t1**: a fifth button «🔨 Урок: перекувати зброю» appears; below
+  level 5, or once the weapon is t2, it is absent.
+- **the card**: the class intro line; «⚔️ Іржавий меч → Очищений меч» with the three «+7 → +11
+  (↑+4) ⚔️ Атака» lines; «📜 Ціна уроку» with the bag-counted material line and «🪙 Срібло
+  (N/30)»; «[🔨 Перекувати] [🔙 До майстра]».
+- **refusals on the card**: too few materials (the shortage modal), too little silver (the
+  trader's «not enough silver» modal).
+- **after the lesson**: the banner «✅ ⚔️ Очищений меч — рівень 2», then ONE message — the
+  Master's class line and «🔨 Ви навчилися перековувати зброю. Далі — самі, у 🛠 Майстерні
+  маєтку: наступна перековка відкриється на 10 рівні.» (the «вже чекає» line if the player came
+  at level 10+); the menu redraws without the button.
+- **the workshop**: «⚔️ Перекувати зброю» / «⚔️ Перековка зброї»; at t1 the screen says «Ви ще не
+  вмієте перековувати зброю…» with no button; at t2 below level 10, the gate line «❌ Рівень
+  гравця (7/10)» and the modal «🔒 Наступна перековка відкриється на 10 рівні. Зараз у вас 7.»
+- **the King's chain**: «Гострий край» opens at level 5 and sends the player to the Master;
+  «Королівська криця» sits at level 20 with its new text.
+- **the staff**: t5 reads «Рунний посох», t9 «Посох архімага».
 
 **Added 2026-10-03 — the quest board as a scroll (`95e8492`, NOT deployed):** any account, at the three
 NPCs and in the journal.
@@ -2358,6 +2399,26 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+- **Weapon rungs 10 and 11 (levels 45 and 50) wait for a level cap of 50** (2026-10-04,
+  `spec-items.md` §9). The owner had the ladder computed to 50 and shipped 9 rungs to L40.
+  Raising the cap is its own change: the Vigor pool, `simulate`'s 1–40 sweep, the specs, the
+  budget's item levels and the decree chain all stop at 40 or earlier.
+- **The tier-2 stat lines were solved against the old obtainable-kit share** (2026-10-04).
+  `spec items`' obtainable column fell (L10 48% → 44%, L40 36% → 29%) when the weapon moved to
+  the player level. The lines are frozen and were not re-solved; §9.7's probe measured the
+  fights directly. Re-solve with the gear ladder, not before.
+- **The workshop's T3 gate is a Swift constant the validator cannot see** (2026-10-04).
+  `EstateTierGates.workshop` hides the workshop below T3, and tiers 3–9 are bought only there.
+  Today the chain is safe because «Другий щабель» (T3) sits before every workshop-only weapon
+  decree, and `king.weapon_tier_before_its_gate` checks levels, not this. The same hidden gate
+  is what stalled «Гострий край» before the lesson moved tier 2 to the Master. A reorder that
+  put a tier-3+ weapon decree ahead of the T3 decree would ship unnoticed; moving the room gates
+  into content would let the validator see it.
+- **The estate no longer opens the weapon** (2026-10-04). T2–T5 lost that pull. The upgrade's
+  value as `spec-bestiary.md` §11.5 measured it never counted the weapon (the model's weapon was
+  level-gated), so nothing approved moves. But players may now hold an estate upgrade back to
+  keep the forest soft — `fight_log.estate_level` is where that would show.
 
 - **Level and class decide a duel, and nothing brackets them** (measured 2026-10-03 on reference
   characters). L10 against L12 wins 2.5% of duels and against L13 0.1%; at L10 the warrior beats

@@ -408,6 +408,64 @@ public enum ContentValidator {
                                 message: "durabilityByTier has \(bundle.weaponDurabilityByTier.count) entries but the longest ladder is \(longestLadder) tiers"))
         }
 
+        issues += validateWeaponGates(bundle)
+        return issues
+    }
+
+    /// The weapon follows the PLAYER level (`spec-items.md` §9, 2026-10-04):
+    /// every rung above the first carries the level it opens at. Before, the
+    /// estate opened tier N at T N, and nothing here could see that the
+    /// item-level-40 sword arrived at level 13.
+    private static func validateWeaponGates(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let file = "weapon_upgrades.json"
+        let maxLevel = bundle.tuning?.progression.maxLevel
+        for (index, ladder) in bundle.weaponLadders.enumerated() {
+            let path = "ladders[\(index)]"
+            for (position, step) in ladder.tiers.enumerated() {
+                let stepPath = "\(path).tiers[\(position)].requiredPlayerLevel"
+                guard let level = step.requiredPlayerLevel else {
+                    // A rung with no gate reads as level 1 (`gateLevel`), so it
+                    // would sell the whole ladder to a new character.
+                    if position > 0 {
+                        issues.append(.init(severity: .error, file: file, path: stepPath, id: ladder.itemId,
+                                            rule: "ladder.required_level_missing",
+                                            message: "tier \(step.tier) has no requiredPlayerLevel — it would open at level 1"))
+                    }
+                    continue
+                }
+                if position == 0 && level != 1 {
+                    issues.append(.init(severity: .error, file: file, path: stepPath, id: ladder.itemId,
+                                        rule: "ladder.first_rung_gated",
+                                        message: "tier 1 is the granted starter weapon and opens at level 1, not \(level)"))
+                }
+                if let maxLevel, level > maxLevel {
+                    issues.append(.init(severity: .error, file: file, path: stepPath, id: ladder.itemId,
+                                        rule: "ladder.gate_above_cap",
+                                        message: "tier \(step.tier) opens at level \(level), above the level cap \(maxLevel) — nobody can reach it"))
+                }
+                if position > 0, let previous = ladder.tiers[position - 1].requiredPlayerLevel, level < previous {
+                    issues.append(.init(severity: .error, file: file, path: stepPath, id: ladder.itemId,
+                                        rule: "ladder.gate_regression",
+                                        message: "tier \(step.tier) opens at level \(level), before tier \(step.tier - 1) at \(previous)"))
+                }
+            }
+        }
+        // The King asks for "weapon tier N" whatever the class, and the lesson
+        // tells every class when the next reforge opens: one gate per tier.
+        var byTier: [Int: (level: Int, itemId: String)] = [:]
+        for ladder in bundle.weaponLadders {
+            for step in ladder.tiers {
+                guard let level = step.requiredPlayerLevel else { continue }
+                if let seen = byTier[step.tier], seen.level != level {
+                    issues.append(.init(severity: .error, file: file, path: "ladders", id: ladder.itemId,
+                                        rule: "ladder.gates_disagree",
+                                        message: "tier \(step.tier) opens at level \(level) here but at \(seen.level) on \(seen.itemId)"))
+                } else {
+                    byTier[step.tier] = (level, ladder.itemId)
+                }
+            }
+        }
         return issues
     }
 
@@ -822,6 +880,10 @@ public enum ContentValidator {
 
             require(master.enchantCap >= 1, file: file, path: "enchantCap",
                     rule: "master.enchant_cap", "enchantCap must be >= 1, found \(master.enchantCap)")
+            // The lesson's fee (`spec-items.md` §9.4). Zero is a choice (a free
+            // lesson); below zero the Master would pay the player to learn.
+            require(master.weaponLessonSilver >= 0, file: file, path: "weaponLessonSilver",
+                    rule: "master.lesson_silver", "weaponLessonSilver must be >= 0, found \(master.weaponLessonSilver)")
             require(master.enchantBudgetFractionPerLevel > 0, file: file,
                     path: "enchantBudgetFractionPerLevel", rule: "master.enchant_no_effect",
                     "an enchant adding 0% of the item's budget does nothing")
@@ -2377,6 +2439,7 @@ public enum ContentValidator {
             bundle.estateUpgrades.progression.map { ($0.toTier, $0.requiredPlayerLevel) },
             uniquingKeysWith: { first, _ in first })
         let maxWeaponTier = bundle.weaponLadders.flatMap { $0.tiers.map(\.tier) }.max() ?? 0
+        let weaponGates = WeaponLadderRules.gatesByTier(bundle.weaponLadders)
         let pool = bundle.tuning?.progression.vigorPool
         // The Training Ground teaches one technique per level, each at its own
         // `combat.json` floor: building it IS buying its first level, and no
@@ -2501,10 +2564,19 @@ public enum ContentValidator {
                         }
                     }
                 case .weaponTier:
-                    if let tier = condition.target, tier < 2 || tier > maxWeaponTier {
-                        issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
-                                            rule: "king.weapon_tier_out_of_range",
-                                            message: "T\(tier) is outside 2…\(maxWeaponTier)"))
+                    if let tier = condition.target {
+                        if tier < 2 || tier > maxWeaponTier {
+                            issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                                rule: "king.weapon_tier_out_of_range",
+                                                message: "T\(tier) is outside 2…\(maxWeaponTier)"))
+                        } else if let gate = weaponGates[tier], decree.level < gate {
+                            // The twin of `king.estate_tier_before_its_gate`. Its
+                            // absence is how «Гострий край» shipped at level 4
+                            // asking for a rung no level-4 player could buy.
+                            issues.append(.init(severity: .error, file: file, path: conditionPath, id: decree.id,
+                                                rule: "king.weapon_tier_before_its_gate",
+                                                message: "weapon T\(tier) opens at player level \(gate) but the decree is filed at level \(decree.level) — it could never be completed there"))
+                        }
                     }
                 case .bagTier:
                     if let tier = condition.target, tier < 2 || tier > bundle.bags.maxTier {

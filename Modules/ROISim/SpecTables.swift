@@ -129,6 +129,30 @@ public enum SpecTables {
             let gate = content.bags.progression.first { $0.toTier == tier }?.requiredEstateLevel
             out.append("| T\(tier) | \(gate.map { "T\($0)" } ?? "start") | \(capacity) |")
         }
+
+        // Last, so the estate excerpt `spec-bestiary.md` §11.2 quotes stays one
+        // contiguous run of this output.
+        let ladders = content.weaponLaddersByItemId.sorted { $0.key < $1.key }
+        if let longest = ladders.map({ $0.value.tiers.count }).max(), longest > 0 {
+            out.append("")
+            out.append("**Weapon** (`weapon_upgrades.json`) — gated on the PLAYER level (`spec-items.md` §9);")
+            out.append("the first reforge is the Master's lesson, the rest the workshop's")
+            out.append("")
+            out.append("| tier | player level | where | " + ladders.map { "`\($0.key)` ⚔️/💥/🎯" }.joined(separator: " | ")
+                       + " | durability |")
+            out.append("|---|---|---|" + ladders.map { _ in "---|" }.joined() + "---|")
+            for tier in 1...longest {
+                let gate = ladders.compactMap { $0.value.tiers.first { $0.tier == tier }?.requiredPlayerLevel }.max()
+                let place = tier == 1 ? "starter" : (tier == 2 ? "the Master's lesson" : "workshop")
+                let cells = ladders.map { pair -> String in
+                    guard let s = pair.value.tiers.first(where: { $0.tier == tier })?.stats else { return "—" }
+                    return "\(s.attack) / \(s.crit) / \(s.accuracy)"
+                }
+                let durability = tier - 1 < content.weaponDurabilityByTier.count ? "\(content.weaponDurabilityByTier[tier - 1])" : "—"
+                out.append("| t\(tier) | \(gate.map(String.init) ?? "—") | \(place) | " + cells.joined(separator: " | ")
+                           + " | \(durability) |")
+            }
+        }
         return out.joined(separator: "\n")
     }
 
@@ -386,20 +410,18 @@ public enum SpecTables {
     }
 
     /// Points the best shipped item in `slot` carries when it is built for a
-    /// player of `level`. A ladder rung is matched by its own `itemLevel`: the
-    /// rung DESIGNED at or below the level, not the rung a player has
-    /// necessarily earned — nothing in `weapon_upgrades.json` gates on level, so
-    /// design intent is the only honest alignment.
+    /// player of `level`. A ladder rung counts once its gate is open: since
+    /// 2026-10-04 every rung carries the player level it opens at
+    /// (`spec-items.md` §9), so the rung a player of `level` can hold is a
+    /// fact, not a reading of design intent.
     private static func bestPoints(content: GameContent, rate: StatPerPointDTO,
                                    slot: String, level: Int) -> Double? {
         var best: Double?
         for item in content.items where item.slot == slot {
             let stats: GearStatsDTO?
             if let ladder = content.weaponLaddersByItemId[item.id] {
-                stats = ladder.tiers
-                    .filter { ($0.itemLevel ?? 1) <= level }
-                    .max(by: { ($0.itemLevel ?? 1) < ($1.itemLevel ?? 1) })?.stats
-                    ?? ladder.tiers.first?.stats
+                let tier = WeaponLadderRules.highestTier(gates: ladder.tiers.map(\.gateLevel), atLevel: level)
+                stats = ladder.tiers.first { $0.tier == tier }?.stats ?? ladder.tiers.first?.stats
             } else {
                 stats = item.gearStats
             }

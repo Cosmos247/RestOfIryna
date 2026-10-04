@@ -90,20 +90,25 @@ public struct MasterFileDTO: Codable, Sendable {
     public let enchantBudgetFractionPerLevel: Double
     /// One step per level, ordered by `level`.
     public let enchantSteps: [EnchantStepDTO]
+    /// The Master's fee for the weapon lesson — the first re-forge, tier 1 → 2,
+    /// on top of that rung's own materials (`spec-items.md` §9.4). A TUNING
+    /// SCALAR beside `repairCostFraction`, hashed by the digest.
+    public let weaponLessonSilver: Int
 
     public init(armorForSale: [MasterArmorListingDTO], repairCostFraction: Double,
                 enchantCap: Int, enchantBudgetFractionPerLevel: Double,
-                enchantSteps: [EnchantStepDTO]) {
+                enchantSteps: [EnchantStepDTO], weaponLessonSilver: Int = 30) {
         self.armorForSale = armorForSale
         self.repairCostFraction = repairCostFraction
         self.enchantCap = enchantCap
         self.enchantBudgetFractionPerLevel = enchantBudgetFractionPerLevel
         self.enchantSteps = enchantSteps
+        self.weaponLessonSilver = weaponLessonSilver
     }
 
     private enum CodingKeys: String, CodingKey {
         case armorForSale, repairCostFraction, enchantCap
-        case enchantBudgetFractionPerLevel, enchantSteps
+        case enchantBudgetFractionPerLevel, enchantSteps, weaponLessonSilver
     }
 
     public init(from decoder: any Decoder) throws {
@@ -113,5 +118,6 @@ public struct MasterFileDTO: Codable, Sendable {
         enchantCap            = try c.decode(Int.self, forKey: .enchantCap)
         enchantBudgetFractionPerLevel = try c.decode(Double.self, forKey: .enchantBudgetFractionPerLevel)
         enchantSteps          = try c.decode([EnchantStepDTO].self, forKey: .enchantSteps)
+        weaponLessonSilver    = try c.decode(Int.self, forKey: .weaponLessonSilver)
     }
 }
