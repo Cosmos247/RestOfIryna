@@ -85,7 +85,8 @@
     {
       "effect" : {
         "dodgeBonus" : -10,
-        "vigorDrainMultiplier" : 0.5
+        "vigorDrainMultiplier" : 0.5,
+        "xpMultiplier" : 1.15
       },
       "id" : "12_hanged_man"
     },

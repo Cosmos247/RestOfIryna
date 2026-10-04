@@ -1950,6 +1950,8 @@ account with 10 🪙, at the fortune teller; the journal and the palace for the 
 - **💰**: the King's «💰 Нагорода: …» in the journal and at the palace, the report banner's second
   line, the NPC board's «[💰 Забрати нагороду]» on a finished counter job.
 - **the card name**: «Ієрофант».
+- **the Hanged Man**: «💨 Ухилення: −10 · 📖 Досвід: +15% · 🍖 Витрата снаги: −50%»; a kill worth
+  100 XP pays 115 while it is active.
 - **the Chariot**: «🍖 Витрата снаги: −50%»; under it a forest step costs 1 🍖 instead of 2, an
   attack 1, a special attack 2 (mage 3), a stance 2 (mage 3). Under the Devil a step costs 3 and
   a special attack 6 (mage 8).

@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **a one-shot card's later line loses «отримано»** — the Tower read
+- (10-04, in the commit that fills `a91226f`'s hash) **the Hanged Man gains +15% XP**, so the Chariot no longer dominates it.
+- `a91226f` (10-04) **a one-shot card's later line loses «отримано»** — the Tower read
   «отримано: −🪙 25»; now «Карта дня: Вежа · −🪙 25», the sign and icon carrying it.
 - `e861c73` (10-04) **a tarot card is phrased once, and 💰 marks every reward**:
   - the reveal prints the card through `FortuneDisplay`, like the fortune screen and the
@@ -433,7 +434,30 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 (a one-shot card without «отримано») — *(uncommitted)*
+## Session — 2026-10-04 (the Hanged Man gains +15% XP) — folded into `a91226f`'s hash fill
+
+Since `e861c73` the Chariot (−50% Vigor, nothing else) strictly dominated the Hanged Man (−50%
+Vigor and −10 dodge). The owner asked for options first. Rounding limits the room: a step of 2
+can only fall to 1 or 0, so the Hanged Man cannot be "a bit stronger" on the walk. Offered:
+- the Hanged Man at −75% (recommended): equal on steps and plain blows, a free defend, flees and
+  techniques at 1;
+- the Hanged Man −50% and +25% XP;
+- the Chariot on the road and the Hanged Man in the fight, which needs a new card field and
+  content schema v18.
+
+The owner picked the XP variant at **+15%**, not 25. `fortune.json` → `12_hanged_man` gains
+`"xpMultiplier" : 1.15`. The multiplier is read in `User.grantXP`, so it covers forest kills, the
+passive run, NPC jobs and the decrees. Not the Judgement's one-shot: a draw needs the 24 h
+cooldown and a card lasts 6 h, so no other card is ever active when the Judgement pays.
+- The reveal now reads «💨 Ухилення: −10 · 📖 Досвід: +15% · 🍖 Витрата снаги: −50%», rendered
+  in both languages.
+- Verified: 370 tests; `validate --strict` 0/0; the house JSON style re-emits the file byte for
+  byte; `records` `e91795fe3b76c8bf` → `438be135e3090fb5`, content hash `794be740` → `73568a2a`,
+  the other four lines unchanged.
+- Deployable by `/reload` alone, being content only, but it ships with the backlog's restart
+  anyway.
+
+## Session — 2026-10-04 (a one-shot card without «отримано») — `a91226f`
 
 The audit after `e861c73` listed «отримано: −🪙 25» as a leftover: `FortuneDisplay.oneShotLine`
 put «отримано:» in front of every receipt, a loss included, on the fortune screen and in the
@@ -502,7 +526,8 @@ for loot to carry the journal's emoji game-wide.
     Devil; a mage's special attack costs 5, 3 and 8.
   - **Left open, and told:** the Chariot (−50%, no downside) now dominates the Hanged Man (−50%
     and −10 dodge), and the Devil still doubles a defend. Both are rounding or retuning
-    questions that were not asked.
+    questions that were not asked. (The first was settled the same day: the Hanged Man gained
+    +15% XP.)
   - Digest: `records` → `e91795fe3b76c8bf`, content hash `00b40443` → `794be740`; 370 tests,
     `validate --strict` 0/0, the touched Swift recompiled with no warning.
 
