@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-04)* **a Vigor reward that will not fit is asked about** — a warning on the
+- `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
   card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
 - (10-04, in the commit that fills `a91226f`'s hash) **the Hanged Man gains +15% XP**, so the Chariot no longer dominates it.
 - `a91226f` (10-04) **a one-shot card's later line loses «отримано»** — the Tower read
@@ -436,7 +436,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-04 (a Vigor reward that will not fit is asked about) — *(uncommitted)*
+## Session — 2026-10-04 (a Vigor reward that will not fit is asked about) — `47e0e8f`
 
 A tester's report: «я мала повну снагу і виконала квест у Короля, призом була снага, може додати
 сповіщення, що снага повна, або хч написати чому приза ніякого».

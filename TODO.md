@@ -1935,7 +1935,7 @@ Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
 arena blocks, the estate block and the 2026-10-02 tier-2 block — which wait for their deploy.
 The six 2026-09-27/28 blocks under them are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-04 — a Vigor reward that will not fit is asked about (*uncommitted*, NOT deployed):**
+**Added 2026-10-04 — a Vigor reward that will not fit is asked about (`47e0e8f`, NOT deployed):**
 any account with a finished decree or a ready NPC job that pays Vigor, at full or nearly full
 Vigor.
 - **the card**: under «💰 Нагорода» a line «⚠️ Снага повна (120/120) — 🍖 60 не вміститься. Указ

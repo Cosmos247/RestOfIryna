@@ -52,7 +52,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the arena in simultaneous rounds (`cad61c3`) and as a cycle of three (`f0c1749`);
     - the quest board as a scroll (`95e8492`);
     - the weapon ladder by player level (`9ab349c`, `spec-items.md` §9);
-    - a Vigor reward that will not fit is asked about (10-04, *uncommitted*; Swift and locale);
+    - a Vigor reward that will not fit is asked about (10-04, `47e0e8f`; Swift and locale);
     - a tarot card phrased once and 💰 for every reward, with the Chariot at −50% Vigor (10-04,
       `e861c73`; Swift, locale and `fortune.json`, no migration).
 
