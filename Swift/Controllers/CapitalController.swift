@@ -1283,7 +1283,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     //
     // One action button, whose meaning depends on the objective: deliver jobs
     // show [✅ Здати] once the bag holds enough (turn-in consumes the items and
-    // pays out in one tap), counter jobs show [🎁 Забрати] once gameplay has
+    // pays out in one tap), counter jobs show [💰 Забрати] once gameplay has
     // ticked them to target. Before that there's no button at all — nothing to
     // tap, nothing to mis-tap.
 
@@ -2386,7 +2386,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             let banner = "✅ " + lingo.localize("king.banner.done", locale: locale,
                                                 interpolations: ["decree": name])
-                + "\n🎁 " + earned.joined(separator: " · ")
+                + "\n💰 " + earned.joined(separator: " · ")
             await postStatusBanner(banner, context: context)
         } catch KingService.ReportFailure.bagFull(let itemId, let quantity) {
             let item = ItemCatalog.find(itemId)
@@ -3402,9 +3402,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 ]))
             }
         } else {
-            // Draw available — show price + balance.
+            // Draw available — show price + balance. The card's window rides
+            // on the price line, printed from `buffDurationSeconds`: the intro
+            // used to say «на наступні шість годин» in prose, where a retune
+            // could not reach it.
             let priceLine = lingo.localize("capital.fortune.price", locale: locale, interpolations: [
-                "price": "\(FortuneCatalog.drawPrice)"
+                "price": "\(FortuneCatalog.drawPrice)",
+                "time": Countdown.format(Int(FortuneCatalog.buffDurationSeconds), lingo: lingo, locale: locale)
             ])
             let silverLabel = lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
                 "silver": "\(session.silver)"
@@ -3434,9 +3438,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Render the reveal screen after a successful draw. Sends a fresh
-    /// photo (the card portrait) with caption: meaning + buff
-    /// description + countdown (for duration cards) + one-shot deltas
-    /// (for instant cards).
+    /// photo (the card portrait) with caption: name, meaning, then what the
+    /// card does — every number in it printed by `FortuneDisplay`, the helper
+    /// the fortune screen and the profile call, so the reveal and the next
+    /// screen cannot phrase one card two ways.
+    ///
+    /// Until 2026-10-04 this printed a hand-typed `buff_desc` per card
+    /// («Активна 6год: +35% досвіду, −15% шанс здобичі»), then the window a
+    /// second time as a countdown, and for a one-shot the same gift a second
+    /// time as a receipt («Миттєво: −🪙 25» over «−🪙 25 · баланс 85»).
     private func renderFortuneReveal(
         card: FortuneCard,
         oneShot: FortuneService.OneShotApplied,
@@ -3446,59 +3456,39 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = context.session.locale
         let cardName = lingo.localize(card.nameKey, locale: locale)
         let meaning  = lingo.localize(card.meaningKey, locale: locale)
-        // The window is `FortuneCatalog.buffDurationSeconds`, so it is printed
-        // from that value: "Активна 6 год" sat hand-typed in front of all 17
-        // duration cards, in both locales, where a retune could not reach it.
-        let windowKey = card.effect.hasDurationEffect ? "fortune.buff.active_for" : "fortune.buff.instant"
-        let window = lingo.localize(windowKey, locale: locale, interpolations: [
-            "time": Countdown.format(Int(FortuneCatalog.buffDurationSeconds), lingo: lingo, locale: locale)
-        ])
-        let buffDesc = "\(window): " + lingo.localize(card.buffDescKey, locale: locale)
 
         var lines: [String] = []
         lines.append("🔮 <b>\(cardName)</b>")
         lines.append("")
         lines.append("<i>\(meaning)</i>")
         lines.append("")
-        lines.append(buffDesc)
 
-        // One-shot deltas applied at draw time — show the concrete impact.
-        // Sign + 🪙 + amount pre-built in Swift; the locale string only has
-        // `%{silver}` because a supplementary-plane emoji adjacent to
-        // `%{var}` breaks Lingo's parser (leaves the literal `%{silver}`).
-        if oneShot.silverDelta != 0 {
-            let key = oneShot.silverDelta > 0 ? "capital.fortune.applied.silver_gain" : "capital.fortune.applied.silver_loss"
-            let signedSilver = oneShot.silverDelta > 0
-                ? "+🪙 \(oneShot.silverDelta)"
-                : "−🪙 \(abs(oneShot.silverDelta))"
-            let line = lingo.localize(key, locale: locale, interpolations: [
-                "silver": signedSilver,
-                "balance": "\(context.session.silver)"
-            ])
-            lines.append("")
-            lines.append(line)
-        }
-        if oneShot.xpGained > 0 {
-            let line = lingo.localize("capital.fortune.applied.xp_gain", locale: locale, interpolations: [
-                "xp": "\(oneShot.xpGained)"
-            ])
-            lines.append(line)
-        }
-        if oneShot.hpRestored || oneShot.vigorRestored {
-            let key: String
-            if oneShot.hpRestored && oneShot.vigorRestored { key = "capital.fortune.applied.hp_vigor" }
-            else if oneShot.hpRestored                     { key = "capital.fortune.applied.hp_only"  }
-            else                                            { key = "capital.fortune.applied.vigor_only" }
-            lines.append(lingo.localize(key, locale: locale))
+        // A duration card: what it moves, then how long — once. Right after
+        // the draw the countdown IS the window, so it is the only time line.
+        if card.effect.hasDurationEffect {
+            lines.append(FortuneDisplay.effectLine(for: card.effect, lingo: lingo, locale: locale))
+            if let secondsLeft = context.session.fortuneSecondsRemaining() {
+                lines.append(lingo.localize("capital.fortune.applied.duration", locale: locale, interpolations: [
+                    "remaining": Countdown.format(secondsLeft, lingo: lingo, locale: locale)
+                ]))
+            }
         }
 
-        // Countdown line for duration cards.
-        if card.effect.hasDurationEffect, let secondsLeft = context.session.fortuneSecondsRemaining() {
-            let line = lingo.localize("capital.fortune.applied.duration", locale: locale, interpolations: [
-                "remaining": Countdown.format(secondsLeft, lingo: lingo, locale: locale)
-            ])
-            lines.append("")
-            lines.append(line)
+        // A one-shot: the Wheel's odds first (the receipt alone would not say a
+        // loss was possible), then what actually landed.
+        let odds = FortuneDisplay.wheelLine(for: card.effect, lingo: lingo, locale: locale)
+        if let odds { lines.append(odds) }
+        let received = FortuneDisplay.oneShotParts(oneShot, lingo: lingo, locale: locale)
+        if received.isEmpty == false {
+            lines.append(lingo.localize("fortune.buff.instant", locale: locale) + ": "
+                         + received.joined(separator: " · "))
+        }
+        // The balance whenever the card deals in silver — also when a loss was
+        // clamped to nothing, because then it is the only line saying so.
+        if card.effect.oneShotSilver != 0 || odds != nil {
+            lines.append("🪙 " + lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+                "silver": "\(context.session.silver)"
+            ]))
         }
 
         let text = lines.joined(separator: "\n")

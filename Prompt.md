@@ -38,10 +38,10 @@ someone PLAYING; none from a test.
 | | |
 |---|---|
 | working tree | clean |
-| HEAD | the 2026-10-04 sync pass (records; the weapon-ladder research made durable; `ReferenceCharacter.ladderRung` renamed `staleGearOffset`; four decree rules that had no test got one) on top of **`994c752`** — the hash fill for **`9ab349c`**, the weapon follows the player level (2026-10-04, `spec-items.md` §9). Under it, newest first: `9084528` / **`95e8492`** (the quest board as a scroll), `8b2bc4e` / **`f0c1749`** (the arena as a cycle of three), `51ec578` (the third 10-03 sync pass), `2dcf87c` / **`cad61c3`** (the arena in simultaneous rounds), `790560f` (the second 10-03 sync pass), `c28a3e5` / **`4be2758`** (the estate scaling), `7a6b458` (the 10-03 sync pass), `b407840` / **`f03d502`** (tier 2 of the bestiary), `ce8ef2f` (the 09-29 sync pass), and **`8ae6772`**, the build the Pi runs. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
-| pushed | `origin/main` is at **`8ae6772`**; the seventeen commits from `ce8ef2f` to `994c752` and the 10-04 sync pass are not pushed. Push stays user-side |
+| HEAD | *(uncommitted, 10-04)* **the tarot pass** (a card phrased once by `FortuneDisplay`, 💰 for every reward, «Витрата снаги», the Chariot −50% and the card's multiplier on the techniques) on top of `f2d7855`, the 2026-10-04 sync pass (records; the weapon-ladder research made durable; `ReferenceCharacter.ladderRung` renamed `staleGearOffset`; four decree rules that had no test got one), on top of **`994c752`** — the hash fill for **`9ab349c`**, the weapon follows the player level (2026-10-04, `spec-items.md` §9). Under it, newest first: `9084528` / **`95e8492`** (the quest board as a scroll), `8b2bc4e` / **`f0c1749`** (the arena as a cycle of three), `51ec578` (the third 10-03 sync pass), `2dcf87c` / **`cad61c3`** (the arena in simultaneous rounds), `790560f` (the second 10-03 sync pass), `c28a3e5` / **`4be2758`** (the estate scaling), `7a6b458` (the 10-03 sync pass), `b407840` / **`f03d502`** (tier 2 of the bestiary), `ce8ef2f` (the 09-29 sync pass), and **`8ae6772`**, the build the Pi runs. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
+| pushed | `origin/main` is at **`8ae6772`**; the seventeen commits from `ce8ef2f` to `f2d7855` and the tarot pass are not pushed. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`95e8492`, the quest board as a scroll** (2026-10-03) sits on top: the decree's requirement line and an 8-cell bar on the NPC board, 📖 for «Досвід» and 🍖 for «Снага» on every screen. Swift and locale only, the digest unmoved; 353 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart |
+| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`95e8492`, the quest board as a scroll** (2026-10-03) sits on top: the decree's requirement line and an 8-cell bar on the NPC board, 📖 for «Досвід» and 🍖 for «Снага» on every screen. Swift and locale only, the digest unmoved; 353 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart.<br>*(uncommitted, 10-04)* **the tarot card phrased once, and 💰 for every reward** sits on top: the reveal prints the card through `FortuneDisplay` like the fortune screen and the profile (the 22 hand-typed `buff_desc` keys deleted), silver as «+🪙 30» everywhere, the window on the price line instead of the intro's prose, «Ієрофант», and 🎁 → 💰 on the King's reward, the palace banner, the claim button and the tarot's loot. The same pass relabels «Виснаження снаги» «Витрата снаги», takes the Chariot from −25% to −50% Vigor (`fortune.json`; −25% rounded away on every step and blow), and lets the card's multiplier reach the techniques, the stance activation and the mage's flee tax, which bypassed it. No migration; `records` → `e91795fe3b76c8bf`, content hash → `794be740`; 370 tests |
 
 **Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -76,7 +76,7 @@ The day closed with the audit (`994c752`) and this sync pass. The decision recor
 `spec-items.md` §9, and every table is in `.memory/rebalance.md` → "The weapon ladder, measured".
 
 **Nothing is in flight.** Threads the owner may pick up:
-- **The deploy** (item 0 below) — the biggest backlog since 09-28: six changes and three
+- **The deploy** (item 0 below) — the biggest backlog since 09-28: seven changes and three
   migrations.
 - **The t6–t9 descriptions** were written after the names were approved and shown in the report,
   never approved on their own.
@@ -91,17 +91,19 @@ The day closed with the audit (`994c752`) and this sync pass. The decision recor
 ### Next action
 
 **0 — Deploy everything committed since `8ae6772`:** tier 2, the estate scaling, the arena
-(simultaneous rounds and the cycle of three), the quest board, and the weapon ladder by player
-level (2026-10-04, `spec-items.md` §9). All of it is committed and audited (`spec-bestiary.md`
+(simultaneous rounds and the cycle of three), the quest board, the weapon ladder by player
+level (2026-10-04, `spec-items.md` §9) and the tarot pass (2026-10-04). All of it is committed and audited (`spec-bestiary.md`
 §10 and §11; §11.12 has every figure of the scaling; the arena's are in `.memory/rebalance.md` →
 "The arena duel, measured"). One restart takes it all from HEAD. Shipping tier 2 alone would
 mean the Pi stops at `7a6b458`.
 - Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
 - The owner pushes. On the Pi: `git pull --ff-only`, then build.
 - Match its `--content-digest` BEFORE the restart:
-  - everything (HEAD): `records 1041961908ba2d3f` · `tuning 605fd06bd8abdfda` · `spawns
+  - everything (HEAD): `records e91795fe3b76c8bf` · `tuning 605fd06bd8abdfda` · `spawns
     0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81` · content hash
-    `00b40443`, schema v17;
+    `794be740`, schema v17;
+  - without the tarot pass (the weapon ladder, `9ab349c`): `records 1041961908ba2d3f`, content
+    hash `00b40443`, the rest as above;
   - without the weapon ladder (the arena cycle, `f0c1749`): `records 1b5577693d8733af`, `king
     5dbddfd689f3cede`, content hash `6963c31b`, schema v16;
   - without either arena change (`790560f`): see the next line, schema v15;
@@ -120,7 +122,7 @@ mean the Pi stops at `7a6b458`.
   `king_progress` positions as predicted — both queries are in the migrations' headers. Run
   `SELECT decree_index, count(*) FROM king_progress GROUP BY 1` BEFORE the restart to compare.
 - Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
-  the testers at the six new walk-list blocks.
+  the testers at the seven new walk-list blocks.
 
 **1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
@@ -131,7 +133,7 @@ whether players hold an upgrade back to keep the forest soft (T6 gains nothing p
 rework's own deploy is done and recorded (2026-09-28 22:11, tables verified).
 
 **2 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the weapon, quest-board, two
+screen, not from running anything. **`TODO.md` → "Walk list"**: the tarot, weapon, quest-board, two
 arena, estate and tier-2 blocks on top (after their deploy; the arena ones need two accounts),
 then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
@@ -274,9 +276,15 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**HEAD digest (2026-10-04, schema v17 — the weapon follows the player level, `9ab349c`, NOT yet on the Pi):**
-`records 1041961908ba2d3f` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
-`quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `00b40443`. The weapon ladder
+**HEAD digest (2026-10-04, schema v17 — the tarot pass on top of the weapon ladder, NOT yet on the Pi):**
+`records e91795fe3b76c8bf` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `794be740`. The tarot pass
+moved `records` alone, twice: a card's fingerprint names its locale keys (`buff_desc` gone,
+`8c58515e0b4d51d7`), then the Chariot's `vigorDrainMultiplier` 0.75 → 0.5. `fortune.json` is the
+one data file touched, hence the content hash.
+
+**The weapon ladder's baseline** (`9ab349c`) is the same with `records 1041961908ba2d3f` and
+content hash `00b40443`. It
 moved `records` (nine gated rungs and `weaponLessonSilver`) and `king` (four decrees moved);
 `tuning`, `spawns` and `quests` are byte-identical.
 

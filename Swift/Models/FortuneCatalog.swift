@@ -7,9 +7,10 @@
 //  Façade over `content/data/fortune.json` (Phase 3C — was a Swift array).
 //  The 22 Major Arcana the Ворожка draws from. Each card carries:
 //    • `id` — file-system-safe key matching `Assets/capital/fortune/<id>.png`
-//      and the locale-key suffix (`fortune.card.<id>.name` / `.meaning` /
-//      `.buff_desc`).
-//    • `nameKey` / `meaningKey` / `buffDescKey` — Lingo lookups.
+//      and the locale-key suffix (`fortune.card.<id>.name` / `.meaning`).
+//    • `nameKey` / `meaningKey` — Lingo lookups. What the card DOES has no
+//      key: `FortuneDisplay` prints it from `effect` (the hand-typed
+//      `.buff_desc` went on 2026-10-04).
 //    • `effect: FortuneEffect` — what actually happens when drawn. All 24h
 //      effects are uniform 4h post-rebase (Phase 6.4 design call).
 //
@@ -101,14 +102,12 @@ public struct FortuneCard: Sendable {
     public let id: String
     public let nameKey: String
     public let meaningKey: String
-    public let buffDescKey: String
     public let effect: FortuneEffect
 
     public init(id: String, effect: FortuneEffect) {
         self.id = id
         self.nameKey     = "fortune.card.\(id).name"
         self.meaningKey  = "fortune.card.\(id).meaning"
-        self.buffDescKey = "fortune.card.\(id).buff_desc"
         self.effect = effect
     }
 }

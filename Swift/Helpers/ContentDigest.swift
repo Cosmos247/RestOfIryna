@@ -1033,7 +1033,7 @@ enum ContentDigest {
     private static func fingerprint(_ card: FortuneCard) -> String {
         let e = card.effect
         return [
-            card.id, card.nameKey, card.meaningKey, card.buffDescKey,
+            card.id, card.nameKey, card.meaningKey,
             "\(e.attackBonus)/\(e.defenseBonus)/\(e.critBonus)/\(e.dodgeBonus)/\(e.accuracyBonus)",
             "\(e.xpMultiplier)/\(e.lootChanceMultiplier)/\(e.vigorDrainMultiplier)",
             "\(e.oneShotSilver)/\(e.oneShotXpGain)/\(e.oneShotHpRestore)/\(e.oneShotVigorRestore)",

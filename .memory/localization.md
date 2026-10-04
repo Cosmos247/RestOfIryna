@@ -191,7 +191,7 @@ If you must keep the emoji in the template for some reason:
 |---|---|---|---|
 | health | `ОЗ` (e.g. `%{damage} ОЗ`, `макс. ОЗ`) | `Здоров'я` (profile/effect labels, "Повне здоров'я") | HP / maxHP |
 | experience | `досвіду` (genitive: `+5 досвіду`, `+25% досвіду`) | `Досвід` (profile label) | XP |
-| vigor | `снаги` / `Снага` / `виснаження снаги` (for "vigor drain") | `Снага` | Vigor |
+| vigor | `снаги` / `Снага` / `витрата снаги` (for "vigor drain"; «виснаження» until 2026-10-04) | `Снага` | Vigor |
 | attack | `АТК` | `Атака` | ATK |
 | defense | `ЗАХ` | `Захист` | DEF |
 | loot | `здобич` / `здобичі` (e.g. "шанс здобичі") | — | loot |

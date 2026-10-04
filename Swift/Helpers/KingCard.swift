@@ -40,9 +40,11 @@ enum KingCard {
                                                     have: condition.have, need: condition.need))
             }
         }
-        // 🎁 prepended in Swift — a leading supplementary-plane emoji breaks
-        // Lingo's `%{var}` parser. See .memory/localization.md.
-        lines.append("🎁 " + lingo.localize("quest.reward", locale: locale, interpolations: [
+        // 💰 — the one mark for what a player gets, the NPC jobs' own (it was
+        // 🎁 here until 2026-10-04). Prepended in Swift — a leading
+        // supplementary-plane emoji breaks Lingo's `%{var}` parser. See
+        // .memory/localization.md.
+        lines.append("💰 " + lingo.localize("quest.reward", locale: locale, interpolations: [
             "reward": CapitalController.kingRewardPhrase(decree.reward, lingo: lingo, locale: locale)
         ]))
         return lines.joined(separator: "\n")

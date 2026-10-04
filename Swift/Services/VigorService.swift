@@ -101,18 +101,27 @@ public enum VigorService {
 
     /// Drain vigor on the user for a given action. Clamps to 0. Mutates — caller must save.
     /// Returns the amount actually drained. The optional `multiplier` is used by
-    /// stance buffs (e.g. Bloodlust ×2) — the action's base cost is scaled and
+    /// stance buffs (e.g. Bloodlust ×1.5) — the action's base cost is scaled and
     /// rounded before the actual drain is applied.
     @discardableResult
     public static func drain(_ user: User, action: VigorAction, multiplier: Double = 1.0) -> Int {
-        // Phase 6.4 — compose the active fortune's vigor-drain multiplier
-        // (default 1.0) with the caller-supplied stance multiplier.
-        // Chariot's −25% / Hanged Man's −50% reduce drain; Devil's ×1.5
-        // increases it. Drain values pre-fortune are visible through the
-        // stance multiplier alone, so combat stance + fortune compose
-        // multiplicatively.
+        return drain(user, base: cost(of: action), multiplier: multiplier)
+    }
+
+    /// Drain a cost that is not a `VigorAction` — a technique, a stance's
+    /// activation, the mage's flee tax — through the same multipliers.
+    ///
+    /// The active card's `vigorDrainMultiplier` (the Chariot and the Hanged Man
+    /// ×0.5, the Devil ×1.5) composes with the caller's stance multiplier, and
+    /// the product is rounded half away from zero. Every spend a card says it
+    /// touches comes through here: until 2026-10-04 the techniques, the stance
+    /// activation and the flee tax called `drain(_:amount:)` and the card never
+    /// saw them. `drain(_:amount:)` stays for a number that is already final
+    /// (the dev `/drain`).
+    @discardableResult
+    public static func drain(_ user: User, base: Int, multiplier: Double = 1.0) -> Int {
         let fortuneMult = user.activeFortuneEffect?.vigorDrainMultiplier ?? 1.0
-        let scaled = Double(cost(of: action)) * max(0.0, multiplier) * max(0.0, fortuneMult)
+        let scaled = Double(base) * max(0.0, multiplier) * max(0.0, fortuneMult)
         return drain(user, amount: Int(scaled.rounded()))
     }
 

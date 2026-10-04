@@ -468,7 +468,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             lines.append("")
             lines.append("👑 <b>" + lingo.localize("king.journal.title", locale: locale) + "</b>")
             lines.append(KingCard.block(standing, lingo: lingo, locale: locale))
-            // ✅, not 🎁: the reward line right above already carries the
+            // ✅, not 💰: the reward line right above already carries the
             // gift, and two of them in a row read as one muddled sentence.
             if standing.isComplete {
                 lines.append("✅ " + lingo.localize("king.journal.ready", locale: locale))

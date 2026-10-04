@@ -51,7 +51,7 @@
     },
     {
       "effect" : {
-        "vigorDrainMultiplier" : 0.75
+        "vigorDrainMultiplier" : 0.5
       },
       "id" : "7_chariot"
     },

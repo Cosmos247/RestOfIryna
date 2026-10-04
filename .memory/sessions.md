@@ -11,6 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-04)* **a tarot card is phrased once, and 💰 marks every reward**:
+  - the reveal prints the card through `FortuneDisplay`, like the fortune screen and the
+    profile; the 22 hand-typed `buff_desc` keys are deleted;
+  - silver «+🪙 30» on every fortune screen, the window printed once and on the price line,
+    «Ієрофант»;
+  - 🎁 → 💰 on the King's reward, the palace banner, the claim button and the tarot's loot;
+  - «Витрата снаги», the Chariot −25% → −50%, and the card's multiplier on the techniques too.
 - `9ab349c` (10-04) **the weapon follows the player level, and its first rung is the Master's
   lesson** (`spec-items.md` §9):
   - nine rungs, one every five levels, each with its `requiredPlayerLevel`, at 75% of the shipped
@@ -423,6 +430,66 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-04 (a tarot card phrased once, 💰 for every reward) — *(uncommitted)*
+
+The owner asked to see how a drawn card reads. Rendering all 22 out of the real files found
+five defects. The owner had all five fixed, after seeing the planned screens first, and asked
+for loot to carry the journal's emoji game-wide.
+- **One card, two phrasings.** The reveal printed a hand-typed `buff_desc` («+35% досвіду, −15%
+  шанс здобичі», the Devil's «×1.5»); the fortune screen and the profile printed
+  `FortuneDisplay.effectLine` («📖 Досвід: +35% · 🎁 Здобич: −15%», «+50%»). The numbers still
+  matched `fortune.json`, but no retune could have reached the reveal's copy.
+  `FortuneDisplay.swift`'s own header called `buff_desc` "prose" that "stays prose", while it
+  carried every number.
+- **Silver two ways.** «+🪙 30» on the reveal (the tavern's form), «🪙 +30» afterwards. The
+  outlier was `FortuneDisplay`, so it moved.
+- **Everything said twice on the reveal.** «Активна 6год» over «Дія до завершення: 6год»; the
+  Tower's «Миттєво: −🪙 25» over «−🪙 25 · баланс 85»; the Lovers' gift twice in two phrasings.
+- **The intro's «шість годин»** was the hand-typed window the reveal had been fixed for on
+  09-09. It is «найближчі години» now, with the window on the price line, printed from
+  `buffDurationSeconds`.
+- **«Іерофант»** → «Ієрофант».
+- **The reveal now:** name, meaning, then either `effectLine` + the countdown, or the Wheel's
+  odds (`wheelLine`, from the card), «Миттєво:» + `oneShotParts` (from the receipt, which the
+  later screens read off the user's stamp) and «🪙 Ваші срібники: N» whenever the card deals in
+  silver. The balance line stays even when a loss was clamped to nothing, because then it is
+  the only line saying so.
+- **Deleted keys** (both locales): the 22 `buff_desc`, `fortune.buff.active_for` and five
+  `capital.fortune.applied.*`. Added: `fortune.effect.wheel`. The validator no longer requires
+  `buff_desc`. Six parenthesised notes («необачний крок» …) went with them, on the owner's word;
+  the meaning line carries the flavour.
+- **💰 game-wide (the owner's pick).** The journal itself had used two marks for a reward: 🎁 on the
+  King's decree, 💰 on the NPC jobs. Asked which to standardise on, the owner chose 💰 for
+  everything a player gets. Changed: `KingCard` (journal, palace, charter), the palace's report
+  banner, `quest.button.claim` and the tarot's loot. 🎁 survives only in a comment.
+- **Verified.**
+  - The build, every touched file recompiled: no warning.
+  - 370 tests; `validate --strict` 0/0.
+  - The digest moved `records` alone (`1041961908ba2d3f` → `8c58515e0b4d51d7`), and not for a
+    number: a card's fingerprint names its locale keys. Content hash `00b40443` unchanged.
+  - All 22 reveals, the entry and the later status lines rendered from the real locale files,
+    plus three cards in English.
+- **Then the owner asked how −25% Vigor works.** Read off `VigorService.drain`: cost × stance ×
+  card, rounded half away from zero (checked in Swift: 1.5 → 2, 0.75 → 1, 2.25 → 2). Every base
+  cost is 1–5, so the Chariot's ×0.75 saved nothing on a step, an attack, a defend or an
+  autobattle round. It saved 1 on a flee and, inside the warrior's ×1.5 stance, 1–2 on an
+  attack, a defend or a flee. The Devil's ×1.5 doubled a defend (1 → 2).
+  Separately, the techniques, the stance activation and the mage's flee tax called
+  `drain(_:amount:)` and bypassed the card entirely.
+  - Offered a fractional carry (recommended) or stochastic rounding. The owner kept the rounding
+    and moved the Chariot to −50%, and chose to have the card reach every spend.
+  - `VigorService.drain(_:base:multiplier:)` is now the one place a cost meets the card;
+    `drain(_:action:multiplier:)` calls it and the four combat sites moved onto it.
+    `drain(_:amount:)` is left for the dev `/drain`.
+  - «Виснаження снаги» → «Витрата снаги» (uk only; `vigor_drain` stays the key).
+  - Measured: 40 steps cost 80 Vigor, 40 under the Chariot or the Hanged Man and 120 under the
+    Devil; a mage's special attack costs 5, 3 and 8.
+  - **Left open, and told:** the Chariot (−50%, no downside) now dominates the Hanged Man (−50%
+    and −10 dodge), and the Devil still doubles a defend. Both are rounding or retuning
+    questions that were not asked.
+  - Digest: `records` → `e91795fe3b76c8bf`, content hash `00b40443` → `794be740`; 370 tests,
+    `validate --strict` 0/0, the touched Swift recompiled with no warning.
 
 ## Session — 2026-10-04 (the sync pass)
 

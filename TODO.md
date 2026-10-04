@@ -1930,10 +1930,28 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the six on top — the 2026-10-04 weapon
-block, the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
+Telegram. **Every block below is LIVE and unwalked** except the seven on top — the 2026-10-04 tarot
+and weapon blocks, the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28
 blocks under them are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (*uncommitted*, NOT deployed):** any
+account with 10 🪙, at the fortune teller; the journal and the palace for the 💰.
+- **the entry**: the intro says «на найближчі години», and the price line «Розклад коштує 10
+  срібників · карта діє 6год».
+- **a duration card** (e.g. the Hermit): name, the meaning in italics, «📖 Досвід: +35% · 💰
+  Здобич: −15%», «Дія до завершення: 6год» — one time line, no «Активна 6год».
+- **a one-shot**: the Wheel shows «50/50: +🪙 30 або −🪙 15», «Миттєво: +🪙 30» (or −🪙 15) and
+  «🪙 Ваші срібники: N»; Judgement «Миттєво: −🪙 20 · 📖 +75 досвіду»; the Lovers «Миттєво: ❤️
+  повне здоров'я · 🍖 повна снага» — each said once.
+- **after the draw**: the fortune screen and the profile print the same line; a one-shot reads
+  «отримано: +🪙 30», sign before the coin.
+- **💰**: the King's «💰 Нагорода: …» in the journal and at the palace, the report banner's second
+  line, the NPC board's «[💰 Забрати нагороду]» on a finished counter job.
+- **the card name**: «Ієрофант».
+- **the Chariot**: «🍖 Витрата снаги: −50%»; under it a forest step costs 1 🍖 instead of 2, an
+  attack 1, a special attack 2 (mage 3), a stance 2 (mage 3). Under the Devil a step costs 3 and
+  a special attack 6 (mage 8).
 
 **Added 2026-10-04 — the weapon by player level and the Master's lesson (`9ab349c`, NOT deployed):** a
 tester above level 5 at estate T3+, and a fresh account taken to level 5.

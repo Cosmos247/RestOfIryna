@@ -208,7 +208,8 @@ Auto-memory `project-quests-taken-by-hand`.
 `CapitalController.questRequirementLine` — the decree's `RequirementLine`, a delivery's items or a
 counter's `quest.counter.<c>` label (validator-required). The 8-cell bar (`questProgressBar`) is
 the BOARD's only, on the owner's word, and an untaken offer carries neither line nor bar. Досвід is
-📖 on every screen, Снага 🍖.
+📖 on every screen, Снага 🍖, and whatever the player GETS — a job's or a decree's reward, the claim
+button, a tarot card's loot — 💰 (the King's 🎁 went 2026-10-04, the owner's pick).
 
 **The innkeeper's job also teaches cooking.** `recipes.json` → `unlocks` is a ladder of
 `{recipeId, npc, minEstateTier}` rungs; finishing a job pays the lowest rung the player has
@@ -270,6 +271,13 @@ which is what makes the pool plus the food in the bag the real limit on how deep
 wilderness can be walked and still walked out of. Never reintroduce a trickle: the old
 one deliberately did not pause during an expedition, so a player could stand at km 25
 and wait out a full pool.
+
+**Every Vigor spend goes through `VigorService.drain(_:base:multiplier:)` or its `action:`
+form**, which applies the active tarot card's `vigorDrainMultiplier` on top of the stance's and
+rounds half up. `drain(_:amount:)` is for a number that is already final (the dev `/drain`): the
+techniques, the stance activation and the mage's flee tax called it until 2026-10-04 and the
+card never touched them. Base costs are 1–5, so a card multiplier must move a 2 by a whole
+point after rounding — ×0.75 moved nothing, which is why the Chariot is ×0.5.
 
 **HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
 pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
@@ -546,8 +554,14 @@ name a row**, so a service that reports rows hands back the tier with them:
 **Every "time left" the player sees goes through `Countdown.format`** — `2год 5хв` ·
 `1хв 22сек` · `5хв` · `42сек`: the two most significant units that carry a value, with an
 exact one dropping its tail so a whole-minute window still reads `5хв`. Durations are never
-written into copy either — the expedition buttons, the tarot "active for" prefix and the
-invite window are all printed from the values that own them.
+written into copy either — the expedition buttons, the tarot window on the fortune teller's
+price line and the invite window are all printed from the values that own them.
+
+**A tarot card is phrased by `FortuneDisplay` on every screen** — the reveal, the fortune
+screen and the profile — from its `FortuneEffect`, so no locale key carries a card's number.
+The 22 hand-typed `buff_desc` lines it replaced (2026-10-04) still matched the JSON, in a second
+phrasing («×1.5» against «+50%») that no retune could reach. A one-shot's gift is printed from
+the RECEIPT (`oneShotParts`), never the card: the Wheel rolls and every loss is clamped.
 
 **"What it costs / what you have" is ONE sentence, and `RequirementLine` renders it.**
 `✅ 1× 🪵 Соснова дошка  (12/1)` — marker, the count the recipe asks for, the label, then the

@@ -10,11 +10,13 @@
 //  struct `effectiveAttack`, `grantXP`, `ExplorationService.rollStep` and
 //  `VigorService.drain` read — rather than written out beside it. Retune a
 //  card in `fortune.json` and the line follows; there is no second copy of
-//  the number to forget. (The card's authored `buff_desc` is prose and stays
-//  prose: it belongs to the reveal, where the flavour is the point.)
+//  the number to forget.
 //
-//  Both surfaces that name an active card call this, so the fortune screen
-//  and the profile cannot describe the same card differently.
+//  All three surfaces that name a card call this — the reveal, the fortune
+//  screen and the profile — so a card cannot read one way on one screen and
+//  another on the next. Until 2026-10-04 the reveal printed a hand-typed
+//  `buff_desc` per card instead: the same numbers in a second phrasing
+//  («×1.5» there, «+50%» here) that no retune could reach.
 //
 
 import Foundation
@@ -22,7 +24,7 @@ import Lingo
 
 enum FortuneDisplay {
 
-    /// Every stat an active card moves, as `⚔️ Attack: +10 · 🎁 Loot: −15%`.
+    /// Every stat an active card moves, as `⚔️ Attack: +10 · 💰 Loot: −15%`.
     ///
     /// A pure one-shot (Lovers, Wheel, Tower, Judgement, World) moves none of
     /// them and gets the "already received" note instead. The draw stamps an
@@ -50,7 +52,9 @@ enum FortuneDisplay {
             parts.append("\(icon) \(lingo.localize(key, locale: locale)): \(signedPercent(value))")
         }
         multiplier(effect.xpMultiplier,         "📖", "profile.xp")
-        multiplier(effect.lootChanceMultiplier, "🎁", "fortune.effect.loot")
+        // 💰, the game's one mark for what a player gets — the journal's
+        // rewards, the King's, the claim button (2026-10-04).
+        multiplier(effect.lootChanceMultiplier, "💰", "fortune.effect.loot")
         // Vigor's own glyph: the number is a change to how fast the pool
         // drains, so "🍖 Vigor drain: −50%" reads as the good news it is.
         multiplier(effect.vigorDrainMultiplier, "🍖", "fortune.effect.vigor_drain")
@@ -63,39 +67,69 @@ enum FortuneDisplay {
         return parts.joined(separator: " · ")
     }
 
-    /// What the last draw's one-shot half actually handed over, as
-    /// `received: 🪙 +30 · 📖 +75 XP`, read off the record `FortuneService.draw`
-    /// stamped on the user.
+    /// The Wheel's two outcomes, `50/50: +🪙 30 or −🪙 15`, read off the card —
+    /// nil for every card that is not a wheel. The test is
+    /// `FortuneService.draw`'s own, so the line appears exactly when the draw
+    /// rolls.
+    static func wheelLine(for effect: FortuneEffect, lingo: Lingo, locale: String) -> String? {
+        guard effect.randomSilverPositive > 0 || effect.randomSilverNegative > 0 else { return nil }
+        return lingo.localize("fortune.effect.wheel", locale: locale, interpolations: [
+            "win": silver(effect.randomSilverPositive),
+            "loss": silver(-effect.randomSilverNegative)
+        ])
+    }
+
+    /// What a draw's one-shot half handed over, as
+    /// `[+🪙 30, 📖 +75 XP, ❤️ full health]` — empty when nothing landed.
     ///
-    /// Not derived from the card: the Wheel rolls 50/50 and every silver loss
-    /// is clamped to what the player holds, so the card says what COULD have
-    /// happened and only the stamped record says what did. A row with nothing
-    /// recorded — drawn before the record existed, or a loss clamped to zero —
-    /// falls back to the plain note, which is still true.
-    static func oneShotLine(for user: User, lingo: Lingo, locale: String) -> String {
+    /// Built from the RECEIPT, never from the card: the Wheel rolls 50/50 and
+    /// every silver loss is clamped to what the player holds, so the card says
+    /// what COULD have happened and only the receipt says what did. The reveal
+    /// passes the receipt `FortuneService.draw` returned; the later screens
+    /// pass the copy it stamped on the user (`oneShotLine`).
+    static func oneShotParts(_ applied: FortuneService.OneShotApplied, lingo: Lingo, locale: String) -> [String] {
         var parts: [String] = []
 
-        if user.lastFortuneSilverDelta != 0 {
-            parts.append("🪙 \(signed(user.lastFortuneSilverDelta))")
+        if applied.silverDelta != 0 {
+            parts.append(silver(applied.silverDelta))
         }
-        if user.lastFortuneXpGain > 0 {
-            // The reveal's own phrasing ("+75 XP" / "+75 досвіду"), so the two
-            // screens name the same gift the same way.
+        if applied.xpGained > 0 {
             parts.append("📖 " + lingo.localize("capital.fortune.applied.xp_gain", locale: locale, interpolations: [
-                "xp": "\(user.lastFortuneXpGain)"
+                "xp": "\(applied.xpGained)"
             ]))
         }
-        if user.lastFortuneHpRestored {
+        if applied.hpRestored {
             parts.append("❤️ " + lingo.localize("fortune.effect.hp_full", locale: locale))
         }
-        if user.lastFortuneVigorRestored {
+        if applied.vigorRestored {
             parts.append("🍖 " + lingo.localize("fortune.effect.vigor_full", locale: locale))
         }
+        return parts
+    }
 
+    /// The last draw's one-shot half as `received: +🪙 30 · 📖 +75 XP`, read
+    /// off the record `FortuneService.draw` stamped on the user. A row with
+    /// nothing recorded — drawn before the record existed, or a loss clamped
+    /// to zero — falls back to the plain note, which is still true.
+    static func oneShotLine(for user: User, lingo: Lingo, locale: String) -> String {
+        let receipt = FortuneService.OneShotApplied(
+            silverDelta: user.lastFortuneSilverDelta,
+            xpGained: user.lastFortuneXpGain,
+            hpRestored: user.lastFortuneHpRestored,
+            vigorRestored: user.lastFortuneVigorRestored
+        )
+        let parts = oneShotParts(receipt, lingo: lingo, locale: locale)
         guard parts.isEmpty == false else {
             return lingo.localize("fortune.effect.one_shot_done", locale: locale)
         }
         return lingo.localize("fortune.effect.received", locale: locale) + ": " + parts.joined(separator: " · ")
+    }
+
+    /// `+🪙 30` / `−🪙 15` — the sign BEFORE the coin, the way the tavern
+    /// prints its wins and losses and the reveal always printed the draw.
+    /// This file used to print `🪙 +30`, so one card read two ways.
+    static func silver(_ delta: Int) -> String {
+        return delta > 0 ? "+🪙 \(delta)" : "−🪙 \(abs(delta))"
     }
 
     /// `+5` / `−5`, with the typographic minus the rest of the copy uses.

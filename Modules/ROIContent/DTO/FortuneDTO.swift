@@ -21,7 +21,7 @@
 //  Card ORDER is preserved: `FortuneService.draw` picks with `randomElement()`,
 //  so the array's order decides which card a given roll returns.
 //
-//  Locale keys (`fortune.card.<id>.name` / `.meaning` / `.buff_desc`) and the
+//  Locale keys (`fortune.card.<id>.name` / `.meaning`) and the
 //  asset path (`Assets/capital/fortune/<id>.png`) both derive from `id`, so
 //  neither is written into the file. The validator derives and checks the keys.
 //

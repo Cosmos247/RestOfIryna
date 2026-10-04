@@ -1282,7 +1282,10 @@ public enum ContentValidator {
         }
 
         for (index, card) in (bundle.fortune?.cards ?? []).enumerated() {
-            for suffix in ["name", "meaning", "buff_desc"] {
+            // Both on the reveal (`CapitalController.renderFortuneReveal`); the
+            // name also on the fortune screen and the profile. What a card DOES
+            // has no key to require — it is printed from the effect.
+            for suffix in ["name", "meaning"] {
                 requireKey("fortune.card.\(card.id).\(suffix)",
                            file: "fortune.json", path: "cards[\(index)]", id: card.id)
             }

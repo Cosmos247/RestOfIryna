@@ -51,7 +51,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the estate scaling (`4be2758`): creature HP and ATK +10% per estate tier, one migration;
     - the arena in simultaneous rounds (`cad61c3`) and as a cycle of three (`f0c1749`);
     - the quest board as a scroll (`95e8492`);
-    - the weapon ladder by player level (`9ab349c`, `spec-items.md` §9).
+    - the weapon ladder by player level (`9ab349c`, `spec-items.md` §9);
+    - a tarot card phrased once and 💰 for every reward, with the Chariot at −50% Vigor (10-04,
+      *uncommitted*; Swift, locale and `fortune.json`, no migration).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`). The digests to match and the tables to verify are in `Prompt.md`.
@@ -80,7 +82,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
   the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
   entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
-  entry (`9ab349c`) and the 10-04 sync pass.
+  entry (`9ab349c`), the 10-04 sync pass and the 10-04 tarot entry.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since

@@ -21,6 +21,27 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-04 — a tarot card is phrased once, and 💰 marks every reward** (*uncommitted*, NOT
+deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, no migration):
+- **The reveal** prints the card through `FortuneDisplay` (`effectLine`, `wheelLine`,
+  `oneShotParts`), the helper the fortune screen and the profile already called. The 22
+  hand-typed `fortune.card.<id>.buff_desc` keys are gone in both locales, with their six
+  parenthesised notes (the owner's call); the window is printed once, a one-shot's gift once,
+  and the balance on its own line whenever the card deals in silver.
+- **Silver** reads «+🪙 30» / «−🪙 15» on every fortune screen (the later screens printed
+  «🪙 +30»). The intro no longer says «шість годин»: the price line prints the window from
+  `buffDurationSeconds`. «Іерофант» → «Ієрофант».
+- **💰 for what the player gets** (the owner's pick): the King's reward line (journal, palace,
+  charter), the palace report banner, «💰 Забрати нагороду» and the tarot's «💰 Здобич». 🎁 is
+  used nowhere now.
+- **Витрата снаги.** «Виснаження снаги» is «Витрата снаги» now. The Chariot went from −25% to
+  −50% (`fortune.json`): every base cost is 1–5 and rounded half up, so ×0.75 saved nothing on a
+  step or a plain blow — 1 on a flee, a little more inside the warrior's stance. The card's multiplier now reaches the techniques, the stance activation and the
+  mage's flee tax through `VigorService.drain(_:base:multiplier:)`; they had called
+  `drain(_:amount:)` and the card never saw them.
+- **Measured.** 370 tests; `validate --strict` 0/0; `records` → `e91795fe3b76c8bf`, content hash
+  → `794be740`; `tuning`, `spawns`, `quests`, `king` unchanged.
+
 **2026-10-04 — the weapon follows the player level, and its first rung is the Master's lesson**
 (`9ab349c`, NOT deployed; needs `pm2 restart ROI` — code, locale strings, content
 schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):

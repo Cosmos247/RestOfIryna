@@ -561,7 +561,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // the same stance multiplier so Arcane Resonance still pays the toll.
         let extra = CombatService.fleeVigorExtra(forClass: cls)
         if extra > 0 {
-            spent += VigorService.drain(player, amount: Int((Double(extra) * mods.vigorMultiplier).rounded()))
+            spent += VigorService.drain(player, base: extra, multiplier: mods.vigorMultiplier)
         }
         state.tally {
             $0.actions += 1
@@ -780,12 +780,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
-        // Vigor drain — base special-defense cost × stance vigor multiplier.
-        // Skipped in training mode.
+        // Vigor drain — base special-defense cost × stance vigor multiplier ×
+        // the active card's. Skipped in training mode.
         if !isTraining {
             let baseVigor = CombatService.specialDefenseVigor(forClass: cls)
-            let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
-            let spent = VigorService.drain(player, amount: actualDrain)
+            let spent = VigorService.drain(player, base: baseVigor, multiplier: stanceMods.vigorMultiplier)
             state.tally { $0.vigorSpent += spent }
         }
 
@@ -885,12 +884,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let cls = CharacterClass(rawValue: player.characterClass ?? "") ?? .warrior
         let stanceMods = CombatService.stanceModifiers(for: state.combatStance)
 
-        // Vigor drain — base special-attack cost × stance vigor multiplier.
-        // Skipped in training mode (consequence-free practice).
+        // Vigor drain — base special-attack cost × stance vigor multiplier ×
+        // the active card's. Skipped in training mode (consequence-free practice).
         if !isTraining {
             let baseVigor = CombatService.specialAttackVigor(forClass: cls)
-            let actualDrain = Int((Double(baseVigor) * stanceMods.vigorMultiplier).rounded())
-            let spent = VigorService.drain(player, amount: actualDrain)
+            let spent = VigorService.drain(player, base: baseVigor, multiplier: stanceMods.vigorMultiplier)
             state.tally { $0.vigorSpent += spent }
         }
 
@@ -1024,7 +1022,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // The activation pays for the strike below as well — it is one tap.
         // Skipped in training mode (consequence-free practice).
         if !Self.isTraining(state) {
-            let spent = VigorService.drain(player, amount: CombatService.stanceActivationVigor(for: stanceId))
+            let spent = VigorService.drain(player, base: CombatService.stanceActivationVigor(for: stanceId))
             state.tally { $0.vigorSpent += spent }
         }
         state.tally { $0.stanceUses += 1 }
