@@ -11,6 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-05)* **the Master's enchant draws from the bag alone** — the card counts in
+  the bag; a refusal is a modal.
 - `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text.
 - `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
   в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
@@ -438,6 +440,46 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-05 (the Master's enchant draws from the bag alone) — *(uncommitted)*
+
+A tester's report: «У столиці при покращенні спорядження пише, що треба 15 шкури, а я маю 14.
+ХОЧА В СУМЦІ 0.» The owner asked for a report first, then options.
+- **Cause.** The +2 → +3 enchant costs 15 hides. `MasterService.enchant` (written in May,
+  `4a13163`) counted `InventoryEntry` + `WarehouseEntry` and drained bag first, warehouse second.
+  The tester had 0 in the bag and 14 in the estate's storage. The refusal «Шкура: треба 15, маєте
+  14.» printed the sum and said nothing of where the 14 were.
+- **Around it.**
+  - The same Master's weapon lesson (10-04) counts the bag alone, with a comment saying why: the
+    capital has no warehouse.
+  - With 1 hide in the bag the enchant would have taken 14 from the estate while the player stood
+    in the capital.
+  - The card asked «Бажаєте покращити … за 🪙 220 + 15🟫?» and never said what the player held,
+    and the refusal had a phrasing of its own. Both broke the `RequirementLine` rule.
+- **Offered** (played samples):
+  - bag alone, like the lesson (recommended; +4 then needs a bag of 35 and +5 one of 45);
+  - bag + warehouse shown separately, with the lesson moved to match;
+  - only explain.
+  The owner chose bag alone.
+- **Built.**
+  - `enchant` counts and drains the bag only.
+  - The card is the lesson's shape: the piece «+2 → +3», `RequirementLine` silver and hides.
+    A «📦 Ще N — у сховищі маєтку…» line was built beyond the sample and dropped on the owner's
+    word: the card says what the bag holds and no more.
+  - [✅ Так] runs `finishMasterEnchant`: a refusal is an alert (`RequirementLine.shortageModal`,
+    the trader's silver line), and the card stays. The callback is no longer answered up front,
+    since an alert must be its only answer.
+  - Two keys dropped (`capital.master.confirm.enchant`, `capital.master.missing_materials`).
+  - The audit caught a regression of this change: with the callback no longer answered up front,
+    a throw from `MasterService.enchant` would have left the tap spinning. It is answered in a
+    `catch` and rethrown. The lesson's `master:lessonok` has had the same gap since 10-04; it was
+    noted and left alone, outside this change.
+  - Rule in CLAUDE.md: what a place can draw on is where it stands.
+- **Verified.**
+  - Both files recompiled with no warning; 370 tests; `validate --strict` 0/0; the digest
+    unmoved.
+  - The capital no longer reads the warehouse at all.
+  - Three cards rendered in both languages: the tester's case, enough hides, short of silver.
 
 ## Session — 2026-10-04 («💛 Допомога грі» in Settings) — `b0c9d80`
 

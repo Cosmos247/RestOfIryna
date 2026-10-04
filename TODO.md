@@ -1930,11 +1930,21 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the ten on top — the 2026-10-04
-support-button, task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board
-block, the two 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — which
-wait for their deploy. The six 2026-09-27/28 blocks under them are included, live since the
-2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the eleven on top — the 2026-10-05
+enchant block, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
+the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
+2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
+are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-05 — the Master's enchant draws from the bag alone (*uncommitted*, NOT deployed):**
+an account with armour to enchant, hides in the estate's storage and few or none in the bag.
+- **the card** («✨ Покращення броні» → a piece): «🦺 Жилет лісника +2 → +3», then «✅ 🪙 Срібло
+  (540/220)» and «❌ 15× 🟫 Шкура (0/15)», counted in the BAG — hides in the estate's storage do
+  not count.
+- **[✅ Так] short of hides**: a modal «🚧 Не вистачає матеріалів: ❌ 15× 🟫 Шкура (0/15)», the
+  card stays; short of silver, the trader's «Не вистачає срібників» modal.
+- **with enough in the bag**: the banner «… — заточено до +3: …», the list again; the warehouse
+  count is untouched.
 
 **Added 2026-10-04 — «💛 Допомога грі» in Settings (`b0c9d80`, NOT deployed):** any account.
 - **⚙️ Settings**: the keyboard reads [🌐 Мова] [💛 Допомога грі] / [🔙 Назад].

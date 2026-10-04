@@ -119,7 +119,12 @@ public enum MasterService {
     // MARK: - Enchant
 
     /// Raise an armor piece's permanent +DEF enchant by one level for silver +
-    /// material, drained from the combined inventory + warehouse pool.
+    /// material, from the BAG alone.
+    ///
+    /// The capital has no warehouse — the rule the Master's weapon lesson was
+    /// written on (`WeaponUpgradeService.reforge`). Until 2026-10-05 this counted
+    /// the estate's warehouse too and drew from it remotely, so a player with
+    /// 0 hides in the bag was told «маєте 14» and could not tell where they were.
     public static func enchant(entryId: UUID, for user: User, on db: any Database) async throws -> EnchantResult {
         guard let userId = user.id else { return .notArmor }
         guard let row = try await ownedRow(entryId, for: user, on: db), isArmor(row.itemId) else {
@@ -130,17 +135,11 @@ public enum MasterService {
         }
         if user.silver < step.silver { return .notEnoughSilver(have: user.silver, need: step.silver) }
 
-        let invQty = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: db)
-        let whQty  = try await WarehouseEntry.totalQuantity(of: step.materialId, for: userId, on: db)
-        if invQty + whQty < step.materialQty {
-            return .missingMaterials(itemId: step.materialId, have: invQty + whQty, need: step.materialQty)
+        let inBag = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: db)
+        if inBag < step.materialQty {
+            return .missingMaterials(itemId: step.materialId, have: inBag, need: step.materialQty)
         }
-
-        // Drain material — inventory first, warehouse for the shortfall.
-        let fromInv = min(step.materialQty, invQty)
-        if fromInv > 0 { _ = try await InventoryEntry.remove(step.materialId, quantity: fromInv, from: user, on: db) }
-        let fromWH = step.materialQty - fromInv
-        if fromWH > 0 { _ = try await WarehouseEntry.remove(step.materialId, quantity: fromWH, from: user, on: db) }
+        _ = try await InventoryEntry.remove(step.materialId, quantity: step.materialQty, from: user, on: db)
 
         user.silver -= step.silver
         row.enchantLevel += 1

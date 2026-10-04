@@ -21,6 +21,18 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-05 — the Master's enchant draws from the bag alone** (*uncommitted*, NOT deployed;
+needs `pm2 restart ROI` — Swift and locale):
+- **Why.** A tester: «треба 15 шкури, а я маю 14. ХОЧА В СУМЦІ 0». `MasterService.enchant`
+  (May, `4a13163`) counted bag + estate warehouse and drew from both; the refusal printed the sum.
+  The Master's lesson (10-04) already counted the bag alone, so one NPC ran two rules.
+- **Now.** Bag alone, as the lesson; the card is `RequirementLine`s (silver, the hides); a refusal
+  is a modal that leaves the card standing (`finishMasterEnchant`, the lesson's shape).
+  `capital.master.confirm.enchant` and `capital.master.missing_materials` are gone.
+- **Accepted.** +4 (26 hides) needs a bag of 35, +5 (42) one of 45.
+- **Measured.** Both touched files recompiled with no warning; 370 tests; `validate --strict` 0/0;
+  digest unmoved; three cards rendered in both languages.
+
 **2026-10-04 — «💛 Допомога грі» in Settings** (`b0c9d80`, NOT deployed; needs `pm2 restart
 ROI` — Swift and four locale strings): `Commands.support`, a third button on the settings keyboard
 ([🌐 Мова] [💛 Допомога грі] / [🔙 Назад]); the tap answers with the owner's text naming

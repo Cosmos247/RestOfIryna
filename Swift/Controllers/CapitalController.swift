@@ -1201,19 +1201,32 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
     }
 
+    /// The enchant card: the piece, the step, and what it costs against what
+    /// the player holds — in `RequirementLine`'s sentence, the lesson card's own
+    /// (2026-10-05). It used to ask «Бажаєте покращити … за 🪙 220 + 15🟫?» and
+    /// say nothing of what the player had, so the only place that number
+    /// appeared was the refusal.
+    ///
+    /// The material is counted in the BAG, as `MasterService.enchant` draws it.
     private func editToMasterConfirmEnchant(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        guard let row = try await ownedRow(entryId, for: context.session, on: context.db),
+        guard let userId = context.session.id,
+              let row = try await ownedRow(entryId, for: context.session, on: context.db),
               let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else {
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context); return
         }
-        let hideIcon = ItemCatalog.find("mat.hide")?.icon ?? "🦴"
-        let text = lingo.localize("capital.master.confirm.enchant", locale: locale, interpolations: [
-            "item": itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale),
-            "level": "\(step.level)", "cost": "🪙 \(step.silver) + \(step.materialQty)\(hideIcon)"
-        ])
+        let inBag = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: context.db)
+        let lines = [
+            "<b>" + lingo.localize("capital.master.enchant.title", locale: locale) + "</b>",
+            "",
+            "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) +\(row.enchantLevel) → +\(step.level)",
+            RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+                                   have: context.session.silver, need: step.silver),
+            RequirementLine.item(step.materialId, have: inBag, need: step.materialQty, lingo: lingo, locale: locale)
+        ]
         let kb = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
-        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
+                               text: lines.joined(separator: "\n"), keyboard: kb)
     }
 
     // MARK: Result banners
@@ -1251,25 +1264,38 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
     }
 
-    private func postMasterResultBanner(forEnchant result: MasterService.EnchantResult, context: Context) async {
+    /// What the enchant card's [✅ Так] ends in — the lesson's shape
+    /// (`finishMasterLesson`): a refusal is a modal and leaves the card
+    /// standing, so the player sees the line that refused them; success posts
+    /// the banner and returns to the list. A stale card (the piece gone, or
+    /// already at the cap) goes back to the list too.
+    private func finishMasterEnchant(_ result: MasterService.EnchantResult, query: TGCallbackQuery,
+                                     messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
+        func alert(_ text: String) async {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                callbackQueryId: query.id, text: text, showAlert: true))
+        }
         switch result {
         case .success(let itemId, let newLevel):
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             let name = itemLabel(itemId, lingo: lingo, locale: locale)
             let bonus = Self.enchantBonusPhrase(for: context.session, level: newLevel, lingo: lingo)
             let text = lingo.localize("capital.master.enchanted", locale: locale, interpolations: ["item": name, "level": "\(newLevel)", "bonus": bonus])
             await postStatusBanner("✅ \(text)", context: context)
-        case .maxLevel:
-            await postStatusBanner("❌ " + lingo.localize("capital.master.max_level", locale: locale), context: context)
-        case .notEnoughSilver(let have, let need):
-            let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
-            await postStatusBanner("❌ \(text)", context: context)
+            try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)
         case .missingMaterials(let itemId, let have, let need):
-            let name = itemLabel(itemId, lingo: lingo, locale: locale)
-            let text = lingo.localize("capital.master.missing_materials", locale: locale, interpolations: ["item": name, "have": "\(have)", "need": "\(need)"])
-            await postStatusBanner("❌ \(text)", context: context)
+            await alert(RequirementLine.shortageModal(
+                [CraftingService.Shortage(itemId: itemId, need: need, have: have)], lingo: lingo, locale: locale))
+        case .notEnoughSilver(let have, let need):
+            await alert(lingo.localize("capital.trader.not_enough_silver", locale: locale,
+                                       interpolations: ["have": "\(have)", "need": "\(need)"]))
+        case .maxLevel:
+            await alert(lingo.localize("capital.master.max_level", locale: locale))
+            try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)
         case .notArmor:
-            break
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)
         }
     }
 
@@ -1975,14 +2001,26 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             return true
         }
+        // Not answered up front: a refusal answers with a modal, and a callback
+        // can be answered only once.
         if data.hasPrefix("master:enchantok:") {
             let idStr = String(data.dropFirst("master:enchantok:".count))
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            if let id = UUID(uuidString: idStr) {
-                let result = try await MasterService.enchant(entryId: id, for: context.session, on: context.db)
-                await ctrl.postMasterResultBanner(forEnchant: result, context: context)
+            guard let id = UUID(uuidString: idStr) else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+                return true
             }
-            try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            // A throw before `finishMasterEnchant` would leave the tap with no
+            // answer at all — the spinning button — so it is answered on the
+            // way out.
+            let result: MasterService.EnchantResult
+            do {
+                result = try await MasterService.enchant(entryId: id, for: context.session, on: context.db)
+            } catch {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                throw error
+            }
+            try await ctrl.finishMasterEnchant(result, query: query, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
 

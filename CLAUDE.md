@@ -514,6 +514,13 @@ units, with the dev bypass matching the writer's. **Predict for EVERY store the 
 land in.** A full bag is no longer a refusal to craft — the output goes to the warehouse and
 the banner names where it landed. Auto-memory `project-fit-check-matches-the-writer`.
 
+**What a place can draw on is where it stands** (2026-10-05). The Master is in the capital, which
+has no warehouse, so his lesson and his enchant count and take materials from the BAG alone. The
+workshop, the kitchen, the Training Ground and the estate and bag upgrades stand at the estate
+and draw bag + warehouse. **A card counts in the same place its service draws from.** The enchant
+counted bag + warehouse from the capital until 2026-10-05, so it told a player with an empty bag
+«маєте 14».
+
 **A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
 are per-instance (`GearState`), so a delete-here-and-`add`-there path hands back a
 factory-fresh item — which made a warehouse round-trip a free repair that also undid the max
