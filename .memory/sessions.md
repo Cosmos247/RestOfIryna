@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-05)* **durability is the item's own, and the Forester set is 50**
+  (`spec-items.md` §10) — `items.json` → `maxDurability`, the global start gone, prices ×5/3 so
+  a repaired point costs what it did; existing pieces +20 in both numbers; the cached gear
+  bonuses re-derived at every boot, which also closes the weapon ladder's stale ATK (four
+  testers, Дарина's sword +60 cached against +27 real); schema v18.
 - `4fe5b7a` (10-05) **the Master's enchant draws from the bag alone** — the card counts in
   the bag; a refusal is a modal. Its fill `fd6e6e1` also has the lesson answer its tap on a throw.
 - `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text. Its fill
@@ -442,6 +447,62 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-05 (durability is the item's own, the Forester set at 50) — *(uncommitted)*
+
+The owner opened a day of gear work: «по перше хочу підняти міцність сету Лісника до 50».
+- **Found.**
+  - One number stamped every row: `economy.gear.maxDurabilityStart` 30, unchanged since
+    2026-05-21. The Forester four are all the armour there is.
+  - **The class weapon took it too.** `RegistrationController` mints the starter weapon through
+    `InventoryEntry.add` → `GearState.fresh`, and the ladder's tier 1 is also 30. A bare 30 → 50
+    would have handed a new player a 50/50 sword that fell to 40/40 at the Master's lesson.
+  - **The repair price divides by it** (`MasterCatalog.repairCost`), and so does the salvage
+    share. At 50 with nothing else moved, a repaired point would have cost 40% less.
+  - **The Pi** (read-only): 24 Forester rows across six players. The lowest maximum was 12, after
+    18 repairs. One player's whole worn set was at 0.
+  - **Beside it, under the undeployed weapon ladder (`9ab349c`).** It re-solved every rung's
+    stats, and `ClampWeaponTiersToLevel` lowers tiers. Neither touches the cached
+    `User.gear*Bonus`. Every tester holding a weapon at t2+ would have kept the old rung on the
+    profile and in their first fight. On the Pi that is four players:
+    - Дарина, t5 sword, not clamped: +60 ATK against the new t5's +27;
+    - анія, staff t5 → t4: +58 against +21;
+    - Володимир, bow t5 → t4: +55 against +20;
+    - Amae, sword t4 → t3: +46 against +16.
+- **Asked** (quizzes with the testers' real pieces):
+  - existing pieces → +20 to the max AND the current durability, broken ones revived;
+  - where the number lives → on each item. The owner raised this one unprompted: more sets are
+    coming, and items outside any set;
+  - the repair price → after the formula was explained, the owner asked about raising the prices
+    instead and chose prices ×5/3 with the fraction at 0.5. That repairs exactly like 0.83 at the
+    old prices, and the difference falls on the purchase.
+- **Built.**
+  - `ItemDTO` / `Item.maxDurability`.
+  - `EquipmentSlot.isArmor` / `isDurable`, read by both `GearConditionService` and the validator.
+  - `GearConditionService.startingDurability(for:)`, the ladder first and then the item. It is
+    read by `GearState.fresh(for:)` (both row inits now take an optional `carrying:`),
+    `MasterCatalog.repairCost` and `CraftingService.salvageYield`.
+  - Validator `durability.*`: three errors (missing, non_positive, shave_destroys_gear for armour
+    only) and two warnings (on_ladder, not_worn). Each has its failing case in `DurabilityTests`;
+    the two economy rules on the old number went with it.
+  - `RaiseArmorDurability`, which shifts each row by its item's durability − 30 in both numbers.
+  - `EquipmentService.backfillGearBonuses`, after the migrations on every boot. `applyBonuses` is
+    `recomputeBonuses`' arithmetic over rows in hand. It closes the armour revive and the weapon
+    ladder's stale cache alike.
+  - The trade list prints wear only for what wears, because a piece nothing wears is now minted
+    0/0.
+  - Content: the four pieces at 50, prices 100 / 160 / 250 / 300, the global key removed, schema
+    v18.
+  - Rules in CLAUDE.md: durability is the item's own, and the cached gear bonuses are re-derived
+    at every boot.
+- **Verified.**
+  - 379 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, the same 18 warnings.
+  - Digest: `records` 438be135e3090fb5 → fefe14b940998631 and `tuning` 605fd06bd8abdfda →
+    4edf65507bbb5e48. `spawns`, `quests` and `king` are byte-identical. Content hash `41455b84`.
+  - Every generated spec block was re-run by a script; one row was stale (the Master's armour
+    485 → 810, `spec-economy.md` §4).
+  - The migration's SQL ran on a TEMP copy of the Pi's 24 rows and read +20/+20 on every one; a
+    −29 shift held the clamps.
 
 ## Session — 2026-10-05 (the sync pass)
 

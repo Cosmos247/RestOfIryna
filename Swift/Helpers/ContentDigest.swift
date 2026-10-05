@@ -243,11 +243,17 @@ enum ContentDigest {
             digest.combine("\(listing.itemId)@\(listing.priceSilver)")
         }
         for step in MasterCatalog.enchantSteps { digest.combine(fingerprint(step)) }
-        // `repairCost` folds in `GearConditionService.maxDurabilityStart` and a
-        // hardcoded 0.5, then rounds — none of which a record hash can see.
+        // `repairCost` divides by the piece's starting durability, falls back
+        // to a price of 30 and floors at 1 — none of which a record hash can
+        // see. The starting durability is itself a derived read since
+        // 2026-10-05 (the ladder's tier 1 before the item's own number), so
+        // it is replayed for every item.
+        for item in ItemCatalog.all {
+            digest.combine("\(item.id) start\(GearConditionService.startingDurability(for: item.id))")
+        }
         for itemId in MasterCatalog.armorForSale.map(\.itemId) + ["gear.rusty_sword", "nope"] {
             digest.combine(MasterCatalog.buyPrice(for: itemId).map(String.init) ?? "-")
-            for missing in [-5, 0, 1, 7, 15, 29, 30, 31, 60] {
+            for missing in [-5, 0, 1, 7, 15, 29, 30, 31, 49, 50, 51, 60] {
                 digest.combine(MasterCatalog.repairCost(itemId: itemId, missing: missing))
             }
         }
@@ -907,7 +913,8 @@ enum ContentDigest {
 
         // MARK: economy.json
         d.combine("economy")
-        d.combine(GearConditionService.maxDurabilityStart)
+        // `maxDurabilityStart` was hashed here until 2026-10-05; durability is
+        // each item's now, and `records` carries it.
         d.combine(GearConditionService.repairMaxShave)
         d.combine("\(GearConditionService.salvageFraction)")
         for event in GearConditionService.WearEvent.allCases {
@@ -1084,7 +1091,8 @@ enum ContentDigest {
             item.id, item.nameKey, item.type.rawValue, "\(item.tier)",
             "iLvl\(item.itemLevel)", item.rarity, item.setId ?? "-", "\(item.stackable)",
             effects, item.slot?.rawValue ?? "-", gear, item.icon ?? "-",
-            item.descriptionKey ?? "-", item.teachesRecipe ?? "-"
+            item.descriptionKey ?? "-", item.teachesRecipe ?? "-",
+            "dur\(item.maxDurability.map(String.init) ?? "-")"
         ].joined(separator: " · ")
     }
 

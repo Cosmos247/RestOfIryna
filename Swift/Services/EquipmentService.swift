@@ -82,7 +82,55 @@ public enum EquipmentService {
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
+        applyBonuses(of: rows, to: user)
+    }
 
+    /// Boot-time and idempotent: re-derive every player's cached gear bonuses
+    /// from their worn rows and the content this boot loaded, and save only the
+    /// players whose numbers moved — `User.backfillLevelDerivedStats`'s shape,
+    /// for the other half of the stat line.
+    ///
+    /// `gear*Bonus` is a CACHE, and only `recomputeBonuses` writes it: on an
+    /// equip, a fight's wear, a repair, an enchant, a reforge. Never on a
+    /// migration or a content edit. The deploy after 2026-10-05 changes what
+    /// worn rows grant three ways: the weapon ladder (2026-10-04) re-solved
+    /// every rung's stats, `ClampWeaponTiersToLevel` takes weapons down a
+    /// tier, and `RaiseArmorDurability` lifts broken armour off 0. Without this
+    /// pass every tester holding a weapon at t2+ would read the old rung on
+    /// the profile and fight the next fight with it — four of them on
+    /// 2026-10-05, one carrying a cached sword ATK of +60 against the new t5's
+    /// +27. A restart is a consistency point for the cache; a `/reload` is not.
+    ///
+    /// Two queries whatever the roster, then one save per player that moved.
+    public static func backfillGearBonuses(on db: any Database, logger: Logger) async throws {
+        let users = try await User.query(on: db).all()
+        let worn = try await InventoryEntry.query(on: db)
+            .filter(\.$equippedSlot ~~ EquipmentSlot.allCases.map { Optional($0.rawValue) })
+            .all()
+        let wornByUser = Dictionary(grouping: worn, by: { $0.$user.id })
+
+        var touched = 0
+        for user in users where user.characterClass != nil {
+            guard let userId = user.id else { continue }
+            func snapshot() -> [Int] {
+                [user.gearHpBonus, user.gearAttackBonus, user.gearDefenseBonus,
+                 user.gearCritBonus, user.gearDodgeBonus, user.gearAccuracyBonus, user.hp]
+            }
+            let before = snapshot()
+            applyBonuses(of: wornByUser[userId] ?? [], to: user)
+            guard snapshot() != before else { continue }
+            try await user.save(on: db)
+            touched += 1
+        }
+        if touched > 0 {
+            logger.info("Recomputed cached gear bonuses for \(touched) user(s)")
+        }
+    }
+
+    /// `recomputeBonuses`' arithmetic over rows already in hand, so the boot
+    /// pass can read every player's worn rows in one query and still run the
+    /// same lines. Rows that are not equipped are skipped.
+    static func applyBonuses(of rows: [InventoryEntry], to user: User) {
         var atk = 0, def = 0, hp = 0, crit = 0, dodge = 0, acc = 0
         for row in rows where row.equippedSlot != nil {
             let s = contributedStats(of: row, for: user)

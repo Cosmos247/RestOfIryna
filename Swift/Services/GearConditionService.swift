@@ -21,11 +21,30 @@ import Foundation
 
 public enum GearConditionService {
 
-    /// Durability a fresh piece starts (and is repaired back) to. Each repair
-    /// permanently shaves `repairMaxShave` off the piece's max, so armor
+    /// The durability a fresh piece of `itemId` starts at — the one question
+    /// every reader of it asks: the row a purchase or a grant creates
+    /// (`GearState.fresh(for:)`), the Master's repair price, and what the
+    /// workshop gives back for a piece taken apart.
+    ///  • A laddered weapon → its ladder's tier-1 durability
+    ///    (`durabilityByTier`); an upgrade moves it from there.
+    ///  • Any other piece a fight wears → its own `maxDurability` in
+    ///    `items.json`, which the validator demands.
+    ///  • Anything else → 0: nothing wears it, so it has no durability.
+    ///
+    /// Until 2026-10-05 this was one number for every row,
+    /// `economy.gear.maxDurabilityStart` = 30, and the class weapon was stamped
+    /// with it too — right only because its tier 1 was also 30. Raising the
+    /// Forester set to 50 would have handed a new player a 50/50 sword that
+    /// dropped to 40/40 at its first reforge.
+    public static func startingDurability(for itemId: String) -> Int {
+        if WeaponUpgradeCatalog.isUpgradable(itemId) {
+            return WeaponUpgradeCatalog.durability(forTier: 1)
+        }
+        return ItemCatalog.find(itemId)?.maxDurability ?? 0
+    }
+
+    /// Each repair permanently shaves this off an armour piece's max, so armor
     /// eventually wears out and must be rebought from the Master.
-    /// (30 for now — tuned for a felt repair cadence vs the −1/−3/−5 drain.)
-    public static var maxDurabilityStart: Int { Catalogs.current.tuningEconomy.gear.maxDurabilityStart }
     public static var repairMaxShave: Int { Catalogs.current.tuningEconomy.gear.repairMaxShave }
     /// Share of the recipe a piece at full max returns when taken apart at the
     /// workshop — see `SalvageMath` for how wear scales it down.
@@ -34,10 +53,11 @@ public enum GearConditionService {
     /// Equipment slots that carry durability. Armor (4 slots) plus the main-hand
     /// weapon. `durableSlots` is the full set that wears in a fight; `armorSlots`
     /// stays separate because armor and weapons differ at 0 (broken vs −50%) and
-    /// in repair rules (max shave vs none).
-    public static let armorSlots: Set<String> = ["helmet", "chest", "legs", "boots"]
+    /// in repair rules (max shave vs none). Read off `EquipmentSlot` since
+    /// 2026-10-05, because the validator now asks the same question.
+    public static let armorSlots: Set<String> = Set(EquipmentSlot.allCases.filter(\.isArmor).map(\.rawValue))
     public static let weaponSlots: Set<String> = [EquipmentSlot.mainHand.rawValue]
-    public static let durableSlots: Set<String> = armorSlots.union(weaponSlots)
+    public static let durableSlots: Set<String> = Set(EquipmentSlot.allCases.filter(\.isDurable).map(\.rawValue))
 
     /// A single fight's wear *budget* (model C — distributed across equipped
     /// armor point-by-point, not charged per piece). Victory < defeat < flee —
@@ -130,8 +150,9 @@ public enum GearConditionService {
     }
 
     /// One-shot, idempotent startup backfill: weapon rows created before the
-    /// per-tier durability table existed carry the generic `max = 30` from
-    /// `InventoryEntry.init`. Raise any under-provisioned weapon's max to its
+    /// per-tier durability table existed carry the generic `max = 30` that
+    /// `InventoryEntry.init` stamped on every row then (a fresh weapon reads its
+    /// ladder since 2026-10-05). Raise any under-provisioned weapon's max to its
     /// tier value, preserving the missing amount (a full 30/30 T5 becomes
     /// 100/100; a worn 20/30 becomes 90/100). Acts only when `max < tier value`,
     /// so re-running never refills a legitimately worn weapon. Bonuses depend on

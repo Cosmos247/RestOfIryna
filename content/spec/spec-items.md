@@ -796,3 +796,120 @@ substitutes by plain string matching. The screen reads as approved.
 and from 36% to 29% at L40. The tier-2 stat lines were solved against the old column on
 2026-10-02. They are frozen, nothing re-solves them, and §9.7 measured the fights directly. A
 re-solve belongs with the gear ladder (`TODO.md`, open items).
+
+---
+
+## 10. Durability is the item's own
+
+**Status: APPROVED and APPLIED 2026-10-05.** The owner's decisions are in §10.1, each taken over a
+quiz with the testers' real pieces as the sample.
+
+### 10.1 What was asked and decided
+
+The owner opened a day of gear work by asking for the Forester set at **50 durability**. Every
+armour piece used to start at one number, `economy.gear.maxDurabilityStart` = 30, which had been
+30 since the Master opened on 2026-05-21. The Forester set is all the armour there is, so a single
+edit could have raised it. Three things made it more than one:
+- **The class weapon was stamped with the same number.** A fresh row took
+  `maxDurabilityStart` whatever it was, and the weapon's ladder starts at 30 too. At 50, a new
+  player would have held a 50/50 sword that fell to 40/40 at the Master's lesson.
+- **The repair price divides by it.** A point costs price × `repairCostFraction` ÷ durability. At
+  50 with nothing else moved, a repaired point would have cost 40% less, and the repair is one of
+  the few places silver leaves the game (`spec-economy.md` §4).
+- **24 pieces were already in play**, six players' worth. The most worn had a maximum of 12, after
+  18 repairs, and one player's whole worn set was at 0.
+
+Decided by the owner on 2026-10-05:
+- **The durability lives on each item**, not in one number for all armour, because more sets are
+  coming, and items that belong to no set. `items.json` → `maxDurability`, and
+  `maxDurabilityStart` is gone.
+- **Existing pieces gain the difference in BOTH numbers** (+20 for the Forester): each becomes the
+  piece it would be had it been bought at 50 and lived the same life. The shaves stay, and a
+  broken piece comes back at 20.
+- **The repair price per point stays where it was, by raising the prices** ×5/3 with
+  `repairCostFraction` left at 0.5. Raising the fraction to 0.83 at the old prices would have
+  priced a repair exactly the same. The owner chose the prices, so «a full repair from zero is
+  half the price» stays one rule for every item. The difference falls on the purchase, which new
+  players pay: the set costs 810 🪙 where it cost 485.
+
+### 10.2 The rule
+
+- **One source per piece.** A piece a fight wears (armour and the main hand) declares its
+  `maxDurability`. The exception is a laddered weapon, whose `durabilityByTier` owns it. A piece
+  nothing wears declares none.
+- **One reader.** `GearConditionService.startingDurability(for:)` answers "what does a fresh piece
+  of this item start at?" for the three places that ask: the row a purchase or a grant mints
+  (`GearState.fresh(for:)`), the Master's repair price, and the workshop's salvage share.
+- **A set's durability and price are set together.** A point repaired costs
+  price × 0.5 ÷ durability, so a sturdier set at the same price is cheaper to keep per fight. That
+  is a choice to make on purpose when authoring one.
+
+| Forester | hood | boots | breeches | jerkin | set |
+|---|---|---|---|---|---|
+| durability | 50 | 50 | 50 | 50 | |
+| price before | 60 | 95 | 150 | 180 | 485 |
+| price now | 100 | 160 | 250 | 300 | 810 |
+| a point repaired | 1 | 1.6 | 2.5 | 3 | as before |
+
+Every piece now survives 49 repairs, where it survived 29. The shave is charged per REPAIR,
+whatever was missing, so a player who mends a little and often spends the maximum faster than one
+who waits for 0.
+
+### 10.3 What changes for players already playing
+
+`RaiseArmorDurability` moves every armour row in the bag and the warehouse by its item's new
+durability minus 30, in both numbers: 6/12 becomes 26/32, 0/25 becomes 20/45, and an untouched
+30/30 becomes 50/50. Its SQL was run against a temporary copy of the Pi's 24 rows on 2026-10-05,
+and every row read exactly +20/+20.
+
+A piece lifted off 0 grants its stats again, and the cached `User.gear*Bonus` cannot see that.
+`EquipmentService.backfillGearBonuses` re-derives every player's bonuses at each boot, after the
+migrations.
+
+**The same gap sits under §9, which is committed and not yet deployed, and it is wider there.**
+The new ladder re-solved every rung's stats (§9.2), and `ClampWeaponTiersToLevel` (§9.6) also
+moves tiers. Neither touches the cache. Every tester holding a weapon at t2+ would therefore have
+kept the old rung on the profile and in their first fight. On 2026-10-05 the Pi held four:
+
+| tester | weapon | cached ATK | after the deploy |
+|---|---|---|---|
+| Дарина | t5 sword, not clamped | +60 | +27 |
+| анія | staff t5 → t4 | +58 | +21 |
+| Володимир | bow t5 → t4 | +55 | +20 |
+| Amae | sword t4 → t3 | +46 | +16 |
+
+The boot pass closes both gaps.
+
+### 10.4 Applied 2026-10-05
+
+**Content.** `items.json`: `maxDurability` 50 on the four Forester pieces. `master.json`: prices
+100 / 160 / 250 / 300. `economy.json`: `maxDurabilityStart` removed. `manifest.json`: schema v18.
+
+**Code.**
+- `ItemDTO` / `Item.maxDurability`.
+- `EquipmentSlot.isArmor` / `isDurable` in `Vocabulary.swift`, which both
+  `GearConditionService` and the validator read.
+- `startingDurability(for:)`, read by `GearState.fresh(for:)`, `MasterCatalog.repairCost` and
+  `CraftingService.salvageYield`.
+- The migration and the boot pass of §10.3.
+- The trade screen prints wear only for pieces that wear, because a piece nothing wears is now
+  minted 0/0 and would read as broken there.
+
+**The validator rules:**
+- `durability.missing` — error;
+- `durability.non_positive` — error;
+- `durability.shave_destroys_gear` — error, armour only, because weapons are not shaved;
+- `durability.on_ladder` — warning;
+- `durability.not_worn` — warning.
+
+`economy.json` lost `tuning.economy.durability_non_positive` and `tuning.economy.shave_destroys_gear`
+with the number they checked. Every rule has its failing case in `DurabilityTests`.
+
+**Verified.**
+- 379 tests; `validate --strict` 0 errors, 0 warnings; `simulate --strict` 0 broken bands and the
+  same 18 warnings as before.
+- `--content-digest`: `records` 438be135e3090fb5 → fefe14b940998631 and `tuning`
+  605fd06bd8abdfda → 4edf65507bbb5e48. `spawns`, `quests` and `king` are unchanged. Content hash
+  73568a2a → 41455b84.
+- `spec economy` re-run; its one moved row («the Master's armour», 485 → 810) is refreshed in
+  `spec-economy.md` §4.

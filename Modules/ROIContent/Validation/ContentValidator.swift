@@ -30,6 +30,7 @@ public enum ContentValidator {
         issues += validateEnums(bundle)
         issues += validateReferences(bundle)
         issues += validateWeaponLadders(bundle)
+        issues += validateDurability(bundle)
         issues += validateUpgradeLadders(bundle)
         issues += validateCapital(bundle)
         issues += validateEstateAndNPCs(bundle)
@@ -464,6 +465,64 @@ public enum ContentValidator {
                 } else {
                     byTier[step.tier] = (level, ladder.itemId)
                 }
+            }
+        }
+        return issues
+    }
+
+    // MARK: - Durability (2026-10-05)
+
+    /// Every piece a fight wears has exactly ONE source for its durability: the
+    /// item's own `maxDurability`, or — for a laddered weapon — the ladder's
+    /// `durabilityByTier`. Until 2026-10-05 all armour shared
+    /// `economy.gear.maxDurabilityStart`, and the starter weapon was stamped
+    /// with the same number because nothing told the two apart; that only
+    /// worked while the two happened to be 30.
+    ///
+    /// A missing number is not a style problem: `GearState.fresh(for:)` would
+    /// stamp the piece 0/0, armour at 0 grants nothing, and
+    /// `MasterCatalog.repairCost` divides by it.
+    private static func validateDurability(_ bundle: ContentBundle) -> [ContentIssue] {
+        var issues: [ContentIssue] = []
+        let file = "items.json"
+        let laddered = Set(bundle.weaponLadders.map(\.itemId))
+        let shave = bundle.tuning?.economy.gear.repairMaxShave
+
+        for (index, item) in bundle.items.enumerated() {
+            let path = "items[\(index)].maxDurability"
+            let slot = item.slot.flatMap(EquipmentSlot.init(rawValue:))
+            let wears = slot?.isDurable == true
+
+            if laddered.contains(item.id) {
+                if item.maxDurability != nil {
+                    issues.append(.init(severity: .warning, file: file, path: path, id: item.id,
+                                        rule: "durability.on_ladder",
+                                        message: "a laddered weapon's durability is weapon_upgrades.json → durabilityByTier; this number is never read"))
+                }
+                continue
+            }
+            guard wears else {
+                if item.maxDurability != nil {
+                    issues.append(.init(severity: .warning, file: file, path: path, id: item.id,
+                                        rule: "durability.not_worn",
+                                        message: "nothing wears \(item.slot.map { "the \($0) slot" } ?? "an item that is not equipped"), so this number is never read"))
+                }
+                continue
+            }
+            guard let value = item.maxDurability else {
+                issues.append(.init(severity: .error, file: file, path: path, id: item.id,
+                                    rule: "durability.missing",
+                                    message: "a fight wears the \(item.slot ?? "?") slot, but the item declares no maxDurability — it would start at 0/0, broken before its first fight"))
+                continue
+            }
+            if value <= 0 {
+                issues.append(.init(severity: .error, file: file, path: path, id: item.id,
+                                    rule: "durability.non_positive",
+                                    message: "maxDurability must be positive, found \(value) — MasterCatalog.repairCost divides by it"))
+            } else if slot?.isArmor == true, let shave, value <= shave {
+                issues.append(.init(severity: .error, file: file, path: path, id: item.id,
+                                    rule: "durability.shave_destroys_gear",
+                                    message: "a repair shave of \(shave) against a maxDurability of \(value) destroys the piece on its first repair"))
             }
         }
         return issues
@@ -1823,8 +1882,9 @@ public enum ContentValidator {
     // number". Several of the values below are read straight into an operation
     // that TRAPS on a bad input — `ClosedRange(min...max)` on an inverted
     // variance, `Int.random(in: 0..<total)` on a non-positive weight total, an
-    // array subscript on an empty warehouse table, a division by
-    // `maxDurabilityStart` inside `MasterCatalog.repairCost`. For those the
+    // array subscript on an empty warehouse table, a division by a piece's
+    // starting durability inside `MasterCatalog.repairCost` (an item rule since
+    // 2026-10-05 — `validateDurability`). For those the
     // validator is not a style checker, it is the thing standing between a typo
     // and a crash on the first fight of the session.
     private static func validateTuning(_ bundle: ContentBundle) -> [ContentIssue] {
@@ -2268,15 +2328,11 @@ public enum ContentValidator {
         do {
             let file = "economy.json"
             let gear = tuning.economy.gear
-            // `MasterCatalog.repairCost` DIVIDES by this.
-            require(gear.maxDurabilityStart > 0, file, "gear.maxDurabilityStart",
-                    "tuning.economy.durability_non_positive",
-                    "starting durability must be positive, found \(gear.maxDurabilityStart) — MasterCatalog.repairCost divides by it")
+            // The two rules that weighed the shave against one starting
+            // durability for all armour moved to `validateDurability` with the
+            // number itself (2026-10-05): each piece now carries its own.
             require(gear.repairMaxShave >= 0, file, "gear.repairMaxShave",
                     "tuning.economy.negative_shave", "repair shave must not be negative")
-            require(gear.repairMaxShave < gear.maxDurabilityStart, file, "gear.repairMaxShave",
-                    "tuning.economy.shave_destroys_gear",
-                    "a shave of \(gear.repairMaxShave) against a starting durability of \(gear.maxDurabilityStart) destroys the piece on its first repair")
             // Above 1 a piece taken apart returns more than its recipe cost,
             // which turns the workshop into a mint for whatever the Master sells.
             require(gear.salvageFraction >= 0 && gear.salvageFraction <= 1, file, "gear.salvageFraction",

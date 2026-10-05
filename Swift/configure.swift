@@ -275,6 +275,9 @@ public func configure(logger: Logger) async throws {
     // 2026-10-04: the watchman tells a player once when a decree or a taken job
     // becomes ready — one marker on each progress row.
     migrations.add(AddReadyNotifiedFlags())
+    // 2026-10-05, `spec-items.md` §10: durability moved onto the item and the
+    // Forester set went 30 → 50; every armour row moves by the difference.
+    migrations.add(RaiseArmorDurability())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.
@@ -510,6 +513,10 @@ public func configure(logger: Logger) async throws {
     // durability ceiling (rows created before the tier table carried a flat 30).
     try await GearConditionService.backfillWeaponDurability(on: db)
     try await User.backfillLevelDerivedStats(on: db, logger: logger)
+    // Every boot, idempotent: the cached gear bonuses re-derived from the worn
+    // rows, AFTER the migrations — a migration that changes what a worn row
+    // grants (a clamped tier, armour lifted off 0) cannot see the cache.
+    try await EquipmentService.backfillGearBonuses(on: db, logger: logger)
     // Phase 7 — the live-reference check the hot swap gates on, run once at
     // boot as a WARNING. It cannot refuse here: content loads before the
     // database block (the dev seed reads catalogs), so by the time rows are

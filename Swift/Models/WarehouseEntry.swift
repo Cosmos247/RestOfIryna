@@ -61,7 +61,8 @@ final public class WarehouseEntry: Model, @unchecked Sendable {
 
     public init() {}
 
-    public init(userID: UUID, itemId: String, quantity: Int, carrying state: GearState = .fresh) {
+    public init(userID: UUID, itemId: String, quantity: Int, carrying state: GearState? = nil) {
+        let state = state ?? .fresh(for: itemId)
         self.$user.id = userID
         self.itemId = itemId
         self.quantity = quantity
@@ -98,9 +99,10 @@ extension WarehouseEntry {
     ///
     /// `carrying` stamps the per-instance state onto every row this call
     /// CREATES (a stackable merge has no new row to stamp) — pass the source
-    /// row's `gearState` on a deposit so wear and enchant survive storage.
+    /// row's `gearState` on a deposit so wear and enchant survive storage. Nil
+    /// mints a fresh row of the item, as `InventoryEntry.add` does.
     public static func add(_ itemId: String, quantity: Int = 1, to user: User, on db: any Database,
-                           carrying state: GearState = .fresh) async throws {
+                           carrying state: GearState? = nil) async throws {
         guard quantity > 0 else { return }
         guard let item = ItemCatalog.find(itemId) else {
             throw WarehouseError.unknownItem(itemId)

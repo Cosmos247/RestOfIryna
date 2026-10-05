@@ -3310,8 +3310,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let icon = item.icon.map { "\($0) " } ?? ""
             let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: g.tier), locale: locale)
             let ench = g.enchantLevel > 0 ? " +\(g.enchantLevel)" : ""
+            // Wear only for what a fight wears: since 2026-10-05 a piece that
+            // never wears is minted 0/0, which would read as broken here.
+            let wear = item.slot.map { GearConditionService.durableSlots.contains($0.rawValue) } == true
+                ? " (\(g.durability)/\(g.maxDurability))" : ""
             let mark = side.offeredGear.contains(gid) ? " ✅" : ""
-            rows.append([TGInlineKeyboardButton(text: "\(icon)\(name)\(ench) (\(g.durability)/\(g.maxDurability))\(mark)", callbackData: "trade:gear:\(gid.uuidString)")])
+            rows.append([TGInlineKeyboardButton(text: "\(icon)\(name)\(ench)\(wear)\(mark)", callbackData: "trade:gear:\(gid.uuidString)")])
         }
         rows.append([TGInlineKeyboardButton(
             text: "🪙 " + lingo.localize("capital.trade.add_silver_btn", locale: locale, interpolations: ["silver": "\(side.silver)"]),

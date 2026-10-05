@@ -164,10 +164,10 @@ final class TuningTests: XCTestCase {
             warehouseCapByEstateLevel: warehouse ?? [200, 400, 600, 800, 1200, 1600, 2000])
     }
 
-    private func economy(durability: Int = 30, shave: Int = 1, salvage: Double = 0.5,
+    private func economy(shave: Int = 1, salvage: Double = 0.5,
                          victory: Int = 1, defeat: Int = 3, flee: Int = 3) -> EconomyTuningDTO {
         EconomyTuningDTO(gear: GearEconomyDTO(
-            maxDurabilityStart: durability, repairMaxShave: shave, salvageFraction: salvage,
+            repairMaxShave: shave, salvageFraction: salvage,
             wearBudget: WearBudgetDTO(victory: victory, defeat: defeat, flee: flee)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015))
     }
 
@@ -205,9 +205,11 @@ final class TuningTests: XCTestCase {
         }
     }
 
+    /// No ladder in these bundles, so each weapon carries its own durability —
+    /// without one, `durability.missing` would mask what a test asserts.
     private func weapon(_ id: String) -> ItemDTO {
         ItemDTO(id: id, type: "gear", tier: 1, stackable: false, slot: "main_hand",
-                gearStats: GearStatsDTO(attack: 3), icon: "⚔️")
+                gearStats: GearStatsDTO(attack: 3), icon: "⚔️", maxDurability: 30)
     }
 
     private func bundle(combat: CombatTuningDTO? = nil, vigor: VigorTuningDTO? = nil,
@@ -648,16 +650,9 @@ final class TuningTests: XCTestCase {
     }
 
     // MARK: - economy.json rules
-
-    /// `MasterCatalog.repairCost` divides by this.
-    func testZeroDurabilityIsAnError() {
-        assertRule("tuning.economy.durability_non_positive", bundle(economy: economy(durability: 0)))
-    }
-
-    func testShaveThatDestroysGearIsAnError() {
-        assertRule("tuning.economy.shave_destroys_gear",
-                   bundle(economy: economy(durability: 30, shave: 30)))
-    }
+    //
+    // The starting-durability rules left this file with the number itself on
+    // 2026-10-05: each piece carries its own now (`DurabilityTests`).
 
     /// Above 1 the workshop would pay out more than the recipe cost.
     func testSalvageAboveOneIsAnError() {

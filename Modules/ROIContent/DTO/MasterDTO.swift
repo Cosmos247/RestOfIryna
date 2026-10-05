@@ -14,9 +14,12 @@
 //  and lock every player out of the bench.
 //
 //  `repairCostFraction` is the 0.5 that used to sit inside
-//  `MasterCatalog.repairCost`: a full repair from zero costs half the buy
-//  price. The rest of that formula stays in Swift, because it reads
-//  `GearConditionService.maxDurabilityStart` — a runtime constant, not content.
+//  `MasterCatalog.repairCost`: a full repair of a fresh piece from zero costs
+//  that share of its buy price. The rest of that formula stays in Swift: it
+//  divides by the piece's own starting durability
+//  (`GearConditionService.startingDurability`, the item's `maxDurability` since
+//  2026-10-05), and the price fallback and the 1-silver floor are behaviour,
+//  not tuning.
 //  `weaponRepairCost` keeps its implicit ×1 in code as well; there is no magic
 //  number in `max(0, missing)` to lift out, and inventing one would mean
 //  writing new logic during a migration.
@@ -24,9 +27,12 @@
 
 import Foundation
 
-/// One ready-made armor piece the Master sells. Buying is the convenience path
-/// (≈4× the crafted material value); the repair price derives from this number,
-/// so the premium carries through.
+/// One ready-made armor piece the Master sells — the only source of armour
+/// since 2026-09-28, when the workshop stopped making it. The repair price
+/// derives from this number: a full repair of a fresh piece from zero costs
+/// `repairCostFraction` of it. The Forester prices went ×5/3 on 2026-10-05
+/// with the set's durability 30 → 50, which kept a repaired point at its old
+/// price (`spec-items.md` §10).
 public struct MasterArmorListingDTO: Codable, Sendable, Equatable {
     public let itemId: String
     public let priceSilver: Int

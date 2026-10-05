@@ -49,21 +49,26 @@ public enum MasterCatalog {
     // MARK: - Repair
 
     /// Silver cost to fully repair a piece from its current durability back to
-    /// max. Scales with how worn it is and the piece's value — a full repair
-    /// from 0 costs `repairCostFraction` of the buy price. Every repair also
-    /// permanently shaves 1 off `maxDurability` (see
+    /// max. Scales with how worn it is and the piece's value — a full repair of
+    /// a fresh piece from 0 costs `repairCostFraction` of the buy price. Every
+    /// repair also permanently shaves 1 off `maxDurability` (see
     /// `GearConditionService.repairMaxShave`), so an often-repaired piece
     /// eventually wears out and must be rebought.
     ///
-    /// Only the fraction is data. The rest stays here because it reads
-    /// `GearConditionService.maxDurabilityStart`, a runtime constant rather than
-    /// content, and because the `?? 30` fallback and the `max(1, …)` floor are
+    /// The divisor is the piece's OWN starting durability (its item's
+    /// `maxDurability` since 2026-10-05). One point therefore costs
+    /// price × fraction ÷ durability: the Forester set went 30 → 50 with its
+    /// prices ×5/3, so a point costs what it did.
+    ///
+    /// The prices and the fraction are data. The `?? 30` price fallback (armour
+    /// the Master does not sell — none today) and the `max(1, …)` floors are
     /// behaviour, not tuning.
     public static func repairCost(itemId: String, missing: Int) -> Int {
         guard missing > 0 else { return 0 }
         let value = buyPrice(for: itemId) ?? 30
         let fraction = Catalogs.current.masterRepairCostFraction
-        let cost = Double(value) * fraction * Double(missing) / Double(GearConditionService.maxDurabilityStart)
+        let start = max(1, GearConditionService.startingDurability(for: itemId))
+        let cost = Double(value) * fraction * Double(missing) / Double(start)
         return max(1, Int(cost.rounded()))
     }
 

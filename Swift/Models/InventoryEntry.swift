@@ -32,13 +32,15 @@ public struct GearState: Sendable, Equatable {
         self.enchantLevel = enchantLevel
     }
 
-    /// What a brand-new row is stamped with: tier 1, full durability, no
-    /// enchant. Computed, never a `static let` — it reads a tuning table.
-    public static var fresh: GearState {
-        GearState(tier: 1,
-                  durability: GearConditionService.maxDurabilityStart,
-                  maxDurability: GearConditionService.maxDurabilityStart,
-                  enchantLevel: 0)
+    /// What a brand-new row of `itemId` is stamped with: tier 1, full
+    /// durability, no enchant. The durability is the ITEM's
+    /// (`GearConditionService.startingDurability(for:)`) — 0/0 for anything a
+    /// fight does not wear. Until 2026-10-05 it was one tuning number for every
+    /// row, so this took no item; a piece's durability can now differ from the
+    /// next one's, and a row cannot be stamped without knowing which it is.
+    public static func fresh(for itemId: String) -> GearState {
+        let start = GearConditionService.startingDurability(for: itemId)
+        return GearState(tier: 1, durability: start, maxDurability: start, enchantLevel: 0)
     }
 }
 
@@ -73,9 +75,11 @@ final public class InventoryEntry: Model, @unchecked Sendable {
     /// `GearConditionService`) for armor and the main-hand weapon. At 0: armor is
     /// "broken" (no stats), the weapon keeps half its stats. Repair restores full
     /// at the Master — armor's `maxDurability` is shaved 1 each time (it wears
-    /// out), the weapon's max holds (per-tier 30→100, never shaved). `init`
-    /// stamps a flat 30; weapons get their tier ceiling on upgrade / backfill.
-    /// Other rows keep these full and never drain.
+    /// out), the weapon's max holds (per-tier 30→180, never shaved). `init`
+    /// stamps the item's own starting durability (`GearState.fresh(for:)`) —
+    /// the item's `maxDurability`, a weapon's tier 1, and 0/0 for rows nothing
+    /// wears; a weapon's ceiling then moves with its tier.
+    /// Other rows never drain.
     @Field(key: "durability")
     public var durability: Int
 
@@ -97,7 +101,8 @@ final public class InventoryEntry: Model, @unchecked Sendable {
 
     public init() {}
 
-    public init(userID: UUID, itemId: String, quantity: Int, carrying state: GearState = .fresh) {
+    public init(userID: UUID, itemId: String, quantity: Int, carrying state: GearState? = nil) {
+        let state = state ?? .fresh(for: itemId)
         self.$user.id = userID
         self.itemId = itemId
         self.quantity = quantity
@@ -173,9 +178,10 @@ extension InventoryEntry {
     /// `carrying` stamps the per-instance state onto every row this call
     /// CREATES (a stackable merge has no new row to stamp). Pass it whenever
     /// the unit is coming back from somewhere it was stored rather than being
-    /// minted — otherwise a worn, enchanted piece returns as a fresh one.
+    /// minted — otherwise a worn, enchanted piece returns as a fresh one. Nil
+    /// mints: `GearState.fresh(for:)`, the item's own starting durability.
     public static func add(_ itemId: String, quantity: Int = 1, to user: User, on db: any Database,
-                           carrying state: GearState = .fresh) async throws {
+                           carrying state: GearState? = nil) async throws {
         guard quantity > 0 else { return }
         guard let item = ItemCatalog.find(itemId) else {
             throw InventoryError.unknownItem(itemId)

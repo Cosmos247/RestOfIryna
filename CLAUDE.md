@@ -538,17 +538,43 @@ copy qualifies and otherwise redraws the list — it used to take whichever copy
 returned; the warehouse's old item-id buttons still move the OLDEST copy, which is
 deterministic and reversible, so they were left as they were.
 **«Розібрати»** (`CraftingService.salvage`, workshop → 🔨) returns the piece's recipe ×
-`gear.salvageFraction` × max/`maxDurabilityStart`, floored per line by `SalvageMath` —
-derived, never a picked number — so armour repaired down to 1/1 gives nothing back but still
-leaves the bag. It predicts the fit in units for both stores, like `craft`, and names the
-row it destroys. Auto-memory `project-salvage-and-gear-rows`.
+`gear.salvageFraction` × max / the item's own starting durability, floored per line by
+`SalvageMath` — derived, never a picked number — so armour repaired down to 1/1 gives nothing
+back but still leaves the bag. It predicts the fit in units for both stores, like `craft`, and
+names the row it destroys. Auto-memory `project-salvage-and-gear-rows`.
 
 **Armour is not crafted** (2026-09-28, the owner's call): the Master is the only source, at the
-prices he always had. The four Forester recipes stay in `recipes.json` as PATTERNS —
-`RecipeCategory.isCraftable` is false for the tannery, so no list shows them and
-`CraftingService.craft` refuses them — because salvage reads them to know what a piece gives
-back. **Deleting them as unused breaks «Розібрати» for every armour piece**, and with it the only
-way to be rid of armour worn to 1/1.
+prices he always had until 2026-10-05, when they went ×5/3 with the durability (below). The
+four Forester recipes stay in `recipes.json` as PATTERNS — `RecipeCategory.isCraftable` is
+false for the tannery, so no list shows them and `CraftingService.craft` refuses them — because
+salvage reads them to know what a piece gives back. **Deleting them as unused breaks
+«Розібрати» for every armour piece**, and with it the only way to be rid of armour worn to 1/1.
+
+**Durability is the item's own** (2026-10-05, `spec-items.md` §10). Every piece a fight wears
+declares `maxDurability` in `items.json`. The one exception is a laddered weapon, whose
+`durabilityByTier` owns it. The validator's `durability.*` rules refuse a missing number and warn
+on a second source or a number nothing reads.
+- **One reader.** A fresh row is stamped by `GearState.fresh(for:)` through
+  `GearConditionService.startingDurability(for:)`. The Master's repair price and the salvage share
+  ask the same function.
+- **Never bring back one durability for all armour.** `economy.gear.maxDurabilityStart` stamped
+  the class weapon as well, which held only while both happened to be 30. At 50 it would have
+  handed a new player a 50/50 sword that fell to 40/40 at the lesson.
+- **A set's durability and its price are one decision.** A repaired point costs
+  price × `repairCostFraction` ÷ durability. The Forester went 30 → 50 with its prices ×5/3, so a
+  point costs what it did.
+- **Changing a shipped piece's durability is a migration, never a content edit alone.** Rows keep
+  the maximum they were minted at, while the repair price and the salvage share read the item's
+  new number. A 50 → 60 by `/reload` would leave every old piece short of 60, cheaper to mend per
+  point and worth less taken apart. `RaiseArmorDurability` is the shape: both numbers shift by the
+  difference. Its `previousStart` (30) belongs to that one change; the next one writes its own.
+
+**The cached gear bonuses are re-derived at every boot** (`EquipmentService.backfillGearBonuses`,
+after the migrations). `User.gear*Bonus` is written only by `recomputeBonuses`: on an equip, a
+fight's wear, a repair, an enchant and a reforge. **A migration or a content edit that changes
+what a worn row grants leaves the cache stale** until that player's next fight. A clamped tier or
+armour lifted off 0 is exactly that. A restart is the consistency point; a `/reload` is not.
+Auto-memory `project-durability-per-item`.
 
 **A weapon ladder is ONE object.** The three upgradable weapons render through
 `ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in

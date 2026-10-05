@@ -106,7 +106,7 @@ rules of their own:
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
 | `exploration.json` | the three-tier revisit weight table, trip damage |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
-| `economy.json` | durability start, repair shave, salvage share (2026-09-27), per-fight wear budget |
+| `economy.json` | repair shave, salvage share (2026-09-27), per-fight wear budget. The durability start left on 2026-10-05 (schema v18): a piece's durability is its item's `maxDurability`, a laddered weapon's its `durabilityByTier` — `GearConditionService.startingDurability(for:)` |
 | `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |
 
 - **Everything decodes as REQUIRED.** No `decodeIfPresent` anywhere in

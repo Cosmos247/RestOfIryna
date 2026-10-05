@@ -103,6 +103,11 @@ public struct Item: Sendable {
     public let rarity: String
     /// Set membership; nil when the item belongs to no set.
     public let setId: String?
+    /// The durability a fresh piece starts at — nil for anything a fight does
+    /// not wear AND for a laddered weapon, whose ladder owns its durability.
+    /// Read it through `GearConditionService.startingDurability(for:)`, which
+    /// knows that second case; this field alone does not.
+    public let maxDurability: Int?
     public let stackable: Bool
     public let effects: [ItemEffect]
     /// Set only for gear items — which body slot this piece occupies.
@@ -138,6 +143,7 @@ public struct Item: Sendable {
         itemLevel: Int = 1,
         rarity: String = "common",
         setId: String? = nil,
+        maxDurability: Int? = nil,
         stackable: Bool,
         effects: [ItemEffect],
         slot: EquipmentSlot? = nil,
@@ -153,6 +159,7 @@ public struct Item: Sendable {
         self.itemLevel = itemLevel
         self.rarity = rarity
         self.setId = setId
+        self.maxDurability = maxDurability
         self.stackable = stackable
         self.effects = effects
         self.slot = slot

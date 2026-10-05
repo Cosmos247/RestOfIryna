@@ -161,7 +161,7 @@ final class OpeningLedgerTests: XCTestCase {
                                         starterWeaponId: "item.sword")],
                 warehouseCapByEstateLevel: [200]),
             economy: EconomyTuningDTO(gear: GearEconomyDTO(
-                maxDurabilityStart: 30, repairMaxShave: 1, salvageFraction: 0.5,
+                repairMaxShave: 1, salvageFraction: 0.5,
                 wearBudget: WearBudgetDTO(victory: 1, defeat: 3, flee: 2)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015)),
             time: TimeTuningDTO(
                 scale: 1,

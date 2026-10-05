@@ -257,9 +257,11 @@ public enum CraftingService {
         return RecipeCatalog.all.first { $0.output.itemId == itemId && $0.category != .kitchen }
     }
 
-    /// What one piece gives back, from its recipe and its max durability. The
-    /// arithmetic is `SalvageMath`, so the card, the payout and the tests all
-    /// read the same lines.
+    /// What one piece gives back, from its recipe and its max durability
+    /// against the max a fresh piece of it starts at — the item's own since
+    /// 2026-10-05, so a Forester piece at 45 reads 45/50, not "fresh" against
+    /// the old 30. The arithmetic is `SalvageMath`, so the card, the payout and
+    /// the tests all read the same lines.
     public static func salvageYield(itemId: String, maxDurability: Int) -> [SalvageMath.Line] {
         guard let recipe = salvageRecipe(for: itemId) else { return [] }
         return SalvageMath.yield(
@@ -267,7 +269,7 @@ public enum CraftingService {
             recipeOutputQuantity: recipe.output.quantity,
             fraction: GearConditionService.salvageFraction,
             maxDurability: maxDurability,
-            maxDurabilityStart: GearConditionService.maxDurabilityStart)
+            maxDurabilityStart: GearConditionService.startingDurability(for: itemId))
     }
 
     /// Every piece the workshop could take apart now: unequipped bag rows and

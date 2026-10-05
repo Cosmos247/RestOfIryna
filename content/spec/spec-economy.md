@@ -359,7 +359,7 @@ the draft band lives and where content arrives after the rebalance.
 | sink | silver | note |
 |---|---|---|
 | enchant one item to +5 | 1660 | ×5 filled slots = 8300 |
-| the Master's armour | 485 | one-off |
+| the Master's armour | 810 | one-off |
 | repair | 50% of value | per repair, ongoing |
 | found a guild | 500 | one-off, level 5 |
 | market listing | 5 | per lot, up to 5 |

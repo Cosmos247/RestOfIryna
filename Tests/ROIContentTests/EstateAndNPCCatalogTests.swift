@@ -118,7 +118,8 @@ final class EstateAndNPCCatalogTests: XCTestCase {
             items: [
                 ItemDTO(id: "mat.hide", type: "material", tier: 1, stackable: true),
                 ItemDTO(id: "food.potato", type: "food", tier: 1, stackable: true),
-                ItemDTO(id: "gear.forester_hood", type: "gear", tier: 1, stackable: false, slot: "helmet")
+                ItemDTO(id: "gear.forester_hood", type: "gear", tier: 1, stackable: false, slot: "helmet",
+                        maxDurability: 50)
             ],
             enemies: [], recipes: [], starterRecipeIds: [],
             master: master, plots: plots, fortune: fortune, quests: quests,

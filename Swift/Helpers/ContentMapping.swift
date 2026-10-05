@@ -103,6 +103,7 @@ extension ItemDTO {
             itemLevel: itemLevel ?? 1,
             rarity: rarity ?? "common",
             setId: setId,
+            maxDurability: maxDurability,
             stackable: stackable,
             effects: effects.map(\.domain),
             slot: equipSlot,

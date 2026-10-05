@@ -33,6 +33,24 @@ public enum EquipmentSlot: String, Codable, CaseIterable, Sendable {
     case offHand    = "off_hand"
     case accessory1 = "accessory_1"
     case accessory2 = "accessory_2"
+
+    /// The four armour slots. Armour worn to 0 is broken — it grants nothing —
+    /// and every repair shaves its maximum.
+    public var isArmor: Bool {
+        switch self {
+        case .helmet, .chest, .legs, .boots: return true
+        case .mainHand, .offHand, .accessory1, .accessory2: return false
+        }
+    }
+
+    /// What a fight wears: the armour and the main-hand weapon. The off-hand
+    /// and both accessories never drain, so a piece there has no durability.
+    ///
+    /// Here rather than in `GearConditionService` since 2026-10-05, when
+    /// durability moved onto each item: the validator has to know which pieces
+    /// need a `maxDurability`, and a second list in it would be the transcription
+    /// this file was created to end.
+    public var isDurable: Bool { isArmor || self == .mainHand }
 }
 
 

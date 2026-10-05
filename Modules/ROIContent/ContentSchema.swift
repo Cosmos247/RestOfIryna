@@ -92,5 +92,12 @@ public enum ContentSchema {
     /// fee for the Master's lesson that sells the first rung
     /// (`spec-items.md` §9). A v16 ladder has no gates and would open every
     /// rung at level 1, so the handshake refuses rather than falls back.
-    public static let current: Int = 17
+    /// v18 (2026-10-05): durability moves onto the item. `items.json` gains a
+    /// `maxDurability` on every piece a fight wears outside a weapon ladder,
+    /// and `economy.gear.maxDurabilityStart` — one number for all armour — is
+    /// gone. A v17 binary decodes that key as required and would die on a
+    /// bare `keyNotFound`; a v18 binary reading a v17 bundle would find armour
+    /// with no durability at all, which is broken from its first fight. The
+    /// handshake names the cause in both directions.
+    public static let current: Int = 18
 }

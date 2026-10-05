@@ -1572,6 +1572,21 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **Durability is the item's own, and the Forester set is 50** *(2026-10-05, *uncommitted*,
+        NOT deployed)* — the owner opened a day of gear work. Spec `spec-items.md` §10, each decision
+        over a quiz with the testers' real pieces.
+        - `items.json` → `maxDurability` on every piece a fight wears outside a weapon ladder.
+          `economy.gear.maxDurabilityStart` is gone; it stamped the class weapon too, so a bare
+          30 → 50 would have made a new sword 50/50 and dropped it to 40/40 at the lesson.
+        - `GearConditionService.startingDurability(for:)` is the one reader: fresh rows, the repair
+          price and the salvage share. The validator has five `durability.*` rules.
+        - The Master's prices ×5/3 (set 810 🪙, was 485), so a repaired point costs what it did.
+        - `RaiseArmorDurability`: +20 in both numbers on every existing piece; a broken one comes
+          back at 20.
+        - `EquipmentService.backfillGearBonuses` at every boot. It also closes a wider hole under
+          the weapon ladder: four testers would have fought their first post-deploy fight on the
+          old rung's ATK (Дарина +60 against +27).
+        - Schema v18; 379 tests.
   - [x] **The Master's enchant draws from the bag alone** *(2026-10-05, `4fe5b7a` + `fd6e6e1`, NOT
         deployed)* — a tester read «треба 15 шкури, а я маю 14» with 0 in the bag: `enchant` summed
         the bag and the estate's warehouse and drew from both, while the Master's lesson counted the
@@ -1950,11 +1965,27 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the eleven on top — the 2026-10-05
-enchant block, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
+Telegram. **Every block below is LIVE and unwalked** except the twelve on top — the 2026-10-05
+durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
 the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-05 — durability is the item's own, the Forester set at 50 (*uncommitted*, NOT
+deployed):** any account, ideally one that had Forester pieces before the restart.
+- **existing pieces**: every Forester piece in the bag, on the body («🛡 Спорядження») and in the
+  warehouse reads +20 in both numbers — 6/12 → 26/32, an untouched 30/30 → 50/50.
+- **a piece that was at 0** (анія's worn set): 20/45…47, no ⚠️, and the profile counts its
+  DEF / HP again from the first screen after the restart, before any fight.
+- **the weapon, after the restart**: a t2+ weapon's ATK on the profile is the new rung's at once
+  (Дарина's sword +27, not +60), before any fight — the boot pass, not the first fight's wear.
+- **🛡 Купити броню**: «🪖 Каптур лісника · 🪙 100», boots 160, breeches 250, jerkin 300; a hood
+  bought lands 50/50 in the bag.
+- **⚒️ Ремонт**: «Бажаєте відремонтувати 🦺 Жилет лісника (21/46) за 🪙 75?» — the price 25 points
+  cost before; after it, 45/45.
+- **🔨 Розібрати**: a fresh 50/50 jerkin gives 7 hides + 2 iron, one at max 45 gives 6 + 1.
+- **a new character**: the starter weapon reads 30/30, not 50/50; the Master's lesson takes it to
+  40/40.
 
 **Added 2026-10-05 — the Master's enchant draws from the bag alone (`4fe5b7a`, NOT deployed):**
 an account with armour to enchant, hides in the estate's storage and few or none in the bag.
@@ -2487,6 +2518,18 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+- **Armour the Master does not sell is repaired as if it cost 30 🪙** (2026-10-05).
+  `MasterCatalog.repairCost` prices from his listing and falls back to `?? 30`. Today every piece
+  is his. The first set that is found rather than bought needs a repair price of its own: a
+  price on the item, or a rule. The owner expects items outside any set.
+- **A `/reload` leaves the cached gear bonuses stale** (2026-10-05). The boot pass
+  (`EquipmentService.backfillGearBonuses`) re-derives them on a restart. A hot swap that moves an
+  item's stats, a rung or a set bonus changes what worn rows grant under running sessions until
+  each player's next fight. Running the same pass after an installed reload is cheap.
+- **A piece that never wears gives nothing back at the workshop** (2026-10-05). Its starting
+  durability is 0, and `SalvageMath` returns nothing for a start below 1. No such piece has a
+  recipe today; the first one that does should salvage at the full share.
 
 - **The Devil doubles a defend** (2026-10-04). Costs round half up, so ×1.5 turns a 1-Vigor defend
   into 2 (+100%, not +50%). The owner kept the rounding when the Chariot moved to ×0.5; a

@@ -139,6 +139,14 @@ public struct ItemDTO: Codable, Sendable, Equatable {
     /// Set membership, resolved against `sets.json`. Absent means the item
     /// belongs to no set.
     public let setId: String?
+    /// The durability a fresh piece starts at, which is also its maximum until
+    /// the first repair shaves it (2026-10-05). Every piece a fight wears
+    /// declares one — except a laddered weapon, whose ladder's
+    /// `durabilityByTier` owns it — and nothing else does; the validator holds
+    /// both halves. It used to be one number for all armour,
+    /// `economy.gear.maxDurabilityStart`, which could not give a second set a
+    /// durability of its own.
+    public let maxDurability: Int?
 
     public var nameKey: String { nameKeyOverride ?? "item.\(id)" }
 
@@ -162,7 +170,8 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         suppressesDescription: Bool = false,
         itemLevel: Int? = nil,
         rarity: String? = nil,
-        setId: String? = nil
+        setId: String? = nil,
+        maxDurability: Int? = nil
     ) {
         self.id = id
         self.type = type
@@ -179,13 +188,14 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         self.itemLevel = itemLevel
         self.rarity = rarity
         self.setId = setId
+        self.maxDurability = maxDurability
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, type, tier, stackable, effects, slot, gearStats, icon, teachesRecipe
         case nameKeyOverride = "nameKey"
         case descriptionKeyOverride = "descriptionKey"
-        case itemLevel, rarity, setId
+        case itemLevel, rarity, setId, maxDurability
     }
 
     public init(from decoder: any Decoder) throws {
@@ -211,6 +221,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         itemLevel     = try c.decodeIfPresent(Int.self, forKey: .itemLevel)
         rarity        = try c.decodeIfPresent(String.self, forKey: .rarity)
         setId         = try c.decodeIfPresent(String.self, forKey: .setId)
+        maxDurability = try c.decodeIfPresent(Int.self, forKey: .maxDurability)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -233,6 +244,7 @@ public struct ItemDTO: Codable, Sendable, Equatable {
         try c.encodeIfPresent(itemLevel, forKey: .itemLevel)
         try c.encodeIfPresent(rarity, forKey: .rarity)
         try c.encodeIfPresent(setId, forKey: .setId)
+        try c.encodeIfPresent(maxDurability, forKey: .maxDurability)
     }
 }
 
