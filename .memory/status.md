@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-05 — durability is the item's own; the Forester set at 50** (*uncommitted*, NOT
+**2026-10-05 — durability is the item's own; the Forester set at 50** (`bf15669`, NOT
 deployed; needs `pm2 restart ROI` — Swift, content schema **v18** and one migration;
 `spec-items.md` §10):
 - **Why.** The owner opened a day of gear work by asking for the Forester set at 50. One

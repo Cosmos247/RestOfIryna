@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-05)* **durability is the item's own, and the Forester set is 50**
+- `bf15669` (10-05) **durability is the item's own, and the Forester set is 50**
   (`spec-items.md` §10) — `items.json` → `maxDurability`, the global start gone, prices ×5/3 so
   a repaired point costs what it did; existing pieces +20 in both numbers; the cached gear
   bonuses re-derived at every boot, which also closes the weapon ladder's stale ATK (four
@@ -448,7 +448,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-05 (durability is the item's own, the Forester set at 50) — *(uncommitted)*
+## Session — 2026-10-05 (durability is the item's own, the Forester set at 50) — `bf15669`
 
 The owner opened a day of gear work: «по перше хочу підняти міцність сету Лісника до 50».
 - **Found.**

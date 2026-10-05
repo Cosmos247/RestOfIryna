@@ -1572,7 +1572,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **Durability is the item's own, and the Forester set is 50** *(2026-10-05, *uncommitted*,
+  - [x] **Durability is the item's own, and the Forester set is 50** *(2026-10-05, `bf15669`,
         NOT deployed)* — the owner opened a day of gear work. Spec `spec-items.md` §10, each decision
         over a quiz with the testers' real pieces.
         - `items.json` → `maxDurability` on every piece a fight wears outside a weapon ladder.
@@ -1971,7 +1971,7 @@ the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate bl
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-05 — durability is the item's own, the Forester set at 50 (*uncommitted*, NOT
+**Added 2026-10-05 — durability is the item's own, the Forester set at 50 (`bf15669`, NOT
 deployed):** any account, ideally one that had Forester pieces before the restart.
 - **existing pieces**: every Forester piece in the bag, on the body («🛡 Спорядження») and in the
   warehouse reads +20 in both numbers — 6/12 → 26/32, an untouched 30/30 → 50/50.

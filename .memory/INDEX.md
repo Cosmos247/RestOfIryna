@@ -59,7 +59,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - «💛 Допомога грі» in Settings (10-04, `b0c9d80`; Swift and locale);
     - the Master's enchant draws from the bag alone (10-05, `4fe5b7a`; Swift and locale);
     - durability is the item's own, the Forester set at 50 and its prices ×5/3 (10-05,
-      *uncommitted*, `spec-items.md` §10; content schema v18, one migration).
+      `bf15669`, `spec-items.md` §10; content schema v18, one migration).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`), the durability one
