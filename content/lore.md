@@ -170,13 +170,13 @@ and listen to their fate read in the cards.
 
 Inside the walls, the player can visit six places:
 
-### 🛒 The Bazaar / Ринок *(planned)*
-A bustling stall-market lining the main square. Player-to-player trade,
-when it ships. Visual notes: striped canvas awnings in faded green and
+### 🛒 The Bazaar / Базар (live)
+A bustling stall-market lining the main square. Player-to-player trade
+and lots listed for silver. Visual notes: striped canvas awnings in faded green and
 rust, stacked baskets, hanging dried herbs, the smell of bread and
 woodsmoke implied by the haze.
 
-### ⚔️ The Arena / Арена *(planned)*
+### ⚔️ The Arena / Ристалище (live)
 A round sand-floored fighting pit ringed by wooden tiers, sealed gate
 with the Crown's wax. Posted rules of single combat. Old dark stains on
 the sand. Sober, not gladiatorial — duels here are formal, not
@@ -200,10 +200,11 @@ oak table by candlelight. For a few silvers she will let you draw
 one card; it will shape the next six hours of your fate. She is older
 than she should be. The cards know your name before you sit down.
 
-### 🛠 The Master / Майстер *(planned)*
+### 🛠 The Master / Майстер (live)
 A workshop louder than a forge — wood, iron, leather and glass all
-under one roof. The Master is grey-bearded, soot-streaked, blunt. When
-weapon repair, reforging, and enchanting ship, they live here.
+under one roof. The Master is grey-bearded, soot-streaked, blunt. The
+shop sells the only armour in the kingdom, mends it and the weapons,
+enchants armour, and teaches a Governor their weapon's first reforge.
 
 ### 🍺 The Tavern — *"Royal Seal"* / Шинок «Королівська печатка» (live)
 The kingdom's most beloved inn, named for the wax seal of the Crown
@@ -361,8 +362,10 @@ ledgers. A Governor handles silvers all their life.
 ### Workshops
 - **🔥 Forge** — open-hearth smithy. Bellows, anvil, glowing iron, sparks. Smelts ingots, will eventually upgrade weapons. Smell: hot iron and pine smoke.
 - **🧵 Tannery** — drying racks, scraping benches, vats of bark-tea
-  liquor. Turns hide into the Forester's leather set (hood, jerkin,
-  breeches, boots). Smell: oak bark, smoke, dampness.
+  liquor. It once turned hide into the Forester's leather set (hood,
+  jerkin, breeches, boots); since 2026-09-28 the Master alone makes
+  armour, and the workshop only takes a piece apart. Smell: oak bark,
+  smoke, dampness.
 - **🍳 Kitchen** — wood-fired hearth, copper pots, hanging herbs,
   cutting board worn by years of knives. Turns raw ingredients +
   scroll-learned recipes into vigour-restoring dishes. Smell: woodsmoke,
@@ -371,10 +374,10 @@ ledgers. A Governor handles silvers all their life.
   numbered barrels. The Governor's bulk stockpile. Smell: dust, sacking,
   dry timber.
 
-### Crafted Gear (Forester's Leather Set)
+### The Forester's Leather Set
 A matched set of practical wilderness leather in muted forest greens
-and oiled browns — hood, jerkin, breeches, boots. The set is the
-midgame "you've earned it" armour for any class. Visual cue: a faint
+and oiled browns — hood, jerkin, breeches, boots. Bought from the Master,
+it is the starter armour for any class. Visual cue: a faint
 pine-needle stitch motif along the hems.
 
 ---

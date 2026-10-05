@@ -213,6 +213,12 @@ class check. That arrives with the second and third sets, after the rebalance.
 The effect enum is a closed tagged union precisely so a case can be added later
 and every consumer is forced to handle it.
 
+> *Note 2026-10-05.* A concept for those sets was drafted and parked, NOT approved:
+> `.memory/class-sets-concept.md`. It proposes one branch per class from L10 to L40, built on
+> `tuning/budget.json` → `classProfiles`, with this document's own-members multiplier at
+> ×1.05 / ×1.13 / ×1.19 for 2 / 4 / 5 pieces. Its numbers come from a scratch script, so they
+> become a section here only when `roi-content spec` prints them.
+
 ---
 
 ## 6. What lands when

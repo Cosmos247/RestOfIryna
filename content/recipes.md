@@ -1,5 +1,20 @@
 # Workshop Recipes
 
+> ⚠️ **SUPERSEDED — this describes the workshop before the rebalance.**
+> - **No Swift array is left.** The recipes are `content/data/recipes.json`, read through
+>   `RecipeCatalog` (Phase 3).
+> - **Armour is no longer crafted** (2026-09-28). The Master is the only source of the Forester
+>   set, and its four tannery recipes stay only as salvage patterns
+>   (`RecipeCategory.isCraftable`).
+> - **Every number below has moved.** The kitchen was rebuilt and repriced on 2026-09-18. The
+>   Forester pieces' stats are budgeted (`spec-items.md`), and since 2026-10-05 each carries its
+>   own durability.
+> - **A craft that does not fit the bag lands in the warehouse**, and the banner says so.
+>
+> **Where the truth lives now:** `content/data/recipes.json` (with `unlocks`, the innkeeper's
+> recipe ladder) for the data, `CLAUDE.md` → "Gear, inventory and storage" for the rules, and
+> `roi-content spec economy` for what each one costs.
+
 Static crafting catalog used by `Swift/Models/Recipe.swift` (`RecipeCatalog`). All recipes are code-based — no DB rows.
 
 ## Source-pool rules

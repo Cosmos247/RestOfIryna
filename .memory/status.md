@@ -708,15 +708,16 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records 696d3c25c1a74d98` / `tuning 605fd06bd8abdfda` / `spawns 0cf31905171d7944` /
-`quests 30de20902006e3b9` / `king 5dbddfd689f3cede`, content hash `be4350a5` (**schema v15**
-since 2026-10-03, when `combat.json` gained the required `estateScaling` — `Prompt.md` is where
-the baseline is kept in sync). That is the estate scaling, committed 2026-10-03 on top of tier 2
-(committed 2026-10-02: `tuning c01ccfdb585f4a68`, content hash `cd9d73bf`, schema v14). Neither
-is on the Pi yet, which still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
-`spawns c9bdb57d456adc26`, content hash `490a2d4b`, since the 2026-09-28 22:11 restart.
-**336 tests**. Pace as of 2026-10-03 is **151–167 days** to level 40, the estate scaling
-priced in; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
+`records fefe14b940998631` / `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` /
+`quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `41455b84` (**schema v18**
+since 2026-10-05, when durability moved onto the item). `Prompt.md` keeps the baseline in sync,
+together with the baseline of every commit still undeployed. That is the durability change
+(`bf15669`), the last of everything committed since 2026-09-28: tier 2, the estate scaling, the
+arena, the weapon ladder, the tarot pass and the 10-04/05 polish. **None of it is on the Pi
+yet.** The Pi still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
+`spawns c9bdb57d456adc26`, content hash `490a2d4b`, schema v14, since the 2026-09-28 22:11
+restart. **379 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
 three times and nothing else had moved at all — the watchman cadence and the passive daily
@@ -874,6 +875,7 @@ were superseded by Phases 4–6.
 ### Content Needed
 - [x] Bestiary — 7 animals across 6 tiers in code-based EnemyCatalog. Wild family (🐗 boar km 1-10 / 🫎 moose 6-15 / 🦬 buffalo 11-20 / 🐻 wild_bear 21-30) drops raw meat + hide; rabid family (🐈‍⬛ lynx 11-20 / 🐺 wolf 16-25 / 🐻‍❄️ rabid_bear 25-35) drops hide only. Three deep-zone overlaps stack: rabid_wolf↔wild_bear at 21-25, wild_bear↔rabid_bear at 25-30. Reference doc at `content/bestiary.md`. T5+ currently only has regular mobs; the dedicated boss is reserved for Phase 3.5. Plus two non-exploration mobs (depthRange 0...0, never rolled): 🥋 training_dummy (estate sparring) and 🐕 rabid_dog (one-off registration tutorial fight, wild_boar-level stats, no loot, no XP — replaced the over-tier rabid_wolf in the first fight 2026-05-21).
 - [ ] Recipe book (crafting recipes per tier)
+- [ ] Class sets — **concept parked 2026-10-05, nothing approved** (`.memory/class-sets-concept.md`): one branch per class L10–40 with an off-hand, Master commissions; it is the gear ladder in class form, so it ships with the bestiary re-solve and `spec-sets.md`'s own-members multiplier
 - [ ] Tuning curves (XP per level, vigor scaling, stat curves)
 - [ ] Quest definitions
 - [ ] Localization for all new game strings

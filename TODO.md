@@ -1880,6 +1880,7 @@ A parking lot for "interesting but not critical" ideas — collected as the proj
 
 - **Per-enemy AI hooks** *(was 4.3.4)* — add `aggression: Int` (0–100, biases enemies toward Attack vs Defend) and `fleeResist: Int` (0–100, makes the fail roll on Flee harsher) to `Enemy`. Threaded into passive autobattle and active combat's Flee resolution. Cheap once the data is in `EnemyCatalog`; main work is per-tier tuning.
 - **Status effects (rabies)** *(was 4.3.5)* — bites from the rabid family (`enemy.rabid_lynx`, `enemy.rabid_wolf`) carry a chance to infect. Effect ticks over time (HP drain, stat penalty, vigor drain — TBD), persists across expeditions, cured at the Capital Chapel (Phase 6 dependency). Needs a generic status-effect system on `User` or a new model.
+- **Class sets** *(concept parked 2026-10-05, nothing approved)* — three branches (warrior / archer / mage) from L10 to L40, five pieces each with a class off-hand, the stats on `tuning/budget.json` → `classProfiles` at 75% growth, ×1.19 on the set's own members, commissioned at the Master piece by piece from the bag. Full tables, recipes, the fight impact (+65–71% survivability at L20) and four unanswered forks: `.memory/class-sets-concept.md`. It is item 1 of the post-rebalance package (the gear ladder), so it ships with the bestiary re-solve, `spec-sets.md`'s own-members multiplier and cap, and a repair price for forged pieces.
 - **Combat log persistence + replay** *(was 4.3.6)* — record round-by-round combat events (damage rolls, hit/miss, technique uses, stance state) into a Codable blob; expose a "view replay" surface. Mostly useful once the Arena (Phase 8) lands, since solo PvE replays have low replay value.
 - *(more items will be added by user as the project grows)*
 
@@ -2131,8 +2132,9 @@ in the capital, one challenging the other.
   Вигнано з гільдії: ….».
 
 **Added 2026-10-03 — creature strength follows the estate tier (`4be2758`, NOT deployed):**
-- **After the deploy, check the data first.** `/content` shows schema v15 and content hash
-  `be4350a5`. `fight_log` has an `estate_level` column, null on every older row:
+- **After the deploy, check the data first.** A deploy that takes everything to HEAD shows
+  schema v18 and content hash `41455b84` in `/content` (this change alone would read v15 and
+  `be4350a5`). `fight_log` has an `estate_level` column, null on every older row:
   `SELECT estate_level, count(*) FROM fight_log GROUP BY 1`.
 - **A T1 player** (levels 1–3) meets every creature exactly as before: 🐍 Гадюка reads ❤️ 55/55.
 - **A T4 player** meets 🐗 Дикий кабан at ❤️ 131/131 (authored 101), and it hits harder. At T5
@@ -2146,7 +2148,7 @@ in the capital, one challenging the other.
 
 **Added 2026-10-02 — tier 2 of the bestiary (committed, NOT deployed):**
 - **after the deploy, the data first**: `/content` shows 16 enemies and content hash `cd9d73bf`
-  (`be4350a5` if the estate scaling ships in the same restart);
+  for tier 2 alone, or `41455b84` when the restart takes everything to HEAD (schema v18);
   nothing in `fight_log` breaks on the old creature ids (history, not a live reference).
 - **km 1–2** roll only 🐍 Гадюка; **km 3** brings 🦅 Беркут; the boar first appears at **km 6**,
   so km 1–5 drop no meat.
@@ -2677,14 +2679,25 @@ unrelated commit on purpose.
 
 ---
 
-*Last updated: 2026-10-03 — **the arena duel in simultaneous rounds** is committed (`cad61c3`, hash
-fill `2dcf87c`, then a sync pass: records, plus five dead arena members removed) and **NOT
-deployed** (Swift, locale and `arena.json`; no migration, no schema change). Under it,
-**creature strength follows the estate tier** (`spec-bestiary.md`
-§11) is committed (`4be2758`) and **NOT deployed**. It sits on **tier 2 of the bestiary** (`f03d502`, hash
-fill `b407840`), which is also committed and **NOT deployed**. All three need a restart, not a
-`/reload`, and the estate change also carries content schema v15 and one migration. Their
-walk-list blocks head the list above.
+*Last updated: 2026-10-05 — the newest commit is **durability is the item's own, the Forester set
+at 50** (`bf15669`, hash fill `e4e67ad`). It changes content schema v18 and adds one migration
+(`RaiseArmorDurability`) and a boot pass that re-derives the cached gear bonuses. The class-sets
+concept was parked beside it, with nothing built (`.memory/class-sets-concept.md`).*
+
+*Everything committed since `8ae6772` is **NOT deployed**, and one restart (not a `/reload`) takes
+it all:*
+- *tier 2, the estate scaling, the arena in simultaneous rounds and as a cycle of three;*
+- *the quest board, the weapon ladder and the tarot pass;*
+- *the Vigor-reward and task-ready notices, the support button, the enchant fix and the
+  durability change.*
+
+*Five migrations ship with it; the digests to match and the tables to verify are in `Prompt.md`
+→ Next action 0. Their walk-list blocks head the list above.*
+
+*Earlier footers, kept as a record:* on 2026-10-03 the arena duel in simultaneous rounds was the
+newest commit (`cad61c3`, fill `2dcf87c`, then a sync pass that removed five dead arena members),
+on top of the estate scaling (`4be2758`, content schema v15) and tier 2 (`f03d502`, fill
+`b407840`).
 
 **Everything up to `8ae6772` is deployed** (the Pi runs it since the 2026-09-28 22:11 restart):
 the seven game changes of 09-27/28 — the stray-number hint, the
@@ -2692,7 +2705,7 @@ workshop's «Розібрати», the combat lines with the death screen, the T
 room, the technique rework with its fight log, the decree reorder and the workshop no longer
 making armour — went live together, five migrations, the tables checked after.
 
-The newest splits the capital into two streets, because six keyboard rows had become the
+The 2026-09-20 change splits the capital into two streets, because six keyboard rows had become the
 constraint on adding anything else to town. 👑 Замкова takes the bazaar, the arena and the
 guilds; 🏘 Поділ takes the trader, the Master, the innkeeper and the fortune teller; the
 square keeps only the two roads and the way home. A street is a KEYBOARD and not a router —

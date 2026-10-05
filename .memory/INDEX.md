@@ -19,13 +19,14 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest
 - [Implemented vs Planned](status.md) — What exists now vs what the GDD describes, plus the rebalance phase table
 - [Rebalance](rebalance.md) — Audit findings, locked decisions, the calibrated math model, the phase tracker and the per-phase lessons
+- [Class sets concept](class-sets-concept.md) — **PARKED 2026-10-05, nothing approved**: three class branches L10–40 (5 pieces with the off-hand, 75% growth, ×1.19 on the set's own members), per-piece stats, the fight impact (+65–71% survivability at L20, so it ships only with a bestiary re-solve), Master commissions sized to fit a bag, four unanswered forks, and the formulas to re-derive every number
 
 ## Content specifications (in the repo, not here)
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
   - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
   - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3
-  - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling
+  - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
@@ -79,7 +80,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
       the estate's lost weapon pull;
     - from the 10-04 tarot and watchman work: the Devil's doubled defend (half-up rounding), the
       tarot's flat bonuses against the no-flat-bonus rule, and the watchman's per-minute cost at
-      the target roster.
+      the target roster;
+    - from the 10-05 durability change: the repair price of armour the Master does not sell
+      (`?? 30`), `/reload` leaving the cached gear bonuses stale, and salvage of a piece that
+      never wears.
+  - **Parked: the class sets** ([class-sets-concept.md](class-sets-concept.md)). The owner asked
+    for the concept on 10-05 and said «ми до цього повернемось» without answering its four forks.
+    It is item 1 of the post-rebalance package (the gear ladder) in class form.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -95,7 +102,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
   entry (`9ab349c`) and the 10-04 sync pass, then the tester-driven entries of 10-04/05 (the
   tarot, the Vigor reward, the task-ready notice, the support button, the enchant), the 10-05
-  sync pass, and the 10-05 durability entry (the first of the day's gear work).
+  sync pass, the 10-05 durability entry (the first of the day's gear work), and the class-sets
+  concept with the second 10-05 sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
@@ -124,7 +132,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 89 at one line each, so a selection copied into this file is the
+already carries all 92 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

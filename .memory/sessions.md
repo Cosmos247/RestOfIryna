@@ -448,6 +448,69 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-05 (class sets — a concept, parked; the second sync pass)
+
+After the durability change and its audit (`bf15669` / `e4e67ad`) the owner asked for class sets
+for higher-level players: «поки нічого робити не треба, давай просто розробимо концепцію. Покажи
+як ти бачиш їх стати та "рецепт"». Nothing was built. The proposal lives in
+`.memory/class-sets-concept.md`; this entry records how it was reached.
+- **Read first.**
+  - `spec-sets.md` §2–§5: the own-members multiplier, the 25% cap, the strength ladder, and the
+    note that the class tilt lives in which set a player wears.
+  - `spec-items.md` §3–§4: the gear ladder; the ~35–40% kit the bestiary was solved against;
+    "a set is a ladder".
+  - `tuning/budget.json`: slot weights, `statPerPoint`, and the per-class `classProfiles`
+    (armour + offHand) the simulator's reference character uses.
+  - The class growth rates, the six materials with their trader prices and sources, the weapon
+    rungs' recipe values (≈50 / 820 / 1,640 / 2,460 🪙 at L10/20/30/40), and the class visuals in
+    `content/lore.md` §4.
+- **Computed** (a scratch script, `BudgetMath.spend`'s arithmetic):
+  - every piece for three classes at L10/20/30/40, at 75% of the growth (the weapon's rule) on
+    the class profiles, each checked against the validator's allowance;
+  - the set rows at ×1.19;
+  - the fight impact at L20 and L30 through `CombatMath.mitigation` / `percent`.
+- **Found while designing.**
+  - **Survivability +65–71% at L20.** The warrior's mitigation goes 17.9% → 36.1%, the mage's crit
+    16.3% → 26.1%, and the kit moves from ~35% to ~80% of curve. So class sets ARE the gear
+    ladder, and they ship with the bestiary re-solve or the forest goes soft.
+  - **The bag caps a commission.** The Master draws from the bag alone (10-05 rule), and the first
+    recipe draft priced high ranks in cheap materials: a mage's rank-IV mantle came to ~93 units.
+    It was rebuilt so ingots carry the value; the largest commission is now ≈46 units. Material
+    value is kept equal across classes per rank (≈300 / 1,300 / 2,600 / 3,900 🪙), with fees of
+    300 / 800 / 1,600 / 2,500 🪙 per set — 5,200 🪙 of pure silver sink over the branch.
+  - **A forged piece has no Master listing**, so its repair price falls to `?? 30` (the open item
+    this morning's change left). Proposed: the commission's full value, which keeps a repaired
+    point near the Forester jerkin's ~3 🪙.
+- **Proposed** (drafts, nothing approved): «Лицарська варта», «Слідопит» and «Мандрівник», five
+  pieces each including the off-hand (щит / сагайдак / гримуар). Ranks keep the noun and change
+  the epithet. Durability is 70 / 100 / 140 / 180.
+- **Asked.** A four-fork quiz: structure, class lock, off-hand, and existing materials vs trophies
+  («Ріг тура», «Шкура рисі», «Ікло вовка», «Кіготь скаженого ведмедя»). The owner rejected it to
+  clarify, then said «Запамʼятай це на майбутнє, ми до цього повернемось». Together with the
+  earlier repair-price quiz, this gave auto-memory `feedback-explain-before-quiz`.
+- **Recorded.**
+  - `.memory/class-sets-concept.md`, with the formulas to re-derive every number;
+  - a pointer in `spec-sets.md` §5, `INDEX.md`, `status.md` and `TODO.md` → Future / Backlog;
+  - auto-memory `project-class-sets-concept`, with `project-post-rebalance-package` linked to it.
+- **The sync pass.** Prompt.md was reoriented to this stopping point, and INDEX's memory count
+  went 89 → 92. Stale current-state records found and fixed:
+  - **README.** The Master still read «485🪙 ≈4× material value», «crafting it stays the
+    economical one», «armor max 30» and «flee 5». The undeployed summary named only tier 2 and
+    the estate scaling, out of twelve changes.
+  - **`status.md`.** Its "Digest baseline" paragraph was stuck at the 10-03 estate scaling (v15,
+    336 tests).
+  - **Prompt.md** still labelled the 10-03 arena digest «Current digest baseline».
+  - **TODO.md.**
+    - Its footer was dated 10-03.
+    - Two walk-list checks told a combined deploy to expect schema v15 / content hash
+      `be4350a5`.
+  - **`content/lore.md`** still had the Bazaar, the Arena and the Master «(planned)», and the
+    tannery «turns hide into the Forester's leather set».
+  - **`content/recipes.md`** was entirely pre-rebalance. It gained a SUPERSEDED header like
+    `content/bestiary.md`'s.
+- **Verified.** No code changed since `e4e67ad`; 379 tests, `validate --strict` 0/0, the
+  generated spec blocks 0 stale, every auto-memory wiki-link resolves.
+
 ## Session — 2026-10-05 (durability is the item's own, the Forester set at 50) — `bf15669`
 
 The owner opened a day of gear work: «по перше хочу підняти міцність сету Лісника до 50».
