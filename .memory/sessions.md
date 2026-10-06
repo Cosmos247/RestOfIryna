@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-06)* **the pre-deploy audit's four fixes** — an answer names what it was
+- *(this sync pass, 10-06)* **`f2ae7ea`'s hash fill** — records only. The audit before the commit
+  found four stale records — the file map's callback lines, the walk list's button names, its
+  count in `Prompt.md` and the README's undeployed list — and fixed them in `f2ae7ea`.
+- `f2ae7ea` (10-06) **the pre-deploy audit's four fixes** — an answer names what it was
   asked about (`king:report_ok:<decree>`, `quest:do_ok:<npc>:<job row>`); the arena's stake picker
   and challenge refuse a player off the arena or without the technique; the palace banner prints
   the XP that landed and a decree's level-up; the three data migrations run in a transaction and
@@ -463,7 +466,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-06 (the pre-deploy audit of `8ae6772..HEAD`, and its four fixes) — *(this commit)*
+## Session — 2026-10-06 (the pre-deploy audit of `8ae6772..HEAD`, and its four fixes) — `f2ae7ea`
 
 The owner: «Продивись зміни які внесені, але ще незадеплоєні на пай. Ще раз перевір їх,
 протестуй як вони працюють один з одним в новій системі та видай мені репорт, чи все добре, та
@@ -526,6 +529,17 @@ The owner: «Продивись зміни які внесені, але ще н
   - a fight in progress at the restart;
   - the plain «✅ Доповісти Королю» double tap;
   - the owner's copy questions.
+- **Audited before the commit** (the owner's prompt). The touched files recompiled under bash with
+  no warning; 395 tests; `validate --strict` 0/0; the digest unmoved; `git diff --check` clean; the
+  rehearsal's copy confirmed equal to the tree. Four stale records found and fixed:
+  - `.memory/file-map.md` still named the bare callbacks, and knew nothing of the transactions,
+    `rowId`, `xpResult` or `challengeAllowedHere`;
+  - the walk list named «Доповісти» where the button reads «✅ Доповісти Королю»;
+  - `Prompt.md` still pointed the testers at thirteen walk-list blocks;
+  - the README's undeployed list lacked the fixes.
+
+  Committed `f2ae7ea` (16 files); this sync pass is its hash fill. Nothing is pushed and nothing
+  is deployed.
 
 ## Session — 2026-10-06 (the sync pass) — `bad142b`'s hash fill
 

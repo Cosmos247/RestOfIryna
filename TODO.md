@@ -1997,7 +1997,7 @@ the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate bl
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-06 — the pre-deploy audit's four fixes (NOT deployed):** an account at full Vigor
+**Added 2026-10-06 — the pre-deploy audit's four fixes (`f2ae7ea`, NOT deployed):** an account at full Vigor
 with a decree or a job that pays Vigor ready; two accounts for the arena.
 - **the palace, the double tap**: «✅ Доповісти Королю» on a Vigor decree asks the question; tap
   «✅ Доповісти все одно» twice, fast. The first reports, and its banner stays. The second
@@ -2591,7 +2591,7 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the 2026-10-06 pre-deploy audit** of `8ae6772..HEAD` (`.memory/sessions.md`). Its four
-fixes shipped in their own commit; these were found, verified and left:
+fixes are `f2ae7ea`; these were found, verified and left:
 - **Two level-1 jobs need km 6 or deeper since tier 2.** `trader.hides` (10 hides) and
   `tavern.supplies` (6 raw meat) are `minLevel` 1. The boar, the first source of both, moved from
   km 2–11 to km 6–10, and the viper and the eagle drop nothing. Both jobs can still be done

@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-06 — the pre-deploy audit's four fixes** (*this commit*, NOT deployed; Swift only, no
+**2026-10-06 — the pre-deploy audit's four fixes** (`f2ae7ea`, NOT deployed; Swift only, no
 migration, the digest unmoved). A review of everything since `8ae6772` found no blocker and these
 holes in it, all fixed:
 - the palace's and the NPC board's «… все одно» named nothing, so a double tap handed in the next

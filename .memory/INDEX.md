@@ -64,7 +64,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the Master's enchant is the armour's ladder (10-06, `bad142b`, `spec-items.md` §11;
       content schema v19, no migration): a level budgets the piece at item level 5 … 25, and
       its price — 50 × level² silver a piece — is its only gate.
-    - the pre-deploy audit's four fixes (10-06, Swift only): an «… все одно» answer names its
+    - the pre-deploy audit's four fixes (10-06, `f2ae7ea`, Swift only): an «… все одно» answer names its
       decree or job, the arena's stake picker asks where the player stands, the palace banner
       prints the XP that landed, and the data migrations run in a transaction — the whole
       backlog rehearsed off the Pi first (auto-memory `reference-deploy-rehearsal`).

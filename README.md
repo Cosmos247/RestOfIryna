@@ -626,7 +626,7 @@ That includes:
 **Committed, not deployed** (2026-10-06, `bad142b`): the Master's enchant as the armour's ladder — a
 level budgets the piece at a higher item level, the way a weapon rung does, and is gated by its
 price alone, 50 × level² silver a piece (`content/spec/spec-items.md` §11).
-Beside it, the fixes from a pre-deploy audit of everything above:
+Beside it (`f2ae7ea`), the fixes from a pre-deploy audit of everything above:
 - an «… все одно» answer hands in only the decree or job it was asked about;
 - a stake picker left in chat can no longer issue a challenge from outside the arena;
 - the palace banner prints the XP that landed;
