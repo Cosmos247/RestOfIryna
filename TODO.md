@@ -409,7 +409,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       side: validation, Honor ELO, stake settlement, sweeper). Nothing about a live duel is
       persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
-- [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred.
+- [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred. **2026-10-06:** the Master's screen photo `Assets/capital/master.jpg` is supplied (the owner's art); `showMaster` already sent it through `sendCachedPhoto`, so no code moved — every sub-screen now edits the photo's caption, the longest (the lesson card) ≈450 of Telegram's 1024.
 - [x] **Two streets** *(landed 2026-09-20, live since the 2026-09-22 00:22 deploy)* — the capital keyboard had reached
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
@@ -441,8 +441,8 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       her an errand too, and because a room behind a wool curtain belongs in the lower town
       rather than under the palace. 7 locale keys × 2 and a rewritten `capital.welcome` that
       names both roads and what stands on each, since nothing else tells the player what is up
-      there. `Assets/capital/street_castle.jpg` and `street_lower.jpg` are **not supplied** —
-      `sendCachedPhoto` falls back to text, and dropping the art in later auto-caches it.
+      there. `Assets/capital/street_castle.jpg` and `street_lower.jpg` were supplied on
+      2026-10-06 — the capital map, the same image as the square's `welcome.jpg`.
 - [ ] Tutorial prompt that flags "you can travel to the capital" — currently players discover it by tapping the existing main-menu button
 
 ---
@@ -1931,7 +1931,7 @@ Castle Street. Spec: `content/spec/king.md`. Every number printed by
 - [x] **The palace** — `Location.palace` inside `CapitalController`, a fourth row on
       Castle Street, the decree card and the `king:report` callback. A location, not a
       controller: `routerName` stays `"capital"` all over town, so the split's own rule
-      holds. Text-only until `Assets/capital/palace.jpg` exists.
+      holds. Its art, `Assets/capital/palace.jpg`, was supplied on 2026-10-06.
 - [x] **`KingProgress` + `CreateKingProgress`** — one row per player, unique on `user_id`,
       two numbers in it (`decreeIndex`, `counter`). Created lazily at decree 0; no
       backfill, so every existing player starts at the top and walks the backlog one
@@ -1991,11 +1991,29 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the fourteen on top — the two
-2026-10-06 blocks (the audit's fixes, the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
+Telegram. **Every block below is LIVE and unwalked** except the fifteen on top — the three
+2026-10-06 blocks (the screen art, the audit's fixes, the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
 the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-06 — the owner's screen art, and the King's first line (NOT deployed):** any
+account in the capital, and a fresh registration for the last two items. The NEW files (the
+Master, the palace, both streets) show as soon as they are on the Pi — `sendCachedPhoto` never
+caches a missing asset. The REPLACED ones (the square, the charter, the six rabid-dog scenes)
+and the King's line need the restart.
+- **the square, 👑 Замкова, 🏘 Поділ** each open on the capital map.
+- **👑 Палац** opens on the throne room. With a decree done, «✅ Доповісти Королю», the Vigor
+  question and the next decree all redraw under the same photo (≈500 of 1,024 at the longest).
+- **🛠 Майстер** opens on the art: the blacksmith at his bench, the castle in the window.
+- **every sub-screen redraws under the same photo**: «🛡 Купити броню» and an item's card,
+  «⚒️ Полагодити» and its confirm, «✨ Покращити» and its card, «🔨 Урок: перекувати зброю»,
+  «📜 Замовлення» (the board), and «🔙 До майстра» back to the menu. None may fall back to a new
+  text message or freeze; the longest, the lesson card, is ≈450 of the caption's 1,024.
+- **an old, text-only Master message** left in chat from before still answers its buttons.
+- **a new registration, both genders**: the King's oath sits under the new charter art and begins
+  «Король жестом підкликає вас до себе і протягує вам згорток:»; the rabid-dog step shows the
+  scene for the chosen class and gender.
 
 **Added 2026-10-06 — the pre-deploy audit's four fixes (`f2ae7ea`, NOT deployed):** an account at full Vigor
 with a decree or a job that pays Vigor ready; two accounts for the arena.
@@ -2316,7 +2334,7 @@ in the capital, one challenging the other.
 - **📓 Нотатник from the first minute.** 👑 Указ Короля stands above the NPC jobs, with the
   condition line and the reward. It is READ-ONLY by that screen's own standing rule; when the
   decree is done the line says «готово — доповісти в палаці» and there is no button.
-- **👑 Палац on Замкова.** Text-only until `Assets/capital/palace.jpg` exists. The
+- **👑 Палац on Замкова.** On its art once the 2026-10-06 files reach the Pi. The
   `✅ Доповісти Королю` button must appear ONLY when every condition is met.
 - **an EXISTING character's first visit.** The chain starts at decree 1 for everyone, so the
   early ones are already satisfied and turn in back to back. Check that the banner quotes

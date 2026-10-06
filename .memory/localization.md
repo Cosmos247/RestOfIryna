@@ -298,8 +298,8 @@ copy names the player: намісник/намісниця, воїне/войо�
 gender-neutral. Player gender is
 chosen once at **registration step 1** (ahead of the name prompt) and stored in
 `User.gender` ("m"/"f"; nil treated as male). The estate-reveal art is also
-per-gender (`CharacterClass.journeyImageName(gender:)` → `<class>_estate_<m|f>.jpg`,
-falls back to the genderless `<class>_estate.jpg`).
+per-gender (`CharacterClass.journeyImageName(gender:)` → `<class>_estate_<m|f>.jpg`; the
+genderless `<class>_estate.jpg` fallback was removed on 2026-05-21).
 
 ### Helper (`Lingo+Locales.swift`)
 ```swift

@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this sync pass, 10-06)* **`f2ae7ea`'s hash fill** — records only. The audit before the commit
+- *(this commit, 10-06)* **the owner's screen art, and the King's first line** — the Master, the
+  palace, the capital map (the square and both streets), the charter and the six rabid-dog scenes;
+  «Король жестом підкликає вас до себе і протягує вам згорток:», since he sits in the new art. No
+  code moved: every slot already sent its file through `sendCachedPhoto`, which falls back to text
+  while the file is missing. The caption's 1,024 cap became a `CLAUDE.md` rule.
+- `6aa166d` (10-06) **`f2ae7ea`'s hash fill** — records only. The audit before the commit
   found four stale records — the file map's callback lines, the walk list's button names, its
   count in `Prompt.md` and the README's undeployed list — and fixed them in `f2ae7ea`.
 - `f2ae7ea` (10-06) **the pre-deploy audit's four fixes** — an answer names what it was
@@ -465,6 +470,54 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-06 (the owner's screen art, and the King's first line) — *(this commit)*
+
+The owner sent art one screen at a time — first «Додай цю картинку до екрану Майстра», then
+«Заразз буду додавати картинки до екранів, допоможи з цим», and picked "only the slots that
+already exist" when asked which screens.
+- **No code moved.** Every screen here already sent its file through `sendCachedPhoto`, which
+  falls back to text while the file is missing. What landed:
+  - `capital/master.jpg` (1024×765, 151 KB) — the Master;
+  - `capital/palace.jpg` (1280×699) — the throne room;
+  - `capital/welcome.jpg`, `street_castle.jpg`, `street_lower.jpg` — ONE image, the capital
+    map with every place labelled, on the square and both streets. It replaced the old
+    market-square panorama. Three files, not a code change, so a street can get its own art
+    later by dropping a file;
+  - `registration/kings_charter.jpg` (1024×559) — the same scene redrawn in the palace's style;
+  - the six `registration/<class>_estate_<m|f>.jpg`. The owner's files were PNG (1697×927,
+    ~2.8 MB each) and the slot is `.jpg`, so they were converted with `sips` to JPG 1280×699 at
+    quality 85 (455–486 KB) — Telegram scales a photo to 1280 anyway.
+- **The King's first line follows the art**, where he sits: «Король робить крок назустріч і
+  кладе руку на ваше плече:» → «Король жестом підкликає вас до себе і протягує вам згорток:» (the
+  owner's words, `registration.king_oath.m`/`.f`). The English line, «The King beckons you closer
+  and holds out a scroll:», is mine, offered in the report.
+- **The risk was the caption** — 1,024 under a photo against 4,096 for text, and neither
+  `sendCachedPhoto` nor `editScreen` trims. Measured from both locale files at the worst case:
+  - the Master: the lesson card ≈450 (all six stat lines, four inputs), the board ≈420, the menu
+    ≈330, the enchant card ≈320, the buy cards ≈245;
+  - the palace ≈500, over all 39 decrees with the longest labels, five-digit counts and the
+    Vigor warning;
+  - the streets ≈270 and send a reply keyboard, so nothing is edited over them;
+  - the King's oath 578 (uk) / 625 (en).
+  - `isPhoto` is read off each tapped message, so an old text message still edits as text.
+  - **The bazaar is the one capital slot left empty.** When it gets art, the trade's locked
+    screen («Ви віддаєте / Ви отримуєте») lists both offers as TEXT under the market's photo:
+    all 23 stackables on one side are ≈470, so it crosses 1,024 only past ~40 distinct items
+    between the two sides. Rare, and not guarded.
+- **What the Pi needs.** `8ae6772` references every one of these paths. The NEW files (master,
+  palace, both streets) show at the pull, since a missing asset is never cached. The REPLACED
+  ones (the square, the charter, the six scenes) keep their cached `file_id` until
+  `pm2 restart ROI`, and so does the King's line (Lingo is not reloaded).
+- **Two mismatches shown to the owner, left as drawn:** the map labels the palace «Корона» where
+  every screen says «Палац», and the rabid-dog scenes show a pack where the caption has one
+  «скажена собака».
+- The audit fixed four stale records: `TODO.md` said the streets and the palace had no art (two
+  places); `.memory/localization.md` still claimed the genderless `<class>_estate.jpg` fallback
+  removed on 2026-05-21; the file map called `renderLocation` the art loader (it is dead). The
+  caption cap became a rule beside the photo rule in `CLAUDE.md`.
+- Recorded in README's and the file map's asset trees, three `TODO.md` lines and the walk-list
+  block (still fifteen — the Master's block grew into this one).
 
 ## Session — 2026-10-06 (the pre-deploy audit of `8ae6772..HEAD`, and its four fixes) — `f2ae7ea`
 

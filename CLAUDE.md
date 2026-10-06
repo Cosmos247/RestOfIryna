@@ -843,7 +843,14 @@ the Arena budget and the quest of the day from drifting apart.
 first send and reuses it forever, so newly-added art is cached the first time it is shown —
 there is nothing extra to register. Never call `bot.sendPhoto` directly for player art, and
 note `TGBot.sendMessage(session:text:…)` has **no `photo:` parameter** on purpose. (After
-swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped.)
+swapping an asset file on disk, restart the bot so the stale in-memory file_id is dropped. A
+NEW file needs no restart: a missing asset is never cached.)
+
+**A screen that gains art turns every in-place redraw into a CAPTION edit, capped at 1,024
+characters against a message's 4,096** — and neither `sendCachedPhoto` nor `editScreen` trims,
+so an overlong caption is a screen that never draws. Before a file goes into a slot, measure the
+screen's worst case in Ukrainian (in UTF-16, like an alert), every sub-screen edited over the
+same message included. Auto-memory `project-screen-art-slots`.
 
 **RULE — every in-place screen redraw goes through `editScreen(...)`
 (`Swift/Helpers/ScreenEdit.swift`).** Telegram edits a message's TEXT or its CAPTION, never

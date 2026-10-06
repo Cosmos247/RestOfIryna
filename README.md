@@ -308,14 +308,18 @@ RestOfIryna/
 │
 ├── Assets/
 │   ├── registration/                # Artwork used during onboarding
-│   │   ├── kings_charter.jpg        # Shown in the King's Oath step (all classes)
-│   │   └── <class>_estate_<m|f>.jpg # Rabid-dog encounter (player's first look at the estate). 6 files: warrior/archer/mage × m/f. Path from CharacterClass.journeyImageName(gender:)
+│   │   ├── kings_charter.jpg        # Shown in the King's Oath step (all classes); redrawn 2026-10-06 — the King seated, holding out the scroll
+│   │   └── <class>_estate_<m|f>.jpg # Rabid-dog encounter (player's first look at the estate). 6 files: warrior/archer/mage × m/f. Path from CharacterClass.journeyImageName(gender:); replaced 2026-10-06 (1280×699 JPG)
 │   ├── estate/                      # Per-tier estate artwork — level_<N>.jpg, N = estateLevel 1…7 (all tiers present)
 │   │   └── level_1.jpg … level_7.jpg
-│   └── capital/                     # Phase 6 — capital + per-location art (auto-loaded by renderLocation when present)
-│       ├── welcome.jpg              # Shown on arrival in capital + on re-entry
+│   └── capital/                     # Phase 6 — capital + per-location art; each place sends its own through sendCachedPhoto, text while the file is missing (market.jpg not supplied)
+│       ├── welcome.jpg              # The capital map (2026-10-06) — shown on arrival in capital + on re-entry
+│       ├── street_castle.jpg        # 👑 Замкова — the same map (2026-10-06); its own file so the street can get its own art
+│       ├── street_lower.jpg         # 🏘 Поділ — the same map (2026-10-06)
+│       ├── palace.jpg               # 👑 Палац — the throne room (2026-10-06); the decree card and the report question edit its caption, ≈500 of 1024
 │       ├── trader.jpg               # Crамар (Trader) screen photo
 │       ├── tavern.jpg               # Шинок (Tavern) screen photo
+│       ├── master.jpg               # Майстер (Master) screen photo — every sub-screen (shop, repair, enchant, lesson, board) is edited into its caption, the longest ≈450 of 1024 (2026-10-06)
 │       ├── fortune.jpg              # Ворожка (Fortune Teller) entry photo
 │       └── fortune/                 # 22 Major Arcana card portraits (0_fool.png … 21_world.png)
 │

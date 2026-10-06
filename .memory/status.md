@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-06 — the owner's screen art, and the King's first line** (*this commit*, NOT deployed;
+art and two locale lines, no code): the Master, the palace, the capital map on the square and both
+streets, the charter and the six rabid-dog scenes, each through a slot `sendCachedPhoto` already
+had. Measured against the 1,024 caption: the King's oath 578 (uk), the palace ≈500, the Master's
+lesson card ≈450. The King's first line now matches the art — he sits and holds out the scroll.
+`capital/market.jpg` is the one capital slot still empty.
+
 **2026-10-06 — the pre-deploy audit's four fixes** (`f2ae7ea`, NOT deployed; Swift only, no
 migration, the digest unmoved). A review of everything since `8ae6772` found no blocker and these
 holes in it, all fixed:

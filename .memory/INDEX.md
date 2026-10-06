@@ -67,7 +67,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the pre-deploy audit's four fixes (10-06, `f2ae7ea`, Swift only): an «… все одно» answer names its
       decree or job, the arena's stake picker asks where the player stands, the palace banner
       prints the XP that landed, and the data migrations run in a transaction — the whole
-      backlog rehearsed off the Pi first (auto-memory `reference-deploy-rehearsal`).
+      backlog rehearsed off the Pi first (auto-memory `reference-deploy-rehearsal`);
+    - the owner's screen art (10-06, no code): the Master, the palace, the capital map on the
+      square and both streets, the King's charter and the six rabid-dog scenes — and the King's
+      first line, «Король жестом підкликає вас до себе і протягує вам згорток:».
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`), the durability one
@@ -75,8 +78,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     verify are in `Prompt.md`. The testers should hear first — the game announces neither the
     stronger forest, nor the weapon clamp, nor the dearer and sturdier armour, nor the enchant
     that now makes it grow.
-  - Then the first `fight_log` rows, and a human walking the screens. Fourteen blocks head
-    `TODO.md`'s walk list and wait for their deploy — the audit-fixes, armour-ladder, durability, enchant, support-button,
+  - Then the first `fight_log` rows, and a human walking the screens. Fifteen blocks head
+    `TODO.md`'s walk list and wait for their deploy — the screen-art, audit-fixes, armour-ladder, durability, enchant, support-button,
     task-ready, Vigor-reward, tarot, weapon, quest-board, two arena, estate and tier-2 blocks; the
     arena ones need two accounts.
   - **Open threads**, all in `TODO.md` → "Open, decided but not done":
