@@ -68,7 +68,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
       decree or job, the arena's stake picker asks where the player stands, the palace banner
       prints the XP that landed, and the data migrations run in a transaction — the whole
       backlog rehearsed off the Pi first (auto-memory `reference-deploy-rehearsal`);
-    - the owner's screen art (10-06, no code): the Master, the palace, the capital map on the
+    - the owner's screen art (10-06, `873e426`, no code): the Master, the palace, the capital map on the
       square and both streets, the King's charter and the six rabid-dog scenes — and the King's
       first line, «Король жестом підкликає вас до себе і протягує вам згорток:».
 

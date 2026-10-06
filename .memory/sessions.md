@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-06)* **the owner's screen art, and the King's first line** — the Master, the
+- *(this sync pass, 10-06)* **`873e426`'s hash fill** — records only.
+- `873e426` (10-06) **the owner's screen art, and the King's first line** — the Master, the
   palace, the capital map (the square and both streets), the charter and the six rabid-dog scenes;
   «Король жестом підкликає вас до себе і протягує вам згорток:», since he sits in the new art. No
   code moved: every slot already sent its file through `sendCachedPhoto`, which falls back to text
@@ -471,7 +472,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-06 (the owner's screen art, and the King's first line) — *(this commit)*
+## Session — 2026-10-06 (the owner's screen art, and the King's first line) — `873e426`
 
 The owner sent art one screen at a time — first «Додай цю картинку до екрану Майстра», then
 «Заразз буду додавати картинки до екранів, допоможи з цим», and picked "only the slots that
