@@ -61,7 +61,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the Master's enchant draws from the bag alone (10-05, `4fe5b7a`; Swift and locale);
     - durability is the item's own, the Forester set at 50 and its prices ×5/3 (10-05,
       `bf15669`, `spec-items.md` §10; content schema v18, one migration);
-    - the Master's enchant is the armour's ladder (10-06, *uncommitted*, `spec-items.md` §11;
+    - the Master's enchant is the armour's ladder (10-06, `bad142b`, `spec-items.md` §11;
       content schema v19, no migration): a level budgets the piece at item level 5 … 25, and
       its price — 50 × level² silver a piece — is its only gate.
 
@@ -113,7 +113,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entry (`9ab349c`) and the 10-04 sync pass, then the tester-driven entries of 10-04/05 (the
   tarot, the Vigor reward, the task-ready notice, the support button, the enchant), the 10-05
   sync pass, the 10-05 durability entry (the first of the day's gear work), and the class-sets
-  concept with the second 10-05 sync pass, and the 10-06 armour-ladder entry.
+  concept with the second 10-05 sync pass, the 10-06 armour-ladder entry (`bad142b`) and its
+  sync pass.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since

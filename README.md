@@ -623,7 +623,7 @@ That includes:
   and the Master's enchant drawing from the bag alone;
 - durability as each item's own, with the Forester set at 50 and its prices ×5/3.
 
-**Built and not yet committed** (2026-10-06): the Master's enchant as the armour's ladder — a
+**Committed, not deployed** (2026-10-06, `bad142b`): the Master's enchant as the armour's ladder — a
 level budgets the piece at a higher item level, the way a weapon rung does, and is gated by its
 price alone, 50 × level² silver a piece (`content/spec/spec-items.md` §11).
 

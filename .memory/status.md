@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-06 — the Master's enchant is the armour's ladder** (*uncommitted*, NOT deployed;
+**2026-10-06 — the Master's enchant is the armour's ladder** (`bad142b`, NOT deployed;
 needs `pm2 restart ROI` — Swift, locale strings and content schema **v19**, no migration;
 `spec-items.md` §11):
 - **Why.** The owner asked how the armour enchant works and how to improve it. A level added 4%
@@ -739,8 +739,8 @@ so it survives a reboot); deployment steps are in README's Deployment section, a
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline of the working
 tree: `records 9303bb274d4517d8` / `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` /
 `quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `be1102fc` (**schema v19**
-since 2026-10-06, when the enchant became the armour's ladder; uncommitted). The last COMMITTED
-baseline is the durability change's (`bf15669`): `records fefe14b940998631`, content hash
+since 2026-10-06, when the enchant became the armour's ladder, `bad142b`). The baseline before it
+is the durability change's (`bf15669`): `records fefe14b940998631`, content hash
 `41455b84`, schema v18. `Prompt.md` keeps both in sync, together with the baseline of every
 commit still undeployed — everything since 2026-09-28: tier 2, the estate scaling, the arena,
 the weapon ladder, the tarot pass, the 10-04/05 polish and the durability. **None of it is on

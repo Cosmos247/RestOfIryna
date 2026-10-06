@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(uncommitted, 10-06)* **the Master's enchant is the armour's ladder** (`spec-items.md` §11) —
+- *(this sync pass, 10-06)* **`bad142b`'s hash fill** — records only; the audit found two stale
+  descriptions of the enchant (README's `CapitalController` entry, the file map's `MasterCatalog`
+  line) and fixed them.
+- `bad142b` (10-06) **the Master's enchant is the armour's ladder** (`spec-items.md` §11) —
   a level budgets the piece at item level 5 / 10 / 15 / 20 / 25 with 75% of the curve's growth,
   the weapon ladder's law. It replaces +4% of the piece's own stats a level, under which thirteen
   of twenty purchases on the Forester set changed no number. NO player level gates it: a gate was
@@ -455,7 +458,31 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-06 (the Master's enchant is the armour's ladder) — *(uncommitted)*
+## Session — 2026-10-06 (the sync pass) — `bad142b`'s hash fill
+
+The owner's audit prompt, given on the report that removed «заточка» from the last two screens.
+- **Audited** the whole diff (35 files modified, 2 new) against the records before committing:
+  - no leftover of the gate built and removed the same day (`requiredPlayerLevel` on a step, the
+    wearer's level in a piece's stats, `refreshAfterLevelUp`) in Swift, tests, locales or content;
+  - no caller of the deleted `enchantMultiplier` / `enchantBonusPercent` /
+    `enchantBudgetFractionPerLevel`; every new symbol has a reader (`GearStatLines.gains` one,
+    `MasterCatalog.enchantScale` one — `EquipmentService.stats(ofItem:tier:enchantLevel:)`);
+  - every locale key the screens ask for exists in both files; «заточ» is in no player-facing
+    file, and in the records only as the owner's quoted word;
+  - the digest, hash, schema and test count agree across every record (`records
+    9303bb274d4517d8`, `be1102fc`, v19, 395).
+- **Two stale records found and fixed**, both pre-dating the day: README's `CapitalController`
+  entry still described the enchant as `1 + 4% × level` with «a 2 DEF boot is still 2 DEF», and
+  `.memory/file-map.md`'s `MasterCatalog` line still quoted May's `perLevelPoints [1,1,1,2,3]` and
+  the 40 → 850 silver steps.
+- **Verified on the final tree:** build clean (the one warning is `BudgetTests.swift:169`, a
+  2026-08-30 line), 395 tests, `validate --strict` 0/0, the digest unchanged, every generated
+  spec block current, no local bot process.
+- **Committed `bad142b`** — 37 files, +1,810 / −303 — then this fill: the hash into `Prompt.md`,
+  `README.md`, `TODO.md`, `.memory/INDEX.md`, `status.md`, this file and the auto-memory.
+  Nothing is pushed and nothing is deployed; the deploy is item 0 of `Prompt.md`.
+
+## Session — 2026-10-06 (the Master's enchant is the armour's ladder) — `bad142b`
 
 The owner, continuing the gear day: «Продивись як зараз працює заточка для броні. Проаналізуй її
 вплив на гру та запропонуй як можна її покращити».

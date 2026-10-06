@@ -1572,7 +1572,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The Master's enchant is the armour's ladder** *(2026-10-06, uncommitted, NOT deployed)*
+  - [x] **The Master's enchant is the armour's ladder** *(2026-10-06, `bad142b`, NOT deployed)*
         — the owner asked how the armour enchant works, what it does to the game and how to improve
         it. Spec `spec-items.md` §11; each decision over a quiz with the set's real numbers.
         - Found: +4% of the piece's own stats a level, on item-level-1 armour. Thirteen of twenty
@@ -1997,7 +1997,7 @@ the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate bl
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
 
-**Added 2026-10-06 — the Master's enchant is the armour's ladder (uncommitted, NOT deployed):**
+**Added 2026-10-06 — the Master's enchant is the armour's ladder (`bad142b`, NOT deployed):**
 an account with Forester pieces, silver and hides in the bag.
 - **🛠 Майстер**: the button reads «✨ Покращити» and the list is titled «✨ Покращення броні», as
   before, with a new hint — «Майстер покращує броню щабель за щаблем: кожен рівень помітно додає
