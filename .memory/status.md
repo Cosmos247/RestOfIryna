@@ -18,8 +18,37 @@ numbers below. Current state:
 | 3 | All 12 catalogs read `content/data/*.json`; no Swift content array remains (Zone made it 13 in 8E) |
 | 4 | Six tuning tables in `content/data/tuning/`; three `testMode` flags collapsed into one `time.scale` (**1.0 since 2026-09-09**) |
 | 5 | Combat is ABSORPTION, not subtraction; ratings→% curves; `levelDiff`; `maxLevel` 40; proportional growth; a Vigor pool ~~+ regen~~ *(8E deleted the regen)*; enemies generated from a six-archetype table ~~and dropping silver~~ *(8C deleted the silver)*; the three special attacks rebuilt off "ignore armour" |
-| 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget; the 7 shipped items and 3 ladders regenerated |
+| 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
+
+**2026-10-06 — the Master's enchant is the armour's ladder** (*uncommitted*, NOT deployed;
+needs `pm2 restart ROI` — Swift, locale strings and content schema **v19**, no migration;
+`spec-items.md` §11):
+- **Why.** The owner asked how the armour enchant works and how to improve it. A level added 4%
+  of the piece's own stats, and the only armour is item level 1: thirteen of the twenty purchases
+  on the Forester set changed no number, and a whole +5 (6,640 🪙, 380 hides) gave +3 DEF and
+  +4 HP. The prices and the hint dated from May's flat mechanic.
+- **Now.** A level budgets the piece at item level 5 / 10 / 15 / 20 / 25 with 75% of the
+  curve's growth — the weapon ladder's law, picked over 50%, 100% and +20% a level.
+  `EnchantLadderRules.scale` is the one lift (the game, the validator, `spec gates`). The set at
+  +5 is 🛡55 ❤️83 💥20 💨15.
+- **The gate is the price.** NO player level gates a level, on the owner's word; a gate was built
+  with the ladder and taken out the same day. The price is 50 × level² silver a piece — 50 / 200 /
+  450 / 800 / 1,250, 11,000 a set — with the hides unchanged (4 / 8 / 15 / 26 / 42). An enchant
+  never fails.
+- **Screens.** The card prints the stat deltas (`GearStatLines`), silver and hides. The banner
+  names what was added. The player-facing word is «покращення»; «заточка» is slang (the owner)
+  and is on no screen — the bag card reads «✨ Покращення: +N», the banner «покращено до +N».
+- **Validator.** `master.enchant_level_changes_nothing` refuses any level that leaves an armour
+  piece unchanged — and with it, armour authored above item level 1 until its ladder is decided.
+  `master.enchant_cost_drops` now watches the ladder's only gate.
+- **Measured.** Below about level 10 a level bought early beats the forest as solved (a set at +5
+  on a level-5 player: +51% XP per Vigor), so the price carries the balance. At the chosen prices
+  the fastest saver buys +3 at level 7, +4 at 15 and +5 at 22, never more than 5% above the
+  solved forest. Days to L10 / 14 / 19 / 25 / 30 / 40: today 63 / 86 / 119 / 175 / 241 / 474,
+  that saver 51 / 70 / 99 / 149 / 209 / 439, the forest as solved 51 / 65 / 88 / 123 / 173 / 385.
+  395 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, the same 18 warnings;
+  digest `records` → `9303bb274d4517d8`, the other four unchanged; content hash `be1102fc`.
 
 **2026-10-05 — durability is the item's own; the Forester set at 50** (`bf15669`, NOT
 deployed; needs `pm2 restart ROI` — Swift, content schema **v18** and one migration;
@@ -707,16 +736,17 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline
-`records fefe14b940998631` / `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` /
-`quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `41455b84` (**schema v18**
-since 2026-10-05, when durability moved onto the item). `Prompt.md` keeps the baseline in sync,
-together with the baseline of every commit still undeployed. That is the durability change
-(`bf15669`), the last of everything committed since 2026-09-28: tier 2, the estate scaling, the
-arena, the weapon ladder, the tarot pass and the 10-04/05 polish. **None of it is on the Pi
-yet.** The Pi still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline of the working
+tree: `records 9303bb274d4517d8` / `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` /
+`quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `be1102fc` (**schema v19**
+since 2026-10-06, when the enchant became the armour's ladder; uncommitted). The last COMMITTED
+baseline is the durability change's (`bf15669`): `records fefe14b940998631`, content hash
+`41455b84`, schema v18. `Prompt.md` keeps both in sync, together with the baseline of every
+commit still undeployed — everything since 2026-09-28: tier 2, the estate scaling, the arena,
+the weapon ladder, the tarot pass, the 10-04/05 polish and the durability. **None of it is on
+the Pi yet.** The Pi still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
 `spawns c9bdb57d456adc26`, content hash `490a2d4b`, schema v14, since the 2026-09-28 22:11
-restart. **379 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+restart. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

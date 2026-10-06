@@ -41,12 +41,13 @@ final class BudgetTests: XCTestCase {
                                           crit: 1.0, dodge: 1.0, accuracy: 0.8))
     }
 
-    private func master(cap: Int = 5, fraction: Double = 0.04) -> MasterFileDTO {
+    private func master(cap: Int = 5, share: Double = 0.75) -> MasterFileDTO {
         MasterFileDTO(armorForSale: [], repairCostFraction: 0.5, enchantCap: cap,
-                      enchantBudgetFractionPerLevel: fraction,
+                      enchantGrowthShare: share,
                       enchantSteps: (1...max(1, cap)).map {
                           EnchantStepDTO(level: $0, silver: 40 * $0,
-                                         materialId: "mat.hide", materialQty: 4 * $0)
+                                         materialId: "mat.hide", materialQty: 4 * $0,
+                                         itemLevel: 5 * $0)
                       })
     }
 

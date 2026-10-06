@@ -99,5 +99,11 @@ public enum ContentSchema {
     /// bare `keyNotFound`; a v18 binary reading a v17 bundle would find armour
     /// with no durability at all, which is broken from its first fight. The
     /// handshake names the cause in both directions.
-    public static let current: Int = 18
+    /// v19 (2026-10-06): the Master's enchant becomes the armour's ladder
+    /// (`spec-items.md` §11). `master.enchantBudgetFractionPerLevel` — 4% of
+    /// the piece's own stats a level — is gone; `enchantGrowthShare` replaces
+    /// it, and every `enchantSteps` row gains a required `itemLevel`. A v18
+    /// bundle has neither, and a ladder whose levels budget the piece nowhere
+    /// would lift nothing, so the handshake refuses rather than falls back.
+    public static let current: Int = 19
 }

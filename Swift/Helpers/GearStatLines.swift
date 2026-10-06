@@ -8,7 +8,9 @@
 //  They lived inside `EstateController` while the workshop was the only place
 //  a weapon was reforged. Since 2026-10-04 the Master's lesson sells the first
 //  rung too (`spec-items.md` §9.4), so both screens call this rather than each
-//  writing its own version of the same sentence.
+//  writing its own version of the same sentence. Since 2026-10-06 the armour
+//  climbs by the Master's enchant (§11), and its card and banner say it here
+//  as well.
 //
 
 import Foundation
@@ -54,5 +56,16 @@ enum GearStatLines {
         if let l = line(from.dodge,    to.dodge,    "",  "💨 \(lingo.localize("workshop.stats.dodge",    locale: locale))") { out.append(l) }
         if let l = line(from.accuracy, to.accuracy, "",  "🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") { out.append(l) }
         return out
+    }
+
+    /// What a step ADDED, on one line: `+3 🛡 Захист · +4 ❤️ Здоров'я`. Only
+    /// the stats that moved, in `GearStats` order, each in `lines`' own
+    /// "+N <icon> <name>" shape — the banner under an enchant names what the
+    /// silver bought instead of a percentage the player has to multiply.
+    static func gains(from: GearStats, to: GearStats, lingo: Lingo, locale: String) -> String {
+        let delta = GearStats(attack: to.attack - from.attack, defense: to.defense - from.defense,
+                              hp: to.hp - from.hp, crit: to.crit - from.crit,
+                              dodge: to.dodge - from.dodge, accuracy: to.accuracy - from.accuracy)
+        return lines(stats: delta, lingo: lingo, locale: locale, prefix: "").joined(separator: " · ")
     }
 }

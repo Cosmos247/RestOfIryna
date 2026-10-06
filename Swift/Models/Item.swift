@@ -75,16 +75,23 @@ public struct GearStats: Sendable {
         self.accuracy = accuracy
     }
 
-    /// Scale every stat by the same factor, rounding each independently.
-    ///
-    /// This is what an enchant IS as of Phase 6: a percentage of the item's own
-    /// budget, which is the same thing as a percentage of the stats that budget
-    /// was spent on. A flat bonus cannot work at any size — +32 DEF is 267% of
-    /// a level-1 chest piece and 14% of a level-40 one.
+    /// Scale every stat by the same factor, rounding each independently — what
+    /// a weapon dulled to 0 does to its stats. (It was also the enchant from
+    /// Phase 6 until 2026-10-06; the enchant is a ladder now and goes through
+    /// the overload below.)
     public func scaled(by factor: Double) -> GearStats {
         func s(_ value: Int) -> Int { Int((Double(value) * factor).rounded()) }
         return GearStats(attack: s(attack), defense: s(defense), hp: s(hp),
                          crit: s(crit), dodge: s(dodge), accuracy: s(accuracy))
+    }
+
+    /// Every stat through a ladder's lift — what an enchant level IS since
+    /// 2026-10-06 (`spec-items.md` §11): the piece budgeted at a higher item
+    /// level. `LadderScale` keeps its two numbers and divides last, so a stat
+    /// that lands on a half rounds as a half on every machine.
+    public func scaled(by scale: LadderScale) -> GearStats {
+        GearStats(attack: scale.apply(attack), defense: scale.apply(defense), hp: scale.apply(hp),
+                  crit: scale.apply(crit), dodge: scale.apply(dodge), accuracy: scale.apply(accuracy))
     }
 }
 

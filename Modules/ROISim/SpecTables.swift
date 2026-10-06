@@ -153,7 +153,65 @@ public enum SpecTables {
                            + " | \(durability) |")
             }
         }
+
+        // The armour's ladder (2026-10-06): the Master's enchant, printed after
+        // the weapon so every earlier excerpt stays one contiguous run. It is
+        // the one ladder here with NO gate — its price is what holds it back.
+        out.append(contentsOf: armourLadder(content: content))
         return out.joined(separator: "\n")
+    }
+
+    /// The Master's enchant as a ladder: for each level the item level it
+    /// budgets a piece at, what that is as a multiple of a level-1 piece's own
+    /// stats, its price, and every armour piece's stat line there.
+    ///
+    /// The stat lines come through `EnchantLadderRules.scale` and the same
+    /// per-stat rounding `EquipmentService` uses, so the table is the game's
+    /// arithmetic and cannot be a typed copy of it.
+    private static func armourLadder(content: GameContent) -> [String] {
+        guard let master = content.master, let curve = content.budget else { return [] }
+        let steps = master.enchantSteps.sorted { $0.level < $1.level }
+        let armour = content.items.filter {
+            $0.slot.flatMap(EquipmentSlot.init(rawValue:))?.isArmor == true && $0.gearStats != nil
+        }
+        guard !steps.isEmpty, !armour.isEmpty else { return [] }
+
+        func line(_ s: GearStatsDTO) -> String { "\(s.defense) / \(s.hp) / \(s.crit) / \(s.dodge)" }
+        func lifted(_ item: ItemDTO, to itemLevel: Int?) -> GearStatsDTO {
+            guard let stats = item.gearStats else { return GearStatsDTO() }
+            guard let itemLevel else { return stats }
+            return stats.scaled(by: EnchantLadderRules.scale(
+                fromItemLevel: item.itemLevel ?? 1, toItemLevel: itemLevel,
+                growthShare: master.enchantGrowthShare, curve: curve))
+        }
+        func row(_ label: String, itemLevel: Int?, lift: String, price: String, set: String) -> String {
+            let pieces = armour.map { lifted($0, to: itemLevel) }
+            let total = pieces.reduce(GearStatsDTO()) { $0.adding($1) }
+            return "| \(label) | \(itemLevel.map(String.init) ?? "own") | \(lift) | \(price) | \(set) | "
+                + pieces.map(line).joined(separator: " | ") + " | \(line(total)) |"
+        }
+
+        var out: [String] = [""]
+        out.append("**Armour** (`master.json` → `enchantSteps`) — the Master's enchant; NO level gate, the price")
+        out.append(String(format: "is what holds a level back (`spec-items.md` §11). A level budgets the piece at an item level, at %.0f%%",
+                          master.enchantGrowthShare * 100))
+        out.append("of the curve's growth; `set so far` is the silver all the armour pieces cost up to that level")
+        out.append("")
+        out.append("| enchant | item level | × own stats | price a piece | set so far | "
+                   + armour.map { "`\($0.id)` 🛡/❤️/💥/💨" }.joined(separator: " | ") + " | all pieces |")
+        out.append("|---|---|---|---|---|" + armour.map { _ in "---|" }.joined() + "---|")
+        out.append(row("+0", itemLevel: nil, lift: "×1", price: "—", set: "—"))
+        var paid = 0
+        for step in steps {
+            let scale = EnchantLadderRules.scale(fromItemLevel: 1, toItemLevel: step.itemLevel,
+                                                 growthShare: master.enchantGrowthShare, curve: curve)
+            paid += step.silver * armour.count
+            out.append(row("+\(step.level)", itemLevel: step.itemLevel,
+                           lift: String(format: "×%g", scale.factor),
+                           price: "\(step.silver) 🪙 + \(step.materialQty)× `\(step.materialId)`",
+                           set: "\(paid) 🪙"))
+        }
+        return out
     }
 
     // MARK: - Bestiary
@@ -384,27 +442,28 @@ public enum SpecTables {
             out.append("| `\(slot.slot)` | \(format(slot.weight)) | \(members.count) | \(span) |")
         }
 
-        let enchantCeiling = content.master.map {
-            1 + $0.enchantBudgetFractionPerLevel * Double($0.enchantCap)
-        } ?? 1
-
         out.append("")
-        out.append("**The obtainable kit against the on-curve kit** — budget points, best item per slot")
+        out.append("**The obtainable kit against the on-curve kit** — budget points, best item per slot.")
+        out.append("`fully enchanted` puts the armour at the enchant's cap, which no level gates —")
+        out.append("only its price (`spec-items.md` §11)")
         out.append("")
         out.append("| L | on curve | obtainable | of curve | fully enchanted | of curve |")
         out.append("|---|---|---|---|---|---|")
+        let cap = content.master?.enchantCap ?? 0
         for level in levels {
-            var curve = 0.0, have = 0.0
+            var curve = 0.0, have = 0.0, full = 0.0
             for slot in budget.slotWeights {
                 curve += BudgetMath.points(itemLevel: level, slotWeight: slot.weight,
                                            rarityMultiplier: 1.0, curve: budget)
                 have += bestPoints(content: content, rate: budget.statPerPoint,
                                    slot: slot.slot, level: level) ?? 0
+                full += bestPoints(content: content, rate: budget.statPerPoint,
+                                   slot: slot.slot, level: level, enchant: cap) ?? 0
             }
             guard curve > 0 else { continue }
             out.append(String(format: "| %d | %.0f | %.0f | %.0f%% | %.0f | %.0f%% |",
                               level, curve, have, 100 * have / curve,
-                              have * enchantCeiling, 100 * have * enchantCeiling / curve))
+                              full, 100 * full / curve))
         }
         return out
     }
@@ -413,23 +472,40 @@ public enum SpecTables {
     /// player of `level`. A ladder rung counts once its gate is open: since
     /// 2026-10-04 every rung carries the player level it opens at
     /// (`spec-items.md` §9), so the rung a player of `level` can hold is a
-    /// fact, not a reading of design intent.
+    /// fact, not a reading of design intent. The armour has a ladder too since
+    /// 2026-10-06 — the Master's enchant (`spec-items.md` §11) — but no level
+    /// opens it, so it is not a function of `level`: `enchant` is asked for,
+    /// 0 for a piece as bought.
     private static func bestPoints(content: GameContent, rate: StatPerPointDTO,
-                                   slot: String, level: Int) -> Double? {
+                                   slot: String, level: Int, enchant: Int = 0) -> Double? {
         var best: Double?
         for item in content.items where item.slot == slot {
             let stats: GearStatsDTO?
             if let ladder = content.weaponLaddersByItemId[item.id] {
                 let tier = WeaponLadderRules.highestTier(gates: ladder.tiers.map(\.gateLevel), atLevel: level)
                 stats = ladder.tiers.first { $0.tier == tier }?.stats ?? ladder.tiers.first?.stats
+            } else if let base = item.gearStats {
+                stats = base.scaled(by: enchantScale(content: content, item: item, level: enchant))
             } else {
-                stats = item.gearStats
+                stats = nil
             }
             guard let stats else { continue }
             let points = stats.pointsSpent(at: rate)
             if points > (best ?? -1) { best = points }
         }
         return best
+    }
+
+    /// The lift the Master's enchant gives `item` at enchant `level`. Identity
+    /// at level 0 and for anything that is not armour: the bench takes nothing
+    /// else.
+    private static func enchantScale(content: GameContent, item: ItemDTO, level: Int) -> LadderScale {
+        guard level >= 1, let master = content.master, let curve = content.budget,
+              let slot = item.slot.flatMap(EquipmentSlot.init(rawValue:)), slot.isArmor,
+              let step = master.enchantSteps.first(where: { $0.level == Swift.min(level, master.enchantCap) })
+        else { return .identity }
+        return EnchantLadderRules.scale(fromItemLevel: item.itemLevel ?? 1, toItemLevel: step.itemLevel,
+                                        growthShare: master.enchantGrowthShare, curve: curve)
     }
 
     /// Everything a player can actually have equipped at `level`, in points.
@@ -500,6 +576,31 @@ public enum SpecTables {
                     onMembers, 100 * onMembers / memberBudget,
                     1 + 0.25 * memberBudget / kit,
                     1 + 0.25 * memberBudget / max(memberSpend, 0.001)))
+            }
+
+            // The members CLIMB since 2026-10-06: the Master's enchant is the
+            // armour's ladder (`spec-items.md` §11). The table above measures
+            // the bonus against the pieces as bought; this one measures the
+            // same bonus against the pieces as enchanted, which no player
+            // level decides — only what the wearer has paid. The ceiling
+            // column still inverts the validator's rule, which reads the
+            // members' AUTHORED budget.
+            if let master = content.master, master.enchantCap >= 1, flat > 0 {
+                out.append("")
+                out.append("**As the members are enchanted** — the same bonus against pieces that climb (`spec-items.md` §11)")
+                out.append("")
+                out.append("| enchant | members worn | flat \(String(format: "%.1f", flat)) pts | cap allows, members |")
+                out.append("|---|---|---|---|")
+                for enchant in 0...master.enchantCap {
+                    let worn = members.reduce(0.0) { total, item in
+                        guard let stats = item.gearStats else { return total }
+                        let scale = enchantScale(content: content, item: item, level: enchant)
+                        return total + stats.scaled(by: scale).pointsSpent(at: rate)
+                    }
+                    guard worn > 0 else { continue }
+                    out.append(String(format: "| +%d | %.0f | %.0f%% | ×%.2f |",
+                                      enchant, worn, 100 * flat / worn, 1 + 0.25 * memberBudget / worn))
+                }
             }
             out.append("")
             out.append("**The strength ladder** — a whole-set multiplier against the 25% ceiling")
@@ -594,8 +695,12 @@ public enum SpecTables {
         out.append("|---|---|---|")
         if let m = content.master {
             let ench = m.enchantSteps.reduce(0) { $0 + $1.silver }
-            let gearWithItems = Set(content.items.compactMap(\.slot)).count
-            out.append("| enchant one item to +\(m.enchantCap) | \(ench) | ×\(gearWithItems) filled slots = \(ench * gearWithItems) |")
+            // Armour slots only: the bench takes nothing else. Until
+            // 2026-10-06 this counted every filled slot, the weapon's too,
+            // and printed ×5 = 8300 for a sink that is ×4.
+            let armourSlots = Set(content.items.compactMap(\.slot).compactMap(EquipmentSlot.init(rawValue:))
+                .filter(\.isArmor)).count
+            out.append("| enchant one armour piece to +\(m.enchantCap) | \(ench) | ×\(armourSlots) armour slots = \(ench * armourSlots) |")
             out.append("| the Master's armour | \(m.armorForSale.reduce(0) { $0 + $1.priceSilver }) | one-off |")
             out.append(String(format: "| repair | %.0f%% of value | per repair, ongoing |",
                               m.repairCostFraction * 100))

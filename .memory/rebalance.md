@@ -639,6 +639,157 @@ active when the Judgement pays.
 **Still open:** the Devil doubles a defend; and since rounding stays half-up, a card multiplier must
 move a 2 by a whole point (×0.75 cannot) — the rule is in `CLAUDE.md`.
 
+### The armour enchant, measured (2026-10-05/06)
+
+Why the Master's enchant became the armour's ladder, and why its price is its only gate. The
+decision record is `content/spec/spec-items.md` §11, which carries the tables the owner decided
+on: the four strengths, a level bought ahead of the player, the price ladders, days to a level,
+the fight at the edge of a trip, the arena. This section keeps what the spec does not — the path,
+the finer grids and the harness, which lived in the session's scratch directory and is gone.
+
+**What was wrong.** The enchant was `1 + 4% × level` of the piece's own stats, each stat rounded
+on its own, and the only armour is item level 1.
+
+| piece (🛡/❤️, crit and dodge 1) | first level that changes anything | what +5 added |
+|---|---|---|
+| hood 3 / 4 | +4 (+1 HP), 810 🪙 and 53 hides in | +1 DEF, +1 HP |
+| jerkin 4 / 6 | +3 (+1 HP), 360 🪙 and 27 hides in | +1 DEF, +1 HP — and +5 added nothing to +4 |
+| breeches 3 / 5 | +3 (+1 HP), 360 🪙 and 27 hides in | +1 DEF, +1 HP |
+| boots 2 / 3 | +5 (+1 HP), 1,660 🪙 and 95 hides in | +1 HP |
+
+- A stat of 1 or 2 never moves at ×1.2; a 3 moves at +5; a 4 at +4; a 5 or 6 at +3. Confirmed by
+  compiling the game's two expressions (`1 + 0.04 × level`, `Int((Double(v) × f).rounded())`).
+- 2,750 🪙 and 172 hides of a full set bought levels that changed nothing.
+- Effective HP from a full set: about +7–8% at level 1, +4–5% at 10, +3% at 20, +2% at 40.
+- 913 🪙 a budget point, against 22 for the armour itself and about 67 for the sword's ladder.
+- The 380 hides of a set exceeded every other hide cost in the game together (estate 53, bags
+  75, Training Ground 23, weapon 0–89).
+- On bigger pieces the same percentage would have healed itself: 13–14 empty purchases of 20 at
+  item level 1, 4–9 at 10, 1–2 at 20, 0–1 at 30–40.
+
+**The path to the decision** — the owner redirected most of its turns.
+1. The first proposal kept the 4% and the +20% ceiling: sell only the levels that change a number
+   (seven purchases instead of twenty), show the stats on the card, price the enchant as a share
+   of the piece's own price. Its question — "how many times the piece's price should a full
+   enchant cost" — was not understood, and the quiz was rejected.
+2. Shown the stats (+3 DEF, +4 HP on the set), the owner said: keep the steps as they are and
+   make the upgrade worth buying.
+3. A bigger percentage alone fades: ×2.0 at +5 is +13–16% XP per Vigor at levels 5–10 and +3% at
+   20, because it still multiplies a level-1 piece. So the lift has to be an item level — the
+   weapon ladder's law. Four strengths went into a quiz with the set's real numbers, each ladder
+   described as opening at player levels 5 … 25. The owner picked 75%.
+4. I built it with those gates: a gate on the purchase, the wearer's level in a piece's stats (a
+   traded or older piece worked at the level its wearer had opened), and a cache refresh on every
+   level-up. The owner read the report and refused the gate: «Хіба ми говорили про те що заточка
+   відкривається згідно рівня? Мені це не подобається … краще зробити просто велику вартість».
+   It had been a table column and a clause in an option, never a question of its own.
+5. Shown the price table and four ladders, the owner asked for variants between the old prices
+   and 100 × level², and of three picked the cheapest, 50 × level². Then: an enchant keeps its
+   100% success, the Master's button goes back to «✨ Покращити», and the word «заточка» leaves
+   every screen as slang.
+
+**The four strengths.** XP per Vigor against today (the estate scaling, no enchant), mean of the
+three classes, the simplified trip (HP budget, no dish healing). The percentage row is shown at
++5; the ladders at the enchant level of the same height as the weapon rung the level opens.
+
+| L | +20% a level | ladder 50% | ladder 75% | ladder 100% | 75% against the forest as solved |
+|---|---|---|---|---|---|
+| 5 | +14% | +6% | +11% | +14% | −7% |
+| 8 | +16% | +6% | +10% | +10% | −19% |
+| 10 | +13% | +13% | +18% | +21% | −21% |
+| 12 | +8% | +8% | +8% | +13% | −28% |
+| 15 | +11% | +11% | +16% | +20% | −19% |
+| 18 | +5% | +5% | +6% | +9% | −23% |
+| 20 | +3% | +7% | +9% | +12% | −33% |
+| 22 | +4% | +8% | +12% | +17% | −30% |
+| 25 | +3% | +7% | +10% | +13% | −24% |
+| 30 | +2% | +6% | +8% | +9% | −13% |
+
+- The forest as solved pays 19–62% more XP per Vigor than today's in this measure — that gap is
+  the estate scaling.
+- The marginal value of each rung of the 75% ladder at the level of its height: +11% / +7% / +5%
+  / +2% / +2%. +4 and +5 buy 31–37% less HP lost per fight and little pace.
+- Past level 20 every creature is outgrown (the roster tops out at №14), and the level gap cuts
+  incoming damage far more than armour can. That is why the late rungs move pace so little.
+
+**A level bought ahead of the player** — what removing the gate exposed. XP per Vigor of the
+75% ladder against today / against the forest as solved, full model:
+
+| L | +1 | +2 | +3 | +4 | +5 |
+|---|---|---|---|---|---|
+| 4 | +12% / −5% | +23% / +4% | +35% / +15% | +51% / +28% | +66% / +41% |
+| 5 | +11% / −7% | +22% / +3% | +35% / +14% | +61% / +36% | +79% / +51% |
+| 6 | +12% / −5% | +23% / +5% | +34% / +15% | +58% / +35% | +69% / +45% |
+| 7 | +12% / −22% | +23% / −14% | +34% / −6% | +53% / +8% | +69% / +19% |
+| 8 | +10% / −23% | +20% / −16% | +33% / −7% | +50% / +5% | +59% / +11% |
+| 10 | +11% / −26% | +18% / −21% | +28% / −14% | +36% / −9% | +44% / −3% |
+| 12 | +6% / −32% | +10% / −29% | +17% / −25% | +27% / −18% | +37% / −12% |
+| 15 | +7% / −23% | +12% / −20% | +15% / −17% | +19% / −14% | +22% / −12% |
+| 20 | +1% / −39% | +3% / −37% | +7% / −35% | +10% / −33% | +11% / −33% |
+| 25 | +3% / −27% | +5% / −26% | +6% / −25% | +8% / −24% | +10% / −22% |
+
+Levels 4–6 are estate T2 and level 7 opens T3, which is why the "against solved" column drops
+there. From level 10 not even +5 beats the solved forest.
+
+**The affordability model** — what a price ladder does with no gate. Day by day:
+- the level reached by each day comes from the days model below;
+- silver in: the three daily jobs at that level (the average of the jobs offered, scaled as
+  `ProgressionMath.questReward` does: 78 a day at level 1, 108 at 10, 123 at 20, 131 at 25) and
+  the King's silver at each decree's level (2,820 over the chain);
+- silver out first: the armour (810 from level 4), the estate's silver steps and the Training
+  Ground;
+- then each enchant level for the WHOLE set as soon as it is affordable. No loot is sold.
+
+The first pass used today's pace. The chosen row was then iterated — the enchant speeds the
+levels, which moves the levels the same days fall on — and converged in two rounds.
+
+| price a piece | set | +1 | +2 | +3 | +4 | +5 | peak against solved |
+|---|---|---|---|---|---|---|---|
+| 40 / 100 / 220 / 450 / 850 (the old table) | 6,640 | L4 | L5 | L5 | L7 | L12 | +15% (L6, +3) |
+| 50 / 200 / 450 / 800 / 1,250 — chosen | 11,000 | L5 | L5 | L6 | L11 | L19 | +15% (L6, +3) |
+| 80 / 200 / 440 / 900 / 1,700 (×2) | 13,280 | L5 | L5 | L6 | L12 | L22 | +15% |
+| 70 / 250 / 550 / 1,000 / 1,700 | 14,280 | L5 | L5 | L7 | L15 | L22 | +5% |
+| 75 / 300 / 675 / 1,200 / 1,875 | 16,500 | L5 | L6 | L8 | L17 | L24 | +5% |
+| 100 / 400 / 900 / 1,600 / 2,500 | 22,000 | L5 | L6 | L10 | L20 | L27 | +5% |
+| 120 / 300 / 660 / 1,350 / 2,550 (×3) | 19,920 | L5 | L6 | L8 | L17 | L26 | — |
+| 200 / 500 / 1,100 / 2,250 / 4,250 (×5) | 33,200 | L5 | L6 | L13 | L24 | L32 | — |
+
+- **The chosen row, iterated:** +1 day 9 and +2 day 17 (both level 5), +3 day 38 (level 7), +4
+  day 76 (level 15), +5 day 122 (level 22). Its peak against the solved forest falls to +5%
+  (level 6, with +2), because +3 now lands on level 7. The owner chose on the first-pass row.
+- Days to L10 / 14 / 19 / 25 / 30 / 40 for that saver: 51 / 70 / 99 / 149 / 209 / 439, against
+  today's 63 / 86 / 119 / 175 / 241 / 474 and the solved forest's 51 / 65 / 88 / 123 / 173 / 385.
+  With the gates (each level bought at 5 / 10 / 15 / 20 / 25) the same model gave
+  57 / 78 / 108 / 158 / 218 / 448.
+- The days model spends levels 5–6 slowly (estate T2 feeds 45 Vigor a day), which is why two
+  enchant levels fit inside level 5. Bought food, job Vigor and decree Vigor are not in it.
+
+**Rebuilding the harness.** A scratch SwiftPM package with copies of `Modules/ROIContent` and
+`Modules/ROISim` as its own targets — the tier-2 recipe above.
+- **`enchantfights`**, the roller. Arguments are armour factors; `--unscaled` fights at T1;
+  `--weapon-lag` holds the weapon one rung behind. It writes one CSV row per factor × player
+  level 1–40 × class × spawnable creature: win, rounds, HP%, Vigor, the player's HP and DEF. It
+  runs 2,000 `.basic` fights a cell, seeded by FNV-1a over `[creature, class, level]`, so every
+  factor faces the same dice. `BalanceSimulator.seed` is internal to `ROISim`, hence the FNV.
+  - The player: `ProgressionMath.baseStats`, the highest weapon rung whose gate is open, and from
+    level 4 the four Forester pieces scaled per stat plus the flat 4-piece bonus.
+  - The creature: authored stats through `CombatMath.scaled` at the estate tier the level opens.
+- **`enchantduels`**, the arena: the same players through `DuelMath.resolveRound`, both sides
+  on a stationary mix, 6,000 duels a cell.
+- **The trip, the days and the affordability**, about 200 lines of Python over the CSVs: the
+  expedition model exactly as it is stated above, and the day-by-day silver model of this section. Food per day is 0 / 45 / 300 / 600 / 900 / 990 / 1200 by tier, reached at
+  levels 1 / 4 / 7 / 10 / 13 / 16 / 19; dishes eaten above the pool heal a quarter of their Vigor.
+- **The spec-block checker:** for every `<!-- generated: roi-content spec … -->` block, re-run
+  the command in the marker and test that the block is still a contiguous excerpt of its output.
+  Three were stale after this change.
+- **Traps met.**
+  - `swift build --build-tests` builds the game target too, so the tests cannot run until the
+    game compiles against a changed DTO.
+  - In zsh `$VAR:content/…` applies a modifier to the variable. Write `"${VAR}:content/…"`.
+  - A factor of 3.1 puts a stat of 5 on 15.5. The probe multiplied by the literal and the game
+    by a derived quotient, which can differ in the last bit. `LadderScale` keeps the numerator and
+    the denominator for that reason, and a test pins the result.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

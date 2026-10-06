@@ -17,38 +17,43 @@
       "priceSilver" : 300
     }
   ],
-  "enchantBudgetFractionPerLevel" : 0.04,
   "enchantCap" : 5,
+  "enchantGrowthShare" : 0.75,
   "enchantSteps" : [
     {
+      "itemLevel" : 5,
       "level" : 1,
       "materialId" : "mat.hide",
       "materialQty" : 4,
-      "silver" : 40
+      "silver" : 50
     },
     {
+      "itemLevel" : 10,
       "level" : 2,
       "materialId" : "mat.hide",
       "materialQty" : 8,
-      "silver" : 100
+      "silver" : 200
     },
     {
+      "itemLevel" : 15,
       "level" : 3,
       "materialId" : "mat.hide",
       "materialQty" : 15,
-      "silver" : 220
-    },
-    {
-      "level" : 4,
-      "materialId" : "mat.hide",
-      "materialQty" : 26,
       "silver" : 450
     },
     {
+      "itemLevel" : 20,
+      "level" : 4,
+      "materialId" : "mat.hide",
+      "materialQty" : 26,
+      "silver" : 800
+    },
+    {
+      "itemLevel" : 25,
       "level" : 5,
       "materialId" : "mat.hide",
       "materialQty" : 42,
-      "silver" : 850
+      "silver" : 1250
     }
   ],
   "repairCostFraction" : 0.5,

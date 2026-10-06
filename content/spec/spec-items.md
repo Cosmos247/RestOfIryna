@@ -65,6 +65,12 @@ Master's enchant, capped at `1 + 4% × 5` = **+20% of the piece's own budget**.
 So the shape of a level-40 player is: a fully laddered weapon, four pieces of
 starting armour, and three empty slots.
 
+> *Amended 2026-10-06 by §11.* The armour climbs now. The Master's enchant
+> became its ladder: five levels, each budgeting the piece at an item level
+> (5 … 25) with 75% of the curve's growth, and gated by its price alone. A
+> fully enchanted Forester piece is ×4.6 its authored stats, where it was ×1.2.
+> The paragraphs above describe the game until that date.
+
 ---
 
 ## 3. What that does to the rebalance
@@ -74,19 +80,31 @@ character** — level-appropriate gear in every weighted slot. That character is
 not one a player can assemble. The gap is printed rather than argued:
 
 <!-- generated: roi-content spec items --levels 1,5,10,15,20,25,30,40 -->
-**The obtainable kit against the on-curve kit** — budget points, best item per slot
+**The obtainable kit against the on-curve kit** — budget points, best item per slot.
+`fully enchanted` puts the armour at the enchant's cap, which no level gates —
+only its price (`spec-items.md` §11)
 
 | L | on curve | obtainable | of curve | fully enchanted | of curve |
 |---|---|---|---|---|---|
-| 1 | 75 | 60 | 81% | 72 | 97% |
-| 5 | 135 | 74 | 55% | 89 | 66% |
-| 10 | 210 | 92 | 44% | 110 | 52% |
-| 15 | 285 | 109 | 38% | 131 | 46% |
-| 20 | 360 | 126 | 35% | 151 | 42% |
-| 25 | 435 | 142 | 33% | 171 | 39% |
-| 30 | 510 | 159 | 31% | 191 | 37% |
-| 40 | 660 | 192 | 29% | 231 | 35% |
+| 1 | 75 | 60 | 81% | 196 | 262% |
+| 5 | 135 | 74 | 55% | 210 | 156% |
+| 10 | 210 | 92 | 44% | 228 | 108% |
+| 15 | 285 | 109 | 38% | 245 | 86% |
+| 20 | 360 | 126 | 35% | 262 | 73% |
+| 25 | 435 | 142 | 33% | 278 | 64% |
+| 30 | 510 | 159 | 31% | 295 | 58% |
+| 40 | 660 | 192 | 29% | 328 | 50% |
 <!-- /generated -->
+
+> *Amended 2026-10-06 by §11.* The table above is refreshed. `obtainable` is
+> what it was — the kit as bought. `fully enchanted` changed twice over: it
+> used to multiply the whole kit by 1.2, the weapon included, although the
+> bench has never taken a weapon; it now puts the ARMOUR at the enchant's cap,
+> which is ×4.6 a piece. No level gates the enchant, so the column is not what
+> a player of level L has — it is what the price is holding back. At level 1 a
+> full enchant would be 2.6 times the curve; from level 20 it is three quarters
+> of it and falling. The paragraphs below were written against the old table
+> and are kept as the record of why the ladder was needed.
 
 **The game starts on curve and leaves it immediately.** At level 1 a fully
 enchanted kit is 97% of what the model assumes. It falls with every level after
@@ -216,6 +234,16 @@ edit later:
 > `ReferenceCharacter.ladderRung` became `staleGearOffset`. A gear ladder decided after this
 > date starts from §9, not from this paragraph.
 
+> **Amended 2026-10-06 by §11.** The armour's ladder was built — through the Master's enchant,
+> not through `weapon_upgrades.json`. The bench was already an upgrade flow with a screen, a
+> price and a per-row level that travels with the piece, which is everything this section said
+> still had to be built. The lift is derived from the budget curve (`EnchantLadderRules.scale`)
+> rather than authored rung by rung, so a piece keeps its own stat mix. Unlike the weapon's, it
+> has no player-level gate: the owner had it priced instead (§11.1). "A later set is a new
+> ladder beside it" is now a question §11.8 leaves open: an armour piece authored at or above an
+> enchant level's item level gains nothing from that level, and the validator refuses it until
+> the question is answered.
+
 ### What A leaves behind, stated rather than discovered
 
 Armour laddered to curve fills `main_hand` (3.0) + the four armour slots (4.8) =
@@ -253,6 +281,12 @@ demands both exist. A set id derives its own name key the same way.
 **Nothing gets a flat bonus.** The rule that cost the most to learn: the same
 +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. Enchant scales the
 item's own stats; every Super stance is a multiplier of the character's own stat.
+
+> *Amended 2026-10-06 by §11.* The enchant no longer scales the item by a fixed
+> percentage: a level budgets the piece at an item level. The rule above stands
+> — nothing flat — and §11 adds the lesson a percentage taught: +4% of a
+> level-1 piece is less than one point of any stat, so a share of a small thing
+> can fail as completely as a flat number, in the opposite direction.
 
 ### Two holes in the set frame, both real
 
@@ -913,3 +947,349 @@ with the number they checked. Every rule has its failing case in `DurabilityTest
   73568a2a → 41455b84.
 - `spec economy` re-run; its one moved row («the Master's armour», 485 → 810) is refreshed in
   `spec-economy.md` §4.
+
+---
+
+## 11. The Master's enchant is the armour's ladder
+
+**Status: APPROVED and APPLIED 2026-10-06.** The owner's decisions are in §11.1, each taken over a
+quiz with the Forester set's real numbers as the sample. The fight and pace figures come from a
+scratch probe described in §11.6. The copy beyond the picked card (§11.4) was written with the
+build and goes to the owner with the report.
+
+### 11.1 What was asked and decided
+
+On 2026-10-05 the owner asked how the armour enchant works, what it does to the game and how to
+improve it. It worked as Phase 6 left it: a level multiplied the piece's own stats by
+`1 + 4% × level`, to ×1.20 at +5, each stat rounded on its own.
+
+**What that gave on the only armour in the game** — the Forester set, item level 1, all four
+pieces at the same level (a script over `items.json` and `master.json`, with the game's rounding):
+
+| level | paid so far | what changed |
+|---|---|---|
+| +1 | 160 🪙, 16 hides | nothing |
+| +2 | 560 🪙, 48 hides | nothing |
+| +3 | 1,440 🪙, 108 hides | +2 HP |
+| +4 | 3,240 🪙, 212 hides | +1 DEF, +3 HP |
+| +5 | 6,640 🪙, 380 hides | +3 DEF, +4 HP |
+
+- **Thirteen of the twenty purchases changed no number.** The dearest thing the Master sold — the
+  jerkin's +4 → +5, at 850 🪙 and 42 hides — was one of them. Crit and dodge, 1 on a piece, never
+  moved at any level.
+- **The cause is the size of the piece, not the rounding.** 4% of an item-level-1 piece is
+  0.27–0.48 budget points, and the cheapest whole stat, 1 HP, costs 0.45. No rounding rule fixes
+  that inside the budget.
+- **The price was never the percentage's.** The step table (40 … 850 🪙, 4 … 42 hides) and the
+  bench's hint date from 2026-05-22, when +5 was a flat +8 DEF a piece. Phase 6 replaced the effect
+  and kept both.
+- **No screen said so.** The card showed «+0 → +1» and a price; the banner read «+4% до кожного
+  стата предмета» over a piece that had not changed.
+- **A full set was worth less than its own free set bonus** (+2 DEF, +6 HP, +2 dodge), at 42 times
+  the silver per budget point of the armour itself.
+
+Decided by the owner on 2026-10-05/06, in this order:
+- **Keep the five steps, and make the level worth buying.** A first proposal — keep the 4%, sell
+  only the levels that change a number, price the enchant as a share of the piece's own price —
+  was turned down in those words.
+- **The enchant is the armour's ladder, at 75% of the growth** — the weapon ladder's share
+  (§9.1). Chosen over 50%, over 100%, and over a plain +20% of the piece's own stats a level, all
+  four measured (§11.6).
+- **No player level gates it.** The ladder was first built with a gate a level (5 / 10 / 15 / 20
+  / 25, the weapon's rungs), and that was in the option the owner had picked. Reading the report,
+  the owner refused it: «замість обмеження рівнем … краще зробити просто велику вартість». The
+  gates came out the same day, with everything they had needed — the wearer's level in a piece's
+  stats, and a refresh of the cached bonuses on a level-up.
+- **The price is the gate: 50 × level² silver a piece** — 50 / 200 / 450 / 800 / 1,250, 11,000
+  for a set — with the hides unchanged. Picked from three ladders between the old prices (6,640 a
+  set) and 100 × level² (22,000), each shown with the earliest level a saving player could reach
+  every step at.
+- **An enchant never fails.** The owner asked; there is no roll anywhere in it.
+- **The card is the mockup the owner picked**, less its player-level line (§11.4).
+- **The player-facing word is «покращення», never «заточка»** — slang, the owner's word for it.
+  The button, the title and every line say «покращити» / «покращення» / «покращено».
+
+### 11.2 The rule
+
+- **Level.** Enchant level N budgets the piece at that level's `itemLevel` — a per-level field in
+  `master.json` → `enchantSteps`, the weapon rung's own. Shipped: 5, 10, 15, 20, 25, where the
+  weapon's rungs t2–t6 sit.
+- **Stats.** Every stat of the piece × (own + share × (target − own)) ÷ own. `own` and `target`
+  are the budget curve at the piece's item level and at the level's; `share` is `master.json` →
+  `enchantGrowthShare`, 0.75. Multiplied first and divided last, each stat rounded half away from
+  zero.
+  - `EnchantLadderRules.scale` is the one implementation. The game, the validator and
+    `spec gates` all call it, so the table in §11.3 is the game's arithmetic.
+  - It is derived, never typed: retune the curve or the share and the ladder follows.
+  - The division comes last because level 3 is ×3.1 and puts a stat of 5 exactly on 15.5.
+    Multiplying by the quotient can land a hair under and hand back 15.
+- **Gate.** The price, and nothing else. A piece grants its enchant to whoever wears it, at any
+  level, so a strong player can dress a new one — by trading the piece, or the silver.
+  - This is where the armour parts from the weapon, whose rungs open by the player level
+    because the estate once put the item-level-40 sword in hand at level 13 (§9.1). Here the
+    owner chose the price to do that work.
+  - **So the price table is a balance number, not a fee.** `EnchantLadderTests` pins it, and
+    `master.enchant_cost_drops` watches its shape: a price that falls opens the level above it
+    early.
+- **Bound.** With a share of 1 or less, a piece at enchant level N never outgrows the on-curve
+  item of that level's item level. Nothing bounds it against its WEARER's level; §3's refreshed
+  table prints what that means (a full enchant on a level-1 player is 2.6 times the curve).
+  Phase 6's ceiling — top rarity × a full enchant ≤ ×1.75 a common of the same level — is measured
+  against the on-curve common of the level's item level, where the rarity alone is ×1.45.
+- **What stays.** Nothing gets a flat bonus. What changed is the lesson beside that rule: a fixed
+  percentage of a small thing fails as completely as a flat number, in the opposite direction.
+
+### 11.3 The ladder
+
+<!-- generated: roi-content spec gates -->
+**Armour** (`master.json` → `enchantSteps`) — the Master's enchant; NO level gate, the price
+is what holds a level back (`spec-items.md` §11). A level budgets the piece at an item level, at 75%
+of the curve's growth; `set so far` is the silver all the armour pieces cost up to that level
+
+| enchant | item level | × own stats | price a piece | set so far | `gear.forester_hood` 🛡/❤️/💥/💨 | `gear.forester_jerkin` 🛡/❤️/💥/💨 | `gear.forester_breeches` 🛡/❤️/💥/💨 | `gear.forester_boots` 🛡/❤️/💥/💨 | all pieces |
+|---|---|---|---|---|---|---|---|---|---|
+| +0 | own | ×1 | — | — | 3 / 4 / 1 / 1 | 4 / 6 / 1 / 1 | 3 / 5 / 1 / 1 | 2 / 3 / 1 / 0 | 12 / 18 / 4 / 3 |
+| +1 | 5 | ×1.6 | 50 🪙 + 4× `mat.hide` | 200 🪙 | 5 / 6 / 2 / 2 | 6 / 10 / 2 / 2 | 5 / 8 / 2 / 2 | 3 / 5 / 2 / 0 | 19 / 29 / 8 / 6 |
+| +2 | 10 | ×2.35 | 200 🪙 + 8× `mat.hide` | 1000 🪙 | 7 / 9 / 2 / 2 | 9 / 14 / 2 / 2 | 7 / 12 / 2 / 2 | 5 / 7 / 2 / 0 | 28 / 42 / 8 / 6 |
+| +3 | 15 | ×3.1 | 450 🪙 + 15× `mat.hide` | 2800 🪙 | 9 / 12 / 3 / 3 | 12 / 19 / 3 / 3 | 9 / 16 / 3 / 3 | 6 / 9 / 3 / 0 | 36 / 56 / 12 / 9 |
+| +4 | 20 | ×3.85 | 800 🪙 + 26× `mat.hide` | 6000 🪙 | 12 / 15 / 4 / 4 | 15 / 23 / 4 / 4 | 12 / 19 / 4 / 4 | 8 / 12 / 4 / 0 | 47 / 69 / 16 / 12 |
+| +5 | 25 | ×4.6 | 1250 🪙 + 42× `mat.hide` | 11000 🪙 | 14 / 18 / 5 / 5 | 18 / 28 / 5 / 5 | 14 / 23 / 5 / 5 | 9 / 14 / 5 / 0 | 55 / 83 / 20 / 15 |
+<!-- /generated -->
+
+`price a piece` is one piece; a set is four. `set so far` is what the whole set has cost in silver
+by that level.
+
+### 11.4 The screens
+
+The card as built (a warrior with 540 🪙 and 12 hides in the bag, the jerkin at +1):
+
+```
+✨ Покращення броні
+
+🦺 Жилет лісника +1 → +2
+   +6 → +9  (↑+3) 🛡 Захист
+   +10 → +14  (↑+4) ❤️ Здоров'я
+   +2 → +2 💥 Крит
+   +2 → +2 💨 Ухилення
+   ✅ 🪙 Срібло  (540/200)
+   ✅ 8× 🟫 Шкура  (12/8)
+```
+
+It is the mockup the owner picked, with three differences that followed from later decisions:
+the «✅ Рівень гравця (10/10)» line went with the gates, the silver line reads the new price, and
+the title is «Покращення броні» where the mockup said «Заточка броні».
+
+- **The stat lines** are the weapon reforge's own sentence (`GearStatLines.deltas`). One ladder is
+  shown one way.
+- **A refusal is a modal** and leaves the card standing, as it has since 2026-10-05.
+- **The banner names what the level added**, in the piece's own numbers: «✅ 🦺 Жилет лісника —
+  покращено до +2: +3 🛡 Захист · +4 ❤️ Здоров'я». It replaces «+N% до кожного стата предмета».
+- **The word is «покращення», and «заточка» is on no screen.** The owner: it is slang. The mockup
+  the owner picked had carried it, and I had spread it to the button, the title and four more
+  lines; all of that went back. Two lines that had said it BEFORE this change went with it — the
+  bag card's «✨ Заточка: +N» is «✨ Покращення: +N», and the banner's «заточено до» is «покращено
+  до». The salvage card's «Зачарування +N буде втрачено» and the Master's «зачарують варте того»
+  are as they were.
+- **The hint is new:** «Майстер покращує броню щабель за щаблем: кожен рівень помітно додає речі
+  сили й коштує дорожче за попередній. Найвищий — +5.» The old one described the flat mechanic of
+  May («… Рівні 4-5 дають більший приріст»), and the three per-class "focus" keys went with it.
+
+### 11.5 What changes for players already playing
+
+- **No migration and no refund.** `enchant_level` is the column it always was. A level bought at
+  the old price was bought for less than it costs now.
+- **Every enchanted piece is stronger from the restart**, at the level it already carries. A
+  hood at +3 granted 🛡3 ❤️4 and grants 🛡9 ❤️12. `EquipmentService.backfillGearBonuses` re-derives
+  every player's cached bonuses at boot, as it does for §9 and §10.
+- **Tell the testers.** The game announces nothing, and this lands with the stronger forest
+  (`spec-bestiary.md` §11), which it partly answers. What they already hold was not read: the
+  Pi's rows could not be queried from this session.
+
+### 11.6 Measured, not reproducible from `roi-content` yet
+
+**The harness** was a scratch package holding copies of `Modules/ROIContent` and `Modules/ROISim`,
+the recipe `.memory/rebalance.md` records for the tier-2 research:
+- **The fights:** the game's own `FightSimulator`, the `.basic` profile, 2,000 fights a cell, one
+  seed per (creature, class, level) shared by every variant.
+- **The player:** class base stats at level L, the class weapon at the rung its level opens, and
+  from level 4 the four Forester pieces with their 4-piece bonus. The armour's own stats were
+  lifted by the variant's factor with the game's per-stat rounding.
+- **The creature:** every spawnable creature, at the strength of the estate tier the player's
+  level opens (`CombatMath.scaled`).
+- **The trip:** the expedition model of `.memory/rebalance.md` — manor to km D and back, 40%
+  encounters going in and 52% coming home, a spawn-weighted pick per km, the deepest trip whose mean
+  HP loss stays within 90% of the bar with a 90% chance of getting home, and the best XP per Vigor
+  among those.
+- **Calibration:** the full model reproduced the recorded cost of the estate scaling. Its days
+  with the scaling against without run ×1.23–1.42 by milestone, where the 2026-10-03 record has
+  ×1.22–1.39. Its absolute days run 3–15% under that record up to level 30 and within 2% of it at
+  level 40, because it carries the nine-rung weapon the record predates.
+
+**The four strengths.** XP per Vigor against today's game — the estate scaling, no enchant. The
+trip here is the simplified one: the HP budget without dish healing. The three ladders are shown
+at the enchant level of the same height as the weapon rung the player's level opens (+1 at 5 … +5
+at 25), which is how they were put to the owner.
+
+| variant | set at +5 🛡/❤️/💥/💨 | L5 | L10 | L15 | L20 | L25 |
+|---|---|---|---|---|---|---|
+| +20% of own stats a level (shown at +5) | 24 / 36 / 8 / 6 | +14% | +13% | +11% | +3% | +3% |
+| ladder, 50% of the growth | 41 / 61 / 12 / 9 | +6% | +13% | +11% | +7% | +7% |
+| **ladder, 75% — chosen** | **55 / 83 / 20 / 15** | **+11%** | **+18%** | **+16%** | **+9%** | **+10%** |
+| ladder, 100% | 69 / 104 / 24 / 18 | +14% | +21% | +20% | +12% | +13% |
+
+- **A percentage of the piece fades with the player's level,** because it multiplies a level-1
+  piece. That is why the lift became an item level.
+- **A yardstick from the same model:** the newest weapon rung against one rung behind is worth
+  +17% / +18% / +17% / +4% / +9% at levels 5 / 10 / 15 / 20 / 25. A level of the chosen ladder
+  across the set weighs about what a weapon rung does.
+- **The figures are coarse.** The trip's depth moves in whole kilometres, so a row can step by
+  three points where its neighbour does not move.
+
+**What a level is worth ahead of the player** — the reason the price matters. XP per Vigor
+against the forest as it was solved (no estate scaling, no enchant), full model:
+
+| player level | +1 | +2 | +3 | +4 | +5 |
+|---|---|---|---|---|---|
+| 5 | −7% | +3% | +14% | +36% | +51% |
+| 7 | −22% | −14% | −6% | +8% | +19% |
+| 10 | −26% | −21% | −14% | −9% | −3% |
+| 15 | −23% | −20% | −17% | −14% | −12% |
+| 20 | −39% | −37% | −35% | −33% | −33% |
+| 25 | −27% | −26% | −25% | −24% | −22% |
+
+From level 10 not even the full enchant makes the forest easier than it was solved to be — the
+estate scaling took more than the armour returns. Below about level 10 a high level bought early
+does, and only its price stands in the way.
+
+**The price ladders.** The earliest level each step can be bought for the WHOLE set by a player
+who saves every coin of the three daily jobs and the King's silver for it, after the armour and
+the mandatory ladders, selling no loot. First estimate, on today's pace:
+
+| price a piece | set | +1 | +2 | +3 | +4 | +5 |
+|---|---|---|---|---|---|---|
+| 40 / 100 / 220 / 450 / 850 (the old table) | 6,640 | 4 | 5 | 5 | 7 | 12 |
+| **50 / 200 / 450 / 800 / 1,250 — chosen** | **11,000** | **5** | **5** | **6** | **11** | **19** |
+| 70 / 250 / 550 / 1,000 / 1,700 | 14,280 | 5 | 5 | 7 | 15 | 22 |
+| 75 / 300 / 675 / 1,200 / 1,875 | 16,500 | 5 | 6 | 8 | 17 | 24 |
+| 100 / 400 / 900 / 1,600 / 2,500 | 22,000 | 5 | 6 | 10 | 20 | 27 |
+
+- **The chosen row, re-run with the pace the enchant itself gives:** +1 and +2 at level 5 (days
+  9 and 17), +3 at level 7 (day 38), +4 at level 15 (day 76), +5 at level 22 (day 122). The days
+  barely move; the levels come later than the first estimate because the player is levelling
+  faster. These are the earliest possible — a player who also buys food or a weapon rung is later.
+- **Along that path the forest is at most 5% easier than it was solved to be** (level 6, with
+  +2), and harder from level 7 on.
+
+**Days to a level** — the full model, with dish healing and the estate's food per day; mean of the
+three classes:
+
+| | L10 | L14 | L19 | L25 | L30 | L40 |
+|---|---|---|---|---|---|---|
+| the forest as solved: no estate scaling, no enchant | 51 | 65 | 88 | 123 | 173 | 385 |
+| today: the estate scaling, no enchant | 63 | 86 | 119 | 175 | 241 | 474 |
+| **the earliest saver at the chosen prices** | **51** | **70** | **99** | **149** | **209** | **439** |
+
+- **A player who buys every level as early as it can be bought is 13–18% faster than today** up
+  to level 30, and 7% at level 40.
+- **And reaches level 10 when the forest as solved would have let them, then falls behind it** by
+  8% at level 14 and 21% at level 25. So the fastest path through the ladder does not outrun the
+  forest's design, which is why it ships without the bestiary re-solve §3 pairs with a gear ladder.
+  A player handed a finished set at level 5 does outrun it, until about level 10.
+
+**A fight at the edge of a trip** — HP lost as a share of the bar, warrior / archer / mage, every
+cell a 100% win:
+
+| player level | creature | no enchant | with the enchant |
+|---|---|---|---|
+| 5 | Скажена лисиця | 17.2% / 20.2% / 23.0% | +1: 14.5% / 16.9% / 19.0% |
+| 10 | Зубр | 21.8% / 26.0% / 27.0% | +2: 17.3% / 19.9% / 20.2% |
+| 15 | Вепр-сікач | 21.9% / 25.4% / 28.1% | +3: 16.5% / 18.0% / 19.8% |
+| 20 | Тур | 15.0% / 18.1% / 19.2% | +4: 10.4% / 12.1% / 12.6% |
+| 25 | Скажений ведмідь | 10.9% / 12.7% / 14.3% | +5: 7.5% / 8.2% / 9.0% |
+
+**The arena** — the same players through `DuelMath.resolveRound`, both sides on the shipped
+equilibrium's mix (50% Attack, 36% Defend, 14% technique), 6,000 duels a cell, a draw as half.
+Both fighters wear the same enchant, the one in the fight table above:
+
+| level | warrior – archer | warrior – mage | archer – mage | warrior mirror, rounds |
+|---|---|---|---|---|
+| 10 | 71% → 69% | 73% → 71% | 53% → 52% | 11.4 → 14.0 |
+| 15 | 66% → 64% | 74% → 70% | 59% → 58% | 10.0 → 13.0 |
+| 20 | 69% → 68% | 73% → 72% | 54% → 55% | 9.0 → 12.2 |
+| 25 | 69% → 66% | 73% → 70% | 57% → 55% | 8.4 → 11.8 |
+
+Between equally enchanted fighters the class gap narrows by one to four points — the same armour
+is a larger share of a frailer class — and a duel lasts about three rounds longer. A duel between
+an enchanted fighter and a bare one was not measured, and with no gate it can happen at any level.
+
+### 11.7 Applied 2026-10-06 — what the implementation touched
+
+**Content.**
+- `master.json`: `enchantGrowthShare` 0.75 in place of `enchantBudgetFractionPerLevel`, an
+  `itemLevel` on each of the five steps, and the silver 50 / 200 / 450 / 800 / 1,250. The hides did
+  not move.
+- `manifest.json`: schema v19.
+- Locales, uk + en: the copy of §11.4. Four keys are gone — the three class "focus" lines and the
+  percentage phrase — the hint is new, and in uk two lines lost the word «заточка».
+
+**Code.**
+- `EnchantLadderRules` and `LadderScale` in `ROIContent`: the lift.
+- `MasterCatalog.enchantScale(level:for:)`.
+- `EquipmentService.stats(ofItem:tier:enchantLevel:)`, which `nominalStats` and the Master's card
+  both ask.
+- `MasterService.enchant` returns the piece's stats before and after, for the banner.
+- `CapitalController`: the list's hint, the card and the banner.
+- `SpecTables`: `spec gates` prints the armour ladder last; `spec items` prints the kit fully
+  enchanted beside the kit as bought, the armour only; `spec sets` adds the bonus against the
+  members as they are enchanted; `spec economy` counts armour slots where it counted filled ones.
+- The digest hashes the share and each step's item level, and replays every armour piece at every
+  level from −1 past the cap.
+
+**The validator rules**, each with its failing case in `EnchantLadderTests` or
+`EstateAndNPCCatalogTests`:
+- `master.enchant_no_effect` — error, a share of 0;
+- `master.enchant_growth_share` — error, a share above 1;
+- `master.enchant_item_level` — error, below 1;
+- `master.enchant_item_level_not_ascending` — error;
+- `master.enchant_cost_drops` — warning, as before; it now guards the ladder's only gate;
+- `master.enchant_level_changes_nothing` — error: every level has to change a number on every
+  armour piece. It replaces a rule that asked only whether the percentage was above zero, which
+  it was while thirteen levels did nothing.
+
+`master.enchant_runaway` is gone with the percentage it bounded, and `rarity.ceiling_exceeded`
+measures the ladder (§11.2).
+
+**Built and taken out the same day:** the per-level player gate (`requiredPlayerLevel`, four
+validator rules, the gate line on the card and its refusal), the wearer's level in a piece's
+stats, and `refreshAfterLevelUp` at the five `grantXP` sites. None of it is in the tree.
+
+**Verified.**
+- 395 tests; `validate --strict` 0 errors, 0 warnings; `simulate --strict` 0 broken bands and the
+  same 18 warnings as before, because the sweep does not read the enchant.
+- `--content-digest`: `records` fefe14b940998631 → 9303bb274d4517d8. `tuning`, `spawns`, `quests`
+  and `king` are unchanged. Content hash 41455b84 → be1102fc.
+- The digest was mutation-tested in a copy of the bundle: the share, an item level, a price and
+  the budget curve each move `records`.
+- `spec gates` prints the approved table from the game's arithmetic (§11.3), and
+  `EnchantLadderTests` pins it and the prices.
+- Three generated blocks were stale and are refreshed: §3's coverage table here,
+  `spec-sets.md` §2 and one row of `spec-economy.md` §4.
+
+### 11.8 Left open
+
+- **Armour above item level 1.** The ladder's levels are absolute item levels, so a piece
+  authored at item level 20 would gain nothing from +1…+4. The validator refuses such a piece
+  (`master.enchant_level_changes_nothing`) until the class sets decide how their ranks and the
+  enchant share one axis (`.memory/class-sets-concept.md`).
+- **The ladder stops at +5, item level 25**, where the authored band stops. The weapon runs to 40.
+- **Wealth is power now, and it moves.** With no gate, a finished set or the silver for one can be
+  handed to a new player, for whom the forest is then up to half again as generous as it was
+  solved to be until about level 10. The owner was told and chose the price. If it shows in play,
+  the levers are the price, or binding an enchanted piece to its owner.
+- **The set bonus is flat and now rots**, as §5 predicted: 23% of the set unenchanted and 5% at
+  +5 (`spec-sets.md` §2). The set ceiling still reads the members' authored budget.
+- **The obtainable kit depends on what the player paid**, which `spec items` can no longer state
+  per level. The tier-2 stat lines were solved against the unenchanted column (§9.10); §11.6
+  measured the fights directly.
+- **A +5 piece is still a 50-durability piece** that loses 1 from its maximum at every repair. A
+  «Відновити» at the Master — the maximum restored, the enchant kept — was raised and not asked.

@@ -25,8 +25,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
   - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
-  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3
-  - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept
+  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3; §11 (2026-10-06) is the Master's enchant as the armour's ladder — the gear ladder of §4, built, and gated by its price where the weapon's is gated by level
+  - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept; §2's amendment and second table (2026-10-06): the members climb by the enchant now, so the Forester's flat bonus rots
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
@@ -47,7 +47,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   makes armour.
 - **Next actions.**
   - **The owner deploys everything committed since `8ae6772` in one restart** (all of it
-    NOT deployed, content schema v18 against the Pi's v14):
+    NOT deployed, content schema v19 against the Pi's v14):
     - tier 2 of the bestiary (`f03d502`);
     - the estate scaling (`4be2758`): creature HP and ATK +10% per estate tier, one migration;
     - the arena in simultaneous rounds (`cad61c3`) and as a cycle of three (`f0c1749`);
@@ -60,15 +60,19 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - «💛 Допомога грі» in Settings (10-04, `b0c9d80`; Swift and locale);
     - the Master's enchant draws from the bag alone (10-05, `4fe5b7a`; Swift and locale);
     - durability is the item's own, the Forester set at 50 and its prices ×5/3 (10-05,
-      `bf15669`, `spec-items.md` §10; content schema v18, one migration).
+      `bf15669`, `spec-items.md` §10; content schema v18, one migration);
+    - the Master's enchant is the armour's ladder (10-06, *uncommitted*, `spec-items.md` §11;
+      content schema v19, no migration): a level budgets the piece at item level 5 … 25, and
+      its price — 50 × level² silver a piece — is its only gate.
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`), the durability one
     (`RaiseArmorDurability`, +20 on every Forester piece). The digests to match and the tables to
     verify are in `Prompt.md`. The testers should hear first — the game announces neither the
-    stronger forest, nor the weapon clamp, nor the dearer and sturdier armour.
-  - Then the first `fight_log` rows, and a human walking the screens. Twelve blocks head
-    `TODO.md`'s walk list and wait for their deploy — the durability, enchant, support-button,
+    stronger forest, nor the weapon clamp, nor the dearer and sturdier armour, nor the enchant
+    that now makes it grow.
+  - Then the first `fight_log` rows, and a human walking the screens. Thirteen blocks head
+    `TODO.md`'s walk list and wait for their deploy — the armour-ladder, durability, enchant, support-button,
     task-ready, Vigor-reward, tarot, weapon, quest-board, two arena, estate and tier-2 blocks; the
     arena ones need two accounts.
   - **Open threads**, all in `TODO.md` → "Open, decided but not done":
@@ -83,10 +87,16 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
       the target roster;
     - from the 10-05 durability change: the repair price of armour the Master does not sell
       (`?? 30`), `/reload` leaving the cached gear bonuses stale, and salvage of a piece that
-      never wears.
+      never wears;
+    - from the 10-06 armour ladder: armour above item level 1 has no ladder yet (the validator
+      refuses it), the ladder stops at +5 / item level 25, its price is its only gate (so a
+      finished set can be handed to a new player), the Forester's flat set bonus now rots, and
+      what the testers already enchanted is not known.
   - **Parked: the class sets** ([class-sets-concept.md](class-sets-concept.md)). The owner asked
     for the concept on 10-05 and said «ми до цього повернемось» without answering its four forks.
-    It is item 1 of the post-rebalance package (the gear ladder) in class form.
+    It was the gear ladder in class form; since 10-06 the armour has a ladder (the enchant,
+    gated by price, not level), so the concept's ranks and the enchant share an axis — its top
+    note says what that changes.
 - **State of the deployment: `Prompt.md`.** That file is the session primer and the only
   place the current commit, digest baseline and next action are kept in sync. **The
   surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
@@ -103,7 +113,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   entry (`9ab349c`) and the 10-04 sync pass, then the tester-driven entries of 10-04/05 (the
   tarot, the Vigor reward, the task-ready notice, the support button, the enchant), the 10-05
   sync pass, the 10-05 durability entry (the first of the day's gear work), and the class-sets
-  concept with the second 10-05 sync pass.
+  concept with the second 10-05 sync pass, and the 10-06 armour-ladder entry.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
@@ -115,7 +125,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   rounds of variants (v1–v3, every other estate tier, a rung every five levels at
   100/75/50%), the probe's rebuild recipe, and the path to each decision. Since 2026-10-04 also
   the tarot's Vigor multipliers, measured: why −25% rounded away to nothing, both cost tables and
-  the Hanged Man decision.
+  the Hanged Man decision. Since 2026-10-06 the armour enchant, measured: why a percentage of a
+  level-1 piece gave nothing, the path to the ladder and from a level gate to a price, the grids
+  (four strengths, a level bought ahead of the player, five price ladders) and how to rebuild the
+  probe.
 - **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
   story behind each one lives here or in the auto-memory bank. See the auto-memory
   `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
@@ -132,7 +145,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 92 at one line each, so a selection copied into this file is the
+already carries all 94 at one line each, so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

@@ -151,8 +151,14 @@ forever safe: respect the budget and no stat's PERCENTAGE can drift.
   it opens at (`spec-items.md` §9). Before that, five rungs sat at 1/10/20/30/40.
 - **Rarity decouples budget from value** (×1.45 against ×16 at the top). Tying
   them makes selling a legendary the largest silver faucet in the game.
-- **Enchant is a percentage of the item's own budget**, never flat points: the
-  same +32 DEF is 267% of a level-1 chest and 14% of a level-40 one.
+- **An enchant level budgets the armour piece at an item level** (2026-10-06,
+  `spec-items.md` §11) — the armour's ladder, lifted by `EnchantLadderRules.scale`
+  from the budget curve and gated by its PRICE alone (no player level; the
+  owner's call, so `master.json` → `enchantSteps[].silver` is a balance number).
+  Never flat points: the
+  same +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. And never a
+  fixed percentage of the piece either, which it was from Phase 6: 4% of a
+  level-1 piece is under one point of any stat, so most levels changed nothing.
 - **Set bonuses are capped against their members' combined budget**, because a
   set bonus is a third power axis bought with slot freedom.
 - **The reference-character check** in `--content-digest` rebuilds the design's

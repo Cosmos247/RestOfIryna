@@ -5,6 +5,29 @@ for higher-level players ("just the concept — show how you see their stats and
 read this proposal, did not answer the four forks below, and said «Запамʼятай це на майбутнє, ми
 до цього повернемось». Pick it up from the forks.
 
+**Read this first — the armour got a ladder on 2026-10-06** (`content/spec/spec-items.md` §11),
+after this concept was written, and four things below no longer stand as stated:
+- **The Forester is not "the starter, levels 1–9".** The Master's enchant lifts it to item level
+  25 at +5 (🛡55 ❤️83 💥20 💨15 for the set), by the weapon ladder's law at 75% of the growth. A
+  class piece of rank I (item level 10) now competes with a Forester piece at +2.
+- **The owner gates armour by PRICE, not by player level.** A gate a level was built with that
+  ladder and refused: «замість обмеження рівнем … краще зробити просто велику вартість». §1's
+  "appears at L10, reforged at L20 / L30 / L40" and §4's "the rank's level gates it" are that
+  same level gate. Expect the question again, and lead with the price a rank would cost.
+- **Ranks and the enchant are one axis.** Both raise a piece's item level. A class set needs one
+  of: its own enchant steps past item level 25, ranks INSTEAD of an enchant, or ranks that are
+  enchant levels under another name. The validator forces the choice:
+  `master.enchant_level_changes_nothing` refuses armour authored at or above an enchant level's
+  item level.
+- **§3's fight table compares against the unenchanted Forester.** Against a Forester set at +4
+  the class set's lead is its class profile, the off-hand and the set multiplier — not the whole
+  +65–71%.
+
+What still stands: the class profiles, the off-hand, the set multiplier on the set's own
+members, the commission's shape and the forks on structure, off-hand and materials. The
+Forester's flat set bonus now rots as its members are enchanted (`spec-sets.md` §2), which makes
+the multiplier form more urgent, not less.
+
 **It is not a spec.** Every number below came from a scratch script built from the formulas in
 §6. When this becomes `content/spec/…`, the numbers must be printed by `roi-content spec`, never
 typed — `CLAUDE.md` → "Content is specified before it is authored". Re-derive them then: the

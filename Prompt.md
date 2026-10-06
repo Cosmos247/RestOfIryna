@@ -29,26 +29,32 @@ What is in flight is **fixing what playing the deployed build reveals**, plus th
 occasional small feature the play surfaces a need for. Every defect so far came from
 someone PLAYING; none from a test.
 
-**Gear work has begun (2026-10-05).** It has two parts so far:
+**Gear work has begun (2026-10-05).** It has three parts so far:
 - **Built:** durability became each item's own (`bf15669`).
+- **Built:** the armour climbs by the Master's enchant (2026-10-06, *uncommitted*,
+  `spec-items.md` §11) — five levels at the weapon ladder's 75%, gated by their price alone.
 - **Parked:** class sets, as a concept only (`.memory/class-sets-concept.md`).
 
-Both lead toward the post-rebalance package of `spec-items.md` §3. The gear ladder and the
-bestiary re-solve ship together (auto-memory `project-post-rebalance-package`).
+All three lead toward the post-rebalance package of `spec-items.md` §3. The armour's ladder is
+that package's first item, and it shipped WITHOUT the bestiary re-solve it was paired with:
+at the chosen prices the fastest saver never outruns the forest as solved, because the estate
+scaling took more than the ladder returns (§11.6). That rests on the PRICE — the ladder has no
+level gate — so a cheaper enchant, or anything stronger, still needs the re-solve (auto-memory
+`project-post-rebalance-package`).
 
 - Tracker: the "Full Rebalance" section of `TODO.md` (its tail is the polish log)
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-10-05; `origin/main` is at `8ae6772`)
+### Where things stand right now (2026-10-06; `origin/main` is at `8ae6772`)
 
 | | |
 |---|---|
-| working tree | clean |
+| working tree | *(uncommitted, 10-06)* **the Master's enchant is the armour's ladder** (`spec-items.md` §11) — see the last entry of the row below |
 | HEAD | the second 2026-10-05 sync pass (the class-sets concept parked in `.memory/class-sets-concept.md`; records only, no code) on top of **`e4e67ad`**. Feature commit / its hash fill, newest first: **`bf15669`** / `e4e67ad` (**durability is the item's own, and the Forester set is 50**, `spec-items.md` §10: `items.json` → `maxDurability`, the Master's prices ×5/3, old pieces +20, the gear-bonus cache re-derived at boot; schema v18, one migration) · `d446451` (the first 10-05 sync pass) · **`4fe5b7a`** / `fd6e6e1` (the Master's enchant from the bag alone; the fill also answers the lesson's tap on a throw) · **`b0c9d80`** / `e569bca` (Settings «💛 Допомога грі»; the fill also fixes «⚙️ Налаштування») · **`0b53e82`** / `28511cf` (the task-ready notice) · **`47e0e8f`** / `c241d71` (a Vigor reward that will not fit is asked about) · **`a91226f`** / `c1c0570` (a one-shot card without «отримано»; the fill also carries the Hanged Man's +15% XP) · **`e861c73`** / `e8c9580` (the tarot pass) · `f2d7855` (the 10-04 sync pass) · **`9ab349c`** / `994c752` (the weapon follows the player level, `spec-items.md` §9) · **`95e8492`** / `9084528` (the quest board as a scroll) · **`f0c1749`** / `8b2bc4e` (the arena as a cycle of three) · `51ec578` (the third 10-03 sync pass) · **`cad61c3`** / `2dcf87c` (the arena in simultaneous rounds) · `790560f` (the second 10-03 sync pass) · **`4be2758`** / `c28a3e5` (the estate scaling) · `7a6b458` (the 10-03 sync pass) · **`f03d502`** / `b407840` (tier 2 of the bestiary) · `ce8ef2f` (the 09-29 sync pass) · **`8ae6772`**, the build the Pi runs. **A commit cannot carry its own hash**, so this line always trails by one; read HEAD off the machine |
 | pushed | `origin/main` is at **`8ae6772`**; the 32 commits from `ce8ef2f` to `e4e67ad` and this sync pass are not pushed. Push stays user-side |
 | running on the Pi | **`8ae6772`**, restarted **2026-09-28 22:11** — schema **v14**, content hash `490a2d4b`, digest `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` · `spawns c9bdb57d456adc26` · `quests 30de20902006e3b9` · `king 5dbddfd689f3cede` (matched the Mac byte for byte BEFORE the restart was ordered). Five migrations ran and the TABLES were checked after: 5 → 0 `training_ground` plots, `training_ground_level` 0 for all 10 users, `fight_log` and `exploration_state.combat_tally` exist, nobody at decree positions 23–25, 64 → 69 migrations. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`95e8492`, the quest board as a scroll** (2026-10-03) sits on top: the decree's requirement line and an 8-cell bar on the NPC board, 📖 for «Досвід» and 🍖 for «Снага» on every screen. Swift and locale only, the digest unmoved; 353 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart.<br>**`e861c73`, the tarot card phrased once, and 💰 for every reward** sits on top: the reveal prints the card through `FortuneDisplay` like the fortune screen and the profile (the 22 hand-typed `buff_desc` keys deleted), silver as «+🪙 30» everywhere, the window on the price line instead of the intro's prose, «Ієрофант», and 🎁 → 💰 on the King's reward, the palace banner, the claim button and the tarot's loot. The same pass relabels «Виснаження снаги» «Витрата снаги», takes the Chariot from −25% to −50% Vigor (`fortune.json`; −25% rounded away on every step and blow), and lets the card's multiplier reach the techniques, the stance activation and the mage's flee tax, which bypassed it. No migration; `records` → `e91795fe3b76c8bf`, content hash → `794be740`; 370 tests.<br>**`a91226f`, a one-shot card's later line without «отримано»** sits on top: «Карта дня: Вежа · −🪙 25» on the fortune screen and in the profile, `fortune.effect.received` deleted. Swift and locale only, the digest unmoved.<br>**`c1c0570`, the Hanged Man's +15% XP** (`a91226f`'s fill) sits on top, so the Chariot no longer dominates it: −10 dodge for −50% Vigor and +15% XP, against the Chariot's −50% alone. `fortune.json` only — a `/reload` would carry it alone; `records` → `438be135e3090fb5`, content hash → `73568a2a`.<br>**`47e0e8f`, a Vigor reward that will not fit is asked about** sits on top: a tester turned a Vigor-only decree in at full Vigor and got «✅ Указ виконано» over an empty «💰». Now the decree card (once done) and the NPC board (once ready) warn, the turn-in tap asks first («Доповісти / Здати все одно» or «Повернуся пізніше»), and the banner names what did not fit. Swift and nine locale strings, no migration, the digest unmoved.<br>**`0b53e82`, the watchman says when a task is ready** sits on top: a player asked to be told when a task was done. `RestNotificationService` asks a fourth question — the open decree complete, or a taken job ready to hand in — and sends one «📓 Одне з ваших завдань виконано — загляньте в нотатник.» (or «Кілька…») per sweep, anywhere, once per task. One migration (`AddReadyNotifiedFlags`), two locale strings, the digest unmoved.<br>**`b0c9d80`, «💛 Допомога грі» in Settings** sits on top: a third button on the settings keyboard that answers with the owner's text — «Якщо маєте бажання фінансово допомогти у розвитку гри, ви можете звернутись до @irina_chemeris1998.» Swift and four locale strings, no migration, the digest unmoved; the Settings button's label «⚙️ Налаштуваня» was corrected to «Налаштування» in its fill, `e569bca`.<br>**`4fe5b7a`, the Master's enchant draws from the bag alone** sits on top: it counted the bag and the estate's warehouse and drew from both, so a tester with 0 hides in the bag and 14 at the estate read «Шкура: треба 15, маєте 14». Now the bag alone, as the lesson already did; the card shows `✅ 🪙 Срібло (540/220)` · `❌ 15× 🟫 Шкура (0/15)`; a refusal is a modal and leaves the card standing; its fill `fd6e6e1` also answers the lesson's tap when the reforge throws. Swift and locale (two strings dropped), no migration, the digest unmoved.<br>**`bf15669`, durability is the item's own, and the Forester set is 50** (2026-10-05, `spec-items.md` §10) sits on top: `items.json` → `maxDurability` on every piece a fight wears outside a weapon ladder, the global `economy.gear.maxDurabilityStart` gone (it stamped the class weapon too), the Master's prices ×5/3 (100 / 160 / 250 / 300) so a repaired point costs what it did. Content schema **v18**, one migration (`RaiseArmorDurability`: every Forester piece +20 in both numbers, a broken one back at 20), and a boot pass (`EquipmentService.backfillGearBonuses`) that re-derives the cached gear bonuses. That also closes a wider hole under the weapon ladder: it re-solved every rung, so every tester at t2+ would have fought their first post-deploy fight on the old rung (Дарина's cached sword ATK +60 against the new t5's +27; анія, Володимир and Amae likewise). `records` → `fefe14b940998631`, `tuning` → `4edf65507bbb5e48`, content hash → `41455b84`; 379 tests |
+| committed but NOT deployed | **`f03d502`, tier 2 of the bestiary** (2026-10-02, `spec-bestiary.md` §10): 14 creatures numbered in order (5 new), bands km 3N−3…3N+1, XP by number alone, the XP level-gap penalty off (`xpLevelDiff.perLevel` 0) with `enemy.xp_falls_with_depth` guarding the ladder instead. Needs `pm2 restart ROI`, not `/reload` (validator code, five new locale strings and the four rewritten oblique-case lines); no migration, because no id was removed. Digest `records 696d3c25c1a74d98` · `tuning c01ccfdb585f4a68` · `spawns 0cf31905171d7944`, content hash `cd9d73bf`. The 09-29 sync pass (`ce8ef2f`) is unpushed under it.<br>**`4be2758`, the estate scaling** (2026-10-03, `spec-bestiary.md` §11), sits on top: a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), content schema **v15**, one migration (`AddFightLogEstateLevel`), and no locale string. With it, `tuning` reads `605fd06bd8abdfda` and the content hash `be4350a5`; the other four lines are unchanged. 336 tests, `validate --strict` 0/0, `simulate --strict` 0 broken bands.<br>**`cad61c3`, the arena in simultaneous rounds** (2026-10-03), sits on top: both fighters choose blind, a 15 s clock defends for the silent one, both blows land together and the heavier wins when both fall (`DuelMath`). Swift, locale and `arena.json` only — no migration, no schema change; `records` → `259f6cb6ca152450`, content hash → `7f6a7317`; 344 tests.<br>**`f0c1749`, the arena as a cycle of three** (2026-10-03) sits on top: a third button (the class special attack), arena-own round numbers in `arena.json` → `duel`, content schema **v16**, admission only for those who learned the special attack. `records` → `1b5577693d8733af`, content hash → `6963c31b`; 352 tests.<br>**`95e8492`, the quest board as a scroll** (2026-10-03) sits on top: the decree's requirement line and an 8-cell bar on the NPC board, 📖 for «Досвід» and 🍖 for «Снага» on every screen. Swift and locale only, the digest unmoved; 353 tests.<br>**`9ab349c`, the weapon follows the player level** (2026-10-04, `spec-items.md` §9) sits on top: nine rungs, one every five levels, at 75% of the growth; the first reforge is a lesson at the Master (materials + 30 🪙); the four weapon decrees moved to L5/10/15/20. Content schema **v17**, two migrations (`ClampWeaponTiersToLevel` with a silver refund, `ReseatDecreesById`); `records` → `1041961908ba2d3f`, `king` → `e3a492be1b017e81`, content hash → `00b40443`; 366 tests. Match the Pi's `--content-digest` against the line that ships BEFORE the restart.<br>**`e861c73`, the tarot card phrased once, and 💰 for every reward** sits on top: the reveal prints the card through `FortuneDisplay` like the fortune screen and the profile (the 22 hand-typed `buff_desc` keys deleted), silver as «+🪙 30» everywhere, the window on the price line instead of the intro's prose, «Ієрофант», and 🎁 → 💰 on the King's reward, the palace banner, the claim button and the tarot's loot. The same pass relabels «Виснаження снаги» «Витрата снаги», takes the Chariot from −25% to −50% Vigor (`fortune.json`; −25% rounded away on every step and blow), and lets the card's multiplier reach the techniques, the stance activation and the mage's flee tax, which bypassed it. No migration; `records` → `e91795fe3b76c8bf`, content hash → `794be740`; 370 tests.<br>**`a91226f`, a one-shot card's later line without «отримано»** sits on top: «Карта дня: Вежа · −🪙 25» on the fortune screen and in the profile, `fortune.effect.received` deleted. Swift and locale only, the digest unmoved.<br>**`c1c0570`, the Hanged Man's +15% XP** (`a91226f`'s fill) sits on top, so the Chariot no longer dominates it: −10 dodge for −50% Vigor and +15% XP, against the Chariot's −50% alone. `fortune.json` only — a `/reload` would carry it alone; `records` → `438be135e3090fb5`, content hash → `73568a2a`.<br>**`47e0e8f`, a Vigor reward that will not fit is asked about** sits on top: a tester turned a Vigor-only decree in at full Vigor and got «✅ Указ виконано» over an empty «💰». Now the decree card (once done) and the NPC board (once ready) warn, the turn-in tap asks first («Доповісти / Здати все одно» or «Повернуся пізніше»), and the banner names what did not fit. Swift and nine locale strings, no migration, the digest unmoved.<br>**`0b53e82`, the watchman says when a task is ready** sits on top: a player asked to be told when a task was done. `RestNotificationService` asks a fourth question — the open decree complete, or a taken job ready to hand in — and sends one «📓 Одне з ваших завдань виконано — загляньте в нотатник.» (or «Кілька…») per sweep, anywhere, once per task. One migration (`AddReadyNotifiedFlags`), two locale strings, the digest unmoved.<br>**`b0c9d80`, «💛 Допомога грі» in Settings** sits on top: a third button on the settings keyboard that answers with the owner's text — «Якщо маєте бажання фінансово допомогти у розвитку гри, ви можете звернутись до @irina_chemeris1998.» Swift and four locale strings, no migration, the digest unmoved; the Settings button's label «⚙️ Налаштуваня» was corrected to «Налаштування» in its fill, `e569bca`.<br>**`4fe5b7a`, the Master's enchant draws from the bag alone** sits on top: it counted the bag and the estate's warehouse and drew from both, so a tester with 0 hides in the bag and 14 at the estate read «Шкура: треба 15, маєте 14». Now the bag alone, as the lesson already did; the card shows `✅ 🪙 Срібло (540/220)` · `❌ 15× 🟫 Шкура (0/15)`; a refusal is a modal and leaves the card standing; its fill `fd6e6e1` also answers the lesson's tap when the reforge throws. Swift and locale (two strings dropped), no migration, the digest unmoved.<br>**`bf15669`, durability is the item's own, and the Forester set is 50** (2026-10-05, `spec-items.md` §10) sits on top: `items.json` → `maxDurability` on every piece a fight wears outside a weapon ladder, the global `economy.gear.maxDurabilityStart` gone (it stamped the class weapon too), the Master's prices ×5/3 (100 / 160 / 250 / 300) so a repaired point costs what it did. Content schema **v18**, one migration (`RaiseArmorDurability`: every Forester piece +20 in both numbers, a broken one back at 20), and a boot pass (`EquipmentService.backfillGearBonuses`) that re-derives the cached gear bonuses. That also closes a wider hole under the weapon ladder: it re-solved every rung, so every tester at t2+ would have fought their first post-deploy fight on the old rung (Дарина's cached sword ATK +60 against the new t5's +27; анія, Володимир and Amae likewise). `records` → `fefe14b940998631`, `tuning` → `4edf65507bbb5e48`, content hash → `41455b84`; 379 tests.<br>***uncommitted*, the Master's enchant is the armour's ladder** (2026-10-06, `spec-items.md` §11) sits on top: an enchant level budgets the piece at item level 5 / 10 / 15 / 20 / 25 with 75% of the curve's growth, the weapon ladder's law. It replaces +4% of the piece's own stats a level, under which thirteen of the twenty purchases on the Forester set changed no number and the whole +5 gave +3 DEF and +4 HP; the set at +5 is now 🛡55 ❤️83 💥20 💨15. NO player level gates it (a gate was built and removed the same day, on the owner's word): the price is the gate — 50 × level² silver a piece, 50 / 200 / 450 / 800 / 1,250, 11,000 a set, the hides unchanged — and an enchant never fails. The card prints the stat deltas; the player-facing word is «покращення» — «заточка» is slang, the owner's call, and is on no screen. Content schema **v19**, NO migration (`enchant_level` is the same column, and the boot pass re-derives the cache). `records` → `9303bb274d4517d8`, content hash → `be1102fc`, the other four lines unchanged; 395 tests |
 
 **Everything up to `8ae6772` is deployed** — the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
@@ -61,7 +67,7 @@ decree in before the deploy entry was written.
 Every deploy's hashes, what each carried and its verification block: the **Commit index** at
 the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
-### Where the last session stopped (2026-10-04 → 10-05 — tester-driven polish, then a day of gear)
+### Where the last session stopped (2026-10-04 → 10-06 — tester-driven polish, then gear)
 
 After the weapon ladder (`9ab349c`; its record is `spec-items.md` §9 and `.memory/rebalance.md` →
 "The weapon ladder, measured"), the session turned to what the owner and the testers were reading
@@ -100,13 +106,38 @@ The 10-05 sync pass (`d446451`) followed. Then the owner opened a day of gear wo
 How the owner works and the corrections they made are in auto-memory
 (`feedback-build-the-approved-sample`, `feedback-amend-means-head`, `feedback-explain-before-quiz`).
 
-**Nothing is in flight.** The gear day stopped at the parked concept, and the owner has not
-named the next step. Threads the owner may pick up:
-- **The deploy** (item 0 below) — the biggest backlog since 09-28: twelve changes and five
+On 2026-10-06 the owner asked how the armour enchant works, what it does to the game and how to
+improve it:
+- **Found:** +4% of the piece's own stats a level, on item-level-1 armour, so thirteen of twenty
+  purchases changed nothing; the price table and the hint were May's flat mechanic's.
+- **Decided, in five turns of which the owner redirected three:**
+  - not "sell only the levels that change something, at a share of the piece's price", but
+    «залишити кроки як є, але … зробимо підвищення вартим»;
+  - the ladder at 75% of the growth, over 50%, 100% and +20% a level;
+  - NO player-level gate — it was in the picked option's text and I built it; the owner refused
+    it on the report, «краще зробити просто велику вартість»;
+  - the price, 50 × level² a piece, the cheapest of three ladders offered in between;
+  - the button back to «✨ Покращити», and then the word itself: «слова Заточка взагалі не має
+    бути, це сленг» — it left every screen, two lines that predate this change included;
+  - an enchant keeps its 100% success.
+- **Built and measured** (`spec-items.md` §11; `.memory/rebalance.md` → "The armour enchant,
+  measured"). It is NOT committed: the owner's audit prompt has not been given.
+- **Still the owner's:** two lines written with the build and shown in the report — the new
+  hint («Майстер покращує броню щабель за щаблем…») and the banner's stat phrase.
+
+**Nothing else is in flight.** Threads the owner may pick up:
+- **The deploy** (item 0 below) — the biggest backlog since 09-28: thirteen changes and five
   migrations.
 - **The class sets** — resume from the concept's four forks (structure, class lock, off-hand,
-  materials).
-- **What these sessions left open** (`TODO.md` → "Open, decided but not done", the top seven):
+  materials). The armour now climbs by the enchant, so the concept's ranks and the enchant
+  share an axis; read the note at the top of the concept first.
+- **What these sessions left open** (`TODO.md` → "Open, decided but not done", the top twelve):
+  - the armour ladder's five:
+    - armour above item level 1 has no ladder yet;
+    - the ladder stops at +5, item level 25;
+    - the price is its only gate, so wealth is power and can be handed over;
+    - the Forester's flat set bonus now rots;
+    - what the testers already enchanted is not known;
   - the durability change's three:
     - the repair price of armour the Master does not sell;
     - `/reload` and the gear-bonus cache;
@@ -121,22 +152,25 @@ named the next step. Threads the owner may pick up:
   new obtainable share, the workshop's T3 gate moved into content, and whether players now hold the
   estate back (`fight_log.estate_level`).
 - **The arena.** Matchmaking, and the class gap: the warrior still wins 75–76% against the other
-  classes. The owner's probable cure is each class's forest effect in the arena.
+  classes on reference characters (66–74% with real kits, a point or four less between equally
+  enchanted fighters). The owner's probable cure is each class's forest effect in the arena.
 
 ### Next action
 
 **0 — Deploy everything committed since `8ae6772`:** tier 2, the estate scaling, the arena
 (simultaneous rounds and the cycle of three), the quest board, the weapon ladder by player
-level (2026-10-04, `spec-items.md` §9), the tarot pass, the Vigor-reward notice, the task-ready notice and the Settings support button (all 2026-10-04), the enchant fix (2026-10-05), and durability as the item's own with the Forester set at 50 (2026-10-05, `spec-items.md` §10). All of it is committed and audited (`spec-bestiary.md`
+level (2026-10-04, `spec-items.md` §9), the tarot pass, the Vigor-reward notice, the task-ready notice and the Settings support button (all 2026-10-04), the enchant fix (2026-10-05), durability as the item's own with the Forester set at 50 (2026-10-05, `spec-items.md` §10), and the armour's ladder through the Master's enchant (2026-10-06, `spec-items.md` §11 — once it is committed). All of it is committed and audited (`spec-bestiary.md`
 §10 and §11; §11.12 has every figure of the scaling; the arena's are in `.memory/rebalance.md` →
 "The arena duel, measured"). One restart takes it all from HEAD. Shipping tier 2 alone would
 mean the Pi stops at `7a6b458`.
 - Read the Pi before assuming anything (auto-memory `feedback-ask-the-machine-not-the-record`).
 - The owner pushes. On the Pi: `git pull --ff-only`, then build.
 - Match its `--content-digest` BEFORE the restart:
-  - everything (HEAD): `records fefe14b940998631` · `tuning 4edf65507bbb5e48` · `spawns
-    0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81` · content hash
-    `41455b84`, schema v18;
+  - everything (the working tree, with the armour's ladder): `records 9303bb274d4517d8` ·
+    `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests 30de20902006e3b9` · `king
+    e3a492be1b017e81` · content hash `be1102fc`, schema v19;
+  - without the armour's ladder (`e4e67ad` and the sync pass on it): `records
+    fefe14b940998631`, content hash `41455b84`, schema v18;
   - without the durability change (`d446451`, under it): `records 438be135e3090fb5` · `tuning
     605fd06bd8abdfda`, content hash `73568a2a`, schema v17;
   - without the Hanged Man's +15% XP (`a91226f`): `records e91795fe3b76c8bf`, content hash
@@ -155,6 +189,10 @@ mean the Pi stops at `7a6b458`.
   rungs refunded in silver; the first reforge is now a lesson at the Master. And the armour:
   every Forester piece gains 20 in both numbers (a broken one comes back at 20), and the
   Master now sells the set for 810 🪙 instead of 485, a repaired point costing what it did.
+  And the enchant: «✨ Покращити» at the Master is the armour's ladder now — every level makes
+  the piece visibly stronger and costs more than the last (50 / 200 / 450 / 800 / 1,250 🪙 a
+  piece, the hides as before), with no level requirement and no chance of failing; pieces
+  already enchanted keep their level and become that much stronger at once.
 - The owner runs `pm2 restart ROI`. A `/reload` is not enough, because of validator, combat and
   arena code, the new locale strings and the content schema.
 - Five migrations run: `AddFightLogEstateLevel` (the estate scaling), then
@@ -172,9 +210,11 @@ mean the Pi stops at `7a6b458`.
   «Recomputed cached gear bonuses for N user(s)» should count at least the four testers holding
   a weapon at t2+ (Дарина, анія, Володимир, Amae). Check one afterwards:
   `SELECT nickname, gear_attack_bonus FROM users WHERE nickname = 'Дарина'` should read 27, not 60
-  (the sword is the only worn piece that carries ATK).
+  (the sword is the only worn piece that carries ATK). The armour's ladder adds no migration,
+  but the same boot pass is what makes every already-enchanted piece count at its new strength:
+  a player wearing one moves in that log line too, and `gear_defense_bonus` rises with it.
 - Then record the deploy (a `## Deploy —` entry in `.memory/sessions.md`, this table) and point
-  the testers at the twelve new walk-list blocks.
+  the testers at the thirteen new walk-list blocks.
 
 **1 — Read the first `fight_log` rows** once the testers have fought: the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
@@ -204,7 +244,7 @@ report naming its losses the way the death screen now does.
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER — the working tree's schema handshake is at **v18** (durability on the item; v17 was the weapon ladder's gates and the lesson fee, v16 the arena's `duel` section, v15 the estate scaling; the Pi runs v14) and refuses a mismatch.
+and the new binary TOGETHER — the working tree's schema handshake is at **v19** (the enchant as the armour's ladder; v18 was durability on the item, v17 the weapon ladder's gates and the lesson fee, v16 the arena's `duel` section, v15 the estate scaling; the Pi runs v14) and refuses a mismatch.
 Free pre-flight that touches neither the running bot nor the database:
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
 it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
@@ -221,7 +261,17 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Twenty-nine items, each raised deliberately and kept out of an unrelated commit on purpose.
+Thirty-four items, each raised deliberately and kept out of an unrelated commit on purpose.
+- **From 2026-10-06, the armour ladder's five:**
+  - armour authored above item level 1 gains nothing from the low enchant levels — the
+    validator refuses it until the class sets decide how ranks and the enchant share an axis;
+  - the ladder stops at +5, item level 25, while the weapon runs to 40;
+  - the price is the enchant's only gate (the owner's call), so a finished set or the silver
+    for one can be handed to a new player, for whom the forest is then far softer than solved
+    until about level 10;
+  - the Forester's flat set bonus now rots (23% of the set as bought, 5% at +5), and the set
+    ceiling reads the members' authored budget;
+  - what the testers already enchanted is not known (the Pi read was refused).
 - **From 2026-10-05, the durability change's three:**
   - armour the Master does not sell is repaired as if it cost 30 🪙 (`repairCost`'s fallback);
   - a `/reload` leaves the cached gear bonuses stale — only a restart re-derives them;
@@ -337,7 +387,15 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**HEAD digest (2026-10-05, schema v18 — durability as the item's own, NOT yet on the Pi):**
+**The working tree's digest (2026-10-06, schema v19 — the enchant as the armour's ladder,
+uncommitted, NOT on the Pi):** `records 9303bb274d4517d8` · `tuning 4edf65507bbb5e48` · `spawns
+0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash
+`be1102fc`. `records` alone moved: the growth share, each step's item level and its new price,
+and every armour piece replayed at every enchant level from −1 past the cap. The lift is
+DERIVED from the budget curve, so a retune of `tuning/budget.json` moves this line too —
+mutation-tested, with the share, an item level and a price.
+
+**The durability baseline** (2026-10-05, schema v18, `e4e67ad`):
 `records fefe14b940998631` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` ·
 `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `41455b84`. Two lines moved:
 `records` (each item's `maxDurability`, the Master's ×5/3 prices, `startingDurability` replayed
@@ -436,7 +494,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 379 tests, ~5s
+swift test                                   # 395 tests, ~5s
 ```
 
 ## What Works Now (shipped game)
@@ -454,7 +512,7 @@ elite fight by ~20% for every class, every technique tap strikes, and each fores
 `fight_log` row) · estate (plots, warehouse, workshop — ingots, upgrades, salvage; armour only from the
 Master since 09-28 — kitchen, weapon/bag/estate upgrades, the Training Ground room at T4; since
 2026-10-04 the weapon climbs nine rungs opened by the player level, the first a lesson at the
-Master) · capital hub (travel across
+Master; since 2026-10-06 the armour climbs five by the Master's enchant, gated by its price) · capital hub (travel across
 **two streets** — 👑 Замкова: Базар / Ристалище / Гільдії / Палац, 🏘 Поділ: Крамар / Майстер /
 Шинок / Ворожка, the square holding only the two roads — plus
 Trader, Tavern, Fortune Teller, Master, player Market, synchronous Trade) · Guilds · Arena

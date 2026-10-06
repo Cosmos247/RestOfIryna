@@ -358,7 +358,7 @@ the draft band lives and where content arrives after the rebalance.
 
 | sink | silver | note |
 |---|---|---|
-| enchant one item to +5 | 1660 | ×5 filled slots = 8300 |
+| enchant one armour piece to +5 | 2750 | ×4 armour slots = 11000 |
 | the Master's armour | 810 | one-off |
 | repair | 50% of value | per repair, ongoing |
 | found a guild | 500 | one-off, level 5 |
@@ -392,6 +392,16 @@ a new player the same job every day until level 6.
 Against that, **the mandatory spend is 1,600 silver** (2,950 with the Training Ground since 2026-09-27), every other silver cost in
 the game is optional, and the largest optional one is enchanting at 1,660 an
 item. Hides add roughly 2.4 silver a kill across 3,925 kills.
+
+> *Amended 2026-10-06 (`spec-items.md` §11).* The sinks row above read «enchant
+> one item to +5 | 1660 | ×5 filled slots = 8300» until this date. It counted
+> the weapon's slot, and the bench has only ever taken armour. More to the
+> point, the enchant was a sink nobody had a reason to use — a full set cost
+> 6,640 silver and 380 hides for +3 DEF and +4 HP. It is the armour's ladder
+> now, and the owner made its price its only gate: 50 × level² silver a piece,
+> 11,000 for a set. That is the largest optional sink in this table, sized like
+> the ladders above it, and the fastest saver cannot finish it before about
+> level 22.
 
 **The trader is the economy's only real drain, and using it is a choice.** Buying
 every material rather than gathering it costs ~21,900 — which is almost exactly

@@ -279,8 +279,8 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     /// Full HTML detail card for one owned gear row — name (+tier for weapons),
-    /// lore, the stats it grants at full condition (tier-aware; armor includes
-    /// the enchant + class bonus), and a condition block (durability, broken /
+    /// lore, the stats it grants at full condition (tier-aware; armour at its
+    /// enchant level), and a condition block (durability, broken /
     /// dulled warning, enchant level). Mirrors the workshop recipe-detail layout.
     private static func gearDetailCard(row: InventoryEntry, item: Item, user: User, lingo: Lingo, locale: String) -> String {
         let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: row.tier), locale: locale)

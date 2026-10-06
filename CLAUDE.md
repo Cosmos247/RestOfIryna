@@ -126,11 +126,16 @@ stat's percentage — which is what makes adding items safe. Two consequences:
 - `itemLevel` is NOT `tier`. Tier is a crafting-ladder rung (1–9 on the weapon ladder); item
   level is the budget input (1–40). Since 2026-10-04 the weapon ladders map nine tiers to
   1/5/10 … 40, each rung's item level equal to the player level it opens at.
-- **Never give anything a flat bonus — items OR techniques.** Enchant is `1 + 4% × level`
-  of the item's OWN stats, set bonuses are capped against their members' combined budget,
-  and every Super stance lifts by a multiplier of the character's own stat. The same
-  +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. No flat number works at
-  both ends, and `roi-content simulate` audits every lift for exactly this.
+- **Never give anything a flat bonus — items OR techniques.** An enchant level budgets the
+  armour piece at an ITEM LEVEL (below, under Gear), set bonuses are capped against their
+  members' combined budget, and every Super stance lifts by a multiplier of the character's
+  own stat. The same +32 DEF is 267% of a level-1 chest and 14% of a level-40 one. No flat
+  number works at both ends, and `roi-content simulate` audits every lift for exactly this.
+- **A fixed percentage of a small thing fails the other way.** Until 2026-10-06 an enchant
+  was `1 + 4% × level` of the item's own stats. On item-level-1 armour 4% is less than one
+  point of any stat, so thirteen of the twenty purchases on the shipped set changed nothing.
+  **Size a lift in item levels — the unit the rest of the game is measured in — never as a
+  share of the piece alone.**
 
 **`/reload` hot-swaps content without a restart** (dev-only, `developerUsers`; `/content`
 shows what is loaded). The order is the safety: **parse → validate → live-check → build
@@ -602,6 +607,36 @@ name a row**, so a service that reports rows hands back the tier with them:
   «Гострий край» (level 4, weapon tier 2) could not be finished before level 7.
   `king.weapon_tier_before_its_gate` now refuses a weapon decree filed below its rung's gate.
 - Auto-memory `project-weapon-ladder-rework`.
+
+**The armour climbs by the Master's enchant, and only its PRICE gates it**
+(2026-10-06, `spec-items.md` §11).
+- **The ladder.** Five levels. Level N budgets the piece at `enchantSteps[N].itemLevel` — 5 /
+  10 / 15 / 20 / 25, where the weapon's rungs t2–t6 sit — with `master.json` →
+  `enchantGrowthShare` (0.75) of the curve's growth: the weapon ladder's law.
+- **One implementation.** `EnchantLadderRules.scale` is the lift, for the game, the
+  validator and `spec gates`. It is derived from `tuning/budget.json`, never typed, and
+  applied multiply first, divide last (`LadderScale`): level 3 puts a stat exactly on a half,
+  and multiplying by the quotient can round it the other way. `EquipmentService.
+  stats(ofItem:tier:enchantLevel:)` is the one reader, for the bonuses and the Master's card.
+- **No player level gates it — the owner's call.** A gate a level was built with the ladder
+  and taken out the same day: «замість обмеження рівнем … краще зробити просто велику
+  вартість». **Do not bring a level gate back**, on the purchase or on what a worn piece
+  grants. An enchant also never fails: there is no roll in it, and none is to be added.
+- **So the price table is a balance number, not a fee.** 50 × level² silver a piece (50 /
+  200 / 450 / 800 / 1,250) with 4 / 8 / 15 / 26 / 42 hides. It was sized so the fastest saver
+  never outruns the forest as it was solved (§11.6), and `EnchantLadderTests` pins it.
+  **Re-measure before lowering it**: below about level 10 a high level bought early makes the
+  forest easier than it was designed to be, and the price is the only thing in the way.
+- **To the player it is «покращення», never «заточка»** — slang, the owner's word for it
+  (2026-10-06). The code says `enchant`; the screens say «✨ Покращити», «✨ Покращення броні»,
+  «покращено до +N», «✨ Покращення: +N». The owner uses «заточка» in conversation, and that is
+  where it stays: **a word from the chat is not copy.**
+- **Every level changes a number on every armour piece**, or the validator refuses it
+  (`master.enchant_level_changes_nothing`). The rule it replaced proved only that the
+  percentage was above zero. It also refuses armour authored at or above a level's item
+  level, so **a new armour piece above item level 1 is a ladder decision first**
+  (`spec-items.md` §11.8).
+- Auto-memory `project-armour-enchant-ladder`.
 
 ### Screens, buttons and refusals
 

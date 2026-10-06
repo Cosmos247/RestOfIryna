@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-05)
+## Commit index — live-play polish and after (2026-09-09 → 10-06)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,6 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(uncommitted, 10-06)* **the Master's enchant is the armour's ladder** (`spec-items.md` §11) —
+  a level budgets the piece at item level 5 / 10 / 15 / 20 / 25 with 75% of the curve's growth,
+  the weapon ladder's law. It replaces +4% of the piece's own stats a level, under which thirteen
+  of twenty purchases on the Forester set changed no number. NO player level gates it: a gate was
+  built and removed the same day on the owner's word, and the price became the gate — 50 × level²
+  silver a piece, 11,000 a set. The card prints the stat deltas; the validator refuses a level
+  that changes nothing; schema v19.
 - `bf15669` (10-05) **durability is the item's own, and the Forester set is 50**
   (`spec-items.md` §10) — `items.json` → `maxDurability`, the global start gone, prices ×5/3 so
   a repaired point costs what it did; existing pieces +20 in both numbers; the cached gear
@@ -447,6 +454,93 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-06 (the Master's enchant is the armour's ladder) — *(uncommitted)*
+
+The owner, continuing the gear day: «Продивись як зараз працює заточка для броні. Проаналізуй її
+вплив на гру та запропонуй як можна її покращити».
+- **Found.**
+  - A level multiplied the piece's own stats by `1 + 4% × level`, each stat rounded on its own.
+    On the Forester set — item level 1, the only armour — **thirteen of the twenty purchases
+    changed no number**. +1 and +2 on all four pieces (560 🪙, 48 hides) gave nothing, and the
+    whole +5 (6,640 🪙, 380 hides) gave +3 DEF and +4 HP. The jerkin's +4 → +5, 850 🪙 and 42 hides,
+    was one of the empty ones.
+  - **The piece is too small for a percentage.** 4% of it is 0.27–0.48 budget points and 1 HP
+    costs 0.45. No rounding rule fixes that inside the budget, and +20% was the ceiling
+    (legendary ×1.45 × enchant ×1.20 against ×1.75).
+  - **The price table and the hint were May's.** 40 … 850 🪙 and «Рівні 4-5 дають більший приріст»
+    date from 2026-05-22, when +5 was a flat +8 DEF a piece. Phase 6 replaced the effect and kept
+    both.
+  - **No screen showed what a level gave.** The banner read «+4% до кожного стата предмета» over
+    a piece that had not changed. Three words named the mechanic.
+  - `spec items` and `spec economy` counted the weapon as enchantable (×5 slots = 8300; the
+    «fully enchanted» column).
+  - A read of the testers' rows on the Pi was refused by the permission layer, so what they
+    have already spent is not known.
+- **Asked — six turns, and the owner redirected four of them.**
+  1. A first proposal kept the 4%, sold only the levels that change a number and priced the
+     enchant as a share of the piece's price. The owner did not follow the price question, asked
+     to see the stats, rejected the quiz and said: «Давай спробуємо залишити кроки як є, але
+     просто зробимо підвищення вартим того, щоб підвищували».
+  2. Four strengths were measured and shown with the set's real numbers. The owner picked **the
+     ladder at 75% of the growth**, over 50%, 100% and an ungated +20% a level. The option's text
+     said the levels open at player levels 5 … 25.
+  3. I built it with those gates and reported. The owner: «Хіба ми говорили про те що заточка
+     відкривається згідно рівня? Мені це не подобається … краще зробити просто велику вартість».
+     The gate had been a column and a clause, never a question of its own.
+  4. Shown the price table and four price ladders, the owner rejected the quiz again and asked
+     for variants between today's prices and 100 × level². Of three, the owner picked the
+     cheapest: **50 × level²**, 50 / 200 / 450 / 800 / 1,250 a piece.
+  5. Mid-build: «В нас же вирогідність заточки залишалась 100%?» — yes, there is no roll — and
+     «зміни кнопку з "заточити" на покращити назад».
+  6. On the next report: «слова Заточка взагалі не має бути, це сленг». I had taken the word
+     from the owner's own messages and from two existing lines, and spread it over six more. It
+     left every screen: the title, the hint, the empty list and the cap's refusal went back to
+     «покращення», and the bag card's label and the banner, which had said it since May, changed
+     with them. What I had reworded unasked (the salvage warning, the Master's own line) went
+     back to what it was.
+- **Built.**
+  - `EnchantLadderRules` (`ROIContent`): `scale`, the lift of a piece budgeted at a higher item
+    level, kept as numerator and denominator so 5 × 3.1 rounds as 15.5.
+  - `master.json`: `enchantGrowthShare` 0.75, an `itemLevel` on each step (5 … 25), the new
+    silver. Schema v19. The hides did not move.
+  - `EquipmentService.stats(ofItem:tier:enchantLevel:)`, asked by `nominalStats` and by the
+    Master's card. `MasterService.enchant` returns the stats before and after.
+  - The card prints the stat deltas (`GearStatLines`) and the costs; the banner names what was
+    added. The screens say «покращення» throughout.
+  - Validator: `master.enchant_growth_share`, `enchant_item_level`,
+    `enchant_item_level_not_ascending`, and `enchant_level_changes_nothing` in place of a rule
+    that asked only whether the percentage was above zero. `enchant_cost_drops` now guards the
+    ladder's only gate.
+  - `SpecTables`: `spec gates` prints the armour ladder; `spec items` prints the kit fully
+    enchanted beside the kit as bought; `spec sets` adds the bonus against enchanted members;
+    `spec economy` counts armour slots.
+  - **Built and taken out:** `requiredPlayerLevel` on a step, four gate rules, the gate line and
+    its refusal, the wearer's level in a piece's stats, `refreshAfterLevelUp` at five `grantXP`
+    sites, two locale keys.
+- **Measured** (a scratch package with copies of the two modules; the recipe is in
+  `rebalance.md`).
+  - What a level is worth ahead of the player: at level 5 a set at +5 pays 51% more XP per
+    Vigor than the forest as solved; at level 10, 3% less. So below about level 10 only the
+    price holds the ladder back.
+  - At the chosen prices the fastest saver buys +1 and +2 at level 5, +3 at 7, +4 at 15 and +5
+    at 22, and the forest is never more than 5% easier than solved along that path.
+  - Days to L10 / 14 / 19 / 25 / 30 / 40: as solved 51 / 65 / 88 / 123 / 173 / 385; today
+    63 / 86 / 119 / 175 / 241 / 474; that saver 51 / 70 / 99 / 149 / 209 / 439.
+  - A fight at the edge of a trip costs 16–37% less HP with the enchant of its level. Between
+    equally enchanted fighters the arena's class gap narrows by one to four points.
+- **Verified.**
+  - 395 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, the same 18 warnings.
+  - Digest: `records` fefe14b940998631 → 9303bb274d4517d8; `tuning`, `spawns`, `quests` and
+    `king` byte-identical; content hash `be1102fc`. Mutation-tested in a copy of the bundle: the
+    share, an item level, a price and the budget curve each move `records`.
+  - `spec gates` prints the approved table from the game's own arithmetic, and
+    `EnchantLadderTests` pins it and the prices.
+  - Every generated spec block was re-run by a script. Three were stale and are refreshed.
+- **Left open:** armour above item level 1 (the validator refuses it until the class sets decide
+  how ranks and the enchant share an axis); the ladder stops at +5; wealth is power and can be
+  handed over, with no gate to stop it; the flat set bonus, 23% of the set as bought and 5% at
+  +5; a «Відновити» for a worn enchanted piece; what the testers already hold.
 
 ## Session — 2026-10-05 (class sets — a concept, parked; the second sync pass)
 

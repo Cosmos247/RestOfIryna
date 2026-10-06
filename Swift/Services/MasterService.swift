@@ -5,7 +5,8 @@
 //  Created by Dmytro Ihnatyuhin on 21.05.2026.
 //
 //  Phase 6.5 — the Master's three actions: buy ready-made armor, repair worn
-//  gear (armor or the main-hand weapon), and enchant armor (+DEF + class stat).
+//  gear (armor or the main-hand weapon), and enchant armor — since 2026-10-06
+//  the armour's ladder, gated by its price alone (`spec-items.md` §11).
 //  All three drain `User.silver` (the first real silver sink); enchant + repair
 //  also touch materials / durability. Pure-ish: owns its DB writes per action
 //  and recomputes gear bonuses, mirrors TraderService / WeaponUpgradeService.
@@ -35,7 +36,10 @@ public enum MasterService {
     }
 
     public enum EnchantResult: Sendable {
-        case success(itemId: String, newLevel: Int)
+        /// `before` and `after` are the piece's full-condition stats on either
+        /// side of the level, so the banner names what the silver bought
+        /// without asking the ladder a second time.
+        case success(itemId: String, newLevel: Int, before: GearStats, after: GearStats)
         case maxLevel
         case notEnoughSilver(have: Int, need: Int)
         case missingMaterials(itemId: String, have: Int, need: Int)
@@ -118,8 +122,12 @@ public enum MasterService {
 
     // MARK: - Enchant
 
-    /// Raise an armor piece's permanent +DEF enchant by one level for silver +
+    /// Raise an armour piece one level up the enchant ladder for silver +
     /// material, from the BAG alone.
+    ///
+    /// The enchant is the armour's ladder since 2026-10-06 (`spec-items.md`
+    /// §11), and its price is its only gate: there is no player-level check
+    /// here on purpose.
     ///
     /// The capital has no warehouse — the rule the Master's weapon lesson was
     /// written on (`WeaponUpgradeService.reforge`). Until 2026-10-05 this counted
@@ -141,11 +149,13 @@ public enum MasterService {
         }
         _ = try await InventoryEntry.remove(step.materialId, quantity: step.materialQty, from: user, on: db)
 
+        let before = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
         user.silver -= step.silver
         row.enchantLevel += 1
         try await row.save(on: db)
         try await EquipmentService.recomputeBonuses(for: user, on: db)
         try await user.saveAndCache(in: db)
-        return .success(itemId: row.itemId, newLevel: row.enchantLevel)
+        let after = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
+        return .success(itemId: row.itemId, newLevel: row.enchantLevel, before: before, after: after)
     }
 }

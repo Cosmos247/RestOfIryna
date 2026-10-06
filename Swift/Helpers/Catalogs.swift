@@ -83,7 +83,7 @@ final class DomainContent: Sendable {
     let masterArmorById: [String: MasterCatalog.ArmorListing]
     let masterRepairCostFraction: Double
     let masterEnchantCap: Int
-    let masterEnchantBudgetFraction: Double
+    let masterEnchantGrowthShare: Double
     let masterEnchantSteps: [MasterCatalog.EnchantStep]
     let masterWeaponLessonSilver: Int
 
@@ -260,8 +260,9 @@ final class DomainContent: Sendable {
                                           uniquingKeysWith: { first, _ in first })
         self.masterRepairCostFraction = master.repairCostFraction
         self.masterEnchantCap = master.enchantCap
-        self.masterEnchantBudgetFraction = master.enchantBudgetFractionPerLevel
-        self.masterEnchantSteps = master.enchantSteps.map(\.domain)
+        self.masterEnchantGrowthShare = master.enchantGrowthShare
+        // Sorted once here: every reader walks the ladder bottom to top.
+        self.masterEnchantSteps = master.enchantSteps.map(\.domain).sorted { $0.level < $1.level }
         self.masterWeaponLessonSilver = master.weaponLessonSilver
 
         // Built by parsing each row's `type`. A raw value the enum cannot

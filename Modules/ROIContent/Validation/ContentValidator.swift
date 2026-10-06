@@ -943,21 +943,17 @@ public enum ContentValidator {
             // lesson); below zero the Master would pay the player to learn.
             require(master.weaponLessonSilver >= 0, file: file, path: "weaponLessonSilver",
                     rule: "master.lesson_silver", "weaponLessonSilver must be >= 0, found \(master.weaponLessonSilver)")
-            require(master.enchantBudgetFractionPerLevel > 0, file: file,
-                    path: "enchantBudgetFractionPerLevel", rule: "master.enchant_no_effect",
-                    "an enchant adding 0% of the item's budget does nothing")
-            // The absorption cap is 70%. A fully enchanted legendary is designed
-            // to land at 49% — comfortably short, so the cap exists without ever
-            // becoming the binding constraint. Past ~35% total the second axis
-            // (rarity × enchant) starts outrunning forty levels of stat growth,
-            // which is the cliff the drafted 2.45x rarity multipliers fell off.
-            let totalEnchant = master.enchantBudgetFractionPerLevel * Double(master.enchantCap)
-            if totalEnchant > 0.35 {
-                issues.append(.init(severity: .warning, file: file,
-                                    path: "enchantBudgetFractionPerLevel", id: nil,
-                                    rule: "master.enchant_runaway",
-                                    message: "a full enchant multiplies the item by \(1 + totalEnchant)x — past 1.35x the enchant axis starts outrunning the whole level ladder"))
-            }
+            // The enchant is the armour's ladder (`spec-items.md` §11): a level
+            // carries a share of the budget curve's growth. At 0 the bench
+            // charges for nothing; above 1 an enchanted piece outgrows the
+            // on-curve item of the level that opens it, which is the trap the
+            // weapon ladder was rebuilt to leave.
+            require(master.enchantGrowthShare > 0, file: file,
+                    path: "enchantGrowthShare", rule: "master.enchant_no_effect",
+                    "an enchant carrying 0% of the curve's growth does nothing")
+            require(master.enchantGrowthShare <= 1.0, file: file,
+                    path: "enchantGrowthShare", rule: "master.enchant_growth_share",
+                    "a growth share of \(master.enchantGrowthShare) puts an enchanted piece above the on-curve item of its level")
 
             // `enchantStep` looks a level up by value, so a gap makes that level
             // unreachable — the player is stuck one short of the cap.
@@ -977,8 +973,50 @@ public enum ContentValidator {
                         rule: "master.enchant_quantity", "materialQty must be >= 1, found \(step.materialQty)")
                 require(step.silver >= 0, file: file, path: "\(path).silver", id: id,
                         rule: "master.negative_cost", "silver must not be negative")
+                require(step.itemLevel >= 1, file: file, path: "\(path).itemLevel", id: id,
+                        rule: "master.enchant_item_level", "itemLevel must be >= 1, found \(step.itemLevel)")
             }
-            // The ladder is designed so the last point is the deepest sink.
+            // A level that budgets no higher than the one below it lifts
+            // nothing, which makes a paid level a formality.
+            //
+            // There is deliberately NO rule here tying a level's item level to
+            // a player level. The ladder was first built with a gate per level
+            // and the owner took the gates out (2026-10-06): the price is what
+            // holds a level back. So the price table is a balance number, and
+            // `master.enchant_cost_drops` below is what watches its shape.
+            for pair in zip(master.enchantSteps, master.enchantSteps.dropFirst()) {
+                let id = "enchant.t\(pair.1.level)"
+                require(pair.1.itemLevel > pair.0.itemLevel, file: file, path: "enchantSteps", id: id,
+                        rule: "master.enchant_item_level_not_ascending",
+                        "item level goes \(pair.0.itemLevel) → \(pair.1.itemLevel) — each enchant level must budget the piece higher than the last")
+            }
+            // Every level the Master sells has to change a number on every
+            // piece he can be handed. The rule this replaced proved only that
+            // the percentage was above zero, while thirteen of the twenty
+            // purchases on the shipped set changed nothing at all — a checker
+            // that could not fail. It also catches armour authored at or above
+            // a level's item level, which the ladder would lift by nothing.
+            if let curve = bundle.budget {
+                for item in bundle.items {
+                    guard let slot = item.slot.flatMap(EquipmentSlot.init(rawValue:)), slot.isArmor,
+                          let stats = item.gearStats else { continue }
+                    var previous = stats
+                    for step in master.enchantSteps.sorted(by: { $0.level < $1.level }) {
+                        let lifted = stats.scaled(by: EnchantLadderRules.scale(
+                            fromItemLevel: item.itemLevel ?? 1, toItemLevel: step.itemLevel,
+                            growthShare: master.enchantGrowthShare, curve: curve))
+                        if lifted == previous {
+                            issues.append(.init(severity: .error, file: file, path: "enchantSteps", id: item.id,
+                                                rule: "master.enchant_level_changes_nothing",
+                                                message: "enchant +\(step.level) leaves every stat of \(item.id) where +\(step.level - 1) had it — a paid level that buys nothing"))
+                        }
+                        previous = lifted
+                    }
+                }
+            }
+            // The ladder is designed so the last point is the deepest sink —
+            // and since 2026-10-06 the price is the only thing that holds a
+            // level back, so a price that falls opens the level above it early.
             for pair in zip(master.enchantSteps, master.enchantSteps.dropFirst()) where pair.1.silver < pair.0.silver {
                 issues.append(.init(severity: .warning, file: file, path: "enchantSteps", id: "enchant.t\(pair.1.level)",
                                     rule: "master.enchant_cost_drops",
@@ -1464,13 +1502,29 @@ public enum ContentValidator {
                      "value multipliers must strictly ascend", .error, id: row.id)
             }
         }
-        // The ceiling the whole model rests on: rarity times a full enchant must
-        // stay under 1.75x a common of the same level. Above that the second
-        // axis outgrows forty levels of the first, and — measured through the
-        // absorption curve — the 70% cap stops being unreachable and starts
+        // The ceiling the whole model rests on: the top rarity, fully enchanted,
+        // must stay under 1.75x a common of the same level. Above that the
+        // second axis outgrows forty levels of the first, and — measured through
+        // the absorption curve — the 70% cap stops being unreachable and starts
         // being the binding constraint, which is a cliff no design can stand on.
+        //
+        // Since 2026-10-06 the enchant is a ladder, so "the same level" is the
+        // item level a step budgets the piece at: the lift is measured against
+        // the on-curve common of THAT level, for a piece authored at item level
+        // 1 (the one the ladder lifts furthest). With a growth share of 1 or
+        // less the lift never passes 1.0, so the ceiling is the rarity's alone
+        // — and a share above 1 is refused twice, here and in `master.json`.
         if let top = bundle.rarities.map(\.budgetMultiplier).max(), let master = bundle.master {
-            let full = top * (1 + master.enchantBudgetFractionPerLevel * Double(master.enchantCap))
+            var reach = 1.0
+            for step in master.enchantSteps {
+                let onCurve = EnchantLadderRules.points(atItemLevel: step.itemLevel, curve: budget)
+                let own = EnchantLadderRules.points(atItemLevel: 1, curve: budget)
+                guard onCurve > 0 else { continue }
+                let lift = EnchantLadderRules.scale(fromItemLevel: 1, toItemLevel: step.itemLevel,
+                                                    growthShare: master.enchantGrowthShare, curve: budget)
+                reach = max(reach, own * lift.factor / onCurve)
+            }
+            let full = top * reach
             if full > 1.75 {
                 fail(rarityFile, "rarities", "rarity.ceiling_exceeded",
                      "top rarity \(top)x with a full enchant reaches \(full)x a common of the same level, past the 1.75x ceiling")

@@ -59,6 +59,17 @@ multipliers". Both halves of that need correcting before anything is authored.
 | 30 | 159 | 23% | 8.0 = 22% | 1.9 = 5% | ×1.06 | ×1.24 |
 | 40 | 192 | 23% | 9.6 = 27% | 1.9 = 5% | ×1.05 | ×1.24 |
 
+**As the members are enchanted** — the same bonus against pieces that climb (`spec-items.md` §11)
+
+| enchant | members worn | flat 8.4 pts | cap allows, members |
+|---|---|---|---|
+| +0 | 37 | 23% | ×1.24 |
+| +1 | 62 | 14% | ×1.15 |
+| +2 | 84 | 10% | ×1.11 |
+| +3 | 112 | 7% | ×1.08 |
+| +4 | 145 | 6% | ×1.06 |
+| +5 | 173 | 5% | ×1.05 |
+
 **The strength ladder** — a whole-set multiplier against the 25% ceiling
 
 | ×total | of the members' budget | of the ceiling |
@@ -83,6 +94,20 @@ It rots the moment the **gear ladder** lands — the members go from 36 points o
 budget at item level 1 to 210 at item level 25 while the bonus stays 8.4, which
 is 23% falling to 4%. So the flat problem is real but **not live**: it arrives
 with the ladder, and it must be fixed in the same package rather than before it.
+
+> *Amended 2026-10-06 — the ladder landed, through the Master's enchant
+> (`spec-items.md` §11), and the problem is live.* The block above gained a
+> table, «As the members are enchanted»: what the set's pieces are worth at
+> each enchant level, and the flat bonus as a share of THAT. It is 23% of the
+> set as bought and 5% of it at +5. No player level decides which row a wearer
+> is on — the enchant is gated by its price — so the first table, by level,
+> still measures the pieces as bought. The two paragraphs above describe the
+> game until that date, and their prediction held. The enchant shipped without
+> the set rework, because a flat bonus that shrinks relative to its set breaks
+> nothing and hands no one power; the fix this document specifies (§5: a
+> multiplier on the set's own members) is still owed, and it now has a second
+> thing to decide — `cap allows` reads the members' AUTHORED budget, which no
+> longer moves with the members.
 
 ### Second, and worse: a `gear_multiplier` scales the wrong thing
 
@@ -278,5 +303,7 @@ in content.
 - What a set is *made of* — its members, their slots and their item levels are
   `spec-items.md`.
 - What a set is worth in silver, and what drops or sells one — `spec-economy.md`.
-- Enchanting. It scales a single item's own stats and is bounded separately;
-  a set bonus and an enchant do not interact beyond both being multipliers.
+- Enchanting. It lifts a single item and is bounded separately
+  (`spec-items.md` §11). Since 2026-10-06 it is the armour's ladder, so it does
+  meet a set in one place: the members it lifts are the denominator a set
+  bonus is measured against (§2's amendment and its second table).

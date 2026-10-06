@@ -1572,6 +1572,31 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The Master's enchant is the armour's ladder** *(2026-10-06, uncommitted, NOT deployed)*
+        — the owner asked how the armour enchant works, what it does to the game and how to improve
+        it. Spec `spec-items.md` §11; each decision over a quiz with the set's real numbers.
+        - Found: +4% of the piece's own stats a level, on item-level-1 armour. Thirteen of twenty
+          purchases on the Forester set changed no number, and the whole +5 (6,640 🪙, 380 hides)
+          gave +3 DEF and +4 HP. The price table and the hint were May's flat mechanic's.
+        - The owner turned down "sell only the levels that change something, at a share of the
+          piece's price" for: keep the steps, make the upgrade worth buying.
+        - Now: a level budgets the piece at item level 5 / 10 / 15 / 20 / 25 with 75% of the
+          curve's growth — the weapon ladder's law. The set at +5 is 🛡55 ❤️83 💥20 💨15 where it
+          was 🛡15 ❤️22 💥4 💨3.
+        - No player level gates it. A gate a level was built first (it was in the option the owner
+          picked) and refused on the report: «краще зробити просто велику вартість». The price is
+          the gate — 50 × level² silver a piece, 50 / 200 / 450 / 800 / 1,250, 11,000 a set — the
+          cheapest of three ladders offered between the old prices and 100 × level². The hides are
+          unchanged, and an enchant never fails.
+        - The card prints the stat deltas and the costs; the banner names what was added. The
+          player-facing word is «покращення»: «заточка» is slang, the owner's call, and left
+          every screen, the two lines that had carried it before this change included.
+        - Measured: below about level 10 a level bought early beats the forest as solved, so the
+          price carries the balance; at the chosen prices the fastest saver buys +3 at level 7, +4
+          at 15, +5 at 22 and is never more than 5% above the solved forest; a fight at the edge
+          of a trip costs 16–37% less HP.
+        - Schema v19, no migration; 395 tests; `validate --strict` 0/0; `simulate --strict` 0
+          broken bands, 18 warnings; `records` alone moved.
   - [x] **Durability is the item's own, and the Forester set is 50** *(2026-10-05, `bf15669`,
         NOT deployed)* — the owner opened a day of gear work. Spec `spec-items.md` §10, each decision
         over a quiz with the testers' real pieces.
@@ -1966,11 +1991,34 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the twelve on top — the 2026-10-05
-durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
+Telegram. **Every block below is LIVE and unwalked** except the thirteen on top — the 2026-10-06
+armour-ladder block, the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
 the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-06 — the Master's enchant is the armour's ladder (uncommitted, NOT deployed):**
+an account with Forester pieces, silver and hides in the bag.
+- **🛠 Майстер**: the button reads «✨ Покращити» and the list is titled «✨ Покращення броні», as
+  before, with a new hint — «Майстер покращує броню щабель за щаблем: кожен рівень помітно додає
+  речі сили й коштує дорожче за попередній. Найвищий — +5.» — and one button a piece,
+  «🦺 Жилет лісника · +1→+2».
+- **the word «заточка» is on no screen**: look for it on the Master's screens, the bag card
+  («✨ Покращення: +2») and the banner.
+- **the card** (the jerkin at +1): «🦺 Жилет лісника +1 → +2», then «+6 → +9  (↑+3) 🛡 Захист»,
+  «+10 → +14  (↑+4) ❤️ Здоров'я», «+2 → +2 💥 Крит», «+2 → +2 💨 Ухилення», then
+  «✅ 🪙 Срібло  (540/200)» and «✅ 8× 🟫 Шкура  (12/8)». No level line: nothing but the price
+  gates a level, at any player level.
+- **the prices**, a piece: +1 50 🪙 + 4 hides · +2 200 + 8 · +3 450 + 15 · +4 800 + 26 ·
+  +5 1,250 + 42.
+- **[✅ Так]**: the banner «✅ 🦺 Жилет лісника — покращено до +2: +3 🛡 Захист · +4 ❤️ Здоров'я»,
+  and the profile's DEF and HP rise by exactly that when the piece is worn. It never fails.
+- **short of silver or hides**: the modal, and the card stays (the 2026-10-05 block below).
+- **a piece enchanted before the restart**: its «+N» is unchanged and its stats are the
+  ladder's, at once. A hood at +3 reads 🛡9 ❤️12 where it read 🛡3 ❤️4, on any wearer.
+- **+5**: the piece leaves the list; with every piece there, «Більше нема що покращувати.» A
+  stale card on a +5 piece answers «Ця річ уже на межі покращення.»
+- **🔨 Розібрати** on an enchanted piece: «Зачарування +N буде втрачено.», as before.
 
 **Added 2026-10-05 — durability is the item's own, the Forester set at 50 (`bf15669`, NOT
 deployed):** any account, ideally one that had Forester pieces before the restart.
@@ -1990,12 +2038,12 @@ deployed):** any account, ideally one that had Forester pieces before the restar
 
 **Added 2026-10-05 — the Master's enchant draws from the bag alone (`4fe5b7a`, NOT deployed):**
 an account with armour to enchant, hides in the estate's storage and few or none in the bag.
-- **the card** («✨ Покращення броні» → a piece): «🦺 Жилет лісника +2 → +3», then «✅ 🪙 Срібло
-  (540/220)» and «❌ 15× 🟫 Шкура (0/15)», counted in the BAG — hides in the estate's storage do
-  not count.
+- **the card** («✨ Покращення броні» → a piece): «🦺 Жилет лісника +2 → +3», the stat lines of
+  the block above, then «✅ 🪙 Срібло (540/450)» (220 until 2026-10-06) and «❌ 15× 🟫 Шкура
+  (0/15)», counted in the BAG — hides in the estate's storage do not count.
 - **[✅ Так] short of hides**: a modal «🚧 Не вистачає матеріалів: ❌ 15× 🟫 Шкура (0/15)», the
   card stays; short of silver, the trader's «Не вистачає срібників» modal.
-- **with enough in the bag**: the banner «… — заточено до +3: …», the list again; the warehouse
+- **with enough in the bag**: the banner «… — покращено до +3: …», the list again; the warehouse
   count is untouched.
 
 **Added 2026-10-04 — «💛 Допомога грі» in Settings (`b0c9d80`, NOT deployed):** any account.
@@ -2521,6 +2569,29 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+- **Armour above item level 1 has no ladder yet** (2026-10-06, `spec-items.md` §11.8). An
+  enchant level budgets a piece at an ABSOLUTE item level (5 … 25), so a piece authored at item
+  level 20 would gain nothing from +1…+4. The validator refuses such a piece
+  (`master.enchant_level_changes_nothing`). The class sets have to decide how their ranks and the
+  enchant share one axis before the first of them is authored (`.memory/class-sets-concept.md`).
+- **The armour's ladder stops at +5, item level 25** (2026-10-06). That is where the authored
+  band stops; the weapon runs to 40.
+- **The enchant's price is its only gate, so wealth is power and it moves** (2026-10-06, the
+  owner's call). Below about level 10 a level bought early beats the forest as it was solved:
+  a set at +5 on a level-5 player pays 51% more XP per Vigor. The chosen prices keep a player
+  who earns them from getting there, but a finished set — or the silver for one — can be handed
+  to a new player. If it shows in play, the levers are the price or binding an enchanted piece
+  to its owner. A duel between an enchanted fighter and a bare one was not measured either.
+- **The Forester's flat set bonus now rots** (2026-10-06). It is 23% of the set as bought and
+  5% of it at +5, as `spec-sets.md` §2's second table prints. The fix that spec already owes (a
+  multiplier on the set's own members) has a second thing to decide: the validator's 25%
+  ceiling reads the members' AUTHORED budget.
+- **What the testers already enchanted is not known** (2026-10-06). The read of the Pi's rows was
+  refused by the permission layer. Nothing depends on it — a piece keeps its level and simply
+  grants the ladder's stats — but it is worth a look before telling the testers. The query:
+  `SELECT u.nickname, u.level, i.item_id, i.enchant_level FROM inventory i JOIN users u
+  ON u.id = i.user_id WHERE i.enchant_level > 0` (and the same over `warehouse`).
+
 - **Armour the Master does not sell is repaired as if it cost 30 🪙** (2026-10-05).
   `MasterCatalog.repairCost` prices from his listing and falls back to `?? 30`. Today every piece
   is his. The first set that is found rather than bought needs a repair price of its own: a
@@ -2556,6 +2627,10 @@ unrelated commit on purpose.
   `spec items`' obtainable column fell (L10 48% → 44%, L40 36% → 29%) when the weapon moved to
   the player level. The lines are frozen and were not re-solved; §9.7's probe measured the
   fights directly. Re-solve with the gear ladder, not before.
+  **Since 2026-10-06 it also depends on what the player paid**: the armour has a ladder (the
+  enchant) with no level gate, so `spec items` prints the kit as bought beside the kit fully
+  enchanted (L10: 44% and 108% of curve) and cannot say which a level-10 player wears. §11.6
+  measured the fights and the pace directly.
 - **The workshop's T3 gate is a Swift constant the validator cannot see** (2026-10-04).
   `EstateTierGates.workshop` hides the workshop below T3, and tiers 3–9 are bought only there.
   Today the chain is safe because «Другий щабель» (T3) sits before every workshop-only weapon
@@ -2576,6 +2651,11 @@ unrelated commit on purpose.
   burn), balanced one by one; and the special defence (L11) as a class upgrade of Defend. The
   invite shows only the nick and the stake. The "±3 bracket" existed only in a comment, corrected 2026-10-03, and
   queue matchmaking (§8.3) is still open.
+  **Measured again on 2026-10-06 with real kits** (`spec-items.md` §11.6, both sides on the
+  equilibrium's mix): the warrior beats the archer 66–71% and the mage 73–74% at levels 10–25.
+  Between equally enchanted fighters the armour's ladder narrows that by one to four points and
+  adds about three rounds to a duel. With no gate on the enchant, an enchanted fighter can now
+  meet a bare one at any level; that pairing was not measured.
 - **A challenger who leaves by `/settings` while waiting** keeps the challenge and is not moved
   back when it is accepted, so their fight taps would land on another controller. The accepter
   is moved (2026-10-03); the challenger is not, because that would write another player's

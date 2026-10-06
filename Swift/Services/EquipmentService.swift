@@ -92,14 +92,20 @@ public enum EquipmentService {
     ///
     /// `gear*Bonus` is a CACHE, and only `recomputeBonuses` writes it: on an
     /// equip, a fight's wear, a repair, an enchant, a reforge. Never on a
-    /// migration or a content edit. The deploy after 2026-10-05 changes what
-    /// worn rows grant three ways: the weapon ladder (2026-10-04) re-solved
-    /// every rung's stats, `ClampWeaponTiersToLevel` takes weapons down a
-    /// tier, and `RaiseArmorDurability` lifts broken armour off 0. Without this
-    /// pass every tester holding a weapon at t2+ would read the old rung on
-    /// the profile and fight the next fight with it — four of them on
-    /// 2026-10-05, one carrying a cached sword ATK of +60 against the new t5's
-    /// +27. A restart is a consistency point for the cache; a `/reload` is not.
+    /// migration or a content edit.
+    ///
+    /// The deploy after 2026-10-05 changes what worn rows grant four ways:
+    /// - the weapon ladder (2026-10-04) re-solved every rung's stats;
+    /// - `ClampWeaponTiersToLevel` takes weapons down a tier;
+    /// - `RaiseArmorDurability` lifts broken armour off 0;
+    /// - the enchant became the armour's ladder (2026-10-06), so every
+    ///   enchanted piece is worth more than its cache says.
+    ///
+    /// Without this pass every tester holding a weapon at t2+ would read the
+    /// old rung on the profile and fight the next fight with it — four of them
+    /// on 2026-10-05, one carrying a cached sword ATK of +60 against the new
+    /// t5's +27. A restart is a consistency point for the cache; a `/reload`
+    /// is not.
     ///
     /// Two queries whatever the roster, then one save per player that moved.
     public static func backfillGearBonuses(on db: any Database, logger: Logger) async throws {
@@ -184,33 +190,42 @@ public enum EquipmentService {
         user.hp = Swift.min(user.hp, user.effectiveMaxHp)
     }
 
-    /// Full-condition stats of a gear row: its tier/base `GearStats` scaled by
-    /// the enchant multiplier. No durability penalty applied — this is what the
-    /// piece grants at full condition (used by the inventory detail card).
-    /// Tiered weapons read the per-tier table; T1 equals `Item.gearStats`.
-    /// Returns zeroes for non-gear / unknown items.
+    /// Full-condition stats of a gear row: its tier/base `GearStats`, lifted by
+    /// the row's enchant level. No durability penalty applied — this is what
+    /// the piece grants at full condition (used by the inventory detail card
+    /// and summed into the cached bonuses). Tiered weapons read the per-tier
+    /// table; T1 equals `Item.gearStats`. Returns zeroes for non-gear / unknown
+    /// items.
     ///
-    /// Phase 6 changed what an enchant IS. It used to add flat points to DEF
-    /// plus a class-identity stat; it now scales the item's OWN stats by
-    /// `1 + 4% × level`. A flat bonus has no workable size — the same +32 DEF
-    /// is 267% of a level-1 chest and 14% of a level-40 one — and scaling the
-    /// item keeps its profile intact instead of bending every piece toward the
-    /// wearer's class.
+    /// The enchant is the armour's ladder since 2026-10-06 (`spec-items.md`
+    /// §11): level N budgets the piece at an item level, the way a weapon rung
+    /// does. It is the same for every wearer — no player level gates an
+    /// enchant, its price does — so `user` is not read.
     ///
-    /// The class-identity flavour moves to sets, where it can be expressed
-    /// without distorting the budget of the piece it sits on.
+    /// Before that an enchant scaled the item's own stats by `1 + 4% × level`
+    /// (Phase 6), and before that it added flat points. The flat form has no
+    /// workable size — the same +32 DEF is 267% of a level-1 chest and 14% of a
+    /// level-40 one — and the percentage was smaller than one point of any
+    /// stat on a level-1 piece.
     public static func nominalStats(of row: InventoryEntry, for user: User) -> GearStats {
-        guard let item = ItemCatalog.find(row.itemId) else { return GearStats() }
+        stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
+    }
+
+    /// The same answer without a row: what `itemId` at `tier` is worth at an
+    /// explicit enchant level. The Master's card asks this to show a level
+    /// beside the next one — one arithmetic for the card and the bonuses.
+    public static func stats(ofItem itemId: String, tier: Int, enchantLevel: Int) -> GearStats {
+        guard let item = ItemCatalog.find(itemId) else { return GearStats() }
         let base: GearStats
-        if let tierStats = WeaponUpgradeCatalog.stats(for: item.id, tier: row.tier) {
+        if let tierStats = WeaponUpgradeCatalog.stats(for: item.id, tier: tier) {
             base = tierStats
         } else if let s = item.gearStats {
             base = s
         } else {
             return GearStats()
         }
-        guard row.enchantLevel > 0 else { return base }
-        return base.scaled(by: MasterCatalog.enchantMultiplier(level: row.enchantLevel))
+        guard enchantLevel > 0 else { return base }
+        return base.scaled(by: MasterCatalog.enchantScale(level: enchantLevel, for: item))
     }
 
     /// What a row actually contributes right now, after durability:

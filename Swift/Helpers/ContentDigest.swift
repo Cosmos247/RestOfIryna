@@ -237,7 +237,7 @@ enum ContentDigest {
         // below matter more here than they did for batch B.
 
         digest.combine(MasterCatalog.enchantCap)
-        digest.combine("\(MasterCatalog.enchantBudgetFractionPerLevel)")
+        digest.combine("growth \(MasterCatalog.enchantGrowthShare)")
         digest.combine("lesson \(MasterCatalog.weaponLessonSilver)")
         for listing in MasterCatalog.armorForSale {
             digest.combine("\(listing.itemId)@\(listing.priceSilver)")
@@ -258,14 +258,22 @@ enum ContentDigest {
             }
         }
         for missing in [-5, 0, 1, 30, 100] { digest.combine(MasterCatalog.weaponRepairCost(missing: missing)) }
-        // Replayed past both ends: the multiplier clamps at 0 below and at the
-        // cap above, and a change to either bound is invisible in the raw
-        // fraction alone.
-        for level in -1...8 {
-            digest.combine("\(MasterCatalog.enchantMultiplier(level: level))")
-            digest.combine(MasterCatalog.enchantBonusPercent(level: level))
+        // The enchant is the armour's ladder since 2026-10-06 (`spec-items.md`
+        // §11), and its lift is DERIVED — from the step's item level, the
+        // growth share, the budget curve and the piece's own item level — so
+        // no record hash can see it. Replay what every armour piece is worth at
+        // every level, past both ends, where the clamps live. The rounding is
+        // part of the replay: level 3 puts a stat exactly on a half, and it
+        // has to round the same way on the Mac and on the Pi.
+        for item in ItemCatalog.all {
+            guard let slot = item.slot, slot.isArmor else { continue }
+            for level in -1...(MasterCatalog.enchantCap + 2) {
+                let stats = EquipmentService.stats(ofItem: item.id, tier: 1, enchantLevel: level)
+                digest.combine("\(item.id)+\(level) \(stats.attack)/\(stats.defense)/\(stats.hp)/"
+                               + "\(stats.crit)/\(stats.dodge)/\(stats.accuracy)")
+            }
         }
-        for level in -1...6 {
+        for level in -1...(MasterCatalog.enchantCap + 2) {
             digest.combine(MasterCatalog.enchantStep(currentLevel: level).map(fingerprint) ?? "-")
         }
 
@@ -1027,7 +1035,7 @@ enum ContentDigest {
     }
 
     private static func fingerprint(_ step: MasterCatalog.EnchantStep) -> String {
-        "t\(step.level) silver\(step.silver) \(step.materialId)x\(step.materialQty)"
+        "t\(step.level) silver\(step.silver) \(step.materialId)x\(step.materialQty) ilvl\(step.itemLevel)"
     }
 
     private static func fingerprint(_ tuning: PlotTuning) -> String {

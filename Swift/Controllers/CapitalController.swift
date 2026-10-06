@@ -1107,36 +1107,20 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     // MARK: Enchant
-
-    /// Localization key for the stat *focus* of the player's class, used in the
-    /// enchant-screen hint (no level numbers — just which stats this class's
-    /// enchant reinforces). Unknown/nil class falls back to warrior.
-    private static func enchantFocusKey(for user: User) -> String {
-        switch CharacterClass(rawValue: user.characterClass ?? "") {
-        case .archer: return "capital.master.enchant.focus.archer"
-        case .mage:   return "capital.master.enchant.focus.mage"
-        case .warrior, nil: return "capital.master.enchant.focus.warrior"
-        }
-    }
-
-    /// Localized phrase for what an enchant of `level` actually grants.
-    ///
-    /// One phrase for every class now: since Phase 6 an enchant scales the
-    /// piece's OWN stats by a percentage instead of adding flat points plus a
-    /// class-identity stat, so there is no longer anything class-specific to
-    /// say. The three per-class keys are retired.
-    private static func enchantBonusPhrase(for user: User, level: Int, lingo: Lingo) -> String {
-        lingo.localize("capital.master.enchant.bonus", locale: user.locale,
-                       interpolations: ["percent": "\(MasterCatalog.enchantBonusPercent(level: level))"])
-    }
+    //
+    // The enchant is the armour's ladder since 2026-10-06 (`spec-items.md`
+    // §11): a level budgets the piece at an item level, and its price is its
+    // only gate. The three per-class "focus" lines and the «+N% до кожного стата»
+    // phrase went with the percentage they described — the card and the banner
+    // print the piece's own numbers instead.
 
     private func editToMasterEnchant(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
         let armor = try await ownedArmorRows(for: context.session, on: context.db)
         let enchantable = armor.filter { $0.enchantLevel < MasterCatalog.enchantCap }
         let hintKey = enchantable.isEmpty ? "capital.master.enchant.empty" : "capital.master.enchant.hint"
-        let focus = lingo.localize(Self.enchantFocusKey(for: context.session), locale: locale)
-        let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo, hintInterpolations: ["focus": focus])
+        let text = sectionBody("capital.master.enchant.title", hintKey: hintKey, session: context.session, lingo: lingo,
+                               hintInterpolations: ["cap": "\(MasterCatalog.enchantCap)"])
         var rows: [[TGInlineKeyboardButton]] = enchantable.compactMap { row -> [TGInlineKeyboardButton]? in
             guard let id = row.id, let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) else { return nil }
             // Cost is shown on the confirm prompt — list shows just the level step.
@@ -1201,13 +1185,19 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
     }
 
-    /// The enchant card: the piece, the step, and what it costs against what
-    /// the player holds — in `RequirementLine`'s sentence, the lesson card's own
-    /// (2026-10-05). It used to ask «Бажаєте покращити … за 🪙 220 + 15🟫?» and
-    /// say nothing of what the player had, so the only place that number
-    /// appeared was the refusal.
+    /// The enchant card: the piece, the level, what the level makes of it, and
+    /// what it asks for against what the player holds — the mockup the owner
+    /// picked on 2026-10-06, less its player-level line, which went with the
+    /// gates the same day.
     ///
-    /// The material is counted in the BAG, as `MasterService.enchant` draws it.
+    /// The stat lines are the weapon reforge's own sentence (`GearStatLines`):
+    /// one ladder, one way of showing a rung. The material is counted in the
+    /// BAG, as `MasterService.enchant` draws it.
+    ///
+    /// Until 2026-10-05 this asked «Бажаєте покращити … за 🪙 220 + 15🟫?» and
+    /// said nothing of what the player had, and until 2026-10-06 nothing of
+    /// what the level gave — which is how thirteen levels out of twenty could
+    /// change no number without one screen saying so.
     private func editToMasterConfirmEnchant(entryId: UUID, messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
         guard let userId = context.session.id,
@@ -1216,14 +1206,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context); return
         }
         let inBag = try await InventoryEntry.totalQuantity(of: step.materialId, for: userId, on: context.db)
-        let lines = [
+        let from = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: row.enchantLevel)
+        let to   = EquipmentService.stats(ofItem: row.itemId, tier: row.tier, enchantLevel: step.level)
+        var lines = [
             "<b>" + lingo.localize("capital.master.enchant.title", locale: locale) + "</b>",
             "",
-            "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) +\(row.enchantLevel) → +\(step.level)",
-            RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-                                   have: context.session.silver, need: step.silver),
-            RequirementLine.item(step.materialId, have: inBag, need: step.materialQty, lingo: lingo, locale: locale)
+            "\(itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale)) +\(row.enchantLevel) → +\(step.level)"
         ]
+        lines += GearStatLines.deltas(from: from, to: to, lingo: lingo, locale: locale,
+                                      prefix: RequirementLine.blockIndent)
+        lines.append(RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+                                            have: context.session.silver, need: step.silver))
+        lines.append(RequirementLine.item(step.materialId, have: inBag, need: step.materialQty, lingo: lingo, locale: locale))
         let kb = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
                                text: lines.joined(separator: "\n"), keyboard: kb)
@@ -1277,10 +1271,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 callbackQueryId: query.id, text: text, showAlert: true))
         }
         switch result {
-        case .success(let itemId, let newLevel):
+        case .success(let itemId, let newLevel, let before, let after):
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             let name = itemLabel(itemId, lingo: lingo, locale: locale)
-            let bonus = Self.enchantBonusPhrase(for: context.session, level: newLevel, lingo: lingo)
+            // What the level added, in the piece's own numbers. Never empty:
+            // the validator refuses a level that changes nothing on any armour
+            // (`master.enchant_level_changes_nothing`).
+            let bonus = GearStatLines.gains(from: before, to: after, lingo: lingo, locale: locale)
             let text = lingo.localize("capital.master.enchanted", locale: locale, interpolations: ["item": name, "level": "\(newLevel)", "bonus": bonus])
             await postStatusBanner("✅ \(text)", context: context)
             try await editToMasterEnchant(messageId: messageId, isPhoto: isPhoto, context: context)

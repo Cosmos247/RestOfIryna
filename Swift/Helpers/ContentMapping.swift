@@ -249,7 +249,7 @@ extension MasterArmorListingDTO {
 
 extension EnchantStepDTO {
     var domain: MasterCatalog.EnchantStep {
-        MasterCatalog.EnchantStep(level, silver, materialId, materialQty)
+        MasterCatalog.EnchantStep(level, silver, materialId, materialQty, itemLevel: itemLevel)
     }
 }
 

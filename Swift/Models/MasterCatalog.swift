@@ -11,9 +11,10 @@
 //  game's first real silver sink — buy markup, repair fees and enchant fees all
 //  drain `User.silver`.
 //
-//  Durability is armor-only for now (weapons keep their tier ladder and will
-//  gain gem inlay in a later phase). Gear-condition runtime — drain on combat,
-//  "broken at 0" — lives in `GearConditionService`.
+//  The enchant bench is the armour's ladder since 2026-10-06 (`spec-items.md`
+//  §11): the weapon climbs by the reforge, gated by the player's level; the
+//  armour by the enchant, gated by its price alone. Gear-condition runtime —
+//  drain on combat, "broken at 0" — lives in `GearConditionService`.
 //
 
 import Foundation
@@ -85,53 +86,42 @@ public enum MasterCatalog {
     }
 
     // MARK: - Enchant
+    //
+    // The enchant is the ARMOUR'S LADDER since 2026-10-06 (`spec-items.md`
+    // §11). Level N budgets the piece at an item level, the way a weapon rung
+    // does; until then a level added 4% of the piece's own stats, which on
+    // item-level-1 armour rounded away. No player level gates it — the owner
+    // had the gates taken out the day they were built. The price does.
 
-    /// Hard cap on the permanent enchant bonus a single piece can hold.
+    /// The highest enchant level a piece can hold — the ladder's length.
     public static var enchantCap: Int { Catalogs.current.masterEnchantCap }
 
     /// The fee for the weapon lesson, the first reforge (`spec-items.md` §9.4),
     /// paid on top of that rung's own materials.
     public static var weaponLessonSilver: Int { Catalogs.current.masterWeaponLessonSilver }
 
-    /// Fraction of an item's own budget each enchant level adds. Linear, and
-    /// deliberately so: the non-linearity that used to live here (+1 +1 +1 +2
-    /// +3) was compensating for a flat bonus that could not scale, and a
-    /// percentage needs no such correction.
-    public static var enchantBudgetFractionPerLevel: Double {
-        Catalogs.current.masterEnchantBudgetFraction
-    }
+    /// Share of the budget curve's growth an enchant level carries — the
+    /// weapon ladder's rule, so the armour and the weapon climb by one law.
+    public static var enchantGrowthShare: Double { Catalogs.current.masterEnchantGrowthShare }
 
-    /// Multiplier an enchant of `level` applies to an item's own stats.
-    ///
-    /// `1 + fraction × level`, clamped at the cap — so a fully enchanted piece
-    /// is 1.20× itself rather than "+8 of something". Every stat the item
-    /// carries scales together, which keeps the item's own profile intact: a
-    /// mage's cloth stays a crit piece, a shield stays bulk.
-    public static func enchantMultiplier(level: Int) -> Double {
-        let clamped = Swift.max(0, Swift.min(level, enchantCap))
-        return 1 + enchantBudgetFractionPerLevel * Double(clamped)
-    }
-
-    /// Percent an enchant of `level` adds, for display ("+12%").
-    public static func enchantBonusPercent(level: Int) -> Int {
-        Int(((enchantMultiplier(level: level) - 1) * 100).rounded())
-    }
-
-    /// Cost to raise a piece from `(level-1)` → `level` (1-based). Silver +
-    /// material. Escalates so the last point is the deepest sink.
+    /// One level of the ladder: what it costs and the item level it budgets a
+    /// piece at. The price is the level's only gate (`spec-items.md` §11).
     public struct EnchantStep: Sendable {
         public let level: Int
         public let silver: Int
         public let materialId: String
         public let materialQty: Int
-        public init(_ level: Int, _ silver: Int, _ materialId: String, _ materialQty: Int) {
+        public let itemLevel: Int
+        public init(_ level: Int, _ silver: Int, _ materialId: String, _ materialQty: Int, itemLevel: Int) {
             self.level = level
             self.silver = silver
             self.materialId = materialId
             self.materialQty = materialQty
+            self.itemLevel = itemLevel
         }
     }
 
+    /// Ordered by level — `Catalogs` sorts them once at install.
     public static var enchantSteps: [EnchantStep] { Catalogs.current.masterEnchantSteps }
 
     /// The step that takes a piece from its current `level` to `level + 1`,
@@ -140,5 +130,21 @@ public enum MasterCatalog {
         let next = currentLevel + 1
         guard next <= enchantCap else { return nil }
         return enchantSteps.first(where: { $0.level == next })
+    }
+
+    /// The lift an enchant of `level` gives `item`'s own stats: the piece
+    /// budgeted at that level's item level, by `EnchantLadderRules.scale`.
+    ///
+    /// Clamped at both ends — nothing below level 1, the cap's lift above the
+    /// cap — and identity for a level the table does not carry, so a bad row
+    /// can never lower a stat. Every stat the piece has scales together, which
+    /// keeps its own profile intact: a mage's cloth stays a crit piece.
+    public static func enchantScale(level: Int, for item: Item) -> LadderScale {
+        let clamped = Swift.min(level, enchantCap)
+        guard clamped >= 1, let step = enchantSteps.first(where: { $0.level == clamped }) else {
+            return .identity
+        }
+        return EnchantLadderRules.scale(fromItemLevel: item.itemLevel, toItemLevel: step.itemLevel,
+                                        growthShare: enchantGrowthShare, curve: Catalogs.current.budget)
     }
 }
