@@ -2551,7 +2551,16 @@ extension EstateController {
         let locale = context.session.locale
         let ctrl = Controllers.estateController
 
-        let result = try await WeaponUpgradeService.upgrade(for: context.session, on: context.db)
+        // Every outcome below answers the tap itself (a refusal is an alert),
+        // so a throw before them would leave it spinning — answered on the
+        // way out, as the Master's lesson does since `fd6e6e1`.
+        let result: WeaponUpgradeService.UpgradeResult
+        do {
+            result = try await WeaponUpgradeService.upgrade(for: context.session, on: context.db)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
 
         switch result {
         case .noWeaponEquipped:

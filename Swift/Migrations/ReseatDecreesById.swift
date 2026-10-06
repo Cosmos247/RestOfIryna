@@ -58,32 +58,39 @@ struct ReseatDecreesById: AsyncMigration {
     }
 
     func prepare(on database: any Database) async throws {
-        // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
-        // records it as done while the rows it exists for stay misplaced.
-        guard let sql = database as? any SQLDatabase else {
-            throw ReseatError.notSQL(driver: "\(type(of: database))")
-        }
         let newOrder = KingCatalog.chain.map(\.id)
-        let rows = try await sql.raw("SELECT id, decree_index FROM king_progress").all(decoding: Row.self)
-        var moved = 0
-        for row in rows {
-            let seat = KingChainReseat.position(row.decree_index, oldOrder: Self.oldOrder, newOrder: newOrder)
-            guard seat != row.decree_index else { continue }
-            // The counter belongs to the decree it was counting for; on a
-            // different decree it starts again, as `KingService` does on a
-            // turn-in.
-            let oldId = row.decree_index < Self.oldOrder.count ? Self.oldOrder[row.decree_index] : nil
-            let newId = seat < newOrder.count ? newOrder[seat] : nil
-            if oldId == newId {
-                try await sql.raw("UPDATE king_progress SET decree_index = \(bind: seat) WHERE id = \(bind: row.id)").run()
-            } else {
-                try await sql.raw("UPDATE king_progress SET decree_index = \(bind: seat), counter = 0 WHERE id = \(bind: row.id)").run()
+        // One transaction, because a re-seat is not idempotent: a row already
+        // moved reads as an OLD position on a second pass and moves again. A
+        // throw halfway — Fluent records a migration only after `prepare`
+        // returns, and does not wrap it in a transaction — would re-run over
+        // the moved half on the next boot.
+        try await database.transaction { tx in
+            // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
+            // records it as done while the rows it exists for stay misplaced.
+            guard let sql = tx as? any SQLDatabase else {
+                throw ReseatError.notSQL(driver: "\(type(of: tx))")
             }
-            moved += 1
-            let again = KingChainReseat.askedAgain(row.decree_index, oldOrder: Self.oldOrder, newOrder: newOrder)
-            database.logger.info("ReseatDecreesById: \(row.decree_index) → \(seat)\(again.isEmpty ? "" : ", asked again: \(again.joined(separator: ", "))")")
+            let rows = try await sql.raw("SELECT id, decree_index FROM king_progress").all(decoding: Row.self)
+            var moved = 0
+            for row in rows {
+                let seat = KingChainReseat.position(row.decree_index, oldOrder: Self.oldOrder, newOrder: newOrder)
+                guard seat != row.decree_index else { continue }
+                // The counter belongs to the decree it was counting for; on a
+                // different decree it starts again, as `KingService` does on a
+                // turn-in.
+                let oldId = row.decree_index < Self.oldOrder.count ? Self.oldOrder[row.decree_index] : nil
+                let newId = seat < newOrder.count ? newOrder[seat] : nil
+                if oldId == newId {
+                    try await sql.raw("UPDATE king_progress SET decree_index = \(bind: seat) WHERE id = \(bind: row.id)").run()
+                } else {
+                    try await sql.raw("UPDATE king_progress SET decree_index = \(bind: seat), counter = 0 WHERE id = \(bind: row.id)").run()
+                }
+                moved += 1
+                let again = KingChainReseat.askedAgain(row.decree_index, oldOrder: Self.oldOrder, newOrder: newOrder)
+                tx.logger.info("ReseatDecreesById: \(row.decree_index) → \(seat)\(again.isEmpty ? "" : ", asked again: \(again.joined(separator: ", "))")")
+            }
+            tx.logger.info("ReseatDecreesById: \(moved) of \(rows.count) player(s) re-seated")
         }
-        database.logger.info("ReseatDecreesById: \(moved) of \(rows.count) player(s) re-seated")
     }
 
     func revert(on database: any Database) async throws {

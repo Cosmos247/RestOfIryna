@@ -1991,11 +1991,32 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the thirteen on top — the 2026-10-06
-armour-ladder block, the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
+Telegram. **Every block below is LIVE and unwalked** except the fourteen on top — the two
+2026-10-06 blocks (the audit's fixes, the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
 the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
 2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
+
+**Added 2026-10-06 — the pre-deploy audit's four fixes (NOT deployed):** an account at full Vigor
+with a decree or a job that pays Vigor ready; two accounts for the arena.
+- **the palace, the double tap**: «✅ Доповісти Королю» on a Vigor decree asks the question; tap
+  «✅ Доповісти все одно» twice, fast. The first reports, and its banner stays. The second
+  only redraws the palace: the next decree, if it is complete, shows its own button and asks
+  its own question; nothing else is handed in.
+- **the palace, a question left in chat**: get the question, then walk to another location of
+  the capital and back, report the decree the ordinary way, and tap the OLD question's button.
+  The palace redraws and nothing is paid.
+- **an NPC job, the same two**: «✅ Здати все одно» (a counter job's «💰 Забрати все одно») tapped
+  twice pays once and leaves the payout's banner; an old question tapped after the next job is taken redraws the board.
+- **a decree that pays XP with a card drawn** (the Hanged Man, the Hierophant or the Hermit): the
+  banner's «📖 N Досвіду» is the boosted number (150 → 173 under the Hanged Man). A decree whose XP
+  crosses a level (e.g. «Пуща», 19,660) sends the level-up banner after the payout's.
+- **the arena, a picker left behind**: open «Виклик», pick an opponent, leave for the capital,
+  then tap «🪙 N» on the old picker. «❌ Виклик уже недійсний.», the picker's buttons vanish,
+  and no invite reaches the opponent. The same from the estate or a walk.
+- **the arena, «❌ Скасувати»** on a picker: its buttons go, the text stays.
+- **a player without the technique**, standing in the arena with an old picker: the tap sends
+  them to the capital with «🏟 Ристалище пускає лише тих…».
 
 **Added 2026-10-06 — the Master's enchant is the armour's ladder (`bad142b`, NOT deployed):**
 an account with Forester pieces, silver and hides in the bag.
@@ -2569,6 +2590,60 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-06 pre-deploy audit** of `8ae6772..HEAD` (`.memory/sessions.md`). Its four
+fixes shipped in their own commit; these were found, verified and left:
+- **Two level-1 jobs need km 6 or deeper since tier 2.** `trader.hides` (10 hides) and
+  `tavern.supplies` (6 raw meat) are `minLevel` 1. The boar, the first source of both, moved from
+  km 2–11 to km 6–10, and the viper and the eagle drop nothing. Both jobs can still be done
+  (deeper, or with silver at the trader) and dropped; raise their `minLevel` if a new player
+  stalls on one.
+- **A broken piece still counts toward its set** (since Phase 6). `EquipmentService.applyBonuses`
+  counts worn rows whatever their durability, so a Forester set worn to 0 still grants +2 dodge,
+  +2 DEF and +6 HP while every piece grants nothing.
+- **The enchant list names no row.** «🦺 Жилет лісника · +0→+1» is one button per piece. So:
+  - two copies at one level are identical buttons;
+  - wear is not shown;
+  - a broken spare can be enchanted at full price;
+  - the card and the banner print a gain that `contributedStats` withholds until the piece is
+    repaired.
+
+  The rule is "a gear list names ROWS", which the bag, the warehouse and the repair list keep.
+- **The task notice can announce a task already on screen.** It fires on a delivery taken with
+  the items in the bag, and on decree N+1 already complete when N is reported. Marking it in
+  `QuestService.accept` and after `row.advance()` would silence both.
+- **The armour's ladder would hit an enchanted weapon.** `EquipmentService.stats(ofItem:tier:
+  enchantLevel:)` lifts any row with a level, measured from the ITEM's item level (1 for the class
+  weapons), so a t9 sword at +5 would read ×4.6. No path writes a weapon's enchant: the Master has
+  been armour-only since `4a13163`. A one-line guard (armour only) closes it. Before the deploy:
+  `SELECT count(*) FROM inventory WHERE enchant_level > 0 AND item_id IN ('gear.rusty_sword',
+  'gear.simple_bow','gear.wooden_staff')`, and the same over `warehouse`, should read 0.
+- **The arena's four.**
+  - An `arena:` datum no case claims recurses between `ArenaController` and `MainController` with
+    no await between. Only five forms were ever emitted, so it is latent; acknowledge and return
+    instead.
+  - The accept-time refusals are written for the challenger and shown to the acceptor: a broke
+    challenger reads as the acceptor's own balance.
+  - A choice carries no round number, so a late or double tap commits the next round blind, and a
+    choice landing after the 1 s sweep on the third miss forfeits; about 1 s of grace would help.
+  - The sweeper's round push can land after a tap's own result (a stale fight keyboard, repaired
+    by the next tap).
+- **A fight in progress at the restart reads back with the new numbers.** HP above its new
+  maximum (300/225), ATK and XP changed mid-fight, `fight_log.estate_level` written as if scaled.
+  Once, at the deploy; ask the testers not to be in a fight.
+- **The plain «✅ Доповісти Королю» double tap.** When the next decree is not complete, its refusal banner
+  replaces the payout's (`postStatusBanner` deletes the previous one). The question's answer no
+  longer can; this tap still does.
+- **Copy for the owner to decide**, not unified unasked:
+  - `arena.locked` names «Тренувальний двір», while every other screen says «Тренувальний
+    майданчик»;
+  - two weapon decrees say «Покращіть зброю», while the weapon's verb is now «перекувати» and
+    «✨ Покращити» is the armour's button at the Master;
+  - English says "the Podil" next to the "Lower Town" button.
+- **Decided, no change: the bag gates +4 and +5.** The Master draws hides from the bag alone,
+  +4 / +5 cost 26 / 42 and the starter bag holds 25, so +4 needs bag tier 2 (estate T3) and +5
+  bag tier 3 almost empty, or tier 4. The owner: «Просто лишити як є, гравець повинен
+  здогадатись сам» — no hint on the card. Do not propose one again.
+
 - **Armour above item level 1 has no ladder yet** (2026-10-06, `spec-items.md` §11.8). An
   enchant level budgets a piece at an ABSOLUTE item level (5 … 25), so a piece authored at item
   level 20 would gain nothing from +1…+4. The validator refuses such a piece
@@ -2689,7 +2764,9 @@ unrelated commit on purpose.
   0 HP — the next step (`rollStep` returns `.nothing` at 0 HP) kills them with an empty step
   narrative. Needs the owner's call on who loses such a round before the order changes. From the
   09-27 deploy on, `fight_log` records such a round as `win` with `hp_end = 0` — rarer now the
-  burn is 0.15 of ATK.
+  burn is 0.15 of ATK. **Also undeclared:** at 0 HP the walk screen still offers the bag, and
+  `explore:eat:` has no HP guard, so the player can eat and walk on (2026-10-06 audit). The
+  estate scaling (`4be2758`) makes the lethal counter during a burn more likely.
 - **`/menu` is missing from the base `unmatched` filter** (found 2026-09-27, not touched). The
   SDK runs EVERY matching handler, so `/menu` both restores the keyboard (global handler) and
   falls through to the current controller's root re-render. `TGControllerBase.unmatched`

@@ -64,6 +64,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - the Master's enchant is the armour's ladder (10-06, `bad142b`, `spec-items.md` §11;
       content schema v19, no migration): a level budgets the piece at item level 5 … 25, and
       its price — 50 × level² silver a piece — is its only gate.
+    - the pre-deploy audit's four fixes (10-06, Swift only): an «… все одно» answer names its
+      decree or job, the arena's stake picker asks where the player stands, the palace banner
+      prints the XP that landed, and the data migrations run in a transaction — the whole
+      backlog rehearsed off the Pi first (auto-memory `reference-deploy-rehearsal`).
 
     The weapon ladder adds two migrations (`ClampWeaponTiersToLevel` with a silver refund,
     `ReseatDecreesById`), the task-ready notice one (`AddReadyNotifiedFlags`), the durability one
@@ -71,8 +75,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     verify are in `Prompt.md`. The testers should hear first — the game announces neither the
     stronger forest, nor the weapon clamp, nor the dearer and sturdier armour, nor the enchant
     that now makes it grow.
-  - Then the first `fight_log` rows, and a human walking the screens. Thirteen blocks head
-    `TODO.md`'s walk list and wait for their deploy — the armour-ladder, durability, enchant, support-button,
+  - Then the first `fight_log` rows, and a human walking the screens. Fourteen blocks head
+    `TODO.md`'s walk list and wait for their deploy — the audit-fixes, armour-ladder, durability, enchant, support-button,
     task-ready, Vigor-reward, tarot, weapon, quest-board, two arena, estate and tier-2 blocks; the
     arena ones need two accounts.
   - **Open threads**, all in `TODO.md` → "Open, decided but not done":

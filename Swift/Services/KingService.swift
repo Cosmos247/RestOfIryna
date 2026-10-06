@@ -91,7 +91,9 @@ enum KingService {
 
     /// What a turn-in actually did. `vigorLanded` is what the pool accepted,
     /// never the authored number; `vigorLost` is the rest, which the banner
-    /// names rather than letting it vanish.
+    /// names rather than letting it vanish. `xp` is likewise what `grantXP`
+    /// landed — the tarot card's multiplier applied, nothing at the cap — and
+    /// `xpResult` carries the level-up for its banner, the quest payout's shape.
     struct Payout: Sendable {
         let decreeId: String
         let vigorLanded: Int
@@ -100,8 +102,7 @@ enum KingService {
         let xp: Int
         let foodItemId: String?
         let foodQuantity: Int
-        let leveledUp: Bool
-        let newLevel: Int
+        let xpResult: User.XPGrantResult?
     }
 
     enum ReportFailure: Error, Sendable {
@@ -198,9 +199,9 @@ enum KingService {
         }
         if reward.silver > 0 { user.silver += reward.silver }
 
-        var leveledUp = false
+        var xpResult: User.XPGrantResult?
         if reward.xp > 0 {
-            leveledUp = user.grantXP(reward.xp).levelsGained > 0
+            xpResult = user.grantXP(reward.xp)
         }
 
         let row = try await progressRow(for: user, on: db)
@@ -212,11 +213,10 @@ enum KingService {
                       vigorLanded: vigorLanded,
                       vigorLost: max(0, reward.vigor - vigorLanded),
                       silver: reward.silver,
-                      xp: reward.xp,
+                      xp: xpResult?.xpAwarded ?? 0,
                       foodItemId: reward.food?.itemId,
                       foodQuantity: reward.food?.quantity ?? 0,
-                      leveledUp: leveledUp,
-                      newLevel: user.level)
+                      xpResult: xpResult)
     }
 
     // MARK: - The seven events

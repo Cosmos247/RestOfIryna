@@ -50,48 +50,56 @@ struct ClampWeaponTiersToLevel: AsyncMigration {
     }
 
     func prepare(on database: any Database) async throws {
-        // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
-        // records it as done while the rows it exists for stay above their gate.
-        guard let sql = database as? any SQLDatabase else {
-            throw ClampError.notSQL(driver: "\(type(of: database))")
-        }
         let ladderIds = WeaponUpgradeCatalog.progression.keys.sorted()
         guard !ladderIds.isEmpty else { return }
         let idList = ladderIds.map { "'\($0)'" }.joined(separator: ",")
-        var refunds: [UUID: Int] = [:]
 
-        for table in ["inventory", "warehouse"] {
-            let rows = try await sql.raw("""
-                SELECT t.id, t.user_id, t.item_id, t.tier, t.durability, u.level
-                FROM \(unsafeRaw: table) t JOIN users u ON u.id = t.user_id
-                WHERE t.item_id IN (\(unsafeRaw: idList))
-                """).all(decoding: Row.self)
-            for row in rows {
-                let allowed = WeaponUpgradeCatalog.highestTier(for: row.item_id, atLevel: row.level)
-                guard row.tier > allowed else { continue }
-                let steps = WeaponUpgradeCatalog.progression[row.item_id] ?? []
-                let refund = WeaponLadderRules.refundSilver(
-                    inputsByTier: steps.map { $0.inputs.map { (itemId: $0.itemId, quantity: $0.quantity) } },
-                    fromTier: row.tier, toTier: allowed,
-                    price: { itemId in
-                        guard let listing = TraderCatalog.find(itemId), listing.buyPacketQty > 0 else { return 0 }
-                        return listing.buyPacketSilver / listing.buyPacketQty
-                    })
-                let maxDurability = WeaponUpgradeCatalog.durability(forTier: allowed)
-                try await sql.raw("""
-                    UPDATE \(unsafeRaw: table)
-                    SET tier = \(bind: allowed), max_durability = \(bind: maxDurability),
-                        durability = \(bind: min(row.durability, maxDurability))
-                    WHERE id = \(bind: row.id)
-                    """).run()
-                refunds[row.user_id, default: 0] += refund
-                database.logger.info("ClampWeaponTiersToLevel: \(table) \(row.item_id) of \(row.user_id) at level \(row.level): T\(row.tier) → T\(allowed), refund \(refund) silver")
+        // One transaction. Fluent neither wraps a migration in one nor records
+        // it before `prepare` returns, so a throw between the tier updates and
+        // the refunds below would leave rows clamped, their silver unpaid and
+        // the migration unrecorded — and the re-run, finding nothing above its
+        // gate, would never pay it.
+        try await database.transaction { tx in
+            // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
+            // records it as done while the rows it exists for stay above their gate.
+            guard let sql = tx as? any SQLDatabase else {
+                throw ClampError.notSQL(driver: "\(type(of: tx))")
             }
+            var refunds: [UUID: Int] = [:]
+
+            for table in ["inventory", "warehouse"] {
+                let rows = try await sql.raw("""
+                    SELECT t.id, t.user_id, t.item_id, t.tier, t.durability, u.level
+                    FROM \(unsafeRaw: table) t JOIN users u ON u.id = t.user_id
+                    WHERE t.item_id IN (\(unsafeRaw: idList))
+                    """).all(decoding: Row.self)
+                for row in rows {
+                    let allowed = WeaponUpgradeCatalog.highestTier(for: row.item_id, atLevel: row.level)
+                    guard row.tier > allowed else { continue }
+                    let steps = WeaponUpgradeCatalog.progression[row.item_id] ?? []
+                    let refund = WeaponLadderRules.refundSilver(
+                        inputsByTier: steps.map { $0.inputs.map { (itemId: $0.itemId, quantity: $0.quantity) } },
+                        fromTier: row.tier, toTier: allowed,
+                        price: { itemId in
+                            guard let listing = TraderCatalog.find(itemId), listing.buyPacketQty > 0 else { return 0 }
+                            return listing.buyPacketSilver / listing.buyPacketQty
+                        })
+                    let maxDurability = WeaponUpgradeCatalog.durability(forTier: allowed)
+                    try await sql.raw("""
+                        UPDATE \(unsafeRaw: table)
+                        SET tier = \(bind: allowed), max_durability = \(bind: maxDurability),
+                            durability = \(bind: min(row.durability, maxDurability))
+                        WHERE id = \(bind: row.id)
+                        """).run()
+                    refunds[row.user_id, default: 0] += refund
+                    tx.logger.info("ClampWeaponTiersToLevel: \(table) \(row.item_id) of \(row.user_id) at level \(row.level): T\(row.tier) → T\(allowed), refund \(refund) silver")
+                }
+            }
+            for (userId, silver) in refunds where silver > 0 {
+                try await sql.raw("UPDATE users SET silver = silver + \(bind: silver) WHERE id = \(bind: userId)").run()
+            }
+            tx.logger.info("ClampWeaponTiersToLevel: \(refunds.count) player(s) clamped, \(refunds.values.reduce(0, +)) silver refunded")
         }
-        for (userId, silver) in refunds where silver > 0 {
-            try await sql.raw("UPDATE users SET silver = silver + \(bind: silver) WHERE id = \(bind: userId)").run()
-        }
-        database.logger.info("ClampWeaponTiersToLevel: \(refunds.count) player(s) clamped, \(refunds.values.reduce(0, +)) silver refunded")
     }
 
     func revert(on database: any Database) async throws {

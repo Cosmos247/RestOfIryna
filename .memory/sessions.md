@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this sync pass, 10-06)* **`bad142b`'s hash fill** — records only; the audit found two stale
+- *(this commit, 10-06)* **the pre-deploy audit's four fixes** — an answer names what it was
+  asked about (`king:report_ok:<decree>`, `quest:do_ok:<npc>:<job row>`); the arena's stake picker
+  and challenge refuse a player off the arena or without the technique; the palace banner prints
+  the XP that landed and a decree's level-up; the three data migrations run in a transaction and
+  the workshop's reforge answers its tap on a throw. Swift only; the digest unmoved.
+- `85a5bbf` (10-06) **`bad142b`'s hash fill** — records only; the audit found two stale
   descriptions of the enchant (README's `CapitalController` entry, the file map's `MasterCatalog`
   line) and fixed them.
 - `bad142b` (10-06) **the Master's enchant is the armour's ladder** (`spec-items.md` §11) —
@@ -457,6 +462,70 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-06 (the pre-deploy audit of `8ae6772..HEAD`, and its four fixes) — *(this commit)*
+
+The owner: «Продивись зміни які внесені, але ще незадеплоєні на пай. Ще раз перевір їх,
+протестуй як вони працюють один з одним в новій системі та видай мені репорт, чи все добре, та
+чи треба ще щось змінити.»
+- **Checked mechanically.**
+  - A from-scratch build in a separate build path: 0 project warnings.
+  - 395 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands / 18 warnings.
+  - The digest equal to `Prompt.md`'s line.
+  - The Pi, read-only: HEAD `8ae6772`, 69 migrations, 11 users, PG 15.16. pm2 shows ROI up since
+    **2026-10-03 22:08**, not 09-28 22:11 as recorded — same commit, restarted by someone.
+- **Rehearsed the deploy off the Pi** (auto-memory `reference-deploy-rehearsal`): a portable
+  PG15 in the scratchpad and a `git archive` copy whose `configure.swift` exits after the boot
+  passes, so nothing reaches Telegram.
+  - A read-only `pg_dump` of the Pi was refused by the auto-mode classifier, so the players were
+    synthetic: 56 of them, built to hit every branch. They hold weapons above their gate (worn,
+    in the bag, in the warehouse), Forester pieces at 30/30, 6/12 and broken, and enchanted
+    pieces; one `king_progress` row stands at each position 0–39.
+  - A fresh install runs all 74 migrations.
+  - Back at the Pi's schema, the five new migrations and the boot passes passed 261/261 checks.
+    The expectations were computed from `content/data` in Python: tiers, refunds, durability,
+    re-seats, the +20, the gear-bonus cache and the order. The checker caught planted errors,
+    and a second boot changed nothing.
+  - 55 scenarios ran through the real services on the migrated rows, all passing: the lesson,
+    the workshop, the enchant, equip, repair, salvage, the palace, the cards and the scaling.
+- **Five parallel code reviews** (forest, arena, gear, quests/decrees/notices, copy/Linux). No
+  blocker. Every finding reported was verified in the code first.
+- **The owner took all four fixes offered**, built here:
+  1. **An answer names what it was asked about.** `king:report_ok:<decree>` and
+     `quest:do_ok:<npc>:<job row>` (`QuestService.Status.rowId`); a mismatch redraws and pays
+     nothing. The bare answer reported whatever was open when it was TAPPED, so a double tap
+     handed in the next decree unasked, its Vigor clamped into the pool the first had filled.
+  2. **The arena's stake picker and challenge ask** (`challengeAllowedHere`). A player off the
+     arena's router gets «❌ Виклик уже недійсний.» and the buttons stripped; one without the
+     technique goes to the capital with the reason; «Скасувати» strips the picker. A picker left
+     in chat issued a challenge from the capital, and only the answering side is moved onto the
+     arena, so the clock forfeited the challenger's stake.
+  3. **The palace banner prints the receipt.** The XP `grantXP` landed — 173, not 150, under the
+     Hanged Man — and the `LevelUpBanner` a job's payout already sent.
+  4. **The three data migrations run in `database.transaction`.** Fluent records a migration
+     only after `prepare` and wraps nothing, and the +20, the re-seat and the clamp's refunds are
+     not idempotent. Also, the workshop's reforge answers its tap on a throw (`fd6e6e1`'s shape).
+- **The owner's call on the fifth.** The Master draws hides from the bag alone (`4fe5b7a`), and
+  +4 / +5 cost 26 / 42 hides while the starter bag holds 25. So +4 needs bag tier 2 (estate T3),
+  and +5 needs bag tier 3 almost empty (45) or tier 4 (60). «Просто лишити як є, гравець повинен
+  здогадатись сам» — no hint on the card either.
+- **Verified the fixes.**
+  - The touched files recompiled under bash with no warning; 395 tests; `validate --strict`
+    0/0; the digest unmoved.
+  - The rehearsal re-run with the transactional migrations: 261/261, idempotent.
+  - 60/60 scenarios. The new ones show that a payout quotes 173 XP, that «Пуща»'s 19,660 XP
+    reports the level it crossed (L18 → L19), and that a job keeps one row id from taking to
+    payout and reads claimed after it.
+- **Left for later**, every one in `TODO.md` → "Open, decided but not done" (2026-10-06):
+  - two level-1 jobs that need km 6+;
+  - a broken piece counting toward its set;
+  - the enchant list naming no row;
+  - the task notice for a task already on screen;
+  - the armour ladder that would hit an enchanted weapon;
+  - four arena items;
+  - a fight in progress at the restart;
+  - the plain «✅ Доповісти Королю» double tap;
+  - the owner's copy questions.
 
 ## Session — 2026-10-06 (the sync pass) — `bad142b`'s hash fill
 

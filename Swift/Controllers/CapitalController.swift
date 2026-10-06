@@ -1549,13 +1549,33 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = "<b>\(lingo.localize(npc.boardTitleKey, locale: locale))</b>\n\n"
             + "🪶 <b>\(lingo.localize(status.def.titleKey, locale: locale))</b>\n"
             + question
+        // The answer names the job it was asked about by its row — see
+        // `handleQuestFinishAnyway`. 55 bytes with the longest NPC.
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: lingo.localize(anywayKey, locale: locale),
-                                    callbackData: "quest:do_ok:\(npc.rawValue)")],
+                                    callbackData: "quest:do_ok:\(npc.rawValue):\(status.rowId?.uuidString ?? "")")],
             [TGInlineKeyboardButton(text: lingo.localize("reward.button.later", locale: locale),
                                     callbackData: "quest:board:\(npc.rawValue)")]
         ])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    /// The question's «hand in anyway». It turns in the job the question named
+    /// and nothing else: a second tap after the first was paid, or a question
+    /// left in chat history once that NPC has handed out another job, redraws
+    /// the board instead — the open job asks its own question there. A matching
+    /// job that is no longer finishable still goes to `handleQuestFinish`,
+    /// whose refusal says why; one already paid is a double tap, and redraws.
+    /// The bare `quest:do_ok:<npc>` of the questions before 2026-10-06 carries
+    /// no job, so it redraws too.
+    private func handleQuestFinishAnyway(npc: QuestNPC, jobId: UUID?, messageId: Int, isPhoto: Bool,
+                                         context: Context) async throws {
+        let status = try await QuestService.status(for: context.session, npc: npc, on: context.db)
+        guard let jobId, status.rowId == jobId, !status.claimed else {
+            try await editToQuestBoard(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        try await handleQuestFinish(npc: npc, messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
     private func handleQuestFinish(npc: QuestNPC, messageId: Int, isPhoto: Bool, context: Context) async throws {
@@ -1693,17 +1713,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
         // The report tap asks first when the decree's Vigor would not fit;
-        // `king:report_ok` is the one that reports regardless, and
-        // `king:palace` is the question's «come back later». Exact matches —
-        // `king:report` is a prefix of `king:report_ok`.
+        // `king:report_ok:<decree>` is the one that reports regardless, and
+        // `king:palace` is the question's «come back later». `king:report` is
+        // an exact match — it is a prefix of `king:report_ok`.
         if data == "king:report" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await ctrl.handleKingReportTap(messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
-        if data == "king:report_ok" {
+        if data == "king:report_ok" || data.hasPrefix("king:report_ok:") {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            try await ctrl.handleKingReport(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            let asked = data.hasPrefix("king:report_ok:") ? String(data.dropFirst("king:report_ok:".count)) : nil
+            try await ctrl.handleKingReportAnyway(decreeId: asked, messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
         if data == "king:palace" {
@@ -1732,13 +1753,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             return true
         }
         // The turn-in regardless of Vigor that will not fit — reached only from
-        // the question `quest:do:` asks. Not a prefix clash: `quest:do:` has a
-        // colon where this has an underscore.
+        // the question `quest:do:` asks, as `quest:do_ok:<npc>:<job row>`. Not
+        // a prefix clash: `quest:do:` has a colon where this has an underscore.
         if data.hasPrefix("quest:do_ok:") {
-            let token = String(data.dropFirst("quest:do_ok:".count))
+            let parts = data.dropFirst("quest:do_ok:".count).split(separator: ":", maxSplits: 1).map(String.init)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            guard let npc = QuestNPC(rawValue: token) else { return true }
-            try await ctrl.handleQuestFinish(npc: npc, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            guard let npc = parts.first.flatMap(QuestNPC.init(rawValue:)) else { return true }
+            let jobId = parts.count > 1 ? UUID(uuidString: parts[1]) : nil
+            try await ctrl.handleQuestFinishAnyway(npc: npc, jobId: jobId, messageId: message.messageId,
+                                                   isPhoto: isPhoto, context: context)
             return true
         }
         // Drop a carried job: the first asks, the second acts. `quest:abandon:`
@@ -2482,15 +2505,34 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = "<b>\(lingo.localize(Location.palace.titleKey, locale: locale))</b>\n\n"
             + "<b>\(lingo.localize(KingCatalog.nameKey(standing.decree), locale: locale))</b>\n"
             + question
+        // The answer names the decree it was asked about — see
+        // `handleKingReportAnyway`. The longest id leaves the data at 43 bytes.
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: lingo.localize("king.button.report_anyway", locale: locale),
-                                    callbackData: "king:report_ok")],
+                                    callbackData: "king:report_ok:\(standing.decree.id)")],
             [TGInlineKeyboardButton(text: lingo.localize("reward.button.later", locale: locale),
                                     callbackData: "king:palace")]
         ])
         _ = await editScreen(
             chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
             text: text, replyMarkup: keyboard, bot: context.bot)
+    }
+
+    /// The question's «report anyway». It hands in the decree the question
+    /// named and nothing else. A second tap after the first has moved the chain
+    /// on, or a question left in chat history, would otherwise report whatever
+    /// decree is open NOW without asking — and that decree's Vigor is exactly
+    /// what the question exists to protect. Any mismatch redraws the palace,
+    /// where the open decree asks its own question; so does the bare
+    /// `king:report_ok` the questions before 2026-10-06 carried.
+    func handleKingReportAnyway(decreeId: String?, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard let decreeId,
+              let standing = try await KingService.standing(for: context.session, on: context.db),
+              standing.decree.id == decreeId else {
+            try await editToPalace(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        try await handleKingReport(messageId: messageId, isPhoto: isPhoto, context: context)
     }
 
     /// Redraw the palace card in place: after a report, and as the question's
@@ -2547,6 +2589,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 banner += "\n" + lost
             }
             await postStatusBanner(banner, context: context)
+            // The level a decree's XP crossed, as an NPC job's payout announces
+            // it: a plain message, because `postStatusBanner` deletes the
+            // previous banner and this must not eat the payout. Best-effort —
+            // the decree is already paid and advanced.
+            if let xpResult = payout.xpResult, xpResult.levelsGained > 0 {
+                _ = try? await context.bot.sendMessage(
+                    session: context.session,
+                    text: LevelUpBanner.text(for: context.session, newLevel: xpResult.newLevel,
+                                             growth: xpResult.growth, lingo: lingo, locale: locale),
+                    parseMode: .html
+                )
+            }
         } catch KingService.ReportFailure.bagFull(let itemId, let quantity) {
             let item = ItemCatalog.find(itemId)
             let foodName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId

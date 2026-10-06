@@ -46,11 +46,6 @@ struct RaiseArmorDurability: AsyncMigration {
     private struct Moved: Decodable { let id: UUID }
 
     func prepare(on database: any Database) async throws {
-        // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
-        // records it as done while the rows it exists for keep the old numbers.
-        guard let sql = database as? any SQLDatabase else {
-            throw RaiseError.notSQL(driver: "\(type(of: database))")
-        }
         // Every piece a fight wears that carries its own durability.
         let shifts: [(itemId: String, by: Int)] = ItemCatalog.all.compactMap { item in
             guard let slot = item.slot, slot.isDurable, let target = item.maxDurability,
@@ -59,28 +54,40 @@ struct RaiseArmorDurability: AsyncMigration {
             return by == 0 ? nil : (item.id, by)
         }.sorted { $0.itemId < $1.itemId }
 
-        var total = 0
-        for table in ["inventory", "warehouse"] {
-            for shift in shifts {
-                // Postgres evaluates every SET expression against the OLD row,
-                // so `durability` is capped by the new maximum, not the old one.
-                // The clamps matter only for a shift below zero, which today's
-                // content does not make.
-                let moved = try await sql.raw("""
-                    UPDATE \(unsafeRaw: table)
-                    SET max_durability = GREATEST(1, max_durability + \(bind: shift.by)),
-                        durability = LEAST(GREATEST(1, max_durability + \(bind: shift.by)),
-                                           GREATEST(0, durability + \(bind: shift.by)))
-                    WHERE item_id = \(bind: shift.itemId)
-                    RETURNING id
-                    """).all(decoding: Moved.self)
-                total += moved.count
-                if !moved.isEmpty {
-                    database.logger.info("RaiseArmorDurability: \(table) \(shift.itemId) \(shift.by > 0 ? "+" : "")\(shift.by) on \(moved.count) row(s)")
+        // One transaction, because a shift is not idempotent: Fluent records a
+        // migration only after `prepare` returns and does not wrap it in a
+        // transaction, so a throw between the two tables would leave the bag's
+        // rows raised, the migration unrecorded — and the next boot would raise
+        // them by another 20.
+        try await database.transaction { tx in
+            // `throw`, not `return`, for `ResetDeepestKm`'s reason: skipping this
+            // records it as done while the rows it exists for keep the old numbers.
+            guard let sql = tx as? any SQLDatabase else {
+                throw RaiseError.notSQL(driver: "\(type(of: tx))")
+            }
+            var total = 0
+            for table in ["inventory", "warehouse"] {
+                for shift in shifts {
+                    // Postgres evaluates every SET expression against the OLD row,
+                    // so `durability` is capped by the new maximum, not the old one.
+                    // The clamps matter only for a shift below zero, which today's
+                    // content does not make.
+                    let moved = try await sql.raw("""
+                        UPDATE \(unsafeRaw: table)
+                        SET max_durability = GREATEST(1, max_durability + \(bind: shift.by)),
+                            durability = LEAST(GREATEST(1, max_durability + \(bind: shift.by)),
+                                               GREATEST(0, durability + \(bind: shift.by)))
+                        WHERE item_id = \(bind: shift.itemId)
+                        RETURNING id
+                        """).all(decoding: Moved.self)
+                    total += moved.count
+                    if !moved.isEmpty {
+                        tx.logger.info("RaiseArmorDurability: \(table) \(shift.itemId) \(shift.by > 0 ? "+" : "")\(shift.by) on \(moved.count) row(s)")
+                    }
                 }
             }
+            tx.logger.info("RaiseArmorDurability: \(total) row(s) moved")
         }
-        database.logger.info("RaiseArmorDurability: \(total) row(s) moved")
     }
 
     func revert(on database: any Database) async throws {

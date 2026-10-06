@@ -57,6 +57,11 @@ public enum QuestService {
         /// burns at noon (2026-09-19): it stays the NPC's one open job, today's
         /// offer waits behind it, and it is the only kind that can be abandoned.
         public let carried: Bool
+        /// The progress row this status reads — the job's identity, which a
+        /// quest id is not, since the same job can be offered again on a later
+        /// day. Nil for an offer that has no row yet. A question asked about one
+        /// job carries it, so its answer cannot turn in another.
+        public let rowId: UUID?
 
         /// Show the action button — the job is finishable right now.
         public var isActionable: Bool { accepted && !claimed && done >= target }
@@ -161,7 +166,7 @@ public enum QuestService {
             let done = try await liveDone(def, progress: open.progress, user: user, on: db)
             return Status(def: def, done: done, target: def.objective.target,
                           reward: scaledReward(def.reward, level: user.level),
-                          accepted: true, claimed: false, carried: true)
+                          accepted: true, claimed: false, carried: true, rowId: open.id)
         }
 
         let row = try await rowForToday(user: user, npc: npc, on: db, now: now)
@@ -184,7 +189,7 @@ public enum QuestService {
         }
         return Status(def: def, done: done, target: def.objective.target,
                       reward: scaledReward(def.reward, level: user.level),
-                      accepted: accepted, claimed: claimed, carried: false)
+                      accepted: accepted, claimed: claimed, carried: false, rowId: row?.id)
     }
 
     /// Accepted, unpaid delivery jobs that want `itemId`, with how many units

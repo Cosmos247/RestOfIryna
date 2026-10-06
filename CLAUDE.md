@@ -288,14 +288,23 @@ point after rounding — ×0.75 moved nothing, which is why the Chariot is ×0.5
 payouts clamp to the pool, so a decree paying only Vigor (20 of 39) turned in at full Vigor
 paid nothing, over a bare «💰». `VigorRewardNotice` is the one phrasing of that loss:
 - a warning on the card once the decree is done or the job is ready;
-- a question on the turn-in tap (`king:report` → `king:report_ok`, `quest:do:` →
-  `quest:do_ok:`);
+- a question on the turn-in tap (`king:report` → `king:report_ok:<decree>`, `quest:do:` →
+  `quest:do_ok:<npc>:<job row>`);
 - a banner line naming what was lost.
 
 The arithmetic is `VigorService.overflow`, the payouts' own clamp asked beforehand. A level-up
 inside the payout moves the cap and the pool by the same step, so it cannot change the answer.
 Asking costs the player nothing, because a decree and a taken job both wait. A new Vigor reward
 goes through the same three.
+
+**An answer names what it was asked about** (2026-10-06). The bare `king:report_ok` handed in
+whatever decree was open when it was TAPPED: a double tap reported the next decree unasked, its
+Vigor clamped into the pool the first had just filled, and so did a question left in chat. A
+mismatch redraws the screen and pays nothing (`handleKingReportAnyway`,
+`handleQuestFinishAnyway`), and so does the bare form older questions carry. The job is named by
+its ROW (`QuestService.Status.rowId`), since a quest id is offered again on later days. **Both
+banners print the receipt**: the XP `grantXP` landed (card multiplier included), and the level
+a decree crosses gets the same `LevelUpBanner` a job's does.
 
 **HP regeneration is a different mechanic from Vigor and stays — but it is a PLACE, not a
 pause between fights** (2026-09-10). `HealingService.canRest` names the three states that
@@ -485,7 +494,12 @@ blocks and answers nothing; two techniques both fizzle. The numbers are the aren
 `defendChipFraction` for the arena**: the forest's Defend, Iron Bulwark and Shadow Veil share it.
 `arena.duel_defend_loses` warns when a riposte no longer outweighs what gets through the block.
 The arena admits only those who have LEARNED the special attack (`ArenaService.isAdmitted`, at
-the capital's door and again at the arena's home). Auto-memory `project-arena-technique-cycle`.
+the capital's door and again at the arena's home). **The stake picker and the challenge ask
+too, and refuse a player off the arena's router** (`challengeAllowedHere`, 2026-10-06): a lobby
+list or a picker stays in the chat, every router forwards `arena:` here, and `acceptChallenge`
+moves only the side that answers — so a challenge issued from the capital let the clock forfeit
+the challenger's stake, and walked a player without the technique past the door. «Скасувати»
+strips the picker. Auto-memory `project-arena-technique-cycle`.
 
 ### Gear, inventory and storage
 
@@ -688,8 +702,8 @@ another controller's screen must END by forwarding what it does not recognise �
 `ExplorationController` and `CapitalController` both hand the rest to `MainController` — and
 it must be **a catch-all, never a list of prefixes**. A handler that answers LATE — because a
 refusal is a modal, which must be the tap's only answer (`finishMasterLesson`,
-`finishMasterEnchant`) — answers in a `catch` before rethrowing, or a throw ahead of it spins the
-button. Auto-memory `project-dead-inline-buttons`.
+`finishMasterEnchant`, the workshop's `handleWeaponUpgradeConfirm`) — answers in a `catch` before
+rethrowing, or a throw ahead of it spins the button. Auto-memory `project-dead-inline-buttons`.
 
 **A number typed before its button gets a hint, never the root screen.** Every quantity is
 asked AFTER a button (a trader card's [🪙 Купити], a warehouse row's [✏️ N], a vault row),
@@ -930,6 +944,13 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Use `context.bot.sendMessage(session:text:...)` over `context.respond()` in controllers
 - Follow existing file header format (Created by / Maintained by)
 - New models need corresponding migrations
+- **A migration that rewrites rows runs its body in `database.transaction`.** Fluent records a
+  migration only after `prepare` returns and wraps nothing in a transaction, so a throw halfway
+  leaves it half-applied AND unrecorded, and the next boot applies it again. A shift or a
+  re-seat is not idempotent: `RaiseArmorDurability` would add +20 twice, `ReseatDecreesById`
+  would move rows twice, and `ClampWeaponTiersToLevel` would never pay the refunds of rows it
+  had already clamped. Rehearse a deploy's migrations off the Pi before the restart
+  (auto-memory `reference-deploy-rehearsal`).
 - Keep Telegram callback_data under 64 bytes
 - Hand-edit `content/data/*.json` in the Swift `JSONEncoder` style already there
   (`"key" : value`, keys sorted, 2-space indent) — a python-style re-emit reformats

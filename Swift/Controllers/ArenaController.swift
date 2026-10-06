@@ -175,8 +175,43 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
+    /// A lobby list or a stake picker outlives the arena: it stays in the chat
+    /// with live buttons after the player has walked out, and every other
+    /// router forwards `arena:` here. A challenge issued from anywhere else
+    /// leaves the challenger off this router — `acceptChallenge` moves only the
+    /// one who answers — so their fight taps land on the screen they stand on,
+    /// the clock defends for them and the third miss forfeits the stake. It
+    /// would also walk a player without the technique past the door. So both
+    /// steps ask first: off the arena, the tapped buttons go and the tap is
+    /// told the challenge is void; on it without the technique, the home
+    /// screen sends the player to the capital with the reason, as «Виклик» does.
+    private func challengeAllowedHere(context: Context) async throws -> Bool {
+        guard context.session.routerName == routerName else {
+            await Self.stripTappedButtons(context: context)
+            await postStatusBanner("❌ \(context.lingo.localize("arena.invite.expired", locale: context.session.locale))",
+                                   context: context)
+            return false
+        }
+        guard try await ArenaService.isAdmitted(context.session, on: context.db) else {
+            try await showArenaHome(context: context)
+            return false
+        }
+        return true
+    }
+
+    /// Take the buttons off the message the tap came from, keeping its text —
+    /// the bubble stays in the history, its buttons go. Best-effort: a message
+    /// the player deleted has nothing left to strip.
+    private static func stripTappedButtons(context: Context) async {
+        guard let message = context.update.callbackQuery?.message else { return }
+        let params = TGEditMessageReplyMarkupParams(chatId: .chat(message.chat.id), messageId: message.messageId,
+                                                    replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: []))
+        _ = try? await context.bot.editMessageReplyMarkup(params: params)
+    }
+
     /// Opponent picked — offer the stake tiers.
     func showStakePicker(opponentTg: Int64, context: Context) async throws {
+        guard try await challengeAllowedHere(context: context) else { return }
         let lingo = context.lingo, locale = context.session.locale
         let members = await ArenaStore.shared.lobbyMembers(excluding: context.session.telegramId)
         guard let opp = members.first(where: { $0.telegramId == opponentTg }) else {
@@ -193,6 +228,7 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
     /// Stake chosen — validate + issue the challenge, push the invite to the target.
     func issueChallenge(opponentTg: Int64, stake: Int, context: Context) async throws {
+        guard try await challengeAllowedHere(context: context) else { return }
         let lingo = context.lingo, locale = context.session.locale
         guard let opponent = try await User.query(on: context.db).filter(\.$telegramId, .equal, opponentTg).first() else {
             await postStatusBanner("❌ \(lingo.localize("arena.challenge.gone", locale: locale))", context: context)
@@ -407,7 +443,11 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
 
         switch true {
         case data == "arena:chalcancel":
-            await ack(); return true
+            // The picker's buttons go with it: left live, «🪙 500» could be
+            // tapped hours later from wherever the player then stands.
+            await ack()
+            await stripTappedButtons(context: context)
+            return true
         case data.hasPrefix("arena:chal:"):
             await ack()
             if let tg = Int64(String(data.dropFirst("arena:chal:".count))) { try await ctrl.showStakePicker(opponentTg: tg, context: context) }
