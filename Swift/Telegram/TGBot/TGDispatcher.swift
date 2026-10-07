@@ -52,8 +52,15 @@ final class TGDispatcher: TGDefaultDispatcher, @unchecked Sendable {
             // else — a bare `/start`, a stale link, any other message — stops
             // here, before a `User` row is created, so a stranger tapping the
             // bot leaves nothing behind in the database.
+            //
+            // Unless the door is open (`ROI_OPEN_ACCESS`): then any message
+            // puts them on the list and walks them on into registration.
             if !(await accessControl.isAllowed(entity.id, on: self.db)) {
-                guard await self.redeemInvite(update: update, entity: entity) else { return }
+                if appState.openAccess {
+                    await self.admitThroughOpenDoor(entity)
+                } else {
+                    guard await self.redeemInvite(update: update, entity: entity) else { return }
+                }
             }
 
             // Get user session with caching
@@ -71,6 +78,36 @@ final class TGDispatcher: TGDefaultDispatcher, @unchecked Sendable {
                 lingo: self.lingo
             )
         }))
+    }
+
+    // MARK: - Open Door
+
+    /// Put an unlisted account on the list because the door is open.
+    ///
+    /// The row is written even though the door would let them in anyway: it
+    /// is what keeps a player in once `ROI_OPEN_ACCESS` is taken away again,
+    /// and it is the record of who came in through the public test.
+    ///
+    /// Says nothing to the player — the update goes on into routing and the
+    /// registration screen is the greeting; «Запрошення прийнято» would answer
+    /// an invitation nobody sent. A failed write is logged and the player is
+    /// let through regardless: the door is open, and their next message,
+    /// still a cache miss, tries the write again.
+    private func admitThroughOpenDoor(_ entity: TGUser) async {
+        do {
+            let added = try await accessControl.grant(entity.id,
+                                                      username: entity.username,
+                                                      source: .open,
+                                                      on: self.db)
+            guard added else { return }
+            log.info("[ACCESS] admitted \(entity.id) (@\(entity.username ?? "no username")) through the open door")
+            await notifyOwner("""
+                [ACCESS] \(entity.id) (@\(entity.username ?? "no username")) \
+                entered through the open door.
+                """)
+        } catch {
+            log.error("[ACCESS] open door failed to record \(entity.id): \(error)")
+        }
     }
 
     // MARK: - Invite Redemption

@@ -1,7 +1,7 @@
 {
   "defaultEmblem" : "🛡",
   "foundCost" : 500,
-  "foundLevelGate" : 5,
+  "foundLevelGate" : 30,
   "maxOfficers" : 2,
   "memberCap" : 20,
   "nameMaxLength" : 24,

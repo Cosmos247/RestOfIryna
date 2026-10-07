@@ -67,7 +67,12 @@ next message rather than at the next restart.
 2. `await accessControl.isAllowed(entity.id, on: db)` — **ahead of routing**, so a refused
    stranger never gets a `User` row at all
 3. If unauthorized: `redeemInvite` accepts a 16-letter `InviteToken`, either as a `/start`
-   payload or pasted as a bare message; a valid one inserts the row and opens registration
+   payload or pasted as a bare message; a valid one inserts the row and opens registration.
+   **With the door open** (`ROI_OPEN_ACCESS=1` in `.env`, read at boot into
+   `appState.openAccess`, 2026-10-07 — the public test) `admitThroughOpenDoor` inserts the
+   row with source `open` instead, says nothing, and lets the update on into registration;
+   the owner gets one silent `[ACCESS] … entered through the open door.` per newcomer.
+   Closing the door (remove the line, restart) keeps everyone who has a row
 4. If authorized: fetch/create session via cache, route to controller
 
 ### In GlobalCommandsController (per-handler):
@@ -84,7 +89,8 @@ let developerUsers: [Int64] = [mitya]                       // allowed BEFORE th
 returns true for it before the table is read at all. `allowed_users` is in
 `WipeForRebalance.preserved` — a wipe resets the game, not the guest list.
 
-To admit a new tester, use **`/link`** — never a code edit. Token design and the three
+To admit a new tester, use **`/link`** — never a code edit. To admit everyone, open the
+door in `.env` and restart — also never a code edit. Token design and the three
 decisions behind it: auto-memory `invite-only-access`.
 
 ## New User Flow

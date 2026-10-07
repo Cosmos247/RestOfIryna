@@ -361,7 +361,7 @@ the draft band lives and where content arrives after the rebalance.
 | enchant one armour piece to +5 | 2750 | ×4 armour slots = 11000 |
 | the Master's armour | 810 | one-off |
 | repair | 50% of value | per repair, ongoing |
-| found a guild | 500 | one-off, level 5 |
+| found a guild | 500 | one-off, level 30 |
 | market listing | 5 | per lot, up to 5 |
 | arena tithe | 10% of the stake | the only PvP drain |
 | tavern food | 25–180 | per dish |

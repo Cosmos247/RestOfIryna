@@ -12,8 +12,10 @@
 //  founding accounts are seeded by `CreateAllowedUsers` so the move costs
 //  nobody their access.
 //
-//  Rows are added two ways — `.seed` by that migration, `.invite` when someone
-//  redeems a `/link` deep link inside its five-minute window. `username` is
+//  Rows are added three ways — `.seed` by that migration, `.invite` when someone
+//  redeems a `/link` deep link inside its five-minute window, `.open` when
+//  someone writes to the bot while `ROI_OPEN_ACCESS` holds the door open (the
+//  public test, 2026-10-07). `username` is
 //  whatever Telegram reported at the moment of redemption and is stored for
 //  the admin's benefit only: it is a display name that its owner can change at
 //  will, never an identity. `telegramId` is the identity.
@@ -36,6 +38,9 @@ final public class AllowedUser: Model, @unchecked Sendable {
         case seed
         /// Redeemed a `/link` invite.
         case invite
+        /// Wrote to the bot while the door was open (`ROI_OPEN_ACCESS`). The
+        /// row is what keeps them in once the door closes again.
+        case open
         /// Written straight into the table by an admin, outside the bot. Never
         /// produced by this code — it exists so a hand-written row reads as
         /// deliberate rather than as corruption.

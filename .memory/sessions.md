@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-06)
+## Commit index — live-play polish and after (2026-09-09 → 10-07)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this sync pass, 10-06)* **`873e426`'s hash fill** — records only.
+- *(this commit, 10-07)* **the open door, and guilds from level 30** — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
+- `854644b` (10-07) **the record of the 10-06 21:39 deploy** — records only.
+- `9385cd1` (10-06) **`873e426`'s hash fill** — records only.
 - `873e426` (10-06) **the owner's screen art, and the King's first line** — the Master, the
   palace, the capital map (the square and both streets), the charter and the six rabid-dog scenes;
   «Король жестом підкликає вас до себе і протягує вам згорток:», since he sits in the new art. No
@@ -471,6 +473,28 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-07 (the public test: the open door, and guilds from level 30)
+
+The day the owner first posted the bot publicly. Asked "how do I make the link open", the gate
+had no way to: `/link` mints a five-minute token (a Swift constant) and the table has no wildcard,
+so it took code and a restart either way. Three options went to a quiz; the owner picked the
+**open door** over a 7-day invite (at public scale the `no start payload` case would refuse many
+arrivals and leave them pasting a code) and over a `/door` command (a table and a migration for
+no gain today), and kept a silent owner notice per newcomer.
+- `ROI_OPEN_ACCESS` (1/true/yes/on) is read at boot into `appState.openAccess`; the boot log says
+  which way the door stands, and a value it does not understand is a warning, not a silent shut.
+- `TGDispatcher.admitThroughOpenDoor` grants with `AllowedUser.Source.open` (a raw string, no
+  migration), says nothing to the player (registration is the greeting), and lets a failed write
+  through — the next message retries it. Closing the door keeps every row.
+- Then «Зроби так щоб можливість створювати гільдії була з 30 рівня»: `foundLevelGate` 5 → 30,
+  data only. The one screen that quotes it is the refusal banner, which interpolates the number;
+  joining by invite has no gate; existing guilds stay. `spec-economy.md`'s line refreshed, all
+  three generated blocks re-checked against `spec economy`.
+
+Build clean (no warning in the touched files), 395 tests, `validate --strict` 0/0, digest: only
+`records` moved. Not live until the Pi pulls, builds, gains `ROI_OPEN_ACCESS=1` in `.env` and
+restarts — the owner's to run.
 
 ## Deploy — 2026-10-06 21:39 (`8ae6772` → `9385cd1`)
 

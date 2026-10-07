@@ -818,7 +818,7 @@ were superseded by Phases 4–6.
 - [x] Arguments parser (Scanner-based: words, ints, doubles, rest-of-string)
 - [x] Session caching (actor-based, 5min TTL, auto-cleanup)
 - [x] User model + migrations (identity, class, nickname, estate)
-- [x] Authorization — **`allowed_users` table + `/link` invites** (2026-09-08). Was a hardcoded array; `AccessControl` caches the table, `InviteToken` carries an encrypted timestamp in a 16-letter `/start` payload good for 5 minutes, and `developerUsers` stays compiled in as the lockout brake.
+- [x] Authorization — **`allowed_users` table + `/link` invites** (2026-09-08). Was a hardcoded array; `AccessControl` caches the table, `InviteToken` carries an encrypted timestamp in a 16-letter `/start` payload good for 5 minutes, and `developerUsers` stays compiled in as the lockout brake. **The open door** (2026-10-07): `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (source `open`), for the public test.
 - [x] Proper migration awaiting (try await migrator.prepareBatch().get())
 - [x] Database connection pool graceful shutdown (defer in configure)
 

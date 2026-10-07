@@ -189,7 +189,11 @@ in `configure.swift` is now only the migration's seed list. **To let a new teste
 routing**, so a refused stranger never gets a `User` row. `allowed_users` is in
 `WipeForRebalance.preserved` — a wipe resets the game, not the guest list — and
 `developerUsers` stays hardcoded and allowed before the table is read: the brake against
-locking yourself out of your own bot. Auto-memory `invite-only-access`.
+locking yourself out of your own bot. **The door can be opened** (2026-10-07, the public
+test): `ROI_OPEN_ACCESS=1` in the Pi's `.env` and a restart, and the gate ADDS every unlisted
+account to `allowed_users` (source `open`) instead of refusing it. Open or shut is a `.env`
+line, never a code edit, and closing it again takes nobody out — the row is what keeps a
+player in. Auto-memory `invite-only-access`.
 
 ### Quests and the daily cycle
 

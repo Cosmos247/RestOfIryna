@@ -143,6 +143,12 @@ public final class AppState: Sendable {
     /// Key material for `InviteToken`. The bot token itself: it is already a
     /// server-side secret, so the invite system needs none of its own.
     public nonisolated(unsafe) var inviteSecret: String = ""
+    /// The open door: when `true`, an account that is not on the allow list
+    /// is ADDED to it on its first message instead of being refused
+    /// (`TGDispatcher`). Read once at boot from `ROI_OPEN_ACCESS`, so opening
+    /// or closing it is a `.env` edit and a restart. Closing it never takes
+    /// anyone back out: everyone who walked in has an `allowed_users` row.
+    public nonisolated(unsafe) var openAccess: Bool = false
 
     public init(db: any Database, lingo: Lingo, logger: Logger, httpClient: HTTPClient) {
         self.db = db
@@ -322,6 +328,19 @@ public func configure(logger: Logger) async throws {
         logger.info("Bot identified as @\(appState.botUsername ?? "unknown")")
     } catch {
         logger.error("getMe failed — /link cannot build invite links: \(error)")
+    }
+
+    // Open or invite-only. Logged either way, and a value that is set but not
+    // understood is logged as such: a typo in `.env` must not leave the door
+    // shut on the day it was meant to open without anyone seeing why.
+    let openAccessRaw = (try? Env.get("ROI_OPEN_ACCESS", default: "")) ?? ""
+    appState.openAccess = ["1", "true", "yes", "on"].contains(openAccessRaw.lowercased())
+    if appState.openAccess {
+        logger.info("[ACCESS] OPEN DOOR — every account that writes is added to allowed_users (ROI_OPEN_ACCESS=\(openAccessRaw))")
+    } else if !openAccessRaw.isEmpty {
+        logger.warning("[ACCESS] ROI_OPEN_ACCESS=\(openAccessRaw) not understood (1/true/yes/on) — invite-only")
+    } else {
+        logger.info("[ACCESS] invite-only — /link mints the way in")
     }
 
     // Warm the allow list. `isAllowed` would load it lazily on the first
