@@ -1994,7 +1994,7 @@ running anything, so this is the highest-yield thing available and it costs one 
 Telegram. **Every block below is LIVE and unwalked** except the fifteen on top — the three
 2026-10-06 blocks (the screen art, the audit's fixes, the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
 the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
-2026-10-02 tier-2 block — which wait for their deploy. The six 2026-09-27/28 blocks under them
+2026-10-02 tier-2 block — which went live at the 2026-10-06 21:39 restart. The six 2026-09-27/28 blocks under them
 are included, live since the 2026-09-28 22:11 restart.
 
 **Added 2026-10-06 — the owner's screen art, and the King's first line (NOT deployed):** any
@@ -2679,9 +2679,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
   5% of it at +5, as `spec-sets.md` §2's second table prints. The fix that spec already owes (a
   multiplier on the set's own members) has a second thing to decide: the validator's 25%
   ceiling reads the members' AUTHORED budget.
-- **What the testers already enchanted is not known** (2026-10-06). The read of the Pi's rows was
-  refused by the permission layer. Nothing depends on it — a piece keeps its level and simply
-  grants the ladder's stats — but it is worth a look before telling the testers. The query:
+- **ANSWERED at the 2026-10-06 21:39 deploy — what the testers had enchanted.** анія +3/+2/+3/+4
+  on her worn set, Володимир +1 on all four worn pieces, Nerif a +5 jerkin in the bag. The boot pass
+  lifted анія's cached DEF 15 → 39 and Володимир's 14 → 21. (Before the deploy the read of the Pi's
+  rows had been refused by the permission layer.) The query:
   `SELECT u.nickname, u.level, i.item_id, i.enchant_level FROM inventory i JOIN users u
   ON u.id = i.user_id WHERE i.enchant_level > 0` (and the same over `warehouse`).
 

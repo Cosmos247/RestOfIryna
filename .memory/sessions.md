@@ -472,6 +472,45 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Deploy — 2026-10-06 21:39 (`8ae6772` → `9385cd1`)
+
+The owner pushed and asked for the deploy and the restart. One pull carried 38 commits — every
+change since 09-28: tier 2 of the bestiary, the estate scaling, the arena (simultaneous rounds,
+the cycle of three), the quest board as a scroll, the weapon ladder by player level, the tarot
+pass, the Vigor-reward question, the task-ready notice, «💛 Допомога грі», the enchant from the
+bag, durability as the item's own, the armour's enchant ladder, the pre-deploy audit's fixes and
+the owner's screen art with the King's first line.
+
+**Order of operations.** No Mac instance polling → `git pull --ff-only` (the Pi's tree clean but
+the untracked `core` and `pgweb/`) → debug build on the Pi (140 s, 0 errors; only the
+environment's swift-backtrace notices) → `--content-digest` matched the Mac **byte for byte**
+(schema v19, content hash `be1102fc`, `records 9303bb274d4517d8` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`) → a snapshot of every table the migrations touch
+→ only then `pm2 restart ROI && pm2 save` at 21:39:57.
+
+**Five migrations ran, and the TABLES say so, not the log line** (`_fluent_migrations` 69 → 74):
+- `AddFightLogEstateLevel`: `fight_log.estate_level` exists, nullable.
+- `ClampWeaponTiersToLevel`: 3 weapons came down — анія's staff t5 → t4 (L16, +682 🪙),
+  Володимир's bow t5 → t4 (L17, +708 🪙), Amae's sword t4 → t3 (L10, +312 🪙); each silver delta
+  on `users` matches its refund exactly, and the header's query now reads 0 rows.
+- `ReseatDecreesById`: 2 of 9 rows moved, exactly as the header predicts — 14 → 13 (asked again:
+  «Гострий край») and 36 → 35 («Королівська криця»); every other position unchanged.
+- `AddReadyNotifiedFlags`: both columns exist, 0 NULL `ready_notified`. The first sweep announced
+  2 ready decrees and 0 jobs, and created the first `king_progress` row (decree 0) for the two
+  accounts that never had one (Інший, Рибослав) — lazy creation, as designed.
+- `RaiseArmorDurability`: all 25 Forester rows (24 in bags, 1 in a warehouse) read exactly +20
+  in both columns against the snapshot; none had been at 0.
+
+**The boot pass** recomputed the cached gear bonuses for 4 users: Дарина's ATK 60 → 27 (the
+predicted figure), Amae 46 → 16, анія 58 → 21, Володимир 55 → 20. Their DEF rose where the new
+enchant ladder lifted an old enchant — анія 15 → 39, Володимир 14 → 21. **What the testers had
+enchanted is now known** (the open item of 10-06): анія +3/+2/+3/+4 worn, Володимир +1 on all four
+worn pieces, Nerif a +5 jerkin in the bag.
+
+**After:** pm2 online, 0 unstable restarts; Content loaded `be1102fc`, `Bot identified as
+@ROfIr_bot`, Hummingbird listening; no warning or error since the restart; `Code: 400` still at
+its 913 baseline. Next: tell the testers (the list sent on 10-06), the first `fight_log` rows
+with `estate_level`, then the walk list's fifteen new blocks.
+
 ## Session — 2026-10-06 (the owner's screen art, and the King's first line) — `873e426`
 
 The owner sent art one screen at a time — first «Додай цю картинку до екрану Майстра», then

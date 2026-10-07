@@ -35,19 +35,19 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 - **Phases 3–11 done; Phase 11 closed as CODE.** What follows is **live-play polish** —
   fixing what playing the deployed build reveals — plus the occasional small feature the
-  play surfaces a need for. The Pi runs **`8ae6772`** since **2026-09-28 22:11** (schema
-  **v14**, content hash `490a2d4b`, digest `tuning fe05ceaa38e03c6b` · `king 5dbddfd689f3cede`,
-  matched byte for byte before the restart was ordered). **Tier 2 of the bestiary (`f03d502`, 2026-10-02)
-  is committed and NOT deployed**: 14 creatures, XP penalty off, content hash `cd9d73bf`
-  (`spec-bestiary.md` §10). **Seven game changes of 2026-09-27/28 went live with that
-  restart** (schema **v14**, five migrations, the tables checked after): the stray-number hint, the workshop's
+  play surfaces a need for. The Pi runs **`9385cd1`** since **2026-10-06 21:39** (schema
+  **v19**, content hash `be1102fc`, the digest matched byte for byte before the restart was
+  ordered; five migrations, the tables checked after — `sessions.md` → `## Deploy — 2026-10-06`).
+  That restart took everything committed since `8ae6772`, tier 2 of the bestiary (`f03d502`,
+  `spec-bestiary.md` §10) first among it. **Seven game changes of 2026-09-27/28 went live with the
+  restart before it** (2026-09-28 22:11) (schema **v14**, five migrations, the tables checked after): the stray-number hint, the workshop's
   «Розібрати» with gear lists that name rows, combat lines with a death screen that shows the
   last round, the Training Ground as a house room, the technique rework with its fight log,
   the King's chain asking for the estate before the ground, and a workshop that no longer
   makes armour.
 - **Next actions.**
-  - **The owner deploys everything committed since `8ae6772` in one restart** (all of it
-    NOT deployed, content schema v19 against the Pi's v14):
+  - **DEPLOYED 2026-10-06 21:39 — everything committed since `8ae6772`, in one restart**
+    (content schema v19; until then the Pi ran v14):
     - tier 2 of the bestiary (`f03d502`);
     - the estate scaling (`4be2758`): creature HP and ATK +10% per estate tier, one migration;
     - the arena in simultaneous rounds (`cad61c3`) and as a cycle of three (`f0c1749`);
@@ -98,7 +98,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
     - from the 10-06 armour ladder: armour above item level 1 has no ladder yet (the validator
       refuses it), the ladder stops at +5 / item level 25, its price is its only gate (so a
       finished set can be handed to a new player), the Forester's flat set bonus now rots, and
-      what the testers already enchanted is not known.
+      what the testers had enchanted (answered at the 10-06 deploy).
   - **Parked: the class sets** ([class-sets-concept.md](class-sets-concept.md)). The owner asked
     for the concept on 10-05 and said «ми до цього повернемось» without answering its four forks.
     It was the gear ladder in class form; since 10-06 the armour has a ladder (the enchant,
