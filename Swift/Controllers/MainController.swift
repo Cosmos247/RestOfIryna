@@ -287,6 +287,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 continue
             }
             let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: entry.tier), locale: locale)
+            // The weapon's own icon in the main hand (2026-10-09), as in the
+            // profile's line; the slot glyph stays for the armour and for an
+            // empty hand.
+            let shown = slot == .mainHand ? (item.icon ?? icon) : icon
             let enchant = entry.enchantLevel > 0 ? " +\(entry.enchantLevel)" : ""
             // Wear only for the slots a fight actually wears, and only once the
             // row carries a maximum: a "0/0" would read as broken.
@@ -295,7 +299,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                 let warn = entry.durability == 0 ? " ⚠️" : ""
                 condition = " · \(entry.durability)/\(entry.maxDurability)\(warn)"
             }
-            lines.append("\(icon) \(label): <b>\(name)</b>\(enchant)\(condition)")
+            lines.append("\(shown) \(label): <b>\(name)</b>\(enchant)\(condition)")
         }
         lines.append("")
         lines.append("<i>" + lingo.localize("gear.hint", locale: locale) + "</i>")
@@ -560,14 +564,19 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // Main-hand line. Empty string if nothing equipped.
         let mainHandLabel = lingo.localize("profile.equipped.main_hand", locale: session.locale)
         let mainHandName: String
+        // The weapon's OWN icon — 🗡 sword, 🏹 bow, 🪄 staff — the one the bag
+        // and the workshop already print (2026-10-09). A fixed 🗡 told an archer
+        // and a mage they were holding a sword. 🗡 stays for an empty hand.
+        var mainHandIcon = "🗡"
         if let entry = equipped[.mainHand], let item = ItemCatalog.find(entry.itemId) {
             // Tiered weapons resolve through ItemDisplay so the profile shows
             // "Sharpened Sword" etc. once the player upgrades.
             mainHandName = lingo.localize(ItemDisplay.nameKey(for: item, tier: entry.tier), locale: session.locale)
+            mainHandIcon = item.icon ?? mainHandIcon
         } else {
             mainHandName = lingo.localize("profile.equipped.empty", locale: session.locale)
         }
-        let mainHandLine = "🗡 \(mainHandLabel): \(mainHandName)"
+        let mainHandLine = "\(mainHandIcon) \(mainHandLabel): \(mainHandName)"
 
         // Phase 6.4 — active fortune line. Renders when the
         // player has an unexpired tarot draw. 🔮 prefixed in Swift (Lingo

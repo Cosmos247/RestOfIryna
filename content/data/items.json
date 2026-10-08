@@ -290,7 +290,7 @@
         "attack" : 7,
         "crit" : 3
       },
-      "icon" : "⚔️",
+      "icon" : "🗡",
       "id" : "gear.rusty_sword",
       "itemLevel" : 1,
       "rarity" : "common",

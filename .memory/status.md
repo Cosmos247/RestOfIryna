@@ -21,6 +21,25 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-09 — «тир» is «рівень» on every screen** (NOT committed yet, NOT deployed; locale only):
+the owner had asked before. 27 uk lines — the bag and estate upgrades, the full warehouse, a
+locked room, three decree conditions and twelve decree descriptions — with the cases agreed
+(«тиру» → «рівня», «тирі» → «рівні»); English keeps "tier", and so do the code and the docs.
+
+**2026-10-09 — a weapon shows its own icon** (NOT committed yet, NOT deployed; Swift, `items.json`
+and two locale strings; `records` → `4c0802f927fb8be4`, content hash → `47888401`): a tester
+asked for the bow and the staff. The profile's «Основна рука», the gear sheet's main hand and the
+decree's weapon condition printed 🗡 for every class; they now print the weapon's own icon —
+🗡 sword, 🏹 bow, 🪄 staff (the decree: the class weapon's). The sword itself went ⚔️ → 🗡 on the
+owner's word («він має 1 меч»), so the bag, the warehouse and the card show 🗡 too. The CLASS icons
+stay ⚔️ / 🏹 / 🔮 — the owner kept the mage's crystal ball.
+
+**2026-10-09 — the player's HP line in a fight is named** (NOT committed yet, NOT deployed; needs
+`pm2 restart ROI` — Swift and one uk/en string, the digest unmoved): a public-test player asked for
+their HP to be told apart from the creature's. Both lines began with ❤️ and only the creature's
+had a name. The player's line is now the class icon and «Ви» — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under
+«🐍 Гадюка — ❤️ 52/55» — the owner's pick over «Ви» alone and over «Ви» with a blank line.
+
 **2026-10-09 — the fortune teller once a game day** (`a582dbf`, NOT deployed; needs `pm2
 restart ROI` — Swift and `content/data`, content schema **v20**; no migration, no locale string).
 The owner's rule: the next card waits for the LATER of the drawn card's 6 h and the next 12:00 —

@@ -2006,15 +2006,32 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the three on top — the fortune
-teller (`a582dbf`), the starving players' four (`88156d4`) and the road card (`2ed296e`) — which wait for
-their restart. The guild-gate block went live at the 2026-10-07 18:34
+Telegram. **Every block below is LIVE and unwalked** except the five on top — the weapon's own icon
+with «рівень», the named HP line, the fortune teller (`a582dbf`), the starving players' four
+(`88156d4`) and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
 task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (NOT committed, NOT deployed):**
+- 👤 Профіль: «🗡 Основна рука: Іржавий меч» for the knight, «🏹 … Простий лук» for the archer,
+  «🪄 … Дерев'яний посох» for the mage; the same in «🛡 Спорядження» with the wear.
+- The sword shows 🗡 in the bag, the warehouse and its card (it was ⚔️). The class icons are
+  unchanged: «⚔️ Лицар», «🏹 Лучник», «🔮 Маг».
+- A weapon decree: «❌ 🏹 Рівень зброї  (1/2)» with the player's own weapon icon.
+- No «тир» anywhere in Ukrainian: the bag and estate upgrades read «Зараз: рівень 2 — …», «Маєток
+  піднято до 3-го рівня — …»; a locked room «…на 4-му рівні маєтку»; the decrees «🏡 Рівень
+  маєтку», «🎒 Рівень сумки», «…до другого рівня».
+
+**Added 2026-10-09 — the player's HP line in a fight is named (NOT committed, NOT deployed):** any
+account, one fight in each class if possible.
+- A fight's screen: «🐍 Гадюка — ❤️ 52/55» and under it «⚔️ Ви — ❤️ 8/95  🍖 25/110» (🏹 for the
+  archer, 🔮 for the mage), on the intro and after every round.
+- At 0 Vigor the line ends «· 😵 Голодні». The training dummy and the registration dog read the
+  same.
 
 **Added 2026-10-09 — the fortune teller once a game day (`a582dbf`, NOT deployed):** an
 account in the capital with 10 🪙.

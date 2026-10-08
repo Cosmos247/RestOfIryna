@@ -195,6 +195,7 @@ If you must keep the emoji in the template for some reason:
 | attack | `АТК` | `Атака` | ATK |
 | defense | `ЗАХ` | `Захист` | DEF |
 | loot | `здобич` / `здобичі` (e.g. "шанс здобичі") | — | loot |
+| tier (estate / bag / weapon) | `рівень` / `рівня` / `рівні` (e.g. "Рівень маєтку", "до третього рівня") — **never «тир»** (2026-10-09, the owner's call; 27 lines replaced) | — | tier |
 | accuracy | `влучність` | `Влучність` | Accuracy |
 | dodge | `ухилення` | `Ухилення` | Dodge |
 | crit | `крит` | `Крит` | Crit |

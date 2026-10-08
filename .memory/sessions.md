@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-09)* **`a582dbf`'s hash fill** — records only.
+- *(this commit, 10-09)* **the fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under «🐍 Гадюка — ❤️ 52/55» (the class icon and «Ви», `combat.you`); the profile, the gear sheet and the decree's weapon condition print the weapon's own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡 in `items.json`); 27 uk lines say «рівень» for the estate's, bag's and weapon's tier. `records` → `4c0802f927fb8be4`, content hash → `47888401` (the sword's icon); no migration.
+- `3ef1f9c` (10-09) **`a582dbf`'s hash fill** — records only.
 - `a582dbf` (10-09) **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
 - `1c310d8` (10-08) **`88156d4`'s hash fill** — records only.
 - `88156d4` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
@@ -481,6 +482,44 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-09 (a weapon's own icon, and «рівень» for «тир»)
+
+Two more requests while the fight's HP line waited for its commit.
+
+**The weapon's icon.** A tester asked for a bow for the archer and a staff for the mage. The data
+already had them (⚔️ sword, 🏹 bow, 🪄 staff — there is no staff emoji, the wand stands in), but
+three places printed 🗡 for every class: the profile's «Основна рука», the gear sheet's main hand
+and the decree condition «🗡 Тир зброї». The owner rejected the quiz to clarify and still answered
+it: the weapon's own icon in the profile and the sheet, the class weapon's in the decree, and the
+mage's CLASS icon left at 🔮. Then: «Для воїна емодзі зброї логічніше було б зробити 🗡, бо він має 1
+меч» — so the sword's own icon went ⚔️ → 🗡 in `items.json`, which the bag, the warehouse and the
+card print too. The class icons stay ⚔️ / 🏹 / 🔮. The decree line takes the icon in Swift
+(`ConditionView.icon`, set for `weaponTier` from the class's starter weapon), because it depends on
+the player; every other condition keeps its emoji in the locale string.
+
+**«Тир».** «Я вже просив замінити усюди слово Тир… або тір.» No earlier request was found in the
+records or the transcripts — only the 09-17 unification of «Тир маєтку» → «Рівень маєтку» on one
+gate. 27 uk lines still said it. Offered «рівень» (already the gate's word), «щабель» and
+«ступінь»; the owner took «рівень». All three are masculine, so only the noun's case moved
+(«тиру» → «рівня», «тирі» → «рівні»). Two spec quotes followed. The glossary rule in `CLAUDE.md`
+now says «рівень», never «тир».
+
+395 tests, `validate --strict` 0/0; the digest moved `records` (the sword's icon is in its
+fingerprint) and the content hash, nothing else.
+
+## Session — 2026-10-09 (the player's HP line in a fight is named)
+
+A player's request, relayed with a screenshot: «чи можна розділити хп ворога від хп персонажа».
+The fight's status card read «🐍 Гадюка — ❤️ 52/55» over «❤️ 8/95  🍖 25/110»: both lines began
+with ❤️ and only the creature's carried a name, so the player's own line read as the viper's
+second. The arena had already solved the same thing by labelling the viewer «Ви». Three played
+samples (from the screenshot's numbers): «Ви» alone, «Ви» with the class icon, «Ви» with a blank
+line. The owner picked the class icon. `renderStatusCard` builds «⚔️ Ви — …» (🏹 for the archer, 🔮
+for the mage) from `combat.you`, a key of the fight's own like `arena.duel.you` and
+`leaderboard.you`. Every fight screen goes through that one renderer: the intro, each round, the
+training dummy and the registration dog. They are plain messages, so the 1,024 caption cap does
+not apply. 395 tests, `validate --strict` 0/0, the digest unmoved.
 
 ## Session — 2026-10-09 (the fortune teller once a game day) — `a582dbf`
 

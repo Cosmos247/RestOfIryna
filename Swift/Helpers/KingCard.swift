@@ -40,7 +40,9 @@ enum KingCard {
                 lines.append(RequirementLine.item(itemId, have: condition.have, need: condition.need,
                                                   lingo: lingo, locale: locale))
             } else if let key = condition.labelKey {
-                lines.append(RequirementLine.render(label: lingo.localize(key, locale: locale),
+                let label = [condition.icon, lingo.localize(key, locale: locale)]
+                    .compactMap { $0 }.joined(separator: " ")
+                lines.append(RequirementLine.render(label: label,
                                                     have: condition.have, need: condition.need))
             }
         }

@@ -621,7 +621,8 @@ Two texts change:
 - «Гострий край» sends the player to the Master: «Іржава криця не боронить нікого. Майстер на
   Подолі покаже, як перекувати зброю.»
 - «Королівська криця» no longer calls t5 the top of the ladder: «Пуща міцнішає, і криця мусить
-  встигати. Доведіть зброю до п'ятого тиру.»
+  встигати. Доведіть зброю до п'ятого рівня.» («тиру» until 2026-10-09, when «тир» left every
+  screen for «рівень».)
 
 **A new validator rule, `king.weapon_tier_before_its_gate`.** A decree asking for weapon tier N must
 sit at or above that tier's `requiredPlayerLevel`. It is the twin of

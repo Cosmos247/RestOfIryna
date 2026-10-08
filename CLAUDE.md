@@ -436,6 +436,10 @@ what a rating is WORTH — BESIDE the rating, never instead of it — and **the 
 never follow**: 26% of level-ups would announce a drop. Auto-memory
 `project-rating-vs-percent-display`.
 
+**Every HP on a fight screen carries a name** (2026-10-09): the creature's line is its icon and
+name, the player's is the class icon and «Ви» (`combat.you`) — «⚔️ Ви — ❤️ 8/95  🍖 25/110».
+Unnamed, the player's «❤️ 8/95» read as the creature's second line (a public-test report).
+
 **A death screen carries the round that caused it** (2026-09-27). `finishRound` hands its own
 lines to `handleCombatDeath` — the player's action, the killing blow, a failed flee, a burn
 tick — together with the enemy's HP left, and the shared `ExplorationController.handleDeath`
@@ -949,7 +953,7 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - Update `TODO.md` progress markers when tasks complete
 - Add new localization keys to both `en.json` and `uk.json` simultaneously
 - Write new uk player-facing copy in «ви» (see Localization above); add `.m`/`.f` + the `gender:` overload only when the string names the player with a gendered noun
-- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`. Full table in `.memory/localization.md`.
+- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`, and `рівень` for the estate's, bag's and weapon's tier — **never «тир»**, a calque the owner had removed from every screen on 2026-10-09, having asked before); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`, and code and docs keep saying `tier`. Full table in `.memory/localization.md`.
 - If adding new controllers/models, update the file map in README.md's Project Structure section
 
 ### Git Workflow

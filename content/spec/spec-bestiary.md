@@ -955,7 +955,7 @@ tier's name. It came from `CLAUDE.md`'s rule that a choice that cannot be undone
 tapped:
 
 ```
-⤴ Тир 5 — Лицарський маєток
+⤴ Рівень 5 — Лицарський маєток
 🐾 Звірі в лісі: ОЗ і атака ×1.3 → ×1.4
 ```
 

@@ -79,6 +79,10 @@ enum KingService {
         let itemId: String?
         /// Locale key for everything that is not an item.
         let labelKey: String?
+        /// An icon that depends on the player, printed before the label — the
+        /// class weapon's for the weapon-tier condition (2026-10-09). Every
+        /// other label carries its emoji in the locale string.
+        var icon: String? = nil
         var met: Bool { have >= need }
     }
 
@@ -274,7 +278,12 @@ enum KingService {
         case .bagTier:
             return view(user.bagTier, target, key: key)
         case .weaponTier:
-            return view(try await equippedWeaponTier(for: user, on: db), target, key: key)
+            // The class weapon's own icon — 🗡 / 🏹 / 🪄 — not a 🗡 for every
+            // class: the decree is about THIS player's weapon.
+            let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior
+            return [ConditionView(have: try await equippedWeaponTier(for: user, on: db), need: target,
+                                  itemId: nil, labelKey: key,
+                                  icon: ItemCatalog.find(cls.starterWeaponId)?.icon)]
 
         case .arriveCapital:
             return view(user.location == TravelDestination.capital.rawValue ? 1 : 0, 1, key: key)

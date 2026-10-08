@@ -1339,6 +1339,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
 
     private func renderStatusCard(user: User, enemy: Enemy, enemyHP: Int, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+        // The player's line is named the way the creature's is — icon, name,
+        // dash — with the class icon and «Ви» (2026-10-09, the owner's pick).
+        // Unnamed, «❤️ 8/95» under «🐍 Гадюка — ❤️ 52/55» read as the viper's
+        // second line, and a public-test player asked for the two to be told
+        // apart. The arena labels the viewer «Ви» the same way.
+        let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior
+        let you = "\(cls.icon()) " + lingo.localize("combat.you", locale: locale)
         let starving = VigorService.isStarving(user)
             ? " · " + lingo.localize("vigor.starving", locale: locale)
             : ""
@@ -1352,10 +1359,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
         lines.append(contentsOf: [
             "\(enemyName) — ❤️ \(enemyHP)/\(enemy.hp)",
-            "❤️ \(user.hp)/\(user.effectiveMaxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
+            "\(you) — ❤️ \(user.hp)/\(user.effectiveMaxHp)  🍖 \(user.vigor)/\(user.maxVigor)\(starving)"
         ])
         if let rounds = state.combatStanceRoundsLeft, state.combatStance != nil, rounds > 0 {
-            let cls = CharacterClass(rawValue: user.characterClass ?? "") ?? .warrior
             let label = lingo.localize(Self.superKeyPrefix + cls.rawValue, locale: locale)
             lines.append("\(label) — \(rounds)")
         }
