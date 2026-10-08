@@ -2007,8 +2007,8 @@ what shipped when, newest first.
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
 Telegram. **Every block below is LIVE and unwalked** except the five on top — the weapon's own icon
-with «рівень», the named HP line, the fortune teller (`a582dbf`), the starving players' four
-(`88156d4`) and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
+with «рівень» and the named HP line (`33551dd`), the fortune teller (`248dc43`), the starving players' four
+(`36e33af`) and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
 task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
@@ -2016,7 +2016,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (NOT committed, NOT deployed):**
+**Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (`33551dd`, NOT deployed):**
 - 👤 Профіль: «🗡 Основна рука: Іржавий меч» for the knight, «🏹 … Простий лук» for the archer,
   «🪄 … Дерев'яний посох» for the mage; the same in «🛡 Спорядження» with the wear.
 - The sword shows 🗡 in the bag, the warehouse and its card (it was ⚔️). The class icons are
@@ -2026,14 +2026,14 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
   піднято до 3-го рівня — …»; a locked room «…на 4-му рівні маєтку»; the decrees «🏡 Рівень
   маєтку», «🎒 Рівень сумки», «…до другого рівня».
 
-**Added 2026-10-09 — the player's HP line in a fight is named (NOT committed, NOT deployed):** any
+**Added 2026-10-09 — the player's HP line in a fight is named (`33551dd`, NOT deployed):** any
 account, one fight in each class if possible.
 - A fight's screen: «🐍 Гадюка — ❤️ 52/55» and under it «⚔️ Ви — ❤️ 8/95  🍖 25/110» (🏹 for the
   archer, 🔮 for the mage), on the intro and after every round.
 - At 0 Vigor the line ends «· 😵 Голодні». The training dummy and the registration dog read the
   same.
 
-**Added 2026-10-09 — the fortune teller once a game day (`a582dbf`, NOT deployed):** an
+**Added 2026-10-09 — the fortune teller once a game day (`248dc43`, NOT deployed):** an
 account in the capital with 10 🪙.
 - Draw a card in the evening (say 22:00): «Нова карта через: …» counts to 12:00, not to 22:00
   tomorrow.
@@ -2045,14 +2045,12 @@ account in the capital with 10 🪙.
 - A card drawn before the restart under the old 24 h: after the restart it waits by the new rule
   (an evening card is free at 12:00).
 
-**Added 2026-10-08 — the starving players' four (`88156d4`, NOT deployed):** an account at
+**Added 2026-10-08 — the starving players' four (`36e33af`, NOT deployed):** an account at
 the estate, damaged, with Vigor to spend down.
 - Walk out with exactly 2 Vigor and step: 🍖 2 → 0 and NO «🥀 Голод…» line; the next step has it.
 - At 0 Vigor tap «🌲 Дослідити»: under «На узліссі ви обираєте свій шлях:» the line «😵 Ви голодні:
-  кожен крок забирає 5% ОЗ, а АТК і ЗАХ нижчі на 25%.», then — food in the bag — «🍴 У сумці є їжа
-  на N Снаги: 🎒 Сумка → 🍖 Їжа → 🍴 Зʼїсти.»; food only in the warehouse — no second line; none
-  anywhere — «🍴 Їжі немає ні в сумці, ні на складі: …Крамар у столиці.» With Vigor above 0 the
-  picker reads as before. «🏕 Експедиція» → «🔙 Назад» redraws the same lines.
+  кожен крок забирає 5% ОЗ, а АТК і ЗАХ нижчі на 25%.» and no line about food (the food lines
+  were removed on 2026-10-09). With Vigor above 0 the picker reads as before. «🏕 Експедиція» → «🔙 Назад» redraws the same lines.
 - At 0 Vigor set out for the capital: the trip starts (no «Сил на дорогу не лишилось»); in town at
   0 Vigor, «🏡 До маєтку» starts the trip home.
 - Rest at the estate while tapping around (plots, warehouse, bag): within a minute of the fill
@@ -2686,16 +2684,15 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the public test, 2026-10-07/08** — found answering players. On 2026-10-08 the owner
-decided in three quizzes, and four changes were BUILT (`88156d4`, not deployed —
+decided in three quizzes, and four changes were BUILT (`36e33af`, not deployed —
 the walk-list block on top): the hunger tick only on a step that begins at 0 Vigor, «Ви повністю
 відпочили» for every rest that tops out, the road open at 0 Vigor, and the forest edge explaining
-hunger with the food in the bag. **The owner's rule from that evening: a question left unanswered
+hunger (its food lines removed on 10-09, the owner's word). **The owner's rule from that evening: a question left unanswered
 means nothing is built for it** — never fill one in with a default (auto-memory
 `feedback-unanswered-means-nothing`).
 - **Eating straight from the warehouse — chosen, form unanswered.** The owner picked it, then left
   the layout question (the «🍴 Зʼїсти» button in the row of ⬆️/⬇️/✏️, or beside the name)
-  unanswered, so nothing was built. Until it is, the forest edge prints no food line when the food
-  is only in the warehouse (the owner's pick: the warehouse has no Eat button).
+  unanswered, so nothing was built.
 - **A hint under the estate-name prompt — chosen, wording unanswered.** Two wordings were offered
   («✍️ Напишіть назву у відповідь — від 2 до 30 символів.» / «✍️ Надішліть назву звичайним
   повідомленням: від 2 до 30 символів.»), neither picked. Still there at 22:20 on 10-08: Iren at

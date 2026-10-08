@@ -96,8 +96,8 @@ The questions that paid off on the first evening:
   (the nickname) since 10-08 00:27.
 - What the owner decided the same evening (built 2026-10-08, live after the restart): the hunger
   tick only on a step that BEGINS at 0 Vigor; «Ви повністю відпочили» for every rest that tops
-  out, a tap's included; the road no longer refuses 0 Vigor; the forest edge explains hunger and
-  names the food in the bag. Chosen but not built — the owner left the form unanswered: eating
+  out, a tap's included; the road no longer refuses 0 Vigor; the forest edge explains hunger (the
+  food lines built with it were removed on 10-09, the owner's word). Chosen but not built — the owner left the form unanswered: eating
   straight from the warehouse, and a hint under the estate-name prompt.
 
 ## Player FAQ — verified answers (2026-10-07/08)
@@ -119,6 +119,6 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | The developer's bag | Unlimited for `developerUsers` (Космос, 398698463) on every path into the bag; the warehouse is not exempt. So "bag full" cannot be reproduced on that account | `InventoryEntry.canAccept` / `add` |
 | Guilds | Founded from level 30 for 500 🪙 since 2026-10-07; joining by invite at any level | `guild.json` |
 | When the next tarot card comes | At the later of the drawn card's 6 hours and the next 12:00 Kyiv: drawn at 22:00 → 12:00; at 11:00 → 17:00, then the following noon. So once a game day, never two cards at once. Since the restart after 2026-10-09; a flat 24 h before | `User.fortuneAvailableAt` |
-| Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until the restart after 2026-10-08 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so and names the food in the bag | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
+| Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until the restart after 2026-10-08 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.

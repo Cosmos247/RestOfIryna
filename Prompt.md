@@ -54,11 +54,11 @@ level gate — so a cheaper enchant, or anything stronger, still needs the re-so
 
 | | |
 |---|---|
-| HEAD | **the named HP line, the weapon's own icon and «рівень»** (this commit, 2026-10-09) on top of **`3ef1f9c`** (a hash fill), **`a582dbf`** (the fortune teller once a game day, 2026-10-09), **`1c310d8`** (a hash fill), **`88156d4`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `88156d4`, `1c310d8`, `a582dbf`, `3ef1f9c` and this commit are not pushed** — push is the owner's |
+| HEAD | **this hash fill** on top of **`33551dd`** (the named HP line, the weapon's own icon and «рівень», 2026-10-09), **`2c525ca`** (a hash fill), **`248dc43`** (the fortune teller once a game day, 2026-10-09), **`b81aa9b`** (a hash fill), **`36e33af`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `36e33af`, `b81aa9b`, `248dc43`, `2c525ca`, `33551dd` and this hash fill are not pushed** — push is the owner's |
 | running on the Pi | **`94620a4`**, restarted **2026-10-08 11:55:36**, up ~10 h with no freeze by 21:59 — schema **v19**, content hash **`a89b39b0`**, `records cc1357a44f3c4849` (guilds from level 30); `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-08 11:55`, `## Deploy — 2026-10-07 18:34`, `## Deploy — 2026-10-06 21:39`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-08 21:59 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`88156d4`**: Swift, three uk/en strings added and one deleted. **`a582dbf`**: Swift and `content/data` — content schema **v20**, `records f67ba528e8f0cb9f`, content hash `86aa6b60`. **This commit**: Swift, `items.json` (the sword's icon) and locale — `records 4c0802f927fb8be4`, content hash `47888401`, schema v20. None has a migration. All four need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` — the pull brings the v20 content and the build the v20 binary together, which the handshake requires (the road picture alone would show at the pull; the code would not) |
+| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`36e33af`**: Swift, one uk/en string added and one deleted. **`248dc43`**: Swift and `content/data` — content schema **v20**, `records f67ba528e8f0cb9f`, content hash `86aa6b60`. **`33551dd`**: Swift, `items.json` (the sword's icon) and locale — `records 4c0802f927fb8be4`, content hash `47888401`, schema v20. None has a migration. All four need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` — the pull brings the v20 content and the build the v20 binary together, which the handshake requires (the road picture alone would show at the pull; the code would not) |
 
 **Restarts since the backlog went live:** 2026-10-06 21:39 (everything since `8ae6772`, five
 migrations, the tables checked), 2026-10-07 18:34 (the open door and the guild gate), and on
@@ -97,34 +97,38 @@ polish plus **player support** (`.memory/live-ops.md`, auto-memory `project-publ
   home stays text. Same commit: «Спершу поїж» → «поїжте».
 - **The game emblem**: six candidates with prompts — `content/lore.md` §14, none chosen.
 - **The sync pass** (`61b3f42`) brought every doc to the deployed state.
-- **The starving players' four** (`88156d4`, 2026-10-08 late; `.memory/sessions.md` → the
+- **The starving players' four** (`36e33af`, 2026-10-08 late; `.memory/sessions.md` → the
   session entry). A 22:20 snapshot showed the newcomers fighting mostly at 0 Vigor, some with food
   in the bag. The owner chose, in quizzes:
   - the hunger tick only on a step that BEGINS at 0 Vigor;
   - «Ви повністю відпочили» for every rest that tops out (`RestedToFull`);
   - the road open at 0 Vigor;
-  - the forest edge explaining hunger, with the food in the bag.
+  - the forest edge explaining hunger (its food lines removed on 10-09, the owner's word).
 
   **A question the owner leaves unanswered means nothing is built for it**, never a default
   (auto-memory `feedback-unanswered-means-nothing`).
-- **The fortune teller once a game day** (`a582dbf`, 2026-10-09): the next card waits for the
+- **The fortune teller once a game day** (`248dc43`, 2026-10-09): the next card waits for the
   LATER of the drawn card's 6 h and the next 12:00 — 22:00 → 12:00, 11:00 → 17:00 — in
   `User.fortuneAvailableAt`, the one rule for the screen, the draw and the watchman. The 24 h
   `fortune.cooldownSeconds` is gone (content schema v20). A card drawn between noon and 06:00 comes
   back on the rollover's minute; then «🔮» and «📜» go as one message, cards first (the owner's pick).
-- **The player's HP line in a fight is named** (this commit, 2026-10-09): «⚔️ Ви — ❤️ 8/95  🍖
+- **The player's HP line in a fight is named** (`33551dd`, 2026-10-09): «⚔️ Ви — ❤️ 8/95  🍖
   25/110» under «🐍 Гадюка — ❤️ 52/55» — the class icon and «Ви», the owner's pick, after a player
   read their own unnamed «❤️» line as the creature's.
-- **A weapon shows its own icon** (this commit): 🗡 / 🏹 / 🪄 in the profile, the gear sheet and the
+- **A weapon shows its own icon** (`33551dd`): 🗡 / 🏹 / 🪄 in the profile, the gear sheet and the
   weapon decree; the sword itself ⚔️ → 🗡 (one sword, the owner's word); class icons unchanged.
-- **«Тир» is «рівень»** (this commit): 27 uk lines, the owner's word; «never «тир»» is now in the
+- **«Тир» is «рівень»** (`33551dd`): 27 uk lines, the owner's word; «never «тир»» is now in the
   glossary rule.
+- **The forest edge names no food** (2026-10-09): the owner had the two food lines removed before
+  the deploy, taken out of `36e33af` itself — the unpushed history was rewritten, every hash after
+  it is new and re-recorded; only «😵 Ви голодні: …» stays.
+- **The recipe notebook** is designed and approved but NOT built — «Зробимо це завтра» (auto-memory
+  `project-recipe-notebook-planned`); build it only on the owner's word.
 
 **Waiting on the owner** — chosen, but the FORM left unanswered, so not built (`TODO.md` → "Open,
 decided but not done", top block):
 - **Eating straight from the warehouse** — the layout of «🍴 Зʼїсти» (in the ⬆️/⬇️/✏️ row, or
-  beside the name). Until it exists, the forest edge prints no food line for food that is only
-  in the warehouse.
+  beside the name).
 - **A hint under the estate-name prompt** — its wording (two offered). Iren has been stuck at step
   6 since 10-07 18:35, and an unnamed account at step 2 since 10-08 00:27.
 
@@ -138,7 +142,7 @@ not done".
 
 ### Next action
 
-**0 — Deploy `2ed296e`, `88156d4`, `a582dbf` and the named HP line once the owner has pushed** (the owner
+**0 — Deploy `2ed296e`, `36e33af`, `248dc43` and `33551dd` once the owner has pushed** (the owner
 asks for the restart; the rule: `CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`,
 the detached build (~30 s, auto-memory `project-pi-deploy-swiftenv`), then `--content-digest` must
 read `records 4c0802f927fb8be4` / content hash `47888401`, schema **v20** (`fortune.cooldownSeconds`
@@ -345,7 +349,7 @@ taught: `.memory/rebalance.md`.
 **The working tree's baseline (2026-10-09, schema v20 — NOT on the Pi yet):** `records
 4c0802f927fb8be4` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. `records` alone moved, twice:
-`fortune.cooldownSeconds` left the data and the hash (`a582dbf`, `f67ba528e8f0cb9f` · `86aa6b60`),
+`fortune.cooldownSeconds` left the data and the hash (`248dc43`, `f67ba528e8f0cb9f` · `86aa6b60`),
 then the sword's icon went ⚔️ → 🗡.
 
 **The baseline on the Pi since 2026-10-07 18:34 (`f200fa5`, schema v19):** `records

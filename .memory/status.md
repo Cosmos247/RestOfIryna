@@ -21,12 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-09 — «тир» is «рівень» on every screen** (NOT committed yet, NOT deployed; locale only):
+**2026-10-09 — «тир» is «рівень» on every screen** (`33551dd`, NOT deployed; locale only):
 the owner had asked before. 27 uk lines — the bag and estate upgrades, the full warehouse, a
 locked room, three decree conditions and twelve decree descriptions — with the cases agreed
 («тиру» → «рівня», «тирі» → «рівні»); English keeps "tier", and so do the code and the docs.
 
-**2026-10-09 — a weapon shows its own icon** (NOT committed yet, NOT deployed; Swift, `items.json`
+**2026-10-09 — a weapon shows its own icon** (`33551dd`, NOT deployed; Swift, `items.json`
 and two locale strings; `records` → `4c0802f927fb8be4`, content hash → `47888401`): a tester
 asked for the bow and the staff. The profile's «Основна рука», the gear sheet's main hand and the
 decree's weapon condition printed 🗡 for every class; they now print the weapon's own icon —
@@ -34,13 +34,13 @@ decree's weapon condition printed 🗡 for every class; they now print the weapo
 owner's word («він має 1 меч»), so the bag, the warehouse and the card show 🗡 too. The CLASS icons
 stay ⚔️ / 🏹 / 🔮 — the owner kept the mage's crystal ball.
 
-**2026-10-09 — the player's HP line in a fight is named** (NOT committed yet, NOT deployed; needs
+**2026-10-09 — the player's HP line in a fight is named** (`33551dd`, NOT deployed; needs
 `pm2 restart ROI` — Swift and one uk/en string, the digest unmoved): a public-test player asked for
 their HP to be told apart from the creature's. Both lines began with ❤️ and only the creature's
 had a name. The player's line is now the class icon and «Ви» — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under
 «🐍 Гадюка — ❤️ 52/55» — the owner's pick over «Ви» alone and over «Ви» with a blank line.
 
-**2026-10-09 — the fortune teller once a game day** (`a582dbf`, NOT deployed; needs `pm2
+**2026-10-09 — the fortune teller once a game day** (`248dc43`, NOT deployed; needs `pm2
 restart ROI` — Swift and `content/data`, content schema **v20**; no migration, no locale string).
 The owner's rule: the next card waits for the LATER of the drawn card's 6 h and the next 12:00 —
 drawn at 22:00, the next at 12:00; at 11:00, at 17:00, and then not before the following noon. A
@@ -50,8 +50,8 @@ card drawn between noon and 06:00 comes back on the rollover's own minute, and t
 знову готові» and «📜 Новий день…» go as ONE message, cards first (the owner's pick). Digest:
 `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; the other four lines unmoved.
 
-**2026-10-08 — the public test's starving players** (`88156d4`, NOT deployed; needs
-`pm2 restart ROI` — Swift and three uk/en strings, one deleted; no migration, the digest unmoved).
+**2026-10-08 — the public test's starving players** (`36e33af`, NOT deployed; needs
+`pm2 restart ROI` — Swift and one uk/en string, one deleted; no migration, the digest unmoved).
 A snapshot showed the newcomers fighting most of their fights at 0 Vigor, some with food in the
 bag; the owner chose four changes in two quizzes:
 - **the hunger tick only on a step that BEGINS at 0 Vigor** (`ExplorationService.rollStep` reads
@@ -61,8 +61,8 @@ bag; the owner chose four changes in two quizzes:
 - **the road refuses only 0 HP** — the 0-Vigor guard was a May leftover that kept a starving
   player from the capital's food and Vigor-paying jobs (`TravelService.start`);
 - **the forest edge explains hunger** (`ExplorationController.modePrompt`): what it costs, from
-  the tuning, and the food in the bag with the path to «🍴 Зʼїсти»; nothing when the food is only
-  in the warehouse; the forest and the Trader when there is none.
+  the tuning. The food lines built with it — the bag's food with the path to «🍴 Зʼїсти», the
+  forest and the Trader when there was none — were removed on 2026-10-09, the owner's word.
 
 Chosen but not built, the owner having left their form unanswered: eating straight from the
 warehouse and a hint under the estate-name prompt. Not chosen: partial market lots.

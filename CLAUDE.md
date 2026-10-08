@@ -287,9 +287,10 @@ capital refused a starving player from May, when the pool still refilled itself;
 and once in town, from coming home. `TravelService.start` refuses 0 HP, never 0 Vigor. Hunger costs what
 `tuning/vigor.json` → `starvation` says (5% of max HP a step, −25% ATK/DEF today), charged on
 every step that BEGINS at 0 Vigor — `ExplorationService.rollStep` reads `isStarving` before the
-step pays, so the step that spends the last of it is fed — and the forest edge says so, with the
-food in the bag (`ExplorationController.modePrompt`, the one place hunger is explained, on the
-owner's word).
+step pays, so the step that spends the last of it is fed — and the forest edge says so
+(`ExplorationController.modePrompt`, the one place hunger is explained, on the owner's word). It
+names no food: the lines for the food in the bag and for where to find food were built and then
+taken out before the deploy, on the owner's word (2026-10-09).
 
 **Every Vigor spend goes through `VigorService.drain(_:base:multiplier:)` or its `action:`
 form**, which applies the active tarot card's `vigorDrainMultiplier` on top of the stance's and

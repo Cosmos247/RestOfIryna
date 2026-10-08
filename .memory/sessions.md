@@ -11,11 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-09)* **the fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under «🐍 Гадюка — ❤️ 52/55» (the class icon and «Ви», `combat.you`); the profile, the gear sheet and the decree's weapon condition print the weapon's own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡 in `items.json`); 27 uk lines say «рівень» for the estate's, bag's and weapon's tier. `records` → `4c0802f927fb8be4`, content hash → `47888401` (the sword's icon); no migration.
-- `3ef1f9c` (10-09) **`a582dbf`'s hash fill** — records only.
-- `a582dbf` (10-09) **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
-- `1c310d8` (10-08) **`88156d4`'s hash fill** — records only.
-- `88156d4` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
+- *(this hash fill, 10-09)* **`33551dd`'s hash fill, and the rewritten history** — records. On the owner's word («або краще виправ зміни у тому коміті де це було») the forest edge's two food lines were taken out of `36e33af` itself rather than by a commit of their own: a non-interactive autosquash of the unpushed commits, the final tree checked identical before and after. Every commit after it took a new hash — `88156d4` → `36e33af`, `1c310d8` → `b81aa9b`, `a582dbf` → `248dc43`, `3ef1f9c` → `2c525ca`, `e6f6de4` → `33551dd`, `f1a9939` → this fill — and all are re-recorded here and in the auto-memory.
+- `33551dd` (10-09) **the fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under «🐍 Гадюка — ❤️ 52/55» (the class icon and «Ви», `combat.you`); the profile, the gear sheet and the decree's weapon condition print the weapon's own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡 in `items.json`); 27 uk lines say «рівень» for the estate's, bag's and weapon's tier. `records` → `4c0802f927fb8be4`, content hash → `47888401` (the sword's icon); no migration.
+- `2c525ca` (10-09) **`248dc43`'s hash fill** — records only.
+- `248dc43` (10-09) **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
+- `b81aa9b` (10-08) **`36e33af`'s hash fill** — records only.
+- `36e33af` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and one uk/en string (`exploration.hunger.state`), `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Its first version also named the food in the bag and where to find food; the owner had both lines taken out on 10-09 and the commit was rewritten without them. Two picked features not built — their form was left unanswered.
 - `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
 - `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
 - `94620a4` (10-08) **the real cause: the SDK's rate limiter, now off** — DEPLOYED 10-08 11:55 — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
@@ -483,7 +484,27 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-09 (a weapon's own icon, and «рівень» for «тир»)
+## Session — 2026-10-09 (the recipe notebook designed and postponed; the food lines out)
+
+**The recipe notebook.** A player asked for a button that writes a recipe into the journal, so they
+can stop riding to the capital to read a price. Designed and approved in four quizzes and a mockup
+of all eight price cards (the button on its own row). Then the owner: «Поки не роби оновлення з
+рецептами. Зробимо це завтра.» Nothing of it was written; the design is auto-memory
+`project-recipe-notebook-planned`. The three ready changes were committed first (`33551dd`), on
+the owner's pick.
+
+**A patch note for the testers**, read off the Pi first (`94620a4` since 10-08 11:55, schema v19):
+everything after it. The owner asked about two of its lines. The «Ви повністю відпочили» notice
+shows the HP as current/max, plus the Vigor. The forest edge's food hint was built from the
+approved sample — but the owner then had both food lines removed: «Прибери ці підказки». The edge
+keeps only «😵 Ви голодні: кожен крок забирає 5% ОЗ, а АТК і ЗАХ нижчі на 25%.» Asked to commit, the
+owner preferred the fix inside the commit that had added the lines. So the unpushed history was
+rewritten: an `amend!` commit, then `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash 61b3f42`, with
+no conflict. The final tree was checked byte-identical to the pre-rebase one, and the diff from the
+old HEAD was exactly the four removal files. Every later hash changed and was re-recorded (the
+Commit index row on top carries the mapping); the old HEAD `f1a9939` stays reachable in the reflog.
+
+## Session — 2026-10-09 (a weapon's own icon, and «рівень» for «тир») — `33551dd`
 
 Two more requests while the fight's HP line waited for its commit.
 
@@ -508,7 +529,7 @@ now says «рівень», never «тир».
 395 tests, `validate --strict` 0/0; the digest moved `records` (the sword's icon is in its
 fingerprint) and the content hash, nothing else.
 
-## Session — 2026-10-09 (the player's HP line in a fight is named)
+## Session — 2026-10-09 (the player's HP line in a fight is named) — `33551dd`
 
 A player's request, relayed with a screenshot: «чи можна розділити хп ворога від хп персонажа».
 The fight's status card read «🐍 Гадюка — ❤️ 52/55» over «❤️ 8/95  🍖 25/110»: both lines began
@@ -521,7 +542,7 @@ for the mage) from `combat.you`, a key of the fight's own like `arena.duel.you` 
 training dummy and the registration dog. They are plain messages, so the 1,024 caption cap does
 not apply. 395 tests, `validate --strict` 0/0, the digest unmoved.
 
-## Session — 2026-10-09 (the fortune teller once a game day) — `a582dbf`
+## Session — 2026-10-09 (the fortune teller once a game day) — `248dc43`
 
 The owner's proposal: «оновлення карти о 12, або після закінчення лічильника 6 годин … якщо взяв
 о 10 вечора то буде доступно о 12 дня, а якщо об 11 ранку, то о 5 вечора. Але лічильник дії карти
@@ -558,7 +579,7 @@ old one down, and the new draw would cut it short. It now reads the end stamped 
 **Left as it is:** a card drawn in the first minute after 06:00 ends its window a few seconds after
 12:00, so the sweep can send «📜» at 12:00 and «🔮» a minute later, as two messages.
 
-## Session — 2026-10-08, late (the starving players: four changes the owner chose) — `88156d4`
+## Session — 2026-10-08, late (the starving players: four changes the owner chose) — `36e33af`
 
 The owner opened with «Починаємо виправляти баги і додавати пропозиції від нових гравців». The
 Pi was healthy (`94620a4` since 11:55, no new `[WATCHDOG]`, `Code: 400` at 913). A fresh snapshot
@@ -588,7 +609,8 @@ hop — the warehouse sits in «🏠 Дім». Partial market lots were offered 
 
 Built: Swift (`ExplorationService`, `HealingService` + `RestedToFull`, `RestNotificationService`,
 `TravelService`, `CapitalController`, `ExplorationController.modePrompt`, `VigorService.vigorValue`),
-three uk/en strings added and `travel.cannot_start.no_vigor` deleted. Clean build with no warnings,
+three uk/en strings added and `travel.cannot_start.no_vigor` deleted (on 10-09 the two food lines and
+`VigorService.vigorValue` were taken back out of this very commit, which now adds one string). Clean build with no warnings,
 395 tests, `validate --strict` 0/0, the digest unmoved (`records cc1357a44f3c4849`, content hash
 `a89b39b0`). No migration. Rendered the three new uk lines against the approved sample: identical.
 

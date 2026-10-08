@@ -72,9 +72,10 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   either. A tester reported −6 at 129 max HP; the 2026-09-12 «корінь −22» death was the same
   defect. Auto-memory `project-starvation-tick-on-the-paying-step`.
 - **The forest edge explains hunger** (2026-10-08): at 0 Vigor the mode picker adds what hunger
-  costs (from the tuning) and the food in the bag with the path to «🍴 Зʼїсти»; food only in the
-  warehouse gets no line, none anywhere points at the forest and the Trader
-  (`ExplorationController.modePrompt`). Nowhere else in the forest, on the owner's word.
+  costs, from the tuning (`ExplorationController.modePrompt`). Nowhere else in the forest, on the
+  owner's word. The food lines built with it (the bag's food and its Eat path; the forest and
+  the Trader when there was none) were removed before the deploy, also on the owner's word
+  (2026-10-09).
 - **Food is priced, not picked** (2026-09-18): a cooked dish restores the trader buy-price of
   its ingredients in Vigor and a quarter of that in HP, so the ladder runs 10 → 72 Vigor. Only
   berries (4), nuts (5) and a duck egg (3) are edible as found; potato and raw meat are not.
