@@ -1010,8 +1010,8 @@ number in the copy.
   the multiplier on the next tap.
 - No level, XP, item or estate tier is touched. No content id is removed, so there is no content
   migration and `LiveReferenceCheck` has nothing to refuse.
-- Tier 2 is not deployed yet. This change builds on it and can ride the same restart or a later
-  one.
+- Tier 2 was not deployed yet when this was written. This change built on it, and both went live
+  in the same restart, 2026-10-06 21:39.
 
 ### 11.10 What the implementation touched
 

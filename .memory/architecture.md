@@ -16,12 +16,15 @@
    - Configures Fluent + PostgreSQL (via `SQLPostgresConfiguration`)
    - Runs migrations via `Migrator`
    - Initializes Lingo from `Localizations/` directory
-   - Creates `HTTPClient` (AsyncHTTPClient)
+   - Creates `HTTPClient` (AsyncHTTPClient) — HTTP/1.1, connect 10 s / read 60 s (2026-10-08)
    - Builds `AppState` (global singleton holding db, lingo, logger, httpClient, bot)
-   - Creates `TGBot` with long polling + `HummingbirdTGClient`
+   - Creates `TGBot` with long polling + `HummingbirdTGClient`, the SDK's own rate limiter OFF
+     (`apiRequestLimitLongPolling: nil` — it deadlocked the poll loop; `tech-stack.md`)
+   - Reads `ROI_OPEN_ACCESS` into `appState.openAccess` and logs which way the door stands
    - Creates `TGDispatcher` (subclass of `TGDefaultDispatcher`) and adds it to bot
    - Calls `Controllers.attachAllHandlers()` to register all controller routers
-   - Starts the bot (`bot.start()`)
+   - Starts the bot (`bot.start()`), then `PollWatchdog.start` — a plain thread that exits the
+     process when no `getUpdates` has completed for 120 s, so pm2 restarts a frozen poll loop
    - Notifies admin users that bot started
    - Starts Hummingbird HTTP server on port 8080 (just a `/health` endpoint)
 
@@ -76,8 +79,10 @@ Three process-wide holders, all `nonisolated(unsafe)` + a lock:
 - `store: RouterStore` — global actor, holds all registered routers
 - `sessionCache: SessionCache` — global actor, in-memory user cache (5min TTL)
 - `AccessControl` — actor cache over the `allowed_users` table; the hardcoded `allowedUsers`
-  array is gone (2026-09-08). Only `developerUsers` stays in code, allowed before the table is read
-- In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner)
+  array is gone (2026-09-08). Only `developerUsers` stays in code, allowed before the table is read.
+  Since 2026-10-07 `ROI_OPEN_ACCESS=1` opens the door: an unlisted account is ADDED (source `open`)
+  instead of refused — the public test runs this way
+- In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner, the trip's road card)
 
 ## Service Layer
 

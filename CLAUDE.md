@@ -78,7 +78,7 @@ Swift/
 ├── Migrations/          # DB migrations
 ├── Services/            # Domain services (pure where possible)
 ├── Telegram/            # Router engine + TG client
-└── Helpers/             # TGControllerBase, SessionCache, ScreenEdit, PhotoCache, Countdown, Lingo ext, env, EphemeralChatState
+└── Helpers/             # TGControllerBase, SessionCache, ScreenEdit, PhotoCache, PollWatchdog, Countdown, Lingo ext, env, EphemeralChatState
 ```
 
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
@@ -904,6 +904,11 @@ the only message flow that gets cleaned up. Auto-memory `project-tavern-dice-cle
 Required in `.env` (see `.env.example`):
 - `TELEGRAM_BOT_TOKEN` — from BotFather
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — PostgreSQL
+
+Optional:
+- `ROI_OPEN_ACCESS` — `1`/`true`/`yes`/`on` opens the door (see Access above); read at boot. The
+  Pi has it on since 2026-10-07 — the public test.
+- `ROI_PROJECT_PATH` — a real environment variable, not `.env` (the `.env` is found through it).
 
 ## Current State
 

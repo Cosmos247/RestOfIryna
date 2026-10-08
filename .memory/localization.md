@@ -271,7 +271,10 @@ sweep that found the last six is the one worth repeating after any copy edit:
 grep for the pronouns, for the 2sg present endings (`-єш/-иш/-ешся`), and — the
 one that actually caught things — over the *vocabulary* of every word ending in
 `-и/-й/-ь/-ись`, since a mid-sentence imperative ("Спершу принеси…") hides from
-a line-oriented search.
+a line-oriented search. **Add `-ж` to that vocabulary:** «Спершу поїж»
+(`travel.cannot_start.no_vigor`) survived from 2026-09-07 to 2026-10-08, because the
+imperative of їсти (їж, поїж, з'їж) ends in neither. On 2026-10-08 the `-ж` sweep
+found no other («ніж», «тож», «також», «вздовж», «продаж», «між» are not verbs).
 
 **The one exception (2026-09-19): the six `recipe.<id>.taught` lines say «ти».** The owner
 wants the innkeeper personal when he teaches a dish; it covers those lines only — the shared

@@ -10,7 +10,7 @@
 
 ## Rebalance status (Phases 3–11 done · Phase 11 closed as CODE · live-play polish since 2026-09-09)
 
-The pre-release rebalance is the only work in flight and has rewritten most of the
+The pre-release rebalance (done, deployed) rewrote most of the
 numbers below. Current state:
 
 | Phase | What landed |
@@ -21,14 +21,36 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-06 — the owner's screen art, and the King's first line** (`873e426`, NOT deployed;
+**2026-10-08 — one road card per trip** (`2ed296e`, NOT deployed; needs `pm2 restart ROI` —
+Swift, one asset, one uk string): a player asked for the estate ↔ capital crossing to be visible.
+Setting out, `↩️ Розвернутись` and "how long is left" are the owner's picture
+(`Assets/travel/road.jpg`) with a new caption; `CapitalController.sendRoadCard` sends the new card
+and deletes the trip's previous one (the one exception to "photos are kept"), arrival forgets the
+id. Arrival home stays text. The road's no-Vigor refusal «поїж» became «поїжте».
+
+**2026-10-08 — the poll loop froze four times; the SDK's rate limiter is off** (`ee7437e` +
+`94620a4`, deployed 11:45 and 11:55): pm2 `online`, no socket to Telegram, the update queue
+growing. The cause is swift-telegram-sdk 4.6's `LimiterAsync`, which every API call passes and
+which deadlocks after a burst that ends on exactly `maxRequests` waiters (reproduced with 10
+calls) — a restart's backlog is such a burst, so each restart froze again within a minute.
+`apiRequestLimitLongPolling: nil` turns it off; `PollWatchdog` exits after 120 s without a
+completed `getUpdates` (fired once, 11:47:53, before the fix); the client is HTTP/1.1 with
+timeouts (the first suspect, cleared). Up ~10 h with no freeze since. `tech-stack.md`.
+
+**2026-10-07 — the open door, and guilds from level 30** (`f200fa5`, deployed 18:34): the
+public test. `ROI_OPEN_ACCESS=1` in the Pi's `.env` admits every account that writes
+(`allowed_users` source `open`, a silent owner notice per newcomer); `/link` still works, and
+closing the door keeps everyone already in. `guild.json` → `foundLevelGate` 5 → 30 (data only;
+the refusal banner interpolates it). Ten players came in the first six hours.
+
+**2026-10-06 — the owner's screen art, and the King's first line** (`873e426`, deployed 2026-10-06 21:39;
 art and two locale lines, no code): the Master, the palace, the capital map on the square and both
 streets, the charter and the six rabid-dog scenes, each through a slot `sendCachedPhoto` already
 had. Measured against the 1,024 caption: the King's oath 578 (uk), the palace ≈500, the Master's
 lesson card ≈450. The King's first line now matches the art — he sits and holds out the scroll.
 `capital/market.jpg` is the one capital slot still empty.
 
-**2026-10-06 — the pre-deploy audit's four fixes** (`f2ae7ea`, NOT deployed; Swift only, no
+**2026-10-06 — the pre-deploy audit's four fixes** (`f2ae7ea`, deployed 2026-10-06 21:39; Swift only, no
 migration, the digest unmoved). A review of everything since `8ae6772` found no blocker and these
 holes in it, all fixed:
 - the palace's and the NPC board's «… все одно» named nothing, so a double tap handed in the next
@@ -39,8 +61,8 @@ holes in it, all fixed:
 
 The rest is in `TODO.md` → "Open, decided but not done".
 
-**2026-10-06 — the Master's enchant is the armour's ladder** (`bad142b`, NOT deployed;
-needs `pm2 restart ROI` — Swift, locale strings and content schema **v19**, no migration;
+**2026-10-06 — the Master's enchant is the armour's ladder** (`bad142b`, deployed 2026-10-06 21:39;
+it needed `pm2 restart ROI` — Swift, locale strings and content schema **v19**, no migration;
 `spec-items.md` §11):
 - **Why.** The owner asked how the armour enchant works and how to improve it. A level added 4%
   of the piece's own stats, and the only armour is item level 1: thirteen of the twenty purchases
@@ -68,8 +90,7 @@ needs `pm2 restart ROI` — Swift, locale strings and content schema **v19**, no
   395 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, the same 18 warnings;
   digest `records` → `9303bb274d4517d8`, the other four unchanged; content hash `be1102fc`.
 
-**2026-10-05 — durability is the item's own; the Forester set at 50** (`bf15669`, NOT
-deployed; needs `pm2 restart ROI` — Swift, content schema **v18** and one migration;
+**2026-10-05 — durability is the item's own; the Forester set at 50** (`bf15669`, deployed 2026-10-06 21:39; it needed `pm2 restart ROI` — Swift, content schema **v18** and one migration;
 `spec-items.md` §10):
 - **Why.** The owner opened a day of gear work by asking for the Forester set at 50. One
   number, `economy.gear.maxDurabilityStart` 30, stamped every new row — the class weapon too,
@@ -93,8 +114,8 @@ deployed; needs `pm2 restart ROI` — Swift, content schema **v18** and one migr
   three unchanged; content hash `41455b84`. The migration's SQL, run on a temp copy of the Pi's
   24 rows, read +20/+20 on every one.
 
-**2026-10-05 — the Master's enchant draws from the bag alone** (`4fe5b7a`, NOT deployed;
-needs `pm2 restart ROI` — Swift and locale):
+**2026-10-05 — the Master's enchant draws from the bag alone** (`4fe5b7a`, deployed 2026-10-06 21:39;
+it needed `pm2 restart ROI` — Swift and locale):
 - **Why.** A tester: «треба 15 шкури, а я маю 14. ХОЧА В СУМЦІ 0». `MasterService.enchant`
   (May, `4a13163`) counted bag + estate warehouse and drew from both; the refusal printed the sum.
   The Master's lesson (10-04) already counted the bag alone, so one NPC ran two rules.
@@ -106,13 +127,13 @@ needs `pm2 restart ROI` — Swift and locale):
 - **Measured.** Both touched files recompiled with no warning; 370 tests; `validate --strict` 0/0;
   digest unmoved; three cards rendered in both languages.
 
-**2026-10-04 — «💛 Допомога грі» in Settings** (`b0c9d80`, NOT deployed; needs `pm2 restart
+**2026-10-04 — «💛 Допомога грі» in Settings** (`b0c9d80`, deployed 2026-10-06 21:39; it needed `pm2 restart
 ROI` — Swift and four locale strings): `Commands.support`, a third button on the settings keyboard
 ([🌐 Мова] [💛 Допомога грі] / [🔙 Назад]); the tap answers with the owner's text naming
 @irina_chemeris1998 and keeps the keyboard. The Settings button's own label was fixed with it:
 «⚙️ Налаштуваня» → «⚙️ Налаштування». 370 tests, `validate --strict` 0/0, digest unmoved.
 
-**2026-10-04 — the watchman says when a task is ready** (`0b53e82`, NOT deployed; needs
+**2026-10-04 — the watchman says when a task is ready** (`0b53e82`, deployed 2026-10-06 21:39; it needed
 `pm2 restart ROI` — Swift, two locale strings and one migration, digest unmoved):
 - **Why.** A player asked to be reminded when a task is done. Nothing said so: the journal and
   the boards showed it only to someone who thought of opening them. Most completions are not
@@ -128,8 +149,8 @@ ROI` — Swift and four locale strings): `Commands.support`, a third button on t
 - **Measured.** 370 tests; `validate --strict` 0/0; the digest unmoved. The migration was not
   run against a database here; it follows `AddGearCondition`'s shape.
 
-**2026-10-04 — a Vigor reward that will not fit is asked about** (`47e0e8f`, NOT deployed;
-needs `pm2 restart ROI` — Swift and nine locale strings, no migration, digest unmoved):
+**2026-10-04 — a Vigor reward that will not fit is asked about** (`47e0e8f`, deployed 2026-10-06 21:39;
+it needed `pm2 restart ROI` — Swift and nine locale strings, no migration, digest unmoved):
 - **Why.** A tester turned a Vigor-only decree in at full Vigor: «✅ Указ виконано» over an empty
   «💰», no word of where the prize went. 20 of 39 decrees pay only Vigor; a partial fit and every
   NPC job lost the rest silently too.
@@ -141,8 +162,7 @@ needs `pm2 restart ROI` — Swift and nine locale strings, no migration, digest 
   for a full, a nearly full and a roomy pool; the longest palace caption with the warning ≈ 520
   of Telegram's 1024.
 
-**2026-10-04 — a tarot card is phrased once, and 💰 marks every reward** (`e861c73`, NOT
-deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, no migration):
+**2026-10-04 — a tarot card is phrased once, and 💰 marks every reward** (`e861c73`, deployed 2026-10-06 21:39; it needed `pm2 restart ROI` — Swift, locale strings and `fortune.json`, no migration):
 - **The reveal** prints the card through `FortuneDisplay` (`effectLine`, `wheelLine`,
   `oneShotParts`), the helper the fortune screen and the profile already called. The 22
   hand-typed `fortune.card.<id>.buff_desc` keys are gone in both locales, with their six
@@ -168,7 +188,7 @@ deployed; needs `pm2 restart ROI` — Swift, locale strings and `fortune.json`, 
   → `73568a2a`; `tuning`, `spawns`, `quests`, `king` unchanged.
 
 **2026-10-04 — the weapon follows the player level, and its first rung is the Master's lesson**
-(`9ab349c`, NOT deployed; needs `pm2 restart ROI` — code, locale strings, content
+(`9ab349c`, deployed 2026-10-06 21:39; it needed `pm2 restart ROI` — code, locale strings, content
 schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
 - **The rule.** Nine rungs, one every five levels (1 … 40), each with its own
   `requiredPlayerLevel` and 75% of the shipped ladder's growth at that item level; t6–t9 recipes
@@ -183,7 +203,7 @@ schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
 - **Measured.** 366 tests; `validate --strict` 0/0; `records` → `1041961908ba2d3f`, `king` →
   `e3a492be1b017e81`, content hash `00b40443`; `tuning`, `spawns`, `quests` unchanged.
 
-**2026-10-03 — the arena duel is a cycle of three** (`f0c1749`, NOT deployed; needs
+**2026-10-03 — the arena duel is a cycle of three** (`f0c1749`, deployed 2026-10-06 21:39; it needed
 `pm2 restart ROI` — code, locale strings and content schema v16, no migration):
 - **The rule.** Attack beats the class special attack, the technique breaks Defend (it cannot
   miss a defender), Defend turns Attack (65% blocked, 60% riposte). Free and unlimited in the
@@ -193,7 +213,7 @@ schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
 - **Measured.** Mirror equilibria ~50/36/14 (A/D/T), duels 1.6× longer; warrior vs archer/mage
   still 75–76% (open). 352 tests; `records` → `1b5577693d8733af`, content hash `6963c31b`.
 
-**2026-10-03 — the arena duel plays in simultaneous rounds** (`cad61c3`, NOT deployed; needs
+**2026-10-03 — the arena duel plays in simultaneous rounds** (`cad61c3`, deployed 2026-10-06 21:39; it needed
 `pm2 restart ROI` for the code and the locale strings — no migration, no schema change):
 - **The rule.** Both fighters choose blind; the round is played on the second choice or after
   15 s, with a missing choice played as a forced Defend. A Defend braces against the SAME round's
@@ -210,7 +230,7 @@ schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
 - **Measured.** 344 tests; `validate --strict` 0/0; `records` alone moved (`259f6cb6ca152450`),
   content hash `7f6a7317`.
 
-**2026-10-03 — creature strength follows the estate tier** (`4be2758`, NOT deployed; needs
+**2026-10-03 — creature strength follows the estate tier** (`4be2758`, deployed 2026-10-06 21:39; it needed
 `pm2 restart ROI`, because of code, content schema v15 and one migration, `AddFightLogEstateLevel`).
 `spec-bestiary.md` §11:
 - **The rule.** A spawnable creature fights with HP and ATK × `1 + 0.1·(estate tier − 1)`, which
@@ -231,7 +251,7 @@ schema v17 and two data migrations; spec `content/spec/spec-items.md` §9):
   - the harness rebuilt against the repo reproduced the 10-02 fight table byte for byte, and with
     it 477 days to L40 against 392 unscaled.
 
-**2026-10-02 — tier 2 of the bestiary** (`f03d502`, NOT deployed; needs `pm2 restart ROI` — the
+**2026-10-02 — tier 2 of the bestiary** (`f03d502`, deployed 2026-10-06 21:39; it needed `pm2 restart ROI` — the
 validator is code, five locale strings are new and four oblique-case lines were rewritten; no migration). `spec-bestiary.md` §10:
 - **The roster.** Fourteen creatures numbered in order, five of them new: Скажена лисиця,
   Олень-рогач, Вепр-сікач, Тур and Скажена зграя. A creature's number is its level and its
@@ -832,7 +852,7 @@ were superseded by Phases 4–6.
 - [x] EstateController — stub (coming-soon message + back), reserved for Phase 5
 - [x] CapitalController — Phase 6.0 MVP + 6.1 Trader + 6.2 Tavern + 6.3 chat-cleanup + 6.4 Fortune Teller + economy v2 rebase. Travel-gated city hub. **Split across two streets on 2026-09-20 (live since the 2026-09-22 00:22 deploy):** the arrival square offers only `[👑 Замкова][🏘 Поділ]` + utility + 🏡, Замкова carries Базар / Ристалище / Гільдії and Поділ carries Крамар / Майстер / Шинок / Ворожка, so no screen is over four rows and each street has room for two more places. `User.capitalStreet` (+ `AddCapitalStreet`) picks one of three layouts inside a single `generateControllerKB`; `routerName` stays "capital" everywhere in town, which is why nothing else in the controller had to change. Before it: reply-keyboard nav with 6 location buttons + utility row [Inventory] [Profile] + leave row. Arrival sends the welcome photo screen (`Assets/capital/welcome.jpg` + atmospheric lore) with the capital reply-keyboard. **Trader (Phase 6.1)** is fully live: two-step UX (Menu → Buy/Sell list, edit-in-place over the merchant photo), 11 listings, per-tier pricing (1/2/3/5/10/100g sell), 2× sell:buy spread, `[💸 ×1] [✏️ N]` actions per row, custom-quantity prompt routed through `EphemeralChatState.PendingTraderTransfer` + `unmatched` text intercept. **Tavern (Phase 6.2)** also live: button-driven Menu/Dice/Darts; menu sells all 7 cooked dishes (20-200g) bypassing recipe scrolls; gambling uses `bot.sendDice` with text labels ("Ти кидаєш..." / "Шинкар кидає...") for attribution since Telegram doesn't let bots author messages as the user — wager flow is `[💰 stake]` → "Готовий?" confirm + `[🎲 Кинути]` (debit happens here, free cancel before) → bot rolls N dice (2 for 🎲, 1 for 🎯) → sleep → bot's N → sleep → result text with `[🔄 Зіграти ще раз][🔙 До шинка]`. Cross-controller guards still check `TravelState` (countdown banner) and `User.location` (explore-from-capital block, estate-from-capital triggers return trip). UK renames live: Торговець→Крамар, Гадалка→Ворожка, Таверна→Шинок. **Master (Phase 6.5, expanded 2026-05-22)** is fully live — armor shop / armor enchant / armor+weapon repair, the first real silver sink. Entry `[🛡 Buy][⚒️ Repair][✨ Improve]`. Buy sells the Forester set — the only armour source since 2026-09-28 — at 810🪙 a set since 2026-10-05 (485 before; ×5/3 with the durability 30 → 50). Durability lives on `InventoryEntry.durability`/`maxDurability` for armor (each item's own `maxDurability` since 2026-10-05 — the Forester set 50) AND the weapon (per-tier max 30/40/50/70/100/120/140/160/180 via `WeaponUpgradeCatalog.durabilityByTier`); `GearConditionService.drainEquippedGear` spends a per-fight budget (win 1 / loss 3 / flee 2, model C) across the shared armor+weapon pool (`CombatController` + `PassiveExpeditionService`). At 0: armor broken (0 stats), weapon keeps HALF (lore: King's weapon can't break) — both via `EquipmentService.contributedStats`. Repair: armor → max−1 at ≈½ buy price; weapon → full at 1🪙/point, no shave, class-flavoured buttons (Sharpen/Restring/Re-empower). Enchant scales the piece's own stats by +4% a level (Phase 6 replaced the flat +DEF and class stat), cap +5. Idempotent `backfillWeaponDurability` at startup lifts pre-existing weapons to their tier ceiling. All via `MasterService`. Inventory tap on gear opens a full HTML detail card (stats + durability + enchant); gear-row labels show only a plain `+N` enchant. Every buy/repair/enchant tap opens a confirm prompt first (`✅ Yes`/`❌ No`, restating item + cost; `master:*ok:` callbacks execute) to avoid accidental taps; list buttons are terse (buy keeps price, repair shows durability, enchant shows the level step). Capital result banners no longer carry an inline back button (`backToCapitalBannerKB` removed — the reply-keyboard is always visible). 2 stubs left (Market / Arena) reuse `renderLocation` which auto-loads `Assets/capital/<id>.jpg` if present, falls back to text.
 - [x] EstateController — tree nav (Phase 5.0 scaffolding): Root (estate name + level + optional per-level artwork) → [🏠 House] drilldown with Workshop/Kitchen/Warehouse stubs / [🌾 Plot] stub; main-nav pass-through; switches between editMessageText and editMessageCaption based on whether the root rendered as text or photo.
-- [x] GuildController — Phase 7.1 (Guilds, 2026-06-16). Capital `🏰 Гільдії` reply button → routerName "guild" (controller owns the keyboard, CombatController-style); membership-branched reply keyboard. **Found** (500🪙 silver sink + player-level gate 5; **tag left empty — game-creator-assigned via DB**, the name prompt points the player to `@TGUserName`), **invite** (leader/officer → nickname/@username prompt → push; invitee accepts/declines from the guildless-home invites list), **roster** (role-sorted, 👑/🎖/🧑), **kick / promote / demote** (officer cap 2; officers kick members only), **leave / disband** (leader must disband — no transfer yet), **item vault 🏦** (stackables only, deposit any member / withdraw leader+officers, cap 3000), **silver treasury 🪙** (deposit any / withdraw leader+officers, `Guild.treasury`). Models `Guild`/`GuildInvite`/`GuildVaultEntry` + `GuildCatalog` (memberCap 20, maxOfficers 2) + `GuildService` (typed result enums, validate-then-mutate, fire-and-forget pushes); 4 migrations. 82 guild locale keys × 2 (all neutral). Deferred: guild chat, banner-on-estate, non-aggression pacts (need territorial PvP), leadership transfer.
+- [x] GuildController — Phase 7.1 (Guilds, 2026-06-16). Capital `🏰 Гільдії` reply button → routerName "guild" (controller owns the keyboard, CombatController-style); membership-branched reply keyboard. **Found** (500🪙 silver sink + player-level gate 30 since 2026-10-07 (was 5); **tag left empty — game-creator-assigned via DB**, the name prompt points the player to `@TGUserName`), **invite** (leader/officer → nickname/@username prompt → push; invitee accepts/declines from the guildless-home invites list), **roster** (role-sorted, 👑/🎖/🧑), **kick / promote / demote** (officer cap 2; officers kick members only), **leave / disband** (leader must disband — no transfer yet), **item vault 🏦** (stackables only, deposit any member / withdraw leader+officers, cap 3000), **silver treasury 🪙** (deposit any / withdraw leader+officers, `Guild.treasury`). Models `Guild`/`GuildInvite`/`GuildVaultEntry` + `GuildCatalog` (memberCap 20, maxOfficers 2) + `GuildService` (typed result enums, validate-then-mutate, fire-and-forget pushes); 4 migrations. 82 guild locale keys × 2 (all neutral). Deferred: guild chat, banner-on-estate, non-aggression pacts (need territorial PvP), leadership transfer.
 - [x] InventoryController — tree navigation (root → category) via inline buttons; every item is a button with item-info modal showing the lore description on tap. Action acks (eat, equip, unequip) appear as an inline `✅ ...` status line above the refreshed view; warnings (raw food, no_effect, empty category, use_unavailable) appear as Telegram modal alerts via `showAlert: true`. Eat status appends current/max pool indicator ("+15 голоду (20/100)"). No top-strip toasts.
 - [x] Daily NPC quests — Phase 9.2 v1 (2026-08-23). Three quest-givers in the capital (Trader / Master / Innkeeper), 5 jobs each, **one job per NPC per game day, taken by hand** — the day decides WHICH job each NPC offers, the player decides whether to take it (2026-09-07). The offer sits on the board until accepted; `record` ticks nothing before that, and taking a job starts the count rather than backfilling the day. Still no list to pick from. **A taken job no longer burns at noon (2026-09-19, `328bf88`, live since the 2026-09-22 00:22 deploy):** it stays open until turned in and that NPC offers nothing new meanwhile — one open job per NPC, enforced by `accept` — so the queue is exactly one deep; a carried job can be dropped after a confirmation, and the one-time `CloseBurnedQuestJobs` closed the rows the old rule left marked as taken. **Bands and a reward curve (2026-09-07):** every job has a `minLevel` (trader 1/1/1/6/8 · master 1/1/1/7/10 · tavern 1/1/1/4/5 — six early forage deliveries were authored so a level-1 board still offers three) and the pool is filtered before the hash, so an unreachable job is never assigned; authored rewards were halved and are scaled at payout — silver +1.5%/level, XP on the `mobXP` exponent, Vigor on the pool. Daily silver runs 85 → 175 across the arc where it was a flat 220. `QuestCatalog.daily(npc:userId:stamp:)` derives the assignment from a stable FNV-1a hash of `userId:npc:GameDay.stamp()` (verified even 1/3 spread; every player cycles all 3 jobs within 30 days), so nothing about *which* job is stored and it survives restarts; `QuestProgress` (+ `CreateQuestProgress`, unique on user+npc+day) stores only progress + claimed, and copies `quest_id` at creation so a mid-day catalog edit can't move the goalposts. Two objective shapes: **deliver** (progress read LIVE from the bag, items consumed at turn-in which also pays out) and **counter** (`QuestService.record(...)` ticked from 5 hook sites — `CombatController.finishVictory`, `PassiveExpeditionService.finalizeAndPush` (batched per run), `CraftingService.craft` (ingot only), `TraderService.sell`, `CapitalController.runRound` (wins only, ties don't count); all `try?` so a quest write can never break a fight/craft/sale). Rewards: silver on every job + per-NPC accent (Trader = bigger silver, Master = +XP, Innkeeper = +Vigor); single `payOut` applies silver/XP/Vigor (Vigor clamped to cap, reports what actually landed) and the banner echoes the combat level-up / estate-up lines. UI: `[📜 Замовлення]` on each NPC menu → board edited in place over the NPC's own message; one action button that only appears when finishable (`✅ Здати` for deliver, `🎁 Забрати` for counter). **Journal («Нотатник»)** hangs off the *profile*, not the capital: a second keyboard row under the 1/2/3 style buttons (`journal:open`) edits the same profile bubble into a read-only digest of all three jobs (state ✅ claimed / 🎁 ready / ⏳ done/target + reward, `🕛` countdown to the 12:00 rollover via `GameDay.secondsUntilNextRollover`), `journal:back` returns. Deliberately claim-free — turn-in stays at the NPC. Reachable from every router that falls through to `MainController.onCallbackQuery` (capital, estate, guild, arena, inventory). 43 locale keys × 2 (neutral except the journal title, which is gendered намісника/-иці via the `.m`/`.f` overload). Deferred: chains, weeklies, guild co-op, fortune/arena quest-givers.
 

@@ -21,8 +21,8 @@
 | Fluent | 4.13.0+ | ORM framework (model definitions, queries) |
 | FluentPostgresDriver | 2.12.0+ | PostgreSQL driver for Fluent |
 | swift-nio | 2.98.0+ | NIO event loop groups (used for Fluent + HTTPClient) |
-| AsyncHTTPClient | 1.31.1+ | HTTP client for Telegram API calls |
-| swift-telegram-sdk | 4.6.0+ | Telegram Bot API wrapper (TGBot actor, dispatchers, handlers) |
+| AsyncHTTPClient | 1.31.1+ (resolved 1.33.1) | HTTP client for Telegram API calls |
+| swift-telegram-sdk | 4.6.0+ (resolved 4.6.0; its rate limiter is OFF, see below) | Telegram Bot API wrapper (TGBot actor, dispatchers, handlers) |
 | swift-dotenv | 2.1.0+ | `.env` file loading |
 | Lingo | 4.0.0+ | i18n/localization from JSON files |
 
@@ -35,7 +35,23 @@
 - `TGBaseHandler` — fires for every update (catch-all)
 - `TGCommandHandler` — fires for specific `/command` entities
 - `TGClientPrtcl` — protocol for HTTP backend (project implements `HummingbirdTGClient`)
-- Rate limits: 5 req/s for long polling, 30 req/s for webhook
+- Rate limits: the SDK ships its own limiter, 5 req/s for long polling and 30 req/s for webhook
+  — **turned OFF here since 2026-10-08** (`apiRequestLimitLongPolling: nil` in `configure`).
+  `TGBot.tgClient` (read by EVERY API call, `getUpdates` included) passes through
+  `LimiterAsync`, whose ticker stops with the count at the maximum when its last tick releases
+  exactly `maxRequests` waiters; every later call then parks forever — no socket, no error, the
+  process `online`. A burst of 10 requests reproduces it; a restart's update backlog is such a
+  burst. It froze the bot four times on 2026-10-08. Re-run that burst test before turning it on
+  again or upgrading the SDK. Telegram's own limits answer an excess with a 429 instead.
+
+### AsyncHTTPClient (the Telegram client)
+- One `HTTPClient` (`configure`), used only by `HummingbirdTGClient`.
+- **`.http1Only`, connect 10 s / read 60 s** since 2026-10-08. The 125 `StreamClosed` errors
+  logged since 2026-09-09 are all HTTP/2 streams cancelled under a request (each a failed
+  redraw); HTTP/1.1 was the first suspect for the freezes and was cleared, but it stays — it is
+  harmless, and the read timeout bounds a request on a dead connection (the long-poll holds 10 s).
+- `HummingbirdTGClient.post` stamps every completed `getUpdates` for `PollWatchdog`, which exits
+  the process after 120 s without one so pm2 restarts it (`CLAUDE.md` → Running the bot).
 
 ### Hummingbird 2.x
 - Lightweight HTTP framework (no built-in ORM, auth, etc.)

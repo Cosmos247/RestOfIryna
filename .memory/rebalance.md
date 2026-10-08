@@ -113,7 +113,7 @@ not guessed: 60 kills/day is short by 3–6×; real throughput is 19/day at L1 a
 
 ### Tier 2 of the bestiary and the expedition model (2026-10-02)
 
-**What shipped (`f03d502`, committed, not yet deployed):**
+**What shipped (`f03d502`, committed 2026-10-02, deployed 2026-10-06 21:39):**
 - 14 creatures numbered in order, five of them new;
 - bands km 3N−3…3N+1, with the rabid bear stretched to km 49;
 - XP by the number alone (every archetype `xpMultiplier` is 1.0);

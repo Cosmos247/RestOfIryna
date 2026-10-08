@@ -57,13 +57,20 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   `project-flee-has-a-ceiling`.
 
 ### Vigor
-- 0 to VigorMax (scales with level, ~100-300)
-- Drains: room walk (2), double-speed (4), combat round (1)
-- Starvation: travel time doubles, stats -25%, HP drain per room
-  (5% of max HP, `tuning/vigor.json` → `starvation.hpDrainPercent`). It is charged
-  on EVERY step once Vigor is 0, whatever else the step rolled, and is **always
-  printed on its own line** — `rollStep` carries it on `StepResult`, never inside an
-  event's number. See `project-damage-sources-named-separately`.
+- 0 to VigorMax (`100 + 5·L`)
+- Drains (`tuning/vigor.json` → `drain`): a step 2, an attack 2, a defend 1, a flee 3, a
+  passive round 2. `walkRoomDoubleSpeed` (4) is a dead knob — no double-speed walk exists
+- Starvation (Vigor 0): stats −25% and an HP drain per step (5% of max HP,
+  `tuning/vigor.json` → `starvation.hpDrainPercent`); the road to the capital is refused
+  outright (the GDD's "travel time doubles" was never built). It is charged on EVERY step once
+  Vigor is 0, whatever else the step rolled, and is **always printed on its own line** —
+  `rollStep` carries it on `StepResult`, never inside an event's number. See
+  `project-damage-sources-named-separately`.
+- ⚠️ **Open defect (found 2026-10-08, fix awaiting the owner):** `rollStep` drains the step's
+  Vigor FIRST and checks `isStarving` after, so the step that spends the LAST Vigor (2 → 0) is
+  charged the hunger tick too, though it was paid in full — the comment above that line says
+  "when vigor is already at 0". A tester reported it at 129 max HP (−6); the 2026-09-12 «корінь
+  −22» death was the same defect. Auto-memory `project-starvation-tick-on-the-paying-step`.
 - **Food is priced, not picked** (2026-09-18): a cooked dish restores the trader buy-price of
   its ingredients in Vigor and a quarter of that in HP, so the ladder runs 10 → 72 Vigor. Only
   berries (4), nuts (5) and a duck egg (3) are edible as found; potato and raw meat are not.
@@ -76,8 +83,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   `HealingService.canRest` names the three states that suspend it: an `ExplorationState`
   row (in the forest), a `TravelState` row (on the road) and `location == capital`.
   Only the first was ever checked, so the manor's bed worked from anywhere in the
-  kingdom. Away from the estate the clock is CLEARED, not merely skipped. Potions are
-  the away-from-home heal; nothing in the capital can take a player to 0 HP (the arena
+  kingdom. Away from the estate the clock is CLEARED, not merely skipped. A cooked dish is
+  the away-from-home heal (a quarter of its silver price in HP; the two potions are obtainable
+  nowhere); nothing in the capital can take a player to 0 HP (the arena
   clamps both duellists to `max(1, …)`), so refusing to heal there strands nobody.
 - **A trip can be turned around** (2026-09-10). While one is in flight the nav keyboard
   lends the Explore slot to `↩️ Розвернутись`; walking back costs exactly what has been
@@ -86,6 +94,15 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   endpoint, and a turn-back row is created mid-road, so a second turn-back priced a
   two-minute road at five seconds (fixed 2026-09-11). Turns are
   symmetric — each costs only its own leg, so oscillating converges rather than compounds.
+- **The road costs no Vigor** — only time (2 real minutes, `tuning/time.json` → `travelMinutes`),
+  but `TravelService.start` refuses a player at 0 Vigor or 0 HP. So a starving player at the
+  estate cannot walk to the capital where food is sold; the exits are eating from the bag (raw
+  berries +4, nuts +5, a duck egg +3), the warehouse (withdraw first — food is eaten only from the
+  bag), the kitchen, or a level-up (2026-10-08, seen live on the public test's first evening).
+- **One road card per trip** (2026-10-08): setting out, every `↩️ Розвернутись` and every "how
+  long is left" is `Assets/travel/road.jpg` with a new caption; `CapitalController.sendRoadCard`
+  sends the new card and deletes the trip's previous one, and arrival forgets the id so the last
+  card stays. Arrival home stays text, the owner's call.
 
 ### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*
 - Manor: per-tier rooms (Warehouse → +Kitchen → +Workshop unlock as the estate tier grows; see Phase 5.3c for the actual gating). Workshop hosts the Forge (ingots) + weapon-upgrade (tier 3 and up — the first reforge is the Master's lesson in the capital since 2026-10-04, and every rung opens at a player level) + bag-upgrade + salvage flows — armour is not crafted since 2026-09-28, the Master sells it; Kitchen hosts cooking

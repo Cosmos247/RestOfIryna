@@ -497,8 +497,8 @@ Design locked with the user: name **Ристалище**, **live** real-time tur
 - [x] **ArenaController** *(landed 2026-07-20)* — capital `⚔️ Ристалище` → routerName "arena"; membership-style reply keyboard branches hub `[⚔️ Виклик][🏆 Честь]/[🔙 Столиця]` vs live fight `[⚔️ Атака][🛡 Оборона]/[🏳 Здатися]`. Both fighters keep the fight keyboard the whole duel; the actor rejected out-of-turn taps (no keyboard swapping) until the 2026-10-03 simultaneous rounds, where a second tap in a round is answered «вибір уже зроблено».
 - [x] **Live герць engine** *(landed 2026-07-20)* — `ArenaStore` actor (TradeStore-shaped: lobby + pending challenges + live duels + byUser busy-index; combat dice rolled INSIDE the actor via `CombatService.applyAttack` so roll+HP mutation are atomic). Alternating turns, 45 s turn timer, auto-defend on timeout, forfeit after 2 consecutive misses — all superseded on 2026-10-03 by simultaneous rounds (entry below). `ArenaService` does the DB work: match validation (alive + solvent + daily cap), Honor ELO, settlement (stake transfer loser→winner minus King's tithe = silver sink, HP carry-over, win/loss tally, daily counter). `ArenaProfile` model + `CreateArenaProfiles` migration + `ArenaCatalog` tunings. Background sweeper in configure (challenge expiry + turn timeouts + forfeit settlement).
 - [x] **Honor rating + leaderboard** *(landed 2026-07-20)* — ELO on `ArenaProfile.honor` (start 1000, K=32); leagues Новак/Боєць/Ветеран/Чемпіон by threshold; `🏆 Честь` screen shows honor/league/W-L/daily + top-10 board. 58 arena locale keys × 2 (all neutral).
-- [x] **Simultaneous rounds** *(2026-10-03, `cad61c3`, NOT deployed)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
-- [x] **Defend made a real choice** *(2026-10-03, `f0c1749`, NOT deployed)* — the duel became a cycle of three: Attack beats the class special attack, the technique breaks Defend, Defend turns Attack. Arena-own numbers in `arena.json` → `duel`; the arena admits only those who learned the special attack. Details in the polish log, 2026-10-03.
+- [x] **Simultaneous rounds** *(2026-10-03, `cad61c3`, deployed 2026-10-06 21:39)* — alternating, the challenger's first blow won 60–66% of mirror duels. Both fighters now choose blind and both blows land together (`DuelMath`): 15 s a round, a missing choice is a forced Defend, three missed rounds in a row a technical defeat, both falling → the heavier blow (equal blows draw). Lines from the viewer's side; the result screen opens with the final round. Details in the polish log, 2026-10-03.
+- [x] **Defend made a real choice** *(2026-10-03, `f0c1749`, deployed 2026-10-06 21:39)* — the duel became a cycle of three: Attack beats the class special attack, the technique breaks Defend, Defend turns Attack. Arena-own numbers in `arena.json` → `duel`; the arena admits only those who learned the special attack. Details in the polish log, 2026-10-03.
 - [ ] **Queue matchmaking** — auto-pair by Честь (the second half of the "both modes" decision; lobby-challenge shipped first). Reuses the same `ArenaStore` engine.
 - [ ] Ranked vs unranked (casual/no-stake) queues
 - [ ] Seasons + end-of-season league rewards (silver / cosmetic title)
@@ -1512,7 +1512,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         ladder's biggest step is now **×4.5 between the moose (L4) and the bison (L7)**, the
         level gap 16 → 22 is the widest in the game, and density falls from 6 candidates at
         km 10 to 2 at km 20.
-  - [x] **Bestiary tier 2** *(2026-10-02, `f03d502`, committed, NOT deployed)* — the
+  - [x] **Bestiary tier 2** *(2026-10-02, `f03d502`, committed, deployed 2026-10-06 21:39)* — the
         owner's own design, recovered from a lost session's transcript.
 
         **What it is.** Fourteen creatures numbered in order, five of them new from
@@ -1545,8 +1545,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         Spec `spec-bestiary.md` §10, research `.memory/rebalance.md`. Next: the
         estate-scaling spec, decided at +10% HP/ATK per estate tier, strength only — done
         2026-10-03 as `4be2758`, the next entry.
-  - [x] **Creature strength follows the estate tier** *(2026-10-03, `4be2758`, NOT
-        deployed)* — the owner's 10-02 decision, specified as `spec-bestiary.md` §11 and shown
+  - [x] **Creature strength follows the estate tier** *(2026-10-03, `4be2758`, deployed
+        2026-10-06 21:39)* — the owner's 10-02 decision, specified as `spec-bestiary.md` §11 and shown
         before any code.
 
         **What it is.** A spawnable creature fights with HP and ATK ×
@@ -1572,7 +1572,22 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The Master's enchant is the armour's ladder** *(2026-10-06, `bad142b`, NOT deployed)*
+  - [x] **One road card per trip** *(2026-10-08, `2ed296e`, NOT deployed — `pm2 restart ROI`)* — a
+        player asked for the estate ↔ capital crossing to be visible; the owner had the picture
+        (`Assets/travel/road.jpg`). Setting out, `↩️ Розвернутись` and "how long is left" are that
+        picture with a new caption; `CapitalController.sendRoadCard` sends the new card and deletes
+        the trip's previous one (the owner picked replacing over editing in place, and kept the
+        arrival home as text). «Спершу поїж» → «поїжте».
+  - [x] **The poll loop froze four times; the SDK's rate limiter is off** *(2026-10-08, `ee7437e` +
+        `94620a4`, deployed 11:45 / 11:55)* — pm2 `online`, no Telegram socket, the queue growing,
+        every thread idle. Cause: swift-telegram-sdk 4.6's `LimiterAsync` deadlocks when its last
+        tick releases exactly `maxRequests` waiters (10 calls reproduce it; a restart's backlog is
+        such a burst). `apiRequestLimitLongPolling: nil`; `PollWatchdog` exits after 120 s without a
+        completed `getUpdates`; the client is HTTP/1.1 with timeouts (the first suspect, cleared).
+  - [x] **The open door, and guilds from level 30** *(2026-10-07, `f200fa5`, deployed 18:34)* — the
+        public test: `ROI_OPEN_ACCESS=1` admits every account that writes (source `open`), and
+        `guild.json` → `foundLevelGate` 5 → 30.
+  - [x] **The Master's enchant is the armour's ladder** *(2026-10-06, `bad142b`, deployed 2026-10-06 21:39)*
         — the owner asked how the armour enchant works, what it does to the game and how to improve
         it. Spec `spec-items.md` §11; each decision over a quiz with the set's real numbers.
         - Found: +4% of the piece's own stats a level, on item-level-1 armour. Thirteen of twenty
@@ -1598,7 +1613,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         - Schema v19, no migration; 395 tests; `validate --strict` 0/0; `simulate --strict` 0
           broken bands, 18 warnings; `records` alone moved.
   - [x] **Durability is the item's own, and the Forester set is 50** *(2026-10-05, `bf15669`,
-        NOT deployed)* — the owner opened a day of gear work. Spec `spec-items.md` §10, each decision
+        deployed 2026-10-06 21:39)* — the owner opened a day of gear work. Spec `spec-items.md` §10, each decision
         over a quiz with the testers' real pieces.
         - `items.json` → `maxDurability` on every piece a fight wears outside a weapon ladder.
           `economy.gear.maxDurabilityStart` is gone; it stamped the class weapon too, so a bare
@@ -1612,28 +1627,28 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           the weapon ladder: four testers would have fought their first post-deploy fight on the
           old rung's ATK (Дарина +60 against +27).
         - Schema v18; 379 tests.
-  - [x] **The Master's enchant draws from the bag alone** *(2026-10-05, `4fe5b7a` + `fd6e6e1`, NOT
-        deployed)* — a tester read «треба 15 шкури, а я маю 14» with 0 in the bag: `enchant` summed
+  - [x] **The Master's enchant draws from the bag alone** *(2026-10-05, `4fe5b7a` + `fd6e6e1`, deployed
+        2026-10-06 21:39)* — a tester read «треба 15 шкури, а я маю 14» with 0 in the bag: `enchant` summed
         the bag and the estate's warehouse and drew from both, while the Master's lesson counted the
         bag alone. Now one rule (the capital has no warehouse); the card is `RequirementLine`s, a
         refusal a modal that keeps the card. The audit caught a regression (a late tap answer would
         spin on a throw) and the fill commit gave the lesson the same `catch`.
-  - [x] **«💛 Допомога грі» in Settings** *(2026-10-04, `b0c9d80` + `e569bca`, NOT deployed)* — the
+  - [x] **«💛 Допомога грі» in Settings** *(2026-10-04, `b0c9d80` + `e569bca`, deployed 2026-10-06 21:39)* — the
         owner's text on whom to contact to support the game; the fill also fixed «⚙️ Налаштування».
-  - [x] **The watchman says when a task is ready** *(2026-10-04, `0b53e82`, NOT deployed)* — a
+  - [x] **The watchman says when a task is ready** *(2026-10-04, `0b53e82`, deployed 2026-10-06 21:39)* — a
         player's request. One unnamed «📓 … загляньте в нотатник» per sweep, once per decree or taken
         job, readiness the boards' own test; `AddReadyNotifiedFlags`.
-  - [x] **A Vigor reward that will not fit is asked about** *(2026-10-04, `47e0e8f`, NOT deployed)*
+  - [x] **A Vigor reward that will not fit is asked about** *(2026-10-04, `47e0e8f`, deployed 2026-10-06 21:39)*
         — a tester turned a Vigor-only decree in at full Vigor and got an empty «💰». A warning on
         the card, a question on the tap, the loss named in the banner; decrees and NPC jobs alike.
-  - [x] **The tarot, phrased once** *(2026-10-04, `e861c73` + `a91226f` + `c1c0570`, NOT deployed)* —
+  - [x] **The tarot, phrased once** *(2026-10-04, `e861c73` + `a91226f` + `c1c0570`, deployed 2026-10-06 21:39)* —
         the owner asked how a card reads. The reveal prints through `FortuneDisplay` (22 hand-typed
         `buff_desc` gone), silver «+🪙 30», the window on the price line, «Ієрофант», 💰 for every
         reward; «Витрата снаги», the Chariot ×0.5 and the card's multiplier on the techniques
         (−25% rounded away to nothing — `.memory/rebalance.md`); the later one-shot line without
         «отримано»; the Hanged Man +15% XP so the Chariot no longer dominates it.
   - [x] **The weapon follows the player level, and its first rung is the Master's lesson**
-        *(2026-10-04, `9ab349c`, NOT deployed)* — the owner found the weapon growth too big. Measured,
+        *(2026-10-04, `9ab349c`, deployed 2026-10-06 21:39)* — the owner found the weapon growth too big. Measured,
         the gate was the cause: rungs authored at item level 1/10/20/30/40 but opened by the
         estate at T2–T5 (L4/7/10/13). Spec `spec-items.md` §9, every decision over a quiz.
         - Nine rungs, one every five levels, each with `requiredPlayerLevel`; 75% of the shipped
@@ -1649,7 +1664,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           `ReseatDecreesById` (positions by decree — no skip, ≤2 back).
         - 366 tests; `validate --strict` 0/0; `simulate --strict` 0 broken bands, 18 warnings,
           pace unchanged; `records` and `king` moved, schema v17.
-  - [x] **The quest board as a scroll** *(2026-10-03, `95e8492`, NOT deployed)* — the owner saw a
+  - [x] **The quest board as a scroll** *(2026-10-03, `95e8492`, deployed 2026-10-06 21:39)* — the owner saw a
         similar layout in another game and asked for a different look with different emoji.
         Three played mockups (scroll / bar / status tags); the owner took the scroll with a
         progress bar, the bar on the NPC board only.
@@ -1668,7 +1683,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         - `CapitalController.questRequirementLine` / `questProgressBar`; four `quest.counter.*`
           labels, required by the validator (with its failing test); `quest.progress` and
           `journal.status.ready` deleted as dead. 353 tests; digest unmoved.
-  - [x] **The arena duel as a cycle of three** *(2026-10-03, `f0c1749`, NOT deployed)* — the owner
+  - [x] **The arena duel as a cycle of three** *(2026-10-03, `f0c1749`, deployed 2026-10-06 21:39)* — the owner
         asked to make Defend a real choice, and whether the forest's Defend would have to change
         too. It does not: the arena's Defend was already its own code, sharing only
         `defendChipFraction`, which three forest moves also read.
@@ -1714,8 +1729,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         0/0; `records` alone moved (`259f6cb6ca152450` → `1b5577693d8733af`), `tuning` held
         through the `chipDamage` refactor; content hash `6963c31b`; every new line rendered in
         both locales.
-  - [x] **The arena duel in simultaneous rounds** *(2026-10-03, `cad61c3`, NOT
-        deployed)* — the owner's ask: players should not move in turn, because that is not
+  - [x] **The arena duel in simultaneous rounds** *(2026-10-03, `cad61c3`, deployed
+        2026-10-06 21:39)* — the owner's ask: players should not move in turn, because that is not
         fair; they move at once, with 10–15 s a move, whoever misses defends, and the final
         blow shows as it does in PvE. Measured first on `CombatMath`: alternating, the
         challenger won 60–66% of mirror duels at every level.
@@ -1991,13 +2006,30 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the fifteen on top — the three
-2026-10-06 blocks (the screen art, the audit's fixes, the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button, task-ready, Vigor-reward, tarot and weapon blocks,
-the 2026-10-03 quest-board block, the two 2026-10-03 arena blocks, the estate block and the
-2026-10-02 tier-2 block — which went live at the 2026-10-06 21:39 restart. The six 2026-09-27/28 blocks under them
-are included, live since the 2026-09-28 22:11 restart.
+Telegram. **Every block below is LIVE and unwalked** except the road-card block on top, which
+waits for its restart (`2ed296e`). The guild-gate block went live at the 2026-10-07 18:34
+restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
+the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
+task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
+2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
+21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
+2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-06 — the owner's screen art, and the King's first line (NOT deployed):** any
+**Added 2026-10-08 — one road card per trip (`2ed296e`, NOT deployed):** any account.
+- Set out for the capital: the road picture with «🐎 Ви підганяєте коня до столиці…».
+- Tap `↩️ Розвернутись` twice: each time a NEW card appears under the tap and the previous one is
+  gone — one road picture in the chat at any moment.
+- Tap «Маєток»/«Столиця» mid-road: the same, with the countdown.
+- Open the bag mid-road, then `↩️ Розвернутись` from there: the new card lands at the bottom.
+- Arrive: the capital square picture (or the estate's text line), and the trip's last road card
+  still above it. Set out again: that old card must NOT disappear.
+- At 0 Vigor try to set out: «…Спершу поїжте.»
+
+**Added 2026-10-07 — guilds from level 30 (`f200fa5`, live since 18:34):** an account below
+level 30 taps «Заснувати гільдію» → «❌ Щоб заснувати гільдію, потрібен рівень 30.»; joining by
+invite still works at any level.
+
+**Added 2026-10-06 — the owner's screen art, and the King's first line (deployed 2026-10-06 21:39):** any
 account in the capital, and a fresh registration for the last two items. The NEW files (the
 Master, the palace, both streets) show as soon as they are on the Pi — `sendCachedPhoto` never
 caches a missing asset. The REPLACED ones (the square, the charter, the six rabid-dog scenes)
@@ -2015,7 +2047,7 @@ and the King's line need the restart.
   «Король жестом підкликає вас до себе і протягує вам згорток:»; the rabid-dog step shows the
   scene for the chosen class and gender.
 
-**Added 2026-10-06 — the pre-deploy audit's four fixes (`f2ae7ea`, NOT deployed):** an account at full Vigor
+**Added 2026-10-06 — the pre-deploy audit's four fixes (`f2ae7ea`, deployed 2026-10-06 21:39):** an account at full Vigor
 with a decree or a job that pays Vigor ready; two accounts for the arena.
 - **the palace, the double tap**: «✅ Доповісти Королю» on a Vigor decree asks the question; tap
   «✅ Доповісти все одно» twice, fast. The first reports, and its banner stays. The second
@@ -2036,7 +2068,7 @@ with a decree or a job that pays Vigor ready; two accounts for the arena.
 - **a player without the technique**, standing in the arena with an old picker: the tap sends
   them to the capital with «🏟 Ристалище пускає лише тих…».
 
-**Added 2026-10-06 — the Master's enchant is the armour's ladder (`bad142b`, NOT deployed):**
+**Added 2026-10-06 — the Master's enchant is the armour's ladder (`bad142b`, deployed 2026-10-06 21:39):**
 an account with Forester pieces, silver and hides in the bag.
 - **🛠 Майстер**: the button reads «✨ Покращити» and the list is titled «✨ Покращення броні», as
   before, with a new hint — «Майстер покращує броню щабель за щаблем: кожен рівень помітно додає
@@ -2059,8 +2091,8 @@ an account with Forester pieces, silver and hides in the bag.
   stale card on a +5 piece answers «Ця річ уже на межі покращення.»
 - **🔨 Розібрати** on an enchanted piece: «Зачарування +N буде втрачено.», as before.
 
-**Added 2026-10-05 — durability is the item's own, the Forester set at 50 (`bf15669`, NOT
-deployed):** any account, ideally one that had Forester pieces before the restart.
+**Added 2026-10-05 — durability is the item's own, the Forester set at 50 (`bf15669`, deployed
+2026-10-06 21:39):** any account, ideally one that had Forester pieces before the restart.
 - **existing pieces**: every Forester piece in the bag, on the body («🛡 Спорядження») and in the
   warehouse reads +20 in both numbers — 6/12 → 26/32, an untouched 30/30 → 50/50.
 - **a piece that was at 0** (анія's worn set): 20/45…47, no ⚠️, and the profile counts its
@@ -2075,7 +2107,7 @@ deployed):** any account, ideally one that had Forester pieces before the restar
 - **a new character**: the starter weapon reads 30/30, not 50/50; the Master's lesson takes it to
   40/40.
 
-**Added 2026-10-05 — the Master's enchant draws from the bag alone (`4fe5b7a`, NOT deployed):**
+**Added 2026-10-05 — the Master's enchant draws from the bag alone (`4fe5b7a`, deployed 2026-10-06 21:39):**
 an account with armour to enchant, hides in the estate's storage and few or none in the bag.
 - **the card** («✨ Покращення броні» → a piece): «🦺 Жилет лісника +2 → +3», the stat lines of
   the block above, then «✅ 🪙 Срібло (540/450)» (220 until 2026-10-06) and «❌ 15× 🟫 Шкура
@@ -2085,7 +2117,7 @@ an account with armour to enchant, hides in the estate's storage and few or none
 - **with enough in the bag**: the banner «… — покращено до +3: …», the list again; the warehouse
   count is untouched.
 
-**Added 2026-10-04 — «💛 Допомога грі» in Settings (`b0c9d80`, NOT deployed):** any account.
+**Added 2026-10-04 — «💛 Допомога грі» in Settings (`b0c9d80`, deployed 2026-10-06 21:39):** any account.
 - **⚙️ Settings**: the keyboard reads [🌐 Мова] [💛 Допомога грі] / [🔙 Назад].
 - **the tap**: «Якщо маєте бажання фінансово допомогти у розвитку гри, ви можете звернутись до
   @irina_chemeris1998.», the handle a tappable link; the settings keyboard stays.
@@ -2095,7 +2127,7 @@ an account with armour to enchant, hides in the estate's storage and few or none
 - **the Settings button** reads «⚙️ Налаштування» (it was «Налаштуваня»); an old keyboard's
   misspelt button redraws the screen with the new one.
 
-**Added 2026-10-04 — the watchman says when a task is ready (`0b53e82`, NOT deployed):** any
+**Added 2026-10-04 — the watchman says when a task is ready (`0b53e82`, deployed 2026-10-06 21:39):** any
 account with an open decree or a taken NPC job; the notice comes within a minute.
 - **a decree completes** (e.g. the charter's first, on walking home from km 3 — depth is banked
   on arrival) → a message
@@ -2108,7 +2140,7 @@ account with an open decree or a taken NPC job; the notice comes within a minute
   them again; turning a task in within the minute sends nothing.
 - **after the restart**: anything already ready is announced once by the first sweep.
 
-**Added 2026-10-04 — a Vigor reward that will not fit is asked about (`47e0e8f`, NOT deployed):**
+**Added 2026-10-04 — a Vigor reward that will not fit is asked about (`47e0e8f`, deployed 2026-10-06 21:39):**
 any account with a finished decree or a ready NPC job that pays Vigor, at full or nearly full
 Vigor.
 - **the card**: under «💰 Нагорода» a line «⚠️ Снага повна (120/120) — 🍖 60 не вміститься. Указ
@@ -2121,7 +2153,7 @@ Vigor.
   не вмістилось.» — no bare «💰» line; a partial fit shows «💰 🍖 10 Снаги» above it.
 - **with room**: no warning, no question, the tap pays at once as before.
 
-**Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (`e861c73`, NOT deployed):** any
+**Added 2026-10-04 — a tarot card phrased once, 💰 for every reward (`e861c73`, deployed 2026-10-06 21:39):** any
 account with 10 🪙, at the fortune teller; the journal and the palace for the 💰.
 - **the entry**: the intro says «на найближчі години», and the price line «Розклад коштує 10
   срібників · карта діє 6год».
@@ -2142,7 +2174,7 @@ account with 10 🪙, at the fortune teller; the journal and the palace for the 
   attack 1, a special attack 2 (mage 3), a stance 2 (mage 3). Under the Devil a step costs 3 and
   a special attack 6 (mage 8).
 
-**Added 2026-10-04 — the weapon by player level and the Master's lesson (`9ab349c`, NOT deployed):** a
+**Added 2026-10-04 — the weapon by player level and the Master's lesson (`9ab349c`, deployed 2026-10-06 21:39):** a
 tester above level 5 at estate T3+, and a fresh account taken to level 5.
 - **after the restart**: the tester's class weapon is at the tier their level allows (L10 → t3,
   ATK 16 on the sword), with silver refunded for the rungs removed, and the King's journal shows
@@ -2165,7 +2197,7 @@ tester above level 5 at estate T3+, and a fresh account taken to level 5.
   «Королівська криця» sits at level 20 with its new text.
 - **the staff**: t5 reads «Рунний посох», t9 «Посох архімага».
 
-**Added 2026-10-03 — the quest board as a scroll (`95e8492`, NOT deployed):** any account, at the three
+**Added 2026-10-03 — the quest board as a scroll (`95e8492`, deployed 2026-10-06 21:39):** any account, at the three
 NPCs and in the journal.
 - **an offer**: «📜 Замовлення ще не взяте…» and «💰 За роботу: …», no bar.
 - **a taken delivery**: «❌ 8× 🔩 Шматок заліза  (3/8)», the bar «▰▰▰▱▱▱▱▱» under it; the
@@ -2175,7 +2207,7 @@ NPCs and in the journal.
 - **the journal**: one heading per NPC «🛠 Майстер — 🪶 …», the requirement line with « — можна
   здавати» when ready, no bar; the profile and every reward say 📖 for Досвід.
 
-**Added 2026-10-03 — the arena as a cycle of three (`f0c1749`, NOT deployed):** two accounts that have
+**Added 2026-10-03 — the arena as a cycle of three (`f0c1749`, deployed 2026-10-06 21:39):** two accounts that have
 learned the special attack, plus one that has not.
 - **the door**: the account without the technique taps «⚔️ Ристалище» and stays on the street
   with «🏟 Ристалище пускає лише тих, хто опанував перший прийом, — його вчать у Тренувальному
@@ -2190,7 +2222,7 @@ learned the special attack, plus one that has not.
 - **silent against a technique**: «⌛ …: пропуск — оборону пробито»; silent against an Attack:
   «⌛ …: пропуск, вимушена оборона» with no number, and the attack blocked.
 
-**Added 2026-10-03 — the arena in simultaneous rounds (`cad61c3`, NOT deployed):** two accounts
+**Added 2026-10-03 — the arena in simultaneous rounds (`cad61c3`, deployed 2026-10-06 21:39):** two accounts
 in the capital, one challenging the other.
 - **the opening** reaches both chats: «⚔️ Герць почався! Суперник — …, ставка 🪙 N.», the board
   «❤️ Ви 150/150 · … 150/150» and «🗡 Раунд 1: оберіть дію — 15сек.».
@@ -2218,7 +2250,7 @@ in the capital, one challenging the other.
   місця в сумці — обмін скасовано.»; the guild says «✅ Запрошення надіслано: ….» and «👢
   Вигнано з гільдії: ….».
 
-**Added 2026-10-03 — creature strength follows the estate tier (`4be2758`, NOT deployed):**
+**Added 2026-10-03 — creature strength follows the estate tier (`4be2758`, deployed 2026-10-06 21:39):**
 - **After the deploy, check the data first.** A deploy that takes everything to HEAD shows
   schema v18 and content hash `41455b84` in `/content` (this change alone would read v15 and
   `be4350a5`). `fight_log` has an `estate_level` column, null on every older row:
@@ -2233,7 +2265,7 @@ in the capital, one challenging the other.
 - **The estate upgrade card and the tier-up banner** say nothing about the forest, by decision.
 - **The King's «Пуща»** (km 26 at level 17) stays reachable. The mage has the least margin.
 
-**Added 2026-10-02 — tier 2 of the bestiary (committed, NOT deployed):**
+**Added 2026-10-02 — tier 2 of the bestiary (committed, deployed 2026-10-06 21:39):**
 - **after the deploy, the data first**: `/content` shows 16 enemies and content hash `cd9d73bf`
   for tier 2 alone, or `41455b84` when the restart takes everything to HEAD (schema v18);
   nothing in `fight_log` breaks on the old creature ids (history, not a live reference).
@@ -2608,6 +2640,33 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the public test, 2026-10-07/08** — found answering players; the first two have a fix
+proposed and await the owner's word:
+- **The hunger tick fires on the step that spends the last Vigor.** `ExplorationService.rollStep`
+  drains first and asks `isStarving` after, so a step paid in full (2 → 0) also costs 5% of max
+  HP — the comment over it says "when vigor is already at 0". A tester at 129 max HP read
+  «❤️ −6 ОЗ» for hunger with 2/120 Vigor; the 2026-09-12 «корінь −22» death (a level-20 archer,
+  most likely Nerif) was the same defect — without it they would have lived on 3 HP. Proposed:
+  read `isStarving` before the drain (so 1 Vigor → 0 on a 2-cost step is not charged either).
+  Affects active and passive walking alike. Auto-memory `project-starvation-tick-on-the-paying-step`.
+- **«Ви повністю відпочили» never comes to a player who taps while healing.** The watchman
+  announces only a fill IT computed; a tap's own `HealingService.tick` fills silently, on any
+  screen — most show no HP. A new player waiting at the estate taps around and misses it
+  (Inokentiy's report). Proposed: the sweep remembers who it saw damaged at the estate and
+  announces the fill whoever computed it. Auto-memory `project-full-hp-notice-gap`.
+- **Starving new players do not know their food is in the warehouse.** On the first evening 6 of
+  10 newcomers sat at 0 Vigor; four held 30–170 Vigor of food in the warehouse, which is eaten only
+  from the bag, and 0 Vigor also refuses the road to the capital where food is sold. Offered: a
+  hint on the starving status, or eating from the warehouse. Not asked yet.
+- **A market lot is bought whole.** A 40-unit lot cannot be bought by a 25-unit starter bag even
+  when empty. Offered: a partial buy (as much as fits, the rest stays listed). Not asked yet.
+- **New players die at km 3–10 on level 1–3** (5 of 10 had died at least once by 21:19 on the first
+  evening, 7 of 10 by midnight): the eagle at km 3–7 and the fox at km 9–10 kill healthy players;
+  the km 1–2 deaths were players walking out starving on 3–5 HP. No change made; the ready answer
+  for players is "stay within 2–3 km until level 3, never walk out at 0 Vigor".
+- One newcomer (@chemerina) stopped at registration step 6 — the estate name, which must be sent as
+  a plain message — and never came back. Watch for more; a hint under that prompt may be due.
+
 **From the 2026-10-06 pre-deploy audit** of `8ae6772..HEAD` (`.memory/sessions.md`). Its four
 fixes are `f2ae7ea`; these were found, verified and left:
 - **Two level-1 jobs need km 6 or deeper since tier 2.** `trader.hides` (10 hides) and
@@ -2855,13 +2914,17 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-05 — the newest commit is **durability is the item's own, the Forester set
+*Last updated: 2026-10-08 — the public test is running (the door opened 2026-10-07 18:34); the Pi
+runs `94620a4` (the SDK limiter off); `2ed296e`, the road card, waits for a restart. The 10-05 footer
+follows.*
+
+*2026-10-05 — the newest commit was **durability is the item's own, the Forester set
 at 50** (`bf15669`, hash fill `e4e67ad`). It changes content schema v18 and adds one migration
 (`RaiseArmorDurability`) and a boot pass that re-derives the cached gear bonuses. The class-sets
 concept was parked beside it, with nothing built (`.memory/class-sets-concept.md`).*
 
-*Everything committed since `8ae6772` is **NOT deployed**, and one restart (not a `/reload`) takes
-it all:*
+*Everything committed since `8ae6772` went live at the 2026-10-06 21:39 restart — in one restart,
+as planned:*
 - *tier 2, the estate scaling, the arena in simultaneous rounds and as a cycle of three;*
 - *the quest board, the weapon ladder and the tarot pass;*
 - *the Vigor-reward and task-ready notices, the support button, the enchant fix and the

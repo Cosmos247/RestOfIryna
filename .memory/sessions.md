@@ -11,9 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-08)* **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
+- *(this sync pass, 10-08)* **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
+- `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
 - `94620a4` (10-08) **the real cause: the SDK's rate limiter, now off** — DEPLOYED 10-08 11:55 — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
-- `ee7437e` (10-08) **the poll watchdog and HTTP/1.1** — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
+- `ee7437e` (10-08) **the poll watchdog and HTTP/1.1** — DEPLOYED 10-08 11:45 (froze at boot; HTTP/2 was the first suspect, cleared by `94620a4`) — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
 - `f200fa5` (10-07) **the open door, and guilds from level 30** — DEPLOYED 10-07 18:34 — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
 - `854644b` (10-07) **the record of the 10-06 21:39 deploy** — records only.
 - `9385cd1` (10-06) **`873e426`'s hash fill** — records only.
@@ -477,12 +478,51 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Session — 2026-10-07 → 10-08 (answering the public test's players) and the sync pass
+
+Between the build tasks, most of these two days was the owner relaying players' questions. Each
+answer was read off the code and data and ended with a ready Ukrainian reply; the verified facts
+are now `.memory/live-ops.md` → "Player FAQ" (HP regen, the road's Vigor, «💨 Швидкий маневр»,
+a broken weapon's 50%, repair prices, the kitchen's gate, raw food, where iron drops, whole market
+lots, the developer's bag, guilds).
+
+**Player snapshots on request** («онови логи»), read off the database since the bot logs almost
+nothing a player does. What they showed on the first evening: 6 of 10 newcomers at 0 Vigor by
+midnight, four with 30–170 Vigor of food in the warehouse (eaten only from the bag; 0 Vigor also
+refuses the road to the capital); 5 of 10 dead at least once by 21:19 and 7 by midnight, the
+healthy ones at km 3–10 to the eagle and the fox, two walking out starving on 3–5 HP; one stuck
+at the estate-name prompt. Two corrections made along the way became the file's reading traps:
+`users.max_hp` is the base (the 305/216 that looked like a bug), and `last_hp_tick_at` is written
+by the watchman, so it is not "last seen".
+
+**Two defects came out of questions, both with a fix proposed and no answer yet:**
+- **The hunger tick on the paying step** (a tester at 2/120 Vigor lost 6 HP on a fully paid step).
+  The owner asked whether Nerif had met it: no step history exists anywhere and Nerif's 72 logged
+  fights (10-06 21:53 → 10-07 01:06) show no starving fight, but the 2026-09-12 «корінь −22» death
+  closes exactly on it, most likely Nerif's. Auto-memory `project-starvation-tick-on-the-paying-step`.
+- **The full-HP notice** (Inokentiy): the watchman announces only a fill it computed; a tap fills
+  silently. Auto-memory `project-full-hp-notice-gap`.
+
+Ideas offered and not asked: a hint for a starving player with food in the warehouse, eating
+from the warehouse, and partial market lots. **The game emblem**: six candidates with prompts,
+the seal as the crest, the fevered wolf as the avatar, the clearing as a banner — now
+`content/lore.md` §14, none chosen.
+
+**The sync pass** (the owner's audit prompt): every Swift file touched since `9385cd1` recompiled
+under bash, 0 warnings; no dead code left by the day's changes; 395 tests. Stale records fixed:
+30 TODO and 14 status "NOT deployed" markers (all live since 10-06 21:39), the guild gate's "5"
+in README and status, game-core's "potions are the away-from-home heal" and "starvation doubles
+travel time" (neither true), the INDEX's current state, `tech-stack.md` and `architecture.md`
+(the limiter, HTTP/1.1, the watchdog, the open door), the README's tree (`PollWatchdog`,
+`Assets/travel`, `ROI_OPEN_ACCESS`), a «ти» sweep note (`-ж` imperatives) and `Prompt.md`
+reoriented to the public test. A `-ж` sweep of `uk.json` found no other «ти» imperative.
+
 ## Session — 2026-10-08 (one road card per trip)
 
 A player asked for the estate ↔ capital crossing to be more visible; the owner had a picture
 ready (first-person from the saddle on a forest track, 1280×956 JPG → `Assets/travel/road.jpg`)
 and asked how to show it without cluttering the chat when a player turns back mid-trip. The road
-was three separate texts — setting out, every «Повернути назад», every "how long is left" — so a
+was three separate texts — setting out, every «↩️ Розвернутись», every "how long is left" — so a
 picture on each would have stacked one per tap.
 
 Two questions as a quiz with played samples. The owner picked **replacing the card** (over editing

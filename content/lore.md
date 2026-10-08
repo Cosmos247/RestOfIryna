@@ -543,3 +543,50 @@ Snippets you can drop into emblem/icon/badge prompts.
 Use this as a mood anchor in any prompt where the AI is over-rotating
 into grimdark, generic high-fantasy, or Western-European-medieval
 clichés.
+
+---
+
+## 14. Game Emblem — Candidates (2026-10-08, none chosen)
+
+Proposed to the owner when they asked what the game's emblem could be. Nothing is chosen. The
+practical constraint for a bot avatar: Telegram crops it to a circle and shows it at ~48 px in
+the chat list, so a strong silhouette with no text wins; check any result at that size.
+
+1. **The Royal Seal** — a red wax seal stamped with the pine crown over a wolfshead. The canon
+   crest: the charter's seal, the «Королівська печатка» tavern and the silver coin already carry
+   it. Round by nature; reads well small. *Recommended as the official crest.*
+   > A circular red wax seal pressed into aged parchment, the impression shows a stylised
+   > pine-tree crown above a wolf's head in profile, crisp embossed relief, warm golden-hour light
+   > from the left, egg-tempera painterly finish, centered, simple strong silhouette, no text
+2. **The Fevered Wolf** — a wolf's head split down the middle: one half healthy in warm amber,
+   the other Blight-struck (bone-pale fur, foam, a sickly green-yellow eye). The game's conflict in
+   one image, and the glowing eye survives 48 px. *Recommended for the bot avatar.*
+   > Heraldic emblem, a wolf's head facing forward split vertically down the middle: left half
+   > healthy, warm amber fur, calm eye; right half fevered, bone-pale matted fur, white foam at the
+   > muzzle, glassy sickly green-yellow eye, faint steam rising; dark forest-green circular
+   > background, aged-gold thin border, painterly egg-tempera style, sombre but hopeful, no text
+3. **The Governor's Pin** — the five-needled bronze pine crown on green wool. The most "logo",
+   reads perfectly small, but carries neither the wolf nor the Blight.
+   > A small hand-hammered bronze pin shaped like a five-needled pine crown, slightly weathered
+   > patina, centered on dark forest-green wool, warm candlelight from the left, macro
+   > photography, minimal, iconic silhouette, no text
+4. **The Clearing** — a log hut seen from above, one window lit, a ring of dark forest closing in
+   with sick eyes between the trees. The estate loop and the threat; too detailed for an avatar,
+   best as a channel banner. *Recommended for a banner.*
+   > Top-down circular composition: a lone rough log hut in a small forest clearing, one window
+   > glowing warm amber, ring of dark pine forest closing in around it, a few pairs of faint sickly
+   > green-yellow eyes in the shadows between trees, storybook painterly style, Slavic medieval,
+   > golden-hour light, no people, no text
+5. **The Three Paths** — a green shield with the gold pine crown, a sword, a bow and a staff fanned
+   behind it. Says "three classes", but turns to mush at avatar size; a class-choice crest.
+   > Heraldic crest: a forest-green shield bearing a gold pine-tree crown, behind it a longsword,
+   > a yew longbow and a crystal-headed wooden staff crossed in a fan, aged-gold border,
+   > hand-painted medieval Slavic style, warm light, centered, no text
+6. **The Trail into the Deep Wood** — a weathered waymarker at the forest edge, a trail vanishing
+   into the dark, two sick eyes watching. The depth loop; a scene, not an emblem — a cover image.
+   > A weathered wooden waymarker post at the edge of a dark pine forest, a carved notch mark on
+   > it, a narrow trail vanishing into deep shadow, two faint sickly green-yellow eyes glowing in
+   > the darkness, late amber dusk light from the left, painterly storybook style, moody, no
+   > people, no text
+
+Add §11's negative-prompt staples to every one.
