@@ -54,11 +54,11 @@ level gate — so a cheaper enchant, or anything stronger, still needs the re-so
 
 | | |
 |---|---|
-| HEAD | **the starving players' four** (this commit, 2026-10-08 late) on top of **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42` and this commit are not pushed** — push is the owner's |
+| HEAD | **this hash fill** on top of **`88156d4`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `88156d4` and this hash fill are not pushed** — push is the owner's |
 | running on the Pi | **`94620a4`**, restarted **2026-10-08 11:55:36**, up ~10 h with no freeze by 21:59 — schema **v19**, content hash **`a89b39b0`**, `records cc1357a44f3c4849` (guilds from level 30); `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-08 11:55`, `## Deploy — 2026-10-07 18:34`, `## Deploy — 2026-10-06 21:39`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-08 21:59 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **This commit**: Swift, three uk/en strings added and one deleted. Neither has a migration; the digest is unmoved. Both need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` (the road picture alone would show at the pull; the code would not) |
+| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`88156d4`**: Swift, three uk/en strings added and one deleted. Neither has a migration; the digest is unmoved. Both need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` (the road picture alone would show at the pull; the code would not) |
 
 **Restarts since the backlog went live:** 2026-10-06 21:39 (everything since `8ae6772`, five
 migrations, the tables checked), 2026-10-07 18:34 (the open door and the guild gate), and on
@@ -97,7 +97,7 @@ polish plus **player support** (`.memory/live-ops.md`, auto-memory `project-publ
   home stays text. Same commit: «Спершу поїж» → «поїжте».
 - **The game emblem**: six candidates with prompts — `content/lore.md` §14, none chosen.
 - **The sync pass** (`61b3f42`) brought every doc to the deployed state.
-- **The starving players' four** (this commit, 2026-10-08 late; `.memory/sessions.md` → the
+- **The starving players' four** (`88156d4`, 2026-10-08 late; `.memory/sessions.md` → the
   session entry). A 22:20 snapshot showed the newcomers fighting mostly at 0 Vigor, some with food
   in the bag. The owner chose, in quizzes:
   - the hunger tick only on a step that BEGINS at 0 Vigor;
@@ -126,7 +126,7 @@ not done".
 
 ### Next action
 
-**0 — Deploy `2ed296e` and this commit once the owner has pushed** (the owner asks for the
+**0 — Deploy `2ed296e` and `88156d4` once the owner has pushed** (the owner asks for the
 restart; the rule: `CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`, the detached
 build (~30 s, auto-memory `project-pi-deploy-swiftenv`), `--content-digest` must still read
 `records cc1357a44f3c4849` / content hash `a89b39b0` (nothing in `content/data` moved), then

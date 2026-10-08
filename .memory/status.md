@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-08 — the public test's starving players** (NOT committed yet, NOT deployed; needs
+**2026-10-08 — the public test's starving players** (`88156d4`, NOT deployed; needs
 `pm2 restart ROI` — Swift and three uk/en strings, one deleted; no migration, the digest unmoved).
 A snapshot showed the newcomers fighting most of their fights at 0 Vigor, some with food in the
 bag; the owner chose four changes in two quizzes:

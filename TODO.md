@@ -2015,7 +2015,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-08 — the starving players' four (NOT committed, NOT deployed):** an account at
+**Added 2026-10-08 — the starving players' four (`88156d4`, NOT deployed):** an account at
 the estate, damaged, with Vigor to spend down.
 - Walk out with exactly 2 Vigor and step: 🍖 2 → 0 and NO «🥀 Голод…» line; the next step has it.
 - At 0 Vigor tap «🌲 Дослідити»: under «На узліссі ви обираєте свій шлях:» the line «😵 Ви голодні:
@@ -2656,7 +2656,7 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the public test, 2026-10-07/08** — found answering players. On 2026-10-08 the owner
-decided in three quizzes, and four changes were BUILT (not committed, not deployed —
+decided in three quizzes, and four changes were BUILT (`88156d4`, not deployed —
 the walk-list block on top): the hunger tick only on a step that begins at 0 Vigor, «Ви повністю
 відпочили» for every rest that tops out, the road open at 0 Vigor, and the forest edge explaining
 hunger with the food in the bag. **The owner's rule from that evening: a question left unanswered

@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-08)* **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
+- *(this hash fill, 10-08)* **`88156d4`'s hash fill** — records only.
+- `88156d4` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
 - `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
 - `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
 - `94620a4` (10-08) **the real cause: the SDK's rate limiter, now off** — DEPLOYED 10-08 11:55 — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
@@ -479,7 +480,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-08, late (the starving players: four changes the owner chose)
+## Session — 2026-10-08, late (the starving players: four changes the owner chose) — `88156d4`
 
 The owner opened with «Починаємо виправляти баги і додавати пропозиції від нових гравців». The
 Pi was healthy (`94620a4` since 11:55, no new `[WATCHDOG]`, `Code: 400` at 913). A fresh snapshot
