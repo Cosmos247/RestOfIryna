@@ -949,13 +949,17 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - **The bot restarts itself when its poll loop dies, and that is the one automatic
   restart** (2026-10-08, the owner's call). `PollWatchdog` exits the process when no
   `getUpdates` has COMPLETED for 120 s, and pm2 starts the same build again — it deploys
-  nothing. The reason: the bot froze twice in thirteen minutes, `online` in pm2, every
+  nothing. The reason: the bot froze four times that morning, `online` in pm2, every
   thread idle, no socket to Telegram, the queue growing; a stuck await leaves no stack.
-  **The Telegram client is HTTP/1.1 with a 60 s read timeout on purpose** (`configure`):
-  every one of the 125 `StreamClosed` errors before it was an HTTP/2 stream. Never
-  switch it back to `.automatic` without a reason that outweighs that. A
-  `[WATCHDOG]` line in the log is a freeze that happened; read it, don't just enjoy the
-  restart.
+  **The cause was the SDK's own rate limiter, and it stays OFF**
+  (`apiRequestLimitLongPolling: nil` in `configure`): every API call, `getUpdates`
+  included, passes `LimiterAsync`, which stops ticking with its count at the maximum when
+  its last tick releases exactly `maxRequests` waiters — after that every call waits
+  forever. A burst of ten requests reproduces it; a restart's backlog is such a burst.
+  Telegram answers an excess with a 429, which we see. The client is also HTTP/1.1 with a
+  60 s read timeout (the 125 `StreamClosed` redraw failures were all HTTP/2) — that was
+  the first suspect, cleared when the bot froze on HTTP/1.1 too. A `[WATCHDOG]` line in
+  the log is a freeze that happened; read it, don't just enjoy the restart.
 
 ### Code Conventions
 - All controllers subclass `TGControllerBase`, mark `@unchecked Sendable`

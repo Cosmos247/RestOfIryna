@@ -301,11 +301,11 @@ public func configure(logger: Logger) async throws {
 
     // Telegram is the only thing this client talks to. HTTP/1.1, not the
     // negotiated HTTP/2: every `StreamClosed` in the log (125 by 2026-10-08) is
-    // an HTTP/2 stream cancelled under a request, and that morning the bot
-    // froze twice in thirteen minutes with no socket to Telegram left —
-    // the first freeze right after one. HTTP/1.1 has no stream multiplexing to
-    // wedge. The timeouts bound what a request may wait: the long-poll holds
-    // for 10 s, so a 60 s read timeout only ever fires on a dead connection.
+    // an HTTP/2 stream cancelled under a request — a failed redraw each time.
+    // It was suspected for the freezes of 2026-10-08 and cleared: the bot froze
+    // on HTTP/1.1 too, and the cause was the SDK's limiter (below). The
+    // timeouts bound what a request may wait: the long-poll holds for 10 s, so
+    // a 60 s read timeout only ever fires on a dead connection.
     var httpConfiguration = HTTPClient.Configuration(
         timeout: .init(connect: .seconds(10), read: .seconds(60))
     )
@@ -321,12 +321,25 @@ public func configure(logger: Logger) async throws {
 
     let tgApi: String = try Env.get("TELEGRAM_BOT_TOKEN")
 
-    // Create bot with AsyncHTTPClient
+    // Create bot with AsyncHTTPClient.
+    //
+    // `apiRequestLimitLongPolling: nil` turns OFF the SDK's own rate limiter,
+    // and that is the fix for the freezes of 2026-10-08. Every API call —
+    // `getUpdates` included — reads `TGBot.tgClient`, which passes through
+    // `LimiterAsync` (5 a second by default). When the limiter's last tick
+    // releases exactly `maxRequests` waiters, it stops ticking with the count
+    // still at the maximum, and nothing ever resets it: every later call waits
+    // forever. A burst of ten requests is enough (reproduced in isolation), and
+    // a restart's backlog is exactly such a burst — which is why the bot froze
+    // again within a minute of each restart. Telegram enforces its own limits
+    // and answers an excess with a 429, an error we see, not a silent hang.
+    // Do not turn the limiter back on while the SDK ships this one.
     appState.bot = try await .init(
         connectionType: .longpolling(),
         tgClient: HummingbirdTGClient(httpClient: httpClient, logger: logger),
         tgURI: TGBot.standardTGURL,
         botId: tgApi,
+        apiRequestLimitLongPolling: nil,
         log: logger
     )
 

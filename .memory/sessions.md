@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-08)* **the poll watchdog and HTTP/1.1** — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
+- *(this commit, 10-08)* **the real cause: the SDK's rate limiter, now off** — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
+- `ee7437e` (10-08) **the poll watchdog and HTTP/1.1** — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
 - `f200fa5` (10-07) **the open door, and guilds from level 30** — DEPLOYED 10-07 18:34 — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
 - `854644b` (10-07) **the record of the 10-06 21:39 deploy** — records only.
 - `9385cd1` (10-06) **`873e426`'s hash fill** — records only.
@@ -474,6 +475,26 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-08, later (the real cause: the SDK's rate limiter)
+
+`ee7437e` went live at 11:45:37 and froze at boot: the log stopped after `[ACCESS] OPEN DOOR`
+(configure never reached `Server started`), six sockets to Telegram drained to none, the queue
+grew. So HTTP/2 was not the cause. **`PollWatchdog` fired as designed** at 11:47:53 (126 s) and
+pm2 was back at 11:47:58 — the first `[WATCHDOG]` line.
+
+**The cause:** `TGBot.tgClient` — read by EVERY API call, `getUpdates` included — passes through
+the SDK's `LimiterAsync` (long polling: 5 per second). Its ticker, after releasing waiters, stops
+when the queue is empty; if that last tick released exactly `maxRequests` waiters, it stops with
+`currentCount == maxRequests` and nothing ever resets it, so every later `acquire()` parks on a
+continuation forever. No socket, no error, idle threads — exactly what was seen. Reproduced on a
+scratch copy: a burst of 10 `acquire()`s, then an 11th still waiting after 5 s. A restart's
+backlog is such a burst, which is why each restart froze again within a minute; 16 h of normal
+play before the first one is the same coincidence arriving slowly.
+
+**Fix:** `apiRequestLimitLongPolling: nil` in `configure` — the limiter off. Telegram rate-limits
+on its own and answers with a 429 we can see. HTTP/1.1 and the timeouts stay (harmless; the 125
+`StreamClosed` redraw failures were all HTTP/2), and so does the watchdog.
 
 ## Session — 2026-10-08 (the poll loop froze; a watchdog and HTTP/1.1)
 
