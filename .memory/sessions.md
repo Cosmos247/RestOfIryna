@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-07)
+## Commit index — live-play polish and after (2026-09-09 → 10-08)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-07)* **the open door, and guilds from level 30** — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
+- *(this commit, 10-08)* **the poll watchdog and HTTP/1.1** — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
+- `f200fa5` (10-07) **the open door, and guilds from level 30** — DEPLOYED 10-07 18:34 — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
 - `854644b` (10-07) **the record of the 10-06 21:39 deploy** — records only.
 - `9385cd1` (10-06) **`873e426`'s hash fill** — records only.
 - `873e426` (10-06) **the owner's screen art, and the King's first line** — the Master, the
@@ -473,6 +474,51 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-08 (the poll loop froze; a watchdog and HTTP/1.1)
+
+The owner: «Подивись чого бот зараз зупинився». **Froze at 10:23:40**, the first public-test
+morning, after ~16 h up. Read off the Pi: pm2 `online`, 0 restarts; the queue growing (27 → 32
+in two minutes, oldest pending 10:23:45); the last log line a `[SCREEN]` redraw that failed with
+HTTP/2 `StreamClosed` at 10:23:40, nothing after; **the process held no socket to Telegram at
+all**, only its two Postgres connections; load 0.00, 7 GB free, DNS and `curl` to the API fine.
+
+Restarted at 10:33:56 on the owner's word. It drained the 32-update backlog (five `[ROUTE]`
+lines, the expected burst) and **froze again within a minute** — the queue climbing 11 → 13,
+the Telegram socket gone again. A `gdb` dump of every thread while frozen: NIO event loops in
+`epoll_wait`, the NIO thread pool waiting for work, libdispatch workers idle — nothing of ours on
+any stack, so not a thread deadlock but an await that never resumes (a suspended task leaves no
+stack). Restarted again at 10:36:18; held. The exact await is not proven; the HTTP/2 connection
+pool is the suspect, since every one of the 125 `StreamClosed` errors since 09-09 is an HTTP/2
+stream and the first freeze followed one.
+
+**Built (the owner picked both after the second freeze; the watchdog alone at first):**
+- `PollWatchdog`: `HummingbirdTGClient.post` stamps every COMPLETED `getUpdates` (answered or
+  thrown); a plain `Thread` exits the process after 120 s of silence, and pm2 starts it again. A
+  loop alive but failing keeps stamping and is left alone. Tested on a scratch copy at a 3 s
+  window: a stall exits 1, a stamping loop survives.
+- The Telegram `HTTPClient` is `.http1Only` with timeouts connect 10 s / read 60 s (the
+  long-poll holds 10 s).
+
+Clean build, 395 tests; Swift only, no migration, the digest unmoved. Not live until pushed,
+pulled, built on the Pi and restarted. Rule: `CLAUDE.md` → Running the bot.
+
+## Deploy — 2026-10-07 18:34 (`9385cd1` → `f200fa5`)
+
+The owner pushed and asked for the deploy and the restart. No Mac instance polling → `git pull
+--ff-only` (two commits: `854644b` records, `f200fa5` the open door and the guild gate) → debug
+build on the Pi (31 s, 0 errors) → `--content-digest` matched the Mac **byte for byte** (schema
+v19, content hash `a89b39b0`, `records cc1357a44f3c4849` · `tuning 4edf65507bbb5e48` · `spawns
+0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`) → `ROI_OPEN_ACCESS=1`
+appended to the Pi's `.env` (line 20; the file already ended in a newline) → `pm2 restart ROI &&
+pm2 save` at 18:34:06. No migration.
+
+**After:** pm2 online, restart count 2, 0 unstable; Content loaded `a89b39b0`, `Bot identified as
+@ROfIr_bot`, **`[ACCESS] OPEN DOOR — every account that writes is added to allowed_users`**,
+Hummingbird listening; no error or warning since; `Code: 400` still at 913. The one stack trace in
+`ROI-error.log` is OLD — `Fatal error: Error raised at top level: DNS error … api.telegram.org`, six
+boots before this one; most likely the unrecorded 2026-10-03 22:08 return: a DNS failure at boot is
+fatal and pm2 is what brings the bot back. The link to post: https://t.me/ROfIr_bot.
 
 ## Session — 2026-10-07 (the public test: the open door, and guilds from level 30)
 

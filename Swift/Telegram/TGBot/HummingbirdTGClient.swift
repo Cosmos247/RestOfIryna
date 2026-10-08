@@ -35,6 +35,11 @@ public final class HummingbirdTGClient: TGClientPrtcl, Sendable {
         params: Params? = nil,
         as mediaType: HTTPMediaType? = nil
     ) async throws -> Response {
+        // A long-poll that finishes, answered or thrown, is the loop proving it
+        // is alive — `PollWatchdog` ends the process when that stops.
+        let isPoll = url.lastPathComponent == "getUpdates"
+        defer { if isPoll { PollWatchdog.recordPoll() } }
+
         var request = HTTPClientRequest(url: url.absoluteString)
         request.method = .POST
 

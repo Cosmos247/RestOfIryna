@@ -299,7 +299,19 @@ public func configure(logger: Logger) async throws {
 
     // MARK: - HTTP Client
 
-    let httpClient = HTTPClient(eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton))
+    // Telegram is the only thing this client talks to. HTTP/1.1, not the
+    // negotiated HTTP/2: every `StreamClosed` in the log (125 by 2026-10-08) is
+    // an HTTP/2 stream cancelled under a request, and that morning the bot
+    // froze twice in thirteen minutes with no socket to Telegram left —
+    // the first freeze right after one. HTTP/1.1 has no stream multiplexing to
+    // wedge. The timeouts bound what a request may wait: the long-poll holds
+    // for 10 s, so a 60 s read timeout only ever fires on a dead connection.
+    var httpConfiguration = HTTPClient.Configuration(
+        timeout: .init(connect: .seconds(10), read: .seconds(60))
+    )
+    httpConfiguration.httpVersion = .http1Only
+    let httpClient = HTTPClient(eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton),
+                                configuration: httpConfiguration)
 
     // MARK: - Application State
 
@@ -544,6 +556,9 @@ public func configure(logger: Logger) async throws {
 
     // Start the bot
     try await appState.bot.start()
+    // A poll loop that stops coming back leaves the process `online` and the
+    // game dead; this ends it so pm2 can start it again.
+    PollWatchdog.start(logger: logger)
 
     // MARK: - Bot commands menu
     // Register the player-facing slash commands so Telegram's hamburger menu
