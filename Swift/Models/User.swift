@@ -655,20 +655,43 @@ extension User {
     /// Seconds until the active fortune effect expires (the 6h buff
     /// window). Nil if no active fortune or already expired. Different
     /// from `fortuneCooldownRemaining` — the buff can wear off long
-    /// before the cooldown allows another draw.
+    /// before the next draw is allowed.
     func fortuneSecondsRemaining(now: Date = Date()) -> Int? {
         guard let expiresAt = activeFortuneExpiresAt, now < expiresAt else { return nil }
         return Int(expiresAt.timeIntervalSince(now).rounded())
     }
 
-    /// Seconds until the player can draw a new card (the 24h cooldown
-    /// window). Nil if no draw yet OR cooldown has already elapsed.
-    /// Independent of `fortuneSecondsRemaining` — the cooldown ALWAYS
-    /// outlasts the buff under the current 24h/6h split.
-    func fortuneCooldownRemaining(now: Date = Date()) -> Int? {
+    /// When the player may draw the next card: the LATER of the drawn card's
+    /// window ending and the first 12:00 rollover after the draw (2026-10-09,
+    /// the owner's rule). Drawn at 22:00 → the next at 12:00; at 11:00 → at
+    /// 17:00, then not before the following noon. So at most one card a game
+    /// day, and never two running at once. It replaced a flat 24 h cooldown,
+    /// under which the card came back at the hour it was drawn. Nil before the
+    /// first draw.
+    ///
+    /// The one place the rule lives: the fortune screen, the draw itself and
+    /// the watchman's «Карти знову готові» all ask `fortuneCooldownRemaining`,
+    /// which reads this.
+    ///
+    /// The window's end is the one STAMPED on the card at the draw, not the
+    /// draw plus today's `buffDurationSeconds`: a `/reload` that shortens the
+    /// window would otherwise offer a new card while the screen still counts
+    /// the old one down, and the new draw would cut it short. The draw plus the
+    /// window is only the fallback for a row whose stamp was cleared (the dev
+    /// reset keeps the draw time and drops the card).
+    func fortuneAvailableAt() -> Date? {
         guard let drawn = lastFortuneDrawAt else { return nil }
-        let elapsed = now.timeIntervalSince(drawn)
-        let left = FortuneCatalog.cooldownSeconds - elapsed
+        let windowEnds = activeFortuneExpiresAt ?? drawn.addingTimeInterval(FortuneCatalog.buffDurationSeconds)
+        guard let nextNoon = GameDay.nextRollover(after: drawn) else { return windowEnds }
+        return Swift.max(windowEnds, nextNoon)
+    }
+
+    /// Seconds until the player can draw a new card (`fortuneAvailableAt`).
+    /// Nil if no draw yet OR the wait is over. Never shorter than
+    /// `fortuneSecondsRemaining` — the next card waits for this one to end.
+    func fortuneCooldownRemaining(now: Date = Date()) -> Int? {
+        guard let available = fortuneAvailableAt() else { return nil }
+        let left = available.timeIntervalSince(now)
         return left > 0 ? Int(left.rounded()) : nil
     }
 }

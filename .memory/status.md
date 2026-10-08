@@ -21,6 +21,16 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-09 — the fortune teller once a game day** (NOT committed yet, NOT deployed; needs `pm2
+restart ROI` — Swift and `content/data`, content schema **v20**; no migration, no locale string).
+The owner's rule: the next card waits for the LATER of the drawn card's 6 h and the next 12:00 —
+drawn at 22:00, the next at 12:00; at 11:00, at 17:00, and then not before the following noon. A
+flat 24 h cooldown stood there (`fortune.cooldownSeconds`, now gone, hence v20), computed twice;
+`User.fortuneAvailableAt` is the one rule now, read by the screen, the draw and the watchman. A
+card drawn between noon and 06:00 comes back on the rollover's own minute, and then «🔮 Карти
+знову готові» and «📜 Новий день…» go as ONE message, cards first (the owner's pick). Digest:
+`records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; the other four lines unmoved.
+
 **2026-10-08 — the public test's starving players** (`88156d4`, NOT deployed; needs
 `pm2 restart ROI` — Swift and three uk/en strings, one deleted; no migration, the digest unmoved).
 A snapshot showed the newcomers fighting most of their fights at 0 Vigor, some with food in the

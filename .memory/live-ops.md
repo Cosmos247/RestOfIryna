@@ -118,6 +118,7 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | A 40-unit lot and a 20-slot bag | Not buyable: a lot is bought whole, into the bag only (no warehouse in the capital); starter bag 25, workshop upgrades to 35/45/60/75/90; pulling a lot back needs the room too. Advice: list in lots of 10–20 | `MarketService.buyListing` |
 | The developer's bag | Unlimited for `developerUsers` (Космос, 398698463) on every path into the bag; the warehouse is not exempt. So "bag full" cannot be reproduced on that account | `InventoryEntry.canAccept` / `add` |
 | Guilds | Founded from level 30 for 500 🪙 since 2026-10-07; joining by invite at any level | `guild.json` |
+| When the next tarot card comes | At the later of the drawn card's 6 hours and the next 12:00 Kyiv: drawn at 22:00 → 12:00; at 11:00 → 17:00, then the following noon. So once a game day, never two cards at once. Since the restart after 2026-10-09; a flat 24 h before | `User.fortuneAvailableAt` |
 | Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until the restart after 2026-10-08 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so and names the food in the bag | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.

@@ -147,31 +147,29 @@ public struct FortuneCardDTO: Codable, Sendable, Equatable {
 public struct FortuneFileDTO: Codable, Sendable {
     /// Draw price in silvers.
     public let drawPrice: Int
-    /// Buff/debuff window. Matches the Ворожка's lore line.
+    /// Buff/debuff window. Matches the Ворожка's lore line. Also the shortest
+    /// wait for the next card: one is drawn again at the later of this window's
+    /// end and the next 12:00 rollover (2026-10-09), so the 24 h
+    /// `cooldownSeconds` that sat here is gone.
     public let buffDurationSeconds: Double
-    /// Draw cooldown — independent of the buff window.
-    public let cooldownSeconds: Double
     /// Traditional numbering, Fool (0) through World (21). Order is preserved
     /// because the draw indexes into this array.
     public let cards: [FortuneCardDTO]
 
-    public init(drawPrice: Int, buffDurationSeconds: Double, cooldownSeconds: Double,
-                cards: [FortuneCardDTO]) {
+    public init(drawPrice: Int, buffDurationSeconds: Double, cards: [FortuneCardDTO]) {
         self.drawPrice = drawPrice
         self.buffDurationSeconds = buffDurationSeconds
-        self.cooldownSeconds = cooldownSeconds
         self.cards = cards
     }
 
     private enum CodingKeys: String, CodingKey {
-        case drawPrice, buffDurationSeconds, cooldownSeconds, cards
+        case drawPrice, buffDurationSeconds, cards
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         drawPrice           = try c.decode(Int.self, forKey: .drawPrice)
         buffDurationSeconds = try c.decode(Double.self, forKey: .buffDurationSeconds)
-        cooldownSeconds     = try c.decode(Double.self, forKey: .cooldownSeconds)
         cards               = try c.decode([FortuneCardDTO].self, forKey: .cards)
     }
 }

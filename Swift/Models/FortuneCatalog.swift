@@ -120,14 +120,10 @@ public enum FortuneCatalog {
 
     /// Buff/debuff effect window — 6 hours in `fortune.json`. The fortune
     /// teller's price line prints it; the intro's hand-typed «шість годин»
-    /// went on 2026-10-04.
+    /// went on 2026-10-04. It is also the shortest wait for the next card —
+    /// see `User.fortuneAvailableAt`, which replaced a flat 24 h cooldown on
+    /// 2026-10-09.
     public static var buffDurationSeconds: TimeInterval { Catalogs.current.fortuneBuffDurationSeconds }
-
-    /// Draw cooldown — independent of the buff window. Player can only
-    /// draw a new card after this much time has passed since the
-    /// previous draw, even if the buff has already worn off. 24 hours
-    /// = one draw per day.
-    public static var cooldownSeconds: TimeInterval { Catalogs.current.fortuneCooldownSeconds }
 
     /// All 22 Major Arcana, in traditional numbering (Fool = 0 through
     /// World = 21). `FortuneService.draw` picks with `randomElement()`, so the

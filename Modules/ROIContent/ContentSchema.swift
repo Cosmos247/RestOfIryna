@@ -105,5 +105,12 @@ public enum ContentSchema {
     /// it, and every `enchantSteps` row gains a required `itemLevel`. A v18
     /// bundle has neither, and a ladder whose levels budget the piece nowhere
     /// would lift nothing, so the handshake refuses rather than falls back.
-    public static let current: Int = 19
+    /// v20 (2026-10-09): `fortune.cooldownSeconds` — a flat 24 h between two
+    /// tarot draws — is gone. The next card waits for the later of the drawn
+    /// card's window (`buffDurationSeconds`) and the next 12:00 rollover, so a
+    /// card is drawn at most once a game day. A v19 binary decodes the key as
+    /// required and would die on a bare `keyNotFound`; a v20 binary reading a
+    /// v19 bundle would ignore a number the operator believes still governs
+    /// the fortune teller, so the handshake names the cause in both directions.
+    public static let current: Int = 20
 }

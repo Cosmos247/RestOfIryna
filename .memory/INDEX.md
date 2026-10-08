@@ -50,6 +50,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   owner's screen art, five migrations, the tables checked after — `sessions.md` →
   `## Deploy — 2026-10-06`); the 2026-10-07 18:34 restart took the open door and the guild gate;
   the 2026-10-08 restarts the freeze fixes.
+- **Built 2026-10-09, not deployed:** the fortune teller once a game day — the next card at the
+  later of the drawn card's 6 h and the next 12:00; content schema v20 (`fortune.cooldownSeconds`
+  gone); «🔮» and «📜» on the same minute go as one message.
 - **Committed 2026-10-08 late as `88156d4`, not deployed:** the starving players' four — the hunger tick only on a
   step that begins at 0 Vigor, «Ви повністю відпочили» for every rest that tops out, the road open
   at 0 Vigor, the forest edge explaining hunger ([live-ops.md](live-ops.md) → "Day two").

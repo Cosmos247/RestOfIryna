@@ -2006,14 +2006,27 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the two on top — the starving
-players' four and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
+Telegram. **Every block below is LIVE and unwalked** except the three on top — the fortune
+teller, the starving players' four (`88156d4`) and the road card (`2ed296e`) — which wait for
+their restart. The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
 task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-09 — the fortune teller once a game day (NOT committed, NOT deployed):** an
+account in the capital with 10 🪙.
+- Draw a card in the evening (say 22:00): «Нова карта через: …» counts to 12:00, not to 22:00
+  tomorrow.
+- Draw at about 11:00: the wait is 6 hours; at 17:00 the button is back. Draw again: the next wait
+  runs to the following 12:00.
+- After an evening card, at 12:00 ONE message: «🔮 Карти знову готові — ворожка чекає вас у
+  столиці.» on top, «📜 Новий день — …» under it. A player whose card is not ready gets the «📜»
+  alone, as before.
+- A card drawn before the restart under the old 24 h: after the restart it waits by the new rule
+  (an evening card is free at 12:00).
 
 **Added 2026-10-08 — the starving players' four (`88156d4`, NOT deployed):** an account at
 the estate, damaged, with Vigor to spend down.

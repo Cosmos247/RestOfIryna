@@ -43,21 +43,17 @@ public enum FortuneService {
         }
     }
 
-    /// Draw a card. Validates cooldown (still under the previous card's
-    /// expiry) and silver (must afford `FortuneCatalog.drawPrice`). On
-    /// success: debits the draw fee, picks a card uniformly, applies
-    /// one-shot effects, stamps `activeFortuneCardId` + `activeFortuneExpiresAt`.
+    /// Draw a card. Validates the wait for the next card
+    /// (`User.fortuneAvailableAt`) and silver (must afford
+    /// `FortuneCatalog.drawPrice`). On success: debits the draw fee, picks a
+    /// card uniformly, applies one-shot effects, stamps `activeFortuneCardId` +
+    /// `activeFortuneExpiresAt`.
     public static func draw(for user: User, on db: any Database) async throws -> DrawResult {
-        // Cooldown — gated by `lastFortuneDrawAt` + `cooldownSeconds`
-        // (24h). Independent of the 6h buff window — a player whose
-        // buff has worn off still has to wait out the rest of the day.
-        if let drawn = user.lastFortuneDrawAt {
-            let now = Date()
-            let elapsed = now.timeIntervalSince(drawn)
-            if elapsed < FortuneCatalog.cooldownSeconds {
-                let left = FortuneCatalog.cooldownSeconds - elapsed
-                return .onCooldown(secondsLeft: max(1, Int(left.rounded())))
-            }
+        // The wait — the later of the previous card's window and the next
+        // 12:00. Asked of the same function the screen and the watchman read:
+        // this used to repeat the 24 h arithmetic beside `User`'s copy of it.
+        if let left = user.fortuneCooldownRemaining() {
+            return .onCooldown(secondsLeft: max(1, left))
         }
 
         // Silver gate.
@@ -116,7 +112,7 @@ public enum FortuneService {
         }
 
         // Stamp active card + buff expiry (6h) + draw timestamp (drives
-        // the 24h cooldown). For pure one-shots `activeFortuneEffect`
+        // the wait for the next card, `User.fortuneAvailableAt`). For pure one-shots `activeFortuneEffect`
         // will return nil even before expiry (hasDurationEffect == false),
         // but we still set both fields so the entry screen renders the
         // "card of the day" reminder + accurate cooldown countdown.

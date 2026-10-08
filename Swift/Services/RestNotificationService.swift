@@ -10,8 +10,8 @@
 //  runs before every dispatch), which means the instant a player reaches full
 //  HP has no observer: the arithmetic that discovers it only runs when they
 //  come back — by which time the news is stale. Same shape for the fortune
-//  teller's 24 h cooldown and the 12:00 job rollover: both are moments that
-//  pass with the app closed.
+//  teller's next card and the 12:00 job rollover: both are moments that pass
+//  with the app closed.
 //
 //  So this is one `Task.detached` that wakes every `restSweepInterval`
 //  seconds and asks four questions of the players it loads. The fourth
@@ -90,8 +90,16 @@ public enum RestNotificationService {
             await notifyFullHp(user: user, canRest: canRest,
                                filledSinceLastSweep: restedSinceLastSweep.contains(userId),
                                db: db, bot: bot, lingo: lingo)
-            await notifyFortuneReady(user: user, db: db, bot: bot, lingo: lingo, now: now)
-            await notifyQuestRollover(user: user, db: db, bot: bot, lingo: lingo, now: now)
+            // The cards and the new day can fall on the same minute: a card
+            // drawn between noon and 06:00 is ready again at the next 12:00,
+            // the rollover's own minute. Then they are ONE message, cards first
+            // (the owner's pick, 2026-10-09) — one push, not two in a row.
+            let fortune = await fortuneReadyLine(user: user, db: db, lingo: lingo, now: now)
+            let rollover = await questRolloverLine(user: user, db: db, lingo: lingo, now: now)
+            let news = [fortune, rollover].compactMap { $0 }
+            if news.isEmpty == false {
+                await push(news.joined(separator: "\n"), to: user, bot: bot)
+            }
             await notifyTasksReady(user: user, db: db, bot: bot, lingo: lingo)
         }
     }
@@ -136,14 +144,18 @@ public enum RestNotificationService {
 
     // MARK: - The cards are ready
 
-    private static func notifyFortuneReady(user: User, db: any Database, bot: TGBot, lingo: Lingo, now: Date) async {
-        guard user.lastFortuneDrawAt != nil, user.fortuneReadyNotified == false else { return }
-        guard user.fortuneCooldownRemaining(now: now) == nil else { return }
+    /// «Карти знову готові», once per draw, the moment the next card may be
+    /// drawn (`User.fortuneAvailableAt`) — or nil. Returns the line rather
+    /// than sending it: the caller joins it with the 12:00 rollover's when
+    /// both fall in one sweep. The flag is written either way, as before: the
+    /// push is best-effort and a blocked chat must not repeat it every minute.
+    private static func fortuneReadyLine(user: User, db: any Database, lingo: Lingo, now: Date) async -> String? {
+        guard user.lastFortuneDrawAt != nil, user.fortuneReadyNotified == false else { return nil }
+        guard user.fortuneCooldownRemaining(now: now) == nil else { return nil }
 
-        let body = lingo.localize("fortune.ready.notification", locale: user.locale)
-        await push("🔮 \(body)", to: user, bot: bot)
         user.fortuneReadyNotified = true
         try? await user.saveAndCache(in: db)
+        return "🔮 " + lingo.localize("fortune.ready.notification", locale: user.locale)
     }
 
     // MARK: - The board turned over
@@ -154,15 +166,16 @@ public enum RestNotificationService {
     /// into town now loses the day rather than merely the trip.
     ///
     /// The stamp is the guard. A brand-new account is stamped without a
-    /// message — it has not missed anything yet.
-    private static func notifyQuestRollover(user: User, db: any Database, bot: TGBot, lingo: Lingo, now: Date) async {
+    /// message — it has not missed anything yet. Returns the line, like the
+    /// cards' (see the caller), or nil.
+    private static func questRolloverLine(user: User, db: any Database, lingo: Lingo, now: Date) async -> String? {
         let stamp = GameDay.stamp(now)
-        guard user.questRolloverStamp != stamp else { return }
+        guard user.questRolloverStamp != stamp else { return nil }
         let firstEverStamp = user.questRolloverStamp == nil
 
         user.questRolloverStamp = stamp
         try? await user.saveAndCache(in: db)
-        guard firstEverStamp == false else { return }
+        guard firstEverStamp == false else { return nil }
 
         var body = lingo.localize("quest.rollover.notification", locale: user.locale)
         // Since 2026-09-19 a taken job survives the rollover and holds that
@@ -171,7 +184,7 @@ public enum RestNotificationService {
         if (try? await QuestService.hasCarriedJob(for: user, on: db, now: now)) == true {
             body += " " + lingo.localize("quest.rollover.locked", locale: user.locale)
         }
-        await push("📜 \(body)", to: user, bot: bot)
+        return "📜 \(body)"
     }
 
     // MARK: - A task is ready

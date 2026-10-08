@@ -339,7 +339,9 @@ happens while nobody is interacting.
 - HP topped out at the estate — whichever call's tick made the fill: the tick notes every fill
   in `RestedToFull` and the sweep announces it, because a player who taps while healing tops
   out on their own tap and most estate screens show no HP (2026-10-08);
-- the fortune teller's 24 h cooldown elapsed;
+- the fortune teller's next card ready (`User.fortuneAvailableAt`, below) — and when that lands on
+  the 12:00 rollover's minute, the cards and the new day go as ONE message, cards first (the
+  owner's pick, 2026-10-09);
 - the 12:00 job rollover;
 - a task became ready (2026-10-04): the open decree complete, or a taken job ready to hand in.
 
@@ -851,6 +853,14 @@ rollover (see `ArenaProfile.fightsSpentToday` and `QuestProgress.dayStamp`).
 `secondsUntilNextRollover(from:)` gives the countdown for screens that show
 "new jobs in Xh Ym". Keeping every daily system on this one helper is what stops
 the Arena budget and the quest of the day from drifting apart.
+
+**The fortune teller is once a game day too** (2026-10-09, the owner's rule): the next card
+waits for the LATER of the drawn card's window and the first rollover after the draw
+(`GameDay.nextRollover(after:)`) — drawn at 22:00, the next at 12:00; at 11:00, the next at
+17:00. The window is the end STAMPED on the card at the draw (`buffDurationSeconds`, 6 h, at that
+moment), so a `/reload` of the window cannot let a new card cut a running one short. `User.fortuneAvailableAt` is the one place it
+lives: the fortune screen, `FortuneService.draw` and the watchman all read it. A flat 24 h
+cooldown stood there until then, and was computed twice.
 
 ### Player-visible photos (capital / estate / location backdrops / registration / lore)
 

@@ -33,19 +33,25 @@ public enum GameDay {
     /// hours and taking its Kyiv calendar date, so the label is the date the
     /// game day *began* on (e.g. the key "2026-07-28" runs 28 Jul 12:00 →
     /// 29 Jul 12:00 Kyiv).
-    /// Seconds from `date` until the next rollover (the next 12:00 Kyiv).
-    /// Used by screens that show "new jobs in Xh Ym" — the quest journal today,
-    /// anything else daily later. DST-safe: the boundary is found by calendar
-    /// search in the Kyiv zone, not by arithmetic on a fixed 24 h period.
-    public static func secondsUntilNextRollover(from date: Date = Date()) -> Int {
+    /// The first rollover strictly after `date` — the next 12:00 Kyiv. DST-safe:
+    /// the boundary is found by calendar search in the Kyiv zone, not by
+    /// arithmetic on a fixed 24 h period. An instant AT the boundary already
+    /// belongs to the new day, so its next rollover is a day later.
+    public static func nextRollover(after date: Date = Date()) -> Date? {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: timeZoneID) ?? TimeZone(identifier: "UTC")!
-        let next = calendar.nextDate(
+        return calendar.nextDate(
             after: date,
             matching: DateComponents(hour: rolloverHour, minute: 0, second: 0),
             matchingPolicy: .nextTime
         )
-        guard let next else { return 0 }
+    }
+
+    /// Seconds from `date` until the next rollover (the next 12:00 Kyiv).
+    /// Used by screens that show "new jobs in Xh Ym" — the quest journal today,
+    /// anything else daily later.
+    public static func secondsUntilNextRollover(from date: Date = Date()) -> Int {
+        guard let next = nextRollover(after: date) else { return 0 }
         return max(0, Int(next.timeIntervalSince(date)))
     }
 

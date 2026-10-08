@@ -93,7 +93,6 @@ final class DomainContent: Sendable {
 
     let fortuneDrawPrice: Int
     let fortuneBuffDurationSeconds: TimeInterval
-    let fortuneCooldownSeconds: TimeInterval
     let fortuneCards: [FortuneCard]
     let fortuneCardsById: [String: FortuneCard]
 
@@ -289,7 +288,6 @@ final class DomainContent: Sendable {
 
         self.fortuneDrawPrice = fortune.drawPrice
         self.fortuneBuffDurationSeconds = fortune.buffDurationSeconds
-        self.fortuneCooldownSeconds = fortune.cooldownSeconds
         // Deck order decides which card a given `randomElement()` roll returns.
         self.fortuneCards = fortune.cards.map(\.domain)
         self.fortuneCardsById = Dictionary(fortuneCards.map { ($0.id, $0) },

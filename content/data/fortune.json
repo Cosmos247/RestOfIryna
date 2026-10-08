@@ -153,6 +153,5 @@
       "id" : "21_world"
     }
   ],
-  "cooldownSeconds" : 86400,
   "drawPrice" : 10
 }

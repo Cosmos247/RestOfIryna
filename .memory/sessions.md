@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-08)* **`88156d4`'s hash fill** — records only.
+- *(this commit, 10-09)* **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
+- `1c310d8` (10-08) **`88156d4`'s hash fill** — records only.
 - `88156d4` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
 - `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
 - `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
@@ -479,6 +480,43 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-09 (the fortune teller once a game day)
+
+The owner's proposal: «оновлення карти о 12, або після закінчення лічильника 6 годин … якщо взяв
+о 10 вечора то буде доступно о 12 дня, а якщо об 11 ранку, то о 5 вечора. Але лічильник дії карти
+все одно 6 годин.» The examples settle the reading — the LATER of the two moments — so no question
+was needed. The restatement named the consequences: a card at 11:00 and another at 17:00; the old
+draws freed at the restart; the 24 h number leaving `fortune.json` as content schema v20.
+
+The owner asked about one of them: a card drawn between noon and 06:00 comes back on the
+rollover's own minute, so its «🔮 Карти знову готові» and the daily «📜 Новий день…» would arrive
+as two pushes in a row. The first quiz was rejected to ask «навіщо це сповіщення, якщо у деяких
+гравців може не бути нової карти о 12?» — «🔮» had read as a noon broadcast. It is per player,
+once per draw, and a player without a ready card gets the «📜» alone. Re-asked with that table,
+the owner picked ONE message, cards first.
+
+Built:
+- `GameDay.nextRollover(after:)` — the calendar search as a `Date`, which
+  `secondsUntilNextRollover` now reads too;
+- `User.fortuneAvailableAt` — the one rule. `FortuneService.draw` no longer repeats the arithmetic
+  beside it;
+- `fortune.cooldownSeconds` removed from the DTO, the validator, the catalog, the digest, the tests
+  and `fortune.json` — content schema v20;
+- the watchman's fortune and rollover questions return their lines, and one push carries both.
+
+Checked against the owner's examples with a scratch copy of the calendar search (Kyiv): 22:00 →
+12:00, 11:00 → 17:00, 17:00 → 12:00, 13:00 → 12:00, 06:00 → 12:00, 12:00:00 → the next noon, and
+across both DST changes. 395 tests, `validate --strict` 0/0. Digest: `records` → `f67ba528e8f0cb9f`
+(the field left the hash), content hash → `86aa6b60`, the other four lines unmoved.
+
+**The audit's one fix:** the window's end was the draw plus TODAY's `buffDurationSeconds`. A
+`/reload` that shortened the window would then offer a new card while the screen still counted the
+old one down, and the new draw would cut it short. It now reads the end stamped on the card
+(`activeFortuneExpiresAt`), falling back to draw + window only when the dev reset cleared it.
+
+**Left as it is:** a card drawn in the first minute after 06:00 ends its window a few seconds after
+12:00, so the sweep can send «📜» at 12:00 and «🔮» a minute later, as two messages.
 
 ## Session — 2026-10-08, late (the starving players: four changes the owner chose) — `88156d4`
 

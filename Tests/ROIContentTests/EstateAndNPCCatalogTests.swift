@@ -304,7 +304,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// The wheel rolls when either side is set, so setting one alone makes a
     /// 50/50 between that side and nothing — an authoring slip worth a warning.
     func testHalfConfiguredWheelIsAWarning() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600, cooldownSeconds: 86400,
+        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "10_wheel",
                                                             effect: FortuneEffectDTO(randomSilverPositive: 30))])
         let report = ContentValidator.validate(bundle(fortune: fortune))
@@ -314,13 +314,13 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// The id becomes `Assets/capital/fortune/<id>.png`, so a separator would
     /// build a path outside the asset directory.
     func testUnsafeCardIdIsAnError() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600, cooldownSeconds: 86400,
+        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "../secrets")])
         XCTAssertTrue(rules(bundle(fortune: fortune)).contains("fortune.unsafe_id"))
     }
 
     func testZeroMultiplierIsAnError() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600, cooldownSeconds: 86400,
+        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "0_fool",
                                                             effect: FortuneEffectDTO(xpMultiplier: 0))])
         XCTAssertTrue(rules(bundle(fortune: fortune)).contains("fortune.non_positive_multiplier"))

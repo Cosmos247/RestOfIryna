@@ -128,7 +128,6 @@ final class LiveReferenceTests: XCTestCase {
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [], enemies: [], recipes: [], starterRecipeIds: [],
             fortune: FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
-                                    cooldownSeconds: 3600,
                                     cards: [FortuneCardDTO(id: "0_fool", effect: FortuneEffectDTO())]),
             quests: QuestFileDTO(pools: []),
             contentHash: "test")

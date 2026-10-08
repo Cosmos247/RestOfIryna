@@ -302,7 +302,6 @@ enum ContentDigest {
 
         digest.combine(FortuneCatalog.drawPrice)
         digest.combine("\(FortuneCatalog.buffDurationSeconds)")
-        digest.combine("\(FortuneCatalog.cooldownSeconds)")
         for card in FortuneCatalog.all { digest.combine(fingerprint(card)) }
         for cardId in FortuneCatalog.all.map(\.id) + ["nope", ""] {
             digest.combine(FortuneCatalog.find(cardId).map(fingerprint) ?? "-")

@@ -1076,8 +1076,6 @@ public enum ContentValidator {
                     rule: "fortune.negative_price", "drawPrice must not be negative")
             require(fortune.buffDurationSeconds > 0, file: file, path: "buffDurationSeconds",
                     rule: "fortune.non_positive_time", "buffDurationSeconds must be positive")
-            require(fortune.cooldownSeconds > 0, file: file, path: "cooldownSeconds",
-                    rule: "fortune.non_positive_time", "cooldownSeconds must be positive")
             require(!fortune.cards.isEmpty, file: file, path: "cards",
                     rule: "fortune.deck_empty", "the deck is empty — a draw would have nothing to return")
 
