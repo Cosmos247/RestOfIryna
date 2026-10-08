@@ -876,7 +876,13 @@ the record stays. `CapitalController.pushTradeInvite` still has the original def
 
 Photos are **kept in chat history** — nothing is deleted. Players asked for a scrollable
 record of where they have been, and because every bubble references the same server-side
-file_id, a long history of repeated backdrops costs no extra storage.
+file_id, a long history of repeated backdrops costs no extra storage. **One exception: the
+road card** (2026-10-08, the owner's pick). Setting out, turning back and "how long is left"
+are each the same picture (`Assets/travel/road.jpg`) with a new caption, and a trip shows ONE:
+`CapitalController.sendRoadCard` sends the new card, then deletes the previous card of the
+SAME trip. A superseded card is not a place the player has been, and a player who turns back
+three times would otherwise get four identical pictures. Arrival forgets the id, so a trip's
+last card stays in history.
 ```swift
 _ = try await sendCachedPhoto(
     assetPath: "\(projectPath)/Assets/capital/<id>.jpg",

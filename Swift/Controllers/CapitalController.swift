@@ -509,12 +509,48 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = "🐎 " + lingo.localize(key, locale: locale, interpolations: [
             "remaining": TravelService.formatCountdown(remaining, lingo: lingo, locale: locale)
         ])
-        // While en-route the player belongs to the main hub — Profile /
-        // Settings / Inventory should be usable, but Estate / Capital taps go
-        // through MainController's travel guard, and Explore lends its slot to
-        // Turn back for as long as the road lasts.
-        let markup = Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
-        try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        try await Self.sendRoadCard(context: context, text: text)
+    }
+
+    /// Where the road's picture lives. Missing on disk, `sendCachedPhoto`
+    /// sends the caption as plain text — so the code can ship before the art.
+    private static var roadAssetPath: String { "\(projectPath)/Assets/travel/road.jpg" }
+
+    /// Every screen of the road — setting out, turning back, "how long is
+    /// left" — is the same picture with a new caption, and a trip shows ONE
+    /// of them (2026-10-08, a player asked for the crossing to be visible; the
+    /// owner chose replacing over editing in place).
+    ///
+    /// The new card is sent and only THEN is the old one deleted. Sending puts
+    /// the answer under the tap that asked for it — an edit in place would
+    /// change a message above it, or off screen when the bag was opened on
+    /// the way — and sending first means the reply keyboard is never left
+    /// without a message carrying it. The one deliberate exception to "photos
+    /// are kept in chat history": a superseded card of the same trip is not a
+    /// place the player has been. Arrival forgets the id
+    /// (`TravelService.arriveIfStillScheduled`), so the last card stays.
+    ///
+    /// While en-route the player belongs to the main hub — Profile / Settings
+    /// / Inventory stay usable, Estate / Capital taps go through
+    /// MainController's travel guard, and Explore lends its slot to Turn back
+    /// for as long as the road lasts. The card carries that keyboard, which is
+    /// what lets any road screen put Turn back back if a colder path dropped it.
+    private static func sendRoadCard(context: Context, text: String) async throws {
+        let telegramId = context.session.telegramId
+        let markup = Controllers.mainController.mainKeyboard(session: context.session, lingo: context.lingo, traveling: true)
+        let sent = try await sendCachedPhoto(
+            assetPath: roadAssetPath,
+            caption: text,
+            replyMarkup: markup,
+            toUser: context.session,
+            bot: context.bot
+        )
+        if let previous = await EphemeralChatState.shared.takeRoadCard(telegramId: telegramId) {
+            _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(
+                chatId: .chat(telegramId), messageId: previous
+            ))
+        }
+        await EphemeralChatState.shared.setRoadCard(telegramId: telegramId, messageId: sent)
     }
 
     /// Shared countdown banner for any place that needs to tell the player
@@ -532,17 +568,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "destination": destLabel,
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
-        // The trip is in hand here, so this banner is one of the two places
-        // that can put the Turn back button back if a colder path dropped it.
-        try await context.bot.sendMessage(
-            session: context.session, text: text, parseMode: .html,
-            replyMarkup: Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
-        )
+        try await Self.sendRoadCard(context: context, text: text)
     }
 
     /// The line the player gets for turning around: where they are headed now
-    /// and how long it takes. A fresh message rather than an edit, because the
-    /// tap arrived as one — Turn back is a keyboard key, not an inline button.
+    /// and how long it takes — on a fresh road card, which replaces the last.
     public static func showTurnedBack(context: Context, trip: TravelState) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
@@ -554,10 +584,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "destination": lingo.localize(destKey, locale: locale),
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
-        try await context.bot.sendMessage(
-            session: context.session, text: text, parseMode: .html,
-            replyMarkup: Controllers.mainController.mainKeyboard(session: context.session, lingo: lingo, traveling: true)
-        )
+        try await sendRoadCard(context: context, text: text)
     }
 
     /// Convenience for other controllers (Main, Estate, Exploration) to

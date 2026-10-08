@@ -120,6 +120,24 @@ public actor EphemeralChatState {
         lastStatusBanners.removeValue(forKey: telegramId)
     }
 
+    // MARK: - The road card (2026-10-08)
+    //
+    // A trip shows ONE picture card, however often the player turns back or
+    // asks how long is left: each new card replaces the last
+    // (`CapitalController.sendRoadCard`). Arrival forgets the id, so the
+    // trip's final card stays in history and the next trip never deletes it.
+    // Lost on a restart mid-trip, which costs one extra card at most.
+
+    private var roadCards: [Int64: Int] = [:]
+
+    public func setRoadCard(telegramId: Int64, messageId: Int) {
+        roadCards[telegramId] = messageId
+    }
+
+    public func takeRoadCard(telegramId: Int64) -> Int? {
+        roadCards.removeValue(forKey: telegramId)
+    }
+
     // MARK: - Trader bulk-N (Phase 6.1 polish)
     //
     // Tap of `[✏️ N]` on a trader buy/sell row opens a prompt asking for

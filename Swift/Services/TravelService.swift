@@ -211,6 +211,10 @@ public enum TravelService {
             return
         }
 
+        // The trip's last road card stays in history; forgetting it here is
+        // what stops the next trip's first card from deleting it.
+        _ = await EphemeralChatState.shared.takeRoadCard(telegramId: user.telegramId)
+
         // Home again — start the rest clock at the arrival, not at the next
         // tap. No-op when it is already running, so the walk itself keeps
         // whatever it accrued.
