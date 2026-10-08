@@ -11,14 +11,24 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-09)* **`33551dd`'s hash fill, and the rewritten history** — records. On the owner's word («або краще виправ зміни у тому коміті де це було») the forest edge's two food lines were taken out of `36e33af` itself rather than by a commit of their own: a non-interactive autosquash of the unpushed commits, the final tree checked identical before and after. Every commit after it took a new hash — `88156d4` → `36e33af`, `1c310d8` → `b81aa9b`, `a582dbf` → `248dc43`, `3ef1f9c` → `2c525ca`, `e6f6de4` → `33551dd`, `f1a9939` → this fill — and all are re-recorded here and in the auto-memory.
-- `33551dd` (10-09) **the fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under «🐍 Гадюка — ❤️ 52/55» (the class icon and «Ви», `combat.you`); the profile, the gear sheet and the decree's weapon condition print the weapon's own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡 in `items.json`); 27 uk lines say «рівень» for the estate's, bag's and weapon's tier. `records` → `4c0802f927fb8be4`, content hash → `47888401` (the sword's icon); no migration.
+- *(this sync pass, 10-09)* **the record of the 2026-10-09 01:30 deploy, and a full doc audit** —
+  records only:
+  - `## Deploy — 2026-10-09 01:30`, with every "NOT deployed" marker moved;
+  - `status.md`'s digest paragraph, which still quoted the 10-06 tree and the 09-28 Pi;
+  - README's current state;
+  - the 24 h fortune premise in `rebalance.md` and the TODO tracker;
+  - `RestedToFull` in `architecture.md` and `session-auth.md`;
+  - two `CLAUDE.md` rules (a weapon by its own icon; a fix folded into its unpushed commit);
+  - TODO's polish log and footer;
+  - `Prompt.md` reoriented to the next session.
+- `de0e062` (10-09) **`33551dd`'s hash fill, and the rewritten history** — DEPLOYED 10-09 01:30 — records. On the owner's word («або краще виправ зміни у тому коміті де це було») the forest edge's two food lines were taken out of `36e33af` itself rather than by a commit of their own: a non-interactive autosquash of the unpushed commits, the final tree checked identical before and after. Every commit after it took a new hash — `88156d4` → `36e33af`, `1c310d8` → `b81aa9b`, `a582dbf` → `248dc43`, `3ef1f9c` → `2c525ca`, `e6f6de4` → `33551dd`, `f1a9939` → this fill — and all are re-recorded here and in the auto-memory.
+- `33551dd` (10-09) **the fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** — DEPLOYED 10-09 01:30 — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under «🐍 Гадюка — ❤️ 52/55» (the class icon and «Ви», `combat.you`); the profile, the gear sheet and the decree's weapon condition print the weapon's own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡 in `items.json`); 27 uk lines say «рівень» for the estate's, bag's and weapon's tier. `records` → `4c0802f927fb8be4`, content hash → `47888401` (the sword's icon); no migration.
 - `2c525ca` (10-09) **`248dc43`'s hash fill** — records only.
-- `248dc43` (10-09) **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
+- `248dc43` (10-09) **the fortune teller once a game day** — DEPLOYED 10-09 01:30 — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
 - `b81aa9b` (10-08) **`36e33af`'s hash fill** — records only.
-- `36e33af` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and one uk/en string (`exploration.hunger.state`), `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Its first version also named the food in the bag and where to find food; the owner had both lines taken out on 10-09 and the commit was rewritten without them. Two picked features not built — their form was left unanswered.
+- `36e33af` (10-08) **the starving players' four** — DEPLOYED 10-09 01:30 — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and one uk/en string (`exploration.hunger.state`), `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Its first version also named the food in the bag and where to find food; the owner had both lines taken out on 10-09 and the commit was rewritten without them. Two picked features not built — their form was left unanswered.
 - `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
-- `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
+- `2ed296e` (10-08) **one road card per trip** — DEPLOYED 10-09 01:30 — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
 - `94620a4` (10-08) **the real cause: the SDK's rate limiter, now off** — DEPLOYED 10-08 11:55 — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
 - `ee7437e` (10-08) **the poll watchdog and HTTP/1.1** — DEPLOYED 10-08 11:45 (froze at boot; HTTP/2 was the first suspect, cleared by `94620a4`) — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
 - `f200fa5` (10-07) **the open door, and guilds from level 30** — DEPLOYED 10-07 18:34 — the public test: `ROI_OPEN_ACCESS=1` in `.env` + a restart admits every account that writes (`allowed_users`, source `open`, a silent owner notice per newcomer); `guild.json` → `foundLevelGate` 5 → 30. `records` → `cc1357a44f3c4849`, content hash → `a89b39b0`; no migration.
@@ -483,6 +493,28 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Deploy — 2026-10-09 01:30 (`94620a4` → `de0e062`)
+
+The owner pushed and asked for the deploy and the restart. Read off the Pi first: `94620a4` since
+2026-10-08 11:55:36, schema v19, no freeze since (one `[WATCHDOG]` line, 10-08 11:47:53). No Mac
+bot running.
+- `git pull --ff-only` took 45 files, and the content on disk became v20 while the v19 binary still
+  ran (no `/reload` in that window).
+- The detached debug build took 109.5 s with 0 errors. Its 42 "warnings" were all swift-backtrace
+  runtime notices; our sources had none.
+- `--content-digest` on the Pi matched the Mac byte for byte: schema v20, content hash `47888401`,
+  `records 4c0802f927fb8be4`, `tuning 4edf65507bbb5e48`, `spawns 0cf31905171d7944`, `quests
+  30de20902006e3b9`, `king e3a492be1b017e81`.
+- `pm2 restart ROI && pm2 save` ran at 01:30:47. The boot logged `Content loaded: schema v20 … hash
+  47888401`, then `Bot identified as @ROfIr_bot`, then `[ACCESS] OPEN DOOR`, and reached `Server
+  started and listening` at 01:30:52. The error log took only the swift-backtrace notices.
+- At 01:34:02: still one `[WATCHDOG]` line, `Code: 400` at its 913 baseline, no new
+  `[ROUTE]`/`[SCREEN]` line, ROI `online` with restarts 9, three sockets to Telegram.
+
+No migration ran. Live since: the road card (`2ed296e`), the starving players' four (`36e33af`),
+the fortune teller once a game day (`248dc43`), and the fight's named HP line, the weapon's own
+icon and «рівень» (`33551dd`). The testers' note was written for the owner before the push.
 
 ## Session — 2026-10-09 (the recipe notebook designed and postponed; the food lines out)
 

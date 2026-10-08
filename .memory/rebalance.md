@@ -633,8 +633,9 @@ room on the walk: a step of 2 can only fall to 1 or 0. Offered:
 - the road for the Chariot and the fight for the Hanged Man (a new card field, content schema v18).
 
 The owner chose XP at **+15%** (`c1c0570`). A kill worth 100 pays 115. It covers every XP source
-except the Judgement's one-shot: a draw needs the 24 h cooldown and a card lasts 6 h, so no card is
-active when the Judgement pays.
+except the Judgement's one-shot: a draw waits for the previous card to end, so no card is active when
+the Judgement pays. (The wait was a flat 24 h then; since 2026-10-09 it is the later of the card's
+6 h and the next 12:00 — still never shorter than the card, so the conclusion stands.)
 
 **Still open:** the Devil doubles a defend; and since rounding stays half-up, a card multiplier must
 move a 2 by a whole point (×0.75 cannot) — the rule is in `CLAUDE.md`.

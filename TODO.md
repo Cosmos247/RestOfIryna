@@ -390,7 +390,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 
 ### 6.4 Fortune Teller (Ворожка) *(landed)*
 - [x] `FortuneCatalog` — 22 Major Arcana cards (0_fool through 21_world) + `FortuneEffect` struct (14 optional fields covering stat bonuses + multipliers + one-shots + Wheel-style random)
-- [x] `FortuneService.draw(for:on:)` — 24h cooldown gate + 10g gold + uniform random draw + one-shot apply + state stamp
+- [x] `FortuneService.draw(for:on:)` — 24h cooldown gate + 10g gold + uniform random draw + one-shot apply + state stamp *(the 24 h went on 2026-10-09: the next card waits for the later of the card's 6 h and the next 12:00 — `User.fortuneAvailableAt`, `248dc43`)*
 - [x] 3 new User fields + 2 migrations (`AddFortuneFields` + `AddFortuneCooldownField`; split fields after 6h-buff vs 24h-cooldown design call)
 - [x] Effect hooks in 5 sites: User.effectiveAttack/Defense/Crit/Dodge/Accuracy, User.grantXP, ExplorationService.rollStep (loot weight), VigorService.drain (drain multiplier composes with stance)
 - [x] UI: showFortune (3 render states — can-draw / cooldown-with-buff / cooldown-only), reveal screen with card portrait + lore meaning + buff description + 6h countdown
@@ -1572,7 +1572,25 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **One road card per trip** *(2026-10-08, `2ed296e`, NOT deployed — `pm2 restart ROI`)* — a
+  - [x] **The fight names both fighters, a weapon shows its own icon, «тир» is «рівень»**
+        *(2026-10-09, `33551dd`, deployed 2026-10-09 01:30)* — three player reports. The fight's
+        status card names the player's line like the creature's: «⚔️ Ви — ❤️ 8/95  🍖 25/110»
+        (`combat.you`, the class icon). The profile, the gear sheet and the weapon decree print
+        the weapon's own icon: 🗡 sword, 🏹 bow, 🪄 staff. The sword itself went ⚔️ → 🗡. 27 uk lines
+        say «рівень» where they said «тир».
+  - [x] **The fortune teller once a game day** *(2026-10-09, `248dc43`, deployed 2026-10-09 01:30)*
+        — the owner's rule. The next card waits for the later of the drawn card's 6 h and the next
+        12:00, in `User.fortuneAvailableAt`. `fortune.cooldownSeconds` is gone, so the content schema
+        is v20. «🔮» and «📜» falling on one minute are one message.
+  - [x] **The starving players' four** *(2026-10-08, `36e33af`, deployed 2026-10-09 01:30)* — from a
+        snapshot of newcomers fighting mostly at 0 Vigor:
+        - the hunger tick only on a step that begins at 0 Vigor;
+        - «Ви повністю відпочили» for every rest that tops out (`RestedToFull`);
+        - the road open at 0 Vigor;
+        - the forest edge saying what hunger costs.
+
+        Its two food lines were taken out of the commit itself before the deploy.
+  - [x] **One road card per trip** *(2026-10-08, `2ed296e`, deployed 2026-10-09 01:30)* — a
         player asked for the estate ↔ capital crossing to be visible; the owner had the picture
         (`Assets/travel/road.jpg`). Setting out, `↩️ Розвернутись` and "how long is left" are that
         picture with a new caption; `CapitalController.sendRoadCard` sends the new card and deletes
@@ -2006,9 +2024,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the five on top — the weapon's own icon
-with «рівень» and the named HP line (`33551dd`), the fortune teller (`248dc43`), the starving players' four
-(`36e33af`) and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
+Telegram. **Every block below is LIVE and unwalked** — the five on top since the 2026-10-09 01:30 restart (the
+weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
+the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
 task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
@@ -2016,7 +2034,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (`33551dd`, NOT deployed):**
+**Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (`33551dd`, live since 2026-10-09 01:30):**
 - 👤 Профіль: «🗡 Основна рука: Іржавий меч» for the knight, «🏹 … Простий лук» for the archer,
   «🪄 … Дерев'яний посох» for the mage; the same in «🛡 Спорядження» with the wear.
 - The sword shows 🗡 in the bag, the warehouse and its card (it was ⚔️). The class icons are
@@ -2026,14 +2044,14 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
   піднято до 3-го рівня — …»; a locked room «…на 4-му рівні маєтку»; the decrees «🏡 Рівень
   маєтку», «🎒 Рівень сумки», «…до другого рівня».
 
-**Added 2026-10-09 — the player's HP line in a fight is named (`33551dd`, NOT deployed):** any
+**Added 2026-10-09 — the player's HP line in a fight is named (`33551dd`, live since 2026-10-09 01:30):** any
 account, one fight in each class if possible.
 - A fight's screen: «🐍 Гадюка — ❤️ 52/55» and under it «⚔️ Ви — ❤️ 8/95  🍖 25/110» (🏹 for the
   archer, 🔮 for the mage), on the intro and after every round.
 - At 0 Vigor the line ends «· 😵 Голодні». The training dummy and the registration dog read the
   same.
 
-**Added 2026-10-09 — the fortune teller once a game day (`248dc43`, NOT deployed):** an
+**Added 2026-10-09 — the fortune teller once a game day (`248dc43`, live since 2026-10-09 01:30):** an
 account in the capital with 10 🪙.
 - Draw a card in the evening (say 22:00): «Нова карта через: …» counts to 12:00, not to 22:00
   tomorrow.
@@ -2045,7 +2063,7 @@ account in the capital with 10 🪙.
 - A card drawn before the restart under the old 24 h: after the restart it waits by the new rule
   (an evening card is free at 12:00).
 
-**Added 2026-10-08 — the starving players' four (`36e33af`, NOT deployed):** an account at
+**Added 2026-10-08 — the starving players' four (`36e33af`, live since 2026-10-09 01:30):** an account at
 the estate, damaged, with Vigor to spend down.
 - Walk out with exactly 2 Vigor and step: 🍖 2 → 0 and NO «🥀 Голод…» line; the next step has it.
 - At 0 Vigor tap «🌲 Дослідити»: under «На узліссі ви обираєте свій шлях:» the line «😵 Ви голодні:
@@ -2057,7 +2075,7 @@ the estate, damaged, with Vigor to spend down.
   «❤️ Ви повністю відпочили — …» arrives once. Fill up, then walk straight into the forest: no
   notice. Eat a dish to full HP: no notice.
 
-**Added 2026-10-08 — one road card per trip (`2ed296e`, NOT deployed):** any account.
+**Added 2026-10-08 — one road card per trip (`2ed296e`, live since 2026-10-09 01:30):** any account.
 - Set out for the capital: the road picture with «🐎 Ви підганяєте коня до столиці…».
 - Tap `↩️ Розвернутись` twice: each time a NEW card appears under the tap and the previous one is
   gone — one road picture in the chat at any moment.
@@ -2684,7 +2702,7 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the public test, 2026-10-07/08** — found answering players. On 2026-10-08 the owner
-decided in three quizzes, and four changes were BUILT (`36e33af`, not deployed —
+decided in three quizzes, and four changes were BUILT (`36e33af`, deployed 2026-10-09 01:30 —
 the walk-list block on top): the hunger tick only on a step that begins at 0 Vigor, «Ви повністю
 відпочили» for every rest that tops out, the road open at 0 Vigor, and the forest edge explaining
 hunger (its food lines removed on 10-09, the owner's word). **The owner's rule from that evening: a question left unanswered
@@ -2956,9 +2974,13 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-08 — the public test is running (the door opened 2026-10-07 18:34); the Pi
-runs `94620a4` (the SDK limiter off); `2ed296e`, the road card, waits for a restart. The 10-05 footer
+*Last updated: 2026-10-09 — the Pi runs `de0e062` since 01:30. That restart took the road card, the
+starving players' four, the fortune teller once a game day, the named fight line, the weapon's own
+icon and «рівень». The recipe notebook is designed and approved, not built. The 10-08 footer
 follows.*
+
+*2026-10-08 — the public test is running (the door opened 2026-10-07 18:34); the Pi runs `94620a4`
+(the SDK limiter off); `2ed296e`, the road card, waits for a restart. The 10-05 footer follows.*
 
 *2026-10-05 — the newest commit was **durability is the item's own, the Forester set
 at 50** (`bf15669`, hash fill `e4e67ad`). It changes content schema v18 and adds one migration

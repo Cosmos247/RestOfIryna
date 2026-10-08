@@ -82,7 +82,7 @@ Three process-wide holders, all `nonisolated(unsafe)` + a lock:
   array is gone (2026-09-08). Only `developerUsers` stays in code, allowed before the table is read.
   Since 2026-10-07 `ROI_OPEN_ACCESS=1` opens the door: an unlisted account is ADDED (source `open`)
   instead of refused — the public test runs this way
-- In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner, the trip's road card)
+- In-memory stores (actors, not persisted; a restart drops their contents): `TradeStore` (live player-to-player trades + exchange lobby), `ArenaStore` (Arena lobby, challenges, live duels), `EphemeralChatState` (pending prompts, last status banner, the trip's road card), `RestedToFull` (2026-10-09: the players whose rest topped out since the watchman's last sweep — noted by `HealingService.tick` whoever's call ran it; a restart forgets at most one sweep's fills, a missed notice, never a wrong one)
 
 ## Service Layer
 

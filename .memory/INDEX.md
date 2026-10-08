@@ -40,24 +40,19 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   accounts in by 10-08 21:59). Sessions now mix live-play polish with **player support**: the
   owner relays questions, answers come from the code and data with a ready Ukrainian reply
   ([live-ops.md](live-ops.md), auto-memory `project-public-test`).
-- **On the Pi: `94620a4`** since **2026-10-08 11:55:36** — schema v19, content hash `a89b39b0`
-  (guilds from level 30), the SDK's rate limiter OFF after it deadlocked the poll loop four
-  times that morning, `PollWatchdog`, the Telegram client on HTTP/1.1. Up ~10 h with no freeze by
-  21:59. **Committed, not pushed, not deployed: `2ed296e`** — one road card per trip (the owner's
-  picture, `Assets/travel/road.jpg`) and «поїжте»; it needs the owner's push, a build and
-  `pm2 restart ROI`.
-- **The 2026-10-06 21:39 restart** took everything committed since `8ae6772` (tier 2 through the
-  owner's screen art, five migrations, the tables checked after — `sessions.md` →
-  `## Deploy — 2026-10-06`); the 2026-10-07 18:34 restart took the open door and the guild gate;
-  the 2026-10-08 restarts the freeze fixes.
-- **Committed 2026-10-09 as `33551dd`, not deployed:** the fight names both fighters («⚔️ Ви — ❤️ …»), a
-  weapon shows its own icon (🗡 / 🏹 / 🪄; the sword ⚔️ → 🗡), «тир» is «рівень» in all uk copy.
-- **Committed 2026-10-09 as `248dc43`, not deployed:** the fortune teller once a game day — the next card at the
-  later of the drawn card's 6 h and the next 12:00; content schema v20 (`fortune.cooldownSeconds`
-  gone); «🔮» and «📜» on the same minute go as one message.
-- **Committed 2026-10-08 late as `36e33af`, not deployed:** the starving players' four — the hunger tick only on a
-  step that begins at 0 Vigor, «Ви повністю відпочили» for every rest that tops out, the road open
-  at 0 Vigor, the forest edge explaining hunger ([live-ops.md](live-ops.md) → "Day two").
+- **On the Pi: `de0e062`** since **2026-10-09 01:30:47** — content schema v20, content hash
+  `47888401`, `records 4c0802f927fb8be4` (`sessions.md` → `## Deploy — 2026-10-09 01:30`). It carried
+  four changes: the road card (`2ed296e`); the starving players' four (`36e33af` — the hunger tick
+  only on a step that begins at 0 Vigor, «Ви повністю відпочили» for every rest that tops out, the
+  road open at 0 Vigor, the forest edge explaining what hunger costs); the fortune teller once a
+  game day (`248dc43`); and `33551dd` — the fight's named HP line, the weapon's own icon, «рівень»
+  for «тир». The SDK's rate limiter stays OFF, `PollWatchdog` runs, the client is HTTP/1.1.
+- **Earlier restarts:** 2026-10-06 21:39 took everything committed since `8ae6772` (tier 2 through
+  the owner's screen art, five migrations, the tables checked after — `sessions.md` →
+  `## Deploy — 2026-10-06`); 2026-10-07 18:34 the open door and the guild gate; 2026-10-08 the
+  freeze fixes (`94620a4` at 11:55).
+- **Designed, approved, NOT built: the recipe notebook** («Зробимо це завтра» — auto-memory
+  `project-recipe-notebook-planned`); build only on the owner's word.
 - **Waiting on the owner** (`TODO.md` → "Open, decided but not done", top block): two features
   chosen with their form unanswered, so not built — eating straight from the warehouse, and a hint
   under the estate-name prompt; a question left unanswered builds nothing. Below them, the older
@@ -88,8 +83,11 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   sync pass, the 10-05 durability entry (the first of the day's gear work), and the class-sets
   concept with the second 10-05 sync pass, the 10-06 armour-ladder entry (`bad142b`) and its
   sync pass, the 10-06 deploy, then the public test: the 10-07 open door and guild gate with its
-  deploy, the 10-08 poll-loop freeze and the SDK limiter with the 11:55 deploy, and the 10-08 road
-  card and player-support entries.
+  deploy, the 10-08 poll-loop freeze and the SDK limiter with the 11:55 deploy, the 10-08 road
+  card and player-support entries, then the 10-08 late starving players' four (`36e33af`), the
+  10-09 fortune teller once a game day (`248dc43`), the named fight line and the weapon's own icon
+  with «рівень» (`33551dd`), the recipe notebook designed and postponed with the food lines taken
+  out of `36e33af` (the history rewrite), and the `## Deploy — 2026-10-09 01:30` record.
 - **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
   tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
   figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
@@ -121,7 +119,7 @@ for why every "never do X" guard stays in the repo rather than moving there.
 Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
 following the rule you are about to break — which is the only index that is needed here.
 **Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 100 at one line each, so a selection copied into this file is the
+already carries all 106 at one line each (2026-10-09), so a selection copied into this file is the
 third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
 grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
 twice.

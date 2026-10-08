@@ -21,12 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-09 — «тир» is «рівень» on every screen** (`33551dd`, NOT deployed; locale only):
+**2026-10-09 — «тир» is «рівень» on every screen** (`33551dd`, deployed 2026-10-09 01:30; locale only):
 the owner had asked before. 27 uk lines — the bag and estate upgrades, the full warehouse, a
 locked room, three decree conditions and twelve decree descriptions — with the cases agreed
 («тиру» → «рівня», «тирі» → «рівні»); English keeps "tier", and so do the code and the docs.
 
-**2026-10-09 — a weapon shows its own icon** (`33551dd`, NOT deployed; Swift, `items.json`
+**2026-10-09 — a weapon shows its own icon** (`33551dd`, deployed 2026-10-09 01:30; Swift, `items.json`
 and two locale strings; `records` → `4c0802f927fb8be4`, content hash → `47888401`): a tester
 asked for the bow and the staff. The profile's «Основна рука», the gear sheet's main hand and the
 decree's weapon condition printed 🗡 for every class; they now print the weapon's own icon —
@@ -34,14 +34,14 @@ decree's weapon condition printed 🗡 for every class; they now print the weapo
 owner's word («він має 1 меч»), so the bag, the warehouse and the card show 🗡 too. The CLASS icons
 stay ⚔️ / 🏹 / 🔮 — the owner kept the mage's crystal ball.
 
-**2026-10-09 — the player's HP line in a fight is named** (`33551dd`, NOT deployed; needs
-`pm2 restart ROI` — Swift and one uk/en string, the digest unmoved): a public-test player asked for
+**2026-10-09 — the player's HP line in a fight is named** (`33551dd`, deployed 2026-10-09 01:30 by a
+restart — Swift and one uk/en string, the digest unmoved): a public-test player asked for
 their HP to be told apart from the creature's. Both lines began with ❤️ and only the creature's
 had a name. The player's line is now the class icon and «Ви» — «⚔️ Ви — ❤️ 8/95  🍖 25/110» under
 «🐍 Гадюка — ❤️ 52/55» — the owner's pick over «Ви» alone and over «Ви» with a blank line.
 
-**2026-10-09 — the fortune teller once a game day** (`248dc43`, NOT deployed; needs `pm2
-restart ROI` — Swift and `content/data`, content schema **v20**; no migration, no locale string).
+**2026-10-09 — the fortune teller once a game day** (`248dc43`, deployed 2026-10-09 01:30 by a
+restart — Swift and `content/data`, content schema **v20**; no migration, no locale string).
 The owner's rule: the next card waits for the LATER of the drawn card's 6 h and the next 12:00 —
 drawn at 22:00, the next at 12:00; at 11:00, at 17:00, and then not before the following noon. A
 flat 24 h cooldown stood there (`fortune.cooldownSeconds`, now gone, hence v20), computed twice;
@@ -50,8 +50,8 @@ card drawn between noon and 06:00 comes back on the rollover's own minute, and t
 знову готові» and «📜 Новий день…» go as ONE message, cards first (the owner's pick). Digest:
 `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; the other four lines unmoved.
 
-**2026-10-08 — the public test's starving players** (`36e33af`, NOT deployed; needs
-`pm2 restart ROI` — Swift and one uk/en string, one deleted; no migration, the digest unmoved).
+**2026-10-08 — the public test's starving players** (`36e33af`, deployed 2026-10-09 01:30 by a
+restart — Swift and one uk/en string, one deleted; no migration, the digest unmoved).
 A snapshot showed the newcomers fighting most of their fights at 0 Vigor, some with food in the
 bag; the owner chose four changes in two quizzes:
 - **the hunger tick only on a step that BEGINS at 0 Vigor** (`ExplorationService.rollStep` reads
@@ -67,7 +67,7 @@ bag; the owner chose four changes in two quizzes:
 Chosen but not built, the owner having left their form unanswered: eating straight from the
 warehouse and a hint under the estate-name prompt. Not chosen: partial market lots.
 
-**2026-10-08 — one road card per trip** (`2ed296e`, NOT deployed; needs `pm2 restart ROI` —
+**2026-10-08 — one road card per trip** (`2ed296e`, deployed 2026-10-09 01:30 by a restart —
 Swift, one asset, one uk string): a player asked for the estate ↔ capital crossing to be visible.
 Setting out, `↩️ Розвернутись` and "how long is left" are the owner's picture
 (`Assets/travel/road.jpg`) with a new caption; `CapitalController.sendRoadCard` sends the new card
@@ -821,17 +821,13 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline of the working
-tree: `records 9303bb274d4517d8` / `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` /
-`quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `be1102fc` (**schema v19**
-since 2026-10-06, when the enchant became the armour's ladder, `bad142b`). The baseline before it
-is the durability change's (`bf15669`): `records fefe14b940998631`, content hash
-`41455b84`, schema v18. `Prompt.md` keeps both in sync, together with the baseline of every
-commit still undeployed — everything since 2026-09-28: tier 2, the estate scaling, the arena,
-the weapon ladder, the tarot pass, the 10-04/05 polish and the durability. **None of it is on
-the Pi yet.** The Pi still runs `records 33e5c6e3259d51ba` / `tuning fe05ceaa38e03c6b` /
-`spawns c9bdb57d456adc26`, content hash `490a2d4b`, schema v14, since the 2026-09-28 22:11
-restart. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the working
+tree and the Pi agree since the 2026-10-09 01:30 restart (`de0e062`): `records 4c0802f927fb8be4` /
+`tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
+e3a492be1b017e81`, content hash `47888401`, **schema v20** (the fortune teller's 24 h
+`cooldownSeconds` gone, then the sword's icon ⚔️ → 🗡 — `records` alone moved). Nothing committed
+is waiting for a restart. Every earlier baseline, and what each restart carried, is in
+`Prompt.md`. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

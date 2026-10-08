@@ -539,6 +539,13 @@ forgets. Auto-memory `project-death-spares-the-class-weapon`.
 are already two families for one set of names kept in step by hand, and that duplication is
 exactly how `accuracy` shipped under two different Ukrainian words.
 
+**A weapon is shown by its OWN icon, never a slot glyph** (2026-10-09): the profile's «Основна
+рука», the gear sheet's main hand and the weapon decree print `items.json`'s icon — 🗡 sword, 🏹
+bow, 🪄 staff (the decree: the class weapon's, through `ConditionView.icon`). A fixed 🗡 told an
+archer and a mage they held a sword. 🗡 stays only for an empty hand. The CLASS icons are a
+different thing and stay ⚔️ / 🏹 / 🔮 (the owner kept the mage's). Auto-memory
+`project-weapon-own-icon`.
+
 **The warehouse cap is enforced on every path in, including
 `PlotService.harvest(to: .warehouse)`** — the estate's own income was once the only way to
 overflow the store. Harvest is all-or-nothing like the bag, with the yield left standing on
@@ -962,6 +969,12 @@ For the up-to-date implemented-vs-planned tracker, see `.memory/status.md` — k
 - On confirmation, generate a short compact commit message (no co-author line)
 - **Never push.** Push operations are manual, user-side only.
 - Stage only relevant files, never `git add -A`
+- **A fix to an earlier UNPUSHED commit goes into that commit** when the owner asks («виправ зміни
+  у тому коміті де це було»): an `amend!` commit, then `GIT_SEQUENCE_EDITOR=: git rebase -i
+  --autosquash <parent>`. Check the final tree against the pre-rebase one, then re-record every
+  hash that changed — the Commit index, `Prompt.md`, `status.md`, `TODO.md`, `INDEX.md` and the
+  auto-memory. Never rewrite anything already on `origin`. Auto-memory
+  `feedback-fold-fixes-into-their-commit`.
 
 ### Running the bot — ASK FIRST
 

@@ -55,6 +55,13 @@ markers live on the progress rows (`quest_progress.ready_notified`,
 `king_progress.ready_notified_index`) and go by a one-column `query…set…update`, never a row save,
 because the player may be ticking the same row's progress at that moment.
 
+The full-HP notice (2026-10-09) also writes no flag. `HealingService.tick` notes a regen that
+reaches the maximum in the in-memory `RestedToFull`, whichever call ran it: a tap or the sweep. The
+sweep takes all the marks at its start and announces while the player can still rest. Before, a tap
+that filled the bar left the sweep seeing "already full" and saying nothing. The same sweep sends
+the fortune teller's «🔮» and the 12:00 rollover's «📜» as ONE message when both fall in the same
+minute.
+
 ## Authorization Flow — invite-only, in the database (since 2026-09-08)
 
 **The hardcoded `allowedUsers` array is gone.** Access lives in the `allowed_users` table

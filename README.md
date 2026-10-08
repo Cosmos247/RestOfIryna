@@ -608,7 +608,7 @@ tick as one number. The pattern worth knowing: each was a place where the code w
 and could not say so, or where a number was shown in a unit it was not measured in.
 
 **The game is in a public test since 2026-10-07** — the bot's door is open to anyone who writes
-to it (`ROI_OPEN_ACCESS`), and the Pi runs `94620a4` since 2026-10-08. Everything below is live:
+to it (`ROI_OPEN_ACCESS`), and the Pi runs `de0e062` since 2026-10-09 01:30. Everything below is live:
 - since the 2026-09-28 restart: the bestiary's first tier and a roster re-solved against the gear
   players actually carry; mob XP halved on what the live database showed, loose silver on the
   trail, an escape that fails at most four times a fight; four all-time leaderboards; the capital
@@ -624,10 +624,16 @@ to it (`ROI_OPEN_ACCESS`), and the Pi runs `94620a4` since 2026-10-08. Everythin
   pre-deploy audit; the owner's screen art;
 - since 2026-10-07/08: the open door, guilds founded from level 30, and a fix for the bot
   freezing (the SDK's own rate limiter deadlocked after a burst — it is off — plus a watchdog that
-  restarts a frozen poll loop).
+  restarts a frozen poll loop);
+- since the 2026-10-09 restart: one road card per trip with the owner's picture; hunger charged
+  only on a step that begins at 0 Vigor, and the forest edge saying what it costs; «Ви повністю
+  відпочили» for every rest that tops out; the road to the capital open at 0 Vigor; the fortune
+  teller once a game day (the next card at the later of the card's 6 h and the next noon); a
+  fight's own HP line named «Ви» with the class icon; each weapon's own icon on the profile, the
+  gear sheet and the weapon decree; «рівень» for «тир» on every Ukrainian screen.
 
-**Committed, not deployed** (2026-10-08, `2ed296e`): a trip shows one road card with the owner's
-picture, replaced rather than repeated when the player turns back.
+**Designed and approved, not built:** a recipe notebook — a «📌 У нотатник» button on every price
+card and a «📌 Рецепти» screen in the journal (the owner deferred it to the next session).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

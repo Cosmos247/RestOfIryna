@@ -50,23 +50,24 @@ level gate — so a cheaper enchant, or anything stronger, still needs the re-so
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-10-09, just after midnight — the public test, day two)
+### Where things stand right now (2026-10-09 01:47 — the public test, day three)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`33551dd`** (the named HP line, the weapon's own icon and «рівень», 2026-10-09), **`2c525ca`** (a hash fill), **`248dc43`** (the fortune teller once a game day, 2026-10-09), **`b81aa9b`** (a hash fill), **`36e33af`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `36e33af`, `b81aa9b`, `248dc43`, `2c525ca`, `33551dd` and this hash fill are not pushed** — push is the owner's |
-| running on the Pi | **`94620a4`**, restarted **2026-10-08 11:55:36**, up ~10 h with no freeze by 21:59 — schema **v19**, content hash **`a89b39b0`**, `records cc1357a44f3c4849` (guilds from level 30); `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-08 11:55`, `## Deploy — 2026-10-07 18:34`, `## Deploy — 2026-10-06 21:39`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-08 21:59 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`36e33af`**: Swift, one uk/en string added and one deleted. **`248dc43`**: Swift and `content/data` — content schema **v20**, `records f67ba528e8f0cb9f`, content hash `86aa6b60`. **`33551dd`**: Swift, `items.json` (the sword's icon) and locale — `records 4c0802f927fb8be4`, content hash `47888401`, schema v20. None has a migration. All four need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` — the pull brings the v20 content and the build the v20 binary together, which the handshake requires (the road picture alone would show at the pull; the code would not) |
+| HEAD | **this sync pass** (the 01:30 deploy record and a full doc audit) on top of **`de0e062`** (a hash fill carrying the records of the rewritten history), **`33551dd`** (the named fight line, the weapon's own icon and «рівень»), **`248dc43`** (the fortune teller once a game day), **`36e33af`** (the starving players' four), **`61b3f42`** (a sync pass) and **`2ed296e`** (one road card per trip). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **This sync pass is not pushed** — push is the owner's |
+| running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`; `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30` and the earlier `## Deploy —` entries. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
+| waiting for a restart | **nothing** — everything committed up to `de0e062` is live since 2026-10-09 01:30:47 |
 
 **Restarts since the backlog went live:** 2026-10-06 21:39 (everything since `8ae6772`, five
 migrations, the tables checked), 2026-10-07 18:34 (the open door and the guild gate), and on
 2026-10-08 six — two asked restarts of a frozen bot, one freeze restart on the watchdog policy,
-`ee7437e` (froze at boot), the watchdog's own exit, and `94620a4`, which held. The full history
-of what each restart carried is in the "History" section below and in the Commit index.
+`ee7437e` (froze at boot), the watchdog's own exit, and `94620a4`, which held; and 2026-10-09
+01:30:47, the deploy of `de0e062`. The full history of what each restart carried is in the
+"History" section below and in the Commit index.
 
-**Everything up to `9385cd1` is deployed** — the 2026-10-06 21:39 restart took the whole backlog (listed under "History" below) in one pull, five migrations with it. Before that, the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
+**Everything up to `de0e062` is deployed** — the 2026-10-09 01:30 restart took the 10-08/09 changes (the road card, the starving players' four, the fortune teller, the named fight line, the weapon's own icon and «рівень»; no migration). The 2026-10-06 21:39 restart took the whole earlier backlog (listed under "History" below) in one pull, five migrations with it. Before that, the 2026-09-28 22:11 restart took the seven changes of 09-27/28 (the stray-number hint, salvage and gear rows, combat lines and the death screen, the Training Ground as a house room, the technique rework with `fight_log`, the decree reorder, and the workshop without armour). Before that, two restarts on 2026-09-22 took the whole backlog: 00:22
 carried fourteen commits (`536fbf6` → `1faaddb`) — the capital street split, the quest
 carry-over and the King's decree chain end to end — and 00:33 followed with a locale-only
 pass for the two street descriptions. Three migrations ran at 00:22: `CloseBurnedQuestJobs`
@@ -77,56 +78,51 @@ decree in before the deploy entry was written.
 Every deploy's hashes, what each carried and its verification block: the **Commit index** at
 the top of `.memory/sessions.md`, with a dated `## Deploy —` entry for each restart.
 
-### Where the last session stopped (2026-10-07 → 10-08 — the public test)
+### Where the last session stopped (2026-10-08 late → 10-09 01:47 — the public test)
 
-On 2026-10-07 the owner opened the game to the public, and the sessions became live-play
-polish plus **player support** (`.memory/live-ops.md`, auto-memory `project-public-test`):
-- **The open door** (`f200fa5`): `ROI_OPEN_ACCESS=1` admits every account that writes; the owner
-  picked it over a 7-day invite (the `no start payload` trap) and a `/door` command. Same commit:
-  **guilds are founded from level 30** (`guild.json`, was 5), the owner's call.
-- **Player questions**, each answered from the code and data with a ready Ukrainian reply — the
-  verified answers are `.memory/live-ops.md` → "Player FAQ".
-- **The bot froze four times on 10-08** (pm2 `online`, no Telegram socket, the queue growing). The
-  cause was swift-telegram-sdk 4.6's own rate limiter (`LimiterAsync` deadlocks after a burst
-  ending on exactly `maxRequests` waiters); it is OFF (`94620a4`). `PollWatchdog` (`ee7437e`) exits
-  after 120 s without a completed `getUpdates` and pm2 restarts — the owner accepted that automatic
-  restart. HTTP/1.1 was the first suspect and stays (harmless). Auto-memory
-  `project-poll-loop-freeze`.
-- **One road card per trip** (`2ed296e`, committed, NOT deployed): the owner's road picture on
-  setting out, turning back and the countdown, each new card replacing the trip's last; arrival
-  home stays text. Same commit: «Спершу поїж» → «поїжте».
-- **The game emblem**: six candidates with prompts — `content/lore.md` §14, none chosen.
-- **The sync pass** (`61b3f42`) brought every doc to the deployed state.
-- **The starving players' four** (`36e33af`, 2026-10-08 late; `.memory/sessions.md` → the
-  session entry). A 22:20 snapshot showed the newcomers fighting mostly at 0 Vigor, some with food
-  in the bag. The owner chose, in quizzes:
+The owner opened with «Починаємо виправляти баги і додавати пропозиції від нових гравців». A
+22:20 snapshot showed the newcomers fighting mostly at 0 Vigor, some with food in the bag
+(`.memory/live-ops.md` → "Day two"). Built, audited, committed and **deployed 2026-10-09 01:30**
+(`.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`):
+- **The starving players' four** (`36e33af`):
   - the hunger tick only on a step that BEGINS at 0 Vigor;
-  - «Ви повністю відпочили» for every rest that tops out (`RestedToFull`);
-  - the road open at 0 Vigor;
-  - the forest edge explaining hunger (its food lines removed on 10-09, the owner's word).
+  - «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`);
+  - the road to the capital open at 0 Vigor;
+  - the forest edge saying what hunger costs.
 
-  **A question the owner leaves unanswered means nothing is built for it**, never a default
-  (auto-memory `feedback-unanswered-means-nothing`).
-- **The fortune teller once a game day** (`248dc43`, 2026-10-09): the next card waits for the
-  LATER of the drawn card's 6 h and the next 12:00 — 22:00 → 12:00, 11:00 → 17:00 — in
-  `User.fortuneAvailableAt`, the one rule for the screen, the draw and the watchman. The 24 h
-  `fortune.cooldownSeconds` is gone (content schema v20). A card drawn between noon and 06:00 comes
-  back on the rollover's minute; then «🔮» and «📜» go as one message, cards first (the owner's pick).
-- **The player's HP line in a fight is named** (`33551dd`, 2026-10-09): «⚔️ Ви — ❤️ 8/95  🍖
-  25/110» under «🐍 Гадюка — ❤️ 52/55» — the class icon and «Ви», the owner's pick, after a player
-  read their own unnamed «❤️» line as the creature's.
-- **A weapon shows its own icon** (`33551dd`): 🗡 / 🏹 / 🪄 in the profile, the gear sheet and the
-  weapon decree; the sword itself ⚔️ → 🗡 (one sword, the owner's word); class icons unchanged.
-- **«Тир» is «рівень»** (`33551dd`): 27 uk lines, the owner's word; «never «тир»» is now in the
-  glossary rule.
-- **The forest edge names no food** (2026-10-09): the owner had the two food lines removed before
-  the deploy, taken out of `36e33af` itself — the unpushed history was rewritten, every hash after
-  it is new and re-recorded; only «😵 Ви голодні: …» stays.
-- **The recipe notebook** is designed and approved but NOT built — «Зробимо це завтра» (auto-memory
-  `project-recipe-notebook-planned`); build it only on the owner's word.
+  Its two food lines (the bag's food, and where to find food) were built from an approved
+  sample, then taken out on the owner's word. They came out of the commit itself — the unpushed
+  history was rewritten and every later hash re-recorded.
+- **The fortune teller once a game day** (`248dc43`): the next card waits for the LATER of the
+  drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00). `User.fortuneAvailableAt` is
+  the one rule; `fortune.cooldownSeconds` is gone, so the content schema is v20. «🔮» and «📜»
+  falling on one minute go as one message.
+- **The fight names both fighters, a weapon shows its own icon, «тир» is «рівень»** (`33551dd`):
+  - «⚔️ Ви — ❤️ 8/95  🍖 25/110» under the creature's line;
+  - 🗡 / 🏹 / 🪄 on the profile, the gear sheet and the weapon decree (the sword ⚔️ → 🗡);
+  - 27 uk lines say «рівень».
+- **The recipe notebook — designed and approved, NOT built.** The owner: «Поки не роби оновлення з
+  рецептами. Зробимо це завтра.» The full design is auto-memory `project-recipe-notebook-planned`.
+- **A testers' note** for the deploy was written for the owner, read off the Pi first. Its hunger
+  bullet was corrected after the food lines went.
+- **Two working rules from the owner:**
+  - a quiz question left unanswered means NOTHING is built for it (auto-memory
+    `feedback-unanswered-means-nothing`);
+  - a fix to an earlier unpushed commit goes into that commit (`CLAUDE.md` § Git Workflow).
 
-**Waiting on the owner** — chosen, but the FORM left unanswered, so not built (`TODO.md` → "Open,
-decided but not done", top block):
+Before it (2026-10-07 → 10-08):
+- the open door (`f200fa5`) and guilds from level 30;
+- player support (`.memory/live-ops.md` → "Player FAQ");
+- the four freezes cured by turning the SDK's rate limiter off (`94620a4`) and a `PollWatchdog`;
+- the road card (`2ed296e`);
+- the emblem candidates (`content/lore.md` §14).
+
+**Waiting on the owner:**
+- **The recipe notebook** — approved, deferred to the next session; build it only when the owner
+  says so (item 0 below).
+
+Chosen, but the FORM left unanswered, so not built (`TODO.md` → "Open, decided but not done", top
+block):
 - **Eating straight from the warehouse** — the layout of «🍴 Зʼїсти» (in the ⬆️/⬇️/✏️ row, or
   beside the name).
 - **A hint under the estate-name prompt** — its wording (two offered). Iren has been stuck at step
@@ -142,17 +138,16 @@ not done".
 
 ### Next action
 
-**0 — Deploy `2ed296e`, `36e33af`, `248dc43` and `33551dd` once the owner has pushed** (the owner
-asks for the restart; the rule: `CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`,
-the detached build (~30 s, auto-memory `project-pi-deploy-swiftenv`), then `--content-digest` must
-read `records 4c0802f927fb8be4` / content hash `47888401`, schema **v20** (`fortune.cooldownSeconds`
-left, the sword's icon changed; the other four lines as before) — then `pm2 restart ROI && pm2 save`. Between the pull and
-the restart the running v19 binary has v20 content on disk: no `/reload` in that window. Tell the
-players the fortune teller's new rhythm. Check: the boot reaches `Server started and listening`; a
-card drawn now counts its wait to the next noon (or 6 h, whichever is later); a trip
-shows the road picture; a `↩️ Розвернутись` replaces the card instead of adding one; the trip's
-last card stays; a starving account can set out for the capital, and its «🌲 Дослідити» shows the
-hunger lines at the forest edge (the walk-list block on top).
+**0 — The recipe notebook, when the owner says go.** The design is approved in full: auto-memory
+`project-recipe-notebook-planned` has the eight cards and the button's own row, the toasts and the
+4th-pin modal, the journal's «📌 Рецепти (N)» screen, the counting and the silent removal. The plan
+in the same memory:
+- a `recipe_notes` table, one migration;
+- one shared price function per kind, which both the card and the journal read;
+- the card callbacks in their own controllers.
+
+Rehearse the migration off the Pi (auto-memory `reference-deploy-rehearsal`) and show the strings
+before building any copy beyond the approved samples.
 
 **1 — Answer the players.** The owner relays questions; read the answer off the code and data,
 end with a ready Ukrainian reply. Snapshots of what the players are doing: the SQL and its reading
@@ -163,7 +158,7 @@ limiter fix did not cover — read the minutes before it (`.memory/live-ops.md` 
 
 **3 — The two unanswered forms** (above): build either only on the owner's answer.
 
-**4 — Read the `fight_log` rows** — 2,469 forest fights since the door opened (10-08 21:59): the rework's first live
+**4 — Read the `fight_log` rows** — 3,033 forest fights since the door opened (14 deaths, by 10-09 01:47): the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
 rounds, max_blow, max_blow_source, special_atk_uses, stance_uses FROM fight_log ORDER BY
 created_at DESC` — a one-tap kill of an on-level beast (`rounds = 1`, a `win`, `max_blow` from a
@@ -172,8 +167,9 @@ whether players hold an upgrade back to keep the forest soft (T6 gains nothing p
 rework's own deploy is done and recorded (2026-09-28 22:11, tables verified).
 
 **5 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the starving players' block and
-the road-card block on top (after their restart) and the guild gate, then the enchant, support-button, task-ready, Vigor-reward, tarot, weapon, quest-board, two
+screen, not from running anything. **`TODO.md` → "Walk list"**: the five blocks on top, live since
+2026-10-09 01:30 — the weapon's own icon with «рівень», the named fight line, the fortune teller, the
+starving players' four, the road card — and the guild gate, then the enchant, support-button, task-ready, Vigor-reward, tarot, weapon, quest-board, two
 arena, estate and tier-2 blocks (live since 10-06; the arena ones need two accounts),
 then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
@@ -192,7 +188,7 @@ report naming its losses the way the death screen now does.
 **Deploying to the Pi:** `git push` — user-side, never you — then on the Pi
 `git pull --ff-only`, build, and **ASK before `pm2 restart ROI`** (the rule in full:
 `CLAUDE.md` § Running the bot). A content or schema change must ship the new `content/data`
-and the new binary TOGETHER — the working tree's schema handshake is at **v20** (`fortune.cooldownSeconds` gone, 2026-10-09; v19 was the enchant as the armour's ladder, v18 durability on the item, v17 the weapon ladder's gates and the lesson fee, v16 the arena's `duel` section, v15 the estate scaling; the Pi runs v19 until the next restart) and refuses a mismatch.
+and the new binary TOGETHER — the working tree's schema handshake is at **v20** (`fortune.cooldownSeconds` gone, 2026-10-09; v19 was the enchant as the armour's ladder, v18 durability on the item, v17 the weapon ladder's gates and the lesson fee, v16 the arena's `duel` section, v15 the estate scaling; the Pi runs v20 since 2026-10-09 01:30) and refuses a mismatch.
 Free pre-flight that touches neither the running bot nor the database:
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`; match
 it against the Mac BEFORE ordering the restart, which is the order the decision has to happen
@@ -346,13 +342,13 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**The working tree's baseline (2026-10-09, schema v20 — NOT on the Pi yet):** `records
+**The current baseline — on the Pi since 2026-10-09 01:30 (`de0e062`, schema v20):** `records
 4c0802f927fb8be4` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. `records` alone moved, twice:
 `fortune.cooldownSeconds` left the data and the hash (`248dc43`, `f67ba528e8f0cb9f` · `86aa6b60`),
 then the sword's icon went ⚔️ → 🗡.
 
-**The baseline on the Pi since 2026-10-07 18:34 (`f200fa5`, schema v19):** `records
+**The baseline the Pi ran from 2026-10-07 18:34 to 2026-10-09 01:30 (`f200fa5` → `94620a4`, schema v19):** `records
 cc1357a44f3c4849` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `a89b39b0`. The guild gate 5 → 30
 (`guild.json` → `foundLevelGate`) moved `records` alone; nothing in `content/data` has moved since
@@ -718,8 +714,15 @@ Every daily system keys off `GameDay` (rolls at **12:00 Kyiv**). EN + UK
 localization. **Access lives in `allowed_users`**; `/link` mints a five-minute deep link, and since
 2026-10-07 the door is OPEN (`ROI_OPEN_ACCESS=1`): every account that writes is added (source
 `open`). Guilds are founded from level 30 since 2026-10-07. A frozen poll loop ends itself
-(`PollWatchdog`, 120 s) and pm2 restarts it; the SDK's rate limiter is off. Since `2ed296e` (not
-deployed yet) a trip shows one road card with the owner's picture.
+(`PollWatchdog`, 120 s) and pm2 restarts it; the SDK's rate limiter is off. Since 2026-10-09:
+- one road card per trip;
+- hunger charged only on a step that begins at 0 Vigor, and the forest edge saying what it costs;
+- «Ви повністю відпочили» for every rest that tops out;
+- the road open at 0 Vigor;
+- the fortune teller once a game day;
+- a fight's HP line named «Ви» with the class icon;
+- each weapon's own icon;
+- «рівень» for «тир».
 
 ✅ `tuning/time.json` → `scale` is **1.0** (2026-09-09): game time is real time. Plot cycle
 1 h, passive runs 30 / 60 / 90 min, a trip to the capital 2 min. Nothing under `realTime`

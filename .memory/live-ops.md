@@ -35,6 +35,8 @@ newcomer at level 6; 6 newcomers at estate T2+; 3 accounts at 0 Vigor.
 - Restarts on 2026-10-08: 10:33:56 and 10:36:18 (asked), 11:44:04 (a freeze, the same build — the
   owner had approved freeze restarts with the watchdog), 11:45:37 (`ee7437e`), 11:47:58 (the
   watchdog), 11:55:36 (`94620a4`). pm2's count reads 8.
+- Restart on 2026-10-09: 01:30:47 (`de0e062`, the deploy of the 10-08/09 changes, asked). pm2's
+  count reads 9. Three minutes later: no `[WATCHDOG]`, `Code: 400` at 913, three sockets to Telegram.
 
 ## What are the players doing — the activity snapshot
 
@@ -94,7 +96,7 @@ The questions that paid off on the first evening:
   Free rest makes Vigor optional for them — a balance question recorded, not acted on.
 - Registration: Iren at step 6 (the estate name) since 10-07 18:35, an unnamed account at step 2
   (the nickname) since 10-08 00:27.
-- What the owner decided the same evening (built 2026-10-08, live after the restart): the hunger
+- What the owner decided the same evening (live since 2026-10-09 01:30): the hunger
   tick only on a step that BEGINS at 0 Vigor; «Ви повністю відпочили» for every rest that tops
   out, a tap's included; the road no longer refuses 0 Vigor; the forest edge explains hunger (the
   food lines built with it were removed on 10-09, the owner's word). Chosen but not built — the owner left the form unanswered: eating
@@ -107,8 +109,8 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | Question | Answer | Source |
 |---|---|---|
 | HP regen at the estate | 10% of the effective max HP per real minute, so 0 → full in 10 min; ONLY at the estate (forest, road, capital: none, and the clock is cleared there); computed on the next tap or the watchman's sweep; partial minutes are kept | `tuning/vigor.json` → `healing.regenPerMinute`, `HealingService.tick` |
-| The full-HP notice did not come | Until the restart after 2026-10-08 it fired only when the watchman's sweep made the fill, so a tap of the player's own filled silently. Since then every rest that tops out is announced within a minute while the player is still at the estate (a fill by food is not) | `RestNotificationService.notifyFullHp`, `RestedToFull` |
-| Vigor for the road | None — only 2 real minutes; 0 HP refuses setting out, and until the restart after 2026-10-08 so did 0 Vigor (no longer); turning back costs the part walked | `TravelService.start`, `tuning/time.json` → `travelMinutes` |
+| The full-HP notice did not come | Until 2026-10-09 01:30 it fired only when the watchman's sweep made the fill, so a tap of the player's own filled silently. Since then every rest that tops out is announced within a minute while the player is still at the estate (a fill by food is not) | `RestNotificationService.notifyFullHp`, `RestedToFull` |
+| Vigor for the road | None — only 2 real minutes; 0 HP refuses setting out, and until 2026-10-09 01:30 so did 0 Vigor (no longer); turning back costs the part walked | `TravelService.start`, `tuning/time.json` → `travelMinutes` |
 | «💨 Швидкий маневр» | The archer's Defend: dodge ×1.5 for that round (DEF unchanged) and a knife for 15% of a clean hit (`defendChipFraction` 0.3 × `archerChipMultiplier` 0.5); 1 Vigor against an attack's 2. Warrior «🛡 Парирувати»: DEF ×2 + 30%; mage «🌀 Магічний бар'єр»: no chip, landed damage ×0.4 | `CombatController` defend branch, `tuning/combat.json` → `defend` |
 | A broken weapon | Keeps 50% of its stats (floored; a Swift literal, not tuning); broken armour gives 0. Wear per fight: win −1, flee −2, death −3 | `EquipmentService.contributedStats`, `tuning/economy.json` → `gear.wearBudget` |
 | Repair prices | Armour: price × 0.5 × missing ÷ 50, min 1 — hood 1/pt (50 full), boots 1.6 (80), breeches 2.5 (125), jerkin 3 (150), set 405; each armour repair shaves the max by 1; the enchant does not change the price. Weapon: 1 🪙 a point, no shave (30 … 180 by tier) | `MasterCatalog.repairCost`, `weaponRepairCost`, `master.json` → `repairCostFraction` |
@@ -118,7 +120,7 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | A 40-unit lot and a 20-slot bag | Not buyable: a lot is bought whole, into the bag only (no warehouse in the capital); starter bag 25, workshop upgrades to 35/45/60/75/90; pulling a lot back needs the room too. Advice: list in lots of 10–20 | `MarketService.buyListing` |
 | The developer's bag | Unlimited for `developerUsers` (Космос, 398698463) on every path into the bag; the warehouse is not exempt. So "bag full" cannot be reproduced on that account | `InventoryEntry.canAccept` / `add` |
 | Guilds | Founded from level 30 for 500 🪙 since 2026-10-07; joining by invite at any level | `guild.json` |
-| When the next tarot card comes | At the later of the drawn card's 6 hours and the next 12:00 Kyiv: drawn at 22:00 → 12:00; at 11:00 → 17:00, then the following noon. So once a game day, never two cards at once. Since the restart after 2026-10-09; a flat 24 h before | `User.fortuneAvailableAt` |
-| Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until the restart after 2026-10-08 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
+| When the next tarot card comes | At the later of the drawn card's 6 hours and the next 12:00 Kyiv: drawn at 22:00 → 12:00; at 11:00 → 17:00, then the following noon. So once a game day, never two cards at once. Since 2026-10-09 01:30; a flat 24 h before | `User.fortuneAvailableAt` |
+| Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until 2026-10-09 01:30 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.
