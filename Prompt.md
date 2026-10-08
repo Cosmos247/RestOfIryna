@@ -54,11 +54,11 @@ level gate — so a cheaper enchant, or anything stronger, still needs the re-so
 
 | | |
 |---|---|
-| HEAD | **the fortune teller once a game day** (this commit, 2026-10-09) on top of **`1c310d8`** (a hash fill), **`88156d4`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `88156d4`, `1c310d8` and this commit are not pushed** — push is the owner's |
+| HEAD | **this hash fill** on top of **`a582dbf`** (the fortune teller once a game day, 2026-10-09), **`1c310d8`** (a hash fill), **`88156d4`** (the starving players' four, 2026-10-08 late), **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42`, `88156d4`, `1c310d8`, `a582dbf` and this hash fill are not pushed** — push is the owner's |
 | running on the Pi | **`94620a4`**, restarted **2026-10-08 11:55:36**, up ~10 h with no freeze by 21:59 — schema **v19**, content hash **`a89b39b0`**, `records cc1357a44f3c4849` (guilds from level 30); `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-08 11:55`, `## Deploy — 2026-10-07 18:34`, `## Deploy — 2026-10-06 21:39`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-08 21:59 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`88156d4`**: Swift, three uk/en strings added and one deleted. **This commit**: Swift and `content/data` — content schema **v20**, `records f67ba528e8f0cb9f`, content hash `86aa6b60`. None has a migration. All three need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` — the pull brings the v20 content and the build the v20 binary together, which the handshake requires (the road picture alone would show at the pull; the code would not) |
+| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **`88156d4`**: Swift, three uk/en strings added and one deleted. **`a582dbf`**: Swift and `content/data` — content schema **v20**, `records f67ba528e8f0cb9f`, content hash `86aa6b60`. None has a migration. All three need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` — the pull brings the v20 content and the build the v20 binary together, which the handshake requires (the road picture alone would show at the pull; the code would not) |
 
 **Restarts since the backlog went live:** 2026-10-06 21:39 (everything since `8ae6772`, five
 migrations, the tables checked), 2026-10-07 18:34 (the open door and the guild gate), and on
@@ -107,7 +107,7 @@ polish plus **player support** (`.memory/live-ops.md`, auto-memory `project-publ
 
   **A question the owner leaves unanswered means nothing is built for it**, never a default
   (auto-memory `feedback-unanswered-means-nothing`).
-- **The fortune teller once a game day** (this commit, 2026-10-09): the next card waits for the
+- **The fortune teller once a game day** (`a582dbf`, 2026-10-09): the next card waits for the
   LATER of the drawn card's 6 h and the next 12:00 — 22:00 → 12:00, 11:00 → 17:00 — in
   `User.fortuneAvailableAt`, the one rule for the screen, the draw and the watchman. The 24 h
   `fortune.cooldownSeconds` is gone (content schema v20). A card drawn between noon and 06:00 comes
@@ -131,7 +131,7 @@ not done".
 
 ### Next action
 
-**0 — Deploy `2ed296e`, `88156d4` and the fortune commit once the owner has pushed** (the owner
+**0 — Deploy `2ed296e`, `88156d4` and `a582dbf` once the owner has pushed** (the owner
 asks for the restart; the rule: `CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`,
 the detached build (~30 s, auto-memory `project-pi-deploy-swiftenv`), then `--content-digest` must
 read `records f67ba528e8f0cb9f` / content hash `86aa6b60`, schema **v20** (`fortune.cooldownSeconds`
@@ -335,7 +335,7 @@ from the manor, so no roster or band change moves it. The tier-2 expedition mode
 put today's game at ~600 days to L40 with real gear (`.memory/rebalance.md`). What each phase
 taught: `.memory/rebalance.md`.
 
-**The working tree's baseline (2026-10-09, schema v20, the fortune commit — NOT on the Pi yet):**
+**The working tree's baseline (2026-10-09, schema v20, `a582dbf` — NOT on the Pi yet):**
 `records f67ba528e8f0cb9f` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `86aa6b60`. `records` alone moved:
 `fortune.cooldownSeconds` left the data and the hash together.

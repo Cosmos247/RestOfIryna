@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-09)* **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
+- *(this hash fill, 10-09)* **`a582dbf`'s hash fill** — records only.
+- `a582dbf` (10-09) **the fortune teller once a game day** — the next card waits for the LATER of the drawn card's 6 h and the next 12:00 (22:00 → 12:00, 11:00 → 17:00); `User.fortuneAvailableAt` the one rule, read by the screen, the draw and the watchman (the draw repeated a 24 h arithmetic of its own); `fortune.cooldownSeconds` gone — content schema v20, `records` → `f67ba528e8f0cb9f`, content hash → `86aa6b60`; «🔮» and «📜» falling on the same minute go as one message, cards first. No migration, no locale string.
 - `1c310d8` (10-08) **`88156d4`'s hash fill** — records only.
 - `88156d4` (10-08) **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
 - `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
@@ -481,7 +482,7 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
-## Session — 2026-10-09 (the fortune teller once a game day)
+## Session — 2026-10-09 (the fortune teller once a game day) — `a582dbf`
 
 The owner's proposal: «оновлення карти о 12, або після закінчення лічильника 6 годин … якщо взяв
 о 10 вечора то буде доступно о 12 дня, а якщо об 11 ранку, то о 5 вечора. Але лічильник дії карти

@@ -2007,7 +2007,7 @@ what shipped when, newest first.
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
 Telegram. **Every block below is LIVE and unwalked** except the three on top — the fortune
-teller, the starving players' four (`88156d4`) and the road card (`2ed296e`) — which wait for
+teller (`a582dbf`), the starving players' four (`88156d4`) and the road card (`2ed296e`) — which wait for
 their restart. The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
@@ -2016,7 +2016,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-09 — the fortune teller once a game day (NOT committed, NOT deployed):** an
+**Added 2026-10-09 — the fortune teller once a game day (`a582dbf`, NOT deployed):** an
 account in the capital with 10 🪙.
 - Draw a card in the evening (say 22:00): «Нова карта через: …» counts to 12:00, not to 22:00
   tomorrow.

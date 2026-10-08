@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-09 — the fortune teller once a game day** (NOT committed yet, NOT deployed; needs `pm2
+**2026-10-09 — the fortune teller once a game day** (`a582dbf`, NOT deployed; needs `pm2
 restart ROI` — Swift and `content/data`, content schema **v20**; no migration, no locale string).
 The owner's rule: the next card waits for the LATER of the drawn card's 6 h and the next 12:00 —
 drawn at 22:00, the next at 12:00; at 11:00, at 17:00, and then not before the following noon. A
