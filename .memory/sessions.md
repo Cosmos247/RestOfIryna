@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this sync pass, 10-08)* **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
+- *(this commit, 10-08)* **the starving players' four** — the hunger tick only on a step that BEGINS at 0 Vigor (`rollStep` reads `isStarving` before the drain); «Ви повністю відпочили» for every rest that tops out, a tap's fill included (`RestedToFull`, noted by `HealingService.tick`, announced by the watchman at the estate); the road no longer refuses 0 Vigor (a May guard that locked a starving player out of the capital); the forest edge explains hunger and names the food in the bag (`ExplorationController.modePrompt`). Swift and three uk/en strings, `travel.cannot_start.no_vigor` deleted; no migration, the digest unmoved. Two picked features not built — their form was left unanswered.
+- `61b3f42` (10-08) **the public test's records** — the player-support findings, `.memory/live-ops.md`, the emblem candidates (`content/lore.md` §14), every doc brought to the deployed state (status/TODO markers, INDEX, Prompt reoriented), the hunger and full-HP gaps recorded as open; `2ed296e`'s hash fill.
 - `2ed296e` (10-08) **one road card per trip** — the owner's road picture on setting out, turning back and "how long is left", each new card replacing the trip's last (`sendRoadCard`); «поїж» → «поїжте». Carries the record of the 11:55 deploy.
 - `94620a4` (10-08) **the real cause: the SDK's rate limiter, now off** — DEPLOYED 10-08 11:55 — `LimiterAsync` deadlocks when its last tick releases exactly `maxRequests` waiters; `apiRequestLimitLongPolling: nil`. Swift only.
 - `ee7437e` (10-08) **the poll watchdog and HTTP/1.1** — DEPLOYED 10-08 11:45 (froze at boot; HTTP/2 was the first suspect, cleared by `94620a4`) — the bot froze twice in 13 min (`online`, no Telegram socket, queue growing); `PollWatchdog` exits after 120 s without a completed `getUpdates` so pm2 restarts it, and the Telegram client is `.http1Only` with connect 10 s / read 60 s. Swift only. Carries the record of the 10-07 18:34 deploy too.
@@ -477,6 +478,40 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
   `RestNotificationService`, the 3 h/day passive budget and the warehouse cap on harvest.
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
+
+## Session — 2026-10-08, late (the starving players: four changes the owner chose)
+
+The owner opened with «Починаємо виправляти баги і додавати пропозиції від нових гравців». The
+Pi was healthy (`94620a4` since 11:55, no new `[WATCHDOG]`, `Code: 400` at 913). A fresh snapshot
+(22:20) moved the priorities: four active newcomers at 0 Vigor had fought most of their fights
+STARVING (DIABLO 125 of 184, Легіон 92/130, Inokentiy 112/320, Samolan 28/59), DIABLO with 75
+Vigor of berries and nuts in the bag and Samolan with 54. No screen says what «😵 Голодні» costs
+or where «🍴 Зʼїсти» is. Free rest makes Vigor optional for them; recorded, not raised.
+
+Two quizzes, then a third about one hole. The owner chose:
+- **the hunger tick only on a step that BEGINS at 0 Vigor** (over "a step not paid in full") —
+  `rollStep` reads `isStarving` before the drain;
+- **«Ви повністю відпочили» for every rest that tops out** — `HealingService.tick` notes each fill
+  in `RestedToFull`, and the watchman announces within a sweep at the estate. This replaced the
+  10-08 proposal of a "seen damaged" set, which would also have announced a fill by food;
+- **the road open at 0 Vigor** — the owner skipped that question in the first quiz and chose it
+  in the second, through the "no food anywhere" line («…а їжу продає Крамар у столиці»);
+- **the forest edge explaining hunger**, «Лише узлісся» (over the step that runs out, or every
+  starving step): the cost from the tuning, plus the bag's food with the path to «🍴 Зʼїсти».
+
+Two picked features had their FORM left unanswered: the warehouse's Eat button layout and the
+estate-name hint's wording. I announced I would take my own options. The owner: «Не бери свої
+варіанти. На питаннях без відповіді нічого робити не треба». Neither was built (auto-memory
+`feedback-unanswered-means-nothing`). That left a hole in the answered work: the warehouse
+variant of the hunger line ended in «🍴 Зʼїсти», a button that no longer exists. One question
+settled it: no food line when the food is only in the warehouse. My earlier sample also missed a
+hop — the warehouse sits in «🏠 Дім». Partial market lots were offered and not chosen.
+
+Built: Swift (`ExplorationService`, `HealingService` + `RestedToFull`, `RestNotificationService`,
+`TravelService`, `CapitalController`, `ExplorationController.modePrompt`, `VigorService.vigorValue`),
+three uk/en strings added and `travel.cannot_start.no_vigor` deleted. Clean build with no warnings,
+395 tests, `validate --strict` 0/0, the digest unmoved (`records cc1357a44f3c4849`, content hash
+`a89b39b0`). No migration. Rendered the three new uk lines against the approved sample: identical.
 
 ## Session — 2026-10-07 → 10-08 (answering the public test's players) and the sync pass
 

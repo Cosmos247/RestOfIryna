@@ -61,16 +61,20 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Drains (`tuning/vigor.json` → `drain`): a step 2, an attack 2, a defend 1, a flee 3, a
   passive round 2. `walkRoomDoubleSpeed` (4) is a dead knob — no double-speed walk exists
 - Starvation (Vigor 0): stats −25% and an HP drain per step (5% of max HP,
-  `tuning/vigor.json` → `starvation.hpDrainPercent`); the road to the capital is refused
-  outright (the GDD's "travel time doubles" was never built). It is charged on EVERY step once
-  Vigor is 0, whatever else the step rolled, and is **always printed on its own line** —
-  `rollStep` carries it on `StepResult`, never inside an event's number. See
+  `tuning/vigor.json` → `starvation.hpDrainPercent`); the GDD's "travel time doubles" was never
+  built, and since 2026-10-08 the road does not refuse 0 Vigor either. It is charged on EVERY
+  step that BEGINS at 0 Vigor, whatever else the step rolled, and is **always printed on its own
+  line** — `rollStep` carries it on `StepResult`, never inside an event's number. See
   `project-damage-sources-named-separately`.
-- ⚠️ **Open defect (found 2026-10-08, fix awaiting the owner):** `rollStep` drains the step's
-  Vigor FIRST and checks `isStarving` after, so the step that spends the LAST Vigor (2 → 0) is
-  charged the hunger tick too, though it was paid in full — the comment above that line says
-  "when vigor is already at 0". A tester reported it at 129 max HP (−6); the 2026-09-12 «корінь
-  −22» death was the same defect. Auto-memory `project-starvation-tick-on-the-paying-step`.
+- **The paying step is fed** (fixed 2026-10-08): `rollStep` read `isStarving` AFTER the drain,
+  so the step that spent the last Vigor (2 → 0) was charged the tick though paid in full; it
+  reads it before the drain now, so a half-paid step (1 → 0 on a cost of 2) is not charged
+  either. A tester reported −6 at 129 max HP; the 2026-09-12 «корінь −22» death was the same
+  defect. Auto-memory `project-starvation-tick-on-the-paying-step`.
+- **The forest edge explains hunger** (2026-10-08): at 0 Vigor the mode picker adds what hunger
+  costs (from the tuning) and the food in the bag with the path to «🍴 Зʼїсти»; food only in the
+  warehouse gets no line, none anywhere points at the forest and the Trader
+  (`ExplorationController.modePrompt`). Nowhere else in the forest, on the owner's word.
 - **Food is priced, not picked** (2026-09-18): a cooked dish restores the trader buy-price of
   its ingredients in Vigor and a quarter of that in HP, so the ladder runs 10 → 72 Vigor. Only
   berries (4), nuts (5) and a duck egg (3) are edible as found; potato and raw meat are not.
@@ -95,10 +99,11 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   two-minute road at five seconds (fixed 2026-09-11). Turns are
   symmetric — each costs only its own leg, so oscillating converges rather than compounds.
 - **The road costs no Vigor** — only time (2 real minutes, `tuning/time.json` → `travelMinutes`),
-  but `TravelService.start` refuses a player at 0 Vigor or 0 HP. So a starving player at the
-  estate cannot walk to the capital where food is sold; the exits are eating from the bag (raw
-  berries +4, nuts +5, a duck egg +3), the warehouse (withdraw first — food is eaten only from the
-  bag), the kitchen, or a level-up (2026-10-08, seen live on the public test's first evening).
+  and since 2026-10-08 `TravelService.start` refuses only a player at 0 HP. The 0-Vigor refusal
+  dated from May, when Vigor still refilled itself; after Phase 8E it kept a starving player from
+  the capital, where food is sold and jobs and decrees pay Vigor (seen live on the public test's
+  first evening), and kept one already in town from coming home. Food is still eaten only from
+  the bag — the warehouse needs a withdrawal first.
 - **One road card per trip** (2026-10-08): setting out, every `↩️ Розвернутись` and every "how
   long is left" is `Assets/travel/road.jpg` with a new caption; `CapitalController.sendRoadCard`
   sends the new card and deletes the trip's previous one, and arrival forgets the id so the last

@@ -16,7 +16,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Localization](localization.md) — Lingo setup, JSON structure, «ви», player gender, item gender, the UA glossary
 
 ## Operations
-- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, and a verified player FAQ with sources
+- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, and a verified player FAQ with sources
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest
@@ -50,10 +50,13 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   owner's screen art, five migrations, the tables checked after — `sessions.md` →
   `## Deploy — 2026-10-06`); the 2026-10-07 18:34 restart took the open door and the guild gate;
   the 2026-10-08 restarts the freeze fixes.
-- **Waiting on the owner** (`TODO.md` → "Open, decided but not done", top block): two fixes
-  proposed and unanswered — the hunger tick on the step that spends the last Vigor, and the
-  full-HP notice a tapping player never gets — and two ideas not yet asked (a starving player's
-  warehouse food; partial market lots). Below them, the older open threads: the arena's
+- **Built 2026-10-08 late, not deployed:** the starving players' four — the hunger tick only on a
+  step that begins at 0 Vigor, «Ви повністю відпочили» for every rest that tops out, the road open
+  at 0 Vigor, the forest edge explaining hunger ([live-ops.md](live-ops.md) → "Day two").
+- **Waiting on the owner** (`TODO.md` → "Open, decided but not done", top block): two features
+  chosen with their form unanswered, so not built — eating straight from the warehouse, and a hint
+  under the estate-name prompt; a question left unanswered builds nothing. Below them, the older
+  open threads: the arena's
   matchmaking and class gap, the weapon ladder's leftovers, the 10-04 tarot/watchman items, the
   10-05 durability items and the 10-06 armour-ladder items.
 - **Parked: the class sets** ([class-sets-concept.md](class-sets-concept.md)). The owner asked

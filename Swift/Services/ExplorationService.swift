@@ -68,7 +68,7 @@ public enum StepOutcome: Sendable {
 public struct StepResult: Sendable {
     public let outcome: StepOutcome
     /// HP hunger took this step, already deducted from `user.hp`. Zero unless
-    /// the walk drained vigor to 0, or it was already there.
+    /// the step began at 0 Vigor — the step that spends the last of it is fed.
     public let starvationHpLost: Int
 
     public init(outcome: StepOutcome, starvationHpLost: Int) {
@@ -179,9 +179,9 @@ public enum ExplorationService {
 
     // MARK: - Rolling a step
 
-    /// Roll one step: drain vigor, apply starvation HP if starving, then
-    /// produce an outcome. Caller applies the outcome to DB / UI separately
-    /// (loot is already added to inventory by this function though).
+    /// Roll one step: drain vigor, apply starvation HP if the step began
+    /// starving, then produce an outcome. Caller applies the outcome to DB / UI
+    /// separately (loot is already added to inventory by this function though).
     ///
     /// `priorVisits` picks the weight tier: 0 = fresh, 1 = reduced, 2+ = bare
     /// (only `.nothing` can fire). The controller passes the room's current
@@ -190,6 +190,15 @@ public enum ExplorationService {
     /// The hunger tick rides on the returned `StepResult`, never inside an
     /// event's own number — see `StepResult`.
     public static func rollStep(for user: User, kmDepth: Int, priorVisits: Int = 0, mode: ExplorationMode = .active, on db: any Database) async throws -> StepResult {
+        // Hunger is the state a step BEGINS in, so it is read before the step
+        // pays for itself. Read after the drain (until 2026-10-08), the step
+        // that spent the last Vigor — paid in full, 2 → 0 — was charged for
+        // hunger as well: a public-test player at 2/120 lost 6 HP on a step they
+        // had paid for, and on 2026-09-12 that tick finished a level-20 archer
+        // who would have walked on with 3 HP. A half-paid step (1 Vigor against
+        // a cost of 2) is the last fed one too; the step after it is not.
+        let beganStarving = VigorService.isStarving(user)
+
         // Vigor drain for the walk itself.
         _ = VigorService.drain(user, action: .walkRoom)
 
@@ -203,8 +212,8 @@ public enum ExplorationService {
         // returned from — see `User.bankDepth`.
         user.recordStep()
 
-        // Starvation HP tick happens every room when vigor is already at 0.
-        let starvationLoss = VigorService.applyStarvationHPLoss(user)
+        // Starvation HP tick: every step that began at 0 Vigor.
+        let starvationLoss = beganStarving ? VigorService.applyStarvationHPLoss(user) : 0
 
         // Pick weights by tier.
         let tier = weights(forPriorVisits: priorVisits, mode: mode)

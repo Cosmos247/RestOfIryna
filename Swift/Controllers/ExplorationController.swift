@@ -199,6 +199,35 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: markup)
     }
 
+    /// The forest edge's question — and, for a player at 0 Vigor, what hunger
+    /// costs (2026-10-08).
+    ///
+    /// On the public test's second evening four of the five starving players
+    /// had fought most of their fights at 0 Vigor, and no screen said what
+    /// «😵 Голодні» costs. The edge is where a starving player decides to walk
+    /// out anyway, so the answer is here and nowhere else in the forest (the
+    /// owner's pick, over the step that runs out and over every starving step).
+    ///
+    /// The cost alone. The first build also named the food in the bag, with the
+    /// path to its Eat button, or — with none anywhere — the forest and the
+    /// Trader; the owner had both lines taken out before the deploy
+    /// (2026-10-09). The percentages are the tuning table's, so the sentence
+    /// cannot drift from what it describes.
+    fileprivate static func modePrompt(for user: User, lingo: Lingo) -> String {
+        let locale = user.locale
+        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
+        guard VigorService.isStarving(user) else { return prompt }
+
+        // Whole percents: both are 0.05 and 0.25 today, and a sentence that
+        // quotes "7.5%" is a retune nobody has asked for yet.
+        func percent(_ fraction: Double) -> String { "\(Int((fraction * 100).rounded()))%" }
+        let hunger = "😵 " + lingo.localize("exploration.hunger.state", locale: locale, interpolations: [
+            "hp": percent(VigorService.starvationHPDrainPercent),
+            "stats": percent(VigorService.starvationStatPenalty)
+        ])
+        return prompt + "\n\n" + hunger
+    }
+
     /// Mode picker: inline keyboard with [Reconnaissance] / [Expedition].
     /// Player stays in MainController's routerName so tapping any main-menu
     /// button (Profile, Estate, Capital, Inventory, Settings) works
@@ -216,7 +245,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         let lingo = context.lingo
         let locale = context.session.locale
-        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
+        let prompt = Self.modePrompt(for: context.session, lingo: lingo)
         let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
         let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
@@ -280,7 +309,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     fileprivate func editToModePicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
         let locale = session.locale
-        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
+        let prompt = Self.modePrompt(for: session, lingo: lingo)
         let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
         let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [

@@ -25,9 +25,9 @@
 //  Each notification needs to fire ONCE. Three of them carry a flag for it —
 //  `fortuneReadyNotified`, `questRolloverStamp`, and the ready markers on the
 //  progress rows (`QuestProgress.readyNotified`,
-//  `KingProgress.readyNotifiedIndex`) — and HP needs none, because
-//  the condition it announces is its own guard: a player at full HP is not a
-//  player who is about to reach it.
+//  `KingProgress.readyNotifiedIndex`) — and HP carries an in-memory mark
+//  instead (`RestedToFull`): the tick that makes a fill notes it, and the
+//  sweep that announces it takes it.
 //
 
 import Fluent
@@ -73,6 +73,10 @@ public enum RestNotificationService {
         // sweep has to apply the same rule the dispatcher does or it would
         // heal — and then announce — the players it is meant to leave alone.
         let onTheRoad = Set(try await TravelState.query(on: db).all().compactMap { $0.$user.id })
+        // Every rest that topped out since the last sweep, the players' own
+        // taps included. Taken once, here, so a fill this sweep does not visit
+        // (an account still in registration) is dropped, not announced later.
+        let restedSinceLastSweep = await RestedToFull.shared.takeAll()
 
         for row in users {
             // Mutate the instance the dispatcher is holding, if there is one:
@@ -83,7 +87,9 @@ public enum RestNotificationService {
             let canRest = HealingService.canRest(user,
                                                  inExpedition: onTheTrail.contains(userId),
                                                  onTheRoad: onTheRoad.contains(userId))
-            await notifyFullHp(user: user, canRest: canRest, db: db, bot: bot, lingo: lingo)
+            await notifyFullHp(user: user, canRest: canRest,
+                               filledSinceLastSweep: restedSinceLastSweep.contains(userId),
+                               db: db, bot: bot, lingo: lingo)
             await notifyFortuneReady(user: user, db: db, bot: bot, lingo: lingo, now: now)
             await notifyQuestRollover(user: user, db: db, bot: bot, lingo: lingo, now: now)
             await notifyTasksReady(user: user, db: db, bot: bot, lingo: lingo)
@@ -92,16 +98,31 @@ public enum RestNotificationService {
 
     // MARK: - Full HP
 
-    /// Advance the rest clock and announce the moment it tops out.
+    /// Advance the rest clock, and announce a rest that topped out — once,
+    /// within a sweep of the fill, whichever call made it.
     ///
     /// The regen itself goes through `HealingService.tick`, never a second
     /// copy of the arithmetic — so the watchman and the player's next tap can
-    /// only ever agree. A player who fills up WHILE tapping gets no message,
-    /// and should not: they are looking at the number.
-    private static func notifyFullHp(user: User, canRest: Bool, db: any Database, bot: TGBot, lingo: Lingo) async {
-        guard user.hp < user.effectiveMaxHp, canRest else { return }
-        guard (try? await HealingService.tick(user, canRest: canRest, on: db)) != nil else { return }
-        guard user.hp >= user.effectiveMaxHp else { return }
+    /// only ever agree. Until 2026-10-08 only a fill this sweep made was
+    /// announced, on the theory that a player who fills up while tapping is
+    /// looking at the number; most estate screens show no HP, and a new player
+    /// waiting to heal taps around exactly there. `filledSinceLastSweep` is the
+    /// tick's own record of the fills it made between sweeps (`RestedToFull`).
+    ///
+    /// Only while the player can still rest: one who topped out and walked
+    /// straight out of the gate is not told about a rest already left behind.
+    private static func notifyFullHp(user: User, canRest: Bool, filledSinceLastSweep: Bool,
+                                     db: any Database, bot: TGBot, lingo: Lingo) async {
+        var filled = filledSinceLastSweep
+        if canRest, user.hp < user.effectiveMaxHp,
+           (try? await HealingService.tick(user, canRest: canRest, on: db)) != nil,
+           user.hp >= user.effectiveMaxHp {
+            // This sweep's own fill. The tick noted it too, and that mark is
+            // this same notice — taken now, or the next sweep repeats it.
+            if let userId = user.id { _ = await RestedToFull.shared.take(userId) }
+            filled = true
+        }
+        guard filled, canRest, user.hp >= user.effectiveMaxHp else { return }
 
         let locale = user.locale
         let body = lingo.localize("rest.full.notification", locale: locale, interpolations: [

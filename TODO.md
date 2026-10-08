@@ -2006,14 +2006,28 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** except the road-card block on top, which
-waits for its restart (`2ed296e`). The guild-gate block went live at the 2026-10-07 18:34
+Telegram. **Every block below is LIVE and unwalked** except the two on top — the starving
+players' four and the road card (`2ed296e`) — which wait for their restart. The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
 the armour ladder), the 2026-10-05 durability and enchant blocks, the 2026-10-04 support-button,
 task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board block, the two
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-08 — the starving players' four (NOT committed, NOT deployed):** an account at
+the estate, damaged, with Vigor to spend down.
+- Walk out with exactly 2 Vigor and step: 🍖 2 → 0 and NO «🥀 Голод…» line; the next step has it.
+- At 0 Vigor tap «🌲 Дослідити»: under «На узліссі ви обираєте свій шлях:» the line «😵 Ви голодні:
+  кожен крок забирає 5% ОЗ, а АТК і ЗАХ нижчі на 25%.», then — food in the bag — «🍴 У сумці є їжа
+  на N Снаги: 🎒 Сумка → 🍖 Їжа → 🍴 Зʼїсти.»; food only in the warehouse — no second line; none
+  anywhere — «🍴 Їжі немає ні в сумці, ні на складі: …Крамар у столиці.» With Vigor above 0 the
+  picker reads as before. «🏕 Експедиція» → «🔙 Назад» redraws the same lines.
+- At 0 Vigor set out for the capital: the trip starts (no «Сил на дорогу не лишилось»); in town at
+  0 Vigor, «🏡 До маєтку» starts the trip home.
+- Rest at the estate while tapping around (plots, warehouse, bag): within a minute of the fill
+  «❤️ Ви повністю відпочили — …» arrives once. Fill up, then walk straight into the forest: no
+  notice. Eat a dish to full HP: no notice.
 
 **Added 2026-10-08 — one road card per trip (`2ed296e`, NOT deployed):** any account.
 - Set out for the capital: the road picture with «🐎 Ви підганяєте коня до столиці…».
@@ -2023,7 +2037,8 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 - Open the bag mid-road, then `↩️ Розвернутись` from there: the new card lands at the bottom.
 - Arrive: the capital square picture (or the estate's text line), and the trip's last road card
   still above it. Set out again: that old card must NOT disappear.
-- At 0 Vigor try to set out: «…Спершу поїжте.»
+- ~~At 0 Vigor try to set out: «…Спершу поїжте.»~~ — the refusal is gone with the starving
+  players' change above: 0 Vigor sets out like any other.
 
 **Added 2026-10-07 — guilds from level 30 (`f200fa5`, live since 18:34):** an account below
 level 30 taps «Заснувати гільдію» → «❌ Щоб заснувати гільдію, потрібен рівень 30.»; joining by
@@ -2640,32 +2655,32 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-**From the public test, 2026-10-07/08** — found answering players; the first two have a fix
-proposed and await the owner's word:
-- **The hunger tick fires on the step that spends the last Vigor.** `ExplorationService.rollStep`
-  drains first and asks `isStarving` after, so a step paid in full (2 → 0) also costs 5% of max
-  HP — the comment over it says "when vigor is already at 0". A tester at 129 max HP read
-  «❤️ −6 ОЗ» for hunger with 2/120 Vigor; the 2026-09-12 «корінь −22» death (a level-20 archer,
-  most likely Nerif) was the same defect — without it they would have lived on 3 HP. Proposed:
-  read `isStarving` before the drain (so 1 Vigor → 0 on a 2-cost step is not charged either).
-  Affects active and passive walking alike. Auto-memory `project-starvation-tick-on-the-paying-step`.
-- **«Ви повністю відпочили» never comes to a player who taps while healing.** The watchman
-  announces only a fill IT computed; a tap's own `HealingService.tick` fills silently, on any
-  screen — most show no HP. A new player waiting at the estate taps around and misses it
-  (Inokentiy's report). Proposed: the sweep remembers who it saw damaged at the estate and
-  announces the fill whoever computed it. Auto-memory `project-full-hp-notice-gap`.
-- **Starving new players do not know their food is in the warehouse.** On the first evening 6 of
-  10 newcomers sat at 0 Vigor; four held 30–170 Vigor of food in the warehouse, which is eaten only
-  from the bag, and 0 Vigor also refuses the road to the capital where food is sold. Offered: a
-  hint on the starving status, or eating from the warehouse. Not asked yet.
+**From the public test, 2026-10-07/08** — found answering players. On 2026-10-08 the owner
+decided in three quizzes, and four changes were BUILT (not committed, not deployed —
+the walk-list block on top): the hunger tick only on a step that begins at 0 Vigor, «Ви повністю
+відпочили» for every rest that tops out, the road open at 0 Vigor, and the forest edge explaining
+hunger with the food in the bag. **The owner's rule from that evening: a question left unanswered
+means nothing is built for it** — never fill one in with a default (auto-memory
+`feedback-unanswered-means-nothing`).
+- **Eating straight from the warehouse — chosen, form unanswered.** The owner picked it, then left
+  the layout question (the «🍴 Зʼїсти» button in the row of ⬆️/⬇️/✏️, or beside the name)
+  unanswered, so nothing was built. Until it is, the forest edge prints no food line when the food
+  is only in the warehouse (the owner's pick: the warehouse has no Eat button).
+- **A hint under the estate-name prompt — chosen, wording unanswered.** Two wordings were offered
+  («✍️ Напишіть назву у відповідь — від 2 до 30 символів.» / «✍️ Надішліть назву звичайним
+  повідомленням: від 2 до 30 символів.»), neither picked. Still there at 22:20 on 10-08: Iren at
+  step 6 since 10-07 18:35, and an unnamed account at step 2 (the nickname) since 10-08 00:27.
 - **A market lot is bought whole.** A 40-unit lot cannot be bought by a 25-unit starter bag even
-  when empty. Offered: a partial buy (as much as fits, the rest stays listed). Not asked yet.
+  when empty. Offered on 2026-10-08 (a partial buy: as much as fits, the rest stays listed) and not
+  chosen.
+- **Starving is how the newcomers play** (observed 2026-10-08 22:20, no change): four active
+  newcomers fought most of their fights at 0 Vigor (DIABLO 125 of 184), two with 54–75 Vigor of
+  food in the bag. Walk out starving, fight at −25%, walk home, rest 10 minutes for free: free rest
+  makes Vigor optional for them. A balance question for the owner, not raised as a change.
 - **New players die at km 3–10 on level 1–3** (5 of 10 had died at least once by 21:19 on the first
   evening, 7 of 10 by midnight): the eagle at km 3–7 and the fox at km 9–10 kill healthy players;
   the km 1–2 deaths were players walking out starving on 3–5 HP. No change made; the ready answer
   for players is "stay within 2–3 km until level 3, never walk out at 0 Vigor".
-- One newcomer (@chemerina) stopped at registration step 6 — the estate name, which must be sent as
-  a plain message — and never came back. Watch for more; a hint under that prompt may be due.
 
 **From the 2026-10-06 pre-deploy audit** of `8ae6772..HEAD` (`.memory/sessions.md`). Its four
 fixes are `f2ae7ea`; these were found, verified and left:

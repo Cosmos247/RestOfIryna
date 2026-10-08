@@ -363,7 +363,7 @@ plain); `capital.blocked_by_expedition` passes `gendered: true` through
 `capital.tavern.gamble.ready_prompt` ("Кидаємо?"), `kitchen.alert.not_learned`,
 `combat.tech.no_uses_left`, `combat.tech.locked`,
 `exploration.outcome.loot.picked` ("Знайдено…"), `travel.cannot_start.no_hp`,
-`travel.cannot_start.no_vigor`, `item.food.governors_feast.desc` (gendering one
+`travel.cannot_start.no_vigor` (deleted 2026-10-08 with the road's Vigor guard), `item.food.governors_feast.desc` (gendering one
 item among many would mean plumbing gender through the whole item-desc path).
 
 ### New keys

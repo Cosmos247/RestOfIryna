@@ -21,12 +21,30 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-08 — the public test's starving players** (NOT committed yet, NOT deployed; needs
+`pm2 restart ROI` — Swift and three uk/en strings, one deleted; no migration, the digest unmoved).
+A snapshot showed the newcomers fighting most of their fights at 0 Vigor, some with food in the
+bag; the owner chose four changes in two quizzes:
+- **the hunger tick only on a step that BEGINS at 0 Vigor** (`ExplorationService.rollStep` reads
+  `isStarving` before the drain) — the paying step was charged too, and killed an archer on 09-12;
+- **«Ви повністю відпочили» for every rest that tops out**, a tap's fill included (`RestedToFull`,
+  noted by `HealingService.tick`, announced by the watchman within a minute, at the estate only);
+- **the road refuses only 0 HP** — the 0-Vigor guard was a May leftover that kept a starving
+  player from the capital's food and Vigor-paying jobs (`TravelService.start`);
+- **the forest edge explains hunger** (`ExplorationController.modePrompt`): what it costs, from
+  the tuning, and the food in the bag with the path to «🍴 Зʼїсти»; nothing when the food is only
+  in the warehouse; the forest and the Trader when there is none.
+
+Chosen but not built, the owner having left their form unanswered: eating straight from the
+warehouse and a hint under the estate-name prompt. Not chosen: partial market lots.
+
 **2026-10-08 — one road card per trip** (`2ed296e`, NOT deployed; needs `pm2 restart ROI` —
 Swift, one asset, one uk string): a player asked for the estate ↔ capital crossing to be visible.
 Setting out, `↩️ Розвернутись` and "how long is left" are the owner's picture
 (`Assets/travel/road.jpg`) with a new caption; `CapitalController.sendRoadCard` sends the new card
 and deletes the trip's previous one (the one exception to "photos are kept"), arrival forgets the
-id. Arrival home stays text. The road's no-Vigor refusal «поїж» became «поїжте».
+id. Arrival home stays text. The road's no-Vigor refusal «поїж» became «поїжте» (the refusal
+itself is gone since the next change).
 
 **2026-10-08 — the poll loop froze four times; the SDK's rate limiter is off** (`ee7437e` +
 `94620a4`, deployed 11:45 and 11:55): pm2 `online`, no socket to Telegram, the update queue

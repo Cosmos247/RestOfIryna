@@ -80,7 +80,25 @@ The questions that paid off on the first evening:
   stay within 2–3 km until level 3, rest at the estate below half HP, never walk out at 0 Vigor.
 - One newcomer stopped at the estate-name prompt (step 6) and never returned.
 - Two defects surfaced from questions: the hunger tick on the paying step and the silent full-HP
-  notice (`TODO.md` → "Open, decided but not done", both with a fix awaiting the owner).
+  notice — both fixed on 2026-10-08 (below).
+
+## Day two, 22:20 — starving is how the newcomers play
+
+- 5 accounts at 0 Vigor, four of them newcomers who had fought within the last half hour — and
+  most of their fights STARVING (`fight_log.vigor_spent = 0`): DIABLO 125 of 184, Легіон 92 of
+  130, Inokentiy 112 of 320, Samolan Вишневий 28 of 59.
+- Food was at hand: DIABLO carried 15 berries and 3 nuts (75 Vigor) in the BAG, Samolan 5 baked
+  potatoes and a berry (54); four of the five held edible food in the warehouse (32–136 Vigor).
+  No screen said what «😵 Голодні» costs or where «🍴 Зʼїсти» is.
+- The loop they found: walk out starving, fight at −25%, walk home, rest 10 minutes for free.
+  Free rest makes Vigor optional for them — a balance question recorded, not acted on.
+- Registration: Iren at step 6 (the estate name) since 10-07 18:35, an unnamed account at step 2
+  (the nickname) since 10-08 00:27.
+- What the owner decided the same evening (built 2026-10-08, live after the restart): the hunger
+  tick only on a step that BEGINS at 0 Vigor; «Ви повністю відпочили» for every rest that tops
+  out, a tap's included; the road no longer refuses 0 Vigor; the forest edge explains hunger and
+  names the food in the bag. Chosen but not built — the owner left the form unanswered: eating
+  straight from the warehouse, and a hint under the estate-name prompt.
 
 ## Player FAQ — verified answers (2026-10-07/08)
 
@@ -89,8 +107,8 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | Question | Answer | Source |
 |---|---|---|
 | HP regen at the estate | 10% of the effective max HP per real minute, so 0 → full in 10 min; ONLY at the estate (forest, road, capital: none, and the clock is cleared there); computed on the next tap or the watchman's sweep; partial minutes are kept | `tuning/vigor.json` → `healing.regenPerMinute`, `HealingService.tick` |
-| The full-HP notice did not come | It fires only when the watchman's sweep makes the fill; a tap of the player's own fills silently (a known gap) | `RestNotificationService.notifyFullHp` |
-| Vigor for the road | None — only 2 real minutes; but 0 Vigor or 0 HP refuses setting out; turning back costs the part walked | `TravelService.start`, `tuning/time.json` → `travelMinutes` |
+| The full-HP notice did not come | Until the restart after 2026-10-08 it fired only when the watchman's sweep made the fill, so a tap of the player's own filled silently. Since then every rest that tops out is announced within a minute while the player is still at the estate (a fill by food is not) | `RestNotificationService.notifyFullHp`, `RestedToFull` |
+| Vigor for the road | None — only 2 real minutes; 0 HP refuses setting out, and until the restart after 2026-10-08 so did 0 Vigor (no longer); turning back costs the part walked | `TravelService.start`, `tuning/time.json` → `travelMinutes` |
 | «💨 Швидкий маневр» | The archer's Defend: dodge ×1.5 for that round (DEF unchanged) and a knife for 15% of a clean hit (`defendChipFraction` 0.3 × `archerChipMultiplier` 0.5); 1 Vigor against an attack's 2. Warrior «🛡 Парирувати»: DEF ×2 + 30%; mage «🌀 Магічний бар'єр»: no chip, landed damage ×0.4 | `CombatController` defend branch, `tuning/combat.json` → `defend` |
 | A broken weapon | Keeps 50% of its stats (floored; a Swift literal, not tuning); broken armour gives 0. Wear per fight: win −1, flee −2, death −3 | `EquipmentService.contributedStats`, `tuning/economy.json` → `gear.wearBudget` |
 | Repair prices | Armour: price × 0.5 × missing ÷ 50, min 1 — hood 1/pt (50 full), boots 1.6 (80), breeches 2.5 (125), jerkin 3 (150), set 405; each armour repair shaves the max by 1; the enchant does not change the price. Weapon: 1 🪙 a point, no shave (30 … 180 by tier) | `MasterCatalog.repairCost`, `weaponRepairCost`, `master.json` → `repairCostFraction` |
@@ -100,6 +118,6 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | A 40-unit lot and a 20-slot bag | Not buyable: a lot is bought whole, into the bag only (no warehouse in the capital); starter bag 25, workshop upgrades to 35/45/60/75/90; pulling a lot back needs the room too. Advice: list in lots of 10–20 | `MarketService.buyListing` |
 | The developer's bag | Unlimited for `developerUsers` (Космос, 398698463) on every path into the bag; the warehouse is not exempt. So "bag full" cannot be reproduced on that account | `InventoryEntry.canAccept` / `add` |
 | Guilds | Founded from level 30 for 500 🪙 since 2026-10-07; joining by invite at any level | `guild.json` |
-| Hunger | 5% of max HP per step at 0 Vigor, stats −25% — and wrongly also on the step that spends the last Vigor (open defect) | `ExplorationService.rollStep` |
+| Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until the restart after 2026-10-08 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so and names the food in the bag | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.

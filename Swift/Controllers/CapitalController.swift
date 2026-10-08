@@ -401,8 +401,6 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             )
         } catch TravelService.StartFailure.dead {
             try await Controllers.capitalController.postCannotStart(context: context, key: "travel.cannot_start.no_hp")
-        } catch TravelService.StartFailure.starving {
-            try await Controllers.capitalController.postCannotStart(context: context, key: "travel.cannot_start.no_vigor")
         } catch TravelService.StartFailure.onExpedition {
             try await Controllers.capitalController.postCannotStart(context: context, key: "capital.blocked_by_expedition", gendered: true)
         } catch TravelService.StartFailure.alreadyTraveling {

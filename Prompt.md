@@ -50,15 +50,15 @@ level gate — so a cheaper enchant, or anything stronger, still needs the re-so
 - Rebalance decisions + calibrated math: `.memory/rebalance.md`
 - Pipeline rules: `.memory/content-pipeline.md`
 
-### Where things stand right now (2026-10-08 22:00 — the public test, day two)
+### Where things stand right now (2026-10-08, late evening — the public test, day two)
 
 | | |
 |---|---|
-| HEAD | **this sync pass** on top of **`2ed296e`** (one road card per trip, «поїжте»), committed 2026-10-08. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`94620a4`**. **`2ed296e` and this sync pass are not pushed** — push is the owner's |
+| HEAD | **the starving players' four** (this commit, 2026-10-08 late) on top of **`61b3f42`** (the sync pass) and **`2ed296e`** (one road card per trip, «поїжте»). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`94620a4`**. **`2ed296e`, `61b3f42` and this commit are not pushed** — push is the owner's |
 | running on the Pi | **`94620a4`**, restarted **2026-10-08 11:55:36**, up ~10 h with no freeze by 21:59 — schema **v19**, content hash **`a89b39b0`**, `records cc1357a44f3c4849` (guilds from level 30); `tuning`, `spawns`, `quests` and `king` as at 10-06. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Records: `.memory/sessions.md` → `## Deploy — 2026-10-08 11:55`, `## Deploy — 2026-10-07 18:34`, `## Deploy — 2026-10-06 21:39`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-08 21:59 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string, no migration, the digest unmoved. Needs the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` (the picture alone would show at the pull; the code would not) |
+| waiting for a restart | **`2ed296e`**: Swift, `Assets/travel/road.jpg` and one uk string. **This commit**: Swift, three uk/en strings added and one deleted. Neither has a migration; the digest is unmoved. Both need the owner's push, `git pull --ff-only` + build on the Pi, and `pm2 restart ROI` (the road picture alone would show at the pull; the code would not) |
 
 **Restarts since the backlog went live:** 2026-10-06 21:39 (everything since `8ae6772`, five
 migrations, the tables checked), 2026-10-07 18:34 (the open door and the guild gate), and on
@@ -96,17 +96,28 @@ polish plus **player support** (`.memory/live-ops.md`, auto-memory `project-publ
   setting out, turning back and the countdown, each new card replacing the trip's last; arrival
   home stays text. Same commit: «Спершу поїж» → «поїжте».
 - **The game emblem**: six candidates with prompts — `content/lore.md` §14, none chosen.
-- **This sync pass** brought every doc to the deployed state.
+- **The sync pass** (`61b3f42`) brought every doc to the deployed state.
+- **The starving players' four** (this commit, 2026-10-08 late; `.memory/sessions.md` → the
+  session entry). A 22:20 snapshot showed the newcomers fighting mostly at 0 Vigor, some with food
+  in the bag. The owner chose, in quizzes:
+  - the hunger tick only on a step that BEGINS at 0 Vigor;
+  - «Ви повністю відпочили» for every rest that tops out (`RestedToFull`);
+  - the road open at 0 Vigor;
+  - the forest edge explaining hunger, with the food in the bag.
 
-**Waiting on the owner** — asked, not answered (both in `TODO.md` → "Open, decided but not done",
-top block, with the reasoning):
-- **The hunger tick on the step that spends the last Vigor** — a real defect; it already killed a
-  player on 2026-09-12. Proposed: check `isStarving` before the drain (auto-memory
-  `project-starvation-tick-on-the-paying-step`).
-- **The full-HP notice a tapping player never gets.** Proposed: the sweep remembers who it saw
-  damaged and announces the fill whoever computed it (auto-memory `project-full-hp-notice-gap`).
-- Offered, not asked: a hint (or eating) for a starving player whose food is in the warehouse,
-  and partial purchase of a market lot.
+  **A question the owner leaves unanswered means nothing is built for it**, never a default
+  (auto-memory `feedback-unanswered-means-nothing`).
+
+**Waiting on the owner** — chosen, but the FORM left unanswered, so not built (`TODO.md` → "Open,
+decided but not done", top block):
+- **Eating straight from the warehouse** — the layout of «🍴 Зʼїсти» (in the ⬆️/⬇️/✏️ row, or
+  beside the name). Until it exists, the forest edge prints no food line for food that is only
+  in the warehouse.
+- **A hint under the estate-name prompt** — its wording (two offered). Iren has been stuck at step
+  6 since 10-07 18:35, and an unnamed account at step 2 since 10-08 00:27.
+
+Partial market lots were offered and not chosen. Starving play as the newcomers' norm (free
+rest makes Vigor optional) is recorded as a balance question, not raised as a change.
 
 **Older threads the owner may pick up:** the class sets (parked, four forks — read the concept's
 top note first), the arena's matchmaking and class gap, the weapon ladder's leftovers, the t6–t9
@@ -115,12 +126,14 @@ not done".
 
 ### Next action
 
-**0 — Deploy `2ed296e` once the owner has pushed** (the owner asks for the restart; the rule:
-`CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`, the detached build (~30 s,
-auto-memory `project-pi-deploy-swiftenv`), `--content-digest` must still read `records
-cc1357a44f3c4849` / content hash `a89b39b0` (nothing in `content/data` moved), then `pm2 restart
-ROI && pm2 save`. Check: the boot reaches `Server started and listening`; a trip shows the road
-picture; a `↩️ Розвернутись` replaces the card instead of adding one; the trip's last card stays.
+**0 — Deploy `2ed296e` and this commit once the owner has pushed** (the owner asks for the
+restart; the rule: `CLAUDE.md` § Running the bot). On the Pi: `git pull --ff-only`, the detached
+build (~30 s, auto-memory `project-pi-deploy-swiftenv`), `--content-digest` must still read
+`records cc1357a44f3c4849` / content hash `a89b39b0` (nothing in `content/data` moved), then
+`pm2 restart ROI && pm2 save`. Check: the boot reaches `Server started and listening`; a trip
+shows the road picture; a `↩️ Розвернутись` replaces the card instead of adding one; the trip's
+last card stays; a starving account can set out for the capital, and its «🌲 Дослідити» shows the
+hunger lines at the forest edge (the walk-list block on top).
 
 **1 — Answer the players.** The owner relays questions; read the answer off the code and data,
 end with a ready Ukrainian reply. Snapshots of what the players are doing: the SQL and its reading
@@ -129,7 +142,7 @@ traps are in `.memory/live-ops.md`.
 **2 — Watch the poll loop.** A new `[WATCHDOG]` line in `~/.pm2/logs/ROI-out.log` is a freeze the
 limiter fix did not cover — read the minutes before it (`.memory/live-ops.md` → "Is the bot alive?").
 
-**3 — The owner's two pending fixes** (above): build either on a yes, with the stated consequence.
+**3 — The two unanswered forms** (above): build either only on the owner's answer.
 
 **4 — Read the `fight_log` rows** — 2,469 forest fights since the door opened (10-08 21:59): the rework's first live
 measurement. `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome,
@@ -140,8 +153,8 @@ whether players hold an upgrade back to keep the forest soft (T6 gains nothing p
 rework's own deploy is done and recorded (2026-09-28 22:11, tables verified).
 
 **5 — Someone opens the screens.** Every defect this project has found came from glancing at a
-screen, not from running anything. **`TODO.md` → "Walk list"**: the road-card block on top (after
-its restart) and the guild gate, then the enchant, support-button, task-ready, Vigor-reward, tarot, weapon, quest-board, two
+screen, not from running anything. **`TODO.md` → "Walk list"**: the starving players' block and
+the road-card block on top (after their restart) and the guild gate, then the enchant, support-button, task-ready, Vigor-reward, tarot, weapon, quest-board, two
 arena, estate and tier-2 blocks (live since 10-06; the arena ones need two accounts),
 then the six 2026-09-27/28 blocks (the workshop without armour; the technique rework; the Training Ground build and catch-up, with the decree reorder;
 salvage and the gear rows; the stray-number hint; combat lines and the death screen), then the
@@ -179,17 +192,15 @@ that say what is actually live.
 
 ### Open, decided but not done
 
-Forty items, each raised deliberately and kept out of an unrelated commit on purpose.
-- **From the public test, 2026-10-07/08** — found answering players:
-  - the hunger tick on the step that spends the last Vigor (fix proposed, awaiting the owner);
-  - «Ви повністю відпочили» never reaching a player who taps while healing (fix proposed,
-    awaiting the owner);
-  - starving newcomers with their food in the warehouse, and 0 Vigor refusing the road to the
-    capital (a hint or eating from the warehouse offered, not asked);
+Thirty-nine items, each raised deliberately and kept out of an unrelated commit on purpose.
+- **From the public test, 2026-10-07/08** — found answering players (four built 2026-10-08:
+  the hunger tick, the full-HP notice, the road at 0 Vigor, the forest edge):
+  - eating straight from the warehouse (chosen, layout unanswered — not built);
+  - a hint under the estate-name prompt (chosen, wording unanswered — not built);
   - a market lot bought only whole, so a 25-unit starter bag cannot take a 40-unit lot (partial
-    purchase offered, not asked);
-  - level 1–3 players dying at km 3–10 (observed, no change);
-  - a newcomer stuck at the estate-name prompt (observed; a hint may be due).
+    purchase offered 10-08, not chosen);
+  - starving play as the newcomers' norm — free rest makes Vigor optional (observed, no change);
+  - level 1–3 players dying at km 3–10 (observed, no change).
 - **From 2026-10-06, the armour ladder's five:**
   - armour authored above item level 1 gains nothing from the low enchant levels — the
     validator refuses it until the class sets decide how ranks and the enchant share an axis;

@@ -98,9 +98,10 @@ public enum HealingService {
     }
 
     /// Apply idle-time HP regen. Writes the user back (via `saveAndCache`)
-    /// whenever a field is touched. Returns amount of HP restored (0 if the
-    /// player is away from the estate, already full, or not enough minutes
-    /// have elapsed to round to a whole HP).
+    /// whenever a field is touched, and notes a regen that reaches the maximum
+    /// in `RestedToFull` for the watchman to announce. Returns amount of HP
+    /// restored (0 if the player is away from the estate, already full, or not
+    /// enough minutes have elapsed to round to a whole HP).
     ///
     /// `canRest` — the answer from the helper above. False clears the clock
     /// rather than merely skipping the credit, so idle time banked before the
@@ -144,6 +145,47 @@ public enum HealingService {
         user.hp = min(user.effectiveMaxHp, user.hp + restored)
         user.lastHpTickAt = now
         try await user.saveAndCache(in: db)
+        // A rest that topped out is news whichever call computed it — the
+        // watchman's sweep or the player's own tap — so the fact is recorded
+        // here, where every fill happens, and the watchman announces it.
+        if user.hp >= user.effectiveMaxHp, let id = user.id {
+            await RestedToFull.shared.note(id)
+        }
         return restored
+    }
+}
+
+/// The players whose rest at the estate topped out since the watchman last
+/// asked (2026-10-08).
+///
+/// `HealingService.tick` runs before every dispatch, so a player who taps
+/// around the estate while healing usually crosses the maximum on a tap of
+/// their own — and «Ви повністю відпочили» used to come only from a fill the
+/// watchman's sweep made itself, on the theory that a player who fills up
+/// while tapping is looking at the number. Most estate screens show no HP; a
+/// public-test player rested 21 → 95 and reported that nothing came. So the
+/// tick notes every fill here and `RestNotificationService` announces them.
+///
+/// In memory on purpose: a restart forgets at most one sweep's fills, which
+/// costs a notice, never a wrong one. A fill by food never passes through the
+/// tick's regen, so it is never noted — it is not a rest.
+public actor RestedToFull {
+    public static let shared = RestedToFull()
+
+    private var fills: Set<UUID> = []
+
+    public func note(_ userId: UUID) {
+        fills.insert(userId)
+    }
+
+    /// Every fill noted since the last call, cleared.
+    public func takeAll() -> Set<UUID> {
+        defer { fills.removeAll() }
+        return fills
+    }
+
+    /// One player's fill, cleared. True when there was one.
+    public func take(_ userId: UUID) -> Bool {
+        fills.remove(userId) != nil
     }
 }

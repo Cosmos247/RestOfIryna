@@ -37,15 +37,20 @@ public enum TravelService {
     public enum StartFailure: Error, Sendable {
         case alreadyTraveling
         case dead
-        case starving
         case onExpedition
         case alreadyAtDestination
     }
 
-    /// Begin a trip in the given direction. Validates guards (HP > 0, vigor > 0,
-    /// not already traveling, not on expedition, not already at destination),
+    /// Begin a trip in the given direction. Validates guards (HP > 0, not
+    /// already traveling, not on expedition, not already at destination),
     /// persists the `TravelState`, and arms a background task that flips
     /// `User.location` + pushes an arrival notification when the timer expires.
+    ///
+    /// Vigor is not a guard (2026-10-08). The road costs none, and the refusal
+    /// at 0 was written in May, when Vigor still came back on its own clock.
+    /// Since Phase 8E it does not, so the guard locked a starving player out of
+    /// the capital — the Trader's food, and the jobs and decrees that pay Vigor
+    /// — and, once there, kept them from coming home.
     @discardableResult
     public static func start(
         for user: User,
@@ -62,7 +67,6 @@ public enum TravelService {
             throw StartFailure.onExpedition
         }
         if user.hp <= 0 { throw StartFailure.dead }
-        if user.vigor <= 0 { throw StartFailure.starving }
         if user.location == destination.rawValue { throw StartFailure.alreadyAtDestination }
 
         let now = Date()

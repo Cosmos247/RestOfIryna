@@ -281,6 +281,16 @@ wilderness can be walked and still walked out of. Never reintroduce a trickle: t
 one deliberately did not pause during an expedition, so a player could stand at km 25
 and wait out a full pool.
 
+**So 0 Vigor must never lock a door that costs no Vigor** (2026-10-08). The road to the
+capital refused a starving player from May, when the pool still refilled itself; after Phase
+8E that guard kept them from the Trader's food and from the jobs and decrees that pay Vigor,
+and once in town, from coming home. `TravelService.start` refuses 0 HP, never 0 Vigor. Hunger costs what
+`tuning/vigor.json` → `starvation` says (5% of max HP a step, −25% ATK/DEF today), charged on
+every step that BEGINS at 0 Vigor — `ExplorationService.rollStep` reads `isStarving` before the
+step pays, so the step that spends the last of it is fed — and the forest edge says so, with the
+food in the bag (`ExplorationController.modePrompt`, the one place hunger is explained, on the
+owner's word).
+
 **Every Vigor spend goes through `VigorService.drain(_:base:multiplier:)` or its `action:`
 form**, which applies the active tarot card's `vigorDrainMultiplier` on top of the stance's and
 rounds half up. `drain(_:amount:)` is for a number that is already final (the dev `/drain`): the
@@ -326,7 +336,9 @@ happens while nobody is interacting.
 
 **What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
 `Task.detached` on `realTime.restSweepInterval`, 60 s) answers four questions per player:
-- HP topped out at the estate;
+- HP topped out at the estate — whichever call's tick made the fill: the tick notes every fill
+  in `RestedToFull` and the sweep announces it, because a player who taps while healing tops
+  out on their own tap and most estate screens show no HP (2026-10-08);
 - the fortune teller's 24 h cooldown elapsed;
 - the 12:00 job rollover;
 - a task became ready (2026-10-04): the open decree complete, or a taken job ready to hand in.
@@ -397,8 +409,8 @@ it assumes on-level fights and never walks from the manor. `content/spec/spec-be
 ### Combat
 
 **One number, one source. A screen never sums two losses under one label.** A step can cost
-HP twice — the event it rolled, and the hunger tick charged on every step once Vigor hits 0 —
-so `ExplorationService.rollStep` returns a `StepResult` pairing the event with
+HP twice — the event it rolled, and the hunger tick charged on every step that begins at 0
+Vigor — so `ExplorationService.rollStep` returns a `StepResult` pairing the event with
 `starvationHpLost`, each printed on its own line. Carrying it on the RESULT rather than inside
 an enum case is the point: when each branch had to remember, six of ten starving-reachable
 exits dropped it silently. **Add a new source of damage to `StepResult`**, never to another
