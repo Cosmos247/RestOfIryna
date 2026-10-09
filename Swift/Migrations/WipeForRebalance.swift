@@ -57,7 +57,7 @@ struct WipeForRebalance: AsyncMigration {
         "users", "inventory", "warehouse",
         "exploration_state", "travel_state", "plots",
         "quest_progress", "arena_profiles", "king_progress", "fight_log",
-        "learned_recipes", "learned_techniques",
+        "learned_recipes", "learned_techniques", "recipe_notes",
         "market_listings",
         "guilds", "guild_invites", "guild_vault",
         "tavern_game_messages",

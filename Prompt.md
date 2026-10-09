@@ -21,17 +21,24 @@ are built; class sets are parked (`.memory/class-sets-concept.md`). The armour's
 WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or anything
 stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi as read 2026-10-09 01:47; git re-read that evening)
+### Where things stand right now (the Pi as read 2026-10-09 01:47; git re-read 2026-10-10)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6` and this hash fill are not pushed** — push is the owner's |
+| HEAD | **this commit** — the recipe notebook — on top of **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41` and this commit are not pushed** — push is the owner's |
 | running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Record: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **nothing** — everything committed up to `de0e062` is live |
+| waiting for a restart | **the recipe notebook** (this commit, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the digest is unmoved. Everything before it, up to `de0e062`, is live |
 
-### Where the last sessions stopped (2026-10-08 late → 10-09 evening)
+### Where the last sessions stopped (2026-10-08 late → 10-10)
+
+**10-10 — the recipe notebook built.** On «Починаємо», the six entries the 10-09 samples had not
+covered were shown on real numbers and approved. The enchant note was keyed by item + level
+after the owner's answer: a warehouse trip re-creates the row. Everything was built on all eight
+cards and the journal. A scratch-Postgres rehearsal met the migration the way the Pi will, alone
+in a new batch, and passed 82 checks through the real services, twice. Two planted mutants were
+caught. Auto-memory `project-recipe-notebook`; `.memory/sessions.md` → the 10-10 entry.
 
 **10-09 evening — a doc pass, no game change.** The session preamble was measured against Claude
 Code's own limits and trimmed against the records (auto-memory `feedback-docs-keep-the-rule`, its
@@ -48,10 +55,10 @@ the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes
 
 ### Next action
 
-**0 — The recipe notebook, when the owner says go.** The approved design and the build plan are
-auto-memory `project-recipe-notebook-planned`. Rehearse the migration off the Pi (auto-memory
-`reference-deploy-rehearsal`) and show the strings before building any copy beyond the approved
-samples.
+**0 — Ship the recipe notebook, on the owner's word.** Committed (this commit; auto-memory
+`project-recipe-notebook`), not pushed. Push is the owner's. The deploy is the usual recipe
+below, and the restart needs the owner's go: a new table (`CreateRecipeNotes`, rehearsed) and new
+strings, the digest unmoved. After it, the walk list's top block.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.

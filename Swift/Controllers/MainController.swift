@@ -328,6 +328,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     func showJournal(context: Context, editMessageId: Int) async throws {
         let text = try await renderJournal(context: context)
         let locale = context.session.locale
+        // The pinned recipes (2026-10-10), above the boards and always shown —
+        // at 0 too, so a player learns the notes exist. Counted through `live`,
+        // which drops the finished ones first.
+        let notes = try await RecipeNoteService.live(for: context.session, on: context.db)
+        let recipes = RecipeNoteDisplay.journalButton(count: notes.count, lingo: context.lingo, locale: locale)
         // The boards open from here and return here, over the same bubble —
         // profile → journal → leaderboard is three screens and one message.
         let boards = TGInlineKeyboardButton(
@@ -343,7 +348,30 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             messageId: editMessageId,
             isPhoto: false,
             text: text,
-            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[boards], [back]]),
+            replyMarkup: TGInlineKeyboardMarkup(inlineKeyboard: [[recipes], [boards], [back]]),
+            bot: context.bot
+        )
+    }
+
+    // MARK: - Recipe notes (2026-10-10)
+    //
+    // The price cards the player pinned with «📌 У нотатник», priced afresh on
+    // every draw (`RecipeNoteDisplay`) — so the answer to "what does the next
+    // reforge take?" is in the journal instead of a ride to the capital, which
+    // is what the player who asked for it was making. Read-only like the
+    // journal, apart from each note's «❌».
+
+    func showRecipeNotes(context: Context, editMessageId: Int) async throws {
+        let notes = try await RecipeNoteService.live(for: context.session, on: context.db)
+        let stock = notes.isEmpty ? [:] : try await CraftingService.stock(for: context.session, on: context.db)
+        let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock,
+                                              lingo: context.lingo, locale: context.session.locale)
+        await editScreen(
+            chatId: .chat(context.session.telegramId),
+            messageId: editMessageId,
+            isPhoto: false,
+            text: screen.text,
+            replyMarkup: screen.keyboard,
             bot: context.bot
         )
     }
@@ -688,6 +716,29 @@ extension MainController {
         if data == "gear:back" || data == "journal:back" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             try await Controllers.mainController.showProfile(context: context, editMessageId: message.messageId)
+            return true
+        }
+        // The pinned recipes behind the journal, over the same bubble; the way
+        // back is `journal:open`. A note's «❌» answers with the card's own
+        // toast once it actually removed something.
+        if data == "notes:open" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await Controllers.mainController.showRecipeNotes(context: context, editMessageId: message.messageId)
+            return true
+        }
+        if data.hasPrefix("notes:del:") {
+            var removed = false
+            do {
+                if let id = UUID(uuidString: String(data.dropFirst("notes:del:".count))) {
+                    removed = try await RecipeNoteService.remove(id, for: context.session, on: context.db)
+                }
+            } catch {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                throw error
+            }
+            let toast = removed ? context.lingo.localize("notes.toast.unpinned", locale: context.session.locale) : nil
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast))
+            try await Controllers.mainController.showRecipeNotes(context: context, editMessageId: message.messageId)
             return true
         }
 

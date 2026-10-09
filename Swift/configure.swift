@@ -284,6 +284,9 @@ public func configure(logger: Logger) async throws {
     // 2026-10-05, `spec-items.md` §10: durability moved onto the item and the
     // Forester set went 30 → 50; every armour row moves by the difference.
     migrations.add(RaiseArmorDurability())
+    // 2026-10-10: the recipe notes — the price cards a player pins to the
+    // journal. A new table, no rows touched.
+    migrations.add(CreateRecipeNotes())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

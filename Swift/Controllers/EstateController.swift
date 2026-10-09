@@ -293,15 +293,19 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🏠 Upgrade]
-    /// + Back. Upgrade button is always shown — the handler validates player
-    /// level + materials and surfaces a modal alert on failure, so the player
-    /// reads exactly what's missing instead of guessing why the button is grey.
-    fileprivate func estateUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🏠 Upgrade],
+    /// the journal's «📌» and Back. Upgrade button is always shown — the handler
+    /// validates player level + materials and surfaces a modal alert on
+    /// failure, so the player reads exactly what's missing instead of guessing
+    /// why the button is grey. `pinned` is nil when there is no step to pin.
+    fileprivate func estateUpgradeKeyboard(canUpgrade: Bool, pinned: Bool?, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         if canUpgrade {
             let upgrade = lingo.localize("estate.upgrade.button.confirm", locale: locale)
             rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "estate:upgrade:confirm")])
+        }
+        if let pinned {
+            rows.append(RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:upgrade:pin", lingo: lingo, locale: locale))
         }
         let back = lingo.localize("estate.back_root", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:root")])
@@ -997,14 +1001,15 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard — primary action (Craft / Cook) + Back-to-room.
-    /// Action verb and back target both come from `recipe.category` so the
-    /// same keyboard works for Workshop and Kitchen.
-    fileprivate func recipeDetailKeyboard(recipe: Recipe, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Detail-screen keyboard — primary action (Craft / Cook), the journal's
+    /// «📌», Back-to-room. Action verb and back target both come from
+    /// `recipe.category` so the same keyboard works for Workshop and Kitchen.
+    fileprivate func recipeDetailKeyboard(recipe: Recipe, pinned: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let action = lingo.localize(recipe.category.actionButtonKey, locale: locale)
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: action, callbackData: "craft:\(recipe.id)")],
+            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "craft:pin:\(recipe.id)", lingo: lingo, locale: locale),
             [TGInlineKeyboardButton(text: back,   callbackData: recipe.category.backCallbackData)]
         ])
     }
@@ -1071,6 +1076,14 @@ extension EstateController {
         //   craft:detail:<recipe.id>  — opens the recipe's detail screen
         //   craft:<recipe.id>         — performs the craft (issued from the
         //                               detail screen's [🔨 Craft] button)
+        // The journal's «📌» on the estate's price cards (2026-10-10) — each in
+        // its card's namespace, so `craft:pin:` goes ahead of the bare `craft:`.
+        if data.hasPrefix("craft:pin:") {
+            return try await handleCraftPin(data: data, query: query, message: message, context: context)
+        }
+        if data == "weapon:upgrade:pin" || data == "estate:upgrade:pin" || data == "bag:upgrade:pin" {
+            return try await handleUpgradePin(data: data, query: query, message: message, context: context)
+        }
         if data.hasPrefix("craft:detail:") {
             return try await handleCraftDetail(data: data, query: query, message: message, context: context)
         }
@@ -1994,6 +2007,18 @@ extension EstateController {
             await answer()
             try await showTrainingUpgrade(message: message, context: context)
 
+        case "estate:training:pin":
+            // The card's «📌»: the level the card shows now. At the top of the
+            // ladder there is no card left, and the building's screen answers.
+            guard let next = TrainingGroundCatalog.level(context.session.trainingGroundLevel + 1) else {
+                await answer()
+                try await showTrainingGround(message: message, context: context)
+                return true
+            }
+            if try await RecipeNoteDisplay.toggle(.training(toLevel: next.level), query: query, context: context) {
+                try await showTrainingUpgrade(message: message, context: context)
+            }
+
         case "estate:training:confirm":
             switch try await TrainingGroundService.upgrade(for: context.session, on: context.db) {
             case .success(let level, let taught, let built, let caughtUp):
@@ -2113,10 +2138,13 @@ extension EstateController {
 
         let act = lingo.localize(building ? "estate.training.button.build" : "estate.training.button.confirm", locale: locale)
         let back = lingo.localize("estate.training.button.back", locale: locale)
-        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: act, callbackData: "estate:training:confirm"),
-            TGInlineKeyboardButton(text: back, callbackData: building ? "estate:home" : "estate:home:training")
-        ]])
+        // The journal's «📌» under the action and Back, which share a row here.
+        let pinned = try await RecipeNoteService.isPinned(.training(toLevel: next.level), for: session, on: context.db)
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: act, callbackData: "estate:training:confirm"),
+             TGInlineKeyboardButton(text: back, callbackData: building ? "estate:home" : "estate:home:training")],
+            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:training:pin", lingo: lingo, locale: locale)
+        ])
         try await editEstateMessage(message: message, text: lines.joined(separator: "\n"), inline: keyboard, context: context)
     }
 
@@ -2149,9 +2177,10 @@ extension EstateController {
     }
 
     /// Localization key for the player's class-specific technique name —
-    /// reused both in the combat submenu and the Training Ground screen so
-    /// the displayed names stay consistent.
-    fileprivate static func techniqueNameKey(kind: CombatService.TechniqueKind, class cls: CharacterClass) -> String {
+    /// reused in the combat submenu, the Training Ground screen and the
+    /// journal's note for the ground (`RecipeNoteDisplay`), so the displayed
+    /// names stay consistent.
+    static func techniqueNameKey(kind: CombatService.TechniqueKind, class cls: CharacterClass) -> String {
         switch kind {
         case .specialAtk: return "combat.button.special_atk.\(cls.rawValue)"
         case .specialDef: return "combat.button.special_def.\(cls.rawValue)"
@@ -2215,7 +2244,6 @@ extension EstateController {
     static func handleCraftDetail(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let recipeId = String(data.dropFirst("craft:detail:".count))
         let locale = context.session.locale
-        let ctrl = Controllers.estateController
 
         guard let recipe = RecipeCatalog.find(recipeId) else {
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
@@ -2241,10 +2269,52 @@ extension EstateController {
         }
 
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        try await showRecipeDetail(recipe, message: message, context: context)
+        return true
+    }
+
+    /// The recipe card over `message`. Every path that draws it comes here —
+    /// the detail tap, the redraw after a craft and the journal's «📌» — so the
+    /// pin's state is read in one place. The stock is read here too, never
+    /// passed in: the redraw after a craft has to show the pantry it left.
+    private static func showRecipeDetail(_ recipe: Recipe, message: TGMaybeInaccessibleMessage, context: Context) async throws {
+        let ctrl = Controllers.estateController
+        let locale = context.session.locale
         let stock = try await CraftingService.stock(for: context.session, on: context.db)
+        let pinned = try await RecipeNoteService.isPinned(.recipe(recipe.id), for: context.session, on: context.db)
         let body = ctrl.renderRecipeDetail(recipe: recipe, stock: stock, lingo: context.lingo, locale: locale)
-        let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
+        let inline = ctrl.recipeDetailKeyboard(recipe: recipe, pinned: pinned, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+    }
+
+    /// `craft:pin:<recipe.id>` — the recipe card's «📌». Refused exactly as the
+    /// card itself would be (an unknown id, an armour pattern, a dish not yet
+    /// learned), then pinned or unpinned and the card redrawn.
+    static func handleCraftPin(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let recipeId = String(data.dropFirst("craft:pin:".count))
+        let locale = context.session.locale
+        guard let recipe = RecipeCatalog.find(recipeId), recipe.category.isCraftable else {
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        }
+        if recipe.category.requiresLearning, !RecipeCatalog.starterRecipeIds.contains(recipeId) {
+            let known: Bool
+            do {
+                known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
+            } catch {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                throw error
+            }
+            if !known {
+                let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+                return true
+            }
+        }
+        if try await RecipeNoteDisplay.toggle(.recipe(recipe.id), query: query, context: context) {
+            try await showRecipeDetail(recipe, message: message, context: context)
+        }
         return true
     }
 
@@ -2315,13 +2385,10 @@ extension EstateController {
 
             // Stay on the detail screen; banner published as a standalone
             // message under the inline keyboard so it can't be missed.
-            // Re-read AFTER the craft, never before: this redraw is the one
-            // that has to show the ingredients going down, and a snapshot taken
-            // above would quote the pantry the player had a moment ago.
-            let stock = try await CraftingService.stock(for: context.session, on: context.db)
-            let body = ctrl.renderRecipeDetail(recipe: recipe, stock: stock, lingo: context.lingo, locale: locale)
-            let inline = ctrl.recipeDetailKeyboard(recipe: recipe, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            // `showRecipeDetail` re-reads the stock AFTER the craft: this redraw
+            // is the one that has to show the ingredients going down. It also
+            // turns the «📌» back, since the craft cleared the recipe's note.
+            try await showRecipeDetail(recipe, message: message, context: context)
             await ctrl.postStatusBanner(statusLine, context: context)
             return true
         }
@@ -2510,20 +2577,26 @@ extension EstateController {
     // MARK: - Weapon upgrade callback handlers (Phase 5.2.2)
 
     /// `weapon:upgrade:detail` — open / refresh the weapon upgrade screen.
-    /// Resolves the player's equipped main-hand row, takes a snapshot of
-    /// inventory + warehouse availability for the next-tier inputs (so the
-    /// "have/need" suffix is accurate), and renders.
     static func handleWeaponUpgradeDetail(
         query: TGCallbackQuery,
         message: TGMaybeInaccessibleMessage,
         context: Context
     ) async throws -> Bool {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        try await showWeaponUpgrade(message: message, context: context)
+        return true
+    }
+
+    /// The weapon card over `message`. Resolves the player's equipped
+    /// main-hand row, takes a snapshot of inventory + warehouse availability
+    /// for the next-tier inputs (so the "have/need" suffix is accurate), and
+    /// renders. Every path that draws the card comes here — the detail tap, the
+    /// redraw after a reforge and the journal's «📌» — so the pin's state is read
+    /// in one place.
+    private static func showWeaponUpgrade(message: TGMaybeInaccessibleMessage, context: Context) async throws {
         let locale = context.session.locale
         let ctrl = Controllers.estateController
-
         let snapshot = try await weaponUpgradeSnapshot(context: context)
-
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         let body = ctrl.renderWeaponUpgrade(
             weaponEntry: snapshot.weaponEntry,
             weaponItem: snapshot.weaponItem,
@@ -2533,8 +2606,57 @@ extension EstateController {
             whSnapshot: snapshot.whHaves,
             lingo: context.lingo, locale: locale
         )
-        let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, lingo: context.lingo, locale: locale)
+        let pinned = try await notePinned(weaponNoteKey(snapshot), context: context)
+        let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, pinned: pinned, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+    }
+
+    /// The note the weapon card can pin: the next rung, while the card prices
+    /// one — never at tier 1 (the Master's lesson, pinned at the Master) or at
+    /// the top of the ladder.
+    private static func weaponNoteKey(_ snapshot: WeaponUpgradeSnapshot) -> RecipeNote.Key? {
+        guard snapshot.canUpgrade, let weapon = snapshot.weaponEntry else { return nil }
+        return .weapon(weapon.itemId, toTier: weapon.tier + 1)
+    }
+
+    /// Whether the card's note is pinned — nil when the card has nothing to
+    /// pin, and then it shows no «📌» at all.
+    private static func notePinned(_ key: RecipeNote.Key?, context: Context) async throws -> Bool? {
+        guard let key else { return nil }
+        return try await RecipeNoteService.isPinned(key, for: context.session, on: context.db)
+    }
+
+    /// `weapon:upgrade:pin`, `estate:upgrade:pin`, `bag:upgrade:pin` — the
+    /// upgrade cards' «📌». The key is the card's step as it stands NOW, so a
+    /// card left in chat from before an upgrade pins the step it would show
+    /// today; a card with no step left is answered and redrawn.
+    static func handleUpgradePin(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let session = context.session
+        let key: RecipeNote.Key?
+        switch data {
+        case "weapon:upgrade:pin":
+            do {
+                key = weaponNoteKey(try await weaponUpgradeSnapshot(context: context))
+            } catch {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                throw error
+            }
+        case "estate:upgrade:pin":
+            key = EstateUpgradeCatalog.nextStep(from: session.estateLevel).map { .estate(toTier: $0.toTier) }
+        default:
+            key = BagCatalog.nextStep(from: session.bagTier).map { .bag(toTier: $0.toTier) }
+        }
+        if let key {
+            // A full journal changes nothing on the card, so it is not redrawn.
+            guard try await RecipeNoteDisplay.toggle(key, query: query, context: context) else { return true }
+        } else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        }
+        switch data {
+        case "weapon:upgrade:pin": try await showWeaponUpgrade(message: message, context: context)
+        case "estate:upgrade:pin": try await showEstateUpgrade(message: message, context: context)
+        default:                   try await showBagUpgrade(message: message, context: context)
+        }
         return true
     }
 
@@ -2611,19 +2733,8 @@ extension EstateController {
                 "tier": "\(newTier)"
             ])
 
-            // Re-fetch fresh snapshot so the body shows the new "current" tier.
-            let snapshot = try await weaponUpgradeSnapshot(context: context)
-            let body = ctrl.renderWeaponUpgrade(
-                weaponEntry: snapshot.weaponEntry,
-                weaponItem: snapshot.weaponItem,
-                userId: context.session.id,
-                playerLevel: context.session.level,
-                invSnapshot: snapshot.invHaves,
-                whSnapshot: snapshot.whHaves,
-                lingo: context.lingo, locale: locale
-            )
-            let inline = ctrl.weaponUpgradeKeyboard(canUpgrade: snapshot.canUpgrade, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            // A fresh snapshot, so the body shows the new "current" tier.
+            try await showWeaponUpgrade(message: message, context: context)
             await ctrl.postStatusBanner(banner, context: context)
             return true
         }
@@ -2632,18 +2743,24 @@ extension EstateController {
     // MARK: - Estate upgrade callback handlers (Phase 5.3c)
 
     /// `estate:upgrade:detail` — open / refresh the estate upgrade screen.
-    /// Snapshots inventory + warehouse availability for the next-tier inputs
-    /// so the "have/need" lines are accurate.
     static func handleEstateUpgradeDetail(
         query: TGCallbackQuery,
         message: TGMaybeInaccessibleMessage,
         context: Context
     ) async throws -> Bool {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        try await showEstateUpgrade(message: message, context: context)
+        return true
+    }
+
+    /// The estate card over `message`. Snapshots inventory + warehouse
+    /// availability for the next-tier inputs so the "have/need" lines are
+    /// accurate. The detail tap, the redraw after an upgrade and the journal's
+    /// «📌» all draw it here.
+    private static func showEstateUpgrade(message: TGMaybeInaccessibleMessage, context: Context) async throws {
         let locale = context.session.locale
         let ctrl = Controllers.estateController
-
         let (inv, wh) = try await estateUpgradeSnapshot(context: context)
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         let body = ctrl.renderEstateUpgrade(
             session: context.session,
             invSnapshot: inv,
@@ -2651,9 +2768,10 @@ extension EstateController {
             lingo: context.lingo, locale: locale
         )
         let canUpgrade = EstateUpgradeCatalog.canUpgrade(from: context.session.estateLevel)
-        let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
+        let key = EstateUpgradeCatalog.nextStep(from: context.session.estateLevel).map { RecipeNote.Key.estate(toTier: $0.toTier) }
+        let pinned = try await notePinned(key, context: context)
+        let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, pinned: pinned, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
-        return true
     }
 
     /// `estate:upgrade:confirm` — perform one tier upgrade. Failure modes
@@ -2666,7 +2784,6 @@ extension EstateController {
         context: Context
     ) async throws -> Bool {
         let locale = context.session.locale
-        let ctrl = Controllers.estateController
 
         // Read before the upgrade — the banner reports the step it took, and
         // the service has already moved `estateLevel` by the time it returns.
@@ -2708,16 +2825,7 @@ extension EstateController {
             let banner = EstateUpBanner.text(newTier: newTier, previousTier: previousTier,
                                              lingo: context.lingo, locale: locale)
 
-            let (inv, wh) = try await estateUpgradeSnapshot(context: context)
-            let body = ctrl.renderEstateUpgrade(
-                session: context.session,
-                invSnapshot: inv,
-                whSnapshot: wh,
-                lingo: context.lingo, locale: locale
-            )
-            let canUpgrade = EstateUpgradeCatalog.canUpgrade(from: context.session.estateLevel)
-            let inline = ctrl.estateUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            try await showEstateUpgrade(message: message, context: context)
             // A plain message, not a status banner: the tier-up is the most
             // expensive thing a player buys, and `postStatusBanner` would have
             // deleted it on the next toast.
@@ -2751,11 +2859,17 @@ extension EstateController {
         message: TGMaybeInaccessibleMessage,
         context: Context
     ) async throws -> Bool {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        try await showBagUpgrade(message: message, context: context)
+        return true
+    }
+
+    /// The bag card over `message` — for the detail tap, the redraw after an
+    /// upgrade and the journal's «📌» alike.
+    private static func showBagUpgrade(message: TGMaybeInaccessibleMessage, context: Context) async throws {
         let locale = context.session.locale
         let ctrl = Controllers.estateController
-
         let (inv, wh) = try await bagUpgradeSnapshot(context: context)
-        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         let body = ctrl.renderBagUpgrade(
             session: context.session,
             invSnapshot: inv,
@@ -2763,9 +2877,10 @@ extension EstateController {
             lingo: context.lingo, locale: locale
         )
         let canUpgrade = BagCatalog.canUpgrade(from: context.session.bagTier)
-        let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
+        let key = BagCatalog.nextStep(from: context.session.bagTier).map { RecipeNote.Key.bag(toTier: $0.toTier) }
+        let pinned = try await notePinned(key, context: context)
+        let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, pinned: pinned, lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
-        return true
     }
 
     /// `bag:upgrade:confirm` — perform one tier upgrade. Failure modes
@@ -2808,16 +2923,7 @@ extension EstateController {
                 "name":     newName,
                 "capacity": "\(newCapacity)"
             ])
-            let (inv, wh) = try await bagUpgradeSnapshot(context: context)
-            let body = ctrl.renderBagUpgrade(
-                session: context.session,
-                invSnapshot: inv,
-                whSnapshot: wh,
-                lingo: context.lingo, locale: locale
-            )
-            let canUpgrade = BagCatalog.canUpgrade(from: context.session.bagTier)
-            let inline = ctrl.bagUpgradeKeyboard(canUpgrade: canUpgrade, lingo: context.lingo, locale: locale)
-            try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+            try await showBagUpgrade(message: message, context: context)
             await ctrl.postStatusBanner(banner, context: context)
             return true
         }
@@ -2986,16 +3092,20 @@ extension EstateController {
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🔨 Upgrade]
-    /// + Back. The Upgrade button is always shown — the handler validates
-    /// the level gate and materials and surfaces a modal alert on failure (so
-    /// the player can read exactly what's missing instead of guessing why
-    /// the button is greyed out).
-    fileprivate func weaponUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🔨 Upgrade],
+    /// the journal's «📌» and Back. The Upgrade button is always shown — the
+    /// handler validates the level gate and materials and surfaces a modal
+    /// alert on failure (so the player can read exactly what's missing instead
+    /// of guessing why the button is greyed out). `pinned` is nil when the card
+    /// prices no rung.
+    fileprivate func weaponUpgradeKeyboard(canUpgrade: Bool, pinned: Bool?, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         if canUpgrade {
             let upgrade = lingo.localize("weapon.upgrade.button.confirm", locale: locale)
             rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "weapon:upgrade:confirm")])
+        }
+        if let pinned {
+            rows.append(RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "weapon:upgrade:pin", lingo: lingo, locale: locale))
         }
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])
@@ -3063,13 +3173,16 @@ extension EstateController {
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🧵 Sew]
-    /// + Back. Same pattern as the weapon/estate upgrade screens.
-    fileprivate func bagUpgradeKeyboard(canUpgrade: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Detail-screen keyboard. At max tier, only Back. Otherwise [🧵 Sew], the
+    /// journal's «📌» and Back. Same pattern as the weapon/estate upgrade screens.
+    fileprivate func bagUpgradeKeyboard(canUpgrade: Bool, pinned: Bool?, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         if canUpgrade {
             let upgrade = lingo.localize("bag.upgrade.button.confirm", locale: locale)
             rows.append([TGInlineKeyboardButton(text: upgrade, callbackData: "bag:upgrade:confirm")])
+        }
+        if let pinned {
+            rows.append(RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "bag:upgrade:pin", lingo: lingo, locale: locale))
         }
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:home:workshop")])

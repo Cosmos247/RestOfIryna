@@ -209,6 +209,11 @@ public enum CraftingService {
             try? await QuestService.record(.ironIngotForged, amount: recipe.output.quantity, for: user, on: db)
         }
 
+        // A recipe pinned to the journal is done once it is made (2026-10-10).
+        // The one note an upgrade's state cannot answer, so it is cleared here;
+        // best-effort, like the two hooks above.
+        try? await RecipeNoteService.recipeMade(recipe.id, for: user, on: db)
+
         return .success(outputItemId: recipe.output.itemId, outputQuantity: recipe.output.quantity, destination: destination)
     }
 

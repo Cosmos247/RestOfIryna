@@ -654,6 +654,14 @@ recipe screen once printed what a dish REQUIRES and never what the player HELD.
 (two queries, whatever is asked about), so a screen cannot quote a total the button then
 disagrees with.
 
+**A recipe note names a THING, never a row, and "done" is read, not announced** (2026-10-10).
+`RecipeNote` stores kind · ref · target (the enchant's is the piece + the level: a warehouse trip
+re-creates the row), priced afresh on every draw. `RecipeNoteService.live` deletes every finished
+note on each read — the journal's count, its screen and the pin's cap all go through it — so no
+upgrade path remembers the journal; only a craft, an event, is cleared in the craft funnel
+(`recipeMade`). `recipe_notes.ref` is deliberately NOT in `LiveReferenceQuery`: a note the
+content no longer backs is dropped the same way. Auto-memory `project-recipe-notebook`.
+
 ## How to Add a New Controller
 
 1. `Swift/Controllers/MyController.swift`: subclass `TGControllerBase`, mark `@unchecked Sendable`,

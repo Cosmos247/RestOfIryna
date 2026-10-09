@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-08)
+## Commit index — live-play polish and after (2026-09-09 → 10-10)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,6 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(this commit, 10-10)* **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
+- `2d8ab41` (10-09) **`34872f6`'s hash fill** — records only.
 - `34872f6` (10-09) **the session preamble trimmed against the records** — records only:
   `MEMORY.md` 24,594 → 16,773 chars of Claude Code's hard 25,000-char cut (63 index lines made
   hooks), `CLAUDE.md` 72,815 → 60,181 (every rule kept, the stories left to the memories they
@@ -596,6 +598,48 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
+## Session — 2026-10-10 (the recipe notebook built, not deployed)
+
+**Picked up from the record.** Asked what had been decided about the notebook, the answer came
+from the 10-09 transcript (`3aef4938`), not from memory. Its four quizzes, the eight mocked cards
+and the stop («Зробимо це завтра») were read back. The owner said «Починаємо, покажи шість записів».
+
+**Two more questions, both answered with the recommended option.** The six entries the 10-09
+samples had not covered — the weapon rung, the bag, a craft, a dish, the estate, the ground — were
+shown on one archer's real numbers (L12, estate 4, bag + warehouse) and approved as shown:
+- gate → materials → silver;
+- the card's own «⤴ Рівень N — …» line for the bag, the estate and the ground;
+- «Майстерня, маєток» / «Кухня, маєток» as the place;
+- a recipe on one line;
+- the shortest «❌» names.
+
+A hole in the approved design was found in the code and asked about. The enchant card is a ROW,
+and `WarehouseService.deposit` deletes the row and creates another, so a row-keyed note would
+have vanished on a warehouse trip. The owner chose the item + the level.
+
+**Built.**
+- `RecipeNote`, `CreateRecipeNotes` (unique on user · kind · ref · target, cascading), and
+  `RecipeNoteService`. In the service, `live` deletes finished notes on every read; `recipeMade`
+  is called from the craft funnel.
+- `RecipeNoteDisplay`: the card row, the tap's toast or modal, the journal button, the screen.
+- The pin on all eight cards; each estate card now has one draw path (`show…`) for the detail,
+  the redraw after an upgrade and the pin.
+- `MainController`'s `notes:open` / `notes:del:`, and the strings.
+- One refinement while building: the weapon notes read the MAIN HAND, as both reforge doors do,
+  so a spare t2 bow in the bag cannot close the lesson for the t1 bow in hand.
+- One correction to the 10-09 mockup: the cards keep their action button when something is
+  missing (the tap explains in a modal); the pin sits between.
+
+**Verified.**
+- Build clean, 395 tests, `validate --strict` clean, the digest unmoved.
+- A rehearsal on a scratch Postgres 15 (zonky binaries, auto-memory `reference-deploy-rehearsal`)
+  in four runs: every migration fresh; the Pi's state (all but the new one); the new migration
+  alone in batch 2 plus 82 scenario checks through the real services; then the same 82 again
+  with no migration.
+- Two planted mutants (the warehouse forgotten; the Master counting the warehouse) failed five
+  checks between them, and the restored code went back to 82 of 82.
+- The harness copy needed a database-only `.env`: `Dotenv.configure` throws on a missing file.
+
 ## Session — 2026-10-09, evening (the session preamble trimmed against the records) — `34872f6`
 
 The owner asked whether `CLAUDE.md`, `Prompt.md` and `MEMORY.md` had grown past what can be read,
@@ -655,7 +699,7 @@ icon and «рівень» (`33551dd`). The testers' note was written for the own
 can stop riding to the capital to read a price. Designed and approved in four quizzes and a mockup
 of all eight price cards (the button on its own row). Then the owner: «Поки не роби оновлення з
 рецептами. Зробимо це завтра.» Nothing of it was written; the design is auto-memory
-`project-recipe-notebook-planned`. The three ready changes were committed first (`33551dd`), on
+`project-recipe-notebook` (renamed from `-planned` when it was built on 10-10). The three ready changes were committed first (`33551dd`), on
 the owner's pick.
 
 **A patch note for the testers**, read off the Pi first (`94620a4` since 10-08 11:55, schema v19):

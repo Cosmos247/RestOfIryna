@@ -21,6 +21,23 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-10 — the recipe notebook** (this commit, NOT deployed — Swift, 21 uk / 19 en strings and
+one migration, `CreateRecipeNotes`; the digest unmoved). A public-test player kept
+riding to the capital just to read what the next reforge cost. Every price card now carries
+«📌 У нотатник» on its own row under the action: the Master's lesson and enchant, the workshop's
+weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade and the Training Ground.
+The journal has «📌 Рецепти (N)», always shown, above «🏆 Рейтинги». It opens up to three pinned
+cards priced afresh, each with its «❌». The design is the owner's, approved in five quizzes over
+10-09 and 10-10 on real numbers.
+- A note is a THING (`RecipeNote`: kind · ref · target), never a row. The enchant's note is the
+  piece + the level, because a warehouse trip re-creates the row.
+- It disappears silently once done. `RecipeNoteService.live` reads the player's rows each time
+  and deletes what is finished; the one event, a craft, is cleared in the craft funnel.
+- Rehearsed on a scratch Postgres 15 the way the Pi will meet it: the migration alone, in batch 2.
+  82 checks drove the real services and passed, twice: the eight cards' notes, both approved
+  screens to the line, the bag-only count at the Master, the warehouse round trip, done through
+  the real upgrades, the cascade and the unique index. Two planted mutants were caught.
+
 **2026-10-09 — «тир» is «рівень» on every screen** (`33551dd`, deployed 2026-10-09 01:30; locale only):
 the owner had asked before. 27 uk lines — the bag and estate upgrades, the full warehouse, a
 locked room, three decree conditions and twelve decree descriptions — with the cases agreed

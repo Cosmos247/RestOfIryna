@@ -2025,7 +2025,8 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block below is LIVE and unwalked** — the five on top since the 2026-10-09 01:30 restart (the
+Telegram. **The block on top (the recipe notebook, 2026-10-10) is NOT deployed yet; every block under
+it is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
 the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
@@ -2034,6 +2035,22 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-10 — the recipe notebook (this commit, NOT deployed — a migration and new strings, so a restart):**
+an account at estate level 4+, so every card is in reach; a second at level 5 for the lesson.
+- Eight cards carry «📌 У нотатник» on a row of its own: the Master's «🔨 Урок перековки» (under
+  «Перекувати · До майстра») and an armour piece's «✨ Покращення броні» (under «Так · Ні»); the
+  workshop's «⚔️ Перековка зброї», «🎒 Покращення сумки» and «🔳 Залізний злиток»; a kitchen dish;
+  «🏠 Розбудова маєтку»; the Training Ground's card (under «Збудувати/Покращити · Назад»). The
+  action button stays even when something is missing.
+- A tap shows the toast «📌 Записано в нотатник (1/3)» and the button turns into «📌 Прибрати з
+  нотатника»; a second tap «📌 Прибрано з нотатника». A fourth pin: the modal «У нотатнику вже 3
+  рецепти — приберіть один: 📓 Нотатник → 📌 Рецепти», and the card stays as it was.
+- 👤 Профіль → 📓 Нотатник: «📌 Рецепти (N)» above «🏆 Рейтинги», at 0 too. It opens over the same
+  bubble: each note, «❌ <назва>» two to a row, «🔙 До нотатника»; with none, the hint.
+- The numbers are the card's: the Master's notes count the bag only, the estate's bag + warehouse.
+- Done goes silently: reforge, raise, sew or cook once and the note is gone the next time the
+  journal opens. An armour note survives a trip to the warehouse and back.
 
 **Added 2026-10-09 — a weapon's own icon, and «рівень» for «тир» (`33551dd`, live since 2026-10-09 01:30):**
 - 👤 Профіль: «🗡 Основна рука: Іржавий меч» for the knight, «🏹 … Простий лук» for the archer,
@@ -2975,9 +2992,13 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-09 — the Pi runs `de0e062` since 01:30. That restart took the road card, the
+*Last updated: 2026-10-10 — the recipe notebook (this commit) is built and rehearsed (82 checks on
+a scratch Postgres), NOT deployed: it needs a restart (a migration and new strings). The Pi still
+runs `de0e062`. The 10-09 footer follows.*
+
+*2026-10-09 — the Pi runs `de0e062` since 01:30. That restart took the road card, the
 starving players' four, the fortune teller once a game day, the named fight line, the weapon's own
-icon and «рівень». The recipe notebook is designed and approved, not built. The 10-08 footer
+icon and «рівень». The recipe notebook was designed and approved, not built. The 10-08 footer
 follows.*
 
 *2026-10-08 — the public test is running (the door opened 2026-10-07 18:34); the Pi runs `94620a4`

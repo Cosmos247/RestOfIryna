@@ -924,7 +924,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// The lesson card: the Master's opening line, the first reforge's preview
     /// in the workshop's own words (`GearStatLines`), and its price — the
     /// rung's materials counted from the bag, since the capital has no
-    /// warehouse, plus the fee, each a `RequirementLine`.
+    /// warehouse, plus the fee, each a `RequirementLine`. Under the buttons,
+    /// its «📌» for the journal (2026-10-10).
     private func editToMasterLesson(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale, user = context.session
         guard let userId = user.id,
@@ -958,12 +959,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         lines.append(RequirementLine.render(
             label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
             have: user.silver, need: MasterCatalog.weaponLessonSilver))
-        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: lingo.localize("weapon.upgrade.button.confirm", locale: locale),
-                                   callbackData: "master:lessonok"),
-            TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale),
-                                   callbackData: "master:menu")
-        ]])
+        let pinned = try await RecipeNoteService.isPinned(.lesson(weapon: weapon.itemId), for: user, on: context.db)
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: lingo.localize("weapon.upgrade.button.confirm", locale: locale),
+                                    callbackData: "master:lessonok"),
+             TGInlineKeyboardButton(text: lingo.localize("capital.master.button.back", locale: locale),
+                                    callbackData: "master:menu")],
+            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "master:pin:lesson", lingo: lingo, locale: locale)
+        ])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
                                text: lines.joined(separator: "\n"), keyboard: keyboard)
     }
@@ -1033,7 +1036,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// label describes a specific inventory row rather than a shop listing —
     /// the Master's repair screen showed a tier-5 weapon under its tier-1 name
     /// while the inventory and the profile showed the real one.
-    private func itemLabel(_ itemId: String, tier: Int = 1, lingo: Lingo, locale: String) -> String {
+    ///
+    /// Not private: the journal's enchant note names its piece through this,
+    /// as the enchant card does (`RecipeNoteDisplay`).
+    func itemLabel(_ itemId: String, tier: Int = 1, lingo: Lingo, locale: String) -> String {
         guard let item = ItemCatalog.find(itemId) else { return itemId }
         // `item.icon` is optional — unwrap it, never interpolate the Optional
         // directly (that leaks "Optional(...)" into player-facing text).
@@ -1243,7 +1249,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         lines.append(RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
                                             have: context.session.silver, need: step.silver))
         lines.append(RequirementLine.item(step.materialId, have: inBag, need: step.materialQty, lingo: lingo, locale: locale))
-        let kb = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
+        // The journal's «📌» under the question — keyed by the piece and the
+        // level, not this row, so a warehouse trip does not lose it.
+        let pinned = try await RecipeNoteService.isPinned(.enchant(row.itemId, toLevel: step.level), for: context.session, on: context.db)
+        let confirm = masterConfirmKeyboard(yes: "master:enchantok:\(entryId.uuidString)", no: "master:enchantlist", lingo: lingo, locale: locale)
+        let kb = TGInlineKeyboardMarkup(inlineKeyboard: confirm.inlineKeyboard + [
+            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "master:pin:enchant:\(entryId.uuidString)", lingo: lingo, locale: locale)
+        ])
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
                                text: lines.joined(separator: "\n"), keyboard: kb)
     }
@@ -2011,6 +2023,36 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 throw error
             }
             await ctrl.finishMasterLesson(result, query: query, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        // The «📌» on the lesson and enchant cards (2026-10-10): pin the card to
+        // the journal, then redraw it so the button turns. The card's subject is
+        // read again first — a stale card (the lesson taken, the piece gone or at
+        // the cap) is answered and redrawn as the screen it now belongs to.
+        if data == "master:pin:lesson" {
+            if (try? await WeaponUpgradeService.lessonAvailable(for: context.session, on: context.db)) == true,
+               let weapon = try? await WeaponUpgradeService.equippedWeapon(for: context.session, on: context.db) {
+                if try await RecipeNoteDisplay.toggle(.lesson(weapon: weapon.itemId), query: query, context: context) {
+                    try await ctrl.editToMasterLesson(messageId: message.messageId, isPhoto: isPhoto, context: context)
+                }
+            } else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                await ctrl.editToMasterMenu(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
+            return true
+        }
+        if data.hasPrefix("master:pin:enchant:") {
+            let idStr = String(data.dropFirst("master:pin:enchant:".count))
+            if let id = UUID(uuidString: idStr),
+               let row = try? await ctrl.ownedRow(id, for: context.session, on: context.db),
+               let step = MasterCatalog.enchantStep(currentLevel: row.enchantLevel) {
+                if try await RecipeNoteDisplay.toggle(.enchant(row.itemId, toLevel: step.level), query: query, context: context) {
+                    try await ctrl.editToMasterConfirmEnchant(entryId: id, messageId: message.messageId, isPhoto: isPhoto, context: context)
+                }
+            } else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                try await ctrl.editToMasterEnchant(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            }
             return true
         }
         // Item taps open a confirm prompt first (guard against accidental
