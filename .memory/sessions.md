@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this doc pass, 10-09)* **the session preamble trimmed against the records** — records only:
+- `34872f6` (10-09) **the session preamble trimmed against the records** — records only:
   `MEMORY.md` 24,594 → 16,773 chars of Claude Code's hard 25,000-char cut (63 index lines made
   hooks), `CLAUDE.md` 72,815 → 60,181 (every rule kept, the stories left to the memories they
   cite), `Prompt.md` 60,941 → 8,534 (live state only), `.memory/INDEX.md` 11,356 → 5,704; before
@@ -596,7 +596,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-09, evening (the session preamble trimmed against the records)
+## Session — 2026-10-09, evening (the session preamble trimmed against the records) — `34872f6`
 
 The owner asked whether `CLAUDE.md`, `Prompt.md` and `MEMORY.md` had grown past what can be read,
 and which parts could move to the memory records — a list first, for approval. The fourth run of
