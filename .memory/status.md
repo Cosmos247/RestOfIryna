@@ -826,8 +826,8 @@ tree and the Pi agree since the 2026-10-09 01:30 restart (`de0e062`): `records 4
 `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
 e3a492be1b017e81`, content hash `47888401`, **schema v20** (the fortune teller's 24 h
 `cooldownSeconds` gone, then the sword's icon ⚔️ → 🗡 — `records` alone moved). Nothing committed
-is waiting for a restart. Every earlier baseline, and what each restart carried, is in
-`Prompt.md`. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+is waiting for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

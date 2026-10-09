@@ -108,7 +108,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - **One road card per trip** (2026-10-08): setting out, every `↩️ Розвернутись` and every "how
   long is left" is `Assets/travel/road.jpg` with a new caption; `CapitalController.sendRoadCard`
   sends the new card and deletes the trip's previous one, and arrival forgets the id so the last
-  card stays. Arrival home stays text, the owner's call.
+  card stays. Arrival home stays text, the owner's call. It is the one exception to keeping
+  photos in history: a superseded card is not a place the player has been, and a player who turns
+  back three times would otherwise get four identical pictures.
 
 ### Estates *(grid + adjacency abandoned 2026-05-11; see Territorial Warfare below)*
 - Manor: per-tier rooms (Warehouse → +Kitchen → +Workshop unlock as the estate tier grows; see Phase 5.3c for the actual gating). Workshop hosts the Forge (ingots) + weapon-upgrade (tier 3 and up — the first reforge is the Master's lesson in the capital since 2026-10-04, and every rung opens at a player level) + bag-upgrade + salvage flows — armour is not crafted since 2026-09-28, the Master sells it; Kitchen hosts cooking

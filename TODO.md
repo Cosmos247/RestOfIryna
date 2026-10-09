@@ -900,7 +900,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       from **1,211/day to 513** on the way. The `pace.too_fast` band moved 45 → 72 days with
       the model it judges.
       · **Two findings left standing on purpose.** `restore_vigor` is flat against a pool that
-      grows (the best dish is 33% of a level-1 pool and 12% of a level-40 one) — the same
+      grows (the best dish is 33% of a level-1 pool and 12% of a level-40 one; the Feast is 69% and
+      24% since the 09-18 repricing) — the same
       defect as the stances, now in the whole economy; deferred with batch cooking to after the
       rebalance, and warned about every run. And levels 1–3 have no estate at all, which is a
       feature: the first days are lived off the trail, and it gives the estate a reason to exist.
@@ -2994,8 +2995,8 @@ as planned:*
 - *the Vigor-reward and task-ready notices, the support button, the enchant fix and the
   durability change.*
 
-*Five migrations ship with it; the digests to match and the tables to verify are in `Prompt.md`
-→ Next action 0. Their walk-list blocks head the list above.*
+*Five migrations ship with it; the digests matched and the tables verified are in `.memory/sessions.md`
+→ `## Deploy — 2026-10-06 21:39`. Their walk-list blocks head the list above.*
 
 *Earlier footers, kept as a record:* on 2026-10-03 the arena duel in simultaneous rounds was the
 newest commit (`cad61c3`, fill `2dcf87c`, then a sync pass that removed five dead arena members),

@@ -36,93 +36,27 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 
 ## Where the work stands
 
-- **The public test is running** since **2026-10-07 18:34** (`ROI_OPEN_ACCESS=1` on the Pi; 13
-  accounts in by 10-08 21:59). Sessions now mix live-play polish with **player support**: the
-  owner relays questions, answers come from the code and data with a ready Ukrainian reply
-  ([live-ops.md](live-ops.md), auto-memory `project-public-test`).
-- **On the Pi: `de0e062`** since **2026-10-09 01:30:47** — content schema v20, content hash
-  `47888401`, `records 4c0802f927fb8be4` (`sessions.md` → `## Deploy — 2026-10-09 01:30`). It carried
-  four changes: the road card (`2ed296e`); the starving players' four (`36e33af` — the hunger tick
-  only on a step that begins at 0 Vigor, «Ви повністю відпочили» for every rest that tops out, the
-  road open at 0 Vigor, the forest edge explaining what hunger costs); the fortune teller once a
-  game day (`248dc43`); and `33551dd` — the fight's named HP line, the weapon's own icon, «рівень»
-  for «тир». The SDK's rate limiter stays OFF, `PollWatchdog` runs, the client is HTTP/1.1.
-- **Earlier restarts:** 2026-10-06 21:39 took everything committed since `8ae6772` (tier 2 through
-  the owner's screen art, five migrations, the tables checked after — `sessions.md` →
-  `## Deploy — 2026-10-06`); 2026-10-07 18:34 the open door and the guild gate; 2026-10-08 the
-  freeze fixes (`94620a4` at 11:55).
-- **Designed, approved, NOT built: the recipe notebook** («Зробимо це завтра» — auto-memory
-  `project-recipe-notebook-planned`); build only on the owner's word.
-- **Waiting on the owner** (`TODO.md` → "Open, decided but not done", top block): two features
-  chosen with their form unanswered, so not built — eating straight from the warehouse, and a hint
-  under the estate-name prompt; a question left unanswered builds nothing. Below them, the older
-  open threads: the arena's
-  matchmaking and class gap, the weapon ladder's leftovers, the 10-04 tarot/watchman items, the
-  10-05 durability items and the 10-06 armour-ladder items.
-- **Parked: the class sets** ([class-sets-concept.md](class-sets-concept.md)). The owner asked
-  for the concept on 10-05 and said «ми до цього повернемось» without answering its four forks.
-  It was the gear ladder in class form; since 10-06 the armour has a ladder (the enchant,
-  gated by price, not level), so the concept's ranks and the enchant share an axis — its top
-  note says what that changes.
-- **Emblem candidates** (2026-10-08, none chosen): `content/lore.md` §14.
-- **State of the deployment: `Prompt.md`.** That file is the session primer and the only
-  place the current commit, digest baseline and next action are kept in sync. **The
-  surfaces still unwalked moved to `TODO.md` on 2026-09-20** — "Walk list — shipped
-  surfaces nobody has opened", with "Open, decided but not done" beside it; a QA
-  checklist read at the start of every session is not a primer.
-- **What each commit did and why: [Session History](sessions.md)** — its **Commit index**
-  at the top is the single changelog (hash → what it did, 2026-09-09 onward), moved there
-  from `Prompt.md` on 2026-09-15 because six hashes lived nowhere else. Dated narrative
-  entries follow it: the 09-07 pre-push pass, the 09-08 Pi audit and invite-only access,
-  the 09-09 → 09-17 polish entries, the 09-18 kitchen rebuild, and on through the 09-27/28
-  entries, the `## Deploy — 2026-09-28` restart, the 10-02 tier-2 entry, the 10-03 sync pass,
-  the 10-03 estate-scaling entry (`4be2758`), the second 10-03 sync pass, the 10-03 arena
-  entries (`cad61c3`, `f0c1749`) and the third 10-03 sync pass, then the 10-04 weapon-ladder
-  entry (`9ab349c`) and the 10-04 sync pass, then the tester-driven entries of 10-04/05 (the
-  tarot, the Vigor reward, the task-ready notice, the support button, the enchant), the 10-05
-  sync pass, the 10-05 durability entry (the first of the day's gear work), and the class-sets
-  concept with the second 10-05 sync pass, the 10-06 armour-ladder entry (`bad142b`) and its
-  sync pass, the 10-06 deploy, then the public test: the 10-07 open door and guild gate with its
-  deploy, the 10-08 poll-loop freeze and the SDK limiter with the 11:55 deploy, the 10-08 road
-  card and player-support entries, then the 10-08 late starving players' four (`36e33af`), the
-  10-09 fortune teller once a game day (`248dc43`), the named fight line and the weapon's own icon
-  with «рівень» (`33551dd`), the recipe notebook designed and postponed with the food lines taken
-  out of `36e33af` (the history rewrite), and the `## Deploy — 2026-10-09 01:30` record.
-- **What each phase decided: [Rebalance](rebalance.md).** Since 2026-10-02 it also holds the
-  tier-2 research: the expedition model that can see depth (which `simulate`'s pace cannot), every
-  figure it produced, the reconstructed 09-14 stat method, and how to rebuild the harness. Since
-  2026-10-03 it adds the estate scaling: the variants measured, the upgrade check, what the
-  implementation measured, and how each derived figure was read off the model. Then the arena
-  duel, measured the same day: the first striker's edge, double knockouts, why Defend is a dead
-  choice, the level and class gaps, silent fighters, and how to rebuild the probe. Since
-  2026-10-04 it holds the weapon ladder, measured: the estate gate behind the overgrowth, three
-  rounds of variants (v1–v3, every other estate tier, a rung every five levels at
-  100/75/50%), the probe's rebuild recipe, and the path to each decision. Since 2026-10-04 also
-  the tarot's Vigor multipliers, measured: why −25% rounded away to nothing, both cost tables and
-  the Hanged Man decision. Since 2026-10-06 the armour enchant, measured: why a percentage of a
-  level-1 piece gave nothing, the path to the ladder and from a level gate to a price, the grids
-  (four strengths, a level bought ahead of the player, five price ladders) and how to rebuild the
-  probe.
-- **The rules all of it produced: `CLAUDE.md`.** It states the rule and the trap; the
-  story behind each one lives here or in the auto-memory bank. See the auto-memory
-  `feedback-docs-keep-the-rule` for the split and for why every "never do X" guard stays
-  in the repo doc rather than moving into a memory file.
+- **State, next action, open threads: `Prompt.md`** — the only place the current commit, the
+  digest baseline and the next action are kept. Open items and the unwalked surfaces: `TODO.md` →
+  "Open, decided but not done" and "Walk list".
+- **What each commit did: [Session History](sessions.md)** — the **Commit index** at its top is the
+  single changelog (hash → what it did, 2026-09-09 onward), then a dated entry per session and a
+  `## Deploy —` entry per restart; the superseded digest baselines sit under the index.
+- **What was decided and measured: [Rebalance](rebalance.md)** — the per-phase decisions and the
+  calibrated model, then the post-rebalance research, each with its rebuild recipe: tier 2's
+  expedition model, the estate scaling, the arena duel, the weapon ladder, the tarot's Vigor
+  multipliers and the armour enchant.
+- **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
+  the auto-memory bank, and every "never do X" guard stays in the repo doc
+  (`feedback-docs-keep-the-rule`).
 
 ## The auto-memory bank (outside the repo)
 
-Lives in `~/.claude/projects/-Users-cosmos-RestOfIryna/memory/`, indexed by its own
-`MEMORY.md`, and is **not** a second copy of this one. The split in force: **the repo doc
-keeps the RULE, the auto-memory keeps the REASON** — `CLAUDE.md` states the imperative and
-the trap, the memory holds the measurement that produced it. See `feedback-docs-keep-the-rule`
-for why every "never do X" guard stays in the repo rather than moving there.
-
-Each `CLAUDE.md` rule names the auto-memory behind it inline, so they are reached by
-following the rule you are about to break — which is the only index that is needed here.
-**Do not list them in this file.** `MEMORY.md` loads automatically every session and
-already carries all 106 at one line each (2026-10-09), so a selection copied into this file is the
-third-copy pattern `feedback-docs-keep-the-rule` was written about: on 2026-09-20 it had
-grown back to 24 entries, every one of them already in `MEMORY.md` and one of them listed
-twice.
+Lives in `~/.claude/projects/-Users-cosmos-RestOfIryna/memory/`, indexed by its own `MEMORY.md`,
+which loads every session — so it is **not** listed here. The split in force: the repo doc keeps
+the RULE, the auto-memory keeps the REASON. Each `CLAUDE.md` rule names the auto-memory behind it
+inline; follow the rule you are about to break. **Do not copy its entries into this file** — the
+third-copy pattern `feedback-docs-keep-the-rule` was written about.
 
 ## Session Log
 - [Session History](sessions.md) — Chronological log of what was done per session

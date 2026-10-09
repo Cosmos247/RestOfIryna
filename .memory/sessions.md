@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this sync pass, 10-09)* **the record of the 2026-10-09 01:30 deploy, and a full doc audit** —
+- *(this doc pass, 10-09)* **the session preamble trimmed against the records** — records only:
+  `MEMORY.md` 24,594 → 16,773 chars of Claude Code's hard 25,000-char cut (63 index lines made
+  hooks), `CLAUDE.md` 72,815 → 60,181 (every rule kept, the stories left to the memories they
+  cite), `Prompt.md` 60,941 → 8,534 (live state only), `.memory/INDEX.md` 11,356 → 5,704; before
+  any deletion, 17 Commit-index rows, the superseded digest baselines and fifteen one-of-a-kind
+  facts were carried into the records. The entry below has the method and what was left alone.
+- `4459f79` (10-09) **the record of the 2026-10-09 01:30 deploy, and a full doc audit** —
   records only:
   - `## Deploy — 2026-10-09 01:30`, with every "NOT deployed" marker moved;
   - `status.md`'s digest paragraph, which still quoted the 10-06 tree and the 09-28 Pi;
@@ -57,23 +63,29 @@ was shown in a unit it was not measured in.
   built and removed the same day on the owner's word, and the price became the gate — 50 × level²
   silver a piece, 11,000 a set. The card prints the stat deltas; the validator refuses a level
   that changes nothing; schema v19.
+- `7ab13ce` (10-05) **the second 10-05 sync pass** — records only: the class-sets concept parked; stale README, lore, recipes and status notes fixed.
+- `e4e67ad` (10-05) **`bf15669`'s hash fill** — records only.
 - `bf15669` (10-05) **durability is the item's own, and the Forester set is 50**
   (`spec-items.md` §10) — `items.json` → `maxDurability`, the global start gone, prices ×5/3 so
   a repaired point costs what it did; existing pieces +20 in both numbers; the cached gear
   bonuses re-derived at every boot, which also closes the weapon ladder's stale ATK (four
   testers, Дарина's sword +60 cached against +27 real); schema v18.
+- `d446451` (10-05) **the 10-05 sync pass** — the records synced after the 10-04/05 tester-driven polish; stale fortune, weapon and half-wheel comments fixed.
 - `4fe5b7a` (10-05) **the Master's enchant draws from the bag alone** — the card counts in
   the bag; a refusal is a modal. Its fill `fd6e6e1` also has the lesson answer its tap on a throw.
 - `b0c9d80` (10-04) **«💛 Допомога грі» in Settings** — one button, the owner's text. Its fill
   `e569bca` also fixes the Settings button's «⚙️ Налаштування».
+- `28511cf` (10-04) **`0b53e82`'s hash fill** — records only.
 - `0b53e82` (10-04) **the watchman says when a task is ready** — one unnamed «📓 … загляньте
   в нотатник» per sweep, once per task, the decree and the NPC jobs alike; one migration.
+- `c241d71` (10-04) **`47e0e8f`'s hash fill** — records only.
 - `47e0e8f` (10-04) **a Vigor reward that will not fit is asked about** — a warning on the
   card, a question on the turn-in tap, the loss named in the banner; decrees and NPC jobs alike.
 - `c1c0570` (10-04, `a91226f`'s fill) **the Hanged Man gains +15% XP**, so the Chariot no longer
   dominates it.
 - `a91226f` (10-04) **a one-shot card's later line loses «отримано»** — the Tower read
   «отримано: −🪙 25»; now «Карта дня: Вежа · −🪙 25», the sign and icon carrying it.
+- `e8c9580` (10-04) **`e861c73`'s hash fill** — records only.
 - `e861c73` (10-04) **a tarot card is phrased once, and 💰 marks every reward**:
   - the reveal prints the card through `FortuneDisplay`, like the fortune screen and the
     profile; the 22 hand-typed `buff_desc` keys are deleted;
@@ -81,6 +93,8 @@ was shown in a unit it was not measured in.
     «Ієрофант»;
   - 🎁 → 💰 on the King's reward, the palace banner, the claim button and the tarot's loot;
   - «Витрата снаги», the Chariot −25% → −50%, and the card's multiplier on the techniques too.
+- `f2d7855` (10-04) **the 10-04 sync pass** — the weapon-ladder research persisted, the records resynced, the stale-gear offset renamed, four untested decree rules tested.
+- `994c752` (10-04) **`9ab349c`'s hash fill** — records only.
 - `9ab349c` (10-04) **the weapon follows the player level, and its first rung is the Master's
   lesson** (`spec-items.md` §9):
   - nine rungs, one every five levels, each with its `requiredPlayerLevel`, at 75% of the shipped
@@ -91,15 +105,19 @@ was shown in a unit it was not measured in.
   - the four weapon decrees moved to L5/10/15/20, re-seated by decree;
   - `king.weapon_tier_before_its_gate` and five ladder gate rules;
   - schema v17, `records` and `king` moved, 366 tests.
+- `9084528` (10-03) **`95e8492`'s hash fill** — records only.
 - `95e8492` (10-03) **the quest board as a scroll**: the decree's requirement line plus an
   8-cell bar on the NPC board (not in the journal), 🪶 / 💰 framing, 📖 for Досвід game-wide, 🍖
   for the board's Снага; `quest.counter.*` labels required by the validator.
+- `8b2bc4e` (10-03) **`f0c1749`'s hash fill** — records only.
 - `f0c1749` (10-03) **the arena duel as a cycle of three**: Attack beats the class special
   attack, the technique breaks Defend, Defend turns Attack (block 65%, riposte 60%); the
   technique free and unlimited; the clock's Defend answers nothing; the arena admits only those
   who learned the special attack; arena-own numbers in `arena.json` → `duel`, schema v16.
 
   `records` alone moved; 352 tests.
+- `51ec578` (10-03) **the third 10-03 sync pass** — the arena research persisted, the records resynced, five dead arena members dropped.
+- `2dcf87c` (10-03) **`cad61c3`'s hash fill** — records only.
 - `cad61c3` (10-03) **the arena duel in simultaneous rounds**:
   - both fighters choose blind; a round plays on the second choice or after 15 s, a missing
     choice as a forced Defend; three missed rounds in a row are a technical defeat;
@@ -111,6 +129,8 @@ was shown in a unit it was not measured in.
     the guilds.
 
   `records` alone moved; 344 tests.
+- `790560f` (10-03) **the second 10-03 sync pass** — the records resynced after the estate scaling; three stale enemy comments cleared.
+- `c28a3e5` (10-03) **`4be2758`'s hash fill** — records only.
 - `4be2758` (10-03) **creatures grow with the estate**:
   - a spawnable creature's HP and ATK × (1 + 0.1·(estate tier − 1)), strength only, with no
     player notice and T6 left as it is;
@@ -120,6 +140,8 @@ was shown in a unit it was not measured in.
   - `simulate` prints «the forest by estate tier» and prices it into the pace.
 
   `tuning` alone moved; 336 tests; `simulate --strict` 0 broken bands.
+- `7a6b458` (10-03) **the 10-03 sync pass** — the tier-2 research persisted, the records resynced for a fresh session.
+- `b407840` (10-03) **`f03d502`'s hash fill** — records only.
 - `f03d502` (10-02) **tier 2 of the bestiary**:
   - fourteen creatures numbered in order, five of them new: Скажена лисиця, Олень-рогач,
     Вепр-сікач, Тур and Скажена зграя;
@@ -130,6 +152,7 @@ was shown in a unit it was not measured in.
   - the four oblique-case enemy-name lines rewritten in the owner's wording.
 
   `records` / `tuning` / `spawns` moved; 324 tests; `simulate --strict` 0 broken bands.
+- `ce8ef2f` (09-29) **the 09-29 sync pass** — the records resynced to the 09-28 deploy; dead recipe-category code dropped.
 - `ada1ae7` (09-28) **the workshop stops making armour** — the Master is the only source, at his old
   prices (485 🪙 a set); the four Forester recipes stay as patterns because salvage reads them
   (`RecipeCategory.isCraftable` false for the tannery, asked by the list, the detail callback and
@@ -494,6 +517,116 @@ Earlier, in the restart of 2026-09-12 19:43 on `aa18f57`:
 - `04bd80d` **Ukrainian agrees with the item, not only with the player** — `item.<id>.gender`
   in `uk.json`, two validator rules behind it.
 
+## Digest baselines — superseded
+
+Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--content-digest`
+baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
+what each restart carried is its `## Deploy —` entry below.
+
+**The baseline the Pi ran from 2026-10-07 18:34 to 2026-10-09 01:30 (`f200fa5` → `94620a4`, schema v19):** `records
+cc1357a44f3c4849` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `a89b39b0`. The guild gate 5 → 30
+(`guild.json` → `foundLevelGate`) moved `records` alone; nothing in `content/data` has moved since
+(`ee7437e`, `94620a4` and `2ed296e` are Swift, an asset and a locale string).
+
+**The armour ladder's baseline (2026-10-06, schema v19, `bad142b` — on the Pi 2026-10-06 21:39 → 10-07 18:34):** `records 9303bb274d4517d8` · `tuning 4edf65507bbb5e48` · `spawns
+0cf31905171d7944` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash
+`be1102fc`. `records` alone moved: the growth share, each step's item level and its new price,
+and every armour piece replayed at every enchant level from −1 past the cap. The lift is
+DERIVED from the budget curve, so a retune of `tuning/budget.json` moves this line too —
+mutation-tested, with the share, an item level and a price.
+
+**The durability baseline** (2026-10-05, schema v18, `e4e67ad`):
+`records fefe14b940998631` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `41455b84`. Two lines moved:
+`records` (each item's `maxDurability`, the Master's ×5/3 prices, `startingDurability` replayed
+for every item, the repair replay with 49/50/51 added) and `tuning` (`maxDurabilityStart` no
+longer hashed — it is gone). `spawns`, `quests` and `king` are byte-identical.
+
+**The tarot pass's baseline** (2026-10-04, schema v17, `d446451`):
+`records 438be135e3090fb5` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `73568a2a`. The tarot pass
+moved `records` alone, three times: a card's fingerprint names its locale keys (`buff_desc` gone,
+`8c58515e0b4d51d7`), then the Chariot's `vigorDrainMultiplier` 0.75 → 0.5 (`e91795fe3b76c8bf`,
+`794be740`), then the Hanged Man's `xpMultiplier` 1.15. `fortune.json` is the one data file
+touched, hence the content hash.
+
+**The weapon ladder's baseline** (`9ab349c`) is the same with `records 1041961908ba2d3f` and
+content hash `00b40443`. It
+moved `records` (nine gated rungs and `weaponLessonSilver`) and `king` (four decrees moved);
+`tuning`, `spawns` and `quests` are byte-identical.
+
+**The arena cycle's baseline** (`f0c1749`, schema v16) is `records 1b5577693d8733af`, `king
+5dbddfd689f3cede` and content hash `6963c31b`, the other three lines as below. The cycle moved
+`records` alone (the four `arena.json` → `duel` numbers).
+
+**The simultaneous arena's baseline** (2026-10-03, schema v15, `cad61c3`):
+`records 259f6cb6ca152450` · `tuning 605fd06bd8abdfda` · `spawns 0cf31905171d7944` ·
+`quests 30de20902006e3b9` · `king 5dbddfd689f3cede`, content hash `7f6a7317`. The arena moved
+`records` alone (`696d3c25c1a74d98` → `259f6cb6ca152450`: `turnSeconds` 45 → 15,
+`maxMissedTurns` 2 → 3, `sweepInterval` 10 → 1); with the old `arena.json` the new code reads
+the estate scaling's baseline byte for byte.
+
+**The estate scaling's baseline** (`4be2758`) is the same with `records 696d3c25c1a74d98` and
+content hash `be4350a5`. The estate
+scaling moved `tuning` alone (`c01ccfdb585f4a68` → `605fd06bd8abdfda`). It replays
+`estateScale` and the façade on a synthetic pair, and no record, band, quest or decree changed.
+
+**Tier 2's committed baseline** (`f03d502`, schema v14) is the same with `tuning
+c01ccfdb585f4a68` and content hash `cd9d73bf`. Tier 2 moved three lines and left two:
+- `records`, for the roster and the archetype XP multipliers;
+- `tuning`, for `xpLevelDiff.perLevel` 0.08 → 0;
+- `spawns`, for the new bands.
+`quests` and `king` are byte-identical.
+
+**The 09-28 baseline (what the Pi ran from 2026-09-28 to 10-06):** `records 33e5c6e3259d51ba` · `tuning fe05ceaa38e03c6b` ·
+`spawns c9bdb57d456adc26`, content hash `490a2d4b`. Its own `--content-digest` matched the Mac
+byte for byte before the 2026-09-28 22:11 restart. Three lines moved on 09-27:
+- `tuning`, for `gear.salvageFraction`, the special attack's floor 8 → 10 and then the
+  technique rework's five numbers (`11797ea73591e02f` → `fe05ceaa38e03c6b`);
+- `records`, for the Training Ground ladder;
+- `king`, for «Наука бою»'s new condition and then the reorder that put the estate before the
+  ground (`08733a95f4d34e68` → `5dbddfd689f3cede`).
+
+`king` is a fifth line, added with the decree chain, and the four older ones are
+byte-identical across it — which is the entire point of splitting them. `records` moved four
+times to get to its value (the farm ladder, the bag ladder, the food repricing, the
+innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kept in `Prompt.md`
+alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
+record, not a current reading. A knob is invisible to the digest until it is hashed — add the
+line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-09, evening (the session preamble trimmed against the records)
+
+The owner asked whether `CLAUDE.md`, `Prompt.md` and `MEMORY.md` had grown past what can be read,
+and which parts could move to the memory records — a list first, for approval. The fourth run of
+auto-memory `feedback-docs-keep-the-rule` (09-12, 09-15 and 09-20 before it).
+- **Measured against Claude Code 2.1.295 itself** (read out of the binary). `MEMORY.md` is cut at
+  200 lines / 25,000 UTF-16 units, the bottom (newest) lines first, and stood at 24,594 (98.4%),
+  62 of 106 lines over the ~200 chars the tool asks for. `CLAUDE.md` warns above 40,000 chars on a
+  200k-context model and stood at 72,815. `Prompt.md` (60,941) still fit one Read (25,000 tokens).
+  Since the 09-20 trim the three repo files had grown 63,711 → 148,673 B, `Prompt.md` +270%.
+- **Compared by six parallel read-only passes**, then planned as five groups. The owner chose
+  1–4: the index, `CLAUDE.md`, `Prompt.md` + `INDEX.md`. **Not chosen:** group 5, fixing the stale
+  records the audit found (listed in auto-memory `feedback-docs-keep-the-rule`); path-scoped
+  `.claude/rules/` files to bring `CLAUDE.md` under 40k — "not now".
+- **Carried first:** 17 Commit-index rows (12 hashes existed only in `Prompt.md`), the superseded
+  digest baselines (a section under the index), and fifteen one-of-a-kind facts — the Feast's
+  69%/24%, the Pi pre-flight, the arena clock's 25 s, the 50 → 60 durability example, the road
+  card's reason, five index-line facts, and the 10-06 plan's checks and a card sample (in that
+  deploy's entry and the `4fe5b7a` entry).
+- **Trimmed:** `MEMORY.md` — 63 lines made one-line hooks (16,773 units, 67%). `CLAUDE.md` — 70
+  block edits to 60,181 chars; every never/must/always guard kept, six stale lines fixed, one
+  guard added (the index cap) and one promoted from memory (the SDK limiter's burst test).
+  `Prompt.md` — its live state only (8,534). `INDEX.md` — "Where the work stands" as four
+  pointers (5,704).
+- **Checked after:** 1,553 identifiers, code lines, hashes, figures and «uk strings» from the four
+  old files against the final corpus — 25 not found word for word, five of them real and carried,
+  the rest format variants; every memory pointer resolves; the two references this trim broke were
+  repointed (`TODO.md`'s 10-06 deploy line, `file-map.md`'s open item).
+- **For the next run:** Python's `glob('**/*.md', recursive=True)` skips the hidden `.memory/`
+  folder — one checker reported ~100 false orphans until it was added explicitly.
+
 ## Deploy — 2026-10-09 01:30 (`94620a4` → `de0e062`)
 
 The owner pushed and asked for the deploy and the restart. Read off the Pi first: `94620a4` since
@@ -843,6 +976,13 @@ worn pieces, Nerif a +5 jerkin in the bag.
 @ROfIr_bot`, Hummingbird listening; no warning or error since the restart; `Code: 400` still at
 its 913 baseline. Next: tell the testers (the list sent on 10-06), the first `fight_log` rows
 with `estate_level`, then the walk list's fifteen new blocks.
+
+**The plan's own checks**, moved from `Prompt.md` on 2026-10-09 (their outcomes are above):
+`SELECT decree_index, count(*) FROM king_progress GROUP BY 1` before the restart, to compare
+against `ReseatDecreesById`; `SELECT nickname, gear_attack_bonus FROM users WHERE nickname =
+'Дарина'` after it (27, not 60); the boot log line `Recomputed cached gear bonuses for N user(s)`;
+and the build on the Pi BEFORE the restart, because the arena's `isEmojiPresentation` was new
+Linux-facing stdlib use that only the Pi's build could prove — the 140 s build above did.
 
 ## Session — 2026-10-06 (the owner's screen art, and the King's first line) — `873e426`
 
@@ -1275,7 +1415,8 @@ A tester's report: «У столиці при покращенні споряд�
   - Both files recompiled with no warning; 370 tests; `validate --strict` 0/0; the digest
     unmoved.
   - The capital no longer reads the warehouse at all.
-  - Three cards rendered in both languages: the tester's case, enough hides, short of silver.
+  - Three cards rendered in both languages: the tester's case, enough hides, short of silver —
+    the tester's reads `✅ 🪙 Срібло (540/220)` · `❌ 15× 🟫 Шкура (0/15)`.
 
 ## Session — 2026-10-04 («💛 Допомога грі» in Settings) — `b0c9d80`
 
