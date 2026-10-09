@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-10)* **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
+- *(this hash fill, 10-10)* **`d77d600`'s hash fill** — records only.
+- `d77d600` (10-10) **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
 - `2d8ab41` (10-09) **`34872f6`'s hash fill** — records only.
 - `34872f6` (10-09) **the session preamble trimmed against the records** — records only:
   `MEMORY.md` 24,594 → 16,773 chars of Claude Code's hard 25,000-char cut (63 index lines made
@@ -598,7 +599,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-10 (the recipe notebook built, not deployed)
+## Session — 2026-10-10 (the recipe notebook built, not deployed) — `d77d600`
 
 **Picked up from the record.** Asked what had been decided about the notebook, the answer came
 from the 10-09 transcript (`3aef4938`), not from memory. Its four quizzes, the eight mocked cards

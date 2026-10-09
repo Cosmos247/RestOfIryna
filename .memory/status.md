@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-10 — the recipe notebook** (this commit, NOT deployed — Swift, 21 uk / 19 en strings and
+**2026-10-10 — the recipe notebook** (`d77d600`, NOT deployed — Swift, 21 uk / 19 en strings and
 one migration, `CreateRecipeNotes`; the digest unmoved). A public-test player kept
 riding to the capital just to read what the next reforge cost. Every price card now carries
 «📌 У нотатник» on its own row under the action: the Master's lesson and enchant, the workshop's

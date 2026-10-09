@@ -25,11 +25,11 @@ stronger still needs the re-solve (auto-memory `project-post-rebalance-package`)
 
 | | |
 |---|---|
-| HEAD | **this commit** — the recipe notebook — on top of **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41` and this commit are not pushed** — push is the owner's |
+| HEAD | **this hash fill** on top of **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600` and this hash fill are not pushed** — push is the owner's |
 | running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Record: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **the recipe notebook** (this commit, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the digest is unmoved. Everything before it, up to `de0e062`, is live |
+| waiting for a restart | **the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the digest is unmoved. Everything before it, up to `de0e062`, is live |
 
 ### Where the last sessions stopped (2026-10-08 late → 10-10)
 
@@ -55,7 +55,7 @@ the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes
 
 ### Next action
 
-**0 — Ship the recipe notebook, on the owner's word.** Committed (this commit; auto-memory
+**0 — Ship the recipe notebook, on the owner's word.** Committed (`d77d600`; auto-memory
 `project-recipe-notebook`), not pushed. Push is the owner's. The deploy is the usual recipe
 below, and the restart needs the owner's go: a new table (`CreateRecipeNotes`, rehearsed) and new
 strings, the digest unmoved. After it, the walk list's top block.

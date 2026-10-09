@@ -2036,7 +2036,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-10 — the recipe notebook (this commit, NOT deployed — a migration and new strings, so a restart):**
+**Added 2026-10-10 — the recipe notebook (`d77d600`, NOT deployed — a migration and new strings, so a restart):**
 an account at estate level 4+, so every card is in reach; a second at level 5 for the lesson.
 - Eight cards carry «📌 У нотатник» on a row of its own: the Master's «🔨 Урок перековки» (under
   «Перекувати · До майстра») and an armour piece's «✨ Покращення броні» (under «Так · Ні»); the
@@ -2992,7 +2992,7 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-10 — the recipe notebook (this commit) is built and rehearsed (82 checks on
+*Last updated: 2026-10-10 — the recipe notebook (`d77d600`) is built and rehearsed (82 checks on
 a scratch Postgres), NOT deployed: it needs a restart (a migration and new strings). The Pi still
 runs `de0e062`. The 10-09 footer follows.*
 
