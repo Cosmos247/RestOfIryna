@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-10)* **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
+- *(this hash fill, 10-10)* **`04368cd`'s hash fill** — records only.
+- `04368cd` (10-10) **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
 - `743f042` (10-10) **`7995d2a`'s hash fill** — records only.
 - `7995d2a` (10-10) **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
 - `248ce7e` (10-10) **`7860aaa`'s hash fill** — records only.
@@ -604,7 +605,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-10, the sync pass (records only)
+## Session — 2026-10-10, the sync pass (records only) — `04368cd`
 
 On the owner's long-form audit prompt. **What was only in the chat and is now kept:**
 - `.memory/rebalance.md` gained two sections. "The fortune teller's dispel and second card,
