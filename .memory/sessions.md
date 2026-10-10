@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
+- *(this hash fill, 10-11)* **`021e9ac`'s hash fill** — records only.
+- `021e9ac` (10-11) **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
 - `7ee41c1` (10-11) **`1f4b442`'s hash fill** — records only.
 - `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
 - `608f2c5` (10-10) **`04368cd`'s hash fill** — records only.
@@ -608,7 +609,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11, later (a level-up keeps the armour's HP)
+## Session — 2026-10-11, later (a level-up keeps the armour's HP) — `021e9ac`
 
 **Found while designing the class change.** The Treasury's first and only item is to be a class
 change (the owner's quiz). It recomputes the stat line through `applyLevelDerivedStats`, the
