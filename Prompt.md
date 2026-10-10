@@ -25,13 +25,18 @@ stronger still needs the re-solve (auto-memory `project-post-rebalance-package`)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa` and this hash fill are not pushed** — push is the owner's |
+| HEAD | **the armour repair halved** (*this commit*) on top of **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e` and this commit are not pushed** — push is the owner's |
 | running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Record: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **the fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings; `records` → `2c754b9daf5c0d5a`. **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
+| waiting for a restart | **the armour repair halved** (*this commit*, 2026-10-10): `repairCostFraction` 0.5 → 0.25 in `master.json`, `records` → `c3720e93c10c13a8`, content hash `c9cf0506` — content only, but it rides the restart because the tree's content is schema v21. **The fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings (it moved `records` to `2c754b9daf5c0d5a`; the repair moved it on). **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
 
 ### Where the last sessions stopped (2026-10-08 late → 10-10)
+
+**10-10, evening — the armour repair halved.** Players called the repair too expensive; the Pi's
+`fight_log` showed newcomers wearing 60–460 points a day against ~100 job silver. The owner halved
+the price (`repairCostFraction` 0.25), kept the max shave, did not restore the cut maxima and kept
+the Master's screens as they are. Auto-memory `project-repair-cost-complaint`.
 
 **10-10, later — the dispel and the second card built.** A players' proposal (pay ~30 to cancel a
 card) and the owner's addition (a second card for 20), shaped in five quizzes: «🕯 Відчарувати»
@@ -62,12 +67,12 @@ the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes
 
 ### Next action
 
-**0 — Ship the recipe notebook and the dispel, on the owner's word.** Both committed (`d77d600`
-and `7860aaa`), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
+**0 — Ship the recipe notebook, the dispel and the halved repair, on the owner's word.** All three
+committed (`d77d600`, `7860aaa` and the repair), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
 restart needs the owner's go: two migrations (`CreateRecipeNotes`, `AddFortuneStage`, each
 rehearsed alone in a new batch), new strings and **content schema v21** — the Pi's pre-flight
-digest must read `records 2c754b9daf5c0d5a`, content hash `f6a8a23e`. After it, the walk list's
-top two blocks.
+digest must read `records c3720e93c10c13a8`, content hash `c9cf0506`. After it, the walk list's
+top three blocks.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
@@ -110,8 +115,8 @@ mismatch). After a migration, verify the TABLE, not the log line. Recipe and tra
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
-**The tree's baseline, waiting for the restart (the dispel, schema v21):** `records
-2c754b9daf5c0d5a`, content hash `f6a8a23e`, the other four halves as above. It becomes the current
+**The tree's baseline, waiting for the restart (the dispel and the repair halved, schema v21):** `records
+c3720e93c10c13a8`, content hash `c9cf0506`, the other four halves as above. It becomes the current
 one when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 

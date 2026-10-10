@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-10)* **`7860aaa`'s hash fill** — records only.
+- *(this commit, 10-10)* **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
+- `248ce7e` (10-10) **`7860aaa`'s hash fill** — records only.
 - `7860aaa` (10-10) **the fortune teller's dispel and second card** — NOT deployed — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
 - `0d556f5` (10-10) **`d77d600`'s hash fill** — records only.
 - `d77d600` (10-10) **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
@@ -600,6 +601,32 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-10, evening (the armour repair halved, not deployed)
+
+**The complaint, and what the Pi said.** Players called the repair too expensive. Read-only `psql`
+on the Pi (`fight_log` and worn `inventory` rows, the last four days):
+- wear points a day — Дарина (a tester) 1,181; Inokentiy 462 (239 wins, 110 flees, 1 death);
+  Нястюшка 339; YuDji 237; DIABLO 195 — against jobs paying ~78–103 a day at L1–L8, and an
+  economy model that counts ~3,900 kills over the whole game (≈25 a day);
+- Нястюшка (L8, 386 🪙) had every piece at 0, with a 436 🪙 full repair;
+- the shave is visible: Володимир's breeches 7/29, Дарина's set at 28–34/50, Nerif's +5 jerkin
+  14/36;
+- only 26% of wins end untouched (newcomers 2–9%), so wearing armour only when hit was not offered.
+
+**Asked (one quiz, then a sample).** The owner picked the price −50%, kept the max shave, did not
+restore the cut maxima, asked to see «prices on the list buttons» as a played sample (the real
+repair list of Inokentiy at the new prices), and then kept the Master's process as it is.
+
+**Built.** `repairCostFraction` 0.5 → 0.25 — the one reader is `MasterCatalog.repairCost` (the
+repair and its confirm screen), the validator's bound is (0, 1], the test fixtures carry their own
+value. The weapon's 1 🪙 a point is a code constant and was not asked about.
+
+**Verified.** `validate --strict` 0/0; 401 tests; the digest moved in `records` alone
+(`2c754b9daf5c0d5a` → `c3720e93c10c13a8`; the digest replays `repairCost` at twelve missing values
+per piece); the one stale generated row (`spec economy`'s sinks) refreshed and every block
+reproduces. Not live: the tree's content is schema v21 (the dispel), so a `/reload` on the v20 Pi
+would be refused — it ships with the restart.
 
 ## Session — 2026-10-10, later (the fortune teller's dispel and second card, built, not deployed) — `7860aaa`
 

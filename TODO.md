@@ -411,6 +411,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred. **2026-10-06:** the Master's screen photo `Assets/capital/master.jpg` is supplied (the owner's art); `showMaster` already sent it through `sendCachedPhoto`, so no code moved — every sub-screen now edits the photo's caption, the longest (the lesson card) ≈450 of Telegram's 1024.
+  - *2026-10-10 (*this commit*, NOT deployed):* **the armour repair halved** on players' complaints — `repairCostFraction` 0.5 → 0.25 (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the set from zero 203, was 405; the weapon keeps 1). The max shave, the cut maxima and the Master's screens were asked about and kept.
 - [x] **Two streets** *(landed 2026-09-20, live since the 2026-09-22 00:22 deploy)* — the capital keyboard had reached
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
@@ -2026,8 +2027,8 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The two blocks on top (the fortune teller's dispel and the recipe notebook, 2026-10-10) are NOT
-deployed yet; every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
+Telegram. **The three blocks on top (the repair halved, the fortune teller's dispel and the recipe notebook,
+2026-10-10) are NOT deployed yet; every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
 the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
@@ -2036,6 +2037,13 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-10 — the armour repair halved (*this commit*, NOT deployed — ships with the restart, since the tree's content is schema v21):**
+an account with worn Forester armour.
+- 🛠 Майстер → ⚒️ Полагодити → a piece: the confirm quotes half of today's price — the jerkin
+  from 0/50 «за 🪙 75» (it was 150), the hood 25, the boots 40, the breeches 63. The weapon is
+  unchanged: 1 🪙 a point.
+- The banner and the max: «✅ 🦺 Жилет лісника — полагоджено за 🪙 75 (49/49)» — the shave stays.
 
 **Added 2026-10-10 — the fortune teller's dispel and second card (`7860aaa`, NOT deployed — a migration, new strings and content schema v21, so a restart):**
 an account at the capital with 60+ silver and a free card ready (a fresh account, or after the next 12:00).
@@ -3010,7 +3018,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-10, later — the fortune teller's dispel and second card is built and
+*Last updated: 2026-10-10, evening — the armour repair halved (`repairCostFraction` 0.25), not
+deployed: it rides with the next restart. The later footer below follows.*
+
+*2026-10-10, later — the fortune teller's dispel and second card is built and
 rehearsed (81 checks on a scratch Postgres, five mutants caught), NOT deployed: content schema v21,
 a migration and new strings, so `content/data` and the binary ship together with a restart. The
 recipe notebook (`d77d600`) waits for the same restart; the Pi still runs `de0e062`.*

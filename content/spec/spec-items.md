@@ -876,8 +876,9 @@ Decided by the owner on 2026-10-05:
   of this item start at?" for the three places that ask: the row a purchase or a grant mints
   (`GearState.fresh(for:)`), the Master's repair price, and the workshop's salvage share.
 - **A set's durability and price are set together.** A point repaired costs
-  price × 0.5 ÷ durability, so a sturdier set at the same price is cheaper to keep per fight. That
-  is a choice to make on purpose when authoring one.
+  price × `repairCostFraction` ÷ durability (0.5 when this was written, 0.25 since 2026-10-10), so
+  a sturdier set at the same price is cheaper to keep per fight. That is a choice to make on purpose
+  when authoring one.
 
 | Forester | hood | boots | breeches | jerkin | set |
 |---|---|---|---|---|---|
@@ -889,6 +890,11 @@ Decided by the owner on 2026-10-05:
 Every piece now survives 49 repairs, where it survived 29. The shave is charged per REPAIR,
 whatever was missing, so a player who mends a little and often spends the maximum faster than one
 who waits for 0.
+
+> *Amended 2026-10-10.* The repair was halved on the owner's word (`repairCostFraction` 0.5 →
+> 0.25, `spec-economy.md` §4): a point repaired is now 0.5 / 0.8 / 1.25 / 1.5, and a full repair
+> from zero a quarter of the price, 25 / 40 / 63 / 75 — the set 203. The weapon keeps 1 🪙 a point,
+> and the shave per repair is unchanged.
 
 ### 10.3 What changes for players already playing
 

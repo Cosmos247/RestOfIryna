@@ -360,7 +360,7 @@ the draft band lives and where content arrives after the rebalance.
 |---|---|---|
 | enchant one armour piece to +5 | 2750 | ×4 armour slots = 11000 |
 | the Master's armour | 810 | one-off |
-| repair | 50% of value | per repair, ongoing |
+| repair | 25% of value | per repair, ongoing |
 | found a guild | 500 | one-off, level 30 |
 | market listing | 5 | per lot, up to 5 |
 | arena tithe | 10% of the stake | the only PvP drain |
@@ -403,6 +403,13 @@ item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 > 11,000 for a set. That is the largest optional sink in this table, sized like
 > the ladders above it, and the fastest saver cannot finish it before about
 > level 22.
+
+> *Amended 2026-10-10.* The repair row read «50% of value» until this date. The owner halved
+> it (`master.json` → `repairCostFraction` 0.5 → 0.25; the weapon keeps its 1 🪙 a point) on
+> players' complaints, measured on the public test's `fight_log`: newcomers wore 60–460 points a
+> day against the ~78–103 their jobs pay, and an L8 player with 386 🪙 faced a 436 🪙 full repair
+> with every piece at 0. The surplus this section describes is a late-game one; the repair was
+> landing on the early game. The max shave per repair stays as it was, on the owner's word.
 
 **The trader is the economy's only real drain, and using it is a choice.** Buying
 every material rather than gathering it costs ~21,900 — which is almost exactly

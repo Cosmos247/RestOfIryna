@@ -56,6 +56,6 @@
       "silver" : 1250
     }
   ],
-  "repairCostFraction" : 0.5,
+  "repairCostFraction" : 0.25,
   "weaponLessonSilver" : 30
 }
