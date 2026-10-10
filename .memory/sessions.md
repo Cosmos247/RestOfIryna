@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
+- *(this hash fill, 10-11)* **`1f4b442`'s hash fill** — records only.
+- `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
 - `608f2c5` (10-10) **`04368cd`'s hash fill** — records only.
 - `04368cd` (10-10) **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
 - `743f042` (10-10) **`7995d2a`'s hash fill** — records only.
@@ -606,7 +607,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11 (the premium currency named, credited by hand and shown; the profile's silver declines)
+## Session — 2026-10-11 (the premium currency named, credited by hand and shown; the profile's silver declines) — `1f4b442`
 
 **The name.** The owner asked for an authentic name for the donation currency and picked
 «златник» (en *zlatnyk*) from the proposal. It is the silver coin's pair, since Volodymyr the Great
