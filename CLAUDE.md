@@ -559,6 +559,10 @@ fight's wear, a repair, an enchant and a reforge. **A migration or a content edi
 what a worn row grants leaves the cache stale** until that player's next fight: a restart is the
 consistency point; a `/reload` is not. Auto-memory `project-durability-per-item`.
 
+**Clamp HP to `effectiveMaxHp`, never to `maxHp`.** `maxHp` is the class line alone, and the armour's
+HP sits on top of it. Until 2026-10-11 `applyLevelDerivedStats` clamped to the base, so every
+level-up took the whole gear share (209/209 at L17 came out 176/214).
+
 **A weapon ladder is ONE object.** The three upgradable weapons render through
 `ItemDisplay.nameKey(for:tier:)` → `item.<id>.t<tier>`, and the rungs must keep a word in
 common — the player is upgrading a thing, not swapping it — which `locale.ladder_name_drift`

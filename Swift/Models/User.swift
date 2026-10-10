@@ -530,7 +530,11 @@ final public class User: Model, @unchecked Sendable {
 
         maxHp = next.maxHp
         if growth.maxHp > 0 { hp += growth.maxHp }
-        hp = min(hp, maxHp)
+        // Against the EFFECTIVE ceiling: `maxHp` is the base line and the
+        // armour's HP sits on top of it. Clamped to the base, every level-up
+        // took the whole gear share — 209/209 at L17 came out 176/214
+        // (2026-10-11).
+        hp = min(hp, effectiveMaxHp)
         attack = next.attack
         defense = next.defense
         crit = next.crit

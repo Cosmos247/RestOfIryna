@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`1f4b442`'s hash fill** — records only.
+- *(this commit, 10-11)* **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
+- `7ee41c1` (10-11) **`1f4b442`'s hash fill** — records only.
 - `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
 - `608f2c5` (10-10) **`04368cd`'s hash fill** — records only.
 - `04368cd` (10-10) **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
@@ -606,6 +607,33 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11, later (a level-up keeps the armour's HP)
+
+**Found while designing the class change.** The Treasury's first and only item is to be a class
+change (the owner's quiz). It recomputes the stat line through `applyLevelDerivedStats`, the
+level-up's own function. Reading that function turned up `hp = min(hp, maxHp)`. `maxHp` is the BASE
+line; the screen's maximum is `effectiveMaxHp` (`maxHp + gearHpBonus`). So every level-up dropped a
+geared player by the armour's whole HP share, usually in the forest, right after the kill that
+levelled them.
+
+**Confirmed through the real code** on the rehearsal build: an L17 archer with +38 armour HP at
+209/209 came out of `grantXP` at **176/214**; after the fix, 214/214. The before-run is the check's
+negative test. No row needs repair: the lost HP regenerated at the estate.
+
+**Fixed** on the owner's answer «Виправити зараз окремо», as its own commit ahead of the Treasury:
+the clamp is `effectiveMaxHp`. The two callers are `grantXP` and the boot's
+`backfillLevelDerivedStats`, and both want the effective ceiling. Rule in `CLAUDE.md`.
+
+**Checked.** `swift build` green, the file recompiled with no diagnostics; 401 tests;
+`validate --strict` 0/0; the digest unmoved; the zlatnyk rehearsal still 54/54 twice.
+
+**Decided the same hour for the Treasury** (not built yet): its first version sells only the class
+change. No upgrades for now, gender stays unchangeable, and a hint under the balance points to
+«⚙️ Налаштування → 💛 Допомога грі». The class weapon is reforged into the new class's weapon with
+its tier and wear kept: the three ladders share tiers, gates and durability. Techniques carry over
+by themselves, because `learned_techniques` stores class-agnostic kinds. There is no limit on how
+often, only the price.
 
 ## Session — 2026-10-11 (the premium currency named, credited by hand and shown; the profile's silver declines) — `1f4b442`
 
