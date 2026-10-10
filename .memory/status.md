@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-10 — the fortune teller's dispel and second card** (*this commit*, NOT deployed — Swift,
+**2026-10-10 — the fortune teller's dispel and second card** (`7860aaa`, NOT deployed — Swift,
 14 uk / 8 en strings, one migration `AddFortuneStage`, two prices in `fortune.json`: content
 schema v21, `records` → `2c754b9daf5c0d5a`). A players' proposal with the owner's addition, the
 rules the owner's, answer by answer:
