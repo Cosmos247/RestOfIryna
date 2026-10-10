@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-11 — the Chancellery: the class change for zlatnyks** (NOT deployed — schema **v22**, so
+**2026-10-11 — the Chancellery: the class change for zlatnyks** (`fb37519`, NOT deployed — schema **v22**, so
 `content/data` and the binary ship together; `treasury.json`, `CreateZlatnykPurchases`, `records` →
 `92300a4769c8933e`, content hash `681d611a`). «🟡 Канцелярія» (code: `treasury`) sits under the palace card and sells one
 entry. The class change keeps level, XP, estate, armour and silver, recomputes the stat line, reforges
@@ -886,7 +886,7 @@ tree is ahead** since 2026-10-10: `records 92300a4769c8933e`, content hash `681d
 v22** (the fortune teller's two prices, the repair halved, then the Chancellery's `treasury.json`),
 the other four halves the Pi's. Waiting for a restart: the recipe notebook (`d77d600`), the dispel
 (`7860aaa`), the halved repair (`7995d2a`), the zlatnyks (`1f4b442`), the level-up HP fix
-(`021e9ac`) and the Chancellery. Every earlier baseline is in `.memory/sessions.md` → "Digest
+(`021e9ac`) and the Chancellery (`fb37519`). Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **408 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
