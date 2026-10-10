@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-10)* **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
+- *(this hash fill, 10-10)* **`7995d2a`'s hash fill** — records only.
+- `7995d2a` (10-10) **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
 - `248ce7e` (10-10) **`7860aaa`'s hash fill** — records only.
 - `7860aaa` (10-10) **the fortune teller's dispel and second card** — NOT deployed — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
 - `0d556f5` (10-10) **`d77d600`'s hash fill** — records only.
@@ -602,7 +603,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-10, evening (the armour repair halved, not deployed)
+## Session — 2026-10-10, evening (the armour repair halved, not deployed) — `7995d2a`
 
 **The complaint, and what the Pi said.** Players called the repair too expensive. Read-only `psql`
 on the Pi (`fight_log` and worn `inventory` rows, the last four days):

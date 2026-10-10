@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-10 — the armour repair halved** (*this commit*, NOT deployed — one number,
+**2026-10-10 — the armour repair halved** (`7995d2a`, NOT deployed — one number,
 `master.json` → `repairCostFraction` 0.5 → 0.25; `records` → `c3720e93c10c13a8`, content hash
 `c9cf0506`, schema still v21). Players complained; the Pi's `fight_log` (read-only, 4 days) showed
 newcomers wearing 60–460 points a day against the ~78–103 their jobs pay, and an L8 player with
