@@ -147,6 +147,14 @@ public struct FortuneCardDTO: Codable, Sendable, Equatable {
 public struct FortuneFileDTO: Codable, Sendable {
     /// Draw price in silvers.
     public let drawPrice: Int
+    /// What «🕯 Відчарувати» costs (2026-10-10): it ends the FREE card's running
+    /// effect early, and only that card — a one-shot has already landed and the
+    /// second card is final (`FortuneStage`).
+    public let dispelPrice: Int
+    /// The one second card a dispel opens, until the next free card. Dearer
+    /// than the draw on the owner's word: it replaces a card, it is not a
+    /// second daily buff.
+    public let secondDrawPrice: Int
     /// Buff/debuff window. Matches the Ворожка's lore line. Also the shortest
     /// wait for the next card: one is drawn again at the later of this window's
     /// end and the next 12:00 rollover (2026-10-09), so the 24 h
@@ -156,19 +164,26 @@ public struct FortuneFileDTO: Codable, Sendable {
     /// because the draw indexes into this array.
     public let cards: [FortuneCardDTO]
 
-    public init(drawPrice: Int, buffDurationSeconds: Double, cards: [FortuneCardDTO]) {
+    public init(drawPrice: Int, dispelPrice: Int, secondDrawPrice: Int,
+                buffDurationSeconds: Double, cards: [FortuneCardDTO]) {
         self.drawPrice = drawPrice
+        self.dispelPrice = dispelPrice
+        self.secondDrawPrice = secondDrawPrice
         self.buffDurationSeconds = buffDurationSeconds
         self.cards = cards
     }
 
     private enum CodingKeys: String, CodingKey {
-        case drawPrice, buffDurationSeconds, cards
+        case drawPrice, dispelPrice, secondDrawPrice, buffDurationSeconds, cards
     }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         drawPrice           = try c.decode(Int.self, forKey: .drawPrice)
+        // Required, like the draw price: a missing price is a corrupt file, and
+        // defaulting it would sell the dispel at whatever the default said.
+        dispelPrice         = try c.decode(Int.self, forKey: .dispelPrice)
+        secondDrawPrice     = try c.decode(Int.self, forKey: .secondDrawPrice)
         buffDurationSeconds = try c.decode(Double.self, forKey: .buffDurationSeconds)
         cards               = try c.decode([FortuneCardDTO].self, forKey: .cards)
     }

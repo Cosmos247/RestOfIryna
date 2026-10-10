@@ -741,6 +741,14 @@ short — and `GameDay.nextRollover(after:)`. `User.fortuneAvailableAt` is the o
 the fortune screen, `FortuneService.draw` and the watchman all read it. Auto-memory
 `project-fortune-once-per-game-day`.
 
+**A card can be dispelled, and only a dispelled card replaced** (2026-10-10, the owner's rules).
+«🕯 Відчарувати» ends the FREE card's running duration effect (`fortune.dispelPrice`); only then
+is ONE «🔮 Друга карта» on sale (`secondDrawPrice`), and it is final. `FortuneStage` (free →
+dispelled → second) answers both questions for the screen, its buttons and `FortuneService`. The
+dispel drops the card and KEEPS the stamped window, so the free card never comes sooner. **No
+dispel of a one-shot or of the second card, no second card after a card that ran out** — do not
+add one without asking. Auto-memory `project-fortune-dispel-and-second-card`.
+
 ### Player-visible photos (capital / estate / location backdrops / registration / lore)
 
 **RULE — every player-visible image goes through `sendCachedPhoto(...)`

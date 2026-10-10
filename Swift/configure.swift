@@ -287,6 +287,9 @@ public func configure(logger: Logger) async throws {
     // 2026-10-10: the recipe notes — the price cards a player pins to the
     // journal. A new table, no rows touched.
     migrations.add(CreateRecipeNotes())
+    // 2026-10-10: the fortune teller's dispel and the one second card after
+    // it — one column on `users`, defaulting every row to `free`.
+    migrations.add(AddFortuneStage())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.
@@ -413,6 +416,7 @@ public func configure(logger: Logger) async throws {
                 user.location = "estate"
                 user.activeFortuneCardId = nil
                 user.activeFortuneExpiresAt = nil
+                user.fortuneStage = .free
                 // Dev convenience: keep the trader-hint flag set so the tutorial
                 // line doesn't pop up on every reset cycle. Flip to false in
                 // Postico to retest the hint flow.

@@ -1074,6 +1074,12 @@ public enum ContentValidator {
             issues += duplicates(fortune.cards.map(\.id), file: file, collection: "cards")
             require(fortune.drawPrice >= 0, file: file, path: "drawPrice",
                     rule: "fortune.negative_price", "drawPrice must not be negative")
+            // A negative price would PAY the player for the dispel or the second
+            // card — `FortuneService` subtracts it.
+            require(fortune.dispelPrice >= 0, file: file, path: "dispelPrice",
+                    rule: "fortune.negative_price", "dispelPrice must not be negative")
+            require(fortune.secondDrawPrice >= 0, file: file, path: "secondDrawPrice",
+                    rule: "fortune.negative_price", "secondDrawPrice must not be negative")
             require(fortune.buffDurationSeconds > 0, file: file, path: "buffDurationSeconds",
                     rule: "fortune.non_positive_time", "buffDurationSeconds must be positive")
             require(!fortune.cards.isEmpty, file: file, path: "cards",

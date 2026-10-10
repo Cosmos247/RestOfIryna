@@ -716,6 +716,11 @@ public enum SpecTables {
             // pretending this table derived it.
             out.append("| tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |")
         }
+        if let f = content.fortune {
+            // The dispel and the second card are one road (2026-10-10): only a
+            // dispelled free card opens the second, and the second is final.
+            out.append("| the fortune teller's card | \(f.drawPrice) | at most one a game day; a dispel \(f.dispelPrice), then one final second card \(f.secondDrawPrice) |")
+        }
 
         if let q = content.quests, let tuning = content.tuning {
             let progression = tuning.progression

@@ -112,5 +112,10 @@ public enum ContentSchema {
     /// required and would die on a bare `keyNotFound`; a v20 binary reading a
     /// v19 bundle would ignore a number the operator believes still governs
     /// the fortune teller, so the handshake names the cause in both directions.
-    public static let current: Int = 20
+    /// v21 (2026-10-10): `fortune.json` gains a required `dispelPrice` and
+    /// `secondDrawPrice` — «🕯 Відчарувати» ends the free card early, and only
+    /// then may one second card be drawn (`FortuneStage`). A v20 binary would
+    /// ignore two prices the operator believes are charged; a v21 binary
+    /// reading a v20 bundle would die on a bare `keyNotFound`.
+    public static let current: Int = 21
 }

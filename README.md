@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 395 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 401 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -171,6 +171,7 @@ RestOfIryna/
 │   ├── Migrations/
 │   │   ├── CreateUser.swift
 │   │   ├── CreateRecipeNotes.swift # 2026-10-10 — `recipe_notes` (user_id FK cascade, kind, ref, target; unique on all four); a new table, no row touched
+│   │   ├── AddFortuneStage.swift # 2026-10-10 — `users.fortune_stage` (default `free`): where a player stands between two free tarot cards; one column, no row rewritten
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
 │   │   ├── RewalkReorderedDecrees.swift # 2026-09-27 — data: anyone at chain positions 23…25 goes back to 22 after the estate-before-ground reorder
@@ -258,7 +259,7 @@ RestOfIryna/
 │   │   ├── TravelService.swift     # Phase 6.0 — estate↔capital trip orchestrator. start() validates guards (dead/onExpedition/alreadyTraveling — 0 Vigor is no guard since 2026-10-08, the road costs none), persists TravelState, arms Task.detached timer. On arrival flips user.location + user.routerName, deletes the row, forgets the trip's road card (2026-10-08) and pushes the arrival screen. rescheduleInflight() on bot startup re-arms in-flight trips.
 │   │   ├── TraderService.swift     # Phase 6.1 — quantity-aware sell(qty)/buy(qty). Atomic gold + slot preflight. Typed result enums for the UI banners. Called by both ×1 and the ✏️ N prompt flow.
 │   │   ├── TavernService.swift     # Phase 6.2 — buyDish (atomic, mirrors trader buy) + pure resolveWager(playerScore:houseScore:) → WagerOutcome for dice/darts outcome bookkeeping.
-│   │   ├── FortuneService.swift    # Phase 6.4 — tarot draw orchestrator. draw(for:on:) → DrawResult (.success(card, oneShotApplied) / .onCooldown / .notEnoughSilver). Validates the wait for the next card (`User.fortuneAvailableAt`: the later of the card's 6 h and the next 12:00, since 2026-10-09 — a flat 24 h before) + 10 silver, picks card uniformly, applies one-shots (silver/Wheel/XP/HP/Vigor) + stamps active card + 6h buff expiry + draw timestamp.
+│   │   ├── FortuneService.swift    # Phase 6.4 — tarot draw orchestrator. draw(for:on:) → DrawResult (.success(card, oneShotApplied) / .onCooldown / .notEnoughSilver). Validates the wait for the next card (`User.fortuneAvailableAt`: the later of the card's 6 h and the next 12:00, since 2026-10-09 — a flat 24 h before) + 10 silver, picks card uniformly, applies one-shots (silver/Wheel/XP/HP/Vigor) + stamps active card + 6h buff expiry + draw timestamp. **2026-10-10**: `dispel` (the free card's running effect, keeping its stamped window) and `drawSecond` (only after a dispel, once, final), through the same `deal`.
 │   │   ├── GearConditionService.swift # Phase 6.5 — gear durability runtime. **2026-09-17**: `drainEquippedGear` / `wear` return `[BrokenPiece]` (item id + the tier of the ROW that broke) rather than `[String]`, because an id cannot name a laddered weapon. `drainEquippedGear(amount:)` spends a fight's wear budget point-by-point across random equipped armor + weapon (model C, shared pool via `durableSlots`); `WearEvent` victory 1 / defeat 3 / flee 2. **2026-10-05**: `startingDurability(for:)` is the one answer to «what does a fresh piece start at» (a laddered weapon's tier 1, else the item's `maxDurability`, else 0) — the global `maxDurabilityStart` 30 is gone, and the slot sets are read off `EquipmentSlot.isArmor` / `isDurable`. `backfillWeaponDurability(on:)` is an idempotent startup pass lifting pre-existing weapons to their per-tier ceiling. At 0: armor broken (0 stats), weapon keeps half (in EquipmentService).
 │   │   ├── MasterService.swift     # Phase 6.5 — the Master's actions: buy(itemId) / repair(entryId) / enchant(entryId), each draining User.silver (+ materials/durability). `repair` branches armor (½ buy price, shaves max−1) vs weapon (1🪙/point, no shave). `enchant` takes its hides from the bag alone since 2026-10-05 (the capital has no warehouse); since 2026-10-06 it is the armour's ladder, gated by its price alone. Typed result enums; mirrors TraderService/WeaponUpgradeService.
 │   │   ├── MarketService.swift     # Phase 6.5 (2026-05-28) — player-to-player Market, DB-only (no bot I/O). createListing (escrows units off the bag + flat listing fee) / buyListing (debit buyer, credit seller, deliver, delete lot, returns seller info for the push) / cancelListing (returns units, fee kept). Typed result enums; mirrors TraderService.
@@ -639,7 +640,9 @@ to it (`ROI_OPEN_ACCESS`), and the Pi runs `de0e062` since 2026-10-09 01:30. Eve
 **Built 2026-10-10, not deployed:** the recipe notebook — «📌 У нотатник» on every price card (the
 Master's lesson and enchant, the workshop, the kitchen, the estate, the Training Ground) and up to
 three pinned cards behind «📌 Рецепти (N)» in the journal, priced afresh and gone silently once
-done. A migration (`CreateRecipeNotes`) and new strings: it needs a restart.
+done. A migration (`CreateRecipeNotes`) and new strings: it needs a restart. And the fortune
+teller's dispel — «🕯 Відчарувати» ends a running card for 30 silver, and only then one final
+«🔮 Друга карта» for 20 (`FortuneStage`; a migration, new strings and content schema v21).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

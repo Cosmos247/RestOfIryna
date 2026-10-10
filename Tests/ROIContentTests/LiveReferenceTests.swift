@@ -127,7 +127,7 @@ final class LiveReferenceTests: XCTestCase {
         let withTuning = ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [], enemies: [], recipes: [], starterRecipeIds: [],
-            fortune: FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
+            fortune: FortuneFileDTO(drawPrice: 10, dispelPrice: 30, secondDrawPrice: 20, buffDurationSeconds: 21600,
                                     cards: [FortuneCardDTO(id: "0_fool", effect: FortuneEffectDTO())]),
             quests: QuestFileDTO(pools: []),
             contentHash: "test")

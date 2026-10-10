@@ -197,7 +197,9 @@ final public class User: Model, @unchecked Sendable {
     /// the card's catalogue id (e.g. "19_sun"); `activeFortuneExpiresAt`
     /// is BOTH the effect's expiry AND the next-draw cooldown gate. Nil
     /// means "no active fortune" (player has never drawn OR previous
-    /// draw expired). Stat hooks consult `activeFortuneEffect` (below).
+    /// draw expired). A dispel clears the card id and leaves the expiry,
+    /// which still gates the next free card. Stat hooks consult
+    /// `activeFortuneEffect` (below).
     @OptionalField(key: "active_fortune_card_id")
     var activeFortuneCardId: String?
 
@@ -229,6 +231,13 @@ final public class User: Model, @unchecked Sendable {
 
     @Field(key: "last_fortune_vigor_restored")
     var lastFortuneVigorRestored: Bool
+
+    /// Where the player stands between two free cards (2026-10-10): `free`
+    /// after the free draw, `dispelled` after «🕯 Відчарувати», `second` once
+    /// the one second card is drawn. Stored as `FortuneStage.rawValue`; read
+    /// through `fortuneStage`, which also owns the rules.
+    @Field(key: "fortune_stage")
+    var fortuneStageRaw: String
 
     /// Guards for `RestNotificationService`. The draw cooldown, once elapsed,
     /// stays elapsed — so "the cards are ready" needs a flag or it would be
@@ -341,6 +350,7 @@ final public class User: Model, @unchecked Sendable {
         self.lastFortuneXpGain = 0
         self.lastFortuneHpRestored = false
         self.lastFortuneVigorRestored = false
+        self.fortuneStageRaw = FortuneStage.free.rawValue
         self.fortuneReadyNotified = false
         self.questRolloverStamp = nil
         self.passiveMinutesToday = 0
@@ -679,6 +689,12 @@ extension User {
     /// the old one down, and the new draw would cut it short. The draw plus the
     /// window is only the fallback for a row whose stamp was cleared (the dev
     /// reset keeps the draw time and drops the card).
+    ///
+    /// «🕯 Відчарувати» (2026-10-10) drops the card and KEEPS the stamp, which
+    /// is the whole reason a dispel cannot bring the free card sooner. The
+    /// second card stamps a window of its own from its own draw, both later
+    /// than the dispelled card's, so it can only push the free card later —
+    /// never two cards at once.
     func fortuneAvailableAt() -> Date? {
         guard let drawn = lastFortuneDrawAt else { return nil }
         let windowEnds = activeFortuneExpiresAt ?? drawn.addingTimeInterval(FortuneCatalog.buffDurationSeconds)
@@ -693,6 +709,32 @@ extension User {
         guard let available = fortuneAvailableAt() else { return nil }
         let left = available.timeIntervalSince(now)
         return left > 0 ? Int(left.rounded()) : nil
+    }
+
+    /// The stage between two free cards. An unknown stored name reads as
+    /// `free`, which offers the least: no second card is ever opened by a row
+    /// the code cannot read.
+    var fortuneStage: FortuneStage {
+        get { FortuneStage(rawValue: fortuneStageRaw) ?? .free }
+        set { fortuneStageRaw = newValue.rawValue }
+    }
+
+    /// The running card «🕯 Відчарувати» would end — nil when there is none to
+    /// sell: no card, a one-shot (its effect already landed), a card that ran
+    /// out, or the second card, which is final. The fortune screen, its button
+    /// and `FortuneService.dispel` all ask this one question.
+    func dispellableFortuneCard(now: Date = Date()) -> FortuneCard? {
+        guard let cardId = activeFortuneCardId, let card = FortuneCatalog.find(cardId) else { return nil }
+        let running = fortuneSecondsRemaining(now: now) != nil
+        return fortuneStage.mayDispel(cardHasDurationEffect: card.effect.hasDurationEffect,
+                                      effectRunning: running) ? card : nil
+    }
+
+    /// Whether «🔮 Друга карта» is on sale now: only after a dispel, and only
+    /// while the free card still waits — once it is ready, the plain draw is
+    /// what the screen offers.
+    func maySecondFortune(now: Date = Date()) -> Bool {
+        fortuneStage.mayDrawSecond(freeCardReady: fortuneCooldownRemaining(now: now) == nil)
     }
 }
 

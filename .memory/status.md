@@ -21,6 +21,19 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-10 — the fortune teller's dispel and second card** (*this commit*, NOT deployed — Swift,
+14 uk / 8 en strings, one migration `AddFortuneStage`, two prices in `fortune.json`: content
+schema v21, `records` → `2c754b9daf5c0d5a`). A players' proposal with the owner's addition, the
+rules the owner's, answer by answer:
+- «🕯 Відчарувати» — 30 — ends the FREE card's running duration effect, after a question that
+  names the card. Only on the fortune screen, never on a one-shot, never on the second card.
+- «🔮 Друга карта» — 20 — only right after a dispel, once, and final: «… Її вже не можна буде
+  відчарувати.» None after a card that ran out by itself.
+- The free card's time never comes sooner: the dispel keeps the stamped window, the second card
+  can only push it later. `FortuneStage` (`free` → `dispelled` → `second`) is the one rule.
+- Rehearsed like the notebook: the migration alone in batch 2 over seeded players, 81 checks
+  through the real services and screen builders, twice; five planted mutants caught.
+
 **2026-10-10 — the recipe notebook** (`d77d600`, NOT deployed — Swift, 21 uk / 19 en strings and
 one migration, `CreateRecipeNotes`; the digest unmoved). A public-test player kept
 riding to the capital just to read what the next reforge cost. Every price card now carries
@@ -838,13 +851,15 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the working
-tree and the Pi agree since the 2026-10-09 01:30 restart (`de0e062`): `records 4c0802f927fb8be4` /
+rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
+since the 2026-10-09 01:30 restart (`de0e062`): `records 4c0802f927fb8be4` /
 `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
 e3a492be1b017e81`, content hash `47888401`, **schema v20** (the fortune teller's 24 h
-`cooldownSeconds` gone, then the sword's icon ⚔️ → 🗡 — `records` alone moved). Nothing committed
-is waiting for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **395 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+`cooldownSeconds` gone, then the sword's icon ⚔️ → 🗡 — `records` alone moved). **The working
+tree is ahead** since 2026-10-10: `records 2c754b9daf5c0d5a`, content hash `f6a8a23e`, **schema
+v21** (the fortune teller's two prices), the other four halves the Pi's. Waiting for a restart:
+the recipe notebook (`d77d600`) and the dispel. Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **401 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

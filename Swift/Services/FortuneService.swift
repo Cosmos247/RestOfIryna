@@ -13,6 +13,12 @@
 //  Outcome enum carries everything the UI needs to render the reveal
 //  (card + applied one-shot deltas + Wheel-style random pick result).
 //
+//  2026-10-10 — two more things for sale, in one order only (`FortuneStage`):
+//  `dispel` ends the free card's running effect, and only after it may
+//  `drawSecond` deal one more card, which is final. Both deals — the free
+//  card and the second — run through `deal`, so a second card is picked and
+//  paid out exactly like the free one.
+//
 
 import Fluent
 import Foundation
@@ -22,6 +28,23 @@ public enum FortuneService {
     public enum DrawResult: Sendable {
         case success(card: FortuneCard, oneShotApplied: OneShotApplied)
         case onCooldown(secondsLeft: Int)
+        case notEnoughSilver(have: Int, need: Int)
+    }
+
+    public enum DispelResult: Sendable {
+        /// `paid` is the receipt — what was charged, for the banner.
+        case dispelled(card: FortuneCard, paid: Int)
+        /// Nothing the question was about is still running — a one-shot, a card
+        /// that ran out, the second card, or an answer to an older draw.
+        case nothingToDispel
+        case notEnoughSilver(have: Int, need: Int)
+    }
+
+    public enum SecondDrawResult: Sendable {
+        case success(card: FortuneCard, oneShotApplied: OneShotApplied)
+        /// No dispel opened it, the second card is already drawn, or the free
+        /// card is ready again — the screen redraws to whatever is on offer.
+        case notOffered
         case notEnoughSilver(have: Int, need: Int)
     }
 
@@ -43,11 +66,11 @@ public enum FortuneService {
         }
     }
 
-    /// Draw a card. Validates the wait for the next card
+    /// Draw the free card. Validates the wait for the next card
     /// (`User.fortuneAvailableAt`) and silver (must afford
     /// `FortuneCatalog.drawPrice`). On success: debits the draw fee, picks a
     /// card uniformly, applies one-shot effects, stamps `activeFortuneCardId` +
-    /// `activeFortuneExpiresAt`.
+    /// `activeFortuneExpiresAt`, and starts the stage over at `free`.
     public static func draw(for user: User, on db: any Database) async throws -> DrawResult {
         // The wait — the later of the previous card's window and the next
         // 12:00. Asked of the same function the screen and the watchman read:
@@ -61,12 +84,65 @@ public enum FortuneService {
             return .notEnoughSilver(have: user.silver, need: FortuneCatalog.drawPrice)
         }
 
-        // Debit + pick.
-        user.silver -= FortuneCatalog.drawPrice
-        guard let card = FortuneCatalog.all.randomElement() else {
+        guard let (card, applied) = deal(to: user, price: FortuneCatalog.drawPrice, stage: .free) else {
             // Defensive — catalog is non-empty by construction.
             return .notEnoughSilver(have: user.silver, need: FortuneCatalog.drawPrice)
         }
+        try await user.saveAndCache(in: db)
+        return .success(card: card, oneShotApplied: applied)
+    }
+
+    /// «🕯 Відчарувати» — end the free card's running effect for
+    /// `FortuneCatalog.dispelPrice`. `drawnAt` is the draw the question was
+    /// asked about (`fortuneDrawToken`): an answer left in chat from an older
+    /// card dispels nothing.
+    ///
+    /// The card id goes and the stamped window STAYS, so the free card comes
+    /// exactly when it would have (`User.fortuneAvailableAt`). The stage moves
+    /// to `dispelled`, which is what opens the one second card.
+    public static func dispel(for user: User, drawnAt token: Int, on db: any Database) async throws -> DispelResult {
+        guard let card = user.dispellableFortuneCard(), fortuneDrawToken(of: user) == token else {
+            return .nothingToDispel
+        }
+        let price = FortuneCatalog.dispelPrice
+        guard user.silver >= price else {
+            return .notEnoughSilver(have: user.silver, need: price)
+        }
+        user.silver -= price
+        user.activeFortuneCardId = nil
+        user.fortuneStage = .dispelled
+        try await user.saveAndCache(in: db)
+        return .dispelled(card: card, paid: price)
+    }
+
+    /// «🔮 Друга карта» — the one card a dispel opens, for
+    /// `FortuneCatalog.secondDrawPrice`, dealt exactly like the free one. It is
+    /// final: the stage moves to `second`, where nothing more is for sale until
+    /// the next free card.
+    public static func drawSecond(for user: User, on db: any Database) async throws -> SecondDrawResult {
+        guard user.maySecondFortune() else { return .notOffered }
+        let price = FortuneCatalog.secondDrawPrice
+        guard user.silver >= price else {
+            return .notEnoughSilver(have: user.silver, need: price)
+        }
+        guard let (card, applied) = deal(to: user, price: price, stage: .second) else { return .notOffered }
+        try await user.saveAndCache(in: db)
+        return .success(card: card, oneShotApplied: applied)
+    }
+
+    /// What names one draw: its moment, in whole seconds. A card id cannot —
+    /// the same card comes back on another day — so a confirmation carries this
+    /// and the dispel compares it. Nil before the first draw.
+    public static func fortuneDrawToken(of user: User) -> Int? {
+        user.lastFortuneDrawAt.map { Int($0.timeIntervalSince1970.rounded()) }
+    }
+
+    /// Debit `price`, pick a card uniformly, land its one-shot half, stamp the
+    /// card and its window, and set `stage`. The caller has checked the gates
+    /// and saves. Nil only for an empty deck, which the validator refuses.
+    private static func deal(to user: User, price: Int, stage: FortuneStage) -> (FortuneCard, OneShotApplied)? {
+        guard let card = FortuneCatalog.all.randomElement() else { return nil }
+        user.silver -= price
         let effect = card.effect
 
         // Apply one-shot effects + collect applied deltas for the reveal.
@@ -120,6 +196,7 @@ public enum FortuneService {
         user.activeFortuneCardId = card.id
         user.activeFortuneExpiresAt = now.addingTimeInterval(FortuneCatalog.buffDurationSeconds)
         user.lastFortuneDrawAt = now
+        user.fortuneStage = stage
 
         // Keep what the one-shot half actually handed over, so the entry
         // screen can say it hours later. Written unconditionally — a pure
@@ -132,8 +209,6 @@ public enum FortuneService {
         // Re-arm the watchman: this draw starts a fresh cooldown, and its end
         // is worth announcing again.
         user.fortuneReadyNotified = false
-
-        try await user.saveAndCache(in: db)
-        return .success(card: card, oneShotApplied: applied)
+        return (card, applied)
     }
 }

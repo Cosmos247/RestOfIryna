@@ -1979,6 +1979,33 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await handleFortuneDraw(context: context)
             return true
         }
+        // The dispel asks first, `fortune:dispel_ok:<draw>` acts. The question
+        // is matched exactly, so it never swallows the answer whatever the
+        // order of these checks.
+        if data == "fortune:dispel" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await ctrl.showFortuneDispelConfirm(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data.hasPrefix("fortune:dispel_ok:") {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let token = Int(data.dropFirst("fortune:dispel_ok:".count)) else {
+                await ctrl.editToFortune(messageId: message.messageId, isPhoto: isPhoto, context: context)
+                return true
+            }
+            try await handleFortuneDispel(token: token, messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "fortune:second" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await handleFortuneSecond(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
+        if data == "fortune:show" {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            await ctrl.editToFortune(messageId: message.messageId, isPhoto: isPhoto, context: context)
+            return true
+        }
         // Universal "back to capital" — used by fortune, trader, tavern
         // entry screens. `fortune:back` kept as alias for stale messages
         // sent before the rename.
@@ -3664,6 +3691,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                         "effects": effects,
                         "cooldown_remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
                     ]))
+                    // The free card only — the second card is final, so its
+                    // screen carries no offer at all (2026-10-10).
+                    if session.dispellableFortuneCard() != nil {
+                        lines += fortuneOffer("capital.fortune.dispel.offer", price: FortuneCatalog.dispelPrice,
+                                              session: session, lingo: lingo)
+                    }
                 } else {
                     // A pure one-shot landed at draw time and nothing is
                     // ticking — `activeFortuneEffect` returns nil for these
@@ -3679,6 +3712,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 lines.append(lingo.localize("capital.fortune.status.cooldown_only", locale: locale, interpolations: [
                     "remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
                 ]))
+                // Only right after a dispel, which is also the only way a card
+                // stops showing here while its window still runs.
+                if session.maySecondFortune() {
+                    lines += fortuneOffer("capital.fortune.second.offer", price: FortuneCatalog.secondDrawPrice,
+                                          session: session, lingo: lingo)
+                }
             }
         } else {
             // Draw available — show price + balance. The card's window rides
@@ -3698,6 +3737,19 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
+    /// «Ви можете … за N срібників.» with the balance under it — both priced
+    /// offers on this screen, so what a thing costs and what the player holds
+    /// stand together, as they do under the draw's price.
+    private func fortuneOffer(_ key: String, price: Int, session: User, lingo: Lingo) -> [String] {
+        let locale = session.locale
+        return [
+            lingo.localize(key, count: price, locale: locale, interpolations: ["price": "\(price)"]),
+            "🪙 " + lingo.localize("capital.trader.silver_balance", locale: locale, interpolations: [
+                "silver": "\(session.silver)"
+            ])
+        ]
+    }
+
     private func fortuneEntryKeyboard(session: User, lingo: Lingo) -> TGInlineKeyboardMarkup {
         let locale = session.locale
         let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
@@ -3705,9 +3757,21 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
         // No draw button while on cooldown — but the [🔙 Back] button is
         // always present so the player can never be stuck on the fortune
-        // screen (e.g. zero silver, no draw available).
+        // screen (e.g. zero silver, no draw available). The dispel and the
+        // second card are asked of the same two functions the body's lines
+        // are, so a button never shows without its price.
         if session.fortuneCooldownRemaining() != nil {
-            return TGInlineKeyboardMarkup(inlineKeyboard: [backRow])
+            var rows: [[TGInlineKeyboardButton]] = []
+            if session.dispellableFortuneCard() != nil {
+                rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.dispel", locale: locale),
+                                                    callbackData: "fortune:dispel")])
+            }
+            if session.maySecondFortune() {
+                rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.second", locale: locale),
+                                                    callbackData: "fortune:second")])
+            }
+            rows.append(backRow)
+            return TGInlineKeyboardMarkup(inlineKeyboard: rows)
         }
         let drawLabel = lingo.localize("capital.fortune.button.draw", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
@@ -3807,6 +3871,101 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 "have": "\(have)", "need": "\(need)"
             ])
             await ctrl.postStatusBanner("❌ \(text)", context: context)
+        }
+    }
+
+    // MARK: Fortune — the dispel and the second card (2026-10-10)
+    //
+    // «🕯 Відчарувати» ends the free card's running effect for `dispelPrice`;
+    // only then is «🔮 Друга карта» on sale, once, for `secondDrawPrice`, and
+    // it is final (`FortuneStage`).
+    // Both live on the fortune screen alone — not the reveal, whose photo stays
+    // in chat for good, and not the profile, which opens anywhere.
+
+    /// The fortune screen redrawn over the same photo — after a dispel, from
+    /// the question's «Назад», and whenever a tap finds its offer gone, so the
+    /// mis-tap is also what repairs the screen.
+    private func editToFortune(messageId: Int, isPhoto: Bool, context: Context) async {
+        let text = renderFortuneEntryBody(session: context.session, lingo: context.lingo)
+        let keyboard = fortuneEntryKeyboard(session: context.session, lingo: context.lingo)
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)
+    }
+
+    /// The question before a dispel: it cannot be undone, and the button sits
+    /// under whatever card runs, the Sun included. It only asks —
+    /// `fortune:dispel_ok:<draw>` acts, and the draw it names is this card's,
+    /// so an answer left in chat from an older card dispels nothing. Nothing
+    /// left to dispel redraws the screen instead of asking about nothing.
+    private func showFortuneDispelConfirm(messageId: Int, isPhoto: Bool, context: Context) async {
+        guard let question = fortuneDispelQuestion(session: context.session, lingo: context.lingo) else {
+            await editToFortune(messageId: messageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context,
+                               text: question.text, keyboard: question.keyboard)
+    }
+
+    /// The question's text and buttons — nil when nothing is left to dispel.
+    /// Built apart from the edit so what the player reads is a value.
+    private func fortuneDispelQuestion(session: User, lingo: Lingo) -> (text: String, keyboard: TGInlineKeyboardMarkup)? {
+        guard let card = session.dispellableFortuneCard(),
+              let token = FortuneService.fortuneDrawToken(of: session),
+              let cooldown = session.fortuneCooldownRemaining() else { return nil }
+        let locale = session.locale
+        let price = FortuneCatalog.dispelPrice
+        let text = lingo.localize("capital.fortune.dispel.confirm", count: price, locale: locale, interpolations: [
+            "card": lingo.localize(card.nameKey, locale: locale),
+            "price": "\(price)",
+            "remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
+        ])
+        let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
+            TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.dispel_confirm", locale: locale),
+                                   callbackData: "fortune:dispel_ok:\(token)"),
+            TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.back", locale: locale),
+                                   callbackData: "fortune:show")
+        ]])
+        return (text, keyboard)
+    }
+
+    /// The answer to the question. Every outcome lands back on the screen: the
+    /// second card's offer after a dispel, the card still running after a
+    /// refusal, today's state after a stale answer.
+    fileprivate static func handleFortuneDispel(token: Int, messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let ctrl = Controllers.capitalController
+        let lingo = context.lingo
+        let locale = context.session.locale
+        switch try await FortuneService.dispel(for: context.session, drawnAt: token, on: context.db) {
+        case .dispelled(let card, let paid):
+            await ctrl.postStatusBanner("✅ " + lingo.localize("capital.fortune.dispel.done", locale: locale, interpolations: [
+                "card": lingo.localize(card.nameKey, locale: locale),
+                "silver": FortuneDisplay.silver(-paid)
+            ]), context: context)
+        case .notEnoughSilver(let have, let need):
+            await ctrl.postStatusBanner("❌ " + lingo.localize("capital.fortune.error.silver", locale: locale, interpolations: [
+                "have": "\(have)", "need": "\(need)"
+            ]), context: context)
+        case .nothingToDispel:
+            break
+        }
+        await ctrl.editToFortune(messageId: messageId, isPhoto: isPhoto, context: context)
+    }
+
+    /// «🔮 Друга карта». A success is revealed exactly like the free draw. A
+    /// button whose offer is gone — the second card already drawn, or the free
+    /// card ready again — redraws the screen to what is on offer now.
+    fileprivate static func handleFortuneSecond(messageId: Int, isPhoto: Bool, context: Context) async throws {
+        let ctrl = Controllers.capitalController
+        switch try await FortuneService.drawSecond(for: context.session, on: context.db) {
+        case .success(let card, let applied):
+            try await ctrl.renderFortuneReveal(card: card, oneShot: applied, context: context)
+        case .notEnoughSilver(let have, let need):
+            let lingo = context.lingo
+            let locale = context.session.locale
+            await ctrl.postStatusBanner("❌ " + lingo.localize("capital.fortune.error.silver", locale: locale, interpolations: [
+                "have": "\(have)", "need": "\(need)"
+            ]), context: context)
+        case .notOffered:
+            await ctrl.editToFortune(messageId: messageId, isPhoto: isPhoto, context: context)
         }
     }
 

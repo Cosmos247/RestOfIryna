@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-10)* **`d77d600`'s hash fill** — records only.
+- *(this commit, 10-10)* **the fortune teller's dispel and second card** — NOT deployed — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
+- `0d556f5` (10-10) **`d77d600`'s hash fill** — records only.
 - `d77d600` (10-10) **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
 - `2d8ab41` (10-09) **`34872f6`'s hash fill** — records only.
 - `34872f6` (10-09) **the session preamble trimmed against the records** — records only:
@@ -598,6 +599,57 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-10, later (the fortune teller's dispel and second card, built, not deployed)
+
+**A players' proposal, the owner's addition.** Players asked to pay ~30 silver to cancel a card;
+the owner added a second draw for 20 (the draw is 10). Shown three shapes on two stories (Death at
+13:10; the Sun at 13:10 and another card wanted at 19:10) — A: two separate services · B: a
+re-roll that replaces the card · C: one extra card priced by haste — the owner picked A with one
+paid card a game day. Then, answer by answer:
+- the button is «Відчарувати», the lines «Ви можете відчарувати карту за 30 срібників.» and «Ви
+  можете витягнути другу карту за 20 срібників.» (the owner's words);
+- a one-shot cannot be dispelled — its effect has landed; undoing it would never be worth 30;
+- the line and the button on the fortune screen only — not the reveal (its photo stays in chat
+  for good), not the profile (it opens anywhere);
+- **the second card only after a dispel** — not after a card that ran out by itself, though the
+  last-minute-dispel ritual it invites was shown;
+- **the second card cannot be dispelled**, so no third;
+- my offer accepted: «Її вже не можна буде відчарувати.» in the second card's line, before the
+  player pays.
+Two things added without a question and said in the plan: the balance under each price line, and
+the plain draw at 10 offered instead of the second card once the free card is ready.
+
+**Built.**
+- `FortuneStage` (`ROIContent`): `free` → `dispelled` → `second`, `mayDispel` / `mayDrawSecond`.
+- `users.fortune_stage` (`AddFortuneStage`, default `free` — every live row's card IS a free card);
+  `User.dispellableFortuneCard()` / `maySecondFortune()`, asked by the screen's lines, its buttons
+  and the service alike.
+- `FortuneService.dispel(for:drawnAt:on:)` drops the card id and keeps `activeFortuneExpiresAt`;
+  `drawSecond(for:on:)`; both deals through one `deal`. The question carries the draw's moment
+  (`fortuneDrawToken`), so an answer left in chat from an older card dispels nothing.
+- The screen: the offers with the balance, «🕯 Відчарувати» → the question (`fortuneDispelQuestion`,
+  a value) → `fortune:dispel_ok:<draw>`; «🔮 Друга карта» → the usual reveal; every refusal or
+  stale tap redraws the screen in place.
+- `fortune.json` `dispelPrice` 30 / `secondDrawPrice` 20, required (schema v21), hashed in
+  `records`, refused below 0 by the validator; `spec economy` prints the fortune teller among the
+  sinks.
+
+**Verified.**
+- Build clean; 401 tests (+5 `FortuneStageTests`, +1 negative prices); `validate --strict` 0/0;
+  all 13 generated spec blocks reproduce; the digest moved in `records` alone, and each price
+  moves it by itself.
+- The rehearsal (auto-memory `reference-deploy-rehearsal`; the 10-10 notebook's zonky binaries and
+  build dir reused): every migration fresh; three players seeded; the column and its migration
+  row dropped (the Pi's state); `AddFortuneStage` alone in batch 2 — the seeded rows read `free`, a
+  Death drawn before it is dispellable — then 81 checks through the real services and the real
+  screen builders; again with no migration, 81 of 81.
+- Five planted mutants (the dispel moves the window; the second card dispellable; a second card
+  without a dispel; the second card at the draw's price; the answer's draw ignored) each failed
+  2–10 checks; the restored code went back to 81 of 81. The window-moving mutant was caught only
+  by a case added for it: at the hour the rehearsal ran, the noon set the free card's time, not the
+  window.
+- Worst fortune caption 661 of 1,024 UTF-16 (the Hanged Man, «Повішений»).
 
 ## Session — 2026-10-10 (the recipe notebook built, not deployed) — `d77d600`
 

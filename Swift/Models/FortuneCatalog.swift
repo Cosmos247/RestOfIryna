@@ -118,6 +118,14 @@ public enum FortuneCatalog {
     /// scale (10/25/50 in tavern gambling).
     public static var drawPrice: Int { Catalogs.current.fortuneDrawPrice }
 
+    /// «🕯 Відчарувати» — ends the free card's running effect early
+    /// (2026-10-10). Only the free card, only a duration one: `FortuneStage`.
+    public static var dispelPrice: Int { Catalogs.current.fortuneDispelPrice }
+
+    /// The one second card a dispel opens, until the next free card. It is
+    /// final — it cannot be dispelled.
+    public static var secondDrawPrice: Int { Catalogs.current.fortuneSecondDrawPrice }
+
     /// Buff/debuff effect window — 6 hours in `fortune.json`. The fortune
     /// teller's price line prints it; the intro's hand-typed «шість годин»
     /// went on 2026-10-04. It is also the shortest wait for the next card —

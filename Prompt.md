@@ -25,13 +25,20 @@ stronger still needs the re-solve (auto-memory `project-post-rebalance-package`)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600` and this hash fill are not pushed** — push is the owner's |
+| HEAD | **the fortune teller's dispel and second card** (*this commit*) on top of **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5` and this commit are not pushed** — push is the owner's |
 | running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Record: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the digest is unmoved. Everything before it, up to `de0e062`, is live |
+| waiting for a restart | **the fortune teller's dispel and second card** (*this commit*, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings; `records` → `2c754b9daf5c0d5a`. **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
 
 ### Where the last sessions stopped (2026-10-08 late → 10-10)
+
+**10-10, later — the dispel and the second card built.** A players' proposal (pay ~30 to cancel a
+card) and the owner's addition (a second card for 20), shaped in five quizzes: «🕯 Відчарувати»
+for 30 on the FREE card's running duration effect, on the fortune screen only; ONE final «🔮 Друга
+карта» for 20, only after a dispel; nothing after a one-shot or a card that ran out; the free
+card's time never sooner. Rehearsed (81 checks twice, five mutants caught). Auto-memory
+`project-fortune-dispel-and-second-card`; `.memory/sessions.md` → the 10-10 later entry.
 
 **10-10 — the recipe notebook built.** On «Починаємо», the six entries the 10-09 samples had not
 covered were shown on real numbers and approved. The enchant note was keyed by item + level
@@ -55,10 +62,12 @@ the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes
 
 ### Next action
 
-**0 — Ship the recipe notebook, on the owner's word.** Committed (`d77d600`; auto-memory
-`project-recipe-notebook`), not pushed. Push is the owner's. The deploy is the usual recipe
-below, and the restart needs the owner's go: a new table (`CreateRecipeNotes`, rehearsed) and new
-strings, the digest unmoved. After it, the walk list's top block.
+**0 — Ship the recipe notebook and the dispel, on the owner's word.** Both committed (`d77d600`
+and the dispel), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
+restart needs the owner's go: two migrations (`CreateRecipeNotes`, `AddFortuneStage`, each
+rehearsed alone in a new batch), new strings and **content schema v21** — the Pi's pre-flight
+digest must read `records 2c754b9daf5c0d5a`, content hash `f6a8a23e`. After it, the walk list's
+top two blocks.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
@@ -90,7 +99,7 @@ report naming its losses the way the death screen does.
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake, now **v20**, refuses a
+schema change ships `content/data` and the binary TOGETHER (the handshake, **v21** in the tree and v20 on the Pi, refuses a
 mismatch). After a migration, verify the TABLE, not the log line. Recipe and traps: auto-memory
 `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
@@ -101,6 +110,9 @@ mismatch). After a migration, verify the TABLE, not the log line. Recipe and tra
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
+**The tree's baseline, waiting for the restart (the dispel, schema v21):** `records
+2c754b9daf5c0d5a`, content hash `f6a8a23e`, the other four halves as above. It becomes the current
+one when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
@@ -116,7 +128,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 395 tests, ~5s
+swift test                                   # 401 tests, ~5s
 ```
 
 

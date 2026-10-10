@@ -304,7 +304,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// The wheel rolls when either side is set, so setting one alone makes a
     /// 50/50 between that side and nothing — an authoring slip worth a warning.
     func testHalfConfiguredWheelIsAWarning() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
+        let fortune = FortuneFileDTO(drawPrice: 10, dispelPrice: 30, secondDrawPrice: 20, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "10_wheel",
                                                             effect: FortuneEffectDTO(randomSilverPositive: 30))])
         let report = ContentValidator.validate(bundle(fortune: fortune))
@@ -314,13 +314,23 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// The id becomes `Assets/capital/fortune/<id>.png`, so a separator would
     /// build a path outside the asset directory.
     func testUnsafeCardIdIsAnError() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
+        let fortune = FortuneFileDTO(drawPrice: 10, dispelPrice: 30, secondDrawPrice: 20, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "../secrets")])
         XCTAssertTrue(rules(bundle(fortune: fortune)).contains("fortune.unsafe_id"))
     }
 
+    /// `FortuneService` subtracts the price, so a negative one would pay the
+    /// player for the dispel or the second card.
+    func testNegativeDispelAndSecondPricesAreErrors() {
+        let fortune = FortuneFileDTO(drawPrice: 10, dispelPrice: -30, secondDrawPrice: -20, buffDurationSeconds: 21600,
+                                     cards: [FortuneCardDTO(id: "0_fool")])
+        let paths = ContentValidator.validate(bundle(fortune: fortune)).issues
+            .filter { $0.rule == "fortune.negative_price" }.map(\.path)
+        XCTAssertEqual(Set(paths), ["dispelPrice", "secondDrawPrice"])
+    }
+
     func testZeroMultiplierIsAnError() {
-        let fortune = FortuneFileDTO(drawPrice: 10, buffDurationSeconds: 21600,
+        let fortune = FortuneFileDTO(drawPrice: 10, dispelPrice: 30, secondDrawPrice: 20, buffDurationSeconds: 21600,
                                      cards: [FortuneCardDTO(id: "0_fool",
                                                             effect: FortuneEffectDTO(xpMultiplier: 0))])
         XCTAssertTrue(rules(bundle(fortune: fortune)).contains("fortune.non_positive_multiplier"))

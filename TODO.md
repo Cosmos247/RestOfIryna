@@ -398,6 +398,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] 22 card PNGs in `Assets/capital/fortune/` + entry portrait `Assets/capital/fortune.jpg`
 - [x] Reply-keyboard insurance — inline `[🔙 До столиці]` back button on fortune/tavern/trader entries (also re-attaches reply keyboard if a Telegram client collapsed it)
 - [x] Bugfix: `CapitalController.onCallbackQuery` forwards unknown callbacks (pstyle, stale explore/combat) to MainController instead of returning false — no more "Unsupported content type"
+- [x] **The dispel and the second card** *(2026-10-10, NOT deployed — a players' proposal, the owner's rules)* — «🕯 Відчарувати» (30) ends the FREE card's running duration effect after a question; only then one final «🔮 Друга карта» (20). None after a one-shot or a card that ran out, no dispel of the second card, the free card's time never sooner. `FortuneStage`, `users.fortune_stage` (`AddFortuneStage`), `dispelPrice` / `secondDrawPrice` in `fortune.json` (schema v21)
 
 ### 6.5 Capital Hub (remaining)
 - [x] **Market** *(landed 2026-05-28)* — player-to-player marketplace. `MarketListing` model + `CreateMarketListings` migration + `MarketCatalog` (flat `listingFee = 5` silver sink, `maxActiveLots = 5`) + `MarketService` (createListing / buyListing / cancelListing, typed results, DB-only). Stackables only (gear excluded via `Item.stackable`). **Escrow at listing** — units leave the seller's bag onto the lot row; cancel returns them (fee kept). **Two-level item-grouped buy board**: Level 1 = one row per distinct item (`<item> · lots: K · from 🪙U`), Level 2 = that item's lots sorted cheapest-per-unit first (`×N · 🪙total (🪙U/ea) · @nick`) → confirm → buy. Buying debits buyer, credits seller, delivers items, deletes the lot, and pushes the seller a "sold" notification (PlotProductionService-style fire-and-forget). Sell = two-prompt flow (quantity → price, fee shown inline) via `PendingMarketListing` two-stage `EphemeralChatState` + `unmatched` text intercept. My-lots screen cancels with one tap. `onMarket` → `showMarket` (was the `renderLocation` stub). 37 locale keys × 2 (all neutral — no gendered words). `Assets/capital/market.jpg` not supplied yet → text fallback via `sendCachedPhoto`.
@@ -2025,8 +2026,8 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The block on top (the recipe notebook, 2026-10-10) is NOT deployed yet; every block under
-it is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
+Telegram. **The two blocks on top (the fortune teller's dispel and the recipe notebook, 2026-10-10) are NOT
+deployed yet; every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
 the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
@@ -2035,6 +2036,23 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-10 — the fortune teller's dispel and second card (*this commit*, NOT deployed — a migration, new strings and content schema v21, so a restart):**
+an account at the capital with 60+ silver and a free card ready (a fresh account, or after the next 12:00).
+- 🔮 Ворожка → «🔮 Тягнути карту». Under a DURATION card the screen ends «Ви можете відчарувати
+  карту за 30 срібників.» + «🪙 Ваші срібники: N» with «🕯 Відчарувати» above «🔙 До столиці».
+  Under a one-shot (Закохані, Колесо, Вежа, Суд, Світ) there is neither.
+- «🕯 Відчарувати» turns the caption into «Відчарувати «<карта>» за 30 срібників? Дія скінчиться
+  одразу, а безкоштовна карта буде, як і була, через …» with «✅ Відчарувати · 🔙 Назад»; «Назад»
+  brings the screen back unchanged.
+- «✅ Відчарувати»: the banner «✅ «<карта>» відчаровано · −🪙 30», the screen «Карти втомились.
+  Нова карта через: …» — the SAME time as before — then «Ви можете витягнути другу карту за 20
+  срібників. Її вже не можна буде відчарувати.» and «🔮 Друга карта». The profile no longer shows
+  the card.
+- «🔮 Друга карта» reveals a card like the first; back on the screen there is no «Відчарувати» and
+  no second offer. The old «🔮 Друга карта» and «✅ Відчарувати» left in chat redraw the screen and
+  charge nothing.
+- With under 30 / 20 silver: «❌ Не вистачає срібників: N/30» (or /20), nothing changes.
 
 **Added 2026-10-10 — the recipe notebook (`d77d600`, NOT deployed — a migration and new strings, so a restart):**
 an account at estate level 4+, so every card is in reach; a second at level 5 for the lesson.
@@ -2992,7 +3010,12 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-10 — the recipe notebook (`d77d600`) is built and rehearsed (82 checks on
+*Last updated: 2026-10-10, later — the fortune teller's dispel and second card is built and
+rehearsed (81 checks on a scratch Postgres, five mutants caught), NOT deployed: content schema v21,
+a migration and new strings, so `content/data` and the binary ship together with a restart. The
+recipe notebook (`d77d600`) waits for the same restart; the Pi still runs `de0e062`.*
+
+*2026-10-10 — the recipe notebook (`d77d600`) is built and rehearsed (82 checks on
 a scratch Postgres), NOT deployed: it needs a restart (a migration and new strings). The Pi still
 runs `de0e062`. The 10-09 footer follows.*
 

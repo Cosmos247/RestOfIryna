@@ -92,6 +92,8 @@ final class DomainContent: Sendable {
     let zones: [Zone]
 
     let fortuneDrawPrice: Int
+    let fortuneDispelPrice: Int
+    let fortuneSecondDrawPrice: Int
     let fortuneBuffDurationSeconds: TimeInterval
     let fortuneCards: [FortuneCard]
     let fortuneCardsById: [String: FortuneCard]
@@ -287,6 +289,8 @@ final class DomainContent: Sendable {
         }
 
         self.fortuneDrawPrice = fortune.drawPrice
+        self.fortuneDispelPrice = fortune.dispelPrice
+        self.fortuneSecondDrawPrice = fortune.secondDrawPrice
         self.fortuneBuffDurationSeconds = fortune.buffDurationSeconds
         // Deck order decides which card a given `randomElement()` roll returns.
         self.fortuneCards = fortune.cards.map(\.domain)

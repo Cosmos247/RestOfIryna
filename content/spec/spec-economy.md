@@ -366,6 +366,7 @@ the draft band lives and where content arrives after the rebalance.
 | arena tithe | 10% of the stake | the only PvP drain |
 | tavern food | 25–180 | per dish |
 | tavern wagers | none | payout is in `CapitalController.runRound` — ×2 on a win, refund on a tie, so a fair die is a 0% edge |
+| the fortune teller's card | 10 | at most one a game day; a dispel 30, then one final second card 20 |
 
 **The faucet** — one job per NPC per game day, taken at the NPC
 

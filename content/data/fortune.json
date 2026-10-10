@@ -153,5 +153,7 @@
       "id" : "21_world"
     }
   ],
-  "drawPrice" : 10
+  "dispelPrice" : 30,
+  "drawPrice" : 10,
+  "secondDrawPrice" : 20
 }
