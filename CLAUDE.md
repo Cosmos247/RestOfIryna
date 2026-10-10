@@ -536,6 +536,10 @@ number nothing reads.
   `economy.gear.maxDurabilityStart` stamped the class weapon as well.
 - **A set's durability and its price are one decision**: a repaired point costs
   price × `repairCostFraction` ÷ durability.
+- **The repair was halved on 2026-10-10** (`repairCostFraction` 0.25) on live-play data, and the
+  rest was kept on the owner's word: the max shave per repair, the already-cut maxima and the
+  Master's one-piece screens were each shown and declined — do not soften the shave, restore maxima
+  or add a «Полагодити все» without asking. Auto-memory `project-repair-cost-complaint`.
 - **Changing a shipped piece's durability is a migration, never a content edit alone.** Rows
   keep the maximum they were minted at, while the repair price and the salvage share read the
   item's new number. `RaiseArmorDurability` is the shape — both numbers shift by the

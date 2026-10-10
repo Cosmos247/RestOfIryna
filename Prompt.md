@@ -21,17 +21,23 @@ are built; class sets are parked (`.memory/class-sets-concept.md`). The armour's
 WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or anything
 stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi as read 2026-10-09 01:47; git re-read 2026-10-10)
+### Where things stand right now (the Pi and git as read 2026-10-10 15:37)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`7995d2a`** (the armour repair halved), **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`** (`34872f6`'s hash fill), **`34872f6`** (the doc pass: the session preamble trimmed against the records), **`4459f79`** (the sync pass that recorded the 10-09 01:30 deploy) and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **`4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e`, `7995d2a` and this hash fill are not pushed** — push is the owner's |
-| running on the Pi | **`de0e062`**, restarted **2026-10-09 01:30:47** — content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. Record: `.memory/sessions.md` → `## Deploy — 2026-10-09 01:30`. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` is line 20 of the Pi's `.env`; 13 accounts in by 10-09 01:47 (`allowed_users` source `open`). Close it by removing the line and restarting; nobody already in is locked out |
+| HEAD | **the sync pass** (*this commit* — records only) on top of **`743f042`** (`7995d2a`'s hash fill), **`7995d2a`** (the armour repair halved), **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: `4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e`, `7995d2a`, `743f042` and this commit** — push is the owner's |
+| running on the Pi | **`de0e062`**, online since **2026-10-09 01:30:47** — no restart since (read 10-10 15:37), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-10 15:37: open 13 · invite 6 · seed 4 · manual 1 (no new open-door account since 10-09 01:47); 4,772 forest fights since the door opened, 16 deaths. Close it by removing the line and restarting; nobody already in is locked out |
 | waiting for a restart | **the armour repair halved** (`7995d2a`, 2026-10-10): `repairCostFraction` 0.5 → 0.25 in `master.json`, `records` → `c3720e93c10c13a8`, content hash `c9cf0506` — content only, but it rides the restart because the tree's content is schema v21. **The fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings (it moved `records` to `2c754b9daf5c0d5a`; the repair moved it on). **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
 
 ### Where the last sessions stopped (2026-10-08 late → 10-10)
+
+**10-10, the sync pass — records only.** Every record brought to the tree; what was only in the
+chat is now kept: the dispel's three shapes and its Vigor arithmetic, and the repair measured on live
+play with the shave's hidden price (`.memory/rebalance.md`, two new sections); the wear/repair SQL
+and day four's observation (`.memory/live-ops.md`); the 10-10 open items and the declined options
+(`TODO.md` → "Open, decided but not done", top block); a repair guard in `CLAUDE.md`.
 
 **10-10, evening — the armour repair halved.** Players called the repair too expensive; the Pi's
 `fight_log` showed newcomers wearing 60–460 points a day against ~100 job silver. The owner halved
@@ -77,20 +83,21 @@ top three blocks.
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
 
-**2 — Watch the poll loop.** A new `[WATCHDOG]` line in `~/.pm2/logs/ROI-out.log` is a freeze the
-limiter fix did not cover (`.memory/live-ops.md` → "Is the bot alive?").
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-10 15:37 (10-08 11:47:53). A new one
+in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
+the bot alive?").
 
 **3 — The two chosen-but-unanswered forms** — eating straight from the warehouse (its layout) and a
 hint under the estate-name prompt (its wording). Build either only on the owner's answer
 (`TODO.md` → "Open, decided but not done", top block).
 
-**4 — Read the `fight_log` rows** — 3,033 forest fights since the door opened (14 deaths, by 10-09
-01:47): `SELECT nickname, character_class, player_level, estate_level, enemy_id, outcome, rounds,
-max_blow, max_blow_source, special_atk_uses, stance_uses FROM fight_log ORDER BY created_at DESC`.
-A one-tap kill of an on-level beast is what the technique rework was for; `estate_level` shows
-whether players hold the estate back (T6 gains nothing per day).
+**4 — Read the rest of the `fight_log`.** Read on 10-10 for the repair (`.memory/live-ops.md` → "Day
+four"): newcomers' busiest days ran 105–350 fights against the model's ≈25 a day, and 26% of wins end
+untouched. Still unread: `estate_level` (do players hold the estate back? T6 gains nothing per day)
+and how many wins are one tap — what the technique rework was for.
 
-**5 — Someone opens the screens.** `TODO.md` → "Walk list", the 10-09 blocks on top. No human has
+**5 — Someone opens the screens.** `TODO.md` → "Walk list": the three 10-10 blocks once they are
+live, the 10-09 ones now. No human has
 seen the whole King's chain, and `/reload` has never run against a real database.
 
 **6 — Older decisions waiting on the owner:** `TODO.md` → "Open, decided but not done". Not there
@@ -98,7 +105,9 @@ and still open: the t6–t9 weapon descriptions, written after the names were ap
 approved on their own; the emblem candidates (`content/lore.md` §14, none chosen); and three
 ideas raised but not yet asked — a «Відновити» service at the Master (reset the max for silver,
 keep the enchant: a silver sink), the Master refusing to mend a piece worn to 1/1, and the passive
-report naming its losses the way the death screen does.
+report naming its losses the way the death screen does. And the 10-10 block of `TODO.md` → "Open,
+decided but not done": repairing at the estate for hides, and a stale fortune button that deletes
+the photo when tapped off the capital.
 
 **Deploying to the Pi:** `git push` is the owner's, never yours. On the Pi: `git pull --ff-only`, a
 detached debug build, then the free pre-flight

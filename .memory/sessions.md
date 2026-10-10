@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-10)* **`7995d2a`'s hash fill** — records only.
+- *(this commit, 10-10)* **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
+- `743f042` (10-10) **`7995d2a`'s hash fill** — records only.
 - `7995d2a` (10-10) **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
 - `248ce7e` (10-10) **`7860aaa`'s hash fill** — records only.
 - `7860aaa` (10-10) **the fortune teller's dispel and second card** — NOT deployed — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
@@ -602,6 +603,39 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-10, the sync pass (records only)
+
+On the owner's long-form audit prompt. **What was only in the chat and is now kept:**
+- `.memory/rebalance.md` gained two sections. "The fortune teller's dispel and second card,
+  priced": the deck's classes, the three shapes on two stories, what a redo weighs, and the Vigor a
+  second card could buy (a loss against tavern food until L40, at most a wash there, once a day).
+  "The repair, measured on live play": the wear model, the Pi's numbers, the options table, and the
+  shave's hidden price — halving the price doubled the shave's relative weight (+22% → +44% for a
+  jerkin mended every 10 points).
+- `.memory/live-ops.md`: the three wear/repair queries and "Day four, 15:00".
+- `TODO.md` → "Open, decided but not done": the 10-10 block — the estate repair for hides
+  (raised, not quizzed), the stale fortune button that deletes the photo off the capital (offered,
+  unanswered), the fight volume against the model (observed), and the options declined that day.
+- `CLAUDE.md`: a guard under durability — the repair halved, the shave, the maxima and the Master's
+  screens kept on the owner's word.
+
+**Stale records fixed:** the fortune teller's timing in README (the CapitalController paragraph
+still said a 24 h cooldown), in the file map (CapitalController, FortuneService,
+RestNotificationService, AddFortuneCooldownField) and the FortuneCatalog line's prices; a
+duplicated "Count agreement" section in `localization.md` (and the dispel's key family added); the
+index lines for live-ops, rebalance, `spec-items.md` and `spec-economy.md`; `Prompt.md` reoriented
+on the Pi read at 15:37 (`de0e062` online since 10-09 01:30:47, still one `[WATCHDOG]` line,
+open-door accounts 13, 4,772 fights since the door opened).
+
+**One number corrected before it was written down:** a first draft said newcomers fight "4–18×"
+the model; recounted from the table, the busiest day of each listed player (Дарина aside) ran
+105–350 fights — 4–14×.
+
+**Checked:** no Swift change in this pass; `validate --strict` 0/0, 401 tests, the digest at the
+tree's baseline (`records c3720e93c10c13a8`, content hash `c9cf0506`), every generated spec block
+reproduces, `git diff --check` clean; no dead code in the day's two features (every new symbol and
+locale key has a reader).
 
 ## Session — 2026-10-10, evening (the armour repair halved, not deployed) — `7995d2a`
 

@@ -791,6 +791,109 @@ levels, which moves the levels the same days fall on — and converged in two ro
     by a derived quotient, which can differ in the last bit. `LadderScale` keeps the numerator and
     the denominator for that reason, and a test pins the result.
 
+### The fortune teller's dispel and second card, priced (2026-10-10, `7860aaa`)
+
+**The ask.** Players asked to pay ~30 silver to cancel a card; the owner added a second draw for 20
+(the draw is 10). Rules and answers: auto-memory `project-fortune-dispel-and-second-card`.
+
+**The deck it acts on** (`fortune.json`, 22 cards): 3 purely bad duration cards — Death (ATK −10,
+DEF −10), the Devil (DEF −5, Vigor drain ×1.5), the Moon (accuracy −5, loot −15%); 7 mixed — the
+Fool, the High Priestess, the Emperor, the Hierophant, the Hermit, Justice, the Hanged Man; 7 purely
+good — the Magician, the Empress, the Chariot, Strength, Temperance, the Star, the Sun; 5 one-shots
+— the Lovers, the Wheel, the Tower, Judgement, the World. A dispel helps the first three; on a
+mixed card it takes the good with the bad; a one-shot has nothing left to take back (undoing the
+Tower would sell 25 silver back for 30).
+
+**Three shapes, on two stories** (Death drawn at 13:10; the Sun at 13:10 and another card wanted
+at 19:10):
+
+| | A · two services | B · re-roll | C · one extra card |
+|---|---|---|---|
+| 30 buys | the effect ended, no card | the effect ended, no card | a new card now, replacing |
+| 20 buys | a second card once the first is gone | a new card any time, replacing | a second card once the first ran out |
+| Death, then a new card | 30 + 20 = 50 | 20 (a bad card again 4/22) | 30 |
+| the Sun, then one more at 19:10 | 20 | 20 | 20 |
+
+The owner took A, then narrowed it to the shipped rule: the second card only right after a dispel
+(not after a card that ran out — the last-minute-dispel ritual this invites was shown and accepted),
+never after a one-shot, and final (no dispel, so no third).
+
+**What it weighs.** A full redo of a day (10 + 30 + 20 = 60) is ¾ of the job silver at L1 (78) and
+⅖ at L40 (153); the prices are flat like the draw's. **The Vigor it could buy:** the Lovers and the
+World refill the pool, so a second card is one more 2/22 chance of that. For a player at 0 Vigor the
+expected refill is 2/22 × (100 + 5·L) — 9.5 / 13.6 / 18.2 / 27.3 Vigor at L1 / 10 / 20 / 40 — worth
+24 / 34 / 45 / 68 silver of tavern food (2.5 silver a point: the baked potato 25 for 10, the feast
+180 for 72). Against the 50 the dispel and the second card cost together, it is a loss until L40 and
+at most a wash there, once a game day. An unlimited ladder (10 → 20 → 40 …) was offered and declined;
+it would have made the deck a Vigor source bounded only by price.
+
+**Two properties, proven rather than tested by clock.** One second card per free card is the same as
+one a game day: a second card stamps its own window from its own draw, and the next free card waits
+for the later of that window and the next noon after it — so no free card follows a second card in
+the same game day. And the free card never comes sooner: the dispel keeps `activeFortuneExpiresAt`,
+and the second card's window starts later than the dispelled card's, so it can only push the free
+card later (a second card drawn 06:00–12:00 moves the free one from noon to its window's end).
+
+Rebuild: classify the deck from `fortune.json` (`hasDurationEffect` and the signs); the pool is
+`100 + 5·L`; dish Vigor from `items.json`, dish prices from `tavern.json`. The worst fortune caption
+with an offer is 661 of 1,024 UTF-16 (the Hanged Man), measured through the real screen builder.
+
+### The repair, measured on live play (2026-10-10, `7995d2a`)
+
+**The mechanism** (`GearConditionService.drainEquippedGear`, `MasterCatalog.repairCost`): a fight
+spends a wear BUDGET across the worn armour and the main-hand weapon, one point at a time on a
+random piece with durability left — a win 1, a flee 2, a death 3; passive runs too (1 per won
+encounter, 3 per lost). A point costs price × `repairCostFraction` ÷ the item's starting durability
+(50 for the Forester set), rounded once per repair with a floor of 1; the weapon 1 a point, a code
+constant. Every ARMOUR repair cuts the max by 1, whatever it mended.
+
+**At 0.5 (until 10-10):** hood 1, boots 1.6, breeches 2.5, jerkin 3, weapon 1 — 1.82 a point on
+average with a full set, so ≈1.8 silver a won fight.
+
+**What the Pi said** (read-only `psql`, 2026-10-06 → 10-10; the SQL is in `.memory/live-ops.md`):
+- wear points a day: Дарина (a tester) 1,181 on 10-08 and 658 on 10-10; Inokentiy 462 (239 wins,
+  110 flees, 1 death) and 381; Нястюшка 339 and 257; YuDji 237; DIABLO 195; Володимир 80–141;
+  Легіон 63–113. Over the four days: 4,462 wins, 505 flees, 16 deaths;
+- against: the jobs pay 78 / 103 / 123 / 153 a day at L1 / 8 / 20 / 40, and a kill drops 0.7–0.9
+  hides worth 3 silver each when sold. The economy model counts ~3,925 kills over the whole game,
+  ≈25 a day — every per-fight cost was sized on that, and the busiest day of each player listed above,
+  Дарина aside, ran 105–350 fights, 4–14× that;
+- Нястюшка (L8, 386 silver) had all five pieces at 0, with a 436 silver full repair;
+- the shave on worn rows: Володимир's breeches 7/29 and hood 5/45, Дарина's set at 28–34/50,
+  Nerif's +5 jerkin 14/36 — a piece at 1/1 takes its enchant (up to 2,750 silver) with it;
+- 26% of wins end untouched (`hp_end >= hp_start`), newcomers 2–9%, Дарина 37%, Nerif 57% — so
+  wearing armour only when hit would not have reached the people complaining; it was not offered.
+
+**The shave's hidden price** — a 50-point piece repaired whenever k points are missing, until its
+max is 1; the jerkin's 300 rebuy spread over the points it absorbed:
+
+| repair every | points over its life | rebuy per point | on top of 3.00 (0.5) | on top of 1.50 (0.25) |
+|---|---|---|---|---|
+| 1 point | 49 | 6.12 | +204% | +408% |
+| 5 points | 239 | 1.26 | +42% | +84% |
+| 10 points | 454 | 0.66 | +22% | +44% |
+| 25 points | 949 | 0.32 | +11% | +21% |
+| at 0 (50) | 1,274 | 0.24 | +8% | +16% |
+
+So the careful player pays the most, and halving the price DOUBLED the shave's relative weight: it
+is now the larger lever left for anyone who mends often.
+
+**Offered** (numbers from the game's formula, the full set's average point): the price at 0.5 /
+0.35 / 0.3 / 0.25 → 1.82 / 1.33 / 1.17 / 1.01 a point; Нястюшка's full repair 436 / 318 / 277 / 239;
+Inokentiy's 462-point day ≈ 841 / 616 / 541 / 467. Also: the shave only on repairing a broken piece
+or none at all; the cut maxima restored by a migration; «🔧 Полагодити все» and prices on the list
+buttons (shown as a played sample on Inokentiy's real list).
+
+**Decided:** the price −50% (0.25 — 0.5 / 0.8 / 1.25 / 1.5 a point, the set from zero 203 where it
+was 405); the shave kept; the cut maxima not restored; the Master's screens kept as they are.
+Raised and not quizzed: repairing at the estate's workshop for hides, without the trip.
+
+**What is left.** At 0.25 a newcomer's 339–462-point day still costs ≈342–467 — above the jobs,
+covered only by selling hides. If the complaints continue, the volume is the lever, not the price:
+a flee is 2 points, and Inokentiy's 110 flees were 220 of his 462. Rebuild: the SQL in
+`.memory/live-ops.md`; the formula in `MasterCatalog.repairCost`; each point equally likely on any
+worn piece with durability left.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

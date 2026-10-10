@@ -2745,6 +2745,22 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-10 sessions** — raised while building the dispel and halving the repair, not
+built:
+- **Repairing at the estate's workshop for hides**, without the trip to the Master — raised, not
+  quizzed. A design of its own: what a hide buys, whether the weapon goes too, and the shave.
+- **A stale fortune button tapped off the capital deletes the fortune photo.**
+  `MainController.onCallbackQuery` deletes any inline message it does not own, so a `fortune:*`
+  button tapped from the estate, the forest or the arena removes the photo from chat history — true
+  of every fortune button, before the dispel too. Offered as a separate fix; no answer.
+- **The fight volume is far above the model** (observed, no change): the economy model counts ≈25
+  kills a day, and newcomers' busiest days ran 105–350 fights. Every per-fight cost — wear, Vigor —
+  was sized on the model (`.memory/rebalance.md` → "The repair, measured on live play").
+- Declined that day (the guards: `CLAUDE.md` and the auto-memories `project-repair-cost-complaint`,
+  `project-fortune-dispel-and-second-card`): a softer shave, restored maxima, «🔧 Полагодити все»
+  and prices on the repair buttons; a re-roll, an unlimited ladder of paid cards, a second card after
+  a card that ran out or a one-shot, and a dispel of a one-shot or of the second card.
+
 **From the public test, 2026-10-07/08** — found answering players. On 2026-10-08 the owner
 decided in three quizzes, and four changes were BUILT (`36e33af`, deployed 2026-10-09 01:30 —
 the walk-list block on top): the hunger tick only on a step that begins at 0 Vigor, «Ви повністю
@@ -3018,8 +3034,13 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-10, evening — the armour repair halved (`repairCostFraction` 0.25), not
-deployed: it rides with the next restart. The later footer below follows.*
+*Last updated: 2026-10-10, the sync pass — every record of the dispel and the halved repair brought
+to the tree; the research behind both is in `.memory/rebalance.md`, the live-data SQL in
+`.memory/live-ops.md`. Nothing is waiting for a build; three commits wait for the restart
+(`d77d600`, `7860aaa`, `7995d2a`). The Pi still runs `de0e062`.*
+
+*2026-10-10, evening — the armour repair halved (`repairCostFraction` 0.25), not deployed: it
+rides with the next restart. The 10-10 "later" footer follows.*
 
 *2026-10-10, later — the fortune teller's dispel and second card is built and
 rehearsed (81 checks on a scratch Postgres, five mutants caught), NOT deployed: content schema v21,

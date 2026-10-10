@@ -53,25 +53,6 @@ The older dodge — «раунд(ів)» — is still in `exploration.outcome.en
 and is honest about being a dodge; this is what replaces it where the number is
 the point of the sentence.
 
-### Count agreement (uk) — `localize(_:count:locale:)`
-
-Ukrainian has THREE noun forms where English has two, so a string whose point is
-a number routes through `lingo.localize(key, count:, locale:)`. It appends
-`.one` / `.few` / `.many`, which **`uk.json` must carry**; other locales keep the
-plain `key` and short-circuit, exactly like the gender helper — English is never
-duplicated.
-
-The rule lives in `UkrainianPlural.form(for:)` in **`ROIContent`**, not beside
-the Lingo extension, so `Tests/ROIContentTests` can reach it. It has one trap and
-it is the reason those tests exist: **11–14 take `many` even though they end in
-1–4**, so «21 срібник» but «11 срібників». A units-only implementation looks
-right until the first eleven.
-
-First used by `unit.silver.*` for the coins-on-the-ground event (2026-09-15).
-The older dodge — «раунд(ів)» — is still in `exploration.outcome.encounter.won`
-and is honest about being a dodge; this is what replaces it where the number is
-the point of the sentence.
-
 ### ⚠️ Lingo interpolation bug with multi-UTF-16 emoji
 
 **Rule:** Any character that is **more than one UTF-16 code unit** placed BEFORE a `%{placeholder}` in the source string breaks that (and every subsequent) interpolation — the raw `%{name}` renders literally.
@@ -492,6 +473,12 @@ by `FortuneDisplay`, so the 22 `buff_desc` keys, `fortune.buff.active_for`, five
 `capital.fortune.applied.*` and `fortune.effect.received` are gone. `fortune.effect.vigor_drain` is
 «Витрата снаги», `fortune.effect.wheel` the Wheel's odds, and `capital.fortune.price` carries the
 card's window as `%{time}`.
+
+The dispel and the second card (2026-10-10): `capital.fortune.button.{dispel,dispel_confirm,second,back}`,
+`capital.fortune.dispel.done`, and three COUNT keys — `capital.fortune.dispel.offer`,
+`capital.fortune.dispel.confirm`, `capital.fortune.second.offer` (`.one`/`.few`/`.many` in uk,
+because the price is data). The banner's `%{silver}` is a value («−🪙 30»), so no emoji sits next
+to a placeholder in any template.
 
 ### Full historical list (may lag — grep the JSON for the source of truth)
 - UI: yes, no, commands.start/cancel/exit/settings/language/support/profile/explore/estate/capital/inventory/turn_back

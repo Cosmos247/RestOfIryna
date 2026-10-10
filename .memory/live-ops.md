@@ -84,6 +84,45 @@ The questions that paid off on the first evening:
 - Two defects surfaced from questions: the hunger tick on the paying step and the silent full-HP
   notice — both fixed on 2026-10-08 (below).
 
+**Wear and repair (2026-10-10).** Three read-only queries answered «ремонт занадто дорогий».
+Wear points per player per day (a win 1, a flee 2, a death 3 — the per-fight budget):
+
+```sql
+SELECT f.nickname, (f.created_at AT TIME ZONE 'Europe/Kyiv')::date AS day,
+       count(*) FILTER (WHERE f.outcome = 'win')   AS wins,
+       count(*) FILTER (WHERE f.outcome = 'flee')  AS flees,
+       count(*) FILTER (WHERE f.outcome = 'death') AS deaths,
+       count(*) FILTER (WHERE f.outcome = 'win') + 2 * count(*) FILTER (WHERE f.outcome = 'flee')
+         + 3 * count(*) FILTER (WHERE f.outcome = 'death') AS wear_points
+FROM fight_log f WHERE f.created_at >= now() - interval '4 days'
+GROUP BY 1, 2 ORDER BY wear_points DESC LIMIT 20;
+```
+
+The worn kit of those players — `max_durability` below the item's start is the shave:
+
+```sql
+SELECT u.nickname, u.level, u.silver, i.item_id, i.tier,
+       i.durability || '/' || i.max_durability AS dur, i.enchant_level
+FROM inventory i JOIN users u ON u.id = i.user_id
+WHERE i.equipped_slot IS NOT NULL
+  AND (i.item_id LIKE 'gear.forester%' OR i.item_id IN ('gear.rusty_sword','gear.simple_bow','gear.wooden_staff'))
+  AND u.id IN (SELECT DISTINCT user_id FROM fight_log WHERE created_at >= now() - interval '4 days')
+ORDER BY u.nickname, i.item_id;
+```
+
+The share of wins that took no damage — what "wear armour only when hit" would save:
+
+```sql
+SELECT nickname, count(*) FILTER (WHERE outcome = 'win') AS wins,
+       round(100.0 * count(*) FILTER (WHERE outcome = 'win' AND hp_end >= hp_start)
+             / NULLIF(count(*) FILTER (WHERE outcome = 'win'), 0), 0) AS pct_untouched
+FROM fight_log WHERE created_at >= now() - interval '4 days'
+GROUP BY 1 HAVING count(*) >= 50 ORDER BY 2 DESC;
+```
+
+Traps: passive runs wear the kit too and write no `fight_log` row, so these numbers are a FLOOR;
+`users.level` is the player's level (there is no `player_level` column on `users`).
+
 ## Day two, 22:20 — starving is how the newcomers play
 
 - 5 accounts at 0 Vigor, four of them newcomers who had fought within the last half hour — and
@@ -101,6 +140,21 @@ The questions that paid off on the first evening:
   out, a tap's included; the road no longer refuses 0 Vigor; the forest edge explains hunger (the
   food lines built with it were removed on 10-09, the owner's word). Chosen but not built — the owner left the form unanswered: eating
   straight from the warehouse, and a hint under the estate-name prompt.
+
+## Day four, 15:00 — the repair complaint (2026-10-10)
+
+- Fights are far denser than the model's ≈25 a day: the busiest day of each active newcomer ran
+  105–350 fights (Inokentiy 239 wins, 110 flees, 1 death on 10-09); the tester Дарина 1,181 wins on
+  10-08. 4,772 forest fights since the door opened (16 deaths), 4,462 wins and 505 flees in the
+  last four days.
+- At the old price that was 110–840 silver of repair a day against ~78–103 from the jobs.
+  Нястюшка (L8, 386 silver) had every piece at 0 with a 436 full repair. The shave showed on worn
+  rows: Володимир's breeches 7/29, Дарина's set 28–34/50, Nerif's +5 jerkin 14/36.
+- Decided the same evening (`7995d2a`, not deployed): the armour repair halved; the shave, the cut
+  maxima and the Master's screens kept. The analysis: `.memory/rebalance.md` → "The repair,
+  measured on live play".
+- Still unread there: `estate_level` (do players hold the estate back?) and how many wins are one
+  tap.
 
 ## Player FAQ — verified answers (2026-10-07/08)
 

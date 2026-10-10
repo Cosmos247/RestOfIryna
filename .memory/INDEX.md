@@ -16,7 +16,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Localization](localization.md) — Lingo setup, JSON structure, «ви», player gender, item gender, the UA glossary
 
 ## Operations
-- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, and a verified player FAQ with sources
+- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest
@@ -28,9 +28,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
   - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
-  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3; §11 (2026-10-06) is the Master's enchant as the armour's ladder — the gear ladder of §4, built, and gated by its price where the weapon's is gated by level
+  - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3; §11 (2026-10-06) is the Master's enchant as the armour's ladder — the gear ladder of §4, built, and gated by its price where the weapon's is gated by level; §10.2 amended 2026-10-10: the repair halved
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept; §2's amendment and second table (2026-10-06): the members climb by the enchant now, so the Forester's flat bonus rots
-  - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement
+  - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement; §4 amended 2026-10-10 (the repair halved on live data; the fortune teller joins the sinks table)
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
 
@@ -45,7 +45,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - **What was decided and measured: [Rebalance](rebalance.md)** — the per-phase decisions and the
   calibrated model, then the post-rebalance research, each with its rebuild recipe: tier 2's
   expedition model, the estate scaling, the arena duel, the weapon ladder, the tarot's Vigor
-  multipliers and the armour enchant.
+  multipliers, the armour enchant, the fortune teller's dispel and second card, and the repair
+  measured on live play (2026-10-10).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).
