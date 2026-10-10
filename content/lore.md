@@ -347,9 +347,13 @@ clink softly, tarnish to dull grey in a purse, and feel cool in the
 hand. The Trader counts them with a thumb-flick that comes from
 years of practice.
 
-**Gold exists in the kingdom but isn't player currency** — gold is
-reserved for crown-level transactions, foreign embassies, and treasury
-ledgers. A Governor handles silvers all their life.
+**Gold does not circulate** — it is reserved for crown-level
+transactions, foreign embassies, and treasury ledgers. The one gold a
+Governor may ever hold is the **zlatnyk** (Ukr: *златник*), the Crown's
+gold coin, which reaches a Governor only from the royal treasury.
+Everything else a Governor pays in silver, all their life. *(Named
+2026-10-10 as the silver coin's pair: Volodymyr the Great minted both
+at Kyiv in the late 10th century.)*
 
 ### Materials a Governor handles
 - 🪨 **River Pebble** — water-worn smooth stones, the basic mason's filler

@@ -48,7 +48,12 @@ it is the reason the tests exist: **11–14 take `many` even though they end in
 1–4**, so «21 срібник» but «11 срібників». A units-only implementation looks
 right until the first eleven.
 
-First used by `unit.silver.*` for the coins-on-the-ground event (2026-09-15).
+First used by `unit.silver.*` for the coins-on-the-ground event (2026-09-15). The profile's
+silver line joined it on 2026-10-11: it had a key of its own (`profile.silver`, deleted), a fixed
+«срібників», and printed «7262 срібників» — the rule above applies to a balance too, not only to a
+sentence about a number. The zlatnyk's two keys were born on it (2026-10-11): `unit.zlatnyk.*` (the
+profile's «🟡 N златників») and `zlatnyk.credited.*` (the watchman's notice; its English avoids the
+plural with «Zlatnyks credited: N»).
 The older dodge — «раунд(ів)» — is still in `exploration.outcome.encounter.won`
 and is honest about being a dodge; this is what replaces it where the number is
 the point of the sentence.

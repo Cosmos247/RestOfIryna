@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-10)
+## Commit index — live-play polish and after (2026-09-09 → 10-11)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-10)* **`04368cd`'s hash fill** — records only.
+- *(this commit, 10-11)* **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
+- `608f2c5` (10-10) **`04368cd`'s hash fill** — records only.
 - `04368cd` (10-10) **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
 - `743f042` (10-10) **`7995d2a`'s hash fill** — records only.
 - `7995d2a` (10-10) **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
@@ -604,6 +605,63 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11 (the premium currency named, credited by hand and shown; the profile's silver declines)
+
+**The name.** The owner asked for an authentic name for the donation currency and picked
+«златник» (en *zlatnyk*) from the proposal. It is the silver coin's pair, since Volodymyr the Great
+minted both at Kyiv in the late 10th century, and lore §9 already kept gold for the Crown. «Корони»
+(the GDD draft), «гривні», «зірки», «куни» and «кристали» were turned down with reasons; «бурштин»
+was the runner-up. All of it is in auto-memory `project-premium-currency-zlatnyk`.
+
+**Where the balance shows.** A played sample on a real profile came first: Володимир (L17 archer),
+read-only from the Pi. The quiz then decided: a line under silver in the profile, `🟡 25 златників`,
+only while above 0; the icon 🟡 (🪙 is silver's, 👑 the palace's). The sample also showed a shop's
+header (`🟡 Ваші златники: 25`) and a `RequirementLine` price (`✅ 🟡 Златники  (25/10)`), and kept
+the main menu out. Recorded in `TODO.md` → Phase 10.1.
+
+**How the owner credits.** «Я буду особисто нараховувати златники, я можу це зробити через бд?» The
+answer turned on the session cache: a `User` field edited in the database shows the player the old
+number for as long as they keep tapping, and the first spend computed from it writes it back. Checked in
+FluentKit first: an update writes only the fields the object changed, so unrelated taps cannot undo a
+hand edit. Only a write of the same field can. The first quiz was rejected to clarify two things —
+«zlatnyk», not «zlatnik», and DBeaver, not Postico (the user-db-tool memory corrected). The second
+took all three recommended answers:
+- a column outside the cached `User`;
+- a notice from the bot;
+- build now.
+
+**Built.**
+- `AddZlatnyks`: `zlatnyks` (bigint NOT NULL default 0, CHECK ≥ 0) and `zlatnyks_announced`, written
+  as one `ALTER TABLE`.
+- `ZlatnykService`: `balance` for the profile; `unannounced` and `markAnnounced` for the watchman. The
+  marker moves BY the difference read. Registration waits.
+- The watchman's fifth question: one query for the roster. The marker is written before the push, and a
+  cut is silent.
+- The profile line, and `unit.zlatnyk` / `zlatnyk.credited` (.one/.few/.many; en without a plural).
+- The procedure for the owner: `.memory/live-ops.md` → "Crediting zlatnyks".
+- Rules: `CLAUDE.md` (the balance is not a `User` field; the spend is one statement on both columns).
+
+**Rehearsed** on the scratch Postgres from the notebook's rehearsal (`16f5da34`'s scratchpad: its
+`pgbin`, `cleanbuild` and `dryrun-src`, synced to this tree with a new `DryRunScenarios.swift`).
+- The steps: a fresh install; then the Pi's shape (three players seeded, the deploy's three migrations
+  undone); then `CreateRecipeNotes`, `AddFortuneStage` and `AddZlatnyks` in a new batch over those
+  rows. 54 checks, twice.
+- What the checks cover: the old rows at 0/0, the CHECK refusing a minus, a DBeaver-style edit seen at
+  once, the notice text, told once, a cut silent, a credit landing between read and mark still owed,
+  the prescribed spend, registration waiting, a stale `User` save leaving `zlatnyks` alone, the
+  profile at 0/1/25 (uk and en), and every plural form.
+- Two planted mutants failed exactly their checks: the marker set TO the balance, and the
+  registration filter dropped.
+
+**Found on the way, fixed on the owner's answer.** The profile printed silver with a key of its own,
+`profile.silver`, a fixed «срібників». Two of the top eight profiles read wrong: Дарина «7262
+срібників», Inokentiy «202 срібників». It now uses `unit.silver` with the count, the expedition
+reports' key, and `profile.silver` is deleted from both locales (it had no other reader). English
+keeps «silvers».
+
+**Checked.** `swift build` green; `validate --strict` 0/0; 401 tests; the digest at the tree's
+baseline (`records c3720e93c10c13a8`, content hash `c9cf0506`); `git diff --check` clean.
 
 ## Session — 2026-10-10, the sync pass (records only) — `04368cd`
 

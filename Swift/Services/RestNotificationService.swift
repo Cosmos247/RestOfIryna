@@ -17,10 +17,12 @@
 //  seconds and asks four questions of the players it loads. The fourth
 //  (2026-10-04) is a task that became ready — a decree complete, a taken job
 //  ready to hand in — which a player asked to be told about: nothing said so
-//  except the journal they had to think of opening. The pattern is
-//  `PlotProductionService`'s, for its reason: one query plus a few row
-//  updates per tick, rather than one sleeping task per player, which would
-//  multiply with the roster.
+//  except the journal they had to think of opening. A fifth (2026-10-11) asks
+//  the database rather than the players: zlatnyks the owner credited by hand,
+//  which no tap of the player's made, so nothing else would mention them.
+//  The pattern is `PlotProductionService`'s, for its reason: one query plus a
+//  few row updates per tick, rather than one sleeping task per player, which
+//  would multiply with the roster.
 //
 //  Each notification needs to fire ONCE. Three of them carry a flag for it —
 //  `fortuneReadyNotified`, `questRolloverStamp`, and the ready markers on the
@@ -102,6 +104,7 @@ public enum RestNotificationService {
             }
             await notifyTasksReady(user: user, db: db, bot: bot, lingo: lingo)
         }
+        await notifyZlatnyksCredited(db: db, bot: bot, lingo: lingo)
     }
 
     // MARK: - Full HP
@@ -217,13 +220,42 @@ public enum RestNotificationService {
         await push("📓 " + lingo.localize(key, locale: user.locale), to: user, bot: bot)
     }
 
+    // MARK: - Zlatnyks credited
+
+    /// «🟡 Вам нараховано 100 златників. Тепер у вас 110.» — once per change
+    /// to the balance the owner makes in DBeaver, within a sweep of the edit.
+    /// One query for the whole roster, and usually no rows: `ZlatnykService`
+    /// reads the column the session cache never holds.
+    ///
+    /// The marker is written BEFORE the push, as the tasks' markers are: a
+    /// notice the sweep could not record would repeat every minute. A
+    /// correction downward is recorded and not announced.
+    private static func notifyZlatnyksCredited(db: any Database, bot: TGBot, lingo: Lingo) async {
+        guard let changes = try? await ZlatnykService.unannounced(on: db) else { return }
+        for change in changes {
+            do {
+                try await ZlatnykService.markAnnounced(change, on: db)
+            } catch {
+                continue
+            }
+            guard change.credited > 0 else { continue }
+            let text = lingo.localize("zlatnyk.credited", count: change.credited, locale: change.locale,
+                                      interpolations: ["amount": change.credited, "balance": change.balance])
+            await push("🟡 " + text, toChat: change.telegramId, bot: bot)
+        }
+    }
+
     // MARK: - Sending
 
     /// Best-effort: a blocked bot or a closed chat must not stop the sweep for
     /// everyone behind this player in the loop.
     private static func push(_ text: String, to user: User, bot: TGBot) async {
+        await push(text, toChat: user.telegramId, bot: bot)
+    }
+
+    private static func push(_ text: String, toChat telegramId: Int64, bot: TGBot) async {
         _ = try? await bot.sendMessage(params: TGSendMessageParams(
-            chatId: .chat(user.telegramId),
+            chatId: .chat(telegramId),
             text: text,
             parseMode: .html
         ))

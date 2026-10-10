@@ -52,7 +52,7 @@
 - [x] Add level + XP fields
 - [x] Add class field (warrior/archer/mage enum)
 - [x] Add vigor fields (current_vigor, max_vigor)
-- [x] Add gold currency field (premium currency name TBD — crowns removed until decided)
+- [x] Add gold currency field (the premium currency was named «златник» on 2026-10-10 — see Phase 10.1)
 - [x] Create migration for new User fields (AddCharacterFields, AddProfileStyle, AddGameStats)
 - [x] Update User model with applyStartingStats(for:) method
 
@@ -1920,9 +1920,26 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 
 ## Phase 10: Monetization & Launch Prep
 
-### 10.1 Premium Currency
-- [ ] Design crown purchase flow
-- [ ] Implement crown balance and spending
+### 10.1 Premium Currency — the zlatnyk («златник»)
+- [x] **Named** «златник» (en *zlatnyk*, the owner's spelling), icon 🟡 — the owner's pick,
+      2026-10-10. Why, and the names turned down: auto-memory `project-premium-currency-zlatnyk`.
+- [x] **The balance, credited by hand** (2026-10-11, the owner's three answers; NOT deployed):
+      `users.zlatnyks` (`AddZlatnyks`), deliberately NOT a field of `User`, because the owner edits
+      the cell in DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks") and a cached copy would go
+      stale. `ZlatnykService` reads it fresh. Within a sweep of the edit the watchman writes
+      «🟡 Вам нараховано 100 златників. Тепер у вас 110.» — once per change; a cut is recorded and
+      not announced.
+- [x] **The profile line** (built with the balance): `🟡 25 златників` right under silver, through
+      `unit.zlatnyk` (.one/.few/.many; en `zlatnyks`), **only while the balance is above 0** (the
+      owner's answer: nothing reminds a free player of the shop). Not the main menu — status lives
+      in the profile.
+- [ ] A purchase flow in the bot, if ever — Telegram Stars only (the only way a bot may sell
+      digital goods). For now the owner credits by hand.
+- [ ] Spending: ONE statement taking from both `zlatnyks` and `zlatnyks_announced`
+      (`ZlatnykService`'s header). The screens, from the 2026-10-11 sample:
+      - the header of the screen that sells or spends them: `🟡 Ваші златники: 25`, as the Trader
+        prints silver;
+      - any price in zlatnyks: `RequirementLine`, `✅ 🟡 Златники  (25/10)`.
 - [ ] Premium cosmetics system
 - [ ] Convenience items (slot expansions, speed-ups)
 

@@ -290,6 +290,10 @@ public func configure(logger: Logger) async throws {
     // 2026-10-10: the fortune teller's dispel and the one second card after
     // it — one column on `users`, defaulting every row to `free`.
     migrations.add(AddFortuneStage())
+    // 2026-10-11: the premium currency — `users.zlatnyks`, which the owner
+    // credits in DBeaver, and the marker the watchman announces it by. Two
+    // columns at 0, no rows touched.
+    migrations.add(AddZlatnyks())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

@@ -215,7 +215,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     func showProfile(context: Context, editMessageId: Int? = nil) async throws {
         let equipped = try await EquipmentService.equipped(for: context.session, on: context.db)
-        let text = renderProfile(session: context.session, equipped: equipped, lingo: context.lingo)
+        // From the database, never the session: the owner credits the column
+        // by hand (`ZlatnykService`). A failed read shows no line rather than
+        // a profile that never draws.
+        let zlatnyks = (try? await ZlatnykService.balance(of: context.session.requireID(), on: context.db)) ?? 0
+        let text = renderProfile(session: context.session, equipped: equipped, zlatnyks: zlatnyks, lingo: context.lingo)
         let keyboard = profileKeyboard(lingo: context.lingo, locale: context.session.locale)
 
         if let msgId = editMessageId {
@@ -558,7 +562,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Profile Rendering
 
-    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], lingo: Lingo) -> String {
+    private func renderProfile(session: User, equipped: [EquipmentSlot: InventoryEntry], zlatnyks: Int, lingo: Lingo) -> String {
         let nickname = session.nickname ?? ""
         let cls = CharacterClass(rawValue: session.characterClass ?? "") ?? .warrior
         let className = lingo.localize("registration.class.\(cls.rawValue)", locale: session.locale)
@@ -586,7 +590,17 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // percentage falls on 26% of level-ups and a celebration screen must
         // not report a loss.
         let crit = session.effectiveCrit, dodge = session.effectiveDodge, acc = session.effectiveAccuracy
+        // The noun agrees with the number through `unit.silver` (.one/.few/.many
+        // in uk), the key the expedition reports already used. The profile had a
+        // key of its own, a fixed «срібників», so every balance ending in 1–4
+        // read wrong: «7262 срібників», «202 срібників» (2026-10-11).
         let silver = session.silver
+        // The zlatnyks sit under the silver, and only while there are any
+        // (the owner's pick, 2026-10-11): nothing reminds a free player of the
+        // shop. 🟡, because 🪙 is the silver's and 👑 the palace's.
+        let zlatnykLine = zlatnyks > 0
+            ? "\n🟡 \(zlatnyks) " + lingo.localize("unit.zlatnyk", count: zlatnyks, locale: session.locale)
+            : ""
         let starvingSuffix = VigorService.isStarving(session) ? " · " + lingo.localize("vigor.starving", locale: session.locale) : ""
 
         // Main-hand line. Empty string if nothing equipped.
@@ -659,7 +673,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         💥 \(l.localize("profile.crit", locale: loc)): \(crit)
 
         \(mainHandLine)
-        🪙 \(silver) \(l.localize("profile.silver", locale: loc))
+        🪙 \(silver) \(l.localize("unit.silver", count: silver, locale: loc))\(zlatnykLine)
         🏰 \(l.localize("profile.estate", locale: loc)) «\(estate)»
         """
 

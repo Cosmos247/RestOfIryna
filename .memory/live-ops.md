@@ -17,6 +17,26 @@ newcomer at level 6; 6 newcomers at estate T2+; 3 accounts at 0 Vigor.
   `allowed_users` row (source `open`). `/link` works either way.
 - Count: `SELECT count(*) FROM allowed_users WHERE source = 'open'`.
 
+## Crediting zlatnyks (the owner, by hand — since 2026-10-11, live after the `AddZlatnyks` restart)
+
+The owner works in **DBeaver** (not Postico).
+1. Open the `users` table and its Data tab, and filter to the player: `nickname = 'Володимир'`.
+   Nicknames are not unique, so confirm `telegram_id`.
+2. Double-click the `zlatnyks` cell and type the NEW TOTAL, not the amount added. Then Save
+   (Ctrl+S), and Commit too if the connection is in manual-commit mode.
+3. The profile shows «🟡 N златників» on its next draw. Within a sweep (60 s) the bot writes the
+   player «🟡 Вам нараховано 100 златників. Тепер у вас 110.».
+
+What the database and the bot do with an edit:
+- A typed minus is refused by the column's CHECK.
+- Lowering the number is silent: the marker resyncs, nothing is announced.
+- An account still in registration is told once it is through.
+- **Never edit `zlatnyks_announced`.** It is the bot's marker of what the player has been told:
+  raising it swallows a notice, lowering it repeats one.
+- Once there is something to spend zlatnyks on, ADD rather than overwrite, in the SQL editor:
+  `UPDATE users SET zlatnyks = zlatnyks + 100 WHERE telegram_id = …;`. A total typed into the grid
+  would undo a spend made while the grid was open.
+
 ## Is the bot alive?
 
 - **The freeze signature:** `getWebhookInfo` → `pending_update_count` rising AND

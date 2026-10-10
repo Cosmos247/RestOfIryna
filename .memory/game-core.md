@@ -170,10 +170,12 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - Replacement: a different estate-attack PvP mechanic — design TBD. Lives in Phase 7+ as a clean-sheet effort once the rest of Phase 5/6 is solid.
 
 ### Economy
-- Resources: raw materials, biomass, flora, currency (gold + TBD premium), rare drops
+- Resources: raw materials, biomass, flora, currency (silver + the premium zlatnyk), rare drops
 - Crafting in manor rooms (recipe-based, tier-gated)
 - Market: NPC fixed prices + player free-market
 
 ### Monetization (TBD)
-- F2P with a premium currency (name TBD — was "crowns" in early draft, reserved until renamed)
+- F2P with a premium currency, the **zlatnyk** («златник», 🟡; named 2026-10-10 — the early draft's
+  "crowns" retired). Not built: no balance, no purchase flow. Where the balance will show:
+  `TODO.md` → Phase 10.1
 - Cosmetics, convenience, no exclusives

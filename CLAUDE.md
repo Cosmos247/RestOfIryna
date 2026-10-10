@@ -305,13 +305,16 @@ The away-from-home heal is a **cooked dish**; `potion.heal_small` and `potion.he
 obtainable nowhere (auto-memory `feedback-a-checker-that-cannot-fail`).
 
 **What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
-`Task.detached` on `realTime.restSweepInterval`) answers four questions per player:
+`Task.detached` on `realTime.restSweepInterval`) answers four questions per player, and a fifth
+of the whole roster:
 - HP topped out at the estate — `HealingService.tick` notes every fill in `RestedToFull`,
   whichever call made it, and the sweep announces it;
 - the fortune teller's next card ready (`User.fortuneAvailableAt`, below) — on the 12:00
   rollover's minute the cards and the new day go as ONE message, cards first;
 - the 12:00 job rollover;
-- a task turned ready: the open decree complete, or a taken job ready to hand in.
+- a task turned ready: the open decree complete, or a taken job ready to hand in;
+- zlatnyks credited by hand (`ZlatnykService.unannounced`) — once per change; a cut is recorded,
+  never announced.
 
 It runs the regen through `HealingService.tick` — never a second copy of the arithmetic. **A
 task's readiness is its board's own test** (`KingService.standing`, `QuestService.liveDone`,
@@ -322,6 +325,11 @@ query, never a row save — the player may be ticking the same row.
 **A background writer MUST take the session-cached `User` when one exists**
 (`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently
 undoes the tap the player made a second earlier.
+
+**The zlatnyk balance is deliberately NOT a field of `User`.** The owner credits
+`users.zlatnyks` by hand in DBeaver, and a cached copy would show a stale number and let a spend
+write it back. Read it through `ZlatnykService`; spend it in ONE statement that takes from
+`zlatnyks` and `zlatnyks_announced` alike. Auto-memory `project-premium-currency-zlatnyk`.
 
 Full reasoning: `.memory/game-core.md` §Rest and the road, `.memory/session-auth.md`;
 auto-memory `project-rest-notification-watchman`, `project-full-hp-notice-gap`,

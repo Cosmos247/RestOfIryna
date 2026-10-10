@@ -392,7 +392,7 @@ Estates are placed into a **single shared world grid** of estates. Placement rul
 - **Raw materials** — wood, stone, ore tiers (iron → steel → rare alloys)
 - **Biomass** — hides, bone, meat, pelts
 - **Flora** — herbs, mushrooms, flowers
-- **Currency** — gold (tradable), crowns (premium, paid — see §14)
+- **Currency** — silver (Ukr. *срібник*, tradable), the zlatnyk (Ukr. *златник*, premium, paid — see §14)
 - **Rare drops** — gems, essences, artifacts
 
 ### Acquisition
@@ -592,15 +592,21 @@ Full tuning curves (XP required per level, gear power curve, hunger cap scaling)
 ### Working direction
 
 - Free-to-play, no hard paywalls, no pay-to-win in PvP.
-- Premium currency (**crowns**) sold for real money.
-- Crowns buy:
+- Premium currency — the **zlatnyk** (Ukr. *златник*, 🟡; named 2026-10-10) — sold for real money,
+  which a Telegram bot takes for digital goods in Telegram Stars only. The name is the silver
+  coin's pair: Volodymyr the Great minted both at Kyiv in the late 10th century, and lore §9 already
+  keeps gold for the Crown. The early draft's "crowns" are retired.
+- For now the owner credits zlatnyks by hand, in the database, and the bot tells the player once
+  per credit. The balance shows in the profile, on a line under silver, only while it is above 0
+  (decided 2026-10-11; the screens and the mechanics: `TODO.md` → Phase 10.1).
+- Zlatnyks buy:
   - **Consumables** — premium potions, rare food with large hunger restore
   - **Cosmetics** — estate decor, manor skins, character skins, pet skins
   - **Rare items** — blueprints that are *also* findable in-game (no exclusivity)
   - **Convenience** — slot expansions, accelerated plot production, faster exploration cooldowns `⚙️ TBD` (careful — convenience can become pay-to-win)
-- Nothing sold for crowns is unobtainable through gameplay.
+- Nothing sold for zlatnyks is unobtainable through gameplay.
 
-Final pricing, storefront, and crown-pack tiers — pending.
+Final pricing, storefront, and zlatnyk-pack tiers — pending.
 
 ---
 
@@ -679,7 +685,7 @@ Consolidated list of `⚙️ TBD` items from above, ranked by how much they affe
 7. **Rate of tile loss** — is 10 losses/attacker fast or slow given expected PvP frequency?
 8. **Taming success base rate** — 2%? 5%? Affects perceived rarity hard.
 9. **Plot production timers** — hourly, 4-hour, daily cycles?
-10. **Monetization placement** — which convenience features are acceptable behind crowns without crossing into pay-to-win?
+10. **Monetization placement** — which convenience features are acceptable behind zlatnyks without crossing into pay-to-win?
 
 ### Low impact (can decide late)
 

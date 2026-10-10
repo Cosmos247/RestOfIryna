@@ -21,6 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-11 — the premium currency, the zlatnyk («златник» 🟡)** (NOT deployed — Swift, a migration
+and strings; the digest unmoved). Named 2026-10-10. The balance is `users.zlatnyks` (`AddZlatnyks`, with
+a CHECK ≥ 0), deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and
+`ZlatnykService` reads it fresh. The watchman announces a credit once («🟡 Вам нараховано N
+златників. Тепер у вас M.»), on the `zlatnyks_announced` marker. The profile shows «🟡 N
+златників» under silver, only above 0. Nothing to spend zlatnyks on yet, and no purchase flow.
+The same change made the profile's silver decline («7262 срібники»). Rehearsed: 54 checks twice,
+two mutants caught.
+
 **2026-10-10 — the armour repair halved** (`7995d2a`, NOT deployed — one number,
 `master.json` → `repairCostFraction` 0.5 → 0.25; `records` → `c3720e93c10c13a8`, content hash
 `c9cf0506`, schema still v21). Players complained; the Pi's `fight_log` (read-only, 4 days) showed
