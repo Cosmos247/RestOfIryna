@@ -25,19 +25,19 @@ stronger still needs the re-solve (auto-memory `project-post-rebalance-package`)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`** (`1f4b442`'s hash fill), **`1f4b442`** (the zlatnyks: named, credited by hand, shown; the profile's silver declines), **`608f2c5`** (`04368cd`'s hash fill), **`04368cd`** (the sync pass, records only), **`743f042`** (`7995d2a`'s hash fill), **`7995d2a`** (the armour repair halved), **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: `4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e`, `7995d2a`, `743f042`, `04368cd`, `608f2c5`, `1f4b442`, `7ee41c1`, `021e9ac` and this hash fill** — push is the owner's |
+| HEAD | **this commit** (the Chancellery: the class change for zlatnyks) on top of **`a683888`** (`021e9ac`'s hash fill), **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`** (`1f4b442`'s hash fill), **`1f4b442`** (the zlatnyks: named, credited by hand, shown; the profile's silver declines), **`608f2c5`** (`04368cd`'s hash fill), **`04368cd`** (the sync pass, records only), **`743f042`** (`7995d2a`'s hash fill), **`7995d2a`** (the armour repair halved), **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: `4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e`, `7995d2a`, `743f042`, `04368cd`, `608f2c5`, `1f4b442`, `7ee41c1`, `021e9ac`, `a683888` and this commit** — push is the owner's |
 | running on the Pi | **`de0e062`**, online since **2026-10-09 01:30:47** — no restart since (read 10-10 15:37), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-10 15:37: open 13 · invite 6 · seed 4 · manual 1 (no new open-door account since 10-09 01:47); 4,772 forest fights since the door opened, 16 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **A level-up keeps the armour's HP** (`021e9ac`, 2026-10-11): `applyLevelDerivedStats` clamps to `effectiveMaxHp` — Swift only. **The zlatnyks and the profile's silver** (`1f4b442`, 2026-10-11): `AddZlatnyks` (two columns on `users`), `ZlatnykService`, the watchman's credit notice, the profile's «🟡 N златників» line, and `unit.silver` with the count instead of a fixed «срібників» — a migration and new strings, so the restart; the digest is unmoved. Crediting is a DBeaver edit, `.memory/live-ops.md` → "Crediting zlatnyks". **The armour repair halved** (`7995d2a`, 2026-10-10): `repairCostFraction` 0.5 → 0.25 in `master.json`, `records` → `c3720e93c10c13a8`, content hash `c9cf0506` — content only, but it rides the restart because the tree's content is schema v21. **The fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings (it moved `records` to `2c754b9daf5c0d5a`; the repair moved it on). **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
+| waiting for a restart | **The Chancellery: the class change for zlatnyks** (this commit, 2026-10-11): «🟡 Канцелярія» under the palace card (code: `treasury`), `treasury.json` (content schema **v22**), `ClassChangeService`, `CreateZlatnykPurchases`, 22 uk / 22 en strings — a migration, strings and a schema step, so `content/data` and the binary ship TOGETHER; `records` → `92300a4769c8933e`, content hash `681d611a`. **A level-up keeps the armour's HP** (`021e9ac`, 2026-10-11): `applyLevelDerivedStats` clamps to `effectiveMaxHp` — Swift only. **The zlatnyks and the profile's silver** (`1f4b442`, 2026-10-11): `AddZlatnyks` (two columns on `users`), `ZlatnykService`, the watchman's credit notice, the profile's «🟡 N златників» line, and `unit.silver` with the count instead of a fixed «срібників» — a migration and new strings, so the restart; the digest is unmoved. Crediting is a DBeaver edit, `.memory/live-ops.md` → "Crediting zlatnyks". **The armour repair halved** (`7995d2a`, 2026-10-10): `repairCostFraction` 0.5 → 0.25 in `master.json`, `records` → `c3720e93c10c13a8`, content hash `c9cf0506` — content only, but it rides the restart because the tree's content schema (v22) is ahead of the Pi's. **The fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings (it moved `records` to `2c754b9daf5c0d5a`; the repair moved it on). **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
 
 ### Where the last sessions stopped (2026-10-08 late → 10-11)
 
-**10-11, later — a level-up keeps the armour's HP; the Treasury designed.** A level-up clamped HP to
-the base maximum and took the armour's share; fixed on its own. The Treasury's design is settled:
+**10-11, later — a level-up keeps the armour's HP; the Chancellery designed.** A level-up clamped HP to
+the base maximum and took the armour's share; fixed on its own. The Chancellery's design (code: `treasury`) is settled:
 it sells only a class change, the weapon is reforged with its tier and wear kept, and there is no
-limit but the price. Still open: the price, then the build. `.memory/sessions.md` → the 10-11 later
-entry.
+limit but the price. Then priced (100) and built the same night, rehearsed at 120 checks twice.
+`.memory/sessions.md` → the 10-11 later and night entries.
 
 **10-10 late → 10-11 — the premium currency: named, credited by hand, shown.**
 - The name: the owner asked for an authentic one and picked «златник» 🟡 (en *zlatnyk*). It is the
@@ -90,11 +90,12 @@ the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes
 
 ### Next action
 
-**0 — Ship the recipe notebook, the dispel, the halved repair, the zlatnyks and the level-up HP fix,
-on the owner's word.** All four committed (`d77d600`, `7860aaa`, `7995d2a`, `1f4b442` and `021e9ac`), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
-restart needs the owner's go: three migrations (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks` —
-rehearsed together in one new batch over existing players on 10-11), new strings and **content schema v21** — the Pi's pre-flight
-digest must read `records c3720e93c10c13a8`, content hash `c9cf0506`. After it, the walk list's
+**0 — Ship the recipe notebook, the dispel, the halved repair, the zlatnyks, the level-up HP fix and the
+Chancellery, on the owner's word.** All committed (`d77d600`, `7860aaa`, `7995d2a`, `1f4b442`, `021e9ac` and the
+Chancellery's commit), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
+restart needs the owner's go: four migrations (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`,
+`CreateZlatnykPurchases` — rehearsed together in one new batch over existing players on 10-11), new strings and
+**content schema v22** — the Pi's pre-flight digest must read `records 92300a4769c8933e`, content hash `681d611a`. After it, the walk list's
 top three blocks.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
@@ -130,7 +131,7 @@ the photo when tapped off the capital.
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake, **v21** in the tree and v20 on the Pi, refuses a
+schema change ships `content/data` and the binary TOGETHER (the handshake, **v22** in the tree and v20 on the Pi, refuses a
 mismatch). After a migration, verify the TABLE, not the log line. Recipe and traps: auto-memory
 `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
@@ -141,8 +142,9 @@ mismatch). After a migration, verify the TABLE, not the log line. Recipe and tra
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
-**The tree's baseline, waiting for the restart (the dispel and the repair halved, schema v21):** `records
-c3720e93c10c13a8`, content hash `c9cf0506`, the other four halves as above. It becomes the current
+**The tree's baseline, waiting for the restart (the dispel, the repair halved and the Chancellery, schema v22):**
+`records 92300a4769c8933e`, content hash `681d611a`, the other four halves as above (the Chancellery moved
+`records` from `c3720e93c10c13a8`, content hash `c9cf0506`). It becomes the current
 one when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
@@ -159,7 +161,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 401 tests, ~5s
+swift test                                   # 408 tests, ~5s
 ```
 
 

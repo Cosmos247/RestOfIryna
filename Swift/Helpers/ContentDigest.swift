@@ -151,6 +151,9 @@ enum ContentDigest {
             digest.combine("\(step.level):\(step.technique):\(step.silverCost):\(TrainingGroundCatalog.playerLevel(for: step))")
             for input in step.inputs { digest.combine("\(input.itemId)x\(input.quantity)") }
         }
+        // The Treasury (2026-10-11): what each entry does and what it costs in
+        // zlatnyks. A price is a balance number like any other here.
+        for item in TreasuryCatalog.items { digest.combine("treasury \(item.id):\(item.kind)@\(item.price)") }
 
         for listing in TraderCatalog.all {
             digest.combine("\(listing.itemId) s\(listing.sellPacketQty)@\(listing.sellPacketSilver) b\(listing.buyPacketQty)@\(listing.buyPacketSilver)")
@@ -421,7 +424,7 @@ enum ContentDigest {
 
         digest.combine(kingDigest)
 
-        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(TrainingGroundCatalog.maxLevel) training levels · \(FortuneCatalog.all.count) cards · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
+        print("records  \(recordDigest)   (\(ItemCatalog.all.count) items · \(EnemyCatalog.all.count) enemies · \(RecipeCatalog.all.count) recipes · \(RecipeCatalog.unlocks.count) unlock rungs · \(WeaponUpgradeCatalog.progression.count) ladders · \(BagCatalog.progression.count) bag steps · \(EstateUpgradeCatalog.progression.count) estate steps · \(TrainingGroundCatalog.maxLevel) training levels · \(FortuneCatalog.all.count) cards · \(TreasuryCatalog.items.count) treasury · \(QuestNPC.allCases.reduce(0) { $0 + (QuestCatalog.pools[$1]?.count ?? 0) }) quests)")
         print("tuning   \(tuningDigest)   (combat · vigor · exploration · progression · economy · time)")
         print("spawns   \(spawnDigest)   (\(maxDepth) depths × \(drawsPerDepth) seeded draws)")
         print("quests   \(questDigest)   (\(questDraws) users × \(questStamps.count) days × \(QuestNPC.allCases.count) NPCs × \(questLevels.count) levels)")

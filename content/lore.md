@@ -355,6 +355,10 @@ Everything else a Governor pays in silver, all their life. *(Named
 2026-10-10 as the silver coin's pair: Volodymyr the Great minted both
 at Kyiv in the late 10th century.)*
 
+The zlatnyk is spent in one place: the **Chancellery** in the palace (Ukr: *Канцелярія*). It smells
+of ink and sealing wax, and there the palace scribe opens the ledger and amends the Crown's books —
+so far only to enter a Governor under another class.
+
 ### Materials a Governor handles
 - 🪨 **River Pebble** — water-worn smooth stones, the basic mason's filler
 - 🌲 **Pine Lumber** — squared timber from felled pines, every craft starts here

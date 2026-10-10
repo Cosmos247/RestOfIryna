@@ -1769,6 +1769,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await ctrl.editToPalace(messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
+        // The Treasury under the decree card (2026-10-11). Only here: a stale
+        // button tapped off the capital never reaches a purchase.
+        if data.hasPrefix("treasury:") {
+            try await Self.onTreasuryCallback(data, query: query, messageId: message.messageId, isPhoto: isPhoto,
+                                              context: context)
+            return true
+        }
         if data.hasPrefix("quest:take:") {
             let token = String(data.dropFirst("quest:take:".count))
             guard let npc = QuestNPC(rawValue: token) else {
@@ -2525,12 +2532,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     func showPalace(context: Context) async throws {
         let standing = try await KingService.standing(for: context.session, on: context.db)
         let text = renderPalaceBody(standing: standing, session: context.session, lingo: context.lingo)
-        // Inline button only when the decree is done; otherwise refresh the
-        // street's own reply keyboard rather than leaving whatever was last
-        // set, so the screen can never be reached with a stale one.
-        let markup: TGReplyMarkup? = (standing?.isComplete ?? false)
-            ? .inlineKeyboardMarkup(palaceKeyboard(lingo: context.lingo, locale: context.session.locale))
-            : generateControllerKB(session: context.session, lingo: context.lingo)
+        // Always an inline keyboard since 2026-10-11: «🟡 Канцелярія» stands
+        // under every decree card. Until then a card without «✅ Доповісти»
+        // refreshed the street's reply keyboard instead; that is no longer
+        // needed here, because the palace is reached by tapping «👑 Палац» on
+        // the castle street's own keyboard, and every street's buttons are
+        // registered whichever street is on screen.
+        let markup: TGReplyMarkup = .inlineKeyboardMarkup(
+            palaceKeyboard(complete: standing?.isComplete ?? false, lingo: context.lingo, locale: context.session.locale))
         _ = try await sendCachedPhoto(
             assetPath: "\(projectPath)/Assets/capital/palace.jpg",
             caption: text,
@@ -2540,11 +2549,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         )
     }
 
-    private func palaceKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: lingo.localize("king.button.report", locale: locale),
-                                   callbackData: "king:report")
-        ]])
+    /// «✅ Доповісти Королю» once the decree is done, and «🟡 Канцелярія» always
+    /// (2026-10-11, `CapitalController+Treasury.swift`).
+    private func palaceKeyboard(complete: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        var rows: [[TGInlineKeyboardButton]] = []
+        if complete {
+            rows.append([TGInlineKeyboardButton(text: lingo.localize("king.button.report", locale: locale),
+                                                callbackData: "king:report")])
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("treasury.button.open", locale: locale),
+                                            callbackData: "treasury:open")])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     /// Both the card and the farewell the chain ends on.
@@ -2637,7 +2652,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         _ = await editScreen(
             chatId: .chat(context.session.telegramId), messageId: messageId, isPhoto: isPhoto,
             text: renderPalaceBody(standing: standing, session: context.session, lingo: lingo),
-            replyMarkup: (standing?.isComplete ?? false) ? palaceKeyboard(lingo: lingo, locale: locale) : nil,
+            replyMarkup: palaceKeyboard(complete: standing?.isComplete ?? false, lingo: lingo, locale: locale),
             bot: context.bot)
     }
 

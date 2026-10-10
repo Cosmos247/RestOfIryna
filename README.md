@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 401 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 408 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -126,6 +126,7 @@ RestOfIryna/
 │   │   ├── CombatController.swift        # Phase 4.1 + 4.2 turn-based PvE duel — Attack/Defend/Flee + [🪄 Techniques] submenu (Special Atk / Special Def / Super) with per-fight budget; registration rabid-dog tutorial fight
 │   │   ├── EstateController.swift        # The estate: Root → House (Workshop · Kitchen · upgrades) / plots, warehouse, per-level artwork. **2026-09-17**: claiming a slot is a two-step now — `estate:plot:type:` draws the picked type's card and asks, `estate:plot:build:` is the only writer (nothing in the code can undo a claim), and every «what it costs / what you have» line on its screens renders through `RequirementLine`
 │   │   ├── CapitalController.swift       # Phase 6.0–6.5 — travel-gated hub, split across two streets since 2026-09-20 (👑 Замкова: Базар / Ристалище / Гільдії / Палац · 🏘 Поділ: Крамар / Майстер / Шинок / Ворожка · the square holds only the two roads); Trader (buy/sell + ✏️ N) + Tavern (food + dice/darts) + Fortune Teller + Master (armor buy/repair/enchant) + Market/Базар (player-to-player listings + 🤝 Trade); 1 stub left (Arena)
+│   │   ├── CapitalController+Treasury.swift # 2026-10-11 — the palace's «🟡 Канцелярія» (code: `treasury`): the Chancellery, the class change card, the «now → after» preview and the purchase, each a caption edit of the palace photo; screens built by pure functions a rehearsal reads
 │   │   ├── InventoryController.swift     # tree nav root → category; inline Use/Eat/Equip action buttons
 │   │   ├── GuildController.swift         # Phase 7.1 — capital Guildhall (routerName "guild"): found/invite/roster/kick/promote/demote/leave/disband + item vault + silver treasury
 │   │   └── ArenaController.swift        # Phase 8.3 — capital Arena (Ристалище), routerName "arena": lobby challenge, real-time duel in simultaneous rounds (lines from the viewer's side, the result screen opens with the final round), Honor ELO, daily fight budget on the GameDay boundary
@@ -141,6 +142,8 @@ RestOfIryna/
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
 │   │   ├── RecipeNote.swift      # 2026-10-10 — `recipe_notes`: a price card pinned to the journal, as `kind · ref · target` (the THING, never a row — the enchant's is the piece + the level, since a warehouse trip re-creates the row); `Kind` and `Key` are the card ↔ note identity. Never a copy of the price
 │   │   ├── TrainingGroundCatalog.swift # 2026-09-27 — façade over `training_ground.json`; a level's player-level floor is its technique's `combat.json` row
+│   │   ├── TreasuryCatalog.swift # 2026-10-11 — façade over `treasury.json`: what zlatnyks buy, in list order; a `TreasuryKind` is the code that carries an entry out
+│   │   ├── ZlatnykPurchase.swift # 2026-10-11 — one row per Treasury purchase, written in the purchase's own transaction; history, not in `LiveReferenceQuery`
 │   │   ├── LearnedTechnique.swift # Phase 5.3e — Fluent model: per-user known-technique set (user_id, technique_id, learned_at). IDs are class-agnostic (`special_atk` / `special_def` / `super`); player's class resolves the concrete technique in combat. has/add/allIds mirror LearnedRecipe.
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers. Phase 6.5 added gear `durability`/`max_durability` (a fresh row is stamped by `GearState.fresh(for:)` with the item's own starting durability since 2026-10-05 — `maxDurability` from items.json, a weapon's ladder tier 1, 0/0 for what nothing wears) + `enchant_level` (armor, cap 5) columns
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory) + remove helper (Phase 5.2)
@@ -173,6 +176,7 @@ RestOfIryna/
 │   │   ├── CreateRecipeNotes.swift # 2026-10-10 — `recipe_notes` (user_id FK cascade, kind, ref, target; unique on all four); a new table, no row touched
 │   │   ├── AddFortuneStage.swift # 2026-10-10 — `users.fortune_stage` (default `free`): where a player stands between two free tarot cards; one column, no row rewritten
 │   │   ├── AddZlatnyks.swift # 2026-10-11 — `users.zlatnyks` (the premium currency, «златник»; NOT NULL, default 0, CHECK ≥ 0) and `users.zlatnyks_announced` (the watchman's marker); two columns, no row rewritten
+│   │   ├── CreateZlatnykPurchases.swift # 2026-10-11 — `zlatnyk_purchases`, the Treasury's purchase log (who, what, price, what it did, the balance after); a new table, listed in `WipeForRebalance.playerTables`
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
 │   │   ├── RewalkReorderedDecrees.swift # 2026-09-27 — data: anyone at chain positions 23…25 goes back to 22 after the estate-before-ground reorder
@@ -254,7 +258,8 @@ RestOfIryna/
 │   │   ├── PlotProductionService.swift # Phase 5.1 — single Task.detached ticker; pushes "ready to harvest" notifications when plot caps are reached
 │   │   ├── CraftingService.swift # Phase 5.2 — pure: craft(_:for:on:) drains inputs from combined inventory+warehouse pool (inventory first), deposits output into inventory; CraftResult enum + Shortage struct for the modal alert
 │   │   ├── RecipeNoteService.swift # 2026-10-10 — the journal's recipe notes: `toggle` (pin / unpin, 3 at most → `.full`), `remove` (the «❌»), `isPinned` (a card's button), and `live` — every reader's door, which asks the player's rows and DELETES what is finished (a reached tier/level, an enchanted or gone piece, content a reload removed). The one event, a craft, is cleared by `recipeMade` from `CraftingService.craft`
-│   │   ├── ZlatnykService.swift # 2026-10-11 — the zlatnyk balance, read from the database on every screen and deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and the session cache would show a stale number. `balance(of:on:)` (the profile), `unannounced(on:)` + `markAnnounced(_:on:)` (the watchman: the marker moves BY the difference read). A future spend is ONE statement taking from both columns
+│   │   ├── ZlatnykService.swift # 2026-10-11 — the zlatnyk balance, read from the database on every screen and deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and the session cache would show a stale number. `balance(of:on:)` (the profile), `unannounced(on:)` + `markAnnounced(_:on:)` (the watchman: the marker moves BY the difference read). `spend` is ONE statement taking from both columns, run inside the purchase's transaction
+│   │   ├── ClassChangeService.swift # 2026-10-11 — the Treasury's class change: `apply` (the one transformation: class, stat line, the weapon reforged at its tier and wear, bonuses), `preview` (that, on a stand-in) and `perform` (ONE transaction: class asked, spend, rows, notes, log; refused in an arena duel)
 │   │   ├── WeaponUpgradeService.swift # Phase 5.2.2 — pure: upgrade(for:on:) advances the player's equipped weapon one tier. Since 2026-10-04 two doors: the workshop (tier 2 → 3 and up, bag + warehouse) and the Master's lesson (`lesson`, tier 1 → 2, bag alone + the fee); the gate is the next rung's player level. InventoryEntry.tier bumped in place (item id never changes), EquipmentService.recomputeBonuses re-run. Result enum: success/maxTierReached/levelTooLow/missingMaterials/notEnoughSilver/notLearned/alreadyLearned/noWeaponEquipped.
 │   │   ├── EstateUpgradeService.swift # Phase 5.3c — pure: upgrade(for:on:) advances User.estateLevel one tier. Validates player-level + gold + materials, drains from combined pool. Result enum: success/maxTierReached/playerLevelTooLow/insufficientGold/missingMaterials.
 │   │   ├── BagUpgradeService.swift # Phase 5.3d — pure: upgrade(for:on:) advances User.bagTier one tier. Validates estate-tier + materials, drains from combined pool. Result enum: success(newTier, newCapacity)/maxTierReached/estateLevelTooLow/missingMaterials.
@@ -646,6 +651,19 @@ done. A migration (`CreateRecipeNotes`) and new strings: it needs a restart. And
 teller's dispel — «🕯 Відчарувати» ends a running card for 30 silver, and only then one final
 «🔮 Друга карта» for 20 (`FortuneStage`; a migration, new strings and content schema v21). And
 the armour repair halved (`repairCostFraction` 0.25: the Forester set from zero 203 where it was 405).
+
+**Built 2026-10-11, not deployed:**
+- The premium currency, the **zlatnyk** («златник» 🟡). The owner credits it by hand in DBeaver: it is
+  a `users` column outside the cached `User`. The watchman tells the player once per credit, and the
+  profile shows «🟡 N златників» under silver while there are any.
+- The palace's **«🟡 Канцелярія»** (the code's `treasury`), which sells one thing: the class change
+  for 100 🟡. The class weapon is reforged at its tier and wear, and the techniques carry over. It
+  runs in one transaction, with a purchase log.
+- The profile's silver now declines («7262 срібники»).
+- A level-up no longer takes the armour's HP.
+
+Two more migrations (`AddZlatnyks`, `CreateZlatnykPurchases`), new strings and content schema v22:
+a restart, with `content/data` and the binary shipped together.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

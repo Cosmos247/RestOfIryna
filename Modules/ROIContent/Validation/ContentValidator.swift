@@ -41,6 +41,7 @@ public enum ContentValidator {
         issues += validateBudget(bundle)
         issues += validateKingChain(bundle)
         issues += validateTrainingGround(bundle)
+        issues += validateTreasury(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -1352,6 +1353,12 @@ public enum ContentValidator {
             }
         }
 
+        // A Treasury entry's name: its button in the Treasury's list and the
+        // title of its card both print `treasury.item.<id>`.
+        for (index, item) in (bundle.treasury?.items ?? []).enumerated() {
+            requireKey("treasury.item.\(item.id)", file: "treasury.json", path: "items[\(index)]", id: item.id)
+        }
+
         // Every rung the innkeeper teaches has its OWN line, because the copy is
         // written per dish rather than per mechanism. Missing it would print the
         // raw key stem at the player, so this is an error and the render site
@@ -2541,6 +2548,42 @@ public enum ContentValidator {
         for technique in techniques where !seen.contains(technique.kind) && !levels.isEmpty {
             fail("levels", "training.technique_unreachable",
                  "no level teaches \"\(technique.kind)\"", id: technique.kind)
+        }
+        return issues
+    }
+
+    /// `treasury.json` — what zlatnyks buy. Each rule has a failing case in
+    /// `TreasuryTests`. The names are required in the locale pass below.
+    private static func validateTreasury(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let treasury = bundle.treasury else { return [] }
+        let file = "treasury.json"
+        var issues: [ContentIssue] = []
+        func fail(_ path: String, _ rule: String, _ message: String, id: String? = nil) {
+            issues.append(.init(severity: .error, file: file, path: path, id: id, rule: rule, message: message))
+        }
+
+        if treasury.items.isEmpty {
+            issues.append(.init(severity: .warning, file: file, path: "items", id: nil, rule: "treasury.empty",
+                                message: "the Treasury sells nothing — its screen would be an empty chest"))
+        }
+        issues += duplicates(treasury.items.map(\.id), file: file, collection: "items")
+        for (index, item) in treasury.items.enumerated() {
+            let path = "items[\(index)]"
+            // The id rides in callback data (`treasury:item:<id>`, 64 bytes at
+            // most) and in a locale key, so it stays short and plain.
+            if item.id.isEmpty || item.id.count > 32
+                || item.id.unicodeScalars.contains(where: { !("a"..."z").contains($0) && !("0"..."9").contains($0) && $0 != "_" }) {
+                fail(path + ".id", "treasury.bad_id", "\"\(item.id)\" must be 1–32 of a–z, 0–9 and _", id: item.id)
+            }
+            if TreasuryKind(rawValue: item.kind) == nil {
+                fail(path + ".kind", "treasury.unknown_kind",
+                     "no handler for kind \"\(item.kind)\" (known: \(TreasuryKind.allCases.map(\.rawValue).joined(separator: ", ")))",
+                     id: item.id)
+            }
+            if item.price < 1 {
+                fail(path + ".price", "treasury.price_not_positive", "price is \(item.price) — a free entry is a gift, not a sale",
+                     id: item.id)
+            }
         }
         return issues
     }

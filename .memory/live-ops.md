@@ -36,6 +36,10 @@ What the database and the bot do with an edit:
 - Once there is something to spend zlatnyks on, ADD rather than overwrite, in the SQL editor:
   `UPDATE users SET zlatnyks = zlatnyks + 100 WHERE telegram_id = …;`. A total typed into the grid
   would undo a spend made while the grid was open.
+- **Purchases** are in `zlatnyk_purchases`: who (`telegram_id`, `nickname` as it was), what (`item_id`), the
+  price, what it did (`detail`, e.g. `archer → warrior`), the balance left and when. It answers «я
+  заплатив, а нічого не отримав». A class change cannot be undone by hand. Credit the zlatnyks back and
+  the player changes back in the Chancellery («🟡 Канцелярія»).
 
 ## Is the bot alive?
 

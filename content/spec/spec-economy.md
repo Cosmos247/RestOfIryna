@@ -602,6 +602,25 @@ earn — which is items, which is after the rebalance.
 
 ---
 
+## 7b. Zlatnyks: the Chancellery (added 2026-10-11)
+
+A third currency, and it gates nothing in play. The zlatnyk («златник») enters only by the owner's
+hand: a credit in the database, which the watchman announces to the player. It is never a drop
+and never a reward. Its one sink is the palace's Chancellery («Канцелярія»; `treasury.json`, the
+table's «Treasury»). On 2026-10-11 the owner chose to sell
+the class change and nothing else. A new name, a new estate name and the upgrades were offered
+and not taken. The weapon is reforged at its tier and wear, and there is no limit but the price.
+
+<!-- generated: roi-content spec economy -->
+**The Treasury** — what zlatnyks buy, in the order it lists them
+
+| entry | kind | zlatnyks |
+|---|---|---|
+| `class_change` | `class_change` | 100 |
+<!-- /generated -->
+
+---
+
 ## 8. What this spec does NOT cover
 
 - What items exist to buy — `spec-items.md`, and there are no new ones.

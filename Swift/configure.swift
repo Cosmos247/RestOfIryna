@@ -294,6 +294,8 @@ public func configure(logger: Logger) async throws {
     // credits in DBeaver, and the marker the watchman announces it by. Two
     // columns at 0, no rows touched.
     migrations.add(AddZlatnyks())
+    // 2026-10-11: the Treasury's purchase log — a new table, no rows touched.
+    migrations.add(CreateZlatnykPurchases())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

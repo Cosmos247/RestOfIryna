@@ -14,13 +14,10 @@
 //  cached number, would write it back over the owner's. Read here, from the
 //  database on every screen, the balance cannot go stale.
 //
-//  A spend, when there is something to spend on, must be ONE statement that
-//  takes from both columns —
-//  `SET zlatnyks = zlatnyks - n, zlatnyks_announced = zlatnyks_announced - n
-//  WHERE id = … AND zlatnyks >= n` — never a read followed by a write. The
-//  marker moves too because the watchman announces `zlatnyks −
-//  zlatnyks_announced`: a spend that left it behind would swallow the next
-//  credit's notice.
+//  A spend is ONE statement that takes from both columns (`spend`) — never a
+//  read followed by a write. The marker moves too because the watchman
+//  announces `zlatnyks − zlatnyks_announced`: a spend that left it behind would
+//  swallow the next credit's notice.
 //
 
 import Fluent
@@ -34,6 +31,21 @@ public enum ZlatnykService {
         guard let sql = db as? any SQLDatabase else { return 0 }
         let row = try await sql.raw("SELECT zlatnyks FROM users WHERE id = \(bind: userId)").first()
         return try row?.decode(column: "zlatnyks", as: Int.self) ?? 0
+    }
+
+    /// Takes `amount` in ONE statement, from both columns (see the header), and
+    /// only when the balance covers it. Returns the balance left, or nil when
+    /// it did not — and then nothing was taken. Run it inside the transaction
+    /// of whatever the zlatnyks buy, so a failed purchase gives them back.
+    public static func spend(_ amount: Int, from userId: UUID, on db: any Database) async throws -> Int? {
+        guard amount > 0, let sql = db as? any SQLDatabase else { return nil }
+        let row = try await sql.raw("""
+            UPDATE users SET zlatnyks = zlatnyks - \(bind: amount),
+                             zlatnyks_announced = zlatnyks_announced - \(bind: amount)
+            WHERE id = \(bind: userId) AND zlatnyks >= \(bind: amount)
+            RETURNING zlatnyks
+            """).first()
+        return try row?.decode(column: "zlatnyks", as: Int.self)
     }
 
     /// A balance that moved since the player was last told about it.

@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`021e9ac`'s hash fill** — records only.
+- *(this commit, 10-11)* **the Chancellery: the class change for zlatnyks** — NOT deployed — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`.
+- `a683888` (10-11) **`021e9ac`'s hash fill** — records only.
 - `021e9ac` (10-11) **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
 - `7ee41c1` (10-11) **`1f4b442`'s hash fill** — records only.
 - `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
@@ -608,6 +609,55 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11, night (the Chancellery: the class change for zlatnyks)
+
+**Renamed before the commit.** «Скарбниця» became «Канцелярія» (en Chancellery) on the owner's word.
+The guild already has a «🪙 Скарбниця». The body became «У канцелярії пахне чорнилом і сургучем…» (the
+owner's pick; the treasurer and his chest went). The code keeps `treasury`, as it keeps `tier`. The
+entry below says «Treasury» where it describes the code.
+
+**Asked and decided** (three quizzes, after a played sample on Володимир's real profile):
+- The Treasury sells only the class change. A new name and estate name, the upgrades and a gender
+  change were offered and not taken.
+- The weapon is reforged at its tier and wear. No limit but the price, which is 100.
+- Build it as sampled, with a purchase log.
+
+**Built:**
+- `treasury.json` and its pipeline: DTO, loader, bundle, snapshot, schema **v22**, validator
+  (`treasury.bad_id`, `.unknown_kind`, `.price_not_positive`, `.empty`, the name key) and
+  `TreasuryTests`.
+- `TreasuryCatalog`; the digest's `records` line; `spec economy` prints the entries.
+- `ClassChangeService`:
+  - `apply` is the one transformation;
+  - `preview` runs it on a stand-in, never the session, because the watchman may save that;
+  - `perform` is ONE transaction — the class asked first, then the spend, the rows, the warehouse,
+    the pinned notes, the row and the log — and its result is copied onto the session afterwards.
+- `CapitalController+Treasury`: the palace's keyboard always carries «🟡 Канцелярія»; four screens built
+  by pure functions.
+- `CreateZlatnykPurchases`, added to `WipeForRebalance.playerTables`, and `ZlatnykService.spend`.
+
+**Rehearsed:**
+- The four deploy migrations ran in one new batch over seeded players.
+- 120 checks, twice:
+  - a stand-in of the same class reproduces the player exactly;
+  - «after» = the new class line + the reforged weapon + the same armour;
+  - the three screens match the approved sample word for word, in captions under 1,024 characters
+    and callbacks under 64 bytes;
+  - a short balance is refused with nothing moved;
+  - the purchase lands exactly the preview (warrior HP rises with the max; mage HP is clamped);
+  - the sword/staff keep tier 4 and 36/70; the pinned rung follows the weapon; one log row per
+    purchase;
+  - a stale second tap is `sameClass`;
+  - a failing log insert rolls the whole purchase back, zlatnyks included.
+- Mutants caught: no reforge, and no copy onto the session. Two validator mutants were caught by
+  `TreasuryTests`.
+- The first mutant run also showed a stale second tap meeting the price before the class. The class
+  is now asked first.
+
+**Checked.** `swift build` green; 408 tests; `validate --strict` 0/0. The digest moved in `records`
+alone (`c3720e93c10c13a8` → `92300a4769c8933e`, the Treasury's line). Content hash `681d611a`. Every
+`spec economy` block reproduces.
 
 ## Session — 2026-10-11, later (a level-up keeps the armour's HP) — `021e9ac`
 

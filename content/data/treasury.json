@@ -1,0 +1,9 @@
+{
+  "items" : [
+    {
+      "id" : "class_change",
+      "kind" : "class_change",
+      "price" : 100
+    }
+  ]
+}

@@ -331,6 +331,14 @@ undoes the tap the player made a second earlier.
 write it back. Read it through `ZlatnykService`; spend it in ONE statement that takes from
 `zlatnyks` and `zlatnyks_announced` alike. Auto-memory `project-premium-currency-zlatnyk`.
 
+**The Chancellery sells for zlatnyks** (the palace, «🟡 Канцелярія»; the code says `treasury` — not the guild's
+«🪙 Скарбниця», `guild.treasury.*`; `treasury.json`, where the entries and prices are data and a
+`TreasuryKind` is code). Its first entry is the class change, ONE transaction
+in `ClassChangeService.perform`: the class asked first, then the spend, the weapon reforged at its
+tier and wear, the pinned notes, the row and the purchase log. The confirm screen runs the same
+`apply` on a stand-in. **Never preview by mutating the session's `User`** — the watchman may save it
+mid-preview.
+
 Full reasoning: `.memory/game-core.md` §Rest and the road, `.memory/session-auth.md`;
 auto-memory `project-rest-notification-watchman`, `project-full-hp-notice-gap`,
 `project-task-ready-notice`, `project-fortune-once-per-game-day`,

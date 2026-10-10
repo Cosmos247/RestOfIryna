@@ -1935,8 +1935,16 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       in the profile.
 - [ ] A purchase flow in the bot, if ever — Telegram Stars only (the only way a bot may sell
       digital goods). For now the owner credits by hand.
-- [ ] Spending: ONE statement taking from both `zlatnyks` and `zlatnyks_announced`
-      (`ZlatnykService`'s header). The screens, from the 2026-10-11 sample:
+- [x] **The Chancellery, selling the class change** (2026-10-11, the owner's quizzes; NOT deployed): «🟡 Канцелярія»
+      (renamed from «Скарбниця» the same night — the guild already has one; the code keeps `treasury`)
+      under the palace card. It opens to the Chancellery (the balance, «Як отримати златники — ⚙️ Налаштування
+      → 💛 Допомога грі»), then the class card, the «now → after» preview, and the purchase banner. The
+      weapon is reforged at its tier and wear, and the techniques carry over by themselves. No limit but
+      the price (`treasury.json`, `content/spec/spec-economy.md` §7b). Every purchase is logged in
+      `zlatnyk_purchases`. First version: no new name, no estate name, no upgrades, and gender stays
+      unchangeable.
+- [ ] More entries, each a `TreasuryKind` with its handler, on the owner's word. Their screens, from the
+      2026-10-11 sample:
       - the header of the screen that sells or spends them: `🟡 Ваші златники: 25`, as the Trader
         prints silver;
       - any price in zlatnyks: `RequirementLine`, `✅ 🟡 Златники  (25/10)`.

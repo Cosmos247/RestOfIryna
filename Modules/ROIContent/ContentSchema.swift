@@ -117,5 +117,9 @@ public enum ContentSchema {
     /// then may one second card be drawn (`FortuneStage`). A v20 binary would
     /// ignore two prices the operator believes are charged; a v21 binary
     /// reading a v20 bundle would die on a bare `keyNotFound`.
-    public static let current: Int = 21
+    /// v22 (2026-10-11): the bundle gains a required `treasury.json` — what the
+    /// palace's Treasury sells for zlatnyks, the first entry being the class
+    /// change. A v21 directory has no such file, and the loader would fail with
+    /// a bare `missingFile("treasury.json")`; the handshake names the cause.
+    public static let current: Int = 22
 }

@@ -599,6 +599,10 @@ Full tuning curves (XP required per level, gear power curve, hunger cap scaling)
 - For now the owner credits zlatnyks by hand, in the database, and the bot tells the player once
   per credit. The balance shows in the profile, on a line under silver, only while it is above 0
   (decided 2026-10-11; the screens and the mechanics: `TODO.md` → Phase 10.1).
+- They are spent in the palace's **Chancellery** («Канцелярія»; the code says `treasury`), whose first and
+  only entry is the class change: the
+  weapon is reforged at its tier and wear, techniques carry over, and there is no limit but the
+  price. The price lives in `treasury.json` (`content/spec/spec-economy.md` §7b).
 - Zlatnyks buy:
   - **Consumables** — premium potions, rare food with large hunger restore
   - **Cosmetics** — estate decor, manor skins, character skins, pet skins

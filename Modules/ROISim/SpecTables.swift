@@ -844,6 +844,17 @@ public enum SpecTables {
             out.append("the only factor that survives: scaling `chance` saturates at 1.0, and")
             out.append("rounding a quantity of 1 collapses ×0.5/×1.0/×1.2/×1.7 into 1 or 2.")
         }
+
+        // The Treasury (2026-10-11): the second currency's only sink. Zlatnyks
+        // enter by the owner's hand, never from play, so there is no faucet row.
+        out.append("")
+        out.append("**The Treasury** — what zlatnyks buy, in the order it lists them")
+        out.append("")
+        out.append("| entry | kind | zlatnyks |")
+        out.append("|---|---|---|")
+        for item in content.treasuryItems {
+            out.append("| `\(item.id)` | `\(item.kind)` | \(item.price) |")
+        }
         return out.joined(separator: "\n")
     }
 
