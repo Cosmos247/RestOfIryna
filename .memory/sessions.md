@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **an apostrophe in a name; a lone unit needs no quantity; a broken piece
+- *(this hash fill, 10-11)* **`37a0ebc`'s hash fill** — records only.
+- `37a0ebc` (10-11) **an apostrophe in a name; a lone unit needs no quantity; a broken piece
   no longer counts toward its set** — NOT live until a restart:
   - the nickname and the estate name accept an apostrophe between two letters (' ʼ ’, stored as
     '), through `PlayerNameRules` in `ROIContent`, which registration and the guild invite's
@@ -653,7 +654,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11, late evening (an apostrophe in a name; the two players' proposals dropped; a lone unit needs no quantity; a broken piece and its set)
+## Session — 2026-10-11, late evening (an apostrophe in a name; the two players' proposals dropped; a lone unit needs no quantity; a broken piece and its set) — `37a0ebc`
 
 The owner opened with «Зробим те, що запропонували гравці». The proposals left open were the 10-08
 pair, chosen with their form unanswered: eating straight from the warehouse and a hint under the

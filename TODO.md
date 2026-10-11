@@ -1575,8 +1575,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **A broken piece no longer counts toward its set** *(2026-10-11, Swift only, NOT live until
-        a restart)* — the owner's question «Зламана броня дає якийсь + до статів?» found it: armour at
+  - [x] **A broken piece no longer counts toward its set** *(2026-10-11, `37a0ebc`, Swift only, NOT live
+        until a restart)* — the owner's question «Зламана броня дає якийсь + до статів?» found it: armour at
         0 granted nothing of its own, but `applyBonuses` counted it toward the set, so a Forester set
         worn to 0 kept +2 DEF · +6 HP · +2 dodge. `EquipmentService.isBroken` is now the one test for
         both. Checked on the real code in a scratch copy, before → after: all broken 2/6/0/2 → 0; the
@@ -1584,7 +1584,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         wore a broken piece (10-11 23:18, any armour). The broken weapon's half was recorded as «floored»; it
         rounds half up (the t1 sword's 7 ATK → 4), and the FAQ, the comment and an old entry are
         corrected.
-  - [x] **A lone unit needs no quantity** *(2026-10-11, Swift only, NOT live until a restart)* — a
+  - [x] **A lone unit needs no quantity** *(2026-10-11, `37a0ebc`, Swift only, NOT live until a restart)* — a
         players' proposal: «не доводилось писати кількість, якщо предмету одна одиниця». The owner
         picked variant A of three: A, a lone unit acts at once; B, «1» / «Усі (N)» buttons in every
         prompt; C, both. When the side the units come from holds exactly one, the tap acts on it:
@@ -1596,7 +1596,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         A taken job that needs the item keeps the trader's and the market's prompt and its ⚠️
         (`loneUnitWithoutJob`). Buying is unchanged. The typed path and the lone unit share one
         mover each (`performVaultMove`, `finishWarehouseTransferN`).
-  - [x] **An apostrophe in a name** *(2026-10-11, Swift only, NOT live until a restart)* — found
+  - [x] **An apostrophe in a name** *(2026-10-11, `37a0ebc`, Swift only, NOT live until a restart)* — found
         while sampling the estate-name hint, built on the owner's answer: the nickname and the
         estate name refused «Дар'я» and «Солов'їний гай» as "symbols", under a message telling the
         player to use letters only. An apostrophe between two letters is now accepted in all three
@@ -2103,14 +2103,14 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-11 — a broken piece no longer counts toward its set (NOT deployed — Swift only, so
-a restart):** an account wearing the whole Forester set.
+**Added 2026-10-11 — a broken piece no longer counts toward its set (`37a0ebc`, NOT deployed — Swift only,
+so a restart):** an account wearing the whole Forester set.
 - Note the profile's 🛡 Захист and ❤️ maximum with every piece whole.
 - In DBeaver set the worn jerkin's `durability` to 0 and restart, or let a fight break it: 🛡 drops
   by 6 and the ❤️ maximum by 12 — the jerkin's own 4 🛡 · 6 ❤️ plus the four-piece +2 🛡 · +6 ❤️ (it
   used to drop by 4 and 6). The two-piece +2 dodge stays. Mended at the Master, both come back.
 
-**Added 2026-10-11 — a lone unit needs no quantity (NOT deployed — Swift only, so a restart):** an
+**Added 2026-10-11 — a lone unit needs no quantity (`37a0ebc`, NOT deployed — Swift only, so a restart):** an
 account holding exactly one unit of something.
 - 💼 Крамар → 💸 Продати: a row reading «🎒 1» sells on the tap, with «✅ … ×1 — продано за 🪙 N»
   and the list redrawn. «🎒 2» or more still asks «Скільки … продати?». Take a job that needs the
@@ -2123,7 +2123,7 @@ account holding exactly one unit of something.
   prompt is gone and the banner says «×1».
 - 💼 Крамар → 💰 Купити asks «Скільки … купити?» as before.
 
-**Added 2026-10-11 — an apostrophe in a name (NOT deployed — Swift only, so a restart):** a NEW
+**Added 2026-10-11 — an apostrophe in a name (`37a0ebc`, NOT deployed — Swift only, so a restart):** a NEW
 account, since only registration writes a name.
 - Step 2: «Дар'я» — typed with whatever apostrophe the keyboard gives — is accepted, and the class
   prompt greets «Дар'я».
@@ -2963,7 +2963,7 @@ fixes are `f2ae7ea`; these were found, verified and left:
   km 2–11 to km 6–10, and the viper and the eagle drop nothing. Both jobs can still be done
   (deeper, or with silver at the trader) and dropped; raise their `minLevel` if a new player
   stalls on one.
-- **FIXED 2026-10-11 (the owner's word; NOT live until a restart) — a broken piece counted toward
+- **FIXED 2026-10-11 (the owner's word, `37a0ebc`; NOT live until a restart) — a broken piece counted toward
   its set** (since Phase 6). `EquipmentService.applyBonuses` counted worn rows whatever their
   durability, so a Forester set worn to 0 still granted +2 dodge, +2 DEF and +6 HP while every
   piece granted nothing. The set pass now skips a piece `isBroken` names — the test
