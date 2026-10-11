@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-11 — the Chancellery: the class change for zlatnyks** (`1c39595`, NOT deployed — schema **v22**, so
+**2026-10-11 — the Chancellery: the class change for zlatnyks** (`1c39595`, deployed 2026-10-11 13:21 — schema **v22**, so
 `content/data` and the binary ship together; `treasury.json`, `CreateZlatnykPurchases`, `records` →
 `92300a4769c8933e`, content hash `681d611a`). «🟡 Канцелярія» (code: `treasury`) sits under the palace card and sells one
 entry. The class change keeps level, XP, estate, armour and silver, recomputes the stat line, reforges
@@ -29,7 +29,7 @@ the class weapon at its tier and wear, and carries the techniques over by themse
 kinds). It runs in ONE transaction with a purchase log. Rehearsed on a scratch Postgres: 120 checks
 twice, two mutants caught.
 
-**2026-10-11 — the premium currency, the zlatnyk («златник» 🟡)** (`1f4b442`, NOT deployed — Swift, a migration
+**2026-10-11 — the premium currency, the zlatnyk («златник» 🟡)** (`1f4b442`, deployed 2026-10-11 13:21 — Swift, a migration
 and strings; the digest unmoved). Named 2026-10-10. The balance is `users.zlatnyks` (`AddZlatnyks`, with
 a CHECK ≥ 0), deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and
 `ZlatnykService` reads it fresh. The watchman announces a credit once («🟡 Вам нараховано N
@@ -39,7 +39,7 @@ followed the same night.
 The same change made the profile's silver decline («7262 срібники»). Rehearsed: 54 checks twice,
 two mutants caught.
 
-**2026-10-10 — the armour repair halved** (`7995d2a`, NOT deployed — one number,
+**2026-10-10 — the armour repair halved** (`7995d2a`, deployed 2026-10-11 13:21 — one number,
 `master.json` → `repairCostFraction` 0.5 → 0.25; `records` → `c3720e93c10c13a8`, content hash
 `c9cf0506`, schema still v21). Players complained; the Pi's `fight_log` (read-only, 4 days) showed
 newcomers wearing 60–460 points a day against the ~78–103 their jobs pay, and an L8 player with
@@ -48,7 +48,7 @@ breeches 1.25, jerkin 1.5 (the weapon keeps 1); the set from zero 203 (405 befor
 decided: the max shave stays, the already-cut maxima are not restored, the Master's screens stay
 as they are (prices on the buttons and «Полагодити все» were shown and declined).
 
-**2026-10-10 — the fortune teller's dispel and second card** (`7860aaa`, NOT deployed — Swift,
+**2026-10-10 — the fortune teller's dispel and second card** (`7860aaa`, deployed 2026-10-11 13:21 — Swift,
 14 uk / 8 en strings, one migration `AddFortuneStage`, two prices in `fortune.json`: content
 schema v21, `records` → `2c754b9daf5c0d5a`). A players' proposal with the owner's addition, the
 rules the owner's, answer by answer:
@@ -61,7 +61,7 @@ rules the owner's, answer by answer:
 - Rehearsed like the notebook: the migration alone in batch 2 over seeded players, 81 checks
   through the real services and screen builders, twice; five planted mutants caught.
 
-**2026-10-10 — the recipe notebook** (`d77d600`, NOT deployed — Swift, 21 uk / 19 en strings and
+**2026-10-10 — the recipe notebook** (`d77d600`, deployed 2026-10-11 13:21 — Swift, 21 uk / 19 en strings and
 one migration, `CreateRecipeNotes`; the digest unmoved). A public-test player kept
 riding to the capital just to read what the next reforge cost. Every price card now carries
 «📌 У нотатник» on its own row under the action: the Master's lesson and enchant, the workshop's
@@ -879,15 +879,13 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
-since the 2026-10-09 01:30 restart (`de0e062`): `records 4c0802f927fb8be4` /
+since the 2026-10-11 13:21 restart (`98580ce`): `records 92300a4769c8933e` /
 `tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
-e3a492be1b017e81`, content hash `47888401`, **schema v20** (the fortune teller's 24 h
-`cooldownSeconds` gone, then the sword's icon ⚔️ → 🗡 — `records` alone moved). **The working
-tree is ahead** since 2026-10-10: `records 92300a4769c8933e`, content hash `681d611a`, **schema
-v22** (the fortune teller's two prices, the repair halved, then the Chancellery's `treasury.json`),
-the other four halves the Pi's. Waiting for a restart: the recipe notebook (`d77d600`), the dispel
-(`7860aaa`), the halved repair (`7995d2a`), the zlatnyks (`1f4b442`), the level-up HP fix
-(`021e9ac`) and the Chancellery (`1c39595`). Every earlier baseline is in `.memory/sessions.md` → "Digest
+e3a492be1b017e81`, content hash `681d611a`, **schema v22** (the fortune teller's two prices, the
+repair halved, then the Chancellery's `treasury.json` — `records` alone moved). That restart
+carried the recipe notebook (`d77d600`), the dispel (`7860aaa`), the halved repair (`7995d2a`), the
+zlatnyks (`1f4b442`), the level-up HP fix (`021e9ac`) and the Chancellery (`1c39595`); nothing waits
+for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **408 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

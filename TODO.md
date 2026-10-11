@@ -398,7 +398,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] 22 card PNGs in `Assets/capital/fortune/` + entry portrait `Assets/capital/fortune.jpg`
 - [x] Reply-keyboard insurance — inline `[🔙 До столиці]` back button on fortune/tavern/trader entries (also re-attaches reply keyboard if a Telegram client collapsed it)
 - [x] Bugfix: `CapitalController.onCallbackQuery` forwards unknown callbacks (pstyle, stale explore/combat) to MainController instead of returning false — no more "Unsupported content type"
-- [x] **The dispel and the second card** *(2026-10-10, `7860aaa`, NOT deployed — a players' proposal, the owner's rules)* — «🕯 Відчарувати» (30) ends the FREE card's running duration effect after a question; only then one final «🔮 Друга карта» (20). None after a one-shot or a card that ran out, no dispel of the second card, the free card's time never sooner. `FortuneStage`, `users.fortune_stage` (`AddFortuneStage`), `dispelPrice` / `secondDrawPrice` in `fortune.json` (schema v21)
+- [x] **The dispel and the second card** *(2026-10-10, `7860aaa`, deployed 2026-10-11 13:21 — a players' proposal, the owner's rules)* — «🕯 Відчарувати» (30) ends the FREE card's running duration effect after a question; only then one final «🔮 Друга карта» (20). None after a one-shot or a card that ran out, no dispel of the second card, the free card's time never sooner. `FortuneStage`, `users.fortune_stage` (`AddFortuneStage`), `dispelPrice` / `secondDrawPrice` in `fortune.json` (schema v21)
 
 ### 6.5 Capital Hub (remaining)
 - [x] **Market** *(landed 2026-05-28)* — player-to-player marketplace. `MarketListing` model + `CreateMarketListings` migration + `MarketCatalog` (flat `listingFee = 5` silver sink, `maxActiveLots = 5`) + `MarketService` (createListing / buyListing / cancelListing, typed results, DB-only). Stackables only (gear excluded via `Item.stackable`). **Escrow at listing** — units leave the seller's bag onto the lot row; cancel returns them (fee kept). **Two-level item-grouped buy board**: Level 1 = one row per distinct item (`<item> · lots: K · from 🪙U`), Level 2 = that item's lots sorted cheapest-per-unit first (`×N · 🪙total (🪙U/ea) · @nick`) → confirm → buy. Buying debits buyer, credits seller, delivers items, deletes the lot, and pushes the seller a "sold" notification (PlotProductionService-style fire-and-forget). Sell = two-prompt flow (quantity → price, fee shown inline) via `PendingMarketListing` two-stage `EphemeralChatState` + `unmatched` text intercept. My-lots screen cancels with one tap. `onMarket` → `showMarket` (was the `renderLocation` stub). 37 locale keys × 2 (all neutral — no gendered words). `Assets/capital/market.jpg` not supplied yet → text fallback via `sendCachedPhoto`.
@@ -411,7 +411,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       persisted — a restart cancels it. Daily fight budget via `ArenaProfile.fightsSpentToday`.
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred. **2026-10-06:** the Master's screen photo `Assets/capital/master.jpg` is supplied (the owner's art); `showMaster` already sent it through `sendCachedPhoto`, so no code moved — every sub-screen now edits the photo's caption, the longest (the lesson card) ≈450 of Telegram's 1024.
-  - *2026-10-10 (`7995d2a`, NOT deployed):* **the armour repair halved** on players' complaints — `repairCostFraction` 0.5 → 0.25 (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the set from zero 203, was 405; the weapon keeps 1). The max shave, the cut maxima and the Master's screens were asked about and kept.
+  - *2026-10-10 (`7995d2a`, deployed 2026-10-11 13:21):* **the armour repair halved** on players' complaints — `repairCostFraction` 0.5 → 0.25 (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the set from zero 203, was 405; the weapon keeps 1). The max shave, the cut maxima and the Master's screens were asked about and kept.
 - [x] **Two streets** *(landed 2026-09-20, live since the 2026-09-22 00:22 deploy)* — the capital keyboard had reached
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
@@ -1923,7 +1923,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 ### 10.1 Premium Currency — the zlatnyk («златник»)
 - [x] **Named** «златник» (en *zlatnyk*, the owner's spelling), icon 🟡 — the owner's pick,
       2026-10-10. Why, and the names turned down: auto-memory `project-premium-currency-zlatnyk`.
-- [x] **The balance, credited by hand** (2026-10-11, the owner's three answers; NOT deployed):
+- [x] **The balance, credited by hand** (2026-10-11, the owner's three answers; deployed 2026-10-11 13:21):
       `users.zlatnyks` (`AddZlatnyks`), deliberately NOT a field of `User`, because the owner edits
       the cell in DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks") and a cached copy would go
       stale. `ZlatnykService` reads it fresh. Within a sweep of the edit the watchman writes
@@ -1935,7 +1935,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       in the profile.
 - [ ] A purchase flow in the bot, if ever — Telegram Stars only (the only way a bot may sell
       digital goods). For now the owner credits by hand.
-- [x] **The Chancellery, selling the class change** (2026-10-11, the owner's quizzes; NOT deployed): «🟡 Канцелярія»
+- [x] **The Chancellery, selling the class change** (2026-10-11, the owner's quizzes; deployed 2026-10-11 13:21): «🟡 Канцелярія»
       (renamed from «Скарбниця» the same night — the guild already has one; the code keeps `treasury`)
       under the palace card. It opens to the Chancellery (the balance, «Як отримати златники — ⚙️ Налаштування
       → 💛 Допомога грі»), then the class card, the «now → after» preview, and the purchase banner. The
@@ -2052,9 +2052,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The six blocks on top (2026-10-11: the Chancellery, the level-up HP fix, the zlatnyks;
-2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook) are NOT deployed yet;
-every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
+Telegram. **Every block is LIVE and unwalked** — the six on top (2026-10-11: the Chancellery, the level-up HP
+fix, the zlatnyks; 2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook)
+since the 2026-10-11 13:21 restart, the five under them since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
 the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
@@ -2064,7 +2064,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-11 — the Chancellery: the class change (`1c39595`, NOT deployed — schema v22, a migration and strings, so a restart with `content/data`):**
+**Added 2026-10-11 — the Chancellery: the class change (`1c39595`, live since 2026-10-11 13:21):**
 an account at the capital with 100+ zlatnyks credited in DBeaver.
 - 👑 Палац: «🟡 Канцелярія» under the decree card, always. «✅ Доповісти Королю» joins it above once a
   decree is done.
@@ -2080,24 +2080,24 @@ an account at the capital with 100+ zlatnyks credited in DBeaver.
 - Under 100: the modal «Не вистачає златників: N/100», and nothing moves.
 - Mid-duel: «Змінити клас не можна посеред двобою на Ристалищі.»
 
-**Added 2026-10-11 — a level-up keeps the armour's HP (`021e9ac`, NOT deployed):** a geared player at
+**Added 2026-10-11 — a level-up keeps the armour's HP (`021e9ac`, live since 2026-10-11 13:21):** a geared player at
 full HP levels up and stays full at the new maximum. It used to drop by the armour's whole HP share.
 
-**Added 2026-10-11 — the zlatnyks and the profile's silver (`1f4b442`, NOT deployed — a migration and strings):**
+**Added 2026-10-11 — the zlatnyks and the profile's silver (`1f4b442`, live since 2026-10-11 13:21):**
 - In DBeaver set a test account's `users.zlatnyks` to 100. Within a minute «🟡 Вам нараховано 100
   златників. Тепер у вас 100.» arrives, and the profile shows «🟡 100 златників» under silver; at 0
   there is no line.
 - Lowering it sends nothing; a typed minus is refused by the CHECK.
 - Silver declines: «🪙 202 срібники», «🪙 21 срібник».
 
-**Added 2026-10-10 — the armour repair halved (`7995d2a`, NOT deployed — ships with the restart, since the tree's content schema is ahead of the Pi's):**
+**Added 2026-10-10 — the armour repair halved (`7995d2a`, live since 2026-10-11 13:21):**
 an account with worn Forester armour.
 - 🛠 Майстер → ⚒️ Полагодити → a piece: the confirm quotes half of today's price — the jerkin
   from 0/50 «за 🪙 75» (it was 150), the hood 25, the boots 40, the breeches 63. The weapon is
   unchanged: 1 🪙 a point.
 - The banner and the max: «✅ 🦺 Жилет лісника — полагоджено за 🪙 75 (49/49)» — the shave stays.
 
-**Added 2026-10-10 — the fortune teller's dispel and second card (`7860aaa`, NOT deployed — a migration, new strings and content schema v21, so a restart):**
+**Added 2026-10-10 — the fortune teller's dispel and second card (`7860aaa`, live since 2026-10-11 13:21):**
 an account at the capital with 60+ silver and a free card ready (a fresh account, or after the next 12:00).
 - 🔮 Ворожка → «🔮 Тягнути карту». Under a DURATION card the screen ends «Ви можете відчарувати
   карту за 30 срібників.» + «🪙 Ваші срібники: N» with «🕯 Відчарувати» above «🔙 До столиці».
@@ -2114,7 +2114,7 @@ an account at the capital with 60+ silver and a free card ready (a fresh account
   charge nothing.
 - With under 30 / 20 silver: «❌ Не вистачає срібників: N/30» (or /20), nothing changes.
 
-**Added 2026-10-10 — the recipe notebook (`d77d600`, NOT deployed — a migration and new strings, so a restart):**
+**Added 2026-10-10 — the recipe notebook (`d77d600`, live since 2026-10-11 13:21):**
 an account at estate level 4+, so every card is in reach; a second at level 5 for the lesson.
 - Eight cards carry «📌 У нотатник» on a row of its own: the Master's «🔨 Урок перековки» (under
   «Перекувати · До майстра») and an armour piece's «✨ Покращення броні» (under «Так · Ні»); the

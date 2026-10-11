@@ -11,12 +11,15 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`0b18908`'s hash fill, and the class change's charter copy folded into its
+- *(this commit, 10-11)* **the 2026-10-11 13:21 deploy recorded** — records only: the `## Deploy —`
+  entry, the six marked live in `Prompt.md`, status, TODO, README, `live-ops.md` and the auto-memory, the
+  v20 baseline moved to the superseded list; two DBeaver snags on the Mac (the tunnel, the grid).
+- `98580ce` (10-11) **`0b18908`'s hash fill, and the class change's charter copy folded into its
   commits** (the owner's quiz, 10-11). «🔄 Зміна класу» → «📜 Грамота про зміну класу», the preview's
   🔄 → 📜 and «✅ Змінити клас» → «✅ Скріпити печаткою» went into `1c39595`, the walk list into
   `0b18908`; autosquash rebase, the tree identical to the pre-rebase one. Rewritten: `fb37519` →
-  `1c39595`, `a9170f7` → `3a7d746`, `0ae88b5` → `0b18908`, `afba437` → this fill (the old HEAD is in
-  the reflog).
+  `1c39595`, `a9170f7` → `3a7d746`, `0ae88b5` → `0b18908`, `afba437` → `98580ce` (the old HEAD is in
+  the reflog). Pushed by the owner and deployed 10-11 13:21.
 - `0b18908` (10-11) **the 10-11 sync pass** — records, plus comments and two unread fields:
   - the session's research persisted in `.memory/rebalance.md`;
   - «Fluent saves whole rows» corrected (Fluent writes only changed fields) in `CLAUDE.md`,
@@ -26,19 +29,19 @@ was shown in a unit it was not measured in.
   - TODO's 10-11 walk-list and open blocks; `Prompt.md` reoriented on the Pi read at 10-11 02:57;
   - `ClassChangeService`'s unread `Line.hp` and `Outcome.from` removed.
 - `3a7d746` (10-11) **`1c39595`'s hash fill** — records only.
-- `1c39595` (10-11) **the Chancellery: the class change for zlatnyks** — NOT deployed — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`. The class change is worded as a charter — «📜 Грамота про зміну класу», «✅ Скріпити печаткою» — folded in on 10-11 (not «указ»: the decree chain's word, on the same palace screen).
+- `1c39595` (10-11) **the Chancellery: the class change for zlatnyks** — DEPLOYED 10-11 13:21 — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`. The class change is worded as a charter — «📜 Грамота про зміну класу», «✅ Скріпити печаткою» — folded in on 10-11 (not «указ»: the decree chain's word, on the same palace screen).
 - `a683888` (10-11) **`021e9ac`'s hash fill** — records only.
-- `021e9ac` (10-11) **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
+- `021e9ac` (10-11) **a level-up keeps the armour's HP** — DEPLOYED 10-11 13:21 — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
 - `7ee41c1` (10-11) **`1f4b442`'s hash fill** — records only.
-- `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — NOT deployed — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
+- `1f4b442` (10-11) **the premium currency — named, credited by hand, shown in the profile; the profile's silver declines** — DEPLOYED 10-11 13:21 — «златник» 🟡 (en *zlatnyk*, the owner's spelling) in GDD §8/§14, TODO 10.1 and lore §9. `AddZlatnyks`: `users.zlatnyks` (CHECK ≥ 0) and `users.zlatnyks_announced`. The balance is NOT a `User` field, because the owner credits it in DBeaver; `ZlatnykService` reads it fresh, and the watchman announces a credit once («🟡 Вам нараховано N златників. Тепер у вас M.»). The profile shows «🟡 N златників» under silver, only above 0. The silver line had a fixed «срібників» (`profile.silver`, deleted) and now goes through `unit.silver`. Rehearsed on a scratch Postgres: 54 checks twice, two mutants caught. A migration, so the restart; the digest is unmoved.
 - `608f2c5` (10-10) **`04368cd`'s hash fill** — records only.
 - `04368cd` (10-10) **the sync pass** — records only: the research the chat held (the dispel's shapes and Vigor arithmetic, the repair on live play and the shave's hidden price) into `rebalance.md`, the wear SQL and day four into `live-ops.md`, the 10-10 open items into `TODO.md`, a repair guard into `CLAUDE.md`; stale fortune timing in README and the file map, a duplicated section in `localization.md`, the index and `Prompt.md` brought to the tree.
 - `743f042` (10-10) **`7995d2a`'s hash fill** — records only.
-- `7995d2a` (10-10) **the armour repair halved** — NOT deployed — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
+- `7995d2a` (10-10) **the armour repair halved** — DEPLOYED 10-11 13:21 — `repairCostFraction` 0.5 → 0.25 in `master.json` (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the weapon keeps 1; the set from zero 405 → 203), on players' complaints measured on the Pi's `fight_log`. The shave, the restored maxima and the Master's screens asked about and left as they are. `records` → `c3720e93c10c13a8`, content hash → `c9cf0506`; the economy spec's sinks row refreshed with a dated note, `spec-items.md` §10.2 amended, the FAQ row and its ready reply.
 - `248ce7e` (10-10) **`7860aaa`'s hash fill** — records only.
-- `7860aaa` (10-10) **the fortune teller's dispel and second card** — NOT deployed — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
+- `7860aaa` (10-10) **the fortune teller's dispel and second card** — DEPLOYED 10-11 13:21 — «🕯 Відчарувати» ends the FREE card's running duration effect for 30 (a question first, naming the card and the draw: `fortune:dispel_ok:<draw>`); only then is ONE «🔮 Друга карта» on sale for 20, and it is final. Never after a one-shot or a card that ran out, never a dispel of the second card, the free card's time never sooner (the dispel keeps the stamped window). `FortuneStage` in `ROIContent` holds both rules; `users.fortune_stage` + one migration (`AddFortuneStage`), two prices in `fortune.json` (content schema v21), 14 uk / 8 en strings, the sinks table of `spec-economy.md` gains the fortune teller. `records` → `2c754b9daf5c0d5a`, content hash → `f6a8a23e`, the other four halves unmoved; 401 tests; rehearsed on a scratch Postgres 15 (81 checks twice, five mutants caught).
 - `0d556f5` (10-10) **`d77d600`'s hash fill** — records only.
-- `d77d600` (10-10) **the recipe notebook** — NOT deployed — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
+- `d77d600` (10-10) **the recipe notebook** — DEPLOYED 10-11 13:21 — «📌 У нотатник» on the eight price cards (the Master's lesson and enchant, the workshop's weapon rung, bag and recipes, the kitchen's dishes, the estate upgrade, the Training Ground), on a row of its own; up to three notes behind «📌 Рецепти (N)» in the journal, always shown, priced afresh with «❌» two to a row. A note is a THING (`RecipeNote`: kind · ref · target; the enchant's is the piece + the level), done is READ: `RecipeNoteService.live` deletes finished notes on every read, a craft is cleared by `recipeMade`. One migration (`CreateRecipeNotes`), 21 uk / 19 en strings, the digest unmoved; rehearsed on a scratch Postgres 15 (82 checks twice, two mutants caught).
 - `2d8ab41` (10-09) **`34872f6`'s hash fill** — records only.
 - `34872f6` (10-09) **the session preamble trimmed against the records** — records only:
   `MEMORY.md` 24,594 → 16,773 chars of Claude Code's hard 25,000-char cut (63 index lines made
@@ -552,6 +555,12 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-09 01:30 to 2026-10-11 13:21 (`de0e062`, schema v20):** `records
+4c0802f927fb8be4` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. The fortune teller's two prices
+(`7860aaa`, schema v21), the repair halved (`7995d2a`) and the Chancellery's `treasury.json` (`1c39595`,
+schema v22) moved `records` alone.
+
 **The baseline the Pi ran from 2026-10-07 18:34 to 2026-10-09 01:30 (`f200fa5` → `94620a4`, schema v19):** `records
 cc1357a44f3c4849` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `a89b39b0`. The guild gate 5 → 30
@@ -624,6 +633,47 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Deploy — 2026-10-11 13:21 (`de0e062` → `98580ce`)
+
+The owner pushed and asked for the deploy and the restart. Read off the Pi first: `de0e062` since
+2026-10-09 01:30:47, schema v20, pm2 restarts 9, one `[WATCHDOG]` line (10-08 11:47:53). No Mac bot
+running.
+- `git pull --ff-only` fast-forwarded to `98580ce`.
+- The detached debug build took 130.0 s with 0 errors.
+- `--content-digest` on the Pi matched the Mac line for line, bar the Linux runtime's two
+  swift-backtrace notices: schema v22, content hash `681d611a`, `records 92300a4769c8933e`, `tuning
+  4edf65507bbb5e48`, `spawns 0cf31905171d7944`, `quests 30de20902006e3b9`, `king e3a492be1b017e81`.
+- `pm2 restart ROI && pm2 save` ran at 13:21:10. The boot logged `Content loaded: schema v22 … hash
+  681d611a`, the four migrations (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`,
+  `CreateZlatnykPurchases`, all finished by 13:21:12), `Bot identified as @ROfIr_bot`, `[ACCESS] OPEN
+  DOOR`, and `Server started and listening` at 13:21:18. The error log took only the swift-backtrace
+  notices.
+- The TABLES, read in `psql` on the Pi:
+  - the four rows in `_fluent_migrations`;
+  - `users.zlatnyks` / `zlatnyks_announced`, bigint NOT NULL DEFAULT 0, with `users_zlatnyks_check
+    CHECK (zlatnyks >= 0)`; `users.fortune_stage`, text NOT NULL DEFAULT 'free';
+  - `recipe_notes` and `zlatnyk_purchases` with every column;
+  - 25 users, 0 NULLs in the three new columns, nobody with zlatnyks, everyone `free`; 0 notes,
+    0 purchases.
+- At 13:24:00: still one `[WATCHDOG]` line, `Code: 400` at its 913 baseline, ROI `online` with
+  restarts 10 — past the watchdog's 120 s, so getUpdates completes — and four sockets to Telegram
+  at 13:21:47; no `[ROUTE]` line yet.
+
+Live since: the recipe notebook (`d77d600`), the fortune teller's dispel and second card
+(`7860aaa`), the armour repair halved (`7995d2a`), the zlatnyks and the profile's silver
+(`1f4b442`), a level-up keeping the armour's HP (`021e9ac`), and the Chancellery with the class
+change worded as a charter (`1c39595`). The testers' note was written before the push and
+shortened on the owner's word.
+
+Two DBeaver snags the same hour, both on the Mac:
+- `Connection to 127.0.0.1:5433 refused`: the ssh tunnel was down. Brought back up with
+  `ssh -f -N -L 5433:localhost:5433 rpi5@192.168.0.203`.
+- `Column 'zlatnyks' is read-only: No corresponding table column`. The columns were there (read in
+  `psql`), `ArtaniaAdmin` owns `users` with UPDATE, and DBeaver's sessions opened at 13:26, after the
+  migration — so most likely its navigator kept `users` as an earlier session had read it. A refresh
+  and a reconnect did not clear it for the owner; the advice was to quit DBeaver (Cmd+Q) and reopen,
+  or to credit through the SQL editor. The outcome was not reported.
 
 ## Session — 2026-10-11, the sync pass (records; two comments' reasons; two unread fields) — `0b18908`
 

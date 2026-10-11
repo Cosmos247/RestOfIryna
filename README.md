@@ -644,26 +644,26 @@ to it (`ROI_OPEN_ACCESS`), and the Pi runs `de0e062` since 2026-10-09 01:30. Eve
   fight's own HP line named «Ви» with the class icon; each weapon's own icon on the profile, the
   gear sheet and the weapon decree; «рівень» for «тир» on every Ukrainian screen.
 
-**Built 2026-10-10, not deployed:** the recipe notebook — «📌 У нотатник» on every price card (the
+**Live since the 2026-10-11 13:21 restart, built 2026-10-10:** the recipe notebook — «📌 У нотатник» on every price card (the
 Master's lesson and enchant, the workshop, the kitchen, the estate, the Training Ground) and up to
 three pinned cards behind «📌 Рецепти (N)» in the journal, priced afresh and gone silently once
-done. A migration (`CreateRecipeNotes`) and new strings: it needs a restart. And the fortune
+done (`CreateRecipeNotes`). And the fortune
 teller's dispel — «🕯 Відчарувати» ends a running card for 30 silver, and only then one final
-«🔮 Друга карта» for 20 (`FortuneStage`; a migration, new strings and content schema v21). And
+«🔮 Друга карта» for 20 (`FortuneStage`, `AddFortuneStage`). And
 the armour repair halved (`repairCostFraction` 0.25: the Forester set from zero 203 where it was 405).
 
-**Built 2026-10-11, not deployed:**
+**Live since the same restart, built 2026-10-11:**
 - The premium currency, the **zlatnyk** («златник» 🟡). The owner credits it by hand in DBeaver: it is
   a `users` column outside the cached `User`. The watchman tells the player once per credit, and the
   profile shows «🟡 N златників» under silver while there are any.
 - The palace's **«🟡 Канцелярія»** (the code's `treasury`), which sells one thing: the class change
-  for 100 🟡. The class weapon is reforged at its tier and wear, and the techniques carry over. It
+  for 100 🟡, offered as «📜 Грамота про зміну класу». The class weapon is reforged at its tier and wear, and the techniques carry over. It
   runs in one transaction, with a purchase log.
 - The profile's silver now declines («7262 срібники»).
 - A level-up no longer takes the armour's HP.
 
-Two more migrations (`AddZlatnyks`, `CreateZlatnykPurchases`), new strings and content schema v22:
-a restart, with `content/data` and the binary shipped together.
+Four migrations in all (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`, `CreateZlatnykPurchases`)
+and content schema v22, shipped with the binary in one restart.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

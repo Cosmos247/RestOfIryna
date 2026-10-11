@@ -17,9 +17,12 @@ newcomer at level 6; 6 newcomers at estate T2+; 3 accounts at 0 Vigor.
   `allowed_users` row (source `open`). `/link` works either way.
 - Count: `SELECT count(*) FROM allowed_users WHERE source = 'open'`.
 
-## Crediting zlatnyks (the owner, by hand — since 2026-10-11, live after the `AddZlatnyks` restart)
+## Crediting zlatnyks (the owner, by hand — live since the 2026-10-11 13:21 restart)
 
-The owner works in **DBeaver** (not Postico).
+The owner works in **DBeaver** (not Postico). After a migration DBeaver's grid can call the new columns «read-only:
+No corresponding table column» (10-11, after the 13:21 restart) — most likely its navigator still
+holds the table as an earlier session read it. A refresh and a reconnect did not clear it that day;
+quit DBeaver (Cmd+Q) and reopen, or use the SQL editor below, which does not need the grid.
 1. Open the `users` table and its Data tab, and filter to the player: `nickname = 'Володимир'`.
    Nicknames are not unique, so confirm `telegram_id`.
 2. Double-click the `zlatnyks` cell and type the NEW TOTAL, not the amount added. Then Save
@@ -33,7 +36,7 @@ What the database and the bot do with an edit:
 - An account still in registration is told once it is through.
 - **Never edit `zlatnyks_announced`.** It is the bot's marker of what the player has been told:
   raising it swallows a notice, lowering it repeats one.
-- Once there is something to spend zlatnyks on, ADD rather than overwrite, in the SQL editor:
+- Now that the Chancellery spends them (live 10-11 13:21), ADD rather than overwrite, in the SQL editor:
   `UPDATE users SET zlatnyks = zlatnyks + 100 WHERE telegram_id = …;`. A total typed into the grid
   would undo a spend made while the grid was open.
 - **Purchases** are in `zlatnyk_purchases`: who (`telegram_id`, `nickname` as it was), what (`item_id`), the
@@ -61,6 +64,8 @@ What the database and the bot do with an edit:
   watchdog), 11:55:36 (`94620a4`). pm2's count reads 8.
 - Restart on 2026-10-09: 01:30:47 (`de0e062`, the deploy of the 10-08/09 changes, asked). pm2's
   count reads 9. Three minutes later: no `[WATCHDOG]`, `Code: 400` at 913, three sockets to Telegram.
+- Restart on 2026-10-11: 13:21:10 (`98580ce`, the deploy of the 10-10/11 changes, asked; four
+  migrations). pm2's count reads 10. At 13:24: no new `[WATCHDOG]`, `Code: 400` at 913.
 
 ## What are the players doing — the activity snapshot
 
@@ -174,7 +179,7 @@ Traps: passive runs wear the kit too and write no `fight_log` row, so these numb
 - At the old price that was 110–840 silver of repair a day against ~78–103 from the jobs.
   Нястюшка (L8, 386 silver) had every piece at 0 with a 436 full repair. The shave showed on worn
   rows: Володимир's breeches 7/29, Дарина's set 28–34/50, Nerif's +5 jerkin 14/36.
-- Decided the same evening (`7995d2a`, not deployed): the armour repair halved; the shave, the cut
+- Decided the same evening (`7995d2a`, deployed 10-11 13:21): the armour repair halved; the shave, the cut
   maxima and the Master's screens kept. The analysis: `.memory/rebalance.md` → "The repair,
   measured on live play".
 - Still unread there: `estate_level` (do players hold the estate back?) and how many wins are one

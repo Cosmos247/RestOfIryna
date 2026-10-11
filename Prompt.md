@@ -23,17 +23,23 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-11 02:57)
+### Where things stand right now (the Pi and git as read 2026-10-11 13:24)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`0b18908`** (the 10-11 sync pass: records, two comments' reasons, two unread fields), **`3a7d746`** (`1c39595`'s hash fill), **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`** (`021e9ac`'s hash fill), **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`** (`1f4b442`'s hash fill), **`1f4b442`** (the zlatnyks: named, credited by hand, shown; the profile's silver declines), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: every commit above it** (`4459f79` … `0b18908`) **and this hash fill** — push is the owner's |
-| running on the Pi | **`de0e062`**, online since **2026-10-09 01:30:47** — no restart since (read 10-11 02:57, pm2 restarts 9), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the 2026-10-11 13:21 deploy recorded) on top of **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: this commit** — push is the owner's |
+| running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Six changes, all committed, one deploy** — content schema **v22**, so `content/data` and the binary ship TOGETHER, and four migrations. The six: the **Chancellery** (`1c39595`: «🟡 Канцелярія» under the palace card, `treasury.json`, `ClassChangeService`, `CreateZlatnykPurchases`); **a level-up keeps the armour's HP** (`021e9ac`, Swift only); the **zlatnyks and the profile's silver** (`1f4b442`: `AddZlatnyks`, the watchman's credit notice, the profile's «🟡 N златників» line, `unit.silver` with the count — crediting is a DBeaver edit, `.memory/live-ops.md` → "Crediting zlatnyks"); the **armour repair halved** (`7995d2a`, content only); the **fortune teller's dispel and second card** (`7860aaa`: `AddFortuneStage`); and the **recipe notebook** (`d77d600`: `CreateRecipeNotes`). The sync pass (`0b18908`) adds comment and dead-field edits, with no behaviour change. Everything up to `de0e062` is live |
+| waiting for a restart | **Nothing.** The six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. |
 
 ### Where the last sessions stopped (2026-10-10 → 10-11)
+
+**10-11, 13:21 — the six deployed**, on the owner's word after the push: pull, a 130 s build, the
+digest matched, the restart, the four migrations verified on the tables. Before it: the class
+change worded as a charter («📜 Грамота про зміну класу», «✅ Скріпити печаткою»), folded into the
+Chancellery's own commit, and a testers' note. The Mac's DBeaver needed its tunnel back up and a
+metadata refresh (`.memory/sessions.md` → the deploy entry).
 
 **10-11, the sync pass — records, two comments' reasons, two unread fields.**
 - The session's research went into `.memory/rebalance.md` → "The zlatnyk and the Chancellery,
@@ -81,24 +87,15 @@ Each has its auto-memory (`project-recipe-notebook`, `project-fortune-dispel-and
 
 ### Next action
 
-**0 — Ship the six, on the owner's word.**
-- **Push is the owner's.** Then, on the Pi: `git pull --ff-only`, a detached debug build, and the
-  pre-flight digest — it must read `records 92300a4769c8933e`, content hash `681d611a` (schema
-  v22). Then **ASK before `pm2 restart ROI`**.
-- **The four migrations** (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`,
-  `CreateZlatnykPurchases`) were rehearsed together in one new batch over existing players.
-- **After the restart, verify the TABLES:**
-  - `users.zlatnyks` / `zlatnyks_announced` with the CHECK;
-  - `zlatnyk_purchases`;
-  - `recipe_notes`;
-  - `users.fortune_stage`.
-- **Then walk** the six top blocks of `TODO.md` → "Walk list", starting by crediting a test
-  account in DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks").
+**0 — Walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
+→ "Crediting zlatnyks"; if the grid calls the new columns read-only, quit DBeaver and reopen, or use the
+SQL editor), then
+the six top blocks of `TODO.md` → "Walk list". The testers' note went to the owner on 10-11.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-11 02:57 (10-08 11:47:53). A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-11 13:24 (10-08 11:47:53). A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
@@ -117,8 +114,8 @@ four"): newcomers' busiest days ran 105–350 fights against the model's ≈25 a
 untouched. Still unread: `estate_level` (do players hold the estate back? T6 gains nothing per day)
 and how many wins are one tap — what the technique rework was for.
 
-**5 — Someone opens the screens.** `TODO.md` → "Walk list": the six 2026-10-10/11 blocks once they
-are live, the 10-09 ones now. No human has seen the whole King's chain, and `/reload` has never run
+**5 — Someone opens the screens.** `TODO.md` → "Walk list": the six 2026-10-10/11 blocks (live since
+10-11 13:21), the 10-09 ones. No human has seen the whole King's chain, and `/reload` has never run
 against a real database.
 
 **6 — Older decisions waiting on the owner:** `TODO.md` → "Open, decided but not done". Not there
@@ -136,20 +133,16 @@ detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
 schema change ships `content/data` and the binary TOGETHER (the handshake, **v22** in the tree and
-v20 on the Pi, refuses a mismatch). After a migration, verify the TABLE, not the log line. Recipe and
+on the Pi, refuses a mismatch). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
 
-**The current baseline — on the Pi since 2026-10-09 01:30 (`de0e062`, schema v20):** `records
-4c0802f927fb8be4` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
-30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. **This is the one place the
+**The current baseline — on the Pi since 2026-10-11 13:21 (`98580ce`, schema v22):** `records
+92300a4769c8933e` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `681d611a`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
-**The tree's baseline, waiting for the restart (the dispel, the repair halved and the Chancellery,
-schema v22):** `records 92300a4769c8933e`, content hash `681d611a`, the other four halves as above
-(the Chancellery moved `records` from `c3720e93c10c13a8`, content hash `c9cf0506`). It becomes the
-current one when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
