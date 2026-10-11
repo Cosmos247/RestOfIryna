@@ -974,6 +974,33 @@ every level-up took the armour's HP share: 209/209 at L17 (+38 armour) came out 
 If players pay outside the bot specifically for zlatnyks, that rule is the risk. Gifts and rewards
 are outside it. Nothing was built for it.
 
+### The delivery jobs break even against buying (2026-10-11)
+
+The owner asked for a table of every NPC job against the price of what it asks for («6 ягід — яка
+нагорода і яка вартість цих ягід»), then: no job may lose against BUYING its items from the
+trader — 0 or a small plus. Measured at the level each job opens, silver only (XP and Vigor ride
+on top), the items priced at the trader's buy price, a dish at its ingredients':
+- ten of fifteen already broke even or better — the forage jobs (berries, nuts, pebbles, lumber)
+  pay +5…+13 even bought from the trader itself, and no counter takes items away (the smelt turns
+  10 iron into an ingot the player keeps; the bulk day sells at the trader's own price);
+- five lost: `trader.hides` −30, `trader.iron` −45 (L8), `master.ore` −103 (L10, with 710 XP),
+  `tavern.supplies` −30, `tavern.cook` −11 (L4).
+
+The owner took the MINIMAL fix over a +10% margin: the smallest authored silver whose scaled
+reward at the job's `minLevel` reaches the cost — 60 · 91 · 141 · 60 · 40, which read 0 · +1 · 0 ·
+0 · 0 against buying at the opening level. Prices never scale and the reward does, so the margin
+grows by itself: +9…+21 at L20, +21…+63 at L40.
+
+What else it moved:
+- **Against selling the items now fetch double** at the job (hides and iron: 2× the trader's
+  sell price), which is the point.
+- **The faucet**: the jobs' daily take (all three NPCs, `spec economy`) 78 / 103 / 123 / 153 →
+  98 / 128 / 175 / 217 at L1 / 8 / 20 / 40 (+26% at L1, +42% from L10), still under the pre-09-07
+  flat 220.
+- `records` moved alone (`92300a4769c8933e` → `78ce585986927122`, content hash `681d611a` →
+  `cb2b3fed`); `quests` did not — the daily pick does not read rewards.
+- Not built, not asked: a validator rule holding a delivery job to its items' price.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

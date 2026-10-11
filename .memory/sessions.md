@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **the 2026-10-11 13:21 deploy recorded** — records only: the `## Deploy —`
+- *(this commit, 10-11)* **the delivery jobs break even against buying** — NOT live until a `/reload` —
+  `quests.json`: `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies`
+  30 → 60, `tavern.cook` 30 → 40 (authored), so no job pays less silver than buying its items at the
+  level it opens. `spec-economy.md` §4's faucet table refreshed (98 → 217 a day) and its prose amended;
+  `records` → `78ce585986927122`, content hash `cb2b3fed`.
+- `2e8e385` (10-11) **the 2026-10-11 13:21 deploy recorded** — records only: the `## Deploy —`
   entry, the six marked live in `Prompt.md`, status, TODO, README, `live-ops.md` and the auto-memory, the
   v20 baseline moved to the superseded list; two DBeaver snags on the Mac (the tunnel, the grid).
 - `98580ce` (10-11) **`0b18908`'s hash fill, and the class change's charter copy folded into its
@@ -633,6 +638,24 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11, afternoon (the delivery jobs break even against buying)
+
+After the deploy the owner asked for every NPC job against the price of what it asks for («якщо
+треба 6 ягід, то яка нагорода і яка вартість цих ягід»): fifteen jobs, the items at the trader's
+buy and sell price, a dish at its ingredients, the reward at the job's opening level and its growth
+(silver ×1.14 / ×1.29 / ×1.59 at L10 / 20 / 40, XP ×35 / ×104 / ×304, Vigor ×1.43 / ×1.90 / ×2.86).
+Then the rule: no job may lose against BUYING its items. Five did; the owner picked the minimal fix
+over a +10% margin (quiz): `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141,
+`tavern.supplies` 30 → 60, `tavern.cook` 30 → 40 (authored at level 1).
+- `quests.json` re-emitted in the house style (round-trip checked byte for byte first): five lines.
+- `validate --strict` 0/0, 408 tests. The digest moved `records` alone (`92300a4769c8933e` →
+  `78ce585986927122`, content hash `681d611a` → `cb2b3fed`); `quests` unmoved.
+- `spec economy` re-run: one generated block moved, the faucet (78 / 103 / 123 / 153 → 98 / 128 /
+  175 / 217 at L1 / 8 / 20 / 40); `spec opening` (release) unmoved. §4's prose quoted 78 → 153, so
+  it got a dated amendment rather than a rewrite.
+- Not live: content only, so a `/reload`, not a restart. The record: `.memory/rebalance.md` →
+  "The delivery jobs break even against buying".
 
 ## Deploy — 2026-10-11 13:21 (`de0e062` → `98580ce`)
 

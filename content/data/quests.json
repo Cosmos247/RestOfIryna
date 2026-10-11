@@ -14,7 +14,7 @@
             "target" : 10
           },
           "reward" : {
-            "silver" : 30
+            "silver" : 60
           }
         },
         {
@@ -28,7 +28,7 @@
             "target" : 5
           },
           "reward" : {
-            "silver" : 50
+            "silver" : 91
           }
         },
         {
@@ -87,7 +87,7 @@
             "target" : 8
           },
           "reward" : {
-            "silver" : 50,
+            "silver" : 141,
             "xp" : 20
           }
         },
@@ -164,7 +164,7 @@
             "target" : 3
           },
           "reward" : {
-            "silver" : 30,
+            "silver" : 40,
             "vigor" : 25
           }
         },
@@ -179,7 +179,7 @@
             "target" : 6
           },
           "reward" : {
-            "silver" : 30,
+            "silver" : 60,
             "vigor" : 20
           }
         },

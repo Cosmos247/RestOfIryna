@@ -27,13 +27,18 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 2026-10-11 13:21 deploy recorded) on top of **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: this commit** — push is the owner's |
+| HEAD | **this commit** (the delivery jobs break even against buying) on top of **`2e8e385`** (the 2026-10-11 13:21 deploy recorded), **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385` and this commit** — push is the owner's |
 | running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Nothing.** The six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. |
+| waiting for a restart | **Nothing.** The six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. **Waiting for a `/reload`**: the delivery jobs' rewards (`quests.json` only; the tree's content hash `cb2b3fed`, `records 78ce585986927122`) |
 
 ### Where the last sessions stopped (2026-10-10 → 10-11)
+
+**10-11, afternoon — the delivery jobs break even against buying.** A table of every NPC job against
+its items' trader price; on the owner's rule the five that lost (hides, iron, ore, raw meat, the
+cook's dishes) were raised to the minimum — 60 · 91 · 141 · 60 · 40 authored. The jobs' daily take
+78 → 98 at L1, 153 → 217 at L40. Content only: live on a `/reload`.
 
 **10-11, 13:21 — the six deployed**, on the owner's word after the push: pull, a 130 s build, the
 digest matched, the restart, the four migrations verified on the tables. Before it: the class
@@ -87,7 +92,8 @@ Each has its auto-memory (`project-recipe-notebook`, `project-fortune-dispel-and
 
 ### Next action
 
-**0 — Walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
+**0 — `/reload` for the delivery jobs' rewards** (the owner's, in Telegram; `/content` must then
+read hash `cb2b3fed`). Then **walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
 → "Crediting zlatnyks"; if the grid calls the new columns read-only, quit DBeaver and reopen, or use the
 SQL editor), then
 the six top blocks of `TODO.md` → "Walk list". The testers' note went to the owner on 10-11.
@@ -143,6 +149,9 @@ traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-d
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `681d611a`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
+**The tree's baseline, waiting for a `/reload` (the delivery jobs' rewards):** `records
+78ce585986927122`, content hash `cb2b3fed`, the other four halves as above. It becomes the current one
+when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate

@@ -1575,6 +1575,13 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The delivery jobs break even against buying** *(2026-10-11, content only, NOT live until a `/reload`)*
+        — the owner's rule, after a table of every job against its items' trader price: no job
+        may pay less silver than buying its items costs, at the level it opens. Five raised to the
+        minimum (authored): `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141,
+        `tavern.supplies` 30 → 60, `tavern.cook` 30 → 40. The jobs' daily take 78 → 98 at L1 and
+        153 → 217 at L40 (`spec-economy.md` §4, amended). Why: `.memory/rebalance.md` → "The
+        delivery jobs break even against buying".
   - [x] **The fight names both fighters, a weapon shows its own icon, «тир» is «рівень»**
         *(2026-10-09, `33551dd`, deployed 2026-10-09 01:30)* — three player reports. The fight's
         status card names the player's line like the creature's: «⚔️ Ви — ❤️ 8/95  🍖 25/110»

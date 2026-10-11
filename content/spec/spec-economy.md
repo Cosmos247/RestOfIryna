@@ -372,10 +372,10 @@ the draft band lives and where content arrives after the rebalance.
 
 | NPC | jobs | offered from | L1 | L8 | L20 | L40 |
 |---|---|---|---|---|---|---|
-| trader | 5 | 1 / 1 / 1 / 6 / 8 | 27 | 35 | 41 | 51 |
-| master | 5 | 1 / 1 / 1 / 7 / 10 | 25 | 38 | 47 | 59 |
-| tavern | 5 | 1 / 1 / 1 / 4 / 5 | 27 | 30 | 35 | 43 |
-| **per day** | | | **78** | **103** | **123** | **153** |
+| trader | 5 | 1 / 1 / 1 / 6 / 8 | 37 | 51 | 59 | 73 |
+| master | 5 | 1 / 1 / 1 / 7 / 10 | 25 | 38 | 71 | 88 |
+| tavern | 5 | 1 / 1 / 1 / 4 / 5 | 37 | 39 | 45 | 56 |
+| **per day** | | | **98** | **128** | **175** | **217** |
 <!-- /generated -->
 
 *AMENDED 2026-09-07 — the faucet was retuned by the finding below.* The authored
@@ -389,6 +389,16 @@ the ~19,800 the old table implied. Six early jobs were authored alongside the
 bands (forage deliveries a level-1 player can actually finish), so each NPC now
 offers three at level 1 rather than one — the bands would otherwise have handed
 a new player the same job every day until level 6.
+
+> *Amended 2026-10-11.* Five delivery jobs paid less silver than their items cost at the trader,
+> so a player who bought the items lost by the job. The owner had each raised to break even
+> against BUYING at the level the job opens (authored at level 1 and scaled as above):
+> `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies`
+> 30 → 60 and `tavern.cook` 30 → 40 (its three roasted meats priced at their ingredients, 42;
+> the hunter's stew, 42 each, still loses). The take in the faucet table now runs **98 → 217**
+> where the paragraph above reads 78 → 153, still under the old flat 220 at every column; the
+> ~10,000-over-90-days figure was not re-derived. Against SELLING, those items now fetch double
+> at the job: 10 hides are 30 at the trader and 60 at the board.
 
 Against that, **the mandatory spend is 1,600 silver** (2,950 with the Training Ground since 2026-09-27), every other silver cost in
 the game is optional, and the largest optional one is enchanting at 1,660 an
