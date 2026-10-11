@@ -96,8 +96,8 @@ install. No `static let` anywhere may reference a catalog.
 
 ## Tuning tables (Phase 4)
 
-`content/data/tuning/` holds six balance tables — the numbers the formulas
-consume, as opposed to the rosters the player scrolls through. They decode by
+`content/data/tuning/` holds six balance tables — plus `budget.json`, the item stat budget (below), seven
+files in all — the numbers the formulas consume, as opposed to the rosters the player scrolls through. They decode by
 rules of their own:
 
 | File | Owns |
@@ -231,8 +231,8 @@ as `[]`. A tool that re-emits them python-style reformats every line and buries
 the real change in a 900-line diff. (It cannot move the digest — that hashes
 values, not bytes — but it does move the bundle's content hash.) The one exception
 is a re-emit proven byte-for-byte: `json.dumps(obj, indent=2, sort_keys=True,
-ensure_ascii=False, separators=(',', ' : ')) + "\n"` reproduces all 28 files
-(2026-10-02, tier 2 was emitted this way). Swift's `JSONEncoder` on the Mac and a DTO
+ensure_ascii=False, separators=(',', ' : ')) + "\n"` reproduces all 29 files
+(2026-10-02, tier 2 was emitted this way; re-checked 2026-10-11, when `treasury.json` was emitted this way). Swift's `JSONEncoder` on the Mac and a DTO
 round-trip do not.
 
 Locale keys are **derived** unless overridden: `item.<id>`, `<nameKey>.desc`,

@@ -2052,8 +2052,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The three blocks on top (the repair halved, the fortune teller's dispel and the recipe notebook,
-2026-10-10) are NOT deployed yet; every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
+Telegram. **The six blocks on top (2026-10-11: the Chancellery, the level-up HP fix, the zlatnyks;
+2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook) are NOT deployed yet;
+every block under them is LIVE and unwalked** — the five under it since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
 the road card). The guild-gate block went live at the 2026-10-07 18:34
 restart; the fifteen under it — the three 2026-10-06 blocks (the screen art, the audit's fixes,
@@ -2063,7 +2064,33 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-10 — the armour repair halved (`7995d2a`, NOT deployed — ships with the restart, since the tree's content is schema v21):**
+**Added 2026-10-11 — the Chancellery: the class change (`fb37519`, NOT deployed — schema v22, a migration and strings, so a restart with `content/data`):**
+an account at the capital with 100+ zlatnyks credited in DBeaver.
+- 👑 Палац: «🟡 Канцелярія» under the decree card, always. «✅ Доповісти Королю» joins it above once a
+  decree is done.
+- 🟡 Канцелярія → the balance, «Як отримати златники — ⚙️ Налаштування → 💛 Допомога грі»,
+  «📜 Грамота про зміну класу · 🟡 100», and «⬅️ До тронної зали» back to the decree card.
+- 📜 Грамота про зміну класу → the title repeats it, «Зараз: 🏹 Лучник», «✅ 🟡 Златники  (N/100)» (❌ when short), and the two other classes.
+- A class → the preview under «📜 🏹 Лучник → ⚔️ Лицар»: six stats now → after, the weapon reforged at its tier and wear, the
+  learned techniques renamed, «Писар перепише вас за 🟡 100. Повернутися до … можна лише ще одним записом.»
+- «✅ Скріпити печаткою» → «✅ Тепер ви — ⚔️ Лицар. 🟡 −100, залишилось N.». Then:
+  - the profile shows the new class, weapon and stats;
+  - a weapon decree reads the reforged weapon;
+  - one row lands in `zlatnyk_purchases`.
+- Under 100: the modal «Не вистачає златників: N/100», and nothing moves.
+- Mid-duel: «Змінити клас не можна посеред двобою на Ристалищі.»
+
+**Added 2026-10-11 — a level-up keeps the armour's HP (`021e9ac`, NOT deployed):** a geared player at
+full HP levels up and stays full at the new maximum. It used to drop by the armour's whole HP share.
+
+**Added 2026-10-11 — the zlatnyks and the profile's silver (`1f4b442`, NOT deployed — a migration and strings):**
+- In DBeaver set a test account's `users.zlatnyks` to 100. Within a minute «🟡 Вам нараховано 100
+  златників. Тепер у вас 100.» arrives, and the profile shows «🟡 100 златників» under silver; at 0
+  there is no line.
+- Lowering it sends nothing; a typed minus is refused by the CHECK.
+- Silver declines: «🪙 202 срібники», «🪙 21 срібник».
+
+**Added 2026-10-10 — the armour repair halved (`7995d2a`, NOT deployed — ships with the restart, since the tree's content schema is ahead of the Pi's):**
 an account with worn Forester armour.
 - 🛠 Майстер → ⚒️ Полагодити → a piece: the confirm quotes half of today's price — the jerkin
   from 0/50 «за 🪙 75» (it was 150), the hood 25, the boots 40, the breeches 63. The weapon is
@@ -2769,6 +2796,21 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-10-11 sessions** — raised while building the zlatnyks and the Chancellery, not built:
+- **Rename the code's `treasury` to `chancellery`** (files, keys, `treasury.json`, the `treasury:`
+  callbacks) — offered after the player-facing rename; no answer.
+- **The class name is not feminized** in the class-change banner («Тепер ви — ⚔️ Лицар»), as in the
+  profile («Дарина — Лицар») and at registration — noticed, not asked.
+- **Telegram sells digital goods for Stars only.** If players pay outside the bot specifically for
+  zlatnyks, that rule is the risk; gifts and rewards are outside it. Raised as a caution, left with
+  the owner.
+- Declined that night. The guards are in `CLAUDE.md` and auto-memory
+  `project-premium-currency-zlatnyk`:
+  - for sale: a new name, a new estate name, the notebook 3 → 6, a supporter mark, a gender change
+    (paid or free);
+  - for crediting: a cached zlatnyk column, a `/zlatnyk` command;
+  - for the class change: a weapon reset to tier 1, a free repair, any limit on how often.
 
 **From the 2026-10-10 sessions** — raised while building the dispel and halving the repair, not
 built:

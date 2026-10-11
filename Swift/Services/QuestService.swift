@@ -346,8 +346,9 @@ public enum QuestService {
     }
 
     /// Record that `rows` were announced. One column, written by query rather
-    /// than by saving the rows: the player may be ticking the same row's
-    /// progress at this moment, and a whole-row save would undo that.
+    /// than by saving the rows, so the write touches the marker and nothing
+    /// else, whatever these copies hold — the player may be ticking the same
+    /// row's progress at this moment.
     public static func markAnnounced(_ rows: [QuestProgress], on db: any Database) async throws {
         let ids = rows.compactMap(\.id)
         guard ids.isEmpty == false else { return }

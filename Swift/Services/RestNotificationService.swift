@@ -81,9 +81,10 @@ public enum RestNotificationService {
         let restedSinceLastSweep = await RestedToFull.shared.takeAll()
 
         for row in users {
-            // Mutate the instance the dispatcher is holding, if there is one:
-            // this sweep writes whole rows, and a stale copy would undo the
-            // tap the player made a second ago.
+            // Mutate the instance the dispatcher is holding, if there is one: a
+            // copy of our own would write the fields it touches from values
+            // read before the player's last tap, and `saveAndCache` would
+            // install it as the session — undoing the tap made a second ago.
             let user = await sessionCache.peek(telegramId: row.telegramId) ?? row
             guard let userId = user.id else { continue }
             let canRest = HealingService.canRest(user,

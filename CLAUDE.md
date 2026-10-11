@@ -323,8 +323,9 @@ would refuse. It fires once per task, on markers in the progress rows written by
 query, never a row save — the player may be ticking the same row.
 
 **A background writer MUST take the session-cached `User` when one exists**
-(`SessionCache.peek`): Fluent saves whole rows, so a sweeper holding its own copy silently
-undoes the tap the player made a second earlier.
+(`SessionCache.peek`): its own copy writes the fields it touches from values read before the
+player's last tap, and `saveAndCache` installs that copy as the session — silently undoing the tap.
+(Fluent writes only changed fields, verified 2026-10-11: the danger is the stale VALUES.)
 
 **The zlatnyk balance is deliberately NOT a field of `User`.** The owner credits
 `users.zlatnyks` by hand in DBeaver, and a cached copy would show a stale number and let a spend
@@ -909,6 +910,6 @@ Optional:
 - Hand-edit `content/data/*.json` in the house style already there (`"key" : value`, keys
   sorted, 2-space indent) — a default python re-emit reformats every line and buries the real
   change. The one proven exception: `json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False,
-  separators=(',', ' : ')) + "\n"` reproduces all 28 files byte for byte; Swift's `JSONEncoder` and
+  separators=(',', ' : ')) + "\n"` reproduces all 29 files byte for byte (re-checked 2026-10-11); Swift's `JSONEncoder` and
   a DTO round-trip do NOT. Auto-memory `reference-house-json-style`.
 - Never interpolate an Optional directly into a player-facing string (`"\(item.icon)"` prints `Optional("🪖")`) — unwrap it (`item.icon.map { "\($0) " } ?? ""`). A clean build won't catch this; verify new strings actually render. (Same vigilance as the Lingo emoji-before-`%{}` rule in `.memory/localization.md`.)

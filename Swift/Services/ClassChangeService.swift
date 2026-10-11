@@ -32,7 +32,6 @@ public enum ClassChangeService {
     /// The numbers the confirm screen compares, read the way the profile reads
     /// them (`effective*`).
     public struct Line: Sendable, Equatable {
-        public let hp: Int
         public let maxHp: Int
         public let attack: Int
         public let defense: Int
@@ -41,7 +40,6 @@ public enum ClassChangeService {
         public let crit: Int
 
         init(_ user: User) {
-            hp = user.hp
             maxHp = user.effectiveMaxHp
             attack = user.effectiveAttack
             defense = user.effectiveDefense
@@ -77,7 +75,6 @@ public enum ClassChangeService {
     }
 
     public struct Outcome: Sendable {
-        public let from: CharacterClass
         public let to: CharacterClass
         public let balanceAfter: Int
     }
@@ -225,6 +222,6 @@ public enum ClassChangeService {
         }
         adopt(saved, into: session)
         await sessionCache.update(session)
-        return Outcome(from: from, to: newClass, balanceAfter: balanceAfter)
+        return Outcome(to: newClass, balanceAfter: balanceAfter)
     }
 }

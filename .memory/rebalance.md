@@ -894,6 +894,86 @@ a flee is 2 points, and Inokentiy's 110 flees were 220 of his 462. Rebuild: the 
 `.memory/live-ops.md`; the formula in `MasterCatalog.repairCost`; each point equally likely on any
 worn piece with durability left.
 
+### The zlatnyk and the Chancellery, decided (2026-10-10/11, `1f4b442`, `021e9ac`, `fb37519`)
+
+**The name.** «златник» (en *zlatnyk*, the owner's spelling, not the numismatists' «zlatnik»). It is the
+srebrenik's pair: Volodymyr the Great minted exactly these two coins at Kyiv in the late 10th century,
+and «Артанія» is one of the three Rus' centres in 10th-century Arab geographers. Lore §9 already kept
+gold for the Crown. Turned down, with their reasons, in auto-memory `project-premium-currency-zlatnyk`:
+«корони», «гривні», «зірки», «куни», «кристали», and «бурштин» as the runner-up.
+
+**Crediting by hand — the session cache, investigated.** The owner credits zlatnyks in DBeaver.
+- `SessionCache` holds a row 300 s from its fetch, and every `saveAndCache` refreshes that
+  (`sessionCache.update`), so a playing player's row stays in memory indefinitely.
+- FluentKit 4's `update` writes ONLY the fields an object changed (`collectInput()` without
+  defaulted values; the inputs clear after a save; a row loaded by a query has none). Checked in
+  `.build/checkouts/fluent-kit` on 2026-10-11. So a hand edit of a cached column survives unrelated
+  taps, and is lost only when the bot writes that same field from its stale value — a spend. Until
+  then the player is shown the stale number.
+- The records that said «Fluent saves whole rows» were corrected in the 10-11 sync pass. The
+  background-writer rule stands: the danger is a copy's stale VALUES, and `saveAndCache` installing
+  that copy as the session.
+- Offered: a cached column edited only while the player is idle; a cached column plus a `/zlatnyk`
+  command; a column outside `User`, read fresh and spent in one statement. **Chosen: the last**, with
+  a notice from the watchman, built at once.
+
+**What the Chancellery may sell — the shelf.**
+- Offered:
+  - changes: a new name (the registration validator, 2–20), a new estate name (2–30), the class;
+  - upgrades: the notebook 3 → 6, a supporter mark beside the nick;
+  - gender: free in Settings, paid, or unchangeable.
+- Advised against, each breaking a standing rule:
+  - Vigor, food, XP, passive minutes — they buy depth and level, i.e. leaderboard places, and the
+    absence of regen IS the depth gate;
+  - arena fights — no money in PvP;
+  - tarot cards — once a game day;
+  - repairs — just halved on complaints;
+  - bag and estate rungs — progression bought with materials and level.
+- **Chosen: the class change and nothing else.** No upgrades. Gender stays unchangeable. Under the
+  balance, the hint «→ ⚙️ Налаштування → 💛 Допомога грі».
+- **Renamed «Скарбниця» → «Канцелярія»** before the commit (the guild already has a «🪙 Скарбниця»).
+  The code keeps `treasury`.
+
+**The class change — what is class-bound, and how each part moves:**
+- the base line is a pure function of (class, level) — `ProgressionMath.baseStats`, recomputed by
+  `applyLevelDerivedStats`;
+- `learned_techniques` stores KINDS (`special_atk` / `special_def` / `super`) and the class resolves
+  the concrete one, so techniques carry over, and the arena's admission with them;
+- the three weapon ladders share their tiers (9), item levels, `requiredPlayerLevel` gates and
+  `durabilityByTier`, so the weapon is reforged at its tier and wear. A reset to tier 1 and a free
+  full repair were offered and declined;
+- armour is class-agnostic; a weapon decree reads the class weapon live; a pinned lesson/weapon
+  note follows the weapon id;
+- an arena fighter is a snapshot taken at the duel's start, so the change is refused mid-duel;
+- travel is refused during any expedition, so the palace cannot be reached from one;
+- no limit on how often, only the price — **100 🟡**, the owner's pick of 50 / 100 / 200. The rate of
+  a zlatnyk against money is the owner's and is not recorded here.
+
+**Measured** — Володимир, the L17 archer, read off the Pi on 2026-10-11. His base line at L17:
+- hp 171, atk 36, def 19, crit 24, dodge 19, acc 33;
+- the bow t4: atk 20, acc 11, crit 11;
+- his armour (effective − base − bow): hp +38, def +23, dodge +8, crit +8.
+
+| class | ❤️ max | ⚔️ | 🛡 | 🎯 | 💨 | 💥 |
+|---|---|---|---|---|---|---|
+| archer (now) | 209 | 56 | 42 | 44 | 27 | 43 |
+| warrior | 266 | 52 | 51 | 32 | 20 | 30 |
+| mage | 190 | 60 | 37 | 27 | 22 | 53 |
+
+The rehearsal player (a plain Forester set) moved by the same deltas through the real code: +57, −4,
++9, −12, −7, −13. Rebuild: base = round(start × (1 + growth·(L − 1))) with `tuning/progression.json`
+(hp 0.056, atk 0.1, ratings 0.085 per level); the weapon rows from `weapon_upgrades.json`; armour =
+effective − base − weapon. Armour is the same under every class.
+
+**The level-up HP defect, found here.** `applyLevelDerivedStats` clamped HP to the BASE maximum, so
+every level-up took the armour's HP share: 209/209 at L17 (+38 armour) came out of `grantXP` at
+176/214. Confirmed through the real code on the rehearsal build before and after the fix
+(`021e9ac`: the clamp is `effectiveMaxHp`).
+
+**Telegram's rule, raised and left with the owner.** A bot sells digital goods for Telegram Stars only.
+If players pay outside the bot specifically for zlatnyks, that rule is the risk. Gifts and rewards
+are outside it. Nothing was built for it.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

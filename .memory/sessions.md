@@ -11,7 +11,15 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`fb37519`'s hash fill** — records only.
+- *(this commit, 10-11)* **the 10-11 sync pass** — records, plus comments and two unread fields:
+  - the session's research persisted in `.memory/rebalance.md`;
+  - «Fluent saves whole rows» corrected (Fluent writes only changed fields) in `CLAUDE.md`,
+    `session-auth.md`, the README and five code comments — every rule kept;
+  - GDD's class line, `game-core.md`'s monetization, status, the 29-file JSON claim and the
+    seven-file tuning count;
+  - TODO's 10-11 walk-list and open blocks; `Prompt.md` reoriented on the Pi read at 10-11 02:57;
+  - `ClassChangeService`'s unread `Line.hp` and `Outcome.from` removed.
+- `a9170f7` (10-11) **`fb37519`'s hash fill** — records only.
 - `fb37519` (10-11) **the Chancellery: the class change for zlatnyks** — NOT deployed — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`.
 - `a683888` (10-11) **`021e9ac`'s hash fill** — records only.
 - `021e9ac` (10-11) **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
@@ -610,6 +618,49 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11, the sync pass (records; two comments' reasons; two unread fields)
+
+On the owner's long-form audit prompt, after `fb37519`/`a9170f7`.
+
+**Persisted what lived only in the chat.** `.memory/rebalance.md` → "The zlatnyk and the Chancellery,
+decided" now holds:
+- the name's reasoning;
+- the session-cache investigation (`SessionCache` TTL refreshed by every save; FluentKit's update
+  writes only changed fields);
+- the shelf analysis — what was offered, what was advised against and why, what was chosen, the
+  rename;
+- the class change's class-bound parts, measured on Володимир;
+- the level-up HP defect;
+- Telegram's Stars rule as a caution.
+
+The auto-memory gained the Telegram caution and a pointer to that section. `reference-deploy-rehearsal`
+gained how to reuse an earlier session's harness and three harness traps.
+
+**Stale records fixed:**
+- **«Fluent saves whole rows»** — wrong since the claim was made on 2026-09-09; it was never
+  measured, only reasoned. The guard stands, with the true reason: a copy's stale values, and
+  `saveAndCache` installing the copy. Fixed in `CLAUDE.md`, `session-auth.md`, the README's
+  `RestNotificationService` line, the auto-memory and its index line, and five code comments
+  (`RestNotificationService`, `KingService` ×2, `QuestService`, `TravelService`). The targeted
+  `KingService.record` keeps its `decree_index` filter: its real reason is a counter landing on a
+  newer decree.
+- GDD §3 still said a class is unchangeable; `game-core.md` said the zlatnyk was not built; status's
+  `1f4b442` entry read as current.
+- The house-JSON claim: 28 files → 29, re-verified byte for byte. `content-pipeline.md`'s "six
+  tuning tables" now names `budget.json`, seven in all.
+- TODO: three 10-11 walk-list blocks; a "From the 2026-10-11 sessions" open block (the `treasury` →
+  `chancellery` code rename offered, unanswered; the unfeminized class name; the Stars caution;
+  what was declined).
+- The memory index: 109 files, all indexed, no dangling `[[links]]`, 17.6k of 25k chars.
+
+**Dead code:** `ClassChangeService.Line.hp` and `Outcome.from` had no reader. Both removed. Every
+`treasury.*` / `zlatnyk` key stem has a reader (24 of 24).
+
+**Pi, read 2026-10-11 02:57 (read-only):**
+- still `de0e062`, online since 10-09 01:30:47, pm2 restarts 9, one `[WATCHDOG]` line (10-08);
+- `allowed_users`: open 14 · invite 6 · seed 4 · manual 1;
+- 5,441 forest fights since the door opened, 22 deaths.
 
 ## Session — 2026-10-11, night (the Chancellery: the class change for zlatnyks) — `fb37519`
 

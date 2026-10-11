@@ -176,6 +176,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 
 ### Monetization (TBD)
 - F2P with a premium currency, the **zlatnyk** («златник», 🟡; named 2026-10-10 — the early draft's
-  "crowns" retired). Not built: no balance, no purchase flow. Where the balance will show:
-  `TODO.md` → Phase 10.1
+  "crowns" retired). Credited by hand in DBeaver, shown in the profile above 0, spent in the palace's
+  Chancellery («🟡 Канцелярія», code `treasury`) on a class change (2026-10-11). No in-bot purchase
+  flow. `TODO.md` → Phase 10.1
 - Cosmetics, convenience, no exclusives

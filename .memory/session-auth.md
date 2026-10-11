@@ -36,10 +36,13 @@ user.invalidateCache()            // Drop from cache
 
 ### Background writers must take the cached instance
 
-`saveAndCache` INSTALLS the object it saved as the next tap's session, and Fluent
-saves whole rows — so a background task holding its own freshly-loaded copy does not
-merely miss the tap the player made a second ago, it publishes the pre-tap row back
-over it. Anything writing a `User` outside a dispatch takes
+`saveAndCache` INSTALLS the object it saved as the next tap's session — so a background
+task holding its own freshly-loaded copy does not merely miss the tap the player made a
+second ago: it writes the fields it touched from pre-tap values, and once installed, the
+next write of any other field puts its pre-tap value back too. (Fluent writes only the fields
+an object changed — `collectInput()` on update, checked in FluentKit on 2026-10-11 — so the
+hazard is the stale VALUES, never a whole-row write. The same fact is why a DBeaver edit
+of a column the bot never caches is safe: `users.zlatnyks`, `ZlatnykService`.) Anything writing a `User` outside a dispatch takes
 `sessionCache.peek(telegramId:)` first and falls back to its own row:
 `RestNotificationService` (since 2026-09-09), `TravelService` and
 `PassiveExpeditionService` (since 2026-09-10 — arrival writes `location` and

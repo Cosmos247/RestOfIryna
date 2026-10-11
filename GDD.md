@@ -78,7 +78,7 @@ At the session-to-session level:
 
 ### Classes
 
-Three classes, chosen at registration, unchangeable afterward (swap for premium currency `⚙️ TBD`):
+Three classes, chosen at registration; changed afterwards only in the palace's Chancellery, for zlatnyks (2026-10-11, §14):
 
 | Class    | Icon | Role                                  | Stat Tilt                       |
 |----------|------|---------------------------------------|---------------------------------|

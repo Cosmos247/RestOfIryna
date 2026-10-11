@@ -164,8 +164,9 @@ enum KingService {
     }
 
     /// Record that the decree at `row`'s position was announced. One column,
-    /// written by query: a report landing at the same moment saves the row's
-    /// position and counter, and a whole-row save here could undo it.
+    /// written by query, so the write touches the marker and nothing else,
+    /// whatever this copy of the row holds — a report may be saving its
+    /// position and counter at the same moment.
     static func markAnnounced(_ row: KingProgress, on db: any Database) async throws {
         guard let id = row.id else { return }
         try await KingProgress.query(on: db)
@@ -244,12 +245,12 @@ enum KingService {
         guard row.counter < target else { return }
 
         // A TARGETED update, not `row.save`, and guarded by the index it was
-        // read at. Fluent writes whole rows, and this runs from a background
-        // task as well as a tap: the passive expedition reports its kills from
-        // a detached sweep, which is not serialized against the player's own
-        // taps the way `RouterStore` serializes those. A whole-row save from
-        // there could put back a `decreeIndex` the player advanced a moment
-        // earlier — handing them a decree they had already been paid for. The
+        // read at. This runs from a background task as well as a tap: the
+        // passive expedition reports its kills from a detached sweep, which is
+        // not serialized against the player's own taps the way `RouterStore`
+        // serializes those. A save from there would write its counter onto
+        // whatever decree the row holds NOW — a player who reported a moment
+        // earlier would find the old decree's progress on the new one. The
         // `decree_index` filter makes that write simply match no row.
         try await KingProgress.query(on: db)
             .filter(\.$user.$id, .equal, row.$user.id)

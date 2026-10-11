@@ -34,7 +34,8 @@ and strings; the digest unmoved). Named 2026-10-10. The balance is `users.zlatny
 a CHECK ≥ 0), deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and
 `ZlatnykService` reads it fresh. The watchman announces a credit once («🟡 Вам нараховано N
 златників. Тепер у вас M.»), on the `zlatnyks_announced` marker. The profile shows «🟡 N
-златників» under silver, only above 0. Nothing to spend zlatnyks on yet, and no purchase flow.
+златників» under silver, only above 0. Nothing to spend them on in that commit — the Chancellery (above)
+followed the same night.
 The same change made the profile's silver decline («7262 срібники»). Rehearsed: 54 checks twice,
 two mutants caught.
 

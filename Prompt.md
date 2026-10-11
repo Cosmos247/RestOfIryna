@@ -15,125 +15,126 @@ snapshots, reading traps and a verified FAQ: `.memory/live-ops.md`.
 
 The pre-release rebalance is done and deployed (Phases 3–11). What is in flight is **fixing what
 playing the deployed build reveals**, plus the small features the play asks for — every defect so
-far came from someone PLAYING, none from a test. Gear work so far: durability as each item's own
-(`bf15669`) and the armour's ladder through the Master's enchant (`bad142b`, `spec-items.md` §11)
-are built; class sets are parked (`.memory/class-sets-concept.md`). The armour's ladder shipped
-WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or anything
-stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
+far came from someone PLAYING, none from a test. The newest feature is the **premium currency**:
+the zlatnyk («златник» 🟡), credited by the owner by hand in DBeaver and spent in the palace's
+Chancellery («🟡 Канцелярія», code `treasury`) on a class change. Gear work so far: durability as
+each item's own (`bf15669`) and the armour's ladder through the Master's enchant (`bad142b`,
+`spec-items.md` §11); class sets are parked (`.memory/class-sets-concept.md`). The armour's ladder
+shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
+anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-10 15:37)
+### Where things stand right now (the Pi and git as read 2026-10-11 02:57)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`fb37519`** (the Chancellery: the class change for zlatnyks), **`a683888`** (`021e9ac`'s hash fill), **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`** (`1f4b442`'s hash fill), **`1f4b442`** (the zlatnyks: named, credited by hand, shown; the profile's silver declines), **`608f2c5`** (`04368cd`'s hash fill), **`04368cd`** (the sync pass, records only), **`743f042`** (`7995d2a`'s hash fill), **`7995d2a`** (the armour repair halved), **`248ce7e`** (`7860aaa`'s hash fill), **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`** (`d77d600`'s hash fill), **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: `4459f79`, `34872f6`, `2d8ab41`, `d77d600`, `0d556f5`, `7860aaa`, `248ce7e`, `7995d2a`, `743f042`, `04368cd`, `608f2c5`, `1f4b442`, `7ee41c1`, `021e9ac`, `a683888`, `fb37519` and this hash fill** — push is the owner's |
-| running on the Pi | **`de0e062`**, online since **2026-10-09 01:30:47** — no restart since (read 10-10 15:37), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
-| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-10 15:37: open 13 · invite 6 · seed 4 · manual 1 (no new open-door account since 10-09 01:47); 4,772 forest fights since the door opened, 16 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The Chancellery: the class change for zlatnyks** (`fb37519`, 2026-10-11): «🟡 Канцелярія» under the palace card (code: `treasury`), `treasury.json` (content schema **v22**), `ClassChangeService`, `CreateZlatnykPurchases`, 22 uk / 22 en strings — a migration, strings and a schema step, so `content/data` and the binary ship TOGETHER; `records` → `92300a4769c8933e`, content hash `681d611a`. **A level-up keeps the armour's HP** (`021e9ac`, 2026-10-11): `applyLevelDerivedStats` clamps to `effectiveMaxHp` — Swift only. **The zlatnyks and the profile's silver** (`1f4b442`, 2026-10-11): `AddZlatnyks` (two columns on `users`), `ZlatnykService`, the watchman's credit notice, the profile's «🟡 N златників» line, and `unit.silver` with the count instead of a fixed «срібників» — a migration and new strings, so the restart; the digest is unmoved. Crediting is a DBeaver edit, `.memory/live-ops.md` → "Crediting zlatnyks". **The armour repair halved** (`7995d2a`, 2026-10-10): `repairCostFraction` 0.5 → 0.25 in `master.json`, `records` → `c3720e93c10c13a8`, content hash `c9cf0506` — content only, but it rides the restart because the tree's content schema (v22) is ahead of the Pi's. **The fortune teller's dispel and second card** (`7860aaa`, 2026-10-10): `FortuneStage`, `AddFortuneStage` (`users.fortune_stage`), two prices in `fortune.json` — content schema **v21**, so `content/data` and the binary ship TOGETHER — and 14 uk / 8 en strings (it moved `records` to `2c754b9daf5c0d5a`; the repair moved it on). **And the recipe notebook** (`d77d600`, 2026-10-10): four new files (`RecipeNote`, `CreateRecipeNotes`, `RecipeNoteService`, `RecipeNoteDisplay`), the eight cards, the journal, 21 uk / 19 en strings. A migration and new strings, so a **restart**, not a `/reload`; the notebook left the digest unmoved. Everything before them, up to `de0e062`, is live |
+| HEAD | **this commit** (the 10-11 sync pass: records, two comments' reasons, two unread fields) on top of **`a9170f7`** (`fb37519`'s hash fill), **`fb37519`** (the Chancellery: the class change for zlatnyks), **`a683888`** (`021e9ac`'s hash fill), **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`** (`1f4b442`'s hash fill), **`1f4b442`** (the zlatnyks: named, credited by hand, shown; the profile's silver declines), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the fortune teller's dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`** (the 10-09 doc pass), **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`de0e062`** (the owner pushed 2026-10-09). **Not pushed: every commit above it** (`4459f79` … `a9170f7`) **and this commit** — push is the owner's |
+| running on the Pi | **`de0e062`**, online since **2026-10-09 01:30:47** — no restart since (read 10-11 02:57, pm2 restarts 9), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v20**, content hash **`47888401`**, `records 4c0802f927fb8be4`. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
+| waiting for a restart | **Six changes, all committed, one deploy** — content schema **v22**, so `content/data` and the binary ship TOGETHER, and four migrations. The six: the **Chancellery** (`fb37519`: «🟡 Канцелярія» under the palace card, `treasury.json`, `ClassChangeService`, `CreateZlatnykPurchases`); **a level-up keeps the armour's HP** (`021e9ac`, Swift only); the **zlatnyks and the profile's silver** (`1f4b442`: `AddZlatnyks`, the watchman's credit notice, the profile's «🟡 N златників» line, `unit.silver` with the count — crediting is a DBeaver edit, `.memory/live-ops.md` → "Crediting zlatnyks"); the **armour repair halved** (`7995d2a`, content only); the **fortune teller's dispel and second card** (`7860aaa`: `AddFortuneStage`); and the **recipe notebook** (`d77d600`: `CreateRecipeNotes`). This sync pass adds comment and dead-field edits, with no behaviour change. Everything up to `de0e062` is live |
 
-### Where the last sessions stopped (2026-10-08 late → 10-11)
+### Where the last sessions stopped (2026-10-10 → 10-11)
 
-**10-11, later — a level-up keeps the armour's HP; the Chancellery designed.** A level-up clamped HP to
-the base maximum and took the armour's share; fixed on its own. The Chancellery's design (code: `treasury`) is settled:
-it sells only a class change, the weapon is reforged with its tier and wear kept, and there is no
-limit but the price. Then priced (100) and built the same night, rehearsed at 120 checks twice.
-`.memory/sessions.md` → the 10-11 later and night entries.
+**10-11, the sync pass — records, two comments' reasons, two unread fields.**
+- The session's research went into `.memory/rebalance.md` → "The zlatnyk and the Chancellery,
+  decided".
+- «Fluent saves whole rows» was corrected everywhere it was claimed. Fluent writes only changed
+  fields; the background-writer guard stands for the true reason: a copy's stale values, installed
+  as the session.
+- Stale GDD, `game-core` and status lines were fixed; TODO gained its 10-11 walk-list and open
+  blocks; `ClassChangeService`'s unread `Line.hp` and `Outcome.from` were removed.
+- `.memory/sessions.md` → the 10-11 sync pass entry.
 
-**10-10 late → 10-11 — the premium currency: named, credited by hand, shown.**
-- The name: the owner asked for an authentic one and picked «златник» 🟡 (en *zlatnyk*). It is the
-  silver coin's pair, and gold is what the lore already keeps for the Crown.
-- The display: on a played sample of a real profile, the balance goes under silver, only while above
-  0.
-- The crediting: the owner credits by hand in DBeaver, so the balance is a `users` column outside the
-  cached `User`, and the watchman announces each credit.
-- Built and rehearsed (54 checks twice, two mutants caught). The sample also turned up the profile
-  printing a fixed «срібників», fixed the same session.
-- Auto-memory `project-premium-currency-zlatnyk`.
+**10-11, night — the Chancellery built.** The owner's quizzes chose:
+- the class change and nothing else (no new name or estate name, no upgrades, gender unchangeable);
+- the weapon reforged at its tier and wear;
+- no limit but the price, 100 🟡;
+- a purchase log;
+- then renamed «Скарбниця» → «Канцелярія» (the guild already has a «🪙 Скарбниця»; the code keeps
+  `treasury`).
 
-**10-10, the sync pass — records only.** Every record brought to the tree; what was only in the
-chat is now kept: the dispel's three shapes and its Vigor arithmetic, and the repair measured on live
-play with the shave's hidden price (`.memory/rebalance.md`, two new sections); the wear/repair SQL
-and day four's observation (`.memory/live-ops.md`); the 10-10 open items and the declined options
-(`TODO.md` → "Open, decided but not done", top block); a repair guard in `CLAUDE.md`.
+Rehearsed at 120 checks twice (the screens word for word, a rollback, a stale second tap) and four
+planted mutants caught. Auto-memory `project-premium-currency-zlatnyk`.
 
-**10-10, evening — the armour repair halved.** Players called the repair too expensive; the Pi's
-`fight_log` showed newcomers wearing 60–460 points a day against ~100 job silver. The owner halved
-the price (`repairCostFraction` 0.25), kept the max shave, did not restore the cut maxima and kept
-the Master's screens as they are. Auto-memory `project-repair-cost-complaint`.
+**10-11, later — a level-up keeps the armour's HP.** Found while designing the class change:
+`applyLevelDerivedStats` clamped HP to the base maximum (209/209 at L17 came out 176/214). It was
+fixed on its own, on the owner's word.
 
-**10-10, later — the dispel and the second card built.** A players' proposal (pay ~30 to cancel a
-card) and the owner's addition (a second card for 20), shaped in five quizzes: «🕯 Відчарувати»
-for 30 on the FREE card's running duration effect, on the fortune screen only; ONE final «🔮 Друга
-карта» for 20, only after a dispel; nothing after a one-shot or a card that ran out; the free
-card's time never sooner. Rehearsed (81 checks twice, five mutants caught). Auto-memory
-`project-fortune-dispel-and-second-card`; `.memory/sessions.md` → the 10-10 later entry.
+**10-10 late → 10-11 — the zlatnyk named, credited, shown.**
+- The owner picked «златник» (en *zlatnyk*, the owner's spelling).
+- The balance is a `users` column outside the cached `User`, credited in DBeaver, and the watchman
+  announces each credit.
+- The profile shows it under silver, only above 0.
+- The played sample turned up the profile's fixed «срібників», fixed the same session.
 
-**10-10 — the recipe notebook built.** On «Починаємо», the six entries the 10-09 samples had not
-covered were shown on real numbers and approved. The enchant note was keyed by item + level
-after the owner's answer: a warehouse trip re-creates the row. Everything was built on all eight
-cards and the journal. A scratch-Postgres rehearsal met the migration the way the Pi will, alone
-in a new batch, and passed 82 checks through the real services, twice. Two planted mutants were
-caught. Auto-memory `project-recipe-notebook`; `.memory/sessions.md` → the 10-10 entry.
+**10-10 — the recipe notebook, the dispel and second card, the repair halved, a sync pass.**
+- **The notebook:** «📌 У нотатник» on eight price cards, at most three notes in the journal.
+- **The dispel:** «🕯 Відчарувати» for 30 on the free card's running effect, then ONE final
+  «🔮 Друга карта» for 20.
+- **The repair:** `repairCostFraction` 0.25, on live-play wear data.
 
-**10-09 evening — a doc pass, no game change.** The session preamble was measured against Claude
-Code's own limits and trimmed against the records (auto-memory `feedback-docs-keep-the-rule`, its
-fourth run): `MEMORY.md` stood at 98% of a hard 25,000-char cut, `CLAUDE.md` at 182% of its
-40,000-char warning. The owner chose the index rewrite, the `CLAUDE.md` trim (every rule kept)
-and this file cut to its live state; the fix of the stale records the audit found was offered and
-NOT chosen, and path-scoped rule files were declined for now.
-
-**10-08 late → 10-09 01:47.** Built, committed and deployed 2026-10-09 01:30: the starving
-players' four (`36e33af`), the fortune teller once a game day (`248dc43`), and the named fight
-line, the weapon's own icon and «рівень» (`33551dd`) — `.memory/sessions.md`. The recipe
-notebook was designed and approved but NOT built («Зробимо це завтра»). Two working rules from
-the owner: auto-memory `feedback-unanswered-means-nothing`, `feedback-fold-fixes-into-their-commit`.
+Each has its auto-memory (`project-recipe-notebook`, `project-fortune-dispel-and-second-card`,
+`project-repair-cost-complaint`). Everything earlier: `.memory/sessions.md`.
 
 ### Next action
 
-**0 — Ship the recipe notebook, the dispel, the halved repair, the zlatnyks, the level-up HP fix and the
-Chancellery, on the owner's word.** All committed (`d77d600`, `7860aaa`, `7995d2a`, `1f4b442`, `021e9ac` and
-`fb37519`), not pushed. Push is the owner's. The deploy is the usual recipe below, and the
-restart needs the owner's go: four migrations (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`,
-`CreateZlatnykPurchases` — rehearsed together in one new batch over existing players on 10-11), new strings and
-**content schema v22** — the Pi's pre-flight digest must read `records 92300a4769c8933e`, content hash `681d611a`. After it, the walk list's
-top three blocks.
+**0 — Ship the six, on the owner's word.**
+- **Push is the owner's.** Then, on the Pi: `git pull --ff-only`, a detached debug build, and the
+  pre-flight digest — it must read `records 92300a4769c8933e`, content hash `681d611a` (schema
+  v22). Then **ASK before `pm2 restart ROI`**.
+- **The four migrations** (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`,
+  `CreateZlatnykPurchases`) were rehearsed together in one new batch over existing players.
+- **After the restart, verify the TABLES:**
+  - `users.zlatnyks` / `zlatnyks_announced` with the CHECK;
+  - `zlatnyk_purchases`;
+  - `recipe_notes`;
+  - `users.fortune_stage`.
+- **Then walk** the six top blocks of `TODO.md` → "Walk list", starting by crediting a test
+  account in DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks").
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-10 15:37 (10-08 11:47:53). A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-11 02:57 (10-08 11:47:53). A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
-**3 — The two chosen-but-unanswered forms** — eating straight from the warehouse (its layout) and a
-hint under the estate-name prompt (its wording). Build either only on the owner's answer
-(`TODO.md` → "Open, decided but not done", top block).
+**3 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-11 block:** rename the code's `treasury` to `chancellery`? The unfeminized class name in
+  the class-change banner; Telegram's Stars-only rule if zlatnyks are paid for outside the bot;
+- **the 10-10 block:** repairing at the estate for hides; a stale fortune button that deletes the
+  photo off the capital;
+- **the two chosen-but-unanswered forms:** eating straight from the warehouse (its layout), and a
+  hint under the estate-name prompt (its wording).
+
+Build none of them without the owner's answer (auto-memory `feedback-unanswered-means-nothing`).
 
 **4 — Read the rest of the `fight_log`.** Read on 10-10 for the repair (`.memory/live-ops.md` → "Day
 four"): newcomers' busiest days ran 105–350 fights against the model's ≈25 a day, and 26% of wins end
 untouched. Still unread: `estate_level` (do players hold the estate back? T6 gains nothing per day)
 and how many wins are one tap — what the technique rework was for.
 
-**5 — Someone opens the screens.** `TODO.md` → "Walk list": the three 10-10 blocks once they are
-live, the 10-09 ones now. No human has
-seen the whole King's chain, and `/reload` has never run against a real database.
+**5 — Someone opens the screens.** `TODO.md` → "Walk list": the six 2026-10-10/11 blocks once they
+are live, the 10-09 ones now. No human has seen the whole King's chain, and `/reload` has never run
+against a real database.
 
 **6 — Older decisions waiting on the owner:** `TODO.md` → "Open, decided but not done". Not there
-and still open: the t6–t9 weapon descriptions, written after the names were approved and never
-approved on their own; the emblem candidates (`content/lore.md` §14, none chosen); and three
-ideas raised but not yet asked — a «Відновити» service at the Master (reset the max for silver,
-keep the enchant: a silver sink), the Master refusing to mend a piece worn to 1/1, and the passive
-report naming its losses the way the death screen does. And the 10-10 block of `TODO.md` → "Open,
-decided but not done": repairing at the estate for hides, and a stale fortune button that deletes
-the photo when tapped off the capital.
+and still open:
+- the t6–t9 weapon descriptions, written after the names were approved and never approved on their
+  own;
+- the emblem candidates (`content/lore.md` §14, none chosen);
+- three ideas raised but not yet asked:
+  - a «Відновити» service at the Master (reset the max for silver, keep the enchant: a silver sink);
+  - the Master refusing to mend a piece worn to 1/1;
+  - the passive report naming its losses the way the death screen does.
 
 **Deploying to the Pi:** `git push` is the owner's, never yours. On the Pi: `git pull --ff-only`, a
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake, **v22** in the tree and v20 on the Pi, refuses a
-mismatch). After a migration, verify the TABLE, not the log line. Recipe and traps: auto-memory
-`linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
+schema change ships `content/data` and the binary TOGETHER (the handshake, **v22** in the tree and
+v20 on the Pi, refuses a mismatch). After a migration, verify the TABLE, not the log line. Recipe and
+traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
 
@@ -142,10 +143,10 @@ mismatch). After a migration, verify the TABLE, not the log line. Recipe and tra
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
 superseded".
-**The tree's baseline, waiting for the restart (the dispel, the repair halved and the Chancellery, schema v22):**
-`records 92300a4769c8933e`, content hash `681d611a`, the other four halves as above (the Chancellery moved
-`records` from `c3720e93c10c13a8`, content hash `c9cf0506`). It becomes the current
-one when the Pi runs it; the line above then moves to the superseded list.
+**The tree's baseline, waiting for the restart (the dispel, the repair halved and the Chancellery,
+schema v22):** `records 92300a4769c8933e`, content hash `681d611a`, the other four halves as above
+(the Chancellery moved `records` from `c3720e93c10c13a8`, content hash `c9cf0506`). It becomes the
+current one when the Pi runs it; the line above then moves to the superseded list.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
