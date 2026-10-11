@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **the 10-11 sync pass** — records, plus comments and two unread fields:
+- *(this hash fill, 10-11)* **`0b18908`'s hash fill, and the class change's charter copy folded into its
+  commits** (the owner's quiz, 10-11). «🔄 Зміна класу» → «📜 Грамота про зміну класу», the preview's
+  🔄 → 📜 and «✅ Змінити клас» → «✅ Скріпити печаткою» went into `1c39595`, the walk list into
+  `0b18908`; autosquash rebase, the tree identical to the pre-rebase one. Rewritten: `fb37519` →
+  `1c39595`, `a9170f7` → `3a7d746`, `0ae88b5` → `0b18908`, `afba437` → this fill (the old HEAD is in
+  the reflog).
+- `0b18908` (10-11) **the 10-11 sync pass** — records, plus comments and two unread fields:
   - the session's research persisted in `.memory/rebalance.md`;
   - «Fluent saves whole rows» corrected (Fluent writes only changed fields) in `CLAUDE.md`,
     `session-auth.md`, the README and five code comments — every rule kept;
@@ -19,8 +25,8 @@ was shown in a unit it was not measured in.
     seven-file tuning count;
   - TODO's 10-11 walk-list and open blocks; `Prompt.md` reoriented on the Pi read at 10-11 02:57;
   - `ClassChangeService`'s unread `Line.hp` and `Outcome.from` removed.
-- `a9170f7` (10-11) **`fb37519`'s hash fill** — records only.
-- `fb37519` (10-11) **the Chancellery: the class change for zlatnyks** — NOT deployed — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`.
+- `3a7d746` (10-11) **`1c39595`'s hash fill** — records only.
+- `1c39595` (10-11) **the Chancellery: the class change for zlatnyks** — NOT deployed — «🟡 Канцелярія» (renamed from «Скарбниця» on the owner's word: the guild has one; the code keeps `treasury`) under the palace card, `treasury.json` (schema **v22**; validator rules with `TreasuryTests`; `spec economy` prints it, `spec-economy.md` §7b), `ClassChangeService` (one `apply`, a stand-in preview, ONE transaction), `CapitalController+Treasury` (four screens, caption edits), `CreateZlatnykPurchases` + `ZlatnykPurchase`, `ZlatnykService.spend`. Rehearsed on a scratch Postgres: 120 checks twice (the screens word for word, a rollback, a stale second tap), two planted mutants caught. `records` → `92300a4769c8933e`, content hash `681d611a`. The class change is worded as a charter — «📜 Грамота про зміну класу», «✅ Скріпити печаткою» — folded in on 10-11 (not «указ»: the decree chain's word, on the same palace screen).
 - `a683888` (10-11) **`021e9ac`'s hash fill** — records only.
 - `021e9ac` (10-11) **a level-up keeps the armour's HP** — NOT deployed — `applyLevelDerivedStats` clamped HP to the BASE maximum, so every level-up took the gear's share (an L17 archer at 209/209 with +38 from armour came out 176/214; now 214/214). Found while designing the class change, which reuses the same recompute; confirmed through the real code on the scratch build before and after. Swift only, so the restart.
 - `7ee41c1` (10-11) **`1f4b442`'s hash fill** — records only.
@@ -619,9 +625,9 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11, the sync pass (records; two comments' reasons; two unread fields)
+## Session — 2026-10-11, the sync pass (records; two comments' reasons; two unread fields) — `0b18908`
 
-On the owner's long-form audit prompt, after `fb37519`/`a9170f7`.
+On the owner's long-form audit prompt, after `1c39595`/`3a7d746`.
 
 **Persisted what lived only in the chat.** `.memory/rebalance.md` → "The zlatnyk and the Chancellery,
 decided" now holds:
@@ -662,7 +668,7 @@ gained how to reuse an earlier session's harness and three harness traps.
 - `allowed_users`: open 14 · invite 6 · seed 4 · manual 1;
 - 5,441 forest fights since the door opened, 22 deaths.
 
-## Session — 2026-10-11, night (the Chancellery: the class change for zlatnyks) — `fb37519`
+## Session — 2026-10-11, night (the Chancellery: the class change for zlatnyks) — `1c39595`
 
 **Renamed before the commit.** «Скарбниця» became «Канцелярія» (en Chancellery) on the owner's word.
 The guild already has a «🪙 Скарбниця». The body became «У канцелярії пахне чорнилом і сургучем…» (the

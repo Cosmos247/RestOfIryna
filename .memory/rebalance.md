@@ -894,7 +894,7 @@ a flee is 2 points, and Inokentiy's 110 flees were 220 of his 462. Rebuild: the 
 `.memory/live-ops.md`; the formula in `MasterCatalog.repairCost`; each point equally likely on any
 worn piece with durability left.
 
-### The zlatnyk and the Chancellery, decided (2026-10-10/11, `1f4b442`, `021e9ac`, `fb37519`)
+### The zlatnyk and the Chancellery, decided (2026-10-10/11, `1f4b442`, `021e9ac`, `1c39595`)
 
 **The name.** «златник» (en *zlatnyk*, the owner's spelling, not the numismatists' «zlatnik»). It is the
 srebrenik's pair: Volodymyr the Great minted exactly these two coins at Kyiv in the late 10th century,

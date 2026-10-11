@@ -2064,7 +2064,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-11 — the Chancellery: the class change (`fb37519`, NOT deployed — schema v22, a migration and strings, so a restart with `content/data`):**
+**Added 2026-10-11 — the Chancellery: the class change (`1c39595`, NOT deployed — schema v22, a migration and strings, so a restart with `content/data`):**
 an account at the capital with 100+ zlatnyks credited in DBeaver.
 - 👑 Палац: «🟡 Канцелярія» under the decree card, always. «✅ Доповісти Королю» joins it above once a
   decree is done.
