@@ -147,12 +147,13 @@ public enum GuildService {
 
     /// Resolve a target by @username first (more unique), then nickname.
     /// Case-insensitive; first match wins (nicknames aren't guaranteed unique —
-    /// a known v1 limitation).
+    /// a known v1 limitation). A nickname is stored with one apostrophe form,
+    /// so the typed one is normalized the same way: «Дар’я» finds «Дар'я».
     static func findTarget(_ identifier: String, on db: any Database) async throws -> User? {
         let id = identifier.hasPrefix("@") ? String(identifier.dropFirst()) : identifier
         guard !id.isEmpty else { return nil }
         if let byName = try await User.query(on: db).filter(\.$userName, .custom("ILIKE"), id).first() { return byName }
-        return try await User.query(on: db).filter(\.$nickname, .custom("ILIKE"), id).first()
+        return try await User.query(on: db).filter(\.$nickname, .custom("ILIKE"), PlayerNameRules.normalized(id)).first()
     }
 
     // MARK: - Accept / decline invite

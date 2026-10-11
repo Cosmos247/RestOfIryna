@@ -23,17 +23,43 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-11 13:24)
+### Where things stand right now (the Pi and git as read 2026-10-11 22:26)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`a9e5a98`** (the delivery jobs break even against buying), **`2e8e385`** (the 2026-10-11 13:21 deploy recorded), **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385`, `a9e5a98` and this hash fill** — push is the owner's |
-| running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (an apostrophe in a name; a lone unit needs no quantity; a broken piece no longer counts toward its set; the 10-08 pair dropped; the expedition research recorded) on top of **`5a7a3e5`** (`a9e5a98`'s hash fill), **`a9e5a98`** (the delivery jobs break even against buying), **`2e8e385`** (the 2026-10-11 13:21 deploy recorded), **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385`, `a9e5a98`, `5a7a3e5` and this commit** — push is the owner's |
+| running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10; read again at 22:26), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Nothing.** The six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. **Waiting for a `/reload`**: the delivery jobs' rewards (`quests.json` only; the tree's content hash `cb2b3fed`, `records 78ce585986927122`) |
+| waiting for a restart | **An apostrophe in a name**, **a lone unit needs no quantity** and **a broken piece no longer counts toward its set** (this commit, Swift only). Before it, the six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. **Waiting for a `/reload`**: the delivery jobs' rewards (`quests.json` only; the tree's content hash `cb2b3fed`, `records 78ce585986927122`) |
 
 ### Where the last sessions stopped (2026-10-10 → 10-11)
+
+**10-11, late evening — a broken piece no longer counts toward its set.** Asked whether broken armour
+gives anything: nothing of its own, but a worn set still counted it (a fully broken Forester set
+kept +2 DEF · +6 HP · +2 dodge). Fixed on the owner's word through one test, `isBroken`; checked on
+the real code before and after. Nobody wore a broken piece (re-read 23:18), so the restart moves no one.
+The broken weapon's half rounds half UP (7 → 4), not down as the FAQ said; the records are fixed.
+
+**10-11, late evening — a lone unit needs no quantity** (a players' proposal). The owner picked
+variant A of three: where the units come from holds exactly one, the tap acts on it — the trader
+sells it, the market skips to the price, the trade offers it, the guild vault and the warehouse's
+✏️ N move it. A taken job that needs the item keeps the prompt. Swift only: live on a restart.
+
+**10-11, late evening — an apostrophe in a name; the two players' proposals dropped.** Asked to «do
+what the players proposed», the 10-08 pair went out again as samples on real data (six players at
+0 Vigor with food only in the warehouse; Iren still at step 6). The owner answered only a finding of
+mine and dropped both: «питання про кнопку на складі й рядок на кроці 6 можеш взагалі забути» —
+never raise them again. The finding, built: «Дар'я» and «Солов'їний гай» were refused as
+"symbols"; an apostrophe between two letters (' ʼ ’) is now accepted and stored as ' —
+`PlayerNameRules`, shared with the guild invite's lookup. Swift only: live on a restart.
+
+**10-11, evening — the 🏕 Expedition researched, nothing built** (session `52cd50db`, no commit).
+The passive run walks only deeper and lands home at once, books those km as 🌲 Глибина, runs one
+step short, never retreats and logs no death. The owner chose there-and-back with a 3-minute step
+(5/10/15 km), retreat below 50% HP and when the Vigor left only covers the road home, the depth on
+the buttons, 📍 and 💀. **Two questions are open**: does the player eat on the run, and can it go
+past the chosen km? TODO → "Open, decided but not done"; `.memory/sessions.md` → that entry.
 
 **10-11, afternoon — the delivery jobs break even against buying.** A table of every NPC job against
 its items' trader price; on the owner's rule the five that lost (hides, iron, ore, raw meat, the
@@ -93,7 +119,8 @@ Each has its auto-memory (`project-recipe-notebook`, `project-fortune-dispel-and
 ### Next action
 
 **0 — `/reload` for the delivery jobs' rewards** (the owner's, in Telegram; `/content` must then
-read hash `cb2b3fed`). Then **walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
+read hash `cb2b3fed`), and a restart for the apostrophe, the lone unit and the broken set piece (the
+owner's: push, pull, build, the digest, then ASK). Then **walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
 → "Crediting zlatnyks"; if the grid calls the new columns read-only, quit DBeaver and reopen, or use the
 SQL editor), then
 the six top blocks of `TODO.md` → "Walk list". The testers' note went to the owner on 10-11.
@@ -101,17 +128,21 @@ the six top blocks of `TODO.md` → "Walk list". The testers' note went to the o
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-11 13:24 (10-08 11:47:53). A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-11 22:26 (10-08 11:47:53). A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
 **3 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-11 evening block:** the 🏕 Expedition's two open questions (does the player eat on the
+  run; can it go past the chosen km?) — the rest of its design is chosen; the refusal copy that does
+  not mention the apostrophe; the trader prompt's «Скільки Лісові горіхи продати?» (its case);
 - **the 10-11 block:** rename the code's `treasury` to `chancellery`? The unfeminized class name in
   the class-change banner; Telegram's Stars-only rule if zlatnyks are paid for outside the bot;
 - **the 10-10 block:** repairing at the estate for hides; a stale fortune button that deletes the
-  photo off the capital;
-- **the two chosen-but-unanswered forms:** eating straight from the warehouse (its layout), and a
-  hint under the estate-name prompt (its wording).
+  photo off the capital.
+
+Eating straight from the warehouse and the estate-name hint are DROPPED (10-11, the owner) — never
+raise them again.
 
 Build none of them without the owner's answer (auto-memory `feedback-unanswered-means-nothing`).
 
@@ -167,7 +198,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 408 tests, ~5s
+swift test                                   # 414 tests, ~5s
 ```
 
 

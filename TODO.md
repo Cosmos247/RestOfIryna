@@ -1575,6 +1575,36 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **A broken piece no longer counts toward its set** *(2026-10-11, Swift only, NOT live until
+        a restart)* — the owner's question «Зламана броня дає якийсь + до статів?» found it: armour at
+        0 granted nothing of its own, but `applyBonuses` counted it toward the set, so a Forester set
+        worn to 0 kept +2 DEF · +6 HP · +2 dodge. `EquipmentService.isBroken` is now the one test for
+        both. Checked on the real code in a scratch copy, before → after: all broken 2/6/0/2 → 0; the
+        jerkin broken 10/18/3/4 → 8/12/3/4; an intact set unchanged (14/24/4/5). Nobody on the Pi
+        wore a broken piece (10-11 23:18, any armour). The broken weapon's half was recorded as «floored»; it
+        rounds half up (the t1 sword's 7 ATK → 4), and the FAQ, the comment and an old entry are
+        corrected.
+  - [x] **A lone unit needs no quantity** *(2026-10-11, Swift only, NOT live until a restart)* — a
+        players' proposal: «не доводилось писати кількість, якщо предмету одна одиниця». The owner
+        picked variant A of three: A, a lone unit acts at once; B, «1» / «Усі (N)» buttons in every
+        prompt; C, both. When the side the units come from holds exactly one, the tap acts on it:
+        - the trader sells it (`sellOrAsk`);
+        - the market skips to the price, which is still typed;
+        - the trade offers it;
+        - the guild vault moves it (`vaultMoveOrAsk`);
+        - the warehouse's ✏️ N moves it after «Куди?».
+        A taken job that needs the item keeps the trader's and the market's prompt and its ⚠️
+        (`loneUnitWithoutJob`). Buying is unchanged. The typed path and the lone unit share one
+        mover each (`performVaultMove`, `finishWarehouseTransferN`).
+  - [x] **An apostrophe in a name** *(2026-10-11, Swift only, NOT live until a restart)* — found
+        while sampling the estate-name hint, built on the owner's answer: the nickname and the
+        estate name refused «Дар'я» and «Солов'їний гай» as "symbols", under a message telling the
+        player to use letters only. An apostrophe between two letters is now accepted in all three
+        keyboard forms (' ʼ ’) and stored as U+0027; anywhere else it is refused with the old
+        message. `PlayerNameRules` (`ROIContent`) is the one rule: registration validates through
+        it, and the guild invite's nickname lookup normalizes through it. 6 tests, three planted
+        mutants caught. The two players' proposals asked in the same quiz (eating from the
+        warehouse, the step-6 hint) were dropped by the owner — "Open, decided but not done".
   - [x] **The delivery jobs break even against buying** *(2026-10-11, `a9e5a98`, content only, NOT live until a `/reload`)*
         — the owner's rule, after a table of every job against its items' trader price: no job
         may pay less silver than buying its items costs, at the level it opens. Five raised to the
@@ -2059,7 +2089,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **Every block is LIVE and unwalked** — the six on top (2026-10-11: the Chancellery, the level-up HP
+Telegram. **The three blocks on top (2026-10-11: a broken piece and its set, a lone unit needs no
+quantity, an apostrophe in a name) are NOT deployed yet; every block under them is LIVE and
+unwalked** — the six under them (2026-10-11: the Chancellery, the level-up HP
 fix, the zlatnyks; 2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook)
 since the 2026-10-11 13:21 restart, the five under them since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
@@ -2070,6 +2102,36 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-11 — a broken piece no longer counts toward its set (NOT deployed — Swift only, so
+a restart):** an account wearing the whole Forester set.
+- Note the profile's 🛡 Захист and ❤️ maximum with every piece whole.
+- In DBeaver set the worn jerkin's `durability` to 0 and restart, or let a fight break it: 🛡 drops
+  by 6 and the ❤️ maximum by 12 — the jerkin's own 4 🛡 · 6 ❤️ plus the four-piece +2 🛡 · +6 ❤️ (it
+  used to drop by 4 and 6). The two-piece +2 dodge stays. Mended at the Master, both come back.
+
+**Added 2026-10-11 — a lone unit needs no quantity (NOT deployed — Swift only, so a restart):** an
+account holding exactly one unit of something.
+- 💼 Крамар → 💸 Продати: a row reading «🎒 1» sells on the tap, with «✅ … ×1 — продано за 🪙 N»
+  and the list redrawn. «🎒 2» or more still asks «Скільки … продати?». Take a job that needs the
+  item, and the lone unit asks again, with the ⚠️ line.
+- 🛒 Базар → 🏷 Продати: a lone unit asks the price straight away («Яку ціну за весь лот (1×
+  …)?»); the lot appears after the price.
+- 🤝 Обмін: a lone stackable joins the offer on the tap; a second tap takes it back out.
+- 🏰 Гільдії → 🏦 Сховище: a lone unit deposits or withdraws on the tap.
+- 📦 Склад → ✏️ N → «⬆️ На склад» / «⬇️ У сумку»: with one unit on that side it moves at once, the
+  prompt is gone and the banner says «×1».
+- 💼 Крамар → 💰 Купити asks «Скільки … купити?» as before.
+
+**Added 2026-10-11 — an apostrophe in a name (NOT deployed — Swift only, so a restart):** a NEW
+account, since only registration writes a name.
+- Step 2: «Дар'я» — typed with whatever apostrophe the keyboard gives — is accepted, and the class
+  prompt greets «Дар'я».
+- Step 6: «Солов'їний гай» is accepted; «✅ Ласкаво просимо…» and the estate screen read «Солов'їний
+  гай».
+- Still refused, with the old «❌ Лише літери, цифри та одиничні пробіли…»: «'Дарья», «Дар''я»,
+  «Дар' я», «Дар'я!».
+- 🏰 Гільдії → invite «Дар’я» typed with ’ (iOS): the invite finds the account.
 
 **Added 2026-10-11 — the Chancellery: the class change (`1c39595`, live since 2026-10-11 13:21):**
 an account at the capital with 100+ zlatnyks credited in DBeaver.
@@ -2804,6 +2866,38 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-11 evening sessions** — the expedition researched, the apostrophe built:
+- **The 🏕 Expedition (the passive run) — chosen in two quizzes, NOT built, a clarification still
+  open.** The research (session `52cd50db`: read-only on the Pi, runs simulated through `ROISim` on
+  real players' stats):
+  - the run walks only deeper (km 1 → 17) and lands home the moment its last step ends — the road
+    back costs no time, no Vigor and no fights;
+  - those km land in 🌲 Глибина: three players hold exactly 17 km that no fight of theirs reached;
+  - a run is one step shorter than its label (`derivedStepCount` floors 89.99 minutes, because
+    `created_at` is stamped milliseconds after `now`), so the report also arrives 5 minutes early;
+  - the run never turns back, and its deaths are recorded nowhere (`fight_log` skips the autobattle).
+
+  The owner chose: there and back in the same time; a 3-minute step (30/60/90 minutes = 5/10/15 km
+  out and back); turning back below 50% HP at any depth; turning back when the Vigor left only
+  covers the road home (2 a km); the depth on the buttons («1 год 30 хв · 15 км»); 📍 where the run
+  is on the waiting screen; 💀 the losses named in the death report. **Open:** the owner's last two
+  questions — does the player eat on such a run, and can it go past the chosen km? — the session
+  ended mid-simulation with both unanswered. Nothing is built until they are. The simulator's
+  source is in that session's transcript; its scratch directory does not survive a reboot.
+- **A lone unit sells on one tap — chosen knowingly.** Variant A drops the question that doubled as
+  a confirmation, so a mis-tap on a lone 🔳 Залізний злиток sells it for 100 and it costs 200 to buy
+  back. Shown before the choice; the «1» / «Усі (N)» buttons (B) are the alternative if it bites.
+- **The trader's prompt reads «Скільки Лісові горіхи продати?»** — the item name in the nominative
+  where Ukrainian needs the genitive (`capital.trader.bulkN.sell_prompt` / `buy_prompt`). Offered
+  to rephrase on 10-11, no answer; copy is the owner's.
+- **The refusal copy does not mention the apostrophe.** An apostrophe inside a word is allowed
+  since 10-11 (`PlayerNameRules`), but `registration.*.invalid_chars` still reads «Лише літери,
+  цифри та одиничні пробіли — без символів, емодзі чи розділових знаків.» — true of every name it
+  refuses, silent about the apostrophe. Copy is the owner's: offered, not changed.
+- **The guild invite's nickname lookup is an `ILIKE` on the typed text**, so `%` and `_` act as
+  wildcards: typing «%» invites the first account the query returns. Latent (the invitee can
+  decline); found while normalizing the apostrophe, not fixed.
+
 **From the 2026-10-11 sessions** — raised while building the zlatnyks and the Chancellery, not built:
 - **Rename the code's `treasury` to `chancellery`** (files, keys, `treasury.json`, the `treasury:`
   callbacks) — offered after the player-facing rename; no answer.
@@ -2842,13 +2936,14 @@ the walk-list block on top): the hunger tick only on a step that begins at 0 Vig
 hunger (its food lines removed on 10-09, the owner's word). **The owner's rule from that evening: a question left unanswered
 means nothing is built for it** — never fill one in with a default (auto-memory
 `feedback-unanswered-means-nothing`).
-- **Eating straight from the warehouse — chosen, form unanswered.** The owner picked it, then left
-  the layout question (the «🍴 Зʼїсти» button in the row of ⬆️/⬇️/✏️, or beside the name)
-  unanswered, so nothing was built.
-- **A hint under the estate-name prompt — chosen, wording unanswered.** Two wordings were offered
-  («✍️ Напишіть назву у відповідь — від 2 до 30 символів.» / «✍️ Надішліть назву звичайним
-  повідомленням: від 2 до 30 символів.»), neither picked. Still there at 22:20 on 10-08: Iren at
-  step 6 since 10-07 18:35, and an unnamed account at step 2 (the nickname) since 10-08 00:27.
+- **DROPPED on 2026-10-11 by the owner — eating straight from the warehouse, and a hint under the
+  estate-name prompt.** Both were chosen on 10-08 with their form left unanswered (the «🍴 Зʼїсти»
+  button in the row of ⬆️/⬇️/✏️ or beside the name; «✍️ Напишіть назву у відповідь…» or «✍️ Надішліть
+  назву звичайним повідомленням…»). On 10-11 both forms were asked again on live samples, skipped
+  again, and the owner: «питання про кнопку на складі й рядок на кроці 6 можеш взагалі забути».
+  **Do not raise either again.** What the Pi showed that evening (22:08), for the record: six players
+  at the estate at 0 Vigor with no food in the bag and edible food in the warehouse; Iren still at
+  step 6 since 10-07 18:35, the unnamed account at step 2 since 10-08 00:27.
 - **A market lot is bought whole.** A 40-unit lot cannot be bought by a 25-unit starter bag even
   when empty. Offered on 2026-10-08 (a partial buy: as much as fits, the rest stays listed) and not
   chosen.
@@ -2868,9 +2963,11 @@ fixes are `f2ae7ea`; these were found, verified and left:
   km 2–11 to km 6–10, and the viper and the eagle drop nothing. Both jobs can still be done
   (deeper, or with silver at the trader) and dropped; raise their `minLevel` if a new player
   stalls on one.
-- **A broken piece still counts toward its set** (since Phase 6). `EquipmentService.applyBonuses`
-  counts worn rows whatever their durability, so a Forester set worn to 0 still grants +2 dodge,
-  +2 DEF and +6 HP while every piece grants nothing.
+- **FIXED 2026-10-11 (the owner's word; NOT live until a restart) — a broken piece counted toward
+  its set** (since Phase 6). `EquipmentService.applyBonuses` counted worn rows whatever their
+  durability, so a Forester set worn to 0 still granted +2 dodge, +2 DEF and +6 HP while every
+  piece granted nothing. The set pass now skips a piece `isBroken` names — the test
+  `contributedStats` uses.
 - **The enchant list names no row.** «🦺 Жилет лісника · +0→+1» is one button per piece. So:
   - two copies at one level are identical buttons;
   - wear is not shown;

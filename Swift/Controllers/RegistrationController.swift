@@ -24,33 +24,10 @@ import SwiftTelegramBot
 final class Registration: TGControllerBase, @unchecked Sendable {
     typealias T = Registration
 
-    // Allowed character sets for nicknames and estate names. Anything outside
-    // these three buckets (emoji, punctuation, symbols, button labels…) is
-    // rejected so players can't submit weird or button-sourced names.
-    private static let nameDigits: Set<Character> = Set("0123456789")
-    private static let nameLatin: Set<Character> = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    private static let nameUkrainian: Set<Character> = Set("АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя")
-
-    private enum NameValidationError {
-        case edgeSpace
-        case consecutiveSpaces
-        case tooShort
-        case tooLong
-        case invalidCharacters
-    }
-
-    private static func validateName(_ text: String, minLength: Int, maxLength: Int) -> NameValidationError? {
-        if text.first?.isWhitespace == true || text.last?.isWhitespace == true { return .edgeSpace }
-        if text.contains("  ") { return .consecutiveSpaces }
-        if text.count < minLength { return .tooShort }
-        if text.count > maxLength { return .tooLong }
-        for ch in text {
-            if ch == " " { continue }
-            if nameDigits.contains(ch) || nameLatin.contains(ch) || nameUkrainian.contains(ch) { continue }
-            return .invalidCharacters
-        }
-        return nil
-    }
+    // What a nickname or an estate name may contain is `PlayerNameRules`
+    // (letters, digits, single spaces and an apostrophe inside a word);
+    // anything else — emoji, punctuation, a button label — is refused, so
+    // nobody submits a weird or button-sourced name.
 
     // MARK: - Controller Lifecycle
     override public func attachHandlers(to bot: TGBot, lingo: Lingo) async {
@@ -159,7 +136,8 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     }
 
     private func handleNicknameInput(context: Context, text: String) async throws -> Bool {
-        if let err = Self.validateName(text, minLength: 2, maxLength: 20) {
+        let name = PlayerNameRules.normalized(text)
+        if let err = PlayerNameRules.violation(of: name, length: PlayerNameRules.nicknameLength) {
             let key: String
             switch err {
             case .edgeSpace:          key = "registration.nickname.edge_space"
@@ -173,7 +151,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        context.session.nickname = text
+        context.session.nickname = name
         context.session.registrationStep = 3
         try await context.session.saveAndCache(in: context.db)
         try await promptClassSelection(context: context)
@@ -267,7 +245,8 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     }
 
     private func handleEstateNameInput(context: Context, text: String) async throws -> Bool {
-        if let err = Self.validateName(text, minLength: 2, maxLength: 30) {
+        let name = PlayerNameRules.normalized(text)
+        if let err = PlayerNameRules.violation(of: name, length: PlayerNameRules.estateNameLength) {
             let key: String
             switch err {
             case .edgeSpace:          key = "registration.estate.edge_space"
@@ -281,7 +260,7 @@ final class Registration: TGControllerBase, @unchecked Sendable {
             return true
         }
 
-        context.session.estateName = text
+        context.session.estateName = name
         try await completeRegistration(context: context)
         return true
     }

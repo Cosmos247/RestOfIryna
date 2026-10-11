@@ -150,8 +150,13 @@ public enum EquipmentService {
         // counted. Flat bonuses land first and multipliers second, so two sets
         // can never end up multiplying each other's flats in whatever order the
         // rows happened to come back from the database.
+        //
+        // A BROKEN piece does not count toward its set (2026-10-11, the owner's
+        // call): until then a Forester set worn to 0 on every piece still
+        // granted its whole bonus, +2 DEF · +6 HP · +2 dodge, while each piece
+        // granted nothing. `isBroken` is the same test `contributedStats` uses.
         var wornPerSet: [String: Int] = [:]
-        for row in rows where row.equippedSlot != nil {
+        for row in rows where row.equippedSlot != nil && !isBroken(row) {
             guard let setId = ItemCatalog.find(row.itemId)?.setId else { continue }
             wornPerSet[setId, default: 0] += 1
         }
@@ -229,17 +234,25 @@ public enum EquipmentService {
     }
 
     /// What a row actually contributes right now, after durability:
-    ///  • armor worn to 0 is "broken" → zero.
-    ///  • the weapon at 0 keeps HALF its stats (floored). Lore: the King's
+    ///  • armor worn to 0 is "broken" (`isBroken`) → zero.
+    ///  • the weapon at 0 keeps HALF its stats, each rounded to the nearest
+    ///    whole point with a half rounded up (7 → 4, 5 → 3). Lore: the King's
     ///    weapon can't truly break, only dull/slacken until honed.
     /// The single source of truth summed by `recomputeBonuses`.
     public static func contributedStats(of row: InventoryEntry, for user: User) -> GearStats {
         guard let slot = ItemCatalog.find(row.itemId)?.slot else { return GearStats() }
-        let isArmor  = GearConditionService.armorSlots.contains(slot.rawValue)
-        let isWeapon = GearConditionService.weaponSlots.contains(slot.rawValue)
-        if isArmor && row.durability <= 0 { return GearStats() }
+        if isBroken(row) { return GearStats() }
         let n = nominalStats(of: row, for: user)
+        let isWeapon = GearConditionService.weaponSlots.contains(slot.rawValue)
         guard isWeapon && row.durability <= 0 else { return n }
         return n.scaled(by: 0.5)
+    }
+
+    /// Armour worn to 0: it grants nothing of its own, and it does not count
+    /// toward its set. A weapon at 0 is only dulled, never broken. The one test
+    /// `contributedStats` and the set pass in `applyBonuses` both ask.
+    static func isBroken(_ row: InventoryEntry) -> Bool {
+        guard let slot = ItemCatalog.find(row.itemId)?.slot else { return false }
+        return GearConditionService.armorSlots.contains(slot.rawValue) && row.durability <= 0
     }
 }

@@ -1545,7 +1545,8 @@ extension EstateController {
     /// `estate:wh:transferPut:<itemId>` / `estate:wh:transferTake:<itemId>` —
     /// player picked a direction on the open prompt. Updates the pending
     /// entry's direction, then edits the prompt into the matching quantity
-    /// question with just `[❌ Cancel]` left on the keyboard. A stale tap
+    /// question with just `[❌ Cancel]` left on the keyboard — unless the side
+    /// the units come from holds exactly one, which moves at once. A stale tap
     /// (no pending entry) silently acks.
     static func handleWarehouseTransferDirection(
         data: String,
@@ -1578,6 +1579,19 @@ extension EstateController {
             telegramId: telegramId,
             direction: direction
         )
+
+        // ONE unit on the side it would come from: the only answer the quantity
+        // question could get is 1, so that unit moves at once (2026-10-11 — a
+        // players' proposal, the owner's variant A).
+        let userId = context.session.id ?? UUID()
+        let source = direction == .put
+            ? try await InventoryEntry.totalQuantity(of: pending.itemId, for: userId, on: context.db)
+            : try await WarehouseEntry.totalQuantity(of: pending.itemId, for: userId, on: context.db)
+        if source == 1, let item = ItemCatalog.find(pending.itemId) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await finishWarehouseTransferN(pending: pending, direction: direction, item: item, quantity: 1, context: context)
+            return true
+        }
 
         let promptText = context.lingo.localize(promptKey, locale: locale)
         let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
@@ -1669,6 +1683,22 @@ extension EstateController {
             return
         }
 
+        try await finishWarehouseTransferN(pending: pending, direction: direction, item: item, quantity: parsed, context: context)
+    }
+
+    /// Move `quantity` units in `direction`, then close the custom-quantity flow:
+    /// clear the pending entry, drop the prompt, refresh the warehouse screen
+    /// and post the outcome — the typed number's path and the lone unit's alike.
+    private static func finishWarehouseTransferN(
+        pending: EphemeralChatState.PendingWarehouseTransfer,
+        direction: EphemeralChatState.PendingWarehouseTransfer.Direction,
+        item: Item,
+        quantity parsed: Int,
+        context: Context
+    ) async throws {
+        let locale = context.session.locale
+        let telegramId = context.session.telegramId
+        let chatId = TGChatId.chat(telegramId)
         let itemName = context.lingo.localize(item.nameKey, locale: locale)
         let banner: String
         switch direction {

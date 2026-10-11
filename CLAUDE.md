@@ -561,6 +561,9 @@ number nothing reads.
   keep the maximum they were minted at, while the repair price and the salvage share read the
   item's new number. `RaiseArmorDurability` is the shape — both numbers shift by the
   difference; its `previousStart` (30) belongs to that one change, the next writes its own.
+- **A broken piece counts for nothing, its set included** (2026-10-11): armour at 0 grants no stat
+  and no set progress; a weapon at 0 is only dulled (half, rounded half up).
+  `EquipmentService.isBroken` is the one test, asked by `contributedStats` and by the set pass.
 
 **The cached gear bonuses are re-derived at every boot** (`EquipmentService.backfillGearBonuses`,
 after the migrations). `User.gear*Bonus` is written only by `recomputeBonuses`: on an equip, a
@@ -672,6 +675,11 @@ pending-prompt checks and **before** its root fallback. WORDS still fall through
 re-render, because stray text is usually a stale reply-keyboard tap and the redraw is what
 repairs it; a number is never a button label. A prompt still waiting for a BUTTON (the
 warehouse's «Куди?») repeats itself with a hint instead. Auto-memory `project-stray-number-hint`.
+
+**A quantity whose only answer is 1 is not asked** (2026-10-11, the owner's variant A): when the
+side the units come from holds exactly one, the tap acts on it. The exception is a taken job that
+needs the item (`loneUnitWithoutJob`), which keeps the prompt and its ⚠️. Buying always asks. A new
+quantity prompt follows the same rule. Auto-memory `project-lone-unit-no-prompt`.
 
 **A screen that can answer a question should answer it before the player gets it wrong** — the
 recipe screen once printed what a dish REQUIRES and never what the player HELD.

@@ -1652,8 +1652,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 // name swapped. `%{dish}` and `%{name}` are offered and may go
                 // unused — the validator refuses a rung whose line is missing,
                 // which is why no generic line stands in for one here to rot. A
-                // nickname is letters, digits and single spaces only
-                // (`validateName`), so it is safe inside `.html` unescaped.
+                // nickname is letters, digits, single spaces and an apostrophe
+                // inside a word (`PlayerNameRules`), so it is safe inside
+                // `.html` unescaped.
                 let key = "\(recipeId).taught"
                 let slots: [String: Any] = ["dish": dish, "name": context.session.nickname ?? ""]
                 var speech = lingo.localize(key, locale: locale, interpolations: slots)
@@ -1867,12 +1868,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         // Trader item taps — the single item button opens the "How many?"
-        // prompt directly. Pending state is stashed in EphemeralChatState and
+        // prompt directly (a lone unit on the sell side is sold at once, see
+        // `sellOrAsk`). Pending state is stashed in EphemeralChatState and
         // consumed by `unmatched` on the next text update.
         if data.hasPrefix("trader:sellN:") {
             let itemId = String(data.dropFirst("trader:sellN:".count))
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            try await ctrl.openTraderBulkPrompt(direction: .sell, itemId: itemId, traderScreenMessageId: message.messageId, isPhoto: isPhoto, context: context)
+            try await ctrl.sellOrAsk(itemId: itemId, traderScreenMessageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
         if data.hasPrefix("trader:card:") {
@@ -2388,6 +2390,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     // MARK: - Trader bulk-N prompt flow
+
+    /// ONE unit of the item in the bag and no taken job waiting for it: the
+    /// case where "how many?" is not asked, since its only answer is 1
+    /// (2026-10-11 — a players' proposal, the owner's variant A of three). A
+    /// job that needs the item keeps the question, because the question is
+    /// where the job warning shows, and a sale into a job is the one trade
+    /// buying back does not undo. The trader and the market both ask this.
+    fileprivate func loneUnitWithoutJob(itemId: String, context: Context) async throws -> Bool {
+        let inBag = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
+        guard inBag == 1 else { return false }
+        return await questWarningSuffix(itemId: itemId, context: context).isEmpty
+    }
+
+    /// A tap on a row of the sell list: a lone unit is sold at once
+    /// (`loneUnitWithoutJob`), anything else opens the quantity prompt.
+    fileprivate func sellOrAsk(itemId: String, traderScreenMessageId: Int, isPhoto: Bool, context: Context) async throws {
+        guard try await loneUnitWithoutJob(itemId: itemId, context: context) else {
+            try await openTraderBulkPrompt(direction: .sell, itemId: itemId, traderScreenMessageId: traderScreenMessageId, isPhoto: isPhoto, context: context)
+            return
+        }
+        let result = try await TraderService.sell(itemId: itemId, quantity: 1, for: context.session, on: context.db)
+        await postTraderResultBanner(forSell: result, itemId: itemId, context: context)
+        let category = ItemCatalog.find(itemId)?.type ?? .material
+        try await editToSellItems(category: category, messageId: traderScreenMessageId, isPhoto: isPhoto, context: context)
+    }
 
     /// Send the "Скільки X?" prompt + cancel button, stash pending state
     /// so the next text update from this user is treated as the typed
@@ -2956,11 +2983,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// Open the "How many to list?" prompt + cancel button, stash pending state
     /// at stage `.quantity`. The next text update is consumed by
     /// `handleMarketListingInput`.
+    ///
+    /// A lone unit (`loneUnitWithoutJob`) can only be listed whole, so the
+    /// prompt opens at the price stage instead: the price is still typed.
     fileprivate func openMarketSellPrompt(itemId: String, marketScreenMessageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo, locale = context.session.locale
-        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
-        let promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
-            + (await questWarningSuffix(itemId: itemId, context: context))
+        let lone = try await loneUnitWithoutJob(itemId: itemId, context: context)
+        let promptText = await marketPromptText(itemId: itemId, stage: lone ? .price : .quantity,
+                                                quantity: lone ? 1 : nil, context: context)
         let cancelLabel = lingo.localize("capital.market.button.cancel", locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
@@ -2975,8 +3005,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             telegramId: context.session.telegramId,
             listing: EphemeralChatState.PendingMarketListing(
                 itemId: itemId,
-                stage: .quantity,
-                quantity: nil,
+                stage: lone ? .price : .quantity,
+                quantity: lone ? 1 : nil,
                 promptMessageId: sent.messageId,
                 marketScreenMessageId: marketScreenMessageId,
                 isPhoto: isPhoto
@@ -2995,20 +3025,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         ))
     }
 
+    /// The listing prompt's wording at either stage — the quantity question with
+    /// the job warning under it, or the price question for `quantity` units.
+    /// One builder, because the prompt is drawn by the opener and redrawn on a
+    /// bad number, and a lone unit now opens it straight at the price stage.
+    private func marketPromptText(itemId: String, stage: EphemeralChatState.PendingMarketListing.Stage,
+                                  quantity: Int?, context: Context) async -> String {
+        let lingo = context.lingo, locale = context.session.locale
+        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        switch stage {
+        case .quantity:
+            return lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
+                + (await questWarningSuffix(itemId: itemId, context: context))
+        case .price:
+            return lingo.localize("capital.market.sell.price_prompt", locale: locale, interpolations: [
+                "item": itemName, "qty": "\(quantity ?? 0)", "fee": "🪙 \(MarketCatalog.listingFee)"
+            ])
+        }
+    }
+
     /// Re-render the active prompt in place with an optional error line, keeping
     /// pending so the next typed message retries. `stage` decides the wording.
     private func reshowMarketPrompt(pending: EphemeralChatState.PendingMarketListing, error: String?, context: Context) async {
         let lingo = context.lingo, locale = context.session.locale
-        let itemName = ItemCatalog.find(pending.itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? pending.itemId
-        let promptText: String
-        if pending.stage == .quantity {
-            promptText = lingo.localize("capital.market.sell.qty_prompt", locale: locale, interpolations: ["item": itemName])
-                + (await questWarningSuffix(itemId: pending.itemId, context: context))
-        } else {
-            promptText = lingo.localize("capital.market.sell.price_prompt", locale: locale, interpolations: [
-                "item": itemName, "qty": "\(pending.quantity ?? 0)", "fee": "🪙 \(MarketCatalog.listingFee)"
-            ])
-        }
+        let promptText = await marketPromptText(itemId: pending.itemId, stage: pending.stage,
+                                                quantity: pending.quantity, context: context)
         let cancelLabel = lingo.localize("capital.market.button.cancel", locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "market:cancelN")
@@ -3146,8 +3187,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // seller learned nothing about the other side, which is the asymmetry
         // this closes.
         //
-        // Nicknames are letters, digits and spaces only (RegistrationController
-        // validates), so there is nothing to escape for `parseMode: .html`.
+        // Nicknames are letters, digits, spaces and an apostrophe inside a word
+        // (`PlayerNameRules`), so there is nothing to escape for `parseMode: .html`.
         let buyerNick = context.session.nickname ?? "—"
         let text = lingo.localize("capital.market.sold_notification", locale: sellerLocale, interpolations: [
             "item": name, "qty": "\(qty)", "total": "🪙 \(price)", "nick": buyerNick
@@ -3300,8 +3341,17 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 try await renderAndPushBuilding(session: updated, context: context)
             }
         } else {
-            // Not offered → ask how many.
-            try await openTradeNumberPrompt(kind: .itemQty(itemId: itemId), screenMessageId: messageId, isPhoto: isPhoto, context: context)
+            // Not offered → ask how many. A lone unit goes in at once: the only
+            // answer could be 1 (2026-10-11 — a players' proposal, the owner's
+            // variant A), and the offer itself is undone by the same tap.
+            let owned = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
+            guard owned == 1 else {
+                try await openTradeNumberPrompt(kind: .itemQty(itemId: itemId), screenMessageId: messageId, isPhoto: isPhoto, context: context)
+                return
+            }
+            if let updated = await TradeStore.shared.setStack(tg: context.session.telegramId, itemId: itemId, qty: 1, ownedQty: owned) {
+                try await renderAndPushBuilding(session: updated, context: context)
+            }
         }
     }
 

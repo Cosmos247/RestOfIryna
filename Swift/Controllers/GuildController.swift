@@ -567,6 +567,24 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: kb)))
     }
 
+    /// A tap on a deposit or withdraw picker row. With ONE unit on the side it
+    /// is taken from (the bag, or the vault) the only answer "how many?" could
+    /// get is 1, so that unit moves at once (2026-10-11 — a players' proposal,
+    /// the owner's variant A); anything else opens the quantity prompt.
+    func vaultMoveOrAsk(itemId: String, deposit: Bool, context: Context) async throws {
+        let have: Int
+        if deposit {
+            have = try await InventoryEntry.totalQuantity(of: itemId, for: context.session.id ?? UUID(), on: context.db)
+        } else {
+            have = try await GuildVaultEntry.totalQuantity(of: itemId, for: context.session.$guild.id ?? UUID(), on: context.db)
+        }
+        guard have == 1 else {
+            try await startVaultQtyPrompt(itemId: itemId, deposit: deposit, context: context)
+            return
+        }
+        try await performVaultMove(itemId: itemId, deposit: deposit, quantity: 1, context: context)
+    }
+
     func startVaultQtyPrompt(itemId: String, deposit: Bool, context: Context) async throws {
         let prompt = await vaultQtyPromptText(itemId: itemId, deposit: deposit, context: context)
         let cancel = context.lingo.localize("guild.found.cancel", locale: context.session.locale)
@@ -619,7 +637,13 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
 
         _ = await EphemeralChatState.shared.takePendingGuildInput(telegramId: telegramId)
         _ = try? await context.bot.deleteMessage(params: TGDeleteMessageParams(chatId: .chat(telegramId), messageId: pending.promptMessageId))
+        try await performVaultMove(itemId: itemId, deposit: deposit, quantity: n, context: context)
+    }
 
+    /// Move `quantity` units between the bag and the vault and say what
+    /// happened — the typed number's path and the lone unit's alike.
+    private func performVaultMove(itemId: String, deposit: Bool, quantity n: Int, context: Context) async throws {
+        let lingo = context.lingo, locale = context.session.locale
         let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
         if deposit {
             switch try await GuildService.depositToVault(itemId: itemId, quantity: n, by: context.session, on: context.db) {
@@ -793,9 +817,9 @@ final class GuildController: TGControllerBase, @unchecked Sendable {
         case data == "guild:vaultwithdraw":
             await ack(); try await ctrl.showVaultWithdrawPicker(context: context); return true
         case data.hasPrefix("guild:vdep:"):
-            await ack(); try await ctrl.startVaultQtyPrompt(itemId: String(data.dropFirst("guild:vdep:".count)), deposit: true, context: context); return true
+            await ack(); try await ctrl.vaultMoveOrAsk(itemId: String(data.dropFirst("guild:vdep:".count)), deposit: true, context: context); return true
         case data.hasPrefix("guild:vwd:"):
-            await ack(); try await ctrl.startVaultQtyPrompt(itemId: String(data.dropFirst("guild:vwd:".count)), deposit: false, context: context); return true
+            await ack(); try await ctrl.vaultMoveOrAsk(itemId: String(data.dropFirst("guild:vwd:".count)), deposit: false, context: context); return true
         case data == "guild:treasury":
             await ack(); try await ctrl.showTreasury(context: context); return true
         case data == "guild:treasdeposit":

@@ -11,7 +11,20 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`a9e5a98`'s hash fill** — records only.
+- *(this commit, 10-11)* **an apostrophe in a name; a lone unit needs no quantity; a broken piece
+  no longer counts toward its set** — NOT live until a restart:
+  - the nickname and the estate name accept an apostrophe between two letters (' ʼ ’, stored as
+    '), through `PlayerNameRules` in `ROIContent`, which registration and the guild invite's
+    lookup share; 6 tests;
+  - a players' proposal, the owner's variant A: where the units come from holds exactly one, the
+    tap acts on it — the trader sells it, the market skips to the price, the trade offers it, the
+    guild vault and the warehouse's ✏️ N move it; a taken job that needs the item keeps the
+    trader's and the market's prompt;
+  - armour at 0 no longer counts toward its set (`EquipmentService.isBroken`, one test for the
+    piece and the set); the broken weapon's half is recorded as rounded half up, not floored.
+  Records: the 10-08 players' pair (eating from the warehouse, the step-6 hint) dropped by the
+  owner, and the 10-11 evening's expedition research and choices (no commit of its own).
+- `5a7a3e5` (10-11) **`a9e5a98`'s hash fill** — records only.
 - `a9e5a98` (10-11) **the delivery jobs break even against buying** — NOT live until a `/reload` —
   `quests.json`: `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies`
   30 → 60, `tavern.cook` 30 → 40 (authored), so no job pays less silver than buying its items at the
@@ -639,6 +652,138 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-11, late evening (an apostrophe in a name; the two players' proposals dropped; a lone unit needs no quantity; a broken piece and its set)
+
+The owner opened with «Зробим те, що запропонували гравці». The proposals left open were the 10-08
+pair, chosen with their form unanswered: eating straight from the warehouse and a hint under the
+estate-name prompt. A read-only look at the Pi (22:08) showed both still mattered:
+- six players sat at the estate at 0 Vigor with nothing edible in the bag and food in the warehouse
+  (Легіон, Inokentiy, Лайкмен, YuDji, Нястюшка, Тиць), four of them active that day;
+- Iren was still at step 6 (since 10-07 18:35), the unnamed account still at step 2 (since 10-08
+  00:27).
+
+The forms went out again as played samples on real data: Легіон's warehouse with «🍴 Зʼїсти» and
+its real banner, Iren's prompt with the hint. A third question carried a finding. The name check
+allowed letters, digits and spaces only, so the apostrophe Ukrainian spells with was a "symbol":
+«Дар'я», «Солов'їний гай» were refused under «Лише літери…». The owner answered the apostrophe
+alone, then: «питання про кнопку на складі й рядок на кроці 6 можеш взагалі забути». Both proposals
+are DROPPED (TODO → "Open, decided but not done"; auto-memory `feedback-unanswered-means-nothing`).
+
+**Built — the apostrophe, as the option described it.**
+- `PlayerNameRules` (`ROIContent`, beside `FortuneStage`) is the rule registration's private
+  `validateName` was, plus the apostrophe. It may stand only between two letters. All three
+  keyboard forms count (' U+0027, ʼ U+02BC, ’ U+2019), and a name is stored with U+0027, the form
+  the game's own uk copy uses (86 of 100 apostrophes).
+- Both registration steps normalize, then validate, then store the normalized name.
+- `GuildService.findTarget` normalizes the typed nickname, so «Дар’я» finds «Дар'я». It was the only
+  place a typed name is compared; every other screen picks a player by button (`telegramId`).
+- The two HTML-safety comments in `CapitalController` now name the apostrophe. It needs no escaping
+  in Telegram's HTML.
+- Nothing else writes a name: registration is the only writer. No migration: no stored name had an
+  apostrophe (0 of 25 on the Pi).
+
+**Left as they were, recorded as open:** the refusal copy still says «Лише літери, цифри та
+одиничні пробіли» (copy is the owner's), and the guild lookup's `ILIKE` treats `%` and `_` as
+wildcards (latent).
+
+**Checked.** `swift build` green; 414 tests (+6, `PlayerNameRulesTests`). Three planted mutants were
+each caught by their own test: an apostrophe allowed anywhere, no normalization, no apostrophe at
+all. `validate --strict` 0/0; the digest at the tree's baseline (`records 78ce585986927122`, content
+hash `cb2b3fed`), since no content moved. Not live: Swift only, so a restart.
+
+**Then — a lone unit needs no quantity** (the owner: «Продовжимо с іншими пропозиціями»). The
+players' words: «не доводилось писати кількість, якщо предмету одна одиниця». Five screens ask a
+typed quantity of an item: the trader (buy and sell), the market's listing, the trade, the guild
+vault and the warehouse's ✏️ N. Each is a «Скільки…?» message with only «❌ Скасувати», so even one
+unit had to be typed. Samolan Вишневий's real bag (1 nut, 1 pebble, 3 berries, 6 lumber) was the
+played sample. Three variants:
+- A: a lone unit acts at once;
+- B: «1» / «Усі (N)» buttons in every prompt, which I recommended, because the prompt is also the
+  only confirmation and «Усі» covers selling a whole stack;
+- C: both.
+
+The owner chose **A**; the button question went unanswered and is moot under A. Built as the sample
+described:
+- the trader's sell tap goes through `sellOrAsk`;
+- the market opens at the price stage, through `marketPromptText`, now the one builder of both
+  stages' wording;
+- the trade's stack tap offers the unit;
+- the guild's picker rows go through `vaultMoveOrAsk`;
+- the warehouse's direction tap moves the unit.
+
+The rule for the trader and the market is `loneUnitWithoutJob`. A taken job that needs the item
+keeps the prompt, because the prompt is where the ⚠️ warning shows, and a sale into a job is the one
+trade buying back does not undo. Buying is unchanged. The typed number and the lone unit share one
+mover per screen: `performVaultMove`, `finishWarehouseTransferN`, the existing `TraderService.sell`
+and `TradeStore.setStack`. No string, callback or content changed, and the services are untouched.
+Known and shown before the choice: a mis-tap on a lone 🔳 Залізний злиток now sells it (100, and 200
+to buy back). Offered and unanswered: the trader prompt's «Скільки Лісові горіхи продати?»
+(nominative where Ukrainian needs the genitive).
+
+**Then — a broken piece and its set.** The owner asked whether broken armour gives anything. Read
+off `EquipmentService`:
+- armour at 0 gives nothing of its own, its enchant included;
+- but the set pass counted every WORN row, so a Forester set worn to 0 kept +2 DEF · +6 HP · +2
+  dodge — the 10-06 audit's open item;
+- a weapon at 0 keeps half, and `GearStats.scaled(by:)` rounds half UP (7 → 4, 5 → 3), while the
+  FAQ, the method's comment and a May session entry all said «floored».
+
+On the owner's «Так, виправ комплект і поправ «донизу»»: `isBroken(_:)` is the one test, asked by
+`contributedStats` and by the set pass, so a broken piece adds no set progress. The class change's
+recompute (`ClassChangeService`) goes through the same `applyBonuses`. The digest hashes the sets'
+definitions, not their application, so it did not move.
+
+**Checked on the real code.** A scratch copy (the `16f5da34` harness's `dryrun-src` +
+`cleanbuild`, rsynced from the tree) gained a `--set-check` entry. It loads the content with no
+database or Telegram and calls `EquipmentService.applyBonuses` and `contributedStats` on in-memory
+rows. After the fix (🛡 · ❤️ · crit · dodge):
+- intact 14 · 24 · 4 · 5;
+- all broken 0;
+- the jerkin broken 8 · 12 · 3 · 4;
+- two broken 7 · 10 · 2 · 4;
+- three broken 3 · 4 · 1 · 1.
+
+With the set pass reverted in the copy: all broken 2 · 6 · 0 · 2, the jerkin broken 10 · 18 · 3 · 4.
+The sword at 0 (t1–t9): ATK 7 → 4 … 47 → 24, never `isBroken`. A read-only query found nobody on
+the Pi wearing broken armour (re-read 23:18), so the restart's boot pass moves no one.
+
+## Session — 2026-10-11, evening (the 🏕 Expedition researched; nothing built) — no commit
+
+Session `52cd50db`. The owner asked how the expedition (the passive run) works and what to do
+about the player being "teleported" home after the last km. Read-only on the Pi, and the runs were
+simulated through `ROISim` on real players' stats, 20,000 runs a cell, in a scratch package (its
+source survives only in the transcript).
+
+**What is wrong with it today.**
+- **The teleport.** The run walks only deeper (km 1 → 17) and is home the moment it ends; the road
+  back costs nothing.
+- **The leaderboard.** Those km land in 🌲 Глибина: Надійка, Дабика Віталій and Легіон hold exactly
+  17 km, while none of their own fights went past km 9–13.
+- **One step short.** A run is one step shorter than its label: `derivedStepCount` floors 89.99
+  minutes, because `created_at` is stamped milliseconds after `now`. So the report also arrives 5
+  minutes early.
+- **No retreat, no record.** The run never turns back, wounded or starving, and its deaths are
+  recorded nowhere (`fight_log` skips the autobattle).
+
+**The numbers that drove the choices** (the 1 h 30 min run, full HP and Vigor at the start):
+- Today: Лайкмен (L3) dies in 69% of runs, Samolan (L5) 46%, Inokentiy (L10) 0%.
+- Starting at 0 Vigor, the run kills 92–99% of the time, even at L10.
+- There and back with a 5-minute step (9 km): 21% / 7% / 0%, but 16–58% less XP.
+- With a 3-minute step (15 km): 60% / 50% / 0%, with 8–39% more XP than today from L5.
+- Turning back when the Vigor left only covers the road home took a half-Vigor start at L4–7 from
+  62–84% deaths to 33–57%.
+
+**The owner chose, in two quizzes** (each rejected to clarify, the answers kept):
+- there and back in the same time, with a 3-minute step: 30/60/90 minutes = 5/10/15 km out and back;
+- turning back below 50% HP at any depth (a deeper, stricter threshold declined);
+- turning back when the Vigor left only covers the road home (2 a km);
+- the depth on the buttons («1 год 30 хв · 15 км»);
+- 📍 where the run is on the waiting screen, and 💀 the losses named in the death report.
+
+**Open:** the owner then asked whether the player eats on such a run and whether it can go past the
+chosen km. The session ended mid-simulation (eating from the bag), with both unanswered. TODO →
+"Open, decided but not done". Nothing is built until they are answered.
 
 ## Session — 2026-10-11, afternoon (the delivery jobs break even against buying) — `a9e5a98`
 
@@ -6181,7 +6326,7 @@ Iterative balance + depth pass on the Master (Phase 6.5), driven entirely by int
 **Weapon durability (new)**
 - `WeaponUpgradeCatalog.durabilityByTier` [30,40,50,70,100] + `durability(forTier:)`. T1=30, T5=100 (user-chosen endpoints; accelerating curve).
 - Weapon joins the wear pool: `GearConditionService.weaponSlots`/`durableSlots`, `drainEquippedArmor`→`drainEquippedGear` (caller in PassiveExpeditionService updated too).
-- At 0 durability the weapon keeps **half** its stats (floored) — NOT broken. Lore: it's the King's weapon, can't break. Repair restores to full at **1🪙/point** (full T1=30 … T5=100), **no** max shave (`repairMaxShave` armor-only). Branch added in `MasterService.repair` + `MasterCatalog.weaponRepairCost`.
+- At 0 durability the weapon keeps **half** its stats (rounded to the nearest, a half up — this line said «floored» until 2026-10-11) — NOT broken. Lore: it's the King's weapon, can't break. Repair restores to full at **1🪙/point** (full T1=30 … T5=100), **no** max shave (`repairMaxShave` armor-only). Branch added in `MasterService.repair` + `MasterCatalog.weaponRepairCost`.
 - Upgrade refreshes durability to the new tier's full max. Idempotent startup `backfillWeaponDurability` lifts pre-existing weapons (init's flat 30) to their tier ceiling, preserving the missing amount.
 - Repair UI adds the equipped weapon with a class-flavoured button: 🗡 Sharpen blade / 🏹 Restring bow / 🔮 Re-empower staff.
 
