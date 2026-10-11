@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-11 — the delivery jobs break even against buying** (content only, NOT live until a
+**2026-10-11 — the delivery jobs break even against buying** (`a9e5a98`, content only, NOT live until a
 `/reload` — `quests.json`; `records` → `78ce585986927122`, content hash `cb2b3fed`). No job pays less
 silver than buying its items from the trader costs, at the level it opens: `trader.hides` 30 → 60,
 `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies` 30 → 60, `tavern.cook` 30 → 40

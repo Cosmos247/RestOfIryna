@@ -974,7 +974,7 @@ every level-up took the armour's HP share: 209/209 at L17 (+38 armour) came out 
 If players pay outside the bot specifically for zlatnyks, that rule is the risk. Gifts and rewards
 are outside it. Nothing was built for it.
 
-### The delivery jobs break even against buying (2026-10-11)
+### The delivery jobs break even against buying (2026-10-11, `a9e5a98`)
 
 The owner asked for a table of every NPC job against the price of what it asks for («6 ягід — яка
 нагорода і яка вартість цих ягід»), then: no job may lose against BUYING its items from the

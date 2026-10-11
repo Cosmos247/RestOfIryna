@@ -1575,7 +1575,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The delivery jobs break even against buying** *(2026-10-11, content only, NOT live until a `/reload`)*
+  - [x] **The delivery jobs break even against buying** *(2026-10-11, `a9e5a98`, content only, NOT live until a `/reload`)*
         — the owner's rule, after a table of every job against its items' trader price: no job
         may pay less silver than buying its items costs, at the level it opens. Five raised to the
         minimum (authored): `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141,

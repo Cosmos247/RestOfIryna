@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11)* **the delivery jobs break even against buying** — NOT live until a `/reload` —
+- *(this hash fill, 10-11)* **`a9e5a98`'s hash fill** — records only.
+- `a9e5a98` (10-11) **the delivery jobs break even against buying** — NOT live until a `/reload` —
   `quests.json`: `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies`
   30 → 60, `tavern.cook` 30 → 40 (authored), so no job pays less silver than buying its items at the
   level it opens. `spec-economy.md` §4's faucet table refreshed (98 → 217 a day) and its prose amended;
@@ -639,7 +640,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11, afternoon (the delivery jobs break even against buying)
+## Session — 2026-10-11, afternoon (the delivery jobs break even against buying) — `a9e5a98`
 
 After the deploy the owner asked for every NPC job against the price of what it asks for («якщо
 треба 6 ягід, то яка нагорода і яка вартість цих ягід»): fifteen jobs, the items at the trader's
