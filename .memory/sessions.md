@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-11/12)* **the silver line on every question that spends silver** — NOT live until
+- *(this hash fill, 10-12)* **`ed01b79`'s hash fill** — records only.
+- `ed01b79` (10-11/12) **the silver line on every question that spends silver** — NOT live until
   a restart — a players' proposal: the Master's repair and buy confirms, the market's lot confirm and
   the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)»; `RequirementLine.silver`
   builds all nine silver lines. Records: wiping one player and changing a gender in DBeaver
@@ -716,7 +717,7 @@ digest unmoved.
 the meal, because the capital checks them first. It has been true among the three since they
 were built (TODO).
 
-## Session — 2026-10-11, night (the silver line on every question that spends silver)
+## Session — 2026-10-11, night (the silver line on every question that spends silver) — `ed01b79`
 
 A players' proposal, relayed with a screenshot of the Master's repair confirm («Бажаєте
 відремонтувати 🦺 Жилет лісника (0/48) за 🪙 144?», taken 10-10, before the repair was halved —

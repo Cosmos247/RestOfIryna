@@ -1579,8 +1579,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
         ягідок/горішків одним махом»), built as the owner's variant A («Скільки … з'їсти?», typed,
         stopping where a unit restores nothing) and **rolled back by the owner the same day, before it
         was committed**. One tap still eats one unit in both bags. Do not rebuild it without asking.
-  - [x] **The silver line on every question that spends silver** *(2026-10-11, Swift only, NOT live
-        until a restart)* — a players' proposal, the Master's repair confirm as the screenshot: «було б
+  - [x] **The silver line on every question that spends silver** *(2026-10-11, `ed01b79`, Swift only, NOT
+        live until a restart)* — a players' proposal, the Master's repair confirm as the screenshot: «було б
         зручніше, якби показувало скільки гравець має золота». The Master's repair and buy confirms,
         the market's lot confirm and the fortune teller's «Відчарувати» each replaced a screen that
         carried the balance and quoted a price with none. Each now ends with «✅/❌ 🪙 Срібло
@@ -2116,8 +2116,8 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-11 — the silver line on every question that spends silver (NOT deployed — Swift only,
-so a restart):** an account with some silver.
+**Added 2026-10-11 — the silver line on every question that spends silver (`ed01b79`, NOT deployed — Swift
+only, so a restart):** an account with some silver.
 - 🛠 Майстер → ⚒️ Полагодити → a worn piece: under «Бажаєте відремонтувати … за 🪙 N?» stands
   «✅ 🪙 Срібло  (have/N)» — ❌ when the purse is short.
 - 🛡 Купити броню → a piece: the same line under «Бажаєте купити … за 🪙 N?».

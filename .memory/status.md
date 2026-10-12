@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-11 — the silver line on every question that spends silver** (Swift only, NOT live until a
+**2026-10-11 — the silver line on every question that spends silver** (`ed01b79`, Swift only, NOT live until a
 restart — a players' proposal). The Master's repair and buy confirms, the market's lot confirm and
 the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)», the line the enchant and
 lesson cards already printed — `RequirementLine.silver`, now the one builder of all nine.
