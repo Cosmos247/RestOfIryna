@@ -44,6 +44,59 @@ What the database and the bot do with an edit:
   заплатив, а нічого не отримав». A class change cannot be undone by hand. Credit the zlatnyks back and
   the player changes back in the Chancellery («🟡 Канцелярія»).
 
+## One player: change the gender, or wipe the character (verified 2026-10-12)
+
+The game has no button for either. **Gender** is `users.gender`, `m` or `f` in lowercase Latin;
+anything else, NULL included, reads as male. Edit the cell in DBeaver's grid (filter by nickname,
+confirm `telegram_id`, Save, Commit in manual mode).
+- It shows once the player's cached session expires: `SessionCache` keeps a `User` for 300 s after
+  the last `saveAndCache`. A restart shows it at once.
+- Taps in between cannot undo it. Fluent writes only the fields a tap changed, and only
+  registration and the dev reset set `gender`.
+- It changes the uk feminitives and nothing else; the class+gender art is shown once, at registration.
+
+**A wipe deletes the `users` row.** All 17 foreign keys to `users` are `ON DELETE CASCADE` (read
+off the Pi on 10-12, no triggers), so everything else goes with the row:
+- the bag, warehouse, plots, expedition and travel rows;
+- job and decree progress, recipes, techniques, notes;
+- market lots, the arena profile, `fight_log`, `zlatnyk_purchases` and guild invites.
+
+Two tables stay. `allowed_users` keeps the player's way in, and `tavern_game_messages` holds a raw
+`telegram_id` the 24 h sweeper still uses. The player's next message creates a fresh row at
+registration step 0 (`User._session`), and the nickname is free again.
+- **A guild leader takes the guild with them.** `guilds.leader_id` cascades, so the guild, its
+  vault and its invites go, and the members are left with a `guild_role` and a NULL `guild_id`. The
+  statement below deletes nothing (0 rows) for a leader whose guild has anyone else in it. The game
+  has no leadership transfer (`GuildService.leave` → `leaderMustDisband`). On 10-12 the one guild
+  had members.
+- The zlatnyk balance and the purchase log go with the row. Note the balance first and credit the
+  new character (above).
+- **Run it with the bot stopped** (`pm2 stop ROI` → the SQL → `pm2 start ROI`). The session cache
+  keeps an active player's `User` alive: its saves update 0 rows and its inserts fail the keys.
+  `EphemeralChatState` also keeps any open quantity question, and the NEW character's first typed
+  number would answer it, a trader's buy included.
+
+```sql
+SELECT nickname, telegram_id, level, silver, zlatnyks, guild_role,
+       (SELECT count(*) FROM users m WHERE m.guild_id = u.guild_id AND m.id <> u.id) AS guild_mates
+FROM users u WHERE nickname = 'Нік';            -- an apostrophe in a nick is doubled: 'Сем''юель'
+
+DELETE FROM users u
+WHERE u.telegram_id = 123456789
+  AND NOT EXISTS (SELECT 1 FROM guilds g WHERE g.leader_id = u.id
+                  AND EXISTS (SELECT 1 FROM users m WHERE m.guild_id = g.id AND m.id <> u.id))
+RETURNING u.nickname, u.level;
+```
+
+Rehearsed on a scratch Postgres with the migrated schema, whose foreign keys match the Pi's (the
+seeding script was not kept). One player sat in each case:
+- a member: deleted, along with its 16 keyed rows;
+- a solo leader: deleted, its guild and vault with it;
+- a leader with a guild-mate: refused;
+- an unknown id: nothing deleted.
+
+A bystander kept all 16 of its rows.
+
 ## Is the bot alive?
 
 - **The freeze signature:** `getWebhookInfo` → `pending_update_count` rising AND
@@ -207,6 +260,8 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | When the next tarot card comes | At the later of the drawn card's 6 hours and the next 12:00 Kyiv: drawn at 22:00 → 12:00; at 11:00 → 17:00, then the following noon. So once a game day, never two cards at once. Since 2026-10-09 01:30; a flat 24 h before | `User.fortuneAvailableAt` |
 | Cancelling a tarot card *(after the restart that ships it — built 2026-10-10)* | «🕯 Відчарувати» on the fortune screen ends a running DURATION card for 30 🪙, after a question; the free card still comes at its own time. Only then «🔮 Друга карта» for 20 🪙, once, and it cannot be dispelled. A one-shot (Закохані, Колесо, Вежа, Суд, Світ) cannot be dispelled and opens no second card; nor does a card that ran out by itself. Ready reply: «У ворожки тепер можна відчарувати карту за 30 срібників — дія закінчиться одразу. Після цього можна витягнути другу карту за 20, але її вже не можна буде відчарувати. Разові карти відчарувати не можна.» | `FortuneStage`, `FortuneService.dispel` / `drawSecond`, `fortune.json` |
 | Hunger | 5% of max HP per step that begins at 0 Vigor, ATK and DEF −25%. Until 2026-10-09 01:30 the step that spent the last Vigor was charged too (the defect, fixed). The forest edge now says so | `ExplorationService.rollStep`, `ExplorationController.modePrompt` |
+| Eating many at once *(after the restart that ships it — built 2026-10-12)* | «🍴 Зʼїсти» on a stack asks «Скільки … з'їсти? (у вас N)»; type the number. The meal stops as soon as Vigor and HP are full, and the rest stays in the bag; a number above what you hold eats what you hold; one unit eats on the tap. Ready reply: «Після найближчого оновлення можна з'їсти кілька штук одразу: натисніть «🍴 Зʼїсти» і напишіть, скільки. Гра зупиниться, щойно Снага заповниться, решта лишиться в сумці.» | `EatPrompt`, `VigorService.eat` |
+| How much silver do I have, at the Master *(after the restart that ships it — built 2026-10-11)* | The menu and the three lists always showed «🪙 Ваші срібники: N»; the confirm that replaces them did not. Now every question that spends silver — the Master's repair and buy, a market lot, «Відчарувати» — ends with «✅ 🪙 Срібло (є/треба)», ❌ when short. Ready reply: «Після найближчого оновлення під кожним питанням про оплату буде видно, скільки у вас срібла і чи вистачає: «✅ 🪙 Срібло (40/32)».» | `RequirementLine.silver` |
 | Typing «1» for a single item *(after the restart that ships it — built 2026-10-11)* | Not needed: when the side the units come from holds exactly one, the tap acts on it — the trader sells it, the market asks only the price, the trade offers it, the guild vault and the warehouse's ✏️ N move it. A taken job that needs the item keeps the trader's and the market's question with its ⚠️. Buying always asks. Ready reply: «Після найближчого оновлення одну штуку не треба вписувати: тап одразу продає, переносить чи додає її. Якщо цей предмет чекає взяте замовлення, гра перепитає.» | `loneUnitWithoutJob`, `sellOrAsk`, `vaultMoveOrAsk`, `finishWarehouseTransferN` |
 | An apostrophe in a name *(after the restart that ships it — built 2026-10-11)* | The nickname and the estate name accept an apostrophe between two letters, whichever the keyboard sends (' ʼ ’), and store it as '. At an edge, beside a space or a digit, or doubled it is still refused with «Лише літери, цифри та одиничні пробіли…». Only registration sets a name, so an account already named keeps its name. Ready reply: «Після найближчого оновлення в імені й назві маєтку можна писати апостроф усередині слова: «Дар'я», «Солов'їний гай».» | `PlayerNameRules` |
 

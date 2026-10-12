@@ -27,13 +27,23 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`37a0ebc`** (an apostrophe in a name; a lone unit needs no quantity; a broken piece no longer counts toward its set; the 10-08 pair dropped; the expedition research recorded), **`5a7a3e5`** (`a9e5a98`'s hash fill), **`a9e5a98`** (the delivery jobs break even against buying), **`2e8e385`** (the 2026-10-11 13:21 deploy recorded), **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385`, `a9e5a98`, `5a7a3e5`, `37a0ebc` and this hash fill** — push is the owner's |
+| HEAD | **this commit** (the silver line on every question that spends silver; wiping one player and changing a gender recorded; eating several units built and rolled back) on top of **`33e6e09`** (`37a0ebc`'s hash fill), **`37a0ebc`** (an apostrophe in a name; a lone unit needs no quantity; a broken piece no longer counts toward its set; the 10-08 pair dropped; the expedition research recorded), **`5a7a3e5`** (`a9e5a98`'s hash fill), **`a9e5a98`** (the delivery jobs break even against buying), **`2e8e385`** (the 2026-10-11 13:21 deploy recorded), **`98580ce`** (`0b18908`'s hash fill; the class change's charter copy folded into `1c39595`), **`0b18908`** (the 10-11 sync pass), **`3a7d746`**, **`1c39595`** (the Chancellery: the class change for zlatnyks), **`a683888`**, **`021e9ac`** (a level-up keeps the armour's HP), **`7ee41c1`**, **`1f4b442`** (the zlatnyks), **`608f2c5`**, **`04368cd`** (the 10-10 sync pass), **`743f042`**, **`7995d2a`** (the armour repair halved), **`248ce7e`**, **`7860aaa`** (the dispel and second card), **`0d556f5`**, **`d77d600`** (the recipe notebook), **`2d8ab41`**, **`34872f6`**, **`4459f79`** and **`de0e062`**. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385`, `a9e5a98`, `5a7a3e5`, `37a0ebc`, `33e6e09` and this commit** — push is the owner's |
 | running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10; read again at 22:26), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **An apostrophe in a name**, **a lone unit needs no quantity** and **a broken piece no longer counts toward its set** (`37a0ebc`, Swift only). Before it, the six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. **Waiting for a `/reload`**: the delivery jobs' rewards (`quests.json` only; the tree's content hash `cb2b3fed`, `records 78ce585986927122`) |
+| waiting for a restart | **The silver line on every question that spends silver** (this commit, Swift only); **an apostrophe in a name**, **a lone unit needs no quantity** and **a broken piece no longer counts toward its set** (`37a0ebc`, Swift only). Before it, the six went live at the 2026-10-11 13:21 restart: the Chancellery (`1c39595`, «📜 Грамота про зміну класу»), a level-up keeps the armour's HP (`021e9ac`), the zlatnyks and the profile's silver (`1f4b442`), the armour repair halved (`7995d2a`), the fortune teller's dispel and second card (`7860aaa`) and the recipe notebook (`d77d600`). What it carried: `.memory/sessions.md` → `## Deploy — 2026-10-11 13:21`. **Waiting for a `/reload`**: the delivery jobs' rewards (`quests.json` only; the tree's content hash `cb2b3fed`, `records 78ce585986927122`) |
 
-### Where the last sessions stopped (2026-10-10 → 10-11)
+### Where the last sessions stopped (2026-10-10 → 10-12)
+
+**10-12 — eating several units at once: built, then rolled back.** A players' proposal, built as the
+owner's variant A («Скільки … з'їсти?», typed); the owner had it rolled back the same day, before it
+was committed. One tap still eats one unit. Also recorded that day: wiping one player and changing a
+gender in DBeaver (`.memory/live-ops.md`).
+
+**10-11, night — the silver line** (a players' proposal). Every question that spends silver — the
+Master's repair and buy, a market lot, «Відчарувати» — ends with «✅/❌ 🪙 Срібло (є/треба)»; the
+owner picked the format and all four. `RequirementLine.silver` builds all nine such lines. Swift
+only: live on a restart.
 
 **10-11, late evening — a broken piece no longer counts toward its set.** Asked whether broken armour
 gives anything: nothing of its own, but a worn set still counted it (a fully broken Forester set
@@ -119,8 +129,8 @@ Each has its auto-memory (`project-recipe-notebook`, `project-fortune-dispel-and
 ### Next action
 
 **0 — `/reload` for the delivery jobs' rewards** (the owner's, in Telegram; `/content` must then
-read hash `cb2b3fed`), and a restart for the apostrophe, the lone unit and the broken set piece (the
-owner's: push, pull, build, the digest, then ASK). Then **walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
+read hash `cb2b3fed`), and a restart for the apostrophe, the lone unit, the broken set piece, the silver
+line (the owner's: push, pull, build, the digest, then ASK). Then **walk the six, now live.** Start by crediting a test account in DBeaver (`.memory/live-ops.md`
 → "Crediting zlatnyks"; if the grid calls the new columns read-only, quit DBeaver and reopen, or use the
 SQL editor), then
 the six top blocks of `TODO.md` → "Walk list". The testers' note went to the owner on 10-11.

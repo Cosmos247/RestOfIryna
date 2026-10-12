@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-11 — the silver line on every question that spends silver** (Swift only, NOT live until a
+restart — a players' proposal). The Master's repair and buy confirms, the market's lot confirm and
+the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)», the line the enchant and
+lesson cards already printed — `RequirementLine.silver`, now the one builder of all nine.
+
 **2026-10-11 — a broken piece no longer counts toward its set** (`37a0ebc`, Swift only, NOT live until a
 restart). Armour at 0 grants nothing and adds no set progress (`EquipmentService.isBroken`, one
 test for both); a Forester set worn to 0 used to keep +2 DEF · +6 HP · +2 dodge. A weapon at 0

@@ -52,6 +52,16 @@ public enum RequirementLine {
         have >= need ? "✅" : "❌"
     }
 
+    /// The silver line every price card and every question that spends silver
+    /// shares: `✅ 🪙 Срібло  (40/32)`. 🪙 is prepended here rather than in a
+    /// template — Lingo's `%{var}` parser breaks on a leading
+    /// supplementary-plane emoji — so no call site has to remember it.
+    public static func silver(have: Int, need: Int, lingo: Lingo, locale: String,
+                              indent: String = blockIndent) -> String {
+        render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
+               have: have, need: need, indent: indent)
+    }
+
     /// `✅ 🪙 Срібло  (120/250)`. `label` is whatever names the thing — an item
     /// with its icon, or a localized word for a gate.
     public static func render(label: String, have: Int, need: Int, indent: String = blockIndent) -> String {

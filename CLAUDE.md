@@ -639,7 +639,8 @@ and every loss is clamped. Auto-memory `project-tarot-phrased-once`.
 fraction in brackets. A gate line carries no count, which is why the count belongs to
 `RequirementLine.item` and not to `render`. Every material list, every gate and the shortage
 modal go through it, so a screen and the modal that refuses the same tap cannot phrase one
-number two ways. **⛔ is retired.** **Current-against-maximum is a DIFFERENT sentence** —
+number two ways. **Every question that spends silver ends with `RequirementLine.silver`**
+(2026-10-11): the question replaces the caption that held the balance. **⛔ is retired.** **Current-against-maximum is a DIFFERENT sentence** —
 durability `0/100`, the bag `18/25`, a plot `40/40` — and must not grow a ✅/❌: a full bag is
 not a failed requirement. Auto-memory `project-requirement-line-one-format`.
 

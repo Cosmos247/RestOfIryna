@@ -283,11 +283,8 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // player sees the wallet check as a separate gate.
         if nextStep.silverCost > 0 {
             lines.append("")
-            // 🪙 prepended in Swift — Lingo's `%{var}` parser breaks on
-            // a leading supplementary-plane emoji in the template.
-            lines.append(RequirementLine.render(
-                label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-                have: session.silver, need: nextStep.silverCost, indent: ""))
+            lines.append(RequirementLine.silver(have: session.silver, need: nextStep.silverCost,
+                                                lingo: lingo, locale: locale, indent: ""))
         }
 
         return lines.joined(separator: "\n")
@@ -2161,9 +2158,8 @@ extension EstateController {
         }
         if next.silverCost > 0 {
             lines.append("")
-            lines.append(RequirementLine.render(
-                label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-                have: session.silver, need: next.silverCost, indent: ""))
+            lines.append(RequirementLine.silver(have: session.silver, need: next.silverCost,
+                                                lingo: lingo, locale: locale, indent: ""))
         }
 
         let act = lingo.localize(building ? "estate.training.button.build" : "estate.training.button.confirm", locale: locale)

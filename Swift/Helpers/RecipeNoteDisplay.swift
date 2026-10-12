@@ -131,9 +131,7 @@ enum RecipeNoteDisplay {
             RequirementLine.render(label: lingo.localize("estate.upgrade.level_label", locale: locale), have: user.level, need: need)
         }
         func silver(_ need: Int) -> String {
-            // 🪙 prepended in Swift, as on every card.
-            RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-                                   have: user.silver, need: need)
+            RequirementLine.silver(have: user.silver, need: need, lingo: lingo, locale: locale)
         }
 
         switch kind {

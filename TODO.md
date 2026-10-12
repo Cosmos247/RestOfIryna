@@ -1575,6 +1575,19 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [-] **Eating several units at once** *(2026-10-12)* — a players' proposal («з'їсти одразу багато
+        ягідок/горішків одним махом»), built as the owner's variant A («Скільки … з'їсти?», typed,
+        stopping where a unit restores nothing) and **rolled back by the owner the same day, before it
+        was committed**. One tap still eats one unit in both bags. Do not rebuild it without asking.
+  - [x] **The silver line on every question that spends silver** *(2026-10-11, Swift only, NOT live
+        until a restart)* — a players' proposal, the Master's repair confirm as the screenshot: «було б
+        зручніше, якби показувало скільки гравець має золота». The Master's repair and buy confirms,
+        the market's lot confirm and the fortune teller's «Відчарувати» each replaced a screen that
+        carried the balance and quoted a price with none. Each now ends with «✅/❌ 🪙 Срібло
+        (є/треба)», the line the Master's enchant and lesson cards already printed; the owner picked
+        that format and all four places. `RequirementLine.silver` is now the one builder of all nine
+        silver lines, the five old ones moved onto it with their output unchanged. Rendered on the
+        real code: the longest caption 284 UTF-16 (buying the jerkin), the market's text 349.
   - [x] **A broken piece no longer counts toward its set** *(2026-10-11, `37a0ebc`, Swift only, NOT live
         until a restart)* — the owner's question «Зламана броня дає якийсь + до статів?» found it: armour at
         0 granted nothing of its own, but `applyBonuses` counted it toward the set, so a Forester set
@@ -2089,9 +2102,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The three blocks on top (2026-10-11: a broken piece and its set, a lone unit needs no
-quantity, an apostrophe in a name) are NOT deployed yet; every block under them is LIVE and
-unwalked** — the six under them (2026-10-11: the Chancellery, the level-up HP
+Telegram. **The four blocks on top (2026-10-11: the silver line, a broken piece and its set, a lone
+unit needs no quantity, an apostrophe in a name) are NOT deployed yet; every block under them is LIVE
+and unwalked** — the six under them (2026-10-11: the Chancellery, the level-up HP
 fix, the zlatnyks; 2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook)
 since the 2026-10-11 13:21 restart, the five under them since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
@@ -2102,6 +2115,16 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-11 — the silver line on every question that spends silver (NOT deployed — Swift only,
+so a restart):** an account with some silver.
+- 🛠 Майстер → ⚒️ Полагодити → a worn piece: under «Бажаєте відремонтувати … за 🪙 N?» stands
+  «✅ 🪙 Срібло  (have/N)» — ❌ when the purse is short.
+- 🛡 Купити броню → a piece: the same line under «Бажаєте купити … за 🪙 N?».
+- 🛒 Базар → 🛒 Купити → a lot: the same line under «Купити … ×N за …?».
+- 🔮 Ворожка → 🕯 Відчарувати: the same line under the question.
+- The enchant card, the lesson, the estate upgrade and the Training Ground print their silver line
+  exactly as before.
 
 **Added 2026-10-11 — a broken piece no longer counts toward its set (`37a0ebc`, NOT deployed — Swift only,
 so a restart):** an account wearing the whole Forester set.
@@ -2890,6 +2913,10 @@ unrelated commit on purpose.
 - **The trader's prompt reads «Скільки Лісові горіхи продати?»** — the item name in the nominative
   where Ukrainian needs the genitive (`capital.trader.bulkN.sell_prompt` / `buy_prompt`). Offered
   to rephrase on 10-11, no answer; copy is the owner's.
+- **Two open questions: the older one takes the number** (found 2026-10-12, not fixed). In town a
+  trader, market and trade question can be open at once, and the capital's `unmatched` checks them in
+  a fixed order, so a number typed for one can answer another left open. One open question at a time
+  (opening one closes the others) would close it.
 - **The refusal copy does not mention the apostrophe.** An apostrophe inside a word is allowed
   since 10-11 (`PlayerNameRules`), but `registration.*.invalid_chars` still reads «Лише літери,
   цифри та одиничні пробіли — без символів, емодзі чи розділових знаків.» — true of every name it

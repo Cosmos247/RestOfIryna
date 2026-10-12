@@ -956,9 +956,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let have = try await InventoryEntry.totalQuantity(of: input.itemId, for: userId, on: context.db)
             lines.append(RequirementLine.item(input.itemId, have: have, need: input.quantity, lingo: lingo, locale: locale))
         }
-        lines.append(RequirementLine.render(
-            label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-            have: user.silver, need: MasterCatalog.weaponLessonSilver))
+        lines.append(RequirementLine.silver(have: user.silver, need: MasterCatalog.weaponLessonSilver,
+                                            lingo: lingo, locale: locale))
         let pinned = try await RecipeNoteService.isPinned(.lesson(weapon: weapon.itemId), for: user, on: context.db)
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: lingo.localize("weapon.upgrade.button.confirm", locale: locale),
@@ -1193,9 +1192,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             }
             head += "\n\n"
         }
+        // What the player holds under the price (2026-10-11, a players'
+        // proposal): the question replaces the list's caption, and with it the
+        // balance line the list carried.
         let text = head + lingo.localize("capital.master.confirm.buy", locale: locale, interpolations: [
             "item": itemLabel(itemId, lingo: lingo, locale: locale), "cost": "🪙 \(price)"
-        ])
+        ]) + "\n\n" + RequirementLine.silver(have: context.session.silver, need: price, lingo: lingo, locale: locale)
         let kb = masterConfirmKeyboard(yes: "master:buyok:\(itemId)", no: "master:buylist", lingo: lingo, locale: locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
     }
@@ -1211,7 +1213,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = lingo.localize("capital.master.confirm.repair", locale: locale, interpolations: [
             "item": itemLabel(row.itemId, tier: row.tier, lingo: lingo, locale: locale),
             "cur": "\(row.durability)", "max": "\(row.maxDurability)", "cost": "🪙 \(cost)"
-        ])
+        ]) + "\n\n" + RequirementLine.silver(have: context.session.silver, need: cost, lingo: lingo, locale: locale)
         let kb = masterConfirmKeyboard(yes: "master:repairok:\(entryId.uuidString)", no: "master:repairlist", lingo: lingo, locale: locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: kb)
     }
@@ -1246,8 +1248,8 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         ]
         lines += GearStatLines.deltas(from: from, to: to, lingo: lingo, locale: locale,
                                       prefix: RequirementLine.blockIndent)
-        lines.append(RequirementLine.render(label: "🪙 " + lingo.localize("estate.upgrade.silver_label", locale: locale),
-                                            have: context.session.silver, need: step.silver))
+        lines.append(RequirementLine.silver(have: context.session.silver, need: step.silver,
+                                            lingo: lingo, locale: locale))
         lines.append(RequirementLine.item(step.materialId, have: inBag, need: step.materialQty, lingo: lingo, locale: locale))
         // The journal's «📌» under the question — keyed by the piece and the
         // level, not this row, so a warehouse trip does not lose it.
@@ -2897,7 +2899,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let text = head + lingo.localize("capital.market.confirm.buy", locale: locale, interpolations: [
             "item": itemName, "qty": "\(lot.quantity)",
             "total": "🪙 \(lot.price)", "unit": "🪙 \(lot.unitPrice)", "nick": nick
-        ])
+        ]) + "\n\n" + RequirementLine.silver(have: context.session.silver, need: lot.price, lingo: lingo, locale: locale)
         let yes = lingo.localize("capital.market.confirm.yes", locale: locale)
         let no  = lingo.localize("capital.market.confirm.no", locale: locale)
         let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[
@@ -3982,7 +3984,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             "card": lingo.localize(card.nameKey, locale: locale),
             "price": "\(price)",
             "remaining": Countdown.format(cooldown, lingo: lingo, locale: locale)
-        ])
+        ]) + "\n\n" + RequirementLine.silver(have: session.silver, need: price, lingo: lingo, locale: locale)
         let keyboard = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.dispel_confirm", locale: locale),
                                    callbackData: "fortune:dispel_ok:\(token)"),

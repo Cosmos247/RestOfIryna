@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-11)* **`37a0ebc`'s hash fill** — records only.
+- *(this commit, 10-11/12)* **the silver line on every question that spends silver** — NOT live until
+  a restart — a players' proposal: the Master's repair and buy confirms, the market's lot confirm and
+  the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)»; `RequirementLine.silver`
+  builds all nine silver lines. Records: wiping one player and changing a gender in DBeaver
+  (`live-ops.md`); eating several units at once, built and **rolled back by the owner before this
+  commit** (none of its code is in it).
+- `33e6e09` (10-11) **`37a0ebc`'s hash fill** — records only.
 - `37a0ebc` (10-11) **an apostrophe in a name; a lone unit needs no quantity; a broken piece
   no longer counts toward its set** — NOT live until a restart:
   - the nickname and the estate name accept an apostrophe between two letters (' ʼ ’, stored as
@@ -653,6 +659,91 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-12, after midnight (eating several units at once — built, then rolled back)
+
+**Rolled back the same day, before it was committed** (session `52cd50db`, the owner: «Треба зробити
+один відкат … пов'язаний з з'їданням їжі» → «Всю їжу кількома штуками»). None of the code below is in
+the tree: one tap eats one unit in both bags, as before. The entry stays as the record of what was
+built and measured, so the proposal is not rebuilt blind.
+
+A players' proposal: «можливість з'їсти одразу багато ягідок/горішків одним махом». The owner
+suggested its shape: «як з перекладуванням речей — якщо є 1, то їсти, а якщо кілька, то спитати
+скільки». Today «🍴 Зʼїсти» eats one unit a tap in both bags, so DIABLO's real bag (0/125 Vigor, 15
+berries, 3 nuts) was 18 taps. The variants, on that bag:
+- A, the owner's: a typed number;
+- B: «1» / «Усі (N)» buttons in the question;
+- C: a second «🍴 Усі» button.
+
+A separate question asked what happens when the pools fill first, on Amae's 149/150 with 5 nuts.
+The owner chose **A** and **stop** (the rest stays in the bag).
+
+**Built.**
+- `VigorService.restoresAnything` is `consume`'s own guard, now asked first. A full player is
+  refused before any question.
+- `VigorService.eat(_:upTo:user:on:)` is the one meal. It runs `consume` unit by unit up to the
+  number, capped at what the bag holds, and stops at the first unit that restores nothing. It
+  removes the eaten units in one write, and rolls the pools back if they are gone. The single tap
+  goes through it too.
+- `MealBanner` is the one banner; the two copies in the bag controllers are gone. «×N» shows only
+  after a typed number.
+- `EatPrompt` is the one question: «Скільки … з'їсти? (у вас N)» + «❌ Скасувати». A bad number
+  repeats it with «❌ Введіть додатне число.»; an answer closes it, eats, redraws the bag that
+  asked and posts the banner.
+- Three routers can hold an open bag (`inventory`, `capital`, `exploration`); each `unmatched`
+  answers its own bag's question, then the stray-number hint.
+- Potions stay one per tap.
+- Three strings in both locales (`inventory.eat_n.prompt` / `invalid` / `cancel`).
+
+Said before building: the banner keeps today's «❤️ здоров'я повне» when HP is full, which the
+Amae sample had left out.
+
+**Checked.** The scratch copy (`16f5da34`'s `dryrun-src` + `cleanbuild`, rsynced) gained a
+`ROI_DRYRUN=meal` hook after the migrations. It ran the real `VigorService.eat` against a fresh
+scratch Postgres:
+- DIABLO 15/60/0;
+- Amae 1/150/4;
+- asking 20 of 6: all 6;
+- full: nothing eaten, nothing removed;
+- pancakes at 120/125 and 100/110: 3 eaten (Vigor fills on the first, HP is worth two more);
+- a lone egg: the banner without «×».
+
+The question renders word for word as sampled. Two planted mutants failed their cases: no cap at
+what the bag holds, and no stop. Recompiled with 0 warnings; 414 tests; `validate --strict` 0/0; the
+digest unmoved.
+
+**Found, not fixed:** in town an older trader, market or trade question takes a number typed for
+the meal, because the capital checks them first. It has been true among the three since they
+were built (TODO).
+
+## Session — 2026-10-11, night (the silver line on every question that spends silver)
+
+A players' proposal, relayed with a screenshot of the Master's repair confirm («Бажаєте
+відремонтувати 🦺 Жилет лісника (0/48) за 🪙 144?», taken 10-10, before the repair was halved —
+today 🪙 72): «було б зручніше, якби показувало скільки гравець має золота, а то мені доводиться в
+персонажа заглядати».
+
+**What the screens did.**
+- The Master's menu and his three lists print «🪙 Ваші срібники: N».
+- His enchant and lesson cards print «✅ 🪙 Срібло (є/треба)».
+- The repair and buy confirms print nothing. They are caption edits of the same photo, so the
+  balance vanished at the moment of the decision.
+- The same gap stood in the market's lot confirm and the fortune teller's «Відчарувати».
+
+Played on Inokentiy's real kit (🪙 40, every Forester piece worn): the jerkin 24/45 for 32 reads
+«✅ 🪙 Срібло (40/32)», and then the hood 13/43 for 15 reads «❌ … (8/15)». The owner picked that
+line over the plain balance, and all four questions over the Master's two (quiz).
+
+**Built.** `RequirementLine.silver(have:need:lingo:locale:indent:)` is the silver line. The five
+places that hand-built it — the estate upgrade, the Training Ground, the notebook, the lesson, the
+enchant card — moved onto it with their output unchanged. The four questions gained it under a
+blank line, as sampled. No string, callback or content changed.
+
+**Checked.** The scratch copy rendered all four on the real helpers (`ItemCard`, `itemLabel`,
+Lingo). The repair is word for word the sample. The longest caption is 284 UTF-16 (buying the
+jerkin, uk; the limit is 1,024), and the market's text, the longest stackable card with a
+20-letter nick, is 349 of 4,096. Recompiled with 0 warnings; 414 tests; `validate --strict` 0/0; the
+digest unmoved.
 
 ## Session — 2026-10-11, late evening (an apostrophe in a name; the two players' proposals dropped; a lone unit needs no quantity; a broken piece and its set) — `37a0ebc`
 
