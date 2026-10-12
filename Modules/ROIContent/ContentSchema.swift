@@ -121,5 +121,12 @@ public enum ContentSchema {
     /// palace's Treasury sells for zlatnyks, the first entry being the class
     /// change. A v21 directory has no such file, and the loader would fail with
     /// a bare `missingFile("treasury.json")`; the handshake names the cause.
-    public static let current: Int = 22
+    /// v23 (2026-10-12): the passive expedition walks there and back
+    /// (`PassiveRoute`), and `gameTime.passiveExpedition.unitsPerStep` goes
+    /// 5 → 3 as the stride of a route that comes home. A v22 binary would read
+    /// it as a step of its old outward-only walk and march the 90-minute run
+    /// 29 km deep before landing home — and a `/reload` of this bundle on that
+    /// binary is exactly how it would get it. The bundle still decodes there,
+    /// so only the handshake can refuse it.
+    public static let current: Int = 23
 }

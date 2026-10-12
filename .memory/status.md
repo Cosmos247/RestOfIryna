@@ -21,6 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-12 — the 🏕 Expedition walks there and back** (content + Swift, NOT live until a restart —
+the owner's report: «телепортує додому після максимального км»). Half the 3-minute strides out, half
+home, the door last: 30/60/90 min = 5/10/15 km, the depth on the picker. The governor turns below
+half his HP or when his Vigor only covers the road home with nothing to eat, eats from the bag only
+when he must (smallest first, a taken job's food last), and holds the bag while he is out. «📍» on
+the waiting screen; the report names the food eaten, an early turn and a death's losses.
+`PassiveRoute` (ROISim) + 10 tests; `tuning` → `53e33d38021f0bf4`; content schema **v23**, so the old
+binary refuses this content, a `/reload` included.
+
 **2026-10-11 — the silver line on every question that spends silver** (`ed01b79`, Swift only, NOT live until a
 restart — a players' proposal). The Master's repair and buy confirms, the market's lot confirm and
 the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)», the line the enchant and
@@ -916,9 +925,11 @@ e3a492be1b017e81`, content hash `681d611a`, **schema v22** (the fortune teller's
 repair halved, then the Chancellery's `treasury.json` — `records` alone moved). That restart
 carried the recipe notebook (`d77d600`), the dispel (`7860aaa`), the halved repair (`7995d2a`), the
 zlatnyks (`1f4b442`), the level-up HP fix (`021e9ac`) and the Chancellery (`1c39595`). **The working
-tree is ahead** by the delivery jobs' rewards: `records 78ce585986927122`, content hash `cb2b3fed`, the
-other four halves the Pi's — content only, so a `/reload` installs it. Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **414 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+tree is ahead** by the delivery jobs' rewards and, since 2026-10-12, the expedition there and back:
+`records 78ce585986927122`, `tuning 53e33d38021f0bf4`, content hash `9dba2746`, **schema v23**, the other three halves
+the Pi's. **A restart installs it**: the old binary refuses it (schema v23), a `/reload` included —
+it would walk the 3-minute stride only deeper. Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **426 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

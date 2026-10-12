@@ -4,6 +4,7 @@
     "dailyBudgetMinutes" : 180,
     "freshStepCount" : 1,
     "lootMultiplier" : 1.0,
+    "retreatBelowHpPercent" : 0.5,
     "weights" : {
       "encounter" : 20,
       "loot" : 43,

@@ -2,7 +2,7 @@
   "gameTime" : {
     "passiveExpedition" : {
       "secondsPerUnit" : 60.0,
-      "unitsPerStep" : 5
+      "unitsPerStep" : 3
     },
     "plotIntervalSeconds" : 3600.0,
     "plotSweeper" : {

@@ -1001,6 +1001,71 @@ What else it moved:
   `cb2b3fed`); `quests` did not — the daily pick does not read rewards.
 - Not built, not asked: a validator rule holding a delivery job to its items' price.
 
+### The passive expedition there and back, measured and decided (2026-10-11/12)
+
+**The report.** The owner: the governor «фактично телепортує додому після максимального км». Read
+off the code and the Pi (10-11 evening):
+- the run walked only deeper, km 1 → N, and was home the moment its last step ended — the road back
+  cost no time, no Vigor and no fights;
+- it banked N on 🌲 Глибина. Надійка, Дабика Віталій and Легіон held exactly 17 km, which none of
+  their own fights reached (9–13 km);
+- it ran one step short of its label: `derivedStepCount` floored `(endsAt − createdAt)/60`, and
+  `created_at` is stamped milliseconds after `now`, so 90 minutes made 17 steps and the report came
+  5 minutes early;
+- it never turned back, wounded or starving, and its deaths are logged nowhere (`fight_log` skips
+  the autobattle);
+- all five players who had sent the governor out that day sat at 0 Vigor.
+
+**The harness** (session `52cd50db`'s scratchpad, gone with /tmp): a SwiftPM package with copies of
+`Modules/ROIContent` and `Modules/ROISim` and one executable that rolls a passive run the way
+`rollStep` + `resolveAutobattle` do — the fresh first step, then `passive.weights`; forage from
+`zones.json`; fights through `FightSimulator` `.basic` against the creature scaled by the estate
+tier; the starvation tick and penalty; XP ×0.7 at the end. Players are real stat lines off the Pi
+(`users`: base + gear bonuses, level, estate tier). 20,000 runs a cell. A `trace` mode prints one
+run stride by stride, and a `sample` mode plays one with a real bag (the 25-slot cap, drops, silver,
+eating, the losses on a death).
+
+**What it measured** — death rate · XP a run on the 90-minute choice, full HP and Vigor at departure:
+
+| player | today (17 km + teleport) | 5-min there and back (9 km) | 3-min there and back (15 km) |
+|---|---|---|---|
+| Лайкмен L3 archer T1 | 69% · 91 | 21% · 74 | 60% · 99 |
+| Samolan L5 archer T2 | 46% · 143 | 7% · 89 | 50% · 155 |
+| Надійка L5 warrior T1 | 12% · 208 | 0.2% · 95 | 26% · 245 |
+| Легіон L7 mage T2 | 4% · 219 | 0.1% · 95 | 14% · 275 |
+| Inokentiy L10 archer T4 | 0% · 225 | 0% · 95 | 0% · 313 |
+
+(The two there-and-back columns already turn below 50% HP and at 0 Vigor.)
+- Departing at 0 Vigor, today's 90-minute run killed 92–99% of the time, even at L10: hunger takes
+  5% HP on each of 17 steps.
+- XP per Vigor at L7: today 3.8, the 5-minute version 1.8, the 3-minute version 3.1; active play
+  (basic attacks, a lower bound) 7.3. Passive stays well below active either way.
+- Passive XP matters only early: two runs a day are 43% of a level at L3 and 2% at L10.
+- With half the Vigor at departure the 3-minute run's naive «turn at 0 Vigor» walks home starving
+  (L4–7 die 62–84%); turning when the Vigor only covers the road home (2 a km) cut it to 33–57% (L10
+  16% → 5%), and eating what he finds cut Легіон's 34% to 17%.
+- A deeper-is-more-careful retreat (+5% of HP per km past 10) halved the L5–7 deaths at 15 km for
+  ~10% XP. Shown, declined.
+- DIABLO (L5, 0 Vigor, 8 berries + 12 nuts, a full 25-slot bag) at 1 h 30 on the 3-minute step: 48%
+  deaths, almost all on the way BACK, where no retreat rule applies; turns on wounds in 64% of runs.
+
+**What the owner decided** (four quizzes, three rejected to clarify with the answers kept):
+- there and back in the same time; a 3-minute stride (`unitsPerStep` 5 → 3);
+- turn below 50% HP at any depth (`passive.retreatBelowHpPercent`);
+- turn when the Vigor only covers the road home and nothing is left to eat;
+- the governor eats ANY food in the bag, only when needed: before a step that would leave him at 0,
+  and on the way out when only the road home is left. The smallest restore first, a taken delivery
+  job's food last (six players held such a job on 10-12);
+- the player may not eat for him, nor equip, unequip or learn a scroll while he is out («прибери
+  можливість людини їсти за бота», «закрий і решту дій»);
+- no minutes refunded on an early return; the depth on the buttons; 📍 on the waiting screen; the
+  losses in the death report. 🌲 records already at 17 km are left as they are.
+
+**Built** (2026-10-12): `PassiveRoute` (ROISim) holds the rules with `PassiveRouteTests`;
+`PassiveExpeditionService.runLive` walks them, the route stamped on the running report. Nothing else
+in the economy moved: the walk and event weights are untouched, and `tuning` is the only digest half
+that changed (`53e33d38021f0bf4`).
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

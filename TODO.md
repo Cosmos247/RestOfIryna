@@ -1575,6 +1575,23 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The 🏕 Expedition walks there and back** *(2026-10-12, content + Swift, NOT live until a
+        restart)* — the owner's report: the governor «телепортує додому після максимального км». The
+        run walked km 1 → 17 and was home the moment its last step ended (the road back free, the 17
+        km banked on 🌲 Глибина), ran one step short of its label (`derivedStepCount` floored 89.99
+        minutes) and never turned back. Four quizzes chose the rebuild:
+        - half the strides out and half home, the last one the door; a 3-minute stride
+          (`unitsPerStep` 5 → 3: 30/60/90 min = 5/10/15 km);
+        - turning below 50% HP (`passive.retreatBelowHpPercent`), or when the Vigor only covers the
+          road home and nothing is left to eat;
+        - eating any food in the bag only when needed, the smallest first and a taken job's food
+          last; the bag locked while he is out (look, change nothing); no minutes refunded on an
+          early return;
+        - the depth on the picker, 📍 on the waiting screen, and in the report the food eaten, an
+          early turn and a death's losses.
+        `PassiveRoute` (ROISim) holds the rules, with 10 tests; the route is stamped on the running
+        report, and a run started before the rework resumes on its own plan and walks home. Content
+        schema **v23**: the old binary refuses this content, a `/reload` included.
   - [-] **Eating several units at once** *(2026-10-12)* — a players' proposal («з'їсти одразу багато
         ягідок/горішків одним махом»), built as the owner's variant A («Скільки … з'їсти?», typed,
         stopping where a unit restores nothing) and **rolled back by the owner the same day, before it
@@ -2102,9 +2119,9 @@ what shipped when, newest first.
 
 **Every defect this project has found came from someone glancing at a screen**, not from
 running anything, so this is the highest-yield thing available and it costs one session in
-Telegram. **The four blocks on top (2026-10-11: the silver line, a broken piece and its set, a lone
-unit needs no quantity, an apostrophe in a name) are NOT deployed yet; every block under them is LIVE
-and unwalked** — the six under them (2026-10-11: the Chancellery, the level-up HP
+Telegram. **The five blocks on top (2026-10-12: the expedition there and back; 2026-10-11: the silver
+line, a broken piece and its set, a lone unit needs no quantity, an apostrophe in a name) are NOT
+deployed yet; every block under them is LIVE and unwalked** — the six under them (2026-10-11: the Chancellery, the level-up HP
 fix, the zlatnyks; 2026-10-10: the repair halved, the fortune teller's dispel, the recipe notebook)
 since the 2026-10-11 13:21 restart, the five under them since the 2026-10-09 01:30 restart (the
 weapon's own icon with «рівень», the named HP line, the fortune teller, the starving players' four,
@@ -2115,6 +2132,25 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+
+**Added 2026-10-12 — the expedition there and back (NOT deployed — content and Swift, so a restart):**
+an account with full HP and some Vigor. A run in flight at the restart resumes on its old 5-minute
+plan and walks home.
+- 🌲 → 🏕 Експедиція: the buttons read «30хв · 5 км», «1год · 10 км», «1год 30хв · 15 км» (only
+  what today's budget still pays for).
+- Send 1 h 30 and tap 🌲 mid-run: «📍 Намісник зараз на N км — іде вглиб.», later «… — повертається
+  додому.», between the countdown and «Ви ще в поході 🏕.».
+- 🎒 during the run: «🏕 Сумка з намісником у поході: …» under the title; «🍴 Зʼїсти», «Одягнути»,
+  «Зняти» and «📖 Вивчити» answer with the modal «🏕 Сумка з намісником у поході. Повернеться через …».
+  So does «🍴» on an old trail-bag message from an earlier 🏃 Розвідка.
+- The report: «Досягнута глибина: 15 км», and the same km on 🌲 Глибина once he is home.
+- Send him at 0 Vigor with a few berries: «🍴 Дорогою з'їдено: …» in the report, and «Принесено»
+  without what he ate. With no food: «↩️ Розвернувся на 1 км: Снаги лишилось лише на дорогу, а їсти
+  нічого.», home in 6 minutes.
+- Send him under half HP: «↩️ Розвернувся на 1 км: ОЗ упали нижче половини.»
+- A death names the losses after «… що він мав при собі:» (largest first), «дорогою додому» when on the
+  way back.
+- A female character: «Намісниця», «Розвернулася», «з намісницею».
 
 **Added 2026-10-11 — the silver line on every question that spends silver (`ed01b79`, NOT deployed — Swift
 only, so a restart):** an account with some silver.
@@ -2889,24 +2925,8 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-**From the 2026-10-11 evening sessions** — the expedition researched, the apostrophe built:
-- **The 🏕 Expedition (the passive run) — chosen in two quizzes, NOT built, a clarification still
-  open.** The research (session `52cd50db`: read-only on the Pi, runs simulated through `ROISim` on
-  real players' stats):
-  - the run walks only deeper (km 1 → 17) and lands home the moment its last step ends — the road
-    back costs no time, no Vigor and no fights;
-  - those km land in 🌲 Глибина: three players hold exactly 17 km that no fight of theirs reached;
-  - a run is one step shorter than its label (`derivedStepCount` floors 89.99 minutes, because
-    `created_at` is stamped milliseconds after `now`), so the report also arrives 5 minutes early;
-  - the run never turns back, and its deaths are recorded nowhere (`fight_log` skips the autobattle).
-
-  The owner chose: there and back in the same time; a 3-minute step (30/60/90 minutes = 5/10/15 km
-  out and back); turning back below 50% HP at any depth; turning back when the Vigor left only
-  covers the road home (2 a km); the depth on the buttons («1 год 30 хв · 15 км»); 📍 where the run
-  is on the waiting screen; 💀 the losses named in the death report. **Open:** the owner's last two
-  questions — does the player eat on such a run, and can it go past the chosen km? — the session
-  ended mid-simulation with both unanswered. Nothing is built until they are. The simulator's
-  source is in that session's transcript; its scratch directory does not survive a reboot.
+**From the 2026-10-11 evening sessions** — the apostrophe built (the expedition researched then is
+built since 2026-10-12, above):
 - **A lone unit sells on one tap — chosen knowingly.** Variant A drops the question that doubled as
   a confirmation, so a mis-tap on a lone 🔳 Залізний злиток sells it for 100 and it costs 200 to buy
   back. Shown before the choice; the «1» / «Усі (N)» buttons (B) are the alternative if it bites.

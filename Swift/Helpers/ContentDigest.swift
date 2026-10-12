@@ -879,7 +879,8 @@ enum ContentDigest {
         let passive = ExplorationService.passiveTuning
         d.combine("passive xp\(passive.xpMultiplier) "
                   + "loot\(passive.lootMultiplier) fresh\(passive.freshStepCount) "
-                  + "daily\(PassiveExpeditionService.dailyBudgetMinutes)")
+                  + "daily\(PassiveExpeditionService.dailyBudgetMinutes) "
+                  + "retreat\(passive.retreatBelowHpPercent)")
         // What the silver bucket pays. Hashed in the same commit that adds the
         // knob, because a knob is invisible to the digest until it is — the
         // weights above would move if the bucket's SHARE changed, and say

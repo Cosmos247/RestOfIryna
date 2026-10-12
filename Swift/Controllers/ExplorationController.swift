@@ -288,10 +288,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         var rows: [[TGInlineKeyboardButton]] = []
         for duration in PassiveDuration.allCases where PassiveExpeditionService.canAfford(duration, for: session) {
-            // The label IS the duration, so it is formatted rather than
-            // written down: three locale strings saying "30 хв" could not
-            // follow `time.scale`, and said so for three months when it was 60.
-            let label = PassiveExpeditionService.formatDuration(duration, lingo: lingo, locale: locale)
+            // The label IS the duration and the depth it buys, so both are
+            // formatted rather than written down: three locale strings saying
+            // "30 хв" could not follow `time.scale`, and said so for three
+            // months when it was 60. The depth is the run's own rule
+            // (`PassiveExpeditionService.depth(of:)`, 2026-10-12), so the button
+            // cannot promise a km the governor does not turn at.
+            let label = lingo.localize("exploration.duration.option", locale: locale, interpolations: [
+                "time": PassiveExpeditionService.formatDuration(duration, lingo: lingo, locale: locale),
+                "km": "\(PassiveExpeditionService.depth(of: duration))"
+            ])
             rows.append([TGInlineKeyboardButton(text: label, callbackData: "explore:dur:\(duration.rawValue)")])
         }
         let backLabel = lingo.localize("exploration.duration.back", locale: locale)
@@ -330,12 +336,24 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// passive expedition is still running. Routername stays at whatever the
     /// player is currently at — the bot will push a report when the timer
     /// fires regardless of where the player is.
+    ///
+    /// Since 2026-10-12 it also says where the governor is and which way he is
+    /// going («📍»), between the countdown and the closing line. None before
+    /// his first stride. The countdown follows an early turn: the runner moves
+    /// `endsAt` when he turns.
     fileprivate func showPassiveCountdown(context: Context, state: ExplorationState) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
         let remaining = state.secondsRemaining() ?? 0
         let time = PassiveExpeditionService.formatCountdown(remaining, lingo: lingo, locale: locale)
-        let text = lingo.localize("exploration.passive.inflight", locale: locale, interpolations: ["time": time])
+        // 📍 is two UTF-16 units: it rides in the value, never in the template.
+        let position = PassiveExpeditionService.position(of: state).map { position in
+            "\n\n📍 " + lingo.localize(
+                position.returning ? "exploration.passive.position.back" : "exploration.passive.position.out",
+                gender: context.session.gender, locale: locale, interpolations: ["km": "\(position.km)"])
+        } ?? ""
+        let text = lingo.localize("exploration.passive.inflight", locale: locale,
+                                  interpolations: ["time": time, "position": position])
         try await context.bot.sendMessage(
             session: context.session,
             text: text,
@@ -1090,6 +1108,15 @@ extension ExplorationController {
 
         // Consume one food/potion and refresh the bag view in place.
         if data.hasPrefix("explore:eat:") {
+            // A trail-bag message outlives its walk, and the main router hands
+            // its taps here. While a passive run holds the bag (2026-10-12) the
+            // player does not eat for the governor — the same modal as the bag.
+            if let run = try await InventoryController.passiveRun(holding: context.session, on: context.db) {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                    callbackQueryId: query.id, text: InventoryController.passiveLockAlert(run, context: context),
+                    showAlert: true))
+                return true
+            }
             let itemId = String(data.dropFirst("explore:eat:".count))
             guard let item = ItemCatalog.find(itemId), VigorService.isConsumable(item) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))

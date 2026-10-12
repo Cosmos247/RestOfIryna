@@ -27,7 +27,14 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
     90 authored minutes, capped at `passive.dailyBudgetMinutes` (180) per game day. The
     `testMode` flags were retired in Phase 4b; durations now come from `tuning/time.json`,
     and `scale` is 1.0, so authored minutes are real minutes.
-- Events: four buckets (nothing / loot / encounter / trip) on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and **tier 1 is also the whole passive expedition** (`passive.freshStepCount` = 1, so a 90-min run is 1 fresh step and 17 tier-1 steps). Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
+  - **There and back since 2026-10-12** (`PassiveRoute`): a 3-minute stride, half the strides
+    out and half home, the last the manor door, so 30/60/90 min turn at 5/10/15 km. Until then
+    the run walked only deeper and was home the moment its last step ended. The governor turns
+    early below `passive.retreatBelowHpPercent` (0.5) of HP, or when his Vigor only covers the
+    road home and nothing is left to eat; he eats from the bag only when he must, the smallest
+    portion first and a taken job's food last; while he is out the player cannot change the
+    bag. Auto-memory `project-passive-expedition-rework`.
+- Events: four buckets (nothing / loot / encounter / trip) on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and the passive expedition rolls none of the tiers past its first stride: it has its own `passive.weights` row since 2026-09-10 (it used to borrow tier 1), the road home included. Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
 - Dungeons: guaranteed every 7th room, party-based, instanced
 - Death: respawn in town, lose expedition loot, keep gear
 

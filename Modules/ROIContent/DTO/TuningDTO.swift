@@ -880,20 +880,28 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     /// Optional with a default: an older bundle still decodes (`ContentSchema`
     /// bumps only for REQUIRED fields).
     public let dailyBudgetMinutes: Int
+    /// The governor turns for home on the way out once his HP falls below this
+    /// share of its maximum (2026-10-12, the owner's 50%, at any depth). The
+    /// shipped bundle states it; the default is the same 0.5, so a fixture that
+    /// omits it reads the owner's number rather than a rule switched off.
+    public let retreatBelowHpPercent: Double
 
     public init(xpMultiplier: Double,
                 lootMultiplier: Double, freshStepCount: Int,
                 weights: EventWeightsDTO,
-                dailyBudgetMinutes: Int = 180) {
+                dailyBudgetMinutes: Int = 180,
+                retreatBelowHpPercent: Double = 0.5) {
         self.xpMultiplier = xpMultiplier
         self.lootMultiplier = lootMultiplier
         self.freshStepCount = freshStepCount
         self.weights = weights
         self.dailyBudgetMinutes = dailyBudgetMinutes
+        self.retreatBelowHpPercent = retreatBelowHpPercent
     }
 
     private enum CodingKeys: String, CodingKey {
         case xpMultiplier, lootMultiplier, freshStepCount, weights, dailyBudgetMinutes
+        case retreatBelowHpPercent
     }
 
     public init(from decoder: any Decoder) throws {
@@ -903,6 +911,7 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
         freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
         weights          = try c.decode(EventWeightsDTO.self, forKey: .weights)
         dailyBudgetMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyBudgetMinutes) ?? 180
+        retreatBelowHpPercent = try c.decodeIfPresent(Double.self, forKey: .retreatBelowHpPercent) ?? 0.5
     }
 }
 

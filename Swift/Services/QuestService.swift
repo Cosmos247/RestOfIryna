@@ -217,6 +217,19 @@ public enum QuestService {
         return out
     }
 
+    /// Every item a taken delivery job is waiting for — what the governor eats
+    /// last on a passive expedition (2026-10-12), so he does not eat the berries
+    /// the player is gathering for a job unless nothing else is left.
+    public static func acceptedDeliveryItemIds(for user: User, on db: any Database) async throws -> Set<String> {
+        var itemIds = Set<String>()
+        for row in try await openRows(for: user, on: db) {
+            guard let def = QuestCatalog.find(row.questId),
+                  case .deliver(let wanted, _) = def.objective else { continue }
+            itemIds.formUnion(wanted)
+        }
+        return itemIds
+    }
+
     // MARK: - Taking the job
 
     /// Take today's job at `npc`. The offer itself is still decided by

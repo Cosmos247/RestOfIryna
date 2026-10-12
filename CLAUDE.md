@@ -353,6 +353,16 @@ change with `time.scale` — on a counter plus day stamp rolling at 12:00. The p
 what the day can still pay for AND the handler re-checks; the charge lands after
 `beginPassive` succeeds. Auto-memory `project-daily-and-storage-ceilings`.
 
+**A passive run walks there and back — never home by teleport** (2026-10-12). Half its strides out,
+half home, the last one the door (`PassiveRoute`; a 3-minute stride makes 30/60/90 min 5/10/15 km),
+stamped on the running report so a `/reload` reshapes only later runs. He turns early below
+`passive.retreatBelowHpPercent` of his HP, or when his Vigor only covers the road home and nothing
+is left to eat; he eats only when he must, the smallest portion first and a taken job's food last.
+**While he is out the bag is his**: the player looks and changes nothing. The lock sits at the
+bag's buttons (`InventoryController.passiveRun(holding:)`; a stale trail bag's `explore:eat:` too),
+never in `VigorService`, or the governor could not eat either. Content schema v23 keeps the stride off
+an older binary. Auto-memory `project-passive-expedition-rework`.
+
 **A leaderboard is a `Leaderboard`, never a `Rating`** — `rating` already means crit / dodge /
 accuracy; the player reads «Рейтинги». The boards are ALL-TIME, the first period and not the
 only one: a seasonal board is a second READING with its own storage — **never a reset of

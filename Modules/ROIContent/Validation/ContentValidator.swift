@@ -2239,6 +2239,13 @@ public enum ContentValidator {
             }
             let pw = exploration.passive.weights
             checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip, pw.silver], "passive.weights")
+            // The governor turns for home below this share of his HP. At 0 he
+            // never turns on wounds and walks on to his death; at 1 he turns on
+            // the first scratch. Both are the rule switched off, not tuned.
+            let retreat = exploration.passive.retreatBelowHpPercent
+            require(retreat > 0 && retreat < 1, file, "passive.retreatBelowHpPercent",
+                    "tuning.exploration.retreat_out_of_range",
+                    "the governor's retreat share must lie strictly between 0 and 1, found \(retreat)")
 
             // The silver bucket and the table it pays from are two separate
             // keys, so either can be present without the other. Both halves of

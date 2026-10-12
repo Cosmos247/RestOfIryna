@@ -122,7 +122,8 @@ final class TuningTests: XCTestCase {
     private func exploration(total: Int = 100, tripDamage: Double = 0.05,
                              passiveXP: Double = 0.7,
                              tiers: [EventWeightTierDTO]? = nil,
-                             passiveWeights: EventWeightsDTO? = nil) -> ExplorationTuningDTO {
+                             passiveWeights: EventWeightsDTO? = nil,
+                             retreat: Double = 0.5) -> ExplorationTuningDTO {
         ExplorationTuningDTO(
             eventWeightTotal: total, tripDamagePercent: tripDamage,
             weightTiers: tiers ?? [
@@ -133,7 +134,8 @@ final class TuningTests: XCTestCase {
             passive: PassiveExpeditionTuningDTO(xpMultiplier: passiveXP,
                                                 lootMultiplier: 1.0, freshStepCount: 1,
                                                 weights: passiveWeights
-                                                    ?? EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 10)))
+                                                    ?? EventWeightsDTO(nothing: 25, loot: 45, encounter: 20, trip: 10),
+                                                retreatBelowHpPercent: retreat))
     }
 
     private func progression(maxLevel: Int = 40, coefficient: Double = 11.4,
@@ -567,6 +569,26 @@ final class TuningTests: XCTestCase {
     func testNegativePassiveWeightIsAnError() {
         assertRule("tuning.exploration.negative_weight", bundle(exploration: exploration(
             passiveWeights: EventWeightsDTO(nothing: 25, loot: 55, encounter: 20, trip: -10))))
+    }
+
+    /// The governor's retreat share (2026-10-12). At 0 he never turns on
+    /// wounds; at 1 he turns on the first scratch — the rule switched off
+    /// either way, so both ends are refused and the shipped half is not.
+    func testRetreatShareOutsideZeroToOneIsAnError() {
+        assertRule("tuning.exploration.retreat_out_of_range", bundle(exploration: exploration(retreat: 0)))
+        assertRule("tuning.exploration.retreat_out_of_range", bundle(exploration: exploration(retreat: 1)))
+        let report = ContentValidator.validate(bundle(exploration: exploration(retreat: 0.5)))
+        XCTAssertFalse(report.errors.contains { $0.rule == "tuning.exploration.retreat_out_of_range" })
+    }
+
+    /// An older bundle without the key still decodes, at the owner's 50%.
+    func testRetreatShareDefaultsToHalf() throws {
+        let json = Data("""
+        {"xpMultiplier": 0.7, "lootMultiplier": 1.0, "freshStepCount": 1,
+         "weights": {"nothing": 25, "loot": 45, "encounter": 20, "trip": 10}}
+        """.utf8)
+        let passive = try JSONDecoder().decode(PassiveExpeditionTuningDTO.self, from: json)
+        XCTAssertEqual(passive.retreatBelowHpPercent, 0.5)
     }
 
     // MARK: - progression.json rules

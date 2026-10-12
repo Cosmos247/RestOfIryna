@@ -17,6 +17,7 @@
 //  instead of re-opening inventory via unmatched().
 //
 
+import Fluent
 import Foundation
 @preconcurrency import Lingo
 import SwiftTelegramBot
@@ -138,7 +139,9 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     public func showInventory(context: Context) async throws {
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
-        let text = renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: context.session.locale)
+        let locked = try await Self.passiveRun(holding: context.session, on: context.db) != nil
+        let text = renderRoot(entries: entries, session: context.session, lingo: context.lingo,
+                              locale: context.session.locale, locked: locked)
         let inline = rootKeyboard(entries: entries, lingo: context.lingo, locale: context.session.locale)
         try await context.bot.sendMessage(
             session: context.session,
@@ -153,15 +156,47 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         return Controllers.mainController.generateControllerKB(session: session, lingo: lingo)
     }
 
+    // MARK: - The bag while the governor is out
+
+    /// The passive run that has the bag right now, or nil. While the governor
+    /// is out (2026-10-12) the bag is his: the player may look, and every tap
+    /// that would change it or what he wears is refused — the owner's «прибери
+    /// можливість людини їсти за бота», then «закрий і решту дій». The lock
+    /// sits here, at the bag's buttons, and never in `VigorService`: the
+    /// governor eats through it on the road. A run whose report is written is
+    /// home, and the bag with it.
+    static func passiveRun(holding session: User, on db: any Database) async throws -> ExplorationState? {
+        guard let state = try await ExplorationState.current(for: session, on: db),
+              state.isPassive, state.reportJSON == nil else { return nil }
+        return state
+    }
+
+    /// The modal a refused tap answers with while `run` holds the bag — here,
+    /// and on a stale trail-bag message (`explore:eat:`), which reaches the bag
+    /// through the main router.
+    static func passiveLockAlert(_ run: ExplorationState, context: Context) -> String {
+        let locale = context.session.locale
+        return "🏕 " + context.lingo.localize("exploration.passive.bag_locked_alert",
+                                             gender: context.session.gender, locale: locale,
+                                             interpolations: [
+            "time": Countdown.format(run.secondsRemaining() ?? 0, lingo: context.lingo, locale: locale)
+        ])
+    }
+
     // MARK: - Rendering
 
-    fileprivate func renderRoot(entries: [InventoryEntry], session: User, lingo: Lingo, locale: String) -> String {
+    fileprivate func renderRoot(entries: [InventoryEntry], session: User, lingo: Lingo, locale: String,
+                                locked: Bool = false) -> String {
         let title = lingo.localize("inventory.title", locale: locale)
         // Per-unit (2026-05-12): sum quantities across all non-equipped rows.
         let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
         let slotsLabel = lingo.localize("inventory.slots_label", locale: locale)
         let cap = InventoryEntry.slotCap(for: session)
-        let header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel)</i>"
+        var header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel)</i>"
+        // Said on the screen before a tap is refused (`passiveRun(holding:)`).
+        if locked {
+            header += "\n\n🏕 " + lingo.localize("exploration.passive.bag_locked", gender: session.gender, locale: locale)
+        }
         if entries.isEmpty {
             return "\(header)\n\n" + lingo.localize("inventory.empty", locale: locale)
         }
@@ -406,7 +441,9 @@ extension InventoryController {
         // Back to root
         if data == "inv:root" {
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
-            let text = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo, locale: locale)
+            let locked = try await passiveRun(holding: context.session, on: context.db) != nil
+            let text = ctrl.renderRoot(entries: entries, session: context.session, lingo: context.lingo,
+                                       locale: locale, locked: locked)
             let inline = ctrl.rootKeyboard(entries: entries, lingo: context.lingo, locale: locale)
             await editScreen(message, text: text, replyMarkup: inline, bot: context.bot)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -501,6 +538,16 @@ extension InventoryController {
                 answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
             }
             _ = try? await context.bot.answerCallbackQuery(params: answer)
+            return true
+        }
+
+        // The governor has the bag (2026-10-12): eating, learning a scroll,
+        // equipping and unequipping all wait for him. A modal, so the screen
+        // the tap came from stays as it was.
+        if data.starts(with: "inv:use:") || data.starts(with: "inv:equip:") || data.starts(with: "inv:unequip:"),
+           let run = try await passiveRun(holding: context.session, on: context.db) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                callbackQueryId: query.id, text: passiveLockAlert(run, context: context), showAlert: true))
             return true
         }
 

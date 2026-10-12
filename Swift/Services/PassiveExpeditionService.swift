@@ -16,11 +16,18 @@
 //  to pick up every in-flight passive expedition and either re-arm or deliver
 //  its report immediately (if the endsAt already passed during downtime).
 //
-//  The simulation reuses `ExplorationService.rollStep` with `priorVisits: 0`
-//  — passive expeditions always head into fresh territory. Loot lands in the
+//  Since 2026-10-12 the run is there and back in the same time (`PassiveRoute`):
+//  half the strides out, half home, the last stride the manor door. It used to
+//  walk only deeper and land home the moment its last step ended — the road
+//  back free, and the depth it never walked back from banked on the board. The
+//  governor turns early below a share of his HP, or when his Vigor only covers
+//  the road home and nothing is left to eat; he eats from the bag only when he
+//  must, the smallest portion first. While he is out the bag is his: the player
+//  can look into it and change nothing (`InventoryController`).
+//
+//  Each stride reuses `ExplorationService.rollStep`. Loot lands in the
 //  player's inventory as it would in active mode (with full-bag fallback);
-//  HP/vigor mutate on the real user model so resting-at-estate regen before
-//  the timer expires is naturally reflected in the simulated pool.
+//  HP/vigor mutate on the real user model.
 //
 
 import Fluent
@@ -32,18 +39,12 @@ import SwiftTelegramBot
 
 /// Three duration choices shown in the picker. Values are "units"; one unit is
 /// `tuning/time.json` → `gameTime.passiveExpedition.secondsPerUnit` divided by
-/// `time.scale` — a minute at release pacing, a second in the dev bundle.
+/// `time.scale` — a minute at release pacing. How many strides each buys, and
+/// so how deep the governor goes, is `PassiveRoute` over `unitsPerStep`.
 public enum PassiveDuration: Int, CaseIterable, Sendable {
-    case short = 30   // 30 min  → 30 s at scale 60
-    case medium = 60  // 1 h     → 60 s
-    case long = 90    // 1.5 h   → 90 s
-
-    /// Number of simulated step rolls this duration buys. One "step" per 5
-    /// units of duration — same count in test and prod modes, only the wall
-    /// clock changes.
-    public var stepCount: Int {
-        return rawValue / 5
-    }
+    case short = 30
+    case medium = 60
+    case long = 90
 }
 
 // MARK: - Report model (JSON-persisted)
@@ -81,11 +82,37 @@ public struct PassiveReport: Codable, Sendable {
     /// pair existed.
     public let starvationSteps: Int
     public let starvationHpLost: Int
+    /// What the governor ate on the road (2026-10-12), item id → units. He eats
+    /// only when he must, but it is the player's food, so the report names it.
+    /// `loot` is net of it: a berry found and then eaten was not brought back.
+    public let eaten: [String: Int]
+    /// Where he turned for home short of the planned depth, and why —
+    /// `TurnReason`'s raw value. Both nil when he walked the whole route.
+    public let turnKm: Int?
+    public let turnReason: String?
+    /// What the forest took when he fell: the bag as `wipeOnDeath` emptied it.
+    public let lost: [LostEntry]
+    /// He fell on the road home rather than on the way out.
+    public let diedOnWayBack: Bool
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
         public let pickedQuantity: Int
         public let droppedQuantity: Int
+    }
+
+    /// One line of a death's loss. The tier rides along because an item id
+    /// alone cannot name a row of a weapon ladder.
+    public struct LostEntry: Codable, Sendable {
+        public let itemId: String
+        public let tier: Int
+        public let quantity: Int
+    }
+
+    /// Why the governor turned early.
+    public enum TurnReason: String, Sendable {
+        case wounds
+        case hunger
     }
 
     public init(
@@ -101,7 +128,12 @@ public struct PassiveReport: Codable, Sendable {
         newLevel: Int = 1,
         growth: User.StatGrowth = User.StatGrowth(),
         starvationSteps: Int = 0,
-        starvationHpLost: Int = 0
+        starvationHpLost: Int = 0,
+        eaten: [String: Int] = [:],
+        turnKm: Int? = nil,
+        turnReason: String? = nil,
+        lost: [LostEntry] = [],
+        diedOnWayBack: Bool = false
     ) {
         self.stepsTaken = stepsTaken
         self.finalDepth = finalDepth
@@ -120,12 +152,18 @@ public struct PassiveReport: Codable, Sendable {
         self.growth = growth
         self.starvationSteps = starvationSteps
         self.starvationHpLost = starvationHpLost
+        self.eaten = eaten
+        self.turnKm = turnKm
+        self.turnReason = turnReason
+        self.lost = lost
+        self.diedOnWayBack = diedOnWayBack
     }
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
         case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
         case growth, starvationSteps, starvationHpLost, silverFound
+        case eaten, turnKm, turnReason, lost, diedOnWayBack
     }
 
     public init(from decoder: any Decoder) throws {
@@ -147,6 +185,11 @@ public struct PassiveReport: Codable, Sendable {
         growth = (try? c.decode(User.StatGrowth.self, forKey: .growth)) ?? User.StatGrowth()
         starvationSteps = (try? c.decode(Int.self, forKey: .starvationSteps)) ?? 0
         starvationHpLost = (try? c.decode(Int.self, forKey: .starvationHpLost)) ?? 0
+        eaten = (try? c.decode([String: Int].self, forKey: .eaten)) ?? [:]
+        turnKm = try? c.decodeIfPresent(Int.self, forKey: .turnKm)
+        turnReason = try? c.decodeIfPresent(String.self, forKey: .turnReason)
+        lost = (try? c.decode([LostEntry].self, forKey: .lost)) ?? []
+        diedOnWayBack = (try? c.decode(Bool.self, forKey: .diedOnWayBack)) ?? false
     }
 }
 
@@ -176,6 +219,23 @@ public struct RunningPassiveReport: Codable, Sendable {
     /// the player actually walked through.
     public var starvationSteps: Int
     public var starvationHpLost: Int
+    /// The route, stamped when the run starts (2026-10-12) so that a `/reload`
+    /// of the stride cannot reshape a run already walking: the seconds a stride
+    /// takes and the planned turnaround. Nil on a row started before the
+    /// rework, which `PassiveExpeditionService.route` derives once.
+    public var strideSeconds: Double?
+    public var plannedDepth: Int?
+    /// Strides walked so far, the door's included. `stepsDeep` is only where
+    /// he stands, and it falls again on the road home.
+    public var strides: Int
+    public var returning: Bool
+    /// Where and why he turned short of `plannedDepth` (`PassiveReport`).
+    public var turnKm: Int?
+    public var turnReason: String?
+    /// What he has eaten so far, item id → units.
+    public var eaten: [String: Int]
+    /// He fell on the road home.
+    public var diedOnWayBack: Bool
 
     public init(
         hpBefore: Int, vigorBefore: Int,
@@ -184,7 +244,15 @@ public struct RunningPassiveReport: Codable, Sendable {
         xpEarned: Int = 0,
         silverFound: Int = 0,
         starvationSteps: Int = 0,
-        starvationHpLost: Int = 0
+        starvationHpLost: Int = 0,
+        strideSeconds: Double? = nil,
+        plannedDepth: Int? = nil,
+        strides: Int = 0,
+        returning: Bool = false,
+        turnKm: Int? = nil,
+        turnReason: String? = nil,
+        eaten: [String: Int] = [:],
+        diedOnWayBack: Bool = false
     ) {
         self.hpBefore = hpBefore
         self.vigorBefore = vigorBefore
@@ -195,11 +263,20 @@ public struct RunningPassiveReport: Codable, Sendable {
         self.silverFound = silverFound
         self.starvationSteps = starvationSteps
         self.starvationHpLost = starvationHpLost
+        self.strideSeconds = strideSeconds
+        self.plannedDepth = plannedDepth
+        self.strides = strides
+        self.returning = returning
+        self.turnKm = turnKm
+        self.turnReason = turnReason
+        self.eaten = eaten
+        self.diedOnWayBack = diedOnWayBack
     }
 
     enum CodingKeys: String, CodingKey {
         case hpBefore, vigorBefore, outcomeCounts, lootPicked, lootDropped, xpEarned, silverFound
         case starvationSteps, starvationHpLost
+        case strideSeconds, plannedDepth, strides, returning, turnKm, turnReason, eaten, diedOnWayBack
     }
 
     public init(from decoder: any Decoder) throws {
@@ -213,6 +290,16 @@ public struct RunningPassiveReport: Codable, Sendable {
         silverFound = (try? c.decode(Int.self, forKey: .silverFound)) ?? 0
         starvationSteps = (try? c.decode(Int.self, forKey: .starvationSteps)) ?? 0
         starvationHpLost = (try? c.decode(Int.self, forKey: .starvationHpLost)) ?? 0
+        strideSeconds = try? c.decodeIfPresent(Double.self, forKey: .strideSeconds)
+        plannedDepth = try? c.decodeIfPresent(Int.self, forKey: .plannedDepth)
+        // A row from before the rework walked outward only, one km a stride,
+        // so its stride count is its depth: `route` fills it in from there.
+        strides = (try? c.decode(Int.self, forKey: .strides)) ?? 0
+        returning = (try? c.decode(Bool.self, forKey: .returning)) ?? false
+        turnKm = try? c.decodeIfPresent(Int.self, forKey: .turnKm)
+        turnReason = try? c.decodeIfPresent(String.self, forKey: .turnReason)
+        eaten = (try? c.decode([String: Int].self, forKey: .eaten)) ?? [:]
+        diedOnWayBack = (try? c.decode(Bool.self, forKey: .diedOnWayBack)) ?? false
     }
 }
 
@@ -229,10 +316,17 @@ public enum PassiveExpeditionService {
 
     // MARK: Start
 
+    /// How deep a run of this duration turns for home — the number its picker
+    /// button shows, from the same rule the run walks by. At least one km, so
+    /// a stride retuned past half the run still walks out and back.
+    public static func depth(of duration: PassiveDuration) -> Int {
+        max(1, PassiveRoute.depth(strides: PassiveRoute.strides(minutes: duration.rawValue, unitsPerStep: unitsPerStep)))
+    }
+
     /// Begin a passive expedition. Creates the `ExplorationState` row with
-    /// `mode = .passive` and `endsAt = now + duration`, then arms a detached
-    /// `Task.sleep` that will run the simulation and push the report when
-    /// the timer elapses.
+    /// `mode = .passive` and `endsAt` at the end of its route, then arms a
+    /// detached task that walks it stride by stride and pushes the report at
+    /// the manor door.
     @discardableResult
     public static func start(
         for user: User,
@@ -242,8 +336,11 @@ public enum PassiveExpeditionService {
         lingo: Lingo
     ) async throws -> ExplorationState {
         let now = Date()
-        let seconds = Double(duration.rawValue) * secondsPerUnit
-        let endsAt = now.addingTimeInterval(seconds)
+        // The route is planned now and stamped on the row below: there and
+        // back over the strides this duration buys, so it ends when it says.
+        let strideSeconds = stepDurationSeconds
+        let depth = depth(of: duration)
+        let endsAt = now.addingTimeInterval(Double(depth + PassiveRoute.stridesHome(fromKm: depth)) * strideSeconds)
 
         // The expedition row first, the budget after it: if `beginPassive`
         // throws, the player must not be left having paid for a run that does
@@ -276,7 +373,9 @@ public enum PassiveExpeditionService {
             vigorBefore: user.vigor,
             outcomeCounts: [:],
             lootPicked: [:],
-            lootDropped: [:]
+            lootDropped: [:],
+            strideSeconds: strideSeconds,
+            plannedDepth: depth
         )
         if let blob = encodeRunningReport(initialReport) {
             state.runningReportJSON = blob
@@ -305,10 +404,10 @@ public enum PassiveExpeditionService {
 
     // MARK: Scheduler
 
-    /// How many "duration units" a single simulated step costs. A 30-unit
-    /// expedition therefore resolves in 6 steps — same count in test mode
-    /// (secondsPerUnit = 1 → 5 s/step) and prod (secondsPerUnit = 60 →
-    /// 300 s/step).
+    /// How many "duration units" one stride takes — 3 since 2026-10-12, so the
+    /// three choices buy 10/20/30 strides and turn at 5/10/15 km
+    /// (`PassiveRoute`). A run stamps the value it started with, so a `/reload`
+    /// reshapes only the runs after it.
     static var unitsPerStep: Int { Catalogs.current.tuningTime.gameTime.passiveExpedition.unitsPerStep }
 
     // MARK: - The daily budget
@@ -356,15 +455,21 @@ public enum PassiveExpeditionService {
         user.passiveMinutesToday += duration.rawValue
     }
 
-    /// Real-world wall-clock seconds per simulated step.
+    /// Real-world wall-clock seconds per stride.
     static var stepDurationSeconds: TimeInterval {
         return Double(unitsPerStep) * secondsPerUnit
     }
 
-    /// Spawn a detached background task that runs the expedition step by
-    /// step. Each step rolls one event, persists progress via `stepsDeep`,
-    /// and either sleeps until the next step's scheduled fire time or
-    /// finalizes early if the governor died mid-walk.
+    /// Where the governor stands now and which way he is going — the waiting
+    /// screen's «📍». Nil before his first stride and once he is home.
+    public static func position(of state: ExplorationState) -> (km: Int, returning: Bool)? {
+        guard state.isPassive, state.stepsDeep > 0 else { return nil }
+        return (state.stepsDeep, decodeRunningReport(state.runningReportJSON)?.returning ?? false)
+    }
+
+    /// Spawn a detached background task that walks the expedition stride by
+    /// stride (`runLive`): each stride rolls one event and persists the route,
+    /// and the run ends at the manor door or early on a death.
     public static func scheduleCompletion(
         stateId: UUID?,
         endsAt: Date,
@@ -379,10 +484,9 @@ public enum PassiveExpeditionService {
     }
 
     /// Startup-time sweep: spawn a fresh live task for every in-flight
-    /// passive state. Each task reads `stepsDeep` to know how many steps
-    /// already completed before the last bot shutdown and resumes from
-    /// there — any scheduled step times that fell during downtime are
-    /// executed back-to-back without sleeping (catch-up).
+    /// passive state. Each task reads the strides already walked from the
+    /// running report and resumes from there — any strides whose time fell
+    /// during downtime are walked back-to-back without sleeping (catch-up).
     public static func rescheduleInflight(
         on db: any Database,
         bot: TGBot,
@@ -404,206 +508,281 @@ public enum PassiveExpeditionService {
     /// back to the row this loop just loaded.
     ///
     /// A passive run walks for up to 90 minutes while the player keeps using
-    /// the bot — nav, the capital, the market all stay open. Fluent saves whole
-    /// rows and `saveAndCache` installs what it saved as the next tap's
-    /// session, so a loop writing its own copy every step would publish a
-    /// pre-tap snapshot over whatever the player did in between. Requires
-    /// `state.$user` to be loaded already (for the telegram id).
+    /// the bot. Fluent writes only the fields a save changed, but
+    /// `saveAndCache` installs what it saved as the next tap's session, so a
+    /// loop saving its own copy would publish values read before the player's
+    /// last tap. Requires `state.$user` to be loaded already (for the telegram
+    /// id).
     private static func liveUser(for state: ExplorationState) async -> User {
         return await sessionCache.peek(telegramId: state.user.telegramId) ?? state.user
     }
 
-    /// Per-step runner. Exits early on death (pushes the report immediately
-    /// instead of waiting out the remaining timer), on expedition cancellation
-    /// by the player (state row gone), or on error.
+    /// The stride every run was planned on before 2026-10-12.
+    private static let legacyUnitsPerStep = 5
+
+    /// The route a run walks: the seconds a stride takes and the planned
+    /// turnaround, as stamped at departure. A row started before the
+    /// 2026-10-12 rework carries neither. It was planned on 5-minute strides
+    /// over `endsAt − createdAt` and walked outward only, one km a stride, so
+    /// its stride count is its depth; from here on it walks home like any run.
+    private static func route(for state: ExplorationState,
+                              run: inout RunningPassiveReport) -> (strideSeconds: Double, depth: Int) {
+        if let strideSeconds = run.strideSeconds, let depth = run.plannedDepth {
+            return (strideSeconds, depth)
+        }
+        let strideSeconds = Double(legacyUnitsPerStep) * secondsPerUnit
+        var planned = 2
+        if let endsAt = state.endsAt, let createdAt = state.createdAt, strideSeconds > 0 {
+            planned = Int((endsAt.timeIntervalSince(createdAt) / strideSeconds).rounded())
+        }
+        let depth = max(1, PassiveRoute.depth(strides: planned))
+        run.strideSeconds = strideSeconds
+        run.plannedDepth = depth
+        run.strides = state.stepsDeep
+        return (strideSeconds, depth)
+    }
+
+    /// Mark the turn for home short of the planned depth.
+    private static func turn(_ run: inout RunningPassiveReport, atKm km: Int, reason: PassiveReport.TurnReason) {
+        run.returning = true
+        run.turnKm = km
+        run.turnReason = reason.rawValue
+    }
+
+    /// The governor's meals: while `needs()` holds, one portion at a time,
+    /// smallest first and what a taken job waits for last
+    /// (`PassiveRoute.nextRation`). Stops when nothing in the bag feeds.
     ///
-    /// Progress is tracked in `state.stepsDeep` so a bot restart mid-run
-    /// resumes from the right step. The accumulated outcome counters, loot
-    /// totals, and HP/vigor-at-start values are persisted on
-    /// `state.runningReportJSON` after every step in the same save as
-    /// `stepsDeep`, so the final report stays complete across restarts.
-    /// Legacy passive rows (created before AddPassiveRunningReport) fall
-    /// back to lazy capture on the first step iteration.
+    /// These are the only meals of a run: the player's own taps on the bag are
+    /// refused while he is out (`InventoryController`), which is why that lock
+    /// sits at the bag's buttons and never in `VigorService` — here it would
+    /// starve him too. Saved at once, because the units already left the bag.
+    private static func eat(while needs: () -> Bool, user: User,
+                            run: inout RunningPassiveReport, on db: any Database) async throws {
+        guard needs() else { return }
+        let wanted = try await QuestService.acceptedDeliveryItemIds(for: user, on: db)
+        var ate = false
+        while needs() {
+            guard let itemId = try await eatOne(user: user, wanted: wanted, on: db) else { break }
+            run.eaten[itemId, default: 0] += 1
+            ate = true
+        }
+        if ate { try await user.saveAndCache(in: db) }
+    }
+
+    /// One portion: `consume` for the pools, then the unit out of the bag. The
+    /// pools go back if the unit is gone by then. Nil when nothing feeds.
+    private static func eatOne(user: User, wanted: Set<String>, on db: any Database) async throws -> String? {
+        var held: [String: Int] = [:]
+        for entry in try await InventoryEntry.list(for: user, on: db) where entry.equippedSlot == nil {
+            held[entry.itemId, default: 0] += entry.quantity
+        }
+        let rations = held.compactMap { itemId, quantity -> PassiveRoute.Ration? in
+            guard quantity > 0, let item = ItemCatalog.find(itemId), VigorService.isConsumable(item) else { return nil }
+            var vigor = 0, hp = 0
+            for effect in item.effects {
+                switch effect {
+                case .restoreVigor(let amount): vigor += amount
+                case .restoreHP(let amount): hp += amount
+                }
+            }
+            return PassiveRoute.Ration(itemId: itemId, vigor: vigor, hp: hp, wanted: wanted.contains(itemId))
+        }
+        guard let ration = PassiveRoute.nextRation(rations),
+              let item = ItemCatalog.find(ration.itemId) else { return nil }
+        let vigorBefore = user.vigor, hpBefore = user.hp
+        guard VigorService.consume(item, user: user) != nil else { return nil }
+        guard try await InventoryEntry.remove(item.id, quantity: 1, from: user, on: db) else {
+            user.vigor = vigorBefore
+            user.hp = hpBefore
+            return nil
+        }
+        return item.id
+    }
+
+    /// The runner, one stride at a time: out to the planned depth or a turn,
+    /// home, and the door. Exits at the door, on death (the report goes out at
+    /// once), on the row disappearing, or on error.
+    ///
+    /// The route — strides walked, the direction, a turn and its reason, the
+    /// food eaten — rides in `state.runningReportJSON` beside the outcome
+    /// counters and is saved with `stepsDeep` after every stride, so a bot
+    /// restart mid-run resumes on the right stride with the report whole.
+    /// Strides fire on `createdAt` plus whole strides, so a restart catches up
+    /// on the ones it slept through.
     private static func runLive(
         stateId: UUID,
         db: any Database,
         bot: TGBot,
         lingo: Lingo
     ) async {
-        var outcomeCounts: [String: Int] = [:]
-        var lootPicked: [String: Int] = [:]
-        var lootDropped: [String: Int] = [:]
-        var hpBefore: Int = 0
-        var vigorBefore: Int = 0
-        var xpEarned: Int = 0
-        var silverFound: Int = 0
-        var starvationSteps: Int = 0
-        var starvationHpLost: Int = 0
-        var hasCapturedBefore = false
+        var carried: RunningPassiveReport?
 
         while true {
-            // Reload fresh at the start of each iteration — state may have
-            // been deleted (cancel), or user may have mutated hp/vigor (eat
-            // food, regen, etc. — regen is paused during expedition, but
-            // we stay defensive).
-            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
-            guard state.isPassive, state.reportJSON == nil else { return }
+            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first(),
+                  state.isPassive, state.reportJSON == nil,
+                  let createdAt = state.createdAt else { return }
+            try? await state.$user.load(on: db)
 
-            // Restore running totals from DB if the column carries a snapshot.
-            // Legacy rows skip this and fall through to lazy-capture below.
-            if !hasCapturedBefore, let restored = decodeRunningReport(state.runningReportJSON) {
-                outcomeCounts = restored.outcomeCounts
-                lootPicked    = restored.lootPicked
-                lootDropped   = restored.lootDropped
-                hpBefore      = restored.hpBefore
-                vigorBefore   = restored.vigorBefore
-                xpEarned      = restored.xpEarned
-                silverFound   = restored.silverFound
-                starvationSteps  = restored.starvationSteps
-                starvationHpLost = restored.starvationHpLost
-                hasCapturedBefore = true
+            // The first pass restores what an earlier process walked. A row
+            // older than the running report captures its start from the live
+            // user instead.
+            var run: RunningPassiveReport
+            if let carried {
+                run = carried
+            } else if let restored = decodeRunningReport(state.runningReportJSON) {
+                run = restored
+            } else {
+                let user = await liveUser(for: state)
+                run = RunningPassiveReport(hpBefore: user.hp, vigorBefore: user.vigor,
+                                           outcomeCounts: [:], lootPicked: [:], lootDropped: [:])
             }
+            let (strideSeconds, depth) = route(for: state, run: &run)
+            // A pre-rework run resumed at or past its turnaround turns now.
+            if !run.returning && state.stepsDeep >= depth {
+                run.returning = true
+                state.endsAt = createdAt.addingTimeInterval(
+                    Double(run.strides + PassiveRoute.stridesHome(fromKm: state.stepsDeep)) * strideSeconds)
+                state.runningReportJSON = encodeRunningReport(run)
+                try? await state.save(on: db)
+            }
+            carried = run
 
-            let totalSteps = derivedStepCount(for: state)
-            let completed = state.stepsDeep
-
-            if completed >= totalSteps {
-                // All steps done — finalize normally. `liveUser` rather than the
-                // freshly-loaded relation: see the note at the step loop below.
-                try? await state.$user.load(on: db)
-                let finalUser = await liveUser(for: state)
-                await finalizeAndPush(
-                    state: state, user: finalUser,
-                    outcomeCounts: outcomeCounts,
-                    lootPicked: lootPicked, lootDropped: lootDropped,
-                    hpBefore: hasCapturedBefore ? hpBefore : finalUser.hp,
-                    vigorBefore: hasCapturedBefore ? vigorBefore : finalUser.vigor,
-                    xpEarned: xpEarned, silverFound: silverFound,
-                    starvationSteps: starvationSteps, starvationHpLost: starvationHpLost,
-                    died: false, deathDepth: nil,
-                    on: db, bot: bot, lingo: lingo
-                )
+            // At the door: the last stride is walked.
+            if run.strides > 0 && state.stepsDeep == 0 {
+                let user = await liveUser(for: state)
+                await finalizeAndPush(state: state, user: user, run: run, died: false, deathDepth: nil,
+                                      lost: [], on: db, bot: bot, lingo: lingo)
                 return
             }
 
-            let nextStep = completed + 1
-            guard let createdAt = state.createdAt else { return }
-            let stepFireAt = createdAt.addingTimeInterval(Double(nextStep) * stepDurationSeconds)
-            let waitSeconds = max(0, stepFireAt.timeIntervalSinceNow)
-
+            let stride = run.strides + 1
+            let waitSeconds = createdAt.addingTimeInterval(Double(stride) * strideSeconds).timeIntervalSinceNow
             if waitSeconds > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(waitSeconds * 1_000_000_000))
             }
 
-            // Reload state + user after the wait (state may have been deleted
-            // via cancel, player may have interacted in ways that affect user
-            // fields).
-            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first() else { return }
-            guard state.isPassive, state.reportJSON == nil else { return }
+            // Reload after the wait: the row may be gone, and the player may
+            // have changed what the user holds.
+            guard let state = try? await ExplorationState.query(on: db).filter(\.$id, .equal, stateId).first(),
+                  state.isPassive, state.reportJSON == nil else { return }
             try? await state.$user.load(on: db)
             let user = await liveUser(for: state)
+            let walkCost = VigorService.cost(of: .walkRoom)
 
-            // Legacy fallback: if no persisted snapshot existed (pre-migration
-            // row that started before this code shipped), lazy-capture the
-            // before values now from the live user. Post-migration rows have
-            // already been seeded by `start()` and the restore branch above.
-            if !hasCapturedBefore {
-                hpBefore = user.hp
-                vigorBefore = user.vigor
-                hasCapturedBefore = true
+            // The door: from km 1 on the road home the last stride rolls
+            // nothing and costs nothing, as the active walk's last step does.
+            // The tally still counts it (`User.recordStep`).
+            if run.returning && state.stepsDeep <= 1 {
+                user.recordStep()
+                state.moveTo(km: 0)
+                run.strides = stride
+                carried = run
+                state.runningReportJSON = encodeRunningReport(run)
+                try? await state.save(on: db)
+                try? await user.saveAndCache(in: db)
+                continue
             }
 
-            // Roll one step.
+            // He eats before a step that would leave him at 0: a fight that
+            // begins at 0 is fought at the starvation penalty.
+            do {
+                try await eat(while: { PassiveRoute.mustEatBeforeStep(vigor: user.vigor, walkCost: walkCost) },
+                              user: user, run: &run, on: db)
+            } catch {
+                appState?.logger.warning("Passive meal before stride \(stride) threw: \(error)")
+            }
+
+            let km = run.returning ? state.stepsDeep - 1 : state.stepsDeep + 1
             let result: StepResult
             do {
                 result = try await ExplorationService.rollStep(
                     for: user,
-                    kmDepth: nextStep,
-                    // Past the first step an unattended walk rolls
-                    // `passive.weights` — its OWN row since 2026-09-10, no longer
-                    // the walk-home tier it used to borrow. Rolling fresh odds on
-                    // every step is half of why the mode that needs no attention
-                    // out-earned the one that does; `rollStep` branches on `mode`,
-                    // so anything past `freshStepCount` means only "not fresh".
-                    priorVisits: nextStep <= ExplorationService.passiveTuning.freshStepCount ? 0 : 1,
+                    kmDepth: km,
+                    // The first stride out is fresh ground; every other stride,
+                    // the road home included, rolls `passive.weights`. The
+                    // walk-home tier is denser in fights, and the mode nobody
+                    // watches must not fight more than the one they play.
+                    priorVisits: !run.returning && stride <= ExplorationService.passiveTuning.freshStepCount ? 0 : 1,
                     mode: .passive,
                     on: db
                 )
             } catch {
-                appState?.logger.warning("Passive live step \(nextStep) threw: \(error)")
+                appState?.logger.warning("Passive live stride \(stride) threw: \(error)")
                 return
             }
-
-            recordOutcome(result, counts: &outcomeCounts, picked: &lootPicked, dropped: &lootDropped,
-                          xpEarned: &xpEarned, silverFound: &silverFound,
-                          starvationSteps: &starvationSteps, starvationHpLost: &starvationHpLost,
-                          playerLevel: user.level)
-
-            // Persist the post-step running totals on the state row alongside
-            // `stepsDeep` — single save, both fields together. Survives any
-            // restart from this point onward.
-            let snapshot = RunningPassiveReport(
-                hpBefore: hpBefore,
-                vigorBefore: vigorBefore,
-                outcomeCounts: outcomeCounts,
-                lootPicked: lootPicked,
-                lootDropped: lootDropped,
-                xpEarned: xpEarned, silverFound: silverFound,
-                starvationSteps: starvationSteps,
-                starvationHpLost: starvationHpLost
-            )
-            state.runningReportJSON = encodeRunningReport(snapshot)
-            state.moveTo(km: nextStep)
-            try? await state.save(on: db)
-            try? await user.saveAndCache(in: db)
+            recordOutcome(result, into: &run, playerLevel: user.level)
+            state.moveTo(km: km)
+            run.strides = stride
 
             if user.hp <= 0 {
-                // Early death — finalize immediately, don't wait out the rest.
+                // He fell: the report goes out now, not at the end of the time.
+                run.diedOnWayBack = run.returning
+                state.runningReportJSON = encodeRunningReport(run)
+                try? await state.save(on: db)
+                var lost: [InventoryEntry.DeathLoss] = []
                 do {
-                    try await applyDeath(to: user, on: db)
+                    lost = try await applyDeath(to: user, on: db)
                     try await user.saveAndCache(in: db)
                 } catch {
                     appState?.logger.warning("applyDeath threw: \(error)")
                 }
-                await finalizeAndPush(
-                    state: state, user: user,
-                    outcomeCounts: outcomeCounts,
-                    lootPicked: lootPicked, lootDropped: lootDropped,
-                    hpBefore: hpBefore, vigorBefore: vigorBefore,
-                    xpEarned: xpEarned, silverFound: silverFound,
-                    starvationSteps: starvationSteps, starvationHpLost: starvationHpLost,
-                    died: true, deathDepth: nextStep,
-                    on: db, bot: bot, lingo: lingo
-                )
+                await finalizeAndPush(state: state, user: user, run: run, died: true, deathDepth: km,
+                                      lost: lost, on: db, bot: bot, lingo: lingo)
                 return
             }
+
+            // On the way out: the planned depth, wounds, or hunger with nothing
+            // left to eat turn him. An early turn brings him home sooner, and
+            // the waiting screen counts down to that.
+            if !run.returning {
+                if km >= depth {
+                    run.returning = true
+                } else if PassiveRoute.woundedEnough(hp: user.hp, maxHP: user.effectiveMaxHp,
+                                                     share: ExplorationService.passiveTuning.retreatBelowHpPercent) {
+                    turn(&run, atKm: km, reason: .wounds)
+                } else {
+                    do {
+                        try await eat(while: { PassiveRoute.onlyRoadHomeLeft(vigor: user.vigor, km: km, walkCost: walkCost) },
+                                      user: user, run: &run, on: db)
+                    } catch {
+                        appState?.logger.warning("Passive meal at km \(km) threw: \(error)")
+                    }
+                    if PassiveRoute.onlyRoadHomeLeft(vigor: user.vigor, km: km, walkCost: walkCost) {
+                        turn(&run, atKm: km, reason: .hunger)
+                    }
+                }
+                if run.turnKm == km {
+                    state.endsAt = createdAt.addingTimeInterval(
+                        Double(stride + PassiveRoute.stridesHome(fromKm: km)) * strideSeconds)
+                }
+            }
+
+            carried = run
+            state.runningReportJSON = encodeRunningReport(run)
+            try? await state.save(on: db)
+            try? await user.saveAndCache(in: db)
         }
     }
 
     /// Build the report, persist it on the state row, and push the
-    /// completion message. Both the end-of-run (success) and early-death
-    /// paths share this tail.
+    /// completion message. The door and an early death share this tail.
     private static func finalizeAndPush(
         state: ExplorationState,
         user: User,
-        outcomeCounts: [String: Int],
-        lootPicked: [String: Int],
-        lootDropped: [String: Int],
-        hpBefore: Int,
-        vigorBefore: Int,
-        xpEarned: Int,
-        silverFound: Int,
-        starvationSteps: Int,
-        starvationHpLost: Int,
+        run: RunningPassiveReport,
         died: Bool,
         deathDepth: Int?,
+        lost: [InventoryEntry.DeathLoss],
         on db: any Database,
         bot: TGBot,
         lingo: Lingo
     ) async {
         // A governor who came back banks the run's deepest km; one who did not
         // banks nothing, which is the same rule the active walk applies at the
-        // manor door (`ExplorationController.handleHomeReached`).
+        // manor door (`ExplorationController.handleHomeReached`). Since
+        // 2026-10-12 the depth is one he walked back from — it used to be one
+        // he was teleported home from.
         //
         // Persisted right here rather than left to the XP save below, which
         // fires only when `xpAwarded > 0` — a quiet run that killed nothing
@@ -615,19 +794,18 @@ public enum PassiveExpeditionService {
         }
 
         // If the governor died, the bag stays with the corpse — the report
-        // must not claim "brought back" anything. `applyDeath` has already
-        // emptied it in the DB (bar the bound weapon); zero the report's loot
-        // list to match.
+        // must not claim "brought back" anything; it names the losses instead.
+        // Otherwise «Принесено» is net of what he ate: a berry found and then
+        // eaten was not brought back.
         let loot: [PassiveReport.LootEntry]
         if died {
             loot = []
         } else {
-            loot = Set(lootPicked.keys).union(lootDropped.keys).sorted().map { id in
-                PassiveReport.LootEntry(
-                    itemId: id,
-                    pickedQuantity: lootPicked[id, default: 0],
-                    droppedQuantity: lootDropped[id, default: 0]
-                )
+            loot = Set(run.lootPicked.keys).union(run.lootDropped.keys).sorted().compactMap { id in
+                let picked = max(0, run.lootPicked[id, default: 0] - run.eaten[id, default: 0])
+                let dropped = run.lootDropped[id, default: 0]
+                guard picked > 0 || dropped > 0 else { return nil }
+                return PassiveReport.LootEntry(itemId: id, pickedQuantity: picked, droppedQuantity: dropped)
             }
         }
 
@@ -639,44 +817,49 @@ public enum PassiveExpeditionService {
         // them inside the loop would let a mid-run restart re-round every
         // partial total and drift the payout.
         let passive = ExplorationService.passiveTuning
-        let xpResult = user.grantXP(Int((Double(xpEarned) * passive.xpMultiplier).rounded()))
+        let xpResult = user.grantXP(Int((Double(run.xpEarned) * passive.xpMultiplier).rounded()))
         if xpResult.xpAwarded > 0 {
             try? await user.saveAndCache(in: db)
         }
 
         // Phase 6.5 — wear equipped gear (armor + weapon) for the whole run: each
         // won fight costs a little, each lost fight more (no flee in passive autobattle).
-        let gearWear = outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
-                     + outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
+        let gearWear = run.outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
+                     + run.outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
         let brokeOnRun = (try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)) ?? []
 
         // Phase 9.2 — autobattle kills count toward the Master's beast-slaying
         // job, banked in one go for the whole run (same as the XP grant above).
         // Kills made before a death still count; the run is over either way.
-        let killsThisRun = outcomeCounts["encounter_won", default: 0]
+        let killsThisRun = run.outcomeCounts["encounter_won", default: 0]
         if killsThisRun > 0 {
             try? await QuestService.record(.beastKill, amount: killsThisRun, for: user, on: db)
             try? await KingService.record(.beastKill, amount: killsThisRun, for: user, on: db)
         }
 
         let report = PassiveReport(
-            stepsTaken: state.stepsDeep,
-            finalDepth: state.stepsDeep,
-            hpBefore: hpBefore,
+            stepsTaken: run.strides,
+            finalDepth: state.maxDepthKm,
+            hpBefore: run.hpBefore,
             hpAfter: user.hp,
-            vigorBefore: vigorBefore,
+            vigorBefore: run.vigorBefore,
             vigorAfter: user.vigor,
             died: died,
             deathDepth: deathDepth,
-            outcomeCounts: outcomeCounts,
+            outcomeCounts: run.outcomeCounts,
             loot: loot,
             xpEarned: xpResult.xpAwarded,
-            silverFound: silverFound,
+            silverFound: run.silverFound,
             levelsGained: xpResult.levelsGained,
             newLevel: xpResult.newLevel,
             growth: xpResult.growth,
-            starvationSteps: starvationSteps,
-            starvationHpLost: starvationHpLost
+            starvationSteps: run.starvationSteps,
+            starvationHpLost: run.starvationHpLost,
+            eaten: run.eaten,
+            turnKm: run.turnKm,
+            turnReason: run.turnReason,
+            lost: lost.map { PassiveReport.LostEntry(itemId: $0.itemId, tier: $0.tier, quantity: $0.quantity) },
+            diedOnWayBack: died && run.diedOnWayBack
         )
 
         do {
@@ -708,65 +891,45 @@ public enum PassiveExpeditionService {
         }
     }
 
-    /// Total number of steps this expedition covers. Derived from the
-    /// configured duration (endsAt − createdAt), so the same helper works
-    /// for freshly-started and in-flight rows.
-    private static func derivedStepCount(for state: ExplorationState) -> Int {
-        guard let endsAt = state.endsAt, let createdAt = state.createdAt else { return 6 }
-        let seconds = max(0, endsAt.timeIntervalSince(createdAt))
-        let units = seconds / secondsPerUnit
-        return max(1, Int(units) / unitsPerStep)
-    }
-
-    private static func recordOutcome(
-        _ result: StepResult,
-        counts: inout [String: Int],
-        picked: inout [String: Int],
-        dropped: inout [String: Int],
-        xpEarned: inout Int,
-        silverFound: inout Int,
-        starvationSteps: inout Int,
-        starvationHpLost: inout Int,
-        playerLevel: Int
-    ) {
+    private static func recordOutcome(_ result: StepResult, into run: inout RunningPassiveReport, playerLevel: Int) {
         // Hunger is tallied beside the buckets, not as one of them: it can land
         // on ANY step, so a `counts["starvation"]` bump both hid the event that
         // step rolled and made the row's own total wrong.
         if result.starvationHpLost > 0 {
-            starvationSteps += 1
-            starvationHpLost += result.starvationHpLost
+            run.starvationSteps += 1
+            run.starvationHpLost += result.starvationHpLost
         }
         switch result.outcome {
         case .nothing:
-            counts["nothing", default: 0] += 1
+            run.outcomeCounts["nothing", default: 0] += 1
         case .trip:
-            counts["trip", default: 0] += 1
+            run.outcomeCounts["trip", default: 0] += 1
         case .silver(let amount):
-            counts["silver", default: 0] += 1
+            run.outcomeCounts["silver", default: 0] += 1
             // Counted for the report only — `rollStep` already credited it to
             // `user.silver`. Accumulating and granting at the end is what XP
             // does, and only because `passive.xpMultiplier` must round once;
             // silver has no multiplier, so a second grant here would double it.
-            silverFound += amount
+            run.silverFound += amount
         case .loot(let itemId, let quantity, let pickedUp):
-            counts["loot", default: 0] += 1
+            run.outcomeCounts["loot", default: 0] += 1
             if pickedUp {
-                picked[itemId, default: 0] += quantity
+                run.lootPicked[itemId, default: 0] += quantity
             } else {
-                dropped[itemId, default: 0] += quantity
+                run.lootDropped[itemId, default: 0] += quantity
             }
         case .encounterWon(let enemy, _, _, _, let drops):
-            counts["encounter_won", default: 0] += 1
-            xpEarned += User.xpFromKill(enemy, playerLevel: playerLevel)
+            run.outcomeCounts["encounter_won", default: 0] += 1
+            run.xpEarned += User.xpFromKill(enemy, playerLevel: playerLevel)
             for drop in drops {
                 if drop.picked {
-                    picked[drop.itemId, default: 0] += drop.quantity
+                    run.lootPicked[drop.itemId, default: 0] += drop.quantity
                 } else {
-                    dropped[drop.itemId, default: 0] += drop.quantity
+                    run.lootDropped[drop.itemId, default: 0] += drop.quantity
                 }
             }
         case .encounterLost:
-            counts["encounter_lost", default: 0] += 1
+            run.outcomeCounts["encounter_lost", default: 0] += 1
         case .encounterStarted:
             // Passive simulation never receives this — `rollStep` only emits
             // it for `mode: .active`. Listed here only for switch exhaustiveness.
@@ -776,10 +939,12 @@ public enum PassiveExpeditionService {
 
     /// On simulated death: wipe the bag (`InventoryEntry.wipeOnDeath` — worn
     /// gear and the bound class weapon survive), respawn at HP = 1, same rules
-    /// as active-mode death. Vigor is preserved per design.
-    private static func applyDeath(to user: User, on db: any Database) async throws {
-        try await InventoryEntry.wipeOnDeath(for: user, on: db)
+    /// as active-mode death. Vigor is preserved per design. Returns what the
+    /// wipe took, which the report names.
+    private static func applyDeath(to user: User, on db: any Database) async throws -> [InventoryEntry.DeathLoss] {
+        let lost = try await InventoryEntry.wipeOnDeath(for: user, on: db)
         user.hp = 1
+        return lost
     }
 
     // MARK: Notification push
@@ -868,11 +1033,34 @@ public enum PassiveExpeditionService {
         lines.append("")
 
         if report.died, let deathKm = report.deathDepth {
-            lines.append(lingo.localize("exploration.passive.report.death", gender: gender, locale: locale, interpolations: ["km": "\(deathKm)"]))
+            // Four sentences, not one with a fragment interpolated: 💀 sits
+            // inside them, and Lingo drops every `%{}` after a two-unit emoji.
+            // With losses, the sentence ends in a colon and names them, the way
+            // the active death screen does (2026-10-12).
+            let key: String
+            switch (report.diedOnWayBack, report.lost.isEmpty) {
+            case (false, true):  key = "exploration.passive.report.death"
+            case (false, false): key = "exploration.passive.report.death.lost"
+            case (true, true):   key = "exploration.passive.report.death.back"
+            case (true, false):  key = "exploration.passive.report.death.back_lost"
+            }
+            lines.append(lingo.localize(key, gender: gender, locale: locale, interpolations: ["km": "\(deathKm)"]))
+            for loss in report.lost {
+                let item = ItemCatalog.find(loss.itemId)
+                let icon = item?.icon.map { "\($0) " } ?? ""
+                let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: loss.tier), locale: locale) } ?? loss.itemId
+                lines.append("   \(icon)\(name) ×\(loss.quantity)")
+            }
             lines.append("")
         }
 
         lines.append(lingo.localize("exploration.passive.report.depth", locale: locale, interpolations: ["km": "\(report.finalDepth)"]))
+        // He turned short of the planned depth: where, and why. ↩️ is two
+        // UTF-16 units, so it is prepended here, never in the template.
+        if let turnKm = report.turnKm, let reason = report.turnReason.flatMap(PassiveReport.TurnReason.init(rawValue:)) {
+            lines.append("↩️ " + lingo.localize("exploration.passive.report.turn.\(reason.rawValue)", gender: gender,
+                                               locale: locale, interpolations: ["km": "\(turnKm)"]))
+        }
         lines.append(lingo.localize("exploration.passive.report.hp", locale: locale, interpolations: [
             "before": "\(report.hpBefore)",
             "after": "\(report.hpAfter)"
@@ -936,9 +1124,23 @@ public enum PassiveExpeditionService {
             ]))
         }
 
+        // What he ate on the road (2026-10-12): it was the player's food, so it
+        // is named — most eaten first. 🍴 rides outside the template.
+        if !report.eaten.isEmpty {
+            let meals = report.eaten.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+                .map { itemId, count -> String in
+                    let item = ItemCatalog.find(itemId)
+                    let name = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+                    return (item?.icon.map { "\($0) \(name)" } ?? name) + " × \(count)"
+                }
+            lines.append("")
+            lines.append("🍴 " + lingo.localize("exploration.passive.report.eaten", locale: locale,
+                                                interpolations: ["items": meals.joined(separator: " · ")]))
+        }
+
         // Loot section is skipped entirely when the governor died — the
-        // death line at the top already communicates that everything was
-        // lost, and repeating "empty-handed" below would be noise.
+        // death line at the top already names what was lost, and repeating
+        // "empty-handed" below would be noise.
         if !report.died {
             lines.append("")
             lines.append(lingo.localize("exploration.passive.report.loot_header", locale: locale))

@@ -11,7 +11,26 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-12)* **`ed01b79`'s hash fill** — records only.
+- *(this commit, 10-12)* **the 🏕 Expedition walks there and back** — NOT live until a restart
+  (content + Swift; never `/reload` this content on the old binary, which would walk 29 strides
+  outward) — the owner's report «телепортує додому після максимального км»:
+  - half the strides out, half home, the door last; a 3-minute stride (`unitsPerStep` 5 → 3:
+    30/60/90 min = 5/10/15 km), stamped on the running report; `PassiveRoute` (ROISim) + 10 tests;
+  - turns below 50% HP (`passive.retreatBelowHpPercent`, validator `retreat_out_of_range`) or when
+    the Vigor only covers the road home and nothing is left to eat; eats any bag food only when
+    needed, the smallest first, a taken job's food last; the bag locked to the player while he is
+    out (`InventoryController.passiveRun(holding:)`);
+  - the depth on the picker, «📍» on the waiting screen, and the food eaten, an early turn and a
+    death's losses in the report; «Принесено» net of what was eaten; the depth banked is the one
+    walked back from;
+  - a stale trail-bag message's «🍴» is refused too while he is out (`explore:eat:` reaches the bag
+    through the main router);
+  - content schema v22 → **v23**: the old binary refuses this content, a `/reload` included, since it
+    would walk the 3-minute strides only deeper;
+  - `tuning` → `53e33d38021f0bf4`, content hash `9dba2746`, the other halves unmoved; 426 tests.
+  Records: the player FAQ row for eating several units, which `ed01b79` carried past its rollback,
+  removed; two FAQ rows for the expedition.
+- `3ad85f6` (10-12) **`ed01b79`'s hash fill** — records only.
 - `ed01b79` (10-11/12) **the silver line on every question that spends silver** — NOT live until
   a restart — a players' proposal: the Master's repair and buy confirms, the market's lot confirm and
   the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)»; `RequirementLine.silver`
@@ -661,6 +680,59 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
+## Session — 2026-10-11 evening → 10-12 (the expedition there and back; the parallel session's work committed)
+
+The owner: «Давай займемось експедицією… що робити з багом того, що гравця фактично "телепортує"
+додому після максимального км?» Read off the code and the Pi, then measured on a scratch harness over
+real players' stat lines; the numbers and every decision are in `.memory/rebalance.md` → "The
+passive expedition there and back". In short: the run walked only deeper and was home at once
+(banking 17 km nobody walked back from), ran a stride short, never turned back, and killed L3–5
+players in 44–69% of 90-minute runs (92–99% from 0 Vigor).
+
+**Decided over four quizzes** (three rejected to clarify, the answers kept): there and back on a
+3-minute stride; turn below 50% HP at any depth (the deeper-is-more-careful rule declined); turn
+when the Vigor only covers the road home and nothing is left to eat; the governor eats any bag food
+only when needed, smallest first and a taken job's food last; the player cannot change the bag while
+he is out; no refund of minutes; the depth on the buttons; 📍; the losses in the death report. The
+screens were shown as a played sample on DIABLO's real bag and approved.
+
+**On the way, the parallel session's work** (`df317fa0`): asked to finish it, I audited it (0
+warnings on a recompile, 414 tests, `validate --strict` 0/0, the digest unmoved); the owner had
+eating several units rolled back before the commit, and the rest went in as `ed01b79` + `3ad85f6`.
+
+**Built.**
+- `PassiveRoute` (ROISim): strides from the authored minutes, the depth, the road home, the wound
+  share, the meal before a step, the ration order. `PassiveRouteTests` (10) and two `TuningTests`.
+- `PassiveExpeditionService.runLive` rewritten around it: the route, the turn, the meals and the
+  death's losses ride in `RunningPassiveReport`; an early turn moves `endsAt`; a row from before the
+  rework derives a 5-minute plan once and walks home. `finalizeAndPush` banks `maxDepthKm`, nets
+  «Принесено» of what was eaten, and the report carries `eaten`, `turnKm`/`turnReason`, `lost`,
+  `diedOnWayBack`. `renderReport` prints them; four death sentences (out/back × with/without losses)
+  keep 💀 out of any interpolation.
+- The picker (`exploration.duration.option`), the waiting screen (`%{position}` in
+  `exploration.passive.inflight`), the bag lock (`InventoryController.passiveRun(holding:)`, the root
+  line and a modal on `inv:use|equip|unequip`), `QuestService.acceptedDeliveryItemIds`.
+- `unitsPerStep` 5 → 3, `passive.retreatBelowHpPercent` 0.5 (optional, default 0.5, hashed in the
+  digest, validator `tuning.exploration.retreat_out_of_range`). `PassiveDuration.stepCount`
+  (`rawValue / 5`, unread) removed.
+
+**Checked.** A scratch copy at `time.scale` 600 (a stride is 0.3 s) against a fresh scratch Postgres,
+the bot pointed at a closed local port: eight scenarios, all PASS — the whole route home on time with
+the depth banked and 30 km walked; nuts eaten before a job's berries, berries before nuts without the
+job; a hunger turn at km 1 with `endsAt` moved; a wounds turn (the female copy); a death naming its
+losses with nothing banked; a pre-rework row 12 km out on a 9 km plan turning at once and walking 12
+home; the bag locked while out and free after. The report, the waiting screen and the alert printed
+word for word as sampled, except the losses, which come largest first like the active death screen.
+Every new key exists in both locales (`.m`/`.f` where gendered), none with an emoji before a `%{}`.
+Recompiled with 0 warnings; 426 tests; `validate --strict` 0/0.
+
+**The audit before the commit** found two things, both fixed: a trail-bag message left in chat still
+ate from the bag during a run (`explore:eat:`, which the main router forwards), now refused with the
+bag's modal; and nothing but a sentence stood between an old binary and the new stride, so the
+content schema went to v23, which the loader checks on a `/reload` too. Two planted mutants were
+caught (the retreat rule renamed, the job priority dropped from the ration order); no spec generator
+reads the passive tuning, so no generated block moved.
+
 ## Session — 2026-10-12, after midnight (eating several units at once — built, then rolled back)
 
 **Rolled back the same day, before it was committed** (session `52cd50db`, the owner: «Треба зробити
@@ -842,6 +914,9 @@ The sword at 0 (t1–t9): ATK 7 → 4 … 47 → 24, never `isBroken`. A read-on
 the Pi wearing broken armour (re-read 23:18), so the restart's boot pass moves no one.
 
 ## Session — 2026-10-11, evening (the 🏕 Expedition researched; nothing built) — no commit
+
+**Built on 2026-10-12** — see «Session — 2026-10-11 evening → 10-12 (the expedition there and back…)»
+above. What follows is the research as it stood that evening.
 
 Session `52cd50db`. The owner asked how the expedition (the passive run) works and what to do
 about the player being "teleported" home after the last km. Read-only on the Pi, and the runs were
