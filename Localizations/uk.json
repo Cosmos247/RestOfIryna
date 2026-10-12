@@ -75,7 +75,6 @@
   "commands.capital": "🏛 Столиця",
   "commands.inventory": "🎒 Сумка",
   "commands.turn_back": "↩️ Розвернутись",
-  "stub.coming_soon": "🚧 <b>Скоро буде</b>\n\nЦей розділ ще в розробці.",
   "item.food.forest_berries": "Лісові ягоди",
   "item.food.forest_berries.gender": "pl",
   "item.food.forest_berries.desc": "Солодкий сік трохи втамовує голод і додає сил.",

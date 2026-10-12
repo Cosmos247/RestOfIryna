@@ -71,7 +71,6 @@
   "commands.capital": "🏛 Capital",
   "commands.inventory": "🎒 Inventory",
   "commands.turn_back": "↩️ Turn back",
-  "stub.coming_soon": "🚧 <b>Coming soon</b>\n\nThis feature is still in development.",
   "item.food.forest_berries": "Forest Berries",
   "item.food.forest_berries.desc": "Sweet juice that slightly eases hunger and restores a bit of vigour.",
   "item.food.forest_nuts": "Forest Nuts",

@@ -10,12 +10,16 @@
 //  these hold the numbers the formulas consume, and that difference decides
 //  every decoding rule below:
 //
-//  • **Everything decodes as REQUIRED.** No `decodeIfPresent`, no defaults,
-//    anywhere in this file. The optional-with-default pattern is right for a
-//    record whose sub-field is genuinely absent (a ladder step with no material
-//    cost), and wrong for a constant: a missing `baseHitChance` silently
-//    becoming 0 is precisely the invisible balance drift the pipeline exists to
-//    stop. A tuning table that forgets a field must fail the boot.
+//  • **Everything decodes as REQUIRED.** No `decodeIfPresent`, no defaults.
+//    The optional-with-default pattern is right for a record whose sub-field
+//    is genuinely absent (a ladder step with no material cost), and wrong for
+//    a constant: a missing `baseHitChance` silently becoming 0 is precisely the
+//    invisible balance drift the pipeline exists to stop. A tuning table that
+//    forgets a field must fail the boot. Five keys did get a default — the
+//    `silver` event weight (both weight tables), `passive.dailyBudgetMinutes`,
+//    `silverDenominations` and `realTime.restSweepInterval` — and the shipped
+//    bundle states every one of them, so no default is read in play. Do not
+//    add a sixth.
 //
 //  • **Per-class and per-kind rows are ARRAYS, not dictionaries.** A JSON
 //    object would decode into a `[String: T]`, and mapping that back to
@@ -881,9 +885,9 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
     /// bumps only for REQUIRED fields).
     public let dailyBudgetMinutes: Int
     /// The governor turns for home on the way out once his HP falls below this
-    /// share of its maximum (2026-10-12, the owner's 50%, at any depth). The
-    /// shipped bundle states it; the default is the same 0.5, so a fixture that
-    /// omits it reads the owner's number rather than a rule switched off.
+    /// share of its maximum (2026-10-12, the owner's 50%, at any depth).
+    /// Required, like every constant here: it arrived with schema v23. The
+    /// initializer's default serves test fixtures only.
     public let retreatBelowHpPercent: Double
 
     public init(xpMultiplier: Double,
@@ -911,7 +915,7 @@ public struct PassiveExpeditionTuningDTO: Codable, Sendable, Equatable {
         freshStepCount   = try c.decode(Int.self, forKey: .freshStepCount)
         weights          = try c.decode(EventWeightsDTO.self, forKey: .weights)
         dailyBudgetMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyBudgetMinutes) ?? 180
-        retreatBelowHpPercent = try c.decodeIfPresent(Double.self, forKey: .retreatBelowHpPercent) ?? 0.5
+        retreatBelowHpPercent = try c.decode(Double.self, forKey: .retreatBelowHpPercent)
     }
 }
 

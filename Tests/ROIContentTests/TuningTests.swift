@@ -581,14 +581,19 @@ final class TuningTests: XCTestCase {
         XCTAssertFalse(report.errors.contains { $0.rule == "tuning.exploration.retreat_out_of_range" })
     }
 
-    /// An older bundle without the key still decodes, at the owner's 50%.
-    func testRetreatShareDefaultsToHalf() throws {
-        let json = Data("""
+    /// A constant, so REQUIRED: a passive block without it fails to decode
+    /// instead of reading a number nobody wrote down.
+    func testRetreatShareIsRequired() throws {
+        let without = Data("""
         {"xpMultiplier": 0.7, "lootMultiplier": 1.0, "freshStepCount": 1,
          "weights": {"nothing": 25, "loot": 45, "encounter": 20, "trip": 10}}
         """.utf8)
-        let passive = try JSONDecoder().decode(PassiveExpeditionTuningDTO.self, from: json)
-        XCTAssertEqual(passive.retreatBelowHpPercent, 0.5)
+        XCTAssertThrowsError(try JSONDecoder().decode(PassiveExpeditionTuningDTO.self, from: without))
+        let with = Data("""
+        {"xpMultiplier": 0.7, "lootMultiplier": 1.0, "freshStepCount": 1, "retreatBelowHpPercent": 0.5,
+         "weights": {"nothing": 25, "loot": 45, "encounter": 20, "trip": 10}}
+        """.utf8)
+        XCTAssertEqual(try JSONDecoder().decode(PassiveExpeditionTuningDTO.self, from: with).retreatBelowHpPercent, 0.5)
     }
 
     // MARK: - progression.json rules

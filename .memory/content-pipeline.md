@@ -104,17 +104,21 @@ rules of their own:
 |---|---|
 | `combat.json` | hit/crit/variance, technique gates, 3 stances, 3 special attacks, 3 special defenses, flee (per-class chance + the per-fight `maxFailures` ceiling), per-class Defend, the training-dummy id |
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
-| `exploration.json` | the three-tier revisit weight table, trip damage |
+| `exploration.json` | the three-tier revisit weight table, trip damage, loose silver's denominations, and the passive block: its weights, XP and loot multipliers, the daily budget and (2026-10-12) the HP share the governor turns at |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
 | `economy.json` | repair shave, salvage share (2026-09-27), per-fight wear budget. The durability start left on 2026-10-05 (schema v18): a piece's durability is its item's `maxDurability`, a laddered weapon's its `durabilityByTier` — `GearConditionService.startingDurability(for:)` |
 | `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |
 
-- **Everything decodes as REQUIRED.** No `decodeIfPresent` anywhere in
-  `TuningDTO.swift`. Optional-with-default is right for a record whose sub-field
-  is genuinely absent and catastrophic for a constant — a missing
-  `baseHitChance` silently becoming 0 is the drift the pipeline exists to stop.
-  `vigor.drain.idle` is 0 and is stated anyway, because an absent key and a
-  deliberate zero must not look alike.
+- **Everything decodes as REQUIRED.** Optional-with-default is right for a
+  record whose sub-field is genuinely absent and catastrophic for a constant — a
+  missing `baseHitChance` silently becoming 0 is the drift the pipeline exists to
+  stop. `vigor.drain.idle` is 0 and is stated anyway, because an absent key and a
+  deliberate zero must not look alike. Five keys did get a default — the
+  `silver` event weight (both weight tables), `passive.dailyBudgetMinutes`,
+  `silverDenominations`, `realTime.restSweepInterval` — and the shipped bundle
+  states all five, so no default is read in play. `passive.retreatBelowHpPercent`
+  arrived optional on 2026-10-12 and was made required the same day. Do not add
+  a sixth.
 - **Per-class rows are ARRAYS carrying an explicit `class`**, not objects. A
   JSON object decodes to `[String: T]`, where an absent `mage` reads as "the
   mage has no flee chance" rather than as an error. `DomainContent.init` then

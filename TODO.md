@@ -358,7 +358,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
 - [x] `User.location` stored field + `AddUserLocation` migration (default "estate")
 - [x] `TravelService` (Task.detached + Task.sleep, `rescheduleInflight` on bot start, flips location + routerName on arrival, pushes welcome screen)
 - [x] `CapitalController` rewritten — reply-keyboard with 6 location buttons + utility row [Inventory] [Profile] + 🏡 Back-to-estate
-- [x] `Assets/capital/welcome.jpg` + atmospheric lore + auto-loader (`renderLocation` picks up `Assets/capital/<id>.jpg` if present)
+- [x] `Assets/capital/welcome.jpg` + atmospheric lore + auto-loader (`renderLocation` picks up `Assets/capital/<id>.jpg` if present; removed 2026-10-12, dead once every place had its own screen)
 - [x] Cross-controller guards: travel countdown in Main / Estate / Exploration; explore-from-capital blocked; estate-from-capital starts return trip
 - [x] Bugfix: inventory-from-capital no longer flips routerName (preserves capital nav); `inv:*` callbacks forwarded from CapitalController
 - [x] ~~Flip `TravelService.testMode = false`~~ — **retired, not flipped** (Phase 4b folded
@@ -429,7 +429,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       is `User.capitalStreet` (nullable, `AddCapitalStreet`) rather than
       something an actor holds, because `generateControllerKB` is synchronous: it is what
       `currentKeyboard(for:)` calls on the refusal path, with nowhere to await.
-      Three new handlers, `renderStreet` mirroring `renderLocation`, and `renderCurrentScreen`
+      Three new handlers, `renderStreet` mirroring `renderLocation` (removed 2026-10-12, dead), and `renderCurrentScreen`
       for the two paths that redraw "here" without deciding where here is — stray text in
       `unmatched`, and `beginTrip`'s `alreadyAtDestination` — since drawing the square's prose
       under a street's keyboard would put the words and the buttons on two different screens.
@@ -3229,22 +3229,13 @@ fixes are `f2ae7ea`; these were found, verified and left:
   from level 1. Noticed 2026-09-19 while auditing which jobs could strand a player now that a
   taken job blocks its NPC; it is a one-key copy fix in both locales and was left out of that
   commit on purpose.
-- **Six dead functions from April**, none touched since: `renderStub`,
-  `backToRootKeyboard`, `backToHomeKeyboard` (EstateController), `itemNameOrId`
-  (ExplorationController), `isPassiveInflight` (ExplorationState), `invalidateCache` (User).
-  Found by the 09-16 sweep; deleting them is a standalone cleanup, not part of any feature.
-- **A seventh: `CapitalController.renderLocation`**, dead since the last stub location grew its
-  own renderer — every one of the six now has one (`showMarket` · `onArenaEnter` · `showTrader`
-  · `showFortune` · `showMaster` · `showTavern`). Found 2026-09-20 while verifying the street
-  split, which did not cause it: it was already uncalled at `f702334`. Kept for now because
-  `renderStreet` was modelled on it and the comparison is worth more in review than the
-  twenty lines cost, but it goes with the other six whenever that cleanup happens.
 - **`walkRoomDoubleSpeed` is a dead knob** (found 2026-10-02 while modelling expeditions).
   `tuning/vigor.json` → `drain.walkRoomDoubleSpeed` (4) is decoded, validated, hashed into the
   digest and mapped by `VigorAction.walkRoomDoubleSpeed`, but nothing ever drains it: no
   double-speed walk exists, and every step goes through `.walkRoom`. Deleting it changes a
-  required DTO field, so it is a standalone cleanup with the dead functions above, not part of
-  any feature.
+  required DTO field, the content and the `tuning` digest, so it is a standalone cleanup, not
+  part of any feature. Left on 2026-10-12 when the dead functions went: the restart waiting
+  then is checked against that digest.
 - **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, no
   estate at levels 1–3, thirteen `roster_off_curve` warnings (since tier 2, every line is solved
   against the real kit) and `opening.shallow_is_bankrupt` (back since tier 2) — are all
@@ -3252,10 +3243,17 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-10, the sync pass — every record of the dispel and the halved repair brought
+*Last updated: 2026-10-12, the sync pass — the expedition there and back (`fac8d5f`) recorded
+everywhere, seven dead functions removed, the dead knob's note kept. Nothing is waiting for a build;
+everything after `98580ce` waits for one restart — the delivery jobs, the apostrophe, the lone unit,
+the broken set piece, the silver line, the expedition and the cleanup (content schema v23, so not a
+`/reload`). The Pi runs `98580ce` since 2026-10-11 13:21, which took the six 10-10/11 walk-list
+blocks.*
+
+*2026-10-10, the sync pass — every record of the dispel and the halved repair brought
 to the tree; the research behind both is in `.memory/rebalance.md`, the live-data SQL in
-`.memory/live-ops.md`. Nothing is waiting for a build; three commits wait for the restart
-(`d77d600`, `7860aaa`, `7995d2a`). The Pi still runs `de0e062`.*
+`.memory/live-ops.md`. Nothing was waiting for a build; three commits waited for the restart
+(`d77d600`, `7860aaa`, `7995d2a`). The Pi still ran `de0e062`.*
 
 *2026-10-10, evening — the armour repair halved (`repairCostFraction` 0.25), not deployed: it
 rides with the next restart. The 10-10 "later" footer follows.*
@@ -3410,7 +3408,7 @@ the "Walk list" section above.
 
 Left open on purpose: the estate calling one place two words now that «наділ» is
 gone but «Слот» still stands in 18 keys, the Master's blade trial naming Пуща while any kill
-counts, and six functions dead since April. All of them are in "Open, decided but not done"
+counts, and six functions dead since April (removed 2026-10-12). All of them are in "Open, decided but not done"
 above. (The "three innkeeper lines missing from `uk.json`" that led this list on 09-22 were a
 false alarm, corrected 2026-09-27: `.m`/`.f` pairs since `536fbf6`, read through a gendered
 retry.)*

@@ -755,9 +755,4 @@ extension User {
         try await save(on: db)
         await sessionCache.update(self)
     }
-
-    /// Invalidate cache for this user
-    func invalidateCache() async {
-        await sessionCache.invalidate(telegramId: self.telegramId)
-    }
 }

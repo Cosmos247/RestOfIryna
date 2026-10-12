@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-11)
+## Commit index — live-play polish and after (2026-09-09 → 10-12)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,19 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-12)* **`fac8d5f`'s hash fill** — records only.
+- *(this commit, 10-12)* **the 10-12 sync pass** — records, plus dead code — NOT live until a
+  restart (Swift; nothing a player sees):
+  - seven functions with no caller removed (`renderStub`, `backToRootKeyboard`,
+    `backToHomeKeyboard`, `itemNameOrId`, `isPassiveInflight`, `invalidateCache`,
+    `renderLocation`), the `stub.coming_soon` key nothing rendered, and `AutobattleResult`'s
+    unread `playerHPLost` / `playerVigorLost`;
+  - `passive.retreatBelowHpPercent` required (`fac8d5f` decoded it with a default); the tuning
+    DTO's "no `decodeIfPresent`" header corrected — five keys carry a default the bundle states;
+  - the passive report's unread `stepsTaken` KEPT: the Pi's binary decodes it as required;
+  - README's roadmap (the Pi's commit, the not-deployed list), the GDD's passive lines as shipped,
+    the pipeline, localization, status and file-map records; `Prompt.md` reoriented on the Pi read
+    at 10-12 23:11. Digest and content hash unmoved; 426 tests.
+- `870361b` (10-12) **`fac8d5f`'s hash fill** — records only.
 - `fac8d5f` (10-12) **the 🏕 Expedition walks there and back** — NOT live until a restart
   (content + Swift; never `/reload` this content on the old binary, which would walk 29 strides
   outward) — the owner's report «телепортує додому після максимального км»:
@@ -680,6 +692,54 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-12, the sync pass (records; seven dead functions; the retreat share required) — *(this commit)*
+
+On the owner's long-form audit prompt, after `fac8d5f` / `870361b`.
+
+**Dead code removed** (no caller anywhere; recompiled with 0 warnings, 426 tests):
+- the six from April that the 09-16 sweep listed — `renderStub`, `backToRootKeyboard`,
+  `backToHomeKeyboard` (EstateController), `itemNameOrId` (ExplorationController),
+  `isPassiveInflight` (ExplorationState), `invalidateCache` (User) — and the seventh found on 09-20,
+  `CapitalController.renderLocation`; with them `stub.coming_soon`, which only `renderStub` rendered;
+- `AutobattleResult.playerHPLost` / `playerVigorLost`: written, never read (`rollEncounter` reads the
+  player before and after the fight).
+
+**Kept on purpose.** `PassiveReport.stepsTaken`, unread since `fac8d5f`: the binary on the Pi
+(`98580ce`) decodes it as REQUIRED and, when a report will not decode, returns without deleting the
+row, so a rollback past `fac8d5f` would strand every report not yet read. A comment says so.
+`walkRoomDoubleSpeed` (a dead tuning knob) stays too: deleting it moves the `tuning` digest and the
+content hash the waiting restart is checked against.
+
+**The retreat share made required.** `fac8d5f` decoded `passive.retreatBelowHpPercent` with a
+default, against the tuning DTO's own rule; it is required now, and `testRetreatShareIsRequired`
+replaces the default's test (426 tests still). The DTO header said "no `decodeIfPresent` anywhere"
+while five keys carry one — the `silver` weight, `passive.dailyBudgetMinutes`,
+`silverDenominations`, `realTime.restSweepInterval`, all stated in the bundle — so the header and
+`content-pipeline.md` now name them.
+
+**Stale records fixed:**
+- README's roadmap named `de0e062` as the Pi's commit and had no not-deployed list (now: the
+  expedition, the silver line, the apostrophe, the lone unit, the broken set piece, the delivery
+  jobs); its tree lines for the three passive files;
+- the GDD's passive lines marked as shipped (the 3-minute stride there and back) or never built
+  (the double-speed walk, the starvation slow-down);
+- `content-pipeline.md`'s exploration row; the file map's TuningDTO line; the localization key
+  list gained the 2026-10-12 keys;
+- README, `session-auth.md`, `localization.md` and status cited removed functions; TODO's
+  dead-function items closed and the dead knob's note no longer leans on them;
+- `Prompt.md`: the expedition's two "open" questions and the idea of naming a passive death's losses
+  were answered and built in `fac8d5f`, and are gone from it.
+
+**Auto-memory.** The passive note gained its hashes and lost two stale names (the rolled-back
+`EatPrompt`, `acceptedDeliveries`). `feedback-audit-before-commit` gained two checks:
+- a grep that proves something is absent is never truncated — `| head` hid the eat-several FAQ
+  row that slipped into `ed01b79`;
+- a field dropped from a persisted Codable is checked against the deployed binary's decoder.
+
+**Pi, read 2026-10-12 23:11 (read-only):** still `98580ce`, online since 10-11 13:21:10, pm2 restarts
+10, one `[WATCHDOG]` line (10-08 11:47:53). **One passive run in flight** (0 at 21:40); a restart
+before it ends resumes it on its old 5-minute plan, and it walks home.
 
 ## Session — 2026-10-11 evening → 10-12 (the expedition there and back; the parallel session's work committed) — `fac8d5f`
 

@@ -82,8 +82,6 @@ public struct StepResult: Sendable {
 public struct AutobattleResult: Sendable {
     public let playerWon: Bool
     public let rounds: Int
-    public let playerHPLost: Int
-    public let playerVigorLost: Int
 }
 
 public enum ExplorationService {
@@ -434,7 +432,6 @@ public enum ExplorationService {
         let playerCrit = player.effectiveCrit
         let playerAcc  = player.effectiveAccuracy
         let playerDodge = player.effectiveDodge
-        let hpBefore = player.hp
 
         while player.hp > 0 && enemyHP > 0 && rounds < maxRounds {
             rounds += 1
@@ -468,12 +465,10 @@ public enum ExplorationService {
             }
         }
 
-        return AutobattleResult(
-            playerWon: enemyHP <= 0 && player.hp > 0,
-            rounds: rounds,
-            playerHPLost: max(0, hpBefore - player.hp),
-            playerVigorLost: rounds  // one vigor per round
-        )
+        // What the fight cost is read off the player by the caller
+        // (`rollEncounter`), before and after — the only numbers that include
+        // every round's real drain.
+        return AutobattleResult(playerWon: enemyHP <= 0 && player.hp > 0, rounds: rounds)
     }
 
     // MARK: - Loot drops

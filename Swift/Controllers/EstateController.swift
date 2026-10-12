@@ -342,13 +342,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
-    /// Generic stub renderer for a not-yet-implemented location inside the estate.
-    fileprivate func renderStub(titleKey: String, lingo: Lingo, locale: String) -> String {
-        let title = lingo.localize(titleKey, locale: locale)
-        let msg = lingo.localize("stub.coming_soon", locale: locale)
-        return "<b>\(title)</b>\n\n\(msg)"
-    }
-
     // MARK: - Warehouse views
 
     fileprivate func renderWarehouseRoot(slotsUsed: Int, slotsCap: Int, lingo: Lingo, locale: String) -> String {
@@ -540,13 +533,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 warehouseCount: whCounts[id, default: 0]
             )
         }
-    }
-
-    fileprivate func backToRootKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let back = lingo.localize("estate.back_root", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: back, callbackData: "estate:root")
-        ]])
     }
 
     // MARK: - Plot drill-down (Phase 5.1)
@@ -843,13 +829,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         let back = lingo.localize("estate.plot.picker.back", locale: locale)
         rows.append([TGInlineKeyboardButton(text: back, callbackData: "estate:plot")])
         return TGInlineKeyboardMarkup(inlineKeyboard: rows)
-    }
-
-    fileprivate func backToHomeKeyboard(lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        let back = lingo.localize("estate.back_home", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: back, callbackData: "estate:home")
-        ]])
     }
 
     // MARK: - Workshop (Phase 5.2)

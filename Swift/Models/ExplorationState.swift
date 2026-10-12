@@ -269,12 +269,6 @@ extension ExplorationState {
 
     public var isPassive: Bool { mode == .passive }
 
-    /// True while the passive expedition's timer hasn't elapsed yet.
-    public func isPassiveInflight(now: Date = Date()) -> Bool {
-        guard isPassive, let endsAt = endsAt else { return false }
-        return now < endsAt
-    }
-
     /// True when the passive simulation has produced a report that the
     /// player hasn't seen yet.
     public var hasReadyReport: Bool {

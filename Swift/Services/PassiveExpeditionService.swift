@@ -50,6 +50,10 @@ public enum PassiveDuration: Int, CaseIterable, Sendable {
 // MARK: - Report model (JSON-persisted)
 
 public struct PassiveReport: Codable, Sendable {
+    /// Strides walked, out and home. Nothing in this binary reads it; it is
+    /// written for the binaries before `fac8d5f`, which decode it as REQUIRED
+    /// and skip a report they cannot read without deleting its row — so a
+    /// rollback past this build would strand every report not yet read.
     public let stepsTaken: Int
     public let finalDepth: Int
     public let hpBefore: Int

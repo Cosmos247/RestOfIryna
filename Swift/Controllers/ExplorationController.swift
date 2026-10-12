@@ -900,13 +900,6 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         }
     }
 
-    private func itemNameOrId(_ itemId: String, lingo: Lingo, locale: String) -> String {
-        if let item = ItemCatalog.find(itemId) {
-            return lingo.localize(item.nameKey, locale: locale)
-        }
-        return itemId
-    }
-
     /// Prepend the item's glyph (e.g. 🪵 for pine lumber) to its localized
     /// name so loot lines read as "+2 🪵 Pine Lumber". Returns the bare
     /// name if the item has no icon or isn't in the catalog.

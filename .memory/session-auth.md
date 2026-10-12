@@ -23,7 +23,7 @@ Fluent model mapped to `users` table:
 User._session(for: tgUser, db:)  // Find by telegram_id or create new
 User.cachedSession(for:db:)       // Cache-first lookup
 user.saveAndCache(in: db)         // Persist + update cache
-user.invalidateCache()            // Drop from cache
+sessionCache.invalidate(telegramId:)  // Drop from cache
 ```
 
 ## Session Cache (Swift/Helpers/SessionCache.swift)

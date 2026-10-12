@@ -454,7 +454,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     }
 
     /// A street's own screen: backdrop, the prose that says what stands on
-    /// it, and the street's keyboard. Same shape as `renderLocation` — the
+    /// it, and the street's keyboard — the shape every place in town has: the
     /// street is a place the player is standing in, not a menu.
     private func renderStreet(_ street: Street, context: Context) async throws {
         let lingo = context.lingo
@@ -467,31 +467,6 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             assetPath: "\(projectPath)/Assets/capital/\(street.assetName).jpg",
             caption: text,
             replyMarkup: generateControllerKB(session: context.session, lingo: lingo),
-            toUser: context.session,
-            bot: context.bot
-        )
-    }
-
-    private func renderLocation(_ location: Location, context: Context) async throws {
-        let lingo = context.lingo
-        let locale = context.session.locale
-        let title = lingo.localize(location.titleKey, locale: locale)
-        // Only the tavern body addresses the player with a feminitive
-        // ("наміснику"); the other locations are gender-neutral, so route just
-        // the tavern through the gendered helper to avoid missing `.m/.f` keys.
-        let body  = location == .tavern
-            ? lingo.localize(location.bodyKey, gender: context.session.gender, locale: locale)
-            : lingo.localize(location.bodyKey, locale: locale)
-        let text  = "<b>\(title)</b>\n\n\(body)"
-        let markup = generateControllerKB(session: context.session, lingo: lingo)
-
-        // Per-location artwork at `Assets/capital/<location-id>.jpg`.
-        // `sendCachedPhoto` handles missing-file fallback (text-only)
-        // AND file_id caching uniformly; photo is kept in chat history.
-        _ = try await sendCachedPhoto(
-            assetPath: "\(projectPath)/Assets/capital/\(location.rawValue).jpg",
-            caption: text,
-            replyMarkup: markup,
             toUser: context.session,
             bot: context.bot
         )
@@ -4051,7 +4026,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     // result text lands.
 
     func showTavern(context: Context) async throws {
-        // Same photo as `renderLocation(.tavern)` would use, but with the
+        // The tavern's own photo (`Assets/capital/tavern.jpg`), with the
         // tavern-specific inline keyboard ([🍲 Меню][🎲 Кості][🎯 Влучанка])
         // attached instead of the plain capital reply-keyboard. Goes
         // through `sendCachedPhoto` so the file_id cache applies (photo

@@ -16,7 +16,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Localization](localization.md) — Lingo setup, JSON structure, «ви», player gender, item gender, the UA glossary
 
 ## Operations
-- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies
+- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), changing one player's gender or wiping one character (2026-10-12), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies (the expedition there and back added 2026-10-12)
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest
@@ -46,8 +46,10 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   calibrated model, then the post-rebalance research, each with its rebuild recipe: tier 2's
   expedition model, the estate scaling, the arena duel, the weapon ladder, the tarot's Vigor
   multipliers, the armour enchant, the fortune teller's dispel and second card, the repair
-  measured on live play (2026-10-10), and the zlatnyk and the Chancellery (2026-10-11: the session
-  cache, the shelf, the class change measured).
+  measured on live play (2026-10-10), the zlatnyk and the Chancellery (2026-10-11: the session
+  cache, the shelf, the class change measured), the delivery jobs against buying (2026-10-11), and
+  the passive expedition there and back (2026-10-11/12: the teleport, the death rates, the stride
+  and the governor's rules, the harness recipe).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).

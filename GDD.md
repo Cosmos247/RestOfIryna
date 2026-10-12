@@ -147,7 +147,7 @@ Hunger is the pacing meter of the entire game. It constrains how long you can st
 ### Starvation Penalty
 
 When `hunger == 0`:
-- In **passive expedition** mode, travel time between rooms **doubles** (5 min → 10 min; test mode 10 s → 20 s). Active reconnaissance has no transition timer, so this penalty doesn't apply there.
+- In **passive expedition** mode, travel time between rooms **doubles** (5 min → 10 min; test mode 10 s → 20 s). Active reconnaissance has no transition timer, so this penalty doesn't apply there. *(Never built: hunger costs HP on every step that begins at 0 Vigor, in both modes — `tuning/vigor.json` → `starvation`.)*
 - Combat stats are reduced by `⚙️ TBD` percent (suggest −25% to Attack and Defense).
 - **Health drains** each room transition while starving (suggest 5% of max HP per room).
 - Food eaten while starving restores less efficiently — can add a brief "eating while starved" grace period `⚙️ TBD`.
@@ -179,8 +179,8 @@ Exploration has two modes with different pacing:
 
 - **Active reconnaissance (розвідка)** — the player drives the chain manually. Step Forward / Step Back buttons resolve instantly; there is no transition timer and no real-time gating. Each tap rolls an event at the new km. This is the primary gameplay loop.
 - **Passive expedition (експедиція)** — the player sets a duration (30 min / 1 h / 1.5 h planned) and the bot simulates room transitions in the background. In this mode:
-  - **Transition time:** 5 minutes per room in production; 10 seconds in test mode (feature flag).
-  - **Double-speed:** player can halve travel time by spending 2× hunger.
+  - **Transition time:** 5 minutes per room in production; 10 seconds in test mode (feature flag). *(As shipped 2026-10-12: a 3-minute stride, and the run walks there AND back in the chosen time — 30 / 60 / 90 min turn at 5 / 10 / 15 km; the governor turns early when wounded or when only the road home is left, and eats from the bag when he must. Test mode became `time.scale`.)*
+  - **Double-speed:** player can halve travel time by spending 2× hunger. *(Never built; its cost, `vigor.json` → `drain.walkRoomDoubleSpeed`, is a dead knob — `TODO.md`.)*
 
 The chain does not branch in either mode. Depth is progress.
 

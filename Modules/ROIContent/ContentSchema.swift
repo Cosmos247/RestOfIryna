@@ -127,6 +127,8 @@ public enum ContentSchema {
     /// it as a step of its old outward-only walk and march the 90-minute run
     /// 29 km deep before landing home — and a `/reload` of this bundle on that
     /// binary is exactly how it would get it. The bundle still decodes there,
-    /// so only the handshake can refuse it.
+    /// so only the handshake can refuse it. `exploration.passive` gains a
+    /// required `retreatBelowHpPercent` with it — the share of HP below which
+    /// the governor turns for home.
     public static let current: Int = 23
 }
