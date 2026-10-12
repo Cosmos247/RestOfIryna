@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-12)* **the 🏕 Expedition walks there and back** — NOT live until a restart
+- *(this hash fill, 10-12)* **`fac8d5f`'s hash fill** — records only.
+- `fac8d5f` (10-12) **the 🏕 Expedition walks there and back** — NOT live until a restart
   (content + Swift; never `/reload` this content on the old binary, which would walk 29 strides
   outward) — the owner's report «телепортує додому після максимального км»:
   - half the strides out, half home, the door last; a 3-minute stride (`unitsPerStep` 5 → 3:
@@ -680,7 +681,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-11 evening → 10-12 (the expedition there and back; the parallel session's work committed)
+## Session — 2026-10-11 evening → 10-12 (the expedition there and back; the parallel session's work committed) — `fac8d5f`
 
 The owner: «Давай займемось експедицією… що робити з багом того, що гравця фактично "телепортує"
 додому після максимального км?» Read off the code and the Pi, then measured on a scratch harness over

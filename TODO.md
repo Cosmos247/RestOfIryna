@@ -1575,8 +1575,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The 🏕 Expedition walks there and back** *(2026-10-12, content + Swift, NOT live until a
-        restart)* — the owner's report: the governor «телепортує додому після максимального км». The
+  - [x] **The 🏕 Expedition walks there and back** *(2026-10-12, `fac8d5f`, content + Swift, NOT live
+        until a restart)* — the owner's report: the governor «телепортує додому після максимального км». The
         run walked km 1 → 17 and was home the moment its last step ended (the road back free, the 17
         km banked on 🌲 Глибина), ran one step short of its label (`derivedStepCount` floored 89.99
         minutes) and never turned back. Four quizzes chose the rebuild:
@@ -2133,7 +2133,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 
-**Added 2026-10-12 — the expedition there and back (NOT deployed — content and Swift, so a restart):**
+**Added 2026-10-12 — the expedition there and back (`fac8d5f`, NOT deployed — content and Swift, so a restart):**
 an account with full HP and some Vigor. A run in flight at the restart resumes on its old 5-minute
 plan and walks home.
 - 🌲 → 🏕 Експедиція: the buttons read «30хв · 5 км», «1год · 10 км», «1год 30хв · 15 км» (only

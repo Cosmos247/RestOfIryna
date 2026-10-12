@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-12 — the 🏕 Expedition walks there and back** (content + Swift, NOT live until a restart —
+**2026-10-12 — the 🏕 Expedition walks there and back** (`fac8d5f`, content + Swift, NOT live until a restart —
 the owner's report: «телепортує додому після максимального км»). Half the 3-minute strides out, half
 home, the door last: 30/60/90 min = 5/10/15 km, the depth on the picker. The governor turns below
 half his HP or when his Vigor only covers the road home with nothing to eat, eats from the bag only
