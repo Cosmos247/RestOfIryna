@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-12)* **the 10-12 sync pass** — records, plus dead code — NOT live until a
+- *(this hash fill, 10-12)* **`beed258`'s hash fill** — records only.
+- `beed258` (10-12) **the 10-12 sync pass** — records, plus dead code — NOT live until a
   restart (Swift; nothing a player sees):
   - seven functions with no caller removed (`renderStub`, `backToRootKeyboard`,
     `backToHomeKeyboard`, `itemNameOrId`, `isPassiveInflight`, `invalidateCache`,
@@ -693,7 +694,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-12, the sync pass (records; seven dead functions; the retreat share required) — *(this commit)*
+## Session — 2026-10-12, the sync pass (records; seven dead functions; the retreat share required) — `beed258`
 
 On the owner's long-form audit prompt, after `fac8d5f` / `870361b`.
 

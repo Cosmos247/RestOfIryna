@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-12 — the sync pass** (Swift + records, NOT live until a restart; nothing a player sees). Seven
+**2026-10-12 — the sync pass** (`beed258`, Swift + records, NOT live until a restart; nothing a player sees). Seven
 functions with no caller removed — `renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`
 (EstateController), `itemNameOrId` (ExplorationController), `isPassiveInflight` (ExplorationState),
 `invalidateCache` (User), `renderLocation` (CapitalController) — with `stub.coming_soon`, which
