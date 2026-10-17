@@ -4,8 +4,9 @@
 //
 //  Created by Dmytro Ihnatyuhin on 12.09.2026.
 //
-//  The four boards behind the journal's 🏆 screen: level, arena honor, the
-//  deepest km ever reached, and every km ever walked.
+//  The five boards behind the journal's 🏆 screen: level, arena honor, the
+//  deepest km ever reached, every km ever walked, and (2026-10-17) the silver
+//  in the purse.
 //
 //  NAMING — these are LEADERBOARDS, never "ratings". `rating` is already taken
 //  in this codebase for crit / dodge / accuracy, which are converted through a
@@ -17,7 +18,9 @@
 //  than the only one: seasons are a decided future direction. A seasonal board
 //  will be a second READING of the same metric with its own storage, never a
 //  reset of `deepestKm` / `totalKmWalked`, because zeroing those would destroy
-//  the all-time board in order to build the seasonal one.
+//  the all-time board in order to build the seasonal one. The wealth board is
+//  the one exception: it reads the balance as it stands — spending drops a
+//  player — so it is a reading of NOW, and a season never touches it.
 //
 //  RANK — how many players are strictly better on the board's OWN metric, plus
 //  one, so ties share a place: two players on 31 km are both 🥇 and the next is
@@ -52,6 +55,7 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
     case honor
     case depth
     case distance
+    case wealth
 
     /// Short, stable callback token. Kept separate from `rawValue` so a board
     /// can be renamed without invalidating every button already on a player's
@@ -62,6 +66,7 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
         case .honor:    return "hon"
         case .depth:    return "dep"
         case .distance: return "dst"
+        case .wealth:   return "wlt"
         }
     }
 
@@ -75,6 +80,8 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
         case .honor:    return "🎖"
         case .depth:    return "🌲"
         case .distance: return "🚶"
+        // Silver's own sign; 💰 is what a player GETS (a reward, a claim).
+        case .wealth:   return "🪙"
         }
     }
 
@@ -86,9 +93,16 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
     public var unitKey: String? {
         switch self {
         case .depth, .distance: return "leaderboard.unit.km"
+        case .wealth:           return "leaderboard.unit.silver"
         case .level, .honor:    return nil
         }
     }
+
+    /// Whether a row shows another player's number. The wealth board shows
+    /// only places (the owner's pick, 2026-10-17): a purse on public display
+    /// would be read at the market. The viewer's own row keeps its number —
+    /// it tells nobody anything they could not see in their own profile.
+    public var showsOthersValues: Bool { self != .wealth }
 }
 
 // MARK: - Rows
@@ -132,6 +146,9 @@ public enum LeaderboardService {
         case .honor:    return try await honorView(page: page, for: user, on: db)
         case .depth:    return try await userMetricView(page: page, for: user, on: db, metric: \.$deepestKm, tiebreak: \.$totalKmWalked)
         case .distance: return try await userMetricView(page: page, for: user, on: db, metric: \.$totalKmWalked, tiebreak: \.$deepestKm)
+        // An empty purse has no standing, like a walk never taken: 11 of 37
+        // finished registrations held 0 on 2026-10-17, nearly all level 1.
+        case .wealth:   return try await userMetricView(page: page, for: user, on: db, metric: \.$silver, tiebreak: \.$level)
         }
     }
 
@@ -222,12 +239,13 @@ public enum LeaderboardService {
         return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
     }
 
-    // MARK: - The two walking boards
+    // MARK: - The plain-column boards (the two walking boards, wealth)
 
     /// Shared body for the boards that read a plain `User` column. A zero is
     /// excluded rather than listed last: a player who has never walked has no
     /// standing on a walking board, and a page of "0 km" from every account that
-    /// ever registered would bury the players who did walk.
+    /// ever registered would bury the players who did walk. An empty purse is
+    /// left out the same way.
     private static func userMetricView(
         page requested: Int,
         for user: User,

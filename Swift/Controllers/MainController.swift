@@ -382,9 +382,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Leaderboards (2026-09-12)
     //
-    // Four all-time boards behind the journal, rendered as tabs that redraw the
-    // same message. Read-only by the same rule the journal follows: a screen
-    // that shows standings must not become somewhere to spend anything.
+    // Five boards behind the journal (four all-time, wealth a reading of now),
+    // rendered as tabs that redraw the same message. Read-only by the same rule
+    // the journal follows: a screen that shows standings must not become
+    // somewhere to spend anything.
     //
     // Paged since 2026-10-17, ten rows a page: `lb:<board>` is a tab and opens
     // page 1, `lb:<board>:<page>` turns a page. A tab button left in chat from
@@ -426,9 +427,12 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             text: lingo.localize("leaderboard.button.back", locale: locale),
             callbackData: "lb:back"
         )
+        // 🪙 Багатство on a row of its own (2026-10-17, the owner's pick), so the
+        // four tabs above it keep the places a thumb already knows.
         var rows = [
             [tab(.level), tab(.honor)],
-            [tab(.depth), tab(.distance)]
+            [tab(.depth), tab(.distance)],
+            [tab(.wealth)]
         ]
         if pageCount > 1 {
             rows.append([
@@ -495,6 +499,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // The viewer's row is bold wherever it appears, including inside the
         // top ten — the number a player came for should not need hunting.
         let shown = entry.isViewer ? "<b>\(name)</b>" : name
+        // A board that keeps other players' numbers private prints their place
+        // and name only; the viewer's own row still carries theirs.
+        guard entry.isViewer || board.showsOthersValues else { return "\(place) \(shown)" }
         return "\(place) \(shown) — \(value)"
     }
 

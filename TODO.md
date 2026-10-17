@@ -1575,6 +1575,11 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The 🪙 Багатство board** *(2026-10-17, Swift + locales, NOT live until a restart)* — the
+        owner: «Хочу додати рейтинг за багатством». A mockup on the live purses and four picks: the
+        purse as it stands (`users.silver`), an empty purse unlisted, the tab on a row of its own,
+        and **places only** — other players' sums are never shown, the viewer's own row keeps
+        theirs (`showsOthersValues`). Paged like the rest; every live page matched Postgres `rank()`.
   - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, `fb72d0d`, Swift only, NOT live
         until a restart)* — nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` in the log:
         the welcome printed the first name «<🌷RILENX🌷>» raw under HTML, Telegram refused it, and the
@@ -2147,8 +2152,17 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**Not live yet:** the three blocks on top — the 2026-10-17 welcome and leaderboard pages and the
-2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
+**Not live yet:** the four blocks on top — the 2026-10-17 wealth board, welcome and leaderboard
+pages and the 2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
+
+**Added 2026-10-17 — the 🪙 Багатство board (NOT deployed — Swift + locales, needs a restart):** any
+account with some silver, and one with none.
+- 📓 Нотатник → 🏆 Рейтинги: a third row «🪙 Багатство» under the four tabs; the tap opens «Хто має
+  найбільше срібла» with «◀️ 1/3 ▶️» (26 purses on 10-17).
+- Every other row reads «4. Amae» — a place and a name, no sum; your own row «11. Ви — 391 🪙», bold.
+- Players with equal purses share a place («23.» three times on 10-17).
+- An account with 0 silver: «У вас поки немає срібла.» under the rule, and it is listed nowhere.
+- Spend some silver and reopen the tab: your place moves down at once.
 
 **Added 2026-10-17 — a Telegram name in the welcome (`fb72d0d`, NOT deployed — Swift only, needs a restart):**
 the stuck player, `7803243068`, has no way to know — their next message should get «👋 Welcome,
@@ -3305,8 +3319,8 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-17 — the leaderboard pages and the escaped registration welcome built (Swift
-only, 437 tests) and waiting for a restart with the barrier's spark; the Pi read off the machine (the
+*Last updated: 2026-10-17 — the 🪙 Багатство board, the leaderboard pages and the escaped
+registration welcome built (Swift only, 437 tests) and waiting for a restart with the barrier's spark; the Pi read off the machine (the
 10-15 restart was the host's reboot); the nine `🌷rilenx🌷` refusals traced to the welcome and fixed;
 a guild name's same hole raised.*
 

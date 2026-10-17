@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-17)* **`fb72d0d`'s hash fill** — records only.
+- *(this commit, 10-17)* **the 🪙 Багатство board** — Swift + locales, NOT deployed (a restart): a
+  fifth leaderboard on a row of its own, `users.silver` above zero, ties by level; other players
+  show a place and a name only, the viewer's row keeps its sum (`showsOthersValues`). Four locale
+  keys × 2. Every page matched Postgres `rank()` on the live data (26 purses, 3 pages).
+- `2d8411a` (10-17) **`fb72d0d`'s hash fill** — records only, plus the stuck player's apology
+  recorded for after the restart.
 - `fb72d0d` (10-17) **a Telegram name escaped in the registration welcome** — Swift only, NOT
   deployed (a restart): «👋 Welcome, <🌷RILENX🌷>!» was refused by Telegram, and the throw skipped the
   language picker, so one open-door account sat on step 0 through nine `/start`s (10-13 → 10-15).
@@ -723,7 +728,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped) — `1f0ca8b`, `fb72d0d`
+## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped; the wealth board) — `1f0ca8b`, `fb72d0d`, *(this commit)*
 
 Two sessions in a row: the laptop switched off mid-build, and the second picked the work up from the
 first one's transcript (auto-memory `reference-session-transcripts`). Nothing was lost; the build
@@ -789,6 +794,27 @@ Telegram name (`User.name`'s one reader is this line).
 
 Not live: Swift only, so a restart. The 10-13 deploy record and the barrier's spark went in just before
 it, as `67aa073` and `32cf650`.
+
+**The 🪙 Багатство board** (the owner, before the push: «Хочу додати рейтинг за багатством. Покажи
+як ти бачиш реалізацію, та постав мені питання перед тим як робити»). A mockup on the live purses
+(26 of 37 finished registrations above zero, 30,638 🪙 in all; the guild's treasury, items, market
+lots and zlatnyks not counted) and a four-question quiz; the owner took the recommendation on three —
+the purse as it stands (not a lifetime counter, which would need a writer at ~15 silver sites and
+start from 0; not items, priced for 11 only), an empty purse unlisted, the tab on a row of its own —
+and chose **places only** over exact sums for the fourth. Built:
+- `LeaderboardBoard.wealth` (slug `wlt`, 🪙 — 💰 is what a player gets), through the shared
+  plain-column body with `\.$silver`, tiebreak `\.$level`, so paging and ranks come for free;
+- `showsOthersValues` (false for wealth): `leaderboardRow` prints another player's place and name
+  only; the viewer's own row keeps its sum (read as «інших гравців» in the question, and it tells
+  nobody anything new) — flagged to the owner;
+- the keyboard's third row `[· 🪙 Багатство ·]`; four keys × 2 (`leaderboard.board.wealth`, `.sub`,
+  `leaderboard.unit.silver`, `leaderboard.unranked.wealth`);
+- checked against Postgres `rank()` on the live data, every page: 26 rows / 3 pages, ties at 23rd
+  ordered by level — match; the screen rendered from those rows.
+- the owner's audit prompt found three record gaps, fixed in the same commit: README's roadmap
+  "waiting for a restart" still named only the barrier (`1f0ca8b` and `fb72d0d` had left the pages
+  and the welcome out), the primer's walk step still called the 10-13 blocks "on top", and a comment
+  in `MainController` broke mid-sentence. A live-ops FAQ row for the board was added.
 
 ## Session — 2026-10-13, evening (the forest's Defend measured; the mage's barrier strikes back) — `32cf650`
 

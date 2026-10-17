@@ -247,7 +247,7 @@ RestOfIryna/
 │   │   ├── EquipmentService.swift # atomic equip/unequip, bonus recomputation. Phase 6.5: `nominalStats(of:for:)` (full-condition stats incl. the armour's enchant level; since 2026-10-06 through `stats(ofItem:tier:enchantLevel:)`, which the Master's card asks too) + `contributedStats(of:for:)` (durability-adjusted: armor broken→0, weapon at 0→half, each stat rounded half up; `isBroken` — since 2026-10-11 a broken piece no longer counts toward its set either) — single source summed by `recomputeBonuses`, reused by the inventory detail card. **2026-10-05**: `backfillGearBonuses(on:logger:)` re-derives every player's cached `gear*Bonus` at boot (after the migrations), since a migration or a content edit cannot reach the cache
 │   │   ├── WarehouseService.swift # deposit/withdraw between inventory and warehouse
 │   │   ├── ExplorationService.swift # step outcome roll + autobattle stub + loot drops. Also the one place a walked km is TALLIED (`user.recordStep()`) — every kind of step comes through here. The depth RECORD is not written here: it is banked at the manor door from `ExplorationState.maxDepthKm` (2026-09-15) The hunger tick lands only on a step that BEGAN at 0 Vigor (2026-10-08).
-│   │   ├── LeaderboardService.swift # 2026-09-12 — the four all-time boards behind the journal (level · arena honor · deepest km · total km), ten a page since 2026-10-17 (`LeaderboardPaging`; a page's first rank is counted, so a tie across the edge keeps its place). The viewer's COUNT runs only when they are not on the page shown. Ties share a place; the secondary sort only orders the display. NOT "ratings" — that word means crit/dodge/accuracy here
+│   │   ├── LeaderboardService.swift # 2026-09-12 — the boards behind the journal (level · arena honor · deepest km · total km, all-time; and since 2026-10-17 🪙 wealth — the purse as it stands, places only for other players), ten a page since 2026-10-17 (`LeaderboardPaging`; a page's first rank is counted, so a tie across the edge keeps its place). The viewer's COUNT runs only when they are not on the page shown. Ties share a place; the secondary sort only orders the display. NOT "ratings" — that word means crit/dodge/accuracy here
 │   │   ├── HealingService.swift  # lazy HP regen (10%·maxHp per REAL minute) while at the estate; stamped at both ends of an expedition (`beginResting` / `suspendResting`); `RestedToFull` (2026-10-08) — every fill the tick makes, for the watchman to announce
 │   │   ├── RestNotificationService.swift # 2026-09-09 — the 60 s watchman for what finishes while nobody is looking: HP topping out, the fortune cooldown, the 12:00 rollover and (2026-10-04) a decree or a taken job turned ready. Mutates the SESSION-CACHED user (`SessionCache.peek`), because its own copy would write stale values and be installed as the session. Since 2026-10-08 the full-HP notice covers a fill the player's own tap computed too. **2026-10-11:** a fifth question, of the whole roster — zlatnyks the owner credited by hand («🟡 Вам нараховано N златників. Тепер у вас M.»), once per change; a cut is recorded and not announced.
 │   │   ├── PassiveExpeditionService.swift # the passive run there and back (2026-10-12): duration picker, a stride-by-stride Task.sleep runner over `PassiveRoute` (the turn, the meals), report push
@@ -676,9 +676,13 @@ the binary):
   longer counts toward its set;
 - every delivery job pays at least what its items cost at the trader.
 
-**Built 2026-10-13, waiting for a restart** (content schema v24, shipped with the binary): the mage's
-«🌀 Магічний бар'єр» strikes back — a spark of 15% of a plain hit, the archer's size, on top of its
-60% cut; it struck nothing before.
+**Built 2026-10-13/17, waiting for one restart** (content schema v24, shipped with the binary):
+- the mage's «🌀 Магічний бар'єр» strikes back — a spark of 15% of a plain hit, the archer's size, on
+  top of its 60% cut; it struck nothing before;
+- the leaderboards turn pages of ten, and a fifth board, «🪙 Багатство», ranks the silver in the purse
+  — other players by place only, never their sums;
+- the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
+  language picker.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

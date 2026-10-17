@@ -368,8 +368,9 @@ accuracy; the player reads «Рейтинги». The boards are ALL-TIME, the fi
 only one: a seasonal board is a second READING with its own storage — **never a reset of
 `deepestKm` / `totalKmWalked`** (`ResetDeepestKm` was the one exception, because that column's
 MEANING changed). **One ladder, one implementation:** the Arena's «Найкращі бійці» renders the
-same `LeaderboardService.view(.honor,…)` as the journal's board. Auto-memory
-`project-leaderboards-will-go-seasonal`.
+same `LeaderboardService.view(.honor,…)` as the journal's board. «🪙 Багатство» (2026-10-17) reads
+the purse as it stands, so it is a reading of now, and it shows other players' places but never their
+sums (`showsOthersValues`, the owner's pick). Auto-memory `project-leaderboards-will-go-seasonal`.
 
 **A lifetime counter has exactly one writer — and WHEN it writes is half the rule.**
 `totalKmWalked` is a tally: `User.recordStep()` from `ExplorationService.rollStep` (all three

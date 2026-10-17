@@ -21,6 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-17 — the 🪙 Багатство board** (Swift + two locales, NOT deployed — a restart). A fifth
+leaderboard, on a row of its own under the four tabs: the silver in the purse (`users.silver`,
+an empty purse unlisted, ties ordered by level). Other players show a place and a name only — the
+owner's pick, so a purse is not read at the market; the viewer's own row keeps its sum. A balance,
+not a lifetime counter: spending drops a player, and a season never touches it. Paged like the rest.
+
 **2026-10-17 — a Telegram name escaped in the registration welcome** (`fb72d0d`, Swift only, NOT deployed — a
 restart). «👋 Welcome, %name!» printed the Telegram first name raw under HTML; «<🌷RILENX🌷>» made
 Telegram refuse it, and the throw skipped the language picker — one player stuck on step 0. The
@@ -1043,7 +1049,7 @@ were superseded by Phases 4–6.
 ### Services
 - [x] VigorService — pure functions (drain, consume, effective-stat penalty, starvation HP loss); callers persist. **All costs read `content/data/tuning/vigor.json` since Phase 4.** Now wired into ExplorationService.rollStep (walkRoom drain on every step, combatRound drain inside autobattle, starvation HP tick per room when vigor == 0).
 - [x] EquipmentService — atomic equip/unequip with slot swap, recomputes cached gear bonuses on User
-- [x] LeaderboardService (2026-09-12) — the four all-time boards behind the quest journal. One query for the page (ranks derive from it locally, since a sorted page starts at the maximum), plus a COUNT only when the viewer is not on that page. Ties share a place; rank is on the board's own metric. `ArenaController`'s «Найкращі бійці» reads it too, so one ladder cannot render two ways.
+- [x] LeaderboardService (2026-09-12) — the four all-time boards behind the quest journal (a fifth, 🪙 wealth, since 2026-10-17: the purse as it stands, places only for others; ten a page since the same day). One query for the page (ranks derive from it locally, since a sorted page starts at the maximum), plus a COUNT only when the viewer is not on that page. Ties share a place; rank is on the board's own metric. `ArenaController`'s «Найкращі бійці» reads it too, so one ladder cannot render two ways.
 - [x] WarehouseService — deposit / withdraw one unit between InventoryEntry and WarehouseEntry (skips equipped gear on deposit). **2026-09-15**: tier / durability / max / enchant ride along as `GearState`, so a round-trip no longer hands back a factory-fresh item
 - [x] ExplorationService — rollStep, which since 2026-09-12 returns a **`StepResult`** (the event plus `starvationHpLost`) rather than a bare outcome, so the hunger tick can never be folded into an event's number or dropped by a branch; the `.starvationOnly` case is gone. It is also the single place a walked km is counted (`User.recordWalk(toKm:)`). Depth-aware loot pool (now `zones.json`), resolveAutobattle on top of CombatService primitives (alternating strikes via applyAttack, hit/miss/crit math, ±10% variance, safety cap 50 rounds). Phase 4.1 active CombatController will share the same applyAttack so fights resolve with identical odds in either mode. Event weights: nothing 40 / loot 30 / encounter 25 / trip 5.
 - [x] **Combat model rebuilt (Phase 5C, 2026-08-30)** — damage is ABSORBED, not subtracted: `ATK × (1 − DEF/(DEF+K(L))) × levelDiff × variance`. Crit/dodge/accuracy are ratings run through curves whose denominators grow with level, so a stat percentage holds steady instead of rotting. Hit band 85 with a floor of 40. Enemies carry real crit/dodge/accuracy (they passed literal 0/0/0 before) and a level, and their stats are generated at design time from a six-row archetype table. `maxLevel` 40, proportional stat growth, power-law XP curve, Vigor pool that grows and regenerates. Numbers live in `content/data/tuning/`.

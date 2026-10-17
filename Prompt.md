@@ -27,15 +27,15 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`fb72d0d`** (the escaped welcome), **`1f0ca8b`** (the leaderboard pages), **`32cf650`** (the mage's barrier strikes back, schema v24), **`67aa073`** (the 2026-10-13 18:54 deploy recorded) and **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: `67aa073`, `32cf650`, `1f0ca8b`, `fb72d0d` and this hash fill** — push is the owner's |
+| HEAD | **this commit** (the 🪙 Багатство board) on top of **`2d8411a`** (`fb72d0d`'s hash fill), **`fb72d0d`** (the escaped welcome), **`1f0ca8b`** (the leaderboard pages), **`32cf650`** (the mage's barrier strikes back, schema v24), **`67aa073`** (the 2026-10-13 18:54 deploy recorded) and **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: `67aa073`, `32cf650`, `1f0ca8b`, `fb72d0d`, `2d8411a` and this commit** — push is the owner's |
 | running on the Pi | **`dda286f`**, deployed **2026-10-13 18:54:16**; online since **2026-10-15 01:42:26**, when the Pi itself rebooted and pm2 resurrected the same build (its count reads 0 since). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` at 922 — nine `🌷rilenx🌷` refusals, an unescaped Telegram name in the welcome (fixed in the tree; one player stuck on step 0 until the restart, `.memory/live-ops.md`). Content schema **v23**, content hash **`9dba2746`**, `records 78ce585986927122`, `tuning 53e33d38021f0bf4`; no migration in that restart. One passive run straddled it (ending 19:37:05, resumed on its old plan). The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The leaderboard pages** and **the escaped welcome** (Swift only), and **the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**: the old binary refuses this content, a `/reload` included). The tree: schema v24, content hash `19c94a81`, `tuning 799a96eb5f8619df`, the other four halves unmoved. The 10-13 18:54 restart installed everything before it |
+| waiting for a restart | **The leaderboard pages**, **the escaped welcome** and **the 🪙 Багатство board** (Swift only), and **the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**: the old binary refuses this content, a `/reload` included). The tree: schema v24, content hash `19c94a81`, `tuning 799a96eb5f8619df`, the other four halves unmoved. The 10-13 18:54 restart installed everything before it |
 
 ### Where the last sessions stopped (2026-10-11 → 10-17)
 
-**10-17 — the Pi read; the leaderboard pages; a Telegram name escaped.** Read off the Pi: it runs
+**10-17 — the Pi read; the leaderboard pages; a Telegram name escaped; the wealth board.** Read off the Pi: it runs
 `dda286f`, the 10-15 restart was the host rebooting, and only the barrier's spark waited — a testers'
 note for it went to the owner. The log's nine `🌷rilenx🌷` refusals were the registration welcome
 printing a first name «<🌷RILENX🌷>» raw; the throw skipped the language picker and the player sits on
@@ -43,7 +43,8 @@ step 0. Escaped through `TelegramHTML` (437 tests); a guild name has the same ho
 Then the journal's 🏆 boards learned to turn pages: ten a page, «◀️ N/M ▶️» wrapping round, a page's
 first rank COUNTED so a tie across the edge keeps its place (`LeaderboardPaging`, 434 tests, every
 live page matched Postgres `rank()`). The laptop died mid-build; the next session resumed from the
-transcript. `.memory/sessions.md` → the 10-17 entry.
+transcript. Last, before the push, a fifth board: «🪙 Багатство», the purse as it stands, other
+players' places without their sums (the owner's pick). `.memory/sessions.md` → the 10-17 entry.
 
 **10-13, evening — the forest's Defend, measured; the mage's barrier strikes back.** Asked how the
 three Defend buttons work: every Defend tap costs HP against an Attack (−2.6 / −4.4 / −3.2 at L9),
@@ -137,8 +138,8 @@ one plain-text `sendMessage` from the Pi to `7803243068`, the text in `.memory/s
 
 **0b — Walk what just went live.** First the passive run that straddled the 10-13 restart (ending
 19:37:05): did its report arrive, and does it read right for a row started on the old plan? Then
-**walk**: the five blocks on top of `TODO.md` → "Walk list" (live since 10-13 18:54), and the six
-under them (live since 10-11 13:21). For the Chancellery, start by crediting a test account in
+**walk**: once the restart lands, the four waiting blocks on top of `TODO.md` → "Walk list"; then
+the five under them (live since 10-13 18:54) and the six under those (live since 10-11 13:21). For the Chancellery, start by crediting a test account in
 DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks"; if the grid calls the new columns read-only,
 quit DBeaver and reopen, or use the SQL editor). The testers' note for the 10-13 restart went to the
 owner the same day.
