@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-17)* **the leaderboard pages** — Swift only, NOT deployed (a restart): the
+- *(this commit, 10-17)* **a Telegram name escaped in the registration welcome** — Swift only, NOT
+  deployed (a restart): «👋 Welcome, <🌷RILENX🌷>!» was refused by Telegram, and the throw skipped the
+  language picker, so one open-door account sat on step 0 through nine `/start`s (10-13 → 10-15).
+  `TelegramHTML.escaped` (ROIContent) is now the one escape — `/reload`'s copy delegates to it — + 3
+  tests (437), the escape order mutation-tested.
+- `1f0ca8b` (10-17) **the leaderboard pages** — Swift only, NOT deployed (a restart): the
   journal's 🏆 boards turn pages of ten under «◀️ N/M ▶️» (wrapping round; the middle button only the
   page number; the row only when a board has two pages or more). A page's first rank is COUNTED
   (strictly better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
@@ -717,7 +722,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages)
+## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped)
 
 Two sessions in a row: the laptop switched off mid-build, and the second picked the work up from the
 first one's transcript (auto-memory `reference-session-transcripts`). Nothing was lost; the build
@@ -757,6 +762,22 @@ page), ten a page. Built:
   straddles there too), distance 33 / 4 (11, 21, 30) — all match;
 - a clean build; no locale key (the arrows and «N/M» are symbols); no content, so the digest is
   unmoved.
+
+**The `🌷rilenx🌷` refusals, fixed** (the owner: «Виправ баг з іменем»). Byte offset 14 is the end of
+«👋 Welcome, » — `RegistrationController.showLanguageSelection` printed the Telegram first name raw
+under `parseMode: .html`, and the account's first name is «<🌷RILENX🌷>» (Telegram lowercases the tag
+in its error). The send throws on a refusal, so the language picker after it was never sent: the
+player (`7803243068`, no username, admitted 10-13 20:31) sits on `registration_step` 0 after nine
+tries, six on 10-13 and three on 10-15. The only such name in `users`; nothing else prints a
+Telegram name (`User.name`'s one reader is this line).
+- `TelegramHTML.escaped` (ROIContent, `&` first) — the welcome escapes through it, and
+  `GlobalCommandsController.htmlEscaped` (the `/reload` echo) now delegates to it rather than keeping
+  a second copy;
+- tests 434 → 437 (`TelegramHTMLTests`); `&` moved last, two of the three failed — restored;
+- the player's next message after the restart redraws step 0 (`showCurrentStep`'s default) and
+  gets the picker. They are not told; an apology from the bot was offered, not sent.
+- Raised, not fixed: a GUILD name is checked for length only, so `<`, `>` or `&` in one would break
+  every HTML message that prints it (1 guild live, clean) — `TODO.md` → "Open, decided but not done".
 
 Not live: Swift only, so a restart. The 10-13 deploy record and the barrier's spark went in just before
 it, as `67aa073` and `32cf650`.

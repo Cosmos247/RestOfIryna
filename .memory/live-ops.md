@@ -127,7 +127,9 @@ A bystander kept all 16 of its rows.
   not a deploy; pm2's count reads 0 since. At 10-17 15:45: still the one `[WATCHDOG]`, but `Code: 400`
   at **922** — nine new, all `can't parse entities: Unsupported start tag "🌷rilenx🌷"` (10-13 20:31,
   when a no-username account came through the open door, and 10-15 13:30): a message carrying a
-  Telegram name in angle brackets, not HTML-escaped. Not fixed yet; nicknames cannot carry it.
+  Telegram name in angle brackets, not HTML-escaped: the registration welcome, whose throw also
+  skipped the language picker (the player is on step 0). Fixed 10-17 in the tree, NOT deployed —
+  after the restart the counter should stop at 922.
 
 ## What are the players doing — the activity snapshot
 

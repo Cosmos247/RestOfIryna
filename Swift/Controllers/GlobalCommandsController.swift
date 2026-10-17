@@ -133,7 +133,9 @@ final class GlobalCommandsController: @unchecked Sendable {
         }
     }
 
-    /// Escape text destined for a `parseMode: .html` message.
+    /// Escape text destined for a `parseMode: .html` message — through
+    /// `TelegramHTML`, the one implementation (the registration welcome uses
+    /// it too).
     ///
     /// Needed because `/reload` echoes VALIDATOR OUTPUT, which is arbitrary
     /// developer-facing prose rather than curated locale copy — and two rules
@@ -141,9 +143,7 @@ final class GlobalCommandsController: @unchecked Sendable {
     /// Telegram rejects the whole message, so the one code path whose entire
     /// job is to explain a refusal would silently deliver nothing at all.
     private static func htmlEscaped(_ text: String) -> String {
-        text.replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
+        TelegramHTML.escaped(text)
     }
 
     /// Dev-only `/content` — what bundle is actually loaded right now.

@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · PassiveRoute (the governor's walk) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 434 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 437 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion

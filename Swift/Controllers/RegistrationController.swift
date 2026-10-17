@@ -89,7 +89,11 @@ final class Registration: TGControllerBase, @unchecked Sendable {
     // MARK: - Step 0: Language Selection
 
     private func showLanguageSelection(context: Context) async throws {
-        let tgName = context.session.firstName ?? context.session.name
+        // The Telegram name is whatever the player typed into Telegram, so it
+        // is escaped: «<🌷RILENX🌷>» printed raw made Telegram refuse this
+        // message, and the throw skipped the language picker below — nine
+        // `/start`s on step 0 (2026-10-13 → 10-15).
+        let tgName = TelegramHTML.escaped(context.session.firstName ?? context.session.name)
         // Strip any leftover reply keyboard so button labels can't be typed as
         // nicknames or estate names later in the flow.
         let removeKB = TGReplyMarkup.replyKeyboardRemove(TGReplyKeyboardRemove(removeKeyboard: true))

@@ -1575,7 +1575,13 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The leaderboard pages** *(2026-10-17, Swift only, NOT live until a restart)* — the owner:
+  - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, Swift only, NOT live
+        until a restart)* — nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` in the log:
+        the welcome printed the first name «<🌷RILENX🌷>» raw under HTML, Telegram refused it, and the
+        throw skipped the language picker, so the account sat on step 0 through nine `/start`s. The
+        name goes through `TelegramHTML.escaped` (ROIContent; the `/reload` echo delegates to it) +
+        3 tests (437), the escape order mutation-tested.
+  - [x] **The leaderboard pages** *(2026-10-17, `1f0ca8b`, Swift only, NOT live until a restart)* — the owner:
         «Зроби так щоб у рейтингу можна булу перелистувати сторінки тта дивитись більшше ніж на 10
         гравців». A mockup on the live board first, then three picks (all the recommended ones):
         the arrows wrap round, «2/4» only says where you are, ten a page. The page row «◀️ N/M ▶️»
@@ -2141,10 +2147,16 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**Not live yet:** the two blocks on top — the 2026-10-17 leaderboard pages and the 2026-10-13
-barrier — wait for one restart (the barrier brings schema v24).
+**Not live yet:** the three blocks on top — the 2026-10-17 welcome and leaderboard pages and the
+2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
 
-**Added 2026-10-17 — the leaderboard pages (NOT deployed — Swift only, needs a restart):** any account.
+**Added 2026-10-17 — a Telegram name in the welcome (NOT deployed — Swift only, needs a restart):**
+the stuck player, `7803243068`, has no way to know — their next message should get «👋 Welcome,
+<🌷RILENX🌷>!» (the brackets shown as typed) and the language picker under it. Check `users` for their
+`registration_step` leaving 0. To see it yourself: a test account whose Telegram first name holds
+`<x>`, deleted from `users` first, then `/start`.
+
+**Added 2026-10-17 — the leaderboard pages (`1f0ca8b`, NOT deployed — Swift only, needs a restart):** any account.
 - 📓 Нотатник → 🏆 Рейтинги → ⚔️ Рівень: under the tabs «◀️ 1/4 ▶️» (37 players on 10-17); ▶️ redraws
   the same message, and page 2 opens «10. …» — the second of the two players sharing 10th, not «11.».
 - ▶️ on the last page opens the first, ◀️ on the first the last; «1/4» redraws the same page.
@@ -2954,6 +2966,12 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-17 session** — the Telegram name in the welcome escaped:
+- **A guild name is checked for length only** (`GuildController.handleFoundNameInput`), so `<`, `>`
+  or `&` in one makes Telegram refuse every HTML message that prints it — the welcome's defect again,
+  for every member. One guild live, clean. Two shapes: hold it to `PlayerNameRules`' characters at
+  founding, or escape it at every render through `TelegramHTML`. Raised, not asked.
+
 **From the 2026-10-13 Defend session** — the mage's barrier spark built; the rest in discussion
 (measurements: `.memory/rebalance.md` → "The forest's Defend, measured"):
 - **«Звір замахується»** — the proposal that gives Defend a moment: on 20% of its turns the beast
@@ -3287,9 +3305,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-17 — the leaderboard pages built (Swift only, 434 tests) and waiting for a
-restart with the barrier's spark; the Pi read off the machine (the 10-15 restart was the host's
-reboot); nine `🌷rilenx🌷` refusals found in the log, offered, not fixed.*
+*Last updated: 2026-10-17 — the leaderboard pages and the escaped registration welcome built (Swift
+only, 437 tests) and waiting for a restart with the barrier's spark; the Pi read off the machine (the
+10-15 restart was the host's reboot); the nine `🌷rilenx🌷` refusals traced to the welcome and fixed;
+a guild name's same hole raised.*
 
 *2026-10-13, evening — the forest's Defend measured for all three classes; the mage's
 barrier spark built (15%, content schema v24, content hash `19c94a81`) and waiting for a restart; the

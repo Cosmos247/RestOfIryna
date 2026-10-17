@@ -21,7 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-17 — the leaderboard pages** (Swift only, NOT deployed — a restart). The journal's 🏆 boards
+**2026-10-17 — a Telegram name escaped in the registration welcome** (Swift only, NOT deployed — a
+restart). «👋 Welcome, %name!» printed the Telegram first name raw under HTML; «<🌷RILENX🌷>» made
+Telegram refuse it, and the throw skipped the language picker — one player stuck on step 0. The
+name goes through `TelegramHTML.escaped` (ROIContent, the one escape; `/reload`'s echo delegates)
++ 3 tests (437).
+
+**2026-10-17 — the leaderboard pages** (`1f0ca8b`, Swift only, NOT deployed — a restart). The journal's 🏆 boards
 show ten a page with «◀️ N/M ▶️» under the tabs — wrapping round, the middle button only the page
 number, the row only when a board has two pages or more. A page's first rank is counted (strictly
 better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
@@ -950,8 +956,8 @@ expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrop
 the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the sync pass's cleanup
 (`beed258`). Waiting for a restart: the mage's barrier spark (2026-10-13, schema v24 — the tree reads
 `tuning 799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved), the leaderboard pages
-(2026-10-17, Swift only, the digest unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **434 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+and the escaped welcome (2026-10-17, Swift only, the digest unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **437 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

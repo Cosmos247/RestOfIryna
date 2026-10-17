@@ -934,3 +934,4 @@ Optional:
   separators=(',', ' : ')) + "\n"` reproduces all 29 files byte for byte (re-checked 2026-10-11); Swift's `JSONEncoder` and
   a DTO round-trip do NOT. Auto-memory `reference-house-json-style`.
 - Never interpolate an Optional directly into a player-facing string (`"\(item.icon)"` prints `Optional("🪖")`) — unwrap it (`item.icon.map { "\($0) " } ?? ""`). A clean build won't catch this; verify new strings actually render. (Same vigilance as the Lingo emoji-before-`%{}` rule in `.memory/localization.md`.)
+- Text nobody curated — a Telegram name, validator prose, anything stored as typed — goes through `TelegramHTML.escaped` before an HTML message. Telegram refuses the whole message, and the throw takes the rest of the handler with it: «<🌷RILENX🌷>» in the welcome kept a player on registration step 0 (2026-10-13).
