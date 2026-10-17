@@ -1575,6 +1575,15 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
+  - [x] **The leaderboard pages** *(2026-10-17, Swift only, NOT live until a restart)* — the owner:
+        «Зроби так щоб у рейтингу можна булу перелистувати сторінки тта дивитись більшше ніж на 10
+        гравців». A mockup on the live board first, then three picks (all the recommended ones):
+        the arrows wrap round, «2/4» only says where you are, ten a page. The page row «◀️ N/M ▶️»
+        sits under the tabs only when a board has two pages or more; the viewer's line stays under
+        the rule on every page they are not on. A page's first rank is COUNTED (strictly better +
+        1): two level-8 players shared 10th across the first edge, so page 2 opens «10.». Every
+        sort ends on the row id. `LeaderboardPaging` (ROIContent) + 6 tests (434); every page of
+        all four live boards matched Postgres `rank()`. The Arena's «Найкращі бійці» stays page 1.
   - [x] **The 🏕 Expedition walks there and back** *(2026-10-12, `fac8d5f`, content + Swift,
         deployed 2026-10-13 18:54)* — the owner's report: the governor «телепортує додому після максимального км». The
         run walked km 1 → 17 and was home the moment its last step ended (the road back free, the 17
@@ -2132,9 +2141,19 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**Not live yet:** the 2026-10-13 barrier block on top waits for a restart (schema v24).
+**Not live yet:** the two blocks on top — the 2026-10-17 leaderboard pages and the 2026-10-13
+barrier — wait for one restart (the barrier brings schema v24).
 
-**Added 2026-10-13 — the mage's barrier strikes back (NOT deployed — schema v24, needs a restart):**
+**Added 2026-10-17 — the leaderboard pages (NOT deployed — Swift only, needs a restart):** any account.
+- 📓 Нотатник → 🏆 Рейтинги → ⚔️ Рівень: under the tabs «◀️ 1/4 ▶️» (37 players on 10-17); ▶️ redraws
+  the same message, and page 2 opens «10. …» — the second of the two players sharing 10th, not «11.».
+- ▶️ on the last page opens the first, ◀️ on the first the last; «1/4» redraws the same page.
+- Your own line under «— — — — —» on every page you are not on, bold on the page you are.
+- Switch to 🎖 Честь: page 1, and no arrow row while it has ten fighters or fewer.
+- An old 🏆 button higher in the chat still works and opens page 1. The Arena's «Найкращі бійці» is
+  still the top ten.
+
+**Added 2026-10-13 — the mage's barrier strikes back (`32cf650`, NOT deployed — schema v24, needs a restart):**
 a mage in any forest fight.
 - «🌀 Магічний бар'єр»: «🌀 Магічний бар'єр мерехтить навколо вас і б'є іскрою у відповідь — 🐺 Скажений
   вовк втрачає 6 ОЗ.» (≈15% of a plain hit — 5–6 against the wolf at L9), then the beast's line as before
@@ -3268,7 +3287,11 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-13, evening — the forest's Defend measured for all three classes; the mage's
+*Last updated: 2026-10-17 — the leaderboard pages built (Swift only, 434 tests) and waiting for a
+restart with the barrier's spark; the Pi read off the machine (the 10-15 restart was the host's
+reboot); nine `🌷rilenx🌷` refusals found in the log, offered, not fixed.*
+
+*2026-10-13, evening — the forest's Defend measured for all three classes; the mage's
 barrier spark built (15%, content schema v24, content hash `19c94a81`) and waiting for a restart; the
 wind-up proposal open with the owner.*
 

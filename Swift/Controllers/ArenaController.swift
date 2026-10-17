@@ -419,12 +419,14 @@ final class ArenaController: TGControllerBase, @unchecked Sendable {
         // fighters on equal honor showed as 1st and 2nd here and shared 🥇
         // there: one ladder, two screens, two answers. It also did a
         // `User.find` per row; the service loads the owners with the page.
+        // Page 1 only: this is a message of its own with no buttons, and the
+        // journal's 🎖 board is where the ladder is paged.
         let view = try await LeaderboardService.view(.honor, for: context.session, on: context.db)
         body += "\n\n<b>\(lingo.localize("arena.leaderboard.title", locale: locale))</b>"
-        if view.top.isEmpty {
+        if view.rows.isEmpty {
             body += "\n<i>\(lingo.localize("arena.leaderboard.empty", locale: locale))</i>"
         } else {
-            for entry in view.top {
+            for entry in view.rows {
                 body += "\n" + lingo.localize("arena.leaderboard.row", locale: locale, interpolations: [
                     "rank": "\(entry.rank)", "nick": entry.name, "honor": "\(entry.value)"
                 ])

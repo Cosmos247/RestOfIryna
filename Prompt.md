@@ -23,17 +23,25 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-13 18:57)
+### Where things stand right now (the Pi and git as read 2026-10-17 15:45)
 
 | | |
 |---|---|
-| HEAD | **this commit** (the mage's barrier strikes back, schema v24) on top of **`67aa073`** (the 2026-10-13 18:54 deploy recorded) and **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: `67aa073` and this commit** — push is the owner's |
-| running on the Pi | **`dda286f`**, online since **2026-10-13 18:54:16** (pm2 restarts 11), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v23**, content hash **`9dba2746`**, `records 78ce585986927122`, `tuning 53e33d38021f0bf4`; no migration in that restart. One passive run straddled it (ending 19:37:05, resumed on its old plan). The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the leaderboard pages) on top of **`32cf650`** (the mage's barrier strikes back, schema v24), **`67aa073`** (the 2026-10-13 18:54 deploy recorded) and **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: `67aa073`, `32cf650` and this commit** — push is the owner's |
+| running on the Pi | **`dda286f`**, deployed **2026-10-13 18:54:16**; online since **2026-10-15 01:42:26**, when the Pi itself rebooted and pm2 resurrected the same build (its count reads 0 since). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` at 922 — nine `🌷rilenx🌷` refusals, an unescaped Telegram name (`.memory/live-ops.md`). Content schema **v23**, content hash **`9dba2746`**, `records 78ce585986927122`, `tuning 53e33d38021f0bf4`; no migration in that restart. One passive run straddled it (ending 19:37:05, resumed on its old plan). The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The mage's barrier strikes back** (content + Swift, schema **v24**: the old binary refuses this content, a `/reload` included). The tree: schema v24, content hash `19c94a81`, `tuning 799a96eb5f8619df`, the other four halves unmoved. The 10-13 18:54 restart installed everything before it |
+| waiting for a restart | **The leaderboard pages** (Swift only) and **the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**: the old binary refuses this content, a `/reload` included). The tree: schema v24, content hash `19c94a81`, `tuning 799a96eb5f8619df`, the other four halves unmoved. The 10-13 18:54 restart installed everything before it |
 
-### Where the last sessions stopped (2026-10-11 → 10-13)
+### Where the last sessions stopped (2026-10-11 → 10-17)
+
+**10-17 — the Pi read; the leaderboard pages.** Read off the Pi: it runs `dda286f`, the 10-15
+restart was the host rebooting, and only the barrier's spark waits — a testers' note for it went to
+the owner. The log holds nine `🌷rilenx🌷` refusals (an unescaped Telegram name; offered, not fixed).
+Then the journal's 🏆 boards learned to turn pages: ten a page, «◀️ N/M ▶️» wrapping round, a page's
+first rank COUNTED so a tie across the edge keeps its place (`LeaderboardPaging`, 434 tests, every
+live page matched Postgres `rank()`). The laptop died mid-build; the next session resumed from the
+transcript. `.memory/sessions.md` → the 10-17 entry.
 
 **10-13, evening — the forest's Defend, measured; the mage's barrier strikes back.** Asked how the
 three Defend buttons work: every Defend tap costs HP against an Attack (−2.6 / −4.4 / −3.2 at L9),
@@ -203,7 +211,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 428 tests, ~5s
+swift test                                   # 434 tests, ~5s
 ```
 
 

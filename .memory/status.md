@@ -21,7 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-13 — the mage's barrier strikes back** (content + Swift, schema **v24**, NOT deployed:
+**2026-10-17 — the leaderboard pages** (Swift only, NOT deployed — a restart). The journal's 🏆 boards
+show ten a page with «◀️ N/M ▶️» under the tabs — wrapping round, the middle button only the page
+number, the row only when a board has two pages or more. A page's first rank is counted (strictly
+better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
+`LeaderboardPaging` (ROIContent) + 6 tests (434). The Arena's «Найкращі бійці» stays the top ten.
+
+**2026-10-13 — the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**, NOT deployed:
 the old binary refuses this content, a `/reload` included). «🌀 Магічний бар'єр» sparks 15% of a clean
 hit — `defend.mageChipMultiplier` 0.5 × `defendChipFraction` 0.3, the archer's size — and keeps its
 60% cut; it struck nothing before. Capped on a measurement: a chip ignores the level gap, so above
@@ -943,8 +949,9 @@ e3a492be1b017e81`, content hash `9dba2746`, **schema v23** (the delivery jobs' r
 expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrophe, the lone unit and
 the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the sync pass's cleanup
 (`beed258`). Waiting for a restart: the mage's barrier spark (2026-10-13, schema v24 — the tree reads
-`tuning 799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **428 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+`tuning 799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved), the leaderboard pages
+(2026-10-17, Swift only, the digest unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **434 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

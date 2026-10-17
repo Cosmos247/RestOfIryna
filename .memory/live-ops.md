@@ -123,6 +123,11 @@ A bystander kept all 16 of its rows.
   migration). pm2's count reads 11. At 18:57: no new `[WATCHDOG]`, `Code: 400` at 913; the boot's
   first sweep drew three `403 bot was blocked by the user` (players who blocked the bot — 13 in the
   whole log), not a fault.
+- 2026-10-15 01:42:26: the Pi rebooted (the host up at 01:43) and pm2 resurrected the same build —
+  not a deploy; pm2's count reads 0 since. At 10-17 15:45: still the one `[WATCHDOG]`, but `Code: 400`
+  at **922** — nine new, all `can't parse entities: Unsupported start tag "🌷rilenx🌷"` (10-13 20:31,
+  when a no-username account came through the open door, and 10-15 13:30): a message carrying a
+  Telegram name in angle brackets, not HTML-escaped. Not fixed yet; nicknames cannot carry it.
 
 ## What are the players doing — the activity snapshot
 

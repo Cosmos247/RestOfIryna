@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-13)
+## Commit index — live-play polish and after (2026-09-09 → 10-17)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-13)* **the mage's barrier strikes back** — content + Swift, schema v24, NOT
+- *(this commit, 10-17)* **the leaderboard pages** — Swift only, NOT deployed (a restart): the
+  journal's 🏆 boards turn pages of ten under «◀️ N/M ▶️» (wrapping round; the middle button only the
+  page number; the row only when a board has two pages or more). A page's first rank is COUNTED
+  (strictly better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
+  `LeaderboardPaging` (ROIContent) + 6 tests (434); the Arena's «Найкращі бійці» stays page 1. No
+  locale key, no content; the digest unmoved.
+- `32cf650` (10-13) **the mage's barrier strikes back** — content + Swift, schema v24, NOT
   deployed: «🌀 Магічний бар'єр» sparks 15% of a plain hit (`defend.mageChipMultiplier` 0.5, the
   archer's size) and keeps its 60% cut, with its own line; capped on a measurement (a chip ignores
   the level gap — above ~20% "barrier every round" beats attacking a stronger beast). `tuning` →
@@ -711,7 +717,51 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-13, evening (the forest's Defend measured; the mage's barrier strikes back)
+## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages)
+
+Two sessions in a row: the laptop switched off mid-build, and the second picked the work up from the
+first one's transcript (auto-memory `reference-session-transcripts`). Nothing was lost; the build
+that never reported was simply run again.
+
+**The Pi, read off the machine** (the owner: «Продивись о незадеплоєне на пай алеготово та зроби
+список для тестувальників»):
+- the Pi runs `dda286f`, the local HEAD; everything committed has been live since 10-13 18:54;
+- the 10-15 01:42 restart was the Pi itself rebooting (the host up at 01:43) — the same build and
+  content (`9dba2746`), pm2's count back at 0 after the resurrect; no `[WATCHDOG]` since 10-08;
+- the one thing ready and undeployed is the barrier's spark (uncommitted, schema v24; `validate
+  --strict` clean, 428 tests that day). A testers' note for it went to the owner;
+- `Code: 400` 913 → 922: nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` (10-13
+  20:31, the second an account with no username was admitted through the open door, and 10-15
+  13:30). Some message interpolates a Telegram name in angle brackets without escaping it as HTML,
+  so it never reaches the player. Offered, not fixed. A nickname cannot carry it
+  (`PlayerNameRules`; 0 live nicknames with `<`, `>` or `&`).
+
+**The leaderboard pages** (the owner: «Зроби так щоб у рейтингу можна булу перелистувати сторінки
+тта дивитись більшше ніж на 10 гравців. Перед тим як робити покажи як ти бачиш реаалізацію.»). A
+mockup on the live level board (37 players, 4 pages) and a three-question quiz; the owner took all
+three recommendations — the arrows wrap round, «2/4» only says where you are (a tap redraws the same
+page), ten a page. Built:
+- `LeaderboardPaging` (ROIContent): page count (never 0), clamp, offset, wrapping previous / next,
+  and `ranks(of:firstRank:offset:)`;
+- `LeaderboardService.view(_:page:for:on:)` → `LeaderboardView` (`rows`, `viewer`, `page`,
+  `pageCount`); every sort ends on the id; past page 1 the first rank is a COUNT of the strictly
+  better. The trap it avoids: two level-8 players shared 10th across the first edge, so an
+  offset-numbered page 2 would open «11.» and a self-numbered one «🥇»;
+- `MainController`: `lb:<board>` is a tab (page 1), `lb:<board>:<page>` a page; the page row only
+  with two pages or more; the viewer's line under the rule on every page they are not on; an old
+  `lb:<board>` button left in chat opens page 1, a page the board no longer has lands on the last;
+- `ArenaController`: «Найкращі бійці» stays page 1 — a message of its own with no buttons;
+- tests 428 → 434 (`LeaderboardPagingTests`, the offset-numbered page among them, caught as wrong);
+- checked against Postgres `rank()` on the live data (read-only), all four boards, every page: level
+  37 rows / 4 pages (pages open at 10, 20, 27), honor 7 / 1, depth 31 / 4 (9, 20, 28 — a tie
+  straddles there too), distance 33 / 4 (11, 21, 30) — all match;
+- a clean build; no locale key (the arrows and «N/M» are symbols); no content, so the digest is
+  unmoved.
+
+Not live: Swift only, so a restart. The 10-13 deploy record and the barrier's spark went in just before
+it, as `67aa073` and `32cf650`.
+
+## Session — 2026-10-13, evening (the forest's Defend measured; the mage's barrier strikes back) — `32cf650`
 
 The owner: «Продивись як зараз працюють кнопки захисту у всіх классів та запропоонуй як їх можна
 покращити».

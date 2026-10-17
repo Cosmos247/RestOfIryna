@@ -25,14 +25,21 @@
 //  a board headed «Рівень» that puts two level-24 players at 1st and 2nd shows
 //  the same number twice with nothing on screen to explain the gap.
 //
-//  COST — one query for the page, whatever the player count, because the listed
-//  rows' ranks are derived from the page itself: it starts at the maximum, and a
-//  rank only advances where the value changes. A second query, a COUNT, runs
-//  ONLY when the viewer is not already on the page — a player in the top ten is
-//  read from the row already loaded, which also guarantees their line and their
-//  listing cannot disagree. The honor board needs a third when it misses, to
-//  find the viewer's arena profile first. It used to spend one COUNT per listed
-//  row; at a tap per screen that is a round-trip budget worth not spending.
+//  PAGES (2026-10-17) — a board is read ten rows at a time, and a page's first
+//  rank is COUNTED (strictly better + 1), never its offset + 1, because a tie
+//  can straddle the page edge. The arithmetic is `LeaderboardPaging`'s. Every
+//  sort ends on the row id, so equal rows keep one order between two taps and
+//  a player cannot turn up on two pages, or on none.
+//
+//  COST — a COUNT of the board (for the page count) and the page itself,
+//  whatever the player count: the rest of the page's ranks derive from its
+//  first, since a rank only advances where the value changes. A third query —
+//  the first row's rank — runs only past page 1, and a fourth only when the
+//  viewer is not on the page shown: a viewer on it is read from the row already
+//  loaded, which also guarantees their line and their listing cannot disagree.
+//  The honor board needs one more when it misses, to find the viewer's arena
+//  profile first. It once spent one COUNT per listed row; at a tap per screen
+//  that is a round-trip budget worth not spending.
 //
 
 import Fluent
@@ -95,64 +102,76 @@ public struct LeaderboardEntry: Sendable {
     public let isViewer: Bool
 }
 
-/// What one board render needs: the top rows, and the viewer's own standing.
-/// `viewer` is nil when the viewer has no entry at all — level 1 is a standing,
-/// but a player who has never walked has no depth and no distance, and saying
-/// "0 km, last place" about someone who has not started is worse than saying
-/// nothing.
+/// What one board render needs: one page of rows, where that page sits, and
+/// the viewer's own standing. `viewer` is nil when the viewer has no entry at
+/// all — level 1 is a standing, but a player who has never walked has no depth
+/// and no distance, and saying "0 km, last place" about someone who has not
+/// started is worse than saying nothing.
 public struct LeaderboardView: Sendable {
-    public let top: [LeaderboardEntry]
+    public let rows: [LeaderboardEntry]
     public let viewer: LeaderboardEntry?
-    /// True when the viewer is already one of the `top` rows, so the caller
-    /// knows not to print them a second time under the separator.
-    public var viewerInTop: Bool { top.contains { $0.isViewer } }
+    /// The page shown, 1-based — the one asked for, clamped into the board.
+    public let page: Int
+    /// At least 1: an empty board is the one page that says so.
+    public let pageCount: Int
+    /// True when the viewer is one of the shown `rows`, so the caller knows
+    /// not to print them a second time under the separator.
+    public var viewerOnPage: Bool { rows.contains { $0.isViewer } }
 }
 
 public enum LeaderboardService {
 
-    /// How many places a board shows before the separator.
-    public static let topCount: Int = 10
-
     // MARK: - Public entry point
 
-    public static func view(_ board: LeaderboardBoard, for user: User, on db: any Database) async throws -> LeaderboardView {
+    /// One page of `board`. `page` is 1-based and clamped into the board, so a
+    /// stale button naming a page that no longer exists shows the last one.
+    public static func view(_ board: LeaderboardBoard, page: Int = 1,
+                            for user: User, on db: any Database) async throws -> LeaderboardView {
         switch board {
-        case .level:    return try await levelView(for: user, on: db)
-        case .honor:    return try await honorView(for: user, on: db)
-        case .depth:    return try await userMetricView(board, for: user, on: db, metric: \.$deepestKm, tiebreak: \.$totalKmWalked)
-        case .distance: return try await userMetricView(board, for: user, on: db, metric: \.$totalKmWalked, tiebreak: \.$deepestKm)
+        case .level:    return try await levelView(page: page, for: user, on: db)
+        case .honor:    return try await honorView(page: page, for: user, on: db)
+        case .depth:    return try await userMetricView(page: page, for: user, on: db, metric: \.$deepestKm, tiebreak: \.$totalKmWalked)
+        case .distance: return try await userMetricView(page: page, for: user, on: db, metric: \.$totalKmWalked, tiebreak: \.$deepestKm)
         }
     }
 
     // MARK: - Ranking a sorted page
 
+    /// Where a requested page lands on a board of `entries` rows.
+    private static func place(_ requested: Int, entries: Int) -> (page: Int, pageCount: Int, offset: Int) {
+        let pageCount = LeaderboardPaging.pageCount(entries: entries)
+        let page = LeaderboardPaging.clamp(requested, pageCount: pageCount)
+        return (page, pageCount, LeaderboardPaging.offset(ofPage: page))
+    }
+
     /// Assign competition ranks to an already-sorted page, using each row's own
-    /// board value. The page starts at the maximum, so the first row is 1st and
-    /// a rank only moves to the row's position when the value actually changes.
-    /// Equal values keep the rank they inherited — which is what makes two 31 km
-    /// players both 🥇 and the next one 3rd.
-    private static func ranked<T>(_ page: [T], value: (T) -> Int) -> [(rank: Int, item: T)] {
-        var out: [(rank: Int, item: T)] = []
-        var rank = 0
-        var previous: Int?
-        for (index, item) in page.enumerated() {
-            let v = value(item)
-            if v != previous { rank = index + 1; previous = v }
-            out.append((rank, item))
-        }
-        return out
+    /// board value. Page 1 starts at the maximum, so its first row is 1st;
+    /// any later page asks `better` how many rows beat its first value, because
+    /// a tie can straddle the edge (`LeaderboardPaging.ranks` has the rest).
+    private static func ranked<T>(_ page: [T], offset: Int, value: (T) -> Int,
+                                  better: (Int) async throws -> Int) async throws -> [(rank: Int, item: T)] {
+        guard let first = page.first else { return [] }
+        let firstRank = offset == 0 ? 1 : try await better(value(first)) + 1
+        let ranks = LeaderboardPaging.ranks(of: page.map(value), firstRank: firstRank, offset: offset)
+        return Array(zip(ranks, page)).map { (rank: $0.0, item: $0.1) }
     }
 
     // MARK: - Level
 
-    private static func levelView(for user: User, on db: any Database) async throws -> LeaderboardView {
+    private static func levelView(page requested: Int, for user: User, on db: any Database) async throws -> LeaderboardView {
+        let at = place(requested, entries: try await registered(on: db).count())
         let page = try await registered(on: db)
             .sort(\.$level, .descending)
             .sort(\.$xp, .descending)
-            .limit(topCount)
+            .sort(\.$id)
+            .offset(at.offset)
+            .limit(LeaderboardPaging.pageSize)
             .all()
 
-        let top = ranked(page, value: \.level).map {
+        let better: (Int) async throws -> Int = { level in
+            try await registered(on: db).filter(\.$level > level).count()
+        }
+        let rows = try await ranked(page, offset: at.offset, value: \.level, better: better).map {
             LeaderboardEntry(rank: $0.rank, name: displayName($0.item),
                              value: $0.item.level, isViewer: $0.item.id == user.id)
         }
@@ -160,41 +179,47 @@ public enum LeaderboardService {
         // Every finished registration has a level, so the viewer always ranks —
         // which is why there is no `leaderboard.unranked.level` string.
         let mine: LeaderboardEntry
-        if let listed = top.first(where: { $0.isViewer }) {
+        if let listed = rows.first(where: { $0.isViewer }) {
             mine = listed
         } else {
-            let better = try await registered(on: db).filter(\.$level > user.level).count()
-            mine = LeaderboardEntry(rank: better + 1, name: displayName(user), value: user.level, isViewer: true)
+            mine = LeaderboardEntry(rank: try await better(user.level) + 1, name: displayName(user),
+                                    value: user.level, isViewer: true)
         }
-        return LeaderboardView(top: top, viewer: mine)
+        return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
     }
 
     // MARK: - Honor
 
-    private static func honorView(for user: User, on db: any Database) async throws -> LeaderboardView {
+    private static func honorView(page requested: Int, for user: User, on db: any Database) async throws -> LeaderboardView {
         // The board reads arena_profiles rather than users: a profile is created
         // the first time a player opens the Ристалище, so its presence IS the
         // "has fought" filter. `.with` loads the owner for the name.
+        let at = place(requested, entries: try await ArenaProfile.query(on: db).count())
         let page = try await ArenaProfile.query(on: db)
             .with(\.$user)
             .sort(\.$honor, .descending)
             .sort(\.$wins, .descending)
-            .limit(topCount)
+            .sort(\.$id)
+            .offset(at.offset)
+            .limit(LeaderboardPaging.pageSize)
             .all()
 
-        let top = ranked(page, value: \.honor).map {
+        let better: (Int) async throws -> Int = { honor in
+            try await ArenaProfile.query(on: db).filter(\.$honor > honor).count()
+        }
+        let rows = try await ranked(page, offset: at.offset, value: \.honor, better: better).map {
             LeaderboardEntry(rank: $0.rank, name: displayName($0.item.user),
                              value: $0.item.honor, isViewer: $0.item.$user.id == user.id)
         }
 
-        var mine = top.first(where: { $0.isViewer })
+        var mine = rows.first(where: { $0.isViewer })
         if mine == nil,
            let userId = user.id,
            let profile = try await ArenaProfile.query(on: db).filter(\.$user.$id == userId).first() {
-            let better = try await ArenaProfile.query(on: db).filter(\.$honor > profile.honor).count()
-            mine = LeaderboardEntry(rank: better + 1, name: displayName(user), value: profile.honor, isViewer: true)
+            mine = LeaderboardEntry(rank: try await better(profile.honor) + 1, name: displayName(user),
+                                    value: profile.honor, isViewer: true)
         }
-        return LeaderboardView(top: top, viewer: mine)
+        return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
     }
 
     // MARK: - The two walking boards
@@ -204,32 +229,40 @@ public enum LeaderboardService {
     /// standing on a walking board, and a page of "0 km" from every account that
     /// ever registered would bury the players who did walk.
     private static func userMetricView(
-        _ board: LeaderboardBoard,
+        page requested: Int,
         for user: User,
         on db: any Database,
         metric: KeyPath<User, FieldProperty<User, Int>>,
         tiebreak: KeyPath<User, FieldProperty<User, Int>>
     ) async throws -> LeaderboardView {
+        let at = place(requested, entries: try await registered(on: db).filter(metric > 0).count())
         let page = try await registered(on: db)
             .filter(metric > 0)
             .sort(metric, .descending)
             .sort(tiebreak, .descending)
-            .limit(topCount)
+            .sort(\.$id)
+            .offset(at.offset)
+            .limit(LeaderboardPaging.pageSize)
             .all()
 
-        let top = ranked(page, value: { $0[keyPath: metric].wrappedValue }).map {
+        // No `metric > 0` here: every value this is asked about is above zero.
+        let better: (Int) async throws -> Int = { value in
+            try await registered(on: db).filter(metric > value).count()
+        }
+        let rows = try await ranked(page, offset: at.offset, value: { $0[keyPath: metric].wrappedValue },
+                                    better: better).map {
             LeaderboardEntry(rank: $0.rank, name: displayName($0.item),
                              value: $0.item[keyPath: metric].wrappedValue,
                              isViewer: $0.item.id == user.id)
         }
 
         let myValue = user[keyPath: metric].wrappedValue
-        var mine = top.first(where: { $0.isViewer })
+        var mine = rows.first(where: { $0.isViewer })
         if mine == nil, myValue > 0 {
-            let better = try await registered(on: db).filter(metric > myValue).count()
-            mine = LeaderboardEntry(rank: better + 1, name: displayName(user), value: myValue, isViewer: true)
+            mine = LeaderboardEntry(rank: try await better(myValue) + 1, name: displayName(user),
+                                    value: myValue, isViewer: true)
         }
-        return LeaderboardView(top: top, viewer: mine)
+        return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
     }
 
     // MARK: - Helpers

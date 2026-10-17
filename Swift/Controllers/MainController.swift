@@ -386,45 +386,63 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     // same message. Read-only by the same rule the journal follows: a screen
     // that shows standings must not become somewhere to spend anything.
     //
+    // Paged since 2026-10-17, ten rows a page: `lb:<board>` is a tab and opens
+    // page 1, `lb:<board>:<page>` turns a page. A tab button left in chat from
+    // before paging is the first form, so it still opens the board's first page.
+    //
     // The word in the UI is «Рейтинги»; everything in code says Leaderboard,
     // because `rating` already means crit / dodge / accuracy here.
 
-    func showLeaderboard(context: Context, board: LeaderboardBoard, editMessageId: Int) async throws {
-        let text = try await renderLeaderboard(context: context, board: board)
+    func showLeaderboard(context: Context, board: LeaderboardBoard, page: Int = 1, editMessageId: Int) async throws {
+        let view = try await LeaderboardService.view(board, page: page, for: context.session, on: context.db)
         await editScreen(
             chatId: .chat(context.session.telegramId),
             messageId: editMessageId,
             isPhoto: false,
-            text: text,
-            replyMarkup: leaderboardKeyboard(active: board, lingo: context.lingo, locale: context.session.locale),
+            text: renderLeaderboard(view, board: board, lingo: context.lingo, locale: context.session.locale),
+            replyMarkup: leaderboardKeyboard(active: board, page: view.page, pageCount: view.pageCount,
+                                             lingo: context.lingo, locale: context.session.locale),
             bot: context.bot
         )
     }
 
-    /// Two rows of tabs plus a way back. The active board keeps its button —
-    /// Telegram cannot grey one out, and removing it would make the grid jump
-    /// under the thumb — so it is marked instead.
-    private func leaderboardKeyboard(active: LeaderboardBoard, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Two rows of tabs, the page row when the board has more than one page,
+    /// and a way back. The active board keeps its button — Telegram cannot grey
+    /// one out, and removing it would make the grid jump under the thumb — so
+    /// it is marked instead. The arrows wrap round for the same reason: an arrow
+    /// that vanished at either end would move the row under the thumb too. The
+    /// middle button only says where you are; a tap redraws the same page.
+    private func leaderboardKeyboard(active: LeaderboardBoard, page: Int, pageCount: Int,
+                                     lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         func tab(_ board: LeaderboardBoard) -> TGInlineKeyboardButton {
             let name = lingo.localize(board.titleKey, locale: locale)
             let label = board == active ? "· \(board.icon) \(name) ·" : "\(board.icon) \(name)"
             return TGInlineKeyboardButton(text: label, callbackData: "lb:\(board.slug)")
         }
+        func turn(_ label: String, to target: Int) -> TGInlineKeyboardButton {
+            TGInlineKeyboardButton(text: label, callbackData: "lb:\(active.slug):\(target)")
+        }
         let back = TGInlineKeyboardButton(
             text: lingo.localize("leaderboard.button.back", locale: locale),
             callbackData: "lb:back"
         )
-        return TGInlineKeyboardMarkup(inlineKeyboard: [
+        var rows = [
             [tab(.level), tab(.honor)],
-            [tab(.depth), tab(.distance)],
-            [back]
-        ])
+            [tab(.depth), tab(.distance)]
+        ]
+        if pageCount > 1 {
+            rows.append([
+                turn("◀️", to: LeaderboardPaging.previous(page, pageCount: pageCount)),
+                turn("\(page)/\(pageCount)", to: page),
+                turn("▶️", to: LeaderboardPaging.next(page, pageCount: pageCount))
+            ])
+        }
+        rows.append([back])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
-    private func renderLeaderboard(context: Context, board: LeaderboardBoard) async throws -> String {
-        let lingo = context.lingo
-        let locale = context.session.locale
-        let view = try await LeaderboardService.view(board, for: context.session, on: context.db)
+    private func renderLeaderboard(_ view: LeaderboardView, board: LeaderboardBoard,
+                                   lingo: Lingo, locale: String) -> String {
 
         // 🏆 and the board icon are prepended in Swift, never placed in a
         // template ahead of a `%{}` — Lingo drops interpolations that follow a
@@ -433,18 +451,18 @@ final class MainController: TGControllerBase, @unchecked Sendable {
                      "<i>\(lingo.localize(board.subtitleKey, locale: locale))</i>",
                      ""]
 
-        if view.top.isEmpty {
+        if view.rows.isEmpty {
             lines.append("<i>" + lingo.localize("leaderboard.empty", locale: locale) + "</i>")
             return lines.joined(separator: "\n")
         }
 
-        for entry in view.top {
+        for entry in view.rows {
             lines.append(leaderboardRow(entry, board: board, youLabel: nil, lingo: lingo, locale: locale))
         }
 
-        // The viewer's own line, below a rule — but only when they are not
-        // already listed above. Printing them twice would read as two players.
-        if let mine = view.viewer, !view.viewerInTop {
+        // The viewer's own line, below a rule — on every page they are not
+        // listed on. Printing them twice would read as two players.
+        if let mine = view.viewer, !view.viewerOnPage {
             lines.append("")
             lines.append("— — — — —")
             lines.append(leaderboardRow(mine, board: board,
@@ -714,14 +732,18 @@ extension MainController {
             try await Controllers.mainController.showGear(context: context, editMessageId: message.messageId)
             return true
         }
-        // Leaderboard tabs. `lb:back` returns to the journal rather than the
-        // profile, so the chain the player walked in on is the chain they walk
-        // back out of.
+        // Leaderboard tabs and pages. `lb:back` returns to the journal rather
+        // than the profile, so the chain the player walked in on is the chain
+        // they walk back out of.
         if data.hasPrefix("lb:") {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            let slug = String(data.dropFirst(3))
-            if let board = LeaderboardBoard.from(slug: slug) {
-                try await Controllers.mainController.showLeaderboard(context: context, board: board, editMessageId: message.messageId)
+            let parts = data.dropFirst(3).split(separator: ":", maxSplits: 1)
+            if let slug = parts.first, let board = LeaderboardBoard.from(slug: String(slug)) {
+                // A tab carries no page and opens page 1; the service clamps a
+                // page the board no longer has.
+                let page = parts.count > 1 ? Int(parts[1]) ?? 1 : 1
+                try await Controllers.mainController.showLeaderboard(context: context, board: board, page: page,
+                                                                     editMessageId: message.messageId)
             } else {
                 try await Controllers.mainController.showJournal(context: context, editMessageId: message.messageId)
             }
