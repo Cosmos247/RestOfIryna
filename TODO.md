@@ -1575,7 +1575,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, Swift only, NOT live
+  - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, `fb72d0d`, Swift only, NOT live
         until a restart)* — nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` in the log:
         the welcome printed the first name «<🌷RILENX🌷>» raw under HTML, Telegram refused it, and the
         throw skipped the language picker, so the account sat on step 0 through nine `/start`s. The
@@ -2150,7 +2150,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 **Not live yet:** the three blocks on top — the 2026-10-17 welcome and leaderboard pages and the
 2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
 
-**Added 2026-10-17 — a Telegram name in the welcome (NOT deployed — Swift only, needs a restart):**
+**Added 2026-10-17 — a Telegram name in the welcome (`fb72d0d`, NOT deployed — Swift only, needs a restart):**
 the stuck player, `7803243068`, has no way to know — their next message should get «👋 Welcome,
 <🌷RILENX🌷>!» (the brackets shown as typed) and the language picker under it. Check `users` for their
 `registration_step` leaving 0. To see it yourself: a test account whose Telegram first name holds

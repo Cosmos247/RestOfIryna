@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-17)* **a Telegram name escaped in the registration welcome** — Swift only, NOT
+- *(this hash fill, 10-17)* **`fb72d0d`'s hash fill** — records only.
+- `fb72d0d` (10-17) **a Telegram name escaped in the registration welcome** — Swift only, NOT
   deployed (a restart): «👋 Welcome, <🌷RILENX🌷>!» was refused by Telegram, and the throw skipped the
   language picker, so one open-door account sat on step 0 through nine `/start`s (10-13 → 10-15).
   `TelegramHTML.escaped` (ROIContent) is now the one escape — `/reload`'s copy delegates to it — + 3
@@ -722,7 +723,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped)
+## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped) — `1f0ca8b`, `fb72d0d`
 
 Two sessions in a row: the laptop switched off mid-build, and the second picked the work up from the
 first one's transcript (auto-memory `reference-session-transcripts`). Nothing was lost; the build
@@ -775,7 +776,14 @@ Telegram name (`User.name`'s one reader is this line).
   a second copy;
 - tests 434 → 437 (`TelegramHTMLTests`); `&` moved last, two of the three failed — restored;
 - the player's next message after the restart redraws step 0 (`showCurrentStep`'s default) and
-  gets the picker. They are not told; an apology from the bot was offered, not sent.
+  gets the picker. She is not told by the game, so the owner approved a one-off apology from the
+  bot, to be sent once after the restart that ships the fix (plain text, no parse mode; the owner
+  dropped «RestOfIryna» for «Артанія» and the English half — the player is from Ukraine):
+  «Вітаємо! Це бот гри «Артанія». / Ви кілька разів надсилали /start, а бот мовчав. Вибачте, це була
+  наша помилка: через кутові дужки у вашому імені в Telegram бот не міг надіслати вам перше
+  повідомлення. Тепер це виправлено. / Надішліть /start, і реєстрація почнеться з вибору мови.»
+  Not code: one `sendMessage` from the Pi, never repeated. The restart notice («bot.restarted») reaches
+  her on every restart anyway — in English, her Telegram locale, until she picks a language.
 - Raised, not fixed: a GUILD name is checked for length only, so `<`, `>` or `&` in one would break
   every HTML message that prints it (1 guild live, clean) — `TODO.md` → "Open, decided but not done".
 

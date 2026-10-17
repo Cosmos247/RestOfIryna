@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-17 — a Telegram name escaped in the registration welcome** (Swift only, NOT deployed — a
+**2026-10-17 — a Telegram name escaped in the registration welcome** (`fb72d0d`, Swift only, NOT deployed — a
 restart). «👋 Welcome, %name!» printed the Telegram first name raw under HTML; «<🌷RILENX🌷>» made
 Telegram refuse it, and the throw skipped the language picker — one player stuck on step 0. The
 name goes through `TelegramHTML.escaped` (ROIContent, the one escape; `/reload`'s echo delegates)
