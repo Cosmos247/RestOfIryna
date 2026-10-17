@@ -23,17 +23,23 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-12 23:11)
+### Where things stand right now (the Pi and git as read 2026-10-13 18:57)
 
 | | |
 |---|---|
-| HEAD | **this hash fill** on top of **`beed258`** (the 10-12 sync pass: seven dead functions out, the retreat share required, the records synced), **`870361b`** (`fac8d5f`'s hash fill), **`fac8d5f`** (the 🏕 Expedition walks there and back), **`3ad85f6`** (`ed01b79`'s hash fill), **`ed01b79`** (the silver line on every question that spends silver; wiping one player and changing a gender recorded; eating several units built and rolled back), **`33e6e09`** (`37a0ebc`'s hash fill), **`37a0ebc`** (an apostrophe in a name; a lone unit needs no quantity; a broken piece no longer counts toward its set), **`5a7a3e5`** (`a9e5a98`'s hash fill), **`a9e5a98`** (the delivery jobs break even against buying) and **`2e8e385`** (the 2026-10-11 13:21 deploy recorded) — everything after **`98580ce`**, the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`98580ce`** (the owner pushed 2026-10-11). **Not pushed: `2e8e385`, `a9e5a98`, `5a7a3e5`, `37a0ebc`, `33e6e09`, `ed01b79`, `3ad85f6`, `fac8d5f`, `870361b`, `beed258` and this hash fill** — push is the owner's |
-| running on the Pi | **`98580ce`**, online since **2026-10-11 13:21:10** (pm2 restarts 10; read again 2026-10-12 23:11), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix), and **one passive run in flight** at 23:11 (none at 21:40). Content schema **v22**, content hash **`681d611a`**, `records 92300a4769c8933e`; the 10-11 restart's four migrations verified on the tables. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the 2026-10-13 18:54 deploy recorded) on top of **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: this commit** — push is the owner's |
+| running on the Pi | **`dda286f`**, online since **2026-10-13 18:54:16** (pm2 restarts 11), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v23**, content hash **`9dba2746`**, `records 78ce585986927122`, `tuning 53e33d38021f0bf4`; no migration in that restart. One passive run straddled it (ending 19:37:05, resumed on its old plan). The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The 🏕 Expedition walks there and back** (`fac8d5f`, content AND Swift, schema **v23**: the old binary refuses this content, a `/reload` included — it would walk the 3-minute strides only deeper, 29 of them); **the silver line on every question that spends silver** (`ed01b79`, Swift only); **an apostrophe in a name**, **a lone unit needs no quantity** and **a broken piece no longer counts toward its set** (`37a0ebc`, Swift only); **the delivery jobs' rewards** (`a9e5a98`, `quests.json` — no longer a `/reload`: the old binary refuses the pulled tree's content); the sync pass's cleanup (Swift, nothing a player sees). The tree: schema v23, content hash `9dba2746`, `records 78ce585986927122`, `tuning 53e33d38021f0bf4` |
+| waiting for a restart | **Nothing.** The 10-13 18:54 restart installed every commit; the tree reads the Pi's digest (schema v23, content hash `9dba2746`) |
 
-### Where the last sessions stopped (2026-10-11 → 10-12)
+### Where the last sessions stopped (2026-10-11 → 10-13)
+
+**10-13 — the deploy** (`98580ce` → `dda286f`, 18:54, on the owner's order after the push): pull,
+a 142 s build, the digest matched the Mac, the restart; no migration. One passive run straddled it.
+The broken-set fix landed on one player at boot (a Forester jerkin at 0/47). Before it, the testers'
+note was rechecked against the code — three corrections — and shortened on the owner's word.
+`.memory/sessions.md` → the deploy entry.
 
 **10-12, late — the sync pass** (`beed258`). Seven functions with no caller removed — the six from
 April and `renderLocation` — with `stub.coming_soon` and `AutobattleResult`'s two unread fields;
@@ -92,7 +98,11 @@ change worded as a charter («📜 Грамота про зміну класу»
 Chancellery's own commit, and a testers' note. The Mac's DBeaver needed its tunnel back up and a
 metadata refresh (`.memory/sessions.md` → the deploy entry).
 
-**Live since that restart, each with its auto-memory:** the Chancellery's class change for 100 🟡,
+**Live since the 10-13 18:54 restart:** the expedition there and back
+(`project-passive-expedition-rework`), the silver line, the apostrophe (`project-name-apostrophe`),
+the lone unit (`project-lone-unit-no-prompt`), the broken set piece and the delivery jobs' rewards.
+
+**Live since the 10-11 13:21 restart, each with its auto-memory:** the Chancellery's class change for 100 🟡,
 worded as a charter («📜 Грамота про зміну класу», never «указ»; `1c39595`,
 `project-premium-currency-zlatnyk`); a level-up keeps the armour's HP (`021e9ac`); the zlatnyks,
 credited in DBeaver and announced by the watchman, and the profile's declining silver (`1f4b442`);
@@ -102,23 +112,18 @@ second card (`7860aaa`, `project-fortune-dispel-and-second-card`); the recipe no
 
 ### Next action
 
-**0 — One restart for everything waiting** (the owner's: push, pull, build, the digest, then ASK):
-the expedition, the silver line, the apostrophe, the lone unit, the broken set piece, the delivery
-jobs' rewards and the sync pass's cleanup. The rewards can no longer go by `/reload`: the pulled
-tree's content is schema v23, which the old binary refuses (it would walk the expedition's 3-minute
-stride only deeper). The digest must read `tuning 53e33d38021f0bf4`, content hash `9dba2746` and
-schema v23. A passive run in flight at the restart resumes on its old 5-minute plan and walks home —
-**one was in flight at 23:11 on 10-12**; count again just before:
-`SELECT count(*) FROM exploration_state WHERE mode = 'passive' AND report_json IS NULL`. Then
-**walk**: the five not-deployed blocks on top of `TODO.md` → "Walk list" once they are live, and the
-six under them (live since 10-11 13:21). For the Chancellery, start by crediting a test account in
+**0 — Walk what just went live.** First the passive run that straddled the 10-13 restart (ending
+19:37:05): did its report arrive, and does it read right for a row started on the old plan? Then
+**walk**: the five blocks on top of `TODO.md` → "Walk list" (live since 10-13 18:54), and the six
+under them (live since 10-11 13:21). For the Chancellery, start by crediting a test account in
 DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks"; if the grid calls the new columns read-only,
-quit DBeaver and reopen, or use the SQL editor). The testers' note went to the owner on 10-11.
+quit DBeaver and reopen, or use the SQL editor). The testers' note for the 10-13 restart went to the
+owner the same day.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-12 23:11 (10-08 11:47:53). A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-13 18:56 (10-08 11:47:53). A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
@@ -159,21 +164,17 @@ and still open:
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake — **v23** in the tree since
-2026-10-12, v22 on the Pi — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
+schema change ships `content/data` and the binary TOGETHER (the handshake — **v23** on the Pi and in the
+tree — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
 
-**The current baseline — on the Pi since 2026-10-11 13:21 (`98580ce`, schema v22):** `records
-92300a4769c8933e` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
-30de20902006e3b9` · `king e3a492be1b017e81`, content hash `681d611a`. **This is the one place the
+**The current baseline — on the Pi since 2026-10-13 18:54 (`dda286f`, schema v23):** `records
+78ce585986927122` · `tuning 53e33d38021f0bf4` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `9dba2746`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
-superseded".
-**The tree's baseline, waiting for a restart (the delivery jobs' rewards and the expedition — not a
-`/reload`):** `records 78ce585986927122` · `tuning 53e33d38021f0bf4`, content hash `9dba2746`, schema v23, the other
-three halves as above. It becomes the current one
-when the Pi runs it; the line above then moves to the superseded list.
+superseded". The tree reads the same: nothing waits for a restart.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate

@@ -620,7 +620,7 @@ tick as one number. The pattern worth knowing: each was a place where the code w
 and could not say so, or where a number was shown in a unit it was not measured in.
 
 **The game is in a public test since 2026-10-07** — the bot's door is open to anyone who writes
-to it (`ROI_OPEN_ACCESS`), and the Pi runs `98580ce` since 2026-10-11 13:21. Everything below is live:
+to it (`ROI_OPEN_ACCESS`), and the Pi runs `dda286f` since 2026-10-13 18:54. Everything below is live:
 - since the 2026-09-28 restart: the bestiary's first tier and a roster re-solved against the gear
   players actually carry; mob XP halved on what the live database showed, loose silver on the
   trail, an escape that fails at most four times a fight; four all-time leaderboards; the capital
@@ -665,8 +665,8 @@ the armour repair halved (`repairCostFraction` 0.25: the Forester set from zero 
 Four migrations in all (`CreateRecipeNotes`, `AddFortuneStage`, `AddZlatnyks`, `CreateZlatnykPurchases`)
 and content schema v22, shipped with the binary in one restart.
 
-**Built 2026-10-11/12, not deployed — one restart installs all of it** (content schema v23: the
-running binary refuses this content, a `/reload` included):
+**Live since the 2026-10-13 18:54 restart, built 2026-10-11/12** (content schema v23, shipped with
+the binary):
 - the 🏕 Expedition walks there and back: half its 3-minute strides out and half home, so 30 / 60 /
   90 minutes turn at 5 / 10 / 15 km. The governor turns early below half his HP, or when his Vigor
   covers only the road home; he eats from the bag when he must, and holds the bag while he is out.

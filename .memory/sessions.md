@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-12)
+## Commit index — live-play polish and after (2026-09-09 → 10-13)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,9 +11,14 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-12)* **`beed258`'s hash fill** — records only.
-- `beed258` (10-12) **the 10-12 sync pass** — records, plus dead code — NOT live until a
-  restart (Swift; nothing a player sees):
+- *(this commit, 10-13)* **the 2026-10-13 18:54 deploy recorded** — records only: the `## Deploy —`
+  entry, the seven commits after `98580ce` marked live in `Prompt.md`, status, TODO (the walk list's
+  five blocks), README, `live-ops.md` (the restart, and the FAQ's ready replies now in the present —
+  two of them stale since the 10-11 deploy) and the auto-memory; the v22 baseline moved to the
+  superseded list.
+- `dda286f` (10-12) **`beed258`'s hash fill** — records only.
+- `beed258` (10-12) **the 10-12 sync pass** — records, plus dead code — DEPLOYED 10-13 18:54
+  (Swift; nothing a player sees):
   - seven functions with no caller removed (`renderStub`, `backToRootKeyboard`,
     `backToHomeKeyboard`, `itemNameOrId`, `isPassiveInflight`, `invalidateCache`,
     `renderLocation`), the `stub.coming_soon` key nothing rendered, and `AutobattleResult`'s
@@ -25,9 +30,8 @@ was shown in a unit it was not measured in.
     the pipeline, localization, status and file-map records; `Prompt.md` reoriented on the Pi read
     at 10-12 23:11. Digest and content hash unmoved; 426 tests.
 - `870361b` (10-12) **`fac8d5f`'s hash fill** — records only.
-- `fac8d5f` (10-12) **the 🏕 Expedition walks there and back** — NOT live until a restart
-  (content + Swift; never `/reload` this content on the old binary, which would walk 29 strides
-  outward) — the owner's report «телепортує додому після максимального км»:
+- `fac8d5f` (10-12) **the 🏕 Expedition walks there and back** — DEPLOYED 10-13 18:54
+  (content + Swift, schema v23, which the old binary refused, a `/reload` included) — the owner's report «телепортує додому після максимального км»:
   - half the strides out, half home, the door last; a 3-minute stride (`unitsPerStep` 5 → 3:
     30/60/90 min = 5/10/15 km), stamped on the running report; `PassiveRoute` (ROISim) + 10 tests;
   - turns below 50% HP (`passive.retreatBelowHpPercent`, validator `retreat_out_of_range`) or when
@@ -45,15 +49,15 @@ was shown in a unit it was not measured in.
   Records: the player FAQ row for eating several units, which `ed01b79` carried past its rollback,
   removed; two FAQ rows for the expedition.
 - `3ad85f6` (10-12) **`ed01b79`'s hash fill** — records only.
-- `ed01b79` (10-11/12) **the silver line on every question that spends silver** — NOT live until
-  a restart — a players' proposal: the Master's repair and buy confirms, the market's lot confirm and
+- `ed01b79` (10-11/12) **the silver line on every question that spends silver** — DEPLOYED 10-13 18:54 —
+  a players' proposal: the Master's repair and buy confirms, the market's lot confirm and
   the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)»; `RequirementLine.silver`
   builds all nine silver lines. Records: wiping one player and changing a gender in DBeaver
   (`live-ops.md`); eating several units at once, built and **rolled back by the owner before this
   commit** (none of its code is in it).
 - `33e6e09` (10-11) **`37a0ebc`'s hash fill** — records only.
 - `37a0ebc` (10-11) **an apostrophe in a name; a lone unit needs no quantity; a broken piece
-  no longer counts toward its set** — NOT live until a restart:
+  no longer counts toward its set** — DEPLOYED 10-13 18:54:
   - the nickname and the estate name accept an apostrophe between two letters (' ʼ ’, stored as
     '), through `PlayerNameRules` in `ROIContent`, which registration and the guild invite's
     lookup share; 6 tests;
@@ -66,7 +70,8 @@ was shown in a unit it was not measured in.
   Records: the 10-08 players' pair (eating from the warehouse, the step-6 hint) dropped by the
   owner, and the 10-11 evening's expedition research and choices (no commit of its own).
 - `5a7a3e5` (10-11) **`a9e5a98`'s hash fill** — records only.
-- `a9e5a98` (10-11) **the delivery jobs break even against buying** — NOT live until a `/reload` —
+- `a9e5a98` (10-11) **the delivery jobs break even against buying** — DEPLOYED 10-13 18:54 (with the
+  restart: the tree's content had gone to schema v23) —
   `quests.json`: `trader.hides` 30 → 60, `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies`
   30 → 60, `tavern.cook` 30 → 40 (authored), so no job pays less silver than buying its items at the
   level it opens. `spec-economy.md` §4's faucet table refreshed (98 → 217 a day) and its prose amended;
@@ -615,6 +620,12 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-11 13:21 to 2026-10-13 18:54 (`98580ce`, schema v22):** `records
+92300a4769c8933e` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `681d611a`. The delivery jobs' rewards
+(`a9e5a98`) moved `records`; the expedition's 3-minute stride and its retreat share (`fac8d5f`,
+schema v23) moved `tuning`.
+
 **The baseline the Pi ran from 2026-10-09 01:30 to 2026-10-11 13:21 (`de0e062`, schema v20):** `records
 4c0802f927fb8be4` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `47888401`. The fortune teller's two prices
@@ -693,6 +704,38 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Deploy — 2026-10-13 18:54 (`98580ce` → `dda286f`)
+
+The owner pushed and asked for the deploy and the restart. Read off the Pi first: `98580ce` since
+2026-10-11 13:21:10, schema v22, pm2 restarts 10, one `[WATCHDOG]` line (10-08 11:47:53). No Mac bot
+running. Before it, the testers' note was rechecked against the code (three corrections: the job
+exception in the lone unit is the trader's and the market's sale only; the guild vault is a source
+too; the profile's stat is «Здоров'я», and the set also gives Ухилення), then shortened on the
+owner's word.
+- `git pull --ff-only` fast-forwarded to `dda286f`. No migration among the eleven commits.
+- The detached debug build took 142.06 s with 0 errors.
+- `--content-digest` on the Pi matched the Mac line for line (68 lines), bar the Linux runtime's two
+  swift-backtrace notices: schema v23, content hash `9dba2746`, `records 78ce585986927122`, `tuning
+  53e33d38021f0bf4`, `spawns 0cf31905171d7944`, `quests 30de20902006e3b9`, `king e3a492be1b017e81`.
+- One passive run in flight at 18:54 (ending 19:37:05, started on the old 5-minute plan), and one
+  finished report waiting since 10-13 01:14. The restart went ahead on the owner's order; the run
+  resumes on its derived old plan and walks home (the case rehearsed for `fac8d5f`).
+- `pm2 restart ROI && pm2 save` ran at 18:54:15. The boot logged `Content loaded: schema v23 … hash
+  9dba2746`, `Bot identified as @ROfIr_bot`, `[ACCESS] OPEN DOOR`, `Backfilled level-derived stats for
+  4 user(s)` (routine — 2 on the 10-08 and 10-09 boots too), `Recomputed cached gear bonuses for 1 user(s)`,
+  three `403 bot was blocked by the user` from the first sweep, and `Server started and listening` at
+  18:54:22. The error log took only the swift-backtrace notices.
+- The one recomputed player is the broken-set fix landing: «Нястюшка» (L9) wears all four Forester
+  pieces with the jerkin at 0/47, so three count and the 4-piece +2 DEF · +6 HP went; her HP read
+  158 = 130 + 28, the new full. On 10-11 23:18 nobody wore a broken piece; by now four did (three
+  weapons, which only dull, and this jerkin).
+- At 18:56:34 (138 s after the boot, past the watchdog's 120 s): still one `[WATCHDOG]` line,
+  `Code: 400` at its 913 baseline, ROI `online` with restarts 11, four :443 sockets on the host (the other bots' included).
+
+Live since: the expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrophe,
+the lone unit and the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the
+sync pass's cleanup (`beed258`).
 
 ## Session — 2026-10-12, the sync pass (records; seven dead functions; the retreat share required) — `beed258`
 

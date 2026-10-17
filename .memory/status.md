@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-12 — the sync pass** (`beed258`, Swift + records, NOT live until a restart; nothing a player sees). Seven
+**2026-10-12 — the sync pass** (`beed258`, Swift + records, deployed 2026-10-13 18:54; nothing a player sees). Seven
 functions with no caller removed — `renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`
 (EstateController), `itemNameOrId` (ExplorationController), `isPassiveInflight` (ExplorationState),
 `invalidateCache` (User), `renderLocation` (CapitalController) — with `stub.coming_soon`, which
@@ -29,7 +29,7 @@ nothing rendered, and `AutobattleResult`'s two unread fields. `passive.retreatBe
 required now (it came in optional). The passive report's unread `stepsTaken` stays on purpose: the
 binary on the Pi decodes it as required, so dropping it would strand a report after a rollback.
 
-**2026-10-12 — the 🏕 Expedition walks there and back** (`fac8d5f`, content + Swift, NOT live until a restart —
+**2026-10-12 — the 🏕 Expedition walks there and back** (`fac8d5f`, content + Swift, deployed 2026-10-13 18:54 —
 the owner's report: «телепортує додому після максимального км»). Half the 3-minute strides out, half
 home, the door last: 30/60/90 min = 5/10/15 km, the depth on the picker. The governor turns below
 half his HP or when his Vigor only covers the road home with nothing to eat, eats from the bag only
@@ -38,17 +38,17 @@ the waiting screen; the report names the food eaten, an early turn and a death's
 `PassiveRoute` (ROISim) + 10 tests; `tuning` → `53e33d38021f0bf4`; content schema **v23**, so the old
 binary refuses this content, a `/reload` included.
 
-**2026-10-11 — the silver line on every question that spends silver** (`ed01b79`, Swift only, NOT live until a
-restart — a players' proposal). The Master's repair and buy confirms, the market's lot confirm and
+**2026-10-11 — the silver line on every question that spends silver** (`ed01b79`, Swift only, deployed 2026-10-13 18:54 —
+a players' proposal). The Master's repair and buy confirms, the market's lot confirm and
 the fortune teller's «Відчарувати» end with «✅/❌ 🪙 Срібло (є/треба)», the line the enchant and
 lesson cards already printed — `RequirementLine.silver`, now the one builder of all nine.
 
-**2026-10-11 — a broken piece no longer counts toward its set** (`37a0ebc`, Swift only, NOT live until a
-restart). Armour at 0 grants nothing and adds no set progress (`EquipmentService.isBroken`, one
+**2026-10-11 — a broken piece no longer counts toward its set** (`37a0ebc`, Swift only, deployed 2026-10-13 18:54).
+Armour at 0 grants nothing and adds no set progress (`EquipmentService.isBroken`, one
 test for both); a Forester set worn to 0 used to keep +2 DEF · +6 HP · +2 dodge. A weapon at 0
 keeps half its stats, rounded half up.
 
-**2026-10-11 — a lone unit needs no quantity** (`37a0ebc`, Swift only, NOT live until a restart — a players'
+**2026-10-11 — a lone unit needs no quantity** (`37a0ebc`, Swift only, deployed 2026-10-13 18:54 — a players'
 proposal, the owner's variant A). Where the units come from holds exactly one, the tap acts on it:
 - the trader sells it (`sellOrAsk`);
 - the market asks only the price;
@@ -58,12 +58,12 @@ proposal, the owner's variant A). Where the units come from holds exactly one, t
 A taken job that needs the item keeps the trader's and the market's prompt (`loneUnitWithoutJob`).
 Buying always asks.
 
-**2026-10-11 — an apostrophe in a name** (`37a0ebc`, Swift only, NOT live until a restart). The nickname and the
+**2026-10-11 — an apostrophe in a name** (`37a0ebc`, Swift only, deployed 2026-10-13 18:54). The nickname and the
 estate name accept an apostrophe between two letters (' ʼ ’, stored as '), through `PlayerNameRules`
 (`ROIContent`). The guild invite's nickname lookup normalizes through it too.
 
-**2026-10-11 — the delivery jobs break even against buying** (`a9e5a98`, content only, NOT live until a
-`/reload` — `quests.json`; `records` → `78ce585986927122`, content hash `cb2b3fed`). No job pays less
+**2026-10-11 — the delivery jobs break even against buying** (`a9e5a98`, content only, deployed 2026-10-13 18:54 with
+the restart — `quests.json`; `records` → `78ce585986927122`, content hash `cb2b3fed`). No job pays less
 silver than buying its items from the trader costs, at the level it opens: `trader.hides` 30 → 60,
 `trader.iron` 50 → 91, `master.ore` 50 → 141, `tavern.supplies` 30 → 60, `tavern.cook` 30 → 40
 (authored). The jobs' daily take 78 → 98 at L1 and 153 → 217 at L40 (`spec-economy.md` §4). Why:
@@ -927,16 +927,13 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
-since the 2026-10-11 13:21 restart (`98580ce`): `records 92300a4769c8933e` /
-`tuning 4edf65507bbb5e48` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
-e3a492be1b017e81`, content hash `681d611a`, **schema v22** (the fortune teller's two prices, the
-repair halved, then the Chancellery's `treasury.json` — `records` alone moved). That restart
-carried the recipe notebook (`d77d600`), the dispel (`7860aaa`), the halved repair (`7995d2a`), the
-zlatnyks (`1f4b442`), the level-up HP fix (`021e9ac`) and the Chancellery (`1c39595`). **The working
-tree is ahead** by the delivery jobs' rewards and, since 2026-10-12, the expedition there and back:
-`records 78ce585986927122`, `tuning 53e33d38021f0bf4`, content hash `9dba2746`, **schema v23**, the other three halves
-the Pi's. **A restart installs it**: the old binary refuses it (schema v23), a `/reload` included —
-it would walk the 3-minute stride only deeper. Every earlier baseline is in `.memory/sessions.md` → "Digest
+since the 2026-10-13 18:54 restart (`dda286f`): `records 78ce585986927122` /
+`tuning 53e33d38021f0bf4` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
+e3a492be1b017e81`, content hash `9dba2746`, **schema v23** (the delivery jobs' rewards moved
+`records`, the expedition's 3-minute stride and retreat share `tuning`). That restart carried the
+expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrophe, the lone unit and
+the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the sync pass's cleanup
+(`beed258`). Nothing waits for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **426 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
