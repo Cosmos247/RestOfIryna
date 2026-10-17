@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-17 — the 🪙 Багатство board** (Swift + two locales, NOT deployed — a restart). A fifth
+**2026-10-17 — the 🪙 Багатство board** (`8320b92`, Swift + two locales, NOT deployed — a restart). A fifth
 leaderboard, on a row of its own under the four tabs: the silver in the purse (`users.silver`,
 an empty purse unlisted, ties ordered by level). Other players show a place and a name only — the
 owner's pick, so a purse is not read at the market; the viewer's own row keeps its sum. A balance,

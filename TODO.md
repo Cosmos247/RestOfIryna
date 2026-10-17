@@ -1575,7 +1575,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The 🪙 Багатство board** *(2026-10-17, Swift + locales, NOT live until a restart)* — the
+  - [x] **The 🪙 Багатство board** *(2026-10-17, `8320b92`, Swift + locales, NOT live until a restart)* — the
         owner: «Хочу додати рейтинг за багатством». A mockup on the live purses and four picks: the
         purse as it stands (`users.silver`), an empty purse unlisted, the tab on a row of its own,
         and **places only** — other players' sums are never shown, the viewer's own row keeps
@@ -2155,7 +2155,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 **Not live yet:** the four blocks on top — the 2026-10-17 wealth board, welcome and leaderboard
 pages and the 2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
 
-**Added 2026-10-17 — the 🪙 Багатство board (NOT deployed — Swift + locales, needs a restart):** any
+**Added 2026-10-17 — the 🪙 Багатство board (`8320b92`, NOT deployed — Swift + locales, needs a restart):** any
 account with some silver, and one with none.
 - 📓 Нотатник → 🏆 Рейтинги: a third row «🪙 Багатство» under the four tabs; the tap opens «Хто має
   найбільше срібла» with «◀️ 1/3 ▶️» (26 purses on 10-17).

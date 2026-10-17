@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-17)* **the 🪙 Багатство board** — Swift + locales, NOT deployed (a restart): a
+- *(this hash fill, 10-17)* **`8320b92`'s hash fill** — records only.
+- `8320b92` (10-17) **the 🪙 Багатство board** — Swift + locales, NOT deployed (a restart): a
   fifth leaderboard on a row of its own, `users.silver` above zero, ties by level; other players
   show a place and a name only, the viewer's row keeps its sum (`showsOthersValues`). Four locale
   keys × 2. Every page matched Postgres `rank()` on the live data (26 purses, 3 pages).
@@ -728,7 +729,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped; the wealth board) — `1f0ca8b`, `fb72d0d`, *(this commit)*
+## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped; the wealth board) — `1f0ca8b`, `fb72d0d`, `8320b92`
 
 Two sessions in a row: the laptop switched off mid-build, and the second picked the work up from the
 first one's transcript (auto-memory `reference-session-transcripts`). Nothing was lost; the build
