@@ -44,7 +44,8 @@ final class TuningTests: XCTestCase {
         persistRounds: Int = 1,
         flee: [FleeTuningDTO]? = nil,
         fleeMaxFailures: Int = 4,
-        archerChip: Double = 0.5, archerDodge: Double = 1.5, mageBarrier: Double = 0.4
+        archerChip: Double = 0.5, archerDodge: Double = 1.5, mageBarrier: Double = 0.4,
+        mageChip: Double = 0.5
     ) -> CombatTuningDTO {
         CombatTuningDTO(
             hitChance: HitChanceDTO(base: hitBase, min: hitMin, max: hitMax),
@@ -106,7 +107,8 @@ final class TuningTests: XCTestCase {
                 ]),
             defend: DefendTuningDTO(archerChipMultiplier: archerChip,
                                     archerDodgeMultiplier: archerDodge,
-                                    mageBarrierDamageFraction: mageBarrier))
+                                    mageBarrierDamageFraction: mageBarrier,
+                                    mageChipMultiplier: mageChip))
     }
 
     private func vigor(walkRoom: Int = 2, idle: Int = 0,
@@ -280,10 +282,28 @@ final class TuningTests: XCTestCase {
          "specialAttack":[],"specialDefense":{"effectPersistRounds":1,"ironBulwarkChipFraction":0.5,
          "shadowVeilDodgeMultiplier":2.0,"mirrorWardReflectFraction":0.5,"byClass":[]},
          "flee":[],"defend":{"archerChipMultiplier":0.5,"archerDodgeMultiplier":1.5,
-         "mageBarrierDamageFraction":0.4}}
+         "mageBarrierDamageFraction":0.4,"mageChipMultiplier":0.5}}
         """
         XCTAssertThrowsError(try JSONDecoder().decode(CombatTuningDTO.self, from: Data(json.utf8)),
                              "a missing tuning constant must fail the boot, not default to 0")
+    }
+
+    /// The barrier's spark is required (schema v24): a v23 `defend` block has
+    /// no such key, and defaulting it to 0 would still chip 1 a tap
+    /// (`chipDamage` floors at 1) while reading as "off" — so it must throw.
+    func testMissingMageChipThrows() throws {
+        let without = """
+        {"archerChipMultiplier":0.5,"archerDodgeMultiplier":1.5,"mageBarrierDamageFraction":0.4}
+        """
+        XCTAssertThrowsError(try JSONDecoder().decode(DefendTuningDTO.self, from: Data(without.utf8)))
+        // The positive control: the same block with the key decodes, so the
+        // throw above is about the key and nothing else.
+        let with = """
+        {"archerChipMultiplier":0.5,"archerDodgeMultiplier":1.5,"mageBarrierDamageFraction":0.4,
+         "mageChipMultiplier":0.5}
+        """
+        let decoded = try JSONDecoder().decode(DefendTuningDTO.self, from: Data(with.utf8))
+        XCTAssertEqual(decoded.mageChipMultiplier, 0.5)
     }
 
     func testMissingVigorDrainFieldThrows() {
@@ -507,6 +527,10 @@ final class TuningTests: XCTestCase {
 
     func testBarrierFractionAboveOneIsAnError() {
         assertRule("tuning.combat.barrier_fraction_range", bundle(combat: combat(mageBarrier: 1.5)))
+    }
+
+    func testNegativeMageChipIsAnError() {
+        assertRule("tuning.combat.negative_multiplier", bundle(combat: combat(mageChip: -0.5)))
     }
 
     // MARK: - vigor.json rules

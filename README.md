@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 426 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 428 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -675,6 +675,10 @@ the binary):
 - an apostrophe in a name («Дар'я»); a lone unit needs no quantity; a broken armour piece no
   longer counts toward its set;
 - every delivery job pays at least what its items cost at the trader.
+
+**Built 2026-10-13, waiting for a restart** (content schema v24, shipped with the binary): the mage's
+«🌀 Магічний бар'єр» strikes back — a spark of 15% of a plain hit, the archer's size, on top of its
+60% cut; it struck nothing before.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

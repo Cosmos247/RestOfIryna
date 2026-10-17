@@ -584,16 +584,30 @@ public struct DefendTuningDTO: Codable, Sendable, Equatable {
     public let archerDodgeMultiplier: Double
     /// Fraction of incoming damage the mage actually takes (0.4 = 60% off).
     public let mageBarrierDamageFraction: Double
+    /// The mage's barrier strikes back since schema v24 (2026-10-13): this
+    /// multiplies `defendChipFraction`, as the archer's knife does, so 0.5 is
+    /// 15% of a clean hit. It used to strike nothing at all — a Vigor tap with
+    /// no blow in it, the defect the techniques lost on 2026-09-27.
+    ///
+    /// Kept small on purpose. A chip never weakens with the level gap while an
+    /// attack loses `levelDiff.perLevel` a level, and the barrier already takes
+    /// the most off a blow of the three classes, so a big chip turns "barrier
+    /// every round" into the way to beat beasts above the mage. Measured: the
+    /// line falls between 20% and 22.5% (×0.67 to ×0.75) — at 30% a level-10
+    /// mage beats a level-16 beast in 93% of barrier-only fights against 58% by
+    /// attacking. `.memory/rebalance.md` has the table.
+    public let mageChipMultiplier: Double
 
     public init(archerChipMultiplier: Double, archerDodgeMultiplier: Double,
-                mageBarrierDamageFraction: Double) {
+                mageBarrierDamageFraction: Double, mageChipMultiplier: Double) {
         self.archerChipMultiplier = archerChipMultiplier
         self.archerDodgeMultiplier = archerDodgeMultiplier
         self.mageBarrierDamageFraction = mageBarrierDamageFraction
+        self.mageChipMultiplier = mageChipMultiplier
     }
 
     private enum CodingKeys: String, CodingKey {
-        case archerChipMultiplier, archerDodgeMultiplier, mageBarrierDamageFraction
+        case archerChipMultiplier, archerDodgeMultiplier, mageBarrierDamageFraction, mageChipMultiplier
     }
 
     public init(from decoder: any Decoder) throws {
@@ -601,6 +615,7 @@ public struct DefendTuningDTO: Codable, Sendable, Equatable {
         archerChipMultiplier      = try c.decode(Double.self, forKey: .archerChipMultiplier)
         archerDodgeMultiplier     = try c.decode(Double.self, forKey: .archerDodgeMultiplier)
         mageBarrierDamageFraction = try c.decode(Double.self, forKey: .mageBarrierDamageFraction)
+        mageChipMultiplier        = try c.decode(Double.self, forKey: .mageChipMultiplier)
     }
 }
 

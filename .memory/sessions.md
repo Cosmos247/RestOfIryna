@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-13)* **the 2026-10-13 18:54 deploy recorded** — records only: the `## Deploy —`
+- *(this commit, 10-13)* **the mage's barrier strikes back** — content + Swift, schema v24, NOT
+  deployed: «🌀 Магічний бар'єр» sparks 15% of a plain hit (`defend.mageChipMultiplier` 0.5, the
+  archer's size) and keeps its 60% cut, with its own line; capped on a measurement (a chip ignores
+  the level gap — above ~20% "barrier every round" beats attacking a stronger beast). `tuning` →
+  `799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved; 428 tests. Records: the
+  forest's Defend measured for all three classes and the open wind-up proposal (`rebalance.md`).
+- `67aa073` (10-13) **the 2026-10-13 18:54 deploy recorded** — records only: the `## Deploy —`
   entry, the seven commits after `98580ce` marked live in `Prompt.md`, status, TODO (the walk list's
   five blocks), README, `live-ops.md` (the restart, and the FAQ's ready replies now in the present —
   two of them stale since the 10-11 deploy) and the auto-memory; the v22 baseline moved to the
@@ -704,6 +710,45 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-13, evening (the forest's Defend measured; the mage's barrier strikes back)
+
+The owner: «Продивись як зараз працюють кнопки захисту у всіх классів та запропоонуй як їх можна
+покращити».
+
+**Read and measured** (scratch probe over `CombatMath`, the controller's round order rebuilt;
+`.memory/rebalance.md` → "The forest's Defend, measured" has every table and the harness recipe):
+- every class's Defend loses to Attack: a tap saves 1.6 / 0.5 / 4.4 HP and gives up 68 / 85 / 100% of
+  the damage, so it costs 2.6 / 4.4 / 3.2 HP net (L9, the wolf). Always-Defend: the warrior 2.5× the HP
+  loss, the archer near death, the mage never kills;
+- live (`fight_log`, read-only on the Pi, defends inferred from Vigor): ≈1.7% of taps; 122 of 124
+  fights finished on the Defend chip were archers, ~100 of them one account — the chip never misses;
+- the special defences are fine and used; numbers alone cannot make Defend a choice (the arena's
+  0%/100% again).
+
+**Proposed:** «звір замахується» — a telegraphed ×2 blow without a crit, which a Defend stops. Measured
+with and without an answering blow; a never-defending player loses nothing, deaths included. The
+owner rejected the quiz to clarify and answered with the first point instead: «По перше давай додамо
+нансенняя шкоди до захисту у мага, бо "нічого" це погано». The proposal stays open (`TODO.md`).
+
+**The barrier's spark, decided and built.** Measured first that a big spark breaks the depth gate: a
+chip ignores the level gap, so barrier-only beats attacking a stronger beast from ~22% (at 30% a L10 mage
+wins 93% against a L16 beast, 58% attacking). The owner took 15% over 20% and 30%:
+- `combat.json` → `defend.mageChipMultiplier` 0.5 (required; schema v23 → **v24**, manifest too);
+  `DefendTuningDTO`, `CombatService.Defend.mageChipMultiplier`, the validator's `negative_multiplier`
+  rule for it, the digest line;
+- `CombatController.onDefend`: the mage chips through `chipDamage` like the other two, and the line
+  is chosen by class — «🌀 Магічний бар'єр мерехтить навколо вас і б'є іскрою у відповідь — X втрачає N
+  ОЗ» (`combat.defend.barrier`, both locales); the archer keeps the warrior's line (raised, not asked);
+- tests 426 → 428: `testMissingMageChipThrows` (with a positive control) and
+  `testNegativeMageChipIsAnError`, mutation-tested (the rule removed, the test failed, restored);
+- `validate --strict` clean; `simulate --strict` unchanged (0 broken bands, 18 warnings, pace 167.0 /
+  159.6 / 150.9 — `FightSimulator` models no Defend); the digest moved `tuning` only (`53e33d38021f0bf4`
+  → `799a96eb5f8619df`), negative-tested (0.6 → `b767e560cea15584`); the new line rendered through
+  Lingo in both locales; the enemy-name sweep finds nothing, its planted bad line flagged.
+
+Not live: content + Swift with schema v24, so a restart, not a `/reload`. The 10-13 18:54 deploy's
+records were still uncommitted from the previous session when this one began.
 
 ## Deploy — 2026-10-13 18:54 (`98580ce` → `dda286f`)
 

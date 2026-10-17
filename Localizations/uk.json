@@ -849,7 +849,7 @@
   "combat.enemy.crit": "<b>%{enemy}</b> наносить нищівний удар. Ви втрачаєте <b>%{damage} ОЗ</b>.",
   "combat.enemy.miss": "<b>%{enemy}</b> не влучає — ви ухиляєтеся.",
   "combat.defend.absorbed": "Ви тримаєте удар і зачіпаєте у відповідь — <b>%{enemy}</b> втрачає <b>%{damage} ОЗ</b>.",
-  "combat.defend.barrier": "Магічний бар'єр мерехтить навколо вас.",
+  "combat.defend.barrier": "Магічний бар'єр мерехтить навколо вас і б'є іскрою у відповідь — <b>%{enemy}</b> втрачає <b>%{damage} ОЗ</b>.",
   "combat.flee.success": "Ви відриваєтеся й відступаєте — <b>%{enemy}</b> лишається позаду.",
   "combat.flee.fail": "<b>%{enemy}</b> наздоганяє у відступі — <b>%{damage} ОЗ</b> у спину.",
   "combat.victory": "<b>%{enemy}</b> падає. Ліс стихає.",

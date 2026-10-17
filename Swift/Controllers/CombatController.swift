@@ -445,7 +445,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         //   • Archer  — chip 15% × ATK (knife flick while melting into cover)
         //               + dodge ×1.5 for the round; DEF stays single since the
         //               fantasy is evasion, not armor.
-        //   • Mage    — no chip (barrier is purely passive); enemy attack
+        //   • Mage    — chip 15% × ATK (the barrier sparks back; since
+        //               2026-10-13 — it struck nothing before); enemy attack
         //               rolls normally through single DEF + dodge, then the
         //               landed damage is multiplied by 0.4 (60% off) before
         //               being applied to HP.
@@ -463,7 +464,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case .archer:
             chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF, defenderLevel: enemy.level, extraMultiplier: CombatService.Defend.archerChipMultiplier)
         case .mage:
-            chip = 0
+            chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: effectiveEnemyDEF, defenderLevel: enemy.level, extraMultiplier: CombatService.Defend.mageChipMultiplier)
         }
         let hpBefore = state.combatEnemyHP ?? enemy.hp
         let enemyHP = max(0, hpBefore - chip)
@@ -473,15 +474,21 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             $0.dealt(chip, removed: hpBefore - enemyHP, by: .defend, inStance: inStance)
             if enemyHP <= 0 { $0.killingBlow = .defend }
         }
+        // Every class's Defend strikes now, so the line is chosen by class, not
+        // by whether a chip landed: the barrier's spark is not «Ви тримаєте
+        // удар», and it never deals 0 (`chipDamage` floors at 1).
+        let lineInterpolations = [
+            "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
+            "damage": "\(chip)"
+        ]
         let playerLine: String
-        if chip > 0 {
-            playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale, interpolations: [
-                "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
-                "damage": "\(chip)"
-            ])
-        } else {
-            // Mage barrier — no chip line, just the brace stance.
-            playerLine = "🌀 " + context.lingo.localize("combat.defend.barrier", locale: context.session.locale)
+        switch cls {
+        case .warrior, .archer:
+            playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale,
+                                                       interpolations: lineInterpolations)
+        case .mage:
+            playerLine = "🌀 " + context.lingo.localize("combat.defend.barrier", locale: context.session.locale,
+                                                       interpolations: lineInterpolations)
         }
 
         if enemyHP <= 0 {

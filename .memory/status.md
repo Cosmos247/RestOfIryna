@@ -21,6 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-13 — the mage's barrier strikes back** (content + Swift, schema **v24**, NOT deployed:
+the old binary refuses this content, a `/reload` included). «🌀 Магічний бар'єр» sparks 15% of a clean
+hit — `defend.mageChipMultiplier` 0.5 × `defendChipFraction` 0.3, the archer's size — and keeps its
+60% cut; it struck nothing before. Capped on a measurement: a chip ignores the level gap, so above
+~20% "barrier every round" beats attacking a stronger beast. Its own line «…мерехтить навколо вас і
+б'є іскрою у відповідь — X втрачає N ОЗ». `tuning` → `799a96eb5f8619df`, content hash `19c94a81`;
+428 tests. The forest's Defend measured for all three classes the same day (`.memory/rebalance.md`);
+the wind-up proposal is open.
+
 **2026-10-12 — the sync pass** (`beed258`, Swift + records, deployed 2026-10-13 18:54; nothing a player sees). Seven
 functions with no caller removed — `renderStub`, `backToRootKeyboard`, `backToHomeKeyboard`
 (EstateController), `itemNameOrId` (ExplorationController), `isPassiveInflight` (ExplorationState),
@@ -933,8 +942,9 @@ e3a492be1b017e81`, content hash `9dba2746`, **schema v23** (the delivery jobs' r
 `records`, the expedition's 3-minute stride and retreat share `tuning`). That restart carried the
 expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrophe, the lone unit and
 the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the sync pass's cleanup
-(`beed258`). Nothing waits for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **426 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+(`beed258`). Waiting for a restart: the mage's barrier spark (2026-10-13, schema v24 — the tree reads
+`tuning 799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **428 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

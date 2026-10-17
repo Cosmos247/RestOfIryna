@@ -439,8 +439,10 @@ Shot is a guaranteed crit AT the standard ×1.5, and `tuning.combat.effect_crit_
 refuses more. The kit is tuned to shorten an elite fight by ~20% for EVERY class; measure with
 `simulate --levels 21` and `--levels 40`, never the default sweep. Raising a stance swings
 through `strikeRound` and all three special defences deal damage back — do not add a tap that
-takes Vigor and strikes nothing. The stance lines carry no stat breakdown, on the owner's word.
-Auto-memory `project-technique-rework`.
+takes Vigor and strikes nothing. The mage's plain barrier strikes too (2026-10-13, 15%), and a Defend
+chip ignores the level gap: above ~20% "barrier every round" beats attacking a stronger beast, so
+re-measure before raising `defend.mageChipMultiplier`. The stance lines carry no stat breakdown, on
+the owner's word. Auto-memory `project-technique-rework`, `project-forest-defend`.
 
 **A finished forest fight writes one `fight_log` row** (win / death / flee — not training, the
 registration dog or the passive autobattle). Its numbers gather between taps in

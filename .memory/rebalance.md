@@ -1066,6 +1066,78 @@ eating, the losses on a death).
 in the economy moved: the walk and event weights are untouched, and `tuning` is the only digest half
 that changed (`53e33d38021f0bf4`).
 
+### The forest's Defend, measured; the mage's barrier strikes back (2026-10-13)
+
+The owner asked how the three classes' Defend buttons work and how to improve them. Rolled on
+`CombatMath` in a scratch probe: the controller's round order (`onAttack` / `onDefend` /
+`finishRound`) rebuilt over `applyAttack` / `chipDamage`, against the shipped roster at its own
+level and against `EnemyGenerator` archetypes at L21 and L40, the reference character on level with
+a full kit (`gearOffset` 0), estate T1, 20,000 fights a cell (`SplitMix64`). Same harness as the
+expedition model's: `Modules/ROIContent` + `Modules/ROISim` copied into a scratch package's
+`Sources/` beside one `probe` executable (`ExistentialAny`), built `-c release`.
+
+**What one tap is worth today.** L9 against Скажений вовк, mean per tap over 200,000 rolls:
+
+| | Attack: deals / takes | Defend: deals / takes | Defend saves | Defend gives up |
+|---|---|---|---|---|
+| warrior (chip 30%, DEF ×2) | 31.9 / 6.2 | 10.1 / 4.5 | 1.6 HP (−27%) | 21.8 (−68%) |
+| archer (chip 15%, dodge ×1.5) | 33.0 / 5.8 | 4.9 / 5.3 | 0.5 HP (−8%) | 28.1 (−85%) |
+| mage (no chip, landed ×0.4) | 36.0 / 7.6 | 0 / 3.2 | 4.4 HP (−58%) | 36.0 (−100%) |
+
+The damage given up must be bought back with attack rounds, each answered by a blow, so every Defend
+tap costs 2.6 / 4.4 / 3.2 HP net, plus a tap and Vigor. The shares hold from the boar (L3) to the
+bear (L14). Defend every round against the wolf: the warrior loses 21.4% HP against 8.5% in 12 taps
+against 4.2, the archer 70.5% (98.9% wins), the mage never kills (0%). The one rational use is a
+finisher — a chip never misses.
+
+**Live** (`fight_log`, 9,408 fights since 09-28, read 10-13). The log has no Defend counter, so it is
+inferred from Vigor on won fights with no technique and Vigor spent: defends = 2·rounds − vigor_spent
+(an attack 2, a defend 1). A ×0.5 card makes every tap cost 1 (est = rounds, set aside), the Devil
+makes it negative, a starving fight carries no signal. Defend ≈ 1.7% of taps (warrior 0.8%, archer
+3.9%, mage 2.0%). 124 fights ended on the Defend chip — 122 by archers, ~100 of them one account
+(Нястюшка, L1–9): the knife used as a sure finisher. The special defences are used (Володимир's Shadow
+Veil in 292 of 1,308 fights at L11+); Дарина (warrior, L22) fought 4,264 fights at L11+ with no technique
+at all — the roster ends at L14.
+
+**Why numbers alone cannot fix it.** The beast hits the same way every round, so Defend is either
+always worse than Attack or always better — the arena's 0%/100% (above). For always-Defend merely to
+equal always-Attack the parry must stop 68% of every blow, the manoeuvre 85%, the barrier 100%, and
+fights grow 3× / 7× / without end.
+
+**Proposed, not decided: «звір замахується».** On 20% of its turns the beast winds up instead of
+striking (that round it does not hit) and the next blow is ×2 with no crit; a Defend on it stops it
+entirely, an ordinary Defend stays as it is; no wind-ups in the autobattle. Measured, HP per fight
+against the bear (L14), today → never defends → defends on every wind-up:
+- stop only: warrior 23.9 → 22.7 → 18.1 (−24%), archer 27.7 → 26.4 → 21.8 (−21%), mage 30.3 → 28.5
+  → 24.3 (−20%); fights +0.2…+1.3 taps;
+- stop + a full answering blow that cannot miss: 16.3 / 19.2 / 20.9 (−31…−32%), fights ±0, 0.3–1.7
+  Vigor saved;
+- level-invariant (the same shares at L3, L21, L40); 15% / 25% give −24% / −38% with the answering blow;
+- a never-defending player takes 4–6% LESS than today (a beast sometimes dies before its blow). With a
+  heavy blow that may crit, deaths rose in the hardest cell measured (archer vs a L21 elite 2.17% →
+  3.07%); without the crit they do not (2.16%), and a player who reads every wind-up dies in 0.4%.
+The owner rejected that quiz to clarify and took the mage's barrier first. The rest is open.
+
+**The mage's barrier strikes back — decided and built.** The owner: «…бо "нічого" це погано». A chip
+does NOT weaken with the level gap (`chipDamage` has no `levelDiff`, an attack loses 6% a level), and
+the barrier already takes the most off a blow, so a big spark turns "barrier every round" into the
+way to beat beasts above the mage. Always-barrier against always-attack, a L10 mage against
+generated beasts of L10+k (wins):
+
+| | attack | spark 15% | 20% | 22.5% | 25% | 30% |
+|---|---|---|---|---|---|---|
+| normal +4 | 98.4% | 0.2% | 37.5% | 81.0% | 98.0% | 100% |
+| normal +6 | 58.0% | 0% | 1.3% | 11.5% | 40.0% | 93.3% |
+| skirmisher +6 | 36.5% | 0% | 2.8% | 12.6% | 35.0% | 83.9% |
+
+At L20 the line falls between 20% and 22.5% (skirmisher +4: 93.2% attacking, 96.9% barrier-only at
+22.5%). The warrior's and the archer's always-Defend never beat attacking. Per tap at L9 the spark
+costs −2.1 / −1.7 / −1.0 HP at 15 / 20 / 30% (today −3.2). The owner took **15%** — the archer's
+size (`defend.mageChipMultiplier` 0.5, schema v24) — over 20% and 30%. Its line: «Магічний бар'єр
+мерехтить навколо вас і б'є іскрою у відповідь — X втрачає N ОЗ». `simulate` cannot see it
+(`FightSimulator` models no Defend); `tuning` → `799a96eb5f8619df` and the content hash moved, the
+other halves did not.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

@@ -2165,6 +2165,8 @@ public enum ContentValidator {
 
             require(combat.defend.archerChipMultiplier >= 0, file, "defend.archerChipMultiplier",
                     "tuning.combat.negative_multiplier", "chip multiplier must not be negative")
+            require(combat.defend.mageChipMultiplier >= 0, file, "defend.mageChipMultiplier",
+                    "tuning.combat.negative_multiplier", "chip multiplier must not be negative")
             require(combat.defend.archerDodgeMultiplier >= 1.0, file, "defend.archerDodgeMultiplier",
                     "tuning.combat.dodge_multiplier",
                     "archerDodgeMultiplier must be at least 1.0 (1.0 = no change), found \(combat.defend.archerDodgeMultiplier)")

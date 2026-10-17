@@ -130,5 +130,10 @@ public enum ContentSchema {
     /// so only the handshake can refuse it. `exploration.passive` gains a
     /// required `retreatBelowHpPercent` with it — the share of HP below which
     /// the governor turns for home.
-    public static let current: Int = 23
+    /// v24 (2026-10-13): the mage's barrier strikes back — `combat.defend`
+    /// gains a required `mageChipMultiplier` (15% of a clean hit at 0.5). A
+    /// v23 binary would ignore it and keep a barrier that strikes nothing while
+    /// the operator believes it chips; a v24 binary reading a v23 bundle would
+    /// die on a bare `keyNotFound`. The handshake names the cause either way.
+    public static let current: Int = 24
 }

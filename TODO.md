@@ -2132,6 +2132,16 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
+**Not live yet:** the 2026-10-13 barrier block on top waits for a restart (schema v24).
+
+**Added 2026-10-13 — the mage's barrier strikes back (NOT deployed — schema v24, needs a restart):**
+a mage in any forest fight.
+- «🌀 Магічний бар'єр»: «🌀 Магічний бар'єр мерехтить навколо вас і б'є іскрою у відповідь — 🐺 Скажений
+  вовк втрачає 6 ОЗ.» (≈15% of a plain hit — 5–6 against the wolf at L9), then the beast's line as before
+  with the blow cut by 60%.
+- A beast left with fewer HP than the spark dies on it: the victory screen follows the barrier line.
+- 🥋 The Training Ground's dummy takes the spark too; the warrior's and the archer's Defend lines are
+  unchanged.
 
 **Added 2026-10-12 — the expedition there and back (`fac8d5f`, live since 2026-10-13 18:54):**
 an account with full HP and some Vigor. A run in flight at the restart resumes on its old 5-minute
@@ -2925,6 +2935,21 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-13 Defend session** — the mage's barrier spark built; the rest in discussion
+(measurements: `.memory/rebalance.md` → "The forest's Defend, measured"):
+- **«Звір замахується»** — the proposal that gives Defend a moment: on 20% of its turns the beast
+  winds up (no blow that round), the next blow is ×2 without a crit, a Defend stops it; an ordinary
+  Defend stays as it is; no wind-ups in the autobattle. Two variants measured: stop only (−20…−24% HP
+  a fight for a player who reads it, +0.2…1.3 taps) and stop + a full answering blow (−31…−32%, no
+  longer fights). The owner rejected the quiz to clarify and began with the barrier («По перше…» — more points may follow) —
+  open, not decided.
+- **Defend's lines say nothing about what it did** — after a Parry the beast's line is the same «б'є у
+  відповідь. Ви втрачаєте N ОЗ»; the archer's Defend borrows the warrior's «Ви тримаєте удар і
+  зачіпаєте у відповідь»; no screen says what each Defend does. Raised, not asked.
+- **A validator ceiling on the barrier's spark** — the measured line (~20%, `mageChipMultiplier` 0.67)
+  is a doc comment and a `CLAUDE.md` sentence, not a rule. Could become a warning like
+  `arena.duel_defend_loses`; offered, not built.
+
 **From the 2026-10-11 evening sessions** — the apostrophe built (the expedition researched then is
 built since 2026-10-12, above):
 - **A lone unit sells on one tap — chosen knowingly.** Variant A drops the question that doubled as
@@ -3243,7 +3268,11 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-13, the 18:54 deploy — the Pi runs `dda286f` (schema v23, content hash
+*Last updated: 2026-10-13, evening — the forest's Defend measured for all three classes; the mage's
+barrier spark built (15%, content schema v24, content hash `19c94a81`) and waiting for a restart; the
+wind-up proposal open with the owner.*
+
+*2026-10-13, the 18:54 deploy — the Pi runs `dda286f` (schema v23, content hash
 `9dba2746`): the delivery jobs, the apostrophe, the lone unit, the broken set piece, the silver
 line, the expedition and the sync pass's cleanup are live. Nothing waits for a build or a restart.*
 

@@ -59,7 +59,7 @@ final class SimulatorTests: XCTestCase {
                 maxFailures: fleeMaxFailures,
                 byClass: [FleeTuningDTO(characterClass: "warrior", chance: 40, extraVigor: 0)]),
             defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
-                                     mageBarrierDamageFraction: 0.4))
+                                     mageBarrierDamageFraction: 0.4, mageChipMultiplier: 0.5))
     }
 
     private func vigor() -> VigorTuningDTO {

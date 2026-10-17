@@ -25,7 +25,8 @@
   "defend" : {
     "archerChipMultiplier" : 0.5,
     "archerDodgeMultiplier" : 1.5,
-    "mageBarrierDamageFraction" : 0.4
+    "mageBarrierDamageFraction" : 0.4,
+    "mageChipMultiplier" : 0.5
   },
   "defendChipFraction" : 0.3,
   "estateScaling" : {

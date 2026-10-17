@@ -444,13 +444,15 @@ public enum CombatService {
     //
     //   • Warrior — chip 30% × ATK + 2× DEF (unchanged, the canonical block).
     //   • Archer  — chip 15% × ATK ("plinks a knife while melting into shadow")
-    //               + flat +30 dodge for the round; DEF stays single.
-    //   • Mage    — no chip ("the barrier is passive") + 60% damage reduction
-    //               on the landed enemy hit (raw goes through DEF + dodge
-    //               normally, then the final landed damage is multiplied by
-    //               `mageBarrierDamageFraction`). Stronger mitigation than
-    //               warrior to compensate for zero return damage — a Defend
-    //               turn should feel roughly equal in value across classes.
+    //               + dodge ×1.5 for the round (a flat +30 until Phase 8D);
+    //               DEF stays single.
+    //   • Mage    — 60% damage reduction on the landed enemy hit (raw goes
+    //               through DEF + dodge normally, then the final landed damage
+    //               is multiplied by `mageBarrierDamageFraction`). It had no
+    //               chip at all ("the barrier is passive") until 2026-10-13,
+    //               which made it the one Vigor tap in the forest that struck
+    //               nothing; it now sparks back `mageChipMultiplier` of the
+    //               shared chip — 15%, the archer's size.
     public enum Defend {
         /// Multiplies `defendChipFraction`, so 0.5 = 15% of raw at the shipped 0.3.
         /// Shadow Veil's counter is the same knife and reads the same number
@@ -468,6 +470,14 @@ public enum CombatService {
         /// Fraction of incoming damage the mage actually takes. 0.4 = 60% off.
         public static var mageBarrierDamageFraction: Double {
             Catalogs.current.tuningCombat.defend.mageBarrierDamageFraction
+        }
+        /// Multiplies `defendChipFraction` for the barrier's spark, as
+        /// `archerChipMultiplier` does for the knife: 0.5 = 15% of raw at the
+        /// shipped 0.3. Small on purpose — a chip ignores the level gap, and
+        /// above ~20% "barrier every round" beats attacking a stronger beast
+        /// (`DefendTuningDTO.mageChipMultiplier` has the measurement).
+        public static var mageChipMultiplier: Double {
+            Catalogs.current.tuningCombat.defend.mageChipMultiplier
         }
     }
 

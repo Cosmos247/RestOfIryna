@@ -27,13 +27,21 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 2026-10-13 18:54 deploy recorded) on top of **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: this commit** — push is the owner's |
+| HEAD | **this commit** (the mage's barrier strikes back, schema v24) on top of **`67aa073`** (the 2026-10-13 18:54 deploy recorded) and **`dda286f`** (`beed258`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`dda286f`** (the owner pushed 2026-10-13). **Not pushed: `67aa073` and this commit** — push is the owner's |
 | running on the Pi | **`dda286f`**, online since **2026-10-13 18:54:16** (pm2 restarts 11), still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix). Content schema **v23**, content hash **`9dba2746`**, `records 78ce585986927122`, `tuning 53e33d38021f0bf4`; no migration in that restart. One passive run straddled it (ending 19:37:05, resumed on its old plan). The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Nothing.** The 10-13 18:54 restart installed every commit; the tree reads the Pi's digest (schema v23, content hash `9dba2746`) |
+| waiting for a restart | **The mage's barrier strikes back** (content + Swift, schema **v24**: the old binary refuses this content, a `/reload` included). The tree: schema v24, content hash `19c94a81`, `tuning 799a96eb5f8619df`, the other four halves unmoved. The 10-13 18:54 restart installed everything before it |
 
 ### Where the last sessions stopped (2026-10-11 → 10-13)
+
+**10-13, evening — the forest's Defend, measured; the mage's barrier strikes back.** Asked how the
+three Defend buttons work: every Defend tap costs HP against an Attack (−2.6 / −4.4 / −3.2 at L9),
+≈1.7% of live taps, its one use a sure finisher. Proposed «звір замахується» (a telegraphed ×2 blow
+that a Defend stops) — the owner rejected that quiz to clarify and began with the mage: «нічого» is
+bad. Built at the owner's 15% (`defend.mageChipMultiplier` 0.5, schema v24): a chip ignores the level
+gap, and above ~20% "barrier every round" beats attacking a stronger beast. `.memory/rebalance.md` →
+"The forest's Defend, measured"; auto-memory `project-forest-defend`.
 
 **10-13 — the deploy** (`98580ce` → `dda286f`, 18:54, on the owner's order after the push): pull,
 a 142 s build, the digest matched the Mac, the restart; no migration. One passive run straddled it.
@@ -128,6 +136,9 @@ in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory
 the bot alive?").
 
 **3 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-13 Defend block:** «звір замахується» (in discussion — the owner said «По перше» and
+  started with the barrier, so more points may follow); Defend's lines that say nothing; a validator
+  ceiling for the barrier's spark;
 - **the 10-11 evening block:** the trader prompt's «Скільки Лісові горіхи продати?» (its case); the
   refusal copy that does not mention the apostrophe; two questions open in town at once, where the
   older one takes a typed number (found 10-12); the guild invite's `ILIKE` wildcards; the lone
@@ -164,8 +175,8 @@ and still open:
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake — **v23** on the Pi and in the
-tree — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
+schema change ships `content/data` and the binary TOGETHER (the handshake — **v23** on the Pi, **v24** in the
+tree since the 10-13 barrier — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
@@ -174,7 +185,9 @@ traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-d
 78ce585986927122` · `tuning 53e33d38021f0bf4` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `9dba2746`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
-superseded". The tree reads the same: nothing waits for a restart.
+superseded". The tree is ahead of it until the next restart — the barrier's spark moved `tuning`
+to `799a96eb5f8619df` and the content hash to `19c94a81` (schema v24); `records`, `spawns`,
+`quests` and `king` did not move.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
@@ -190,7 +203,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 426 tests, ~5s
+swift test                                   # 428 tests, ~5s
 ```
 
 

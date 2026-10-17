@@ -796,7 +796,7 @@
   "combat.enemy.crit": "<b>%{enemy}</b> lands a savage blow. You take <b>%{damage} HP</b>.",
   "combat.enemy.miss": "<b>%{enemy}</b> misses — you sidestep.",
   "combat.defend.absorbed": "You hold the line and tag <b>%{enemy}</b> for <b>%{damage} HP</b>.",
-  "combat.defend.barrier": "A magic barrier shimmers around you.",
+  "combat.defend.barrier": "A magic barrier shimmers around you and strikes back with a spark — <b>%{enemy}</b> takes <b>%{damage} HP</b>.",
   "combat.flee.success": "You break away from <b>%{enemy}</b> and fall back.",
   "combat.flee.fail": "<b>%{enemy}</b> catches you mid-retreat — <b>%{damage} HP</b> in the back.",
   "combat.victory": "<b>%{enemy}</b> falls. The forest goes still.",

@@ -772,6 +772,7 @@ enum ContentDigest {
         d.combine("\(CombatService.Defend.archerChipMultiplier)")
         d.combine("\(CombatService.Defend.archerDodgeMultiplier)")
         d.combine("\(CombatService.Defend.mageBarrierDamageFraction)")
+        d.combine("\(CombatService.Defend.mageChipMultiplier)")
 
         // The curves, replayed through the live accessors rather than hashed as
         // constants: a `kBase`/`kPerLevel` pair only means something once it has
