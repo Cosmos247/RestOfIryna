@@ -29,10 +29,10 @@ let text = lingo.localize("key", locale: session.locale)
 
 ### With interpolation
 ```swift
-let text = lingo.localize("greeting.message", locale: session.locale, 
-                          interpolations: ["full-name": name])
+let text = lingo.localize("capital.trade.with_player", locale: locale,
+                          interpolations: ["nick": other.nickname])
 ```
-JSON: `"greeting.message": "Hey %{full-name}"`
+JSON: `"capital.trade.with_player": "Trading with %{nick}"`
 
 ### Count agreement (uk) — `localize(_:count:locale:)`
 
@@ -508,7 +508,8 @@ to a placeholder in any template.
 - Iron resources (Phase 5.1): item.mat.iron (Iron Lump 🔩 — raw, gathered) + item.mat.iron_ingot (Iron Ingot 🔳 — crafted, planned Workshop recipe). The legacy `mat.old_iron` was retired and its locale keys removed; DB rows wiped via `RemoveOldIron` migration.
 - Plots (Phase 5.1): plot.type.{farm,forest,mine,coop,training_ground}.{name,desc} (the 5 plot types; `forest` is locale-named "Lumberyard" / "Лісопилка" — raw value retained for DB compat). plot.ready.notification (push when a plot's primary accumulator hits cap). estate.plot.list.title ("Estate grounds" / "Ділянка"), estate.plot.list.header (slots-used line), estate.plot.row.{claimed,empty,training} row formats, estate.plot.button.{harvest,claim,train} (emoji prepended in Swift since `🚜` / `🥋` are supplementary-plane), estate.plot.picker.{header,back}, estate.plot.rate.{per_hour,per_minute}, estate.plot.alert.{slot_out_of_range,slot_taken,slot_empty,harvest_empty,claimed,harvested,harvested_multi,training_exited}, estate.plot.ready_mark (currently empty per user pref). combat.button.training_exit ("🚪 Exit" — replaces Flee in training; renamed from "🔙 Back" 2026-05-27 to avoid a reply-keyboard text collision with the techniques "🔙 Back"), combat.training.dummy_revived (auto-revive narrative).
 - Dev commands: grant.usage/unknown_item/success, revoke.usage/unknown_item/not_enough/success, drain.usage/success (all mitya-only)
-- Other: lang.name, greeting.message, keyboard.restored, not.allowed.ask.invite
+- Other: lang.name, main.menu.prompt (the hub's line on every way back — «👇 Оберіть, куди далі»; it replaced
+  `greeting.message`'s «👋 Вітаю, <нік>!» on 2026-10-20: the hub never greets), keyboard.restored, not.allowed.ask.invite
 
 ## Adding a New Language
 1. Create `Localizations/<code>.json` with all keys

@@ -161,17 +161,14 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     public func showMainMenu(context: Context, text: String? = nil) async throws {
-        // The player is addressed by the name they chose at registration, never
-        // by their Telegram one. A nil nickname only ever means "still in
-        // registration" — it is written by the name step and cleared only by
-        // the dev reset, which sets routerName back to registration in the same
-        // breath — and that flow greets the player itself, before a name
-        // exists. So the empty fallback is unreachable rather than a placeholder.
-        let displayName = context.session.nickname ?? ""
-        let greeting = context.lingo.localize("greeting.message", locale: context.session.locale, interpolations: [
-            "full-name": displayName
-        ])
-        let text = text ?? "👋 \(greeting)!"
+        // A RETURN to the hub, never a greeting. Every way back lands here —
+        // Settings' Back, `/start` from any screen, a stray word, a Turn back
+        // left over from a finished trip — and the default used to be «👋 Вітаю,
+        // <нік>!», so the bot said hello each time the player came back from a
+        // menu (2026-10-20, the owner's line). Telegram attaches a reply
+        // keyboard only to a message with text, so silence is not an option.
+        // Registration's last step passes its own text and stays the one hello.
+        let text = text ?? context.lingo.localize("main.menu.prompt", locale: context.session.locale)
         // `/start` and every unmatched tap land here, and they can land in the
         // middle of a trip — so this is one of the two paths that has to ask
         // rather than assume, or it would quietly take the Turn back button away.

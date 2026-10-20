@@ -10,7 +10,7 @@
   "how.to.show.buttons": "Use <b>/buttons</b> if your keyboard is missing to restore it",
   "how.to.settings": "Use <b>/settings</b> to change settings like language and others",
   "enjoy.chatting": "Enjoy chatting! If you have questions or feedback, just reply here",
-  "greeting.message": "Hey %{full-name}",
+  "main.menu.prompt": "👇 Choose where to go next",
   "commands.start": "🔄 Start",
   "commands.cancel": "🔙 Back",
   "commands.exit": "🔙 Exit",

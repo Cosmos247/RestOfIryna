@@ -2152,9 +2152,14 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The 2026-10-20 block on top is NOT live yet** — it waits for a restart (schema v25). **The four
+**The two 2026-10-20 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under it** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-20 — the hub stops saying hello (NOT deployed: a restart):** any registered account.
+- ⚙️ Налаштування → 🔙 Назад: the menu keyboard comes back under «👇 Оберіть, куди далі», no «👋 Вітаю».
+- `/start` from the estate, the capital and the bag; a word typed on the hub: the same line.
+- Registration's last step still says its own hello.
 
 **Added 2026-10-20 — the forest goes on past km 49 (NOT deployed: a restart, schema v25):** a
 character that can reach km 50 — about level 25 by the spec's walk (`spec-bestiary.md` §10.6), or a
@@ -2991,6 +2996,19 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-20 session, later** — the hub's «👋 Вітаю» replaced; found in the same sweep, raised
+and not changed:
+- **The capital square re-sends itself on every return.** Back from the arena, the guild or the palace,
+  `showCapital` → `renderWelcome` (`CapitalController`, ~line 346) posts the photo and «🏛 Столиця —
+  серце королівства…» again. It is the square's own screen, as a street's is, so it may be by design;
+  ask before touching it. The code calls it `welcome` (`capital.welcome`, `sendWelcome`), which is
+  what made it look like a greeting.
+- **`/help` is still the template's.** `GlobalCommandsController.generateHelpText` (~line 367) prints
+  «Ласкаво просимо до <b>RestOfIryna</b> – вашого помічника в Telegram» (the `welcome` key) under a
+  hard-coded English «<b>RestOfIryna Help</b>» heading, in both locales, and offers `/buttons` and
+  `/settings` with their descriptions swapped (`/buttons` reads `settings.title`, `/settings` reads
+  `help.show.buttons`). Needs new copy from the owner.
+
 **From the 2026-10-20 session** — the forest past km 49 built; found in the log on the way:
 - **The warehouse's ℹ️ on a laddered weapon prints a raw key** — `item.gear.simple_bow.desc` (once in
   `ROI-out.log`, 10-19/20). The gear tab lists every unequipped piece with `estate:wh:info:<item id>`,
@@ -3347,8 +3365,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-20 — the forest past km 49 built (content + Swift, schema v25, 446 tests) and
-waiting for a restart; the Pi still runs `83176b8` (schema v24, content hash `19c94a81`).*
+*Last updated: 2026-10-21 — the hub's «👋 Вітаю» replaced by «👇 Оберіть, куди далі» (Swift + locales)
+and the forest past km 49 (content + Swift, schema v25, 446 tests), both waiting for a restart; the Pi
+still runs `83176b8` (schema v24, content hash `19c94a81`).*
 
 *2026-10-17, the 17:40 deploy — the Pi runs `83176b8` (schema v24, content hash
 `19c94a81`): the barrier's spark, the leaderboard pages, the escaped welcome and the 🪙 Багатство

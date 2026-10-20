@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-20)* **the forest goes on past km 49** — content + Swift, schema v25, NOT
+- *(this commit, 10-20)* **no hello on the way back to the hub** — Swift + locales, NOT deployed (a
+  restart: Lingo is not reloaded): `showMainMenu`'s default line was «👋 Вітаю, <нік>!», so every
+  return to the hub — Settings' Back, `/start`, a stray word, a stale Turn back — greeted the player.
+  Now «👇 Оберіть, куди далі» (`main.menu.prompt`, the owner's line); `greeting.message` deleted.
+- `1b99a3f` (10-20) **the forest goes on past km 49** — content + Swift, schema v25, NOT
   deployed (a restart): past the horizon (the deepest spawnable band, km 49) nothing answered, so 93%
   of steps read «Лише тиша» — an archer walked km 49 → 70 on 10-12, a root leaving him 2 HP. Now the rabid bear, the
   rabid pack and the deep wood carry `beyondHorizon` and answer every km past it; the pack's own band
@@ -742,6 +746,39 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-20, later (the hub stops saying hello)
+
+**The report** (the owner: «Коли гравець переходить в меню і повертається то його вітає бот. Продивись
+де ще це може бути»). One cause: `MainController.showMainMenu` printed «👋 Вітаю, <нік>!» whenever a
+caller passed no text — a line from the April 2025 template, when only `/start` reached the hub. Eight
+paths reached it: Settings' 🔙 Назад (the reported one — the only reply keyboard carrying Back) and a
+stray word there; a stray word or a stale Back on the hub; `/start` from the hub, Settings, the bag,
+the estate, the capital, the arena and the guild; a Turn back left over from a finished trip (the hub
+and the bag); `CombatController.onStart` with no fight; `beginTrip`'s `.alreadyAtDestination` for the
+estate; a stale Back in the bag, estate or capital. The callers that pass their own text (registration's
+last step, the passive report, death, home from the forest) were never affected.
+
+**The decision.** The owner picked «👇 Оберіть, куди далі» for Settings' Back and first wanted nothing
+at all elsewhere; told that Telegram sets a reply keyboard only with a message that has text (and that
+silence leaves a stale keyboard or reads as a dead bot), picked the same line for every path. Built in
+the one place: the default of `showMainMenu` is `main.menu.prompt` (en «👇 Choose where to go next»);
+`greeting.message` is gone from both locales. The hub no longer greets anyone; registration's last
+step stays the one hello. 446 tests, `validate --strict` clean.
+
+**Raised, not changed** — both in `TODO.md` → "Open", on the owner's word: the capital square re-sends
+its photo and «🏛 Столиця — серце королівства…» on every return from the arena, guild or palace (the
+square's own screen, like a street's); `/help` still prints the template's «Ласкаво просимо до
+RestOfIryna – вашого помічника в Telegram» under an English «RestOfIryna Help» heading, with the
+`/buttons` and `/settings` descriptions swapped (found while writing the TODO entry).
+
+**The audit** (the owner: «Перевір зроблене, надай мені репорт, якщо все добре, то зроби коміт»): a forced
+recompile of `MainController.swift` (0 warnings), 446 tests, `validate --strict` clean, the digest
+unchanged against the tree's recorded one (`b268262a` · `records 9f52425d4d3064e0` · `spawns
+d03fcf97e2a12108`; locales are not hashed), `git diff --check` clean, both strings rendered from the
+JSON (no `%{}`), no reader of `greeting.message` left. One stale record fixed: `.memory/localization.md`
+used `greeting.message` as its interpolation example and listed it among the keys — the example is now
+`capital.trade.with_player`, and the list names `main.menu.prompt`.
 
 ## Session — 2026-10-20 (a player past km 49: the report; the forest goes on past its horizon)
 
