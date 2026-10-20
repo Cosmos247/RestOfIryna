@@ -620,7 +620,7 @@ tick as one number. The pattern worth knowing: each was a place where the code w
 and could not say so, or where a number was shown in a unit it was not measured in.
 
 **The game is in a public test since 2026-10-07** — the bot's door is open to anyone who writes
-to it (`ROI_OPEN_ACCESS`), and the Pi runs `dda286f` since 2026-10-13 18:54. Everything below is live:
+to it (`ROI_OPEN_ACCESS`), and the Pi runs `83176b8` since 2026-10-17 17:40. Everything below is live:
 - since the 2026-09-28 restart: the bestiary's first tier and a roster re-solved against the gear
   players actually carry; mob XP halved on what the live database showed, loose silver on the
   trail, an escape that fails at most four times a fight; four all-time leaderboards; the capital
@@ -676,7 +676,8 @@ the binary):
   longer counts toward its set;
 - every delivery job pays at least what its items cost at the trader.
 
-**Built 2026-10-13/17, waiting for one restart** (content schema v24, shipped with the binary):
+**Live since the 2026-10-17 17:40 restart, built 2026-10-13/17** (content schema v24, shipped with
+the binary):
 - the mage's «🌀 Магічний бар'єр» strikes back — a spark of 15% of a plain hit, the archer's size, on
   top of its 60% cut; it struck nothing before;
 - the leaderboards turn pages of ten, and a fifth board, «🪙 Багатство», ranks the silver in the purse

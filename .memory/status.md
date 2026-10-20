@@ -21,26 +21,26 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-17 — the 🪙 Багатство board** (`8320b92`, Swift + two locales, NOT deployed — a restart). A fifth
+**2026-10-17 — the 🪙 Багатство board** (`8320b92`, Swift + two locales, deployed 2026-10-17 17:40). A fifth
 leaderboard, on a row of its own under the four tabs: the silver in the purse (`users.silver`,
 an empty purse unlisted, ties ordered by level). Other players show a place and a name only — the
 owner's pick, so a purse is not read at the market; the viewer's own row keeps its sum. A balance,
 not a lifetime counter: spending drops a player, and a season never touches it. Paged like the rest.
 
-**2026-10-17 — a Telegram name escaped in the registration welcome** (`fb72d0d`, Swift only, NOT deployed — a
-restart). «👋 Welcome, %name!» printed the Telegram first name raw under HTML; «<🌷RILENX🌷>» made
+**2026-10-17 — a Telegram name escaped in the registration welcome** (`fb72d0d`, Swift only,
+deployed 2026-10-17 17:40). «👋 Welcome, %name!» printed the Telegram first name raw under HTML; «<🌷RILENX🌷>» made
 Telegram refuse it, and the throw skipped the language picker — one player stuck on step 0. The
 name goes through `TelegramHTML.escaped` (ROIContent, the one escape; `/reload`'s echo delegates)
 + 3 tests (437).
 
-**2026-10-17 — the leaderboard pages** (`1f0ca8b`, Swift only, NOT deployed — a restart). The journal's 🏆 boards
+**2026-10-17 — the leaderboard pages** (`1f0ca8b`, Swift only, deployed 2026-10-17 17:40). The journal's 🏆 boards
 show ten a page with «◀️ N/M ▶️» under the tabs — wrapping round, the middle button only the page
 number, the row only when a board has two pages or more. A page's first rank is counted (strictly
 better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
 `LeaderboardPaging` (ROIContent) + 6 tests (434). The Arena's «Найкращі бійці» stays the top ten.
 
-**2026-10-13 — the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**, NOT deployed:
-the old binary refuses this content, a `/reload` included). «🌀 Магічний бар'єр» sparks 15% of a clean
+**2026-10-13 — the mage's barrier strikes back** (`32cf650`, content + Swift, schema **v24**,
+deployed 2026-10-17 17:40). «🌀 Магічний бар'єр» sparks 15% of a clean
 hit — `defend.mageChipMultiplier` 0.5 × `defendChipFraction` 0.3, the archer's size — and keeps its
 60% cut; it struck nothing before. Capped on a measurement: a chip ignores the level gap, so above
 ~20% "barrier every round" beats attacking a stronger beast. Its own line «…мерехтить навколо вас і
@@ -954,15 +954,11 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
-since the 2026-10-13 18:54 restart (`dda286f`): `records 78ce585986927122` /
-`tuning 53e33d38021f0bf4` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
-e3a492be1b017e81`, content hash `9dba2746`, **schema v23** (the delivery jobs' rewards moved
-`records`, the expedition's 3-minute stride and retreat share `tuning`). That restart carried the
-expedition there and back (`fac8d5f`), the silver line (`ed01b79`), the apostrophe, the lone unit and
-the broken set piece (`37a0ebc`), the delivery jobs' rewards (`a9e5a98`) and the sync pass's cleanup
-(`beed258`). Waiting for a restart: the mage's barrier spark (2026-10-13, schema v24 — the tree reads
-`tuning 799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved), the leaderboard pages
-and the escaped welcome (2026-10-17, Swift only, the digest unmoved). Every earlier baseline is in `.memory/sessions.md` → "Digest
+since the 2026-10-17 17:40 restart (`83176b8`): `records 78ce585986927122` /
+`tuning 799a96eb5f8619df` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
+e3a492be1b017e81`, content hash `19c94a81`, **schema v24** (the barrier's spark moved `tuning`).
+That restart carried the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped
+welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). Nothing waits for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **437 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

@@ -1575,18 +1575,18 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
           giving L40 in 477 days against 392 unscaled.
 
         Against today's live roster it is slower up to L30. Research: `.memory/rebalance.md`.
-  - [x] **The 🪙 Багатство board** *(2026-10-17, `8320b92`, Swift + locales, NOT live until a restart)* — the
+  - [x] **The 🪙 Багатство board** *(2026-10-17, `8320b92`, Swift + locales, deployed 2026-10-17 17:40)* — the
         owner: «Хочу додати рейтинг за багатством». A mockup on the live purses and four picks: the
         purse as it stands (`users.silver`), an empty purse unlisted, the tab on a row of its own,
         and **places only** — other players' sums are never shown, the viewer's own row keeps
         theirs (`showsOthersValues`). Paged like the rest; every live page matched Postgres `rank()`.
-  - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, `fb72d0d`, Swift only, NOT live
-        until a restart)* — nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` in the log:
+  - [x] **A Telegram name escaped in the registration welcome** *(2026-10-17, `fb72d0d`, Swift only,
+        deployed 2026-10-17 17:40)* — nine `can't parse entities: Unsupported start tag "🌷rilenx🌷"` in the log:
         the welcome printed the first name «<🌷RILENX🌷>» raw under HTML, Telegram refused it, and the
         throw skipped the language picker, so the account sat on step 0 through nine `/start`s. The
         name goes through `TelegramHTML.escaped` (ROIContent; the `/reload` echo delegates to it) +
         3 tests (437), the escape order mutation-tested.
-  - [x] **The leaderboard pages** *(2026-10-17, `1f0ca8b`, Swift only, NOT live until a restart)* — the owner:
+  - [x] **The leaderboard pages** *(2026-10-17, `1f0ca8b`, Swift only, deployed 2026-10-17 17:40)* — the owner:
         «Зроби так щоб у рейтингу можна булу перелистувати сторінки тта дивитись більшше ніж на 10
         гравців». A mockup on the live board first, then three picks (all the recommended ones):
         the arrows wrap round, «2/4» only says where you are, ten a page. The page row «◀️ N/M ▶️»
@@ -2152,10 +2152,10 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**Not live yet:** the four blocks on top — the 2026-10-17 wealth board, welcome and leaderboard
-pages and the 2026-10-13 barrier — wait for one restart (the barrier brings schema v24).
+**The four blocks on top** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the
+2026-10-13 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-17 — the 🪙 Багатство board (`8320b92`, NOT deployed — Swift + locales, needs a restart):** any
+**Added 2026-10-17 — the 🪙 Багатство board (`8320b92`, live since 2026-10-17 17:40):** any
 account with some silver, and one with none.
 - 📓 Нотатник → 🏆 Рейтинги: a third row «🪙 Багатство» under the four tabs; the tap opens «Хто має
   найбільше срібла» with «◀️ 1/3 ▶️» (26 purses on 10-17).
@@ -2164,13 +2164,13 @@ account with some silver, and one with none.
 - An account with 0 silver: «У вас поки немає срібла.» under the rule, and it is listed nowhere.
 - Spend some silver and reopen the tab: your place moves down at once.
 
-**Added 2026-10-17 — a Telegram name in the welcome (`fb72d0d`, NOT deployed — Swift only, needs a restart):**
+**Added 2026-10-17 — a Telegram name in the welcome (`fb72d0d`, live since 2026-10-17 17:40):**
 the stuck player, `7803243068`, has no way to know — their next message should get «👋 Welcome,
 <🌷RILENX🌷>!» (the brackets shown as typed) and the language picker under it. Check `users` for their
 `registration_step` leaving 0. To see it yourself: a test account whose Telegram first name holds
 `<x>`, deleted from `users` first, then `/start`.
 
-**Added 2026-10-17 — the leaderboard pages (`1f0ca8b`, NOT deployed — Swift only, needs a restart):** any account.
+**Added 2026-10-17 — the leaderboard pages (`1f0ca8b`, live since 2026-10-17 17:40):** any account.
 - 📓 Нотатник → 🏆 Рейтинги → ⚔️ Рівень: under the tabs «◀️ 1/4 ▶️» (37 players on 10-17); ▶️ redraws
   the same message, and page 2 opens «10. …» — the second of the two players sharing 10th, not «11.».
 - ▶️ on the last page opens the first, ◀️ on the first the last; «1/4» redraws the same page.
@@ -2179,7 +2179,7 @@ the stuck player, `7803243068`, has no way to know — their next message should
 - An old 🏆 button higher in the chat still works and opens page 1. The Arena's «Найкращі бійці» is
   still the top ten.
 
-**Added 2026-10-13 — the mage's barrier strikes back (`32cf650`, NOT deployed — schema v24, needs a restart):**
+**Added 2026-10-13 — the mage's barrier strikes back (`32cf650`, live since 2026-10-17 17:40):**
 a mage in any forest fight.
 - «🌀 Магічний бар'єр»: «🌀 Магічний бар'єр мерехтить навколо вас і б'є іскрою у відповідь — 🐺 Скажений
   вовк втрачає 6 ОЗ.» (≈15% of a plain hit — 5–6 against the wolf at L9), then the beast's line as before
@@ -3319,7 +3319,11 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-17 — the 🪙 Багатство board, the leaderboard pages and the escaped
+*Last updated: 2026-10-17, the 17:40 deploy — the Pi runs `83176b8` (schema v24, content hash
+`19c94a81`): the barrier's spark, the leaderboard pages, the escaped welcome and the 🪙 Багатство
+board are live; the stuck player's apology sent. Nothing waits for a build or a restart.*
+
+*2026-10-17 — the 🪙 Багатство board, the leaderboard pages and the escaped
 registration welcome built (Swift only, 437 tests) and waiting for a restart with the barrier's spark; the Pi read off the machine (the
 10-15 restart was the host's reboot); the nine `🌷rilenx🌷` refusals traced to the welcome and fixed;
 a guild name's same hole raised.*

@@ -11,26 +11,29 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this hash fill, 10-17)* **`8320b92`'s hash fill** — records only.
-- `8320b92` (10-17) **the 🪙 Багатство board** — Swift + locales, NOT deployed (a restart): a
+- *(this commit, 10-17)* **the 2026-10-17 17:40 deploy recorded** — records only: the `## Deploy —`
+  entry, the four changes marked live everywhere, the v23 baseline superseded, the stuck player's
+  apology recorded as sent.
+- `83176b8` (10-17) **`8320b92`'s hash fill** — records only.
+- `8320b92` (10-17) **the 🪙 Багатство board** — Swift + locales, DEPLOYED 10-17 17:40: a
   fifth leaderboard on a row of its own, `users.silver` above zero, ties by level; other players
   show a place and a name only, the viewer's row keeps its sum (`showsOthersValues`). Four locale
   keys × 2. Every page matched Postgres `rank()` on the live data (26 purses, 3 pages).
 - `2d8411a` (10-17) **`fb72d0d`'s hash fill** — records only, plus the stuck player's apology
   recorded for after the restart.
-- `fb72d0d` (10-17) **a Telegram name escaped in the registration welcome** — Swift only, NOT
-  deployed (a restart): «👋 Welcome, <🌷RILENX🌷>!» was refused by Telegram, and the throw skipped the
+- `fb72d0d` (10-17) **a Telegram name escaped in the registration welcome** — Swift only,
+  DEPLOYED 10-17 17:40: «👋 Welcome, <🌷RILENX🌷>!» was refused by Telegram, and the throw skipped the
   language picker, so one open-door account sat on step 0 through nine `/start`s (10-13 → 10-15).
   `TelegramHTML.escaped` (ROIContent) is now the one escape — `/reload`'s copy delegates to it — + 3
   tests (437), the escape order mutation-tested.
-- `1f0ca8b` (10-17) **the leaderboard pages** — Swift only, NOT deployed (a restart): the
+- `1f0ca8b` (10-17) **the leaderboard pages** — Swift only, DEPLOYED 10-17 17:40: the
   journal's 🏆 boards turn pages of ten under «◀️ N/M ▶️» (wrapping round; the middle button only the
   page number; the row only when a board has two pages or more). A page's first rank is COUNTED
   (strictly better + 1), so a tie across the edge keeps its place; every sort ends on the row id.
   `LeaderboardPaging` (ROIContent) + 6 tests (434); the Arena's «Найкращі бійці» stays page 1. No
   locale key, no content; the digest unmoved.
-- `32cf650` (10-13) **the mage's barrier strikes back** — content + Swift, schema v24, NOT
-  deployed: «🌀 Магічний бар'єр» sparks 15% of a plain hit (`defend.mageChipMultiplier` 0.5, the
+- `32cf650` (10-13) **the mage's barrier strikes back** — content + Swift, schema v24,
+  DEPLOYED 10-17 17:40: «🌀 Магічний бар'єр» sparks 15% of a plain hit (`defend.mageChipMultiplier` 0.5, the
   archer's size) and keeps its 60% cut, with its own line; capped on a measurement (a chip ignores
   the level gap — above ~20% "barrier every round" beats attacking a stronger beast). `tuning` →
   `799a96eb5f8619df`, content hash `19c94a81`, the other halves unmoved; 428 tests. Records: the
@@ -644,6 +647,11 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-13 18:54 to 2026-10-17 17:40 (`dda286f`, schema v23):** `records
+78ce585986927122` · `tuning 53e33d38021f0bf4` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `9dba2746`. The barrier's spark
+(`32cf650`, schema v24) moved `tuning`.
+
 **The baseline the Pi ran from 2026-10-11 13:21 to 2026-10-13 18:54 (`98580ce`, schema v22):** `records
 92300a4769c8933e` · `tuning 4edf65507bbb5e48` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `681d611a`. The delivery jobs' rewards
@@ -728,6 +736,34 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Deploy — 2026-10-17 17:40 (`dda286f` → `83176b8`)
+
+The owner pushed and asked for the deploy and the restart («Запушив. Задеплой на пай та перезапусти
+бота»). Read off the Pi first: `dda286f`, online since the host's reboot on 10-15 01:42:26, pm2
+restarts 0, one `[WATCHDOG]` line (10-08 11:47:53), `Code: 400` at 922. origin/main = local HEAD =
+`83176b8`; no Mac bot or debugserver running. The testers' note was written first and shortened on
+the owner's word.
+- `git pull --ff-only` fast-forwarded to `83176b8` (seven commits). No migration among them.
+- The detached debug build took 103.64 s with 0 errors (the Linux runtime's swift-backtrace notices
+  only).
+- `--content-digest` on the Pi matched the Mac byte for byte: schema v24, content hash `19c94a81`,
+  `records 78ce585986927122`, `tuning 799a96eb5f8619df`, `spawns 0cf31905171d7944`, `quests
+  30de20902006e3b9`, `king e3a492be1b017e81`, COMBINED `5bb7728fb1c3fb91`.
+- In flight before the restart: no passive run, no trip; one manual forest row (persisted, so the
+  restart does not touch it).
+- `pm2 restart ROI && pm2 save` at 17:40:14. The boot logged `Content loaded: schema v24 … hash
+  19c94a81`, `Bot identified as @ROfIr_bot`, `[ACCESS] OPEN DOOR`, seven `403 bot was blocked by the
+  user` from the restart notice (three at the 10-13 boot), and `Server started and listening` at
+  17:40:20. No backfill or gear recompute this time.
+- The stuck player's apology went once, plain text, from the Pi (`message_id 475073`, 278 characters,
+  the text in the 10-17 session entry). Her `registration_step` read 0 at 17:41 and **4 at 17:42:57**
+  (language, gender, name and class behind her, the King's oath next) — the escaped welcome working.
+- At 17:42:57 (163 s after the boot, past the watchdog's 120 s): still one `[WATCHDOG]` line,
+  `Code: 400` at 922 (no new refusal), ROI `online` with restarts 1, the seven 403s the only errors.
+
+Live since: the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped welcome
+(`fb72d0d`) and the 🪙 Багатство board (`8320b92`).
 
 ## Session — 2026-10-17 (the Pi read; a testers' note; the leaderboard pages; a Telegram name escaped; the wealth board) — `1f0ca8b`, `fb72d0d`, `8320b92`
 
