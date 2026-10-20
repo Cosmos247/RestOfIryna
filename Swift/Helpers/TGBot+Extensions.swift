@@ -72,7 +72,8 @@ public class TGControllerBase: @unchecked Sendable {
     /// Every quantity in this game is asked AFTER a button — [🪙 Купити] on a
     /// trader card, [✏️ N] on a warehouse row, a vault row — so a number nobody
     /// asked for is the player answering one tap early. The fallback every
-    /// `unmatched` ends in re-renders the controller's root, and for a number
+    /// `unmatched` ends in re-renders the controller's root (the estate and the
+    /// bag, which render inline only, send the menu line instead), and for a number
     /// that threw away the screen the player was on: the server never knew
     /// which inline screen was open, so it could not redraw that one. A hint
     /// keeps it. Words still fall through to the re-render — stray text is

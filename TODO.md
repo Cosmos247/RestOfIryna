@@ -2153,7 +2153,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
 **The three 2026-10-20/21 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
-blocks under it** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
+blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
 **Added 2026-10-21 — the keyboard stays (NOT deployed: a restart):** an account at estate level 4+.

@@ -23,17 +23,40 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-20 22:39)
+### Where things stand right now (the Pi and git as read 2026-10-21 01:09)
 
 | | |
 |---|---|
-| HEAD | **this commit** (`6ac0351`'s hash fill) on top of **`6ac0351`** (the keyboard stays, 10-21), on top of **`9074cb3`** (`266ad57`'s hash fill), on top of **`266ad57`** (no hello on the way back to the hub, 10-20), on top of **`1b99a3f`** (the forest past km 49, 10-20), on top of **`c43959f`** (the 10-17 17:40 deploy record), on top of **`83176b8`** (`8320b92`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17). **Not pushed: `c43959f`** (the deploy record), **`1b99a3f`** (the forest), **`266ad57`** (the hub's line), **`9074cb3`** (its hash fill), **`6ac0351`** (the keyboard) **and this commit** — push is the owner's |
-| running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:14** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` at 922, where the nine `🌷rilenx🌷` refusals left it — the welcome is escaped now. Content schema **v24**, content hash **`19c94a81`**, `records 78ce585986927122`, `tuning 799a96eb5f8619df`; no migration in that restart. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the 10-21 sync pass: records and two code comments). Under it, all unpushed: **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17), the commit the Pi runs. Everything above it is unpushed — push is the owner's |
+| running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:13** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night), none during play. Content schema **v24**, content hash **`19c94a81`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The keyboard stays** (10-21, Swift: no banner deletes a keyboard; the estate and the bag give it back), **the hub's hello replaced by «👇 Оберіть, куди далі»** (10-20, Swift + locales) and **the forest past km 49** (10-20) — content + Swift, **schema v25**: a `pull`, a build and `pm2 restart ROI`, never a `/reload` (the Pi's v24 binary refuses a v25 bundle). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi. No migration |
+| waiting for a restart | **Three changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales) and the keyboard fix (`6ac0351`, Swift). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi — the two Swift changes move none of it. No migration |
 
-### Where the last sessions stopped (2026-10-11 → 10-20)
+### Where the last sessions stopped (2026-10-13 → 10-21)
+
+**10-21 — the vanishing keyboard.** Players reported the REPLY keyboard (the buttons under the
+input field — not the inline ones under a message) vanishing, «/menu fixes it, not always»; four
+screenshots. Found: (1) Telegram drops a reply keyboard with the message that brought it, and
+`postStatusBanner` deleted the previous banner — 2 of 155 banners carry the keyboard (the training
+exit, the stray-number hint), so the next harvest or craft took the buttons (`Володимир`, Android, T6:
+no keyboard icon at all); (2) the estate and the bag render inline only, so their `unmatched` redraw
+restored nothing («Ке» drew the estate again); (3) no keyboard sets `is_persistent`; (4) `/menu` is
+not in `TGControllerBase.unmatched`'s global list and the SDK runs every matching handler, so the
+screen gets it too (a Settings race, prompts eating it, the guild's found-name prompt taking «/menu»
+for 500 silver). Two screenshots stay unexplained from code (Ivan's fight buttons at the estate on
+10-19 after a menu-keyboard message; a pre-10-09 iPhone fight whose message carried the right
+keyboard). The owner picked (1) and (2), built in `6ac0351`; (3) and (4) raised, not picked. Rule in
+`CLAUDE.md`, auto-memory `project-reply-keyboard-lives-on-its-message`, a FAQ row with a ready reply
+in `.memory/live-ops.md`, `.memory/sessions.md` → the 10-21 entry.
+
+**10-20, late — the hub stops saying hello.** «👋 Вітаю, <нік>!» was `showMainMenu`'s default line,
+so Settings' Back and seven other ways back to the hub greeted the player. The owner picked «👇
+Оберіть, куди далі» for Settings' Back, then — told that Telegram carries a keyboard only on a message
+with text — the same line everywhere (`266ad57`, `main.menu.prompt`; `greeting.message` deleted).
+Raised in the same sweep: the capital square re-sends its photo and prose on every return; `/help` is
+the template's (and swaps the `/buttons` and `/settings` descriptions). Auto-memory
+`project-hub-never-greets`.
 
 **10-20 — a player past km 49; the forest goes on past its horizon.** The owner relayed four
 screenshots of «🕊 Лише тиша» from km 50 to 70. Read off `fight_log`: `Inokentiy`, archer L10, on
@@ -68,69 +91,6 @@ bad. Built at the owner's 15% (`defend.mageChipMultiplier` 0.5, schema v24): a c
 gap, and above ~20% "barrier every round" beats attacking a stronger beast. `.memory/rebalance.md` →
 "The forest's Defend, measured"; auto-memory `project-forest-defend`.
 
-**10-13 — the deploy** (`98580ce` → `dda286f`, 18:54, on the owner's order after the push): pull,
-a 142 s build, the digest matched the Mac, the restart; no migration. One passive run straddled it.
-The broken-set fix landed on one player at boot (a Forester jerkin at 0/47). Before it, the testers'
-note was rechecked against the code — three corrections — and shortened on the owner's word.
-`.memory/sessions.md` → the deploy entry.
-
-**10-12, late — the sync pass** (`beed258`). Seven functions with no caller removed — the six from
-April and `renderLocation` — with `stub.coming_soon` and `AutobattleResult`'s two unread fields;
-`passive.retreatBelowHpPercent` made required (it came in optional); README's roadmap, the GDD's
-passive lines, the pipeline, localization and status records synced. Two things stay on purpose: the
-passive report's unread `stepsTaken` (the Pi's binary decodes it as required, so a rollback would
-strand a report) and the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest the restart
-is checked against). `.memory/sessions.md` → the 10-12 sync pass.
-
-**10-11 evening → 10-12 — the 🏕 Expedition walks there and back** (`fac8d5f`; the owner's report: the governor
-«телепортує додому після максимального км»). Half the 3-minute strides out, half home, the door last
-(30/60/90 min = 5/10/15 km, shown on the buttons). He turns below half his HP, or when his Vigor only
-covers the road home and nothing is left to eat; he eats any bag food only when he must, the smallest
-first and a taken job's food last; the bag is his while he is out. 📍 on the waiting screen; the food
-eaten, an early turn and a death's losses in the report. Measured and decided over four quizzes
-(`.memory/rebalance.md`), the screens approved as a played sample, checked on a scratch Postgres
-(eight scenarios). Content + Swift: live on a restart, never on a `/reload`.
-
-**10-12 — eating several units at once: built, then rolled back.** A players' proposal, built as the
-owner's variant A («Скільки … з'їсти?», typed); the owner had it rolled back the same day, before it
-was committed. One tap still eats one unit. Also recorded that day: wiping one player and changing a
-gender in DBeaver (`.memory/live-ops.md`).
-
-**10-11, night — the silver line** (a players' proposal). Every question that spends silver — the
-Master's repair and buy, a market lot, «Відчарувати» — ends with «✅/❌ 🪙 Срібло (є/треба)»; the
-owner picked the format and all four. `RequirementLine.silver` builds all nine such lines. Swift
-only: live on a restart.
-
-**10-11, late evening — a broken piece no longer counts toward its set.** Asked whether broken armour
-gives anything: nothing of its own, but a worn set still counted it (a fully broken Forester set
-kept +2 DEF · +6 HP · +2 dodge). Fixed on the owner's word through one test, `isBroken`; checked on
-the real code before and after. Nobody wore a broken piece (re-read 23:18), so the restart moves no one.
-The broken weapon's half rounds half UP (7 → 4), not down as the FAQ said; the records are fixed.
-
-**10-11, late evening — a lone unit needs no quantity** (a players' proposal). The owner picked
-variant A of three: where the units come from holds exactly one, the tap acts on it — the trader
-sells it, the market skips to the price, the trade offers it, the guild vault and the warehouse's
-✏️ N move it. A taken job that needs the item keeps the prompt. Swift only: live on a restart.
-
-**10-11, late evening — an apostrophe in a name; the two players' proposals dropped.** Asked to «do
-what the players proposed», the 10-08 pair went out again as samples on real data (six players at
-0 Vigor with food only in the warehouse; Iren still at step 6). The owner answered only a finding of
-mine and dropped both: «питання про кнопку на складі й рядок на кроці 6 можеш взагалі забути» —
-never raise them again. The finding, built: «Дар'я» and «Солов'їний гай» were refused as
-"symbols"; an apostrophe between two letters (' ʼ ’) is now accepted and stored as ' —
-`PlayerNameRules`, shared with the guild invite's lookup. Swift only: live on a restart.
-
-**10-11, afternoon — the delivery jobs break even against buying.** A table of every NPC job against
-its items' trader price; on the owner's rule the five that lost (hides, iron, ore, raw meat, the
-cook's dishes) were raised to the minimum — 60 · 91 · 141 · 60 · 40 authored. The jobs' daily take
-78 → 98 at L1, 153 → 217 at L40. Content only: live on a `/reload`.
-
-**10-11, 13:21 — the six deployed**, on the owner's word after the push: pull, a 130 s build, the
-digest matched, the restart, the four migrations verified on the tables. Before it: the class
-change worded as a charter («📜 Грамота про зміну класу», «✅ Скріпити печаткою»), folded into the
-Chancellery's own commit, and a testers' note. The Mac's DBeaver needed its tunnel back up and a
-metadata refresh (`.memory/sessions.md` → the deploy entry).
-
 **Live since the 10-13 18:54 restart:** the expedition there and back
 (`project-passive-expedition-rework`), the silver line, the apostrophe (`project-name-apostrophe`),
 the lone unit (`project-lone-unit-no-prompt`), the broken set piece and the delivery jobs' rewards.
@@ -143,28 +103,39 @@ the armour repair halved (`7995d2a`, `project-repair-cost-complaint`); the fortu
 second card (`7860aaa`, `project-fortune-dispel-and-second-card`); the recipe notebook (`d77d600`,
 `project-recipe-notebook`). Everything earlier: `.memory/sessions.md`.
 
+**Dead-looking code kept on purpose** (the 10-12 sync pass, `beed258`): the passive report's
+unread `stepsTaken` (the Pi's binary decodes it as required, so a rollback would strand a report) and
+the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is checked against).
+
 ### Next action
 
-**Waiting on the owner: the restart for the forest past km 49** (the table above). After it, walk it
-(`TODO.md` → "Walk list", the 10-20 block) — then the rest of the list below.
+**Waiting on the owner: the push and ONE restart for the three changes** (the table above; the
+recipe below). After it, walk the three 2026-10-20/21 blocks on top of `TODO.md` → "Walk list" — the
+keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
+the bag), the hub's line, the forest past km 49 — and offer the owner a testers' note.
 
-**0 — Walk what just went live.** The four blocks under the 10-20 one in `TODO.md` → "Walk list" (live since
-10-17 17:40: the wealth board, the welcome, the leaderboard pages, the barrier's spark); then the
-five under them (live since 10-13 18:54) and the six under those (live since 10-11 13:21). The stuck
-player's apology went at 17:41 (`message_id 475073`) and she was on registration step 4 by 17:43 —
-nothing more to send. The testers' note for the 10-17 restart went to the owner before the push. For the Chancellery, start by crediting a test account in
-DBeaver (`.memory/live-ops.md` → "Crediting zlatnyks"; if the grid calls the new columns read-only,
-quit DBeaver and reopen, or use the SQL editor). The testers' note for the 10-13 restart went to the
-owner the same day.
+**0 — Walk what is live and unwalked.** `TODO.md` → "Walk list": the four blocks live since 10-17
+17:40, the five since 10-13 18:54, the six since 10-11 13:21, the 10-09 ones. For the Chancellery,
+credit a test account in DBeaver first (`.memory/live-ops.md` → "Crediting zlatnyks"; if the grid
+calls the new columns read-only, quit DBeaver and reopen, or use the SQL editor). No human has seen
+the whole King's chain, and `/reload` has never run against a real database.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
-reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`.
+reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`. Lost buttons: its FAQ row (ask
+whether the ⊞ icon is in the input field; `/menu` until the restart).
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-17 17:43 (10-08 11:47:53). A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-21 01:09 (10-08 11:47:53). A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
-**3 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+**3 — The next bug on the list:** the warehouse's ℹ️ on a laddered weapon prints the raw key
+`item.gear.simple_bow.desc` — the fix needs a row-id button (`TODO.md` → "Open", the 10-20 block).
+
+**4 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-21 block:** `is_persistent` on the keyboards; `/menu` as a global command (with the guild
+  «/menu» hole and the training fight's flee key); a character rule for guild names;
+- **the 10-20, later block:** the capital square re-sending itself; `/help`'s template copy;
+- **the 10-20 block:** the dead `explore:passive:close` handler (pre-April chats only);
 - **the 10-13 Defend block:** «звір замахується» (in discussion — the owner said «По перше» and
   started with the barrier, so more points may follow); Defend's lines that say nothing; a validator
   ceiling for the barrier's spark;
@@ -182,14 +153,10 @@ raise them again.
 
 Build none of them without the owner's answer (auto-memory `feedback-unanswered-means-nothing`).
 
-**4 — Read the rest of the `fight_log`.** Read on 10-10 for the repair (`.memory/live-ops.md` → "Day
+**5 — Read the rest of the `fight_log`.** Read on 10-10 for the repair (`.memory/live-ops.md` → "Day
 four"): newcomers' busiest days ran 105–350 fights against the model's ≈25 a day, and 26% of wins end
 untouched. Still unread: `estate_level` (do players hold the estate back? T6 gains nothing per day)
 and how many wins are one tap — what the technique rework was for.
-
-**5 — Someone opens the screens.** `TODO.md` → "Walk list": the six 2026-10-10/11 blocks (live since
-10-11 13:21), the 10-09 ones. No human has seen the whole King's chain, and `/reload` has never run
-against a real database.
 
 **6 — Older decisions waiting on the owner:** `TODO.md` → "Open, decided but not done". Not there
 and still open:

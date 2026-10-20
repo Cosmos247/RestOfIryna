@@ -183,8 +183,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // still route to this controller. Inventory drill-down uses inline
         // `inv:*` callbacks; those are forwarded in `onCallbackQuery` below.
         // Otherwise routerName=inventory would route every capital button
-        // tap to InventoryController, whose unmatched fallback re-renders
-        // inventory — locking the player out of the capital nav.
+        // tap to InventoryController, whose unmatched fallback answers with
+        // the main menu's line and keyboard — locking the player out of the
+        // capital nav.
         try await Controllers.inventoryController.showInventory(context: context)
         return true
     }

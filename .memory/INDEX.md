@@ -11,12 +11,12 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Content Pipeline](content-pipeline.md) — Data-driven catalogs and tuning tables: JSON layout, loader/validator, snapshots, the item stat budget, the archetype table, hot reload, and the verification discipline
 
 ## Patterns & Conventions
-- [Controller Pattern](controller-pattern.md) — How to build/register controllers, routing, keyboards, refusals
+- [Controller Pattern](controller-pattern.md) — How to build/register controllers, routing, keyboards, refusals, the fixed order inside `unmatched` (prompts → stray number → re-render, or the menu line on an inline-only screen)
 - [Session & Auth](session-auth.md) — User model, session cache, the access gate (invite-only, or the open door since 2026-10-07), background writers
 - [Localization](localization.md) — Lingo setup, JSON structure, «ви», player gender, item gender, the UA glossary
 
 ## Operations
-- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), changing one player's gender or wiping one character (2026-10-12), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies (the expedition there and back added 2026-10-12)
+- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), changing one player's gender or wiping one character (2026-10-12), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies (the expedition there and back added 2026-10-12, the vanishing keyboard 2026-10-21)
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest

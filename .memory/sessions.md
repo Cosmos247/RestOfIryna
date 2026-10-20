@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-20)
+## Commit index — live-play polish and after (2026-09-09 → 10-21)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,11 +11,18 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(this commit, 10-21)* **the sync pass** — records, plus two code comments (`answerStrayNumber`'s doc, the
+  capital's `onInventory` note — both said the bag and the estate re-render): the commit index's two
+  hash fills, README's and `status.md`'s waiting lists, a stale greeting line in `file-map.md`, the
+  `answerStrayNumber` doc (the estate and the bag no longer re-render), `INDEX.md`, `Prompt.md`
+  reoriented; three auto-memories written or extended.
+- `b04338f` (10-21) **`6ac0351`'s hash fill** — records only.
 - `6ac0351` (10-21) **the keyboard stays** — Swift only, NOT deployed (a restart): a banner
   carrying a reply keyboard (the training exit, the stray-number hint) is no longer deleted by the next
   banner, which took the buttons with it; the estate and the bag answer a stray word with
   `showMainMenu`'s «👇 Оберіть, куди далі» instead of an inline redraw that could not restore a keyboard.
   `is_persistent` and `/menu` as a global command raised, not picked.
+- `9074cb3` (10-21) **`266ad57`'s hash fill** — records only.
 - `266ad57` (10-20, committed 10-21) **no hello on the way back to the hub** — Swift + locales, NOT deployed (a
   restart: Lingo is not reloaded): `showMainMenu`'s default line was «👋 Вітаю, <нік>!», so every
   return to the hub — Settings' Back, `/start`, a stray word, a stale Turn back — greeted the player.
@@ -769,7 +776,7 @@ players' screenshots — off the screenshots, `fight_log` and the log:
   handler (`swift-telegram-sdk` `TGDispatcher.swift:126`), so the screen gets it too — a Settings race,
   prompts eating it, a guild «/menu» for 500 silver, the dead flee key in training (the next attack
   brings «🚪 Вийти» back).
-- **The screenshots:** Володимир (archer L18, T6, Android) — no keyboard icon at all, so removed, and
+- **The screenshots:** `Володимир` (archer L18, T6, Android) — no keyboard icon at all, so removed, and
   «Ке» drew the estate again; Ivan Djyran (mage L9, T3) — «як вийти?» on the estate (most likely 10-14 ~01:11) and,
   most likely 10-19, the fight's buttons at the estate although the bot's last keyboard (walking home
   10-18 23:13) was the menu's and nothing after it but the 7:03 plot notice (no markup) — not

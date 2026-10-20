@@ -685,9 +685,12 @@ the binary):
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
 
-**Built 2026-10-20, waiting for a restart** (content schema v25, shipped with the binary): the forest
-goes on past km 49. The rabid bear and the rabid pack roam every km past it and the deep wood is
-foraged there; until then 93% of steps past the horizon read «Лише тиша».
+**Built 2026-10-20/21, waiting for a restart** (content schema v25, shipped with the binary):
+- the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
+  deep wood is foraged there; until then 93% of steps past the horizon read «Лише тиша»;
+- the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
+- the keyboard stays: a status line that brought the buttons back is no longer deleted with them,
+  and a word typed at the estate or in the bag gives the menu buttons back.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).
