@@ -36,6 +36,9 @@ final class DomainContent: Sendable {
     let enemies: [Enemy]
     let enemiesById: [String: Enemy]
     let enemyArchetypes: [EnemyArchetype: EnemyArchetypeSpec]
+    /// The deepest km a creature's own band reaches — past it, only what is
+    /// marked `beyondHorizon` answers (`ForestHorizon`). Nil for an empty roster.
+    let forestHorizon: Int?
 
     let recipes: [Recipe]
     let recipesById: [String: Recipe]
@@ -206,6 +209,7 @@ final class DomainContent: Sendable {
             let fallback = kind.flatMap { archetypes[$0]?.spawnWeight } ?? 1
             return try dto.toDomain(defaultSpawnWeight: fallback)
         }
+        self.forestHorizon = ForestHorizon.km(of: enemies.filter(\.spawns).map(\.depthRange))
         self.recipes = try content.recipes.map { try $0.toDomain() }
 
         // `uniquingKeysWith:` rather than `uniqueKeysWithValues:` — the latter
@@ -288,6 +292,7 @@ final class DomainContent: Sendable {
         self.zones = (content.zones?.zones ?? []).map { dto in
             Zone(id: dto.id,
                  depthRange: (dto.depth.closedRange ?? 0...0),
+                 beyondHorizon: dto.beyondHorizon,
                  forage: dto.forage.map { ForageEntry(itemId: $0.itemId, weight: $0.weight) })
         }
 

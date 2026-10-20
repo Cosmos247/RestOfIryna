@@ -1762,14 +1762,28 @@ public enum ContentValidator {
         // Coverage, walked to the deepest km any enemy can spawn at — the two
         // tables describe the same wilderness, so a band one covers and the
         // other does not is a hole in exactly one of them.
-        let horizon = bundle.enemies.compactMap { $0.depth?.closedRange }
-            .filter { $0 != 0...0 }.map(\.upperBound).max()
+        let horizon = ForestHorizon.km(of: bundle.enemies.compactMap { $0.depth?.closedRange }
+            .filter { $0 != 0...0 })
         if let horizon, !file.zones.isEmpty {
             let covered = file.zones.compactMap { $0.depth.closedRange }
             let gaps = (1...horizon).filter { km in !covered.contains { $0.contains(km) } }
             if !gaps.isEmpty {
                 fail("zones", "zone.depth_gap",
                      "no zone covers km \(gaps.map(String.init).joined(separator: ", ")) — foraging there finds nothing at all",
+                     .warning)
+            }
+            // And past it, where the walk goes on (`ForestHorizon`): one zone
+            // answers there. None is the silent forest found on 2026-10-20;
+            // two leave the second marked for nothing, since the first in the
+            // file is the only one ever read.
+            let beyond = file.zones.filter(\.beyondHorizon)
+            if beyond.isEmpty {
+                fail("zones", "zone.horizon_empty",
+                     "no zone is marked beyondHorizon, so every find past km \(horizon) turns into nothing",
+                     .warning)
+            } else if beyond.count > 1 {
+                fail("zones", "zone.horizon_ambiguous",
+                     "\(beyond.map(\.id).joined(separator: ", ")) are all marked beyondHorizon — past km \(horizon) only the first is ever read",
                      .warning)
             }
         }
@@ -1863,6 +1877,14 @@ public enum ContentValidator {
                 fail("\(path).spawnWeight", "enemy.negative_weight",
                      "spawn weight must not be negative, found \(weight)", id: enemy.id)
             }
+            // `ForestHorizon.covers` lets a marked band answer past the horizon
+            // whatever the band is, so the training dummy marked by mistake
+            // would step out of the trees at km 50.
+            if enemy.beyondHorizon && (enemy.depth?.closedRange ?? 0...0) == 0...0 {
+                fail("\(path).beyondHorizon", "enemy.beyond_never_spawns",
+                     "marked beyondHorizon but has no depth band — it would spawn past the horizon and nowhere else",
+                     id: enemy.id)
+            }
             // The archetype's level floor. Enemy stats are frozen at design
             // time, so this file is the only place the floor can be broken —
             // and an elite below level 14 meets a player with no techniques
@@ -1914,6 +1936,21 @@ public enum ContentValidator {
                      "every enemy that can spawn at km \(km) is weighted 0")
                 break
             }
+        }
+
+        // MARK: past the horizon
+        //
+        // The forest has no edge: «Крок вперед» goes on past the deepest band
+        // for as long as the Vigor lasts (`ForestHorizon`). Until 2026-10-20
+        // nobody lived there, 93% of steps read «Лише тиша», and the gap walk
+        // above never saw it — it stops at the level cap. A roster with no
+        // creature marked `beyondHorizon` is that silent forest again.
+        let spawnBands = bundle.enemies.compactMap { $0.depth?.closedRange }.filter { $0 != 0...0 }
+        if let horizon = ForestHorizon.km(of: spawnBands),
+           !bundle.enemies.contains(where: { $0.beyondHorizon && ($0.depth?.closedRange ?? 0...0) != 0...0 }) {
+            fail("enemies", "enemy.horizon_empty",
+                 "no creature is marked beyondHorizon, so every step past km \(horizon) rolls no encounter at all — and nothing stops a player walking on",
+                 .warning)
         }
 
         // MARK: XP never falls with depth

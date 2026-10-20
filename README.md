@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`, `ForestHorizon`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · PassiveRoute (the governor's walk) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 437 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 446 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -148,7 +148,7 @@ RestOfIryna/
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers. Phase 6.5 added gear `durability`/`max_durability` (a fresh row is stamped by `GearState.fresh(for:)` with the item's own starting durability since 2026-10-05 — `maxDurability` from items.json, a weapon's ladder tier 1, 0/0 for what nothing wears) + `enchant_level` (armor, cap 5) columns
 │   │   ├── WarehouseEntry.swift  # per-user estate storage (separate table from inventory) + remove helper (Phase 5.2)
 │   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, running_report_json, visited_rooms)
-│   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); since 2026-10-03 a spawnable creature fights with HP and ATK × the estate tier's strength (`scaled(forEstateTier:)`, §11)
+│   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); since 2026-10-03 a spawnable creature fights with HP and ATK × the estate tier's strength (`scaled(forEstateTier:)`, §11); since 2026-10-20 the rabid bear and the rabid pack (`beyondHorizon`) also roam every km past the horizon at km 49 (`ForestHorizon`, §12)
 │   │   ├── Plot.swift            # Phase 5.1 — Fluent model for estate plots (user_id, slot_index, plot_type, tier, last_harvested_at, notified_full)
 │   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
 │   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 9 tiers since 2026-10-04, each opened by a player level — one every five; stats + materials); ItemDisplay namespace lives in Item.swift. `durabilityByTier` [30 … 180] + `durability(forTier:)` — weapon durability ceiling climbs with tier; `requiredLevel(for:tier:)` and `highestTier(for:atLevel:)` read the gates
@@ -684,6 +684,10 @@ the binary):
   — other players by place only, never their sums;
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
+
+**Built 2026-10-20, waiting for a restart** (content schema v25, shipped with the binary): the forest
+goes on past km 49. The rabid bear and the rabid pack roam every km past it and the deep wood is
+foraged there; until then 93% of steps past the horizon read «Лише тиша».
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

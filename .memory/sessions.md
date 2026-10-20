@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-17)
+## Commit index — live-play polish and after (2026-09-09 → 10-20)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-17)* **the 2026-10-17 17:40 deploy recorded** — records only: the `## Deploy —`
+- *(this commit, 10-20)* **the forest goes on past km 49** — content + Swift, schema v25, NOT
+  deployed (a restart): past the horizon (the deepest spawnable band, km 49) nothing answered, so 93%
+  of steps read «Лише тиша» — an archer walked km 49 → 70 on 10-12, a root leaving him 2 HP. Now the rabid bear, the
+  rabid pack and the deep wood carry `beyondHorizon` and answer every km past it; the pack's own band
+  stays 36–40. `ForestHorizon` (ROIContent) is the one rule both catalogs ask; four validator rules;
+  the digest replays km 1–60. + 9 tests (446); `spec-bestiary.md` §12. The two records past 49 stay.
+- `c43959f` (10-17, committed 10-20) **the 2026-10-17 17:40 deploy recorded** — records only: the `## Deploy —`
   entry, the four changes marked live everywhere, the v23 baseline superseded, the stuck player's
   apology recorded as sent.
 - `83176b8` (10-17) **`8320b92`'s hash fill** — records only.
@@ -736,6 +742,74 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-20 (a player past km 49: the report; the forest goes on past its horizon)
+
+**The report** (the owner, with four screenshots: «Один гравець в мене зайшов за 50 км. І там майже
+увесь час була тиша. Продивись логи та дай мені репорт по цій події»). The screenshots were from
+**10-12 22:12**, not that day: `fight_log` holds exactly the two flees from the rabid bear at km 49 on
+11 HP (22:12:33, :36) — `Inokentiy`, archer L10, estate 4. The bot log has no line between ~21:00 and
+23:39 that night: it records no player steps, and nothing failed. The run, from `fight_log`: out at
+22:07 on 183/183, nine wins to km 24 (HP → 51), then fourteen flees in a row from km 25 to 49, eating
+between them; km 50–70 in a minute — twenty «🕊 Лише тиша» and a root at km 52 (11 → 2 HP); a new
+run from km 1 at full HP at 22:44. How it ended is not recorded; it was a death that was not a fight
+— `bankDepth` is a max and his `deepest_km` is 55, no fight or flee is logged on the way back through
+km 49 → 1 where ~52% of steps roll one, a fight death writes a row, and 1 HP + 10%/min regen is full in
+ten minutes. Every other exit that banks nothing was checked and none applies to him: the dev reset,
+`/start` on a combat screen with no fight, and the «Close» button of a pre-April passive report. So a
+root (5% a step, −9 on 2 HP) or hunger. The 55 is inferred, not recorded: most likely the 10-14 run,
+the only other one past km 40 in `fight_log` (41 flees and one win, out to 49 and home; the 23 s
+between its last flee at 49 and the next at 44 fit his ~1 s a step that evening for 48 → 55 → 44).
+Cause, in code: the rabid bear (39–49) and `zone.deepwood` (26–49) end at km 49; past it `pickFor` and `rollForage` return nil and the step's encounter and find
+both become `.nothing` (5 + 48 + 40 = 93% of a fresh step), and «Крок вперед» has no edge. The
+validator's gap walk stops at `maxLevel` (40), the digest replayed km 1–40. The depth board's top two
+(Nerif 70, Inokentiy 55) were banked in that corridor. Side finding from the log, NOT fixed:
+`item.gear.simple_bow.desc` missing — the warehouse's ℹ️ on a gear row (`estate:wh:info:`,
+`EstateController.swift:1129`) reads `item.descriptionKey` without the weapon's tier, and a laddered
+weapon only has `.desc.t1…t9` (the report first named the forest bag's `explore:info:`, which reads
+the bare key too but lists only food and potions — corrected in the audit).
+
+**Decided** (two quizzes): not an edge at km 49 — «Додай туди ведмедя і зграю вовків. Але щоб там
+були і звичайні події як і до 49»; the pack only past the horizon (36–40 and from 50, so km 41–49
+stays the bear's alone); the archetype weights decide the mix (five packs to a bear); the records
+stay («Лишити як є»); no end.
+
+**Built** (`spec-bestiary.md` §12): `ForestHorizon` (ROIContent) — `km(of:)` the deepest spawnable
+band, `covers` = in the band, or past the horizon when marked; `EnemyDTO`/`ZoneDTO` gain an optional
+`beyondHorizon`, set on the rabid bear, the rabid pack and the deep wood; `EnemyCatalog.pickFor` and
+`ZoneCatalog.zone(forDepth:)` ask `covers` against `Catalogs.current.forestHorizon`. Validator:
+`enemy.horizon_empty`, `zone.horizon_empty`, `zone.horizon_ambiguous` (warnings) and
+`enemy.beyond_never_spawns` (error). Schema v25 — the field is optional, so only the handshake keeps
+a v24 binary from decoding this bundle and staying silent. The digest replays km 1–60 (was 1–40).
+
+**Verified:** `validate --strict` clean; 437 → 446 tests (`ForestHorizonTests`, each validator rule
+on its failing case, and the shipped bundle read through the same rule: km 44 the bear alone, km 50
+and 70 the bear and the pack, the deep wood past 49). Digest: `tuning`, `quests`, `king`
+byte-identical; `records` 78ce585986927122 → 9f52425d4d3064e0 (the two marked creatures), `spawns`
+0cf31905171d7944 → d03fcf97e2a12108, content hash 19c94a81 → b268262a. With the replay set back to
+40 km the new code gave `spawns 0cf31905171d7944` exactly — the forest before the horizon is
+unchanged — and over km 1–60 no draw came back empty (bear 2,242, pack 2,617 of the 12,000).
+Content + Swift + schema: live on a restart only, never on a `/reload` (the Pi's v24 binary would
+refuse the v25 bundle).
+
+**The audit** (the owner: «Перед тим як ми продовжимо перевір всі зміни які були зроблені, перевір на
+коректність. Надай репорт»). Checked: every touched Swift file recompiled after a `touch` (under
+`bash`), 0 warnings; the four new rules and both `covers` boundaries mutation-tested — each mutant
+went red on its own assertion; the game side, which `ROIContentTests` cannot reach, broken on purpose
+(the mark ignored in `pickFor` and `zone(forDepth:)`): the digest showed 2,200 empty encounters and
+2,200 empty finds — km 50–60 × 200 — and a new `spawns`, and came back to `d03fcf97e2a12108` once
+restored; all 14 `<!-- generated -->` blocks re-run and still contiguous excerpts (the checker itself
+negative-tested); `simulate --strict` unchanged (18 of 18 invariance rows, 0 broken bands, 18
+warnings, pace 167.0 / 159.6 / 150.9 days); every exit of an expedition read, for the report's
+inference; the Pi re-read (`83176b8`, `Code: 400` still 922, one `[WATCHDOG]`). Fixed: `pickFor` and
+`zone(forDepth:)` read `Catalogs.current` once (two reads could pair a roster and a horizon across a
+`/reload`); the v25 schema note said a v25 binary would read a v24 bundle — the handshake is `==`
+and refuses both ways; `CLAUDE.md`'s rule cut to three lines; stale state lines in README (437 tests,
+no waiting entry), `status.md`, `TODO.md` and `Prompt.md` («The tree reads the same»); the 55 km
+record marked as inferred; the walk list's item names; `project-world-ladder`'s note; "on 2 HP" for a
+walk made on 11; the raw bow key traced to the warehouse's ℹ️, not the forest bag's (which lists no
+gear). Found and raised, not fixed: the dead `explore:passive:close` handler ends ANY expedition
+(`TODO.md` → open).
 
 ## Deploy — 2026-10-17 17:40 (`dda286f` → `83176b8`)
 

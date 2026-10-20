@@ -394,6 +394,10 @@ pace table cannot see any of this — it assumes on-level fights and never walks
 `content/spec/spec-bestiary.md` §10.5 describes the expedition model that can. Auto-memory
 `project-new-beasts-draft`.
 
+**The walk has no edge, so the content must not have one** (2026-10-20). Past the horizon (the deepest
+spawnable band, km 49) only rows marked `beyondHorizon` answer, through `ForestHorizon.covers`; with none
+marked, 93% of steps there read «Лише тиша». `spec-bestiary.md` §12, auto-memory `project-forest-past-the-horizon`.
+
 ### Combat
 
 **One number, one source. A screen never sums two losses under one label.** A step can cost HP

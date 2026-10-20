@@ -23,17 +23,29 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-17 17:43)
+### Where things stand right now (the Pi and git as read 2026-10-20 22:39)
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 2026-10-17 17:40 deploy recorded) on top of **`83176b8`** (`8320b92`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17). **Not pushed: this commit** — push is the owner's |
+| HEAD | **this commit** (the forest past km 49, 10-20) on top of **`c43959f`** (the 10-17 17:40 deploy record), on top of **`83176b8`** (`8320b92`'s hash fill), the commit the Pi runs. A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17). **Not pushed: `c43959f`** (the deploy record) **and this commit** — push is the owner's |
 | running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:14** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` at 922, where the nine `🌷rilenx🌷` refusals left it — the welcome is escaped now. Content schema **v24**, content hash **`19c94a81`**, `records 78ce585986927122`, `tuning 799a96eb5f8619df`; no migration in that restart. The SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Nothing.** The 10-17 17:40 restart installed every commit; the tree reads the Pi's digest (schema v24, content hash `19c94a81`) |
+| waiting for a restart | **The forest past km 49** (10-20) — content + Swift, **schema v25**: a `pull`, a build and `pm2 restart ROI`, never a `/reload` (the Pi's v24 binary refuses a v25 bundle). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi. No migration |
 
-### Where the last sessions stopped (2026-10-11 → 10-17)
+### Where the last sessions stopped (2026-10-11 → 10-20)
+
+**10-20 — a player past km 49; the forest goes on past its horizon.** The owner relayed four
+screenshots of «🕊 Лише тиша» from km 50 to 70. Read off `fight_log`: `Inokentiy`, archer L10, on
+10-12 22:07–22:13 — fourteen flees in a row to km 49 on 11 HP, then twenty silent steps and a root
+(2 HP); the run ended in a non-fight death out there (his record is 55, most likely from a 10-14 run). The bot log
+records no steps and nothing failed. Cause: the deepest band (the rabid bear, 39–49) and the deep
+wood end at km 49 and the walk does not, so past it 93% of steps rolled nothing. On the owner's word
+the rabid bear, the rabid pack (36–40 and from 50, not 41–49) and the deep wood now answer every km
+past the horizon (`beyondHorizon`, `ForestHorizon`, schema v25, 446 tests, `spec-bestiary.md` §12);
+the two records past 49 stay. Side findings, not fixed: the warehouse's ℹ️ on a laddered weapon
+prints the raw key `item.gear.simple_bow.desc`; a dead `explore:passive:close` handler ends any
+expedition (pre-April chats only). Both in `TODO.md` → "Open". `.memory/sessions.md` → the 10-20 entry.
 
 **10-17 — the Pi read; the leaderboard pages; a Telegram name escaped; the wealth board; the 17:40 deploy.** Read off the Pi: it runs
 `dda286f`, the 10-15 restart was the host rebooting, and only the barrier's spark waited — a testers'
@@ -133,7 +145,10 @@ second card (`7860aaa`, `project-fortune-dispel-and-second-card`); the recipe no
 
 ### Next action
 
-**0 — Walk what just went live.** The four blocks on top of `TODO.md` → "Walk list" (live since
+**Waiting on the owner: the restart for the forest past km 49** (the table above). After it, walk it
+(`TODO.md` → "Walk list", the 10-20 block) — then the rest of the list below.
+
+**0 — Walk what just went live.** The four blocks under the 10-20 one in `TODO.md` → "Walk list" (live since
 10-17 17:40: the wealth board, the welcome, the leaderboard pages, the barrier's spark); then the
 five under them (live since 10-13 18:54) and the six under those (live since 10-11 13:21). The stuck
 player's apology went at 17:41 (`message_id 475073`) and she was on registration step 4 by 17:43 —
@@ -189,8 +204,8 @@ and still open:
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake — **v24** on the Pi and in the
-tree since the 10-17 deploy — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
+schema change ships `content/data` and the binary TOGETHER (the handshake — **v24** on the Pi, **v25** in the
+tree since 10-20 — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
@@ -199,7 +214,9 @@ traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-d
 78ce585986927122` · `tuning 799a96eb5f8619df` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `19c94a81`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
-superseded". The tree reads the same.
+superseded". **The tree differs since 2026-10-20** (the forest past km 49, waiting for a restart):
+`records 9f52425d4d3064e0` · `spawns d03fcf97e2a12108` (60 depths, was 40) · content hash `b268262a`;
+`tuning`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
@@ -215,7 +232,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 437 tests, ~5s
+swift test                                   # 446 tests, ~5s
 ```
 
 

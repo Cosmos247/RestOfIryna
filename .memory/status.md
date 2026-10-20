@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-20 — the forest goes on past km 49** (content + Swift, schema v25, NOT deployed — a
+restart). Past the horizon (the deepest spawnable band, km 49) nothing answered, so 93% of steps read
+«Лише тиша»; an archer walked km 49 → 70 on 10-12, on 11 HP and then, after a root, on 2. The rabid bear, the rabid pack and the deep
+wood are marked `beyondHorizon` and answer every km past it — the pack only there and at its own
+36–40, never 41–49 — through `ForestHorizon.covers`. Four validator rules; the digest replays km
+1–60. The two depth records past 49 stay. `spec-bestiary.md` §12.
+
 **2026-10-17 — the 🪙 Багатство board** (`8320b92`, Swift + two locales, deployed 2026-10-17 17:40). A fifth
 leaderboard, on a row of its own under the four tabs: the silver in the purse (`users.silver`,
 an empty purse unlisted, ties ordered by level). Other players show a place and a name only — the
@@ -958,8 +965,10 @@ since the 2026-10-17 17:40 restart (`83176b8`): `records 78ce585986927122` /
 `tuning 799a96eb5f8619df` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
 e3a492be1b017e81`, content hash `19c94a81`, **schema v24** (the barrier's spark moved `tuning`).
 That restart carried the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped
-welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). Nothing waits for a restart. Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **437 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). **Waiting for a restart since 2026-10-20: the
+forest past km 49** (content + Swift, schema v25) — the tree's digest differs from this baseline in
+`records` `9f52425d4d3064e0`, `spawns` `d03fcf97e2a12108` (60 depths) and content hash `b268262a`. Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **446 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

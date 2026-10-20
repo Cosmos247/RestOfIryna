@@ -19,7 +19,7 @@
 //     accessor half exists because fingerprinting data does not verify the code
 //     that reads it — `PlotCatalog.icon` and `MasterCatalog.repairCost` have no
 //     backing array at all.
-//  2. **Seeded `pickFor` replay** — 40 depths × 200 draws from a fixed seed.
+//  2. **Seeded `pickFor` replay** — 60 depths × 200 draws from a fixed seed.
 //     `EnemyCatalog.pickFor` is `filter().randomElement()`, so the DECLARATION
 //     ORDER of the roster decides which enemy a given roll returns. A reorder
 //     that leaves every record byte-identical would still silently change every
@@ -49,7 +49,10 @@ enum ContentDigest {
     /// digest, so treat them as constants.
     private static let seed: UInt64 = 0x5245_4241_4C41_4E43   // "REBALANC"
     private static let drawsPerDepth = 200
-    private static let maxDepth = 40
+    /// 40 until 2026-10-20, which left the forest from km 41 on — the bear's
+    /// stretch and everything past the horizon at km 49 — out of the replay, so
+    /// no digest could see km 50+ rolling nothing. 60 reaches past the horizon.
+    private static let maxDepth = 60
 
     /// Daily-quest replay inputs. The stamps straddle a month boundary on
     /// purpose — `daily` hashes the stamp as a plain string, so nothing about
@@ -1121,7 +1124,7 @@ enum ContentDigest {
             "weight\(enemy.spawnWeight)",
             "\(enemy.depthRange.lowerBound)...\(enemy.depthRange.upperBound)",
             loot, enemy.icon, "\(enemy.xpReward)"
-        ].joined(separator: " · ")
+        ].joined(separator: " · ") + (enemy.beyondHorizon ? " · beyondHorizon" : "")
     }
 
     private static func fingerprint(_ recipe: Recipe) -> String {

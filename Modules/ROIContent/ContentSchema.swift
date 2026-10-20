@@ -135,5 +135,12 @@ public enum ContentSchema {
     /// v23 binary would ignore it and keep a barrier that strikes nothing while
     /// the operator believes it chips; a v24 binary reading a v23 bundle would
     /// die on a bare `keyNotFound`. The handshake names the cause either way.
-    public static let current: Int = 24
+    /// v25 (2026-10-20): the forest goes on past its horizon at km 49
+    /// (`ForestHorizon`). `enemies.json` and `zones.json` gain an optional
+    /// `beyondHorizon` — the rabid bear, the rabid pack and the deep wood answer
+    /// for every km past it. The field is optional, so a v24 binary would decode
+    /// this bundle without a word and keep the silent forest the operator
+    /// believes is fixed — only the handshake refuses it. A v24 bundle on a v25
+    /// binary is refused the same way; were it read, nobody in it is marked.
+    public static let current: Int = 25
 }

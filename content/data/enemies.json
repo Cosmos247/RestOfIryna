@@ -423,6 +423,7 @@
     },
     {
       "archetype" : "skirmisher",
+      "beyondHorizon" : true,
       "depth" : {
         "max" : 40,
         "min" : 36
@@ -450,6 +451,7 @@
     },
     {
       "archetype" : "elite",
+      "beyondHorizon" : true,
       "depth" : {
         "max" : 49,
         "min" : 39

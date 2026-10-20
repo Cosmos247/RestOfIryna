@@ -202,6 +202,16 @@ The verification has four parts:
   a wild boar and the deepest zone was the easiest. `rollEncounter` already
   treated nil as "no encounter" — the call site had been written for the honest
   answer all along. A gap is now a validator finding.
+- **The walk has no edge, so the roster must not have one (2026-10-20, schema v25).**
+  Past the horizon — the deepest spawnable band, km 49 — a step found nothing for 93% of
+  rolls: the gap walk stops at the level cap and the digest replayed km 1–40, so nothing
+  saw it until a player walked to km 70 (`spec-bestiary.md` §12). Now `enemies.json` and
+  `zones.json` carry an optional `beyondHorizon`: the marked rows (the rabid bear, the
+  rabid pack, the deep wood) answer every km past the horizon as well as their own band,
+  through `ForestHorizon.covers` (ROIContent), which `EnemyCatalog.pickFor` and
+  `ZoneCatalog.zone(forDepth:)` both ask. The horizon is derived, never typed. Guards:
+  `enemy.horizon_empty` / `zone.horizon_empty` / `zone.horizon_ambiguous` (warnings),
+  `enemy.beyond_never_spawns` (error); the digest replays km 1–60.
 - **Combat curves come in two shapes and they are separate TYPES.**
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.

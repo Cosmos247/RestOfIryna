@@ -134,6 +134,10 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
     /// its own weight when it is deliberately rarer or more common than its
     /// archetype.
     public let spawnWeight: Double?
+    /// This creature also roams every km past the forest's horizon
+    /// (`ForestHorizon`), at its own spawn weight. Absent means false. Only a
+    /// creature that spawns may carry it.
+    public let beyondHorizon: Bool
 
     public let nameKeyOverride: String?
 
@@ -155,6 +159,7 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         archetype: String = "normal",
         family: String? = nil,
         spawnWeight: Double? = nil,
+        beyondHorizon: Bool = false,
         nameKeyOverride: String? = nil
     ) {
         self.id = id
@@ -168,12 +173,13 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         self.archetype = archetype
         self.family = family
         self.spawnWeight = spawnWeight
+        self.beyondHorizon = beyondHorizon
         self.nameKeyOverride = nameKeyOverride
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, tier, icon, xpReward, stats, depth, loot
-        case level, archetype, family, spawnWeight
+        case level, archetype, family, spawnWeight, beyondHorizon
         case nameKeyOverride = "nameKey"
     }
 
@@ -190,6 +196,7 @@ public struct EnemyDTO: Codable, Sendable, Equatable {
         archetype    = try c.decode(String.self, forKey: .archetype)
         family       = try c.decodeIfPresent(String.self, forKey: .family)
         spawnWeight  = try c.decodeIfPresent(Double.self, forKey: .spawnWeight)
+        beyondHorizon = try c.decodeIfPresent(Bool.self, forKey: .beyondHorizon) ?? false
         nameKeyOverride = try c.decodeIfPresent(String.self, forKey: .nameKeyOverride)
     }
 }

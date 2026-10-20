@@ -32,11 +32,16 @@ public struct ForageEntry: Sendable {
 public struct Zone: Sendable {
     public let id: String
     public let depthRange: ClosedRange<Int>
+    /// Also answers for every km past the forest's horizon (`ForestHorizon`) —
+    /// the deep wood since 2026-10-20.
+    public let beyondHorizon: Bool
     public let forage: [ForageEntry]
 
-    public init(id: String, depthRange: ClosedRange<Int>, forage: [ForageEntry]) {
+    public init(id: String, depthRange: ClosedRange<Int>, beyondHorizon: Bool = false,
+                forage: [ForageEntry]) {
         self.id = id
         self.depthRange = depthRange
+        self.beyondHorizon = beyondHorizon
         self.forage = forage
     }
 }
@@ -50,9 +55,17 @@ public enum ZoneCatalog {
     /// `kmDepth <= 2 ? shallow : (kmDepth <= 5 ? mixed : deep)` picked the
     /// FIRST matching band, so a file that overlaps behaves the way the code
     /// did rather than the way a `last` would.
+    ///
+    /// Past the horizon the zone marked `beyondHorizon` answers — the same rule
+    /// `EnemyCatalog.pickFor` asks, so the find goes on wherever the encounter does.
     public static func zone(forDepth kmDepth: Int) -> Zone? {
         let km = max(1, kmDepth)
-        return all.first { $0.depthRange.contains(km) }
+        // One read, as in `pickFor`: the zones and the horizon from one snapshot.
+        let content = Catalogs.current
+        return content.zones.first {
+            ForestHorizon.covers($0.depthRange, beyondHorizon: $0.beyondHorizon,
+                                 km: km, horizon: content.forestHorizon)
+        }
     }
 
     /// Weighted forage roll for a depth. Nil when no zone covers it or the

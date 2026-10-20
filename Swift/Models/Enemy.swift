@@ -36,9 +36,11 @@
 //  Deep wilderness: the band rule ends the roster at km 43, and the rabid bear's
 //  band is stretched to the zones' horizon at km 49 so no km of the Пуща rolls
 //  an empty step — the rule's one exception, shrinking as №15–16 are authored.
-//  The roster is honest about its edges: `pickFor` returns nil past coverage
-//  instead of quietly handing back the first enemy in the file. No boss
-//  archetype has a member yet.
+//  The walk does not stop there, so the creatures marked `beyondHorizon` — the
+//  rabid bear and the rabid pack — roam every km past it (2026-10-20; until
+//  then km 50+ rolled no encounter at all, `ForestHorizon`). `pickFor` still
+//  returns nil wherever nothing answers instead of quietly handing back the
+//  first enemy in the file. No boss archetype has a member yet.
 //
 
 import Foundation
@@ -138,6 +140,9 @@ public struct Enemy: Sendable {
     public let spawnWeight: Double
     /// km range at which this enemy can appear during exploration rolls.
     public let depthRange: ClosedRange<Int>
+    /// Also roams every km past the forest's horizon (`ForestHorizon`) — the
+    /// rabid bear and the rabid pack since 2026-10-20.
+    public let beyondHorizon: Bool
     public let lootTable: [EnemyLootDrop]
     public let icon: String
     /// XP awarded to the player on victory, BEFORE the level-gap scaling in
@@ -168,6 +173,7 @@ public struct Enemy: Sendable {
         archetype: EnemyArchetype = .normal,
         spawnWeight: Double = 1,
         depthRange: ClosedRange<Int>,
+        beyondHorizon: Bool = false,
         lootTable: [EnemyLootDrop],
         icon: String,
         xpReward: Int
@@ -185,6 +191,7 @@ public struct Enemy: Sendable {
         self.archetype = archetype
         self.spawnWeight = spawnWeight
         self.depthRange = depthRange
+        self.beyondHorizon = beyondHorizon
         self.lootTable = lootTable
         self.icon = icon
         self.xpReward = xpReward
@@ -263,7 +270,14 @@ public enum EnemyCatalog {
     ///    along. A gap in coverage is now a validator finding instead of a
     ///    silently wrong monster.
     public static func pickFor<G: RandomNumberGenerator>(kmDepth: Int, using generator: inout G) -> Enemy? {
-        let eligible = all.filter { $0.depthRange.contains(max(1, kmDepth)) }
+        let km = max(1, kmDepth)
+        // One read: the roster and its horizon must come from the same
+        // snapshot, or a `/reload` between two reads could pair them across.
+        let content = Catalogs.current
+        let eligible = content.enemies.filter {
+            ForestHorizon.covers($0.depthRange, beyondHorizon: $0.beyondHorizon,
+                                 km: km, horizon: content.forestHorizon)
+        }
         guard !eligible.isEmpty else { return nil }
         let total = eligible.reduce(0.0) { $0 + max(0, $1.spawnWeight) }
         // Every candidate weighted 0 is a content error the validator reports;

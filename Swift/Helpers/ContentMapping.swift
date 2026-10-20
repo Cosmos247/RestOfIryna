@@ -144,6 +144,7 @@ extension EnemyDTO {
             archetype: kind,
             spawnWeight: spawnWeight ?? defaultSpawnWeight,
             depthRange: range,
+            beyondHorizon: beyondHorizon,
             lootTable: loot.map {
                 EnemyLootDrop(itemId: $0.itemId, chance: $0.chance, quantity: $0.quantity)
             },

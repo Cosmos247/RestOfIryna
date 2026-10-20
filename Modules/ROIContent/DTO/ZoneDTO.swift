@@ -43,20 +43,26 @@ public struct ZoneDTO: Codable, Sendable, Equatable {
     /// Kilometres this zone covers, inclusive at both ends.
     public let depth: IntRangeDTO
     public let forage: [ForageEntryDTO]
+    /// This pool also answers for every km past the forest's horizon
+    /// (`ForestHorizon`). Absent means false; exactly one zone should carry it.
+    public let beyondHorizon: Bool
 
-    public init(id: String, depth: IntRangeDTO, forage: [ForageEntryDTO]) {
+    public init(id: String, depth: IntRangeDTO, forage: [ForageEntryDTO],
+                beyondHorizon: Bool = false) {
         self.id = id
         self.depth = depth
         self.forage = forage
+        self.beyondHorizon = beyondHorizon
     }
 
-    private enum CodingKeys: String, CodingKey { case id, depth, forage }
+    private enum CodingKeys: String, CodingKey { case id, depth, forage, beyondHorizon }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id     = try c.decode(String.self, forKey: .id)
         depth  = try c.decode(IntRangeDTO.self, forKey: .depth)
         forage = try c.decode([ForageEntryDTO].self, forKey: .forage)
+        beyondHorizon = try c.decodeIfPresent(Bool.self, forKey: .beyondHorizon) ?? false
     }
 }
 

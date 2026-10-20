@@ -67,6 +67,7 @@
       "id" : "zone.oldwood"
     },
     {
+      "beyondHorizon" : true,
       "depth" : {
         "max" : 49,
         "min" : 26

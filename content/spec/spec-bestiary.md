@@ -3,7 +3,8 @@
 **Status: approved 2026-08-31.** Phase 9. The decisions are in §8; §7 was applied
 in the same pass. **§10 — tier 2, fourteen creatures numbered in order — was approved
 and applied on 2026-10-02.** §3–§4 describe the roster before it. **§11 — creature
-strength by estate tier — was approved and applied on 2026-10-03.**
+strength by estate tier — was approved and applied on 2026-10-03.** **§12 — the forest past
+its horizon at km 49 — was decided and applied on 2026-10-20.**
 
 Scope: **levels 1–25**, the authored band fixed in `spec-progression.md`. Levels
 26–40 stay a generated draft from the same archetype table.
@@ -620,7 +621,7 @@ separate work and not part of this amendment.
 - **Trips get long.** At level 20 a trip is ~80 steps and ~36 fights, and costs ~320
   Vigor against a pool of 200. The rest is eaten from the bag on the way.
 - **Past km 40 the rabid bear walks alone**, to the horizon at km 49 (§10.2's one
-  exception). From ~level 25 the player walks the whole forest, and levels 22–40 take
+  exception). Past the horizon it meets the pack again, without end (§12). From ~level 25 the player walks the whole forest, and levels 22–40 take
   ~290 days of that walk. Nothing new appears there until №15.
 - **The opening changes.** Km 1–2 hold the viper, km 3–4 add the eagle at level 2, and
   the boar starts at km 6. The viper and the eagle drop nothing, so **km 1–5 yield no
@@ -1073,3 +1074,72 @@ number in the copy.
   creature with `CombatMath.scaled` and the knob read from the shipped bundle. Its fight table
   came out byte-identical to the 2026-10-02 sandbox's, all 3,234 rows, and the expedition model
   gives the same 74 / 96 / 130 / 184 / 249 / 477 days as §11.4.
+
+---
+
+## 12. Past the horizon — the forest goes on (2026-10-20)
+
+### 12.1 What was found
+
+On 2026-10-12 at 22:12 a level-10 archer (`Inokentiy`, estate 4) fled the rabid bear twice
+at km 49 on 11 HP and walked on to km 70: twenty steps of «🕊 Лише тиша» and one root
+(read off `fight_log` and the player's screenshots, relayed 2026-10-20). The walk has no
+edge — «Крок вперед» never refuses — but the content did: the deepest band a creature
+spawns in (the rabid bear's, 39–49) is the **horizon**, and the deep wood's pool ended at
+the same km. A step past it still rolled its buckets; the encounter and the find both
+came back nil and became `.nothing`. On a fresh km that is the encounter, find and
+nothing weights of `tuning/exploration.json` together — 93% of steps — leaving the root
+and the coins. The validator's gap walk stops at the level cap (km 40) and never saw it;
+the digest replayed km 1–40 only.
+
+What it cost: the depth board's top two were banked in that corridor (70 and 55 km), and
+the archer's run ended out there — `deepest_km` is 55, not 70, and no fight was logged on
+the way back, so the expedition ended in a death that was not a fight (a root or hunger
+on 2 HP) — inferred, not recorded: every other exit that banks no depth was ruled out.
+**The two records stay** (§12.4).
+
+### 12.2 Decided 2026-10-20 (the owner)
+
+1. **Past km 49 live the rabid bear and the rabid pack, and the deep wood is foraged** —
+   "звичайні події як і до 49": every bucket of the step as before.
+2. **The pack goes on only past the horizon.** Its own band stays 36–40, so km 41–49 is
+   still the bear's alone — the one exception of §10.2 is untouched.
+3. **The archetype weights decide the mix** (skirmisher 40, elite 8): five packs to a
+   bear, as at km 39–40.
+4. **No end.** The forest past the horizon is the same at km 50 and at km 500.
+
+### 12.3 The rule
+
+A creature or a zone marked `"beyondHorizon" : true` answers for every km past the
+horizon as well as for its own band. The horizon is DERIVED — the deepest km any spawnable
+creature's band reaches — so №15–16 inside km 49 leave it where it is, and a band pushed
+deeper moves it with the data. `ForestHorizon.covers` (ROIContent) is the one rule; the
+game asks it in `EnemyCatalog.pickFor` and `ZoneCatalog.zone(forDepth:)`, the tests ask
+it of the shipped bundle. Content schema **v25**: the field is optional, so only the
+handshake keeps a v24 binary from reading this bundle and staying silent.
+
+What checks it:
+- `enemy.horizon_empty` and `zone.horizon_empty` (warnings, so `--strict` fails) — nobody
+  marked is the forest of 2026-10-12;
+- `zone.horizon_ambiguous` (warning) — two marked zones, the second read nowhere;
+- `enemy.beyond_never_spawns` (error) — a `0...0` creature marked would step out of the
+  trees past the horizon;
+- the digest replays km 1–60 (was 1–40), so what lives past the horizon is hashed.
+
+### 12.4 What changes for players already playing
+
+Nothing is migrated. A player standing past km 49 meets the bear and the pack from the
+next step after the restart. `deepest_km` is not touched: Nerif's 70 and Inokentiy's 55
+were walked under the rules of the day (the owner's call, 2026-10-20).
+
+### 12.5 Applied 2026-10-20
+
+- **Validation.** `validate --strict` clean. The four rules fire on their failing cases
+  (`ForestHorizonTests`): the unmarked forest warns on both tables, two marked zones warn,
+  a marked dummy is refused.
+- **Digest.** `tuning`, `quests` and `king` byte-identical; `records` moved (the two marked
+  creatures) and `spawns` moved (km 41–60 joined the replay). Replayed over km 1–40 the new
+  code gives the old `spawns` byte for byte, so the forest before the horizon is unchanged.
+  Over km 1–60 no draw comes back empty; with the mark ignored in the game (a planted
+  mutant) the replay shows 2,200 empty encounters and 2,200 empty finds — km 50–60, the
+  silence of 12.1 — and a different `spawns`.

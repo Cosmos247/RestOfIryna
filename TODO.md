@@ -2152,8 +2152,19 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The four blocks on top** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the
-2026-10-13 barrier) went live at the 2026-10-17 17:40 restart.
+**The 2026-10-20 block on top is NOT live yet** — it waits for a restart (schema v25). **The four
+blocks under it** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
+barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-20 — the forest goes on past km 49 (NOT deployed: a restart, schema v25):** a
+character that can reach km 50 — about level 25 by the spec's walk (`spec-bestiary.md` §10.6), or a
+test account with the HP and Vigor for it.
+- Walk past km 49: steps find things again («🥔 Картопля», «🥚 Качине яйце», «🧱 Дика глина», «🔩 Шматок
+  заліза»), and a «🐺 Скажена зграя» or a «🐻‍❄️ Скажений ведмідь» steps out — about five packs to a
+  bear. «🕊 Лише тиша» should be rare (5% of a fresh km), not twenty steps in twenty-one.
+- Km 41–49 is still the bear's alone: no pack there.
+- On the way back over km 50+ (a km walked once), the bear and the pack still step out.
+- A passive run never reaches it (15 km at most) — nothing to check there.
 
 **Added 2026-10-17 — the 🪙 Багатство board (`8320b92`, live since 2026-10-17 17:40):** any
 account with some silver, and one with none.
@@ -2980,6 +2991,23 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-20 session** — the forest past km 49 built; found in the log on the way:
+- **The warehouse's ℹ️ on a laddered weapon prints a raw key** — `item.gear.simple_bow.desc` (once in
+  `ROI-out.log`, 10-19/20). The gear tab lists every unequipped piece with `estate:wh:info:<item id>`,
+  and its handler (`EstateController`, ~line 1129) reads `item.descriptionKey` bare, while a ladder
+  weapon has only `.desc.t1…t9`; the inventory and `ItemCard` already go through
+  `ItemDisplay.descriptionKey(for:tier:)`. The button names the ITEM, so the fix needs the row's tier
+  — a row-id button, as the deposit and withdraw beside it already carry. The forest bag's
+  `explore:info:` (`ExplorationController` ~1090) reads the bare key too, but lists only food and
+  potions, so no weapon reaches it. (First attributed to the forest bag in the report; the 10-20
+  audit found it lists no gear.) The next bug on the list.
+- **A dead handler is a way out of the forest.** `explore:passive:close` (`ExplorationController`,
+  ~line 971) ends ANY expedition, an active one included, and sends the player home: no depth banked,
+  no death wipe, no `beginResting`. Nothing has emitted that button since `ab374c6` (2026-04-23), so a
+  public-test player cannot reach it — but a chat that still holds a pre-April passive report (the
+  founding testers') can tap it from any km. Found in the 10-20 audit; raised, not asked. Two shapes:
+  delete the handler, or end only a passive row in it.
+
 **From the 2026-10-17 session** — the Telegram name in the welcome escaped:
 - **A guild name is checked for length only** (`GuildController.handleFoundNameInput`), so `<`, `>`
   or `&` in one makes Telegram refuse every HTML message that prints it — the welcome's defect again,
@@ -3319,7 +3347,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-17, the 17:40 deploy — the Pi runs `83176b8` (schema v24, content hash
+*Last updated: 2026-10-20 — the forest past km 49 built (content + Swift, schema v25, 446 tests) and
+waiting for a restart; the Pi still runs `83176b8` (schema v24, content hash `19c94a81`).*
+
+*2026-10-17, the 17:40 deploy — the Pi runs `83176b8` (schema v24, content hash
 `19c94a81`): the barrier's spark, the leaderboard pages, the escaped welcome and the 🪙 Багатство
 board are live; the stuck player's apology sent. Nothing waits for a build or a restart.*
 
