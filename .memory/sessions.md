@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-20)* **no hello on the way back to the hub** — Swift + locales, NOT deployed (a
+- `266ad57` (10-20, committed 10-21) **no hello on the way back to the hub** — Swift + locales, NOT deployed (a
   restart: Lingo is not reloaded): `showMainMenu`'s default line was «👋 Вітаю, <нік>!», so every
   return to the hub — Settings' Back, `/start`, a stray word, a stale Turn back — greeted the player.
   Now «👇 Оберіть, куди далі» (`main.menu.prompt`, the owner's line); `greeting.message` deleted.
