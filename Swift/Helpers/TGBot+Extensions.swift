@@ -112,6 +112,14 @@ public class TGControllerBase: @unchecked Sendable {
     /// Returns immediately on send failure (e.g. message permission revoked)
     /// — banners are advisory, not critical, so callers don't branch on the
     /// outcome.
+    ///
+    /// A banner that carries a REPLY keyboard is never deleted, so it is not
+    /// remembered as the one to replace. Telegram drops the keyboard together
+    /// with the message that brought it, so the next banner deleting it took
+    /// the player's buttons away — after a training exit or the stray-number
+    /// hint, the next harvest or craft left no keyboard at all (2026-10-20, a
+    /// player's screenshot). An inline markup is part of the banner and goes
+    /// with it.
     public func postStatusBanner(_ text: String, context: Context, replyMarkup: TGReplyMarkup? = nil) async {
         let telegramId = context.session.telegramId
         let chatId = TGChatId.chat(telegramId)
@@ -128,6 +136,10 @@ public class TGControllerBase: @unchecked Sendable {
             replyMarkup: replyMarkup
         )
         guard let sent = try? await context.bot.sendMessage(params: params) else { return }
+        switch replyMarkup {
+        case nil, .inlineKeyboardMarkup?: break
+        default: return
+        }
         await EphemeralChatState.shared.setLastStatusBanner(telegramId: telegramId, messageId: sent.messageId)
     }
 }

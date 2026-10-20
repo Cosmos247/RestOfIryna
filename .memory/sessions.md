@@ -11,6 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
+- *(this commit, 10-21)* **the keyboard stays** — Swift only, NOT deployed (a restart): a banner
+  carrying a reply keyboard (the training exit, the stray-number hint) is no longer deleted by the next
+  banner, which took the buttons with it; the estate and the bag answer a stray word with
+  `showMainMenu`'s «👇 Оберіть, куди далі» instead of an inline redraw that could not restore a keyboard.
+  `is_persistent` and `/menu` as a global command raised, not picked.
 - `266ad57` (10-20, committed 10-21) **no hello on the way back to the hub** — Swift + locales, NOT deployed (a
   restart: Lingo is not reloaded): `showMainMenu`'s default line was «👋 Вітаю, <нік>!», so every
   return to the hub — Settings' Back, `/start`, a stray word, a stale Turn back — greeted the player.
@@ -746,6 +751,49 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-21 (the keyboard that vanishes)
+
+**The report** (the owner: «У гравців доволі часто зникає клавіатура, яку можна повернути через /menu і
+то не завжди»). Read off the code, then — after the owner asked which buttons I meant and sent four
+players' screenshots — off the screenshots, `fight_log` and the log:
+- **Deleted carriers.** Telegram drops a reply keyboard with the message that brought it.
+  `postStatusBanner` deleted the previous banner before sending; 2 of its 155 callers send a reply
+  keyboard (the training exit, `CombatController` ~764; `answerStrayNumber`), so the next banner took
+  the buttons. Every other deleted message carries inline markup or none (prompts, pickers, the
+  tavern's rounds: checked one by one); the road card already sends before it deletes.
+- **Inline-only fallbacks.** The estate's and the bag's `unmatched` re-rendered an inline screen, which
+  restores no keyboard; every other controller's fallback re-sends its own.
+- **Hidden, not removed.** No keyboard sets `is_persistent`.
+- **`/menu` twice.** Not in `TGControllerBase.unmatched`'s global list; the SDK runs every matching
+  handler (`swift-telegram-sdk` `TGDispatcher.swift:126`), so the screen gets it too — a Settings race,
+  prompts eating it, a guild «/menu» for 500 silver, the dead flee key in training (the next attack
+  brings «🚪 Вийти» back).
+- **The screenshots:** Володимир (archer L18, T6, Android) — no keyboard icon at all, so removed, and
+  «Ке» drew the estate again; Ivan Djyran (mage L9, T3) — «як вийти?» on the estate (most likely 10-14 ~01:11) and,
+  most likely 10-19, the fight's buttons at the estate although the bot's last keyboard (walking home
+  10-18 23:13) was the menu's and nothing after it but the 7:03 plot notice (no markup) — not
+  reproducible from code; an iPhone fight from before 10-09 (no «Ви —»; not in `fight_log`, so likely
+  before 09-28) whose message carried the combat keyboard (checked at `94620a4`) while the phone kept
+  the walk's. The log keeps no per-player trail; its 429/502 bursts are all at ~04:00.
+
+**Built** (the owner picked A and B of four): `postStatusBanner` does not remember a banner whose
+markup is not inline, so it is never deleted (the switch checked on all five markup kinds in a
+scratch script); the estate and the bag end `unmatched` in `showMainMenu` with the router unchanged
+(both register every menu button; `showMainMenu` asks about a trip, so the bag on the road keeps Turn
+back). A rule in `CLAUDE.md`, auto-memory `project-reply-keyboard-lives-on-its-message`; C and D in
+`TODO.md` → "Open". 446 tests; controllers are outside the test graph.
+
+**The audit** (the owner: «Перевір всі зміни… Надай репорт і зроби коміт»): a forced recompile of the
+three Swift files (0 warnings), 446 tests, `validate --strict` clean, the digest unchanged against the
+tree's (`b268262a` · `records 9f52425d4d3064e0` · `spawns d03fcf97e2a12108`), `git diff --check` clean.
+Nothing forwards to either `unmatched`, and neither screen has another text prompt; the trader's buy
+posts a banner, so the walk list's hint step tests what it says. Corrected: the report and `TODO.md`
+said a training fight after `/menu` could be left only by `/start` — every round re-sends the
+state-aware keyboard, so the next attack brings «🚪 Вийти» back; the deleted messages "carry inline
+markup" became "inline markup or none" (the tavern's labels and dice carry none); the 10-14 date of
+the second screenshot is marked a guess; `.memory/file-map.md` (three entries) and
+`.memory/controller-pattern.md` (the unmatched order, and `/menu` missing from the global list) caught up.
 
 ## Session — 2026-10-20, later (the hub stops saying hello)
 

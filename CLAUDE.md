@@ -694,6 +694,12 @@ re-render, because stray text is usually a stale reply-keyboard tap and the redr
 repairs it; a number is never a button label. A prompt still waiting for a BUTTON (the
 warehouse's «Куди?») repeats itself with a hint instead. Auto-memory `project-stray-number-hint`.
 
+**A reply keyboard lives on the message that brought it, and Telegram drops it when that message
+is deleted** — so a message carrying one is never deleted (`postStatusBanner` does not remember
+such a banner; the road card sends the new card first). A screen that renders inline only (the
+estate, the bag) cannot repair a keyboard by redrawing, so a word there gets `showMainMenu`'s
+«👇 Оберіть, куди далі» instead. Auto-memory `project-reply-keyboard-lives-on-its-message`.
+
 **A quantity whose only answer is 1 is not asked** (2026-10-11, the owner's variant A): when the
 side the units come from holds exactly one, the tap acts on it. The exception is a taken job that
 needs the item (`loneUnitWithoutJob`), which keeps the prompt and its ⚠️. Buying always asks. A new

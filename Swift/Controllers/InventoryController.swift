@@ -81,7 +81,11 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
 
     override func unmatched(context: Context) async throws -> Bool {
         guard try await super.unmatched(context: context) else { return false }
-        try await showInventory(context: context)
+        // The bag renders inline only, so re-drawing it repaired nothing: give
+        // the menu keyboard back instead, as the estate does. `showMainMenu`
+        // asks whether a trip is in flight, which is the one time this router
+        // wears Turn back. The router stays put: every button is registered here.
+        try await Controllers.mainController.showMainMenu(context: context)
         return true
     }
 

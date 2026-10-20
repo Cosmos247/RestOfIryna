@@ -97,14 +97,16 @@ fight, so the mis-tap is also the tap that repairs the screen.
   a check only one of two paths performs is the one that gets forgotten.
 
 ### Unmatched Handler
-Override `unmatched(context:)`. Call `super.unmatched(context:)` first — it returns `false` for global commands (/help, /settings, /buttons) so they get handled by GlobalCommandsController instead.
+Override `unmatched(context:)`. Call `super.unmatched(context:)` first — it returns `false` for global commands (/help, /settings, /buttons) so they get handled by GlobalCommandsController instead. `/menu` is NOT in that list, so the screen handles it too (raised 2026-10-21, `TODO.md` → "Open").
 
 The order inside it is fixed (2026-09-27): **open prompts first** (each `peekPending…` in
 `EphemeralChatState` owns the next text), **then `answerStrayNumber(context:)`**, **then the
 root re-render**. A bare number that reaches the second step was typed one tap early, before
 [🪙 Купити] or [✏️ N]: the helper posts a `🔢` banner carrying `currentKeyboard` and the
 screen stays where it was. Everything else still falls to the re-render, which is what
-repairs a stale reply keyboard. Estate, Capital and Guild are the three controllers with
+repairs a stale reply keyboard — except on a screen that renders inline only (the estate, the
+bag), whose redraw carries no reply keyboard: there the third step is
+`MainController.showMainMenu` (2026-10-21). Estate, Capital and Guild are the three controllers with
 numeric prompts and the three that call it. A prompt that is still waiting for a BUTTON,
 the warehouse direction picker, repeats itself in place with a hint
 (`EstateController.remindWarehouseTransferDirection`) rather than falling through.

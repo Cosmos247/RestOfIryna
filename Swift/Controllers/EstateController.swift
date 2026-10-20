@@ -77,7 +77,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         guard try await super.unmatched(context: context) else { return false }
         // Custom-quantity transfer is mid-flight: the player tapped [✏️ N]
         // and the next text update is their answer. Consume it BEFORE the
-        // generic showEstate fallback so a typed number doesn't bounce them
+        // generic fallback so a typed number doesn't bounce them
         // back to the estate root. Only treat the text as a quantity once
         // the player has actually picked a direction. Before that the picker
         // repeats itself with a hint: this stage used to fall through to
@@ -93,7 +93,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             return true
         }
         if await answerStrayNumber(context: context) { return true }
-        try await showEstate(context: context)
+        // A word or a button from another keyboard gets the menu keyboard back.
+        // Every estate screen is an inline photo, so re-rendering one — what
+        // this used to do — never carried a reply keyboard: a player who had
+        // lost theirs got the same photo for every word typed, and one holding
+        // the fight's buttons kept them (2026-10-20, players' screenshots). The
+        // router stays put: every button on the menu keyboard is registered here.
+        try await Controllers.mainController.showMainMenu(context: context)
         return true
     }
 

@@ -2152,9 +2152,18 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The two 2026-10-20 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The three 2026-10-20/21 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under it** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-21 — the keyboard stays (NOT deployed: a restart):** an account at estate level 4+.
+- 🥋 Тренувальний майданчик → a fight with the dummy → 🚪 Вийти → harvest a plot: the menu buttons stay
+  under «✅ Слот N — …», and «🥋 Ви відходите від манекена…» stays in the chat above it.
+- On a trader card, type «5» before «🪙 Купити» → «🔢 Спершу оберіть дію…» → buy: the buttons stay.
+- At the estate (any screen of it), type a word: «👇 Оберіть, куди далі» with the menu buttons, no new
+  estate photo; the estate screen above still answers its buttons. A fight button left on the keyboard
+  («⚡ Удар магією») at the estate: the same line, and the fight's buttons are gone.
+- The bag opened from the menu, a word typed: the same line; on the road, «↩️ Розвернутись» is on it.
 
 **Added 2026-10-20 — the hub stops saying hello (NOT deployed: a restart):** any registered account.
 - ⚙️ Налаштування → 🔙 Назад: the menu keyboard comes back under «👇 Оберіть, куди далі», no «👋 Вітаю».
@@ -2996,6 +3005,23 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-21 session** — the vanishing keyboard: the deleted banners and the estate's and the
+bag's fallback fixed (A and B of the owner's quiz); raised in the same report, NOT picked — build none
+unasked (auto-memory `project-reply-keyboard-lives-on-its-message`):
+- **`is_persistent` on the reply keyboards** (variant C). None of the ten sets it, so a phone lets the
+  keyboard be hidden behind the ⊞ icon. The trade-off: the player can no longer hide
+  the buttons. Not seen for certain on the 10-20 screenshots.
+- **`/menu` is handled twice** (variant D). `TGControllerBase.unmatched` passes only `["/buttons",
+  "/help", "/settings"]`, and the SDK runs every matching handler, so `/menu` also reaches the
+  screen: in Settings it races the move to the menu (the settings keyboard can land under the main
+  router); an open prompt takes it as the answer («❌ не число» at the trader, market, trade, warehouse)
+  — and **the guild's found-name prompt accepts «/menu» as a name and charges 500 silver** (3–24
+  characters, no character rule); in a training fight `/menu` returns the non-training keyboard,
+  whose flee button does nothing there (`CombatController` ~557) — the next attack or `/start` brings
+  «🚪 Вийти» back, since every round re-sends the state-aware keyboard.
+- **A guild name has no character rule** — the «/menu» case above and the HTML hole raised 10-17;
+  `PlayerNameRules` is the shape.
+
 **From the 2026-10-20 session, later** — the hub's «👋 Вітаю» replaced; found in the same sweep, raised
 and not changed:
 - **The capital square re-sends itself on every return.** Back from the arena, the guild or the palace,
@@ -3365,8 +3391,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-21 — the hub's «👋 Вітаю» replaced by «👇 Оберіть, куди далі» (Swift + locales)
-and the forest past km 49 (content + Swift, schema v25, 446 tests), both waiting for a restart; the Pi
+*Last updated: 2026-10-21 — the keyboard no longer deleted with a banner and given back by the estate and
+the bag (Swift), the hub's «👋 Вітаю» replaced by «👇 Оберіть, куди далі» (Swift + locales) and the forest
+past km 49 (content + Swift, schema v25, 446 tests), all waiting for a restart; the Pi
 still runs `83176b8` (schema v24, content hash `19c94a81`).*
 
 *2026-10-17, the 17:40 deploy — the Pi runs `83176b8` (schema v24, content hash
