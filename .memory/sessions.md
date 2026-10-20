@@ -11,7 +11,7 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-21)* **the keyboard stays** — Swift only, NOT deployed (a restart): a banner
+- `6ac0351` (10-21) **the keyboard stays** — Swift only, NOT deployed (a restart): a banner
   carrying a reply keyboard (the training exit, the stray-number hint) is no longer deleted by the next
   banner, which took the buttons with it; the estate and the bag answer a stray word with
   `showMainMenu`'s «👇 Оберіть, куди далі» instead of an inline redraw that could not restore a keyboard.
