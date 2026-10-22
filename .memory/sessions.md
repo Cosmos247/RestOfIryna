@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-22)* **a find that half fits; the road names the way back; «Руки майстра»** — Swift +
+- *(this commit, 10-22)* **`c011f9f`'s hash fill** — records only.
+- `c011f9f` (10-22) **a find that half fits; the road names the way back; «Руки майстра»** — Swift +
   locales, NOT deployed (a restart): a forest find or a kill drop takes as many units as the bag still
   holds (`InventoryEntry.unitsThatFit`, `ExplorationService.pickUp`) and says «Сумка повна — ще 1
   лишається на землі.» under them — all-or-nothing lost both units of a find of two with one slot
