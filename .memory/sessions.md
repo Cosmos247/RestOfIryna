@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **every material is foraged at every km** — content only, NOT deployed (it ships
+- *(this commit, 10-23)* **`8308be6`'s hash fill** — records only.
+- `8308be6` (10-23) **every material is foraged at every km** — content only, NOT deployed (it ships
   with the restart, or a `/reload` after it): `zones.json` is five 10-km bands where three zones stood, each
   with all eight materials, the weights shifting with depth; clay is the rarest at every depth, half of
   iron, and iron and clay sit at 1.5 times the first proposal. Meat and hide stay kill-only; the clay price
