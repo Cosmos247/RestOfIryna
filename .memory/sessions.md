@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-22)* **the forest edge names armour a death would take; an old edge opens nothing** —
+- *(this commit, 10-22)* **`4ebc80b`'s hash fill** — records only.
+- `4ebc80b` (10-22) **the forest edge names armour a death would take; an old edge opens nothing** —
   Swift + locales, NOT deployed (a restart): the edge and the duration picker list the bag's armour a
   death would take («⚠️ У сумці броня, яку ви не одягли:», a row per piece as the bag names it, «Смерть у
   лісі забирає все із сумки, а одягнене лишається з вами.») with «🛡 Одягнути» first, filling EMPTY slots
