@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`, `ForestHorizon`)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`, `ForestHorizon`, `DeathWipe`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · PassiveRoute (the governor's walk) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 446 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 452 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -698,6 +698,10 @@ the binary):
   столиці — ↩️ Розвернутись.») under the countdown;
 - the decree «Руки майстра» reads «🔨 Викувати щось у Майстерні», where «Виготовити річ» dated from
   craftable armour.
+- the forest edge names the armour a death would take — «⚠️ У сумці броня, яку ви не одягли:», each
+  piece, «Смерть у лісі забирає все із сумки, а одягнене лишається з вами.» — with «🛡 Одягнути» first,
+  which puts it on in the empty slots; the duration picker carries it too. An edge left in the chat
+  across a restart no longer starts an expedition from the capital or the road.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

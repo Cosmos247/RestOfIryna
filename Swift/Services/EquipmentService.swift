@@ -72,6 +72,49 @@ public enum EquipmentService {
         try await user.saveAndCache(in: db)
     }
 
+    // MARK: - The forest edge's armour (2026-10-22)
+
+    /// The bag's armour a death would take, as the forest edge lists it, and
+    /// the part of it «🛡 Одягнути» would put on (`DeathWipe`).
+    public struct ArmorAtRisk {
+        public let rows: [InventoryEntry]
+        public let toWear: [InventoryEntry]
+    }
+
+    public static func armorAtRisk(for user: User, on db: any Database) async throws -> ArmorAtRisk {
+        guard let userId = user.id else { return ArmorAtRisk(rows: [], toWear: []) }
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .all()
+
+        var worn: Set<EquipmentSlot> = []
+        var byId: [String: InventoryEntry] = [:]
+        var pieces: [DeathWipe.Piece] = []
+        for row in rows {
+            if let raw = row.equippedSlot, let slot = EquipmentSlot(rawValue: raw) { worn.insert(slot) }
+            guard row.isTakenByDeath, let id = row.id?.uuidString,
+                  let slot = ItemCatalog.find(row.itemId)?.slot, slot.isArmor else { continue }
+            byId[id] = row
+            pieces.append(DeathWipe.Piece(id: id, slot: slot, isBroken: isBroken(row),
+                                          enchantLevel: row.enchantLevel, durability: row.durability,
+                                          maxDurability: row.maxDurability))
+        }
+        return ArmorAtRisk(rows: DeathWipe.ranked(pieces).compactMap { byId[$0.id] },
+                           toWear: DeathWipe.wearPlan(pieces, wornSlots: worn).compactMap { byId[$0.id] })
+    }
+
+    /// «🛡 Одягнути» on the forest edge: puts on what `DeathWipe.wearPlan`
+    /// picks — empty slots only — through `equip`, the one way a piece goes on.
+    /// Returns the rows it put on, for the banner.
+    @discardableResult
+    public static func wearArmorAtRisk(for user: User, on db: any Database) async throws -> [InventoryEntry] {
+        let plan = try await armorAtRisk(for: user, on: db).toWear
+        for row in plan {
+            try await equip(row, for: user, on: db)
+        }
+        return plan
+    }
+
     // MARK: - Bonus Aggregation
 
     /// Sum the GearStats of every currently-equipped item into the user's cached

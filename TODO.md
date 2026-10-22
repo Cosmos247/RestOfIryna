@@ -2152,9 +2152,26 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The seven 2026-10-20/22 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The eight 2026-10-20/22 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-22 — the forest edge names armour a death would take; an old edge opens nothing (NOT
+deployed: a restart — Lingo is not reloaded):** an account at the estate wearing the hood, with boots
+bought from the Master still in the bag.
+- «🗺 Дослідити»: under «На узліссі ви обираєте свій шлях:» — «⚠️ У сумці броня, яку ви не одягли:»,
+  «   🥾 Чоботи лісника 50/50», «Смерть у лісі забирає все із сумки, а одягнене лишається з вами.»; the
+  buttons «🛡 Одягнути», «🏃 Розвідка», «🏕 Експедиція».
+- «🛡 Одягнути»: the same message redraws without the block; the banner «✅ Чоботи лісника — одягнено 📍»;
+  the profile shows the boots worn.
+- Take the boots off (🎒 Сумка → Спорядження → ❌ Зняти), «🗺 Дослідити» → «🏕 Експедиція»: the duration
+  picker carries the block and «🛡 Одягнути» above the durations; tapping it redraws the duration picker.
+- A spare: a second hood in the bag while one is worn — the block lists it and there is NO «🛡 Одягнути».
+  Two hoods in the bag and none worn: the button puts on the better one (the higher «+N», then more wear
+  left) and the other stays listed. Starving as well: the hunger line first, then the block.
+- The old edge: open «🗺 Дослідити» BEFORE the deploy restart and leave it in the chat. After the restart,
+  ride to the capital and tap «🏃 Розвідка» on it: the edge disappears and «🏛 Дикий ліс межує лише з
+  маєтком…» answers (on the road: the road card; mid-walk: the walk resumes). At the estate it works.
 
 **Added 2026-10-22 — «Руки майстра» names the place (NOT deployed: a restart — Lingo is not reloaded):**
 an account holding the level-8 decree «Руки майстра» (👑 the palace's decree card): the line reads

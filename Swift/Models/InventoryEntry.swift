@@ -283,6 +283,9 @@ extension InventoryEntry {
     /// Returns WHAT it destroyed (2026-09-27), not how many rows: the death
     /// screen names the loss instead of saying "the forest took everything".
     /// One line per item and tier, largest loss first.
+    ///
+    /// Which rows go is `isTakenByDeath`, which the forest edge asks too
+    /// (2026-10-22): the armour it warns about is exactly the armour this takes.
     @discardableResult
     public static func wipeOnDeath(for user: User, on db: any Database) async throws -> [DeathLoss] {
         guard let userId = user.id else { return [] }
@@ -290,7 +293,7 @@ extension InventoryEntry {
             .filter(\.$user.$id, .equal, userId)
             .all()
         var lost: [String: DeathLoss] = [:]
-        for row in rows where row.equippedSlot == nil && !WeaponUpgradeCatalog.isUpgradable(row.itemId) {
+        for row in rows where row.isTakenByDeath {
             try await row.delete(on: db)
             let key = "\(row.itemId)#\(row.tier)"
             let prior = lost[key]?.quantity ?? 0
@@ -301,6 +304,13 @@ extension InventoryEntry {
             if $0.itemId != $1.itemId { return $0.itemId < $1.itemId }
             return $0.tier < $1.tier
         }
+    }
+
+    /// Whether a death takes this row (`DeathWipe.takes`): not worn, and not
+    /// the bound class weapon. `wipeOnDeath` and the forest edge's warning both
+    /// ask it.
+    public var isTakenByDeath: Bool {
+        DeathWipe.takes(isWorn: equippedSlot != nil, isBoundWeapon: WeaponUpgradeCatalog.isUpgradable(itemId))
     }
 
     /// One line of what a death took. The tier rides along because an item id

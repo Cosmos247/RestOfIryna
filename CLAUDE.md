@@ -384,6 +384,9 @@ counts already funnels. Auto-memory `project-depth-is-banked-on-arrival`.
 screen or the fight instead of ending the expedition, on BOTH screens: banking depth at the
 door makes any free exit the cheapest way to bank a record. The one real escape is a fight
 whose enemy id no longer resolves, which ends the expedition rather than trapping the player.
+**The edge's buttons outlive the edge**: `EphemeralChatState` forgets the picker on a restart, so
+every `explore:mode:` / `explore:dur:` / `explore:wear:` tap asks `edgeIsStale` (road · capital ·
+expedition) first — an old edge used to start an expedition from the capital or the road.
 
 **A creature's number is its rung, and a kill pays its full XP at any player level.** Bands run
 km 3N−3…3N+1, the last creature stretched to the horizon at km 49. `xpLevelDiff.perLevel` is 0;
@@ -501,7 +504,10 @@ that answers. «Скасувати» strips the picker. Auto-memory `project-are
 implementation both death paths call — `ExplorationController.handleDeath` and
 `PassiveExpeditionService.applyDeath`; worn gear and a bound starter weapon carried in the bag
 survive. **Put the next wipe in that function too**: a rule each caller filters for itself is a
-rule one caller forgets. Auto-memory `project-death-spares-the-class-weapon`.
+rule one caller forgets. Auto-memory `project-death-spares-the-class-weapon`. **The forest edge names
+what it would take** (2026-10-22): the wipe and the edge's armour block ask one rule, `DeathWipe.takes`
+(via `isTakenByDeath`), and «🛡 Одягнути» fills EMPTY slots only — a spare is listed, never swapped in
+(the owner's pick). Auto-memory `project-armour-warning-at-forest-edge`.
 
 **Every gear screen renders all six `GearStats` fields, HP included.** HP reuses
 `profile.health` rather than adding a `workshop.stats.hp`: `profile.*` and `workshop.stats.*`

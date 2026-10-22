@@ -284,26 +284,13 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         let unequipLabel = lingo.localize("inventory.action.gear.unequip", locale: locale)
 
         return sorted.map { pair in
-            // Tier-aware name so an upgraded weapon shows e.g. "Sharpened Sword"
-            // instead of always "Rusty Sword". Non-tiered gear falls through.
-            let name = lingo.localize(ItemDisplay.nameKey(for: pair.item, tier: pair.entry.tier), locale: locale)
-            // Rarity glyph ahead of the icon, and only above the baseline —
-            // a ⚪ on every common item is noise, not information.
-            let iconPrefix = ItemDisplay.rarityPrefix(for: pair.item)
-                + (pair.item.icon.map { "\($0) " } ?? "")
-            // The enchant as a plain "+N" for armor, then the row's wear for
-            // anything a fight wears. Wear was kept out of the label on
-            // 2026-05-21 so the name would not truncate; it came back on
-            // 2026-09-27 because without it two copies cannot be told apart.
-            var condition = ""
-            if let slot = pair.item.slot, GearConditionService.armorSlots.contains(slot.rawValue),
-               pair.entry.enchantLevel > 0 {
-                condition += " +\(pair.entry.enchantLevel)"
-            }
-            if let slot = pair.item.slot, GearConditionService.durableSlots.contains(slot.rawValue) {
-                condition += " \(pair.entry.durability)/\(pair.entry.maxDurability)"
-            }
-            let itemLabel = "\(iconPrefix)\(name)\(condition)"
+            // Tier-aware name, rarity glyph above the baseline only, the
+            // enchant as a plain "+N" and the row's wear (`gearRowLabel`). Wear
+            // was kept out of the label on 2026-05-21 so the name would not
+            // truncate; it came back on 2026-09-27 because without it two
+            // copies cannot be told apart.
+            let itemLabel = ItemDisplay.gearRowLabel(item: pair.item, state: pair.entry.gearState,
+                                                     lingo: lingo, locale: locale)
             let isEquipped = pair.entry.equippedSlot != nil
             let actionLabel = isEquipped ? unequipLabel : equipLabel
             let actionPrefix = isEquipped ? "inv:unequip:" : "inv:equip:"

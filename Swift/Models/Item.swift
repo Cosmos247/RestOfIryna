@@ -224,6 +224,26 @@ public enum ItemDisplay {
         return rarity.glyph + " "
     }
 
+    /// One gear ROW as the bag names it: the rarity glyph, the icon, the row's
+    /// tier-aware name, a plain "+N" for an enchanted armour piece, then the
+    /// row's wear for anything a fight wears — «🦺 Жилет лісника +2 23/50».
+    /// Two copies differ by wear, so the wear is part of the name.
+    ///
+    /// The bag's gear list and the forest edge's armour warning (2026-10-22)
+    /// both print it, so the edge lists a piece exactly as the bag shows it.
+    public static func gearRowLabel(item: Item, state: GearState, lingo: Lingo, locale: String) -> String {
+        let iconPrefix = rarityPrefix(for: item) + (item.icon.map { "\($0) " } ?? "")
+        let name = lingo.localize(nameKey(for: item, tier: state.tier), locale: locale)
+        var condition = ""
+        if let slot = item.slot, GearConditionService.armorSlots.contains(slot.rawValue), state.enchantLevel > 0 {
+            condition += " +\(state.enchantLevel)"
+        }
+        if let slot = item.slot, GearConditionService.durableSlots.contains(slot.rawValue) {
+            condition += " \(state.durability)/\(state.maxDurability)"
+        }
+        return "\(iconPrefix)\(name)\(condition)"
+    }
+
     /// Grammatical gender of the item's name IN THE CURRENT LOCALE, as
     /// `item.<id>.gender` — `m` · `f` · `n` · `pl`.
     ///

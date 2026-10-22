@@ -160,6 +160,16 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         try await showModePicker(context: context)
     }
 
+    /// Whether a forest edge left in the chat no longer stands: the player is
+    /// on the road, in the capital, or already out — `showExploration`'s three
+    /// answers before it draws an edge, asked again by every button the edge
+    /// carries (2026-10-22).
+    static func edgeIsStale(context: Context) async throws -> Bool {
+        if try await TravelState.current(for: context.session, on: context.db) != nil { return true }
+        if context.session.location == "capital" { return true }
+        return try await ExplorationState.current(for: context.session, on: context.db) != nil
+    }
+
     /// Send the expedition reply keyboard and a status card for an existing
     /// active expedition. Used when the player re-enters exploration after
     /// checking the bag, opening the estate, etc.
@@ -213,19 +223,69 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// Trader; the owner had both lines taken out before the deploy
     /// (2026-10-09). The percentages are the tuning table's, so the sentence
     /// cannot drift from what it describes.
-    fileprivate static func modePrompt(for user: User, lingo: Lingo) -> String {
+    ///
+    /// Then the armour a death would take, when there is any (`armorBlock`).
+    fileprivate static func modePrompt(for user: User, armor: EquipmentService.ArmorAtRisk, lingo: Lingo) -> String {
         let locale = user.locale
-        let prompt = lingo.localize("exploration.mode.prompt", locale: locale)
-        guard VigorService.isStarving(user) else { return prompt }
+        var text = lingo.localize("exploration.mode.prompt", locale: locale)
+        if VigorService.isStarving(user) {
+            // Whole percents: both are 0.05 and 0.25 today, and a sentence that
+            // quotes "7.5%" is a retune nobody has asked for yet.
+            func percent(_ fraction: Double) -> String { "\(Int((fraction * 100).rounded()))%" }
+            text += "\n\n😵 " + lingo.localize("exploration.hunger.state", locale: locale, interpolations: [
+                "hp": percent(VigorService.starvationHPDrainPercent),
+                "stats": percent(VigorService.starvationStatPenalty)
+            ])
+        }
+        if let block = armorBlock(armor, lingo: lingo, locale: locale) {
+            text += "\n\n" + block
+        }
+        return text
+    }
 
-        // Whole percents: both are 0.05 and 0.25 today, and a sentence that
-        // quotes "7.5%" is a retune nobody has asked for yet.
-        func percent(_ fraction: Double) -> String { "\(Int((fraction * 100).rounded()))%" }
-        let hunger = "😵 " + lingo.localize("exploration.hunger.state", locale: locale, interpolations: [
-            "hp": percent(VigorService.starvationHPDrainPercent),
-            "stats": percent(VigorService.starvationStatPenalty)
+    /// The armour a death would take, named where the player decides to walk
+    /// out (2026-10-22): the edge, and the duration picker after it, because
+    /// the governor carries the bag too.
+    ///
+    /// New players kept losing armour that sat in the bag (the owner's report):
+    /// the Master puts what he sells there, his banner says only «куплено», and
+    /// the first screen to name the rule was the death screen. Of four forms —
+    /// this list alone, a question on the way out, the armour put on unasked at
+    /// the door — the owner picked the list, the rule in one sentence and
+    /// «🛡 Одягнути» (`wearRow`). Each piece is named as the bag names it, and
+    /// a spare, its slot already worn, is listed and nothing more (the owner's
+    /// pick: a swap would only put the other piece in the bag).
+    fileprivate static func armorBlock(_ armor: EquipmentService.ArmorAtRisk, lingo: Lingo, locale: String) -> String? {
+        guard !armor.rows.isEmpty else { return nil }
+        var lines = ["⚠️ " + lingo.localize("exploration.armor.header", locale: locale)]
+        for row in armor.rows {
+            guard let item = ItemCatalog.find(row.itemId) else { continue }
+            lines.append(RequirementLine.blockIndent
+                         + ItemDisplay.gearRowLabel(item: item, state: row.gearState, lingo: lingo, locale: locale))
+        }
+        lines.append(lingo.localize("exploration.armor.note", locale: locale))
+        return lines.joined(separator: "\n")
+    }
+
+    /// «🛡 Одягнути», first among the edge's buttons — so a habitual tap on the
+    /// top one dresses rather than leaves — and only when it would put
+    /// something on: a bag holding only spares gets the list without it.
+    /// `screen` is the picker it redraws: `mode` or `dur`.
+    fileprivate static func wearRow(_ armor: EquipmentService.ArmorAtRisk, screen: String,
+                                    lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
+        guard !armor.toWear.isEmpty else { return [] }
+        let label = lingo.localize("inventory.action.gear", locale: locale)
+        return [[TGInlineKeyboardButton(text: label, callbackData: "explore:wear:\(screen)")]]
+    }
+
+    fileprivate static func modePickerKeyboard(_ armor: EquipmentService.ArmorAtRisk,
+                                               lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
+        let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
+        return TGInlineKeyboardMarkup(inlineKeyboard: wearRow(armor, screen: "mode", lingo: lingo, locale: locale) + [
+            [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
+            [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
         ])
-        return prompt + "\n\n" + hunger
     }
 
     /// Mode picker: inline keyboard with [Reconnaissance] / [Expedition].
@@ -245,13 +305,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         let lingo = context.lingo
         let locale = context.session.locale
-        let prompt = Self.modePrompt(for: context.session, lingo: lingo)
-        let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
-        let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
-        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
-            [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
-        ])
+        let armor = try await EquipmentService.armorAtRisk(for: context.session, on: context.db)
+        let prompt = Self.modePrompt(for: context.session, armor: armor, lingo: lingo)
+        let inline = Self.modePickerKeyboard(armor, lingo: lingo, locale: locale)
         let params = TGSendMessageParams(
             chatId: .chat(context.session.telegramId),
             text: prompt,
@@ -267,10 +323,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     /// Duration picker edits the mode-picker message in place (same inline
     /// message, keyboard swapped). Three choices plus a Back that returns
-    /// to the mode picker.
-    fileprivate func editToDurationPicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
+    /// to the mode picker — and the armour block with «🛡 Одягнути» above
+    /// them, as on the edge: the governor carries the bag too.
+    fileprivate func editToDurationPicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User,
+                                          lingo: Lingo, db: any Database) async throws {
         let locale = session.locale
         let left = PassiveExpeditionService.minutesLeftToday(for: session)
+        let armor = try await EquipmentService.armorAtRisk(for: session, on: db)
 
         // The budget is part of the question, so it is on the screen that asks
         // it — a choice the player cannot afford should not be offered and
@@ -285,8 +344,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "reset": Countdown.format(GameDay.secondsUntilNextRollover(), lingo: lingo, locale: locale)
             ])
         }
+        if let block = Self.armorBlock(armor, lingo: lingo, locale: locale) {
+            prompt += "\n\n" + block
+        }
 
-        var rows: [[TGInlineKeyboardButton]] = []
+        var rows = Self.wearRow(armor, screen: "dur", lingo: lingo, locale: locale)
         for duration in PassiveDuration.allCases where PassiveExpeditionService.canAfford(duration, for: session) {
             // The label IS the duration and the depth it buys, so both are
             // formatted rather than written down: three locale strings saying
@@ -313,15 +375,12 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         )
     }
 
-    fileprivate func editToModePicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User, lingo: Lingo) async throws {
+    fileprivate func editToModePicker(chatId: TGChatId, messageId: Int, bot: TGBot, session: User,
+                                      lingo: Lingo, db: any Database) async throws {
         let locale = session.locale
-        let prompt = Self.modePrompt(for: session, lingo: lingo)
-        let activeLabel  = lingo.localize("exploration.mode.active",  locale: locale)
-        let passiveLabel = lingo.localize("exploration.mode.passive", locale: locale)
-        let inline = TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: activeLabel,  callbackData: "explore:mode:active")],
-            [TGInlineKeyboardButton(text: passiveLabel, callbackData: "explore:mode:passive")]
-        ])
+        let armor = try await EquipmentService.armorAtRisk(for: session, on: db)
+        let prompt = Self.modePrompt(for: session, armor: armor, lingo: lingo)
+        let inline = Self.modePickerKeyboard(armor, lingo: lingo, locale: locale)
         await editScreen(
             chatId: chatId,
             messageId: messageId,
@@ -999,18 +1058,28 @@ extension ExplorationController {
             return true
         }
 
+        // Every button of the forest edge — the two ways out, «🛡 Одягнути»,
+        // the duration picker's choices and its Back — asks `showExploration`'s
+        // questions first (2026-10-22). These buttons outlive their screen:
+        // `EphemeralChatState` forgets the picker on a restart, and a delete
+        // Telegram refuses is swallowed by `dismissPendingPicker`, so an old
+        // edge can stay in the chat with live buttons. The two ways out and the
+        // durations used to check only for an expedition row (a stale tap, or a
+        // race with the passive scheduler — never silently delete active
+        // progress), so «🏃 Розвідка» on an old edge walked into the forest from
+        // the capital or the road. A stale edge is taken away, and the player
+        // gets what «🗺 Дослідити» shows from where they stand.
+        if data.hasPrefix("explore:mode:") || data.hasPrefix("explore:dur:") || data.hasPrefix("explore:wear:"),
+           try await edgeIsStale(context: context) {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
+            _ = try? await context.bot.deleteMessage(params: deleteParams)
+            try await ctrl.showExploration(context: context)
+            return true
+        }
+
         // Mode picker → Active reconnaissance: begin a fresh active expedition.
         if data == "explore:mode:active" {
-            // Idempotency guard — if an expedition row already exists (stale
-            // picker tap, or a race with the passive scheduler), bail out to
-            // showExploration so we never silently delete active progress.
-            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
-                _ = try? await context.bot.deleteMessage(params: deleteParams)
-                try await ctrl.showExploration(context: context)
-                return true
-            }
             let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
             _ = try? await context.bot.deleteMessage(params: deleteParams)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1021,37 +1090,48 @@ extension ExplorationController {
         // Mode picker → Passive expedition: edit message in place to show
         // the duration picker.
         if data == "explore:mode:passive" {
-            // Idempotency guard — see note on explore:mode:active above.
-            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
-                _ = try? await context.bot.deleteMessage(params: deleteParams)
-                try await ctrl.showExploration(context: context)
-                return true
-            }
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot, session: context.session, lingo: context.lingo)
+            try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot,
+                                                session: context.session, lingo: context.lingo, db: context.db)
             return true
         }
 
         // Duration picker Back button → edit message back to mode picker.
         if data == "explore:mode:pick" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            try await ctrl.editToModePicker(chatId: chatId, messageId: message.messageId, bot: context.bot, session: context.session, lingo: context.lingo)
+            try await ctrl.editToModePicker(chatId: chatId, messageId: message.messageId, bot: context.bot,
+                                            session: context.session, lingo: context.lingo, db: context.db)
+            return true
+        }
+
+        // «🛡 Одягнути» (2026-10-22): put on what fits an empty slot, redraw the
+        // screen it was tapped on — the edge or the duration picker — so the
+        // block lists whatever is still at risk, and name what went on in the
+        // bag's own banner. A spare is left where it is (`DeathWipe.wearPlan`).
+        if data.hasPrefix("explore:wear:") {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            let worn = try await EquipmentService.wearArmorAtRisk(for: context.session, on: context.db)
+            if data == "explore:wear:dur" {
+                try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot,
+                                                    session: context.session, lingo: context.lingo, db: context.db)
+            } else {
+                try await ctrl.editToModePicker(chatId: chatId, messageId: message.messageId, bot: context.bot,
+                                                session: context.session, lingo: context.lingo, db: context.db)
+            }
+            let names = worn.compactMap { row in
+                ItemCatalog.find(row.itemId).map { context.lingo.localize(ItemDisplay.nameKey(for: $0, tier: row.tier), locale: locale) }
+            }
+            if !names.isEmpty {
+                let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: [
+                    "item": names.joined(separator: ", ")
+                ])
+                await ctrl.postStatusBanner(statusLine, context: context)
+            }
             return true
         }
 
         // Duration pick → start passive expedition.
         if data.hasPrefix("explore:dur:") {
-            // Idempotency guard — stale picker tap after an expedition
-            // already started (e.g. via a concurrent dispatch).
-            if try await ExplorationState.current(for: context.session, on: context.db) != nil {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)
-                _ = try? await context.bot.deleteMessage(params: deleteParams)
-                try await ctrl.showExploration(context: context)
-                return true
-            }
             let raw = String(data.dropFirst("explore:dur:".count))
             guard let rawInt = Int(raw), let duration = PassiveDuration(rawValue: rawInt) else {
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -1066,8 +1146,8 @@ extension ExplorationController {
                 ])
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                     callbackQueryId: query.id, text: text, showAlert: true))
-                try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId,
-                                                    bot: context.bot, session: context.session, lingo: context.lingo)
+                try await ctrl.editToDurationPicker(chatId: chatId, messageId: message.messageId, bot: context.bot,
+                                                    session: context.session, lingo: context.lingo, db: context.db)
                 return true
             }
             _ = try await PassiveExpeditionService.start(

@@ -11,7 +11,17 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-22)* **`c011f9f`'s hash fill** — records only.
+- *(this commit, 10-22)* **the forest edge names armour a death would take; an old edge opens nothing** —
+  Swift + locales, NOT deployed (a restart): the edge and the duration picker list the bag's armour a
+  death would take («⚠️ У сумці броня, яку ви не одягли:», a row per piece as the bag names it, «Смерть у
+  лісі забирає все із сумки, а одягнене лишається з вами.») with «🛡 Одягнути» first, filling EMPTY slots
+  only (`explore:wear:mode|dur`); a spare is listed only. The rule is `DeathWipe` in ROIContent — `takes`,
+  asked by `InventoryEntry.isTakenByDeath` for the wipe AND the warning, `wearPlan`, `ranked` — with
+  `EquipmentService.armorAtRisk` / `wearArmorAtRisk` and `ItemDisplay.gearRowLabel` (the bag's own
+  label, extracted). Every edge button asks `edgeIsStale` (road · capital · expedition) first: an edge
+  left in chat across a restart started either expedition from the capital or the road. All the owner's
+  picks; 452 tests.
+- `c4346ae` (10-22) **`c011f9f`'s hash fill** — records only.
 - `c011f9f` (10-22) **a find that half fits; the road names the way back; «Руки майстра»** — Swift +
   locales, NOT deployed (a restart): a forest find or a kill drop takes as many units as the bag still
   holds (`InventoryEntry.unitsThatFit`, `ExplorationService.pickUp`) and says «Сумка повна — ще 1
@@ -776,6 +786,53 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-22, evening (armour a death would take, named at the forest edge; an old edge opens nothing)
+
+**The ask** (the owner): new players often lose armour early on because they forget that a death empties
+the bag — warn players who carry armour, on the step after «🗺 Дослідити»; ask what is unclear and show
+the solution. Read first: `wipeOnDeath` takes every bag row but the worn and the bound class weapon; the
+Master's armour lands in the bag and its banner says only «✅ Чоботи лісника — куплено за 🪙 160»; no screen
+named the rule before the death screen («Ліс забрав усе, що ви несли:»). On the Pi that evening: no unworn
+armour in any bag, 16 players wearing armour, 9 pieces in 3 warehouses — 5 spares beside worn copies, and
+one level-11 player's whole set of 4 while wearing none (told to the owner as «9 запасних» at first, and
+corrected at the audit). Past losses cannot be read: the wipe deletes the rows and records nothing.
+
+**Shown, then picked.** A played sample (a level-4 newcomer with the hood on and boots just bought; a
+level-9 player's real spare, a jerkin +4 50/50 while wearing +1 27/47) and four forms: the block with
+«🛡 Одягнути»; the block alone; a question on the way out; the armour put on unasked at the door. The owner
+answered the two side questions and skipped the form; asked again alone, with a «not now» exit, the owner
+picked **the block with the button**. The spare (its slot worn): **listed only** — over a «📦 На склад»
+button and over not showing it. **The side finding**, from code, not reproduced: the edge's buttons never
+asked where the player stands, and `EphemeralChatState` forgets the picker on a restart, so an edge left
+in the chat started either expedition from the capital or the road. Fix it together: **yes**.
+
+**Built.**
+- `DeathWipe` (ROIContent): `takes(isWorn:isBoundWeapon:)`, which `InventoryEntry.isTakenByDeath` asks for
+  `wipeOnDeath` AND the warning. `wearPlan` puts on, per EMPTY armour slot, the piece that grants the most
+  now: whole before broken, then the higher enchant, then more wear left, then the row id. A worn slot is
+  never swapped. `ranked` sorts head to toe. `DeathWipeTests`: 6 tests, and three mutations (swap into worn
+  slots, broken first, the bound weapon taken) each fail them.
+- `EquipmentService.armorAtRisk` (the rows to list and the rows to wear) and `wearArmorAtRisk` (through
+  `equip`).
+- `ExplorationController`: `modePrompt` gains `armorBlock` after the hunger line, and the duration picker
+  carries it too (the governor carries the bag). `wearRow` puts «🛡 Одягнути» (`inventory.action.gear`)
+  first only when `wearPlan` is not empty. `explore:wear:mode|dur` redraws the screen it was tapped on,
+  with the bag's banner `equip.success` («✅ Чоботи лісника — одягнено 📍»). `modePickerKeyboard` replaced
+  the two copies of the edge's keyboard.
+- `edgeIsStale` (a trip · the capital · an expedition row — `showExploration`'s three questions) is asked
+  by every `explore:mode:` / `explore:dur:` / `explore:wear:` tap before anything. It replaced the three
+  per-button expedition guards and covers the duration picker's Back too. A stale edge is deleted and
+  `showExploration` answers.
+- `ItemDisplay.gearRowLabel` — the bag's gear-row label, extracted; the bag's list calls it, so the edge
+  names a piece exactly as the bag does. The warehouse keeps its own (no rarity glyph) — untouched.
+- Locales: `exploration.armor.header`, `exploration.armor.note`, uk + en.
+
+**Audit.** Clean build, no warnings; 452 tests; `validate --strict` 0/0; the digest unchanged against the
+tree (`b268262a` · `records 9f52425d4d3064e0` · `tuning 799a96eb5f8619df` · `spawns d03fcf97e2a12108` ·
+`quests 30de20902006e3b9` · `king e3a492be1b017e81`). The edge, the banner, the spare-only edge and the
+duration picker rendered from the real uk strings match the approved sample. Both screens are plain
+messages (4,096): a 90-slot bag full of armour is ≈2,900 UTF-16 units. No migration, no content change.
 
 ## Session — 2026-10-22 (a find that half fits; the road names the way back; «Руки майстра»)
 

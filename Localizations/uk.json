@@ -976,6 +976,8 @@
   "exploration.mode.active": "🏃 Розвідка",
   "exploration.mode.passive": "🏕 Експедиція",
   "exploration.hunger.state": "Ви голодні: кожен крок забирає %{hp} ОЗ, а АТК і ЗАХ нижчі на %{stats}.",
+  "exploration.armor.header": "У сумці броня, яку ви не одягли:",
+  "exploration.armor.note": "Смерть у лісі забирає все із сумки, а одягнене лишається з вами.",
   "exploration.duration.prompt.m": "Наскільки відправляєте намісника?",
   "exploration.duration.prompt.f": "Наскільки відправляєте намісницю?",
   "exploration.duration.back": "🔙 Назад",
