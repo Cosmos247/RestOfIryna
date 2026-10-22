@@ -27,13 +27,21 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 10-21 sync pass: records and two code comments). Under it, all unpushed: **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22). Under it, all unpushed: **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17), the commit the Pi runs. Everything above it is unpushed — push is the owner's |
 | running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:13** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night), none during play. Content schema **v24**, content hash **`19c94a81`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Three changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales) and the keyboard fix (`6ac0351`, Swift). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi — the two Swift changes move none of it. No migration |
+| waiting for a restart | **Four changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift) and the warehouse's ℹ️ with two «двір» → «майданчик» lines (HEAD, Swift + uk locale). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi — the three Swift changes move none of it. No migration |
 
 ### Where the last sessions stopped (2026-10-13 → 10-21)
+
+**10-21, later — the warehouse's ℹ️ on a weapon.** The gear rows' info button carried the item id, so
+a laddered weapon (described per tier, `.desc.t1…t9`) printed the raw `item.gear.simple_bow.desc`. The
+owner picked A of two: the button carries the row's id and the alert reads that row's tier
+(`EstateController.handleWarehouseInfo`); B, the bag's full gear card, was not picked. On 10-22, after
+player questions answered from code (FAQ rows in `.memory/live-ops.md`), two uk lines say «майданчик»
+for the arena's «Тренувальний двір» and the training exit's «двір». `.memory/sessions.md` → the 10-21,
+later → 10-22 entry.
 
 **10-21 — the vanishing keyboard.** Players reported the REPLY keyboard (the buttons under the
 input field — not the inline ones under a message) vanishing, «/menu fixes it, not always»; four
@@ -109,9 +117,9 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**Waiting on the owner: the push and ONE restart for the three changes** (the table above; the
-recipe below). After it, walk the three 2026-10-20/21 blocks on top of `TODO.md` → "Walk list" — the
-keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
+**Waiting on the owner: the push and ONE restart for the four changes** (the table above; the
+recipe below). After it, walk the four 2026-10-20/21 blocks on top of `TODO.md` → "Walk list" — the
+warehouse's ℹ️ on a bow (two tiers, both stores), the keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
 the bag), the hub's line, the forest past km 49 — and offer the owner a testers' note.
 
 **0 — Walk what is live and unwalked.** `TODO.md` → "Walk list": the four blocks live since 10-17
@@ -128,8 +136,8 @@ whether the ⊞ icon is in the input field; `/menu` until the restart).
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
-**3 — The next bug on the list:** the warehouse's ℹ️ on a laddered weapon prints the raw key
-`item.gear.simple_bow.desc` — the fix needs a row-id button (`TODO.md` → "Open", the 10-20 block).
+**3 — No bug queued.** The warehouse's ℹ️ on a laddered weapon (the raw `item.gear.simple_bow.desc`)
+was fixed 10-21 and waits for the restart; what is left in "Open" are questions for the owner (4).
 
 **4 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
 - **the 10-21 block:** `is_persistent` on the keyboards; `/menu` as a global command (with the guild

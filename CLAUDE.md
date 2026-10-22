@@ -545,7 +545,7 @@ Auto-memory `project-gear-state-travels-with-the-unit`.
 **A gear list names ROWS, and the workshop is the one place a piece is destroyed.** Copies
 differ by wear, so the bag's gear list and the warehouse's gear rows print each copy's wear and
 every button carries the ROW's id (`inv:info|equip|unequip:<uuid>`,
-`estate:wh:deposit|withdraw:<uuid>`); an item-id [Одягнути] left in chat acts only when one copy
+`estate:wh:info|deposit|withdraw:<uuid>`); an item-id [Одягнути] left in chat acts only when one copy
 qualifies and otherwise redraws the list (the warehouse's old item-id buttons move the OLDEST
 copy, on purpose). **«Розібрати»** (`CraftingService.salvage`, workshop → 🔨) returns the piece's
 recipe × `gear.salvageFraction` × max / the item's own starting durability, floored per line by

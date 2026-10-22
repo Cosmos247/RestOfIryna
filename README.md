@@ -690,7 +690,8 @@ the binary):
   deep wood is foraged there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
 - the keyboard stays: a status line that brought the buttons back is no longer deleted with them,
-  and a word typed at the estate or in the bag gives the menu buttons back.
+  and a word typed at the estate or in the bag gives the menu buttons back;
+- the warehouse describes a class weapon by its own tier, where it printed a raw key.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

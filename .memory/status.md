@@ -21,6 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-21/22 — the warehouse's ℹ️ names its row** (Swift + uk locale, NOT deployed — a restart). The gear
+rows' info button carries the row's id, and the alert reads the description at that row's tier — a
+laddered weapon has only `.desc.t1…t9`, so the bare key printed itself. An item-id button left in chat
+answers when the listed copies share one tier, and otherwise redraws the list. With it, 10-22: the
+arena's refusal and the training exit say «майданчик», not «двір».
+
 **2026-10-21 — the keyboard stays** (`6ac0351`, Swift only, NOT deployed — a restart). Telegram drops a
 reply keyboard with the message that brought it, and `postStatusBanner` deleted the previous banner —
 so after a training exit or the stray-number hint, which carry the keyboard on a banner, the next
@@ -979,8 +985,8 @@ since the 2026-10-17 17:40 restart (`83176b8`): `records 78ce585986927122` /
 e3a492be1b017e81`, content hash `19c94a81`, **schema v24** (the barrier's spark moved `tuning`).
 That restart carried the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped
 welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). **Waiting for a restart since 2026-10-20: the
-forest past km 49** (content + Swift, schema v25), the hub's line (`266ad57`) and the keyboard fix
-(`6ac0351`) — the tree's digest differs from this baseline in
+forest past km 49** (content + Swift, schema v25), the hub's line (`266ad57`), the keyboard fix
+(`6ac0351`) and the warehouse's ℹ️ (10-21) — the tree's digest differs from this baseline in
 `records` `9f52425d4d3064e0`, `spawns` `d03fcf97e2a12108` (60 depths) and content hash `b268262a`. Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **446 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this

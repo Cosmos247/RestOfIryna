@@ -11,7 +11,16 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-21)* **the sync pass** — records, plus two code comments (`answerStrayNumber`'s doc, the
+- *(this commit, 10-21/22)* **the warehouse's ℹ️ names its row** — Swift + uk locale, NOT deployed (a restart):
+  the gear rows' info button carried the item id, and the handler read the bare description key, which
+  a laddered weapon does not have (`.desc.t1…t9`), so a bow printed `item.gear.simple_bow.desc`. The
+  button now carries the row's id and `handleWarehouseInfo` reads the row's tier (`warehouseInfoSubject`
+  resolves it, the lookup answering the tap in a `catch` before rethrowing); an item-id button
+  left in chat answers when the listed copies share one tier and otherwise redraws the list. The
+  gear-list redraw became `redrawWarehouseGear`, shared with the move. Also `453872f`'s hash filled.
+  10-22: two uk lines lose «двір» for «майданчик» (the owner's pick) — the arena's refusal said «у
+  Тренувальному дворі», the training exit «двір стихає»; every other line names it «Тренувальний майданчик».
+- `453872f` (10-21) **the sync pass** — records, plus two code comments (`answerStrayNumber`'s doc, the
   capital's `onInventory` note — both said the bag and the estate re-render): the commit index's two
   hash fills, README's and `status.md`'s waiting lists, a stale greeting line in `file-map.md`, the
   `answerStrayNumber` doc (the estate and the bag no longer re-render), `INDEX.md`, `Prompt.md`
@@ -758,6 +767,42 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-21, later → 10-22 (the warehouse's ℹ️ on a weapon; player questions; «двір» → «майданчик»)
+
+**The bug** (raised 10-20, read off the log: `item.gear.simple_bow.desc` missing, once, uk): the
+warehouse's gear rows put `estate:wh:info:<item id>` on the name and `onCallbackQuery` read
+`item.descriptionKey` bare; a laddered weapon has only `.desc.t1…t9`. Explained to the owner with two
+shapes — A, the row's id and its tier's line in the alert; B, the bag's full gear card — and the owner
+picked A.
+
+**Built:** both gear loops put the row's id (`target`) on the info button as well as the move (51 bytes
+of callback); `EstateController.handleWarehouseInfo` resolves a UUID in the bag, then the warehouse,
+and reads `ItemDisplay.descriptionKey(for:tier:)` / `nameKey(for:tier:)` at the row's tier. A gone row
+redraws the gear list (`redrawWarehouseGear`, now shared with `handleWarehouseTransfer`). An item-id
+button left in chat: anything but a laddered weapon reads its one description as before; a laddered
+weapon answers when the unworn bag copies and the warehouse copies share one tier, and otherwise
+redraws the list — the bag's item-id rule, widened from "one copy" to "one tier" because the tier is
+all the description depends on. The longest tier line is 112 UTF-16 units (uk), under the alert's 200.
+Stackable rows keep item ids. The forest bag's `explore:info:` reads the bare key too and was left: it
+lists only food and potions. Build clean, 446 tests (controllers are outside the test graph).
+
+**10-22, player questions** (answers in `.memory/live-ops.md` → FAQ): «Руки майстра» — only a workshop
+craft counts, and the iron ingot is the one craftable recipe (the asking player had 12 🔩 in the warehouse);
+when the Training Ground opens. Then «why does the task say двір»: `arena.locked` (written with the
+arena's cycle of three, `f0c1749`) called it «Тренувальний двір», a leftover of the retired plot's
+«Спаринг-двір»; the owner picked «на Тренувальному майданчику» and, for the training exit, «— майданчик
+стихає». English already said Training Ground (its exit line's «the yard goes quiet» kept). Also answered from code: the
+pie (8 HP, 32 Vigor, its recipe), the egg (3 Vigor), how durability is lost (FAQ row), the archer's
+manoeuvre against a shot; the coop plot type read off the Pi through the tunnel.
+
+**The audit** (the owner's check-report-commit): forced recompile (0 warnings), 446 tests, `validate
+--strict` clean, the digest unchanged against the tree (`b268262a` · `records 9f52425d4d3064e0` · `spawns
+d03fcf97e2a12108`), both changed lines rendered. Found and fixed: (1) the info handler answers late (its
+answer is the alert) and queried the database first, so a throw would have spun the button — the lookup
+moved into `warehouseInfoSubject` and answers in a `catch`, as `handleWeaponUpgradeConfirm` does; (2) the
+Training Ground answer and its FAQ row said clay comes only from the forest past km 11 — the trader sells
+it at 4 🪙. Corrected to the owner: a plot's `tier` is always 1 today ("future tier upgrades").
 
 ## Session — 2026-10-21 (the keyboard that vanishes)
 

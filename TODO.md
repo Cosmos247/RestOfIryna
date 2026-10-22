@@ -2152,9 +2152,20 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The three 2026-10-20/21 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The four 2026-10-20/21 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-21 — the warehouse's ℹ️ on a weapon (NOT deployed: a restart):** an account with a
+spare class weapon — e.g. a «Простий лук» and an «Обточений лук».
+- 🏰 Маєток → 📦 Склад → Спорядження: tap a bow's name, in the bag's rows and in the warehouse's — the alert
+  shows that copy's own description («Грубо тесане дерево…» for the first, «Кору зчищено…» for the
+  second), never `item.gear.simple_bow.desc`.
+- An armour piece's name still shows its description; Матеріали and Їжа still show theirs.
+- Move a piece, then tap its name on an older copy of the screen: the list redraws.
+- With it (10-22), «майданчик» for «двір»: an account without the special attack at the capital's
+  ⚔️ Ристалище reads «…його вчать на Тренувальному майданчику з 10 рівня.»; 🚪 Вийти from a training
+  fight reads «🥋 Ви відходите від манекена — майданчик стихає.»
 
 **Added 2026-10-21 — the keyboard stays (NOT deployed: a restart):** an account at estate level 4+.
 - 🥋 Тренувальний майданчик → a fight with the dummy → 🚪 Вийти → harvest a plot: the menu buttons stay
@@ -3036,7 +3047,11 @@ and not changed:
   `help.show.buttons`). Needs new copy from the owner.
 
 **From the 2026-10-20 session** — the forest past km 49 built; found in the log on the way:
-- **The warehouse's ℹ️ on a laddered weapon prints a raw key** — `item.gear.simple_bow.desc` (once in
+- **FIXED 2026-10-21 (the owner's A; NOT deployed — a restart): the info button carries the row's id,
+  and the handler reads the description at the row's tier (`EstateController.handleWarehouseInfo`).
+  An item-id button left in chat answers when every copy the list shows shares one tier, and otherwise
+  redraws the list. B — the bag's full gear card from the warehouse — offered, not picked.**
+  **The warehouse's ℹ️ on a laddered weapon prints a raw key** — `item.gear.simple_bow.desc` (once in
   `ROI-out.log`, 10-19/20). The gear tab lists every unequipped piece with `estate:wh:info:<item id>`,
   and its handler (`EstateController`, ~line 1129) reads `item.descriptionKey` bare, while a ladder
   weapon has only `.desc.t1…t9`; the inventory and `ItemCard` already go through
