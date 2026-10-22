@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-21/22)* **the warehouse's ℹ️ names its row** — Swift + uk locale, NOT deployed (a restart):
+- *(this commit, 10-22)* **`40b52df`'s hash fill** — records only.
+- `40b52df` (10-21/22) **the warehouse's ℹ️ names its row** — Swift + uk locale, NOT deployed (a restart):
   the gear rows' info button carried the item id, and the handler read the bare description key, which
   a laddered weapon does not have (`.desc.t1…t9`), so a bow printed `item.gear.simple_bow.desc`. The
   button now carries the row's id and `handleWarehouseInfo` reads the row's tier (`warehouseInfoSubject`
