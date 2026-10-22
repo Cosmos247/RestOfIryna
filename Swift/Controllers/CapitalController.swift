@@ -340,7 +340,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
 
         if let trip = try await TravelState.current(for: context.session, on: context.db) {
-            try await renderTravelInProgress(context: context, trip: trip)
+            try await renderTravelInProgress(context: context, trip: trip, tapped: .capital)
             return
         }
 
@@ -406,7 +406,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             try await Controllers.capitalController.postCannotStart(context: context, key: "capital.blocked_by_expedition", gendered: true)
         } catch TravelService.StartFailure.alreadyTraveling {
             if let trip = try await TravelState.current(for: context.session, on: context.db) {
-                try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip)
+                try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip, tapped: destination)
             }
         } catch TravelService.StartFailure.alreadyAtDestination {
             // Caller's guard should have caught this; render a neutral
@@ -531,17 +531,34 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// "you're on the road, X:XX left". Lives here because Capital owns the
     /// trip-start UX; MainController and friends call it via the public
     /// helper below.
-    private func renderTravelInProgress(context: Context, trip: TravelState) async throws {
+    ///
+    /// `tapped` is the place whose button asked, when one did. A tap on the
+    /// place the player is coming FROM gets a second line naming the way back
+    /// (2026-10-22, a player: «тисну на кнопку Столиця, а йду в Маєток»). The
+    /// owner picked the hint over making that button turn the trip around, so
+    /// the tap still changes nothing; Explore passes nil and gets no hint.
+    private func renderTravelInProgress(context: Context, trip: TravelState,
+                                        tapped: TravelDestination? = nil) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
         let destKey = trip.destination == .capital ? "travel.destination.capital" : "travel.destination.estate"
         let destLabel = lingo.localize(destKey, locale: locale)
         // 🐎 prepended in Swift — leading supplementary-plane emoji breaks
         // Lingo's `%{var}` parser. See .memory/localization.md.
-        let text = "🐎 " + lingo.localize("travel.in_progress", locale: locale, interpolations: [
+        var text = "🐎 " + lingo.localize("travel.in_progress", locale: locale, interpolations: [
             "destination": destLabel,
             "remaining": TravelService.formatCountdown(trip.secondsRemaining(), lingo: lingo, locale: locale)
         ])
+        if let tapped, tapped != trip.destination {
+            let originKey = tapped == .capital ? "travel.destination.capital" : "travel.destination.estate"
+            // The button's own label, passed in rather than typed into the
+            // template: the hint names the key on the keyboard under it, and
+            // ↩️ is two UTF-16 units, which Lingo's `%{}` parser trips on.
+            text += "\n" + lingo.localize("travel.turn_back_hint", locale: locale, interpolations: [
+                "destination": lingo.localize(originKey, locale: locale),
+                "button": Commands.turnBack.button(for: context.session, lingo).text
+            ])
+        }
         try await Self.sendRoadCard(context: context, text: text)
     }
 
@@ -563,8 +580,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     /// Convenience for other controllers (Main, Estate, Exploration) to
     /// emit the same countdown banner without re-implementing the lookup.
-    public static func showTravelInProgress(context: Context, trip: TravelState) async throws {
-        try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip)
+    /// `tapped`: the place whose button asked — see `renderTravelInProgress`.
+    public static func showTravelInProgress(context: Context, trip: TravelState,
+                                            tapped: TravelDestination? = nil) async throws {
+        try await Controllers.capitalController.renderTravelInProgress(context: context, trip: trip, tapped: tapped)
     }
 
     /// `gendered` routes through the feminitive helper — set it only for keys

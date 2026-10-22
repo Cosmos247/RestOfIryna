@@ -21,6 +21,18 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-22 — «Руки майстра» names the place** (locales, NOT deployed — a restart). The decree's line
+reads «🔨 Викувати щось у Майстерні», where «Виготовити річ» dated from craftable armour.
+
+**2026-10-22 — the road names the way back** (Swift + locales, NOT deployed — a restart). On the road,
+the place button the trip is NOT heading to answers the countdown plus «Щоб повернути до столиці —
+↩️ Розвернутись.» (the owner's pick over making that button turn the trip).
+
+**2026-10-22 — a find that half fits** (Swift + locales, NOT deployed — a restart). A forest find or a
+kill drop puts as many units in the bag as still fit (`InventoryEntry.unitsThatFit`) and says «Сумка
+повна — ще 1 лишається на землі.» under them; it used to take all or none, so one free slot and a find
+of two lost both. The passive report splits the find the same way.
+
 **2026-10-21/22 — the warehouse's ℹ️ names its row** (Swift + uk locale, NOT deployed — a restart). The gear
 rows' info button carries the row's id, and the alert reads the description at that row's tier — a
 laddered weapon has only `.desc.t1…t9`, so the bare key printed itself. An item-id button left in chat

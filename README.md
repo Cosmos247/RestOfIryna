@@ -685,13 +685,19 @@ the binary):
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
 
-**Built 2026-10-20/21, waiting for a restart** (content schema v25, shipped with the binary):
+**Built 2026-10-20/22, waiting for a restart** (content schema v25, shipped with the binary):
 - the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
   deep wood is foraged there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
 - the keyboard stays: a status line that brought the buttons back is no longer deleted with them,
   and a word typed at the estate or in the bag gives the menu buttons back;
-- the warehouse describes a class weapon by its own tier, where it printed a raw key.
+- the warehouse describes a class weapon by its own tier, where it printed a raw key;
+- a forest find or a kill drop takes as much as the bag still holds and leaves the rest («Сумка повна —
+  ще 1 лишається на землі.»); one free slot and a find of two used to lose both;
+- on the road, the button of the place the player is coming from names the way back («Щоб повернути до
+  столиці — ↩️ Розвернутись.») under the countdown;
+- the decree «Руки майстра» reads «🔨 Викувати щось у Майстерні», where «Виготовити річ» dated from
+  craftable armour.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

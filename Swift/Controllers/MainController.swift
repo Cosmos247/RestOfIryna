@@ -89,7 +89,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     }
 
     private func onExplore(context: Context) async throws -> Bool {
-        if try await guardedByTravel(context: context) { return true }
+        if try await guardedByTravel(context: context, tapped: nil) { return true }
         let controller = Controllers.explorationController
         try await controller.showExploration(context: context)
         return true
@@ -100,7 +100,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // a "governor away" notice without leaving routerName in the wrong
         // state.
         await dismissPendingPicker(context: context)
-        if try await guardedByTravel(context: context) { return true }
+        if try await guardedByTravel(context: context, tapped: .estate) { return true }
         try await Controllers.estateController.showEstate(context: context)
         return true
     }
@@ -110,7 +110,7 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         // a "governor away" notice without leaving routerName in the wrong
         // state.
         await dismissPendingPicker(context: context)
-        if try await guardedByTravel(context: context) { return true }
+        if try await guardedByTravel(context: context, tapped: .capital) { return true }
         try await Controllers.capitalController.showCapital(context: context)
         return true
     }
@@ -144,10 +144,12 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     /// Returns `true` and posts the countdown banner if the player is
     /// currently on the road between estate and capital. Callers should
     /// short-circuit their own logic when this returns true — the player
-    /// can't enter Estate / Capital / Explore while traveling.
-    private func guardedByTravel(context: Context) async throws -> Bool {
+    /// can't enter Estate / Capital / Explore while traveling. `tapped` is the
+    /// place the button names (nil for Explore): the one they are coming from
+    /// adds the way-back hint to the banner.
+    private func guardedByTravel(context: Context, tapped: TravelDestination?) async throws -> Bool {
         guard let trip = try await TravelState.current(for: context.session, on: context.db) else { return false }
-        try await CapitalController.showTravelInProgress(context: context, trip: trip)
+        try await CapitalController.showTravelInProgress(context: context, trip: trip, tapped: tapped)
         return true
     }
 

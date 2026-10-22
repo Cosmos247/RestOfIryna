@@ -170,6 +170,23 @@ extension InventoryEntry {
         return used + quantity <= slotCap(for: user)
     }
 
+    /// How many of `quantity` units `add` would accept right now — all of
+    /// them, some, or none. The same arithmetic as `add`'s own guard (units,
+    /// `used + n <= cap`, developers unbounded), so `add(itemId, quantity:
+    /// unitsThatFit(…))` can never throw `.inventoryFull` for want of room.
+    ///
+    /// For a find that is LOST when it does not fit (the forest's foraging and
+    /// kill drops): asking `canAccept` for the whole pile turned one free slot
+    /// and a find of two into nothing picked and the slot still free.
+    public static func unitsThatFit(_ itemId: String, upTo quantity: Int, for user: User, on db: any Database) async throws -> Int {
+        guard quantity > 0 else { return 0 }
+        guard ItemCatalog.find(itemId) != nil, user.id != nil else { return 0 }
+        if user.isDeveloper { return quantity }
+
+        let used = try await slotsUsed(for: user, on: db)
+        return min(quantity, max(0, slotCap(for: user) - used))
+    }
+
     /// Add an item to a user's inventory. Stackable items merge into an existing row;
     /// non-stackable items create a new row per unit. Throws `InventoryError.inventoryFull`
     /// if the slot cap would be exceeded — caller must surface that to the UI.

@@ -915,22 +915,14 @@ public enum PassiveExpeditionService {
             // does, and only because `passive.xpMultiplier` must round once;
             // silver has no multiplier, so a second grant here would double it.
             run.silverFound += amount
-        case .loot(let itemId, let quantity, let pickedUp):
+        case .loot(let itemId, let quantity, let taken):
             run.outcomeCounts["loot", default: 0] += 1
-            if pickedUp {
-                run.lootPicked[itemId, default: 0] += quantity
-            } else {
-                run.lootDropped[itemId, default: 0] += quantity
-            }
+            tallyLoot(itemId, found: quantity, taken: taken, into: &run)
         case .encounterWon(let enemy, _, _, _, let drops):
             run.outcomeCounts["encounter_won", default: 0] += 1
             run.xpEarned += User.xpFromKill(enemy, playerLevel: playerLevel)
             for drop in drops {
-                if drop.picked {
-                    run.lootPicked[drop.itemId, default: 0] += drop.quantity
-                } else {
-                    run.lootDropped[drop.itemId, default: 0] += drop.quantity
-                }
+                tallyLoot(drop.itemId, found: drop.quantity, taken: drop.taken, into: &run)
             }
         case .encounterLost:
             run.outcomeCounts["encounter_lost", default: 0] += 1
@@ -939,6 +931,14 @@ public enum PassiveExpeditionService {
             // it for `mode: .active`. Listed here only for switch exhaustiveness.
             break
         }
+    }
+
+    /// One find, split: what went in the bag and what stayed on the ground. A
+    /// find can now be both (one slot left, two found), which the report's
+    /// «(N лишилось у лісі)» already knew how to say.
+    private static func tallyLoot(_ itemId: String, found: Int, taken: Int, into run: inout RunningPassiveReport) {
+        if taken > 0 { run.lootPicked[itemId, default: 0] += taken }
+        if found > taken { run.lootDropped[itemId, default: 0] += found - taken }
     }
 
     /// On simulated death: wipe the bag (`InventoryEntry.wipeOnDeath` — worn

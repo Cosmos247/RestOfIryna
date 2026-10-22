@@ -15,8 +15,8 @@
 //
 //  The service mutates the `User` model in place; callers persist via
 //  `saveAndCache`. Loot drops are added directly to the player's inventory
-//  (inventory == expedition bag per design) and may be refused when the bag
-//  is full — the outcome enum carries that information back to the UI.
+//  (inventory == expedition bag per design), as many units as still fit; the
+//  outcome enum carries what was found and what was taken back to the UI.
 //
 
 import Fluent
@@ -26,7 +26,9 @@ import Foundation
 
 public enum StepOutcome: Sendable {
     case nothing
-    case loot(itemId: String, quantity: Int, picked: Bool)        // picked=false → bag full
+    /// `quantity` found, `taken` of them put in the bag (0…quantity); the rest
+    /// stays on the ground because the bag is full.
+    case loot(itemId: String, quantity: Int, taken: Int)
     /// Coins found on the ground, already added to `user.silver`.
     ///
     /// Credited inside `rollStep` rather than accumulated and granted at the
@@ -45,7 +47,7 @@ public enum StepOutcome: Sendable {
     /// walk-room drain for the step). Caller persists `combatEnemyId` /
     /// `combatEnemyHP` on the ExplorationState row.
     case encounterStarted(enemy: Enemy)
-    case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int, loot: [(itemId: String, quantity: Int, picked: Bool)])
+    case encounterWon(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int, loot: [(itemId: String, quantity: Int, taken: Int)])
     case encounterLost(enemy: Enemy, rounds: Int, hpLost: Int, vigorLost: Int)
 }
 
@@ -299,14 +301,22 @@ public enum ExplorationService {
             return .nothing
         }
         let quantity = Int.random(in: 1...2)
+        let taken = try await pickUp(itemId, quantity: quantity, for: user, on: db)
+        return .loot(itemId: itemId, quantity: quantity, taken: taken)
+    }
 
-        let canFit = try await InventoryEntry.canAccept(itemId, quantity: quantity, for: user, on: db)
-        if canFit {
-            try await InventoryEntry.add(itemId, quantity: quantity, to: user, on: db)
-            return .loot(itemId: itemId, quantity: quantity, picked: true)
-        } else {
-            return .loot(itemId: itemId, quantity: quantity, picked: false)
+    /// Put as many of a find in the bag as still fit and return that count;
+    /// the rest stays on the ground. Partial on purpose (2026-10-22, the
+    /// owner's pick): a find not taken is lost, so all-or-nothing made one
+    /// free slot and a find of two cost both units and leave the slot empty.
+    /// The warehouse's harvest is all-or-nothing for a different reason — a
+    /// yield left standing on the plot is still there next time.
+    private static func pickUp(_ itemId: String, quantity: Int, for user: User, on db: any Database) async throws -> Int {
+        let taken = try await InventoryEntry.unitsThatFit(itemId, upTo: quantity, for: user, on: db)
+        if taken > 0 {
+            try await InventoryEntry.add(itemId, quantity: taken, to: user, on: db)
         }
+        return taken
     }
 
     /// Coins under a root. Picks a denomination by weight and credits it.
@@ -378,37 +388,21 @@ public enum ExplorationService {
         let vigorLost = max(0, vigorBefore - user.vigor)
 
         if result.playerWon {
-            let drops = rollLootDrops(for: enemy)
-            var picked: [(itemId: String, quantity: Int, picked: Bool)] = []
-            for drop in drops {
-                let canFit = try await InventoryEntry.canAccept(drop.itemId, quantity: drop.quantity, for: user, on: db)
-                if canFit {
-                    try await InventoryEntry.add(drop.itemId, quantity: drop.quantity, to: user, on: db)
-                    picked.append((drop.itemId, drop.quantity, true))
-                } else {
-                    picked.append((drop.itemId, drop.quantity, false))
-                }
-            }
+            let picked = try await awardEncounterDrops(for: user, enemy: enemy, on: db)
             return .encounterWon(enemy: enemy, rounds: result.rounds, hpLost: hpLost, vigorLost: vigorLost, loot: picked)
         } else {
             return .encounterLost(enemy: enemy, rounds: result.rounds, hpLost: hpLost, vigorLost: vigorLost)
         }
     }
 
-    /// Public hook for CombatController — mirrors the loot-drop step that
-    /// `rollEncounter` runs after autobattle, so the active controller can
-    /// share the same drop logic at victory time.
-    public static func awardEncounterDrops(for user: User, enemy: Enemy, on db: any Database) async throws -> [(itemId: String, quantity: Int, picked: Bool)] {
-        let drops = rollLootDrops(for: enemy)
-        var picked: [(itemId: String, quantity: Int, picked: Bool)] = []
-        for drop in drops {
-            let canFit = try await InventoryEntry.canAccept(drop.itemId, quantity: drop.quantity, for: user, on: db)
-            if canFit {
-                try await InventoryEntry.add(drop.itemId, quantity: drop.quantity, to: user, on: db)
-                picked.append((drop.itemId, drop.quantity, true))
-            } else {
-                picked.append((drop.itemId, drop.quantity, false))
-            }
+    /// The loot-drop step of a won fight, for both kinds: `rollEncounter` runs
+    /// it after the autobattle and CombatController at victory time. Drops are
+    /// taken in loot-table order, each as far as the bag still has room.
+    public static func awardEncounterDrops(for user: User, enemy: Enemy, on db: any Database) async throws -> [(itemId: String, quantity: Int, taken: Int)] {
+        var picked: [(itemId: String, quantity: Int, taken: Int)] = []
+        for drop in rollLootDrops(for: enemy) {
+            let taken = try await pickUp(drop.itemId, quantity: drop.quantity, for: user, on: db)
+            picked.append((drop.itemId, drop.quantity, taken))
         }
         return picked
     }

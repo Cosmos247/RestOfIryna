@@ -2152,9 +2152,30 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The four 2026-10-20/21 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The seven 2026-10-20/22 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-22 — «Руки майстра» names the place (NOT deployed: a restart — Lingo is not reloaded):**
+an account holding the level-8 decree «Руки майстра» (👑 the palace's decree card): the line reads
+«❌ 🔨 Викувати щось у Майстерні  (0/1)», where it said «Виготовити річ».
+
+**Added 2026-10-22 — the road names the way back (NOT deployed: a restart):** any account, 🏛 Столиця from
+the estate.
+- On the road to the capital tap 🏰 Маєток: «🐎 Ви в дорозі до столиці. Прибуття за …» and under it
+  «Щоб повернути до маєтку — ↩️ Розвернутись.»; nothing turns. Tap 🏛 Столиця: the countdown alone.
+- ↩️ Розвернутись, then 🏛 Столиця: «…в дорозі до маєтку…» with «Щоб повернути до столиці — ↩️ Розвернутись.»
+- The same from the bag opened on the road (🎒 Сумка, then a place button on the keyboard under it).
+
+**Added 2026-10-22 — a find that half fits (NOT deployed: a restart):** an account whose bag has exactly
+one free slot (fill it from the warehouse until the bag reads 24/25 at level 1).
+- Walk the forest until a find of two (berries, lumber, pebbles…): «+1 🫐 Лісові ягоди» and under it
+  «Сумка повна — ще 1 лишається на землі.»; the bag reads 25/25. A find of one still reads «+1 …» with no
+  line; with the bag full, «+2 …» and «Сумка повна — лишається на землі.» as before.
+- Kill a beast that drops 🥩 ×2 (Дикий лось, Олень-рогач, Зубр, Вепр-сікач, Дикий ведмідь, Тур — km 12–37) with one slot free: «✨ Знайдено
+  🥩 Сире м'ясо × 1.» and the same «ще 1» line; a second drop after it reads «…але сумка повна…».
+- A passive run that fills the bag: the report's loot line reads «• 🫐 Лісові ягоди × N (1 лишилось у лісі —
+  сумка повна)», and the bag holds the N (a find of two used to land wholly in the brackets).
 
 **Added 2026-10-21 — the warehouse's ℹ️ on a weapon (NOT deployed: a restart):** an account with a
 spare class weapon — e.g. a «Простий лук» and an «Обточений лук».

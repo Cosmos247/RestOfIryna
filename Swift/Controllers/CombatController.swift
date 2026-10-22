@@ -1139,11 +1139,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         ]))
         for drop in drops {
             let label = itemLabelWithIcon(drop.itemId, lingo: lingo, locale: locale)
-            let key = drop.picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
-            parts.append(lingo.localize(key, locale: locale, interpolations: [
-                "item": label,
-                "qty": "\(drop.quantity)"
-            ]))
+            parts.append(ExplorationController.lootLine(label: label, found: drop.quantity, taken: drop.taken,
+                                                        lingo: lingo, locale: locale))
         }
         let prefix = parts.joined(separator: "\n")
 

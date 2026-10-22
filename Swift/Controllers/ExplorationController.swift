@@ -829,7 +829,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "coins": "\(amount) \(noun)"
             ])
 
-        case .loot(let itemId, let quantity, let picked):
+        case .loot(let itemId, let quantity, let taken):
             let label = itemLabelWithIcon(itemId, lingo: lingo, locale: locale)
             // Per-item foraging flavor text if one exists; Lingo returns the
             // key verbatim when no translation is registered, which we
@@ -837,19 +837,15 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             let findKey = "exploration.find.\(itemId)"
             let flavor = lingo.localize(findKey, locale: locale)
             if flavor != findKey {
-                let qtyLine = "<b>+\(quantity) \(label)</b>"
-                if picked {
-                    return "\(flavor)\n\(qtyLine)"
-                } else {
+                if taken == 0 {
                     let bagFull = lingo.localize("exploration.outcome.loot.bag_full", locale: locale)
-                    return "\(flavor)\n\(qtyLine)\n<i>\(bagFull)</i>"
+                    return "\(flavor)\n<b>+\(quantity) \(label)</b>\n<i>\(bagFull)</i>"
                 }
+                let qtyLine = "<b>+\(taken) \(label)</b>"
+                guard taken < quantity else { return "\(flavor)\n\(qtyLine)" }
+                return "\(flavor)\n\(qtyLine)\n<i>\(Self.lootLeftLine(quantity - taken, lingo: lingo, locale: locale))</i>"
             } else {
-                let fallbackKey = picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
-                return lingo.localize(fallbackKey, locale: locale, interpolations: [
-                    "item": label,
-                    "qty": "\(quantity)"
-                ])
+                return Self.lootLine(label: label, found: quantity, taken: taken, lingo: lingo, locale: locale)
             }
 
         case .trip(let hpLost):
@@ -874,11 +870,8 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             var parts = [header]
             for drop in loot {
                 let label = itemLabelWithIcon(drop.itemId, lingo: lingo, locale: locale)
-                let key = drop.picked ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
-                parts.append(lingo.localize(key, locale: locale, interpolations: [
-                    "item": label,
-                    "qty": "\(drop.quantity)"
-                ]))
+                parts.append(Self.lootLine(label: label, found: drop.quantity, taken: drop.taken,
+                                           lingo: lingo, locale: locale))
             }
             return parts.joined(separator: "\n")
 
@@ -898,6 +891,28 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
                 "enemy": enemyName
             ])
         }
+    }
+
+    /// A drop without a flavor line — every kill drop, here and on the active
+    /// fight's victory screen (`CombatController.finishVictory`). All taken,
+    /// none taken, or the part that fit plus `lootLeftLine` under it.
+    static func lootLine(label: String, found: Int, taken: Int, lingo: Lingo, locale: String) -> String {
+        let key = taken > 0 ? "exploration.outcome.loot.picked" : "exploration.outcome.loot.full"
+        let line = lingo.localize(key, locale: locale, interpolations: [
+            "item": label,
+            "qty": "\(taken > 0 ? taken : found)"
+        ])
+        guard taken > 0, taken < found else { return line }
+        return "\(line)\n<i>\(lootLeftLine(found - taken, lingo: lingo, locale: locale))</i>"
+    }
+
+    /// «Сумка повна — ще 1 лишається на землі.» Present tense on purpose (the
+    /// owner's pick, 2026-10-22): it agrees in number only, never with the
+    /// item's gender, so one line serves every item; `count:` picks
+    /// «лишається» / «лишаються».
+    static func lootLeftLine(_ left: Int, lingo: Lingo, locale: String) -> String {
+        lingo.localize("exploration.outcome.loot.partial", count: left, locale: locale,
+                       interpolations: ["left": "\(left)"])
     }
 
     /// Prepend the item's glyph (e.g. 🪵 for pine lumber) to its localized

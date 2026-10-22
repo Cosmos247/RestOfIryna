@@ -167,7 +167,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         // capital, tapping Estate starts the return trip (rather than
         // pretending the manor is accessible from across the kingdom).
         if let trip = try await TravelState.current(for: context.session, on: context.db) {
-            try await CapitalController.showTravelInProgress(context: context, trip: trip)
+            try await CapitalController.showTravelInProgress(context: context, trip: trip, tapped: .estate)
             return
         }
         if context.session.location == "capital" {

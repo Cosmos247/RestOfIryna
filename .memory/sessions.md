@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-21)
+## Commit index — live-play polish and after (2026-09-09 → 10-22)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,14 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-22)* **`40b52df`'s hash fill** — records only.
+- *(this commit, 10-22)* **a find that half fits; the road names the way back; «Руки майстра»** — Swift +
+  locales, NOT deployed (a restart): a forest find or a kill drop takes as many units as the bag still
+  holds (`InventoryEntry.unitsThatFit`, `ExplorationService.pickUp`) and says «Сумка повна — ще 1
+  лишається на землі.» under them — all-or-nothing lost both units of a find of two with one slot
+  free; the passive tally splits the find (`tallyLoot`). On the road, the button of the place the trip
+  is not heading to adds «Щоб повернути до столиці — ↩️ Розвернутись.» to the countdown (`tapped:`).
+  `king.cond.craft_any` reads «🔨 Викувати щось у Майстерні». All three the owner's picks.
+- `43cc51e` (10-22) **`40b52df`'s hash fill** — records only.
 - `40b52df` (10-21/22) **the warehouse's ℹ️ names its row** — Swift + uk locale, NOT deployed (a restart):
   the gear rows' info button carried the item id, and the handler read the bare description key, which
   a laddered weapon does not have (`.desc.t1…t9`), so a bow printed `item.gear.simple_bow.desc`. The
@@ -768,6 +775,55 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-22 (a find that half fits; the road names the way back; «Руки майстра»)
+
+**«Руки майстра»** (the owner: the decree line said «🔨 Виготовити річ», written when the workshop made
+armour; today its one craftable recipe is 🔳 Залізний злиток, and its other buttons — the weapon and bag
+upgrades, «Розібрати» — are not crafts). Three labels shown (what and where; what; where); **the owner
+picked "where"**: `king.cond.craft_any` → «🔨 Викувати щось у Майстерні» (en «🔨 Forge something in the
+Workshop»), true whatever recipes are added; «Викувати» is the workshop's own verb («Викувано 1× …»).
+Copy only; the decree's description kept.
+
+**The audit** (the owner's check-report-commit): forced recompile of the eight changed Swift files (0
+warnings), 446 tests, `validate --strict` clean, the digest unchanged against the tree (`b268262a` ·
+`records 9f52425d4d3064e0` · `spawns d03fcf97e2a12108` · `king e3a492be1b017e81`), every new line
+rendered (the partial line for 1, 2, 5, 11, 22; the hint and the decree line in both locales), no
+multi-unit character in a new template. Both changed screens are plain messages (4,096), not captions.
+Found and fixed, records only: the ×2 beasts were named «буйвіл» and «кабан» in the walk list and the
+chat — they are «Зубр» and «Вепр-сікач», and «Дикий кабан» drops ×1; the FAQ's workshop path skipped
+the ingot's button; the decree's walk-list block claimed any account could see the line.
+
+**The road** (a player's screenshot, relayed: «тисну на кнопку Столиця, а йду в Маєток … розвернутися
+працює, просто дивно що кнопка Столиця і Маєток не перенаправляють тебе відразу»). On the road both
+place buttons answer the same countdown card; only «↩️ Розвернутись» turns (free: the way back takes
+what was walked). Three shapes shown — A, the button of the place the player comes from turns the trip;
+B, the countdown card adds a hint; C, hide both place buttons on the road — and **the owner picked B**,
+so a tap still turns nothing. `renderTravelInProgress` / `showTravelInProgress` take `tapped:` (the
+place the button names); a tap on the place the trip is NOT heading to adds «Щоб повернути до столиці —
+↩️ Розвернутись.» (`travel.turn_back_hint`, the button's own label passed in). Passed by all four
+paths a place tap reaches on the road: `MainController.guardedByTravel`, `showCapital`, `showEstate`
+(the bag's place buttons go through these two) and `beginTrip`'s `alreadyTraveling`; Explore passes nil.
+
+**The bug** (a player, relayed: «якщо в сумці 1 вільна комірка, а в досліджені знайдено 2 предмети, то
+жоден з предметів не підбирається і комірка залишається вільною»). `rollLoot` and `awardEncounterDrops`
+asked `canAccept` for the whole pile and took all of it or none, and a find not taken is LOST. It hits a
+foraged find of two (1…2 per find) and the 7 of 19 kill-drop rows that drop ×2 (🥩 from the moose, stag,
+buffalo, tusker, bear and aurochs; 🟫 from the rabid bear), active and passive alike.
+
+**Built** (the owner's picks): take what fits. `InventoryEntry.unitsThatFit(_:upTo:for:on:)` is `add`'s
+own guard asked as a number (units, `used + n <= cap`, developers unbounded), so the `add` after it
+cannot throw for room; `ExplorationService.pickUp` is the one caller, for foraging and for both kinds
+of kill (`rollEncounter` now calls `awardEncounterDrops` instead of its own copy of the loop). The
+outcome carries `taken: Int` instead of `picked: Bool` (`.loot`, the drop tuples); the passive tally
+splits a find between `lootPicked` and `lootDropped` (`tallyLoot`), which the report's «(N лишилось у
+лісі — сумка повна)» already rendered. On screen, under the part that fit: «Сумка повна — ще 1
+лишається на землі.» (`exploration.outcome.loot.partial`, `.one/.few/.many` in uk), shared by the step
+narration and the active victory screen (`ExplorationController.lootLine` / `lootLeftLine`). The owner
+asked for the present tense over «лишилось» / «влізло»: it agrees in number, never in gender, so one
+line serves every item; the passive report keeps its past tense (it sums a finished run). Kill drops
+are taken in loot-table order. Every other `canAccept` caller is a refusal that loses nothing.
+Build clean, 446 tests, `validate --strict` clean; the lines rendered for 1, 2, 3, 5, 11, 21, 22.
 
 ## Session — 2026-10-21, later → 10-22 (the warehouse's ℹ️ on a weapon; player questions; «двір» → «майданчик»)
 
