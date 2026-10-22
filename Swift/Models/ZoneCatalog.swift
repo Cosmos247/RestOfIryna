@@ -33,7 +33,7 @@ public struct Zone: Sendable {
     public let id: String
     public let depthRange: ClosedRange<Int>
     /// Also answers for every km past the forest's horizon (`ForestHorizon`) —
-    /// the deep wood since 2026-10-20.
+    /// the deep wood from 2026-10-20, the 41–49 band since 2026-10-23.
     public let beyondHorizon: Bool
     public let forage: [ForageEntry]
 

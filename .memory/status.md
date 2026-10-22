@@ -960,7 +960,8 @@ measurable, which compressed time never allowed.
 `spec-economy.md`). Every number in them is emitted by `roi-content spec`, never
 typed, so a spec cannot drift from the generator it feeds. What they decided: the authored
 band is levels **1–25**; an enemy of level N spawns from **km N to km N+9**; the three zone
-systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 / Пуща 26–49** (applied);
+systems are reconciled to **Гущавина 1–10 / Старий ліс 11–25 / Пуща 26–49** (applied; since
+2026-10-23 they no longer decide the forage — `spec-bestiary.md` §13);
 **no new creatures** — the seven that exist are re-spread (levels only); the boss stays
 unmembered; and nothing new unlocks between level 21 and 40, deferred on purpose.
 

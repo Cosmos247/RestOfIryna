@@ -1138,6 +1138,78 @@ size (`defend.mageChipMultiplier` 0.5, schema v24) — over 20% and 30%. Its lin
 (`FightSimulator` models no Defend); `tuning` → `799a96eb5f8619df` and the content hash moved, the
 other halves did not.
 
+### Foraging without zones, measured and decided (2026-10-22/23, `8308be6`)
+
+The owner: «прибрати розділення по зонам» — every material at every km, a different chance per
+material. Record: `content/spec/spec-bestiary.md` §13; why: auto-memory `project-forage-without-zones`.
+
+**How a find works (unchanged).** A step rolls a bucket from `tuning/exploration.json`: on a new km
+find 48 · beast 40 · nothing 5 · root 5 · silver 2; walked once (the way home) 33 / 52 / 8 / 5 / 2; a
+third pass 23 / 0 / 75 / 0 / 2; a passive step after the first 43 / 20 / 25 / 10 / 2. A find draws one
+id from the pool of the km by weight and takes 1–2 units (uniform). The tarot multiplies the find
+bucket only (Fool ×1.2, Hierophant ×0.9, Hermit and Moon ×0.85). The beasts' drops are their own
+tables (chance × quantity), picked among the bands covering the km by archetype weight (trash 100 ·
+normal 60 · skirmisher 40 · brute 25 · elite 8) — never zones. **Found unwired on the way:** the
+archetypes' `lootMultiplier` (×0.5…×3) and `passive.lootMultiplier` are decoded, validated, hashed and
+printed by `spec economy`, and the game applies neither (the post-rebalance package).
+
+**Live, read 2026-10-22** (since the door opened 10-07): forest fights by zone 11,208 at km 1–10 (72%) ·
+4,078 at 11–25 · 319 at 26+ (last 7 days 4,636 / 1,518 / 155); deepest banked: 22 players ≤ km 10, 11
+to 25, 4 to 49, 2 past; held in bags and warehouses: pebble 3,929 · lumber 2,086 · hide 1,110 · iron 926
+· meat 900 · potato 749 · clay 546 · nut 509 · berry 363 · egg 220 · ingot 219. Clay is wanted by the
+estate only from T4 (10 / 15 / 20 / 25 for T4–T7), one weapon rung (the staff t3, 3) and «Мʼясо в
+глині»; no plot makes it; the trader sells it at 4.
+
+**The recipe** (Python over the JSON, no harness): chance of a material on a new km = 0.48 × w / Σw
+(×33/48 on the way home, ×23/48 on a third pass); units = 1.5 a find; a round trip to km N = N new-km
+rolls (km 1…N) + N−1 walked-once rolls (km N−1…1), the door rolls nothing; forage food per new km =
+0.72 × Σ share × raw Vigor (berry 4 · nut 5 · egg 3 · everything else 0); kill drops per new km = 0.40 ×
+Σ P(creature | km) × chance × quantity, assuming every fight won.
+
+**The shapes shown** (chance per new km, %, at km 5 · 20 · 40; first-proposal weights):
+
+| | today | A — one table | B — shifting with depth | C — A, iron rising |
+|---|---|---|---|---|
+| 🫐🌰 each | 12 · 6.7 · 0 | 10.1 · 10.1 · 10.1 | 11.5 · 9.4 · 5.4 | 10.3 · 10.1 · 9.8 |
+| 🪵🪨 each | 12 · 6.7 · 0 | 6.7 · 6.7 · 6.7 | 7.7 · 6.6 · 4.5 | 6.9 · 6.7 · 6.5 |
+| 🥔🥚🧱 each | 0 · 6.7 · 15 | 4.2 · 4.2 · 4.2 | 2.9 · 4.7 · 8.2 | 4.3 · 4.2 · 4.1 |
+| 🔩 | 0 · 1.3 · 3 | 1.7 · 1.7 · 1.7 | 1.0 · 1.9 · 3.6 | 0.9 · 1.7 · 3.3 |
+| forage food, Vigor/km | 1.6 · 1.2 · 0.7 | 1.6 · 1.6 · 1.6 | 1.7 · 1.5 · 1.1 | 1.6 · 1.6 · 1.5 |
+
+B was recommended and picked because a flat table makes the deep as food-rich as the shallows (0.7 →
+1.6 Vigor a km at km 40) — the Vigor that is the depth gate (auto-memory
+`project-vigor-no-passive-regen`). Then "B, but clay the rarest": with every weight doubled, clay at
+half of iron (V1) · one point under iron (V3) · flat 1 (V2) gave clay 0.5 → 1.0 → 2.1 · 0.5 → 1.5 → 3.5
+· 0.5 everywhere (% at 5 · 20 · 40) and 0.4 · 0.5 · 0.25 clay a round trip to km 20 (today 1.6): **V1
+picked**. Then «збільши трохи» iron and clay: ×1.5 (iron 1.5 → 7.6%, clay 0.75 → 3.8%) over ×2 (iron
+2.0 → 9.4%, deep iron as frequent as potato): **×1.5 picked**.
+
+**As built** — weights on a ×4 scale so clay is half of iron in integers (in the file, not typed
+anywhere else that drifts), and the chance on a new km they give:
+
+| band | 🫐 🌰 | 🪵 🪨 | 🥔 🥚 | 🔩 | 🧱 | → % 🫐 · 🪵 · 🥔 · 🔩 · 🧱 |
+|---|---|---|---|---|---|---|
+| 1–10 | 48 | 32 | 12 | 6 | 3 | 11.9 · 8.0 · 3.0 · 1.5 · 0.75 |
+| 11–20 | 40 | 28 | 20 | 12 | 6 | 9.9 · 6.9 · 5.0 · 3.0 · 1.5 |
+| 21–30 | 32 | 24 | 28 | 18 | 9 | 7.9 · 5.9 · 6.9 · 4.4 · 2.2 |
+| 31–40 | 24 | 20 | 36 | 24 | 12 | 5.9 · 4.9 · 8.8 · 5.9 · 2.9 |
+| 41–49 + beyond | 16 | 16 | 40 | 30 | 15 | 4.1 · 4.1 · 10.2 · 7.6 · 3.8 |
+
+A round trip to km 10 / 20 / 30 forages 🔩 0.4 / 1.1 / 2.2 and 🧱 0.2 / 0.5 / 1.1; forage food 1.75 / 1.56
+/ 1.37 / 1.19 / 1.01 Vigor a new km by band. The game's own roll agrees: the digest's 12,000 forage draws
+over km 1–60 gave iron 1,233 and clay 597 against ~1,250 and ~625. **What moved:** `spawns`
+`d03fcf97e2a12108` → `004c138c83fa9d1a` and the content hash `b268262a` → `8c6e2610`; `spec opening` —
+km 1 −305 → **−286**, the cheapest holdable depth km 17 +18 → **+21**, the deep rows' trail up (km 26:
+3 → 7); `simulate --strict` unchanged (0 broken bands, 18 warnings). Meat and hide stay kill-only.
+
+**The clay price, worked and postponed.** At 24 / 12 (the owner's number): T4's 10 clay 40 → 240
+silver, T4–T7's 70 clay 280 → 1,680, the staff's 3 clay 12 → 72; the 546 held (Nerif 179, Володимир
+145) would sell for up to 6,552. A dish restores its inputs' price (auto-memory
+`project-food-is-priced-not-picked`), so «Мʼясо в глині» goes 50 → 70 Vigor (18 HP, 175 at the tavern),
+2 short of the Feast (72 · 18), unless its recipe changes: 3 🥩 + 🧱 + 🪵 = 58 · 2 🥩 + 1 🥔 + 🧱 + 🪵 = 54
+· 1 🥩 + 2 🥔 + 🧱 + 🪵 = 50. Two quizzes on the dish were rejected to clarify, then «поки не будемо
+міняти ціну» — `TODO.md` → Open.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

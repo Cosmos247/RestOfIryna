@@ -16,7 +16,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 - [Localization](localization.md) — Lingo setup, JSON structure, «ви», player gender, item gender, the UA glossary
 
 ## Operations
-- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), changing one player's gender or wiping one character (2026-10-12), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies (the expedition there and back added 2026-10-12, the vanishing keyboard 2026-10-21)
+- [Live ops — the public test](live-ops.md) — **since 2026-10-07**: the open door, crediting zlatnyks by hand in DBeaver (2026-10-11), changing one player's gender or wiping one character (2026-10-12), telling a frozen poll loop from a dead network, the player-activity snapshot SQL and its reading traps, what the first evening showed, day two's starving play, day four's repair complaint with its wear SQL (2026-10-10), and a verified player FAQ with sources and ready replies (the expedition there and back added 2026-10-12, the vanishing keyboard 2026-10-21, lost armour 2026-10-22, where iron drops amended 2026-10-23)
 
 ## Game Design
 - [Game Core](game-core.md) — GDD summary: classes, vigor, exploration, combat, estates, rest
@@ -27,12 +27,12 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
 ## Content specifications (in the repo, not here)
 - [`content/spec/`](../content/spec/) — **five approved, Phase 9 closed 2026-09-01, plus `king.md` (2026-09-21).** Every number is printed by `roi-content spec` and quoted inside `<!-- generated -->` markers, so drift is mechanically detectable
   - `spec-progression.md` — the XP ladder, unlock gates, the level↔km rule (superseded 2026-10-02 by `spec-bestiary.md` §10)
-  - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier
+  - `spec-bestiary.md` — the roster, zones and loot; §10 (2026-10-02) is tier 2: 14 creatures numbered by depth, the XP level-gap penalty off; §11 (2026-10-03) is creature strength by estate tier; §12 (2026-10-20) the forest past its km-49 horizon; §13 (2026-10-23) foraging without zones — every material at every km, clay the rarest
   - `spec-items.md` — a FRAME, not a list: the gear ladder and the 40%-of-curve wardrobe gap; §9 (2026-10-04) is the weapon ladder by player level and the Master's lesson; §10 (2026-10-05) is durability as the item's own, the Forester set at 50 with its prices ×5/3; §11 (2026-10-06) is the Master's enchant as the armour's ladder — the gear ladder of §4, built, and gated by its price where the weapon's is gated by level; §10.2 amended 2026-10-10: the repair halved
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept; §2's amendment and second table (2026-10-06): the members climb by the enchant now, so the Forester's flat bonus rots
-  - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement; §4 amended 2026-10-10 (the repair halved on live data; the fortune teller joins the sinks table); §7b (2026-10-11) the zlatnyk and the Chancellery, its price printed by `spec economy`
+  - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement; §4 amended 2026-10-10 (the repair halved on live data; the fortune teller joins the sinks table); §7b (2026-10-11) the zlatnyk and the Chancellery, its price printed by `spec economy`; the opening block re-measured 2026-10-23 after the forage change
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
-- [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones, visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
+- [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones (names and art only since 2026-10-23, not forage), visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
 
 ## Where the work stands
 
@@ -49,7 +49,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   measured on live play (2026-10-10), the zlatnyk and the Chancellery (2026-10-11: the session
   cache, the shelf, the class change measured), the delivery jobs against buying (2026-10-11), and
   the passive expedition there and back (2026-10-11/12: the teleport, the death rates, the stride
-  and the governor's rules, the harness recipe).
+  and the governor's rules, the harness recipe), the forest's Defend (2026-10-13), and foraging
+  without zones (2026-10-22/23: the shapes, the clay variants, the price worked and postponed, the recipe).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).

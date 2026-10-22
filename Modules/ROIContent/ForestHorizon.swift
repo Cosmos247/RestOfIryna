@@ -17,8 +17,9 @@
 //
 //  A creature or a zone marked `beyondHorizon` answers for every km past the
 //  horizon as well as for its own band — the rabid bear, the rabid pack and the
-//  deep wood, on the owner's word. The pack's own band stays 36–40, so km
-//  41–49 is still the bear's alone.
+//  deepest forage band (the deep wood until 2026-10-23, the 41–49 band since),
+//  on the owner's word. The pack's own band stays 36–40, so km 41–49 is still
+//  the bear's alone.
 //
 //  One rule, here, for the game's two catalogs, the validator and the digest:
 //  a second copy of "who lives past the horizon" is the drift this file exists

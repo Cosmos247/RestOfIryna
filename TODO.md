@@ -2873,7 +2873,8 @@ in the capital, one challenging the other.
   Anyone holding one before the deploy would see an unresolvable row, which is why
   `LiveReferenceCheck` is what refuses a reload that would do that.
 - **мʼясо в глині needs 🧱 дику глину**, which no plot produces — it is foraged at km 11+. That
-  is deliberate: the T6 dish cannot be cooked without walking deep.
+  is deliberate: the T6 dish cannot be cooked without walking deep. *(Superseded at the next
+  restart: since 2026-10-23 clay is foraged at every km as the rarest find — `spec-bestiary.md` §13.)*
 
 **Added 2026-09-17 part 4 — LIVE since 09-19 14:21, never walked. Reported from play:**
 - **equip and unequip an upgraded weapon.** The banner must now name the row, not the

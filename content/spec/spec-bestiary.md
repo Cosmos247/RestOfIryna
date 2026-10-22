@@ -1112,6 +1112,9 @@ on 2 HP) — inferred, not recorded: every other exit that banks no depth was ru
    bear, as at km 39–40.
 4. **No end.** The forest past the horizon is the same at km 50 and at km 500.
 
+*Amended 2026-10-23:* the deep wood's pool went with the zones — what is foraged past the horizon is
+the 41–49 band's, which holds every material (§13).
+
 ### 12.3 The rule
 
 A creature or a zone marked `"beyondHorizon" : true` answers for every km past the

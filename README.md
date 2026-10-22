@@ -685,7 +685,7 @@ the binary):
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
 
-**Built 2026-10-20/22, waiting for a restart** (content schema v25, shipped with the binary):
+**Built 2026-10-20/23, waiting for a restart** (content schema v25, shipped with the binary):
 - the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
   deepest forage band answers there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;

@@ -11,7 +11,17 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **`8308be6`'s hash fill** — records only.
+- *(this commit, 10-23)* **the sync pass** — records only: `.memory/rebalance.md` gains "Foraging without zones,
+  measured and decided" (the live read, the recipe, the shapes, the clay variants, the price worked and
+  postponed); `INDEX.md` names `spec-bestiary.md` §12–13, the re-measured opening, two FAQ rows and the
+  missing Defend research; `Prompt.md` re-read off the Pi (00:37: `83176b8` online since 10-17 17:40, one
+  `[WATCHDOG]`, `Code: 400` 922) with the clay price among the owner's questions; stale lines fixed —
+  `TODO.md`'s clay-at-km-11 note, `status.md`'s Phase 9 zones, README's waiting-list header, the
+  Training Ground FAQ's clay, `spec-bestiary.md` §12.2 and the file map's two forage rows, plus two Swift
+  comments that still named the deep wood as the marked forage row (`ForestHorizon`'s header,
+  `ZoneCatalog.Zone.beyondHorizon`); four auto-memories brought up to date and the zsh false clean
+  recorded in `feedback-audit-before-commit`.
+- `1865cd4` (10-23) **`8308be6`'s hash fill** — records only.
 - `8308be6` (10-23) **every material is foraged at every km** — content only, NOT deployed (it ships
   with the restart, or a `/reload` after it): `zones.json` is five 10-km bands where three zones stood, each
   with all eight materials, the weights shifting with depth; clay is the rarest at every depth, half of
