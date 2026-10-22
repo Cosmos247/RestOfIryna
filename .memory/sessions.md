@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **the sync pass** — records only: `.memory/rebalance.md` gains "Foraging without zones,
+- *(this commit, 10-23)* **`354c106`'s hash fill** — records only.
+- `354c106` (10-23) **the sync pass** — records only: `.memory/rebalance.md` gains "Foraging without zones,
   measured and decided" (the live read, the recipe, the shapes, the clay variants, the price worked and
   postponed); `INDEX.md` names `spec-bestiary.md` §12–13, the re-measured opening, two FAQ rows and the
   missing Defend research; `Prompt.md` re-read off the Pi (00:37: `83176b8` online since 10-17 17:40, one
