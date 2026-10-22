@@ -401,6 +401,11 @@ pace table cannot see any of this — it assumes on-level fights and never walks
 spawnable band, km 49) only rows marked `beyondHorizon` answer, through `ForestHorizon.covers`; with none
 marked, 93% of steps there read «Лише тиша». `spec-bestiary.md` §12, auto-memory `project-forest-past-the-horizon`.
 
+**Every material is foraged at every km** (2026-10-23, the owner's call): `zones.json` is five 10-km bands,
+each holding all eight, the weights shifting with depth; clay is the rarest everywhere, half of iron. Never
+lock a material out of a band again — `ZoneTests` pins it. `spec-bestiary.md` §13, auto-memory
+`project-forage-without-zones`.
+
 ### Combat
 
 **One number, one source. A screen never sums two losses under one label.** A step can cost HP

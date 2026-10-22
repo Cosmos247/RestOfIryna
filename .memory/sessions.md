@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-22)* **`4ebc80b`'s hash fill** — records only.
+- *(this commit, 10-23)* **every material is foraged at every km** — content only, NOT deployed (it ships
+  with the restart, or a `/reload` after it): `zones.json` is five 10-km bands where three zones stood, each
+  with all eight materials, the weights shifting with depth; clay is the rarest at every depth, half of
+  iron, and iron and clay sit at 1.5 times the first proposal. Meat and hide stay kill-only; the clay price
+  stays 4 / 2 (24 / 12 weighed and postponed). `ZoneTests` pins it on the shipped bundle; `spec-bestiary.md`
+  §13; the `spec opening` block refreshed. `spawns` and the content hash moved. All the owner's picks; 453 tests.
+- `78721b9` (10-22) **`4ebc80b`'s hash fill** — records only.
 - `4ebc80b` (10-22) **the forest edge names armour a death would take; an old edge opens nothing** —
   Swift + locales, NOT deployed (a restart): the edge and the duration picker list the bag's armour a
   death would take («⚠️ У сумці броня, яку ви не одягли:», a row per piece as the bag names it, «Смерть у
@@ -787,6 +793,46 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-22 → 10-23 (every material is foraged at every km)
+
+**The ask** (the owner): rework how resources drop — today by zones. Shown first, read off the code and
+the data: every step rolls a bucket (`tuning/exploration.json`: find 48% on a new km, 33% on the way home,
+23% on a third pass); a find draws from the zone of the km, 1–2 units; the beasts' tables are their own and
+were never zones. The three zones locked potato, egg, clay and iron out of km 1–10 and berries, nuts,
+lumber and pebbles out of the deep wood. Live, since the door opened: 11,208 fights at km 1–10 (72%), 4,078
+at 11–25, 319 deeper; 22 of 39 players never banked a depth past km 10. Also found: the archetypes'
+`lootMultiplier` and `passive.lootMultiplier` are in the data and applied nowhere (the post-rebalance
+package).
+
+**Decided, in four rounds** (the owner's picks, each shown as chances per new km and per round trip):
+- **B, weights shifting with depth**, over one table everywhere (A) and only iron rising (C). The reason
+  given: a flat table makes the deep as food-rich as the shallows (forage food at km 40, 0.7 → 1.6 Vigor a
+  new km), while B keeps it the hungriest part (about 1.2 at km 31–40 and 1.0 past them, with the final weights).
+- **"B, but clay the rarest"** → of three (half of iron; one point under iron; flat) **half of iron**.
+- **Meat and hide kill-only** (over adding them to forage, which needed two new find lines).
+- **The clay price**: the owner asked to review it, then gave 24 / 12. Worked through: T4's 10 clay
+  40 → 240 silver; the 546 clay held (Nerif 179, Володимир 145) would sell for up to 6,552; «Мʼясо в глині»
+  restores its inputs' price, so 50 → 70 Vigor, 2 short of the Feast, unless its recipe changes. Two quizzes
+  on the dish were rejected to clarify; then **«поки не будемо міняти ціну»** — recorded in `TODO.md` → Open.
+- **"Increase clay and iron a bit"** → **×1.5** over ×2 (at ×2 deep iron would equal potatoes).
+
+**Built (content only).** `zones.json`: five records `zone.forest_01_10` … `zone.forest_41_49` (the last
+`beyondHorizon`), all eight materials in each, weights on a ×4 scale so clay is half of iron in integers. No
+code changed, no schema moved. Checked through the game's own roll: the digest's 12,000 forage draws over
+km 1–60 give iron 1,233 and clay 597 against ~1,250 and ~625 expected. `ZoneTests`: one new test on the
+shipped bundle (all eight everywhere, clay half of iron and alone the rarest, both rising), failing on
+clay as common as iron and on berries taken out of 41–49. `ForestHorizonTests` names the new band past
+km 49. Docs: `spec-bestiary.md` §7 amended and §13 written (no weights typed — the file holds them),
+`lore.md`'s zones paragraph, the `spec opening` block in `spec-economy.md` regenerated with a dated note.
+
+**Audit.** `validate --strict` 0/0; 453 tests; `simulate --strict` 0 broken bands, the same 18 warnings
+(the opening's now reads 286 short at km 1, +21 at km 17 — was 305 / +18); every `spec` command run against
+the old and the new `zones.json`: only `spec opening` moved. Digest: `spawns 004c138c83fa9d1a` (was
+`d03fcf97e2a12108`) and content hash `8c6e2610` (was `b268262a`); `records`, `tuning`, `quests`, `king`
+unchanged. **A false clean caught on the way**: the first old-vs-new spec comparison ran in zsh, where
+`$cmd` is not word-split, so every call printed the usage text and all nine came back "same"; rerun under
+`bash -c`, one moved.
 
 ## Session — 2026-10-22, evening (armour a death would take, named at the forest edge; an old edge opens nothing)
 

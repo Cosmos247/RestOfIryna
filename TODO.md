@@ -2152,9 +2152,18 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The eight 2026-10-20/22 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The nine 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-23 — every material is foraged at every km (NOT deployed: content only; it ships with
+the restart, or a `/reload` after it):** any account.
+- `/content` (developer): the content hash reads `8c6e2610` (with the other 10-20/22 changes loaded).
+- Walk km 1–10 for a while: berries, nuts, lumber and pebbles still come most often, and now and then
+  a potato, a duck egg, iron (about one new km in 67) and, rarely, clay (about one in 134) — each with
+  its own «✨ …» find line, all eight already in the locales.
+- Past km 40: potatoes and eggs lead, iron and clay come more often than in the shallows, and berries,
+  nuts, lumber and pebbles still turn up. A passive run's «Принесено:» shows the same mix.
 
 **Added 2026-10-22 — the forest edge names armour a death would take; an old edge opens nothing (NOT
 deployed: a restart — Lingo is not reloaded):** an account at the estate wearing the hood, with boots
@@ -3053,6 +3062,14 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-10-23 session** — the forage without zones built; postponed by the owner («поки не будемо
+міняти ціну»):
+- **The clay price at the trader** (4 / 2). With clay the rarest find, the trader still sells it at the
+  pebbles' tier. 24 / 12 was worked through: T4's 10 clay 40 → 240 silver, the 546 clay players held on
+  10-22 sell for up to 6,552. A dish restores its inputs' price, so «Мʼясо в глині» (3 🥩 + 2 🥔 + 1 🧱 +
+  1 🪵, 50 Vigor) would rise to 70 — 2 short of the Feast — unless its recipe changes (3 🥩 + 🧱 + 🪵 = 58;
+  1 🥩 + 2 🥔 + 🧱 + 🪵 = 50). Two quizzes on the dish were rejected to clarify; nothing was decided.
 
 **From the 2026-10-21 session** — the vanishing keyboard: the deleted banners and the estate's and the
 bag's fallback fixed (A and B of the owner's quiz); raised in the same report, NOT picked — build none

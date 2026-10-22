@@ -9,7 +9,8 @@
 //  lived past the deepest band, and the validator's gap walk stopped at the
 //  level cap, so nothing said so. Since 2026-10-20 what is marked
 //  `beyondHorizon` answers there — the rabid bear, the rabid pack and the deep
-//  wood — and the pack's own band stays 36–40, so km 41–49 is still the bear's.
+//  wood (the 41–49 forage band since 2026-10-23) — and the pack's own band stays
+//  36–40, so km 41–49 is still the bear's.
 //
 //  The rule is `ForestHorizon.covers`, the one the game's two catalogs ask.
 //  Each validator rule is tested on the case that must FAIL it, not only on
@@ -63,7 +64,8 @@ final class ForestHorizonTests: XCTestCase {
 
     /// The owner's picture, read off `content/data` through the same rule the
     /// game asks: the bear alone at km 44, the bear and the pack at km 50 and
-    /// at km 70, where the archer walked, and the deep wood foraged past 49.
+    /// at km 70, where the archer walked, and past 49 the deepest forage band
+    /// (41–49 since 2026-10-23, when the three zones' pools went).
     func testTheShippedForestPastTheHorizon() throws {
         let s = try ContentLoader.load(from: Self.contentRoot)
         let spawning = s.enemies.compactMap { e in e.depth?.closedRange.flatMap { $0 == 0...0 ? nil : (e, $0) } }
@@ -86,9 +88,9 @@ final class ForestHorizonTests: XCTestCase {
                                      km: km, horizon: horizon)
             }?.id
         }
-        XCTAssertEqual(zone(at: 49), "zone.deepwood")
-        XCTAssertEqual(zone(at: 50), "zone.deepwood")
-        XCTAssertEqual(zone(at: 70), "zone.deepwood")
+        XCTAssertEqual(zone(at: 49), "zone.forest_41_49")
+        XCTAssertEqual(zone(at: 50), "zone.forest_41_49")
+        XCTAssertEqual(zone(at: 70), "zone.forest_41_49")
     }
 
     // MARK: - The validator

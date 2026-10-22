@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 452 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 453 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -687,7 +687,7 @@ the binary):
 
 **Built 2026-10-20/22, waiting for a restart** (content schema v25, shipped with the binary):
 - the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
-  deep wood is foraged there; until then 93% of steps past the horizon read «Лише тиша»;
+  deepest forage band answers there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
 - the keyboard stays: a status line that brought the buttons back is no longer deleted with them,
   and a word typed at the estate or in the bag gives the menu buttons back;
@@ -701,7 +701,10 @@ the binary):
 - the forest edge names the armour a death would take — «⚠️ У сумці броня, яку ви не одягли:», each
   piece, «Смерть у лісі забирає все із сумки, а одягнене лишається з вами.» — with «🛡 Одягнути» first,
   which puts it on in the empty slots; the duration picker carries it too. An edge left in the chat
-  across a restart no longer starts an expedition from the capital or the road.
+  across a restart no longer starts an expedition from the capital or the road;
+- every material is foraged at every km: the three zones no longer lock clay, potato, eggs and iron out of
+  the shallows or berries, nuts, lumber and pebbles out of the deep — the chances shift with depth instead,
+  and clay is the rarest find everywhere.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

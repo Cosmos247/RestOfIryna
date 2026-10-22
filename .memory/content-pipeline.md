@@ -207,7 +207,8 @@ The verification has four parts:
   rolls: the gap walk stops at the level cap and the digest replayed km 1–40, so nothing
   saw it until a player walked to km 70 (`spec-bestiary.md` §12). Now `enemies.json` and
   `zones.json` carry an optional `beyondHorizon`: the marked rows (the rabid bear, the
-  rabid pack, the deep wood) answer every km past the horizon as well as their own band,
+  rabid pack, and the deepest forage band — the deep wood until 2026-10-23, the 41–49 band
+  since) answer every km past the horizon as well as their own band,
   through `ForestHorizon.covers` (ROIContent), which `EnemyCatalog.pickFor` and
   `ZoneCatalog.zone(forDepth:)` both ask. The horizon is derived, never typed. Guards:
   `enemy.horizon_empty` / `zone.horizon_empty` / `zone.horizon_ambiguous` (warnings),

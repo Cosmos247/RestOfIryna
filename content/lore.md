@@ -236,9 +236,11 @@ treeline; 49 km = the horizon of the world, where the rabid bear walks
 alone). Foraging,
 encounters, and ambient resources scale by depth.
 
-**Three wilderness zones for art reference.** The bands are the ones
-`zones.json` and the bestiary both use — one ladder, three names, aligned in
-Phase 9. Depths were 1–10 / 10–20 / 20–35 before the level cap moved to 40.
+**Three wilderness zones for art reference.** The bands are the ones the
+bestiary uses — one ladder, three names, aligned in Phase 9. Depths were
+1–10 / 10–20 / 20–35 before the level cap moved to 40. Since 2026-10-23 they no
+longer decide what is foraged: every material is found at every km, more of the
+common ones near the manor and more of the rare ones deep (`spec-bestiary.md` §13).
 
 ### Thicket — Гущавина (1–10 km)
 Mixed pine-and-oak forest, dappled sunlight reaching the floor, soft

@@ -396,6 +396,10 @@ reachable before it is needed — but **the mine stops being optional in the fir
 week**, which is a real change to how the opening plays and belongs in
 `spec-economy.md`'s ledger rather than in a footnote here.
 
+**Amended 2026-10-23 — what is found no longer follows the zones** (§13). Every material is
+foraged at every km, with weights that shift as the forest deepens. The three zones stay
+the names of the forest's depths, for the art and the creatures, not for the finds.
+
 ## 8. Decisions (approved 2026-08-31)
 
 **The roster is the seven existing creatures, re-spread.** Nine new animals were
@@ -1143,3 +1147,47 @@ were walked under the rules of the day (the owner's call, 2026-10-20).
   Over km 1–60 no draw comes back empty; with the mark ignored in the game (a planted
   mutant) the replay shows 2,200 empty encounters and 2,200 empty finds — km 50–60, the
   silence of 12.1 — and a different `spawns`.
+
+## 13. Foraging without zones (2026-10-23)
+
+### 13.1 What was found
+
+The zones of §7 locked materials to depths. Km 1–10 foraged berries, nuts, lumber and
+pebbles only; potato, duck egg, clay and iron began at km 11; the deep wood had no
+berries, nuts, lumber or pebbles at all. Since the door opened (2026-10-07) 72% of the
+forest's fights were fought at km 1–10, and 22 of 39 players had never banked a depth
+past km 10 (`fight_log` and `users.deepest_km`, read 2026-10-22), so most players had
+never foraged clay, potato, an egg or iron.
+
+### 13.2 Decided 2026-10-22/23 (the owner)
+
+1. **Every material at every km.** No forage material is locked out of a depth.
+2. **The weights shift with depth**, in five 10-km bands, the last (41–49) answering past
+   the horizon (§12): the shallows mostly feed and build — berries, nuts, lumber,
+   pebbles — and the deep mostly gives potato, duck egg, iron and clay. Of three shapes
+   shown (one table for the whole forest; only iron rising with depth; everything shifting)
+   the owner picked the last, so the deep stays the hungriest part of the forest.
+3. **Clay is the rarest material at every depth — exactly half of iron.** Of three
+   (half of iron; one point under iron; flat everywhere) the owner picked half.
+4. **Iron and clay at 1.5 times the first proposal** ("збільши трохи"), over doubling them.
+5. **Meat and hide stay kill-only.** The beasts' tables (§10) were never zones.
+6. **The clay price stays 4 / 2 for now.** A raise to 24 / 12 was weighed and postponed: a
+   dish restores the buy-price of its inputs, so «Мʼясо в глині» would have moved with it.
+
+### 13.3 The data and what checks it
+
+`zones.json` keeps its shape: five records (`zone.forest_01_10` … `zone.forest_41_49`), each
+with all eight materials; the weights are the file's, not this document's. No code
+changed and the schema did not move. `ZoneTests.testTheShippedForestForagesEveryMaterialAtEveryDepth`
+pins the decision on the shipped bundle — all eight in every band, clay half of iron and
+alone the rarest, both rising band on band — and fails on clay as common as iron and on
+berries taken out of 41–49. The coverage rules of §12.3 are unchanged.
+
+### 13.4 What moved
+
+- `spec opening` (the block in `spec-economy.md`, regenerated with its dated note): the
+  trail feeds a little more at every depth; the shallow opening is still bankrupt.
+- The digest: `spawns` (the forage replay) and the content hash; `records`, `tuning`,
+  `quests` and `king` are unchanged.
+- Nothing is migrated. What is in bags and warehouses stays; the first step after the
+  bundle is loaded forages by the new table.

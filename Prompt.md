@@ -27,13 +27,21 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (`4ebc80b`'s hash fill). Under it, all unpushed: **`4ebc80b`** (the forest edge names armour a death would take; an old edge no longer opens the forest, 10-22), **`c4346ae`** (`c011f9f`'s hash fill), **`c011f9f`** (a find that half fits, the road's way-back hint, «Руки майстра»'s line, 10-22), **`43cc51e`** (`40b52df`'s hash fill), **`40b52df`** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22), **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (every material is foraged at every km, 10-23). Under it, all unpushed: **`78721b9`** (`4ebc80b`'s hash fill), **`4ebc80b`** (the forest edge names armour a death would take; an old edge no longer opens the forest, 10-22), **`c4346ae`** (`c011f9f`'s hash fill), **`c011f9f`** (a find that half fits, the road's way-back hint, «Руки майстра»'s line, 10-22), **`43cc51e`** (`40b52df`'s hash fill), **`40b52df`** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22), **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17), the commit the Pi runs. Everything above it is unpushed — push is the owner's |
 | running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:13** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night), none during play. Content schema **v24**, content hash **`19c94a81`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 5,441 forest fights since the door opened, 22 deaths. Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Eight changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift), the warehouse's ℹ️ with two «двір» → «майданчик» lines (`40b52df`, Swift + uk locale) a find that half fits, the road's way-back hint (both 10-22, Swift + locales) and «Руки майстра»'s line (10-22, locales) — the three in one commit, `c011f9f` — and the forest edge's armour warning with the old-edge guard (`4ebc80b`, 10-22, Swift + locales). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `b268262a`, `records 9f52425d4d3064e0`, `spawns d03fcf97e2a12108` (60 depths now); `tuning`, `quests`, `king` as on the Pi — the Swift changes move none of it. No migration |
+| waiting for a restart | **Nine changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift), the warehouse's ℹ️ with two «двір» → «майданчик» lines (`40b52df`, Swift + uk locale) a find that half fits, the road's way-back hint (both 10-22, Swift + locales) and «Руки майстра»'s line (10-22, locales) — the three in one commit, `c011f9f` — the forest edge's armour warning with the old-edge guard (`4ebc80b`, 10-22, Swift + locales) — and the forage without zones (this commit, 10-23, content only). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `8c6e2610`, `records 9f52425d4d3064e0`, `spawns 004c138c83fa9d1a` (60 depths and the new forage); `tuning`, `quests`, `king` as on the Pi — the Swift changes move none of it. No migration |
 
-### Where the last sessions stopped (2026-10-13 → 10-22)
+### Where the last sessions stopped (2026-10-13 → 10-23)
+
+**10-22/23 — every material is foraged at every km.** The owner wanted the zones' split gone. Shown how
+drops work (the event roll, the three zones' pools, the beasts' own tables, live play: 72% of fights at km
+1–10), then four rounds of numbers: of three shapes the owner picked weights that shift with depth (B), clay
+the rarest — half of iron — and iron and clay ×1.5. Meat and hide stay kill-only. A clay price of 24/12 was
+weighed (it moves «Мʼясо в глині») and postponed. Built as data: five 10-km bands in `zones.json`, all eight
+materials in each; `spec-bestiary.md` §13, the `spec opening` block refreshed; 453 tests; `spawns` and the
+content hash moved. `.memory/sessions.md` → the 10-23 entry; auto-memory `project-forage-without-zones`.
 
 **10-22, evening — armour a death would take, named at the forest edge.** The owner: new players lose
 armour because they forget a death empties the bag. `wipeOnDeath` takes all but the worn and the class
@@ -128,10 +136,11 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**Waiting on the owner: the push and ONE restart for the eight changes** (the table above; the
+**Waiting on the owner: the push and ONE restart for the nine changes** (the table above; the
 recipe below). Before the restart, open «🗺 Дослідити» on a test account and leave the edge in the chat:
-after it, that old edge is the walk of the stale-edge guard. Then walk the eight 2026-10-20/22 blocks on
-top of `TODO.md` → "Walk list" — the forest edge's armour block («🛡 Одягнути», a spare, the duration
+after it, that old edge is the walk of the stale-edge guard. Then walk the nine 2026-10-20/23 blocks on
+top of `TODO.md` → "Walk list" — the forage at every km (`/content` reads hash `8c6e2610`; clay and eggs in the
+shallows), the forest edge's armour block («🛡 Одягнути», a spare, the duration
 picker, the old edge from the capital), «Руки майстра»'s line, the road's hint (the other place's button), a find of two with one slot free (forage, a ×2 kill drop, a passive report), the warehouse's ℹ️ on a bow (two tiers, both stores), the keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
 the bag), the hub's line, the forest past km 49 — and offer the owner a testers' note.
 
@@ -202,9 +211,9 @@ traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-d
 78ce585986927122` · `tuning 799a96eb5f8619df` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `19c94a81`. **This is the one place the
 current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
-superseded". **The tree differs since 2026-10-20** (the forest past km 49, waiting for a restart):
-`records 9f52425d4d3064e0` · `spawns d03fcf97e2a12108` (60 depths, was 40) · content hash `b268262a`;
-`tuning`, `quests` and `king` as above.
+superseded". **The tree differs since 2026-10-20** (the forest past km 49 and, since 10-23, the forage without
+zones, both waiting for a restart): `records 9f52425d4d3064e0` · `spawns 004c138c83fa9d1a` (60 depths, was 40,
+and the new forage) · content hash `8c6e2610`; `tuning`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
@@ -220,7 +229,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 452 tests, ~5s
+swift test                                   # 453 tests, ~5s
 ```
 
 

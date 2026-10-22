@@ -127,4 +127,40 @@ final class ZoneTests: XCTestCase {
                    enemies: [enemy]))
         XCTAssertFalse(report.warnings.contains { $0.rule == "zone.depth_gap" })
     }
+
+    // MARK: - The shipped forest
+
+    /// The repository's own content directory, found from this file.
+    private static let contentRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("content/data")
+
+    /// No material is locked to a depth since 2026-10-23 (the owner's call):
+    /// five 10-km bands, each holding all eight, the weights shifting as the
+    /// forest deepens. Clay is the rarest at every depth, exactly half of iron,
+    /// and both grow band on band.
+    func testTheShippedForestForagesEveryMaterialAtEveryDepth() throws {
+        let zones = try XCTUnwrap(ContentLoader.load(from: Self.contentRoot).zones?.zones)
+        XCTAssertEqual(zones.map(\.depth.min), [1, 11, 21, 31, 41])
+        XCTAssertEqual(zones.map(\.depth.max), [10, 20, 30, 40, 49])
+        let deepest = try XCTUnwrap(zones.last)
+        XCTAssertEqual(zones.filter(\.beyondHorizon).map(\.id), [deepest.id])
+
+        let materials = Set(zones[0].forage.map(\.itemId))
+        XCTAssertEqual(materials.count, 8)
+        var shallowerIron = 0, shallowerClay = 0
+        for zone in zones {
+            XCTAssertEqual(Set(zone.forage.map(\.itemId)), materials, zone.id)
+            let weight = Dictionary(uniqueKeysWithValues: zone.forage.map { ($0.itemId, $0.weight) })
+            let iron = try XCTUnwrap(weight["mat.iron"]), clay = try XCTUnwrap(weight["mat.clay"])
+            XCTAssertEqual(clay * 2, iron, "\(zone.id): clay is half of iron")
+            XCTAssertEqual(weight.values.filter { $0 <= clay }.count, 1, "\(zone.id): clay alone is the rarest")
+            XCTAssertGreaterThan(iron, shallowerIron, zone.id)
+            XCTAssertGreaterThan(clay, shallowerClay, zone.id)
+            shallowerIron = iron
+            shallowerClay = clay
+        }
+    }
 }
