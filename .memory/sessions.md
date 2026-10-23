@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **clay costs 24 / 12; «Мʼясо в глині» re-cut** — content only, NOT deployed (it
+- *(this commit, 10-23)* **`34fe88c`'s hash fill** — records only.
+- `34fe88c` (10-23) **clay costs 24 / 12; «Мʼясо в глині» re-cut** — content only, NOT deployed (it
   ships with the restart): `trader.json` clay 4 / 2 → 24 / 12; the dish 3 🥩 + 2 🥔 + 🧱 + 🪵 (50 Vigor, 13 HP,
   125 at the tavern) → 2 🥩 + 1 🥔 + 🧱 + 🪵 (54, 14, 135), so it still restores its ingredients' price.
   `spec-bestiary.md` §13.5, `spec-items.md` §9.3 amended, two `spec-economy.md` blocks refreshed; `records`
@@ -822,7 +823,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-23, night (clay costs 24 / 12; «Мʼясо в глині» re-cut) — *(this commit)*
+## Session — 2026-10-23, night (clay costs 24 / 12; «Мʼясо в глині» re-cut) — `34fe88c`
 
 **The ask** (the owner): recompute the clay price at 24 / 12 — postponed the night before, now that the
 forage makes clay the rarest find.
