@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **the manor door names what an active walk brought** — Swift + a migration, NOT
+- *(this commit, 10-23)* **`ea52cf6`'s hash fill** — records only.
+- `ea52cf6` (10-23) **the manor door names what an active walk brought** — Swift + a migration, NOT
   deployed (a restart): the arrival line gains «Принесено:» — what the walk put in the bag less what was eaten
   of it, then «🪙 Знайдено N срібників»; «з порожніми руками» when nothing; what the bag refused is not
   listed. `ExpeditionHaul` (ROIContent) on `exploration_state.haul` (`AddExplorationHaul`), fed at the steps,
@@ -812,7 +813,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-23 (the manor door names what an active walk brought)
+## Session — 2026-10-23 (the manor door names what an active walk brought) — `ea52cf6`
 
 **The ask** (the owner): when does a player get the expedition report on coming home? Answered from code:
 a passive run pushes it at the door stride (or at once on a death), the controller re-delivers on
