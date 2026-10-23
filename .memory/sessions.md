@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **`ea52cf6`'s hash fill** — records only.
+- *(this commit, 10-23)* **the archer's Defend is «💨 Ухилитися»** — locales + Swift, NOT deployed (a
+  restart): «💨 Швидкий маневр» renamed (en «💨 Dodge»), and its own line «💨 Ви пірнаєте вбік і черкаєте
+  ножем — …» (`combat.defend.dodge`) where it borrowed the warrior's «Ви тримаєте удар…». The owner's picks.
+- `2367563` (10-23) **`ea52cf6`'s hash fill** — records only.
 - `ea52cf6` (10-23) **the manor door names what an active walk brought** — Swift + a migration, NOT
   deployed (a restart): the arrival line gains «Принесено:» — what the walk put in the bag less what was eaten
   of it, then «🪙 Знайдено N срібників»; «з порожніми руками» when nothing; what the bag refused is not
@@ -812,6 +815,38 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-23, last (the forest's buttons listed; the archer's Defend renamed «💨 Ухилитися»)
+
+**The ask** (the owner): every attack and defence button and what it does — "I will most likely rename
+some". Listed from the locales and `tuning/combat.json` / `vigor.json` / `arena.json`: the forest keyboard
+(Attack 2 🍖, Defend 1, Flee 3 — 40/70/90%, the mage +2, the fifth try free), the «🪄 Прийоми» submenu (special
+attack from L10, special defence L11, super L14, second charges at 17/20/21, each with its Vigor and effect),
+the arena's four (the cycle, 65% block, 60% riposte, 30% chip, the technique free). Flagged for renames: the
+names recur in other lines (Розкол ×4, Полум'я душі, the barrier, the three supers' activations, «🪄 Прийоми»
+twice; «⚔️ Атака» and «🚪 Вийти» collide with other buttons); the technique names render on the Training
+Ground, the journal note, the Chancellery card and the arena through `techniqueNameKey`; 🌑 twice on the
+archer; Lingo needs a restart.
+
+**Decided** (the owner, of four names with the keyboard drawn): «💨 Швидкий маневр» → **«💨 Ухилитися»** (en
+«💨 Dodge», was «Quick maneuver»), and — raised in the same quiz — **its own line**: «💨 Ви пірнаєте вбік і
+черкаєте ножем — <enemy> втрачає N ОЗ.» (`combat.defend.dodge`; en «You duck aside and nick … with your knife
+for N HP.»), where the archer printed the warrior's «🛡 Ви тримаєте удар і зачіпаєте у відповідь». The
+mechanic is unchanged.
+
+**Built.** Two locale lines and a new key in both files; `CombatController.onDefend` splits the archer off
+the warrior's case; the Shadow Veil comment names the button. A fight open across the restart shows the
+old label; its tap reaches `unmatched`, whose in-combat notice re-sends the keyboard, so one tap repairs it.
+Not touched: the FAQ's older history rows, `status.md`'s 05-17 paragraph. 458 tests, `validate --strict`
+0/0, no digest line moves (locales and Swift only).
+
+**Then asked** (the owner): the forest pie to restore 12 HP, not 8. Shown the rule it breaks (a taught
+dish heals ¼ of its inputs' price; the pie's 32 → 8) and two shapes — the pie alone (out-heals the T4 roast
+and the T5 stew) or every taught dish at ⅜ (6/12/14/16/19/27). The owner rejected the quiz to clarify;
+nothing built (`TODO.md` → Open). **Audit pass** before the commit: rebuilt, 458 tests, digest unmoved, both
+lines rendered, the new label unique in each locale, the old one gone from both; the button list's claims
+re-read in code (Attack 2 / Defend 1 / Flee 3 Vigor; no counter after a special defence; the super swings;
+Cleave's DEF 0 for its blow and two more actions).
 
 ## Session — 2026-10-23 (the manor door names what an active walk brought) — `ea52cf6`
 

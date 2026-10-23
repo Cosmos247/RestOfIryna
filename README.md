@@ -708,7 +708,9 @@ migration, `AddExplorationHaul`):
   the shallows or berries, nuts, lumber and pebbles out of the deep — the chances shift with depth instead,
   and clay is the rarest find everywhere;
 - coming home from a reconnaissance walk names what it brought — «Принесено:», the finds less what was
-  eaten on the road, then «🪙 Знайдено N срібників» — where the manor door said only «Ви повертаєтеся додому».
+  eaten on the road, then «🪙 Знайдено N срібників» — where the manor door said only «Ви повертаєтеся додому»;
+- the archer's Defend is «💨 Ухилитися» (was «Швидкий маневр»), with a line of its own — «Ви пірнаєте вбік і
+  черкаєте ножем — …» — where it borrowed the warrior's «Ви тримаєте удар».
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

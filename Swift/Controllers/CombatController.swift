@@ -481,10 +481,15 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             "enemy": "\(enemy.icon) " + context.lingo.localize(enemy.nameKey, locale: context.session.locale),
             "damage": "\(chip)"
         ]
+        // The archer's has been its own since 2026-10-23, when the button became
+        // «💨 Ухилитися»: a dodge is not «Ви тримаєте удар».
         let playerLine: String
         switch cls {
-        case .warrior, .archer:
+        case .warrior:
             playerLine = "🛡 " + context.lingo.localize("combat.defend.absorbed", locale: context.session.locale,
+                                                       interpolations: lineInterpolations)
+        case .archer:
+            playerLine = "💨 " + context.lingo.localize("combat.defend.dodge", locale: context.session.locale,
                                                        interpolations: lineInterpolations)
         case .mage:
             playerLine = "🌀 " + context.lingo.localize("combat.defend.barrier", locale: context.session.locale,
@@ -820,8 +825,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case .archer:
             // Shadow Veil: full dodge this round (no enemy counter), a knife on
             // the way out, then a lingering dodge buff for the next round. The
-            // knife is Quick Manoeuvre's own chip — the same knob, so the two
-            // cannot drift apart.
+            // knife is the plain Defend's own chip («💨 Ухилитися») — the same
+            // knob, so the two cannot drift apart.
             let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
             let veilEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
             struck = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: veilEnemyDEF,

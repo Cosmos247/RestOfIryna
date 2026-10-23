@@ -2152,9 +2152,18 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The ten 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
+**The eleven 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-23 — the archer's Defend is «💨 Ухилитися» (NOT deployed: locales + Swift — a restart;
+Lingo is not reloaded):** an archer account.
+- In a forest fight the top row reads «🏹 Випустити стрілу» · «💨 Ухилитися». Tap it: «💨 Ви пірнаєте вбік і
+  черкаєте ножем — 🐗 … втрачає N ОЗ.», then the beast's line. A warrior's «🛡 Парирувати» still prints «🛡 Ви
+  тримаєте удар і зачіпаєте у відповідь — …»; a mage's barrier its spark.
+- The training dummy: the same line. English: «💨 Dodge», «You duck aside and nick … with your knife for N HP.»
+- A fight left open across the restart: its keyboard still says «💨 Швидкий маневр»; tapping it answers
+  «⚔️ …» with the new keyboard, and the next tap works.
 
 **Added 2026-10-23 — the manor door names what an active walk brought (NOT deployed: Swift + a
 migration, `AddExplorationHaul` — a restart):** any account at the estate, the bag with a few free slots.
@@ -3078,6 +3087,14 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-23, last session** — the archer's Defend renamed «💨 Ухилитися» (built); then asked,
+NOT decided:
+- **The forest pie at 12 HP instead of 8.** Every taught dish restores ¼ of its inputs' price in HP (the
+  pie: 32 silver → 32 Vigor, 8 HP), and no validator checks it. Two shapes shown: the pie alone at 12 (it
+  would out-heal the dearer T4 roast, 10, and T5 stew, 11), or every taught dish at ⅜ of the price (pancakes
+  6, pie 12, roast 14, stew 16, clay-baked meat 19, feast 27). Vigor and the tavern's price move in neither.
+  The owner rejected the quiz to clarify; nothing was built.
+
 **From the 2026-10-23 session** — the forage without zones built; postponed by the owner («поки не будемо
 міняти ціну»):
 - **The clay price at the trader** (4 / 2). With clay the rarest find, the trader still sells it at the
@@ -3152,8 +3169,9 @@ and not changed:
   longer fights). The owner rejected the quiz to clarify and began with the barrier («По перше…» — more points may follow) —
   open, not decided.
 - **Defend's lines say nothing about what it did** — after a Parry the beast's line is the same «б'є у
-  відповідь. Ви втрачаєте N ОЗ»; the archer's Defend borrows the warrior's «Ви тримаєте удар і
-  зачіпаєте у відповідь»; no screen says what each Defend does. Raised, not asked.
+  відповідь. Ви втрачаєте N ОЗ»; no screen says what each Defend does. Raised, not asked. *(The archer's
+  half is done 2026-10-23: the button became «💨 Ухилитися» and its line «💨 Ви пірнаєте вбік і черкаєте
+  ножем — …», no longer the warrior's «Ви тримаєте удар…»; waits for a restart.)*
 - **A validator ceiling on the barrier's spark** — the measured line (~20%, `mageChipMultiplier` 0.67)
   is a doc comment and a `CLAUDE.md` sentence, not a rule. Could become a warning like
   `arena.duel_defend_loses`; offered, not built.

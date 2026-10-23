@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-23 — the archer's Defend is «💨 Ухилитися»** (locales + Swift, NOT deployed — a restart). Was
+«💨 Швидкий маневр» (en «💨 Dodge», was «Quick maneuver»); its line is its own, «💨 Ви пірнаєте вбік і
+черкаєте ножем — …» (`combat.defend.dodge`), where it borrowed the warrior's «Ви тримаєте удар…». The
+mechanic is unchanged.
+
 **2026-10-23 — the manor door names what an active walk brought** (Swift + a migration, NOT deployed — a
 restart). The arrival line «🏰 Ви повертаєтеся додому…» gains «Принесено:»: what the walk put in the bag less
 what was eaten of it, in the passive report's rows, then «🪙 Знайдено N срібників»; «з порожніми руками» when
