@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **the archer's Defend is «💨 Ухилитися»** — locales + Swift, NOT deployed (a
+- *(this commit, 10-23)* **`e9bdb78`'s hash fill** — records only.
+- `e9bdb78` (10-23) **the archer's Defend is «💨 Ухилитися»** — locales + Swift, NOT deployed (a
   restart): «💨 Швидкий маневр» renamed (en «💨 Dodge»), and its own line «💨 Ви пірнаєте вбік і черкаєте
   ножем — …» (`combat.defend.dodge`) where it borrowed the warrior's «Ви тримаєте удар…». The owner's picks.
 - `2367563` (10-23) **`ea52cf6`'s hash fill** — records only.
@@ -816,7 +817,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-23, last (the forest's buttons listed; the archer's Defend renamed «💨 Ухилитися»)
+## Session — 2026-10-23, last (the forest's buttons listed; the archer's Defend renamed «💨 Ухилитися») — `e9bdb78`
 
 **The ask** (the owner): every attack and defence button and what it does — "I will most likely rename
 some". Listed from the locales and `tuning/combat.json` / `vigor.json` / `arena.json`: the forest keyboard
