@@ -27,13 +27,20 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (`354c106`'s hash fill). Under it, all unpushed: **`354c106`** (the 10-23 sync pass, records only), **`1865cd4`** (`8308be6`'s hash fill), **`8308be6`** (every material is foraged at every km, 10-23), **`78721b9`** (`4ebc80b`'s hash fill), **`4ebc80b`** (the forest edge names armour a death would take; an old edge no longer opens the forest, 10-22), **`c4346ae`** (`c011f9f`'s hash fill), **`c011f9f`** (a find that half fits, the road's way-back hint, «Руки майстра»'s line, 10-22), **`43cc51e`** (`40b52df`'s hash fill), **`40b52df`** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22), **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the manor door's «Принесено», 10-23). Under it, all unpushed: **`48d796e`** (`354c106`'s hash fill), **`354c106`** (the 10-23 sync pass, records only), **`1865cd4`** (`8308be6`'s hash fill), **`8308be6`** (every material is foraged at every km, 10-23), **`78721b9`** (`4ebc80b`'s hash fill), **`4ebc80b`** (the forest edge names armour a death would take; an old edge no longer opens the forest, 10-22), **`c4346ae`** (`c011f9f`'s hash fill), **`c011f9f`** (a find that half fits, the road's way-back hint, «Руки майстра»'s line, 10-22), **`43cc51e`** (`40b52df`'s hash fill), **`40b52df`** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22), **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17), the commit the Pi runs. Everything above it is unpushed — push is the owner's |
 | running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:13** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night), none during play. Content schema **v24**, content hash **`19c94a81`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Nine changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift), the warehouse's ℹ️ with two «двір» → «майданчик» lines (`40b52df`, Swift + uk locale) a find that half fits, the road's way-back hint (both 10-22, Swift + locales) and «Руки майстра»'s line (10-22, locales) — the three in one commit, `c011f9f` — the forest edge's armour warning with the old-edge guard (`4ebc80b`, 10-22, Swift + locales) — and the forage without zones (`8308be6`, 10-23, content only). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `8c6e2610`, `records 9f52425d4d3064e0`, `spawns 004c138c83fa9d1a` (60 depths and the new forage); `tuning`, `quests`, `king` as on the Pi — the Swift changes move none of it. No migration |
+| waiting for a restart | **Ten changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift), the warehouse's ℹ️ with two «двір» → «майданчик» lines (`40b52df`, Swift + uk locale) a find that half fits, the road's way-back hint (both 10-22, Swift + locales) and «Руки майстра»'s line (10-22, locales) — the three in one commit, `c011f9f` — the forest edge's armour warning with the old-edge guard (`4ebc80b`, 10-22, Swift + locales) — the forage without zones (`8308be6`, 10-23, content only) — and the manor door's «Принесено» (this commit, 10-23, Swift + **a migration**). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `8c6e2610`, `records 9f52425d4d3064e0`, `spawns 004c138c83fa9d1a` (60 depths and the new forage); `tuning`, `quests`, `king` as on the Pi — the Swift changes move none of it. **One migration**, `AddExplorationHaul` (a nullable `haul` column on `exploration_state`, no rows touched) — verify the table after the restart |
 
 ### Where the last sessions stopped (2026-10-13 → 10-23)
+
+**10-23, later — the manor door names what an active walk brought.** Asked when a player gets the report
+of what was brought and lost: the passive report has both, the active walk only its death screen's loss.
+From a played sample the owner picked «Принесено:» under «🏰 Ви повертаєтеся додому…» — finds less what was
+eaten, then «🪙 Знайдено N срібників», what the bag refused not listed; the passive report unchanged (asked
+twice). `ExpeditionHaul` on `exploration_state.haul` (`AddExplorationHaul`); 458 tests, digest unmoved.
+`.memory/sessions.md` → the 10-23 entry; auto-memory `project-active-walk-brought`.
 
 **10-22/23 — every material is foraged at every km.** The owner wanted the zones' split gone. Shown how
 drops work (the event roll, the three zones' pools, the beasts' own tables, live play: 72% of fights at km
@@ -136,10 +143,11 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**Waiting on the owner: the push and ONE restart for the nine changes** (the table above; the
+**Waiting on the owner: the push and ONE restart for the ten changes** (the table above; the
 recipe below). Before the restart, open «🗺 Дослідити» on a test account and leave the edge in the chat:
-after it, that old edge is the walk of the stale-edge guard. Then walk the nine 2026-10-20/23 blocks on
-top of `TODO.md` → "Walk list" — the forage at every km (`/content` reads hash `8c6e2610`; clay and eggs in the
+after it, that old edge is the walk of the stale-edge guard; on a second account leave an active walk open
+at km 2+ (it must come home without «Принесено:»). Then walk the ten 2026-10-20/23 blocks on
+top of `TODO.md` → "Walk list" — the door's «Принесено» (a find eaten, a refused find, km 1 and back), the forage at every km (`/content` reads hash `8c6e2610`; clay and eggs in the
 shallows), the forest edge's armour block («🛡 Одягнути», a spare, the duration
 picker, the old edge from the capital), «Руки майстра»'s line, the road's hint (the other place's button), a find of two with one slot free (forage, a ×2 kill drop, a passive report), the warehouse's ℹ️ on a bow (two tiers, both stores), the keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
 the bag), the hub's line, the forest past km 49 — and offer the owner a testers' note.
@@ -231,7 +239,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 453 tests, ~5s
+swift test                                   # 458 tests, ~5s
 ```
 
 

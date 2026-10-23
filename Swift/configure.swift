@@ -296,6 +296,9 @@ public func configure(logger: Logger) async throws {
     migrations.add(AddZlatnyks())
     // 2026-10-11: the Treasury's purchase log — a new table, no rows touched.
     migrations.add(CreateZlatnykPurchases())
+    // 2026-10-23: what an active walk brings home, named at the manor door — one
+    // nullable column on `exploration_state`, no rows touched.
+    migrations.add(AddExplorationHaul())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

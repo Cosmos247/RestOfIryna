@@ -26,7 +26,7 @@ public enum LiveReferenceQuery {
     /// the hot swap will happily break.
     ///
     /// Derived by walking every `@Field` in `Swift/Models`, not from the design
-    /// document — which listed six of these ten. Seven columns are deliberately
+    /// document — which listed six of these ten. Eight columns are deliberately
     /// NOT here, each for a stated reason:
     ///
     /// - `quest_progress.npc` — covered transitively. A row's `quest_id` comes
@@ -45,6 +45,12 @@ public enum LiveReferenceQuery {
     ///   bundle no longer backs is dropped on its next read
     ///   (`RecipeNoteService.live`), the way a finished one is, so it cannot
     ///   dangle on any screen — and a pinned recipe must not hold a reload back.
+    /// - `exploration_state.haul` — an active walk's finds, as JSON, read once
+    ///   at the manor door. What it took sits in the bag, whose
+    ///   `inventory.item_id` rows already refuse the bundle; an id eaten away
+    ///   nets out and is never printed; and the one way a find can leave the
+    ///   bag otherwise — a trade confirmed in town that completes while the
+    ///   player walks — prints its bare id (`broughtRow`) rather than fail.
     public static func collect(on db: any Database) async throws -> [LiveReferenceCheck.LiveIds] {
         func ids(_ table: String, _ column: String, _ kind: LiveReferenceCheck.Kind,
                  _ values: [String]) -> LiveReferenceCheck.LiveIds {

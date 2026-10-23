@@ -76,14 +76,14 @@ ROI is built on a router–controller state machine. Each controller represents 
 
 ```
 Modules/                          # Content pipeline (Foundation-only — no Fluent, no Telegram)
-├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`, `ForestHorizon`, `DeathWipe`)
+├── ROIContent/                   # DTOs · ContentLoader · ContentValidator · GameData snapshot · LocaleIndex · pure rules the tests reach (`QuestCarryOver`, `WeaponLadderRules`, `KingChainReseat`, `EnchantLadderRules`, `FortuneStage`, `PlayerNameRules`, `LeaderboardPaging`, `TelegramHTML`, `ForestHorizon`, `DeathWipe`, `ExpeditionHaul`)
 ├── ROISim/                       # The combat/progression/budget MATHS (CombatMath · ProgressionMath · BudgetMath)
 │                                 #   + DuelMath (the arena round) · PassiveRoute (the governor's walk) · EnemyGenerator · FightSimulator · the balance report · SplitMix64
 └── roi-content/                  # CLI — `swift run roi-content validate [--strict]`
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 453 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 458 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -122,7 +122,7 @@ RestOfIryna/
 │   │   ├── RegistrationController.swift
 │   │   ├── SettingsController.swift
 │   │   ├── GlobalCommandsController.swift
-│   │   ├── ExplorationController.swift   # Phase 3.1 active exploration (step/bag/return/death) — encounters now hand off to CombatController; at 0 Vigor the forest edge explains what hunger costs (`modePrompt`, 2026-10-08); the 🏕 picker prints each run's depth and the waiting screen where the governor is (📍, 2026-10-12)
+│   │   ├── ExplorationController.swift   # Phase 3.1 active exploration (step/bag/return/death; the return names «Принесено:» since 2026-10-23) — encounters now hand off to CombatController; at 0 Vigor the forest edge explains what hunger costs (`modePrompt`, 2026-10-08); the 🏕 picker prints each run's depth and the waiting screen where the governor is (📍, 2026-10-12)
 │   │   ├── CombatController.swift        # Phase 4.1 + 4.2 turn-based PvE duel — Attack/Defend/Flee + [🪄 Techniques] submenu (Special Atk / Special Def / Super) with per-fight budget; registration rabid-dog tutorial fight
 │   │   ├── EstateController.swift        # The estate: Root → House (Workshop · Kitchen · upgrades) / plots, warehouse, per-level artwork. **2026-09-17**: claiming a slot is a two-step now — `estate:plot:type:` draws the picked type's card and asks, `estate:plot:build:` is the only writer (nothing in the code can undo a claim), and every «what it costs / what you have» line on its screens renders through `RequirementLine`
 │   │   ├── CapitalController.swift       # Phase 6.0–6.5 — travel-gated hub, split across two streets since 2026-09-20 (👑 Замкова: Базар / Ристалище / Гільдії / Палац · 🏘 Поділ: Крамар / Майстер / Шинок / Ворожка · the square holds only the two roads); Trader (buy/sell + ✏️ N) + Tavern (food + dice/darts) + Fortune Teller + Master (armor buy/repair/enchant) + Market/Базар (player-to-player listings + 🤝 Trade); 1 stub left (Arena)
@@ -176,6 +176,7 @@ RestOfIryna/
 │   │   ├── CreateRecipeNotes.swift # 2026-10-10 — `recipe_notes` (user_id FK cascade, kind, ref, target; unique on all four); a new table, no row touched
 │   │   ├── AddFortuneStage.swift # 2026-10-10 — `users.fortune_stage` (default `free`): where a player stands between two free tarot cards; one column, no row rewritten
 │   │   ├── AddZlatnyks.swift # 2026-10-11 — `users.zlatnyks` (the premium currency, «златник»; NOT NULL, default 0, CHECK ≥ 0) and `users.zlatnyks_announced` (the watchman's marker); two columns, no row rewritten
+│   │   ├── AddExplorationHaul.swift # 2026-10-23 — nullable `haul` on `exploration_state`: what an active walk put in the bag (`ExpeditionHaul` JSON), named at the manor door; no row touched
 │   │   ├── CreateZlatnykPurchases.swift # 2026-10-11 — `zlatnyk_purchases`, the Treasury's purchase log (who, what, price, what it did, the balance after); a new table, listed in `WipeForRebalance.playerTables`
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
@@ -685,7 +686,8 @@ the binary):
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
 
-**Built 2026-10-20/23, waiting for a restart** (content schema v25, shipped with the binary):
+**Built 2026-10-20/23, waiting for a restart** (content schema v25, shipped with the binary; one database
+migration, `AddExplorationHaul`):
 - the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
   deepest forage band answers there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
@@ -704,7 +706,9 @@ the binary):
   across a restart no longer starts an expedition from the capital or the road;
 - every material is foraged at every km: the three zones no longer lock clay, potato, eggs and iron out of
   the shallows or berries, nuts, lumber and pebbles out of the deep — the chances shift with depth instead,
-  and clay is the rarest find everywhere.
+  and clay is the rarest find everywhere;
+- coming home from a reconnaissance walk names what it brought — «Принесено:», the finds less what was
+  eaten on the road, then «🪙 Знайдено N срібників» — where the manor door said only «Ви повертаєтеся додому».
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

@@ -1089,13 +1089,7 @@ public enum PassiveExpeditionService {
             lines.append(xpLine)
         }
         if report.silverFound > 0 {
-            // 🪙 prepended here AND passed as a value below, never written into
-            // the template: U+1FA99 is two UTF-16 units, and Lingo drops every
-            // `%{}` that follows one of those in the template itself.
-            let noun = lingo.localize("unit.silver", count: report.silverFound, locale: locale)
-            lines.append("🪙 " + lingo.localize("exploration.passive.report.silver",
-                                                locale: locale,
-                                                interpolations: ["coins": "\(report.silverFound) \(noun)"]))
+            lines.append(silverFoundLine(report.silverFound, lingo: lingo, locale: locale))
         }
         let totalEvents = report.outcomeCounts.values.reduce(0, +)
         if totalEvents > 0 {
@@ -1152,14 +1146,8 @@ public enum PassiveExpeditionService {
                 lines.append(lingo.localize("exploration.passive.report.no_loot", locale: locale))
             } else {
                 for entry in report.loot {
-                    // Icon is prepended in Swift code (not inside the Lingo
-                    // template) so surrogate-pair emoji on items like 🥔 🥩 🪨
-                    // don't break the `%{dropped}` interpolation on partial
-                    // pickups. See `.memory/localization.md`.
-                    let item = ItemCatalog.find(entry.itemId)
-                    let itemName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? entry.itemId
-                    let label = item?.icon.map { "\($0) \(itemName)" } ?? itemName
-                    var line = "• \(label) × \(entry.pickedQuantity)"
+                    var line = broughtRow(itemId: entry.itemId, quantity: entry.pickedQuantity,
+                                          lingo: lingo, locale: locale)
                     if entry.droppedQuantity > 0 {
                         line += lingo.localize("exploration.passive.report.loot_partial", locale: locale, interpolations: ["dropped": "\(entry.droppedQuantity)"])
                     }
@@ -1169,6 +1157,33 @@ public enum PassiveExpeditionService {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    /// One «Принесено» row — `• 🫐 Лісові ягоди × 1` — in both reports: the
+    /// passive one above and the active walk's arrival
+    /// (`ExplorationController.handleHomeReached`), so the two cannot phrase a
+    /// find two ways.
+    ///
+    /// The icon is prepended in Swift (not inside a Lingo template) so
+    /// surrogate-pair emoji on items like 🥔 🥩 🪨 don't break the `%{dropped}`
+    /// interpolation the passive report appends on partial pickups. See
+    /// `.memory/localization.md`.
+    static func broughtRow(itemId: String, quantity: Int, lingo: Lingo, locale: String) -> String {
+        let item = ItemCatalog.find(itemId)
+        let itemName = item.map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        let label = item?.icon.map { "\($0) \(itemName)" } ?? itemName
+        return "• \(label) × \(quantity)"
+    }
+
+    /// The silver found on the road, in both reports.
+    ///
+    /// 🪙 prepended here AND passed as a value, never written into the
+    /// template: U+1FA99 is two UTF-16 units, and Lingo drops every `%{}` that
+    /// follows one of those in the template itself.
+    static func silverFoundLine(_ amount: Int, lingo: Lingo, locale: String) -> String {
+        let noun = lingo.localize("unit.silver", count: amount, locale: locale)
+        return "🪙 " + lingo.localize("exploration.passive.report.silver", locale: locale,
+                                      interpolations: ["coins": "\(amount) \(noun)"])
     }
 
     // MARK: Time formatting

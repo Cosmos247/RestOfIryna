@@ -2152,9 +2152,23 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The nine 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25). **The four
+**The ten 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-23 — the manor door names what an active walk brought (NOT deployed: Swift + a
+migration, `AddExplorationHaul` — a restart):** any account at the estate, the bag with a few free slots.
+- BEFORE the deploy restart: «🗺 Дослідити» → «🏃 Розвідка», walk to km 2 or more and leave the walk open.
+  After the restart, walk it home: «🏰 Ви повертаєтеся додому…» alone, no «Принесено:» (its finds before the
+  restart were never counted).
+- After the restart, on Postgres: `exploration_state` has a `haul` column (verify the table, not the log).
+- A new walk: a few km out, a find or two, a won fight with a drop, eat one found berry from «🎒 Сумка»,
+  walk home. Under the arrival line: «Принесено:», one «• 🫐 Лісові ягоди × N» row per item, the berries one
+  fewer than found; «🪙 Знайдено N срібників» under them if a step found silver.
+- Fill the bag, then find something it refuses («Сумка повна — лишається на землі.»): the door does not list it.
+- Walk to km 1 and straight back with nothing: «Принесено:» and «з порожніми руками». Step back at km 0
+  (never left): the arrival line alone.
+- A passive run's report is unchanged — a refused find still reads «× 0 (N лишилось у лісі — сумка повна)».
 
 **Added 2026-10-23 — every material is foraged at every km (NOT deployed: content only; it ships with
 the restart, or a `/reload` after it):** any account.

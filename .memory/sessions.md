@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **`354c106`'s hash fill** — records only.
+- *(this commit, 10-23)* **the manor door names what an active walk brought** — Swift + a migration, NOT
+  deployed (a restart): the arrival line gains «Принесено:» — what the walk put in the bag less what was eaten
+  of it, then «🪙 Знайдено N срібників»; «з порожніми руками» when nothing; what the bag refused is not
+  listed. `ExpeditionHaul` (ROIContent) on `exploration_state.haul` (`AddExplorationHaul`), fed at the steps,
+  the victory's drops and the trail bag's meal; the rows are the passive report's (`broughtRow`,
+  `silverFoundLine` extracted). The passive report unchanged. All the owner's picks; 458 tests.
+- `48d796e` (10-23) **`354c106`'s hash fill** — records only.
 - `354c106` (10-23) **the sync pass** — records only: `.memory/rebalance.md` gains "Foraging without zones,
   measured and decided" (the live read, the recipe, the shapes, the clay variants, the price worked and
   postponed); `INDEX.md` names `spec-bestiary.md` §12–13, the re-measured opening, two FAQ rows and the
@@ -805,6 +811,47 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-23 (the manor door names what an active walk brought)
+
+**The ask** (the owner): when does a player get the expedition report on coming home? Answered from code:
+a passive run pushes it at the door stride (or at once on a death), the controller re-delivers on
+«🗺 Дослідити» if the push failed. Then, clarified — the report of what was BROUGHT and LOST: the passive
+report has both («Принесено:» home, the wipe's list on a death); the active walk names the loss on its death
+screen but came home with «🏰 Ви повертаєтеся додому…» alone. Both loss lists are the whole bag
+(`wipeOnDeath`), not the trip's finds.
+
+**Decided** (the owner, after a played sample of a walk and its arrival): add «Принесено:» to the active
+walk's arrival. Three quiz answers: a find eaten on the road is subtracted (the passive rule); silver gets
+«🪙 Знайдено N срібників» under the list; what the bag refused is NOT listed. The third option's text said
+"and drop it from the passive report too"; asked again with the fact that the passive run has no visible
+steps, so that line is the only place a full bag shows — **the passive report stays as it is**.
+
+**Built.** `ExpeditionHaul` (ROIContent): `take` (units that went in), `eat`, `findSilver`, `brought` (taken −
+eaten per item, item-id order), `isEmptyHanded`. On `exploration_state.haul` (JSON, `AddExplorationHaul`,
+nullable, no rows touched); `ExplorationState.begin` sets it empty, `recordHaul` is a no-op without one. Fed
+at the step handlers (`recordFinds`: a find's `taken`, silver), at `CombatController.finishVictory` (drops'
+`taken`) and at `explore:eat:` (the meal). `handleHomeReached` → `renderBrought`: the header and «з
+порожніми руками» keys and the rows are the passive report's — `broughtRow` / `silverFoundLine` extracted from
+`renderReport`, the passive output byte for byte the same. No block at km 0 (never left) or for a walk begun
+before the column (its earlier finds were never counted). `exploration_state.haul` is the eighth column
+deliberately not in `LiveReferenceQuery` — what the walk took sits in the bag, whose `inventory` rows
+already guard the reload; an eaten id nets out; `broughtRow` prints a bare id rather than fail. Found on the
+way: the only way to eat mid-walk is the trail bag (`MainController` does not forward `inv:` callbacks, and the
+combat router re-renders the fight on any callback), so the meal hook is the whole answer for eating. The one
+other way a find can leave the bag mid-walk is a trade confirmed in town that completes within its 5-minute
+session TTL while the player walks (the ride home is 2 min); the door then still lists the find — left as is.
+
+**Audit.** Build clean; 458 tests (`ExpeditionHaulTests`, 5 — the netting and the refused-find guard each
+mutated and caught, 4 failures, restored); the digest unmoved (content hash `8c6e2610`, all five lines as
+the tree's). No locale key added. The migration was not rehearsed off the Pi: one nullable `ADD COLUMN`,
+the shape of `AddCombatTally`. **The owner's audit pass** found three things, all fixed before the commit: the
+trail bag's meal hook could throw before the tap was answered (a spinning «Їсти»; now best-effort, `try?`);
+`LiveReferenceQuery`'s note and two records claimed the door lists only what is still in the bag, which a
+trade completing mid-walk breaks (reworded — `broughtRow` prints a bare id); README's waiting list, its test
+count and the code-map row had not been brought up. Rendered from both locale files: the sample, «з
+порожніми руками», silver alone, «21 срібник» / «11 срібників». A FAQ row in `.memory/live-ops.md` answers
+the session's first question (when the expedition report comes), with a ready reply.
 
 ## Session — 2026-10-22 → 10-23 (every material is foraged at every km)
 

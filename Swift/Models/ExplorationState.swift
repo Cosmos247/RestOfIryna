@@ -178,6 +178,14 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "combat_tally")
     public var combatTallyJSON: String?
 
+    /// What an active walk has put in the bag so far, as JSON
+    /// (`ExpeditionHaul`), named at the manor door as «Принесено:»
+    /// (2026-10-23). Set empty by `begin`; nil on a passive run and on a walk
+    /// already in flight when AddExplorationHaul shipped, which comes home
+    /// without the list. Read and written through `haul` / `recordHaul`.
+    @OptionalField(key: "haul")
+    public var haulJSON: String?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -208,6 +216,7 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.combatSuperUses = nil
         self.combatFleeFails = nil
         self.combatTallyJSON = nil
+        self.haulJSON = nil
     }
 }
 
@@ -304,6 +313,7 @@ extension ExplorationState {
         }
         let state = ExplorationState(userID: userId, stepsDeep: 0)
         state.mode = .active
+        state.haul = ExpeditionHaul()
         try await state.save(on: db)
         return state
     }
@@ -441,6 +451,28 @@ extension ExplorationState {
         guard var current = combatTally else { return }
         update(&current)
         combatTally = current
+    }
+
+    /// The walk's haul, decoded from `haul`. Nil on a passive run and on a
+    /// walk that began before the column existed.
+    public var haul: ExpeditionHaul? {
+        get {
+            guard let data = haulJSON?.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode(ExpeditionHaul.self, from: data)
+        }
+        set {
+            haulJSON = newValue
+                .flatMap { try? JSONEncoder().encode($0) }
+                .flatMap { String(data: $0, encoding: .utf8) }
+        }
+    }
+
+    /// Update the haul in place. A row without one is left alone — its walk
+    /// comes home without the list anyway. Caller saves.
+    public func recordHaul(_ update: (inout ExpeditionHaul) -> Void) {
+        guard var current = haul else { return }
+        update(&current)
+        haul = current
     }
 
     /// True when the row encodes a live Super-technique stance.

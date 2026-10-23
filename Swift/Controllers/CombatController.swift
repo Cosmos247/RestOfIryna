@@ -1132,6 +1132,11 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
 
         let drops = try await ExplorationService.awardEncounterDrops(for: context.session, enemy: enemy, on: context.db)
+        // What went in the bag joins the walk's haul, named at the manor door.
+        // Saved with `endCombat` below; the registration dog's row is deleted.
+        state.recordHaul { haul in
+            for drop in drops { haul.take(drop.itemId, quantity: drop.taken) }
+        }
 
         var parts = headerLines
         parts.append("🏆 " + lingo.localize("combat.victory", locale: locale, interpolations: [

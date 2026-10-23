@@ -406,6 +406,11 @@ each holding all eight, the weights shifting with depth; clay is the rarest ever
 lock a material out of a band again — `ZoneTests` pins it. `spec-bestiary.md` §13, auto-memory
 `project-forage-without-zones`.
 
+**The manor door names what an active walk brought** (2026-10-23): «Принесено:» — what went into the bag less
+what was eaten of it (`ExpeditionHaul`), then 🪙 silver; what the bag refused is not listed (the passive report
+keeps its own). **A new way for a walk to fill the bag must feed `state.recordHaul`**, or the door undercounts
+it. Auto-memory `project-active-walk-brought`.
+
 ### Combat
 
 **One number, one source. A screen never sums two losses under one label.** A step can cost HP

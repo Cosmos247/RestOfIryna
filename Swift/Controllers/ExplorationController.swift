@@ -505,6 +505,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             on: context.db
         )
         state.recordVisit(state.stepsDeep)
+        Self.recordFinds(result.outcome, on: state)
         try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
@@ -552,6 +553,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             on: context.db
         )
         state.recordVisit(state.stepsDeep)
+        Self.recordFinds(result.outcome, on: state)
         try await state.save(on: context.db)
         try await context.session.saveAndCache(in: context.db)
 
@@ -568,6 +570,27 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
         try await renderOutcome(context: context, result: result, state: state, priorVisits: priorVisits)
         return true
+    }
+
+    /// What a step put in the bag goes on the walk's haul, which the manor door
+    /// names (2026-10-23). Both step handlers call it before they save the row;
+    /// a fight's drops are counted at victory (`CombatController.finishVictory`)
+    /// and the trail bag's meals at `explore:eat:`. A new way for the walk to
+    /// fill the bag must feed `state.recordHaul` too, or the door undercounts it.
+    private static func recordFinds(_ outcome: StepOutcome, on state: ExplorationState) {
+        state.recordHaul { haul in
+            switch outcome {
+            case .loot(let itemId, _, let taken):
+                haul.take(itemId, quantity: taken)
+            case .silver(let amount):
+                haul.findSilver(amount)
+            case .encounterWon(_, _, _, _, let drops):
+                // Passive-only today; counted here so the switch is the whole answer.
+                for drop in drops { haul.take(drop.itemId, quantity: drop.taken) }
+            case .nothing, .trip, .encounterStarted, .encounterLost:
+                break
+            }
+        }
     }
 
     /// An expedition action attempted while a fight is still standing on the
@@ -744,9 +767,35 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         // above this line is a walk; only this line is a return.
         context.session.bankDepth(state.maxDepthKm)
         try await state.delete(on: context.db)
+        var text = context.lingo.localize("exploration.returned", locale: context.session.locale)
+        if let brought = renderBrought(state: state, lingo: context.lingo, locale: context.session.locale) {
+            text += "\n\n" + brought
+        }
         // `goToMainMenu` saves the session, which is what persists the km above.
-        try await goToMainMenu(context: context, text: context.lingo.localize("exploration.returned", locale: context.session.locale))
+        try await goToMainMenu(context: context, text: text)
         try await showCapitalHintIfNeeded(context: context)
+    }
+
+    /// «Принесено:» under the arrival line (2026-10-23, the owner's sample):
+    /// what the walk put in the bag less what was eaten of it, in the passive
+    /// report's rows, then the silver it found. What stayed in the forest is
+    /// not listed — every step already said so. Nil — no block at all — for a
+    /// player who turned round at the gate without leaving, and for a walk
+    /// begun before the haul was counted, whose list would be partial.
+    fileprivate func renderBrought(state: ExplorationState, lingo: Lingo, locale: String) -> String? {
+        guard state.maxDepthKm >= 1, let haul = state.haul else { return nil }
+        var lines = [lingo.localize("exploration.passive.report.loot_header", locale: locale)]
+        if haul.isEmptyHanded {
+            lines.append(lingo.localize("exploration.passive.report.no_loot", locale: locale))
+        }
+        for entry in haul.brought {
+            lines.append(PassiveExpeditionService.broughtRow(itemId: entry.itemId, quantity: entry.quantity,
+                                                             lingo: lingo, locale: locale))
+        }
+        if haul.silver > 0 {
+            lines.append(PassiveExpeditionService.silverFoundLine(haul.silver, lingo: lingo, locale: locale))
+        }
+        return lines.joined(separator: "\n")
     }
 
     /// One-shot nudge toward the capital, sent the first time the player gets
@@ -1230,6 +1279,15 @@ extension ExplorationController {
             }
             try await InventoryEntry.remove(itemId, quantity: 1, from: context.session, on: context.db)
             try await context.session.saveAndCache(in: context.db)
+            // Eaten on the walk is not brought home: the door nets it out of
+            // «Принесено». A stale trail bag tapped at home finds no row.
+            // Best-effort: the meal is already eaten, and a throw here would
+            // leave the tap unanswered — a spinning button.
+            if let state = try? await ExplorationState.current(for: context.session, on: context.db),
+               state.haul != nil {
+                state.recordHaul { $0.eat(itemId) }
+                try? await state.save(on: context.db)
+            }
 
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
