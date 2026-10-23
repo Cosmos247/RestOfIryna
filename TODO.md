@@ -2152,9 +2152,23 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The eleven 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
+**The twelve 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
+
+**Added 2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵 (NOT deployed: content
+only — it ships with the restart; a `/reload` alone is refused, the Pi's binary being v24):** any account,
+plus one at estate T6+ that knows the dish (Nerif, Дарина, Володимир and анія do).
+- «💼 Крамар» → «💰 Купити» → «🪨 Матеріали»: «🧱 Дика глина · 🪙 24»; its card «Ціна: 🪙 24»; «🪙 Купити», 10:
+  «✅ Дика глина ×10 — куплено за 🪙 240». «💸 Продати»: the clay row reads «🧱 Дика глина · 🎒 N · 🪙 12».
+  Iron still 20 / 10.
+- «🍺 Шинок» → the menu: «🫕 Мʼясо в глині · 🪙 135»; its card grants +54 снаги and +14 здоров'я; the Feast
+  still «· 🪙 180».
+- 🏠 Дім → 🍳 Кухня → «🫕 Мʼясо в глині»: 2× 🥩 Сире м'ясо, 1× 🥔 Картопля, 1× 🧱 Дика глина, 1× 🪵 Сосновий брус;
+  under «📊 Ефекти» «+54 🍖 Снага» and «+14 ❤️ Здоров'я». Cook one and eat it: +54 Vigor, +14 HP. A portion
+  cooked BEFORE the restart restores 54 / 14 too (the value is read at eating). A «📌» note on the dish
+  lists the new ingredients.
+- Unchanged, glance only: the estate's T3 → T4 card still asks 10× 🧱, the mage's staff t2 → t3 still 3× 🧱.
 
 **Added 2026-10-23 — the archer's Defend is «💨 Ухилитися» (NOT deployed: locales + Swift — a restart;
 Lingo is not reloaded):** an archer account.
@@ -2181,7 +2195,8 @@ migration, `AddExplorationHaul` — a restart):** any account at the estate, the
 
 **Added 2026-10-23 — every material is foraged at every km (NOT deployed: content only; it ships with
 the restart, or a `/reload` after it):** any account.
-- `/content` (developer): the content hash reads `8c6e2610` (with the other 10-20/22 changes loaded).
+- `/content` (developer): the content hash reads `30b0d499` (with the other 10-20/23 changes loaded, the
+  clay price among them; `8c6e2610` before it).
 - Walk km 1–10 for a while: berries, nuts, lumber and pebbles still come most often, and now and then
   a potato, a duck egg, iron (about one new km in 67) and, rarely, clay (about one in 134) — each with
   its own «✨ …» find line, all eight already in the locales.
@@ -2888,10 +2903,12 @@ in the capital, one challenging the other.
   An estate below T2 must be offered nothing at all.
 - **eat everything.** Every dish's Vigor changed: печена картопля 10, омлет 10, смажене мʼясо 14,
   деруни 16, пиріг 32, печеня 38, юшка 42, мʼясо в глині 50, бенкет 72 — and every taught dish
-  now heals a quarter of that. A raw качине яйце is **3** now, not 7.
+  now heals a quarter of that. A raw качине яйце is **3** now, not 7. *(From the next restart мʼясо в
+  глині is 54 and heals 14 — 2 🥩 + 1 🥔 + 🧱 + 🪵, clay at 24 since 2026-10-23.)*
 - **open the kitchen on a fresh account.** THREE recipes must be there from day one, not two —
   the omelette joined the starters and is one egg plus a board.
-- **visit the shinkar's menu.** Nine dishes, 25 · 25 · 35 · 40 · 80 · 95 · 105 · 125 · 180.
+- **visit the shinkar's menu.** Nine dishes, 25 · 25 · 35 · 40 · 80 · 95 · 105 · 125 · 180 (the 125 reads
+  135 from the next restart — 2026-10-23).
 - **look for a recipe scroll in your bag.** There must not be one — all five items were deleted.
   Anyone holding one before the deploy would see an unresolvable row, which is why
   `LiveReferenceCheck` is what refuses a reload that would do that.
@@ -3087,21 +3104,19 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-**From the 2026-10-23, last session** — the archer's Defend renamed «💨 Ухилитися» (built); then asked,
+**From the 2026-10-23 night session** — the clay price raised to 24 / 12 and «Мʼясо в глині» re-cut to
+2 🥩 + 1 🥔 + 🧱 + 🪵 = 54 Vigor (built, `spec-bestiary.md` §13.5; it closes the clay price the forage session
+postponed); raised in the same report, NOT answered — build nothing unasked:
+- **The staff's t3 rung keeps its 3 🧱.** At 24 it costs 102 🪙 against the sword's 50 and the bow's 38 (the
+  whole staff ladder is still the cheapest of the three, 7,390). «1 🧱 instead of 3» (54 🪙) was offered.
+
+**From the 2026-10-23 archer session** — the archer's Defend renamed «💨 Ухилитися» (built); then asked,
 NOT decided:
 - **The forest pie at 12 HP instead of 8.** Every taught dish restores ¼ of its inputs' price in HP (the
   pie: 32 silver → 32 Vigor, 8 HP), and no validator checks it. Two shapes shown: the pie alone at 12 (it
   would out-heal the dearer T4 roast, 10, and T5 stew, 11), or every taught dish at ⅜ of the price (pancakes
-  6, pie 12, roast 14, stew 16, clay-baked meat 19, feast 27). Vigor and the tavern's price move in neither.
-  The owner rejected the quiz to clarify; nothing was built.
-
-**From the 2026-10-23 session** — the forage without zones built; postponed by the owner («поки не будемо
-міняти ціну»):
-- **The clay price at the trader** (4 / 2). With clay the rarest find, the trader still sells it at the
-  pebbles' tier. 24 / 12 was worked through: T4's 10 clay 40 → 240 silver, the 546 clay players held on
-  10-22 sell for up to 6,552. A dish restores its inputs' price, so «Мʼясо в глині» (3 🥩 + 2 🥔 + 1 🧱 +
-  1 🪵, 50 Vigor) would rise to 70 — 2 short of the Feast — unless its recipe changes (3 🥩 + 🧱 + 🪵 = 58;
-  1 🥩 + 2 🥔 + 🧱 + 🪵 = 50). Two quizzes on the dish were rejected to clarify; nothing was decided.
+  6, pie 12, roast 14, stew 16, clay-baked meat 20 — 19 before the 10-23 night re-cut — feast 27). Vigor
+  and the tavern's price move in neither. The owner rejected the quiz to clarify; nothing was built.
 
 **From the 2026-10-21 session** — the vanishing keyboard: the deleted banners and the estate's and the
 bag's fallback fixed (A and B of the owner's quiz); raised in the same report, NOT picked — build none

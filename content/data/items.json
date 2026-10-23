@@ -175,11 +175,11 @@
     {
       "effects" : [
         {
-          "amount" : 50,
+          "amount" : 54,
           "kind" : "restore_vigor"
         },
         {
-          "amount" : 13,
+          "amount" : 14,
           "kind" : "restore_hp"
         }
       ],

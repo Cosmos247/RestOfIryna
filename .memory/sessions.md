@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-22)
+## Commit index — live-play polish and after (2026-09-09 → 10-23)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **`e9bdb78`'s hash fill** — records only.
+- *(this commit, 10-23)* **clay costs 24 / 12; «Мʼясо в глині» re-cut** — content only, NOT deployed (it
+  ships with the restart): `trader.json` clay 4 / 2 → 24 / 12; the dish 3 🥩 + 2 🥔 + 🧱 + 🪵 (50 Vigor, 13 HP,
+  125 at the tavern) → 2 🥩 + 1 🥔 + 🧱 + 🪵 (54, 14, 135), so it still restores its ingredients' price.
+  `spec-bestiary.md` §13.5, `spec-items.md` §9.3 amended, two `spec-economy.md` blocks refreshed; `records`
+  and the content hash moved, no band. The owner's picks; 458 tests.
+- `bfc78c9` (10-23) **`e9bdb78`'s hash fill** — records only.
 - `e9bdb78` (10-23) **the archer's Defend is «💨 Ухилитися»** — locales + Swift, NOT deployed (a
   restart): «💨 Швидкий маневр» renamed (en «💨 Dodge»), and its own line «💨 Ви пірнаєте вбік і черкаєте
   ножем — …» (`combat.defend.dodge`) where it borrowed the warrior's «Ви тримаєте удар…». The owner's picks.
@@ -817,7 +822,54 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-23, last (the forest's buttons listed; the archer's Defend renamed «💨 Ухилитися») — `e9bdb78`
+## Session — 2026-10-23, night (clay costs 24 / 12; «Мʼясо в глині» re-cut) — *(this commit)*
+
+**The ask** (the owner): recompute the clay price at 24 / 12 — postponed the night before, now that the
+forage makes clay the rarest find.
+
+**Recomputed off the data and the Pi** (read-only SQL at 21:45, the file in the scratchpad):
+- **Supply after the restart:** 0.75% of a new km at km 1–10, up to 3.8% past km 40; a round trip to km 10 /
+  20 / 30 forages 0.18 / 0.55 / 1.1 clay, a full 3 h passive day 0.55–0.76. The estate's clay is bought, so
+  the price is what it costs.
+- **Every reader of the price** (grep): `TraderService`, `CapitalController`'s buy and sell lists,
+  `ContentDigest`, the validator's arbitrage rule, `spec economy`, `WeaponLadderTests`' clamp example (the
+  sword, no clay), the long-applied `ClampWeaponTiersToLevel`, the `traderSilver` job. In the data: the
+  estate T4–T7 (10 / 15 / 20 / 25 clay: 280 → 1,680 🪙; the steps' whole cost 14,150 → 15,550, +10%), the
+  staff's t3 (42 → 102 against the sword's 50 and the bow's 38; the staff's ladder 7,330 → 7,390, still the
+  cheapest) and «Мʼясо в глині», whose Vigor, HP and tavern price are typed by hand and checked by nothing.
+- **Live:** 548 clay in 17 players (545 in warehouses; none on the market or in a guild vault). All of it
+  sold at 12: 6,576 🪙 (1,096 at 2). Beyond what each still needs for the estate: 308 (Nerif 179, Володимир
+  115, анія 12, Дарина 2) → 3,696 (616). Short for their next step: four players, 31 clay (744 against 124).
+  The 23 players at T1–T2 hold 3. Four know the dish; 31 portions are held, by two of them (Володимир 30 —
+  2 in the bag, 28 in the warehouse — and анія 1; re-read at 22:13).
+- **The dish:** 70 / 18 / 175 at the old recipe (the Feast 72 / 18 / 180); left at 50 it breaks the rule —
+  bought, 70 🪙 of ingredients for 50 Vigor, and a found clay adds 4 Vigor in the pot against 12 sold.
+  **Found on the way:** the description («Мʼясо з картоплею…») and the innkeeper's lesson («додав картоплі
+  для ситості…») tell of potatoes, so last night's recommended 58 (3 🥩 + 🧱 + 🪵) would have needed both
+  rewritten — withdrawn. Recommended instead: 60 (2 🥩 + 2 🥔, the base of the roast and the stew).
+- `spec opening`'s `if cooked` column values a kill's meat at the best dish per cut
+  (`OpeningLedger.cookedValue`): a recipe of fewer than three meats moves it; the price alone does not.
+
+**Decided** (the owner's quiz): 24 / 12, and the recipe **2 🥩 + 1 🥔 + 🧱 + 🪵** — 54 Vigor, 14 HP, 135 at the
+tavern — over 60, 70 and leaving the dish alone. Offered in prose and not answered: the staff's t3 at 1 🧱.
+
+**Built (content only).** `trader.json`, `recipes.json`, `items.json`, `tavern.json`, hand-edited, the
+house style re-checked byte for byte; all nine dishes re-checked against the rule (Vigor = price, HP = ¼
+rounded half up, the tavern 2.5×). Docs: `spec-bestiary.md` §13.2 amended and §13.5 written; `spec-items.md`
+§9.3's staff table and its prose amended; the two moved `spec-economy.md` blocks refreshed (the ladders,
+`spec opening`), all five reproduced from their markers; `content/recipes.md` (the row, the price list, and
+the clay sentence, which still said "the Old Wood and the Deepwood and nowhere else"); README (the waiting
+list, the trader's sell prices); `TODO.md` (a walk block, the forage block's hash, the 09-18 block's dish
+numbers, Open); the FAQ's Training Ground row; `status.md`; the file map's tavern row; the class-sets
+concept's value note; `.memory/rebalance.md`.
+
+**Audit.** `validate --strict` 0/0; 458 tests; `simulate --strict` 0 broken bands, the same 18 warnings —
+only the portion line (50 → 54) and the opening's `if cooked` column moved; every `spec` table run against
+HEAD's content and the tree: only `economy` and `opening` moved. Digest: `records 9f52425d4d3064e0` →
+`68ecc8783252a905`, content hash `8c6e2610` → `30b0d499`; `tuning`, `spawns`, `quests`, `king` unchanged. No
+migration: a portion already cooked restores the new numbers when eaten.
+
+## Session — 2026-10-23, evening (the forest's buttons listed; the archer's Defend renamed «💨 Ухилитися») — `e9bdb78`
 
 **The ask** (the owner): every attack and defence button and what it does — "I will most likely rename
 some". Listed from the locales and `tuning/combat.json` / `vigor.json` / `arena.json`: the forest keyboard

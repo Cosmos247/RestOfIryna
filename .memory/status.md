@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» re-cut** (content only, NOT deployed — it ships with
+the restart). The trader sells clay at 24 and buys it at 12 (was 4 / 2), the dearest of the forest's finds.
+«Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵 (was 3 🥩 + 2 🥔 + 🧱 + 🪵) and restores 54 Vigor and 14 HP, 135 at the
+tavern (was 50 / 13 / 125), so a dish still restores its ingredients' price (`spec-bestiary.md` §13.5).
+
 **2026-10-23 — the archer's Defend is «💨 Ухилитися»** (locales + Swift, NOT deployed — a restart). Was
 «💨 Швидкий маневр» (en «💨 Dodge», was «Quick maneuver»); its line is its own, «💨 Ви пірнаєте вбік і
 черкаєте ножем — …» (`combat.defend.dodge`), where it borrowed the warrior's «Ви тримаєте удар…». The
@@ -36,7 +41,8 @@ before the restart. The passive report is unchanged.
 **2026-10-23 — every material is foraged at every km** (content only, NOT deployed — it ships with the
 restart, or a `/reload` after it). The three zones' pools are gone: `zones.json` is five 10-km bands, each
 with all eight materials, the weights shifting with depth; clay is the rarest at every depth, half of iron
-(`spec-bestiary.md` §13). Meat and hide stay kill-only; the clay price stays 4 / 2.
+(`spec-bestiary.md` §13). Meat and hide stay kill-only; the clay price stayed 4 / 2 that day (raised to
+24 / 12 the same night, above).
 
 **2026-10-22 — the forest edge names armour a death would take** (Swift + locales, NOT deployed — a
 restart). The edge and the duration picker list the bag's armour a death would take, with «🛡 Одягнути»
@@ -1022,8 +1028,8 @@ e3a492be1b017e81`, content hash `19c94a81`, **schema v24** (the barrier's spark 
 That restart carried the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped
 welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). **Waiting for a restart since 2026-10-20: the
 forest past km 49** (content + Swift, schema v25), the hub's line (`266ad57`), the keyboard fix
-(`6ac0351`), the warehouse's ℹ️ (10-21) and the four 10-22 changes (a find that half fits, the road's hint, «Руки майстра», the forest edge's armour warning) and the forage without zones and the door's «Принесено» (10-23, the latter with a migration) — the tree's digest differs from this baseline in
-`records` `9f52425d4d3064e0`, `spawns` `004c138c83fa9d1a` (60 depths, the new forage) and content hash `8c6e2610`. Every earlier baseline is in `.memory/sessions.md` → "Digest
+(`6ac0351`), the warehouse's ℹ️ (10-21) and the four 10-22 changes (a find that half fits, the road's hint, «Руки майстра», the forest edge's armour warning) and the forage without zones, the door's «Принесено» (with a migration), the archer's «💨 Ухилитися» and the clay price 24 / 12 (10-23) — the tree's digest differs from this baseline in
+`records` `68ecc8783252a905`, `spawns` `004c138c83fa9d1a` (60 depths, the new forage) and content hash `30b0d499`. Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **458 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

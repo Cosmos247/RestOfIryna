@@ -242,11 +242,11 @@
       "inputs" : [
         {
           "itemId" : "food.raw_meat",
-          "quantity" : 3
+          "quantity" : 2
         },
         {
           "itemId" : "food.potato",
-          "quantity" : 2
+          "quantity" : 1
         },
         {
           "itemId" : "mat.clay",

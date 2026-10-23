@@ -530,16 +530,21 @@ up. This is a proposal: the trader value is at his buy price, and "iron" counts 
 |---|---|---|---|
 | t1 | — | 0 🪙 | 0 |
 | t2 | 5× 🪵 Сосновий брус, 3× 🪨 Річкова галька | 26 🪙 | 0 |
-| t3 | 5× 🪵 Сосновий брус, 5× 🪨 Річкова галька, 3× 🧱 Дика глина | 42 🪙 | 0 |
+| t3 | 5× 🪵 Сосновий брус, 5× 🪨 Річкова галька, 3× 🧱 Дика глина | 102 🪙 | 0 |
 | t4 | 5× 🪵 Сосновий брус, 8× 🪨 Річкова галька, 1× 🔳 Залізний злиток | 236 🪙 | 10 |
 | t5 | 8× 🪵 Сосновий брус, 10× 🪨 Річкова галька, 3× 🔳 Залізний злиток, 5× 🟫 Шкура | 682 🪙 | 30 |
 | t6 | 12× 🪵 Сосновий брус, 15× 🪨 Річкова галька, 5× 🔳 Залізний злиток, 8× 🟫 Шкура | 1126 🪙 | 50 |
 | t7 | 16× 🪵 Сосновий брус, 20× 🪨 Річкова галька, 6× 🔳 Залізний злиток, 10× 🟫 Шкура | 1364 🪙 | 60 |
 | t8 | 20× 🪵 Сосновий брус, 25× 🪨 Річкова галька, 8× 🔳 Залізний злиток, 13× 🟫 Шкура | 1808 🪙 | 80 |
 | t9 | 24× 🪵 Сосновий брус, 30× 🪨 Річкова галька, 9× 🔳 Залізний злиток, 15× 🟫 Шкура | 2046 🪙 | 90 |
-| **t1→t9** | | **7330 🪙** | **320** |
+| **t1→t9** | | **7390 🪙** | **320** |
 
-The whole ladder takes 7,330–8,772 🪙 of materials, against 986–1,188 before. That is a sink for the
+> *Amended 2026-10-23.* Clay went 4 → 24 at the trader (`spec-bestiary.md` §13.5), so the staff's
+> t3 is 102 🪙 (was 42) — the dearest t3 of the three, against the sword's 50 and the bow's 38 — and
+> its whole ladder 7,390 🪙 (was 7,330), still the cheapest. The two cells above are refreshed;
+> `roi-content spec economy` prints the ladders' current totals.
+
+The whole ladder takes 7,390–8,772 🪙 of materials, against 986–1,188 before. That is a sink for the
 silver `spec-economy.md` finds over-supplied (about 20k spare over a lifetime). Iron is not the
 bottleneck. A mine makes 2 iron an hour and holds 10 (`plots.json` → `bonusOutput`), so it
 yields 10–30 a day for one to three harvests. The 320–427 iron of a whole ladder is a few weeks

@@ -132,7 +132,9 @@ All names are drafts; copy waits for the owner.
 
 - **Value.** At the trader's buy prices (🟫 hide 6, 🔩 iron 20, 🔳 ingot 200, 🪵 lumber 4, 🧱 clay 4,
   🪨 pebble 2) the materials come to ≈300 / 1,300 / 2,600 / 3,900 🪙 per rank. They are kept
-  equal across the three classes.
+  equal across the three classes. *Clay went 4 → 24 on 2026-10-23, which breaks that equality: the
+  mage's ranks cost +200 / +400 / +600 / +800 🪙 more (rank I ≈480 against 300) — re-weigh the mage's
+  clay if the concept is unparked.*
 - **The whole branch** is ≈13,300 🪙, of which 5,200 is pure fee — a silver sink, which the
   economy wants (`spec-economy.md` §4).
 - **Per piece** the set's materials split by slot weight: chest 27%, legs 22%, off-hand 20%,

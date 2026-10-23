@@ -1176,6 +1176,7 @@ never foraged clay, potato, an egg or iron.
 5. **Meat and hide stay kill-only.** The beasts' tables (§10) were never zones.
 6. **The clay price stays 4 / 2 for now.** A raise to 24 / 12 was weighed and postponed: a
    dish restores the buy-price of its inputs, so «Мʼясо в глині» would have moved with it.
+   *Amended later the same day: the owner raised it to 24 / 12 — §13.5.*
 
 ### 13.3 The data and what checks it
 
@@ -1194,3 +1195,27 @@ berries taken out of 41–49. The coverage rules of §12.3 are unchanged.
   `quests` and `king` are unchanged.
 - Nothing is migrated. What is in bags and warehouses stays; the first step after the
   bundle is loaded forages by the new table.
+
+### 13.5 The clay price (decided 2026-10-23)
+
+Recomputed once the forage was built, the owner raised clay to **24 / 12** at the trader (what
+the player pays / receives; `trader.json`), over keeping 4 / 2, and picked the dish's recipe
+of five shown.
+
+- **Why.** Clay is the rarest find at every depth, and at 4 / 2 the trader priced it like a
+  pine board. A round trip to km 10 forages about a fifth of a clay, so the estate's 70
+  (T4–T7) is bought rather than found: the price is what it costs.
+- **«Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵** (was 3 🥩 + 2 🥔 + 🧱 + 🪵) and restores 54
+  Vigor and 14 HP, 135 at the tavern, so a dish still restores what its ingredients cost.
+  The old recipe at the new price would have restored 70 against the T7 Feast's 72; the dish
+  left at 50 would have broken that rule; 60 (2 🥩 + 2 🥔) was recommended and 54 picked. The
+  dish's description and the innkeeper's lesson tell of meat with potatoes, so a recipe
+  without one was dropped.
+- **Not changed:** the staff's t3 and its 3 clay — now the dearest t3 of the three, its whole
+  ladder still the cheapest (`spec-items.md` §9.3's amendment). «1 🧱 instead of 3» was
+  offered and not answered.
+- **What moved:** `spec economy` (the clay row, the estate's T4–T7 rows, the staff's ladder,
+  the totals), `spec opening`'s `if cooked` column (a kill's meat is valued at the best dish
+  per cut: the Feast's 72 / 3 before, this dish's 54 / 2 now), `simulate`'s portion list,
+  and the digest's `records` with the content hash. No band, no warning and no other spec
+  table moved. Nothing is migrated: a portion already cooked restores the new numbers.

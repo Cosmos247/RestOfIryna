@@ -30,10 +30,10 @@
     },
     {
       "buyPacketQty" : 1,
-      "buyPacketSilver" : 4,
+      "buyPacketSilver" : 24,
       "itemId" : "mat.clay",
       "sellPacketQty" : 1,
-      "sellPacketSilver" : 2
+      "sellPacketSilver" : 12
     },
     {
       "buyPacketQty" : 1,

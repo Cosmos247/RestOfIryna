@@ -1210,6 +1210,28 @@ silver, T4–T7's 70 clay 280 → 1,680, the staff's 3 clay 12 → 72; the 546 h
 · 1 🥩 + 2 🥔 + 🧱 + 🪵 = 50. Two quizzes on the dish were rejected to clarify, then «поки не будемо
 міняти ціну» — `TODO.md` → Open.
 
+**The clay price, decided (2026-10-23, night).** Recomputed on the built forage and the Pi's 21:45 holdings,
+then taken: **24 / 12**, and «Мʼясо в глині» **2 🥩 + 1 🥔 + 🧱 + 🪵 = 54 Vigor, 14 HP, 135 at the tavern**.
+- **Supply:** a round trip to km 10 / 20 / 30 forages 0.18 / 0.55 / 1.1 clay, a full 3 h passive day
+  0.55–0.76 (iron twice that) — T4's 10 is ~55 trips to km 10, so the trader's price is what clay costs.
+- **Cost:** the estate's steps priced whole at the trader, T4 1,310 → 1,510 · T5 2,710 → 3,010 · T6 4,030 →
+  4,430 · T7 6,100 → 6,600 (+15 / +11 / +10 / +8%); the staff's t3 42 → 102 (sword 50, bow 38; the whole
+  staff ladder 7,330 → 7,390, still the cheapest). 240 🪙 for T4's clay is about two days of job silver.
+- **Live (21:45):** 548 clay in 17 players; 308 beyond their own estate needs (Nerif 179 at T7, Володимир
+  115 of 140, анія 12, Дарина 2) → 3,696 🪙 sold at 12; four players short for their next step by 31 clay
+  in all (744 🪙 against 124); 23 at T1–T2 hold 3.
+- **The dish, of five shown:** untouched 50 / 13 / 125 (breaks the rule: bought, 70 🪙 for 50 Vigor; a found
+  clay worth 4 Vigor in the pot against 12 sold) · the old recipe at 70 / 18 / 175 (the Feast 72 / 18) ·
+  **60** 2 🥩 + 2 🥔 (recommended: the roast's and the stew's base) · **54** 2 🥩 + 1 🥔 (picked) · 50 1 🥩 + 2 🥔.
+  The 58 without potato, recommended the night before, was withdrawn: the dish's description and the
+  innkeeper's lesson both tell of potatoes. At 54 a found clay is worth 24 Vigor in the pot.
+- **The trap behind it:** the dish's numbers are typed, and nothing — code, validator, spec table — checks
+  that a dish restores its inputs' price, so a trader price change re-prices the dishes only if someone
+  remembers to. The validator was confirmed silent on a copy at 24 / 12 with the dish left at 50.
+- **What moved:** `spec economy`'s ladder rows and `spec opening`'s `if cooked` (a kill's meat is valued at
+  the best dish per cut: 54 / 2 = 27 now beats the Feast's 72 / 3 = 24); `simulate`'s portion list;
+  `records` and the content hash. Not answered: the staff's t3 at 1 🧱 (54 🪙).
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

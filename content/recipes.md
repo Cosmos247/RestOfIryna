@@ -48,7 +48,7 @@ The **Forester's** set — first craftable armor. Uses hide drops from wild kill
 
 Recipes in this category are **gated by `LearnedRecipe`** — they only appear in the Kitchen UI if the player has learned them, with three exceptions: **Baked Potato, Roasted Meat and the Forager's Omelette are always available** (gated through `RecipeCatalog.starterRecipeIds` rather than a learned-set row, and no scroll exists for them). Every player can cook those three from day one — the Kitchen UI unions the always-available set with whatever the player has learned.
 
-**A dish restores exactly the trader buy-price of its ingredients, in Vigor** (2026-09-18). A berry or a nut costs 2 silver, a board 4, a potato or a duck egg 6, raw meat 10 — so a Hunter's Stew of 2 meat + 2 potato + 1 egg + 1 board costs 42 silver and restores 42. The rule replaced a ladder where the cheap dishes paid ~0.9 Vigor per silver of ingredients and the expensive ones ~0.48: the economy of scale ran backwards, and the more a dish cost the worse its return. **Price a new dish's inputs; do not pick its number.**
+**A dish restores exactly the trader buy-price of its ingredients, in Vigor** (2026-09-18). A berry or a nut costs 2 silver, a board 4, a potato or a duck egg 6, raw meat 10, wild clay 24 (4 until 2026-10-23) — so a Hunter's Stew of 2 meat + 2 potato + 1 egg + 1 board costs 42 silver and restores 42. The rule replaced a ladder where the cheap dishes paid ~0.9 Vigor per silver of ingredients and the expensive ones ~0.48: the economy of scale ran backwards, and the more a dish cost the worse its return. **Price a new dish's inputs; do not pick its number.**
 
 Three things are edible as found: **a berry at +4, a nut at +5 and a duck egg at +3** — the egg deliberately below both, because it costs 6 silver against their 2 and would otherwise be the most Vigor-efficient food in the game (it was, at +7, until 2026-09-18). Potato and raw meat restore nothing at all until cooked. That is what leaves a dish a clean gain over its own ingredients: the cheap forage is worth 2.0–2.5 Vigor per silver against a dish's 1.0, so every berry and nut a recipe eats costs it margin, while a potato, an egg or a cut of meat costs it almost none.
 
@@ -56,7 +56,7 @@ Three things are edible as found: **a berry at +4, a nut at +5 and a duck egg at
 
 **HP follows the same price, at a quarter of it** (2026-09-18). The three always-available dishes restore Vigor only; every learned dish also restores `price / 4` HP, so a 72-silver Feast heals 18. The biggest one stays below the Small Healing Potion (+30 HP) so food does not displace potions — except that **neither potion is obtainable in play today**: `potion.heal_small` and `potion.heal_medium` sit in `items.json` and in no shop, recipe, drop or forage table, which leaves cooked food the only heal that exists away from the estate.
 
-Clay-Baked Meat is the only dish that eats a second non-food material: 1× 🧱 Wild Clay, foraged in the Old Wood and the Deepwood and nowhere else, which is what makes a T6 dish require walking deep rather than only tending the estate.
+Clay-Baked Meat is the only dish that eats a second non-food material: 1× 🧱 Wild Clay, which no plot makes. It was foraged in the Old Wood and the Deepwood only, and since 2026-10-23 at every km as the forest's rarest find (`spec-bestiary.md` §13). The same day the trader's price went 4 → 24, and the recipe lost a cut of meat and a potato (3 🥩 + 2 🥔 until then): at the old recipe the dish would have restored 70, two short of the T7 Feast. At 54 the ladder reads 42 → 54 → 72, and a clay found in the forest is worth 24 Vigor in the pot against 12 silver at the trader.
 
 **Every kitchen recipe burns 1× 🪵 Pine Lumber for the cooking fire** — both for narrative authenticity (cooking on flame needs firewood) and as a soft cap on farm-cooking. Pine lumber comes from the Lumberyard plot or shallow-zone foraging.
 
@@ -69,7 +69,7 @@ Clay-Baked Meat is the only dish that eats a second non-food material: 1× 🧱 
 | `recipe.berry_tart`         | 3× 🫐 Berries + 2× 🌰 Nuts + 3× 🥚 Egg + 1× 🪵 Lumber | 🥧 Forest Pie (`food.berry_tart`)        | +32 | +8 | innkeeper, estate T3 |
 | `recipe.meat_ragout`        | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🌰 Nuts + 1× 🪵 Lumber | 🥘 Pot Roast (`food.meat_ragout`)             | +38 | +10 | innkeeper, estate T4 |
 | `recipe.hunters_stew`       | 2× 🥩 Meat + 2× 🥔 Potato + 1× 🥚 Egg + 1× 🪵 Lumber | 🍲 Hunter's Stew (`food.hunters_stew`)           | +42 | +11 | innkeeper, estate T5 |
-| `recipe.clay_baked_meat`    | 3× 🥩 Meat + 2× 🥔 Potato + 1× 🧱 Clay + 1× 🪵 Lumber | 🫕 Clay-Baked Meat (`food.clay_baked_meat`) | +50 | +13 | innkeeper, estate T6 |
+| `recipe.clay_baked_meat`    | 2× 🥩 Meat + 1× 🥔 Potato + 1× 🧱 Clay + 1× 🪵 Lumber | 🫕 Clay-Baked Meat (`food.clay_baked_meat`) | +54 | +14 | innkeeper, estate T6 |
 | `recipe.governors_feast`    | 3× 🥩 Meat + 3× 🥔 Potato + 2× 🥚 Egg + 2× 🫐 Berries + 2× 🌰 Nuts + 1× 🪵 Lumber | 🍽 Governor's Feast (`food.governors_feast`) | +72 | +18 | innkeeper, estate T7 |
 
 Raw ingredients, and what they are worth as found:
