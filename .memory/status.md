@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-24 — the armour repair back at ×0.5** (content, *(this commit)*, NOT LIVE — it ships with the v27
+**2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, NOT LIVE — it ships with the v27
 restart: the running v25 binary refuses this bundle). `master.json` → `repairCostFraction` 0.25 → 0.5: a point
 repaired is hood 1, boots 1.6, breeches 2.5, jerkin 3 again, the set from zero 405 (203 at 0.25); the weapon keeps
 1 🪙 a point and the shave its 1. The owner's call after the per-player reckoning: on the week to 10-24 the

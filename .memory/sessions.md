@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **the armour repair back at ×0.5** — content only, NOT deployed (it goes with the v27
+- *(this commit, 10-24)* **`a0386b1`'s hash fill** — records only.
+- `a0386b1` (10-24) **the armour repair back at ×0.5** — content only, NOT deployed (it goes with the v27
   restart): `master.json` → `repairCostFraction` 0.25 → 0.5 (a point 1 / 1.6 / 2.5 / 3, the set from zero 405; the
   weapon 1). `records` → `f1501e3c1c9dc759`, content hash → `c8d337fe`; `spec economy`'s sinks row refreshed; 476 tests.
 - `001212a` (10-24) **`cf6e3ea`'s hash fill, and the rewritten history** — records only. On the owner's word («Так,
@@ -856,7 +857,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-24, night (the audit, «одягненої», the repair back at ×0.5) — *(this commit)*
+## Session — 2026-10-24, night (the audit, «одягненої», the repair back at ×0.5) — `a0386b1`
 
 **Asked.** «Перевір, чи є незакомічені зміни?» — the gear sheet's wear block, built earlier the same day (the entry
 below) and never committed: its «Комічу?» was overtaken by the repair question, and that session then ran out of
