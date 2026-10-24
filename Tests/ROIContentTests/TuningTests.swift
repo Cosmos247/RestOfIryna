@@ -169,7 +169,7 @@ final class TuningTests: XCTestCase {
     }
 
     private func economy(shave: Int = 1, salvage: Double = 0.5,
-                         victory: Int = 1, defeat: Int = 3, flee: Int = 3) -> EconomyTuningDTO {
+                         victory: Double = 1, defeat: Double = 3, flee: Double = 3) -> EconomyTuningDTO {
         EconomyTuningDTO(gear: GearEconomyDTO(
             repairMaxShave: shave, salvageFraction: salvage,
             wearBudget: WearBudgetDTO(victory: victory, defeat: defeat, flee: flee)), questRewards: QuestRewardTuningDTO(silverPerLevel: 0.015))
@@ -263,12 +263,21 @@ final class TuningTests: XCTestCase {
         XCTAssertFalse(report.hasErrors, "shipped tuning produced: \(report.errors.map(\.rule))")
     }
 
-    /// The audit's finding, asserted rather than described: with the shipped
-    /// 5-vs-3 budget, running away wears gear harder than dying. Phase 5 fixes
-    /// the numbers; until then the validator must keep saying so.
+    /// The audit's finding, asserted rather than described: a budget where
+    /// running away wears gear harder than dying (the shipped 5-vs-3 once) must
+    /// keep drawing the warning.
     func testFleeCostlierThanDefeatWarns() {
         assertRule("tuning.economy.flee_costlier_than_defeat",
                    bundle(economy: economy(defeat: 3, flee: 5)), severity: .warning)
+    }
+
+    /// A wear budget is a fraction since 2026-10-24 — a chance per fight — so
+    /// the shipped ½ is clean and only a negative number is refused.
+    func testAFractionalWearBudgetIsCleanAndANegativeOneIsRefused() {
+        let soft = ContentValidator.validate(bundle(economy: economy(victory: 0.5, defeat: 2, flee: 1)))
+        XCTAssertFalse(soft.issues.contains { $0.rule.hasPrefix("tuning.economy") },
+                       "\(soft.issues.map(\.rule))")
+        assertRule("tuning.economy.negative_wear", bundle(economy: economy(victory: -0.5)))
     }
 
     // MARK: - Decoding is required, never defaulted

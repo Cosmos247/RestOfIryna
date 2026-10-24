@@ -149,5 +149,13 @@ public enum ContentSchema {
     /// keep handing out free plots the operator believes are paid for; only the
     /// handshake refuses it. A v25 bundle on a v26 binary is refused the same
     /// way, where the validator would only have said "no build cost".
-    public static let current: Int = 26
+    /// v27 (2026-10-24): a fight wears less — `economy.gear.wearBudget` is a
+    /// win ½, a flee 1, a death 2 (was 1 / 2 / 3), and its three numbers are
+    /// fractions now, a fraction being a chance per fight (`WearMath`). A v26
+    /// binary decodes them as whole numbers and dies on the 0.5 with a bare
+    /// type mismatch; the handshake names the cause instead. A v26 bundle on a
+    /// v27 binary would decode — its whole numbers are valid fractions — and
+    /// keep the old wear the operator believes is softened; the handshake
+    /// refuses that too.
+    public static let current: Int = 27
 }

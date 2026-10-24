@@ -4,8 +4,8 @@
 //
 //  Created by Dmytro Ihnatyuhin on 21.05.2026.
 //
-//  Phase 6.5 — armor durability runtime. Equipped armor wears down with every
-//  fight (more on a loss, most on a flee) and is restored at the Master for
+//  Phase 6.5 — armor durability runtime. Equipped armor wears down at the end
+//  of every forest fight (a win least, a death most) and is restored at the Master for
 //  silver (see `MasterService` + `MasterCatalog`). At 0 durability a piece is
 //  "broken" and contributes no stats until repaired — that check + the
 //  permanent enchant bonus both live in `EquipmentService.recomputeBonuses`.
@@ -60,20 +60,37 @@ public enum GearConditionService {
     public static let durableSlots: Set<String> = Set(EquipmentSlot.allCases.filter(\.isDurable).map(\.rawValue))
 
     /// A single fight's wear *budget* (model C — distributed across equipped
-    /// armor point-by-point, not charged per piece). Victory < defeat < flee —
-    /// running away drags the gear through the brush hardest.
+    /// armor point-by-point, not charged per piece). A win wears least and a
+    /// death most: ½ / 1 / 2 since 2026-10-24 (it was 1 / 3 / 2 for victory /
+    /// defeat / flee, and the comment here said a flee wore hardest long after
+    /// the data stopped saying so).
     public enum WearEvent: String, CaseIterable, Sendable {
         case victory
         case defeat
         case flee
 
-        public var amount: Int {
+        /// The budget as authored — a fraction is a chance per fight.
+        public var budget: Double {
             let budget = Catalogs.current.tuningEconomy.gear.wearBudget
             switch self {
             case .victory: return budget.victory
             case .defeat:  return budget.defeat
             case .flee:    return budget.flee
             }
+        }
+
+        /// The points `fights` fights of this outcome take, each rolled on its
+        /// own (`WearMath`) — one for a fight in the forest, the tally for a
+        /// passive run. Never `budget × fights` rounded: a run that won once
+        /// must take a point half the time at ½, not never or always.
+        public func points(fights: Int = 1) -> Int {
+            var rng = SystemRandomNumberGenerator()
+            return points(fights: fights, using: &rng)
+        }
+
+        /// The same with a given generator — the digest replays it seeded.
+        public func points<G: RandomNumberGenerator>(fights: Int, using rng: inout G) -> Int {
+            WearMath.points(budget: budget, fights: fights, using: &rng)
         }
     }
 
@@ -92,7 +109,8 @@ public enum GearConditionService {
     }
 
     /// Spend a fight's wear budget across equipped armor. Model C: `amount` is
-    /// a fixed per-fight budget (not per-piece), distributed one point at a time
+    /// the points the fight (or a passive run) rolled off its budget —
+    /// `WearEvent.points` — not charged per piece, distributed one point at a time
     /// to a randomly-chosen equipped piece that still has durability left. This
     /// keeps the silver sink predictable (independent of how many pieces are
     /// worn), wears the set down gradually (no synchronized "whole set breaks at
@@ -146,7 +164,7 @@ public enum GearConditionService {
     /// list out to the caller for the same reason `drainEquippedGear` does.
     @discardableResult
     public static func wear(_ event: WearEvent, for user: User, on db: any Database) async throws -> [BrokenPiece] {
-        try await drainEquippedGear(amount: event.amount, for: user, on: db)
+        try await drainEquippedGear(amount: event.points(), for: user, on: db)
     }
 
     /// One-shot, idempotent startup backfill: weapon rows created before the

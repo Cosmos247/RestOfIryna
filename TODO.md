@@ -2156,7 +2156,16 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26):** an
+**Added 2026-10-24, later — a fight wears less (*(this commit)*, NOT live — waits for a restart; schema v27):**
+an account wearing the Forester set and its weapon, the durability of each piece noted first (🎒 → the piece →
+«Міцність N/M»).
+- Ten won fights in the forest: the kit loses about five points in all, spread over random pieces — some wins
+  take nothing, none takes two.
+- A successful escape («🏃 Відступити» / «🌑 Сховатись у тіні» / «🔮 Телепортація»): exactly one point; a death: exactly two (worn pieces survive the wipe).
+- A 🏕 run of several fights: its report's won fights cost about half a point each, a lost one two.
+- `/content` reads schema v27 and hash `90abd2c4`; the Master's repair price per point is unchanged.
+
+**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v27):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
 - 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
@@ -3539,8 +3548,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-24 — a plot costs materials, built and NOT live (schema v26, content hash `17654923`;
-a restart). Under it:*
+*Last updated: 2026-10-24, later — a fight wears less (a win ½, a flee 1, a death 2), built and NOT live with the
+plot cost before it (schema v27, content hash `90abd2c4`; a restart). Under it:*
+
+*2026-10-24 — a plot costs materials (`bac1a70`), built and NOT live.*
 
 *2026-10-23, the 22:46 deploy — the Pi runs `7ac11f0` (schema v25, content hash
 `30b0d499`): the twelve 2026-10-20/23 changes are live — the forest past km 49, the hub's line, the keyboard,

@@ -2527,8 +2527,8 @@ public enum ContentValidator {
                      "wear must not be negative, found \(value)")
             }
             // The audit's finding, kept live in the tool rather than in prose:
-            // running away currently wears gear harder than dying does, which
-            // prices flight above death. Phase 5 rebalances it.
+            // running away once wore gear harder than dying did, which priced
+            // flight above death. Fixed since; the warning keeps it fixed.
             require(wear.flee <= wear.defeat, file, "gear.wearBudget",
                     "tuning.economy.flee_costlier_than_defeat",
                     "fleeing wears \(wear.flee) durability against \(wear.defeat) for a defeat — running away costs more than dying",

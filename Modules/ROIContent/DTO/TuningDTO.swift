@@ -1245,12 +1245,14 @@ public struct ProgressionTuningDTO: Codable, Sendable {
 // MARK: - economy.json
 
 /// The per-fight durability budget. One required field per `WearEvent` case.
+/// A fraction is a chance per fight (2026-10-24, schema v27): 0.5 takes one
+/// point in half the fights — `WearMath.points` is the one reading.
 public struct WearBudgetDTO: Codable, Sendable, Equatable {
-    public let victory: Int
-    public let defeat: Int
-    public let flee: Int
+    public let victory: Double
+    public let defeat: Double
+    public let flee: Double
 
-    public init(victory: Int, defeat: Int, flee: Int) {
+    public init(victory: Double, defeat: Double, flee: Double) {
         self.victory = victory
         self.defeat = defeat
         self.flee = flee
@@ -1260,9 +1262,9 @@ public struct WearBudgetDTO: Codable, Sendable, Equatable {
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        victory = try c.decode(Int.self, forKey: .victory)
-        defeat  = try c.decode(Int.self, forKey: .defeat)
-        flee    = try c.decode(Int.self, forKey: .flee)
+        victory = try c.decode(Double.self, forKey: .victory)
+        defeat  = try c.decode(Double.self, forKey: .defeat)
+        flee    = try c.decode(Double.self, forKey: .flee)
     }
 }
 

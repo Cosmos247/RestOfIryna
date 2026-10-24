@@ -945,7 +945,12 @@ enum ContentDigest {
         d.combine("\(GearConditionService.salvageFraction)")
         for event in GearConditionService.WearEvent.allCases {
             d.combine(event.rawValue)
-            d.combine(event.amount)
+            d.combine("\(event.budget)")
+            // The roll itself (2026-10-24), seeded and through the accessor the
+            // fights use: a change to how a fraction becomes points moves the
+            // line even when the budgets do not.
+            var rng = SplitMix64(seed: 0x57EA2)
+            d.combine((0..<20).map { String(event.points(fights: $0, using: &rng)) }.joined(separator: ","))
         }
         // Not moving to JSON — these must stay in lockstep with `EquipmentSlot`
         // — but hashed so that stays a decision rather than an oversight.

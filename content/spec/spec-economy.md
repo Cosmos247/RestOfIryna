@@ -432,6 +432,12 @@ item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 > with every piece at 0. The surplus this section describes is a late-game one; the repair was
 > landing on the early game. The max shave per repair stays as it was, on the owner's word.
 
+> *Amended 2026-10-24, the wear.* A fight wears less: a win ½ (one point in half the fights), a
+> flee 1, a death 2, where it was 1 / 2 / 3 (`tuning/economy.json` → `gear.wearBudget`). On the
+> public test's week to 10-24, 84% of the wear came from wins and the busiest player, at L12, averaged
+> 390 points a day; the same fights at the new budget wear 3,900 points where they wore 7,769. The
+> repair row above keeps its 25% of value per repair — it is repaired about half as often.
+
 > *Amended 2026-10-24 (`spec-progression.md` §7).* A plot costs materials now: the player's Nth
 > plot pays N of its type's recipe, the first without clay and iron. The four `plots, 6 × …`
 > rows above price six plots of one type; `one player` adds a full estate of them at the

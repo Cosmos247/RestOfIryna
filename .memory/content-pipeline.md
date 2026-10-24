@@ -106,7 +106,7 @@ rules of their own:
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
 | `exploration.json` | the three-tier revisit weight table, trip damage, loose silver's denominations, and the passive block: its weights, XP and loot multipliers, the daily budget and (2026-10-12) the HP share the governor turns at |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
-| `economy.json` | repair shave, salvage share (2026-09-27), per-fight wear budget. The durability start left on 2026-10-05 (schema v18): a piece's durability is its item's `maxDurability`, a laddered weapon's its `durabilityByTier` — `GearConditionService.startingDurability(for:)` |
+| `economy.json` | repair shave, salvage share (2026-09-27), per-fight wear budget — fractions since 2026-10-24 (schema v27), a fraction being a chance per fight (`WearMath`). The durability start left on 2026-10-05 (schema v18): a piece's durability is its item's `maxDurability`, a laddered weapon's its `durabilityByTier` — `GearConditionService.startingDurability(for:)` |
 | `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |
 
 - **Everything decodes as REQUIRED.** Optional-with-default is right for a
@@ -222,6 +222,12 @@ The verification has four parts:
   `plot.build_rule_missing`), so a forgotten recipe is an error, never a free plot; the
   schema bump is what keeps the bundle off an older binary. The digest's `records` replays
   `PlotCatalog.buildCost` over plot numbers −1…8 (`spec-progression.md` §7).
+- **A fight wears less (2026-10-24, schema v27).** `economy.gear.wearBudget` is a win ½, a flee 1, a
+  death 2, decoded as `Double`. A fraction is a chance per FIGHT: `WearMath.points` (ROISim) lands the
+  whole part always and the rest with its probability, and `GearConditionService.WearEvent.points
+  (fights:)` is the game's only reader — the forest's three ends and the passive run's tally. The digest's
+  `tuning` hashes each budget and replays the roll seeded through that accessor (`SplitMix64`), so a
+  change to the roll moves it even when the numbers do not.
 - **Combat curves come in two shapes and they are separate TYPES.**
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.

@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **`bac1a70`'s hash fill** — records only.
+- *(this commit, 10-24)* **a fight wears less** — Swift + content, schema v27, NOT deployed (a restart):
+  `economy.gear.wearBudget` a win ½ · a flee 1 · a death 2 (was 1 / 2 / 3), decoded as fractions; `WearMath` (ROISim)
+  rolls a fraction per fight for the forest and the passive run; the digest replays it seeded; the stale «a flee wears
+  hardest» comments corrected. `tuning` and the content hash moved; 475 tests. The owner's pick of four.
+- `c2007f8` (10-24) **`bac1a70`'s hash fill** — records only.
 - `bac1a70` (10-24) **a plot costs materials** — Swift + content, schema v26, NOT deployed (a restart): every
   `plots.json` row a `buildCost`, the file a `build` rule; the player's Nth plot pays N recipes, the first without
   clay and iron (`PlotBuildCost`); the build card lists «📜 Матеріали», `PlotService.claim` pays bag-first in one
@@ -840,6 +844,44 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-24, later (a fight wears less) — *(this commit)*
+
+**Asked.** First «Перевір останні незакомічені зміни… зроби коміт» — the plot cost's audit, committed as `bac1a70` +
+`c2007f8` (its record is in the entry below). Then: «Давай змінимо втрату міцності за кожен з результатів бою. Покажи
+як вона виглядає зараз і як би ти міг її пом'якшити.»
+
+**Read first.** The code: a fight's END spends one budget across the worn kit, a point at a time on a random piece
+(`GearConditionService.drainEquippedGear`) — win 1, flee 2, death 3; a passive run 1 per won fight, 3 per lost; no
+wear in the Arena, training, the registration dog or a failed flee attempt. The Pi (read-only, 7 days): 6,489 wins,
+592 flees, 32 deaths — 7,769 points, 84% from wins. Per day: Лайкмен (L12) 390 with 662 🪙 and two pieces at 0;
+Надійка 103 (173 🪙); Нястюшка 83, 58% flees. Untouched wins 2–48%; wins under 10% of HP lost 28–100%.
+
+**Decided (the owner).** Of four variants shown as a day on that week's fights (`.memory/rebalance.md` → "A fight
+wears less"), **A. ½ / 1 / 2**, recommended: Лайкмен 390 → ≈196, Нястюшка 83 → ≈42, Leyfor 32 → ≈16. Not picked:
+½ / 2 / 3; 1 / 1 / 2 (a `/reload` alone); a win that wears only when it cost ≥10% of HP (the strong stop wearing,
+newcomers barely gain). Not offered, with the numbers: «only when hit» and «a point per 10% of HP».
+
+**Built.**
+- Content: `tuning/economy.json` → `wearBudget` 0.5 / 2 / 1 (victory / defeat / flee); `manifest.json` schema 27.
+- ROIContent: `WearBudgetDTO` decodes `Double`; `ContentSchema` v27; the validator's stale «Phase 5 rebalances it»
+  comment corrected (the `negative_wear` and `flee_costlier_than_defeat` rules unchanged).
+- ROISim: `WearMath.points(budget:using:)` / `(budget:fights:using:)` — the whole part always, the fraction as a
+  chance, per fight.
+- Game: `WearEvent.budget` + `points(fights:)` / `points(fights:using:)`; `wear(_:)` and the passive run's tally go
+  through it; `ContentDigest` hashes the budget and replays 0…19 fights per outcome seeded (`SplitMix64`). The
+  comments that called a flee the hardest wear (`GearConditionService`, `CombatController` ×2) corrected.
+- Tests: `WearMathTests` (6), one in `TuningTests` (a fractional budget is clean, a negative one refused) — 475.
+- Docs: `rebalance.md` (the section), `spec-economy.md` §4 (an amendment), `CLAUDE.md` (one bullet), `live-ops.md`
+  (three FAQ rows, a ready reply), status, file-map, content-pipeline, README, TODO, Prompt, auto-memory
+  `project-fight-wear-softened`.
+
+**Verified.** A forced recompile under bash: no warning in a touched file (the one left is `BudgetTests.swift:169`'s
+Optional interpolation, untouched and older); `validate --strict` 0/0; 475 tests; the digest against the tree before
+moves `tuning` `799a96eb5f8619df` → `37c6ec237883b9f4`, the content hash `17654923` → `90abd2c4`, COMBINED
+`68f2cdb43398dfd1` → `825102a3df9b6adb`, nothing else. Mutants: the fraction always rounded up (5 assertions in
+`WearMathTests` fail, `tuning` moves) and the façade as `Int(budget × fights)` (`tuning` moves) — both restored
+byte for byte. No `simulate`: `economy.json` decides no fight.
 
 ## Session — 2026-10-24 (a plot costs materials) — `bac1a70`
 

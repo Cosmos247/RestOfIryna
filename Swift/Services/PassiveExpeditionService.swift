@@ -828,8 +828,9 @@ public enum PassiveExpeditionService {
 
         // Phase 6.5 — wear equipped gear (armor + weapon) for the whole run: each
         // won fight costs a little, each lost fight more (no flee in passive autobattle).
-        let gearWear = run.outcomeCounts["encounter_won", default: 0] * GearConditionService.WearEvent.victory.amount
-                     + run.outcomeCounts["encounter_lost", default: 0] * GearConditionService.WearEvent.defeat.amount
+        // Rolled per fight, as in the forest: the budgets are fractions since 2026-10-24.
+        let gearWear = GearConditionService.WearEvent.victory.points(fights: run.outcomeCounts["encounter_won", default: 0])
+                     + GearConditionService.WearEvent.defeat.points(fights: run.outcomeCounts["encounter_lost", default: 0])
         let brokeOnRun = (try? await GearConditionService.drainEquippedGear(amount: gearWear, for: user, on: db)) ?? []
 
         // Phase 9.2 — autobattle kills count toward the Master's beast-slaying

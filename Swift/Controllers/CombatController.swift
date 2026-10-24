@@ -608,7 +608,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             // Before `endCombat`, which clears the tally the row is built from.
             try? await FightLog.record(.flee, state: state, enemy: enemy, user: player, on: context.db)
 
-            // Phase 6.5: fleeing wears armor the hardest.
+            // Phase 6.5: a flee wears the kit more than a win, less than a death.
             let brokeOnFlee = try await GearConditionService.wear(.flee, for: player, on: context.db)
             for broken in Self.brokenGearLines(brokeOnFlee, lingo: lingo, locale: locale) {
                 line += "\n\(broken)"
@@ -1264,8 +1264,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // the tally lives on.
         try? await FightLog.record(.death, state: state, enemy: enemy, user: context.session, on: context.db)
 
-        // Phase 6.5: a defeat wears equipped armor (more than a win, less than
-        // a flee). Equipped gear survives the death wipe, only its durability drops.
+        // Phase 6.5: a defeat wears equipped armor the hardest of the three
+        // ends. Equipped gear survives the death wipe, only its durability drops.
         let brokeOnLoss = try await GearConditionService.wear(.defeat, for: context.session, on: context.db)
 
         let lingo = context.lingo

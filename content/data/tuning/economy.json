@@ -3,9 +3,9 @@
     "repairMaxShave" : 1,
     "salvageFraction" : 0.5,
     "wearBudget" : {
-      "defeat" : 3,
-      "flee" : 2,
-      "victory" : 1
+      "defeat" : 2,
+      "flee" : 1,
+      "victory" : 0.5
     }
   },
   "questRewards" : {

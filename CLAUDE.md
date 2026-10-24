@@ -603,6 +603,10 @@ number nothing reads.
 - **A broken piece counts for nothing, its set included** (2026-10-11): armour at 0 grants no stat
   and no set progress; a weapon at 0 is only dulled (half, rounded half up).
   `EquipmentService.isBroken` is the one test, asked by `contributedStats` and by the set pass.
+- **A fight's wear is a fraction rolled per FIGHT** (2026-10-24: win ½, flee 1, death 2, the owner's
+  pick). `WearEvent.points(fights:)` → `WearMath` is the one reading, for the forest and the passive
+  run alike — never `budget × count` rounded, which turns a lone ½ into nothing or always one.
+  Auto-memory `project-fight-wear-softened`.
 
 **The cached gear bonuses are re-derived at every boot** (`EquipmentService.backfillGearBonuses`,
 after the migrations). `User.gear*Bonus` is written only by `recomputeBonuses`: on an equip, a

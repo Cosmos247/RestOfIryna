@@ -1232,6 +1232,36 @@ then taken: **24 / 12**, and «Мʼясо в глині» **2 🥩 + 1 🥔 + �
   the best dish per cut: 54 / 2 = 27 now beats the Feast's 72 / 3 = 24); `simulate`'s portion list;
   `records` and the content hash. Not answered: the staff's t3 at 1 🧱 (54 🪙).
 
+### A fight wears less: ½ / 1 / 2 (2026-10-24)
+
+**Asked** (the owner): «Давай змінимо втрату міцності за кожен з результатів бою. Покажи як вона виглядає
+зараз і як би ти міг її пом'якшити.» The repair price was halved on 10-10 (above); this is the other half —
+how much a fight wears.
+
+**What the Pi said** (read-only, the 7 days to the afternoon of 2026-10-24): 6,489 wins, 592 flees, 32 deaths — 7,769
+points at 1 / 2 / 3, **84% of them from wins**, 15% flees, 1% deaths. So the death's number barely matters
+and the win's is the lever. A day of play at ≈1 🪙 a point (the set plus the weapon average 1.01): Лайкмен
+(L12) 390 against 662 🪙 in the purse, two armour pieces at 0; Надійка (L12) 103 against 173; Руслан 76;
+Нястюшка (L9) 83, 58% of it flees. Wins untouched: 2–48% by player (Leyfor, L5, 2%); wins that cost under 10% of HP: 28–100%.
+
+**Shown, a day each on that week's fights** (Лайкмен · Надійка · Нястюшка · Leyfor L5 · Володимир L18):
+- now 1 / 2 / 3 — 390 · 103 · 83 · 32 · 44;
+- **A. ½ / 1 / 2 — 196 · 52 · 42 · 16 · 22 (picked, recommended)**;
+- B. ½ / 2 / 3 — 232 · 55 · 66 · 20 · 23;
+- C. 1 / 1 / 2, data only — ≈353 · 100 · 59 · 28 · 43;
+- D. a win wears only when it cost ≥10% of HP — 175 · 46 · 72 · 25 · 7: the strong stop wearing, newcomers
+  barely gain. Not offered: «only when hit» (Leyfor 32 → 31 — newcomers are hit in nearly every win) and
+  one point per 10% of HP lost (newcomers wear MORE: Leyfor 32 → 59).
+
+**Built.** `economy.gear.wearBudget` victory 0.5 · flee 1 · defeat 2, decoded as fractions (schema v27). A
+fraction is a chance per FIGHT, `WearMath.points` (ROISim): the whole part always lands, the rest with its
+probability. The passive run rolls each of its won and lost fights the same way — `Int(0.5 × wins)` would
+round a lone win to nothing. The digest's `tuning` replays the roll seeded through `WearEvent.points`.
+
+**What it costs the economy.** That week at ½ / 1 / 2 is 3,900 points of 7,769 — the repair sink halves
+again (the price per point is unchanged). The shave is per repair, so it slows with the repairs it rides on.
+Untouched: the price, the shave, the maxima, the Arena and training (no wear).
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.
