@@ -11,12 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **a plot costs materials** — Swift + content, schema v26, NOT deployed (a restart): every
+- *(this commit, 10-24)* **`bac1a70`'s hash fill** — records only.
+- `bac1a70` (10-24) **a plot costs materials** — Swift + content, schema v26, NOT deployed (a restart): every
   `plots.json` row a `buildCost`, the file a `build` rule; the player's Nth plot pays N recipes, the first without
   clay and iron (`PlotBuildCost`); the build card lists «📜 Матеріали», `PlotService.claim` pays bag-first in one
   transaction; eleven validator rules, `spec gates` / `spec economy`, `spec-progression.md` §7; `records` and the
   content hash moved. The owner's picks over two rounds; 468 tests. The 10-23 deploy record below is in it too.
-- *(this commit, 10-23)* **the 10-23 22:46 deploy record** — the same commit: written that night and never
+- `bac1a70` (10-23) **the 10-23 22:46 deploy record** — the same commit: written that night and never
   committed on its own, so it rides with the plot cost. Records only: the deploy entry below, the
   Pi's baseline moved to the superseded list, `Prompt.md`, `status.md`, README, `TODO.md` (the twelve walk
   blocks and the footer marked live), the FAQ rows and ready replies brought to the present, four
@@ -840,7 +841,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-24 (a plot costs materials) — *(this commit)*
+## Session — 2026-10-24 (a plot costs materials) — `bac1a70`
 
 **Asked.** «Гравці запропонували додати ресурси для створення ділянки. Запропонуй варіанти того, чого і скільки може
 вартувати кожен тип ділянок.» Until now a plot was free: type → card → «✅ Будувати».

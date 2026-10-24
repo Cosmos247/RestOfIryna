@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-24 — a plot costs materials** (Swift + content, schema v26, *(this commit)*, NOT LIVE — it needs a
+**2026-10-24 — a plot costs materials** (Swift + content, schema v26, `bac1a70`, NOT LIVE — it needs a
 restart, not a `/reload`). Each type has a recipe of its own: farm 10🪵 2🟫 1🔩 3🥔 · sawmill 8🪵 10🪨 2🔩 1🧱 ·
 mine 12🪵 3🟫 2🔩 1🧱 · coop 8🪵 5🪨 1🧱 3🥚; the player's Nth plot pays N of it, the first without clay and iron
 (`PlotBuildCost`, `spec-progression.md` §7). The build card lists the materials under «📜 Матеріали»; a refused

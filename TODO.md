@@ -2156,7 +2156,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-24 — a plot costs materials (*(this commit)*, NOT live — waits for a restart; schema v26):** an
+**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
 - 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
