@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 475 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 476 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -723,6 +723,8 @@ onto the running one is refused):
   built stay as they are.
 - a fight wears less: a win takes one durability point in about half the fights, a flee 1 point (was 2), a death
   2 (was 3); a passive run rolls each of its fights the same way. The repair price per point is unchanged.
+- the profile's «🛡 Спорядження» explains the wear under the list («🔧 Як зношується»): what each fight's end takes,
+  the run, what a piece at 0 still gives, and the repair's shave — every number read from the data.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

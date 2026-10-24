@@ -185,6 +185,7 @@ If you must keep the emoji in the template for some reason:
 | accuracy | `влучність` | `Влучність` | Accuracy |
 | dodge | `ухилення` | `Ухилення` | Dodge |
 | crit | `крит` | `Крит` | Crit |
+| equip / worn | `одягнути` / `одягнений` (the «🛡 Одягнути» button, «немає одягненої зброї», «яку ви не одягли») — not «вдягнути» (2026-10-24: the gear sheet's «вдягненої» unified, the owner's word) | — | equip / worn |
 
 The three rating stats were added 2026-09-11, after `accuracy` was found under two
 names: `profile.accuracy` said «Влучність» and `workshop.stats.accuracy` said

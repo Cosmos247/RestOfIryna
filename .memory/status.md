@@ -21,6 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-24 — the gear sheet explains the wear** (Swift + locales, *(this commit)*, NOT LIVE — a restart: Lingo is
+not reloaded). The profile's «🛡 Спорядження» ends with «🔧 Як зношується» in place of its one-line hint: a forest
+fight's end — «перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2» — the 🏕 run the same, the Arena and training
+nothing; at 0 armour gives nothing and leaves its set, a weapon keeps half; the Master's repair shaves 1. Every
+number is read from the data (`WearMath.shape`, `repairMaxShave`). The owner's sample and phrasing.
+
 **2026-10-24 — a fight wears less** (Swift + content, schema v27, `6620d39`, NOT LIVE — a restart, not a
 `/reload`). `economy.gear.wearBudget` is a win ½, a flee 1, a death 2 (was 1 / 2 / 3); a fraction is a chance per
 fight (`WearMath`), so a win takes one point in about half the fights, and a passive run rolls each of its fights
@@ -1046,7 +1052,7 @@ and clay at 24 / 12 (`34fe88c`). **The tree differs since 2026-10-24** (a plot c
 less, schema v27, waiting for a restart): `records f14d5d3442b2ce23`, `tuning 37c6ec237883b9f4`, content hash
 `90abd2c4`; the other three lines as above.
 Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **475 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **476 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

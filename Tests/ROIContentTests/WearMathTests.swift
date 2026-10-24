@@ -75,6 +75,19 @@ final class WearMathTests: XCTestCase {
         XCTAssertTrue(spread.isSubset(of: [0, 1, 2, 3, 4]), "\(spread.sorted())")
     }
 
+    /// What the gear sheet prints («перемога — 1 очко з шансом 50%»): the
+    /// points that always land and the chance of one more, the split `points`
+    /// rolls.
+    func testTheShapeASheetPrints() {
+        XCTAssertTrue(WearMath.shape(of: 0.5) == (0, 50))
+        XCTAssertTrue(WearMath.shape(of: 1) == (1, 0))
+        XCTAssertTrue(WearMath.shape(of: 2) == (2, 0))
+        XCTAssertTrue(WearMath.shape(of: 1.5) == (1, 50))
+        XCTAssertTrue(WearMath.shape(of: 0.25) == (0, 25))
+        XCTAssertTrue(WearMath.shape(of: 0) == (0, 0))
+        XCTAssertTrue(WearMath.shape(of: -1) == (0, 0))
+    }
+
     // MARK: - The owner's pick, as shipped
 
     /// «А. ½ / 1 / 2» (2026-10-24), over ½ / 2 / 3, 1 / 1 / 2 and a win that

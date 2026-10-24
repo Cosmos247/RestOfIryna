@@ -2156,6 +2156,15 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-10-24, evening — the gear sheet explains the wear (*(this commit)*, NOT live — waits for the same restart;
+Lingo is not reloaded):** any account.
+- 👤 Профіль → «🛡 Спорядження»: under the slots, «🔧 Як зношується», then «Кінець бою в лісі знімає міцність з
+  випадкової одягненої речі: перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2. У поході 🏕 — так само за кожну
+  сутичку. Арена й тренування не зношують.» and «На 0 броня нічого не дає й не рахується в комплект, а зброя має
+  лише половину сили. Лагодить Майстер у столиці; кожен ремонт броні зрізає 1 з її максимуму.» The old line «Знос
+  витрачається в боях…» is gone.
+- English: «How gear wears», «a win — 1 point at a 50% chance, a flee — 1, a death — 2».
+
 **Added 2026-10-24, later — a fight wears less (`6620d39`, NOT live — waits for a restart; schema v27):**
 an account wearing the Forester set and its weapon, the durability of each piece noted first (🎒 → the piece →
 «Міцність N/M»).
@@ -3548,8 +3557,8 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-24, later — a fight wears less (a win ½, a flee 1, a death 2), built and NOT live with the
-plot cost before it (schema v27, content hash `90abd2c4`; a restart). Under it:*
+*Last updated: 2026-10-24, evening — the gear sheet explains the wear («🔧 Як зношується»), built and NOT live with
+the softer wear (a win ½, a flee 1, a death 2) and the plot cost before it (schema v27, content hash `90abd2c4`; a restart). Under it:*
 
 *2026-10-24 — a plot costs materials (`bac1a70`), built and NOT live.*
 

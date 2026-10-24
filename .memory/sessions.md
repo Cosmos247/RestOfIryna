@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **`6620d39`'s hash fill** — records only.
+- *(this commit, 10-24)* **the gear sheet explains the wear** — Swift + locales, NOT deployed (a restart): the
+  profile's «🛡 Спорядження» ends with «🔧 Як зношується» (`gear.wear.*`, `gear.hint` removed); every number read
+  from the data through `WearMath.shape` and `repairMaxShave`. Digest unmoved; 476 tests.
+- `1c9fce8` (10-24) **`6620d39`'s hash fill** — records only.
 - `6620d39` (10-24) **a fight wears less** — Swift + content, schema v27, NOT deployed (a restart):
   `economy.gear.wearBudget` a win ½ · a flee 1 · a death 2 (was 1 / 2 / 3), decoded as fractions; `WearMath` (ROISim)
   rolls a fraction per fight for the forest and the passive run; the digest replays it seeded; the stale «a flee wears
@@ -845,6 +848,40 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-24, evening (the gear sheet explains the wear) — *(this commit)*
+
+**Asked.** After the audit of the softer wear (committed `6620d39` + `1c9fce8`; the audit fixed two prose ranges —
+untouched wins 2–48%, not 10–48%; wins under 10% HP lost 28–100%, not 53–100% — «up to 390» that was an average, an
+unverified «14:55», four current-state lines still at 1 / 3 / 2 and two stale comments): «Я хочу зробити короткий
+опис витрати міцності для гравців і додати його на екран Спорядження в профілі. Покажи як ти це бачиш.»
+
+**Shown.** The sheet (`MainController.showGear`, text, no art) with Лайкмен's real kit (two pieces at 0 ⚠️), the
+block always under the list (A) or behind «❓ Як зношується» (B). The owner rejected the quiz to clarify — picks A and
+no repair tip recorded — then asked for other phrasings of the win: of «1 очко з шансом 50%», «у середньому ½ очка»,
+«1 очко або нічого, 50 на 50» and a three-line list, the first (recommended).
+
+**Built.** «🔧 <b>Як зношується</b>» and two plain lines in place of the italic `gear.hint`:
+- `gear.wear.fights` — «Кінець бою в лісі знімає міцність з випадкової одягненої речі: перемога — %{win}, втеча —
+  %{flee}, смерть — %{death}. У поході 🏕 — так само за кожну сутичку. Арена й тренування не зношують.» (🏕 after
+  every placeholder — the Lingo surrogate-pair rule);
+- `gear.wear.after` — «На 0 броня нічого не дає й не рахується в комплект, а зброя має лише половину сили. Лагодить
+  Майстер у столиці; кожен ремонт броні зрізає %{shave} з її максимуму.»;
+- `MainController.wearPhrase` reads each budget through `WearMath.shape(of:)` (ROISim, new): a whole number bare, a
+  fraction below one «1 очко з шансом N%» (`gear.wear.chance`), anything else «W, а з шансом N% — W+1»
+  (`gear.wear.whole_or_more`); the `%` rides in the value. English mirrors it.
+
+**Verified.** A forced recompile: no warning in the three touched Swift files; 476 tests (`testTheShapeASheetPrints`);
+`validate --strict` 0/0; the digest unmoved (UI only). Rendered through the real Lingo (a scratch package on
+`.build/checkouts/Lingo` over the repo's `Localizations/`): uk reads the approved text word for word, en mirrors it,
+no raw `%{…}`; the edge shapes 1.5 and 0.25 read «1, а з шансом 50% — 2» and «1 очко з шансом 25%». Claims checked
+against the code: the training dummy never strikes, its win revives it and its flee bails, so training never wears;
+the Arena has no wear call.
+
+**Audited** (10-24, night — «Перевір та зроби коміт»): all of the above re-run clean. Then one word on the owner's
+word, folded into this commit (it was `278ba7e` before the fold): «вдягненої» → «одягненої» in `gear.wear.fights`,
+the verb every other screen uses («🛡 Одягнути», «немає одягненої зброї»). Raised, not picked: «смерть — 2» reads
+as one piece, though each point picks its own random piece.
 
 ## Session — 2026-10-24, later (a fight wears less) — `6620d39`
 

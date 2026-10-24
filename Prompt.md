@@ -27,13 +27,19 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (`6620d39`'s hash fill). Under it, unpushed: **`6620d39`** (a fight wears less — Swift + content, schema v27), **`c2007f8`** (`bac1a70`'s hash fill), **`bac1a70`** (a plot costs materials — Swift + content, schema v26 — carrying the 10-23 22:46 deploy record too, which was written that night and never committed on its own). Under them everything is pushed: `origin/main` = the Pi = **`7ac11f0`** (`34fe88c`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the gear sheet explains the wear — Swift + locales). Under it, unpushed: **`1c9fce8`** (`6620d39`'s hash fill), **`6620d39`** (a fight wears less — Swift + content, schema v27), **`c2007f8`** (`bac1a70`'s hash fill), **`bac1a70`** (a plot costs materials — Swift + content, schema v26 — carrying the 10-23 22:46 deploy record too, which was written that night and never committed on its own). Under them everything is pushed: `origin/main` = the Pi = **`7ac11f0`** (`34fe88c`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`7ac11f0`** (the owner pushed 2026-10-23, just before the 22:46 deploy), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`7ac11f0`**, online since **2026-10-23 22:46:07** (pm2 restarts 2). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night; none since 10-18 04:11), none during play. Content schema **v25**, content hash **`30b0d499`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Two changes, one restart** (schema v27 — a restart, not a `/reload`): **a plot costs materials** (2026-10-24, `bac1a70`): each type its own four-material recipe, the player's Nth plot ×N, the first without 🧱 and 🔩 (`spec-progression.md` §7); **a fight wears less** (2026-10-24, `6620d39`): a win ½ (one point in half the fights), a flee 1, a death 2, where it was 1 / 2 / 3 (`.memory/rebalance.md` → "A fight wears less"). Before them, the twelve 2026-10-20/23 changes went live at the 2026-10-23 22:46 restart — the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`), the keyboard fix (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра» (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the manor door's «Принесено» (`ea52cf6`, with `AddExplorationHaul`, verified on the table), the archer's «💨 Ухилитися» (`e9bdb78`) and clay at 24 / 12 (`34fe88c`); `.memory/sessions.md` → "Deploy — 2026-10-23 22:46" |
+| waiting for a restart | **Three changes, one restart** (schema v27 — a restart, not a `/reload`): **a plot costs materials** (2026-10-24, `bac1a70`): each type its own four-material recipe, the player's Nth plot ×N, the first without 🧱 and 🔩 (`spec-progression.md` §7); **a fight wears less** (2026-10-24, `6620d39`): a win ½ (one point in half the fights), a flee 1, a death 2, where it was 1 / 2 / 3 (`.memory/rebalance.md` → "A fight wears less"); **the gear sheet explains the wear** (2026-10-24, *(this commit)*): «🔧 Як зношується» under the profile's «🛡 Спорядження», its numbers read from the data. Before them, the twelve 2026-10-20/23 changes went live at the 2026-10-23 22:46 restart — the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`), the keyboard fix (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра» (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the manor door's «Принесено» (`ea52cf6`, with `AddExplorationHaul`, verified on the table), the archer's «💨 Ухилитися» (`e9bdb78`) and clay at 24 / 12 (`34fe88c`); `.memory/sessions.md` → "Deploy — 2026-10-23 22:46" |
 
 ### Where the last sessions stopped (2026-10-13 → 10-24)
+
+**10-24, evening — the gear sheet explains the wear.** The owner asked for a short player-facing description of
+durability loss on the profile's «🛡 Спорядження». Mocked on Лайкмен's real kit; the owner picked the block always
+under the list (over a «❓ Як зношується» button), no repair tip, and — after asking for other phrasings — «перемога —
+1 очко з шансом 50%». Built: «🔧 Як зношується» in place of `gear.hint`, every number read from the data
+(`WearMath.shape`, `repairMaxShave`); rendered through the real Lingo in uk and en; 476 tests; digest unmoved.
 
 **10-24, later — a fight wears less.** The owner asked to soften the durability each fight outcome takes. Read off
 the Pi (7 days): 6,489 wins, 592 flees, 32 deaths — 84% of the wear was wins; Лайкмен (L12) wore 390 points a day
@@ -187,7 +193,7 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 schema v27, so the Pi needs the new binary and the new content together — a `/reload` of this bundle onto the
 running binary is refused by the handshake). After it: build a first plot on a fresh account (no 🧱 / 🔩 asked), a
 second with one material short (the modal, the card redrawn); win a few fights and watch the kit lose a point in
-about half of them, a flee one, a death two; read `/content` for hash `90abd2c4`.
+about half of them, a flee one, a death two; read «🔧 Як зношується» on «🛡 Спорядження»; read `/content` for hash `90abd2c4`.
 
 **Walk the twelve blocks live since 10-23 22:46** on top of `TODO.md` → "Walk list" — clay at 24 / 12 and
 «Мʼясо в глині» at 54 (the trader, the tavern's 135, the kitchen card, a portion cooked before the restart),
@@ -293,7 +299,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 475 tests, ~5s
+swift test                                   # 476 tests, ~5s
 ```
 
 

@@ -605,7 +605,8 @@ number nothing reads.
   `EquipmentService.isBroken` is the one test, asked by `contributedStats` and by the set pass.
 - **A fight's wear is a fraction rolled per FIGHT** (2026-10-24: win ½, flee 1, death 2, the owner's
   pick). `WearEvent.points(fights:)` → `WearMath` is the one reading, for the forest and the passive
-  run alike — never `budget × count` rounded, which turns a lone ½ into nothing or always one.
+  run alike — never `budget × count` rounded, which turns a lone ½ into nothing or always one. The
+  gear sheet's «🔧 Як зношується» prints the same split (`WearMath.shape`); no wear number is typed into copy.
   Auto-memory `project-fight-wear-softened`.
 
 **The cached gear bonuses are re-derived at every boot** (`EquipmentService.backfillGearBonuses`,

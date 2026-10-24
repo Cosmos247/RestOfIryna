@@ -277,6 +277,22 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         (.mainHand, "🗡"), (.offHand, "🛡")
     ]
 
+    /// One outcome's wear as the sheet says it, read through `WearMath.shape`:
+    /// a whole budget is its number («втеча — 1»), a fraction below one a
+    /// chance («1 очко з шансом 50%»), anything else both. The percent sign
+    /// rides in the value — no template in the locales carries a bare `%`.
+    private static func wearPhrase(_ event: GearConditionService.WearEvent, lingo: Lingo, locale: String) -> String {
+        let shape = WearMath.shape(of: event.budget)
+        guard shape.chancePercent > 0 else { return String(shape.always) }
+        let percent = "\(shape.chancePercent)%"
+        if shape.always == 0 {
+            return lingo.localize("gear.wear.chance", locale: locale, interpolations: ["percent": percent])
+        }
+        return lingo.localize("gear.wear.whole_or_more", locale: locale, interpolations: [
+            "whole": String(shape.always), "more": String(shape.always + 1), "percent": percent
+        ])
+    }
+
     func showGear(context: Context, editMessageId: Int) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
@@ -304,8 +320,20 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             }
             lines.append("\(shown) \(label): <b>\(name)</b>\(enchant)\(condition)")
         }
+        // How the kit wears (2026-10-24, the owner's sample): always under the
+        // list, where the player is looking at the worn pieces. Every number is
+        // read from what the game runs on — the wear budget, the shave — so a
+        // `/reload` that moves one cannot leave the sheet describing the old rule.
         lines.append("")
-        lines.append("<i>" + lingo.localize("gear.hint", locale: locale) + "</i>")
+        lines.append("🔧 <b>" + lingo.localize("gear.wear.title", locale: locale) + "</b>")
+        lines.append(lingo.localize("gear.wear.fights", locale: locale, interpolations: [
+            "win": Self.wearPhrase(.victory, lingo: lingo, locale: locale),
+            "flee": Self.wearPhrase(.flee, lingo: lingo, locale: locale),
+            "death": Self.wearPhrase(.defeat, lingo: lingo, locale: locale)
+        ]))
+        lines.append(lingo.localize("gear.wear.after", locale: locale, interpolations: [
+            "shave": String(GearConditionService.repairMaxShave)
+        ]))
 
         let back = TGInlineKeyboardButton(
             text: lingo.localize("journal.button.back", locale: locale),

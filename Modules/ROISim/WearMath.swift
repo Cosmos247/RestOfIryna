@@ -40,4 +40,14 @@ public enum WearMath {
         guard fights > 0 else { return 0 }
         return (0..<fights).reduce(0) { total, _ in total + points(budget: budget, using: &rng) }
     }
+
+    /// What a budget reads as on a screen (2026-10-24, the gear sheet's «🔧 Як
+    /// зношується»): the points that always land, and the chance in whole
+    /// percent of one more — 0.5 is (0, 50), 2 is (2, 0), 1.5 is (1, 50). The
+    /// same split `points` rolls, so the sheet cannot describe another rule.
+    public static func shape(of budget: Double) -> (always: Int, chancePercent: Int) {
+        guard budget > 0, budget.isFinite else { return (0, 0) }
+        let whole = budget.rounded(.down)
+        return (Int(whole), Int(((budget - whole) * 100).rounded()))
+    }
 }
