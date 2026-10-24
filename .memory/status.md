@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-24 — the gear sheet explains the wear** (Swift + locales, *(this commit)*, NOT LIVE — a restart: Lingo is
+**2026-10-24 — the gear sheet explains the wear** (Swift + locales, `cf6e3ea`, NOT LIVE — a restart: Lingo is
 not reloaded). The profile's «🛡 Спорядження» ends with «🔧 Як зношується» in place of its one-line hint: a forest
 fight's end — «перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2» — the 🏕 run the same, the Arena and training
 nothing; at 0 armour gives nothing and leaves its set, a weapon keeps half; the Master's repair shaves 1. Every

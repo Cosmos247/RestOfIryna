@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **the gear sheet explains the wear** — Swift + locales, NOT deployed (a restart): the
+- *(this commit, 10-24)* **`cf6e3ea`'s hash fill, and the rewritten history** — records only. On the owner's word («Так,
+  заміни на «одягненої» у тому ж коміті») the audit's one word went into the gear sheet's commit itself: a
+  non-interactive autosquash of the unpushed top, the tree checked identical before and after. `278ba7e` → `cf6e3ea`,
+  `9d68cf8` → this fill.
+- `cf6e3ea` (10-24) **the gear sheet explains the wear** — Swift + locales, NOT deployed (a restart): the
   profile's «🛡 Спорядження» ends with «🔧 Як зношується» (`gear.wear.*`, `gear.hint` removed); every number read
   from the data through `WearMath.shape` and `repairMaxShave`. Digest unmoved; 476 tests.
 - `1c9fce8` (10-24) **`6620d39`'s hash fill** — records only.
@@ -849,7 +853,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-24, evening (the gear sheet explains the wear) — *(this commit)*
+## Session — 2026-10-24, evening (the gear sheet explains the wear) — `cf6e3ea`
 
 **Asked.** After the audit of the softer wear (committed `6620d39` + `1c9fce8`; the audit fixed two prose ranges —
 untouched wins 2–48%, not 10–48%; wins under 10% HP lost 28–100%, not 53–100% — «up to 390» that was an average, an

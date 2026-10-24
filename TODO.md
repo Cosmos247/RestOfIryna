@@ -2156,7 +2156,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-24, evening — the gear sheet explains the wear (*(this commit)*, NOT live — waits for the same restart;
+**Added 2026-10-24, evening — the gear sheet explains the wear (`cf6e3ea`, NOT live — waits for the same restart;
 Lingo is not reloaded):** any account.
 - 👤 Профіль → «🛡 Спорядження»: under the slots, «🔧 Як зношується», then «Кінець бою в лісі знімає міцність з
   випадкової одягненої речі: перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2. У поході 🏕 — так само за кожну
