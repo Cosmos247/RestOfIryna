@@ -1067,6 +1067,77 @@ public enum ContentValidator {
                 require(bonus.capacity >= 1, file: file, path: "\(path).tuning.bonusOutput.capacity",
                         id: row.type, rule: "plot.capacity", "bonus capacity must be >= 1")
             }
+
+            // What a plot costs to build (2026-10-24). Every way this can be
+            // wrong ends in a free plot or a price nobody can pay, and a plot
+            // can never be rebuilt — so all of it is refused, not warned.
+            let obtainable = obtainableItemIds(bundle)
+            for (index, row) in plots.types.enumerated() {
+                let path = "types[\(index)].buildCost"
+                require(!row.buildCost.isEmpty, file: file, path: path, id: row.type,
+                        rule: "plot.build_cost_missing", "no build cost — the plot would be free")
+                var listed: Set<String> = []
+                for (i, cost) in row.buildCost.enumerated() {
+                    let costPath = "\(path)[\(i)]"
+                    if !itemIds.contains(cost.itemId) {
+                        issues.append(.init(severity: .error, file: file, path: costPath, id: row.type,
+                                            rule: "reference.item.unknown",
+                                            message: "references unknown item \"\(cost.itemId)\""))
+                    } else if !obtainable.contains(cost.itemId) {
+                        // Existence is not availability: no drop, forage, plot,
+                        // recipe or shop yields it, so the plot could never stand.
+                        issues.append(.init(severity: .error, file: file, path: costPath, id: row.type,
+                                            rule: "plot.build_cost_unobtainable",
+                                            message: "\"\(cost.itemId)\" is obtainable nowhere"))
+                    }
+                    require(cost.quantity >= 1, file: file, path: costPath, id: row.type,
+                            rule: "ladder.quantity", "quantity must be >= 1, found \(cost.quantity)")
+                    // Two lines for one item would print twice on the card and
+                    // be checked twice against the same stock, so both pass
+                    // while the sum does not, and the drain fails halfway.
+                    require(listed.insert(cost.itemId).inserted, file: file, path: costPath, id: row.type,
+                            rule: "plot.build_cost_duplicate", "\"\(cost.itemId)\" is listed twice")
+                }
+            }
+            if let rule = plots.build {
+                let rulePath = "build.multiplierByPlotNumber"
+                let table = rule.multiplierByPlotNumber
+                let ownable = bundle.estateUpgrades.plotSlotsByTier.max() ?? 0
+                require(table.count >= max(1, ownable), file: file, path: rulePath,
+                        rule: "plot.build_multiplier_short",
+                        "prices \(table.count) plot(s), but an estate owns up to \(ownable) — past the end the last multiplier repeats")
+                for (i, multiplier) in table.enumerated() {
+                    require(multiplier >= 1, file: file, path: "\(rulePath)[\(i)]",
+                            rule: "plot.build_multiplier_non_positive", "a multiplier must be >= 1, found \(multiplier)")
+                }
+                for (i, pair) in zip(table, table.dropFirst()).enumerated() {
+                    require(pair.1 >= pair.0, file: file, path: "\(rulePath)[\(i + 1)]",
+                            rule: "plot.build_multiplier_drops",
+                            "plot \(i + 2) would cost less than plot \(i + 1) (×\(pair.1) after ×\(pair.0))")
+                }
+                for (i, itemId) in rule.firstPlotLeavesOut.enumerated() {
+                    let leftPath = "build.firstPlotLeavesOut[\(i)]"
+                    if !itemIds.contains(itemId) {
+                        issues.append(.init(severity: .error, file: file, path: leftPath, id: itemId,
+                                            rule: "reference.item.unknown",
+                                            message: "references unknown item \"\(itemId)\""))
+                    } else if !plots.types.contains(where: { $0.buildCost.contains { $0.itemId == itemId } }) {
+                        issues.append(.init(severity: .warning, file: file, path: leftPath, id: itemId,
+                                            rule: "plot.build_leaves_out_nothing",
+                                            message: "no recipe asks for \"\(itemId)\", so leaving it out changes nothing"))
+                    }
+                }
+                for (index, row) in plots.types.enumerated() where !row.buildCost.isEmpty {
+                    let first = PlotBuildCost.inputs(recipe: row.buildCost, plotNumber: 1, rule: rule)
+                    require(!first.isEmpty, file: file, path: "types[\(index)].buildCost", id: row.type,
+                            rule: "plot.build_first_plot_free",
+                            "the first plot leaves out every material of the recipe, so it would be free")
+                }
+            } else {
+                issues.append(.init(severity: .error, file: file, path: "build", id: nil,
+                                    rule: "plot.build_rule_missing",
+                                    message: "no build rule — nothing says what the player's Nth plot costs"))
+            }
         }
 
         // MARK: Fortune

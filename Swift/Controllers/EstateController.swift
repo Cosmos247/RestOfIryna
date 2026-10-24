@@ -768,7 +768,14 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     /// (estate, weapon and bag upgrades; every purchase in the capital leads
     /// with `ItemCard`), so this is the plot picker joining them, not a new
     /// idea. Reported 2026-09-17.
-    fileprivate func renderPlotBuildConfirm(slot: Int, type: PlotType, lingo: Lingo, locale: String) -> String {
+    ///
+    /// Since 2026-10-24 a plot costs materials, and the card lists them through
+    /// `RequirementLine` above the warning: `inputs` is
+    /// `PlotService.buildCost`, `stock` is `CraftingService.stock` — the two
+    /// readings `PlotService.claim` pays from.
+    fileprivate func renderPlotBuildConfirm(slot: Int, type: PlotType, inputs: [MaterialCostDTO],
+                                            stock: [String: CraftingService.StockLine],
+                                            lingo: Lingo, locale: String) -> String {
         let icon = PlotCatalog.icon(for: type)
         let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
         let header = lingo.localize("estate.plot.card.header", locale: locale, interpolations: [
@@ -799,6 +806,14 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             lines.append(stream(tuning.producedItemId, cap: tuning.capacity, rate: tuning.ratePerInterval))
             if let bonus = tuning.bonusOutput {
                 lines.append(stream(bonus.producedItemId, cap: bonus.capacity, rate: bonus.ratePerInterval))
+            }
+        }
+        if !inputs.isEmpty {
+            lines.append("")
+            lines.append("<b>" + lingo.localize("estate.upgrade.recipe_header", locale: locale) + "</b>")
+            for input in inputs {
+                lines.append(RequirementLine.item(input.itemId, have: stock[input.itemId]?.total ?? 0,
+                                                  need: input.quantity, lingo: lingo, locale: locale))
             }
         }
         lines.append("")
@@ -1918,16 +1933,27 @@ extension EstateController {
             return true
         }
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-        let ctrl = Controllers.estateController
-        let locale = context.session.locale
-        let body = ctrl.renderPlotBuildConfirm(slot: slot, type: type, lingo: context.lingo, locale: locale)
-        let inline = ctrl.plotBuildConfirmKeyboard(slot: slot, type: type, lingo: context.lingo, locale: locale)
-        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+        try await showPlotBuildConfirm(slot: slot, type: type, message: message, context: context)
         return true
     }
 
+    /// Draws the build card with the price of the player's next plot and what
+    /// they hold of it, read where `PlotService.claim` reads both.
+    private static func showPlotBuildConfirm(slot: Int, type: PlotType, message: TGMaybeInaccessibleMessage,
+                                             context: Context) async throws {
+        let ctrl = Controllers.estateController
+        let locale = context.session.locale
+        let inputs = try await PlotService.buildCost(of: type, for: context.session, on: context.db)
+        let stock = try await CraftingService.stock(for: context.session, on: context.db)
+        let body = ctrl.renderPlotBuildConfirm(slot: slot, type: type, inputs: inputs, stock: stock,
+                                               lingo: context.lingo, locale: locale)
+        let inline = ctrl.plotBuildConfirmKeyboard(slot: slot, type: type, lingo: context.lingo, locale: locale)
+        try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+    }
+
     /// `estate:plot:build:<slot>:<typeRaw>` — the second tap, and the only path
-    /// that writes a `Plot`. Claims the slot, then refreshes the plot list with
+    /// that writes a `Plot`. Claims and pays for the slot (or names what is
+    /// short, over a redrawn card), then refreshes the plot list with
     /// an inline `✅` status line. Every guard runs again here: the two taps can
     /// be minutes apart, and `claim` cannot be undone.
     static func handlePlotBuildConfirmed(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
@@ -1936,7 +1962,15 @@ extension EstateController {
         }
         let locale = context.session.locale
         let ctrl = Controllers.estateController
-        let result = try await PlotService.claim(slot: slot, type: type, for: context.session, on: context.db)
+        // The answer depends on the result (a modal or nothing), so a throw
+        // ahead of it is answered here before it goes on, or the button spins.
+        let result: PlotService.ClaimResult
+        do {
+            result = try await PlotService.claim(slot: slot, type: type, for: context.session, on: context.db)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
         switch result {
         case .slotOutOfRange:
             let toast = context.lingo.localize("estate.plot.alert.slot_out_of_range", locale: locale)
@@ -1945,6 +1979,13 @@ extension EstateController {
         case .slotTaken:
             let toast = context.lingo.localize("estate.plot.alert.slot_taken", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        case .missingMaterials(let shortages):
+            let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            // The card under the modal may be older than the stock: redraw it,
+            // so its ✅ / ❌ agree with what the modal just said.
+            try await showPlotBuildConfirm(slot: slot, type: type, message: message, context: context)
             return true
         case .success:
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))

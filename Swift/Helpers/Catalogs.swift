@@ -94,6 +94,10 @@ final class DomainContent: Sendable {
 
     let plotIcons: [PlotType: String]
     let plotTunings: [PlotType: PlotTuning]
+    /// One recipe per type and the rule that multiplies it (2026-10-24); read
+    /// only through `PlotCatalog.buildCost`, which asks `PlotBuildCost`.
+    let plotBuildRecipes: [PlotType: [MaterialCostDTO]]
+    let plotBuildRule: PlotBuildRuleDTO
     let zones: [Zone]
 
     let fortuneDrawPrice: Int
@@ -277,6 +281,7 @@ final class DomainContent: Sendable {
         // represent throws — a validator error too, so unreachable on install.
         var icons: [PlotType: String] = [:]
         var tunings: [PlotType: PlotTuning] = [:]
+        var recipes: [PlotType: [MaterialCostDTO]] = [:]
         for row in plots.types {
             let type = try row.toPlotType()
             icons[type] = row.icon
@@ -284,9 +289,14 @@ final class DomainContent: Sendable {
             // Training Ground left the plots (2026-09-27), but a row without
             // tuning is still legal content and must not invent a yield.
             if let tuning = row.tuning { tunings[type] = tuning.domain }
+            recipes[type] = row.buildCost
         }
         self.plotIcons = icons
         self.plotTunings = tunings
+        self.plotBuildRecipes = recipes
+        // A missing rule is a validator error, so this default is never
+        // installed; it prices every plot at one recipe rather than trapping.
+        self.plotBuildRule = plots.build ?? PlotBuildRuleDTO()
         // Declaration order preserved: `ZoneCatalog.zone(forDepth:)` takes the
         // FIRST band that covers a km, which is how the shipped ternary chose.
         self.zones = (content.zones?.zones ?? []).map { dto in

@@ -1,6 +1,38 @@
 {
+  "build" : {
+    "firstPlotLeavesOut" : [
+      "mat.clay",
+      "mat.iron"
+    ],
+    "multiplierByPlotNumber" : [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
   "types" : [
     {
+      "buildCost" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "food.potato",
+          "quantity" : 3
+        }
+      ],
       "icon" : "🌾",
       "tuning" : {
         "capacity" : 10,
@@ -10,6 +42,24 @@
       "type" : "farm"
     },
     {
+      "buildCost" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 8
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 10
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 1
+        }
+      ],
       "icon" : "🪚",
       "tuning" : {
         "capacity" : 30,
@@ -19,6 +69,24 @@
       "type" : "forest"
     },
     {
+      "buildCost" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 12
+        },
+        {
+          "itemId" : "mat.hide",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "mat.iron",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 1
+        }
+      ],
       "icon" : "⛏",
       "tuning" : {
         "bonusOutput" : {
@@ -33,6 +101,24 @@
       "type" : "mine"
     },
     {
+      "buildCost" : [
+        {
+          "itemId" : "mat.pine_lumber",
+          "quantity" : 8
+        },
+        {
+          "itemId" : "mat.river_pebble",
+          "quantity" : 5
+        },
+        {
+          "itemId" : "mat.clay",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "food.duck_egg",
+          "quantity" : 3
+        }
+      ],
       "icon" : "🐔",
       "tuning" : {
         "capacity" : 5,

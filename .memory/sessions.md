@@ -11,7 +11,18 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-23)* **`34fe88c`'s hash fill** — records only.
+- *(this commit, 10-24)* **a plot costs materials** — Swift + content, schema v26, NOT deployed (a restart): every
+  `plots.json` row a `buildCost`, the file a `build` rule; the player's Nth plot pays N recipes, the first without
+  clay and iron (`PlotBuildCost`); the build card lists «📜 Матеріали», `PlotService.claim` pays bag-first in one
+  transaction; eleven validator rules, `spec gates` / `spec economy`, `spec-progression.md` §7; `records` and the
+  content hash moved. The owner's picks over two rounds; 468 tests. The 10-23 deploy record below is in it too.
+- *(this commit, 10-23)* **the 10-23 22:46 deploy record** — the same commit: written that night and never
+  committed on its own, so it rides with the plot cost. Records only: the deploy entry below, the
+  Pi's baseline moved to the superseded list, `Prompt.md`, `status.md`, README, `TODO.md` (the twelve walk
+  blocks and the footer marked live), the FAQ rows and ready replies brought to the present, four
+  auto-memories; plus two `TODO.md` → Open notes raised that night («Серпанок тіні» beside «Тінь лісу»; five uk
+  lines with an undeclined plural).
+- `7ac11f0` (10-23) **`34fe88c`'s hash fill** — records only.
 - `34fe88c` (10-23) **clay costs 24 / 12; «Мʼясо в глині» re-cut** — content only, NOT deployed (it
   ships with the restart): `trader.json` clay 4 / 2 → 24 / 12; the dish 3 🥩 + 2 🥔 + 🧱 + 🪵 (50 Vigor, 13 HP,
   125 at the tavern) → 2 🥩 + 1 🥔 + 🧱 + 🪵 (54, 14, 135), so it still restores its ingredients' price.
@@ -733,6 +744,12 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-17 17:40 to 2026-10-23 22:46 (`83176b8`, schema v24):** `records
+78ce585986927122` · `tuning 799a96eb5f8619df` · `spawns 0cf31905171d7944` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `19c94a81`. The forest past km 49 (`1b99a3f`,
+schema v25) moved `records` and `spawns`, the forage at every km (`8308be6`) `spawns`, and the clay price
+(`34fe88c`) `records`.
+
 **The baseline the Pi ran from 2026-10-13 18:54 to 2026-10-17 17:40 (`dda286f`, schema v23):** `records
 78ce585986927122` · `tuning 53e33d38021f0bf4` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `9dba2746`. The barrier's spark
@@ -822,6 +839,107 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-24 (a plot costs materials) — *(this commit)*
+
+**Asked.** «Гравці запропонували додати ресурси для створення ділянки. Запропонуй варіанти того, чого і скільки може
+вартувати кожен тип ділянок.» Until now a plot was free: type → card → «✅ Будувати».
+
+**Read first.** The Pi (read-only SELECTs): 57 plots — 23 mines, 13 farms, 11 sawmills, 10 coops; the first slot was
+a farm or a mine 14 times in 20; one player (T4) has an open slot; 19 players at T1, levels 1–3, will pay for all
+six. Median holdings by estate tier: T2 10🪵 36🪨 7🟫; T3 22🪵 71🪨 31🟫 16🔩 5🧱; T4 80🪵 108🪨 31🟫 27🔩 21🧱; T6
+266🪵 724🪨 181🟫 130🔩 88🧱 (two players) — pebbles and hides pile up. A 5-hour fill at buy prices: coop 30, farm 60,
+sawmill 120, mine 280. A passive day (180 min) forages ~6🪵 ~6🪨 1.2–1.6🔩 0.6–0.8🧱 2.4–2.9🥔/🥚.
+
+**Decided (the owner), two rounds.**
+1. The first quiz (one frame 10🪵 + 10🪨 for all · the frame plus 3🥔 / 3🥚 / 1🔩 / 1🔩 · priced by yield, the mine
+   at 280) was stopped to clarify: «Спробуй якось урізноманітнити шляхом додавання глини та заліза, окрім яєць».
+2. «Кожна своя, повніше» (over a leaner three-material set): farm 10🪵 2🟫 1🔩 3🥔 · sawmill 8🪵 10🪨 2🔩 1🧱 · mine
+   12🪵 3🟫 2🔩 1🧱 · coop 8🪵 5🪨 1🧱 3🥚 — the farm alone without clay, the coop alone without iron.
+3. «×N, перша без 🧱 і 🔩» (over ×N with them, and one price for all six): the first plot 52–70 against the T2
+   step's 118 (the full first mine would be 130); the sixth 504 (coop) – 780 (mine).
+The quiz was interrupted once more (the owner stopped it, then «Давай продовжимо»); the third showing was answered.
+
+**Built.**
+- Content: `plots.json` — `buildCost` per type, `build` {`firstPlotLeavesOut` [clay, iron], `multiplierByPlotNumber`
+  [1…6]}; `manifest.json` schema 26.
+- ROIContent: `PlotBuildCost` (the one reading); `PlotTypeDTO.buildCost`, `PlotBuildRuleDTO`, `PlotFileDTO.build`
+  (both optional on the wire); `ContentSchema` v26; eleven validator rules (`spec-progression.md` §7.5).
+- ROISim: `spec gates` ends with the plots table; `spec economy` gains `plots, 6 × <type>` rows and `one player` a
+  full estate of plots (34,558–36,878, was 32,826–34,208).
+- Game: `Catalogs` / `PlotCatalog.buildCost`; `PlotService.buildCost(of:for:on:)` (N = plots + 1) and `claim` →
+  `.missingMaterials` or a bag-first drain + insert in ONE transaction (`ClaimError.stockMoved` rolls back);
+  `EstateController.showPlotBuildConfirm` — the card lists «📜 Матеріали» via `RequirementLine` and
+  `CraftingService.stock`; a refusal answers with the shortage modal and redraws the card; a throw is answered
+  in a `catch`. `ContentDigest` replays `buildCost` at plot numbers −1…8.
+- Docs: `spec-progression.md` §7 (new, one generated block), `spec-economy.md` §4 (block refreshed + an amendment),
+  CLAUDE.md (one paragraph), `.memory/` (status, file-map, content-pipeline, live-ops FAQ), README, TODO, Prompt,
+  auto-memory `project-plot-build-cost`.
+
+**Verified.** Build clean (no warnings); `validate --strict` 0/0; 468 tests (+10); every generated spec block
+reproduces (15); the digest against the deployed baseline moves `records` `68ecc8783252a905` → `f14d5d3442b2ce23`,
+COMBINED `c1d4f62d7aed7d8b` → `68f2cdb43398dfd1`, the content hash `30b0d499` → `17654923`, nothing else; a changed
+recipe and a changed resolver each move `records` again. Mutation tests: a farm given clay, a first plot leaving out
+nothing, a resolver leaving clay and iron out of every plot — each caught. The build card's worst caption is 359
+UTF-16 units of 1,024 (the mine, plot 5, four-digit holdings). Rehearsal on a scratch Postgres (embedded PG 15.15,
+the real `PlotService` / `CraftingService.stock` in a copy with a `ROI_DRYRUN` hook and no token): 31 checks pass on
+two clean runs — a first mine takes 12 🪵 + 3 🟫 bag-first (5 from the bag, 7 from the warehouse) and leaves clay and
+iron; a short second coop is refused with the four rows above and drains nothing; enough, it takes clay from both
+stores; a taken slot and a slot past the allowance drain nothing; the third plot is ×3; the card renders in uk and
+en; an insert made to fail (a CHECK planted `NOT VALID`) rolls the whole drain back and builds once it can.
+Mutants: the claim without its transaction (4 FAIL — the drain outlives the failed insert) and a warehouse-first
+drain (2 FAIL). The seeding first overfilled the synthetic bag (25 units) — a harness error, fixed.
+
+**Not built.** A «📌 У нотатник» on the build card; a line saying why the price grew (the approved sample had
+neither). **Found, not fixed:** `estate.plot.alert.claimed` «%{type} закладена» is feminine for every type, wrong
+for «Курник» — `TODO.md` → Open.
+
+**Audit before the commit** (the owner's «перевір… зроби коміт»). Re-run on a forced recompile under bash: 0 warnings,
+468 tests, `validate --strict` 0/0, the digest as above, every `spec gates` / `spec economy` / `spec progression`
+block an exact excerpt, every prose price recomputed off `trader.json` (52–70, 504–780, 1,732 / 2,670, 130, 57,864);
+two validator mutants (`plot.build_cost_unobtainable` renamed, `plot.build_multiplier_drops` disarmed) each failed
+a test. Fixed in the records: the 10-23 22:46 deploy record had never been committed — `Prompt.md` called it an
+unpushed commit under this one, so it rides here and the HEAD row says so; `Prompt.md`'s baseline said "the tree
+matches it" and its handshake line "v25 in the tree" (the tree is v26, `records f14d5d34`, hash `17654923`), and
+`status.md` gained the same line; 458 → 468 tests in `Prompt.md`, README and `status.md`.
+
+## Deploy — 2026-10-23 22:46 (`83176b8` → `7ac11f0`)
+
+The owner asked for the deploy and the restart («Задеплой на пай зміни і перезапусти бота») and, in the same
+message, for the two notes raised just before to go into `TODO.md` («Додай зміни в туду»). Before it the
+same night: a testers' note for the twelve changes (every claim checked against the code and the locales; in
+the session, not in a file), the nine techniques listed with their numbers for the owner (`tuning/combat.json`,
+`vigor.json`, `CombatController`), and «Що таке "Серпанок тіні"?» answered — the lingering dodge ×2 of the
+archer's «🌑 Тінь лісу» — which raised the two notes: one effect under two names, and five uk lines that print
+a number beside an undeclined «раунд(ів)» / «удар(ів)» / «крок(ів)».
+- `origin/main` was still `83176b8` when asked; the owner pushed (watched with `git ls-remote`), then
+  `origin/main` = local HEAD = `7ac11f0`. No Mac bot or debugserver running.
+- Read off the Pi first: `83176b8`, online since 2026-10-17 17:40:13, pm2 restarts 1; the untracked `core`
+  and `pgweb/` as known.
+- `git pull --ff-only` fast-forwarded to `7ac11f0` (23 commits); schema v25 on disk.
+- The detached debug build took 133.59 s with 0 errors (the swift-backtrace notices only).
+- `--content-digest` on the Pi matched the Mac byte for byte (67 lines): schema v25, content hash
+  `30b0d499`, `records 68ecc8783252a905`, `tuning 799a96eb5f8619df`, `spawns 004c138c83fa9d1a`, `quests
+  30de20902006e3b9`, `king e3a492be1b017e81`, COMBINED `c1d4f62d7aed7d8b`.
+- The migration was not rehearsed off the Pi: `AddExplorationHaul` is one nullable `ADD COLUMN` and
+  rewrites no row.
+- In flight before the restart (22:45:51): one active walk (not in a fight), one 🏕 run, no trip. The
+  persisted Codables the run carries are unchanged since `83176b8`; `haul` is nullable, so the walk decodes.
+- `pm2 restart ROI && pm2 save` at 22:46:07. The boot logged `Content loaded: schema v25 … hash 30b0d499`,
+  `AddExplorationHaul` prepared, `Bot identified as @ROfIr_bot`, `[ACCESS] OPEN DOOR`, `Backfilled
+  level-derived stats for 1 user(s)` (a boot pass that also fired at six earlier boots), eight `403 bot was
+  blocked by the user` from the restart notice, and `Server started and listening` at 22:46:15.
+- The table, not the log: `exploration_state.haul` is `text`, nullable; the `_fluent_migrations` row is
+  stamped 22:46:08; the two rows in flight carry no haul, so the walk comes home without «Принесено:», as
+  designed.
+- At 22:48:45 (158 s after the boot, past the watchdog's 120 s): ROI `online`, restarts 2, up since
+  22:46:07; still one `[WATCHDOG]` (10-08 11:47:53); `Code: 400` at 922; the last 429 / 502 at 10-18 04:11.
+
+Live since: the twelve 10-20/23 changes — the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`),
+the keyboard fix (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and
+«Руки майстра» (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage at every km
+(`8308be6`), the manor door's «Принесено» (`ea52cf6`), the archer's «💨 Ухилитися» (`e9bdb78`) and clay at
+24 / 12 with «Мʼясо в глині» re-cut (`34fe88c`).
 
 ## Session — 2026-10-23, night (clay costs 24 / 12; «Мʼясо в глині» re-cut) — `34fe88c`
 

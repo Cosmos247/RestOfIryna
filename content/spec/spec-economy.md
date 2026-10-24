@@ -351,6 +351,10 @@ the draft band lives and where content arrives after the rebalance.
 | estate →T5 | 2860 | 150 |
 | estate →T6 | 4030 | 400 |
 | estate →T7 | 5600 | 1000 |
+| plots, 6 × `farm` | 1870 | 0 |
+| plots, 6 × `forest` | 2372 | 0 |
+| plots, 6 × `mine` | 2666 | 0 |
+| plots, 6 × `coop` | 1740 | 0 |
 | bag, every step | 6090 | 0 |
 | training ground L1 | 190 | 150 |
 | training ground L2 | 468 | 400 |
@@ -358,8 +362,8 @@ the draft band lives and where content arrives after the rebalance.
 | `gear.rusty_sword` T1→T9 | 8772 | 0 |
 | `gear.simple_bow` T1→T9 | 7618 | 0 |
 | `gear.wooden_staff` T1→T9 | 7390 | 0 |
-| **every row** | **49216** | |
-| **one player** — a single weapon ladder | **32826–34208** | |
+| **every row** | **57864** | |
+| **one player** — a single weapon ladder, a full estate of plots | **34558–36878** | |
 
 **The sinks that are not a ladder**
 
@@ -427,6 +431,13 @@ item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 > day against the ~78–103 their jobs pay, and an L8 player with 386 🪙 faced a 436 🪙 full repair
 > with every piece at 0. The surplus this section describes is a late-game one; the repair was
 > landing on the early game. The max shave per repair stays as it was, on the owner's word.
+
+> *Amended 2026-10-24 (`spec-progression.md` §7).* A plot costs materials now: the player's Nth
+> plot pays N of its type's recipe, the first without clay and iron. The four `plots, 6 × …`
+> rows above price six plots of one type; `one player` adds a full estate of them at the
+> cheapest and the dearest type for every plot number — 1,732 and 2,670 — so it reads
+> 34,558–36,878 where it read 32,826–34,208. No silver is charged, so the mandatory spend above
+> is unchanged; the ~21,900 below was not re-derived.
 
 **The trader is the economy's only real drain, and using it is a choice.** Buying
 every material rather than gathering it costs ~21,900 — which is almost exactly

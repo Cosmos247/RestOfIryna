@@ -94,6 +94,16 @@ public enum PlotCatalog {
         return tuning(for: type, tier: tier)
     }
 
+    /// What the player's `plotNumber`-th plot of `type` costs to build
+    /// (2026-10-24) — the number counts the plot being built, so the first is
+    /// 1. `PlotService.buildCost` supplies the number; the arithmetic is
+    /// `PlotBuildCost`, which `roi-content spec gates` prints.
+    public static func buildCost(for type: PlotType, plotNumber: Int) -> [MaterialCostDTO] {
+        let content = Catalogs.current
+        return PlotBuildCost.inputs(recipe: content.plotBuildRecipes[type] ?? [], plotNumber: plotNumber,
+                                    rule: content.plotBuildRule)
+    }
+
     /// UI icon per type. Tied to the type, not the tier — visual continuity
     /// across upgrades. The validator requires a row for every `PlotType`, so
     /// the fallback is unreachable on a bundle that installs.

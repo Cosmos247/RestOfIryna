@@ -268,3 +268,92 @@ level↔km rule implies. Later content goes there.
 - Set bonuses and their sources — `spec-sets.md`.
 - Levels 26–40 as authored content. They are a generated draft by decision, and
   the band above is where that decision was taken.
+
+---
+
+## 7. What a plot costs (2026-10-24)
+
+### 7.1 What was asked
+
+Players asked for a plot to cost resources. Until then building one was free: pick a type,
+read the card, «✅ Будувати». A plot can never be rebuilt or changed (the card says so), so
+the price is paid once for the life of the account.
+
+### 7.2 Decided 2026-10-24 (the owner)
+
+1. **The first proposal was sent back.** It gave every type the same frame of 10 🪵 + 10 🪨
+   plus one item of its own (3 🥔 · 3 🥚 · 1 🔩 · 1 🔩); the owner asked for something more
+   varied, with clay and iron in it.
+2. **Every type has a recipe of its own, four materials each** — of two diversified sets, the
+   fuller (the leaner had three each). The farm is the only one without clay, the coop the only
+   one without iron, and pebbles and hides — the materials warehouses hold most of — are asked
+   for too:
+   - farm — a fence 🪵, a harness 🟫, a ploughshare 🔩, seed potatoes 🥔;
+   - coop — a frame 🪵, a floor 🪨, clay-daubed walls 🧱, eggs to hatch 🥚;
+   - sawmill (`forest`) — the saw frame and its wheel 🪵, a foundation 🪨, the saws 🔩, a dam 🧱;
+   - mine — pit props 🪵, bellows 🟫, picks 🔩, a forge 🧱.
+3. **The player's Nth plot costs N recipes, and the first leaves out clay and iron** — over
+   ×N with clay and iron from the first plot, and over one price for all six. Without the
+   exception the first mine would have cost more than the estate step that opens its slot.
+
+### 7.3 The rule
+
+- **N counts the plot being built**: the player's plots plus one, never the slot index — a
+  slot can be claimed out of order, and the price is about how much land the estate already
+  works.
+- The Nth plot pays its type's `buildCost` × `build.multiplierByPlotNumber[N − 1]`; past the
+  table the last multiplier holds. The first plot leaves out `build.firstPlotLeavesOut`.
+- It is drawn from the bag first and the warehouse for the rest, the estate's policy, and paid
+  in one transaction with the plot row: a plot that cannot be rebuilt is paid in full or not
+  built at all.
+- **The plots built before the rule stay as they are.** Nobody is charged for them.
+
+<!-- generated: roi-content spec gates -->
+**Plots** (`plots.json`) — the player's Nth plot costs its type's recipe × N's multiplier;
+the first plot leaves out `mat.clay` `mat.iron`
+
+| plot | × | `farm` | `forest` | `mine` | `coop` |
+|---|---|---|---|---|---|
+| 1 | 1 | 10🪵 2🟫 3🥔 | 8🪵 10🪨 | 12🪵 3🟫 | 8🪵 5🪨 3🥚 |
+| 2 | 2 | 20🪵 4🟫 2🔩 6🥔 | 16🪵 20🪨 4🔩 2🧱 | 24🪵 6🟫 4🔩 2🧱 | 16🪵 10🪨 2🧱 6🥚 |
+| 3 | 3 | 30🪵 6🟫 3🔩 9🥔 | 24🪵 30🪨 6🔩 3🧱 | 36🪵 9🟫 6🔩 3🧱 | 24🪵 15🪨 3🧱 9🥚 |
+| 4 | 4 | 40🪵 8🟫 4🔩 12🥔 | 32🪵 40🪨 8🔩 4🧱 | 48🪵 12🟫 8🔩 4🧱 | 32🪵 20🪨 4🧱 12🥚 |
+| 5 | 5 | 50🪵 10🟫 5🔩 15🥔 | 40🪵 50🪨 10🔩 5🧱 | 60🪵 15🟫 10🔩 5🧱 | 40🪵 25🪨 5🧱 15🥚 |
+| 6 | 6 | 60🪵 12🟫 6🔩 18🥔 | 48🪵 60🪨 12🔩 6🧱 | 72🪵 18🟫 12🔩 6🧱 | 48🪵 30🪨 6🧱 18🥚 |
+
+🪵 `mat.pine_lumber` · 🟫 `mat.hide` · 🔩 `mat.iron` · 🥔 `food.potato` · 🪨 `mat.river_pebble` · 🧱 `mat.clay` · 🥚 `food.duck_egg`
+<!-- /generated -->
+
+### 7.4 What it costs
+
+At the trader's buy prices a player's first plot costs 52–70 (sawmill, coop, mine, farm)
+against the 118 of the estate step that opens its slot; the sixth costs 504 (coop) to 780
+(mine). Six plots of one type are the `plots, 6 × …` rows of `spec-economy.md` §4, and a full
+estate of them is what moved its `one player` row. Clay is the material to watch: a passive
+day forages under one, the trader sells it at 24, and a full estate of plots asks for up to
+twenty — none for a farm — on top of the seventy the estate's own steps from T4 to T7 take.
+
+### 7.5 What checks it
+
+- **The validator**, every rule an error but one: `plot.build_cost_missing`,
+  `plot.build_rule_missing`, `reference.item.unknown`, `plot.build_cost_unobtainable`,
+  `ladder.quantity`, `plot.build_cost_duplicate`, `plot.build_multiplier_short`,
+  `plot.build_multiplier_non_positive`, `plot.build_multiplier_drops`,
+  `plot.build_first_plot_free`, and the warning `plot.build_leaves_out_nothing`.
+- **The tests**: `PlotBuildCostTests` pins the rule and the owner's pick on the shipped bundle
+  (mutation-tested: a farm given clay, a first plot that leaves out nothing and a resolver
+  that leaves clay and iron out of every plot each fail it); `EstateAndNPCCatalogTests` makes every rule fire.
+- **The digest**: `records` replays `PlotCatalog.buildCost` for every type at plot numbers
+  −1…8.
+- **Content schema v26**: both fields decode as optional, so only the handshake keeps the
+  bundle off a binary that would hand out free plots.
+
+### 7.6 Where it lives
+
+`PlotBuildCost` (`Modules/ROIContent`) is the one reading of the rule, for the build card,
+`PlotService.claim`, the validator and `roi-content spec`. The card asks
+`PlotService.buildCost(of:for:on:)` and `CraftingService.stock` — the two readings the claim
+pays from — and lists the materials under «📜 Матеріали» through `RequirementLine`; a refused
+«✅ Будувати» answers with the shortage modal and redraws the card under it. Not built: a
+«📌 У нотатник» on the build card, and a line on the card saying why the price grew — the
+approved sample had neither.

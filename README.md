@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 458 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 468 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -686,8 +686,8 @@ the binary):
 - the registration welcome escapes a Telegram name, which had kept one player from ever seeing the
   language picker.
 
-**Built 2026-10-20/23, waiting for a restart** (content schema v25, shipped with the binary; one database
-migration, `AddExplorationHaul`):
+**Live since the 2026-10-23 22:46 restart, built 2026-10-20/23** (content schema v25, shipped with the binary;
+one database migration, `AddExplorationHaul`):
 - the forest goes on past km 49 — the rabid bear and the rabid pack roam every km past it and the
   deepest forage band answers there; until then 93% of steps past the horizon read «Лише тиша»;
 - the hub stops saying hello: every way back to the menu reads «👇 Оберіть, куди далі»;
@@ -714,6 +714,13 @@ migration, `AddExplorationHaul`):
 - clay costs 24 🪙 at the trader, who buys it at 12 — the dearest of the forest's finds, where at 4 / 2 the
   rarest one was priced like a pine board; «Мʼясо в глині» is cooked from 2 🥩 + 1 🥔 + 🧱 + 🪵 and restores
   54 Vigor and 14 HP (135 🪙 at the tavern), so it still restores exactly what its ingredients cost.
+
+**Built 2026-10-24, NOT live** — it needs a restart (content schema v26 ships with the binary, so a `/reload`
+onto the running one is refused):
+- a plot costs materials: each type its own recipe — the farm 10 🪵 2 🟫 1 🔩 3 🥔, the sawmill 8 🪵 10 🪨 2 🔩 1 🧱,
+  the mine 12 🪵 3 🟫 2 🔩 1 🧱, the coop 8 🪵 5 🪨 1 🧱 3 🥚 — the player's second plot twice that, the sixth six
+  times, and the first without clay and iron. The build card lists them under «📜 Матеріали»; plots already
+  built stay as they are.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

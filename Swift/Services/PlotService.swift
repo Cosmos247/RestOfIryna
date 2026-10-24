@@ -193,11 +193,25 @@ public enum PlotService {
     public enum ClaimResult: Sendable {
         case slotOutOfRange    // slot >= slotsForLevel(user.estateLevel)
         case slotTaken         // user already has a plot at that slot
+        /// The bag and the warehouse together hold less than the plot costs —
+        /// every short input named, for `RequirementLine.shortageModal`.
+        case missingMaterials(shortages: [CraftingService.Shortage])
         case success(Plot)
     }
 
-    /// Claim an empty slot for `type`. Slot index must be within the user's
-    /// estate-level allowance (`slotsForLevel`). Tier defaults to 1.
+    /// What the player's NEXT plot of `type` costs (2026-10-24). Its number is
+    /// the plots they own plus one — never the slot index, since a slot can be
+    /// claimed out of order. The build card and `claim` both ask here, so the
+    /// card cannot quote a price the claim then disagrees with.
+    public static func buildCost(of type: PlotType, for user: User, on db: any Database) async throws -> [MaterialCostDTO] {
+        let owned = try await Plot.list(for: user, on: db).count
+        return PlotCatalog.buildCost(for: type, plotNumber: owned + 1)
+    }
+
+    /// Claim an empty slot for `type`, paying its build cost from the bag first
+    /// and the warehouse for the rest — the estate's policy, read from the same
+    /// `CraftingService.stock` the card quotes. Slot index must be within the
+    /// user's estate-level allowance (`slotsForLevel`). Tier defaults to 1.
     @discardableResult
     public static func claim(slot: Int, type: PlotType, for user: User, on db: any Database) async throws -> ClaimResult {
         let allowance = slotsForLevel(user.estateLevel)
@@ -206,9 +220,46 @@ public enum PlotService {
         if let _ = try await Plot.find(slot: slot, for: user, on: db) {
             return .slotTaken
         }
+
+        let inputs = try await buildCost(of: type, for: user, on: db)
+        let snapshot = try await CraftingService.stock(for: user, on: db)
+        let shortages: [CraftingService.Shortage] = inputs.compactMap { input in
+            let have = snapshot[input.itemId]?.total ?? 0
+            guard have < input.quantity else { return nil }
+            return CraftingService.Shortage(itemId: input.itemId, need: input.quantity, have: have)
+        }
+        if !shortages.isEmpty {
+            return .missingMaterials(shortages: shortages)
+        }
+
+        // One transaction, unlike the upgrades beside it: a plot can never be
+        // rebuilt, so it is paid in full or not built at all — a drain that
+        // outlived a failed insert would take the materials for land the player
+        // does not get, and a store that no longer holds what the snapshot saw
+        // would build the plot underpaid.
         let plot = Plot(userID: userId, slotIndex: slot, plotType: type.rawValue, tier: 1, lastHarvestedAt: Date())
-        try await plot.save(on: db)
+        try await db.transaction { tx in
+            for input in inputs {
+                let fromInv = min(input.quantity, snapshot[input.itemId]?.bag ?? 0)
+                if fromInv > 0, try await !InventoryEntry.remove(input.itemId, quantity: fromInv, from: user, on: tx) {
+                    throw ClaimError.stockMoved(input.itemId)
+                }
+                let fromWH = input.quantity - fromInv
+                if fromWH > 0, try await !WarehouseEntry.remove(input.itemId, quantity: fromWH, from: user, on: tx) {
+                    throw ClaimError.stockMoved(input.itemId)
+                }
+            }
+            try await plot.save(on: tx)
+        }
         return .success(plot)
+    }
+
+    /// Thrown inside the claim's transaction, which rolls it back. Nothing but
+    /// the player's own serialized taps moves their stock, so it should never
+    /// fire; if it does, the tap is answered and logged and the next one reads
+    /// a fresh snapshot.
+    public enum ClaimError: Error {
+        case stockMoved(String)
     }
 
 }

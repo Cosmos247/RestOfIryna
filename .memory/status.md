@@ -21,54 +21,60 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» re-cut** (content only, NOT deployed — it ships with
-the restart). The trader sells clay at 24 and buys it at 12 (was 4 / 2), the dearest of the forest's finds.
+**2026-10-24 — a plot costs materials** (Swift + content, schema v26, *(this commit)*, NOT LIVE — it needs a
+restart, not a `/reload`). Each type has a recipe of its own: farm 10🪵 2🟫 1🔩 3🥔 · sawmill 8🪵 10🪨 2🔩 1🧱 ·
+mine 12🪵 3🟫 2🔩 1🧱 · coop 8🪵 5🪨 1🧱 3🥚; the player's Nth plot pays N of it, the first without clay and iron
+(`PlotBuildCost`, `spec-progression.md` §7). The build card lists the materials under «📜 Матеріали»; a refused
+«✅ Будувати» answers with the shortage modal. The 57 plots built before stay free. The owner's picks, two rounds.
+
+**2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» re-cut** (content only, `34fe88c`, live since 2026-10-23
+22:46). The trader sells clay at 24 and buys it at 12 (was 4 / 2), the dearest of the forest's finds.
 «Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵 (was 3 🥩 + 2 🥔 + 🧱 + 🪵) and restores 54 Vigor and 14 HP, 135 at the
 tavern (was 50 / 13 / 125), so a dish still restores its ingredients' price (`spec-bestiary.md` §13.5).
 
-**2026-10-23 — the archer's Defend is «💨 Ухилитися»** (locales + Swift, NOT deployed — a restart). Was
+**2026-10-23 — the archer's Defend is «💨 Ухилитися»** (locales + Swift, `e9bdb78`, live since 2026-10-23 22:46). Was
 «💨 Швидкий маневр» (en «💨 Dodge», was «Quick maneuver»); its line is its own, «💨 Ви пірнаєте вбік і
 черкаєте ножем — …» (`combat.defend.dodge`), where it borrowed the warrior's «Ви тримаєте удар…». The
 mechanic is unchanged.
 
-**2026-10-23 — the manor door names what an active walk brought** (Swift + a migration, NOT deployed — a
-restart). The arrival line «🏰 Ви повертаєтеся додому…» gains «Принесено:»: what the walk put in the bag less
+**2026-10-23 — the manor door names what an active walk brought** (Swift + a migration, `ea52cf6`, live since
+2026-10-23 22:46; the `haul` column verified). The arrival line «🏰 Ви повертаєтеся додому…» gains «Принесено:»: what the walk put in the bag less
 what was eaten of it, in the passive report's rows, then «🪙 Знайдено N срібників»; «з порожніми руками» when
 nothing; what the bag refused is not listed (the passive report keeps «лишилось у лісі»). Counted on
 `exploration_state.haul` (`ExpeditionHaul`, `AddExplorationHaul`); no block at km 0 or for a walk begun
 before the restart. The passive report is unchanged.
 
-**2026-10-23 — every material is foraged at every km** (content only, NOT deployed — it ships with the
-restart, or a `/reload` after it). The three zones' pools are gone: `zones.json` is five 10-km bands, each
+**2026-10-23 — every material is foraged at every km** (content only, `8308be6`, live since 2026-10-23
+22:46). The three zones' pools are gone: `zones.json` is five 10-km bands, each
 with all eight materials, the weights shifting with depth; clay is the rarest at every depth, half of iron
 (`spec-bestiary.md` §13). Meat and hide stay kill-only; the clay price stayed 4 / 2 that day (raised to
 24 / 12 the same night, above).
 
-**2026-10-22 — the forest edge names armour a death would take** (Swift + locales, NOT deployed — a
-restart). The edge and the duration picker list the bag's armour a death would take, with «🛡 Одягнути»
+**2026-10-22 — the forest edge names armour a death would take** (Swift + locales, `4ebc80b`, live since
+2026-10-23 22:46). The edge and the duration picker list the bag's armour a death would take, with «🛡 Одягнути»
 first, filling EMPTY slots only (a spare is listed, never swapped in); the rule is `DeathWipe` in
 ROIContent, asked by the wipe and the warning alike. Every edge button asks `edgeIsStale` first, so an
 edge left in the chat across a restart no longer starts an expedition from the capital or the road.
 
-**2026-10-22 — «Руки майстра» names the place** (locales, NOT deployed — a restart). The decree's line
+**2026-10-22 — «Руки майстра» names the place** (locales, `c011f9f`, live since 2026-10-23 22:46). The decree's line
 reads «🔨 Викувати щось у Майстерні», where «Виготовити річ» dated from craftable armour.
 
-**2026-10-22 — the road names the way back** (Swift + locales, NOT deployed — a restart). On the road,
+**2026-10-22 — the road names the way back** (Swift + locales, `c011f9f`, live since 2026-10-23 22:46). On the road,
 the place button the trip is NOT heading to answers the countdown plus «Щоб повернути до столиці —
 ↩️ Розвернутись.» (the owner's pick over making that button turn the trip).
 
-**2026-10-22 — a find that half fits** (Swift + locales, NOT deployed — a restart). A forest find or a
+**2026-10-22 — a find that half fits** (Swift + locales, `c011f9f`, live since 2026-10-23 22:46). A forest find or a
 kill drop puts as many units in the bag as still fit (`InventoryEntry.unitsThatFit`) and says «Сумка
 повна — ще 1 лишається на землі.» under them; it used to take all or none, so one free slot and a find
 of two lost both. The passive report splits the find the same way.
 
-**2026-10-21/22 — the warehouse's ℹ️ names its row** (Swift + uk locale, NOT deployed — a restart). The gear
+**2026-10-21/22 — the warehouse's ℹ️ names its row** (Swift + uk locale, `40b52df`, live since 2026-10-23 22:46). The gear
 rows' info button carries the row's id, and the alert reads the description at that row's tier — a
 laddered weapon has only `.desc.t1…t9`, so the bare key printed itself. An item-id button left in chat
 answers when the listed copies share one tier, and otherwise redraws the list. With it, 10-22: the
 arena's refusal and the training exit say «майданчик», not «двір».
 
-**2026-10-21 — the keyboard stays** (`6ac0351`, Swift only, NOT deployed — a restart). Telegram drops a
+**2026-10-21 — the keyboard stays** (`6ac0351`, Swift only, live since 2026-10-23 22:46). Telegram drops a
 reply keyboard with the message that brought it, and `postStatusBanner` deleted the previous banner —
 so after a training exit or the stray-number hint, which carry the keyboard on a banner, the next
 harvest or craft took the buttons away. Such a banner is no longer remembered, so never deleted. The
@@ -76,13 +82,13 @@ estate and the bag, whose screens are inline only, answer a stray word with `sho
 the menu keyboard instead of redrawing a screen that restores none. `is_persistent` and `/menu` as a
 global command were raised and not picked (`TODO.md` → "Open").
 
-**2026-10-20 — the hub stops saying hello** (`266ad57`, Swift + locales, NOT deployed — a restart).
+**2026-10-20 — the hub stops saying hello** (`266ad57`, Swift + locales, live since 2026-10-23 22:46).
 `showMainMenu`'s default line was «👋 Вітаю, <нік>!», so Settings' Back, `/start`, a stray word and a
 stale Turn back all greeted the player; it is «👇 Оберіть, куди далі» (`main.menu.prompt`) now, and
 registration's last step is the one hello.
 
-**2026-10-20 — the forest goes on past km 49** (content + Swift, schema v25, NOT deployed — a
-restart). Past the horizon (the deepest spawnable band, km 49) nothing answered, so 93% of steps read
+**2026-10-20 — the forest goes on past km 49** (content + Swift, schema v25, `1b99a3f`, live since 2026-10-23
+22:46). Past the horizon (the deepest spawnable band, km 49) nothing answered, so 93% of steps read
 «Лише тиша»; an archer walked km 49 → 70 on 10-12, on 11 HP and then, after a root, on 2. The rabid bear, the rabid pack and the deep
 wood are marked `beyondHorizon` and answer every km past it — the pack only there and at its own
 36–40, never 41–49 — through `ForestHorizon.covers`. Four validator rules; the digest replays km
@@ -1022,15 +1028,18 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
-since the 2026-10-17 17:40 restart (`83176b8`): `records 78ce585986927122` /
-`tuning 799a96eb5f8619df` / `spawns 0cf31905171d7944` / `quests 30de20902006e3b9` / `king
-e3a492be1b017e81`, content hash `19c94a81`, **schema v24** (the barrier's spark moved `tuning`).
-That restart carried the barrier's spark (`32cf650`), the leaderboard pages (`1f0ca8b`), the escaped
-welcome (`fb72d0d`) and the 🪙 Багатство board (`8320b92`). **Waiting for a restart since 2026-10-20: the
-forest past km 49** (content + Swift, schema v25), the hub's line (`266ad57`), the keyboard fix
-(`6ac0351`), the warehouse's ℹ️ (10-21) and the four 10-22 changes (a find that half fits, the road's hint, «Руки майстра», the forest edge's armour warning) and the forage without zones, the door's «Принесено» (with a migration), the archer's «💨 Ухилитися» and the clay price 24 / 12 (10-23) — the tree's digest differs from this baseline in
-`records` `68ecc8783252a905`, `spawns` `004c138c83fa9d1a` (60 depths, the new forage) and content hash `30b0d499`. Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **458 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+since the 2026-10-23 22:46 restart (`7ac11f0`): `records 68ecc8783252a905` /
+`tuning 799a96eb5f8619df` / `spawns 004c138c83fa9d1a` / `quests 30de20902006e3b9` / `king
+e3a492be1b017e81`, content hash `30b0d499`, **schema v25** (the forest past km 49 moved the schema; the
+forest past km 49, the new forage and the clay price moved `records`, `spawns` and the hash). That restart
+carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`), the keyboard fix
+(`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра»
+(`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
+«Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
+and clay at 24 / 12 (`34fe88c`). **The tree differs since 2026-10-24** (a plot costs materials, schema v26,
+waiting for a restart): `records f14d5d3442b2ce23`, content hash `17654923`; the other four lines as above.
+Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **468 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

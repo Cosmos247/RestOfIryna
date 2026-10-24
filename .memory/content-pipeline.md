@@ -213,6 +213,15 @@ The verification has four parts:
   `ZoneCatalog.zone(forDepth:)` both ask. The horizon is derived, never typed. Guards:
   `enemy.horizon_empty` / `zone.horizon_empty` / `zone.horizon_ambiguous` (warnings),
   `enemy.beyond_never_spawns` (error); the digest replays km 1–60.
+- **A plot costs materials (2026-10-24, schema v26).** Every `plots.json` row carries a
+  `buildCost` (one recipe) and the file a `build` rule: the player's Nth plot — their plots
+  plus one, never the slot index — pays the recipe × `multiplierByPlotNumber[N − 1]`, the first
+  less `firstPlotLeavesOut`. `PlotBuildCost.inputs` (ROIContent) is the only reading, for the
+  card, `PlotService.claim`, the validator and `spec gates` / `spec economy`. Both fields
+  decode as optional and the validator refuses them missing (`plot.build_cost_missing`,
+  `plot.build_rule_missing`), so a forgotten recipe is an error, never a free plot; the
+  schema bump is what keeps the bundle off an older binary. The digest's `records` replays
+  `PlotCatalog.buildCost` over plot numbers −1…8 (`spec-progression.md` §7).
 - **Combat curves come in two shapes and they are separate TYPES.**
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.

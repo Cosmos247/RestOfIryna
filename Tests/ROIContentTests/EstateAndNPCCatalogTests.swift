@@ -112,7 +112,8 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     // MARK: - Fixtures
 
     private func bundle(master: MasterFileDTO? = nil, plots: PlotFileDTO? = nil,
-                        fortune: FortuneFileDTO? = nil, quests: QuestFileDTO? = nil) -> ContentBundle {
+                        fortune: FortuneFileDTO? = nil, quests: QuestFileDTO? = nil,
+                        plotSlotsByTier: [Int] = []) -> ContentBundle {
         ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [
@@ -122,6 +123,8 @@ final class EstateAndNPCCatalogTests: XCTestCase {
                         maxDurability: 50)
             ],
             enemies: [], recipes: [], starterRecipeIds: [],
+            estateUpgrades: EstateUpgradeFileDTO(maxTier: plotSlotsByTier.count, plotSlotsByTier: plotSlotsByTier,
+                                                 progression: []),
             master: master, plots: plots, fortune: fortune, quests: quests,
             contentHash: "test"
         )
@@ -145,17 +148,27 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         )
     }
 
-    private func allPlots() -> PlotFileDTO {
+    /// Every type built from the fixture's two obtainable items (a plot's own
+    /// output counts); the first plot leaves out the potato.
+    private func allPlots(build: PlotBuildRuleDTO? = PlotBuildRuleDTO(firstPlotLeavesOut: ["food.potato"],
+                                                                       multiplierByPlotNumber: [1, 2, 3]),
+                          buildCost: [MaterialCostDTO] = [MaterialCostDTO(itemId: "mat.hide", quantity: 4),
+                                                          MaterialCostDTO(itemId: "food.potato", quantity: 2)])
+        -> PlotFileDTO {
         PlotFileDTO(types: [
             PlotTypeDTO(type: "farm", icon: "🌾",
-                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20)),
+                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20),
+                        buildCost: buildCost),
             PlotTypeDTO(type: "forest", icon: "🪚",
-                        tuning: PlotTuningDTO(producedItemId: "mat.hide", ratePerInterval: 6, capacity: 30)),
+                        tuning: PlotTuningDTO(producedItemId: "mat.hide", ratePerInterval: 6, capacity: 30),
+                        buildCost: buildCost),
             PlotTypeDTO(type: "mine", icon: "⛏",
-                        tuning: PlotTuningDTO(producedItemId: "mat.hide", ratePerInterval: 8, capacity: 40)),
+                        tuning: PlotTuningDTO(producedItemId: "mat.hide", ratePerInterval: 8, capacity: 40),
+                        buildCost: buildCost),
             PlotTypeDTO(type: "coop", icon: "🐔",
-                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 2, capacity: 12))
-        ])
+                        tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 2, capacity: 12),
+                        buildCost: buildCost)
+        ], build: build)
     }
 
     private func rules(_ bundle: ContentBundle) -> Set<String> {
@@ -256,6 +269,64 @@ final class EstateAndNPCCatalogTests: XCTestCase {
 
     func testWellFormedPlotsAreClean() {
         XCTAssertTrue(rules(bundle(plots: allPlots())).isEmpty)
+        XCTAssertTrue(rules(bundle(plots: allPlots(), plotSlotsByTier: [0, 1, 2])).isEmpty)
+    }
+
+    // MARK: - What a plot costs to build (2026-10-24)
+
+    private func cost(_ itemId: String, _ quantity: Int) -> MaterialCostDTO {
+        MaterialCostDTO(itemId: itemId, quantity: quantity)
+    }
+
+    /// A forgotten recipe or rule must not become a free plot.
+    func testAPlotWithoutABuildCostOrRuleIsRefused() {
+        XCTAssertTrue(rules(bundle(plots: allPlots(buildCost: []))).contains("plot.build_cost_missing"))
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: nil))).contains("plot.build_rule_missing"))
+    }
+
+    /// An item that does not exist, one nothing yields, a count below one, or
+    /// the same item twice — each would leave a plot nobody can build or a
+    /// claim that drains halfway.
+    func testABuildCostTheGameCannotChargeIsRefused() {
+        XCTAssertTrue(rules(bundle(plots: allPlots(buildCost: [cost("mat.nope", 1)])))
+            .contains("reference.item.unknown"))
+        // The hood exists, but this bundle sells it nowhere and drops it nowhere.
+        XCTAssertTrue(rules(bundle(plots: allPlots(buildCost: [cost("gear.forester_hood", 1)])))
+            .contains("plot.build_cost_unobtainable"))
+        XCTAssertTrue(rules(bundle(plots: allPlots(buildCost: [cost("mat.hide", 0)])))
+            .contains("ladder.quantity"))
+        XCTAssertTrue(rules(bundle(plots: allPlots(buildCost: [cost("mat.hide", 2), cost("mat.hide", 3)])))
+            .contains("plot.build_cost_duplicate"))
+    }
+
+    /// The table must price every plot an estate can own, never at nothing,
+    /// and a later plot never cheaper than an earlier one.
+    func testAMultiplierTableThatCannotPriceTheLadderIsRefused() {
+        // Three slots at the top tier, two prices: the third plot would repeat ×2.
+        let short = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [1, 2])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [0, 1, 2, 3]))
+            .contains("plot.build_multiplier_short"))
+        XCTAssertFalse(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [0, 1, 2]))
+            .contains("plot.build_multiplier_short"))
+        let zero = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [0, 1, 2])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: zero))).contains("plot.build_multiplier_non_positive"))
+        let drops = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [1, 3, 2])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: drops))).contains("plot.build_multiplier_drops"))
+        let flat = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [1, 1, 1])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: flat))).isEmpty, "a flat price is a legal choice")
+    }
+
+    /// Leaving out every material makes the first plot free; leaving out one
+    /// no recipe asks for changes nothing and only warns.
+    func testWhatTheFirstPlotLeavesOutIsChecked() {
+        let everything = PlotBuildRuleDTO(firstPlotLeavesOut: ["mat.hide", "food.potato"], multiplierByPlotNumber: [1])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: everything))).contains("plot.build_first_plot_free"))
+        let unknown = PlotBuildRuleDTO(firstPlotLeavesOut: ["mat.nope"], multiplierByPlotNumber: [1])
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: unknown))).contains("reference.item.unknown"))
+        let unused = PlotBuildRuleDTO(firstPlotLeavesOut: ["gear.forester_hood"], multiplierByPlotNumber: [1])
+        let report = ContentValidator.validate(bundle(plots: allPlots(build: unused)))
+        XCTAssertTrue(report.warnings.contains { $0.rule == "plot.build_leaves_out_nothing" })
+        XCTAssertTrue(report.errors.isEmpty, "\(report.errors.map(\.rule))")
     }
 
     /// Ukrainian agrees with the plot's own noun — «Шахта заповнена» but

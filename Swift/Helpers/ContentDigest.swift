@@ -305,6 +305,15 @@ enum ContentDigest {
         for raw in ["farm", "forest", "mine", "coop", "training_ground", "Farm", "nope", ""] {
             digest.combine(PlotCatalog.tuning(forRaw: raw).map(fingerprint) ?? "-")
         }
+        // What a plot costs to build (2026-10-24), replayed through the accessor
+        // the build card and the claim use: every type at every plot number an
+        // estate can own, and the edges either side of the multiplier table.
+        for type in PlotType.allCases {
+            for number in -1...8 {
+                digest.combine(PlotCatalog.buildCost(for: type, plotNumber: number)
+                    .map { "\($0.itemId)x\($0.quantity)" }.joined(separator: ","))
+            }
+        }
 
         digest.combine(FortuneCatalog.drawPrice)
         digest.combine(FortuneCatalog.dispelPrice)

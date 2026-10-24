@@ -2152,12 +2152,25 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The twelve 2026-10-20/23 blocks on top are NOT live yet** — they wait for a restart (schema v25; one migration, `AddExplorationHaul`). **The four
+**The twelve 2026-10-20/23 blocks on top went live at the 2026-10-23 22:46 restart** (`7ac11f0`, schema v25; `AddExplorationHaul` verified on the table). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵 (NOT deployed: content
-only — it ships with the restart; a `/reload` alone is refused, the Pi's binary being v24):** any account,
+**Added 2026-10-24 — a plot costs materials (*(this commit)*, NOT live — waits for a restart; schema v26):** an
+account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
+- 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
+  with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
+  «(have/need)» counted over the bag and the warehouse together, then «⚠️ Ділянку не можна перебудувати.»
+- One short: «✅ Будувати» → the modal «🚧 Не вистачає матеріалів:» and the ❌ row; the card stays, redrawn.
+- Enough: «✅ Будувати» → the plot list and «✅ ⛏ Шахта закладена на слоті N.»; what was in the bag is taken first, the
+  warehouse gives the rest.
+- A second plot, a coop: «16× 🪵 · 10× 🪨 · 2× 🧱 · 6× 🥚»; a third farm «30× 🪵 · 6× 🟫 · 3× 🔩 · 9× 🥔»; a sixth
+  mine «72× 🪵 · 18× 🟫 · 12× 🔩 · 6× 🧱».
+- Plots built before the restart are untouched, and nothing is charged for them. English: «📜 Materials»,
+  «🚧 Not enough materials:».
+
+**Added 2026-10-23 — clay costs 24 / 12; «Мʼясо в глині» is 2 🥩 + 1 🥔 + 🧱 + 🪵 (`34fe88c`, live since 2026-10-23 22:46):**
+any account,
 plus one at estate T6+ that knows the dish (Nerif, Дарина, Володимир and анія do).
 - «💼 Крамар» → «💰 Купити» → «🪨 Матеріали»: «🧱 Дика глина · 🪙 24»; its card «Ціна: 🪙 24»; «🪙 Купити», 10:
   «✅ Дика глина ×10 — куплено за 🪙 240». «💸 Продати»: the clay row reads «🧱 Дика глина · 🎒 N · 🪙 12».
@@ -2170,8 +2183,7 @@ plus one at estate T6+ that knows the dish (Nerif, Дарина, Володим�
   lists the new ingredients.
 - Unchanged, glance only: the estate's T3 → T4 card still asks 10× 🧱, the mage's staff t2 → t3 still 3× 🧱.
 
-**Added 2026-10-23 — the archer's Defend is «💨 Ухилитися» (NOT deployed: locales + Swift — a restart;
-Lingo is not reloaded):** an archer account.
+**Added 2026-10-23 — the archer's Defend is «💨 Ухилитися» (`e9bdb78`, live since 2026-10-23 22:46):** an archer account.
 - In a forest fight the top row reads «🏹 Випустити стрілу» · «💨 Ухилитися». Tap it: «💨 Ви пірнаєте вбік і
   черкаєте ножем — 🐗 … втрачає N ОЗ.», then the beast's line. A warrior's «🛡 Парирувати» still prints «🛡 Ви
   тримаєте удар і зачіпаєте у відповідь — …»; a mage's barrier its spark.
@@ -2179,8 +2191,8 @@ Lingo is not reloaded):** an archer account.
 - A fight left open across the restart: its keyboard still says «💨 Швидкий маневр»; tapping it answers
   «⚔️ …» with the new keyboard, and the next tap works.
 
-**Added 2026-10-23 — the manor door names what an active walk brought (NOT deployed: Swift + a
-migration, `AddExplorationHaul` — a restart):** any account at the estate, the bag with a few free slots.
+**Added 2026-10-23 — the manor door names what an active walk brought (`ea52cf6`, live since 2026-10-23 22:46; the
+`haul` column verified at 22:46):** any account at the estate, the bag with a few free slots.
 - BEFORE the deploy restart: «🗺 Дослідити» → «🏃 Розвідка», walk to km 2 or more and leave the walk open.
   After the restart, walk it home: «🏰 Ви повертаєтеся додому…» alone, no «Принесено:» (its finds before the
   restart were never counted).
@@ -2193,8 +2205,7 @@ migration, `AddExplorationHaul` — a restart):** any account at the estate, the
   (never left): the arrival line alone.
 - A passive run's report is unchanged — a refused find still reads «× 0 (N лишилось у лісі — сумка повна)».
 
-**Added 2026-10-23 — every material is foraged at every km (NOT deployed: content only; it ships with
-the restart, or a `/reload` after it):** any account.
+**Added 2026-10-23 — every material is foraged at every km (`8308be6`, live since 2026-10-23 22:46):** any account.
 - `/content` (developer): the content hash reads `30b0d499` (with the other 10-20/23 changes loaded, the
   clay price among them; `8c6e2610` before it).
 - Walk km 1–10 for a while: berries, nuts, lumber and pebbles still come most often, and now and then
@@ -2203,8 +2214,8 @@ the restart, or a `/reload` after it):** any account.
 - Past km 40: potatoes and eggs lead, iron and clay come more often than in the shallows, and berries,
   nuts, lumber and pebbles still turn up. A passive run's «Принесено:» shows the same mix.
 
-**Added 2026-10-22 — the forest edge names armour a death would take; an old edge opens nothing (NOT
-deployed: a restart — Lingo is not reloaded):** an account at the estate wearing the hood, with boots
+**Added 2026-10-22 — the forest edge names armour a death would take; an old edge opens nothing
+(`4ebc80b`, live since 2026-10-23 22:46):** an account at the estate wearing the hood, with boots
 bought from the Master still in the bag.
 - «🗺 Дослідити»: under «На узліссі ви обираєте свій шлях:» — «⚠️ У сумці броня, яку ви не одягли:»,
   «   🥾 Чоботи лісника 50/50», «Смерть у лісі забирає все із сумки, а одягнене лишається з вами.»; the
@@ -2220,18 +2231,18 @@ bought from the Master still in the bag.
   ride to the capital and tap «🏃 Розвідка» on it: the edge disappears and «🏛 Дикий ліс межує лише з
   маєтком…» answers (on the road: the road card; mid-walk: the walk resumes). At the estate it works.
 
-**Added 2026-10-22 — «Руки майстра» names the place (NOT deployed: a restart — Lingo is not reloaded):**
+**Added 2026-10-22 — «Руки майстра» names the place (`c011f9f`, live since 2026-10-23 22:46):**
 an account holding the level-8 decree «Руки майстра» (👑 the palace's decree card): the line reads
 «❌ 🔨 Викувати щось у Майстерні  (0/1)», where it said «Виготовити річ».
 
-**Added 2026-10-22 — the road names the way back (NOT deployed: a restart):** any account, 🏛 Столиця from
+**Added 2026-10-22 — the road names the way back (`c011f9f`, live since 2026-10-23 22:46):** any account, 🏛 Столиця from
 the estate.
 - On the road to the capital tap 🏰 Маєток: «🐎 Ви в дорозі до столиці. Прибуття за …» and under it
   «Щоб повернути до маєтку — ↩️ Розвернутись.»; nothing turns. Tap 🏛 Столиця: the countdown alone.
 - ↩️ Розвернутись, then 🏛 Столиця: «…в дорозі до маєтку…» with «Щоб повернути до столиці — ↩️ Розвернутись.»
 - The same from the bag opened on the road (🎒 Сумка, then a place button on the keyboard under it).
 
-**Added 2026-10-22 — a find that half fits (NOT deployed: a restart):** an account whose bag has exactly
+**Added 2026-10-22 — a find that half fits (`c011f9f`, live since 2026-10-23 22:46):** an account whose bag has exactly
 one free slot (fill it from the warehouse until the bag reads 24/25 at level 1).
 - Walk the forest until a find of two (berries, lumber, pebbles…): «+1 🫐 Лісові ягоди» and under it
   «Сумка повна — ще 1 лишається на землі.»; the bag reads 25/25. A find of one still reads «+1 …» with no
@@ -2241,7 +2252,7 @@ one free slot (fill it from the warehouse until the bag reads 24/25 at level 1).
 - A passive run that fills the bag: the report's loot line reads «• 🫐 Лісові ягоди × N (1 лишилось у лісі —
   сумка повна)», and the bag holds the N (a find of two used to land wholly in the brackets).
 
-**Added 2026-10-21 — the warehouse's ℹ️ on a weapon (NOT deployed: a restart):** an account with a
+**Added 2026-10-21 — the warehouse's ℹ️ on a weapon (`40b52df`, live since 2026-10-23 22:46):** an account with a
 spare class weapon — e.g. a «Простий лук» and an «Обточений лук».
 - 🏰 Маєток → 📦 Склад → Спорядження: tap a bow's name, in the bag's rows and in the warehouse's — the alert
   shows that copy's own description («Грубо тесане дерево…» for the first, «Кору зчищено…» for the
@@ -2252,7 +2263,7 @@ spare class weapon — e.g. a «Простий лук» and an «Обточен�
   ⚔️ Ристалище reads «…його вчать на Тренувальному майданчику з 10 рівня.»; 🚪 Вийти from a training
   fight reads «🥋 Ви відходите від манекена — майданчик стихає.»
 
-**Added 2026-10-21 — the keyboard stays (NOT deployed: a restart):** an account at estate level 4+.
+**Added 2026-10-21 — the keyboard stays (`6ac0351`, live since 2026-10-23 22:46):** an account at estate level 4+.
 - 🥋 Тренувальний майданчик → a fight with the dummy → 🚪 Вийти → harvest a plot: the menu buttons stay
   under «✅ Слот N — …», and «🥋 Ви відходите від манекена…» stays in the chat above it.
 - On a trader card, type «5» before «🪙 Купити» → «🔢 Спершу оберіть дію…» → buy: the buttons stay.
@@ -2261,12 +2272,12 @@ spare class weapon — e.g. a «Простий лук» and an «Обточен�
   («⚡ Удар магією») at the estate: the same line, and the fight's buttons are gone.
 - The bag opened from the menu, a word typed: the same line; on the road, «↩️ Розвернутись» is on it.
 
-**Added 2026-10-20 — the hub stops saying hello (NOT deployed: a restart):** any registered account.
+**Added 2026-10-20 — the hub stops saying hello (`266ad57`, live since 2026-10-23 22:46):** any registered account.
 - ⚙️ Налаштування → 🔙 Назад: the menu keyboard comes back under «👇 Оберіть, куди далі», no «👋 Вітаю».
 - `/start` from the estate, the capital and the bag; a word typed on the hub: the same line.
 - Registration's last step still says its own hello.
 
-**Added 2026-10-20 — the forest goes on past km 49 (NOT deployed: a restart, schema v25):** a
+**Added 2026-10-20 — the forest goes on past km 49 (`1b99a3f`, live since 2026-10-23 22:46):** a
 character that can reach km 50 — about level 25 by the spec's walk (`spec-bestiary.md` §10.6), or a
 test account with the HP and Vigor for it.
 - Walk past km 49: steps find things again («🥔 Картопля», «🥚 Качине яйце», «🧱 Дика глина», «🔩 Шматок
@@ -3104,11 +3115,30 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-24 session** — a plot costs materials (built, `spec-progression.md` §7, NOT live — a restart);
+found while building it, NOT raised with the owner yet — build nothing unasked:
+- **«%{type} закладена на слоті %{slot}» is feminine for every plot type** (`estate.plot.alert.claimed`, the banner
+  after «✅ Будувати») — wrong for «Курник» (`m`). The plot names already declare their gender
+  (`plot.type.<type>.gender`); the house fix is `.m` / `.f` / `.n` / `.pl` variants read through
+  `Lingo.localize(_:agreeingWith:locale:)`.
+- **No «📌 У нотатник» on the plot's build card.** It lists materials now, like the eight cards that have one;
+  not asked, so not built.
+
 **From the 2026-10-23 night session** — the clay price raised to 24 / 12 and «Мʼясо в глині» re-cut to
 2 🥩 + 1 🥔 + 🧱 + 🪵 = 54 Vigor (built, `spec-bestiary.md` §13.5; it closes the clay price the forage session
 postponed); raised in the same report, NOT answered — build nothing unasked:
 - **The staff's t3 rung keeps its 3 🧱.** At 24 it costs 102 🪙 against the sword's 50 and the bow's 38 (the
   whole staff ladder is still the cheapest of the three, 7,390). «1 🧱 instead of 3» (54 🪙) was offered.
+
+Asked to be recorded by the owner the same night, answering «Що таке "Серпанок тіні"?» — NOT decided,
+build nothing unasked:
+- **One effect, two names.** The archer's special defence is «🌑 Тінь лісу» on the button and «🌑 Серпанок
+  тіні» on the fight card — `combat.effect.shadow_veil`, the dodge ×2 that lingers into the next round; the
+  activation line ends «Серпанок не розвіється одразу».
+- **Five uk lines print a number with an undeclined noun** — «раунд(ів)», «удар(ів)», «крок(ів)»:
+  `combat.effect.shadow_veil`, `combat.effect.armor_split`, `exploration.outcome.encounter.won` and `.lost`
+  (the passive report's fight lines), `exploration.passive.report.starvation`. The house rule is
+  `lingo.localize(key, count:)` with `.one` / `.few` / `.many` (`CLAUDE.md` → Localization).
 
 **From the 2026-10-23 archer session** — the archer's Defend renamed «💨 Ухилитися» (built); then asked,
 NOT decided:
@@ -3149,7 +3179,7 @@ and not changed:
   `help.show.buttons`). Needs new copy from the owner.
 
 **From the 2026-10-20 session** — the forest past km 49 built; found in the log on the way:
-- **FIXED 2026-10-21 (the owner's A; NOT deployed — a restart): the info button carries the row's id,
+- **FIXED 2026-10-21 (the owner's A; live since 2026-10-23 22:46): the info button carries the row's id,
   and the handler reads the description at the row's tier (`EstateController.handleWarehouseInfo`).
   An item-id button left in chat answers when every copy the list shows shares one tier, and otherwise
   redraws the list. B — the bag's full gear card from the warehouse — offered, not picked.**
@@ -3509,7 +3539,16 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-21 — the keyboard no longer deleted with a banner and given back by the estate and
+*Last updated: 2026-10-24 — a plot costs materials, built and NOT live (schema v26, content hash `17654923`;
+a restart). Under it:*
+
+*2026-10-23, the 22:46 deploy — the Pi runs `7ac11f0` (schema v25, content hash
+`30b0d499`): the twelve 2026-10-20/23 changes are live — the forest past km 49, the hub's line, the keyboard,
+the warehouse's ℹ️, a find that half fits, the road's hint, «Руки майстра», the forest edge's armour warning,
+the forage at every km, the manor door's «Принесено», the archer's «💨 Ухилитися» and clay at 24 / 12 with
+«Мʼясо в глині» re-cut; `AddExplorationHaul` verified on the table. Nothing waits for a build or a restart.*
+
+*2026-10-21 — the keyboard no longer deleted with a banner and given back by the estate and
 the bag (Swift), the hub's «👋 Вітаю» replaced by «👇 Оберіть, куди далі» (Swift + locales) and the forest
 past km 49 (content + Swift, schema v25, 446 tests), all waiting for a restart; the Pi
 still runs `83176b8` (schema v24, content hash `19c94a81`).*

@@ -142,5 +142,12 @@ public enum ContentSchema {
     /// this bundle without a word and keep the silent forest the operator
     /// believes is fixed — only the handshake refuses it. A v24 bundle on a v25
     /// binary is refused the same way; were it read, nobody in it is marked.
-    public static let current: Int = 25
+    /// v26 (2026-10-24): a plot costs materials. Every `plots.json` row gains a
+    /// `buildCost` and the file a `build` rule — the player's Nth plot pays N
+    /// recipes, the first without clay and iron (`PlotBuildCost`). Both decode
+    /// as optional, so a v25 binary would read this bundle without a word and
+    /// keep handing out free plots the operator believes are paid for; only the
+    /// handshake refuses it. A v25 bundle on a v26 binary is refused the same
+    /// way, where the validator would only have said "no build cost".
+    public static let current: Int = 26
 }

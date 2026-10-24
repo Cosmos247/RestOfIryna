@@ -158,7 +158,47 @@ public enum SpecTables {
         // the weapon so every earlier excerpt stays one contiguous run. It is
         // the one ladder here with NO gate — its price is what holds it back.
         out.append(contentsOf: armourLadder(content: content))
+        // What a plot costs to build (2026-10-24), last for the same reason.
+        out.append(contentsOf: plotCosts(content: content))
         return out.joined(separator: "\n")
+    }
+
+    /// The price of every plot a player can own, by type, through
+    /// `PlotBuildCost` — the reading the build card and the claim use, so the
+    /// table is the game's arithmetic rather than a typed copy of it.
+    private static func plotCosts(content: GameContent) -> [String] {
+        guard let plots = content.plots, let rule = plots.build else { return [] }
+        let ownable = content.estateUpgrades.plotSlotsByTier.max() ?? 0
+        guard ownable > 0 else { return [] }
+        let icons = Dictionary(content.items.map { ($0.id, $0.icon) }, uniquingKeysWith: { first, _ in first })
+        func cell(_ inputs: [MaterialCostDTO]) -> String {
+            inputs.map { cost in icons[cost.itemId].flatMap { $0 }.map { "\(cost.quantity)\($0)" }
+                         ?? "\(cost.quantity)× `\(cost.itemId)`" }.joined(separator: " ")
+        }
+        var out: [String] = [""]
+        let leftOut = rule.firstPlotLeavesOut.map { "`\($0)`" }.joined(separator: " ")
+        out.append("**Plots** (`plots.json`) — the player's Nth plot costs its type's recipe × N's multiplier;")
+        out.append("the first plot leaves out \(leftOut.isEmpty ? "nothing" : leftOut)")
+        out.append("")
+        out.append("| plot | × | " + plots.types.map { "`\($0.type)`" }.joined(separator: " | ") + " |")
+        out.append("|---|---|" + plots.types.map { _ in "---|" }.joined())
+        let table = rule.multiplierByPlotNumber
+        for number in 1...ownable {
+            let multiplier = number - 1 < table.count ? table[number - 1] : (table.last ?? 1)
+            let cells = plots.types.map { row in
+                cell(PlotBuildCost.inputs(recipe: row.buildCost, plotNumber: number, rule: rule))
+            }
+            out.append("| \(number) | \(multiplier) | " + cells.joined(separator: " | ") + " |")
+        }
+        // The icons, named once: the cells use them to stay readable.
+        var named: [String] = []
+        for row in plots.types {
+            for cost in row.buildCost where !named.contains(cost.itemId) { named.append(cost.itemId) }
+        }
+        out.append("")
+        out.append(named.map { id in icons[id].flatMap { $0 }.map { "\($0) `\(id)`" } ?? "`\(id)`" }
+            .joined(separator: " · "))
+        return out
     }
 
     /// The Master's enchant as a ladder: for each level the item level it
@@ -664,6 +704,25 @@ public enum SpecTables {
             out.append(String(format: "| estate →T%d | %.0f | %d |",
                               step.toTier, m, step.silverCost))
         }
+        // Plots (2026-10-24): an estate owns up to six, each dearer than the
+        // last, so a row prices six of one type and `one player` below takes
+        // the cheapest and the dearest type for every plot number.
+        var allPlots = 0.0, plotsCheapest = 0.0, plotsDearest = 0.0
+        if let plots = content.plots, plots.build != nil {
+            let numbers = 1...max(1, content.estateUpgrades.plotSlotsByTier.max() ?? 0)
+            let price = { (type: String, number: Int) in priced(plots.buildCost(for: type, plotNumber: number) ?? []) }
+            for row in plots.types {
+                let six = numbers.reduce(0.0) { $0 + price(row.type, $1) }
+                allPlots += six
+                out.append(String(format: "| plots, %d × `%@` | %.0f | 0 |", numbers.count, row.type, six))
+            }
+            for number in numbers {
+                let prices = plots.types.map { price($0.type, number) }
+                plotsCheapest += prices.min() ?? 0
+                plotsDearest += prices.max() ?? 0
+            }
+            total += allPlots
+        }
         let bagCost = content.bags.progression.reduce(0.0) { $0 + priced($1.inputs) }
         total += bagCost
         out.append(String(format: "| bag, every step | %.0f | 0 |", bagCost))
@@ -684,9 +743,9 @@ public enum SpecTables {
         }
         let allWeapons = weaponCosts.reduce(0, +)
         out.append(String(format: "| **every row** | **%.0f** | |", total))
-        out.append(String(format: "| **one player** — a single weapon ladder | **%.0f–%.0f** | |",
-                          total - allWeapons + (weaponCosts.min() ?? 0),
-                          total - allWeapons + (weaponCosts.max() ?? 0)))
+        out.append(String(format: "| **one player** — a single weapon ladder, a full estate of plots | **%.0f–%.0f** | |",
+                          total - allWeapons - allPlots + (weaponCosts.min() ?? 0) + plotsCheapest,
+                          total - allWeapons - allPlots + (weaponCosts.max() ?? 0) + plotsDearest))
 
         out.append("")
         out.append("**The sinks that are not a ladder**")

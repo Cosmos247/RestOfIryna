@@ -23,17 +23,35 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-23 00:37)
+### Where things stand right now (the Pi and git as read 2026-10-23 22:48)
 
 | | |
 |---|---|
-| HEAD | **this commit** (`34fe88c`'s hash fill). Under it, all unpushed: **`34fe88c`** (clay at 24 / 12 and «Мʼясо в глині» re-cut, 10-23), **`bfc78c9`** (`e9bdb78`'s hash fill), **`e9bdb78`** (the archer's «💨 Ухилитися», 10-23), **`2367563`** (`ea52cf6`'s hash fill), **`ea52cf6`** (the manor door's «Принесено», 10-23), **`48d796e`** (`354c106`'s hash fill), **`354c106`** (the 10-23 sync pass, records only), **`1865cd4`** (`8308be6`'s hash fill), **`8308be6`** (every material is foraged at every km, 10-23), **`78721b9`** (`4ebc80b`'s hash fill), **`4ebc80b`** (the forest edge names armour a death would take; an old edge no longer opens the forest, 10-22), **`c4346ae`** (`c011f9f`'s hash fill), **`c011f9f`** (a find that half fits, the road's way-back hint, «Руки майстра»'s line, 10-22), **`43cc51e`** (`40b52df`'s hash fill), **`40b52df`** (the warehouse's ℹ️ names its row and «майданчик», 10-21/22), **`453872f`** (the 10-21 sync pass), **`b04338f`** (`6ac0351`'s hash fill), **`6ac0351`** (the keyboard stays, 10-21), **`9074cb3`** (`266ad57`'s hash fill), **`266ad57`** (no hello on the way back to the hub, 10-20), **`1b99a3f`** (the forest past km 49, 10-20), **`c43959f`** (the 10-17 17:40 deploy record). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`83176b8`** (the owner pushed 2026-10-17), the commit the Pi runs. Everything above it is unpushed — push is the owner's |
-| running on the Pi | **`83176b8`**, online since **2026-10-17 17:40:13** (pm2 restarts 1 — the count reset at the 10-15 host reboot). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night), none during play. Content schema **v24**, content hash **`19c94a81`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (a plot costs materials — Swift + content, schema v26 — carrying the 10-23 22:46 deploy record too, which was written that night and never committed on its own), unpushed. Under it everything is pushed: `origin/main` = the Pi = **`7ac11f0`** (`34fe88c`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`7ac11f0`** (the owner pushed 2026-10-23, just before the 22:46 deploy), the commit the Pi runs. Push is the owner's |
+| running on the Pi | **`7ac11f0`**, online since **2026-10-23 22:46:07** (pm2 restarts 2). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night; none since 10-18 04:11), none during play. Content schema **v25**, content hash **`30b0d499`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Twelve changes, one restart:** the forest past km 49 (`1b99a3f`, content + Swift, **schema v25**), the hub's line (`266ad57`, Swift + locales), the keyboard fix (`6ac0351`, Swift), the warehouse's ℹ️ with two «двір» → «майданчик» lines (`40b52df`, Swift + uk locale) a find that half fits, the road's way-back hint (both 10-22, Swift + locales) and «Руки майстра»'s line (10-22, locales) — the three in one commit, `c011f9f` — the forest edge's armour warning with the old-edge guard (`4ebc80b`, 10-22, Swift + locales) — the forage without zones (`8308be6`, 10-23, content only) — the manor door's «Принесено» (`ea52cf6`, 10-23, Swift + **a migration**) — the archer's Defend renamed «💨 Ухилитися» with its own line (`e9bdb78`, 10-23, locales + Swift) — and clay at 24 / 12 with «Мʼясо в глині» re-cut to 2 🥩 + 1 🥔 + 🧱 + 🪵 = 54 (`34fe88c`, 10-23, content only). A `pull`, a build and `pm2 restart ROI` — never a `/reload` (the Pi's v24 binary refuses a v25 bundle, and Lingo is not reloaded). The tree's digest: content hash `30b0d499`, `records 68ecc8783252a905` (the clay price and the dish), `spawns 004c138c83fa9d1a` (60 depths and the new forage); `tuning`, `quests`, `king` as on the Pi — the Swift changes move none of it. **One migration**, `AddExplorationHaul` (a nullable `haul` column on `exploration_state`, no rows touched) — verify the table after the restart |
+| waiting for a restart | **A plot costs materials** (2026-10-24, *(this commit)*, schema v26 — a restart, not a `/reload`): each type its own four-material recipe, the player's Nth plot ×N, the first without 🧱 and 🔩 (`spec-progression.md` §7). Before it, the twelve 2026-10-20/23 changes went live at the 2026-10-23 22:46 restart — the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`), the keyboard fix (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра» (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the manor door's «Принесено» (`ea52cf6`, with `AddExplorationHaul`, verified on the table), the archer's «💨 Ухилитися» (`e9bdb78`) and clay at 24 / 12 (`34fe88c`); `.memory/sessions.md` → "Deploy — 2026-10-23 22:46" |
 
-### Where the last sessions stopped (2026-10-13 → 10-23)
+### Where the last sessions stopped (2026-10-13 → 10-24)
+
+**10-24 — a plot costs materials.** Players asked for a plot to cost resources; it was free. The first proposal
+(one frame of 10 🪵 + 10 🪨 for every type plus an item of its own) went back as too uniform — «урізноманітни…
+глини та заліза». The owner then picked «кожна своя, повніше»: farm 10🪵 2🟫 1🔩 3🥔 · sawmill 8🪵 10🪨 2🔩 1🧱 ·
+mine 12🪵 3🟫 2🔩 1🧱 · coop 8🪵 5🪨 1🧱 3🥚, and the Nth plot at ×N with the first plot leaving out clay and iron
+(52–70 🪙 at buy prices against the T2 step's 118; the sixth 504–780). Built: `PlotBuildCost`, the build card's
+«📜 Матеріали», the claim paying bag-first in one transaction, eleven validator rules, `spec gates` / `spec economy`,
+schema v26; `records` and the content hash moved (`30b0d499` → `17654923`). Rehearsed on a scratch Postgres (31 checks on two clean runs; a claim without the transaction and a
+warehouse-first drain each caught). The 57
+plots already built stay free. `.memory/sessions.md` → the entry.
+
+**10-23, night — the 22:46 deploy.** On the owner's word, after the push: a pull to `7ac11f0` on the Pi, a
+133.6 s debug build, the digest matched the Mac byte for byte (v25, `30b0d499`, COMBINED `c1d4f62d7aed7d8b`),
+`pm2 restart ROI` at 22:46:07 with one active walk and one 🏕 run in flight; `AddExplorationHaul` verified on
+the table; eight 403s from the restart notice; at 22:48:45 still one `[WATCHDOG]`, 922 `Code: 400`. Before
+it the same night: a testers' note for the twelve changes (in the session, ready to publish), the
+techniques listed for the owner, and two notes in `TODO.md` → Open («Серпанок тіні», five undeclined
+plurals). `.memory/sessions.md` → the deploy entry.
 
 **10-23, night — clay costs 24 / 12; «Мʼясо в глині» re-cut.** The owner asked to recompute the clay price
 postponed the night before, now that clay is the rarest find. Recomputed off the data and the Pi (21:45: 548
@@ -157,35 +175,46 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**Waiting on the owner: the push and ONE restart for the twelve changes** (the table above; the
-recipe below). Before the restart, open «🗺 Дослідити» on a test account and leave the edge in the chat:
-after it, that old edge is the walk of the stale-edge guard; on a second account leave an active walk open
-at km 2+ (it must come home without «Принесено:»). Then walk the twelve 2026-10-20/23 blocks on
-top of `TODO.md` → "Walk list" — clay at 24 / 12 and «Мʼясо в глині» at 54 (the trader, the tavern's 135, the kitchen card, a portion cooked before the restart), the archer's «💨 Ухилитися» and its line, the door's «Принесено» (a find eaten, a refused find, km 1 and back), the forage at every km (`/content` reads hash `30b0d499`; clay and eggs in the
-shallows), the forest edge's armour block («🛡 Одягнути», a spare, the duration
-picker, the old edge from the capital), «Руки майстра»'s line, the road's hint (the other place's button), a find of two with one slot free (forage, a ×2 kill drop, a passive report), the warehouse's ℹ️ on a bow (two tiers, both stores), the keyboard (a training exit, then a harvest; a number before «🪙 Купити»; a word at the estate and in
-the bag), the hub's line, the forest past km 49 — and offer the owner a testers' note.
+**The plot cost waits for the owner's restart** (`7ac11f0` + the unpushed commits; schema v26, so the Pi needs the
+new binary and the new content together — a `/reload` of this bundle onto the running binary is refused by the
+handshake). After it: build a first plot on a fresh account (no 🧱 / 🔩 asked), a second with one material short
+(the modal, the card redrawn), and read `/content` for hash `17654923`.
 
-**0 — Walk what is live and unwalked.** `TODO.md` → "Walk list": the four blocks live since 10-17
-17:40, the five since 10-13 18:54, the six since 10-11 13:21, the 10-09 ones. For the Chancellery,
+**Walk the twelve blocks live since 10-23 22:46** on top of `TODO.md` → "Walk list" — clay at 24 / 12 and
+«Мʼясо в глині» at 54 (the trader, the tavern's 135, the kitchen card, a portion cooked before the restart),
+the archer's «💨 Ухилитися» and its line, the door's «Принесено» (a find eaten, a refused find, km 1 and back),
+the forage at every km (`/content` reads hash `30b0d499`; clay and eggs in the shallows), the forest edge's
+armour block («🛡 Одягнути», a spare, the duration picker, an old edge from the capital), «Руки майстра»'s
+line, the road's hint (the other place's button), a find of two with one slot free (forage, a ×2 kill drop, a
+passive report), the warehouse's ℹ️ on a bow (two tiers, both stores), the keyboard (a training exit, then a
+harvest; a number before «🪙 Купити»; a word at the estate and in the bag), the hub's line, the forest past
+km 49. The testers' note for them was written on 10-23 night; the owner publishes it.
+
+**0 — Walk what is live and unwalked.** `TODO.md` → "Walk list": the twelve blocks live since 10-23
+22:46, the four since 10-17 17:40, the five since 10-13 18:54, the six since 10-11 13:21, the 10-09 ones. For the Chancellery,
 credit a test account in DBeaver first (`.memory/live-ops.md` → "Crediting zlatnyks"; if the grid
 calls the new columns read-only, quit DBeaver and reopen, or use the SQL editor). No human has seen
 the whole King's chain, and `/reload` has never run against a real database.
 
 **1 — Answer the players.** Read the answer off the code and data, end with a ready Ukrainian
 reply. Snapshot SQL and its reading traps: `.memory/live-ops.md`. Lost buttons: its FAQ row (ask
-whether the ⊞ icon is in the input field; `/menu` until the restart).
+whether the ⊞ icon is in the input field; `/menu` re-sends them).
 
-**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-23 00:37 (10-08 11:47:53); `Code: 400` still 922, no 429/502 since the 10-18 04:00 burst. A new one
+**2 — Watch the poll loop.** Still one `[WATCHDOG]` line on 10-23 22:48 (10-08 11:47:53); `Code: 400` still 922, no 429/502 since the 10-18 04:00 burst. A new one
 in `~/.pm2/logs/ROI-out.log` is a freeze the limiter fix did not cover (`.memory/live-ops.md` → "Is
 the bot alive?").
 
 **3 — No bug queued.** The warehouse's ℹ️ on a laddered weapon (the raw `item.gear.simple_bow.desc`)
-was fixed 10-21 and a find that half fits (one free slot, two found, nothing taken) 10-22; both wait for the restart; what is left in "Open" are questions for the owner (4).
+was fixed 10-21 and a find that half fits (one free slot, two found, nothing taken) 10-22; both live since 10-23 22:46; what is left in "Open" are questions for the owner (4).
 
 **4 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-24 block:** «%{type} закладена на слоті %{slot}» (`estate.plot.alert.claimed`) is feminine for every plot
+  type — wrong for «Курник» (found while building the plot cost, not fixed); a «📌 У нотатник» on the plot's build
+  card (it has materials now) was not built — not asked;
 - **the 10-23 night block:** the staff's t3 keeps 3 🧱 — at 24 it costs 102 🪙 against the sword's 50 and the
-  bow's 38 («1 🧱 instead of 3» offered, not answered);
+  bow's 38 («1 🧱 instead of 3» offered, not answered); the archer's special defence named twice («🌑 Тінь
+  лісу» on the button, «Серпанок тіні» on the fight card); five uk lines with an undeclined plural
+  («раунд(ів)», «удар(ів)», «крок(ів)»);
 - **the 10-23 archer block:** the forest pie at 12 HP (the pie alone, or every taught dish at ⅜ of its price —
   `TODO.md` → Open; the owner asked to clarify, nothing built);
 - **the 10-21 block:** `is_persistent` on the keyboards; `/menu` as a global command (with the guild
@@ -227,20 +256,19 @@ and still open:
 detached debug build, then the free pre-flight
 `ROI_PROJECT_PATH=/home/rpi5/RestOfIryna ./.build/debug/RestOfIryna --content-digest`, which must
 match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart ROI`**. A content or
-schema change ships `content/data` and the binary TOGETHER (the handshake — **v24** on the Pi, **v25** in the
-tree since 10-20 — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
+schema change ships `content/data` and the binary TOGETHER (the handshake — **v25** on the Pi, **v26** in the
+tree since 10-24 — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`.
 
 ### The baseline and the simulator
 
-**The current baseline — on the Pi since 2026-10-17 17:40 (`83176b8`, schema v24):** `records
-78ce585986927122` · `tuning 799a96eb5f8619df` · `spawns 0cf31905171d7944` · `quests
-30de20902006e3b9` · `king e3a492be1b017e81`, content hash `19c94a81`. **This is the one place the
-current baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines —
-superseded". **The tree differs since 2026-10-20** (the forest past km 49 and, since 10-23, the forage without
-zones and the clay price, all waiting for a restart): `records 68ecc8783252a905` (the 10-20 records, then the
-clay price and the dish) · `spawns 004c138c83fa9d1a` (60 depths, was 40, and the new forage) · content hash
-`30b0d499`; `tuning`, `quests` and `king` as above.
+**The current baseline — on the Pi since 2026-10-23 22:46 (`7ac11f0`, schema v25):** `records
+68ecc8783252a905` · `tuning 799a96eb5f8619df` · `spawns 004c138c83fa9d1a` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `30b0d499` (COMBINED `c1d4f62d7aed7d8b`). **This
+is the one place the current baseline is kept**; the superseded ones are in `.memory/sessions.md` →
+"Digest baselines — superseded". **The tree differs since 2026-10-24** (a plot costs materials, schema v26,
+waiting for a restart): `records f14d5d3442b2ce23`, content hash `17654923` (COMBINED `68f2cdb43398dfd1`);
+`tuning`, `spawns`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
@@ -256,7 +284,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 458 tests, ~5s
+swift test                                   # 468 tests, ~5s
 ```
 
 

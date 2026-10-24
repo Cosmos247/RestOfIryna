@@ -551,6 +551,12 @@ workshop, the kitchen, the Training Ground and the estate and bag upgrades stand
 and draw bag + warehouse. **A card counts in the same place its service draws from.**
 Auto-memory `project-master-draws-from-bag`.
 
+**A plot costs materials** (2026-10-24, the owner's pick): the player's Nth plot — their plots plus
+one, never the slot index — pays N of its type's `plots.json` → `buildCost`, the first without
+`build.firstPlotLeavesOut` (clay, iron). `PlotBuildCost` is the one reading for the card, the claim,
+the validator and `spec gates`, and `PlotService.claim` pays bag-first in ONE transaction with the
+plot row. Plots built before stay free. Auto-memory `project-plot-build-cost`.
+
 **A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
 are per-instance (`GearState`), carried by both `InventoryEntry` and `WarehouseEntry`; every
 create-path takes it as `carrying:`, or reassigns the owner as `TradeService` does. **A new
