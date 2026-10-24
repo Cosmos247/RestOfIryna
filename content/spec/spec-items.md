@@ -881,7 +881,7 @@ Decided by the owner on 2026-10-05:
   of this item start at?" for the three places that ask: the row a purchase or a grant mints
   (`GearState.fresh(for:)`), the Master's repair price, and the workshop's salvage share.
 - **A set's durability and price are set together.** A point repaired costs
-  price × `repairCostFraction` ÷ durability (0.5 when this was written, 0.25 since 2026-10-10), so
+  price × `repairCostFraction` ÷ durability (0.5 when this was written, 0.25 from 2026-10-10, 0.5 again since 2026-10-24), so
   a sturdier set at the same price is cheaper to keep per fight. That is a choice to make on purpose
   when authoring one.
 
@@ -900,6 +900,11 @@ who waits for 0.
 > 0.25, `spec-economy.md` §4): a point repaired is now 0.5 / 0.8 / 1.25 / 1.5, and a full repair
 > from zero a quarter of the price, 25 / 40 / 63 / 75 — the set 203. The weapon keeps 1 🪙 a point,
 > and the shave per repair is unchanged.
+
+> *Amended 2026-10-24.* The repair is back at 0.5 (`spec-economy.md` §4), on the owner's word once a
+> fight wore half as much: a point repaired is 1 / 1.6 / 2.5 / 3 again, as in the table above, and a full
+> repair from zero 50 / 80 / 125 / 150 — the set 405. The weapon keeps 1 🪙 a point, and the shave per
+> repair is unchanged.
 
 ### 10.3 What changes for players already playing
 

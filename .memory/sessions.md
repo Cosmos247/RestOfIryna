@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **`cf6e3ea`'s hash fill, and the rewritten history** — records only. On the owner's word («Так,
+- *(this commit, 10-24)* **the armour repair back at ×0.5** — content only, NOT deployed (it goes with the v27
+  restart): `master.json` → `repairCostFraction` 0.25 → 0.5 (a point 1 / 1.6 / 2.5 / 3, the set from zero 405; the
+  weapon 1). `records` → `f1501e3c1c9dc759`, content hash → `c8d337fe`; `spec economy`'s sinks row refreshed; 476 tests.
+- `001212a` (10-24) **`cf6e3ea`'s hash fill, and the rewritten history** — records only. On the owner's word («Так,
   заміни на «одягненої» у тому ж коміті») the audit's one word went into the gear sheet's commit itself: a
   non-interactive autosquash of the unpushed top, the tree checked identical before and after. `278ba7e` → `cf6e3ea`,
   `9d68cf8` → this fill.
@@ -852,6 +855,45 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-24, night (the audit, «одягненої», the repair back at ×0.5) — *(this commit)*
+
+**Asked.** «Перевір, чи є незакомічені зміни?» — the gear sheet's wear block, built earlier the same day (the entry
+below) and never committed: its «Комічу?» was overtaken by the repair question, and that session then ran out of
+context. Then «Перевір та зроби коміт, якщо все добре».
+
+**Audited and committed.** A forced recompile of the three Swift files under `bash`: no warning; 476 tests;
+`validate --strict` 0/0; the digest equal to the tree's baseline; `git diff --check` clean; the block rendered
+through the real Lingo (uk word for word, en mirrors it, no raw `%{…}`); every claim of the copy checked against the
+code (the three forest wear sites, the passive run's won ½ / lost 2, no wear call in the Arena, training bailing
+before the wear, a broken piece, the shave on armour only). Committed `278ba7e` + its fill `9d68cf8`. Two notes on
+the approved copy were raised: «вдягненої» where every other screen says «одягн…», and «смерть — 2» reading as one
+piece. The owner took the first («Так, заміни на «одягненої» у тому ж коміті»): a `fixup!` and a non-interactive
+autosquash, `278ba7e` → `cf6e3ea` and `9d68cf8` → `001212a`, the tree identical before and after; the glossary in
+`.memory/localization.md` gained «одягнути / одягнений».
+
+**The repair price.** «Ми з тобою ще роздивлялись підняття цін до старих. Розрахуй мені ремонт по цим цінам» — the
+session before had priced four combinations on the full kit's average point (its answer survives in that
+transcript, not in the records); this time each player's own worn kit, read off the Pi (read-only, the 7 days to
+23:20). The server's week: 7,663 🪙 live (the old wear, 0.25) · 3,848 (the new wear, 0.25) · 6,854 (the new wear,
+0.5); the table is in `.memory/rebalance.md` → "The repair back at ×0.5". The owner: «Повертай стару ціну».
+
+**Built.** `master.json` → `repairCostFraction` 0.25 → 0.5, one line. Every reader checked: `MasterCatalog.repairCost`
+(the one live reader), the `spec economy` sinks row (the only generator output that moved, of eight compared under
+`bash -c`; the four economy blocks were exact excerpts and were refreshed from the new output), the validator's
+0 < x ≤ 1. `records` `f14d5d3442b2ce23` → `f1501e3c1c9dc759`, the content hash `90abd2c4` → `c8d337fe`, COMBINED →
+`d4356a0f11214265`; `tuning`, `spawns`, `quests` and `king` unmoved; 476 tests. Records: the repair bullet in
+`CLAUDE.md`, both ready replies in the live-ops FAQ (each was about to go false after the restart — «Ціна ремонту за
+очко не змінилася»), rebalance, status, Prompt, README, TODO (a walk block; the softer wear's block no longer
+promises an unchanged price), both specs' amendments, INDEX, file-map; auto-memory `project-repair-cost-complaint`
+and `project-fight-wear-softened`.
+
+**The audit before the commit** («Перед тим як ми продовжимо перевір всі зміни…») fixed: the yardstick quoted to the
+owner — «≈78–103 a day from the jobs» is the L1–8 figure measured on 10-10, before the 10-11 job raise, and the
+faucet's own arithmetic gives ≈159 a day at L12, so Надійка's 102 at 0.5 is about two-thirds of the jobs' silver, not
+«almost all»; the walk block's path (the Master stands on «🏘 Поділ»); an «above/below» slip; two overstated words
+(«charged» for what the week's wear would cost to mend, «the same wear» for the same fights). Re-checked and true:
+the 10-11 testers' note did announce the halving («⚒️ Ремонт броні вдвічі дешевший», in that session's transcript).
 
 ## Session — 2026-10-24, evening (the gear sheet explains the wear) — `cf6e3ea`
 

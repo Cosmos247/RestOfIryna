@@ -371,7 +371,7 @@ the draft band lives and where content arrives after the rebalance.
 |---|---|---|
 | enchant one armour piece to +5 | 2750 | ×4 armour slots = 11000 |
 | the Master's armour | 810 | one-off |
-| repair | 25% of value | per repair, ongoing |
+| repair | 50% of value | per repair, ongoing |
 | found a guild | 500 | one-off, level 30 |
 | market listing | 5 | per lot, up to 5 |
 | arena tithe | 10% of the stake | the only PvP drain |
@@ -436,7 +436,15 @@ item. Hides add roughly 2.4 silver a kill across 3,925 kills.
 > flee 1, a death 2, where it was 1 / 2 / 3 (`tuning/economy.json` → `gear.wearBudget`). On the
 > public test's week to 10-24, 84% of the wear came from wins and the busiest player, at L12, averaged
 > 390 points a day; the same fights at the new budget wear 3,900 points where they wore 7,769. The
-> repair row above keeps its 25% of value per repair — it is repaired about half as often.
+> repair row above kept its 25% of value per repair for it — until the same night (below).
+
+> *Amended 2026-10-24, the repair price.* The repair row reads «50% of value» again (`master.json` →
+> `repairCostFraction` 0.25 → 0.5; the weapon keeps its 1 🪙 a point, the shave its 1), on the owner's
+> word once the softer wear was built. Priced on each player's own worn kit over the public test's week
+> to 10-24 23:20, the forest's fights wore 7,663 🪙 of repair at the old wear and 0.25 (the live rules
+> that week), 3,848 at the new wear and 0.25, and 6,854 at the new wear and 0.5 — so the two changes
+> together leave a day's repair about a tenth under what it cost before them, and half of what it cost
+> before 10-10 (13,652). A player with only the weapon is untouched by the fraction and pays half.
 
 > *Amended 2026-10-24 (`spec-progression.md` §7).* A plot costs materials now: the player's Nth
 > plot pays N of its type's recipe, the first without clay and iron. The four `plots, 6 × …`

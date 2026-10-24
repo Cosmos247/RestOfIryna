@@ -1259,8 +1259,39 @@ probability. The passive run rolls each of its won and lost fights the same way 
 round a lone win to nothing. The digest's `tuning` replays the roll seeded through `WearEvent.points`.
 
 **What it costs the economy.** That week at ½ / 1 / 2 is 3,900 points of 7,769 — the repair sink halves
-again (the price per point is unchanged). The shave is per repair, so it slows with the repairs it rides on.
-Untouched: the price, the shave, the maxima, the Arena and training (no wear).
+again at the same price per point. The shave is per repair, so it slows with the repairs it rides on.
+Untouched: the shave, the maxima, the Arena and training (no wear) — and the price, until the same night (below).
+
+### The repair back at ×0.5 (2026-10-24, night)
+
+**Asked** (the owner, once the softer wear was built): «Скільки зараз коштує ремонт і скільки він коштував
+раніше…» — four combinations on the full kit's average point (1.82 🪙 at 0.5, 1.01 at 0.25) — then «Ми з тобою
+ще роздивлялись підняття цін до старих. Розрахуй мені ремонт по цим цінам», and «Повертай стару ціну».
+
+**Priced on each player's OWN worn kit** (a piece's price × the fraction ÷ 50, the weapon 1; the points spread
+over every worn piece, as if the kit is kept repaired), from the forest's `fight_log` over the 7 days to
+10-24 23:20, per active day:
+
+| player (level) | old wear, 0.25 (live) | new wear, 0.25 | new wear, 0.5 |
+|---|---|---|---|
+| Лайкмен (12) | 477 | 239 | 431 |
+| Дарина (23) | 295 | 147 | 266 |
+| Надійка (12) | 112 | 57 | 102 |
+| Руслан (11) | 98 | 49 | 89 |
+| Нястюшка (9) | 84 | 42 | 76 |
+| Leyfor (5), the weapon only | 32 | 16 | 16 |
+| the server, the week | 7,663 | 3,848 | 6,854 |
+
+At the old wear and 0.5 — before 10-10 — the same week is 13,652. The passive runs keep no history, so their
+wear is on top; the rounding and the 1 🪙 floor per repair are ignored. Лайкмен's average rose from the
+afternoon's 390 points a day to 472 by 23:20 (687 wins that day, the most of the week, and the light 10-17 out
+of the window), so that row is the edge, not the typical player.
+
+**Decided:** `repairCostFraction` back at 0.5. The two changes together leave a day's repair ≈10% under what
+the same fights cost at the live rules that week; a player with only the weapon pays half either way. The three
+daily jobs pay ≈159 a day at L12 (the `spec economy` faucet's arithmetic at L12; 129 at L9, 157 at L11), so
+Надійка's 102 a day at 0.5 is about two-thirds of them, if all three are done. The ≈78–103 quoted the same
+night was the L1–8 figure measured on 10-10, before the 10-11 job raise — the wrong yardstick for L12.
 
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
