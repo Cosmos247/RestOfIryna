@@ -2156,7 +2156,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-24, later — a fight wears less (*(this commit)*, NOT live — waits for a restart; schema v27):**
+**Added 2026-10-24, later — a fight wears less (`6620d39`, NOT live — waits for a restart; schema v27):**
 an account wearing the Forester set and its weapon, the durability of each piece noted first (🎒 → the piece →
 «Міцність N/M»).
 - Ten won fights in the forest: the kit loses about five points in all, spread over random pieces — some wins

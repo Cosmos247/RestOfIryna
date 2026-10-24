@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-24 — a fight wears less** (Swift + content, schema v27, *(this commit)*, NOT LIVE — a restart, not a
+**2026-10-24 — a fight wears less** (Swift + content, schema v27, `6620d39`, NOT LIVE — a restart, not a
 `/reload`). `economy.gear.wearBudget` is a win ½, a flee 1, a death 2 (was 1 / 2 / 3); a fraction is a chance per
 fight (`WearMath`), so a win takes one point in about half the fights, and a passive run rolls each of its fights
 the same way. The repair price, the shave and the maxima are unchanged. On the week to 10-24 the same fights wear

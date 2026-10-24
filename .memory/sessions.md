@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **a fight wears less** — Swift + content, schema v27, NOT deployed (a restart):
+- *(this commit, 10-24)* **`6620d39`'s hash fill** — records only.
+- `6620d39` (10-24) **a fight wears less** — Swift + content, schema v27, NOT deployed (a restart):
   `economy.gear.wearBudget` a win ½ · a flee 1 · a death 2 (was 1 / 2 / 3), decoded as fractions; `WearMath` (ROISim)
   rolls a fraction per fight for the forest and the passive run; the digest replays it seeded; the stale «a flee wears
   hardest» comments corrected. `tuning` and the content hash moved; 475 tests. The owner's pick of four.
@@ -845,7 +846,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-24, later (a fight wears less) — *(this commit)*
+## Session — 2026-10-24, later (a fight wears less) — `6620d39`
 
 **Asked.** First «Перевір останні незакомічені зміни… зроби коміт» — the plot cost's audit, committed as `bac1a70` +
 `c2007f8` (its record is in the entry below). Then: «Давай змінимо втрату міцності за кожен з результатів бою. Покажи
