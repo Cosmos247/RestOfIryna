@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-27)* **the forest's Defend set by the owner's numbers** — content + Swift, schema v28, NOT
+- *(this commit, 10-27)* **`83002a6`'s hash fill** — records only.
+- `83002a6` (10-27) **the forest's Defend set by the owner's numbers** — content + Swift, schema v28, NOT
   deployed (it rides the waiting restart): the parry 40% + DEF ×2 (was 30%), the dodge ×2 + a 45% knife (×1.5 and 15%),
   the barrier 30% off + a 30% spark (60% and 15%) — `combat.json`; Shadow Veil's knife its own required
   `specialDefense.shadowVeilChipFraction` 0.15 (it was the archer's chip). `tuning` → `6b67472ebbcad035`, content hash
@@ -862,7 +863,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-26/27 (the forest's Defend set by numbers) — *(this commit)*
+## Session — 2026-10-26/27 (the forest's Defend set by numbers) — `83002a6`
 
 **Asked.** «Я хочу ще раз спробувати підсилити кнопки захисту у всіх класів. Через це гра стане простішою, але
 після цього хочу і трохи підсилити мобів. Як по твоєму можна підсилити кнопки захисту?»

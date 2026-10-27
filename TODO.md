@@ -2157,7 +2157,7 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-27 — the forest's Defend set by the owner's numbers (NOT live — waits for the same restart; schema
+**Added 2026-10-27 — the forest's Defend set by the owner's numbers (`83002a6`, NOT live — waits for the same restart; schema
 v28, so the running v25 binary refuses this bundle):** one account of each class, a beast of about their level (the
 numbers are means — read several taps).
 - ⚔️ «🛡 Парирувати»: its line strikes about 40% of a clean hit (Надійка against 🦬 Зубр ≈11, was ≈8); the beast's

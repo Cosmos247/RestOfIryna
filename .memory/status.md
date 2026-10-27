@@ -21,7 +21,7 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, schema v28, NOT LIVE — it
+**2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, `83002a6`, schema v28, NOT LIVE — it
 ships with the same restart). «🛡 Парирувати» 40% + DEF ×2 (was 30%), «💨 Ухилитися» dodge ×2 + a 45% knife (×1.5
 and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 15%) — equal by value per tap against an on-level
 beast (59 / 56 / 60%) and still below an Attack tap; no class's "Defend every round" beats attacking. Shadow
