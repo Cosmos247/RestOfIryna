@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, schema v28, NOT LIVE — it
+ships with the same restart). «🛡 Парирувати» 40% + DEF ×2 (was 30%), «💨 Ухилитися» dodge ×2 + a 45% knife (×1.5
+and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 15%) — equal by value per tap against an on-level
+beast (59 / 56 / 60%) and still below an Attack tap; no class's "Defend every round" beats attacking. Shadow
+Veil's knife is its own `specialDefense.shadowVeilChipFraction`, held at 15%. `tuning` → `6b67472ebbcad035`,
+content hash → `a3f69d76` (`.memory/rebalance.md` → "The forest's Defend, set by numbers").
+
 **2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, NOT LIVE — it ships with the v27
 restart: the running v25 binary refuses this bundle). `master.json` → `repairCostFraction` 0.25 → 0.5: a point
 repaired is hood 1, boots 1.6, breeches 2.5, jerkin 3 again, the set from zero 405 (203 at 0.25); the weapon keeps
@@ -1057,10 +1064,11 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). **The tree differs since 2026-10-24** (a plot costs materials, a fight wears
-less and the repair is back at ×0.5, schema v27, waiting for a restart): `records f1501e3c1c9dc759`, `tuning
-37c6ec237883b9f4`, content hash `c8d337fe`; the other three lines as above.
+less, the repair is back at ×0.5 and, since 2026-10-27, the forest's Defend is set by the owner's numbers;
+schema v28, waiting for a restart): `records f1501e3c1c9dc759`, `tuning 6b67472ebbcad035`, content hash
+`a3f69d76`; the other three lines as above.
 Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **476 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **478 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved

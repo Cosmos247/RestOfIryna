@@ -51,7 +51,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   the passive expedition there and back (2026-10-11/12: the teleport, the death rates, the stride
   and the governor's rules, the harness recipe), the forest's Defend (2026-10-13), and foraging
   without zones (2026-10-22/23: the shapes, the clay variants, the price worked and postponed, the recipe;
-  then the price decided the same night, 24 / 12 with «Мʼясо в глині» re-cut).
+  then the price decided the same night, 24 / 12 with «Мʼясо в глині» re-cut), the wear and the repair
+  (2026-10-24), and the forest's Defend set by numbers (2026-10-27: the telegraph declined, the value per
+  tap, the three classes made equal, the barrier's cut-and-spark line, Shadow Veil held, the harness).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).

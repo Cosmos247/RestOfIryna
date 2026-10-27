@@ -2157,6 +2157,18 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-10-27 — the forest's Defend set by the owner's numbers (NOT live — waits for the same restart; schema
+v28, so the running v25 binary refuses this bundle):** one account of each class, a beast of about their level (the
+numbers are means — read several taps).
+- ⚔️ «🛡 Парирувати»: its line strikes about 40% of a clean hit (Надійка against 🦬 Зубр ≈11, was ≈8); the beast's
+  answer is unchanged (DEF ×2).
+- 🏹 «💨 Ухилитися»: the knife strikes about 45% (Лайкмен against Зубр ≈14, was ≈5); the beast misses a little more
+  often (dodge ×2).
+- 🔮 «🌀 Магічний бар'єр»: the spark strikes about 30% (Ivan against Зубр ≈9, was ≈5); 70% of a landed blow comes
+  through (was 40% — Ivan ≈6 against Зубр, was ≈3.5).
+- 🏹 «🌑 Тінь лісу» (L11, Training Ground): its knife stays small, about 15% — unchanged on purpose; «🏰 Залізна стіна»
+  and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `a3f69d76`.
+
 **Added 2026-10-24, night — the armour repair back at ×0.5 (`a0386b1`, NOT live — waits for the same restart;
 content only, but the running v25 binary refuses this bundle):** an account wearing Forester pieces with some wear.
 - 🏛 Столиця → «🏘 Поділ» → «🛠 Майстер» → «⚒️ Полагодити»: a hood missing 10 points costs 10 🪙 (5 before the
@@ -2180,9 +2192,10 @@ an account wearing the Forester set and its weapon, the durability of each piece
   take nothing, none takes two.
 - A successful escape («🏃 Відступити» / «🌑 Сховатись у тіні» / «🔮 Телепортація»): exactly one point; a death: exactly two (worn pieces survive the wipe).
 - A 🏕 run of several fights: its report's won fights cost about half a point each, a lost one two.
-- `/content` reads schema v27 and hash `c8d337fe` (the repair price above moved it from `90abd2c4`).
+- `/content` reads schema v28 and hash `a3f69d76`, the whole waiting restart's (the repair price above moved it from
+  `90abd2c4` to `c8d337fe`, the Defend at the top from there, with the schema).
 
-**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v27):** an
+**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v28):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
 - 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
@@ -3141,6 +3154,17 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, NOT live — a restart;
+`.memory/rebalance.md` → "The forest's Defend, set by numbers"):
+- **Step 2, stronger beasts — the owner's plan, not started.** The owner wanted it after the Defend; nothing was
+  chosen. Measure first: the on-level fights sit on an edge — beasts +5% HP and ATK more than doubled a
+  non-defender's deaths in the hardest cells (Лайкмен vs Тур 6.2% → 13.6%) — and the 🏕 run fights the same beasts
+  and never defends. The Defend change itself barely eases play (a Defend tap still loses to an Attack tap), so the
+  owner was told a beast buff lands on everyone.
+- **Shadow Veil's knife** is held at 15% by its own `specialDefense.shadowVeilChipFraction` — the owner: «До тіні
+  лісу ми повернемось, коли будемо перероблювати всі прийоми». Revisit with the techniques.
+- Raised in the 10-27 report, not asked: the three Defend lines kept their copy, so the archer's 45% knife still «черкає».
+
 **From the 2026-10-24 session** — a plot costs materials (built, `spec-progression.md` §7, NOT live — a restart);
 found while building it, NOT raised with the owner yet — build nothing unasked:
 - **«%{type} закладена на слоті %{slot}» is feminine for every plot type** (`estate.plot.alert.claimed`, the banner
@@ -3233,18 +3257,21 @@ and not changed:
 
 **From the 2026-10-13 Defend session** — the mage's barrier spark built; the rest in discussion
 (measurements: `.memory/rebalance.md` → "The forest's Defend, measured"):
-- **«Звір замахується»** — the proposal that gives Defend a moment: on 20% of its turns the beast
-  winds up (no blow that round), the next blow is ×2 without a crit, a Defend stops it; an ordinary
-  Defend stays as it is; no wind-ups in the autobattle. Two variants measured: stop only (−20…−24% HP
-  a fight for a player who reads it, +0.2…1.3 taps) and stop + a full answering blow (−31…−32%, no
-  longer fights). The owner rejected the quiz to clarify and began with the barrier («По перше…» — more points may follow) —
-  open, not decided.
+- **«Звір замахується» — CLOSED, declined twice.** The proposal gave Defend a moment: on 20% of its turns
+  the beast winds up (no blow that round), the next blow is ×2 without a crit, a Defend stops it; no
+  wind-ups in the autobattle. Measured here: stop only (−20…−24% HP a fight for a player who reads it,
+  +0.2…1.3 taps) and stop + a full answering blow (−31…−32%, no longer fights); the owner rejected the
+  quiz to clarify and began with the barrier. Proposed again 2026-10-27 on the week's fights with a played
+  sample; the owner: «Давай не придумувати нового, а просто змінювати показники», and the Defend was set by
+  numbers instead (the 10-27 block above). Do not raise it again unasked.
 - **Defend's lines say nothing about what it did** — after a Parry the beast's line is the same «б'є у
   відповідь. Ви втрачаєте N ОЗ»; no screen says what each Defend does. Raised, not asked. *(The archer's
   half is done 2026-10-23: the button became «💨 Ухилитися» and its line «💨 Ви пірнаєте вбік і черкаєте
   ножем — …», no longer the warrior's «Ви тримаєте удар…»; waits for a restart.)*
-- **A validator ceiling on the barrier's spark** — the measured line (~20%, `mageChipMultiplier` 0.67)
-  is a doc comment and a `CLAUDE.md` sentence, not a rule. Could become a warning like
+- **A validator ceiling on the barrier's spark** — the line it would guard moves with the cut: at 60% off
+  it fell between a 20% and a 22.5% spark (`mageChipMultiplier` 0.67–0.75 at the old 0.3), and since
+  2026-10-27, at 30% off, even a 40% spark never beats attacking — so a ceiling would have to read both
+  halves. It is a doc comment and a `CLAUDE.md` sentence, not a rule. Could become a warning like
   `arena.duel_defend_loses`; offered, not built.
 
 **From the 2026-10-11 evening sessions** — the apostrophe built (the expedition researched then is

@@ -317,8 +317,8 @@ public enum CombatMath {
     /// Defend-mode chip damage. Always lands, never crits, scaled to
     /// `defendChipFraction × extraMultiplier` of a clean hit. Variance still
     /// applies so the number isn't pure deterministic. `extraMultiplier`
-    /// defaults to 1.0 (warrior); the archer's "plinks while hiding" Defend
-    /// passes 0.5 to halve the chip.
+    /// defaults to 1.0 (the warrior's parry); the archer's knife and the
+    /// mage's spark pass their own class multipliers.
     public static func chipDamage<G: RandomNumberGenerator>(
         attackerATK: Int,
         defenderDEF: Int,
@@ -334,8 +334,10 @@ public enum CombatMath {
 
     /// The same chip at a fraction the caller names — the arena's riposte and
     /// chip, which are the arena's own numbers (`arena.json` → `duel`) and not
-    /// the forest's `defendChipFraction`. One formula for both, so the factors
-    /// multiply in the order the forest's chip always used.
+    /// the forest's `defendChipFraction`, and Shadow Veil's knife
+    /// (`specialDefense.shadowVeilChipFraction`, schema v28). One formula for
+    /// all of them, so the factors multiply in the order the forest's chip
+    /// always used.
     public static func chipDamage<G: RandomNumberGenerator>(
         attackerATK: Int,
         defenderDEF: Int,

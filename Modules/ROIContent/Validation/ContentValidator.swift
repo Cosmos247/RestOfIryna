@@ -2280,6 +2280,10 @@ public enum ContentValidator {
                     "archerDodgeMultiplier must be at least 1.0 (1.0 = no change), found \(combat.defend.archerDodgeMultiplier)")
             checkFraction(combat.defend.mageBarrierDamageFraction, file,
                           "defend.mageBarrierDamageFraction", "tuning.combat.barrier_fraction_range")
+            // Shadow Veil's knife is its own number since schema v28; the same
+            // range as every other chip, because it is one.
+            checkFraction(combat.specialDefense.shadowVeilChipFraction, file,
+                          "specialDefense.shadowVeilChipFraction", "tuning.combat.chip_fraction_range")
         }
 
         // MARK: vigor.json

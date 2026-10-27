@@ -139,8 +139,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   still open.
 - **A duel is played in simultaneous rounds.** Both fighters choose ⚔️ Attack or 🛡 Defend
   blind. The round plays on the second choice, or after 15 s with a missing choice played as a
-  forced Defend, and both blows read the state the round started with. Defend is a 30% chip that
-  cannot miss plus DEF ×2 against that round's attack. Until 2026-10-03 the duel alternated, and
+  forced Defend, and both blows read the state the round started with. Defend blocks 65% of that
+  round's attack and ripostes 60% (both defending, each chips 30%) — the arena's own `arena.json` →
+  `duel`, never the forest's Defend numbers. Until 2026-10-03 the duel alternated, and
   the challenger's first blow won 60–66% of mirror duels.
 - **Both falling in one round** goes to the heavier blow; equal blows draw, with stakes and Honor
   unchanged. **Three missed rounds in a row** are a technical defeat, and both at once call the

@@ -1293,6 +1293,88 @@ daily jobs pay ≈159 a day at L12 (the `spec economy` faucet's arithmetic at L1
 Надійка's 102 a day at 0.5 is about two-thirds of them, if all three are done. The ≈78–103 quoted the same
 night was the L1–8 figure measured on 10-10, before the 10-11 job raise — the wrong yardstick for L12.
 
+### The forest's Defend, set by numbers (2026-10-26/27)
+
+**Asked** (the owner): «Я хочу ще раз спробувати підсилити кнопки захисту у всіх класів… після цього хочу і трохи
+підсилити мобів. Як по твоєму можна підсилити кнопки захисту?»
+
+**What the Pi said** (read 2026-10-26 23:15). Defend since the 10-17 spark, by the 10-13 Vigor recipe on
+technique-free won fights: warrior 1.3% of taps, archer 1.9%, mage 5.2% (53 of the mages' 80 are Король
+Скелетів); 118 archer wins ended on the knife. The week's 1,385 fights at each player's current level and tier:
+the median player stands **9 levels above the beast**, 85% of fights are against beasts 5+ levels below and
+1.9% at or above. A won fight runs 2.2–4.7 taps.
+
+**First proposal — the beast winds up (the 10-13 telegraph) — declined.** Replayed on the week's fights (each
+×200, no flee, no techniques) and on-level brutes from full HP (Лайкмен vs Тур, Ivan vs the wild bear):
+
+| variant | never defends, HP a fight | defends every wind-up | hard-cell deaths, never · reader |
+|---|---|---|---|
+| today | — | — | 6.2% / 4.2% |
+| wind-up instead of a blow, ×2, stop + a full answer | −4…−11% | −22…−31%, ±0.1 tap | 6.2 / 4.4 · 1.1 / 0.7 |
+| the same, stop only | −4…−11% | −14…−22%, +0.2–0.6 taps | — |
+| instead of a blow, ×2.5 | 0…−7% | −22…−31% | 14.3 / 9.8 · 1.1 / 0.7 |
+| a blow AND a wind-up, ×2 | +6…+11% | −9…−14% | 23.6 / 17.9 · 1.6 / 1.1 |
+
+The owner rejected the quiz to clarify, then: «Давай не придумувати нового, а просто змінювати показники».
+Numbers only; the telegraph is closed (auto-memory `project-forest-defend`).
+
+**The yardstick: value per tap** = Defend's damage ÷ Attack's + (1 − damage taken defending ÷ taken attacking),
+means of 100,000 rolls. 1.0 = a Defend tap costs what an Attack tap costs in HP; below 1 it loses. Measured on
+the roster beast at the player's own level ("on-level") and on the week's fights ("week"):
+
+| | today, on-level · week | new, on-level · week |
+|---|---|---|
+| warrior: DEF ×2, chip 30% → **40%** (the owner's yardstick) | 49% · 44% | 59% · 52% |
+| archer: dodge ×1.5 → **×2**, knife 15% → **45%** | 21% · 16% | 56% · 40% |
+| mage: barrier 60% → **30%** off, spark 15% → **30%** | 76% · 70% | 60% · 52% |
+
+Warriors Надійка, DIABLO; archers Лайкмен, Inokentiy, Нястюшка, Samolan (Nerif in the week only, nothing in the
+roster is his level); mages Ivan Djyran, Легіон, Король Скелетів, Leyfor. The archer's dodge ×2 stops only
+another 3–5% of a blow — the knife does the work; on-level parity is ~48%, and 45% (the top of the owner's
+40–45%) was picked. The mage was already the best Defend; asked for «менший відсоток захисту, але вищий
+відсоток удару», every pair on the line cut + spark ≈ 60% reads 60% on-level (45/15, 40/20, 35/25, 30/30,
+25/35), and 30/30 is the one that matches the warrior on both measures. Against 🦬 Зубр, deals / takes (Attack
+in brackets): Надійка 8.4 / 5.7 → 11.2 / 5.7 (36.4 / 7.1); Лайкмен 4.6 / 8.3 → 13.8 / 8.0 (42.0 / 8.7); Ivan
+4.6 / 3.5 → 9.2 / 6.3 (36.9 / 9.0).
+
+**No class's "Defend every round" beats attacking.** Always-Defend against always-Attack from full HP, 20,000
+fights a cell: eight live players against roster beasts 1–5 levels above them, and the 10-13 protocol
+(reference mage L10 and L20, generated normal / skirmisher / brute at L+2/+4/+6, T1). The barrier's danger is
+the cut and the spark TOGETHER: at 60% off the line fell between a 20% and a 22.5% spark (10-13); at 45% off or
+less even a 40% spark never wins as often as attacking (reference L10 vs a normal L16: attack 57.3%, 25/40
+13.6%; Легіон vs the pack: 99.5% against 30/30's 94.8%).
+
+**What it does to play: little, and the owner was told before the build.** A Defend tap still loses to an
+Attack tap — 3–8 HP net a tap on an on-level beast (today 2–16; the archer 16 → 8, the mage the other way,
+2–3 → 3–5, its block halved). On the week's replay a player who attacks and finishes with Defend loses the same
+HP a fight (≤0.2); always-Defend improves for the warrior and the archer (Лайкмен 46.6 → 16.3 HP and 16.7 → 6.5
+taps a fight) and worsens for the mage (Ivan 34.6 → 41.9). So the game does not get noticeably easier, and step 2
+lands on everyone.
+
+**Shadow Veil held at 15%.** Its knife was the archer's Defend chip; the owner: «До тіні лісу ми повернемось,
+коли будемо перероблювати всі прийоми», then «лишити 15%». Iron Bulwark keeps 50% through
+`ironBulwarkChipFraction / defendChipFraction`. Untouched: Mirror Ward, the arena (`arena.json` → `duel`), the
+passive autobattle (it never defends) and `simulate` (`FightSimulator` models no Defend): pace 167.0 / 159.6 /
+150.9 days, 0 broken bands, 18 warnings; the lift audit's archer Defend row reads ×2.00 and holds.
+
+**Built** (content + Swift, schema v28): `defendChipFraction` 0.4, `defend.archerChipMultiplier` 1.125,
+`archerDodgeMultiplier` 2.0, `mageBarrierDamageFraction` 0.7, `mageChipMultiplier` 0.75, and the required
+`specialDefense.shadowVeilChipFraction` 0.15 (`tuning.combat.chip_fraction_range`, mutation-tested). Digest:
+`tuning` → `6b67472ebbcad035`, content hash → `a3f69d76` (COMBINED `6b4053507c3e34fb`); the other four halves
+unmoved. 478 tests.
+
+**Step 2 — the beasts — not started.** The on-level fights sit on an edge: beasts +5% HP and ATK more than
+doubled a non-defender's deaths in the hardest cells (Лайкмен vs Тур 6.2% → 13.6%, Ivan vs the wild bear 4.2% →
+10.1%, full HP, no flee). Measure any buff on those cells and on the passive run (same beasts, never defends)
+before picking a number.
+
+**Harness.** A scratch SwiftPM package: `Modules/ROIContent` + `Modules/ROISim` copied into `Sources/` beside a
+`probe` executable (`ExistentialAny`, `-c release`). It loads `content/data` through `ContentLoader`, rebuilds
+`onDefend` / `strikeRound`'s order over `CombatMath.applyAttack` / `chipDamage`, and replays a `fight_log` CSV (the
+week's rows at each player's current level and tier: enemy, estate level, `hp_start`) ×200. Players are `users`
+base + `gear_*_bonus`, no card, not starving; generated beasts come from `EnemyGenerator.generate` against the
+three on-curve references.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

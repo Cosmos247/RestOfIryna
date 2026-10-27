@@ -228,6 +228,13 @@ The verification has four parts:
   (fights:)` is the game's only reader — the forest's three ends and the passive run's tally. The digest's
   `tuning` hashes each budget and replays the roll seeded through that accessor (`SplitMix64`), so a
   change to the roll moves it even when the numbers do not.
+- **Shadow Veil's knife is its own number (2026-10-27, schema v28).** `combat.specialDefense.
+  shadowVeilChipFraction` (required; a fraction under `tuning.combat.chip_fraction_range`) used to BE the
+  archer's Defend chip, `defendChipFraction × defend.archerChipMultiplier`. When the owner set the three
+  Defend to their numbers (parry 40%, knife 45% with dodge ×2, barrier 30% off + a 30% spark), the veil was
+  held at 15%. `CombatService.chipDamage(…fraction:)` names it, and the digest's `tuning` combines it. A
+  `defendChipFraction` edit now reaches the three Defend, and Iron Bulwark only through rounding: its 50% is
+  sized against the parry's chip.
 - **Combat curves come in two shapes and they are separate TYPES.**
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.

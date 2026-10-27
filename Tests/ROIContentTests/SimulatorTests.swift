@@ -53,6 +53,7 @@ final class SimulatorTests: XCTestCase {
                 zeroesDodge: false, effect: .armourBreak(rounds: 3))],
             specialDefense: SpecialDefenseSectionDTO(
                 effectPersistRounds: 1, ironBulwarkChipFraction: 0.5, shadowVeilDodgeMultiplier: 2.0,
+                shadowVeilChipFraction: 0.15,
                 mirrorWardReflectFraction: 0.5,
                 byClass: [SpecialDefenseClassDTO(characterClass: "warrior", vigor: 3)]),
             flee: FleeSectionDTO(

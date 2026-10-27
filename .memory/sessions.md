@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-23)
+## Commit index — live-play polish and after (2026-09-09 → 10-27)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-24)* **`a0386b1`'s hash fill** — records only.
+- *(this commit, 10-27)* **the forest's Defend set by the owner's numbers** — content + Swift, schema v28, NOT
+  deployed (it rides the waiting restart): the parry 40% + DEF ×2 (was 30%), the dodge ×2 + a 45% knife (×1.5 and 15%),
+  the barrier 30% off + a 30% spark (60% and 15%) — `combat.json`; Shadow Veil's knife its own required
+  `specialDefense.shadowVeilChipFraction` 0.15 (it was the archer's chip). `tuning` → `6b67472ebbcad035`, content hash
+  → `a3f69d76`; 478 tests. The owner's numbers and picks; the telegraph proposed first was declined.
+- `3ddb71e` (10-24) **`a0386b1`'s hash fill** — records only.
 - `a0386b1` (10-24) **the armour repair back at ×0.5** — content only, NOT deployed (it goes with the v27
   restart): `master.json` → `repairCostFraction` 0.25 → 0.5 (a point 1 / 1.6 / 2.5 / 3, the set from zero 405; the
   weapon 1). `records` → `f1501e3c1c9dc759`, content hash → `c8d337fe`; `spec economy`'s sinks row refreshed; 476 tests.
@@ -856,6 +861,68 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-26/27 (the forest's Defend set by numbers) — *(this commit)*
+
+**Asked.** «Я хочу ще раз спробувати підсилити кнопки захисту у всіх класів. Через це гра стане простішою, але
+після цього хочу і трохи підсилити мобів. Як по твоєму можна підсилити кнопки захисту?»
+
+**Read off the Pi** (read-only, 10-26 23:15). It runs `7ac11f0`, online since **2026-10-24 05:39**: the host
+rebooted at 05:17 (its reboots since 10-03: 10-03, 10-15, 10-24), DNS was not up, and the bot died seven times at boot (`Failed to start
+application: … Temporary failure in name resolution`, then `HTTPClientError.connectTimeout`) before polling at
+05:39 — pm2 restarts 2 → 8, ≈20 minutes down, nothing to fix. Still one `[WATCHDOG]`. Then the play: Defend's
+share of taps since the spark, the level gap (the median fight 9 levels below the player, 85% at 5+), the week's
+1,385 fights at each player's current level exported for a replay; numbers in `.memory/rebalance.md` → "The
+forest's Defend, set by numbers".
+
+**The telegraph, declined.** First answer: plain numbers either leave Defend unused or make it the only button (the
+beast hits the same every round, and stronger beasts do not move that ratio), so «звір готує удар» — the 10-13
+proposal — measured on the week's fights, with a played sample (Надійка vs 🦬 Зубр, seed 19). The owner rejected
+the quiz to clarify: «Давай не придумувати нового, а просто змінювати показники». The owner's numbers: the warrior
+DEF ×2 + 40%; the archer dodge ×2 + 40–45% and the mage's cut 50–60% + a spark, both to be computed.
+
+**Computed and picked.** The yardstick is value per tap (Defend's damage share + the share of the blow it stops;
+1.0 = it costs what an Attack costs). The warrior at 40% reads 59% on-level. The archer: 45% reads 56% (40% → 51%,
+parity ~48%) — picked. The mage: parity first (50/15 recommended, 50/10, 60/15 kept); the owner: «Робимо менший
+відсоток захисту, але вищий відсоток удару, запропонуй варіанти» — the line cut + spark ≈ 60% (40/20, 35/25,
+30/30, 25/35); **30/30** picked, the one equal to the warrior on both measures. Shadow Veil: «До тіні лісу ми
+повернемось, коли будемо перероблювати всі прийоми», then «лишити 15%» — held by its own number. Before the build
+the owner was told that a Defend tap still loses to an Attack tap, so the game will not get noticeably easier and
+step 2 (stronger beasts) lands on everyone; +5% to the beasts doubles a non-defender's deaths in the hardest cells.
+
+**Built.** `combat.json`: `defendChipFraction` 0.4, `defend.archerChipMultiplier` 1.125, `archerDodgeMultiplier` 2.0,
+`mageBarrierDamageFraction` 0.7, `mageChipMultiplier` 0.75, `specialDefense.shadowVeilChipFraction` 0.15; `manifest`
+schema 28. `SpecialDefenseSectionDTO` gains the required key, `ContentSchema` v28, the validator's chip range for it,
+`CombatService.chipDamage(…fraction:)` and `SpecialDefense.shadowVeilChipFraction`, the veil's knife reading it in
+`CombatController.onSpecialDefense`, the digest hashing it; the Defend comments in `CombatService`,
+`CombatController` and `DefendTuningDTO` carry the new numbers and the cut-and-spark line. Two tests: the key is
+required (with its positive control) and out of range is an error — the rule removed, the test fails twice.
+Verified: 478 tests, `validate --strict` 0/0, `simulate --strict` 0 broken / 18 warnings / pace 167.0 · 159.6 · 150.9
+unchanged (the lift audit's archer Defend row ×2.00, holds), the digest: `tuning` `37c6ec237883b9f4` →
+`6b67472ebbcad035`, content hash `c8d337fe` → `a3f69d76`, COMBINED `d4356a0f11214265` → `6b4053507c3e34fb`, the other
+four halves unmoved. Records: `CLAUDE.md` (the plain Defend's numbers and line; the arena's `defendChipFraction`
+no longer shared with the veil), rebalance, Prompt, TODO, INDEX; auto-memory `project-forest-defend`.
+
+**Open.** Step 2, the beasts (not started — measure the hardest cells and the passive run first); Shadow Veil
+with the techniques' rework; the copy of the three Defend lines was left as it was (the knife «черкає» at 45%).
+
+**Audited and committed** (the owner's «перевір всі зміни»). The game code was right. What was stale:
+- three comments: `CombatMath.chipDamage` still had the archer passing 0.5, its `fraction:` overload named only the
+  arena, and `ArenaDuelDTO` counted «three other forest moves» sharing `defendChipFraction`, the veil among them;
+- the player FAQ (`.memory/live-ops.md`): the «💨 Ухилитися» row gave only the live numbers. It now adds the
+  numbers after the restart and a ready reply;
+- README: the waiting list did not name the Defend and still said v27, and the tests line said 476;
+- status.md's baseline paragraph (`tuning`, the hash, v27, 476 tests), the file map (v28, the touched files,
+  478 tests), TODO's older walk line (`/content` v27 / `c8d337fe`, the plot block «ships with v27») and
+  content-pipeline's schema list (no v28 entry);
+- TODO's 10-13 Open block and Prompt's questions for the owner still had «звір замахується» «open, not decided».
+  It is closed now, declined twice. The spark ceiling's ~20% line was also out of date: the line moves with the cut.
+
+Re-verified after the fixes: the 14 touched Swift files recompiled under `bash` (no warning anywhere); 478 tests;
+`validate --strict` 0/0 at `a3f69d76`; the digest byte-identical to the build's; the `simulate --strict` report
+identical (0 broken / 18 warnings, pace unchanged); `git diff --check` clean. Every reader of the five Defend
+constants was grepped: only `onDefend` (and Iron Bulwark's ratio); the autobattle, `FightSimulator`, Mirror Ward and
+the arena read none. The Pi was read again at 10-27 23:11: still `7ac11f0`, restarts 8, one `[WATCHDOG]`.
 
 ## Session — 2026-10-24, night (the audit, «одягненої», the repair back at ×0.5) — `a0386b1`
 

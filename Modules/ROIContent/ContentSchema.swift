@@ -157,5 +157,12 @@ public enum ContentSchema {
     /// v27 binary would decode — its whole numbers are valid fractions — and
     /// keep the old wear the operator believes is softened; the handshake
     /// refuses that too.
-    public static let current: Int = 27
+    /// v28 (2026-10-27): the three classes' Defend are set by the owner's
+    /// numbers, and `combat.specialDefense` gains a required
+    /// `shadowVeilChipFraction` — Shadow Veil's knife, which used to be the
+    /// archer's Defend chip and is held at 15% while that chip goes to 45%. A
+    /// v27 binary would read this bundle without a word and swing the veil at
+    /// 45% the operator believes is held; a v27 bundle on a v28 binary would die
+    /// on a bare `keyNotFound`. The handshake names the cause either way.
+    public static let current: Int = 28
 }

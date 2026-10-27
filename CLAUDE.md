@@ -457,10 +457,13 @@ Shot is a guaranteed crit AT the standard ×1.5, and `tuning.combat.effect_crit_
 refuses more. The kit is tuned to shorten an elite fight by ~20% for EVERY class; measure with
 `simulate --levels 21` and `--levels 40`, never the default sweep. Raising a stance swings
 through `strikeRound` and all three special defences deal damage back — do not add a tap that
-takes Vigor and strikes nothing. The mage's plain barrier strikes too (2026-10-13, 15%), and a Defend
-chip ignores the level gap: above ~20% "barrier every round" beats attacking a stronger beast, so
-re-measure before raising `defend.mageChipMultiplier`. The stance lines carry no stat breakdown, on
-the owner's word. Auto-memory `project-technique-rework`, `project-forest-defend`.
+takes Vigor and strikes nothing. The plain Defend is the owner's numbers (2026-10-27): parry 40% + DEF
+×2, dodge ×2 + a 45% knife, barrier 30% off + a 30% spark — equal against an on-level beast, still
+below an Attack tap. A chip ignores the level gap, so a big spark behind a big block makes "barrier
+every round" beat attacking a stronger beast: re-measure barrier-only before raising either half.
+Shadow Veil's knife is its own number (15%, schema v28) until the techniques are reworked. The stance
+lines carry no stat breakdown, on the owner's word. Auto-memory `project-technique-rework`,
+`project-forest-defend`.
 
 **A finished forest fight writes one `fight_log` row** (win / death / flee — not training, the
 registration dog or the passive autobattle). Its numbers gather between taps in
@@ -500,8 +503,8 @@ With two blind choices one always dominates whatever the numbers, so **never fix
 tuning a two-choice duel**. The technique is free and unlimited in the arena (a use limit
 breaks the cycle once spent); a clock-forced Defend blocks and answers nothing; two techniques
 both fizzle. The numbers are the arena's own (`arena.json` → `duel`) — **never move
-`combat.json` → `defendChipFraction` for the arena**: the forest's Defend, Iron Bulwark and
-Shadow Veil share it. `arena.duel_defend_loses` warns when a riposte no longer outweighs what
+`combat.json` → `defendChipFraction` for the arena**: the forest's Defend and Iron Bulwark
+share it. `arena.duel_defend_loses` warns when a riposte no longer outweighs what
 gets through the block. The arena admits only those who have LEARNED the special attack
 (`ArenaService.isAdmitted`, at the capital's door and again at the arena's home), and **the
 stake picker and the challenge refuse a player off the arena's router**

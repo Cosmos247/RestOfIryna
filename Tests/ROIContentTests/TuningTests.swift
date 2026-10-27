@@ -40,6 +40,7 @@ final class TuningTests: XCTestCase {
         specialDefenseVigor: [SpecialDefenseClassDTO]? = nil,
         ironBulwarkChip: Double = 0.5,
         shadowVeilDodge: Double = 2.0,
+        shadowVeilChip: Double = 0.15,
         mirrorWardReflect: Double = 0.5,
         persistRounds: Int = 1,
         flee: [FleeTuningDTO]? = nil,
@@ -92,6 +93,7 @@ final class TuningTests: XCTestCase {
                 effectPersistRounds: persistRounds,
                 ironBulwarkChipFraction: ironBulwarkChip,
                 shadowVeilDodgeMultiplier: shadowVeilDodge,
+                shadowVeilChipFraction: shadowVeilChip,
                 mirrorWardReflectFraction: mirrorWardReflect,
                 byClass: specialDefenseVigor ?? [
                     SpecialDefenseClassDTO(characterClass: "warrior", vigor: 3),
@@ -289,7 +291,7 @@ final class TuningTests: XCTestCase {
          "variance":{"min":0.9,"max":1.1},"trainingDummyEnemyId":"enemy.training_dummy",
          "techniques":[],"stances":{"durationRounds":3,"defaultActivationVigor":4,"byId":[]},
          "specialAttack":[],"specialDefense":{"effectPersistRounds":1,"ironBulwarkChipFraction":0.5,
-         "shadowVeilDodgeMultiplier":2.0,"mirrorWardReflectFraction":0.5,"byClass":[]},
+         "shadowVeilDodgeMultiplier":2.0,"shadowVeilChipFraction":0.15,"mirrorWardReflectFraction":0.5,"byClass":[]},
          "flee":[],"defend":{"archerChipMultiplier":0.5,"archerDodgeMultiplier":1.5,
          "mageBarrierDamageFraction":0.4,"mageChipMultiplier":0.5}}
         """
@@ -313,6 +315,26 @@ final class TuningTests: XCTestCase {
         """
         let decoded = try JSONDecoder().decode(DefendTuningDTO.self, from: Data(with.utf8))
         XCTAssertEqual(decoded.mageChipMultiplier, 0.5)
+    }
+
+    /// Shadow Veil's knife is required (schema v28): a v27 `specialDefense`
+    /// block has no such key, and the knife it used to borrow — the archer's
+    /// Defend chip — is 45% now, three times what the veil is held at. There
+    /// is no default that is not a silent change, so it must throw.
+    func testMissingShadowVeilChipThrows() throws {
+        let without = """
+        {"effectPersistRounds":1,"ironBulwarkChipFraction":0.5,"shadowVeilDodgeMultiplier":2.0,
+         "mirrorWardReflectFraction":0.5,"byClass":[]}
+        """
+        XCTAssertThrowsError(try JSONDecoder().decode(SpecialDefenseSectionDTO.self, from: Data(without.utf8)))
+        // The positive control: the same block with the key decodes, so the
+        // throw above is about the key and nothing else.
+        let with = """
+        {"effectPersistRounds":1,"ironBulwarkChipFraction":0.5,"shadowVeilDodgeMultiplier":2.0,
+         "shadowVeilChipFraction":0.15,"mirrorWardReflectFraction":0.5,"byClass":[]}
+        """
+        let decoded = try JSONDecoder().decode(SpecialDefenseSectionDTO.self, from: Data(with.utf8))
+        XCTAssertEqual(decoded.shadowVeilChipFraction, 0.15)
     }
 
     func testMissingVigorDrainFieldThrows() {
@@ -540,6 +562,11 @@ final class TuningTests: XCTestCase {
 
     func testNegativeMageChipIsAnError() {
         assertRule("tuning.combat.negative_multiplier", bundle(combat: combat(mageChip: -0.5)))
+    }
+
+    func testShadowVeilChipOutsideAFractionIsAnError() {
+        assertRule("tuning.combat.chip_fraction_range", bundle(combat: combat(shadowVeilChip: 1.5)))
+        assertRule("tuning.combat.chip_fraction_range", bundle(combat: combat(shadowVeilChip: -0.1)))
     }
 
     // MARK: - vigor.json rules

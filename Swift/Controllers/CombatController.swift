@@ -439,16 +439,16 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             state.tally { $0.vigorSpent += spent }
         }
 
-        // Per-class basic Defend (2026-05-15):
-        //   • Warrior — chip 30% × ATK + 2× DEF for the round (the canonical
+        // Per-class basic Defend (2026-05-15; the owner's numbers 2026-10-27):
+        //   • Warrior — chip 40% × ATK + 2× DEF for the round (the canonical
         //     parry: tags the enemy with the shield, eats most of the swing).
-        //   • Archer  — chip 15% × ATK (knife flick while melting into cover)
-        //               + dodge ×1.5 for the round; DEF stays single since the
+        //   • Archer  — chip 45% × ATK (knife flick while melting into cover)
+        //               + dodge ×2 for the round; DEF stays single since the
         //               fantasy is evasion, not armor.
-        //   • Mage    — chip 15% × ATK (the barrier sparks back; since
+        //   • Mage    — chip 30% × ATK (the barrier sparks back; since
         //               2026-10-13 — it struck nothing before); enemy attack
         //               rolls normally through single DEF + dodge, then the
-        //               landed damage is multiplied by 0.4 (60% off) before
+        //               landed damage is multiplied by 0.7 (30% off) before
         //               being applied to HP.
         // Iron Bulwark's armor-split debuff (if active) is consumed by chip;
         // training mode forces enemy DEF to 0 for a clean chip number.
@@ -816,8 +816,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
             let bulwarkEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
             let chip = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: bulwarkEnemyDEF, defenderLevel: enemy.level)
-            // The basic chipDamage uses 30% of base — Iron Bulwark scales it
-            // up to 50% (defendChipFraction = 0.3, ironBulwarkChipFraction = 0.5).
+            // The basic chipDamage is the parry's 40% of base — Iron Bulwark
+            // scales it up to 50% (defendChipFraction = 0.4, ironBulwarkChipFraction = 0.5).
             struck = max(1, Int((Double(chip) * (CombatService.SpecialDefense.ironBulwarkChipFraction / CombatService.defendChipFraction)).rounded()))
             // Apply armor-split for the next swing (after the tick).
             state.applyEnemyDefDebuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
@@ -825,13 +825,15 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         case .archer:
             // Shadow Veil: full dodge this round (no enemy counter), a knife on
             // the way out, then a lingering dodge buff for the next round. The
-            // knife is the plain Defend's own chip («💨 Ухилитися») — the same
-            // knob, so the two cannot drift apart.
+            // knife was the plain Defend's own chip («💨 Ухилитися») until
+            // 2026-10-27, when that chip went 15% → 45%: the owner held the veil
+            // at 15% until the techniques are reworked, so it reads its own
+            // number now.
             let buffedATK = Int((Double(player.effectiveAttack) * stanceMods.attackMultiplier).rounded())
             let veilEnemyDEF = Self.playerSwingEnemyDEF(enemy, state: state)
             struck = CombatService.chipDamage(attackerATK: buffedATK, defenderDEF: veilEnemyDEF,
                                               defenderLevel: enemy.level,
-                                              extraMultiplier: CombatService.Defend.archerChipMultiplier)
+                                              fraction: CombatService.SpecialDefense.shadowVeilChipFraction)
             state.applyPlayerDodgeBuff(rounds: CombatService.SpecialDefense.effectPersistRounds + 1)
 
         case .mage:

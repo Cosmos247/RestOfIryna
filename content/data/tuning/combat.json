@@ -23,12 +23,12 @@
     }
   },
   "defend" : {
-    "archerChipMultiplier" : 0.5,
-    "archerDodgeMultiplier" : 1.5,
-    "mageBarrierDamageFraction" : 0.4,
-    "mageChipMultiplier" : 0.5
+    "archerChipMultiplier" : 1.125,
+    "archerDodgeMultiplier" : 2.0,
+    "mageBarrierDamageFraction" : 0.7,
+    "mageChipMultiplier" : 0.75
   },
-  "defendChipFraction" : 0.3,
+  "defendChipFraction" : 0.4,
   "estateScaling" : {
     "perTier" : 0.1
   },
@@ -116,6 +116,7 @@
     "effectPersistRounds" : 1,
     "ironBulwarkChipFraction" : 0.5,
     "mirrorWardReflectFraction" : 0.5,
+    "shadowVeilChipFraction" : 0.15,
     "shadowVeilDodgeMultiplier" : 2.0
   },
   "stances" : {

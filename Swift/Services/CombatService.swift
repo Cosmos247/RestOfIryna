@@ -198,14 +198,24 @@ public enum CombatService {
     /// Defend-mode chip damage. Always lands, never crits, scaled to
     /// `defendChipFraction × extraMultiplier` of a clean hit. Variance still
     /// applies so the number isn't pure deterministic. `extraMultiplier`
-    /// defaults to 1.0 (warrior); the archer's "plinks while hiding" Defend
-    /// passes 0.5 to halve the chip.
+    /// defaults to 1.0 (the warrior's parry); the archer's knife and the
+    /// mage's spark pass their own class multipliers.
     public static func chipDamage(attackerATK: Int, defenderDEF: Int, defenderLevel: Int,
                                   extraMultiplier: Double = 1.0) -> Int {
         var rng = SystemRandomNumberGenerator()
         return CombatMath.chipDamage(attackerATK: attackerATK, defenderDEF: defenderDEF,
                                      defenderLevel: defenderLevel,
                                      extraMultiplier: extraMultiplier,
+                                     rules: rules, using: &rng)
+    }
+
+    /// The same chip at a fraction the caller names — Shadow Veil's knife,
+    /// which stopped borrowing the archer's Defend chip in schema v28.
+    public static func chipDamage(attackerATK: Int, defenderDEF: Int, defenderLevel: Int,
+                                  fraction: Double) -> Int {
+        var rng = SystemRandomNumberGenerator()
+        return CombatMath.chipDamage(attackerATK: attackerATK, defenderDEF: defenderDEF,
+                                     defenderLevel: defenderLevel, fraction: fraction,
                                      rules: rules, using: &rng)
     }
 
@@ -339,9 +349,17 @@ public enum CombatService {
         public static var mirrorWardVigor:  Int { specialDefenseVigor(forClass: .mage) }
 
         /// Iron Bulwark's parry-counter chip damage as a fraction of a clean
-        /// hit. Bigger than the basic Defend's 30% — this is a heavier counter.
+        /// hit. Bigger than the basic parry's 40% — this is a heavier counter.
         public static var ironBulwarkChipFraction: Double {
             Catalogs.current.tuningCombat.specialDefense.ironBulwarkChipFraction
+        }
+
+        /// Shadow Veil's knife as a fraction of a clean hit. Its own number
+        /// since schema v28: it was the archer's Defend chip, held at 15% when
+        /// that chip went to 45% (2026-10-27), until the techniques are
+        /// reworked together.
+        public static var shadowVeilChipFraction: Double {
+            Catalogs.current.tuningCombat.specialDefense.shadowVeilChipFraction
         }
 
         /// What Shadow Veil multiplies the archer's dodge by on the lingering
@@ -440,23 +458,23 @@ public enum CombatService {
     //
     // Basic Defend used to share one mechanic across all classes: chip damage
     // back + doubled DEF for the round. Thematically that only matched the
-    // warrior's "Parry". 2026-05-15 split it three ways:
+    // warrior's "Parry". 2026-05-15 split it three ways, and 2026-10-27 set the
+    // three to the owner's numbers, worth the same against an on-level beast:
     //
-    //   • Warrior — chip 30% × ATK + 2× DEF (unchanged, the canonical block).
-    //   • Archer  — chip 15% × ATK ("plinks a knife while melting into shadow")
-    //               + dodge ×1.5 for the round (a flat +30 until Phase 8D);
-    //               DEF stays single.
-    //   • Mage    — 60% damage reduction on the landed enemy hit (raw goes
+    //   • Warrior — chip 40% × ATK + 2× DEF (the canonical block; 30% before).
+    //   • Archer  — chip 45% × ATK ("a knife while melting into shadow")
+    //               + dodge ×2 for the round (15% and ×1.5 before; a flat +30
+    //               until Phase 8D); DEF stays single.
+    //   • Mage    — 30% damage reduction on the landed enemy hit (raw goes
     //               through DEF + dodge normally, then the final landed damage
-    //               is multiplied by `mageBarrierDamageFraction`). It had no
-    //               chip at all ("the barrier is passive") until 2026-10-13,
-    //               which made it the one Vigor tap in the forest that struck
-    //               nothing; it now sparks back `mageChipMultiplier` of the
-    //               shared chip — 15%, the archer's size.
+    //               is multiplied by `mageBarrierDamageFraction`), and a spark
+    //               of 30%. It had no chip at all ("the barrier is passive")
+    //               until 2026-10-13, then 60% off and a 15% spark; the owner
+    //               traded block for spark on 2026-10-27.
     public enum Defend {
-        /// Multiplies `defendChipFraction`, so 0.5 = 15% of raw at the shipped 0.3.
-        /// Shadow Veil's counter is the same knife and reads the same number
-        /// (2026-09-27): the veil used to cost Vigor and strike nothing.
+        /// Multiplies `defendChipFraction`, so 1.125 = 45% of raw at the shipped
+        /// 0.4. Shadow Veil's knife read this number from 2026-09-27 to
+        /// 2026-10-27; it is `SpecialDefense.shadowVeilChipFraction` now.
         public static var archerChipMultiplier: Double {
             Catalogs.current.tuningCombat.defend.archerChipMultiplier
         }
@@ -467,15 +485,16 @@ public enum CombatService {
         public static var archerDodgeMultiplier: Double {
             Catalogs.current.tuningCombat.defend.archerDodgeMultiplier
         }
-        /// Fraction of incoming damage the mage actually takes. 0.4 = 60% off.
+        /// Fraction of incoming damage the mage actually takes. 0.7 = 30% off.
         public static var mageBarrierDamageFraction: Double {
             Catalogs.current.tuningCombat.defend.mageBarrierDamageFraction
         }
         /// Multiplies `defendChipFraction` for the barrier's spark, as
-        /// `archerChipMultiplier` does for the knife: 0.5 = 15% of raw at the
-        /// shipped 0.3. Small on purpose — a chip ignores the level gap, and
-        /// above ~20% "barrier every round" beats attacking a stronger beast
-        /// (`DefendTuningDTO.mageChipMultiplier` has the measurement).
+        /// `archerChipMultiplier` does for the knife: 0.75 = 30% of raw at the
+        /// shipped 0.4. A chip ignores the level gap, so a big spark behind a big
+        /// block makes "barrier every round" beat attacking a stronger beast —
+        /// re-measure both together (`DefendTuningDTO.mageChipMultiplier` has
+        /// the measurement).
         public static var mageChipMultiplier: Double {
             Catalogs.current.tuningCombat.defend.mageChipMultiplier
         }

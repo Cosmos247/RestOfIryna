@@ -226,8 +226,9 @@ public struct ArenaLeagueDTO: Codable, Sendable, Equatable {
 /// because with two blind choices one of them always dominates whatever the
 /// numbers: every brace that was measured was either never worth taking or
 /// always worth taking. These are the arena's OWN numbers: the forest's Defend
-/// reads `combat.json` → `defendChipFraction`, which three other forest moves
-/// share, so the arena could not tune it without moving them.
+/// reads `combat.json` → `defendChipFraction` — the parry, the knife and the
+/// spark all scale it, and Iron Bulwark is sized against it — so the arena
+/// could not tune it without moving them.
 public struct ArenaDuelDTO: Codable, Sendable, Equatable {
     /// Share of an Attack a Defend stops — chosen or forced by the clock.
     public let blockFraction: Double

@@ -774,6 +774,7 @@ enum ContentDigest {
         d.combine(CombatService.SpecialDefense.mirrorWardVigor)
         d.combine("\(CombatService.SpecialDefense.ironBulwarkChipFraction)")
         d.combine("\(CombatService.SpecialDefense.shadowVeilDodgeMultiplier)")
+        d.combine("\(CombatService.SpecialDefense.shadowVeilChipFraction)")
         d.combine("\(CombatService.SpecialDefense.mirrorWardReflectFraction)")
         d.combine(CombatService.SpecialDefense.effectPersistRounds)
         d.combine(CombatService.Flee.warriorChance)

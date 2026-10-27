@@ -486,22 +486,30 @@ public struct SpecialDefenseSectionDTO: Codable, Sendable, Equatable {
     /// dodge chance at level 1 and 4 at the cap, the same rot Phase 8C took
     /// out of the stances one file over.
     public let shadowVeilDodgeMultiplier: Double
+    /// Shadow Veil's knife on the way out, as a fraction of a clean hit — its
+    /// own number since schema v28 (2026-10-27). It used to BE the archer's
+    /// Defend chip (`defendChipFraction × defend.archerChipMultiplier`), and
+    /// when that chip went 15% → 45% the owner held the veil where it was until
+    /// the techniques are reworked together. Shared, the veil would have
+    /// tripled with a button it only borrowed a knife from.
+    public let shadowVeilChipFraction: Double
     public let mirrorWardReflectFraction: Double
     public let byClass: [SpecialDefenseClassDTO]
 
     public init(effectPersistRounds: Int, ironBulwarkChipFraction: Double,
-                shadowVeilDodgeMultiplier: Double, mirrorWardReflectFraction: Double,
-                byClass: [SpecialDefenseClassDTO]) {
+                shadowVeilDodgeMultiplier: Double, shadowVeilChipFraction: Double,
+                mirrorWardReflectFraction: Double, byClass: [SpecialDefenseClassDTO]) {
         self.effectPersistRounds = effectPersistRounds
         self.ironBulwarkChipFraction = ironBulwarkChipFraction
         self.shadowVeilDodgeMultiplier = shadowVeilDodgeMultiplier
+        self.shadowVeilChipFraction = shadowVeilChipFraction
         self.mirrorWardReflectFraction = mirrorWardReflectFraction
         self.byClass = byClass
     }
 
     private enum CodingKeys: String, CodingKey {
         case effectPersistRounds, ironBulwarkChipFraction
-        case shadowVeilDodgeMultiplier, mirrorWardReflectFraction, byClass
+        case shadowVeilDodgeMultiplier, shadowVeilChipFraction, mirrorWardReflectFraction, byClass
     }
 
     public init(from decoder: any Decoder) throws {
@@ -509,6 +517,7 @@ public struct SpecialDefenseSectionDTO: Codable, Sendable, Equatable {
         effectPersistRounds       = try c.decode(Int.self, forKey: .effectPersistRounds)
         ironBulwarkChipFraction   = try c.decode(Double.self, forKey: .ironBulwarkChipFraction)
         shadowVeilDodgeMultiplier = try c.decode(Double.self, forKey: .shadowVeilDodgeMultiplier)
+        shadowVeilChipFraction    = try c.decode(Double.self, forKey: .shadowVeilChipFraction)
         mirrorWardReflectFraction = try c.decode(Double.self, forKey: .mirrorWardReflectFraction)
         byClass                   = try c.decode([SpecialDefenseClassDTO].self, forKey: .byClass)
     }
@@ -575,27 +584,42 @@ public struct FleeSectionDTO: Codable, Sendable, Equatable {
     }
 }
 
+/// The three classes' plain Defend. Since 2026-10-27 (the owner's numbers) the
+/// three are worth the same: a Defend tap deals ~60% of what an Attack tap is
+/// worth in damage dealt plus blow stopped, against a beast of the player's own
+/// level — the warrior's parry at `defendChipFraction` 0.4 with DEF ×2 is the
+/// yardstick, and the archer's and the mage's numbers were solved against it
+/// on live players (`.memory/rebalance.md` → "The forest's Defend, set by
+/// numbers"). Still below an Attack tap: no class's "Defend every round" beats
+/// attacking, which is the line every number here is checked against.
 public struct DefendTuningDTO: Codable, Sendable, Equatable {
+    /// Multiplies `defendChipFraction`: 1.125 is 45% of a clean hit at the
+    /// shipped 0.4. The knife does the archer's work — the dodge below stops
+    /// only another 3–5% of a blow — so it is the biggest chip of the three.
     public let archerChipMultiplier: Double
     /// The archer's Defend melts into cover: dodge is multiplied by this for
     /// the round. A MULTIPLE of their own rating since Phase 8D, for the same
     /// reason as `shadowVeilDodgeMultiplier` — and this one is worse as a flat
     /// number, because Defend is available every round from level 1.
     public let archerDodgeMultiplier: Double
-    /// Fraction of incoming damage the mage actually takes (0.4 = 60% off).
+    /// Fraction of incoming damage the mage actually takes (0.7 = 30% off; it
+    /// was 0.4 until 2026-10-27, when the owner traded block for spark).
     public let mageBarrierDamageFraction: Double
     /// The mage's barrier strikes back since schema v24 (2026-10-13): this
-    /// multiplies `defendChipFraction`, as the archer's knife does, so 0.5 is
-    /// 15% of a clean hit. It used to strike nothing at all — a Vigor tap with
-    /// no blow in it, the defect the techniques lost on 2026-09-27.
+    /// multiplies `defendChipFraction`, as the archer's knife does, so 0.75 is
+    /// 30% of a clean hit at the shipped 0.4. It used to strike nothing at all —
+    /// a Vigor tap with no blow in it, the defect the techniques lost on
+    /// 2026-09-27.
     ///
-    /// Kept small on purpose. A chip never weakens with the level gap while an
-    /// attack loses `levelDiff.perLevel` a level, and the barrier already takes
-    /// the most off a blow of the three classes, so a big chip turns "barrier
-    /// every round" into the way to beat beasts above the mage. Measured: the
-    /// line falls between 20% and 22.5% (×0.67 to ×0.75) — at 30% a level-10
-    /// mage beats a level-16 beast in 93% of barrier-only fights against 58% by
-    /// attacking. `.memory/rebalance.md` has the table.
+    /// The danger is this number and the block TOGETHER. A chip never weakens
+    /// with the level gap while an attack loses `levelDiff.perLevel` a level, so
+    /// a big spark behind a big block turns "barrier every round" into the way
+    /// to beat beasts above the mage: at 60% off the line fell between a 20% and
+    /// a 22.5% spark (at 30%, a level-10 mage beat a level-16 beast in 93% of
+    /// barrier-only fights against 58% attacking). With 45% off or less, even a
+    /// 40% spark never beat attacking on any beast two to six levels up
+    /// (2026-10-27). Re-measure barrier-only against attacking before raising
+    /// either. `.memory/rebalance.md` has both tables.
     public let mageChipMultiplier: Double
 
     public init(archerChipMultiplier: Double, archerDodgeMultiplier: Double,
@@ -627,6 +651,10 @@ public struct CombatTuningDTO: Codable, Sendable {
     public let estateScaling: EstateScalingDTO
     public let critMultiplier: Double
     public let variance: VarianceDTO
+    /// The warrior's parry chip as a fraction of a clean hit (0.4 since
+    /// 2026-10-27), and the base `defend.archerChipMultiplier` and
+    /// `defend.mageChipMultiplier` scale. Iron Bulwark keeps its own 50%
+    /// through it; Shadow Veil and the arena carry their own numbers.
     public let defendChipFraction: Double
     /// Enemy the Training Ground spawns. A content REFERENCE living in a tuning
     /// file — the validator resolves it against `enemies.json`, the same way it

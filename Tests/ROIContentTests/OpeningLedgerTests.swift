@@ -132,7 +132,8 @@ final class OpeningLedgerTests: XCTestCase {
                 specialAttack: [],
                 specialDefense: SpecialDefenseSectionDTO(
                     effectPersistRounds: 1, ironBulwarkChipFraction: 0.5,
-                    shadowVeilDodgeMultiplier: 2.0, mirrorWardReflectFraction: 0.5, byClass: []),
+                    shadowVeilDodgeMultiplier: 2.0, shadowVeilChipFraction: 0.15,
+                    mirrorWardReflectFraction: 0.5, byClass: []),
                 flee: FleeSectionDTO(maxFailures: 4, byClass: []),
                 defend: DefendTuningDTO(archerChipMultiplier: 0.5, archerDodgeMultiplier: 1.5,
                                         mageBarrierDamageFraction: 0.4, mageChipMultiplier: 0.5)),
