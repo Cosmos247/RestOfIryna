@@ -1375,6 +1375,170 @@ week's rows at each player's current level and tier: enemy, estate level, `hp_st
 base + `gear_*_bonus`, no card, not starving; generated beasts come from `EnemyGenerator.generate` against the
 three on-curve references.
 
+### Stronger beasts — step 2, measured and parked (2026-10-27, night)
+
+**Asked** (the owner, after the Defend): «Тепер давай трохи підсилимо мобів. Я так розумію, що ми можемо
+переставити мобів на інші рівні (більш високі) і вони підсиляться, так? Якщо так, то запропонуй варіанти змін для
+існуючих мобів.» During the measurement: «В розрахунках прийми до уваги те, що мобів перших рівнів не обов'язково
+піднімати.» Then, after the quiz: «Всі ці розрахунки і відповіді запам'ятай, ми повернемось до них пізніше.»
+**Nothing is decided and nothing is built.**
+
+**What a level is — the answer given.** A creature's `level` feeds three things:
+- its stat line, which is the archetype contract at that level (`spec bestiary`);
+- the damage shift (`levelDiff.perLevel` 0.06 a level, clamped ×0.25–×2.5);
+- the rating and absorption curves.
+
+XP follows the creature's NUMBER, not its level (`spec-bestiary.md` §10.2), so a re-levelled beast pays the same.
+`enemies.json` stores the stat line explicitly. A level edit alone moves only the shift and the curves, so a
+re-level must re-solve the line at the new level (§10.8 step 4's method).
+
+All fourteen sit exactly on the contract's DEF, crit and dodge. HP and ATK are each creature's own share of the
+contract: №1–4 carry 100% of the HP and 62–71% of the ATK, №5 on carry 69–77% and 66–79%.
+
+Example: 🦬 Зубр L7, 127 / 14 / 48 at T1, becomes L8, 137 / 15 / 52. For Ivan (L10, T4) a fight from full HP goes
+from 36 to 50 HP (23% → 32% of the bar), and from 5.0 to 5.7 taps.
+
+**What the Pi said** (read-only, 2026-10-27 23:25):
+- 5,941 forest fights in 7 days. 89% of them are against beasts 5–12 levels below the player (5–8 below: 2,464;
+  9–12 below: 2,835); 1.8% are within two levels of the player or above.
+- By beast: viper 2,168, eagle 1,255, boar 1,010, fox 421. **82% of fights are with №1–4** (75% with №1–3).
+- Лайкмен alone fought 3,382 of them, at an average km 5.2. The deepest walker, Володимир (L19), averages km 14.5.
+- A won fight costs 3.1% of the starting HP against the viper, 12.6% against the stag, and 21–24% against the
+  bison, the tusker, the bear and the aurochs.
+- 62 deaths in 14 days; 58 of them entered the fight at 35 HP or less (median 10).
+- Registered players: 16 at L1, 6 at L2, 3 at L3, then one or a few per level, up to one each at L16, L19 and L26.
+
+**Harness** (scratch `probe2`: the Defend harness rebuilt):
+- The repo's `ROIContent` and `ROISim` copied beside a `probe` executable.
+- The forest round order with the shipped (10-27) Defend numbers, read from `combat.json`.
+- Two policies: «attack, Defend only for a sure kill» (the finisher) and «never» (the autobattle). No flee,
+  techniques or stances.
+- Players: `users` base + gear at 23:25. The week's 1,535 fights at each player's current level and tier
+  (`fight_log`, `hp_start` as logged) are each replayed ×40.
+- A re-levelled line is each stat × contract(new level) ÷ contract(old level), so every creature keeps its share.
+  This approximates the re-solve; an approved variant gets the real re-solve, shown before it is written.
+- The shift variants decode a patched `combat.json`; the estate ones scale through `CombatMath.scaled` with
+  another `perTier`.
+
+The Pi reads behind it (read-only, through `psql -p 5433 -d ArtaniaDB`):
+
+```sql
+-- fights by level gap, 7 days
+SELECT CASE WHEN player_level - enemy_level < 0 THEN 'below 0' WHEN player_level - enemy_level <= 2 THEN '0-2'
+            WHEN player_level - enemy_level <= 4 THEN '3-4' WHEN player_level - enemy_level <= 8 THEN '5-8'
+            WHEN player_level - enemy_level <= 12 THEN '9-12' ELSE '13+' END AS gap,
+       count(*), sum((outcome = 'death')::int) AS deaths, sum((outcome = 'flee')::int) AS flees
+FROM fight_log WHERE created_at >= now() - interval '7 days' GROUP BY 1 ORDER BY min(player_level - enemy_level);
+-- the replay rows: the week's fights at each player's CURRENT level and tier
+\copy (SELECT f.nickname, f.character_class, f.player_level, f.estate_level, f.enemy_id, f.hp_start, f.outcome,
+  f.rounds, f.vigor_spent, f.special_atk_uses, f.special_def_uses, f.stance_uses, f.depth_km
+  FROM fight_log f JOIN users u ON u.id = f.user_id WHERE f.created_at >= now() - interval '7 days'
+  AND f.player_level = u.level AND f.estate_level = u.estate_level) TO stdout WITH csv header
+-- the fighters: base + gear, with their deepest km
+SELECT nickname, character_class, level, estate_level, max_hp + gear_hp_bonus, attack + gear_attack_bonus,
+       defense + gear_defense_bonus, crit + gear_crit_bonus, dodge + gear_dodge_bonus,
+       accuracy + gear_accuracy_bonus, deepest_km
+FROM users WHERE id IN (SELECT user_id FROM fight_log WHERE created_at >= now() - interval '7 days');
+```
+
+**The week's fights replayed** (finisher policy). XP is unchanged in every variant, so «Vigor» is also what the
+same XP costs:
+
+| variant | levels | HP a fight | % of the bar | Vigor |
+|---|---|---|---|---|
+| today | 1…14 | 7.4 | 4.7% | ×1.00 |
+| **+1 from the moose (№5)** | 5→6 … 14→15 | 8.4 | 5.3% | ×1.02 |
+| **+1 from №5, +2 from the wolf (№9)** | 9→11 … 14→16 | 8.5 | 5.3% | ×1.02 |
+| **+2 from №5** | 5→7 … 14→16 | 9.2 | 5.8% | ×1.04 |
+| +1 №5–7, +2 №8–10, +3 №11–14 | … 14→17 | 8.6 | 5.4% | ×1.02 |
+| +1 from the fox (№4) | 4→5 … 14→15 | 8.6 | 5.4% | ×1.03 |
+| +2 from №4 | 4→6 … 14→16 | 9.7 | 6.1% | ×1.06 |
+| +1 from the eagle (№2) | 2→3 … 14→15 | 9.9 | 6.2% | ×1.07 |
+| everyone +2 | 1→3 … 14→16 | 13.1 | 8.3% | ×1.24 |
+| the ladder stretched to L25 | 1, 3, 5, 7, 8, 10, 12, 14, 16, 18, 19, 21, 23, 25 | 14.5 | 8.9% | ×1.17 |
+| estate +15% a tier (now 10%) | — | 8.9 | 5.6% | ×1.09 |
+| estate +20% a tier | — | 10.7 | 6.6% | ×1.17 |
+| shift 5% a level (now 6%) | — | 8.6 | 5.4% | ×1.03 |
+| shift 4% | — | 9.9 | 6.2% | ×1.08 |
+| shift 3% | — | 11.4 | 7.0% | ×1.13 |
+| HP and ATK +10% | — | 8.8 | 5.6% | ×1.07 |
+| +1 from №5 and shift 5% | 5→6 … | 9.5 | 5.9% | ×1.05 |
+| +1 from №5 and shift 4% | 5→6 … | 10.9 | 6.7% | ×1.10 |
+
+**The far end of the walks:** the beasts on each player's deepest km (`users.deepest_km`), from full HP, finisher
+policy. Each cell is % of the bar · death %:
+
+| cell | today | +1 from №5 | +1 / +2 from №9 | +2 from №5 | +1 / +2 / +3 | shift 4% |
+|---|---|---|---|---|---|---|
+| Ivan L10 T4 – wolf | 20.6 · 0 | 27.4 · 0 | 33.4 · 0 | 33.4 · 0 | 33.4 · 0 | 21.8 · 0 |
+| Легіон L11 T4 – wild bear | 44.6 · 0 | 57.2 · 0.2 | 69.2 · 3.5 | 69.2 · 3.5 | 84.1 · 25.0 | 44.6 · 0 |
+| Лайкмен L13 T5 – tusker | 38.3 · 0 | 48.5 · 0 | 62.0 · 0.8 | 62.0 · 0.8 | 62.0 · 0.8 | 43.2 · 0 |
+| Нястюшка L9 T3 – bison | 50.5 · 0 | 65.7 · 1.5 | 65.7 · 1.5 | 78.7 · 14.0 | 65.7 · 1.5 | 54.3 · 0.1 |
+| Нястюшка L9 T3 – lynx | 38.5 · 0.2 | 50.2 · 1.3 | 50.2 · 1.3 | 60.3 · 4.5 | 60.3 · 4.5 | 39.4 · 0.2 |
+| Володимир L19 T7 – rabid bear | 41.3 · 0 | 51.0 · 0.2 | 61.1 · 1.5 | 61.1 · 1.5 | 78.0 · 16.7 | 51.1 · 0.2 |
+| анія L16 T6 – wild bear | 22.9 · 0 | 29.8 · 0 | 36.5 · 0 | 36.5 · 0 | 45.1 · 0 | 28.8 · 0 |
+
+**On-level and above, never defending, from full HP** (death %). These cells are the same for №4 and №5 starts,
+because both raise these beasts alike:
+
+| cell | today | +1 | +2 | estate 15% | estate 20% | shift 4% | +10% |
+|---|---|---|---|---|---|---|---|
+| Лайкмен L13 T5 – aurochs | 0.1 | 4.7 | 23.3 | 6.0 | 35.4 | 0.2 | 2.9 |
+| Ivan L10 T4 – wild bear | 4.2 | 33.0 | 64.0 | 28.3 | 61.0 | 2.5 | 19.3 |
+| анія L16 T6 – rabid bear | 2.6 | 13.0 | 31.9 | 22.3 | 62.8 | 5.7 | 13.8 |
+
+The stretched ladder kills in 93–100% of every hard cell measured.
+
+**Newcomers** (full HP, finisher policy), death % · % of the bar:
+- Raising the FOX is where newcomers start dying. НеБармен (L3, T1) against it: 0.1 · 45 today → 1.8 · 60 at +1,
+  10.1 · 74 at +2, 50.9 · 91 on the stretched ladder. Leyfor (L5, T2): 0.4 · 44 → 3.1 · 57 (+1) → 11.8 · 70 (+2).
+- Every start from the moose leaves them untouched. The moose itself, for DIABLO (L5, T2): 0 · 30 → 0 · 40 (+1)
+  → 0.1 · 54 (+2).
+- Everyone +2 doubles the opening: Той (L2) against the boar goes 38% → 67% of the bar (2.1% deaths), the eagle
+  for ODARKA (L1) 30% → 60%. HP and ATK +10%: the boar 38% → 47%.
+- The shift moves newcomers by about one point, slightly EASIER: it shrinks the level effect both ways, and they
+  fight at or above their level.
+
+**The 🏕 run** (the autobattle against the viper, the eagle and the boar, the only beasts it reaches at ≤7.5 km):
+- No start from the fox or the moose touches it.
+- Shift 4%: a veteran's fight goes 1.9% → 3.2% of the bar (Лайкмен); still no deaths.
+- Everyone +2: a newcomer's fight goes 25% → 48% of the bar, with 1.4–2.2% deaths. A passive death takes the bag.
+
+**The decree «Пуща»** (km 26 at L17): the on-curve L17 character at T6 against the wolf, the tusker, the stag and
+the lynx stays at ≤19% of the bar a fight in every variant.
+
+**Pairs from full HP** (finisher). Лайкмен L13 T5 against the boar, ten levels below him:
+- the boar's blow ×0.40 and his ×1.60 today, 5.3 HP a fight;
+- shift 5%: ×0.50, 7.0 HP; shift 4%: ×0.60, 8.7 HP; shift 3%: ×0.70, 11.9 HP;
+- no re-level from №4 or №5 changes it.
+
+The live replay's own death rate (22.4‰ today) overstates the live 4‰, because the model never flees (456 flees in
+the week). HP a fight is the measure. A stronger forest also lowers the HP players walk in with, which the per-fight
+replay cannot see.
+
+**Shown to the owner:**
+- Three variants from the moose, keeping the first four: A, +1 from №5; B, +1 then +2 from the wolf; C, +2.
+- A second question, the shift for outgrown beasts: keep 6%, 5% or 4%.
+- Recommended: A, and the shift kept at 6%. A Defend tap helps where the re-level bites, and the shift reaches
+  the 82% of fights the re-level leaves alone.
+- Rejected, with the reasons said: everyone +2 (the opening doubles); +3 on the deepest (25% deaths); the estate
+  step (it hits on-level cells, and every upgrade gets worse value, with T5→T6 already ×0.9); a flat +10%
+  (newcomers); raising the fox.
+
+The owner MARKED A and 6% in the dialog, then pressed «clarify» instead of submitting, and parked the whole step.
+A marked option is a leaning, not a decision: re-confirm it before building. A single-select question has no
+default (the Halloween quiz the same night came back «No answer provided»), so the marks were the owner's own.
+
+**What a pick would touch:**
+- **A re-level:** `enemies.json` (levels, and lines re-solved by §10.8 step 4's method, shown first).
+  `spec-bestiary.md` §10.2's rule «the number is the level» is amended (from №5 the level is the number + 1).
+  Also the tests pinned to the roster, the `spec bestiary` and `spec opening -c release` blocks (the ledger's km
+  12–17 holds the moose and the stag), the digest, and `CLAUDE.md`'s creature rule. No schema bump, no migration.
+- **The shift:** one number, `levelDiff.perLevel`. `spec-bestiary.md` §10.4 decided «`levelDiff` stays», so that is
+  amended. The arena's duels between unequal levels move with it, and so do the Training Ground dummy's numbers.
+- Either rides the waiting restart (the Pi refuses this tree's `/reload` anyway).
+- Re-read the Pi before deciding: these numbers age with the players.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

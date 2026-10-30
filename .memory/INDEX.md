@@ -53,7 +53,9 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   without zones (2026-10-22/23: the shapes, the clay variants, the price worked and postponed, the recipe;
   then the price decided the same night, 24 / 12 with «Мʼясо в глині» re-cut), the wear and the repair
   (2026-10-24), and the forest's Defend set by numbers (2026-10-27: the telegraph declined, the value per
-  tap, the three classes made equal, the barrier's cut-and-spark line, Shadow Veil held, the harness).
+  tap, the three classes made equal, the barrier's cut-and-spark line, Shadow Veil held, the harness), and the
+  stronger beasts, measured and parked (2026-10-27, night: the re-levels, the level shift, the estate step, the
+  harness).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).

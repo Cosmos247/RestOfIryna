@@ -3156,11 +3156,15 @@ unrelated commit on purpose.
 
 **From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, NOT live — a restart;
 `.memory/rebalance.md` → "The forest's Defend, set by numbers"):
-- **Step 2, stronger beasts — the owner's plan, not started.** The owner wanted it after the Defend; nothing was
-  chosen. Measure first: the on-level fights sit on an edge — beasts +5% HP and ATK more than doubled a
-  non-defender's deaths in the hardest cells (Лайкмен vs Тур 6.2% → 13.6%) — and the 🏕 run fights the same beasts
-  and never defends. The Defend change itself barely eases play (a Defend tap still loses to an Attack tap), so the
-  owner was told a beast buff lands on everyone.
+- **Step 2, stronger beasts — measured 2026-10-27 night, PARKED by the owner** («Всі ці розрахунки і відповіді
+  запам'ятай, ми повернемось до них пізніше»). The owner's idea is to raise the beasts' levels, keeping the first ones
+  («мобів перших рівнів не обов'язково піднімати»). Shown: A, +1 from the moose (№5); B, +1, then +2 from the wolf
+  (№9); C, +2 from №5. All three keep the first four (the viper, the eagle, the boar, the fox), because raising the
+  fox kills newcomers at km 9–13. A second question was the level shift for outgrown beasts (keep 6%, or 5% / 4%):
+  82% of the week's fights are with №1–4, and no re-level from the moose touches them. Recommended: A, and 6%. The
+  owner MARKED A and 6% in the dialog, but pressed «clarify» instead of submitting and then parked it. That is a
+  leaning, not a decision: re-confirm it before building. Every table: `.memory/rebalance.md` → "Stronger beasts — step 2". Re-read the Pi before resuming: the
+  numbers age.
 - **Shadow Veil's knife** is held at 15% by its own `specialDefense.shadowVeilChipFraction` — the owner: «До тіні
   лісу ми повернемось, коли будемо перероблювати всі прийоми». Revisit with the techniques.
 - Raised in the 10-27 report, not asked: the three Defend lines kept their copy, so the archer's 45% knife still «черкає».

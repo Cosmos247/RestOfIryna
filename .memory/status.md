@@ -26,7 +26,9 @@ ships with the same restart). «🛡 Парирувати» 40% + DEF ×2 (was 3
 and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 15%) — equal by value per tap against an on-level
 beast (59 / 56 / 60%) and still below an Attack tap; no class's "Defend every round" beats attacking. Shadow
 Veil's knife is its own `specialDefense.shadowVeilChipFraction`, held at 15%. `tuning` → `6b67472ebbcad035`,
-content hash → `a3f69d76` (`.memory/rebalance.md` → "The forest's Defend, set by numbers").
+content hash → `a3f69d76` (`.memory/rebalance.md` → "The forest's Defend, set by numbers"). Step 2, stronger
+beasts, was measured the same night and parked by the owner, with nothing decided (`.memory/rebalance.md` →
+"Stronger beasts — step 2").
 
 **2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, NOT LIVE — it ships with the v27
 restart: the running v25 binary refuses this bundle). `master.json` → `repairCostFraction` 0.25 → 0.5: a point

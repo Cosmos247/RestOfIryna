@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-27)* **`83002a6`'s hash fill** — records only.
+- *(this commit, 10-27)* **stronger beasts, measured and parked** — records only: the step-2 tables in
+  `.memory/rebalance.md`, nothing decided.
+- `bde0acc` (10-27) **`83002a6`'s hash fill** — records only.
 - `83002a6` (10-27) **the forest's Defend set by the owner's numbers** — content + Swift, schema v28, NOT
   deployed (it rides the waiting restart): the parry 40% + DEF ×2 (was 30%), the dodge ×2 + a 45% knife (×1.5 and 15%),
   the barrier 30% off + a 30% spark (60% and 15%) — `combat.json`; Shadow Veil's knife its own required
@@ -862,6 +864,36 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-27, night (stronger beasts, measured and parked) — *(this commit)*
+
+**Asked.** «Тепер давай трохи підсилимо мобів. Я так розумію, що ми можемо переставити мобів на інші рівні (більш
+високі) і вони підсиляться, так? Якщо так, то запропонуй варіанти змін для існуючих мобів.» During the
+measurement: «В розрахунках прийми до уваги те, що мобів перших рівнів не обов'язково піднімати.»
+
+**Answered.** Yes, with two corrections:
+- the stat line is stored apart from the level, so a re-level means re-solving the line;
+- XP follows the beast's number, so a re-levelled beast pays the same.
+
+Read off the Pi (23:25, read-only): 82% of the week's 5,941 fights are with №1–4, and 89% are against beasts 5–12
+levels below the player. A scratch harness (`probe2`) replayed the week's 1,535 fights at each player's current
+level and tier against 17 variants: re-levels starting at the fox, the moose, the eagle or everyone; the ladder
+stretched to L25; the estate step; the level shift; a flat +10%. It also measured newcomers, the far end of each
+player's walks, the on-level cells, the 🏕 run and the «Пуща» decree.
+
+**Shown.**
+- A, +1 from the moose: the week's fight 7.4 → 8.4 HP; the far end of the walks +25–35%, with ≤1.5% deaths there.
+- B, +1, then +2 from the wolf.
+- C, +2 from the moose: Нястюшка dies to the bison in 14% of fights.
+- Raising the fox kills newcomers (10–12% of fights at +2).
+- A second question: the level shift (6 / 5 / 4%), the only knob that reaches the 82%.
+- Recommended: A and 6%.
+
+**Parked.** The owner rejected the quiz to clarify, then: «Всі ці розрахунки і відповіді запам'ятай, ми повернемось
+до них пізніше». Nothing picked, nothing built. Records:
+- `.memory/rebalance.md` → "Stronger beasts — step 2" (every table and the harness);
+- TODO's 10-27 Open block, Prompt, status, INDEX;
+- auto-memory `project-stronger-beasts`.
 
 ## Session — 2026-10-26/27 (the forest's Defend set by numbers) — `83002a6`
 
