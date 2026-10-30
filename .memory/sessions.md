@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-27)* **stronger beasts, measured and parked** — records only: the step-2 tables in
+- *(this commit, 10-30)* **`5cbfe36`'s hash fill** — records only.
+- `5cbfe36` (10-27) **stronger beasts, measured and parked** — records only: the step-2 tables in
   `.memory/rebalance.md`, nothing decided.
 - `bde0acc` (10-27) **`83002a6`'s hash fill** — records only.
 - `83002a6` (10-27) **the forest's Defend set by the owner's numbers** — content + Swift, schema v28, NOT
@@ -865,7 +866,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-27, night (stronger beasts, measured and parked) — *(this commit)*
+## Session — 2026-10-27, night (stronger beasts, measured and parked) — `5cbfe36`
 
 **Asked.** «Тепер давай трохи підсилимо мобів. Я так розумію, що ми можемо переставити мобів на інші рівні (більш
 високі) і вони підсиляться, так? Якщо так, то запропонуй варіанти змін для існуючих мобів.» During the
