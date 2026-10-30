@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-30)* **stronger beasts: №5–14 a level up** — content + a test, NOT deployed (it rides the
+- *(this commit, 10-30)* **`ff3e64e`'s hash fill** — records only.
+- `ff3e64e` (10-30) **stronger beasts: №5–14 a level up** — content + a test, NOT deployed (it rides the
   holiday's restart; no schema bump, no migration): `enemies.json` — the moose … the rabid bear each a level up
   (L6 … L15), every stat × contract(L+1)/contract(L), so each keeps its share of the contract; the level shift kept at
   6%; XP, bands and the manor's creatures unchanged. `SimulatorTests`' fixture moved and
@@ -882,7 +883,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-30, night (stronger beasts: №5–14 a level up) — *(this commit)*
+## Session — 2026-10-30, night (stronger beasts: №5–14 a level up) — `ff3e64e`
 
 **Asked.** «Давай доробимо останнє перед оновленням. Це підсилення мобів. Ти вже робив розрахунки, знайди їх і
 покажи мені знов.» Then «Перерахуй на свіжих даних з Pi».
