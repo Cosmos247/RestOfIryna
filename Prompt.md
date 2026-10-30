@@ -299,9 +299,8 @@ was fixed 10-21 and a find that half fits (one free slot, two found, nothing tak
   6%; `spec-bestiary.md` §14). The shift (5 / 4%) is the one knob that reaches the 81.5% of fights with №1–4, and it
   also moves a holiday's manor, so any change waits until no manor is open. Shadow Veil's knife (held at 15%) comes
   back with the techniques' rework; the three Defend lines' copy left as it was («черкаєте ножем» for a 45% knife);
-- **the 10-24 block:** «%{type} закладена на слоті %{slot}» (`estate.plot.alert.claimed`) is feminine for every plot
-  type — wrong for «Курник» (found while building the plot cost, not fixed); a «📌 У нотатник» on the plot's build
-  card (it has materials now) was not built — not asked;
+- **the 10-24 block:** a «📌 У нотатник» on the plot's build card (it has materials now) was not built — not asked
+  (the coop's «закладена» was fixed 10-31);
 - **the 10-23 night block:** the staff's t3 keeps 3 🧱 — at 24 it costs 102 🪙 against the sword's 50 and the
   bow's 38 («1 🧱 instead of 3» offered, not answered); the archer's special defence named twice («🌑 Тінь
   лісу» on the button, «Серпанок тіні» on the fight card); five uk lines with an undeclined plural

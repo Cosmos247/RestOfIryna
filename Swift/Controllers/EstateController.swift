@@ -1991,7 +1991,12 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             let typeName = context.lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             let icon = PlotCatalog.icon(for: type)
-            let statusLine = "✅ " + context.lingo.localize("estate.plot.alert.claimed", locale: locale, interpolations: [
+            // Agrees with the PLOT's noun, as the ready notification does — «Шахта
+            // закладена» but «Курник закладений» (2026-10-31; it said «закладена»
+            // for every type, wrong for the coop alone).
+            let plotGender = context.lingo.localize(PlotCatalog.genderKey(for: type), locale: locale)
+            let statusLine = "✅ " + context.lingo.localize("estate.plot.alert.claimed", agreeingWith: plotGender,
+                                                             locale: locale, interpolations: [
                 "icon": icon,
                 "type": typeName,
                 "slot": "\(slot + 1)"

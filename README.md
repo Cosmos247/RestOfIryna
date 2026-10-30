@@ -749,6 +749,7 @@ onto the running one is refused):
   5–10% more HP and attack; the first four, the XP, the bands and the holiday's creatures unchanged
   (`content/spec/spec-bestiary.md` §14).
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
+- a coop's build banner agrees with its noun: «🐔 Курник закладений на слоті N.» (it said «закладена»).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

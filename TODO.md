@@ -2252,7 +2252,7 @@ account with an empty slot and no plots yet (a first plot), and one that has plo
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
   «(have/need)» counted over the bag and the warehouse together, then «⚠️ Ділянку не можна перебудувати.»
 - One short: «✅ Будувати» → the modal «🚧 Не вистачає матеріалів:» and the ❌ row; the card stays, redrawn.
-- Enough: «✅ Будувати» → the plot list and «✅ ⛏ Шахта закладена на слоті N.»; what was in the bag is taken first, the
+- Enough: «✅ Будувати» → the plot list and «✅ ⛏ Шахта закладена на слоті N.» («🐔 Курник закладений…» since 2026-10-31); what was in the bag is taken first, the
   warehouse gives the rest.
 - A second plot, a coop: «16× 🪵 · 10× 🪨 · 2× 🧱 · 6× 🥚»; a third farm «30× 🪵 · 6× 🟫 · 3× 🔩 · 9× 🥔»; a sixth
   mine «72× 🪵 · 18× 🟫 · 12× 🔩 · 6× 🧱».
@@ -3259,10 +3259,10 @@ unrelated commit on purpose.
 
 **From the 2026-10-24 session** — a plot costs materials (built, `spec-progression.md` §7, NOT live — a restart);
 found while building it, NOT raised with the owner yet — build nothing unasked:
-- **«%{type} закладена на слоті %{slot}» is feminine for every plot type** (`estate.plot.alert.claimed`, the banner
-  after «✅ Будувати») — wrong for «Курник» (`m`). The plot names already declare their gender
-  (`plot.type.<type>.gender`); the house fix is `.m` / `.f` / `.n` / `.pl` variants read through
-  `Lingo.localize(_:agreeingWith:locale:)`.
+- ~~**«%{type} закладена на слоті %{slot}» is feminine for every plot type**~~ — **FIXED 2026-10-31** on the owner's
+  word («Виправ курник»): `estate.plot.alert.claimed.m` / `.f` read through `Lingo.localize(_:agreeingWith:locale:)`
+  with `plot.type.<type>.gender`, as the ready notification does — «🐔 Курник закладений на слоті N.» Only `.m` and
+  `.f` exist, like `plot.ready.notification`: no plot is `n` or `pl`; a new one that is needs its variant.
 - **No «📌 У нотатник» on the plot's build card.** It lists materials now, like the eight cards that have one;
   not asked, so not built.
 
