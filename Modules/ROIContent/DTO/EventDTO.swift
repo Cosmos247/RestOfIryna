@@ -38,6 +38,11 @@ public struct EventDTO: Codable, Sendable, Equatable {
     public let opensAt: String
     /// The manor closes; whoever is inside is walked out.
     public let endsAt: String
+    /// When the capital starts to wear the holiday — its own pictures, the
+    /// palace's empty throne, the square's welcome (2026-10-31, the owner: at
+    /// 12:00, not with the 09:00 decree). Optional in the file — absent, from
+    /// `preludeAt`; it always ends at `endsAt`.
+    public let artFrom: String?
     /// The km of an active walk where the manor stands.
     public let entranceKm: Int
     /// The depth-`d` creature is level `max(1, playerLevel + offset + d)`.
@@ -54,13 +59,14 @@ public struct EventDTO: Codable, Sendable, Equatable {
     /// pumpkin). Optional in the file, so a holiday without one says nothing.
     public let finds: [EventFindDTO]?
 
-    public init(id: String, preludeAt: String, opensAt: String, endsAt: String, entranceKm: Int,
-                creatureLevelOffset: Int, creatures: [EventCreatureDTO], rooms: [EventRoomDTO],
+    public init(id: String, preludeAt: String, opensAt: String, endsAt: String, artFrom: String? = nil,
+                entranceKm: Int, creatureLevelOffset: Int, creatures: [EventCreatureDTO], rooms: [EventRoomDTO],
                 notices: [EventNoticeDTO], rollovers: [EventRolloverDTO], finds: [EventFindDTO]? = nil) {
         self.id = id
         self.preludeAt = preludeAt
         self.opensAt = opensAt
         self.endsAt = endsAt
+        self.artFrom = artFrom
         self.entranceKm = entranceKm
         self.creatureLevelOffset = creatureLevelOffset
         self.creatures = creatures

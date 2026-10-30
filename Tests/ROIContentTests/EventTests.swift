@@ -57,12 +57,14 @@ final class EventTests: XCTestCase {
     }
 
     /// `veles` with one field changed. Swift structs with `let`s are rebuilt.
+    /// `artFrom: .some(nil)` drops the field, as a file without it would.
     private func variant(_ base: EventDTO, id: String? = nil, preludeAt: String? = nil, opensAt: String? = nil,
-                         endsAt: String? = nil, entranceKm: Int? = nil, creatures: [EventCreatureDTO]? = nil,
+                         endsAt: String? = nil, artFrom: String?? = .none, entranceKm: Int? = nil,
+                         creatures: [EventCreatureDTO]? = nil,
                          rooms: [EventRoomDTO]? = nil, notices: [EventNoticeDTO]? = nil,
                          rollovers: [EventRolloverDTO]? = nil, finds: [EventFindDTO]? = nil) -> EventDTO {
         EventDTO(id: id ?? base.id, preludeAt: preludeAt ?? base.preludeAt, opensAt: opensAt ?? base.opensAt,
-                 endsAt: endsAt ?? base.endsAt, entranceKm: entranceKm ?? base.entranceKm,
+                 endsAt: endsAt ?? base.endsAt, artFrom: artFrom ?? base.artFrom, entranceKm: entranceKm ?? base.entranceKm,
                  creatureLevelOffset: base.creatureLevelOffset, creatures: creatures ?? base.creatures,
                  rooms: rooms ?? base.rooms, notices: notices ?? base.notices, rollovers: rollovers ?? base.rollovers,
                  finds: finds ?? base.finds)
@@ -159,6 +161,30 @@ final class EventTests: XCTestCase {
         let event = try veles()
         XCTAssertTrue(try rules([variant(event, endsAt: event.opensAt)]).contains("event.window_order"))
         XCTAssertTrue(try rules([variant(event, preludeAt: event.endsAt)]).contains("event.window_order"))
+    }
+
+    /// The pictures come at 12:00 on Saturday, three hours after the 09:00
+    /// news (2026-10-31, the owner: «Картинки івентові повинні з'являтись не о
+    /// 9, а о 12»).
+    func testThePicturesComeAtNoonNotWithTheNews() throws {
+        let event = try veles()
+        let prelude = try XCTUnwrap(EventClock.date(event.preludeAt))
+        let art = try XCTUnwrap(event.artFrom.flatMap(EventClock.date))
+        XCTAssertEqual(art, try XCTUnwrap(EventClock.date("2026-10-31T10:00:00Z")), "12:00 Kyiv")
+        XCTAssertEqual(art.timeIntervalSince(prelude), 3 * 3600)
+    }
+
+    func testArtOutsideTheWindowIsRefused() throws {
+        let event = try veles()
+        XCTAssertTrue(try rules([variant(event, artFrom: "2026-10-31T08:59:00+02:00")]).contains("event.art_window"),
+                      "before the prelude")
+        XCTAssertTrue(try rules([variant(event, artFrom: .some(event.endsAt))]).contains("event.art_window"),
+                      "at the close: the pictures would never show")
+        XCTAssertTrue(try rules([variant(event, artFrom: "31.10.2026 12:00")]).contains("event.bad_time"))
+        // Without the field the pictures start with the prelude, and nothing complains.
+        XCTAssertEqual(try rules([variant(event, artFrom: .some(nil))]), [])
+        XCTAssertFalse(try rules([variant(event, artFrom: .some(event.preludeAt))]).contains("event.art_window"),
+                       "the prelude itself is allowed")
     }
 
     func testEntranceAtZeroIsRefused() throws {

@@ -2761,6 +2761,12 @@ public enum ContentValidator {
                      "preludeAt ≤ opensAt < endsAt does not hold — the manor would open before the news or close before it opens",
                      id: id)
             }
+            if let text = event.artFrom, let art = time(text, "artFrom"), let prelude, let ends,
+               !(prelude <= art && art < ends) {
+                fail(path + ".artFrom", "event.art_window",
+                     "preludeAt ≤ artFrom < endsAt does not hold — the pictures would show before the holiday or never",
+                     id: id)
+            }
             if event.entranceKm < 1 {
                 fail(path + ".entranceKm", "event.bad_entrance", "the manor stands at km \(event.entranceKm) — the walk starts at km 1",
                      id: id)

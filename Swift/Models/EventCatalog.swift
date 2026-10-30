@@ -9,8 +9,9 @@
 //  are data, so `/reload` moves them; the text is Lingo, under `EventKeys`.
 //
 //  A holiday runs in three phases, read off the clock and never stored:
-//  - the prelude (`preludeAt` ..< `opensAt`): the decrees, and the capital
-//    hears the King is ill;
+//  - the prelude (`preludeAt` ..< `opensAt`): the decrees, each at its own
+//    time; from `artFrom` (2026-10-31: 12:00) the capital hears the King is
+//    ill — its pictures, the palace's empty throne, the square's welcome;
 //  - open (`opensAt` ..< `endsAt`): the manor stands at the entrance km, and
 //    the palace tells the story and hands out the flask that lets a walk in;
 //  - over (from `endsAt`): whoever is inside is walked out at their next tap,
@@ -35,6 +36,8 @@ public struct GameEvent: Sendable {
     public let prelude: Date
     public let opens: Date
     public let ends: Date
+    /// When the holiday's pictures start (`artFrom`, else the prelude).
+    public let artFrom: Date
     public let notices: [Notice]
     /// creature id → its line at level `index + 1`, for every level the game has.
     private let lines: [String: [CombatantStats]]
@@ -53,6 +56,14 @@ public struct GameEvent: Sendable {
         self.prelude = prelude
         self.opens = opens
         self.ends = ends
+        if let text = dto.artFrom {
+            guard let art = EventClock.date(text) else {
+                throw ContentMappingError.invalidEvent("artFrom is not ISO 8601 with an offset", id: dto.id)
+            }
+            self.artFrom = art
+        } else {
+            self.artFrom = prelude
+        }
         self.notices = try dto.notices.map { notice in
             guard let at = EventClock.date(notice.at), let until = EventClock.date(notice.until) else {
                 throw ContentMappingError.invalidEvent("a time is not ISO 8601 with an offset", id: "\(dto.id).\(notice.id)")
@@ -78,10 +89,14 @@ public struct GameEvent: Sendable {
 
     // MARK: Phases
 
-    /// The prelude or the manor open: the capital's lines and the decrees.
-    public func isRunning(at now: Date) -> Bool { prelude <= now && now < ends }
     public func isOpen(at now: Date) -> Bool { opens <= now && now < ends }
     public func isOver(at now: Date) -> Bool { now >= ends }
+    /// The capital wears the holiday — its pictures, the palace's empty throne
+    /// and the square's raving windows — from `artFrom` to the close (2026-10-31,
+    /// the owner: from 12:00; only the decrees go out from the 09:00 prelude,
+    /// each at its own time). `isRunning`, the whole prelude, had no reader
+    /// left once the last line moved, and went.
+    public func showsArt(at now: Date) -> Bool { artFrom <= now && now < ends }
 
     // MARK: The manor
 
@@ -139,11 +154,12 @@ extension GameEvent {
 }
 
 public enum EventArt {
-    /// What a town screen sends now: the running holiday's art for `slot` —
-    /// from the prelude to the close, the window the capital's lines follow —
-    /// or `usual` outside it, so after the close every screen has its own again.
+    /// What a town screen sends now: the holiday's art for `slot` from its
+    /// `artFrom` to the close (2026-10-31, the owner: at 12:00, not with the
+    /// 09:00 decree) — or `usual` outside it, so after the close every screen
+    /// has its own again.
     public static func path(_ slot: EventArtSlot, usual: String, now: Date = Date()) -> String {
-        EventCatalog.running(at: now)?.artPath(slot) ?? usual
+        EventCatalog.showingArt(at: now)?.artPath(slot) ?? usual
     }
 }
 
@@ -154,10 +170,11 @@ public enum EventCatalog {
         all.first { $0.id == id }
     }
 
-    /// The holiday whose prelude or manor is on now. Two never overlap in
+    /// The holiday the capital wears now (`artFrom` ..< `endsAt`): the art,
+    /// the palace's line and the square's welcome. Two never overlap in
     /// practice; the first in the file wins if they ever do.
-    public static func running(at now: Date = Date()) -> GameEvent? {
-        all.first { $0.isRunning(at: now) }
+    public static func showingArt(at now: Date = Date()) -> GameEvent? {
+        all.first { $0.showsArt(at: now) }
     }
 
     public static func open(at now: Date = Date()) -> GameEvent? {

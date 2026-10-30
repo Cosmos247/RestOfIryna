@@ -83,7 +83,7 @@ Swift/
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
 
 `Localizations/` — `en.json`, `uk.json`. `Assets/` — the artwork (registration, estate, capital, travel, and
-`events/<event>/` — a holiday's own art, sent only while it runs: `EventArt`).
+`events/<event>/` — a holiday's own art, sent from its `artFrom` to its close: `EventArt`).
 `content/data/` — the game itself as JSON. `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
 
 ## Game and Content Rules

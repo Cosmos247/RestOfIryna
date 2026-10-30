@@ -56,7 +56,7 @@ falls there wakes at home.
 | when | what |
 |---|---|
 | Sat 31.10, 09:00 | 📜 decree 1 |
-| Sat 31.10, 12:00 | 🌑 the daily «new day» notice, themed for the day |
+| Sat 31.10, 12:00 | 🌑 the daily «new day» notice, themed for the day; the capital wears the holiday (`artFrom`): its pictures, the palace's empty throne, the square's raving windows |
 | Sat 31.10, 14:00 | 📜 decree 2 |
 | Sat 31.10, 16:00 | 📜 decree 3 |
 | Sat 31.10, 18:00 | 🕯 the summons to the palace (one message); the manor opens — the story and the flask wait in the palace (§4.3) |
@@ -222,9 +222,9 @@ The board — the journal's «🏆 Рейтинги» gains «🩸 Кров дл
 Його Величності»; a player with none reads «Ви ще не заходили до маєтку Велеса». The owner
 credits the top three with zlatnyks by hand; the watchman announces it as usual.
 
-### 4.7 The capital while the King is ill (prelude to close)
+### 4.7 The capital while the King is ill (`artFrom` to close — 12:00 Saturday since 2026-10-31; the decrees alone go out from 09:00)
 
-- 👑 the palace: «Тронна зала порожня. Писар веде пальцем по списку й шепоче: «Його Величність у гарячці. Укази поки підписую я — так, як велів би він».»
+- 👑 the palace, from 12:00 Saturday with its picture (2026-10-31, the owner — before noon the palace is as usual): «Тронна зала порожня. Писар веде пальцем по списку й шепоче: «Його Величність у гарячці. Укази поки підписую я — так, як велів би він».»
 - 🏛 the capital's welcome ends «А з вікон палацу ночами долинає марення.» instead of «…пильно спостерігає сам Король.»
 - 🍺 the innkeeper (open to close): «Чули, наміснику? На п'ятому кілометрі у вікнах мертвого маєтку світиться. Кажуть, звідти не повертаються. Брешуть: повертаються — на порозі власного дому. Ха!»
 - 🔮 the fortune teller (open to close): «Велесова ніч, наміснику. Мертві йдуть додому — а ви йдете до них.»
@@ -247,7 +247,7 @@ The lines and the blood, printed by the code that draws them (no estate scaling;
 ratings):
 
 <!-- generated: swift run roi-content spec events -->
-**veles_night_2026** — prelude 2026-10-31T09:00:00+02:00 · opens 2026-10-31T18:00:00+02:00 · closes 2026-11-01T18:00:00+02:00 · the manor at km 5 · a depth-d creature is level max(1, player − 8 + d)
+**veles_night_2026** — prelude 2026-10-31T09:00:00+02:00 · pictures from 2026-10-31T12:00:00+02:00 · opens 2026-10-31T18:00:00+02:00 · closes 2026-11-01T18:00:00+02:00 · the manor at km 5 · a depth-d creature is level max(1, player − 8 + d)
 
 | level | 🦇 bat (`skirmisher` ×0.7 HP, ×0.7 ATK) | 🐀 rat (`normal` ×1 HP, ×1 ATK) |
 |---|---|---|
@@ -386,10 +386,13 @@ starving prints its hunger line above the find, whose receipt already counts it;
 **The art (2026-10-30, the owner's three pictures — «Всі ці картинки тільки на час івенту»)** —
 `Assets/events/veles_night_2026/`: `capital.jpg` (the capital map with pumpkins; the map is one image in three
 files, so it replaces the square's `welcome.jpg` AND both `street_<id>.jpg`), `palace.jpg` (the empty throne,
-the scribe with his book — the palace card from the prelude, when «Тронна зала порожня» starts), `manor.jpg` (the
+the scribe with his book — the palace card from 12:00 Saturday, and «Тронна зала порожня» with it: asked, the
+owner moved the palace's line to noon rather than write it under the King still on his throne), `manor.jpg` (the
 manor across its pond — the manor's first screen, sent as the player steps through the gate, its caption the
 gate's card, 188 of 1,024 in uk, 210 in en; no manor screen is ever edited in place). `EventArt.path` picks a
-holiday's file while it RUNS (prelude to close) and only when the file exists; otherwise every screen keeps its
-usual art. A slot is a screen, so the next holiday drops its own files into `Assets/events/<id>/` and needs no
+holiday's file from its `artFrom` to the close, and only when the file exists; otherwise every screen keeps its
+usual art. *Changed 2026-10-31, the night before:* it was the whole prelude, from 09:00 — the owner: «Картинки
+івентові повинні з'являтись не о 9, а о 12». `artFrom` is data (`events.json`, optional: absent = the prelude),
+`event.art_window` refuses one outside preludeAt ≤ artFrom < endsAt, and `spec events` prints it. A slot is a screen, so the next holiday drops its own files into `Assets/events/<id>/` and needs no
 code. The manor picture shows the approach (the pond, the willow, the lit windows — the km-5 entrance's words);
 the gate screen it sits on speaks of the yard. Told to the owner, not changed.

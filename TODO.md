@@ -2158,7 +2158,7 @@ blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages,
 barrier) went live at the 2026-10-17 17:40 restart.
 
 **Added 2026-10-30 — stronger beasts (NOT live — content only, it rides the holiday's restart; `spec-bestiary.md` §14):**
-- [ ] `/content` reads hash `30a590f0` after the restart.
+- [ ] `/content` reads hash `231acc72` after the restart (the holiday's `artFrom` moved it from `30a590f0`).
 - [ ] A fight with the moose (km 12–16) on a T1 estate shows ❤️ 102 on the creature's line (94 before); the rabid bear
       at km 39+ shows 236 at T1 (×1 + 0.1·(tier − 1) above it).
 - [ ] A kill pays the XP it paid before (the moose 160, the rabid bear 780).
@@ -2172,8 +2172,11 @@ barrier) went live at the 2026-10-17 17:40 restart.
 - [ ] Before Sat 09:00 nothing shows; at 09:00 / 14:00 / 16:00 the three decrees, each once (`event_notices`).
 - [ ] Sat 12:00: the new day reads «🌑 Новий день, та сонце з самого ранку світить, як у сутінках…», the boards'
       line kept (and the «locked» tail for a carried job); Sun 12:00 the second one, «…сьогодні о 18:00».
-- [ ] From 09:00 the palace reads «Тронна зала порожня…» and the capital's welcome ends «…долинає марення.»
-- [ ] From 09:00 the art: the capital map with pumpkins on the square AND both streets, the empty throne in the
+- [ ] Before 12:00 the capital is as usual (only the 09:00 decree has gone out); from 12:00 the welcome ends
+      «…долинає марення.» and the palace reads «Тронна зала порожня…» under the empty throne — both lines go with
+      their pictures (the owner, 2026-10-31).
+- [ ] From 12:00 the art (not 09:00 — the owner, 2026-10-31; `events.json` → `artFrom`): before noon the usual pictures;
+      then the capital map with pumpkins on the square AND both streets, the empty throne in the
       palace; the manor's picture on the first screen after «🕯 Увійти» only. After Sun 18:00 the usual art again.
 - [ ] Sat 18:00: ONE message, the summons («🕯 З палацу. Гінці скачуть…», reworked 10-30) — no story pushed.
 - [ ] From 18:00 «👑 Палац» without the flask: the card as usual, then 🕯 the story and 📜 the scribe with
@@ -2208,7 +2211,7 @@ numbers are means — read several taps).
 - 🔮 «🌀 Магічний бар'єр»: the spark strikes about 30% (Ivan against Зубр ≈9, was ≈5); 70% of a landed blow comes
   through (was 40% — Ivan ≈6 against Зубр, was ≈3.5).
 - 🏹 «🌑 Тінь лісу» (L11, Training Ground): its knife stays small, about 15% — unchanged on purpose; «🏰 Залізна стіна»
-  and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `30a590f0` (schema v29 — the whole restart's, with Велесова ніч and the stronger beasts; it was `a3f69d76` before them).
+  and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `231acc72` (schema v29 — the whole restart's, with Велесова ніч and the stronger beasts; it was `a3f69d76` before them).
 
 **Added 2026-10-24, night — the armour repair back at ×0.5 (`a0386b1`, NOT live — waits for the same restart;
 content only, but the running v25 binary refuses this bundle):** an account wearing Forester pieces with some wear.
@@ -2233,8 +2236,9 @@ an account wearing the Forester set and its weapon, the durability of each piece
   take nothing, none takes two.
 - A successful escape («🏃 Відступити» / «🌑 Сховатись у тіні» / «🔮 Телепортація»): exactly one point; a death: exactly two (worn pieces survive the wipe).
 - A 🏕 run of several fights: its report's won fights cost about half a point each, a lost one two.
-- `/content` reads schema v29 and hash `30a590f0`, the whole waiting restart's (the repair price above moved it from
-  `90abd2c4` to `c8d337fe`, the Defend to `a3f69d76`, Велесова ніч to `42ec1955`, the stronger beasts to `30a590f0`).
+- `/content` reads schema v29 and hash `231acc72`, the whole waiting restart's (the repair price above moved it from
+  `90abd2c4` to `c8d337fe`, the Defend to `a3f69d76`, Велесова ніч to `42ec1955`, the stronger beasts to `30a590f0`, the
+  holiday's pictures from 12:00 to `231acc72`).
 
 **Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v28):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).

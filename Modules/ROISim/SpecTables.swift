@@ -278,7 +278,7 @@ public enum SpecTables {
         guard let tuning = content.tuning, let budget = content.budget else { return "" }
         var out: [String] = []
         for event in content.events {
-            out.append("**\(event.id)** — prelude \(event.preludeAt) · opens \(event.opensAt) · closes \(event.endsAt) · the manor at km \(event.entranceKm) · a depth-d creature is level max(1, player \(event.creatureLevelOffset >= 0 ? "+" : "−") \(abs(event.creatureLevelOffset)) + d)")
+            out.append("**\(event.id)** — prelude \(event.preludeAt) · pictures from \(event.artFrom ?? event.preludeAt) · opens \(event.opensAt) · closes \(event.endsAt) · the manor at km \(event.entranceKm) · a depth-d creature is level max(1, player \(event.creatureLevelOffset >= 0 ? "+" : "−") \(abs(event.creatureLevelOffset)) + d)")
             out.append("")
             out.append("| level | " + event.creatures.map { "\($0.icon) \($0.id) (`\($0.archetype)` ×\(format($0.hpScale)) HP, ×\(format($0.attackScale)) ATK)" }.joined(separator: " | ") + " |")
             out.append("|---|" + event.creatures.map { _ in "---|" }.joined())

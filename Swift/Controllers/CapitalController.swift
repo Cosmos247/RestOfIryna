@@ -444,8 +444,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// the file_id cache applies (photo is kept in chat history).
     public static func sendWelcome(toUser user: User, bot: TGBot, lingo: Lingo) async throws {
         // The last sentence is the King watching over the city — or, while a
-        // holiday says he is ill (2026-10-29), the raving from his windows.
-        let tailKey = EventCatalog.running()?.keys.welcomeTail ?? "capital.welcome.tail"
+        // holiday says he is ill (2026-10-29), the raving from his windows:
+        // from the holiday's `artFrom` with the square's picture (2026-10-31,
+        // the owner), not with the first decree.
+        let tailKey = EventCatalog.showingArt()?.keys.welcomeTail ?? "capital.welcome.tail"
         let text = lingo.localize("capital.welcome", locale: user.locale) + " "
             + lingo.localize(tailKey, locale: user.locale)
         let markup = Controllers.capitalController.generateControllerKB(session: user, lingo: lingo)
@@ -2608,8 +2610,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // The decree itself is `KingCard`, shared with the journal and the
         // charter so the three cannot drift apart.
         // While a holiday says the King is ill (2026-10-29) the throne room is
-        // empty and the scribe signs — the decree below is still his.
-        let bodyKey = EventCatalog.running()?.keys.palace ?? Location.palace.bodyKey
+        // empty and the scribe signs — the decree below is still his. It keeps
+        // the palace's PICTURE company (2026-10-31, the owner): both from the
+        // holiday's `artFrom`, so the empty throne is never written under the
+        // King sitting on it.
+        let bodyKey = EventCatalog.showingArt()?.keys.palace ?? Location.palace.bodyKey
         return "<b>\(title)</b>\n\n"
             + lingo.localize(bodyKey, locale: locale) + "\n\n"
             + KingCard.block(standing, for: session, lingo: lingo, locale: locale)

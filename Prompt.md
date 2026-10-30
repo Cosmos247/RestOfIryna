@@ -261,7 +261,7 @@ schema v28 — v29 with the holiday — so the Pi needs the new binary and the n
 running binary is refused by the handshake). After it: build a first plot on a fresh account (no 🧱 / 🔩 asked), a
 second with one material short (the modal, the card redrawn); win a few fights and watch the kit lose a point in
 about half of them, a flee one, a death two; read «🔧 Як зношується» on «🛡 Спорядження»; at the Master a hood missing 10 points costs 10 🪙 (5 before);
-in a forest fight «🛡 Парирувати» strikes ~40% of a clean hit, «💨 Ухилитися» ~45%, «🌀 Магічний бар'єр» lets 70% of a blow through and sparks ~30%, while «🌑 Тінь лісу»'s knife stays small (~15%); read `/content` for schema v29 and hash `30a590f0` (the whole restart's).
+in a forest fight «🛡 Парирувати» strikes ~40% of a clean hit, «💨 Ухилитися» ~45%, «🌀 Магічний бар'єр» lets 70% of a blow through and sparks ~30%, while «🌑 Тінь лісу»'s knife stays small (~15%); read `/content` for schema v29 and hash `231acc72` (the whole restart's).
 
 **Walk the twelve blocks live since 10-23 22:46** on top of `TODO.md` → "Walk list" — clay at 24 / 12 and
 «Мʼясо в глині» at 54 (the trader, the tavern's 135, the kitchen card, a portion cooked before the restart),
@@ -363,7 +363,9 @@ f1501e3c1c9dc759` (the plot cost and the repair price), `tuning 6b67472ebbcad035
 hash `a3f69d76` (COMBINED `6b4053507c3e34fb`); **and since 2026-10-29 (Велесова ніч, schema v29, `3e11ef6`; the
 10-30 rework and the pumpkin moved `records` and the hash): `records 7c252b0e1861e91c` · `tuning c0380e692986ba04` ·
 content hash `42ec1955` (COMBINED `a687497d827739b9`)**; **and since 2026-10-30 (stronger beasts, content only):
-`records 438f9ec47d93ca8f` · `tuning c0380e692986ba04` · content hash `30a590f0` (COMBINED `ea15c16c660f81f2`)** — the
+`records 438f9ec47d93ca8f` · `tuning c0380e692986ba04` · content hash `30a590f0` (COMBINED `ea15c16c660f81f2`)**; **and since
+2026-10-31 (the holiday's pictures from 12:00, `events.json` → `artFrom`): content hash `231acc72`, the five halves and
+COMBINED unchanged** — the
 numbers the restart is checked against;
 `spawns`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
@@ -381,7 +383,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 502 tests, ~5s
+swift test                                   # 504 tests, ~5s
 ```
 
 
