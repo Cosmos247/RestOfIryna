@@ -83,13 +83,20 @@ palace does not change.
 
 Saturday:
 > 🌑 Новий день, та сонце з самого ранку світить, як у сутінках: бліде, низьке, і тіні від нього довші, ніж мали б бути.
-> На Подолі ворожка сьогодні не розкладає карт, лише каже кожному, хто зайде: «Сьогодні мертві йдуть додому. Не питайте, кого вони покличуть до столу».
+> На Подолі ворожка сьогодні тасує карти довше, ніж звичайно.
 > А на дошках Крамаря, Майстра й Шинкаря, як завжди, нові замовлення — їх треба взяти особисто.
 
 Sunday:
 > 🌑 Новий день, а сонце й далі світить, як у сутінках. У палаці кажуть, що жар у Короля не спадає.
 > Ворожка попереджає: брама маєтку Велеса зачиниться разом із заходом сонця — сьогодні о 18:00. Хто ще хоче наповнити флягу — поспішайте.
 > А на дошках Крамаря, Майстра й Шинкаря, як завжди, нові замовлення — їх треба взяти особисто.
+
+*Changed 2026-10-31, the night before (the owner's pick of four):* Saturday's second line said «…ворожка
+сьогодні не розкладає карт, лише каже кожному, хто зайде: «Сьогодні мертві йдуть додому. Не питайте, кого вони
+покличуть до столу».» The fortune teller deals as usual all holiday, and a card that comes ready at noon is
+announced in the SAME message, first («🔮 Карти знову готові — ворожка чекає вас у столиці.»), so the line
+contradicted the line above it for everyone who drew on Friday afternoon (6 at 00:30). The owner took «тасує карти
+довше, ніж звичайно» and struck the quote; closing the fortune teller for the day was offered and not taken.
 
 Both keep the ordinary notice's job (and its «locked» tail for a carried job). The «18:00» is
 printed from the data. Sunday's last sentence of the second line is the reader's flask (2026-10-30): a
