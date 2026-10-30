@@ -75,27 +75,30 @@ final class SimulatorTests: XCTestCase {
 
     /// Every roster enemy's DEF, crit and dodge, rebuilt from its archetype's
     /// target percentages and its level. Values copied from `enemies.json` —
-    /// the tier-2 roster of 2026-10-02 (`spec-bestiary.md` §10), all fourteen
-    /// spawnable creatures on the level each is actually on.
+    /// the tier-2 roster of 2026-10-02 (`spec-bestiary.md` §10), №5–14 a level
+    /// up since 2026-10-30 (§14), all fourteen spawnable creatures on the level
+    /// each is actually on. `testTheFixtureIsTheShippedRoster` holds the copy
+    /// to the file.
+    /// (id, level, mitigation%, dodge%, crit%, shipped DEF, dodge, crit)
+    private static let roster: [(String, Int, Double, Double, Double, Int, Int, Int)] = [
+        ("wild_viper",    1, 10, 0,  0,   6,  0,  0),
+        ("wild_eagle",    2, 12, 15, 12,  9, 19, 18),
+        ("wild_boar",     3, 20, 3,  5,  18,  3,  7),
+        ("rabid_fox",     4, 12, 15, 12, 11, 22, 20),
+        ("wild_moose",    6, 20, 3,  5,  24,  4,  8),
+        ("wild_stag",     7, 20, 3,  5,  26,  4,  8),
+        ("wild_buffalo",  8, 32, 0,  5,  52,  0,  9),
+        ("rabid_lynx",    9, 12, 15, 12, 16, 29, 26),
+        ("rabid_wolf",   10, 20, 3,  5,  32,  5,  9),
+        ("wild_tusker",  11, 32, 0,  5,  63,  0, 10),
+        ("wild_bear",    12, 32, 0,  5,  67,  0, 10),
+        ("wild_aurochs", 13, 32, 0,  5,  71,  0, 10),
+        ("rabid_pack",   14, 12, 15, 12, 22, 36, 31),
+        ("rabid_bear",   15, 25, 8,  15, 56, 17, 43),
+    ]
+
     func testInversionsReproduceTheShippedRoster() {
-        // (level, mitigation%, dodge%, crit%, shipped DEF, dodge, crit)
-        let roster: [(String, Int, Double, Double, Double, Int, Int, Int)] = [
-            ("wild_viper",    1, 10, 0,  0,   6,  0,  0),
-            ("wild_eagle",    2, 12, 15, 12,  9, 19, 18),
-            ("wild_boar",     3, 20, 3,  5,  18,  3,  7),
-            ("rabid_fox",     4, 12, 15, 12, 11, 22, 20),
-            ("wild_moose",    5, 20, 3,  5,  22,  4,  8),
-            ("wild_stag",     6, 20, 3,  5,  24,  4,  8),
-            ("wild_buffalo",  7, 32, 0,  5,  48,  0,  8),
-            ("rabid_lynx",    8, 12, 15, 12, 15, 27, 25),
-            ("rabid_wolf",    9, 20, 3,  5,  30,  4,  9),
-            ("wild_tusker",  10, 32, 0,  5,  60,  0,  9),
-            ("wild_bear",    11, 32, 0,  5,  63,  0, 10),
-            ("wild_aurochs", 12, 32, 0,  5,  67,  0, 10),
-            ("rabid_pack",   13, 12, 15, 12, 21, 34, 30),
-            ("rabid_bear",   14, 25, 8,  15, 53, 16, 42),
-        ]
-        for (id, level, mit, dod, cri, wantDEF, wantDodge, wantCrit) in roster {
+        for (id, level, mit, dod, cri, wantDEF, wantDodge, wantCrit) in Self.roster {
             XCTAssertEqual(EnemyGenerator.defense(forMitigationPercent: mit, level: level,
                                                   curve: mitigation), wantDEF,
                            "\(id): DEF off the mitigation inversion")
@@ -103,6 +106,24 @@ final class SimulatorTests: XCTestCase {
                            wantDodge, "\(id): dodge off the rating inversion")
             XCTAssertEqual(EnemyGenerator.rating(forPercent: cri, level: level, curve: crit),
                            wantCrit, "\(id): crit off the rating inversion")
+        }
+    }
+
+    /// The copy above is only worth what it copies. A re-levelled roster
+    /// (2026-10-30) left the inversion test green on the old levels, because it
+    /// never read the file; this reads it.
+    func testTheFixtureIsTheShippedRoster() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("content/data")
+        let shipped = try ContentLoader.load(from: root).enemies.filter { ($0.depth?.max ?? 0) > 0 }
+        XCTAssertEqual(shipped.count, Self.roster.count, "a spawnable creature is missing from the fixture")
+        for (id, level, _, _, _, def, dodge, crit) in Self.roster {
+            let enemy = try XCTUnwrap(shipped.first { $0.id == "enemy.\(id)" }, "\(id) is not in enemies.json")
+            XCTAssertEqual(enemy.level, level, "\(id): level")
+            XCTAssertEqual(enemy.stats.defense, def, "\(id): DEF")
+            XCTAssertEqual(enemy.stats.dodge, dodge, "\(id): dodge")
+            XCTAssertEqual(enemy.stats.crit, crit, "\(id): crit")
         }
     }
 

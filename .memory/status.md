@@ -21,6 +21,14 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-30 — stronger beasts: №5–14 a level up** (content + a test, NOT LIVE — it rides the holiday's restart; no
+schema bump, no migration; `content/spec/spec-bestiary.md` §14). The moose … the rabid bear each moved a level up
+(L6 … L15), every stat × contract(L+1)/contract(L) so each keeps its share of the contract; №1–4, XP, the bands, the
+level shift (6%) and the manor's creatures unchanged. On the week's fights a fight costs 7.3 HP where it cost 6.2;
+km 1–11 and the 30-/60-minute 🏕 runs meet only №1–4, but the 90-minute run turns at km 15 and meets the moose
+(modelled: a level-5 newcomer's deaths a run 46% → 50%, the baseline itself unverified — `TODO.md` → Open). `records` → `438f9ec47d93ca8f`, content hash → `30a590f0` (COMBINED
+`ea15c16c660f81f2`); 502 tests. `.memory/rebalance.md` → "Stronger beasts — step 2".
+
 **2026-10-29 — Велесова ніч, the first holiday** (content + Swift, NOT LIVE — schema v29, three migrations, it
 needs the restart before Sat 31.10 08:30; `content/spec/event-veles-night.md`). Decrees from the sick King
 (Sat 09:00 / 14:00 / 16:00), themed 12:00 notices on both days, the reveal (the cup from the manor no list
@@ -42,8 +50,7 @@ and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 1
 beast (59 / 56 / 60%) and still below an Attack tap; no class's "Defend every round" beats attacking. Shadow
 Veil's knife is its own `specialDefense.shadowVeilChipFraction`, held at 15%. `tuning` → `6b67472ebbcad035`,
 content hash → `a3f69d76` (`.memory/rebalance.md` → "The forest's Defend, set by numbers"). Step 2, stronger
-beasts, was measured the same night and parked by the owner, with nothing decided (`.memory/rebalance.md` →
-"Stronger beasts — step 2").
+beasts, was measured the same night and parked by the owner — decided and built on 2026-10-30 (above).
 
 **2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, NOT LIVE — it ships with the v27
 restart: the running v25 binary refuses this bundle). `master.json` → `repairCostFraction` 0.25 → 0.5: a point

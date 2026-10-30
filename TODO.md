@@ -1521,7 +1521,7 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
 
         **What it is.** Fourteen creatures numbered in order, five of them new from
         Ukrainian lore: Скажена лисиця, Олень-рогач, Вепр-сікач, Тур, Скажена зграя.
-        - The number is the level, and the band is km 3N−3…3N+1. The rabid bear is stretched
+        - The number is the level (from №5 the number + 1 since 2026-10-30, `spec-bestiary.md` §14), and the band is km 3N−3…3N+1. The rabid bear is stretched
           to km 49, the owner's choice over an empty km 44–49.
         - XP comes from the number alone: every archetype `xpMultiplier` is 1.0.
         - **The XP level-gap penalty is off** (`xpLevelDiff.perLevel` 0), because a creature's
@@ -2157,6 +2157,16 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-10-30 — stronger beasts (NOT live — content only, it rides the holiday's restart; `spec-bestiary.md` §14):**
+- [ ] `/content` reads hash `30a590f0` after the restart.
+- [ ] A fight with the moose (km 12–16) on a T1 estate shows ❤️ 102 on the creature's line (94 before); the rabid bear
+      at km 39+ shows 236 at T1 (×1 + 0.1·(tier − 1) above it).
+- [ ] A kill pays the XP it paid before (the moose 160, the rabid bear 780).
+- [ ] The viper, the eagle, the boar and the fox are unchanged (the fox ❤️ 86 at T1).
+- [ ] A fight in progress across the restart carries on (its HP over the new maximum).
+- [ ] Велесова ніч's bats and rats are untouched (their lines come from `EventMath`, not the roster).
+- [ ] A 90-minute 🏕 run (it turns at km 15) meets the raised moose: read a report's fights and HP.
+
 **Added 2026-10-29 — Велесова ніч (NOT live — schema v29, three migrations; the restart must land before Sat 31.10
 08:30; `content/spec/event-veles-night.md`). It runs ONCE, so it is walked as it happens:**
 - [ ] Before Sat 09:00 nothing shows; at 09:00 / 14:00 / 16:00 the three decrees, each once (`event_notices`).
@@ -2198,7 +2208,7 @@ numbers are means — read several taps).
 - 🔮 «🌀 Магічний бар'єр»: the spark strikes about 30% (Ivan against Зубр ≈9, was ≈5); 70% of a landed blow comes
   through (was 40% — Ivan ≈6 against Зубр, was ≈3.5).
 - 🏹 «🌑 Тінь лісу» (L11, Training Ground): its knife stays small, about 15% — unchanged on purpose; «🏰 Залізна стіна»
-  and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `a3f69d76`.
+  and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `30a590f0` (schema v29 — the whole restart's, with Велесова ніч and the stronger beasts; it was `a3f69d76` before them).
 
 **Added 2026-10-24, night — the armour repair back at ×0.5 (`a0386b1`, NOT live — waits for the same restart;
 content only, but the running v25 binary refuses this bundle):** an account wearing Forester pieces with some wear.
@@ -2223,8 +2233,8 @@ an account wearing the Forester set and its weapon, the durability of each piece
   take nothing, none takes two.
 - A successful escape («🏃 Відступити» / «🌑 Сховатись у тіні» / «🔮 Телепортація»): exactly one point; a death: exactly two (worn pieces survive the wipe).
 - A 🏕 run of several fights: its report's won fights cost about half a point each, a lost one two.
-- `/content` reads schema v28 and hash `a3f69d76`, the whole waiting restart's (the repair price above moved it from
-  `90abd2c4` to `c8d337fe`, the Defend at the top from there, with the schema).
+- `/content` reads schema v29 and hash `30a590f0`, the whole waiting restart's (the repair price above moved it from
+  `90abd2c4` to `c8d337fe`, the Defend to `a3f69d76`, Велесова ніч to `42ec1955`, the stronger beasts to `30a590f0`).
 
 **Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v28):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
@@ -3217,7 +3227,8 @@ unrelated commit on purpose.
 
 **From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, NOT live — a restart;
 `.memory/rebalance.md` → "The forest's Defend, set by numbers"):
-- **Step 2, stronger beasts — measured 2026-10-27 night, PARKED by the owner** («Всі ці розрахунки і відповіді
+- ~~**Step 2, stronger beasts**~~ — **DECIDED and built 2026-10-30**: A (№5–14 a level up), the shift kept at 6%, the
+  lines keeping each creature's share of the contract (`spec-bestiary.md` §14). The 10-27 record, kept: **measured 2026-10-27 night, PARKED by the owner** («Всі ці розрахунки і відповіді
   запам'ятай, ми повернемось до них пізніше»). The owner's idea is to raise the beasts' levels, keeping the first ones
   («мобів перших рівнів не обов'язково піднімати»). Shown: A, +1 from the moose (№5); B, +1, then +2 from the wolf
   (№9); C, +2 from №5. All three keep the first four (the viper, the eagle, the boar, the fox), because raising the
@@ -3226,6 +3237,12 @@ unrelated commit on purpose.
   owner MARKED A and 6% in the dialog, but pressed «clarify» instead of submitting and then parked it. That is a
   leaning, not a decision: re-confirm it before building. Every table: `.memory/rebalance.md` → "Stronger beasts — step 2". Re-read the Pi before resuming: the
   numbers age.
+- **Is the 90-minute 🏕 run a trap for newcomers?** (raised 2026-10-30 in the stronger-beasts audit, NOT verified live,
+  not asked.) It turns at km 15 for everyone (`PassiveRoute`), and a model of the run — the autobattle never defends,
+  home below 50% HP, the governor's meals and hunger left out — kills a level 1–5 player in 40–60% of runs already
+  today, by the fox and the boar on the way back; a passive death takes the bag. Players L1–5 do send 90-minute runs
+  (Catimperator L3 on 10-30, Leyfor L5 on 10-26, two L1s on 10-12). Read a few real reports first; the question for
+  the owner is whether the picker should offer depth a newcomer can survive (`spec-bestiary.md` §14.5).
 - **Shadow Veil's knife** is held at 15% by its own `specialDefense.shadowVeilChipFraction` — the owner: «До тіні
   лісу ми повернемось, коли будемо перероблювати всі прийоми». Revisit with the techniques.
 - Raised in the 10-27 report, not asked: the three Defend lines kept their copy, so the archer's 45% knife still «черкає».

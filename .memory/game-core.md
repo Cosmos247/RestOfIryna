@@ -46,7 +46,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 - 5 enemy tiers (T1 hare/fox -> Boss dungeon-only)
 - **Bestiary — as SHIPPED, which the bullet above is not** (tier 2, 2026-10-02, committed
   `f03d502`). Fourteen creatures, real animals of medieval Ukraine, numbered 1–14 by depth:
-  the number is the level, and the band is km 3N−3…3N+1, with the rabid bear stretched to km
+  the number is the level (from №5 the number + 1 since 2026-10-30, `spec-bestiary.md` §14), and the band is km 3N−3…3N+1, with the rabid bear stretched to km
   49. XP depends on the number alone, and there is no XP penalty for out-levelling a creature;
   damage still shifts by the level gap. Wild creatures drop meat and hide, rabid ones hide
   only, and the viper and the eagle drop nothing. The boss archetype has no members.

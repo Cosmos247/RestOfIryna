@@ -508,6 +508,8 @@ Three rules produce the table, and nothing else in it is chosen:
 
 - **The number is the level.** It feeds the generated stat line, the damage shift
   (`levelDiff`) and the rating curves — but no longer the XP a kill pays (§10.4).
+  *Amended 2026-10-30 (§14): from №5 the level is the number + 1 — the moose is level 6,
+  the rabid bear level 15. №1–4 keep it.*
 - **The band is km 3N−3 … 3N+1, with №1 starting at km 1.** A new creature every three
   km, each band four km wide, neighbours overlapping by two. No km holds more than two
   creatures; km 1–2, every third km from km 5 on (5, 8, 11 …) and km 41–49 hold only
@@ -528,7 +530,7 @@ Three rules produce the table, and nothing else in it is chosen:
 
 The ids of the nine existing creatures stay — ids are a database contract. Spawn
 weights stay inherited from the archetype (§5); nothing overrides one. The rabid bear
-sits exactly on the elite floor of level 14. The tusker is a `brute`, because an elite
+sits exactly on the elite floor of level 14 (a level above it since §14). The tusker is a `brute`, because an elite
 below level 14 is refused (`enemy.below_archetype_floor`).
 
 ### 10.3 Why these five
@@ -1219,3 +1221,112 @@ of five shown.
   per cut: the Feast's 72 / 3 before, this dish's 54 / 2 now), `simulate`'s portion list,
   and the digest's `records` with the content hash. No band, no warning and no other spec
   table moved. Nothing is migrated: a portion already cooked restores the new numbers.
+
+## 14. Stronger beasts — №5–14 a level up (2026-10-30)
+
+**Status: DECIDED and APPLIED 2026-10-30.** Content only — no schema bump, no migration.
+
+### 14.1 What was asked
+
+Step 2 of the forest's Defend work. On 2026-10-27 the owner asked to make the beasts a
+little stronger by moving them to higher levels, and added that the first ones need not
+move. It was measured that night and parked. Re-measured on the week to 2026-10-30 22:54
+and decided the same night.
+
+### 14.2 Decided 2026-10-30 (the owner)
+
+1. **Every creature from the moose (№5) moves a level up; №1–4 stay.** Of three shown: this
+   (A); +1 to №5–8 and +2 from the wolf (B); +2 from №5 (C). B and C made on-level fights
+   deadly (an L10 mage without Defend against the wild bear: 4% → 64% deaths).
+2. **The level shift stays 6% a level** (`levelDiff.perLevel`). It is the one knob that
+   reaches the first four, but it would also move Велесова ніч: the manor's creatures start
+   seven levels below the player, so their blows ride on it.
+3. **The lines keep each creature's share of the contract** (below), over the §10.8 step 4
+   method carried a level up (§14.4).
+
+Unchanged: XP (§10.2 — it follows the number), every band, the loot, and the manor's
+creatures (`EventMath` solves them from the archetype at the player's level and never
+reads this roster).
+
+### 14.3 The lines
+
+Each stat × contract(L+1) ÷ contract(L), rounded, where the contract is `EnemyGenerator`
+against the on-curve reference of every class. DEF, crit and dodge therefore land exactly
+on the curves at the new level (`SimulatorTests` pins all fourteen), and HP and ATK keep
+each creature's share of the contract: 69–77% of the HP and 67–80% of the ATK for №5–14
+(66–79% of the ATK before — the rounding moves a point either way). Tier-1
+lines (the estate scales HP and ATK on top, §11):
+
+| № | creature | level | HP | ATK | DEF | crit | dodge |
+|---|---|---|---|---|---|---|---|
+| 5 | Дикий лось | 5 → 6 | 94 → 102 | 11 → 12 | 22 → 24 | 8 | 4 |
+| 6 | Олень-рогач | 6 → 7 | 99 → 109 | 11 → 12 | 24 → 26 | 8 | 4 |
+| 7 | Зубр | 7 → 8 | 127 → 137 | 14 → 15 | 48 → 52 | 8 → 9 | 0 |
+| 8 | Скажена рись | 8 → 9 | 85 → 91 | 16 → 17 | 15 → 16 | 25 → 26 | 27 → 29 |
+| 9 | Скажений вовк | 9 → 10 | 116 → 124 | 12 → 13 | 30 → 32 | 9 | 4 → 5 |
+| 10 | Вепр-сікач | 10 → 11 | 168 → 179 | 17 → 18 | 60 → 63 | 9 → 10 | 0 |
+| 11 | Дикий ведмідь | 11 → 12 | 173 → 181 | 18 → 19 | 63 → 67 | 10 | 0 |
+| 12 | Тур | 12 → 13 | 179 → 189 | 18 → 19 | 67 → 71 | 10 | 0 |
+| 13 | Скажена зграя | 13 → 14 | 116 → 122 | 21 → 22 | 21 → 22 | 30 → 31 | 34 → 36 |
+| 14 | Скажений ведмідь | 14 → 15 | 225 → 236 | 23 → 24 | 53 → 56 | 42 → 43 | 16 → 17 |
+
+### 14.4 Why not the §10.8 method
+
+The §10.8 step 4 method — the on-curve reference with its kit scaled to the obtainable share
+of the 10-02 wardrobe (L5 0.448 … L14 0.374, recorded in `.memory/rebalance.md`) — reproduces
+all ten shipped lines EXACTLY at their own level. Carried a level up (L15's share by the same
+rule, 0.354: between rungs the kit is constant and only the curve grows), it moved HP +3–6%
+and left ATK where it was for seven of ten, while the wolf jumped +18% HP and +17% ATK: level
+10 is where that wardrobe's second weapon rung arrived, a rung the 2026-10-04 ladder
+(`spec-items.md` §9) no longer has. Today's obtainable shares would re-solve even the
+creatures that do not move (the tusker at its own level 168 → 164). The week's HP a fight:
+6.2 today, 7.3 with these lines, 6.9 by that method.
+
+**So from 2026-10-30 a re-level keeps each creature's share of the contract.** A creature
+that is ever re-solved from scratch again needs the §10.8 question answered anew — against
+which wardrobe.
+
+### 14.5 Measured (the week to 2026-10-30 22:54, read-only off the Pi)
+
+- **The fights.** 3,972 forest fights in seven days; 81.5% with №1–4, which this leaves
+  alone; 83% against creatures 5–12 levels below the player. Live: 17 deaths (4‰).
+- **The replay** (every fight of the week at each player's current kit and tier, ×40, attack
+  with a sure-kill Defend, never fleeing): HP a fight 6.2 → 7.3 (+18%), the Vigor for the
+  same XP ×1.02. By creature: the moose 9.4 → 13.8, the stag 11.5 → 17.5, the bison
+  26.0 → 34.8, the wolf 19.1 → 26.3, the tusker 38.7 → 48.8.
+- **The far end of each player's walks** (the creatures on their deepest km, from full HP),
+  % of the bar: Володимир L19 against the rabid bear 41 → 51; Легіон L11 against the wild
+  bear 45 → 57; Ivan L10 against the wolf 21 → 27; Ліліт L5 against the moose 34 → 46 and the
+  stag 42 → 56 (deaths 0 → 0.6%) — the one newcomer this reaches.
+- **On-level, never defending**, deaths: Ivan L10 against the wild bear 4.2% → 33%, against
+  the tusker 0.4% → 6.8%; Легіон L11 against the aurochs 0% → 2.8%.
+- **The shallows and the short 🏕 runs:** unchanged — km 1–11 hold only №1–4, and the 30- and
+  60-minute runs turn at km 5 and km 10. (Raising the fox instead would have taken a level-2
+  archer from 2.8% to 19.8% deaths against it.)
+- **The 90-minute 🏕 run turns at km 15** (`PassiveRoute`: 30 strides, half out), so it walks
+  the moose's ground and meets the stag at km 15 — the 10-27 record's "≤7.5 km" was wrong,
+  found in the 10-30 audit. Modelled (20,000 runs a player: the first stride 40% encounter,
+  then 20%, a trip 10% for 5% of max HP, the autobattle never defends, home below 50% HP;
+  the governor's meals and hunger left out), deaths a run today → under A: Catimperator L3
+  51.6% → 54.4%, Ліліт L5 46.2% → 49.8%, DIABLO L5 42.2% → 47.0%, Король Скелетів L9
+  2.2% → 4.1%, Ivan L10 0.2% → 0.9%; L10+ at T4+ unchanged. About 0.4–1.1 fights a run are
+  with №5+. **The model's own baseline is the larger finding:** a 90-minute run kills a
+  level 1–5 player in 40–60% of runs already today, by the fox and the boar on the way back
+  — unverified against a live report, raised in `TODO.md` → Open.
+- The replay never flees, so its deaths (13‰ today) overstate the live 4‰; HP a fight is the
+  measure.
+
+### 14.6 What moved
+
+- `enemies.json`: ten levels and lines. The registration dog and the dummy stay `0...0`.
+- `SimulatorTests`: the inversion fixture moved to the new levels, and
+  `testTheFixtureIsTheShippedRoster` now holds it to `enemies.json` — the fixture stayed
+  green on the old levels, because it never read the file (negative-tested on the old
+  roster: 29 failed assertions — ten levels, ten DEF and the dodge and crit that moved).
+- `spec-economy.md`: the `spec economy` creature table (the level column) and `spec opening`
+  (with a dated note).
+- `simulate --strict`: 0 broken bands, 18 warnings, as before; the opening finding reads km 17
+  at +12 (it was +21).
+- The digest: `records` and the content hash; `tuning`, `spawns`, `quests` and `king` held.
+- `fight_log.enemy_level` records the new levels from the restart on; a read across the
+  deploy must split on it.

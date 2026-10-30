@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-27)
+## Commit index — live-play polish and after (2026-09-09 → 10-30)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,16 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-30)* **`3e11ef6`'s hash fill** — records only.
+- *(this commit, 10-30)* **stronger beasts: №5–14 a level up** — content + a test, NOT deployed (it rides the
+  holiday's restart; no schema bump, no migration): `enemies.json` — the moose … the rabid bear each a level up
+  (L6 … L15), every stat × contract(L+1)/contract(L), so each keeps its share of the contract; the level shift kept at
+  6%; XP, bands and the manor's creatures unchanged. `SimulatorTests`' fixture moved and
+  `testTheFixtureIsTheShippedRoster` added (it caught the stale copy); `spec-bestiary.md` §10.2 amended and §14;
+  `spec-economy.md`'s two blocks and a note; the `EnemyGenerator` header. `records` → `438f9ec47d93ca8f`, content hash
+  → `30a590f0`; 502 tests. The owner's picks, on the week re-read off the Pi. The audit's fixes ride in it: the 90-minute
+  🏕 run turns at km 15 and meets the moose (the 10-27 "≤7.5 km" corrected), a model of that run raised in TODO → Open,
+  README's NOT-live list (the holiday added, v29), the stale `/content` hash lines, the file map's count, a FAQ row.
+- `8697a85` (10-30) **`3e11ef6`'s hash fill** — records only.
 - `3e11ef6` (10-29/30) **Велесова ніч, the first holiday** — content + Swift + art, schema v29, three
   migrations, NOT deployed: `events.json` (the window, the manor at km 5, bats and rats by the player's level, blood,
   the notices, the pumpkin find), `EventMath`, `GameEvent`/`EventCatalog`/`EventArt`, `ManorService` and the walk's
@@ -872,6 +881,43 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-30, night (stronger beasts: №5–14 a level up) — *(this commit)*
+
+**Asked.** «Давай доробимо останнє перед оновленням. Це підсилення мобів. Ти вже робив розрахунки, знайди їх і
+покажи мені знов.» Then «Перерахуй на свіжих даних з Pi».
+
+**Done, in order.**
+- The 10-27 tables shown again from `.memory/rebalance.md` → "Stronger beasts — step 2".
+- Re-read off the Pi (22:54, read-only): 3,972 fights in the week, 81.5% with №1–4; the replay rebuilt as `probe3`
+  (fresh `ROIContent`/`ROISim`, the 20 fighters' kits) and run on every fight of the week at today's kit. A +18% HP a
+  fight, B +21%, C +34%, the shift at 5% +23%. New: Ліліт (L5) walks to the moose and the stag; the shift would move
+  the holiday's manor (its creatures sit seven levels below the player at the door).
+- Quiz: A and 6% marked, «clarify» pressed; the owner asked «А можна не змінювати велесових мобів?» — yes: a re-level
+  never reaches the manor (`EventMath` solves its creatures from the archetype), and the shift stays. Second quiz,
+  submitted: **A tonight, with the holiday's restart.**
+- The real re-solve, before writing: §10.8's method with the recorded 10-02 shares reproduces all ten shipped lines
+  exactly, and a level up gives a weak, lumpy lift (ATK +0 for seven, the wolf +17%: the old ladder's L10 rung).
+  Shown side by side with the measured lines; the owner picked **the lines as measured** (each keeps its share of
+  the contract). `spec-bestiary.md` §14.
+- Built and verified: `enemies.json`; `SimulatorTests` — the fixture claimed to be copied from `enemies.json` and stayed
+  green on the old levels, so `testTheFixtureIsTheShippedRoster` now reads the file (29 failed assertions on the old
+  roster, 0 on the new); every generated spec block checked against its command (two drifted, both from this change,
+  refreshed; the old roster drifts none); `validate --strict` 0/0; 502 tests; `simulate --strict` 0 broken bands,
+  18 warnings; the digest moved `records` and the hash only.
+
+**Not live.** It needs the owner's commit, push and the one restart that ships Велесова ніч (schema v29). After the
+restart, `fight_log.enemy_level` carries the new levels; a read across the deploy must split on it.
+
+**The audit** («Перед тим як ми продовжимо перевір всі зміни…»). Verified: the roster diff is ten levels and stat lines
+and nothing else; the file equals A computed from the old roster (0 of 14 mismatches); the touched Swift recompiled
+with 0 warnings; the simulate warnings are the same 18 with the same subjects; the manor never reads the roster;
+`git diff --check` clean. **Found and corrected:** my report said the 🏕 run is untouched — the 90-minute run turns at
+km 15 (`PassiveRoute`, confirmed by Володимир's live row, `max_depth_km` 15) and walks the moose's ground; modelled
+deaths a run +1.5–4.8 points for L3–5 newcomers, +1.9 for an L9 mage, 0 at L10+/T4+. The model's baseline, 40–60% deaths
+a 90-minute run for L1–5 TODAY, is unverified and went to TODO → Open as a question. Also: §14.3's share range, README's
+NOT-live list (the holiday was missing, schema still v28), two walk lines still quoting `/content` hash `a3f69d76`,
+`Prompt.md`'s test count and `/content` line, the file map's count (498), `game-core.md`'s level rule, a FAQ row.
 
 ## Session — 2026-10-30 (Велесова ніч reworked: the reveal in the palace, the flask collected there; «Велесовий гарбуз») — `3e11ef6`
 

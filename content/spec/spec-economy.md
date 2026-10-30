@@ -134,28 +134,28 @@ never spent here either, so every row is a floor and not an estimate.
 | 8 | 3 | 71.0 | 17.5 | 100% | 11.1 | 48 | 194 | 16 | **-47** | +163 |
 | 9 | 3,4 | 86.6 | 17.3 | 100% | 9.1 | 40 | 158 | 18 | **-21** | +82 |
 | 11 | 4 | 110.0 | 17.1 | 100% | 7.2 | 28 | 123 | 22 | **-2** | -2 |
-| 12 | 4,5 | 140.0 | 17.8 | 100% | 5.6 | 22 | 100 | 24 | **+13** | +158 |
-| 14 | 5 | 160.0 | 18.3 | 100% | 4.9 | 19 | 90 | 28 | **+16** | +229 |
-| 15 | 5,6 | 185.0 | 19.1 | 100% | 4.3 | 17 | 81 | 30 | **+20** | +204 |
-| 17 | 6 | 210.0 | 19.8 | 100% | 3.8 | 15 | 74 | 34 | **+21** | +183 |
-| 18 | 6,7 | 227.6 | 21.8 | 94% | 3.5 | 13 | 75 | 36 | **+17** | +167 |
-| 20 | 7 | 270.0 | 26.5 | 79% | 2.9 | 11 | 77 | 40 | **+9** | +135 |
-| 21 | 7,8 | 306.9 | 22.7 | 84% | 2.6 | 9 | 58 | 42 | **+24** | +66 |
-| 23 | 8 | 330.0 | 20.2 | 88% | 2.4 | 8 | 48 | 46 | **+29** | +29 |
-| 24 | 8,9 | 366.0 | 23.7 | 86% | 2.2 | 7 | 51 | 48 | **+23** | +23 |
-| 26 | 9 | 390.0 | 26.1 | 85% | 2.0 | 7 | 53 | 52 | **+17** | +17 |
-| 27 | 9,10 | 410.6 | 26.0 | 60% | 1.9 | 7 | 50 | 54 | **+18** | +42 |
-| 29 | 10 | 460.0 | 25.9 | 2% | 1.7 | 6 | 44 | 58 | **+18** | +92 |
-| 30 | 10,11 | 495.0 | 25.0 | 1% | 1.6 | 5 | 40 | 60 | **+21** | +92 |
-| 32 | 11 | 530.0 | 24.1 | 0% | 1.5 | 4 | 36 | 64 | **+20** | +88 |
-| 33 | 11,12 | 570.0 | 23.8 | 0% | 1.4 | 4 | 33 | 66 | **+20** | +84 |
-| 35 | 12 | 610.0 | 23.4 | 0% | 1.3 | 4 | 30 | 70 | **+19** | +78 |
-| 36 | 12,13 | 659.2 | 21.3 | 0% | 1.2 | 4 | 25 | 72 | **+21** | +42 |
-| 38 | 13 | 690.0 | 19.9 | 0% | 1.1 | 3 | 23 | 76 | **+20** | +20 |
-| 39 | 13,14 | 705.0 | 19.7 | 0% | 1.1 | 3 | 22 | 78 | **+18** | +18 |
-| 41 | 14 | 780.0 | 18.3 | 0% | 1.0 | 3 | 18 | 82 | **+17** | +17 |
+| 12 | 4,6 | 140.0 | 19.0 | 100% | 5.6 | 22 | 107 | 24 | **+6** | +152 |
+| 14 | 6 | 160.0 | 20.3 | 99% | 4.9 | 19 | 100 | 28 | **+6** | +219 |
+| 15 | 6,7 | 185.0 | 21.3 | 98% | 4.3 | 17 | 91 | 30 | **+11** | +195 |
+| 17 | 7 | 210.0 | 22.4 | 97% | 3.8 | 15 | 84 | 34 | **+12** | +174 |
+| 18 | 7,8 | 227.6 | 24.0 | 83% | 3.5 | 13 | 83 | 36 | **+10** | +159 |
+| 20 | 8 | 270.0 | 27.7 | 50% | 2.9 | 11 | 81 | 40 | **+5** | +132 |
+| 21 | 8,9 | 306.9 | 24.0 | 62% | 2.6 | 9 | 62 | 42 | **+20** | +63 |
+| 23 | 9 | 330.0 | 21.6 | 70% | 2.4 | 8 | 52 | 46 | **+26** | +26 |
+| 24 | 9,10 | 366.0 | 25.4 | 64% | 2.2 | 7 | 55 | 48 | **+20** | +20 |
+| 26 | 10 | 390.0 | 27.8 | 60% | 2.0 | 7 | 56 | 52 | **+14** | +14 |
+| 27 | 10,11 | 410.6 | 26.8 | 43% | 1.9 | 7 | 51 | 54 | **+16** | +41 |
+| 29 | 11 | 460.0 | 24.2 | 0% | 1.7 | 6 | 41 | 58 | **+21** | +95 |
+| 30 | 11,12 | 495.0 | 23.4 | 0% | 1.6 | 5 | 37 | 60 | **+23** | +94 |
+| 32 | 12 | 530.0 | 22.6 | 0% | 1.5 | 4 | 34 | 64 | **+22** | +90 |
+| 33 | 12,13 | 570.0 | 22.3 | 0% | 1.4 | 4 | 31 | 66 | **+22** | +86 |
+| 35 | 13 | 610.0 | 22.1 | 0% | 1.3 | 4 | 28 | 70 | **+20** | +80 |
+| 36 | 13,14 | 659.2 | 20.2 | 0% | 1.2 | 4 | 24 | 72 | **+22** | +44 |
+| 38 | 14 | 690.0 | 19.0 | 0% | 1.1 | 3 | 22 | 76 | **+21** | +21 |
+| 39 | 14,15 | 705.0 | 18.7 | 0% | 1.1 | 3 | 21 | 78 | **+19** | +19 |
+| 41 | 15 | 780.0 | 17.3 | 0% | 1.0 | 3 | 18 | 82 | **+18** | +18 |
 
-Cheapest depth a player can actually HOLD (win ≥ 95%): **km 17**, at +21 Vigor.
+Cheapest depth a player can actually HOLD (win ≥ 95%): **km 17**, at +12 Vigor.
 <!-- /generated -->
 
 **The answer to "at what depth" is: four kilometres further than a new player
@@ -211,6 +211,12 @@ kilometres wide, and that is the whole of the intended opening.
 > trail more than they did, because berries and nuts are found there again. The
 > cheapest holdable depth is the same kilometre, a few Vigor better; the shallow opening
 > is still bankrupt, and the finding still fires.
+>
+> *Re-measured 2026-10-30, after №5–14 moved a level up (`spec-bestiary.md` §14).* The
+> shallows did not move — no creature below the moose changed. The moose-and-stag stretch
+> pays less and holds worse: km 12 nets +6 where it netted +13, km 17 +12 where it netted
+> +21, and the win rate falls to 83% at km 18 (from 94%) and 50% at km 20 (from 79%). The
+> cheapest holdable depth is still km 17, and the finding still fires.
 
 Three modelling choices carry that result, and each of them moves it by more than
 the deficit this section was arguing about:
@@ -281,16 +287,16 @@ fails a build on a number the project has agreed to look at first.
 | `enemy.wild_eagle` | 2 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
 | `enemy.wild_boar` | 3 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 |
 | `enemy.rabid_fox` | 4 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.wild_moose` | 5 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_stag` | 6 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_buffalo` | 7 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_lynx` | 8 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.rabid_wolf` | 9 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_tusker` | 10 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.wild_bear` | 11 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
-| `enemy.wild_aurochs` | 12 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_pack` | 13 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.80 | 2.4 | 0.96 |
-| `enemy.rabid_bear` | 14 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
+| `enemy.wild_moose` | 6 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_stag` | 7 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
+| `enemy.wild_buffalo` | 8 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
+| `enemy.rabid_lynx` | 9 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
+| `enemy.rabid_wolf` | 10 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
+| `enemy.wild_tusker` | 11 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_bear` | 12 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
+| `enemy.wild_aurochs` | 13 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
+| `enemy.rabid_pack` | 14 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.80 | 2.4 | 0.96 |
+| `enemy.rabid_bear` | 15 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
 
 `lootMult` does not apply today — no award site reads it, so `hide`
 is what the table says regardless of archetype. `hide ×mult` is what

@@ -1375,7 +1375,10 @@ week's rows at each player's current level and tier: enemy, estate level, `hp_st
 base + `gear_*_bonus`, no card, not starving; generated beasts come from `EnemyGenerator.generate` against the
 three on-curve references.
 
-### Stronger beasts — step 2, measured and parked (2026-10-27, night)
+### Stronger beasts — step 2, measured and parked (2026-10-27, night); DECIDED and built 2026-10-30
+
+> **Decided 2026-10-30 (the end of this section): A — №5–14 a level up, the shift kept at 6%, the lines keeping
+> each creature's share of the contract.** Everything between here and there is the 10-27 record, kept as it was.
 
 **Asked** (the owner, after the Defend): «Тепер давай трохи підсилимо мобів. Я так розумію, що ми можемо
 переставити мобів на інші рівні (більш високі) і вони підсиляться, так? Якщо так, то запропонуй варіанти змін для
@@ -1499,7 +1502,9 @@ The stretched ladder kills in 93–100% of every hard cell measured.
 - The shift moves newcomers by about one point, slightly EASIER: it shrinks the level effect both ways, and they
   fight at or above their level.
 
-**The 🏕 run** (the autobattle against the viper, the eagle and the boar, the only beasts it reaches at ≤7.5 km):
+**The 🏕 run** (the autobattle against the viper, the eagle and the boar, the only beasts it reaches at ≤7.5 km —
+**WRONG, corrected 2026-10-30: the 90-minute run turns at km 15 (`PassiveRoute`: 30 strides, half out) and meets the
+moose and the stag; see the 10-30 audit below**):
 - No start from the fox or the moose touches it.
 - Shift 4%: a veteran's fight goes 1.9% → 3.2% of the bar (Лайкмен); still no deaths.
 - Everyone +2: a newcomer's fight goes 25% → 48% of the bar, with 1.4–2.2% deaths. A passive death takes the bag.
@@ -1538,6 +1543,48 @@ default (the Halloween quiz the same night came back «No answer provided»), so
   amended. The arena's duels between unequal levels move with it, and so do the Training Ground dummy's numbers.
 - Either rides the waiting restart (the Pi refuses this tree's `/reload` anyway).
 - Re-read the Pi before deciding: these numbers age with the players.
+
+**Re-read and decided 2026-10-30, night.** The owner asked to finish it before the holiday's restart and to see
+the 10-27 numbers again, then to recompute them on fresh data.
+- **The Pi (read-only, 22:54):** 3,972 forest fights in 7 days (5,941 before); 81.5% with №1–4; 83% against creatures
+  5–12 levels below the player, 4.3% within two or above. 17 deaths in the week (4‰); 51 in 14 days, 48 of them
+  entering at ≤35 HP (median 10). New: Ліліт (L5 mage, T2) walks to km 15, the moose and the stag at her level.
+- **The harness** (scratch `probe3`): `probe2` with the current `ROIContent`/`ROISim` and the fresh roster. Two
+  replays: the week's fights at the player's current level and tier (1,129 — players levelled during the week), and
+  every fight of the week at today's kit and tier (3,972). The second is the headline; both rank the variants alike.
+- **Every fight of the week, HP a fight:** today 6.2 · A 7.3 (+18%) · B 7.5 · C 8.3 · shift 5% 7.6 · shift 4% 9.2 ·
+  A + 5% 8.8. Vigor for the same XP ×1.02 / 1.03 / 1.05 / 1.04 / 1.08 / 1.07.
+- **The far end and on-level cells** moved as on 10-27 (`spec-bestiary.md` §14.5). Ліліт against the stag: 42% → 56%
+  of the bar under A, 68% and 5.2% deaths under C.
+- **Found: the shift moves Велесова ніч.** The manor's creatures are `EventMath`'s level `player + offset (−8) +
+  depth`, so its first rooms sit seven levels below the player and ride on `levelDiff`. A re-level does not touch
+  them: they are solved from the archetype, never from `enemies.json`. Asked «А можна не змінювати велесових
+  мобів?» — yes, with the shift kept.
+- **The owner's picks** (the first quiz again marked A and 6% and pressed «clarify»; the second, after the manor
+  answer, submitted): **A, tonight, with the holiday's restart; the shift stays 6%.**
+- **The real re-solve, found before writing.** §10.8 step 4's method with the RECORDED 10-02 shares reproduces all
+  ten shipped lines exactly (verified); with today's shares it does not (the weapon ladder of 10-04 moved them:
+  L5 0.551 … L14 0.340). Carried a level up with the 10-02 shares (L15 = 0.374 × curve(14)/curve(15) = 0.354 — the
+  recorded shares obey exactly that between rungs), it moves HP +3–6%, ATK +0 for 7 of 10, and the wolf +18% / +17%
+  (its new level 10 is the old ladder's second rung). Week: 6.9 against the measured 7.3. Shown side by side; the
+  owner picked **the lines as measured** — each stat × contract(L+1)/contract(L), the creature keeping its share.
+  `spec-bestiary.md` §14.3–14.4 carry the table and the reasoning.
+- **Built:** `enemies.json` (ten levels and lines), `SimulatorTests` (fixture + `testTheFixtureIsTheShippedRoster`,
+  which caught the stale copy: 29 failed assertions on the old roster), the `EnemyGenerator` header's worked
+  example, `spec-bestiary.md` §10.2 amended and §14, `spec-economy.md`'s two blocks and a dated note. 502 tests;
+  `validate --strict` 0/0; `simulate --strict` 0 broken, 18 warnings (the opening finding: km 17 at +12, was +21);
+  digest `records 438f9ec47d93ca8f`, content hash `30a590f0`, COMBINED `ea15c16c660f81f2` — `tuning`, `spawns`,
+  `quests` and `king` held. `CLAUDE.md`'s creature rule is about XP and still true, so it was not touched.
+- **The audit (the owner's «перевір всі зміни»), the same night.** The roster diff is ten levels and stat lines and
+  nothing else (archetypes, XP, bands, loot identical); the file equals A computed from the old roster (0 of 14
+  mismatches); the simulate warnings are the same 18 with the same subjects; the manor never reads the roster
+  (`EventCatalog` solves from archetypes, tuning, budget and rarities). **Found:** the 90-minute 🏕 run turns at km 15,
+  so A reaches it (the 10-27 "≤7.5 km" was wrong and my report to the owner repeated it). Modelled on 20,000 runs a
+  player (`probe3 passiveroute`): deaths a run Catimperator L3 51.6 → 54.4%, Ліліт L5 46.2 → 49.8%, DIABLO L5
+  42.2 → 47.0%, Король Скелетів L9 2.2 → 4.1%, Ivan L10 0.2 → 0.9%, L10+ at T4+ unchanged. The model's baseline — a
+  level 1–5 player dies in 40–60% of 90-minute runs TODAY — is unverified and went to `TODO.md` → Open as a question.
+  Also fixed: §14.3's share range (67–80% of the ATK now), stale `/content` hash lines in the walk list, README's
+  NOT-live list (the holiday was missing, schema v28), the file map's test count.
 
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 

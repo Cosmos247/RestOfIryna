@@ -725,7 +725,7 @@ one database migration, `AddExplorationHaul`):
   rarest one was priced like a pine board; «Мʼясо в глині» is cooked from 2 🥩 + 1 🥔 + 🧱 + 🪵 and restores
   54 Vigor and 14 HP (135 🪙 at the tavern), so it still restores exactly what its ingredients cost.
 
-**Built 2026-10-24/27, NOT live** — it needs a restart (content schema v28 ships with the binary, so a `/reload`
+**Built 2026-10-24/30, NOT live** — it needs a restart (content schema v29 ships with the binary, so a `/reload`
 onto the running one is refused):
 - a plot costs materials: each type its own recipe — the farm 10 🪵 2 🟫 1 🔩 3 🥔, the sawmill 8 🪵 10 🪨 2 🔩 1 🧱,
   the mine 12 🪵 3 🟫 2 🔩 1 🧱, the coop 8 🪵 5 🪨 1 🧱 3 🥚 — the player's second plot twice that, the sixth six
@@ -742,6 +742,12 @@ onto the running one is refused):
   (was 30%) and still doubles DEF, «💨 Ухилитися» doubles the dodge (was ×1.5) and its knife strikes 45% (was 15%),
   «🌀 Магічний бар'єр» takes 30% off a blow (was 60%) and sparks 30% (was 15%). «🌑 Тінь лісу»'s knife stays at
   15%; an Attack is still the stronger tap.
+- Велесова ніч, the first holiday (Sat 31.10 09:00 → Sun 01.11 18:00): the sick King's decrees, the palace's story
+  and the flask, Veles's manor at km 5 left only by dying, the «🩸 Кров для Короля» board
+  (`content/spec/event-veles-night.md`).
+- the beasts from the moose on are a level stronger (2026-10-30): the moose … the rabid bear each a level up, about
+  5–10% more HP and attack; the first four, the XP, the bands and the holiday's creatures unchanged
+  (`content/spec/spec-bestiary.md` §14).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

@@ -25,14 +25,15 @@
 //
 //  The inversions are not a guess. Fed the shipped roster's levels and
 //  archetypes they reproduce every enemy's DEF, crit and dodge to within
-//  rounding — `enemy.rabid_bear` at level 14 wants DEF 52.96 and carries 53,
-//  crit 41.52 and carries 42, dodge 16.15 and carries 16 — which is what says
+//  rounding — `enemy.rabid_bear` at level 15 wants DEF 55.64 and carries 56,
+//  crit 42.89 and carries 43, dodge 16.77 and carries 17 — which is what says
 //  the shipped ratings came off this curve and not off a spreadsheet nobody
 //  kept. It holds for every spawnable creature on the level it is actually on:
 //  all fourteen since tier 2 re-solved the roster on 2026-10-02 (the bear was
-//  level 22 with DEF 74 before). Phase 10 had moved levels and frozen the stat
-//  lines, so until 2026-09-14 five creatures carried the curve of a level they
-//  had left behind.
+//  level 22 with DEF 74 before), and again since №5–14 moved a level up on
+//  2026-10-30 (`spec-bestiary.md` §14). Phase 10 had moved levels and frozen
+//  the stat lines, so until 2026-09-14 five creatures carried the curve of a
+//  level they had left behind.
 //
 
 import Foundation

@@ -183,38 +183,6 @@
       },
       "icon" : "🫎",
       "id" : "enemy.wild_moose",
-      "level" : 5,
-      "loot" : [
-        {
-          "chance" : 0.8,
-          "itemId" : "food.raw_meat",
-          "quantity" : 2
-        },
-        {
-          "chance" : 0.7,
-          "itemId" : "mat.hide",
-          "quantity" : 1
-        }
-      ],
-      "stats" : {
-        "accuracy" : 0,
-        "attack" : 11,
-        "crit" : 8,
-        "defense" : 22,
-        "dodge" : 4,
-        "hp" : 94
-      },
-      "tier" : 2,
-      "xpReward" : 160
-    },
-    {
-      "archetype" : "normal",
-      "depth" : {
-        "max" : 19,
-        "min" : 15
-      },
-      "icon" : "🦌",
-      "id" : "enemy.wild_stag",
       "level" : 6,
       "loot" : [
         {
@@ -230,11 +198,43 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 11,
+        "attack" : 12,
         "crit" : 8,
         "defense" : 24,
         "dodge" : 4,
-        "hp" : 99
+        "hp" : 102
+      },
+      "tier" : 2,
+      "xpReward" : 160
+    },
+    {
+      "archetype" : "normal",
+      "depth" : {
+        "max" : 19,
+        "min" : 15
+      },
+      "icon" : "🦌",
+      "id" : "enemy.wild_stag",
+      "level" : 7,
+      "loot" : [
+        {
+          "chance" : 0.8,
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.7,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "accuracy" : 0,
+        "attack" : 12,
+        "crit" : 8,
+        "defense" : 26,
+        "dodge" : 4,
+        "hp" : 109
       },
       "tier" : 2,
       "xpReward" : 210
@@ -247,7 +247,7 @@
       },
       "icon" : "🦬",
       "id" : "enemy.wild_buffalo",
-      "level" : 7,
+      "level" : 8,
       "loot" : [
         {
           "chance" : 0.8,
@@ -262,11 +262,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 14,
-        "crit" : 8,
-        "defense" : 48,
+        "attack" : 15,
+        "crit" : 9,
+        "defense" : 52,
         "dodge" : 0,
-        "hp" : 127
+        "hp" : 137
       },
       "tier" : 3,
       "xpReward" : 270
@@ -279,7 +279,7 @@
       },
       "icon" : "🐈‍⬛",
       "id" : "enemy.rabid_lynx",
-      "level" : 8,
+      "level" : 9,
       "loot" : [
         {
           "chance" : 0.7,
@@ -289,11 +289,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 16,
-        "crit" : 25,
-        "defense" : 15,
-        "dodge" : 27,
-        "hp" : 85
+        "attack" : 17,
+        "crit" : 26,
+        "defense" : 16,
+        "dodge" : 29,
+        "hp" : 91
       },
       "tier" : 3,
       "xpReward" : 330
@@ -306,7 +306,7 @@
       },
       "icon" : "🐺",
       "id" : "enemy.rabid_wolf",
-      "level" : 9,
+      "level" : 10,
       "loot" : [
         {
           "chance" : 0.8,
@@ -316,11 +316,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 12,
+        "attack" : 13,
         "crit" : 9,
-        "defense" : 30,
-        "dodge" : 4,
-        "hp" : 116
+        "defense" : 32,
+        "dodge" : 5,
+        "hp" : 124
       },
       "tier" : 4,
       "xpReward" : 390
@@ -333,42 +333,10 @@
       },
       "icon" : "🐗",
       "id" : "enemy.wild_tusker",
-      "level" : 10,
-      "loot" : [
-        {
-          "chance" : 0.8,
-          "itemId" : "food.raw_meat",
-          "quantity" : 2
-        },
-        {
-          "chance" : 0.9,
-          "itemId" : "mat.hide",
-          "quantity" : 1
-        }
-      ],
-      "stats" : {
-        "accuracy" : 0,
-        "attack" : 17,
-        "crit" : 9,
-        "defense" : 60,
-        "dodge" : 0,
-        "hp" : 168
-      },
-      "tier" : 4,
-      "xpReward" : 460
-    },
-    {
-      "archetype" : "brute",
-      "depth" : {
-        "max" : 34,
-        "min" : 30
-      },
-      "icon" : "🐻",
-      "id" : "enemy.wild_bear",
       "level" : 11,
       "loot" : [
         {
-          "chance" : 0.85,
+          "chance" : 0.8,
           "itemId" : "food.raw_meat",
           "quantity" : 2
         },
@@ -384,19 +352,19 @@
         "crit" : 10,
         "defense" : 63,
         "dodge" : 0,
-        "hp" : 173
+        "hp" : 179
       },
-      "tier" : 5,
-      "xpReward" : 530
+      "tier" : 4,
+      "xpReward" : 460
     },
     {
       "archetype" : "brute",
       "depth" : {
-        "max" : 37,
-        "min" : 33
+        "max" : 34,
+        "min" : 30
       },
-      "icon" : "🐂",
-      "id" : "enemy.wild_aurochs",
+      "icon" : "🐻",
+      "id" : "enemy.wild_bear",
       "level" : 12,
       "loot" : [
         {
@@ -412,11 +380,43 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 18,
+        "attack" : 19,
         "crit" : 10,
         "defense" : 67,
         "dodge" : 0,
-        "hp" : 179
+        "hp" : 181
+      },
+      "tier" : 5,
+      "xpReward" : 530
+    },
+    {
+      "archetype" : "brute",
+      "depth" : {
+        "max" : 37,
+        "min" : 33
+      },
+      "icon" : "🐂",
+      "id" : "enemy.wild_aurochs",
+      "level" : 13,
+      "loot" : [
+        {
+          "chance" : 0.85,
+          "itemId" : "food.raw_meat",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.9,
+          "itemId" : "mat.hide",
+          "quantity" : 1
+        }
+      ],
+      "stats" : {
+        "accuracy" : 0,
+        "attack" : 19,
+        "crit" : 10,
+        "defense" : 71,
+        "dodge" : 0,
+        "hp" : 189
       },
       "tier" : 5,
       "xpReward" : 610
@@ -430,7 +430,7 @@
       },
       "icon" : "🐺",
       "id" : "enemy.rabid_pack",
-      "level" : 13,
+      "level" : 14,
       "loot" : [
         {
           "chance" : 0.8,
@@ -440,11 +440,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 21,
-        "crit" : 30,
-        "defense" : 21,
-        "dodge" : 34,
-        "hp" : 116
+        "attack" : 22,
+        "crit" : 31,
+        "defense" : 22,
+        "dodge" : 36,
+        "hp" : 122
       },
       "tier" : 5,
       "xpReward" : 690
@@ -458,7 +458,7 @@
       },
       "icon" : "🐻‍❄️",
       "id" : "enemy.rabid_bear",
-      "level" : 14,
+      "level" : 15,
       "loot" : [
         {
           "chance" : 0.9,
@@ -468,11 +468,11 @@
       ],
       "stats" : {
         "accuracy" : 0,
-        "attack" : 23,
-        "crit" : 42,
-        "defense" : 53,
-        "dodge" : 16,
-        "hp" : 225
+        "attack" : 24,
+        "crit" : 43,
+        "defense" : 56,
+        "dodge" : 17,
+        "hp" : 236
       },
       "tier" : 6,
       "xpReward" : 780

@@ -56,7 +56,8 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   (2026-10-24), and the forest's Defend set by numbers (2026-10-27: the telegraph declined, the value per
   tap, the three classes made equal, the barrier's cut-and-spark line, Shadow Veil held, the harness), and the
   stronger beasts, measured and parked (2026-10-27, night: the re-levels, the level shift, the estate step, the
-  harness).
+  harness), then re-read and decided (2026-10-30: №5–14 a level up, the shift kept, the lines keeping their share
+  of the contract, and why not the 10-02 method).
 - **The rules all of it produced: `CLAUDE.md`** — the rule and the trap; the story lives here or in
   the auto-memory bank, and every "never do X" guard stays in the repo doc
   (`feedback-docs-keep-the-rule`).
