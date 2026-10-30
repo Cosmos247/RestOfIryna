@@ -79,6 +79,10 @@ public enum LiveReferenceQuery {
         // nothing and cannot dangle.
         let inFight = try await ExplorationState.query(on: db).unique().all(\.$combatEnemyId)
         live.append(ids("exploration_state", "combat_enemy_id", .enemy, inFight.compactMap { $0 }))
+        // A walk inside a holiday's manor (2026-10-29). `event_blood.event_id`
+        // and `event_notices.event_id` are history and stay out of this list.
+        let manors = try await ExplorationState.query(on: db).unique().all(\.$manorEventId)
+        live.append(ids("exploration_state", "manor_event_id", .event, manors.compactMap { $0 }))
         let stances = try await ExplorationState.query(on: db).unique().all(\.$combatStance)
         live.append(ids("exploration_state", "combat_stance", .stance, stances.compactMap { $0 }))
         let fortunes = try await User.query(on: db).unique().all(\.$activeFortuneCardId)

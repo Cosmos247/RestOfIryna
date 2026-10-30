@@ -41,6 +41,7 @@ public enum ContentLoader {
     private static let kingFile     = "king.json"
     private static let trainingFile = "training_ground.json"
     private static let treasuryFile = "treasury.json"
+    private static let eventsFile   = "events.json"
     private static let zonesFile    = "zones.json"
     private static let raritiesFile = "rarities.json"
     private static let setsFile     = "sets.json"
@@ -118,6 +119,9 @@ public enum ContentLoader {
         let treasuryData = try read(treasuryFile, in: root, into: &hashState)
         let treasuryFileDTO: TreasuryFileDTO = try decode(treasuryData, as: TreasuryFileDTO.self, file: treasuryFile)
 
+        let eventsData = try read(eventsFile, in: root, into: &hashState)
+        let eventsFileDTO: EventFileDTO = try decode(eventsData, as: EventFileDTO.self, file: eventsFile)
+
         let zonesData = try read(zonesFile, in: root, into: &hashState)
         let zoneFile: ZoneFileDTO = try decode(zonesData, as: ZoneFileDTO.self, file: zonesFile)
 
@@ -175,6 +179,7 @@ public enum ContentLoader {
             king: kingFileDTO,
             trainingGround: trainingFileDTO,
             treasury: treasuryFileDTO,
+            events: eventsFileDTO,
             zones: zoneFile,
             tuning: TuningBundleDTO(
                 combat: combatTuning,

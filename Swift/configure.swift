@@ -299,6 +299,12 @@ public func configure(logger: Logger) async throws {
     // 2026-10-23: what an active walk brings home, named at the manor door — one
     // nullable column on `exploration_state`, no rows touched.
     migrations.add(AddExplorationHaul())
+    // 2026-10-29: Велесова ніч — the blood board, the notice log and a manor
+    // descent on the walk's row. Two new tables and four nullable columns, no
+    // rows touched.
+    migrations.add(CreateEventBlood())
+    migrations.add(CreateEventNotices())
+    migrations.add(AddManorToExplorationState())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

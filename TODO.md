@@ -2157,6 +2157,37 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-10-29 — Велесова ніч (NOT live — schema v29, three migrations; the restart must land before Sat 31.10
+08:30; `content/spec/event-veles-night.md`). It runs ONCE, so it is walked as it happens:**
+- [ ] Before Sat 09:00 nothing shows; at 09:00 / 14:00 / 16:00 the three decrees, each once (`event_notices`).
+- [ ] Sat 12:00: the new day reads «🌑 Новий день, та сонце з самого ранку світить, як у сутінках…», the boards'
+      line kept (and the «locked» tail for a carried job); Sun 12:00 the second one, «…сьогодні о 18:00».
+- [ ] From 09:00 the palace reads «Тронна зала порожня…» and the capital's welcome ends «…долинає марення.»
+- [ ] From 09:00 the art: the capital map with pumpkins on the square AND both streets, the empty throne in the
+      palace; the manor's picture on the first screen after «🕯 Увійти» only. After Sun 18:00 the usual art again.
+- [ ] Sat 18:00: ONE message, the summons («🕯 З палацу. Гінці скачуть…», reworked 10-30) — no story pushed.
+- [ ] From 18:00 «👑 Палац» without the flask: the card as usual, then 🕯 the story and 📜 the scribe with
+      «🩸 Взяти флягу» («до неділі, 18:00,»); again on the next visit if not taken. The tap strips the button,
+      the words stay, «✅ Срібна фляга…» above the input; the next visit is the card alone. A tap from the estate
+      works too; after the close the button goes with the ruin's alert.
+- [ ] km 5 without the flask: the manor with «Брама прочинена, та писар кликав спершу до палацу…» and no button.
+- [ ] Sun 12:00 without the flask: «Хто ще не забрав у палаці флягу — поспішайте.»; with it, the old sentence.
+- [ ] From 18:00 the tavern and the fortune teller carry their line under the usual greeting (m and f).
+- [ ] An active walk WITH the flask reaching km 5 gets the entrance once («🕯 Увійти до маєтку»); a quiet step, a forest fight
+      won at km 5 and a resume at km 5 each show it; walking 5 → 6 → 5 does not repeat it.
+- [ ] The gate's question lists what a death would take (or «Сумка порожня…»); «🌲 Лишитися в лісі» puts the
+      entrance back; an old entrance tapped at km 7 is an alert; tapped after the close, the ruin.
+- [ ] Inside: «🚶» is a fight every time, bats and rats both turn up; the room's line at depths 4, 7, 10; «🔙» is
+      refused; the fight has NO flee button (a typed flee is refused too); «🎒 Сумка» eats between fights.
+- [ ] A bat pays ⌈d/2⌉, a rat d (`🩸 +N`), the card under the fight says «За цей спуск · у флязі»; XP 38 / 57.
+- [ ] «🎃 …Велесовий гарбуз…» on about one step in ten: no fight, the depth moves on, «✅ +N снаги (…), +M ОЗ (…)»
+      a quarter of the maximum each (capped, «… повна» when topped), the next creature one deeper.
+- [ ] «🏆 Рейтинги» shows «🩸 Кров для Короля» from 18:00 (a row of its own), ranks with ties shared.
+- [ ] A death in the manor: «💀 Ви полягли в маєтку Велеса», the flask's line, the bag gone, the home at 1 HP.
+- [ ] Sun 18:00: the finale to everyone — the podium, «Ви принесли N 🩸 — K-те місце», or «Цього разу ви до
+      маєтку не ходили»; a player still inside is walked out at the next tap; a kill after 18:00 pays nothing.
+- [ ] `/reload` while someone is inside is refused if the bundle drops the holiday (`LiveReferenceCheck`).
+
 **Added 2026-10-27 — the forest's Defend set by the owner's numbers (`83002a6`, NOT live — waits for the same restart; schema
 v28, so the running v25 binary refuses this bundle):** one account of each class, a beast of about their level (the
 numbers are means — read several taps).
@@ -3153,6 +3184,36 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-10-30 session — AFTER THE HOLIDAY (the owner: «Цей баг запиши в туду лист після івенту»):**
+- **«Принесено:» undercounted a walk — cause NOT found.** Ліліт (mage L5, tg `429654667`), 2026-10-30 21:46–21:47:
+  left with an empty bag, found 🌰 ×2 (km 2, a step forward) and 🫐 ×2 (km 3, a step back) and 🪙 2 (km 2, back),
+  ate one 🫐 from the trail bag at km 1 — the door said «🌰 Лісові горіхи × 1» and the silver, where the bag (right)
+  held 🫐 ×1 and 🌰 ×2. Checked: the Pi runs `7ac11f0` (the haul code unchanged since); her four `fight_log` rows
+  (21:47:01 / :07 / :13 / :22, km 1 / 3 / 4 / 1) match the screenshots' HP; the bot log is silent 21:45–21:49 (no
+  error, no `[ROUTE]`); no second instance, no 409; no player holds two `exploration_state` rows; one `RouterStore`,
+  and callbacks share the per-user chain. Her exact sequence replayed through `ExpeditionHaul` and its JSON gives
+  «🫐 × 1, 🌰 × 2, 🪙 2» — so the live haul held numbers the code would not write, and the row is deleted at the door,
+  so nothing is left to read. A second oddity on the same screenshots: the walk began at 🍖 0/125 «Голодні», the bag
+  empty, and the first step showed 🍖 25/125 with NO hunger tick — equally unexplained, maybe the same cause.
+  Offered and NOT picked (the owner asked to clarify, then parked it here): count «Принесено» from the bag itself —
+  a snapshot of the bag in the haul at `begin`, the door lists what grew, the old count logged where it disagrees —
+  or a log line only. A ready reply to the player was given: nothing was lost, only the list was wrong.
+
+**From the 2026-10-29 session** — Велесова ніч (built, NOT live — `content/spec/event-veles-night.md`):
+- **Reworked 2026-10-30** (spec §3, §4.2–4.5, §7): the reveal is told in the palace and the flask collected there
+  («🩸 Взяти флягу»), «Велесовий гарбуз» on one step in ten, the owner's three pictures. Decided in the build and
+  listed in §7, not asked: the story repeats until the flask is taken, the button works from anywhere while the manor
+  is open, hunger before the pumpkin, the meal's «… повна» markers under it. The manor picture shows the approach
+  while its screen speaks of the yard — told to the owner, not changed.
+- **The English copy is unapproved** — written to the uk pattern («Veles's Night», «the clerk», «the Lower Town»).
+- **The top three's zlatnyks** are the owner's to credit in DBeaver after Sun 18:00 (the board SQL is in
+  `.memory/live-ops.md`); the amount was never fixed.
+- **Four small lines the flow needed were written, not approved** (the spec's §7): the entrance tapped away from
+  km 5, the gate's question with an empty bag, the manor's death with an empty bag, and «7-ме місце».
+- **The km lives in the copy as a word** («на п'ятому кілометрі»); moving `entranceKm` needs the copy and a restart.
+- **After the holiday:** the blood board's tab stays (the latest opened holiday's); a next holiday is a new
+  `events.json` row with its own `event.<id>.*` text — the finale promised «Наступна Велесова ніч — восени».
 
 **From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, NOT live — a restart;
 `.memory/rebalance.md` → "The forest's Defend, set by numbers"):

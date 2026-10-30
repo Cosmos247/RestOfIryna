@@ -164,5 +164,11 @@ public enum ContentSchema {
     /// v27 binary would read this bundle without a word and swing the veil at
     /// 45% the operator believes is held; a v27 bundle on a v28 binary would die
     /// on a bare `keyNotFound`. The handshake names the cause either way.
-    public static let current: Int = 28
+    /// v29 (2026-10-29): the bundle gains a required `events.json` — the
+    /// holidays, the first being Велесова ніч (`content/spec/event-veles-night.md`).
+    /// A v28 directory has no such file, and the loader would fail with a bare
+    /// `missingFile("events.json")`; a v28 binary would never read the file and
+    /// run no holiday the operator believes is scheduled. The handshake names
+    /// the cause either way.
+    public static let current: Int = 29
 }

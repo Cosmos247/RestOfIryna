@@ -44,6 +44,7 @@ enum ContentMappingError: Error, CustomStringConvertible {
     case unknownCharacterClass(String, table: String)
     case unknownTechniqueKind(String)
     case tuningRowMissing(String, table: String)
+    case invalidEvent(String, id: String)
 
     var description: String {
         switch self {
@@ -62,6 +63,7 @@ enum ContentMappingError: Error, CustomStringConvertible {
         case .unknownTechniqueKind(let v): return "tuning/combat.json: unknown technique kind \"\(v)\""
         case .tuningRowMissing(let what, let table):
             return "tuning/\(table): no row for \(what)"
+        case .invalidEvent(let what, let id): return "events.json: \(id): \(what)"
         }
     }
 }

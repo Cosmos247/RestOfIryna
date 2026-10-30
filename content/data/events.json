@@ -1,0 +1,110 @@
+{
+  "events" : [
+    {
+      "creatureLevelOffset" : -8,
+      "creatures" : [
+        {
+          "archetype" : "skirmisher",
+          "attackScale" : 0.7,
+          "bloodDivisor" : 2,
+          "hpScale" : 0.7,
+          "icon" : "🦇",
+          "id" : "bat",
+          "weight" : 1,
+          "xpReward" : 38
+        },
+        {
+          "archetype" : "normal",
+          "attackScale" : 1.0,
+          "bloodDivisor" : 1,
+          "hpScale" : 1.0,
+          "icon" : "🐀",
+          "id" : "rat",
+          "weight" : 1,
+          "xpReward" : 57
+        }
+      ],
+      "endsAt" : "2026-11-01T18:00:00+02:00",
+      "entranceKm" : 5,
+      "finds" : [
+        {
+          "chance" : 0.1,
+          "hpShare" : 0.25,
+          "icon" : "🎃",
+          "id" : "pumpkin",
+          "vigorShare" : 0.25
+        }
+      ],
+      "id" : "veles_night_2026",
+      "notices" : [
+        {
+          "at" : "2026-10-31T09:00:00+02:00",
+          "icon" : "📜",
+          "id" : "decree_1",
+          "kind" : "plain",
+          "until" : "2026-10-31T18:00:00+02:00"
+        },
+        {
+          "at" : "2026-10-31T14:00:00+02:00",
+          "icon" : "📜",
+          "id" : "decree_2",
+          "kind" : "plain",
+          "until" : "2026-10-31T18:00:00+02:00"
+        },
+        {
+          "at" : "2026-10-31T16:00:00+02:00",
+          "icon" : "📜",
+          "id" : "decree_3",
+          "kind" : "plain",
+          "until" : "2026-10-31T18:00:00+02:00"
+        },
+        {
+          "at" : "2026-10-31T18:00:00+02:00",
+          "icon" : "🕯",
+          "id" : "summons",
+          "kind" : "plain",
+          "until" : "2026-11-01T18:00:00+02:00"
+        },
+        {
+          "at" : "2026-11-01T18:00:00+02:00",
+          "icon" : "👑",
+          "id" : "finale",
+          "kind" : "finale",
+          "until" : "2026-11-02T18:00:00+02:00"
+        }
+      ],
+      "opensAt" : "2026-10-31T18:00:00+02:00",
+      "preludeAt" : "2026-10-31T09:00:00+02:00",
+      "rollovers" : [
+        {
+          "day" : "2026-10-31",
+          "icon" : "🌑",
+          "id" : "saturday"
+        },
+        {
+          "day" : "2026-11-01",
+          "icon" : "🌑",
+          "id" : "sunday"
+        }
+      ],
+      "rooms" : [
+        {
+          "fromDepth" : 1,
+          "id" : "yard"
+        },
+        {
+          "fromDepth" : 4,
+          "id" : "svitlytsia"
+        },
+        {
+          "fromDepth" : 7,
+          "id" : "cellar"
+        },
+        {
+          "fromDepth" : 10,
+          "id" : "water"
+        }
+      ]
+    }
+  ]
+}

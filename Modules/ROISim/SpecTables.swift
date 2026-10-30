@@ -271,6 +271,52 @@ public enum SpecTables {
     /// not. The Vigor column carries its share of the pool at the decree's own
     /// level, because that share is the thing the reward has to respect — a
     /// flat number means something different at level 1 and level 25.
+    /// `events.json` (2026-10-29): each holiday's window and its manor — the
+    /// creatures' lines by level, as `EventMath.line` solves them, and the
+    /// blood a kill pays by depth. `content/spec/event-veles-night.md` quotes it.
+    public static func events(content: GameContent) -> String {
+        guard let tuning = content.tuning, let budget = content.budget else { return "" }
+        var out: [String] = []
+        for event in content.events {
+            out.append("**\(event.id)** — prelude \(event.preludeAt) · opens \(event.opensAt) · closes \(event.endsAt) · the manor at km \(event.entranceKm) · a depth-d creature is level max(1, player \(event.creatureLevelOffset >= 0 ? "+" : "−") \(abs(event.creatureLevelOffset)) + d)")
+            out.append("")
+            out.append("| level | " + event.creatures.map { "\($0.icon) \($0.id) (`\($0.archetype)` ×\(format($0.hpScale)) HP, ×\(format($0.attackScale)) ATK)" }.joined(separator: " | ") + " |")
+            out.append("|---|" + event.creatures.map { _ in "---|" }.joined())
+            for level in [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 25, 30, 40] where level <= tuning.progression.maxLevel {
+                let cells = event.creatures.map { creature -> String in
+                    guard let line = EventMath.line(of: creature, level: level, archetypes: content.enemyArchetypes,
+                                                    tuning: tuning, budget: budget, rarities: content.rarities)
+                    else { return "—" }
+                    return "❤️\(line.maxHP) · АТК \(line.attack) · ЗАХ \(line.defense) · крит \(line.crit) · ухил. \(line.dodge)"
+                }
+                out.append("| \(level) | " + cells.joined(separator: " | ") + " |")
+            }
+            out.append("")
+            out.append("| depth | " + event.creatures.map { "\($0.icon) 🩸 (÷\($0.bloodDivisor), ⌈⌉) · \($0.xpReward) XP" }.joined(separator: " | ") + " |")
+            out.append("|---|" + event.creatures.map { _ in "---|" }.joined())
+            for depth in 1...12 {
+                out.append("| \(depth) | " + event.creatures.map { "\(EventMath.blood(depth: depth, divisor: $0.bloodDivisor))" }.joined(separator: " | ") + " |")
+            }
+            out.append("")
+            // The finds (2026-10-30): drawn before the creatures on a step
+            // deeper, standing at that depth in a creature's place.
+            if !event.findList.isEmpty {
+                out.append("| find (in a creature's place) | chance a step | ❤️ back, of the maximum | 🍖 back, of the pool |")
+                out.append("|---|---|---|---|")
+                for find in event.findList {
+                    out.append("| \(find.icon) \(find.id) | \(percent(find.chance)) | \(percent(find.hpShare)) | \(percent(find.vigorShare)) |")
+                }
+                out.append("")
+            }
+        }
+        return out.joined(separator: "\n")
+    }
+
+    /// 0.1 → «10%», 0.125 → «12.5%».
+    private static func percent(_ share: Double) -> String {
+        format(share * 100) + "%"
+    }
+
     public static func king(content: GameContent) -> String {
         guard let tuning = content.tuning else { return "" }
         let pool = tuning.progression.vigorPool

@@ -21,6 +21,21 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-29 — Велесова ніч, the first holiday** (content + Swift, NOT LIVE — schema v29, three migrations, it
+needs the restart before Sat 31.10 08:30; `content/spec/event-veles-night.md`). Decrees from the sick King
+(Sat 09:00 / 14:00 / 16:00), themed 12:00 notices on both days, the reveal (the cup from the manor no list
+names, the fortune teller's Moon, Veles laying the table for the dead; the cure — blood) told IN THE PALACE since
+the 10-30 rework — 18:00 only summons everyone there, and the scribe hands the flask over («🩸 Взяти флягу»; no
+flask, no way through the gate; Sunday's noon line reminds those without one; one manor step in ten is «Велесовий
+гарбуз», +25% of max HP and Vigor at once),
+and from Sat 18:00 to Sun 18:00 Veles's abandoned manor at km 5 of an active walk: entered once asked, left only
+by dying or the close, bats and rats 50/50 at every depth with their level following the player's (the one
+exception to the estate rule), blood ⌈d/2⌉ / d into a flask the death does not take (`event_blood`), 38 / 57 XP;
+the «🩸 Кров для Короля» board; the per-reader finale at Sun 18:00 with the podium; the palace, the welcome, the
+innkeeper and the fortune teller speak of it. `events.json`, `EventMath`, `GameEvent`, `ManorService`, the
+watchman's notices, `CapitalController+Flask`; 501 tests; `records` → `7c252b0e1861e91c`, `tuning` →
+`c0380e692986ba04`, content hash → `42ec1955` (COMBINED `a687497d827739b9`); `spawns`, `quests`, `king` unmoved.
+
 **2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, `83002a6`, schema v28, NOT LIVE — it
 ships with the same restart). «🛡 Парирувати» 40% + DEF ×2 (was 30%), «💨 Ухилитися» dodge ×2 + a 45% knife (×1.5
 and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 15%) — equal by value per tap against an on-level

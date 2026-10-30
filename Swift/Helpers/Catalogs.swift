@@ -79,6 +79,8 @@ final class DomainContent: Sendable {
     let trainingGroundLevels: [TrainingGroundLevelDTO]
     /// The Treasury's goods for zlatnyks, in list order (`treasury.json`).
     let treasuryItems: [TreasuryItemDTO]
+    /// The holidays, their creatures solved at every level (`events.json`).
+    let events: [GameEvent]
 
     // Batch C. The two lookup dictionaries replace what used to be a linear
     // `first(where:)` and a `Dictionary(uniqueKeysWithValues:)` that TRAPPED on
@@ -263,6 +265,10 @@ final class DomainContent: Sendable {
         self.kingDecrees = content.kingDecrees
         self.trainingGroundLevels = content.trainingGroundLevels
         self.treasuryItems = content.treasuryItems
+        self.events = try content.events.map {
+            try GameEvent(dto: $0, archetypes: content.enemyArchetypes, tuning: tuning, budget: budget,
+                          rarities: content.rarities)
+        }
         self.arena = arena
 
         // Shop order is display order — ascending by price — so no sort here.

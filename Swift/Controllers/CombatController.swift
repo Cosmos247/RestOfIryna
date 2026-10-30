@@ -189,9 +189,13 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let locale = session.locale
         let attack = TGKeyboardButton(text: lingo.localize(Self.attackKeyPrefix + cls.rawValue, locale: locale))
         let defend = TGKeyboardButton(text: lingo.localize(Self.defendKeyPrefix + cls.rawValue, locale: locale))
-        let trailing: TGKeyboardButton
+        let trailing: TGKeyboardButton?
         if let state = state, Self.isTraining(state) {
             trailing = TGKeyboardButton(text: lingo.localize("combat.button.training_exit", locale: locale))
+        } else if state?.isInManor == true {
+            // A holiday's manor is left by dying (2026-10-29): no class's flee
+            // stands on its keyboard. A flee typed anyway is refused in `onFlee`.
+            trailing = nil
         } else {
             trailing = TGKeyboardButton(text: lingo.localize(Self.fleeKeyPrefix + cls.rawValue, locale: locale))
         }
@@ -202,10 +206,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // what "unlocked" means on the Training Ground, and the check has to
         // stay synchronous — `generateControllerKB` has no database.
         guard Self.techniquesUnlocked(for: session) else {
-            return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [trailing]], resizeKeyboard: true)
+            let rows = trailing.map { [[attack, defend], [$0]] } ?? [[attack, defend]]
+            return TGReplyKeyboardMarkup(keyboard: rows, resizeKeyboard: true)
         }
         let tech = TGKeyboardButton(text: lingo.localize("combat.button.techniques", locale: locale))
-        return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [tech, trailing]], resizeKeyboard: true)
+        return TGReplyKeyboardMarkup(keyboard: [[attack, defend], [tech] + (trailing.map { [$0] } ?? [])],
+                                     resizeKeyboard: true)
     }
 
     /// True once the player's level reaches the earliest technique gate.
@@ -237,7 +243,9 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let enemyHP = state.combatEnemyHP ?? enemy.hp
 
         var lines: [String] = []
-        if intro {
+        if intro, let manor = Self.manorIntro(state: state, enemyName: enemyName, lingo: lingo, locale: locale) {
+            lines.append(contentsOf: manor)
+        } else if intro {
             lines.append("⚔️ " + lingo.localize("combat.encounter.intro", locale: locale, interpolations: [
                 "enemy": enemyName
             ]))
@@ -562,6 +570,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         // Defensive — Flee button is replaced by Back in training mode, so
         // a stale callback is the only way this fires. Bail without effect.
         if Self.isTraining(state) {
+            return true
+        }
+        if state.isInManor, let event = state.manorEventId.flatMap(EventCatalog.find) {
+            let line = "🔙 " + context.lingo.localize(event.keys.noWayBack, locale: context.session.locale)
+            try await context.bot.sendMessage(session: context.session, text: line, parseMode: .html)
+            try await showCombat(context: context, state: state, enemy: enemy, intro: false)
             return true
         }
 
@@ -1134,6 +1148,12 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             try await reviveTrainingDummy(context: context, state: state, enemy: enemy, headerLines: headerLines)
             return
         }
+        if let event = state.manorEventId.flatMap(EventCatalog.find),
+           let ref = EventCreatureRef(enemyId: enemy.id) {
+            try await finishManorVictory(context: context, state: state, enemy: enemy, event: event,
+                                         creatureId: ref.creatureId, headerLines: headerLines)
+            return
+        }
         let lingo = context.lingo
         let locale = context.session.locale
         let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
@@ -1222,6 +1242,79 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         }
     }
 
+    /// A kill in a holiday's manor (2026-10-29): the forest's win — the log, the
+    /// wear, the jobs' and the decrees' beast, the XP — with blood in place of
+    /// loot, and the manor's screen in place of the forest's. The blood goes
+    /// into the flask (`EventBlood`) before the screen that names it.
+    private func finishManorVictory(context: Context, state: ExplorationState, enemy: Enemy, event: GameEvent,
+                                    creatureId: String, headerLines: [String]) async throws {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let enemyName = "\(enemy.icon) " + lingo.localize(enemy.nameKey, locale: locale)
+
+        try? await FightLog.record(.win, state: state, enemy: enemy, user: context.session, on: context.db)
+        let broke = try await GearConditionService.wear(.victory, for: context.session, on: context.db)
+        try? await QuestService.record(.beastKill, for: context.session, on: context.db)
+        try? await KingService.record(.beastKill, for: context.session, on: context.db)
+        let xpResult = context.session.grantXP(User.xpFromKill(enemy, playerLevel: context.session.level))
+
+        var parts = headerLines
+        if event.isOver(at: Date()) {
+            // A fight that outlasted the close pays no blood: the gate shut at
+            // the hour the finale names, and its podium must stay the last word.
+            // The win itself stands; `showManor` walks the player out under it.
+            parts.append("🏆 " + lingo.localize("combat.victory", locale: locale, interpolations: ["enemy": enemyName]))
+        } else {
+            let poured = try await ManorService.pourKill(context.session, state: state, event: event,
+                                                         creatureId: creatureId, on: context.db)
+            // 🩸 rides inside the value: Lingo drops a placeholder that follows a
+            // multi-unit emoji in the template.
+            parts.append("🏆 " + lingo.localize(event.keys.kill(creatureId), locale: locale, interpolations: [
+                "enemy": enemyName,
+                "blood": "🩸 +\(poured.blood)"
+            ]))
+        }
+        parts.append(contentsOf: Self.brokenGearLines(broke, lingo: lingo, locale: locale))
+        if xpResult.xpAwarded > 0 {
+            parts.append("📖 " + lingo.localize("combat.victory.xp", locale: locale, interpolations: [
+                "xp": "\(xpResult.xpAwarded)"
+            ]))
+        }
+
+        state.endCombat()
+        try await state.save(on: context.db)
+        let exploration = Controllers.explorationController
+        context.session.routerName = exploration.routerName
+        try await context.session.saveAndCache(in: context.db)
+        try await exploration.showManor(context: context, state: state, lead: parts.joined(separator: "\n"))
+
+        if xpResult.levelsGained > 0 {
+            try await context.bot.sendMessage(
+                session: context.session,
+                text: LevelUpBanner.text(for: context.session, newLevel: xpResult.newLevel,
+                                         growth: xpResult.growth, lingo: lingo, locale: locale),
+                parseMode: .html
+            )
+        }
+    }
+
+    /// A manor fight's first lines (2026-10-29): the room's line when this step
+    /// entered a new room past the first (whose line the gate already said),
+    /// then the creature's own entrance in that room. Nil outside a manor.
+    static func manorIntro(state: ExplorationState, enemyName: String, lingo: Lingo, locale: String) -> [String]? {
+        guard let event = state.manorEventId.flatMap(EventCatalog.find),
+              let ref = state.combatEnemyId.flatMap(EventCreatureRef.init(enemyId:)),
+              let depth = state.manorDepth,
+              let room = event.dto.room(forDepth: depth) else { return nil }
+        var lines: [String] = []
+        if depth == room.fromDepth, depth > 1 {
+            lines.append(lingo.localize(event.keys.room(room.id), locale: locale))
+        }
+        lines.append("⚔️ " + lingo.localize(event.keys.encounter(ref.creatureId, room: room.id), locale: locale,
+                                            interpolations: ["enemy": enemyName]))
+        return lines
+    }
+
     /// Training Ground branch of `finishVictory`. Resets the dummy's HP to
     /// full and re-renders the combat screen with a "dummy restored" notice
     /// — the player keeps training without any "victory" UX (no loot, no
@@ -1280,7 +1373,8 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
                 "hp": "❤️ \(enemyHP)/\(enemy.hp)"
             ])
         let cause = roundLines + [defeat] + Self.brokenGearLines(brokeOnLoss, lingo: lingo, locale: locale)
-        try await ExplorationController.handleDeath(context: context, causeNarrative: cause.joined(separator: "\n"))
+        try await ExplorationController.handleDeath(context: context, causeNarrative: cause.joined(separator: "\n"),
+                                                    manor: ManorDeath(state: state))
     }
 
     /// "🛡 Кольчуга лісника зламалась" — one line per piece that reached zero
@@ -1313,6 +1407,10 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
             try await Controllers.mainController.showMainMenu(context: context, text: prefix)
             return
         }
+        if state.isInManor {
+            try await exploration.showManor(context: context, state: state, lead: prefix)
+            return
+        }
 
         let depthLabel = lingo.localize("exploration.depth_label", locale: locale)
         let starving = VigorService.isStarving(context.session)
@@ -1325,6 +1423,7 @@ final class CombatController: TGControllerBase, @unchecked Sendable {
         let text = "\(prefix)\n\n\(status)"
         let markup = exploration.generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        try await exploration.offerManorIfDue(context: context, state: state)
     }
 
     // MARK: - Loaders

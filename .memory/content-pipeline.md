@@ -66,7 +66,7 @@ content/data/*.json
   — every one reads Catalogs.current
 ```
 
-`content/data/` holds 22 files: `arena · bags · enemies · estate_upgrades · fortune · guild · items · king · manifest · market · master · plots · quests · rarities · recipes · sets · tavern · trader · training_ground · treasury · weapon_upgrades · zones` (`training_ground` since schema v14, 2026-09-27; `treasury` since schema v22, 2026-10-11).
+`content/data/` holds 23 files: `arena · bags · enemies · estate_upgrades · events · fortune · guild · items · king · manifest · market · master · plots · quests · rarities · recipes · sets · tavern · trader · training_ground · treasury · weapon_upgrades · zones` (`training_ground` since schema v14, 2026-09-27; `treasury` since schema v22, 2026-10-11; `events` since schema v29, 2026-10-29 — the holidays: their times, their manor's creatures as archetype contracts scaled, `EventMath` solving each level's line at install).
 (The list had drifted twice before 2026-09-21: `rarities` and `sets` arrived in
 Phase 6 and were never added here, and `king` in the decree chain. Counted from the
 directory, not from memory.) **No Swift catalog array

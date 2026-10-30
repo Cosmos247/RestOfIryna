@@ -292,9 +292,28 @@ extension InventoryEntry {
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
-        var lost: [String: DeathLoss] = [:]
-        for row in rows where row.isTakenByDeath {
+        let taken = rows.filter(\.isTakenByDeath)
+        for row in taken {
             try await row.delete(on: db)
+        }
+        return losses(of: taken)
+    }
+
+    /// What a death would take right now, named the way the death screen will
+    /// name it — the manor's gate asks before the player steps in (2026-10-29).
+    public static func deathPreview(for user: User, on db: any Database) async throws -> [DeathLoss] {
+        guard let userId = user.id else { return [] }
+        let rows = try await InventoryEntry.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .all()
+        return losses(of: rows.filter(\.isTakenByDeath))
+    }
+
+    /// One line per item and tier, largest loss first — the wipe's report and
+    /// its preview, so the two cannot list one bag two ways.
+    private static func losses(of rows: [InventoryEntry]) -> [DeathLoss] {
+        var lost: [String: DeathLoss] = [:]
+        for row in rows {
             let key = "\(row.itemId)#\(row.tier)"
             let prior = lost[key]?.quantity ?? 0
             lost[key] = DeathLoss(itemId: row.itemId, tier: row.tier, quantity: prior + row.quantity)

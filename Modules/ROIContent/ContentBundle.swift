@@ -58,6 +58,9 @@ public struct ContentBundle: Sendable {
     /// `treasury.json` (schema v22) — what zlatnyks buy. Optional only so
     /// hand-built test fixtures need not carry one.
     public let treasury: TreasuryFileDTO?
+    /// `events.json` (schema v29) — the holidays: when each runs and what its
+    /// manor holds. Optional only so hand-built test fixtures need not carry one.
+    public let events: EventFileDTO?
     /// Foraging pools by depth band. Optional so a fixture bundle can omit it.
     public let zones: ZoneFileDTO?
     /// Phase 4's six balance tables. Optional for the same reason as the files
@@ -96,6 +99,7 @@ public struct ContentBundle: Sendable {
         king: KingFileDTO? = nil,
         trainingGround: TrainingGroundFileDTO? = nil,
         treasury: TreasuryFileDTO? = nil,
+        events: EventFileDTO? = nil,
         zones: ZoneFileDTO? = nil,
         tuning: TuningBundleDTO? = nil,
         contentHash: String
@@ -126,6 +130,7 @@ public struct ContentBundle: Sendable {
         self.king = king
         self.trainingGround = trainingGround
         self.treasury = treasury
+        self.events = events
         self.zones = zones
         self.tuning = tuning
         self.contentHash = contentHash

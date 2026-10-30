@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-30)* **`5cbfe36`'s hash fill** — records only.
+- *(this commit, 10-29/30)* **Велесова ніч, the first holiday** — content + Swift + art, schema v29, three
+  migrations, NOT deployed: `events.json` (the window, the manor at km 5, bats and rats by the player's level, blood,
+  the notices, the pumpkin find), `EventMath`, `GameEvent`/`EventCatalog`/`EventArt`, `ManorService` and the walk's
+  manor screens, the fight's no-flee and kill, the watchman's decrees/summons/finale, the palace's story and «🩸 Взяти
+  флягу» (`CapitalController+Flask`), the blood board, the capital's four lines, `Assets/events/veles_night_2026/`;
+  501 tests. Also recorded: the «Принесено» undercount (Ліліт, 10-30), parked in TODO for after the holiday.
+- `4c0ef48` (10-30) **`5cbfe36`'s hash fill** — records only.
 - `5cbfe36` (10-27) **stronger beasts, measured and parked** — records only: the step-2 tables in
   `.memory/rebalance.md`, nothing decided.
 - `bde0acc` (10-27) **`83002a6`'s hash fill** — records only.
@@ -865,6 +871,126 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-30 (Велесова ніч reworked: the reveal in the palace, the flask collected there; «Велесовий гарбуз») — *(this commit)*
+
+**Asked.** «Давай доробимо івент. По-перше розгадка повинна бути коли гравець приходить в палац. Інакше як
+пояснити появу фляги, гравець повинен прийти її забрати. Але йому треба про це повідомити. Запропонуй, як можна
+переробити.»
+
+**Proposed** as a played sample: 18:00 sends one summons instead of the two reveal messages; the palace card stays and
+the story and the scribe follow it, the scribe offering «🩸 Взяти флягу»; a banner on the tap; km 5 without the flask
+shows the manor and the way to the palace; Sunday's noon line names the flask for those who have not collected it. The
+cost was named: one trip to the capital (2 min each way, and from the forest the walk home, 2 🍖 a km).
+Quiz: **picked** the km-5 hint (no button) and the Sunday sentence; **unanswered** the handover (button or automatic)
+and the 18:00 text. Asked what to clarify, the owner answered «Давай зробимо це і після цього ти мені покажеш повністю
+як виглядає івент» — so the two open forms were built as the sample showed them (the button; the summons naming the
+flask), and said so in the report.
+
+**Built.** `events.json`: `reveal_story` + `reveal_scribe` → one `summons` notice. `EventKeys`: `palaceStory`,
+`palaceScribe`, `palaceTake`, `flaskTaken`, `entranceNoFlask`, `rolloverFlaskTaken`/`Waiting` (required; the Sunday
+template carries `%{flask}`). `EventBlood.hasFlask` / `issueFlask` (the empty row IS the flask; a pour into a missing
+row still makes it). `ManorService.refusal(…, hasFlask:)` → `.noFlask`; `offerManorIfDue` shows a walk without the flask
+`entrance.no_flask` and no button. `CapitalController+Flask` (new): the story and the scribe after `showPalace`'s card on
+every visit until taken, `onFlaskCallback` (stripped button on every path, the ✅ banner on a first issue, after the
+close the `entrance.gone` alert), dispatched from `MainController.onCallbackQuery` (its default deletes the message).
+The watchman's rollover passes `%{flask}` (`EventNoticeText.flaskSentence`). uk + en; the spec's §3, §4.2–4.4, §7;
+`CLAUDE.md` → Holidays; README and the file map; a flask count in `.memory/live-ops.md`.
+
+**Verified.** 499 tests (`testTheFlaskIsCollectedAtThePalace` new; two planted mutants — a missing `palace.story`, a
+Sunday without `%{flask}` — each caught, then restored); `validate --strict` 0/0; the `spec events` block unchanged.
+The whole event rendered through the real Lingo in both locales from a scratch package (0 missing keys, 0 raw
+placeholders, every message under its cap); the descent shown to the owner is a seeded run of the reference archer L13
+on the shipped `CombatMath` (a temporary probe test, deleted). Digest: `records 52aa80e0fc683021` → **`1021ff6de43de5ea`**
+(the notices), content hash `76d5ac15` → **`0b6ffe2f`**, COMBINED `61645e8f38109e94` → **`d103b7bb6e50123f`**; `tuning`,
+`spawns`, `quests`, `king` unmoved. No migration changed — `event_blood` is not on the Pi yet; NOT rehearsed again on a
+scratch Postgres (the new writes are one insert on an existing table and one read).
+
+**Then, the same evening.** The owner struck «, і кожному приготував срібну флягу з печаткою Корони.» from the summons
+(uk and en, now «…Він дізнався, що з Королем.»), and asked for an event in the manor between the bats and the rats: a
+find, «Велесовий гарбуз», Halloween in mood, 10% likely, putting back 25% of HP and Vigor at once, with a beautiful
+description. Shown on the walkthrough's archer (depth 7, +51 / +41) with three texts; the owner picked «Дати гарбуза»
+(Veles «gives a pumpkin» — turns you away from his table: your time has not come) and that it stands at its depth in
+a creature's place. Built: `events.json` → `finds` (optional list: id, icon, chance, hpShare, vigorShare),
+`EventFindDTO`, `EventMath.pickFind` / `restore`, `ManorService.Step.Encounter` (`.creature` / `.find`), the find's
+lines in `ExplorationController+Manor.findLead` (a new room's line, hunger, the text, a meal's receipt), five validator
+rules, `EventKeys.findText`, `spec events` prints the finds (the spec's block refreshed), the digest hashes them.
+501 tests (two new; two planted mutants in the maths — `<=` in the roll, a floor in the restore — each caught, then
+restored); `validate --strict` 0/0; both locales rendered through the real Lingo, the screen word for word as approved.
+Digest now: `records` **`7c252b0e1861e91c`**, content hash **`42ec1955`**, COMBINED **`a687497d827739b9`**; `tuning`,
+`spawns`, `quests`, `king` unmoved (the earlier `1021ff6de43de5ea` / `0b6ffe2f` were never committed).
+
+**Last, the art.** Three pictures from the owner, «тільки на час івенту»: the manor (its first screen, as the player
+steps in), the capital (the map with pumpkins) and the palace (the empty throne, the scribe). Copied from Telegram's
+temp folder (`9:27:49`, `9:40:28`, `9:41:08 PM`; the two other files there, `9:31:42` and `9:39:19`, were not the ones
+named) into `Assets/events/veles_night_2026/` as `manor.jpg` (1024×764), `capital.jpg` (1024×680), `palace.jpg`
+(1280×699). `EventArtSlot` / `GameEvent.artPath` / `EventArt.path` (EventCatalog.swift): a holiday's file while it
+runs, and only when it exists, else the usual art; the capital map covers the square AND both streets (one image in
+three files since 10-06). `showManor(…, art: true)` on the step through the gate — the caption is the gate's card,
+188 of 1,024 (uk), 210 (en), and no manor screen is edited in place. Pointed out, not changed: the manor picture shows
+the approach (pond, willow, lit windows — the km-5 entrance's words) while the gate screen speaks of the yard. Not
+sendable without running the bot: verified by the build, the 501 tests and the caption measure; the three JPGs must go
+into the commit (`Assets/` is tracked) for the Pi's pull to carry them.
+
+**Then a player's bug, investigated and parked.** The owner relayed Ліліт's screenshots: «Принесено:» said «🌰 × 1»
+where the bag held 🫐 ×1 and 🌰 ×2. Read off the Pi with the owner's permission (read-only): her four fights, the code
+`7ac11f0`, a silent log, no duplicate walk rows, no second instance; her sequence replayed through the real haul gives
+the right list. Cause not found — the walk's row is deleted at the door. Two fixes offered (count from the bag + a log
+line; a log line only), none picked; the owner: «Цей баг запиши в туду лист після івенту» — `TODO.md` → "Open", the
+2026-10-30 block, with every fact and the Vigor oddity of the same walk.
+
+## Session — 2026-10-27 night → 10-29 (Велесова ніч, designed and built) — *(this commit)*
+
+**Asked.** «Я хочу зробити для своїх тестувальників невеличкий івент на честь Геловіну… Запропонуй мені кілька
+варіантів». Then the owner's own idea (10-27, 22:46): the King falls ill on Halloween, strange notices with
+nonsensical decrees, the cure is a creature's blood, at a km a button to a place left only by dying, blood kept
+outside the bag, the most blood wins. Designed over many rounds of the owner's «уточнити»; built 10-29.
+
+**Decided, in order** (every text and number in `content/spec/event-veles-night.md`):
+- tone «Марення, що темнішає» for three decrees; the cure from 🦇 bats, one at a time, the swarm only in the
+  text; blood in drops in the Crown's flask; waves from the player's level; death takes the bag as in the forest;
+- 10-29 the owner re-set it as **Велесова ніч**: the cave became Veles's abandoned manor at **km 5**; the story
+  joined В (the cup from a manor no list names), the Moon card and 4 (back next autumn). The mythology was
+  checked and told plainly: Veles as cattle god and Boyan's «Велесів внук» are attested; Veles as lord of the
+  dead is a 20th-century reconstruction; «Велесова ніч» is a modern name; the real custom is Діди. Taken:
+  «Маєток Велеса» on screen, the governor who swore to Veles, the willow over the pond (the oak is Perun's);
+  the palace, the innkeeper and the fortune teller speak of it; «Стара травниця» → «Стара ворожка»;
+- opening at dusk, **Sat 31.10 18:00 → Sun 01.11 18:00**; decrees 09:00 / 14:00 / 16:00; themed 12:00 notices
+  on both days (the sun as at dusk, the fortune teller's line; Sunday warns of the close); «Наступної осені
+  шукайте його…» dropped from the finale;
+- a second creature: 🐀 the rabid **rat**, 50/50 with the bat at every depth, the `normal` contract at its level
+  (twice the bat's HP cost per fight, the same bite); blood: the bat ⌈d/2⌉, the rat d; XP 38 / 57;
+- declined: riddles, the double, doors, the unkillable she-bat, the Sunday midway news, a 20%-harder rat, a
+  «big bat».
+
+**Built.** `events.json` (schema v29) and its validator rules (each with a failing test), `EventKeys` (the one
+list of keys, required = rendered), `EventMath` (ROISim), `GameEvent` (every level's line solved at install),
+`EventCreatureRef` (`event:<event>:<creature>:<level>`, read back by `combatEnemy(for:)`), three migrations
+(`event_blood`, `event_notices`, four manor columns), `ManorService`, `ExplorationController+Manor`, the fight's
+no-flee/intro/kill/death, the watchman's notices (`RestNotificationService+Events`, a marker before each push),
+`LeaderboardBoard.blood`, the capital's four lines (the welcome's last sentence split into
+`capital.welcome.tail`), `roi-content spec events`, the digest (`records` and `tuning`). What the build decided
+alone is listed in the spec's §7 (a room's line on entering it, a step costs the walk's Vigor, a fight past
+the close pays no blood, four small new lines).
+
+**Verified.** 498 tests (20 new, `EventTests`); `validate --strict` 0/0; every line rendered through the real
+Lingo in both locales, 0 problems, uk word for word as approved; captions under 1,024 (tavern 569/606, fortune
+≤ ~870 worst case, welcome 295/365). Digest: `records 52aa80e0fc683021` · `tuning c0380e692986ba04` · `spawns`,
+`quests`, `king` unmoved · content hash `76d5ac15` · COMBINED `61645e8f38109e94`.
+
+**Rehearsed** (the 10-24 harness had been emptied by the tmp cleaner, so rebuilt from
+`reference-deploy-rehearsal`: zonky Postgres **15.8** on 55433, a source copy with a `ROI_DRYRUN` hook after Lingo
+and a `DryRunScenarios.swift` calling the real services, a fresh build of 784 s):
+1. an empty database — every migration, the three new ones and the wipe; the tables, the unique indexes
+   (`user_id+event_id`, `user_id+event_id+notice_id`) and both cascades read off `information_schema`;
+2. the Pi's shape — the three migrations unrecorded and their tables and columns dropped, three players and a walk
+   in flight seeded — only the three applied, the walk kept its km 3; 21 checks PASS: the entrance due at km 5 only
+   once open, the gate's refusals (closed / busy), the manor columns persisting, a step one deeper costing Vigor, the
+   fight's creature read back through `combatEnemy(for:)`, the pour, the flask's one row, the notice log's one send,
+   the board's rank, the finale rendered («1-ше місце»), the reload check seeing the manor and its creature, the
+   death's run, the close back at km 5;
+3. a second boot — no migration prepared, the 21 checks again;
+4. a mutant (the pour paying one drop too many) — 5 FAILs and exit 1, then reverted in the copy.
 
 ## Session — 2026-10-27, night (stronger beasts, measured and parked) — `5cbfe36`
 

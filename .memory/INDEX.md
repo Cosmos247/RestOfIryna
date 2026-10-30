@@ -32,6 +32,7 @@ index — one line per entry.** Narrative belongs in `sessions.md` (what happene
   - `spec-sets.md` — a set bonus multiplies its OWN members; set strength is a ladder topped by the 25% ceiling; §5's note (2026-10-05) points at the parked class-sets concept; §2's amendment and second table (2026-10-06): the members climb by the enchant now, so the Forester's flat bonus rots
   - `spec-economy.md` — silver has almost no sink; §2 amended 2026-09-02 by its own measurement; §4 amended 2026-10-10 (the repair halved on live data; the fortune teller joins the sinks table) and 2026-10-24 (the wear softened; the repair back at 50% of value); §7b (2026-10-11) the zlatnyk and the Chancellery, its price printed by `spec economy`; the opening block re-measured 2026-10-23 after the forage change
   - `king.md` — the King's decree chain: 39 decrees, levels 1–25, one open at a time
+  - `event-veles-night.md` — **Велесова ніч (2026-10-29)**, the first holiday: the mythology checked, the story, the schedule (Sat 31.10 → Sun 01.11), every approved uk line, the manor's bats and rats (lines from `roi-content spec events`), what the build decided on its own
 - [`content/lore.md`](../content/lore.md) — the world: families, the three wilderness zones (names and art only since 2026-10-23, not forage), visual reference. `content/bestiary.md` is pre-rebalance reference, marked SUPERSEDED
 
 ## Where the work stands

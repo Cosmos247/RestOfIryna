@@ -56,6 +56,10 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
     case depth
     case distance
     case wealth
+    /// A holiday's flask (2026-10-29): the blood carried out of its manor,
+    /// for the latest holiday that has opened (`EventCatalog.latestOpened`).
+    /// Its tab shows only once one has.
+    case blood
 
     /// Short, stable callback token. Kept separate from `rawValue` so a board
     /// can be renamed without invalidating every button already on a player's
@@ -67,6 +71,7 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
         case .depth:    return "dep"
         case .distance: return "dst"
         case .wealth:   return "wlt"
+        case .blood:    return "bld"
         }
     }
 
@@ -82,6 +87,7 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
         case .distance: return "🚶"
         // Silver's own sign; 💰 is what a player GETS (a reward, a claim).
         case .wealth:   return "🪙"
+        case .blood:    return "🩸"
         }
     }
 
@@ -94,6 +100,7 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
         switch self {
         case .depth, .distance: return "leaderboard.unit.km"
         case .wealth:           return "leaderboard.unit.silver"
+        case .blood:            return "leaderboard.unit.blood"
         case .level, .honor:    return nil
         }
     }
@@ -149,6 +156,7 @@ public enum LeaderboardService {
         // An empty purse has no standing, like a walk never taken: 11 of 37
         // finished registrations held 0 on 2026-10-17, nearly all level 1.
         case .wealth:   return try await userMetricView(page: page, for: user, on: db, metric: \.$silver, tiebreak: \.$level)
+        case .blood:    return try await bloodView(page: page, for: user, on: db)
         }
     }
 
@@ -235,6 +243,46 @@ public enum LeaderboardService {
            let profile = try await ArenaProfile.query(on: db).filter(\.$user.$id == userId).first() {
             mine = LeaderboardEntry(rank: try await better(profile.honor) + 1, name: displayName(user),
                                     value: profile.honor, isViewer: true)
+        }
+        return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
+    }
+
+    // MARK: - Blood (a holiday's flask)
+
+    /// The latest opened holiday's `event_blood`, most blood first. A player
+    /// with none has no standing, like a walk never taken. Shaped like honor:
+    /// its own table, `.with` for the name.
+    private static func bloodView(page requested: Int, for user: User, on db: any Database) async throws -> LeaderboardView {
+        guard let event = EventCatalog.latestOpened() else {
+            return LeaderboardView(rows: [], viewer: nil, page: 1, pageCount: 1)
+        }
+        func board() -> QueryBuilder<EventBlood> {
+            EventBlood.query(on: db).filter(\.$eventId == event.id).filter(\.$total > 0)
+        }
+        let at = place(requested, entries: try await board().count())
+        let page = try await board()
+            .with(\.$user)
+            .sort(\.$total, .descending)
+            .sort(\.$id)
+            .offset(at.offset)
+            .limit(LeaderboardPaging.pageSize)
+            .all()
+
+        let better: (Int) async throws -> Int = { total in
+            try await board().filter(\.$total > total).count()
+        }
+        let rows = try await ranked(page, offset: at.offset, value: \.total, better: better).map {
+            LeaderboardEntry(rank: $0.rank, name: displayName($0.item.user),
+                             value: $0.item.total, isViewer: $0.item.$user.id == user.id)
+        }
+
+        var mine = rows.first(where: { $0.isViewer })
+        if mine == nil {
+            let total = try await EventBlood.total(for: user, eventId: event.id, on: db)
+            if total > 0 {
+                mine = LeaderboardEntry(rank: try await better(total) + 1, name: displayName(user),
+                                        value: total, isViewer: true)
+            }
         }
         return LeaderboardView(rows: rows, viewer: mine, page: at.page, pageCount: at.pageCount)
     }

@@ -27,13 +27,36 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (`5cbfe36`'s hash fill). Under it, unpushed: **`5cbfe36`** (the 10-27 night records: stronger beasts, measured and parked — records only), **`bde0acc`** (`83002a6`'s hash fill), **`83002a6`** (the forest's Defend set by the owner's numbers — content + Swift, schema v28), **`3ddb71e`** (`a0386b1`'s hash fill), **`a0386b1`** (the repair back at ×0.5 — content), **`001212a`** (`cf6e3ea`'s hash fill, and the rewritten history), **`cf6e3ea`** (the gear sheet explains the wear — Swift + locales), **`1c9fce8`** (`6620d39`'s hash fill), **`6620d39`** (a fight wears less — Swift + content, schema v27), **`c2007f8`** (`bac1a70`'s hash fill), **`bac1a70`** (a plot costs materials — Swift + content, schema v26 — carrying the 10-23 22:46 deploy record too, which was written that night and never committed on its own). Under them everything is pushed: `origin/main` = the Pi = **`7ac11f0`** (`34fe88c`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (Велесова ніч — content + Swift + art, schema v29, three migrations). Under it, unpushed: **`4c0ef48`** (`5cbfe36`'s hash fill), **`5cbfe36`** (the 10-27 night records: stronger beasts, measured and parked — records only), **`bde0acc`** (`83002a6`'s hash fill), **`83002a6`** (the forest's Defend set by the owner's numbers — content + Swift, schema v28), **`3ddb71e`** (`a0386b1`'s hash fill), **`a0386b1`** (the repair back at ×0.5 — content), **`001212a`** (`cf6e3ea`'s hash fill, and the rewritten history), **`cf6e3ea`** (the gear sheet explains the wear — Swift + locales), **`1c9fce8`** (`6620d39`'s hash fill), **`6620d39`** (a fight wears less — Swift + content, schema v27), **`c2007f8`** (`bac1a70`'s hash fill), **`bac1a70`** (a plot costs materials — Swift + content, schema v26 — carrying the 10-23 22:46 deploy record too, which was written that night and never committed on its own). Under them everything is pushed: `origin/main` = the Pi = **`7ac11f0`** (`34fe88c`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`7ac11f0`** (the owner pushed 2026-10-23, just before the 22:46 deploy), the commit the Pi runs. Push is the owner's |
-| running on the Pi | **`7ac11f0`**, online since **2026-10-24 05:39** (pm2 restarts 8: the host rebooted at 05:17, DNS was not up, and the boot failed seven times — `Failed to start application`, name resolution then connect timeout — before polling at 05:39; the 22:46 deploy itself is unchanged). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall around 04:00 (09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night; none since 10-18 04:11), none during play. Content schema **v25**, content hash **`30b0d499`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| running on the Pi | **`7ac11f0`**, online since **2026-10-24 05:39** (pm2 restarts 8: the host rebooted at 05:17, DNS was not up, and the boot failed seven times — `Failed to start application`, name resolution then connect timeout — before polling at 05:39; the 22:46 deploy itself is unchanged). Still ONE `[WATCHDOG]` line in the log (10-08 11:47:53, before the limiter fix); `Code: 400` still at 922. The log's 429/502 bursts all fall in the same night hour, ~01:00–01:10 UTC (04:00 Kyiv in summer time: 09-16, 09-27, 10-09, 10-18 — 194 × 502 and 38 × 429 that night; and **10-26 03:10–03:11 Kyiv, 207 × 502**, the first night after the clocks went back on 10-25 — read 2026-10-28 19:28), none during play; no freeze, the watchdog did not fire. Content schema **v25**, content hash **`30b0d499`**; the SDK's rate limiter is OFF, `PollWatchdog` runs, the Telegram client is HTTP/1.1. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
 | waiting for a restart | **Five changes, one restart** (schema v28 — a restart, not a `/reload`): **the forest's Defend set by the owner's numbers** (2026-10-27, `83002a6`): «🛡 Парирувати» 40% + DEF ×2, «💨 Ухилитися» dodge ×2 + a 45% knife, «🌀 Магічний бар'єр» 30% off + a 30% spark, «🌑 Тінь лісу»'s knife held at 15% by its own number (`.memory/rebalance.md` → "The forest's Defend, set by numbers"); **a plot costs materials** (2026-10-24, `bac1a70`): each type its own four-material recipe, the player's Nth plot ×N, the first without 🧱 and 🔩 (`spec-progression.md` §7); **a fight wears less** (2026-10-24, `6620d39`): a win ½ (one point in half the fights), a flee 1, a death 2, where it was 1 / 2 / 3 (`.memory/rebalance.md` → "A fight wears less"); **the gear sheet explains the wear** (2026-10-24, `cf6e3ea`): «🔧 Як зношується» under the profile's «🛡 Спорядження», its numbers read from the data; **the armour repair back at ×0.5** (2026-10-24, `a0386b1`): a point 1 / 1.6 / 2.5 / 3 again, the set from zero 405, the weapon 1 (`.memory/rebalance.md` → "The repair back at ×0.5"). Before them, the twelve 2026-10-20/23 changes went live at the 2026-10-23 22:46 restart — the forest past km 49 (`1b99a3f`), the hub's line (`266ad57`), the keyboard fix (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра» (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the manor door's «Принесено» (`ea52cf6`, with `AddExplorationHaul`, verified on the table), the archer's «💨 Ухилитися» (`e9bdb78`) and clay at 24 / 12 (`34fe88c`); `.memory/sessions.md` → "Deploy — 2026-10-23 22:46" |
 
-### Where the last sessions stopped (2026-10-13 → 10-27)
+### Where the last sessions stopped (2026-10-13 → 10-30)
+
+**10-30 — Велесова ніч reworked: the reveal is the palace's, the flask is collected there (this commit, NOT LIVE).**
+The owner: the reveal should come when the player walks into the palace, and a flask must be collected to explain
+itself — but the player has to be told. Now 18:00 sends ONE message (the scribe summons every governor to the
+palace; the flask is not named — struck by the owner); the palace, while the manor is open and the flask not taken, tells the story and
+the scribe offers «🩸 Взяти флягу» (`CapitalController+Flask`, the empty `event_blood` row IS the flask); a walk
+without it sees the manor at km 5 with the way to the palace instead of the button; Sunday's noon line tells a
+player without a flask to fetch it. Then «Велесовий гарбуз»: one manor step in ten finds it instead of a creature
+(at that depth), +25% of max HP and Vigor at once, text «Дати гарбуза» (the owner's pick). Last, the owner's three
+pictures, only while the holiday runs: the capital map (square and streets), the empty palace, the manor's first
+screen (`Assets/events/veles_night_2026/`, `EventArt`) — the three JPGs must be in the commit. Quiz: the km-5 hint and the Sunday line picked; the button and the 18:00 text
+left unanswered, then built from the sample on «Давай зробимо це». 501 tests, `validate --strict` 0/0, every line
+through the real Lingo in both locales; `records` and the content hash moved. Spec §4.3; `.memory/sessions.md`.
+
+**10-27 night → 10-29 — Велесова ніч, designed and built (this commit, NOT LIVE).** The owner asked for a small
+Halloween event for the testers, then gave its idea: the King falls ill, strange decrees, the cure is a creature's
+blood from a place left only by dying, blood kept outside the bag, the most blood wins. Over many rounds it became
+Велесова ніч: decrees Sat 31.10 09:00 / 14:00 / 16:00, themed 12:00 notices, the reveal at 18:00, Veles's
+abandoned manor at km 5 from Sat 18:00 to Sun 18:00 (bats and rats 50/50, their level following the player's,
+blood into a flask, 38 / 57 XP), the «🩸 Кров для Короля» board, the per-reader finale. Built and verified the
+same night (498 tests, `validate --strict` 0/0, every line through the real Lingo; reworked 10-30, above) and rehearsed on a scratch
+Postgres 15.8 (the three migrations on a Pi-shaped database, 21 checks, a mutant caught) — `.memory/sessions.md`. **It needs the owner's commit, push and a restart
+before Sat 08:30.** Everything: `content/spec/event-veles-night.md`.
 
 **10-27, night — stronger beasts, measured and parked.** The owner asked to raise the beasts' levels, keeping the
 first ones. The step was measured on the week's live fights; 82% of them are with the first four beasts, which no
@@ -214,8 +237,15 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
+**Велесова ніч must be live before Sat 31.10 08:30** — the first decree goes out at 09:00. It is committed (this commit,
+over the 10-27 records' `5cbfe36` + `4c0ef48`); after the owner's push, ONE restart ships it together with the five
+changes below (schema v29: the binary and the content together; three migrations — `CreateEventBlood`,
+`CreateEventNotices`, `AddManorToExplorationState`; verify the TABLES after the restart). Its walk list is
+`TODO.md` → "Added 2026-10-29" (the palace's reveal and the flask added 10-30); the board SQL for the finale's
+zlatnyks is `.memory/live-ops.md` → "Велесова ніч".
+
 **The plot cost, the softer wear, the gear sheet's wear block, the repair price and the Defend numbers wait for the owner's push and restart** (`7ac11f0` + the unpushed commits;
-schema v28, so the Pi needs the new binary and the new content together — a `/reload` of this bundle onto the
+schema v28 — v29 with the holiday — so the Pi needs the new binary and the new content together — a `/reload` of this bundle onto the
 running binary is refused by the handshake). After it: build a first plot on a fresh account (no 🧱 / 🔩 asked), a
 second with one material short (the modal, the card redrawn); win a few fights and watch the kit lose a point in
 about half of them, a flee one, a death two; read «🔧 Як зношується» on «🛡 Спорядження»; at the Master a hood missing 10 points costs 10 🪙 (5 before);
@@ -249,6 +279,8 @@ the bot alive?").
 was fixed 10-21 and a find that half fits (one free slot, two found, nothing taken) 10-22; both live since 10-23 22:46; what is left in "Open" are questions for the owner (4).
 
 **4 — Questions waiting on the owner** — `TODO.md` → "Open, decided but not done":
+- **the 10-30 block, AFTER THE HOLIDAY:** «Принесено:» undercounted Ліліт's walk (🌰 × 1 for 🫐 ×1 + 🌰 ×2), cause NOT
+  found, every fact recorded; count from the bag + a log line, or a log line only — offered, not picked;
 - **the 10-27 block:** step 2 of the Defend work, stronger beasts — measured 10-27 night and PARKED by the owner
   («ми повернемось до них пізніше»). The first four beasts are kept; A is +1 from the moose (№5), B is +1 then +2
   from the wolf, C is +2; plus the level shift for outgrown beasts (6 / 5 / 4%). Recommended A and 6%, nothing
@@ -315,7 +347,9 @@ is the one place the current baseline is kept**; the superseded ones are in `.me
 "Digest baselines — superseded". **The tree differs since 2026-10-24** (a plot costs materials, a fight wears
 less, the repair is back at ×0.5 and, since 10-27, the Defend numbers; schema v28, waiting for a restart): `records
 f1501e3c1c9dc759` (the plot cost and the repair price), `tuning 6b67472ebbcad035` (the wear and the Defend), content
-hash `a3f69d76` (COMBINED `6b4053507c3e34fb`);
+hash `a3f69d76` (COMBINED `6b4053507c3e34fb`); **and since 2026-10-29 (Велесова ніч, schema v29, this commit; the
+10-30 rework and the pumpkin moved `records` and the hash): `records 7c252b0e1861e91c` · `tuning c0380e692986ba04` ·
+content hash `42ec1955` (COMBINED `a687497d827739b9`)**;
 `spawns`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
@@ -332,7 +366,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 478 tests, ~5s
+swift test                                   # 501 tests, ~5s
 ```
 
 

@@ -182,12 +182,18 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         context.session.routerName = routerName
         try await context.session.saveAndCache(in: context.db)
 
+        if state.isInManor {
+            try await showManor(context: context, state: state, lead: nil)
+            return
+        }
+
         let lingo = context.lingo
         let locale = context.session.locale
         let intro = lingo.localize("exploration.resumed", locale: locale)
         let body = "\(intro)\n\n\(renderStatusCard(user: context.session, state: state, lingo: lingo, locale: locale))"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: body, parseMode: .html, replyMarkup: markup)
+        try await offerManorIfDue(context: context, state: state)
     }
 
     /// Start a fresh active expedition at km 0. Called from the mode picker
@@ -493,6 +499,10 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return true
         }
         if try await guardInCombat(context: context, state: state) { return true }
+        if state.isInManor {
+            try await manorStepForward(context: context, state: state)
+            return true
+        }
 
         state.moveTo(km: state.stepsDeep + 1)
         let priorVisits = state.visitCount(state.stepsDeep)
@@ -536,6 +546,10 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return true
         }
         if try await guardInCombat(context: context, state: state) { return true }
+        if state.isInManor {
+            try await manorRefuseStepBack(context: context, state: state)
+            return true
+        }
 
         if state.stepsDeep <= 1 {
             try await handleHomeReached(context: context, state: state)
@@ -627,7 +641,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// CombatController, and send the intro screen with the class-flavoured
     /// keyboard. Called from the step handlers when `rollStep` rolls an
     /// encounter in active mode.
-    private func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy,
+    func handOffToCombat(context: Context, state: ExplorationState, enemy: Enemy,
                                  starvationHpLost: Int) async throws {
         let uses = CombatService.initialUsesForUser(context.session)
         state.beginCombat(enemyId: enemy.id, hp: enemy.hp, specialAtkUses: uses.atk, specialDefUses: uses.def, superUses: uses.sup,
@@ -664,6 +678,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let text = "\(narrative)\n\n\(status)"
         let markup = generateControllerKB(session: context.session, lingo: lingo)
         try await context.bot.sendMessage(session: context.session, text: text, parseMode: .html, replyMarkup: markup)
+        try await offerManorIfDue(context: context, state: state)
     }
 
     // MARK: - Bag
@@ -836,7 +851,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// Static death helper so CombatController can reuse the respawn sequence
     /// without duplicating it. The wipe itself is `InventoryEntry.wipeOnDeath`,
     /// the one the passive report calls too.
-    static func handleDeath(context: Context, causeNarrative: String) async throws {
+    static func handleDeath(context: Context, causeNarrative: String, manor: ManorDeath? = nil) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
 
@@ -854,14 +869,32 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: loss.tier), locale: locale) } ?? loss.itemId
             return "   \(icon)\(name) ×\(loss.quantity)"
         }
-        let loss = lostLines.isEmpty
-            ? lingo.localize("exploration.death.loss_none", locale: locale)
-            : lingo.localize("exploration.death.loss", locale: locale) + "\n" + lostLines.joined(separator: "\n")
-
-        let deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: [
-            "cause": causeNarrative,
-            "loss": loss
-        ])
+        let deathText: String
+        if let manor {
+            // A holiday's manor (2026-10-29): the flask is named before the bag,
+            // because it is what the death did NOT take.
+            let keys = manor.event.keys
+            let total = (try? await EventBlood.total(for: context.session, eventId: manor.event.id, on: context.db)) ?? 0
+            let blood = "🩸 " + lingo.localize(keys.deathBlood, locale: locale, interpolations: [
+                "run": "\(manor.run)", "total": "\(total)"
+            ])
+            let loss = lostLines.isEmpty
+                ? lingo.localize(keys.deathLossNone, locale: locale)
+                : lingo.localize(keys.deathLoss, locale: locale) + "\n" + lostLines.joined(separator: "\n")
+            deathText = "💀 " + lingo.localize(keys.death, locale: locale, interpolations: [
+                "cause": causeNarrative,
+                "blood": blood,
+                "loss": loss
+            ])
+        } else {
+            let loss = lostLines.isEmpty
+                ? lingo.localize("exploration.death.loss_none", locale: locale)
+                : lingo.localize("exploration.death.loss", locale: locale) + "\n" + lostLines.joined(separator: "\n")
+            deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: [
+                "cause": causeNarrative,
+                "loss": loss
+            ])
+        }
         let mainCtrl = Controllers.mainController
         try await mainCtrl.showMainMenu(context: context, text: deathText)
         context.session.routerName = mainCtrl.routerName
@@ -870,7 +903,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Rendering helpers
 
-    fileprivate func renderStatusCard(user: User, state: ExplorationState, lingo: Lingo, locale: String) -> String {
+    func renderStatusCard(user: User, state: ExplorationState, lingo: Lingo, locale: String) -> String {
         let depthLabel = lingo.localize("exploration.depth_label", locale: locale)
         let starving = VigorService.isStarving(user)
             ? " · " + lingo.localize("vigor.starving", locale: locale)
@@ -895,7 +928,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     /// The hunger tick's own line, or nil when hunger took nothing. Every
     /// caller that can show HP leaving the player goes through this.
-    fileprivate func narrateStarvation(_ hpLost: Int, lingo: Lingo, locale: String) -> String? {
+    func narrateStarvation(_ hpLost: Int, lingo: Lingo, locale: String) -> String? {
         guard hpLost > 0 else { return nil }
         // 🥀 prepended here, not in the template — Lingo drops interpolations
         // that follow a multi-UTF-16 emoji. ❤️ rides inside the value for the
@@ -1077,6 +1110,14 @@ extension ExplorationController {
         let ctrl = Controllers.explorationController
         let locale = context.session.locale
         let chatId = TGChatId.chat(message.chat.id)
+
+        // A holiday manor's gate (2026-10-29): the entrance, its question and
+        // its two answers. `explore:` so every controller's catch-all forwards
+        // it here, wherever the player stands when they tap an old one.
+        if data.hasPrefix("explore:manor") {
+            try await ctrl.onManorButton(context: context, query: query, message: message, data: data)
+            return true
+        }
 
         // Dismiss the bag view.
         if data == "explore:back" {

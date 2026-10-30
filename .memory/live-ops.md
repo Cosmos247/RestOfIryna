@@ -296,3 +296,57 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | «Руки майстра» — «🔨 Виготовити річ», how? *(asked 2026-10-22; the line reads «🔨 Викувати щось у Майстерні» since the 2026-10-23 22:46 restart, the owner's pick)* | Only a WORKSHOP craft counts (estate T3, which the decree before it demands): a kitchen dish is the other decree's event, and the weapon or bag upgrade and salvage are not crafts. Today the one craftable workshop recipe is 🔳 Залізний злиток from 10 🔩 — 🏰 Маєток → 🏠 Дім → 🛠 Майстерня → 🔳 Залізний злиток → 🔨 Створити, iron drawn from bag + warehouse. Counts only from when the decree opens; 100 🪙. The ingot is the weapon ladder's from tier 3. Iron: the row «Where iron drops» | `KingService.record(.crafted)` from `CraftingService.craft`; `recipes.json`; `king.json` |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.
+
+## Велесова ніч (Sat 31.10 18:00 → Sun 01.11 18:00, 2026) — reading the holiday
+
+The design: `content/spec/event-veles-night.md`. Run these the way the snapshot SQL runs (scp the file to
+`/tmp`, `sudo -n -u postgres psql -p 5433 -d ArtaniaDB -f - < /tmp/file.sql`). All read-only.
+
+The board as the finale reads it — competition rank, so ties share a place (the top three get zlatnyks by
+hand, `## Crediting zlatnyks` above; the watchman announces the credit as usual):
+
+```sql
+SELECT u.nickname, u.telegram_id, b.total,
+       rank() OVER (ORDER BY b.total DESC) AS place
+FROM event_blood b JOIN users u ON u.id = b.user_id
+WHERE b.event_id = 'veles_night_2026' AND b.total > 0
+ORDER BY b.total DESC, b.id
+LIMIT 10;
+```
+
+Who has been sent what (a marker is written before the push, so a blocked chat counts as sent):
+
+```sql
+SELECT notice_id, count(*) FROM event_notices
+WHERE event_id = 'veles_night_2026' GROUP BY 1 ORDER BY min(created_at);
+```
+
+Who has collected the flask at the palace (2026-10-30: «🩸 Взяти флягу» makes an EMPTY row, so a row is a flask
+and `total > 0` is a player who brought blood — the board and the finale read only the latter):
+
+```sql
+SELECT count(*) AS flasks, count(*) FILTER (WHERE total > 0) AS with_blood
+FROM event_blood WHERE event_id = 'veles_night_2026';
+```
+
+Who is inside right now, how deep, and what this descent has poured:
+
+```sql
+SELECT u.nickname, e.manor_depth, e.manor_run_blood, e.combat_enemy_id, e.updated_at
+FROM exploration_state e JOIN users u ON u.id = e.user_id
+WHERE e.manor_event_id IS NOT NULL;
+```
+
+The manor's fights in `fight_log` — their `enemy_id` is `event:veles_night_2026:<bat|rat>:<level>`, their
+`depth_km` the entrance km (5):
+
+```sql
+SELECT split_part(enemy_id, ':', 3) AS creature, outcome, count(*), round(avg(rounds), 1) AS rounds
+FROM fight_log WHERE enemy_id LIKE 'event:veles_night_2026:%'
+GROUP BY 1, 2 ORDER BY 1, 2;
+```
+
+**Reading traps:** a fight that outlasts the 18:00 close pays no blood (the gate shut at the hour the finale
+names), so the board at 18:00 is the final one. A player still inside at the close is walked out at their
+next tap, not by the watchman.
+

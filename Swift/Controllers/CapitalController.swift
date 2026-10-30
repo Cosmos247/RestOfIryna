@@ -443,10 +443,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// message shape in both cases. Goes through `sendCachedPhoto` so
     /// the file_id cache applies (photo is kept in chat history).
     public static func sendWelcome(toUser user: User, bot: TGBot, lingo: Lingo) async throws {
-        let text = lingo.localize("capital.welcome", locale: user.locale)
+        // The last sentence is the King watching over the city — or, while a
+        // holiday says he is ill (2026-10-29), the raving from his windows.
+        let tailKey = EventCatalog.running()?.keys.welcomeTail ?? "capital.welcome.tail"
+        let text = lingo.localize("capital.welcome", locale: user.locale) + " "
+            + lingo.localize(tailKey, locale: user.locale)
         let markup = Controllers.capitalController.generateControllerKB(session: user, lingo: lingo)
+        // A holiday's own map while it runs (2026-10-30, `EventArt`).
         _ = try await sendCachedPhoto(
-            assetPath: "\(projectPath)/Assets/capital/welcome.jpg",
+            assetPath: EventArt.path(.capital, usual: "\(projectPath)/Assets/capital/welcome.jpg"),
             caption: text,
             replyMarkup: markup,
             toUser: user,
@@ -464,8 +469,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let body  = lingo.localize(street.bodyKey, locale: locale)
         let text  = "<b>\(title)</b>\n\n\(body)"
 
+        // The streets carry the square's map (one image in three files), so a
+        // holiday's map replaces it here too (2026-10-30, `EventArt`).
         _ = try await sendCachedPhoto(
-            assetPath: "\(projectPath)/Assets/capital/\(street.assetName).jpg",
+            assetPath: EventArt.path(.capital, usual: "\(projectPath)/Assets/capital/\(street.assetName).jpg"),
             caption: text,
             replyMarkup: generateControllerKB(session: context.session, lingo: lingo),
             toUser: context.session,
@@ -2564,13 +2571,18 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // registered whichever street is on screen.
         let markup: TGReplyMarkup = .inlineKeyboardMarkup(
             palaceKeyboard(complete: standing?.isComplete ?? false, lingo: context.lingo, locale: context.session.locale))
+        // While a holiday says the King is ill, the throne stands empty in
+        // the art too (2026-10-30, `EventArt`).
         _ = try await sendCachedPhoto(
-            assetPath: "\(projectPath)/Assets/capital/palace.jpg",
+            assetPath: EventArt.path(.palace, usual: "\(projectPath)/Assets/capital/palace.jpg"),
             caption: text,
             replyMarkup: markup,
             toUser: context.session,
             bot: context.bot
         )
+        // While a holiday's manor is open, the scribe tells its story under the
+        // card and hands the flask over (2026-10-30, `CapitalController+Flask`).
+        try await sendFlaskRevealIfDue(context: context)
     }
 
     /// «✅ Доповісти Королю» once the decree is done, and «🟡 Канцелярія» always
@@ -2595,8 +2607,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         }
         // The decree itself is `KingCard`, shared with the journal and the
         // charter so the three cannot drift apart.
+        // While a holiday says the King is ill (2026-10-29) the throne room is
+        // empty and the scribe signs — the decree below is still his.
+        let bodyKey = EventCatalog.running()?.keys.palace ?? Location.palace.bodyKey
         return "<b>\(title)</b>\n\n"
-            + lingo.localize(Location.palace.bodyKey, locale: locale) + "\n\n"
+            + lingo.localize(bodyKey, locale: locale) + "\n\n"
             + KingCard.block(standing, for: session, lingo: lingo, locale: locale)
     }
 
@@ -3726,7 +3741,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     private func renderFortuneEntryBody(session: User, lingo: Lingo) -> String {
         let locale = session.locale
         let title = lingo.localize(Location.fortune.titleKey, locale: locale)
-        let intro = lingo.localize("capital.fortune.intro", gender: session.gender, locale: locale)
+        var intro = lingo.localize("capital.fortune.intro", gender: session.gender, locale: locale)
+        // While a holiday's manor is open (2026-10-29) the fortune teller has
+        // one more thing to say before the cards.
+        if let event = EventCatalog.open() {
+            intro += "\n\n<i>" + lingo.localize(event.keys.fortune, gender: session.gender, locale: locale) + "</i>"
+        }
         var lines: [String] = ["<b>\(title)</b>", "", intro, ""]
 
         let cooldownLeft = session.fortuneCooldownRemaining()
@@ -4054,7 +4074,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
-        let body  = lingo.localize(Location.tavern.bodyKey, gender: context.session.gender, locale: locale)
+        let body  = Self.tavernBody(session: context.session, lingo: lingo)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let inline = tavernEntryKeyboard(lingo: lingo, locale: locale)
         _ = try await sendCachedPhoto(
@@ -4086,11 +4106,21 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         ])
     }
 
+    /// The tavern's description and the innkeeper's greeting — and, while a
+    /// holiday's manor is open (2026-10-29), the rumour he passes on after it.
+    static func tavernBody(session: User, lingo: Lingo) -> String {
+        var body = lingo.localize(Location.tavern.bodyKey, gender: session.gender, locale: session.locale)
+        if let event = EventCatalog.open() {
+            body += "\n\n<i>" + lingo.localize(event.keys.tavern, gender: session.gender, locale: session.locale) + "</i>"
+        }
+        return body
+    }
+
     private func editToTavernEntry(messageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
         let title = lingo.localize(Location.tavern.titleKey, locale: locale)
-        let body  = lingo.localize(Location.tavern.bodyKey, gender: context.session.gender, locale: locale)
+        let body  = Self.tavernBody(session: context.session, lingo: lingo)
         let text  = "<b>\(title)</b>\n\n\(body)"
         let keyboard = tavernEntryKeyboard(lingo: lingo, locale: locale)
         await editTraderScreen(messageId: messageId, isPhoto: isPhoto, context: context, text: text, keyboard: keyboard)

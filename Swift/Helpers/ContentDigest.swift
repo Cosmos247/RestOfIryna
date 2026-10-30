@@ -157,6 +157,25 @@ enum ContentDigest {
         // The Treasury (2026-10-11): what each entry does and what it costs in
         // zlatnyks. A price is a balance number like any other here.
         for item in TreasuryCatalog.items { digest.combine("treasury \(item.id):\(item.kind)@\(item.price)") }
+        // The holidays (2026-10-29): when each runs, where its manor stands and
+        // what fights in it at what price. The lines the creatures fight are
+        // derived from the tuning and replayed in that half.
+        for event in EventCatalog.all {
+            let dto = event.dto
+            digest.combine("event \(dto.id) \(event.prelude.timeIntervalSince1970)/\(event.opens.timeIntervalSince1970)/\(event.ends.timeIntervalSince1970) km\(dto.entranceKm) L\(dto.creatureLevelOffset)")
+            for c in dto.creatures {
+                digest.combine("\(c.id) \(c.icon) \(c.archetype) hp\(c.hpScale) atk\(c.attackScale) xp\(c.xpReward) /\(c.bloodDivisor) w\(c.weight)")
+            }
+            for room in dto.rooms { digest.combine("room \(room.id)@\(room.fromDepth)") }
+            // The finds (2026-10-30): a chance a step and what each puts back.
+            for find in dto.findList {
+                digest.combine("find \(find.id) \(find.icon) p\(find.chance) hp\(find.hpShare) v\(find.vigorShare)")
+            }
+            for notice in event.notices {
+                digest.combine("notice \(notice.dto.id) \(notice.dto.kind) \(notice.dto.icon) \(notice.at.timeIntervalSince1970)-\(notice.until.timeIntervalSince1970)")
+            }
+            for day in dto.rollovers { digest.combine("rollover \(day.day) \(day.id) \(day.icon)") }
+        }
 
         for listing in TraderCatalog.all {
             digest.combine("\(listing.itemId) s\(listing.sellPacketQty)@\(listing.sellPacketSilver) b\(listing.buyPacketQty)@\(listing.buyPacketSilver)")
@@ -1001,6 +1020,28 @@ enum ContentDigest {
             let date = Date(timeIntervalSince1970: epoch)
             d.combine(GameDay.stamp(date))
             d.combine(GameDay.secondsUntilNextRollover(from: date))
+        }
+
+        // MARK: the holidays' creatures (2026-10-29)
+        //
+        // A manor creature's line is an archetype's contract solved against
+        // the reference characters (`EventMath.line`), so a tuning edit moves it
+        // without touching `events.json`. Replayed through the installed
+        // snapshot: the level a depth fights at, the line there, the blood.
+        for event in EventCatalog.all {
+            d.combine("event \(event.id)")
+            for creature in event.dto.creatures {
+                for (playerLevel, depth) in [(1, 1), (5, 3), (13, 1), (13, 10), (19, 7), (40, 30)] {
+                    let level = event.creatureLevel(playerLevel: playerLevel, depth: depth)
+                    let ref = EventCreatureRef(eventId: event.id, creatureId: creature.id, level: level)
+                    if let enemy = event.enemy(for: ref) {
+                        d.combine("\(ref.enemyId) \(enemy.hp)/\(enemy.attack)/\(enemy.defense)/\(enemy.crit)/\(enemy.dodge)/\(enemy.accuracy) xp\(enemy.xpReward)")
+                    } else {
+                        d.combine("\(ref.enemyId) unresolved")
+                    }
+                    d.combine(event.blood(creatureId: creature.id, depth: depth))
+                }
+            }
         }
 
         return d.hexDigest

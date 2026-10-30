@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain) — the rules are below, under "Content and tuning are data" |
+| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -82,7 +82,8 @@ Swift/
 
 Per-file annotations: `.memory/file-map.md` (canonical, updated per session).
 
-`Localizations/` — `en.json`, `uk.json`. `Assets/` — the artwork (registration, estate, capital, travel).
+`Localizations/` — `en.json`, `uk.json`. `Assets/` — the artwork (registration, estate, capital, travel, and
+`events/<event>/` — a holiday's own art, sent only while it runs: `EventArt`).
 `content/data/` — the game itself as JSON. `content/lore.md` — the world (families, zones, visual reference); `content/bestiary.md` and `recipes.md` are pre-rebalance reference docs, the bestiary one marked SUPERSEDED.
 
 ## Game and Content Rules
@@ -147,7 +148,7 @@ a thing it must describe ALL of it: both lines are built from the data (`bonusOu
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never
 goes around it. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening|king>`, never typed, so a specification
+<progression|gates|bestiary|items|sets|economy|opening|king|events>`, never typed, so a specification
 cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
 `-c release`.
 
@@ -410,6 +411,23 @@ lock a material out of a band again — `ZoneTests` pins it. `spec-bestiary.md` 
 what was eaten of it (`ExpeditionHaul`), then 🪙 silver; what the bag refused is not listed (the passive report
 keeps its own). **A new way for a walk to fill the bag must feed `state.recordHaul`**, or the door undercounts
 it. Auto-memory `project-active-walk-brought`.
+
+### Holidays (`events.json`)
+
+**A holiday's manor is the walk's own row** (2026-10-29, Велесова ніч, `content/spec/event-veles-night.md`):
+`exploration_state.manor_event_id` marks a descent, so the walk's keyboard, bag and guards carry over. It is
+left by dying or by the close — «🔙» and a typed flee are refused, `/start` redraws it. Its creature fights as
+`event:<event>:<creature>:<level>` (`EventCreatureRef`) and is read back ONLY through
+`ExplorationState.combatEnemy(for:)`; its strength follows the PLAYER's level (`EventMath`) — the one
+exception to the estate-tier rule, on the owner's word — solved once per level at install (`GameEvent`).
+**The flask is not the bag**: blood lives in `event_blood`, which a death never touches. **It is collected in
+person** (2026-10-30, the owner): the opening only summons everyone to the palace, where the story is told and
+«🩸 Взяти флягу» makes the empty row (`CapitalController+Flask`) — the row IS the flask, and the gate refuses a walk
+without one (`ManorService.Refusal.noFlask`). The button's callback lives in `MainController`, whose default
+deletes the message. A notice goes out
+once — its `event_notices` marker is written BEFORE the push. Every line a holiday prints is
+`EventKeys.required`, which the validator requires and the bot renders through; times are data
+(`/reload`), text is Lingo (restart), and the km written into the copy must move with `entranceKm`.
 
 ### Combat
 

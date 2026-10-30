@@ -44,6 +44,10 @@ public enum LiveReferenceCheck {
         case stance
         case quest
         case fortuneCard
+        /// A holiday a walk is inside (`exploration_state.manor_event_id`,
+        /// 2026-10-29). Dropping it would strand the player in a manor whose
+        /// rules no longer exist.
+        case event
     }
 
     /// Distinct ids one live column currently holds.
@@ -84,14 +88,26 @@ public enum LiveReferenceCheck {
             .plotType: Set(bundle.plots?.types.map(\.type) ?? []),
             .stance: Set(bundle.tuning?.combat.stances.byId.map(\.id) ?? []),
             .quest: Set(bundle.quests?.pools.flatMap { $0.quests.map(\.id) } ?? []),
-            .fortuneCard: Set(bundle.fortune?.cards.map(\.id) ?? [])
+            .fortuneCard: Set(bundle.fortune?.cards.map(\.id) ?? []),
+            .event: Set(bundle.events?.events.map(\.id) ?? [])
         ]
+        // A holiday's creature fights under `event:<event>:<creature>:<level>`
+        // (`EventCreatureRef`): it is live while its holiday still names that
+        // creature, at any level.
+        let eventCreatures = Set((bundle.events?.events ?? []).flatMap { event in
+            event.creatures.map { "\(event.id):\($0.id)" }
+        })
+        func resolves(_ id: String, as kind: Kind, in roster: Set<String>) -> Bool {
+            if roster.contains(id) { return true }
+            guard kind == .enemy, let ref = EventCreatureRef(enemyId: id) else { return false }
+            return eventCreatures.contains("\(ref.eventId):\(ref.creatureId)")
+        }
         var problems: [Dangling] = []
         for column in live {
             let roster = known[column.kind] ?? []
             // Sorted so the report reads the same on every run — a reload that
             // is refused twice should say the same thing twice.
-            for id in Set(column.ids).sorted() where !roster.contains(id) {
+            for id in Set(column.ids).sorted() where !resolves(id, as: column.kind, in: roster) {
                 problems.append(Dangling(table: column.table, column: column.column,
                                          kind: column.kind, id: id))
             }

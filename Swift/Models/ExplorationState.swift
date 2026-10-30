@@ -186,6 +186,28 @@ final public class ExplorationState: Model, @unchecked Sendable {
     @OptionalField(key: "haul")
     public var haulJSON: String?
 
+    // MARK: - A holiday's manor (2026-10-29)
+
+    /// The holiday whose manor this walk is inside, or nil in the forest. Set
+    /// at the gate (`ManorService.enter`), cleared by the close; a death ends
+    /// the row. `content/spec/event-veles-night.md`.
+    @OptionalField(key: "manor_event_id")
+    public var manorEventId: String?
+
+    /// The depth reached in the manor — the creature now fought stands here.
+    @OptionalField(key: "manor_depth")
+    public var manorDepth: Int?
+
+    /// The blood this descent has put in the flask, for the manor screen and
+    /// the death screen. The flask itself is `EventBlood`.
+    @OptionalField(key: "manor_run_blood")
+    public var manorRunBlood: Int?
+
+    /// The holiday whose entrance this walk was already shown, so passing the
+    /// entrance km again does not show it twice. The button stays in the chat.
+    @OptionalField(key: "manor_offered")
+    public var manorOffered: String?
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -217,6 +239,10 @@ final public class ExplorationState: Model, @unchecked Sendable {
         self.combatFleeFails = nil
         self.combatTallyJSON = nil
         self.haulJSON = nil
+        self.manorEventId = nil
+        self.manorDepth = nil
+        self.manorRunBlood = nil
+        self.manorOffered = nil
     }
 }
 
@@ -388,7 +414,31 @@ extension ExplorationState {
     /// `estate:` callback to `MainController`, which deletes it.
     public func combatEnemy(for user: User) -> Enemy? {
         guard let enemyId = combatEnemyId else { return nil }
+        // A holiday's manor creature (2026-10-29) carries its level in its id
+        // and is solved for it; it never scales with the estate
+        // (`content/spec/event-veles-night.md` §5).
+        if EventCreatureRef(enemyId: enemyId) != nil {
+            return EventCatalog.enemy(enemyId)
+        }
         return EnemyCatalog.find(enemyId)?.scaled(forEstateTier: user.estateLevel)
+    }
+
+    /// True while the walk is inside a holiday's manor.
+    public var isInManor: Bool { manorEventId != nil }
+
+    /// Step through the manor's gate: depth 0, an empty run. Caller saves.
+    public func enterManor(_ eventId: String) {
+        manorEventId = eventId
+        manorDepth = 0
+        manorRunBlood = 0
+    }
+
+    /// Back out on the forest path at the entrance km — the close walks the
+    /// player out. Caller saves.
+    public func leaveManor() {
+        manorEventId = nil
+        manorDepth = nil
+        manorRunBlood = nil
     }
 
     /// Stamp the combat fields and initialise the per-fight technique

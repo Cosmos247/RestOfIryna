@@ -42,6 +42,7 @@ public enum ContentValidator {
         issues += validateKingChain(bundle)
         issues += validateTrainingGround(bundle)
         issues += validateTreasury(bundle)
+        issues += validateEvents(bundle)
         if let localizations {
             issues += validateLocalization(bundle, localizations)
         }
@@ -1430,6 +1431,15 @@ public enum ContentValidator {
             requireKey("treasury.item.\(item.id)", file: "treasury.json", path: "items[\(index)]", id: item.id)
         }
 
+        // A holiday's every line (2026-10-29): the list is `EventKeys.required`,
+        // which is also what the watchman, the walk, the fight and the capital
+        // render through.
+        for (index, event) in (bundle.events?.events ?? []).enumerated() {
+            for required in EventKeys.required(for: event, at: index) {
+                requireKey(required.key, file: "events.json", path: required.path, id: event.id)
+            }
+        }
+
         // Every rung the innkeeper teaches has its OWN line, because the copy is
         // written per dish rather than per mechanism. Missing it would print the
         // raw key stem at the player, so this is an error and the render site
@@ -2704,6 +2714,191 @@ public enum ContentValidator {
             if item.price < 1 {
                 fail(path + ".price", "treasury.price_not_positive", "price is \(item.price) — a free entry is a gift, not a sale",
                      id: item.id)
+            }
+        }
+        return issues
+    }
+
+    /// `events.json` — the holidays (2026-10-29). Each rule has a failing case
+    /// in `EventTests`. The text is required in the locale pass below, through
+    /// `EventKeys.required`, the same list the bot renders from.
+    private static func validateEvents(_ bundle: ContentBundle) -> [ContentIssue] {
+        guard let file = bundle.events else { return [] }
+        let name = "events.json"
+        var issues: [ContentIssue] = []
+        func fail(_ path: String, _ rule: String, _ message: String, id: String?) {
+            issues.append(.init(severity: .error, file: name, path: path, id: id, rule: rule, message: message))
+        }
+        // Ids ride in callback data (`explore:manor:<event>`, 64 bytes at most),
+        // in a fight's enemy id and in locale keys, so they stay short and plain.
+        func plain(_ id: String, max: Int) -> Bool {
+            !id.isEmpty && id.count <= max
+                && !id.unicodeScalars.contains { !("a"..."z").contains($0) && !("0"..."9").contains($0) && $0 != "_" }
+        }
+
+        issues += duplicates(file.events.map(\.id), file: name, collection: "events")
+        let archetypes = Set(bundle.enemyArchetypes.map(\.id))
+        for (index, event) in file.events.enumerated() {
+            let path = "events[\(index)]"
+            let id = event.id
+            if !plain(id, max: 24) {
+                fail(path + ".id", "event.bad_id", "\"\(id)\" must be 1–24 of a–z, 0–9 and _", id: id)
+            }
+
+            func time(_ text: String, _ field: String) -> Date? {
+                guard let date = EventClock.date(text) else {
+                    fail(path + "." + field, "event.bad_time",
+                         "\"\(text)\" is not ISO 8601 with an offset (2026-10-31T18:00:00+02:00)", id: id)
+                    return nil
+                }
+                return date
+            }
+            let prelude = time(event.preludeAt, "preludeAt")
+            let opens = time(event.opensAt, "opensAt")
+            let ends = time(event.endsAt, "endsAt")
+            if let prelude, let opens, let ends, !(prelude <= opens && opens < ends) {
+                fail(path, "event.window_order",
+                     "preludeAt ≤ opensAt < endsAt does not hold — the manor would open before the news or close before it opens",
+                     id: id)
+            }
+            if event.entranceKm < 1 {
+                fail(path + ".entranceKm", "event.bad_entrance", "the manor stands at km \(event.entranceKm) — the walk starts at km 1",
+                     id: id)
+            }
+
+            if event.creatures.isEmpty {
+                fail(path + ".creatures", "event.no_creatures", "the manor holds no creature — every step would find nothing",
+                     id: id)
+            }
+            issues += duplicates(event.creatures.map(\.id), file: name, collection: path + ".creatures")
+            for (i, creature) in event.creatures.enumerated() {
+                let cpath = "\(path).creatures[\(i)]"
+                if !plain(creature.id, max: 16) {
+                    fail(cpath + ".id", "event.bad_id", "\"\(creature.id)\" must be 1–16 of a–z, 0–9 and _", id: creature.id)
+                }
+                if !archetypes.contains(creature.archetype) {
+                    fail(cpath + ".archetype", "event.unknown_archetype",
+                         "no enemy archetype \"\(creature.archetype)\" (known: \(archetypes.sorted().joined(separator: ", ")))",
+                         id: creature.id)
+                }
+                if creature.icon.isEmpty {
+                    fail(cpath + ".icon", "event.no_icon", "every fight line starts with the creature's icon", id: creature.id)
+                }
+                if !(creature.hpScale > 0) || !(creature.attackScale > 0) {
+                    fail(cpath, "event.scale_not_positive", "hpScale and attackScale must be above 0", id: creature.id)
+                }
+                if creature.xpReward < 0 {
+                    fail(cpath + ".xpReward", "event.xp_negative", "a kill cannot take XP away", id: creature.id)
+                }
+                if creature.bloodDivisor < 1 {
+                    fail(cpath + ".bloodDivisor", "event.bad_blood_divisor", "blood is ⌈depth / divisor⌉ — the divisor must be at least 1",
+                         id: creature.id)
+                }
+                if creature.weight < 1 {
+                    fail(cpath + ".weight", "event.weight_not_positive", "a creature with no weight never stands at any depth",
+                         id: creature.id)
+                }
+            }
+
+            // The finds (2026-10-30): a slice of the steps each, the rest the
+            // creatures', and each puts something back.
+            let finds = event.findList
+            issues += duplicates(finds.map(\.id), file: name, collection: path + ".finds")
+            for (i, find) in finds.enumerated() {
+                let fpath = "\(path).finds[\(i)]"
+                if !plain(find.id, max: 16) {
+                    fail(fpath + ".id", "event.bad_id", "\"\(find.id)\" must be 1–16 of a–z, 0–9 and _", id: find.id)
+                }
+                if find.icon.isEmpty {
+                    fail(fpath + ".icon", "event.no_icon", "a find's line starts with its icon", id: find.id)
+                }
+                if !(find.chance > 0 && find.chance < 1) {
+                    fail(fpath + ".chance", "event.find_chance",
+                         "chance \(find.chance) is outside 0 < chance < 1 — it would never turn up, or always", id: find.id)
+                }
+                if !(0...1).contains(find.hpShare) || !(0...1).contains(find.vigorShare) {
+                    fail(fpath, "event.find_share", "hpShare and vigorShare are shares of the maximum, 0…1", id: find.id)
+                }
+                if !(find.hpShare > 0 || find.vigorShare > 0) {
+                    fail(fpath, "event.find_restores_nothing", "a find that puts nothing back is a step with no creature",
+                         id: find.id)
+                }
+            }
+            let findChance = finds.reduce(0.0) { $0 + Swift.max(0, $1.chance) }
+            if findChance >= 1 {
+                fail(path + ".finds", "event.finds_crowd_out_creatures",
+                     "the finds take \(findChance) of the steps — no creature would ever stand, and no blood be poured", id: id)
+            }
+
+            if event.rooms.isEmpty {
+                fail(path + ".rooms", "event.no_rooms", "the manor has no room to describe its first depth", id: id)
+            }
+            issues += duplicates(event.rooms.map(\.id), file: name, collection: path + ".rooms")
+            if let first = event.rooms.first, first.fromDepth != 1 {
+                fail(path + ".rooms[0].fromDepth", "event.rooms_start", "the first room starts at depth \(first.fromDepth), not 1 — depth 1 would have none",
+                     id: first.id)
+            }
+            for (i, pair) in zip(event.rooms, event.rooms.dropFirst()).enumerated() where pair.1.fromDepth <= pair.0.fromDepth {
+                fail("\(path).rooms[\(i + 1)].fromDepth", "event.rooms_order",
+                     "\"\(pair.1.id)\" starts at depth \(pair.1.fromDepth), not deeper than \"\(pair.0.id)\" — it could never be reached",
+                     id: pair.1.id)
+            }
+            for (i, room) in event.rooms.enumerated() where !plain(room.id, max: 16) {
+                fail("\(path).rooms[\(i)].id", "event.bad_id", "\"\(room.id)\" must be 1–16 of a–z, 0–9 and _", id: room.id)
+            }
+
+            issues += duplicates(event.notices.map(\.id), file: name, collection: path + ".notices")
+            var finales = 0
+            for (i, notice) in event.notices.enumerated() {
+                let npath = "\(path).notices[\(i)]"
+                if !plain(notice.id, max: 24) {
+                    fail(npath + ".id", "event.bad_id", "\"\(notice.id)\" must be 1–24 of a–z, 0–9 and _", id: notice.id)
+                }
+                guard let kind = EventNoticeKind(rawValue: notice.kind) else {
+                    fail(npath + ".kind", "event.unknown_notice_kind",
+                         "no notice kind \"\(notice.kind)\" (known: \(EventNoticeKind.allCases.map(\.rawValue).joined(separator: ", ")))",
+                         id: notice.id)
+                    continue
+                }
+                if notice.icon.isEmpty {
+                    fail(npath + ".icon", "event.no_icon", "every notice opens with its icon", id: notice.id)
+                }
+                let at = time(notice.at, "notices[\(i)].at")
+                let until = time(notice.until, "notices[\(i)].until")
+                if let at, let until, at >= until {
+                    fail(npath, "event.notice_window", "at is not before until — nobody could ever be sent it", id: notice.id)
+                }
+                if kind == .finale {
+                    finales += 1
+                    // The finale names the podium, which is final only once the
+                    // manor is closed.
+                    if let at, let ends, at < ends {
+                        fail(npath + ".at", "event.finale_before_close",
+                             "the finale goes out before the manor closes — its podium would not be the last word", id: notice.id)
+                    }
+                }
+            }
+            if finales > 1 {
+                fail(path + ".notices", "event.finale_twice", "\(finales) finales — the podium is announced once", id: id)
+            }
+
+            issues += duplicates(event.rollovers.map(\.id), file: name, collection: path + ".rollovers")
+            for (i, rollover) in event.rollovers.enumerated() {
+                let shape = rollover.day.count == 10 && rollover.day.enumerated().allSatisfy { offset, ch in
+                    offset == 4 || offset == 7 ? ch == "-" : ch.isASCII && ch.isNumber
+                }
+                if !shape {
+                    fail("\(path).rollovers[\(i)].day", "event.bad_day",
+                         "\"\(rollover.day)\" must be a game day's stamp, yyyy-MM-dd", id: rollover.id)
+                }
+                if rollover.icon.isEmpty {
+                    fail("\(path).rollovers[\(i)].icon", "event.no_icon", "the day's notice opens with its icon",
+                         id: rollover.id)
+                }
+                if !plain(rollover.id, max: 24) {
+                    fail("\(path).rollovers[\(i)].id", "event.bad_id", "\"\(rollover.id)\" must be 1–24 of a–z, 0–9 and _",
+                         id: rollover.id)
+                }
             }
         }
         return issues

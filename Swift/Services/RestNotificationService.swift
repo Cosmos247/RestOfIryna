@@ -106,6 +106,7 @@ public enum RestNotificationService {
             await notifyTasksReady(user: user, db: db, bot: bot, lingo: lingo)
         }
         await notifyZlatnyksCredited(db: db, bot: bot, lingo: lingo)
+        await notifyEvents(users: users, db: db, bot: bot, lingo: lingo, now: now)
     }
 
     // MARK: - Full HP
@@ -182,13 +183,22 @@ public enum RestNotificationService {
         guard firstEverStamp == false else { return nil }
 
         var body = lingo.localize("quest.rollover.notification", locale: user.locale)
+        var icon = "📜"
+        // A holiday's day reads its own text (2026-10-29) — the same news, the
+        // boards included, told as the day it is.
+        if let (event, day) = EventCatalog.rollover(onDay: stamp) {
+            var values = EventNoticeText.timeValues(event, lingo: lingo, locale: user.locale)
+            values["flask"] = await EventNoticeText.flaskSentence(event, for: user, db: db, lingo: lingo)
+            body = lingo.localize(event.keys.rollover(day.id), locale: user.locale, interpolations: values)
+            icon = day.icon
+        }
         // Since 2026-09-19 a taken job survives the rollover and holds that
         // NPC's new offer back, so "new jobs on every board" needs qualifying
         // for a player who has one.
         if (try? await QuestService.hasCarriedJob(for: user, on: db, now: now)) == true {
             body += " " + lingo.localize("quest.rollover.locked", locale: user.locale)
         }
-        return "📜 \(body)"
+        return "\(icon) \(body)"
     }
 
     // MARK: - A task is ready
@@ -250,7 +260,7 @@ public enum RestNotificationService {
 
     /// Best-effort: a blocked bot or a closed chat must not stop the sweep for
     /// everyone behind this player in the loop.
-    private static func push(_ text: String, to user: User, bot: TGBot) async {
+    static func push(_ text: String, to user: User, bot: TGBot) async {
         await push(text, toChat: user.telegramId, bot: bot)
     }
 

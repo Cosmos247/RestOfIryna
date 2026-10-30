@@ -461,6 +461,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             [tab(.depth), tab(.distance)],
             [tab(.wealth)]
         ]
+        // A holiday's flask (2026-10-29), once one has opened — on a row of its
+        // own under the five, so none of them moves under the thumb.
+        if EventCatalog.latestOpened() != nil {
+            rows.append([tab(.blood)])
+        }
         if pageCount > 1 {
             rows.append([
                 turn("◀️", to: LeaderboardPaging.previous(page, pageCount: pageCount)),
@@ -833,6 +838,14 @@ extension MainController {
         // main hub when they answer — forward to the ArenaController.
         if data.hasPrefix("arena:") {
             return try await ArenaController.onCallbackQuery(context: context)
+        }
+        // A holiday's «🩸 Взяти флягу» under the palace's reveal (2026-10-30).
+        // Taken wherever it is tapped while the manor is open, so it is claimed
+        // here, where every router's unknown callbacks arrive — the default
+        // below would delete the scribe's words.
+        if data.hasPrefix(CapitalController.flaskCallbackPrefix) {
+            try await CapitalController.onFlaskCallback(data, query: query, message: message, context: context)
+            return true
         }
 
         // Default: delete inline message
