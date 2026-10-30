@@ -2157,6 +2157,12 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-10-31 — the autumn road (NOT live — it ships with the restart; a picture only):**
+- [ ] A trip between the estate and the capital, both ways, shows the autumn forest from the saddle (setting out,
+      «↩️ Розвернутись», «how long is left»). The owner: for the whole autumn, not just the holiday. **When autumn is
+      over**, put the green summer road back (`git show 2ed296e:Assets/travel/road.jpg > Assets/travel/road.jpg`) or the
+      owner's winter one, and restart: the bot caches a picture's Telegram id in memory until it restarts.
+
 **Added 2026-10-30 — stronger beasts (NOT live — content only, it rides the holiday's restart; `spec-bestiary.md` §14):**
 - [ ] `/content` reads hash `231acc72` after the restart (the holiday's `artFrom` moved it from `30a590f0`).
 - [ ] A fight with the moose (km 12–16) on a T1 estate shows ❤️ 102 on the creature's line (94 before); the rabid bear

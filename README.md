@@ -335,7 +335,7 @@ RestOfIryna/
 │   │   └── <class>_estate_<m|f>.jpg # Rabid-dog encounter (player's first look at the estate). 6 files: warrior/archer/mage × m/f. Path from CharacterClass.journeyImageName(gender:); replaced 2026-10-06 (1280×699 JPG)
 │   ├── events/veles_night_2026/     # 2026-10-30 — Велесова ніч's own art, only while it runs (`EventArt`): capital.jpg (the map — square and both streets), palace.jpg (the empty throne), manor.jpg (the manor's first screen)
 │   ├── travel/
-│   │   └── road.jpg                 # 2026-10-08 — the road card (first-person from the saddle, 1280×956): setting out, turning back and the countdown are this picture with a new caption, ONE card per trip (`CapitalController.sendRoadCard` replaces the last)
+│   │   └── road.jpg                 # 2026-10-08 — the road card (first-person from the saddle; the autumn forest since 2026-10-31, 1024×764): setting out, turning back and the countdown are this picture with a new caption, ONE card per trip (`CapitalController.sendRoadCard` replaces the last)
 │   ├── estate/                      # Per-tier estate artwork — level_<N>.jpg, N = estateLevel 1…7 (all tiers present)
 │   │   └── level_1.jpg … level_7.jpg
 │   └── capital/                     # Phase 6 — capital + per-location art; each place sends its own through sendCachedPhoto, text while the file is missing (market.jpg not supplied)
@@ -748,6 +748,7 @@ onto the running one is refused):
 - the beasts from the moose on are a level stronger (2026-10-30): the moose … the rabid bear each a level up, about
   5–10% more HP and attack; the first four, the XP, the bands and the holiday's creatures unchanged
   (`content/spec/spec-bestiary.md` §14).
+- the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

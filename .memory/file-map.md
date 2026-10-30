@@ -119,7 +119,7 @@ RestOfIryna/
 │   │   └── <class>_estate_<m|f>.jpg # (replaced 2026-10-06) Rabid-dog encounter step (player's first look at the estate). 6 files: warrior/archer/mage × m/f. Path built by `CharacterClass.journeyImageName(gender:)`. No genderless fallback (removed 2026-05-21).
 │   ├── capital/                    # The square + both streets (one map, 2026-10-06), palace, trader, master, tavern, fortune + `fortune/` (22 cards). `market.jpg` not supplied. A screen with art edits its CAPTION — 1,024 max
 │   ├── events/veles_night_2026/    # **2026-10-30** — a holiday's own art, sent from its `artFrom` to its close (`EventArt.path`) and only when the file exists: `capital.jpg` (the map with pumpkins — the square AND both streets), `palace.jpg` (the empty throne), `manor.jpg` (the manor's first screen, the step through the gate). A slot is a screen; the next holiday drops its files into `events/<id>/`
-│   ├── travel/road.jpg             # **2026-10-08** — the road card (the owner's picture, 1280×956): setting out, turning back and the countdown, one card per trip (`CapitalController.sendRoadCard`)
+│   ├── travel/road.jpg             # **2026-10-08** — the road card (the owner's picture; since 2026-10-31 the AUTUMN one, 1024×764 — «поки осінь»; the green summer one is `2ed296e:Assets/travel/road.jpg`): setting out, turning back and the countdown, one card per trip (`CapitalController.sendRoadCard`)
 │   └── estate/                     # Per-tier estate artwork — `level_<N>.jpg`, N = estateLevel 1…7 (EstateUpgradeCatalog.maxTier). Loaded directly by EstateController.showEstate; all 7 present (2026-05-21).
 │       └── level_1.jpg … level_7.jpg
 │
