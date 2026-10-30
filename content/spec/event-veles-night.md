@@ -113,8 +113,8 @@ message goes to everyone:
 In the palace, while the manor is open and the player has not taken the flask, two messages follow the
 palace card (which stays as it is, the decree included) — on every visit until the flask is taken:
 
-> 🕯 **Писар зачиняє за вами двері тронної зали.** Його Величність третю ніч у гарячці, і всі ці укази — марення.
-> На осінньому бенкеті Королю піднесли кубок темного вина — дарунок із далекого маєтку. Писар не знайшов того маєтку в жодному списку. Король пожартував, що вино тепле, як кров, а вночі вже марив.
+> 🕯 **Писар зачиняє за вами двері тронної зали.** Його Величність у гарячці з ночі на суботу, і всі ці укази — марення.
+> У п'ятницю ввечері, на осінньому бенкеті, Королю піднесли кубок темного вина — дарунок із далекого маєтку. Писар не знайшов того маєтку в жодному списку. Король пожартував, що вино тепле, як кров, а вночі вже марив.
 > Стара ворожка з Подолу сказала, що бачила це ще тиждень тому: Король сам витягнув у неї карту, і випав Місяць. А маєток той Корона давно викреслила зі списків. Колись там жив намісник, що присягнув не Короні, а Велесові — старому богові худоби й багатства, господареві мертвих. Маєток спорожнів. Та щоосені, у Велесову ніч, мертві йдуть додому, і там, де на них ніхто не чекає, стіл їм накриває сам Велес. Цього року він покликав до столу й Короля.
 
 > 📜 **Писар знімає з полиці срібну флягу з печаткою Корони.** «Ліки ворожка назвала одні: клин клином — жар із Велесового кубка зніме лише кров із Велесового двору, кров, у якій теж горить жар. Кров скажених нетопирів і щурів, що живуть під його дахом.
@@ -123,6 +123,12 @@ palace card (which stays as it is, the decree included) — on every visit until
 
 The tap takes the button away (the words stay) and posts the banner:
 > ✅ Срібна фляга з печаткою Корони тепер у вас на поясі. Маєток Велеса — на п'ятому кілометрі лісу, брама відчинена до неділі, 18:00.
+
+*Changed 2026-10-31, the night before (the owner's picks):* «Його Величність третю ніч у гарячці» → «…у гарячці з
+ночі на суботу», and «На осінньому бенкеті» → «У п'ятницю ввечері, на осінньому бенкеті» — the King sat on his
+throne all Friday and the palace is itself until Saturday noon, so «the third night» could not be true. Days of the
+week, not «учора» / «минулої ночі»: the story is read from Saturday 18:00 to Sunday 18:00, and on Sunday «yesterday»
+would put the feast on Saturday. A story told over a window must not say «yesterday».
 
 What changed from the 10-29 text: the two messages moved from the 18:00 push into the palace; the
 story's header «З палацу.» → «Писар зачиняє за вами двері тронної зали.»; the scribe's «Від писаря.» →
@@ -225,7 +231,7 @@ credits the top three with zlatnyks by hand; the watchman announces it as usual.
 ### 4.7 The capital while the King is ill (`artFrom` to close — 12:00 Saturday since 2026-10-31; the decrees alone go out from 09:00)
 
 - 👑 the palace, from 12:00 Saturday with its picture (2026-10-31, the owner — before noon the palace is as usual): «Тронна зала порожня. Писар веде пальцем по списку й шепоче: «Його Величність у гарячці. Укази поки підписую я — так, як велів би він».»
-- 🏛 the capital's welcome ends «А з вікон палацу ночами долинає марення.» instead of «…пильно спостерігає сам Король.»
+- 🏛 the capital's welcome, from 12:00 Saturday with the square's picture (2026-10-31, the owner), ends «А з вікон палацу долинає марення.» instead of «…пильно спостерігає сам Король.» («ночами» struck 2026-10-31: at Saturday noon one night has passed)
 - 🍺 the innkeeper (open to close): «Чули, наміснику? На п'ятому кілометрі у вікнах мертвого маєтку світиться. Кажуть, звідти не повертаються. Брешуть: повертаються — на порозі власного дому. Ха!»
 - 🔮 the fortune teller (open to close): «Велесова ніч, наміснику. Мертві йдуть додому — а ви йдете до них.»
 
