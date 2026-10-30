@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-29/30)* **Велесова ніч, the first holiday** — content + Swift + art, schema v29, three
+- *(this commit, 10-30)* **`3e11ef6`'s hash fill** — records only.
+- `3e11ef6` (10-29/30) **Велесова ніч, the first holiday** — content + Swift + art, schema v29, three
   migrations, NOT deployed: `events.json` (the window, the manor at km 5, bats and rats by the player's level, blood,
   the notices, the pumpkin find), `EventMath`, `GameEvent`/`EventCatalog`/`EventArt`, `ManorService` and the walk's
   manor screens, the fight's no-flee and kill, the watchman's decrees/summons/finale, the palace's story and «🩸 Взяти
@@ -872,7 +873,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-30 (Велесова ніч reworked: the reveal in the palace, the flask collected there; «Велесовий гарбуз») — *(this commit)*
+## Session — 2026-10-30 (Велесова ніч reworked: the reveal in the palace, the flask collected there; «Велесовий гарбуз») — `3e11ef6`
 
 **Asked.** «Давай доробимо івент. По-перше розгадка повинна бути коли гравець приходить в палац. Інакше як
 пояснити появу фляги, гравець повинен прийти її забрати. Але йому треба про це повідомити. Запропонуй, як можна
@@ -939,7 +940,7 @@ the right list. Cause not found — the walk's row is deleted at the door. Two f
 line; a log line only), none picked; the owner: «Цей баг запиши в туду лист після івенту» — `TODO.md` → "Open", the
 2026-10-30 block, with every fact and the Vigor oddity of the same walk.
 
-## Session — 2026-10-27 night → 10-29 (Велесова ніч, designed and built) — *(this commit)*
+## Session — 2026-10-27 night → 10-29 (Велесова ніч, designed and built) — `3e11ef6`
 
 **Asked.** «Я хочу зробити для своїх тестувальників невеличкий івент на честь Геловіну… Запропонуй мені кілька
 варіантів». Then the owner's own idea (10-27, 22:46): the King falls ill on Halloween, strange notices with
