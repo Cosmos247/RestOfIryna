@@ -21,6 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-10-31 — the holiday's last polish, the autumn road, the coop** (NOT LIVE — the same restart). The capital
+wears Велесова ніч from Saturday 12:00 (`events.json` → `artFrom`: its pictures, the palace's empty throne, the square's
+welcome), only the 09:00 decree before it; Saturday's noon line no longer says the fortune teller deals no cards; the
+scribe's story names days, not «третю ніч»; the road card is an autumn forest; «Курник закладений». Content hash →
+`231acc72`; 504 tests.
+
 **2026-10-30 — stronger beasts: №5–14 a level up** (content + a test, NOT LIVE — it rides the holiday's restart; no
 schema bump, no migration; `content/spec/spec-bestiary.md` §14). The moose … the rabid bear each moved a level up
 (L6 … L15), every stat × contract(L+1)/contract(L) so each keeps its share of the contract; №1–4, XP, the bands, the

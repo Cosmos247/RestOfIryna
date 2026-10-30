@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-30)
+## Commit index — live-play polish and after (2026-09-09 → 10-31)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,18 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-30)* **`ff3e64e`'s hash fill** — records only.
+- *(this commit, 10-31)* **the hash fill for the night of 10-31, and its session record** — records only.
+- `2c2d895` (10-31) **a coop's build banner agrees with its noun** — Swift + uk: `estate.plot.alert.claimed.m` / `.f` read
+  through `Lingo.localize(_:agreeingWith:)` with `plot.type.<type>.gender` — «🐔 Курник закладений на слоті N.»
+- `084f23b` (10-31) **the autumn road** — a picture: `Assets/travel/road.jpg` is the owner's autumn forest «поки осінь»;
+  the summer one is `2ed296e:Assets/travel/road.jpg`, swapping back is in TODO.
+- `9701f27` (10-31) **the scribe's story keeps the clock** — uk + en: «у гарячці з ночі на суботу», «У п'ятницю ввечері,
+  на осінньому бенкеті»; «ночами» struck from the square's welcome.
+- `97a2be9` (10-31) **the capital wears the holiday from 12:00** — content + Swift + a test: `events.json` → `artFrom`,
+  `GameEvent.showsArt` / `EventCatalog.showingArt` for the art, the palace's line and the square's welcome;
+  `event.art_window`; `running()` / `isRunning` removed; content hash → `231acc72`; 504 tests.
+- `2db2435` (10-31) **Saturday's noon line** — uk + en: «На Подолі ворожка сьогодні тасує карти довше, ніж звичайно.»
+- `1e89645` (10-30) **`ff3e64e`'s hash fill** — records only.
 - `ff3e64e` (10-30) **stronger beasts: №5–14 a level up** — content + a test, NOT deployed (it rides the
   holiday's restart; no schema bump, no migration): `enemies.json` — the moose … the rabid bear each a level up
   (L6 … L15), every stat × contract(L+1)/contract(L), so each keeps its share of the contract; the level shift kept at
@@ -882,6 +893,51 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-31, past midnight (the holiday's last polish, the autumn road, the coop's banner) — `2db2435`, `97a2be9`, `9701f27`, `084f23b`, `2c2d895`
+
+After the stronger beasts, with the restart still to come before 08:30. The testers' list and the whole event were
+written out twice in the session (the second time with the fortune teller's and the innkeeper's screens); the
+questions on the pumpkin's receipt, the repair price and the plot build card were answered from the code. What changed:
+
+- **Saturday's noon line** («Ворожка що з 12 не видає карти?»). The holiday never closes the fortune teller, and a card
+  that comes ready at noon is announced in the SAME message, first — so «…ворожка сьогодні не розкладає карт…»
+  contradicted «🔮 Карти знову готові» for the 6 players who drew on Friday afternoon. Of four options (two rewordings,
+  closing her for the day, leaving it) the owner took «На Подолі ворожка сьогодні тасує карти довше, ніж звичайно.»
+  and struck the quote. uk + en, `event-veles-night.md` §4.2 with a dated note.
+- **The capital wears the holiday from 12:00, not 09:00** («Картинки івентові повинні з'являтись не о 9, а о 12»;
+  then «Перенеси на 12 і вітання на площі»). `events.json` → `artFrom` (optional: absent = the prelude),
+  `GameEvent.showsArt`, `EventCatalog.showingArt` — read by `EventArt.path`, the palace's «Тронна зала порожня…» (asked:
+  the usual picture shows the King ON the throne, so the line went with its picture) and the square's welcome. Only the
+  09:00 decree goes out before noon; `running()` / `isRunning` lost their last reader and went. The validator's
+  `event.art_window` (preludeAt ≤ artFrom < endsAt, mutation-tested), two `EventTests`, `spec events` prints «pictures
+  from»; the spec's schedule, §4.7 and art paragraph, CLAUDE.md's art line. The content hash → `231acc72` (the five
+  digest halves and COMBINED unchanged).
+- **The story's clock.** The scribe said «Його Величність третю ніч у гарячці», but the King sat on his throne all
+  Friday and the palace is itself until Saturday noon. Proposed with the window in mind — the story is read Sat
+  18:00 → Sun 18:00, so «учора» would be wrong on Sunday; the owner took the days of the week («у гарячці з ночі на
+  суботу», «У п'ятницю ввечері, на осінньому бенкеті») and struck «ночами» from the square's welcome. uk + en, §4.3 and
+  §4.7 with a dated note.
+- **The autumn road** («…поки осінь»). `Assets/travel/road.jpg` is the owner's autumn forest from the saddle (1024×764,
+  the same 4:3, copied out of Telegram's temp folder — its file name carries a narrow no-break space before «AM»). One
+  picture serves both directions; `PhotoCache` lives in memory, so the restart shows it. The green summer road is
+  `2ed296e:Assets/travel/road.jpg`; swapping back after autumn is in TODO.
+- **The coop's banner** («Виправ курник»): «✅ 🐔 Курник закладена на слоті N.» → «…закладений…».
+  `estate.plot.alert.claimed` is `.m` / `.f` in uk, read through `Lingo.localize(_:agreeingWith:)` with
+  `plot.type.<type>.gender`, the ready notification's pattern; rendered for all four types in both locales. The 10-24
+  Open note is closed.
+
+**The audit and the split** («Виправ курник, перевір ще раз зміни, надай репорт. Якщо все добре то розбий на коміти і
+коміть»). Every touched Swift file recompiled with 0 warnings; 504 tests; `validate --strict` 0/0; every generated
+block in sync; the digest's five halves and COMBINED unmoved, the content hash `231acc72`; `git diff --check` clean.
+Re-verified from the code before the commit: the shortage modal lists only what is short, a plot's number counts the
+old free plots too, and before noon nothing of the holiday shows in the capital but the 09:00 decree. The working
+tree was split into five commits by change without touching it: each commit's files were built from `1e89645` plus
+that change's hunks (three hunks split line by line where two changes sat on adjacent lines) and staged with
+`git update-index`; after the fifth only this entry was left uncommitted.
+
+**Not live.** All of it rides the one restart before Sat 08:30 (schema v29); the Pi's pre-flight must read content
+hash `231acc72`.
 
 ## Session — 2026-10-30, night (stronger beasts: №5–14 a level up) — `ff3e64e`
 
