@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-31)* **the test bot** — records only: the Mac runs `@artania_gamebot` on its own database
+- *(this commit, 10-31)* **the holiday's copy, the owner's 17:30 rewrite** — uk + en + one Swift change, NOT deployed
+  (a Pi build and `pm2 restart ROI`): the scribe's story and words, the entrance question, «За цей спуск» → «За цей
+  похід»; `findLead` prints no room's line over a find. Content and digest unchanged; 504 tests.
+- `4f72f34` (10-31) **the test bot** — records only: the Mac runs `@artania_gamebot` on its own database
   `roi_test`; `CLAUDE.md`, `Prompt.md`, README, `tech-stack.md`, `status.md` drop the Mac-shares-the-token exception.
 - `bbbfd81` (10-31) **`006ad51`'s hash fill** — records only.
 - `006ad51` (10-31) **the 2026-10-31 02:01 deploy record, the docs synced after it, and the digest naming
@@ -907,6 +910,33 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-31, before the opening (the owner rewrites the holiday's copy) — *(this commit)*
+
+**Tried on the test bot first.** The owner asked to run the holiday there NOW: a copy of `content/data` in the
+scratchpad with `opensAt` and the summons at 15:00 and the three decrees closed at 15:00 (`validate --strict`
+clean, hash `4bf7cdfc`), the bot restarted with `ROI_CONTENT_PATH` on it — the repo and the Pi untouched. The
+summons arrived at 15:49; the owner took the flask and fought five manor fights; no error in the log.
+
+**Then the owner sent the copy as it should read**, message by message, about 30 minutes before the 18:00 opening:
+- **The scribe's story** (`palace.story`): the first sentence on its own line; «У п'ятницю ввечері» → «У п'ятницю»;
+  the fortune teller's sentence its own paragraph, naming what the Moon foretold — «ілюзії, страх, тривогу та
+  інтуїтивні сни», the card's own meaning in `fortune.card.18_moon.meaning`; «намісник» → «Намісник». Two typos
+  in the paste fixed and said: «інтуітивні», «Короля..».
+- **The scribe's words** (`palace.scribe`): the first sentence on its own line; «на п'ятому кілометрі» → «на 5-му
+  кілометрі». «до неділі, 18:00» stays `%{deadline}` (renders exactly that). The four other lines that say «на
+  п'ятому кілометрі» were left as they are — asked, not answered.
+- **The entrance question** (`confirm`): the same words in three lines.
+- **The pumpkin**: its own text unchanged; the owner had cut the room's line («У світлиці накрито стіл…») that
+  stood above it on a room's first depth. A code change in `findLead` — the room then goes undescribed on that
+  descent, since `CombatController.manorIntro` says a room only on the step into it (said to the owner).
+- **«спуск» → «похід»** («ніби ми все ще в печері»): `manor.blood` and `death.blood`, the only two; English
+  «descent» → «expedition», the word en.json already uses for a walk.
+
+**Audit:** forced recompile 0 warnings (bash), `git diff --check` clean, 504 tests, `validate --strict` clean,
+digest unchanged (`records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`, content `231acc72`); every changed
+string rendered with its values, HTML balanced, compared with the paste character by character (identical but
+for the two typos). The spec's quoted copy, TODO's checklist, live-ops, the file map and `Prompt.md` updated.
 
 ## Session — 2026-10-31, afternoon (the test bot) — *(this commit)*
 

@@ -304,6 +304,9 @@ The design: `content/spec/event-veles-night.md`. Live since the 2026-10-31 02:01
 09:00 / 14:00 / 16:00 decrees are pushed, nothing else changes before noon; from 12:00 the capital wears the holiday
 (its pictures, the palace's empty throne, the square's welcome — `artFrom`); from 18:00 the summons, the manor at km 5,
 the scribe's story and the flask, the innkeeper's and the fortune teller's lines; Sunday 18:00 the finale and the close.
+**The owner's 17:30 copy edits** (the story and the scribe rewritten, the entrance question in three lines, «За цей
+спуск» → «За цей похід», a pumpkin with no room's line over it) are text + one Swift change: they reach players only
+with the Pi build and `pm2 restart ROI` that follows them — before that the 02:01 copy is what shows.
 Run these the way the snapshot SQL runs (scp the file to
 `/tmp`, `sudo -n -u postgres psql -p 5433 -d ArtaniaDB -f - < /tmp/file.sql`). All read-only.
 

@@ -270,17 +270,15 @@ extension ExplorationController {
         }
     }
 
-    /// A find's lines above the manor card (2026-10-30): the room's line when
-    /// the step entered a new room past the first (as a creature's intro says
-    /// it), the hunger tick if the step began starving — before the find, whose
-    /// receipt already counts it — then the find and what it put back, phrased
-    /// as a meal's is (`vigor.restored`, `hp.restored`, a pool that topped out).
+    /// A find's lines above the manor card (2026-10-30): the hunger tick if the
+    /// step began starving — before the find, whose receipt already counts it —
+    /// then the find and what it put back, phrased as a meal's is
+    /// (`vigor.restored`, `hp.restored`, a pool that topped out). **No room's
+    /// line** (2026-10-31, the owner's cut): a find that lands on the step into
+    /// a new room speaks alone, and that room goes undescribed on this descent.
     private func findLead(_ event: GameEvent, find: EventFindDTO, step: ManorService.Step, hpRestored: Int,
                           vigorRestored: Int, user: User, lingo: Lingo, locale: String) -> String {
         var blocks: [String] = []
-        if let room = event.dto.room(forDepth: step.depth), step.depth == room.fromDepth, step.depth > 1 {
-            blocks.append(lingo.localize(event.keys.room(room.id), locale: locale))
-        }
         if let hunger = narrateStarvation(step.starvationHpLost, lingo: lingo, locale: locale) {
             blocks.append(hunger)
         }

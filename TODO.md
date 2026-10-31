@@ -2200,9 +2200,9 @@ barrier) went live at the 2026-10-17 17:40 restart.
       entrance back; an old entrance tapped at km 7 is an alert; tapped after the close, the ruin.
 - [ ] Inside: «🚶» is a fight every time, bats and rats both turn up; the room's line at depths 4, 7, 10; «🔙» is
       refused; the fight has NO flee button (a typed flee is refused too); «🎒 Сумка» eats between fights.
-- [ ] A bat pays ⌈d/2⌉, a rat d (`🩸 +N`), the card under the fight says «За цей спуск · у флязі»; XP 38 / 57.
+- [ ] A bat pays ⌈d/2⌉, a rat d (`🩸 +N`), the card under the fight says «За цей похід · у флязі» (was «спуск» to 10-31); XP 38 / 57.
 - [ ] «🎃 …Велесовий гарбуз…» on about one step in ten: no fight, the depth moves on, «✅ +N снаги (…), +M ОЗ (…)»
-      a quarter of the maximum each (capped, «… повна» when topped), the next creature one deeper.
+      a quarter of the maximum each (capped, «… повна» when topped), the next creature one deeper; on a room's first depth NO room line over it (10-31).
 - [ ] «🏆 Рейтинги» shows «🩸 Кров для Короля» from 18:00 (a row of its own), ranks with ties shared.
 - [ ] A death in the manor: «💀 Ви полягли в маєтку Велеса», the flask's line, the bag gone, the home at 1 HP.
 - [ ] Sun 18:00: the finale to everyone — the podium, «Ви принесли N 🩸 — K-те місце», or «Цього разу ви до
