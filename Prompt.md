@@ -238,6 +238,6 @@ swift test                                   # 504 tests, ~5s
 
 `CLAUDE.md` is the full set and is loaded every session. The three that cost the most when
 forgotten: **never push** (user-side only), **never start / restart / stop the bot without
-asking** (the Mac instance is the one exception — stop it, it 409s the Pi), and **ask before
+asking** (the Mac's test bot `@artania_gamebot` included — its own token and `roi_test`), and **ask before
 committing**. Content edits must pass `roi-content validate --strict`; balance-table edits
 must also re-run `roi-content simulate --strict`.

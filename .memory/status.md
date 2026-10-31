@@ -1084,7 +1084,7 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
+rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi
 since the 2026-10-31 02:01 restart (`20f5681`): `records 438f9ec47d93ca8f` / `tuning c0380e692986ba04` / `spawns
 004c138c83fa9d1a` / `quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `231acc72`, COMBINED
 `ea15c16c660f81f2`, **schema v29** — it carried everything built 10-24 → 10-31 (the plot cost, the softer wear and

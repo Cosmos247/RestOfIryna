@@ -63,7 +63,7 @@
 - Uses `Databases`, `Migrations`, `Migrator` directly (not through Vapor's `Application`)
 - Models use `@ID`, `@Field`, `@Timestamp` property wrappers
 - Database operations via `Database` protocol
-- PostgreSQL **15** — the Pi's native cluster on port 5433, which is what production and the dev Mac (over an SSH tunnel) both talk to. A `postgres:16-alpine` Docker container also runs on the Pi but belongs to a DIFFERENT project; connecting there fails with `role "ArtaniaAdmin" does not exist`, i.e. right host, wrong server
+- PostgreSQL **15** — the Pi's native cluster on port 5433, which holds production's `ArtaniaDB` and, since 2026-10-31, the test bot's `roi_test` — the only one the dev Mac (over an SSH tunnel) talks to. A `postgres:16-alpine` Docker container also runs on the Pi but belongs to a DIFFERENT project; connecting there fails with `role "ArtaniaAdmin" does not exist`, i.e. right host, wrong server
 
 ### Lingo 4.x
 - JSON locale files in `Localizations/` directory

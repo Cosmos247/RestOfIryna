@@ -458,8 +458,8 @@ Two gotchas worth knowing before you go hunting:
 
 Production is a **Raspberry Pi 5** (`rpi5@192.168.0.203`) running the bot under **pm2**
 as the app `ROI`, alongside two unrelated bots. Postgres 15 is native on the Pi at port
-**5433**, so no tunnel is needed there — the tunnel is only for reaching that database
-from the dev Mac.
+**5433**, so no tunnel is needed there — the tunnel is only for the dev Mac, which reaches
+the test bot's `roi_test` on the same cluster, never `ArtaniaDB`.
 
 ```bash
 # on the Pi
@@ -475,8 +475,10 @@ Three things that are easy to get wrong:
   `.build/debug/RestOfIryna`, so nothing needs reconfiguring, and debug reuses the
   existing artifacts — 81 seconds against tens of minutes, whose slowest step would be
   whole-module optimisation of the app target.
-- **Stop the Mac instance first.** Both `.env` files carry the same bot token, so a Mac
-  run left polling means a Telegram 409 for the Pi.
+- **The Mac runs only the test bot.** Since 2026-10-31 its `.env` holds the test bot's
+  token (`@artania_gamebot`) and its own database `roi_test` on the Pi's cluster, so a Mac
+  run never competes with the Pi for the production token, nor touches `ArtaniaDB`.
+  Check a change there first — but it is not a Linux build (next point).
 - **A green Mac build proves nothing about the Pi.** Swift 6 strict concurrency rejects
   references to Glibc's mutable globals that Darwin imports as computed properties —
   `fflush(stdout)` compiled on macOS and failed every Linux build for three months.

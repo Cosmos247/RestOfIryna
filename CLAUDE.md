@@ -964,11 +964,12 @@ Optional:
     since the catalogs are computed `var`s over the snapshot.
 - **Builds are exempt** — they disturb nobody. But a build is only ever half the job,
   and saying so is part of the handover.
-- **The Mac instance is the one exception: stop it, don't ask.** Both `.env` files
-  carry the same bot token, so a Mac run left polling means a Telegram 409 for the Pi.
-  Stopping it is part of deploying, not a separate decision. Kill `debugserver` first —
-  a crashed Xcode run sits as `STAT SX` and survives `kill -9` while the debugger
-  traces it.
+- **The Mac runs only the TEST bot** (2026-10-31): `@artania_gamebot` «Артанія (тест)», its
+  own token and its own database `roi_test` on the Pi's PG15 (role `roi_test`, no rights in
+  `ArtaniaDB`); the production token lives in the Pi's `.env` alone, so a Mac run no longer
+  409s the Pi. **The test bot is under the same rule — ask before starting, restarting or
+  stopping it** (the owner's answer). Kill `debugserver` first — a crashed Xcode run sits as
+  `STAT SX` and survives `kill -9` while traced. Auto-memory `project-test-bot`.
 - **The bot restarts itself when its poll loop dies, and that is the one automatic
   restart.** `PollWatchdog` exits the process when no `getUpdates` has COMPLETED for 120 s,
   and pm2 starts the same build again — it deploys nothing. **The SDK's rate limiter stays OFF**

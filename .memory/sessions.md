@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-31)* **`006ad51`'s hash fill** — records only.
+- *(this commit, 10-31)* **the test bot** — records only: the Mac runs `@artania_gamebot` on its own database
+  `roi_test`; `CLAUDE.md`, `Prompt.md`, README, `tech-stack.md`, `status.md` drop the Mac-shares-the-token exception.
+- `bbbfd81` (10-31) **`006ad51`'s hash fill** — records only.
 - `006ad51` (10-31) **the 2026-10-31 02:01 deploy record, the docs synced after it, and the digest naming
   `artFrom`** — records, plus one Swift line in `ContentDigest` (no gameplay; the tree's `records` → `64bfea4db5bdbee8`,
   COMBINED → `40b3160c7a2fab15`, the content hash unchanged at `231acc72`).
@@ -905,6 +907,35 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-31, afternoon (the test bot) — *(this commit)*
+
+**Asked for** a test version of the bot, to check updates before they reach the Pi; then, mid-answer, the
+owner's call: **it runs only from the Mac**, never as a second app on the Pi. Then "I create the bot, give you
+the token, you do the rest".
+
+**Built (no code change):**
+- **Telegram:** the owner made `@artania_gamebot` «Артанія (тест)»; `getMe` answered and no webhook was set.
+- **Database:** role `roi_test` (random hex password) and database `roi_test` owned by it, on the Pi's PG15
+  (5433), created through `sudo -n -u postgres` — `ArtaniaAdmin` has neither CREATEDB nor CREATEROLE.
+  `pg_hba` already admits any role with a password on 127.0.0.1 / ::1.
+- **The safety belt, checked as a negative:** `has_schema_privilege('roi_test','public','CREATE')` and
+  SELECT on `users` / `_fluent_migrations` in `ArtaniaDB` are all false — a `.env` naming `ArtaniaDB` by
+  mistake fails at boot instead of migrating production.
+- **The Mac's `.env`** now holds the test token and `roi_test`; the old one (production token + `ArtaniaDB`)
+  is `.env.bak.20261031`. The production token lives in the Pi's `.env` alone.
+- **First boot** at 15:40 (`swift build --product RestOfIryna`, 20 s): content `231acc72` (production's),
+  82 migrations on the empty database, 23 tables, 4 seed rows in `allowed_users`, `Bot identified as
+  @artania_gamebot`, Hummingbird on 8080. Four `400 chat not found`: the `bot.restarted` notice to the four
+  roster accounts that have not opened the test bot yet.
+
+**Why not on the Pi, had it been wanted:** Hummingbird binds `127.0.0.1:8080` hard-coded (a second instance
+fails at the end of `configure`), and the Pi's `~/.bashrc:124` exports the PRODUCTION `ROI_PROJECT_PATH`,
+which pm2 copies into every app started from a shell — a test app there would read production's `.env`.
+
+**The owner's answer on running it:** asked whether I may start / restart / stop the test bot myself —
+**"Ні, питай щоразу"**. The first launch was covered by "все інше зробиш ти". The Mac exception in
+`CLAUDE.md` ("stop it, don't ask", for the shared token) is gone with the shared token.
 
 ## Session — 2026-10-31, after the deploy (the records synced; the digest names `artFrom`) — `006ad51`
 
