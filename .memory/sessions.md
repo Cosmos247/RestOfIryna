@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-31)* **the 2026-10-31 02:01 deploy record, the docs synced after it, and the digest naming
+- *(this commit, 10-31)* **`006ad51`'s hash fill** — records only.
+- `006ad51` (10-31) **the 2026-10-31 02:01 deploy record, the docs synced after it, and the digest naming
   `artFrom`** — records, plus one Swift line in `ContentDigest` (no gameplay; the tree's `records` → `64bfea4db5bdbee8`,
   COMBINED → `40b3160c7a2fab15`, the content hash unchanged at `231acc72`).
 - `20f5681` (10-31) **the hash fill for the night of 10-31, and its session record** — records only. The commit the Pi
@@ -905,7 +906,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-31, after the deploy (the records synced; the digest names `artFrom`) — *(this commit)*
+## Session — 2026-10-31, after the deploy (the records synced; the digest names `artFrom`) — `006ad51`
 
 **Asked** (the owner's long-form audit): analyse the uncommitted progress, persist every decision and result in both
 memory banks, bring every `*.md` in sync with no stale record, index the memories, reorient `Prompt.md`, sweep for

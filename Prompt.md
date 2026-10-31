@@ -27,15 +27,15 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 2026-10-31 02:01 deploy record, the docs brought in sync after it, and one Swift line: the digest names the holiday's `artFrom`). Under it everything is pushed: `origin/main` = the Pi = **`20f5681`** (the 10-31 hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (`006ad51`'s hash fill). Under it, unpushed: **`006ad51`** (the 2026-10-31 02:01 deploy record, the docs brought in sync after it, and one Swift line: the digest names the holiday's `artFrom`). Under them everything is pushed: `origin/main` = the Pi = **`20f5681`** (the 10-31 hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`20f5681`** (the owner pushed 2026-10-31, just before the 02:01 deploy), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`20f5681`**, online since **2026-10-31 02:01:39** (pm2 restarts 9 — the deploy; `pm2 save` done). Content schema **v29**, content hash **`231acc72`** — the digest matched the Mac byte for byte before the restart. The holiday's three migrations ran and were verified on the TABLES (`event_blood`, `event_notices`, `exploration_state.manor_*`; unique keys, cascade, 0 rows). 11 × 403 from the restart notice (players who blocked the bot; 8 last time), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53), `Code: 400` still 922. The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Only this commit's digest line — no gameplay.** `ContentDigest` now names `artFrom`, so the tree's digest differs from the running binary's on the SAME content: here `records 64bfea4db5bdbee8` · COMBINED `40b3160c7a2fab15`, on the Pi `records 438f9ec47d93ca8f` · COMBINED `ea15c16c660f81f2`; the content hash is `231acc72` on both. The next deploy's pre-flight compares the new numbers. Everything else committed went live at the 2026-10-31 02:01 restart (`.memory/sessions.md` → "Deploy — 2026-10-31 02:01") |
+| waiting for a restart | **Only `006ad51`'s digest line — no gameplay.** `ContentDigest` now names `artFrom`, so the tree's digest differs from the running binary's on the SAME content: here `records 64bfea4db5bdbee8` · COMBINED `40b3160c7a2fab15`, on the Pi `records 438f9ec47d93ca8f` · COMBINED `ea15c16c660f81f2`; the content hash is `231acc72` on both. The next deploy's pre-flight compares the new numbers. Everything else committed went live at the 2026-10-31 02:01 restart (`.memory/sessions.md` → "Deploy — 2026-10-31 02:01") |
 
 ### Where the last sessions stopped (2026-10-24 → 10-31)
 
-**10-31, after the deploy — the records synced, the digest names `artFrom` (this commit).** The owner's long-form
+**10-31, after the deploy — the records synced, the digest names `artFrom` (`006ad51`).** The owner's long-form
 audit: every doc and both memory banks brought to "live since 02:01"; stale lines fixed (README's art window, the
 holiday spec's «before Sat 08:30», `status.md`'s test count and the v25 clause, a 09-19 walk block still «NOT LIVE»);
 `CLAUDE.md`'s holiday rule gained the `artFrom` window and «copy read across a window names days»; `INDEX.md` gained
@@ -213,7 +213,7 @@ pre-flight expects the tree's numbers (`records 64bfea4db5bdbee8`, COMBINED `40b
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `231acc72` (COMBINED `ea15c16c660f81f2`). **This
 is the one place the current baseline is kept**; the superseded ones are in `.memory/sessions.md` →
 "Digest baselines — superseded", and the tree's steps between 10-24 and 10-31 in the Commit index. **The tree differs
-since this commit** — the same content, but the digest now names `artFrom`: `records 64bfea4db5bdbee8`, COMBINED
+since `006ad51`** — the same content, but the digest now names `artFrom`: `records 64bfea4db5bdbee8`, COMBINED
 `40b3160c7a2fab15`; `tuning`, `spawns`, `quests`, `king` and the content hash as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
