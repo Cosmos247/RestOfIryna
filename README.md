@@ -146,7 +146,7 @@ RestOfIryna/
 │   │   ├── TrainingGroundCatalog.swift # 2026-09-27 — façade over `training_ground.json`; a level's player-level floor is its technique's `combat.json` row
 │   │   ├── TreasuryCatalog.swift # 2026-10-11 — façade over `treasury.json`: what zlatnyks buy, in list order; a `TreasuryKind` is the code that carries an entry out
 │   │   ├── ZlatnykPurchase.swift # 2026-10-11 — one row per Treasury purchase, written in the purchase's own transaction; history, not in `LiveReferenceQuery`
-│   │   ├── EventCatalog.swift # 2026-10-29 — façade over `events.json`: a holiday's phases (running / open / over) and its manor creatures, every level's line solved at install
+│   │   ├── EventCatalog.swift # 2026-10-29 — façade over `events.json`: a holiday's phases (the capital's look from `artFrom` / the manor open / over) and its manor creatures, every level's line solved at install
 │   │   ├── EventBlood.swift # 2026-10-29 — the flask (`event_blood`, outside the bag, so a death never takes it) and the notice log (`event_notices`, one row per notice sent)
 │   │   ├── LearnedTechnique.swift # Phase 5.3e — Fluent model: per-user known-technique set (user_id, technique_id, learned_at). IDs are class-agnostic (`special_atk` / `special_def` / `super`); player's class resolves the concrete technique in combat. has/add/allIds mirror LearnedRecipe.
 │   │   ├── InventoryEntry.swift  # per-user item stacks in the backpack (DB) + helpers. Phase 6.5 added gear `durability`/`max_durability` (a fresh row is stamped by `GearState.fresh(for:)` with the item's own starting durability since 2026-10-05 — `maxDurability` from items.json, a weapon's ladder tier 1, 0/0 for what nothing wears) + `enchant_level` (armor, cap 5) columns
@@ -333,7 +333,7 @@ RestOfIryna/
 │   ├── registration/                # Artwork used during onboarding
 │   │   ├── kings_charter.jpg        # Shown in the King's Oath step (all classes); redrawn 2026-10-06 — the King seated, holding out the scroll
 │   │   └── <class>_estate_<m|f>.jpg # Rabid-dog encounter (player's first look at the estate). 6 files: warrior/archer/mage × m/f. Path from CharacterClass.journeyImageName(gender:); replaced 2026-10-06 (1280×699 JPG)
-│   ├── events/veles_night_2026/     # 2026-10-30 — Велесова ніч's own art, only while it runs (`EventArt`): capital.jpg (the map — square and both streets), palace.jpg (the empty throne), manor.jpg (the manor's first screen)
+│   ├── events/veles_night_2026/     # 2026-10-30 — Велесова ніч's own art, from its `artFrom` (Saturday 12:00) to the close (`EventArt`): capital.jpg (the map — square and both streets), palace.jpg (the empty throne), manor.jpg (the manor's first screen)
 │   ├── travel/
 │   │   └── road.jpg                 # 2026-10-08 — the road card (first-person from the saddle; the autumn forest since 2026-10-31, 1024×764): setting out, turning back and the countdown are this picture with a new caption, ONE card per trip (`CapitalController.sendRoadCard` replaces the last)
 │   ├── estate/                      # Per-tier estate artwork — level_<N>.jpg, N = estateLevel 1…7 (all tiers present)
@@ -725,8 +725,7 @@ one database migration, `AddExplorationHaul`):
   rarest one was priced like a pine board; «Мʼясо в глині» is cooked from 2 🥩 + 1 🥔 + 🧱 + 🪵 and restores
   54 Vigor and 14 HP (135 🪙 at the tavern), so it still restores exactly what its ingredients cost.
 
-**Built 2026-10-24/30, NOT live** — it needs a restart (content schema v29 ships with the binary, so a `/reload`
-onto the running one is refused):
+**Live since 2026-10-31 02:01** (`20f5681`, content schema v29 with the binary):
 - a plot costs materials: each type its own recipe — the farm 10 🪵 2 🟫 1 🔩 3 🥔, the sawmill 8 🪵 10 🪨 2 🔩 1 🧱,
   the mine 12 🪵 3 🟫 2 🔩 1 🧱, the coop 8 🪵 5 🪨 1 🧱 3 🥚 — the player's second plot twice that, the sixth six
   times, and the first without clay and iron. The build card lists them under «📜 Матеріали»; plots already

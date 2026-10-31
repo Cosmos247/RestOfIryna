@@ -163,6 +163,9 @@ enum ContentDigest {
         for event in EventCatalog.all {
             let dto = event.dto
             digest.combine("event \(dto.id) \(event.prelude.timeIntervalSince1970)/\(event.opens.timeIntervalSince1970)/\(event.ends.timeIntervalSince1970) km\(dto.entranceKm) L\(dto.creatureLevelOffset)")
+            // When the capital wears it (2026-10-31, `artFrom`): it moved only
+            // the content hash until it was named here.
+            digest.combine("event art \(event.artFrom.timeIntervalSince1970)")
             for c in dto.creatures {
                 digest.combine("\(c.id) \(c.icon) \(c.archetype) hp\(c.hpScale) atk\(c.attackScale) xp\(c.xpReward) /\(c.bloodDivisor) w\(c.weight)")
             }

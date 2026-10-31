@@ -235,6 +235,16 @@ The verification has four parts:
   held at 15%. `CombatService.chipDamage(…fraction:)` names it, and the digest's `tuning` combines it. A
   `defendChipFraction` edit now reaches the three Defend, and Iron Bulwark only through rounding: its 50% is
   sized against the parry's chip.
+- **A re-level keeps each creature's share of the contract (2026-10-30, `spec-bestiary.md` §14).** №5–14 moved a
+  level up as every stat × contract(L+1) ÷ contract(L), so DEF, crit and dodge land exactly on the new level's curves
+  and HP and ATK keep their share. The §10.8 method (the 10-02 wardrobe) reproduces the old lines exactly but carries
+  that wardrobe's L10 weapon rung, which the 10-04 ladder no longer has. `SimulatorTests`' roster fixture is now held
+  to `enemies.json` by `testTheFixtureIsTheShippedRoster` — it stayed green on the old levels before.
+- **A holiday's capital look starts at `artFrom` (2026-10-31, `events.json`, optional: absent = `preludeAt`).** The
+  pictures, the palace's empty throne and the square's welcome follow `GameEvent.showsArt`; only the decrees go out
+  from the prelude, each at its own time. `event.art_window` refuses one outside preludeAt ≤ artFrom < endsAt. The
+  digest's `records` names it since the same night — until then it moved only the content hash
+  ([[feedback-digest-names-constants]] again).
 - **Combat curves come in two shapes and they are separate TYPES.**
   `MitigationCurveDTO` is `min(cap, DEF/(DEF+K))` where `cap` is a CEILING;
   `RatingCurveDTO` is `scale·R/(R+K)` where `scale` is a leading coefficient.

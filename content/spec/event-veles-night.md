@@ -63,7 +63,7 @@ falls there wakes at home.
 | Sun 01.11, 12:00 | 🌑 the daily notice, themed again |
 | Sun 01.11, 18:00 | 👑 the finale; the manor closes |
 
-The restart that ships the event is needed before Sat 08:30. The times live in the data
+The event shipped with the 2026-10-31 02:01 restart (`20f5681`). The times live in the data
 (`events.json`), so `/reload` can move them; the TEXT is Lingo and needs a restart.
 
 ## 4. The copy (approved uk)

@@ -412,7 +412,7 @@ Decision (2026-05-11): keep single source of truth on `User.level`/`User.xp` (St
       Still open from §4.5: a per-round timer and mutual-Auto instant resolution.
 - [x] **Master** *(landed 2026-05-21, expanded 2026-05-22)* — armor shop / repair / enchant; the first real silver sink. Durability system on `InventoryEntry.durability`/`max_durability` + `enchant_level` (via `AddGearCondition`); `GearConditionService` model-C wear (win 1 / loss 3 / flee 5, point-by-point across random equipped pieces). **2026-05-22 expansion:** (1) enchant gives a class-identity bonus on top of flat DEF (⚔️ +DEF / 🏹 +dodge / 🔮 +crit), cap raised +3→+5, non-linear point curve (1/2/3/5/8), step costs 40/100/220/450/850🪙 + hide; (2) premium armor buy prices (Forester set 485🪙 ≈4× material value) + heavier craft recipe (40🦴 + 8🔩 iron); (3) **weapon durability** by tier (`WeaponUpgradeCatalog.durabilityByTier` 30/40/50/70/100) — weapon joins the wear pool, at 0 keeps HALF its stats (lore: King's weapon can't break), repair is 1🪙/point with no max shave, class-flavoured repair buttons (🗡 Sharpen / 🏹 Restring / 🔮 Re-empower); (4) inventory gear-detail card (tap → HTML message with stats + durability + enchant). Gem inlay still deferred. **2026-10-06:** the Master's screen photo `Assets/capital/master.jpg` is supplied (the owner's art); `showMaster` already sent it through `sendCachedPhoto`, so no code moved — every sub-screen now edits the photo's caption, the longest (the lesson card) ≈450 of Telegram's 1024.
   - *2026-10-10 (`7995d2a`, deployed 2026-10-11 13:21):* **the armour repair halved** on players' complaints — `repairCostFraction` 0.5 → 0.25 (a point: hood 0.5, boots 0.8, breeches 1.25, jerkin 1.5; the set from zero 203, was 405; the weapon keeps 1). The max shave, the cut maxima and the Master's screens were asked about and kept.
-  - *2026-10-24 (`a0386b1`, NOT live — waits for the v27 restart):* **the armour repair back at ×0.5** once a fight wore half as much — `repairCostFraction` 0.25 → 0.5 (a point: hood 1, boots 1.6, breeches 2.5, jerkin 3; the set from zero 405; the weapon keeps 1). The owner's call on the per-player reckoning (`.memory/rebalance.md` → "The repair back at ×0.5").
+  - *2026-10-24 (`a0386b1`, live since the 2026-10-31 02:01 restart):* **the armour repair back at ×0.5** once a fight wore half as much — `repairCostFraction` 0.25 → 0.5 (a point: hood 1, boots 1.6, breeches 2.5, jerkin 3; the set from zero 405; the weapon keeps 1). The owner's call on the per-player reckoning (`.memory/rebalance.md` → "The repair back at ×0.5").
 - [x] **Two streets** *(landed 2026-09-20, live since the 2026-09-22 00:22 deploy)* — the capital keyboard had reached
       six rows and was the constraint on adding anything else to town, so the places split
       across two streets and the arrival square kept none of them. **👑 Замкова** (Castle
@@ -2153,17 +2153,19 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The twelve 2026-10-20/23 blocks on top went live at the 2026-10-23 22:46 restart** (`7ac11f0`, schema v25; `AddExplorationHaul` verified on the table). **The four
+**The blocks added 2026-10-24 → 10-31 (the autumn road down to a plot's cost) went live at the 2026-10-31 02:01
+restart** (`20f5681`, schema v29; the holiday's three migrations verified on the tables). **The twelve
+2026-10-20/23 blocks under them went live at the 2026-10-23 22:46 restart** (`7ac11f0`, schema v25; `AddExplorationHaul` verified on the table). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-10-31 — the autumn road (NOT live — it ships with the restart; a picture only):**
+**Added 2026-10-31 — the autumn road (LIVE since the 2026-10-31 02:01 restart; a picture only):**
 - [ ] A trip between the estate and the capital, both ways, shows the autumn forest from the saddle (setting out,
       «↩️ Розвернутись», «how long is left»). The owner: for the whole autumn, not just the holiday. **When autumn is
       over**, put the green summer road back (`git show 2ed296e:Assets/travel/road.jpg > Assets/travel/road.jpg`) or the
       owner's winter one, and restart: the bot caches a picture's Telegram id in memory until it restarts.
 
-**Added 2026-10-30 — stronger beasts (NOT live — content only, it rides the holiday's restart; `spec-bestiary.md` §14):**
+**Added 2026-10-30 — stronger beasts (LIVE since the 2026-10-31 02:01 restart — content only; `spec-bestiary.md` §14):**
 - [ ] `/content` reads hash `231acc72` after the restart (the holiday's `artFrom` moved it from `30a590f0`).
 - [ ] A fight with the moose (km 12–16) on a T1 estate shows ❤️ 102 on the creature's line (94 before); the rabid bear
       at km 39+ shows 236 at T1 (×1 + 0.1·(tier − 1) above it).
@@ -2173,8 +2175,8 @@ barrier) went live at the 2026-10-17 17:40 restart.
 - [ ] Велесова ніч's bats and rats are untouched (their lines come from `EventMath`, not the roster).
 - [ ] A 90-minute 🏕 run (it turns at km 15) meets the raised moose: read a report's fights and HP.
 
-**Added 2026-10-29 — Велесова ніч (NOT live — schema v29, three migrations; the restart must land before Sat 31.10
-08:30; `content/spec/event-veles-night.md`). It runs ONCE, so it is walked as it happens:**
+**Added 2026-10-29 — Велесова ніч (LIVE since the 2026-10-31 02:01 restart — schema v29, the three migrations verified on the tables;
+`content/spec/event-veles-night.md`). It runs ONCE, so it is walked as it happens:**
 - [ ] Before Sat 09:00 nothing shows; at 09:00 / 14:00 / 16:00 the three decrees, each once (`event_notices`).
 - [ ] Sat 12:00: the new day reads «🌑 Новий день, та сонце з самого ранку світить, як у сутінках…», the boards'
       line kept (and the «locked» tail for a carried job); Sun 12:00 the second one, «…сьогодні о 18:00».
@@ -2207,8 +2209,8 @@ barrier) went live at the 2026-10-17 17:40 restart.
       маєтку не ходили»; a player still inside is walked out at the next tap; a kill after 18:00 pays nothing.
 - [ ] `/reload` while someone is inside is refused if the bundle drops the holiday (`LiveReferenceCheck`).
 
-**Added 2026-10-27 — the forest's Defend set by the owner's numbers (`83002a6`, NOT live — waits for the same restart; schema
-v28, so the running v25 binary refuses this bundle):** one account of each class, a beast of about their level (the
+**Added 2026-10-27 — the forest's Defend set by the owner's numbers (`83002a6`, LIVE since the 2026-10-31 02:01 restart;
+schema v28):** one account of each class, a beast of about their level (the
 numbers are means — read several taps).
 - ⚔️ «🛡 Парирувати»: its line strikes about 40% of a clean hit (Надійка against 🦬 Зубр ≈11, was ≈8); the beast's
   answer is unchanged (DEF ×2).
@@ -2219,15 +2221,15 @@ numbers are means — read several taps).
 - 🏹 «🌑 Тінь лісу» (L11, Training Ground): its knife stays small, about 15% — unchanged on purpose; «🏰 Залізна стіна»
   and «🪞 Дзеркальний щит» unchanged. The arena's duel and the 🏕 run unchanged. `/content` reads hash `231acc72` (schema v29 — the whole restart's, with Велесова ніч and the stronger beasts; it was `a3f69d76` before them).
 
-**Added 2026-10-24, night — the armour repair back at ×0.5 (`a0386b1`, NOT live — waits for the same restart;
-content only, but the running v25 binary refuses this bundle):** an account wearing Forester pieces with some wear.
+**Added 2026-10-24, night — the armour repair back at ×0.5 (`a0386b1`, LIVE since the 2026-10-31 02:01 restart;
+content only):** an account wearing Forester pieces with some wear.
 - 🏛 Столиця → «🏘 Поділ» → «🛠 Майстер» → «⚒️ Полагодити»: a hood missing 10 points costs 10 🪙 (5 before the
   restart), boots 16, breeches 25, jerkin 30; a piece at 0/50 costs 50 / 80 / 125 / 150. One point missing: hood 1, boots 2, breeches 3,
   jerkin 3 (rounded, at least 1).
 - The weapon's line still costs 1 🪙 a point; after any armour repair the piece's maximum is 1 lower, as before.
 
-**Added 2026-10-24, evening — the gear sheet explains the wear (`cf6e3ea`, NOT live — waits for the same restart;
-Lingo is not reloaded):** any account.
+**Added 2026-10-24, evening — the gear sheet explains the wear (`cf6e3ea`, LIVE since the 2026-10-31 02:01 restart;
+Lingo):** any account.
 - 👤 Профіль → «🛡 Спорядження»: under the slots, «🔧 Як зношується», then «Кінець бою в лісі знімає міцність з
   випадкової одягненої речі: перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2. У поході 🏕 — так само за кожну
   сутичку. Арена й тренування не зношують.» and «На 0 броня нічого не дає й не рахується в комплект, а зброя має
@@ -2235,7 +2237,7 @@ Lingo is not reloaded):** any account.
   витрачається в боях…» is gone.
 - English: «How gear wears», «a win — 1 point at a 50% chance, a flee — 1, a death — 2».
 
-**Added 2026-10-24, later — a fight wears less (`6620d39`, NOT live — waits for a restart; schema v27):**
+**Added 2026-10-24, later — a fight wears less (`6620d39`, LIVE since the 2026-10-31 02:01 restart; schema v27):**
 an account wearing the Forester set and its weapon, the durability of each piece noted first (🎒 → the piece →
 «Міцність N/M»).
 - Ten won fights in the forest: the kit loses about five points in all, spread over random pieces — some wins
@@ -2246,7 +2248,7 @@ an account wearing the Forester set and its weapon, the durability of each piece
   `90abd2c4` to `c8d337fe`, the Defend to `a3f69d76`, Велесова ніч to `42ec1955`, the stronger beasts to `30a590f0`, the
   holiday's pictures from 12:00 to `231acc72`).
 
-**Added 2026-10-24 — a plot costs materials (`bac1a70`, NOT live — waits for a restart; schema v26, ships with v28):** an
+**Added 2026-10-24 — a plot costs materials (`bac1a70`, LIVE since the 2026-10-31 02:01 restart; schema v26):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
 - 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
@@ -2967,7 +2969,7 @@ in the capital, one challenging the other.
   which is exactly the screen they had. Nothing to verify in the table beyond the column
   existing.
 
-**Added 2026-09-19 — NOT LIVE (`328bf88`). A taken job no longer burns at noon (owner's design):**
+**Added 2026-09-19 — live since the 2026-09-22 00:22 restart (`328bf88`). A taken job no longer burns at noon (owner's design):**
 - **take a job and leave it past 12:00.** The board must then show THAT job — no date header,
   by request — with «🔒 Нове замовлення відкриється, щойно здасте це.» and no Take button.
   Turn it in: the usual banner, then the board flips to today's offer in place.
@@ -3220,7 +3222,7 @@ unrelated commit on purpose.
   a snapshot of the bag in the haul at `begin`, the door lists what grew, the old count logged where it disagrees —
   or a log line only. A ready reply to the player was given: nothing was lost, only the list was wrong.
 
-**From the 2026-10-29 session** — Велесова ніч (built, NOT live — `content/spec/event-veles-night.md`):
+**From the 2026-10-29 session** — Велесова ніч (built, live since 2026-10-31 02:01 — `content/spec/event-veles-night.md`):
 - **Reworked 2026-10-30** (spec §3, §4.2–4.5, §7): the reveal is told in the palace and the flask collected there
   («🩸 Взяти флягу»), «Велесовий гарбуз» on one step in ten, the owner's three pictures. Decided in the build and
   listed in §7, not asked: the story repeats until the flask is taken, the button works from anywhere while the manor
@@ -3235,7 +3237,7 @@ unrelated commit on purpose.
 - **After the holiday:** the blood board's tab stays (the latest opened holiday's); a next holiday is a new
   `events.json` row with its own `event.<id>.*` text — the finale promised «Наступна Велесова ніч — восени».
 
-**From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, NOT live — a restart;
+**From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, live since 2026-10-31 02:01;
 `.memory/rebalance.md` → "The forest's Defend, set by numbers"):
 - ~~**Step 2, stronger beasts**~~ — **DECIDED and built 2026-10-30**: A (№5–14 a level up), the shift kept at 6%, the
   lines keeping each creature's share of the contract (`spec-bestiary.md` §14). The 10-27 record, kept: **measured 2026-10-27 night, PARKED by the owner** («Всі ці розрахунки і відповіді
@@ -3257,7 +3259,7 @@ unrelated commit on purpose.
   лісу ми повернемось, коли будемо перероблювати всі прийоми». Revisit with the techniques.
 - Raised in the 10-27 report, not asked: the three Defend lines kept their copy, so the archer's 45% knife still «черкає».
 
-**From the 2026-10-24 session** — a plot costs materials (built, `spec-progression.md` §7, NOT live — a restart);
+**From the 2026-10-24 session** — a plot costs materials (built, `spec-progression.md` §7, live since 2026-10-31 02:01);
 found while building it, NOT raised with the owner yet — build nothing unasked:
 - ~~**«%{type} закладена на слоті %{slot}» is feminine for every plot type**~~ — **FIXED 2026-10-31** on the owner's
   word («Виправ курник»): `estate.plot.alert.claimed.m` / `.f` read through `Lingo.localize(_:agreeingWith:locale:)`
@@ -3684,7 +3686,12 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-10-24, night — the armour repair back at ×0.5, built and NOT live with the gear sheet's wear block
+*Last updated: 2026-10-31 02:01 — the deploy: `20f5681` on the Pi (schema v29, content hash `231acc72`), and with it
+every block built since 10-23 — the plot cost, the softer wear and its sheet, the repair at ×0.5, the Defend
+numbers, Велесова ніч with its 10-31 polish, the stronger beasts, the autumn road and the coop's banner. The 10-24
+footer follows.*
+
+*2026-10-24, night — the armour repair back at ×0.5, built and NOT live with the gear sheet's wear block
 («🔧 Як зношується», `cf6e3ea`), the softer wear (a win ½, a flee 1, a death 2) and the plot cost before it (schema v27,
 content hash `c8d337fe`; a restart). Under it:*
 

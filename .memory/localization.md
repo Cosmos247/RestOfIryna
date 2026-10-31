@@ -331,7 +331,7 @@ the innkeeper's own «Заходьте, наміснику!»), `recipe.clay_bak
 generic in both). These three are the first `.taught` lines to need it, and they are reached
 by the render site's RETRY through the `gender:` overload — only after the plain lookup comes
 back as the bare key — not by an unconditional `gender:` call like the others.
-`gear.broken.notice` and `plot.ready.notification` also carry `.m`/`.f`, but as NOUN
+`gear.broken.notice`, `plot.ready.notification` and (since 2026-10-31, the coop's «закладений») `estate.plot.alert.claimed` also carry `.m`/`.f`, but as NOUN
 agreement (`agreeingWith:`, with `.n`/`.pl` beside them) — not player gender.
 
 **Collapsed on 2026-09-07** because «ви» made the two variants identical, and the

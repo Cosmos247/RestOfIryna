@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-31)* **the hash fill for the night of 10-31, and its session record** — records only.
+- *(this commit, 10-31)* **the 2026-10-31 02:01 deploy record, the docs synced after it, and the digest naming
+  `artFrom`** — records, plus one Swift line in `ContentDigest` (no gameplay; the tree's `records` → `64bfea4db5bdbee8`,
+  COMBINED → `40b3160c7a2fab15`, the content hash unchanged at `231acc72`).
+- `20f5681` (10-31) **the hash fill for the night of 10-31, and its session record** — records only. The commit the Pi
+  runs since 02:01.
 - `2c2d895` (10-31) **a coop's build banner agrees with its noun** — Swift + uk: `estate.plot.alert.claimed.m` / `.f` read
   through `Lingo.localize(_:agreeingWith:)` with `plot.type.<type>.gender` — «🐔 Курник закладений на слоті N.»
 - `084f23b` (10-31) **the autumn road** — a picture: `Assets/travel/road.jpg` is the owner's autumn forest «поки осінь»;
@@ -798,6 +802,13 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-23 22:46 to 2026-10-31 02:01 (`7ac11f0`, schema v25):** `records
+68ecc8783252a905` · `tuning 799a96eb5f8619df` · `spawns 004c138c83fa9d1a` · `quests
+30de20902006e3b9` · `king e3a492be1b017e81`, content hash `30b0d499` (COMBINED `c1d4f62d7aed7d8b`). The plot cost
+(`bac1a70`, v26) and the repair price (`a0386b1`) moved `records`; the softer wear (`6620d39`, v27) and the Defend
+numbers (`83002a6`, v28) `tuning`; Велесова ніч (`3e11ef6`, v29) `records` and `tuning`; the stronger beasts
+(`ff3e64e`) `records`; the holiday's `artFrom` (`97a2be9`) only the content hash.
+
 **The baseline the Pi ran from 2026-10-17 17:40 to 2026-10-23 22:46 (`83176b8`, schema v24):** `records
 78ce585986927122` · `tuning 799a96eb5f8619df` · `spawns 0cf31905171d7944` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `19c94a81`. The forest past km 49 (`1b99a3f`,
@@ -893,6 +904,64 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-10-31, after the deploy (the records synced; the digest names `artFrom`) — *(this commit)*
+
+**Asked** (the owner's long-form audit): analyse the uncommitted progress, persist every decision and result in both
+memory banks, bring every `*.md` in sync with no stale record, index the memories, reorient `Prompt.md`, sweep for
+dead code and for what was forgotten, then commit.
+
+**Found and fixed:**
+- **The digest did not name `artFrom`.** The event line in `ContentDigest`'s `records` hashed the prelude, the
+  opening, the close, the km and the level offset — so moving the capital's look to 12:00 moved only the content hash.
+  It now combines `event art <artFrom>`; mutation-checked (13:00 moves `records`, restored). The tree's `records` →
+  `64bfea4db5bdbee8`, COMBINED → `40b3160c7a2fab15` on unchanged content; the Pi keeps the 10-31 numbers until the
+  next deploy, whose pre-flight compares the new ones.
+- **Stale lines:** README's holiday art «only while it runs» and `EventCatalog`'s «running / open / over»; the holiday
+  spec's «needed before Sat 08:30»; `status.md`'s «478 tests», a «running v25 binary refuses» clause and two «ships
+  with the same restart»; a 09-19 walk block («A taken job no longer burns at noon») still marked NOT LIVE although it
+  went live at the 2026-09-22 00:22 restart; `Prompt.md`'s 10-26 «as read» date and its NOT LIVE session headers.
+- **Missing records:** `INDEX.md` never listed `spec-bestiary.md` §14; `content-pipeline.md` had neither the re-level
+  rule nor `artFrom`; `localization.md`'s noun-agreement keys lacked `estate.plot.alert.claimed`; `CLAUDE.md`'s
+  holiday rule gained the `artFrom` window and «copy read across a window names days, never «учора», and never claims
+  a mechanic the game does not run»; the FAQ gained the repair's fixed ÷ 50 (a piece at 0/49 pays 49 points at the same
+  price a point) and a plot's build order (mine then coop 28 🪵 3 🟫 10 🪨 2 🧱 6 🥚, coop then mine 32 🪵 6 🟫 5 🪨 4 🔩
+  2 🧱 3 🥚), and the holiday section «what shows when».
+- **`Prompt.md` reoriented:** the sessions before 10-24 folded into "Live since …" lines (every detail checked present in
+  this file, `rebalance.md` or the specs before it went); the next action starts with the holiday running today, then the
+  walk of the blocks live since 02:01.
+
+**Dead code:** `EventCatalog.running()` / `GameEvent.isRunning` were removed in `97a2be9` once their last reader moved;
+nothing else this night's work left unread. The scratch harness (`probe3`) lives outside the repo.
+
+## Deploy — 2026-10-31 02:01 (`7ac11f0` → `20f5681`)
+
+The owner pushed, then: «Запушив, задеплой на Пай і перезапусти бота».
+- **Before.** `origin/main` = local = `20f5681`; no Mac bot or `debugserver` running. The Pi at `7ac11f0`, `ROI` online
+  since 10-24 05:25 (restarts 8). Nobody on the road or in a fight; `exploration_state` held only two stale rows (KQ's
+  walk since 10-17, xeuzo's unclaimed 🏕 run since 10-12); no `event_*` tables yet.
+- **Pull and build.** `git pull --ff-only` brought 22 commits (the holiday's art and the autumn road with them); a
+  detached debug build under swiftenv's PATH, 145.4 s, 0 errors.
+- **Pre-flight.** `--content-digest` on the Pi matched the Mac in every line: schema v29, hash `231acc72`, `records
+  438f9ec47d93ca8f`, `tuning c0380e692986ba04`, `spawns 004c138c83fa9d1a`, `quests 30de20902006e3b9`, `king
+  e3a492be1b017e81`, COMBINED `ea15c16c660f81f2`; the three self-checks ✅.
+- **Restart.** `pm2 restart ROI` at 02:01:39 and `pm2 save`. The log: `Content loaded: schema v29 … hash 231acc72`, the
+  three migrations (`CreateEventBlood`, `CreateEventNotices`, `AddManorToExplorationState`) prepared, `Bot identified
+  as @ROfIr_bot`, Hummingbird listening at 02:01:46. 11 × 403 from the restart notice («bot was blocked by the user»;
+  8 on 10-23), no other code.
+- **The tables, not the log line.** `information_schema` and `pg_constraint`: `event_blood` (id, user_id → users ON
+  DELETE CASCADE, event_id, total bigint, timestamps; UNIQUE (user_id, event_id)), `event_notices` (… notice_id;
+  UNIQUE (user_id, event_id, notice_id) — the constraint's name is cut at Postgres's 63 characters, the constraint is
+  whole), `exploration_state.manor_event_id / manor_depth / manor_run_blood / manor_offered`; all three in
+  `_fluent_migrations`; 0 rows each.
+- **After.** At 02:04:49 `online`, restarts 9, still one `[WATCHDOG]` (10-08), `Code: 400` 922, no 409 / 429 / 502 —
+  the watchdog would have restarted a deaf poll loop by then.
+- **What went live:** everything built 10-24 → 10-31 — the plot cost, the softer wear and the gear sheet's block, the
+  repair at ×0.5, the Defend numbers, Велесова ніч with its 10-31 polish, the stronger beasts, the autumn road, the
+  coop's banner. Велесова ніч's first decree goes out at 09:00; the finale's zlatnyks are the owner's after Sun 18:00.
+- **Records:** this entry, the superseded baseline above, `Prompt.md` (the state rows, the next action, the baseline),
+  `status.md`, README, `TODO.md` (the walk blocks and the Open notes marked live, a footer), the FAQ rows in
+  `.memory/live-ops.md` brought to the present, and the auto-memories that said NOT LIVE.
 
 ## Session — 2026-10-31, past midnight (the holiday's last polish, the autumn road, the coop's banner) — `2db2435`, `97a2be9`, `9701f27`, `084f23b`, `2c2d895`
 

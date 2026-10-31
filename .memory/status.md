@@ -21,13 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-10-31 — the holiday's last polish, the autumn road, the coop** (NOT LIVE — the same restart). The capital
+**2026-10-31 — the holiday's last polish, the autumn road, the coop** (LIVE since the 2026-10-31 02:01 restart). The capital
 wears Велесова ніч from Saturday 12:00 (`events.json` → `artFrom`: its pictures, the palace's empty throne, the square's
 welcome), only the 09:00 decree before it; Saturday's noon line no longer says the fortune teller deals no cards; the
 scribe's story names days, not «третю ніч»; the road card is an autumn forest; «Курник закладений». Content hash →
 `231acc72`; 504 tests.
 
-**2026-10-30 — stronger beasts: №5–14 a level up** (content + a test, NOT LIVE — it rides the holiday's restart; no
+**2026-10-30 — stronger beasts: №5–14 a level up** (content + a test, LIVE since 2026-10-31 02:01; no
 schema bump, no migration; `content/spec/spec-bestiary.md` §14). The moose … the rabid bear each moved a level up
 (L6 … L15), every stat × contract(L+1)/contract(L) so each keeps its share of the contract; №1–4, XP, the bands, the
 level shift (6%) and the manor's creatures unchanged. On the week's fights a fight costs 7.3 HP where it cost 6.2;
@@ -35,8 +35,8 @@ km 1–11 and the 30-/60-minute 🏕 runs meet only №1–4, but the 90-minute 
 (modelled: a level-5 newcomer's deaths a run 46% → 50%, the baseline itself unverified — `TODO.md` → Open). `records` → `438f9ec47d93ca8f`, content hash → `30a590f0` (COMBINED
 `ea15c16c660f81f2`); 502 tests. `.memory/rebalance.md` → "Stronger beasts — step 2".
 
-**2026-10-29 — Велесова ніч, the first holiday** (content + Swift, NOT LIVE — schema v29, three migrations, it
-needs the restart before Sat 31.10 08:30; `content/spec/event-veles-night.md`). Decrees from the sick King
+**2026-10-29 — Велесова ніч, the first holiday** (content + Swift, LIVE since 2026-10-31 02:01 — schema v29, the three migrations
+verified on the tables; `content/spec/event-veles-night.md`). Decrees from the sick King
 (Sat 09:00 / 14:00 / 16:00), themed 12:00 notices on both days, the reveal (the cup from the manor no list
 names, the fortune teller's Moon, Veles laying the table for the dead; the cure — blood) told IN THE PALACE since
 the 10-30 rework — 18:00 only summons everyone there, and the scribe hands the flask over («🩸 Взяти флягу»; no
@@ -50,35 +50,35 @@ innkeeper and the fortune teller speak of it. `events.json`, `EventMath`, `GameE
 watchman's notices, `CapitalController+Flask`; 501 tests; `records` → `7c252b0e1861e91c`, `tuning` →
 `c0380e692986ba04`, content hash → `42ec1955` (COMBINED `a687497d827739b9`); `spawns`, `quests`, `king` unmoved.
 
-**2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, `83002a6`, schema v28, NOT LIVE — it
-ships with the same restart). «🛡 Парирувати» 40% + DEF ×2 (was 30%), «💨 Ухилитися» dodge ×2 + a 45% knife (×1.5
+**2026-10-27 — the forest's Defend set by the owner's numbers** (content + Swift, `83002a6`, schema v28, LIVE since 2026-10-31 02:01 — it
+shipped with that restart). «🛡 Парирувати» 40% + DEF ×2 (was 30%), «💨 Ухилитися» dodge ×2 + a 45% knife (×1.5
 and 15%), «🌀 Магічний бар'єр» 30% off + a 30% spark (60% and 15%) — equal by value per tap against an on-level
 beast (59 / 56 / 60%) and still below an Attack tap; no class's "Defend every round" beats attacking. Shadow
 Veil's knife is its own `specialDefense.shadowVeilChipFraction`, held at 15%. `tuning` → `6b67472ebbcad035`,
 content hash → `a3f69d76` (`.memory/rebalance.md` → "The forest's Defend, set by numbers"). Step 2, stronger
 beasts, was measured the same night and parked by the owner — decided and built on 2026-10-30 (above).
 
-**2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, NOT LIVE — it ships with the v27
-restart: the running v25 binary refuses this bundle). `master.json` → `repairCostFraction` 0.25 → 0.5: a point
+**2026-10-24 — the armour repair back at ×0.5** (content, `a0386b1`, LIVE since 2026-10-31 02:01 — it shipped with the v29
+restart). `master.json` → `repairCostFraction` 0.25 → 0.5: a point
 repaired is hood 1, boots 1.6, breeches 2.5, jerkin 3 again, the set from zero 405 (203 at 0.25); the weapon keeps
 1 🪙 a point and the shave its 1. The owner's call after the per-player reckoning: on the week to 10-24 the
 forest's fights cost 7,663 🪙 at the old wear and 0.25, 3,848 at the new wear and 0.25, 6,854 at the new wear and
 0.5 (`.memory/rebalance.md` → "The repair back at ×0.5"). `records` → `f1501e3c1c9dc759`, content hash → `c8d337fe`.
 
-**2026-10-24 — the gear sheet explains the wear** (Swift + locales, `cf6e3ea`, NOT LIVE — a restart: Lingo is
-not reloaded). The profile's «🛡 Спорядження» ends with «🔧 Як зношується» in place of its one-line hint: a forest
+**2026-10-24 — the gear sheet explains the wear** (Swift + locales, `cf6e3ea`, LIVE since 2026-10-31 02:01 — it needed a restart:
+Lingo is not reloaded). The profile's «🛡 Спорядження» ends with «🔧 Як зношується» in place of its one-line hint: a forest
 fight's end — «перемога — 1 очко з шансом 50%, втеча — 1, смерть — 2» — the 🏕 run the same, the Arena and training
 nothing; at 0 armour gives nothing and leaves its set, a weapon keeps half; the Master's repair shaves 1. Every
 number is read from the data (`WearMath.shape`, `repairMaxShave`). The owner's sample and phrasing.
 
-**2026-10-24 — a fight wears less** (Swift + content, schema v27, `6620d39`, NOT LIVE — a restart, not a
-`/reload`). `economy.gear.wearBudget` is a win ½, a flee 1, a death 2 (was 1 / 2 / 3); a fraction is a chance per
+**2026-10-24 — a fight wears less** (Swift + content, schema v27, `6620d39`, LIVE since 2026-10-31 02:01 — it needed a restart,
+not a `/reload`). `economy.gear.wearBudget` is a win ½, a flee 1, a death 2 (was 1 / 2 / 3); a fraction is a chance per
 fight (`WearMath`), so a win takes one point in about half the fights, and a passive run rolls each of its fights
 the same way. The shave and the maxima are unchanged; the repair price went back to ×0.5 the same night (above).
 On the week to 10-24 the same fights wear
 half (3,900 points of 7,769; 84% of the old wear was wins). The owner's pick of four (`.memory/rebalance.md`).
 
-**2026-10-24 — a plot costs materials** (Swift + content, schema v26, `bac1a70`, NOT LIVE — it needs a
+**2026-10-24 — a plot costs materials** (Swift + content, schema v26, `bac1a70`, LIVE since 2026-10-31 02:01 — it needed a
 restart, not a `/reload`). Each type has a recipe of its own: farm 10🪵 2🟫 1🔩 3🥔 · sawmill 8🪵 10🪨 2🔩 1🧱 ·
 mine 12🪵 3🟫 2🔩 1🧱 · coop 8🪵 5🪨 1🧱 3🥚; the player's Nth plot pays N of it, the first without clay and iron
 (`PlotBuildCost`, `spec-progression.md` §7). The build card lists the materials under «📜 Матеріали»; a refused
@@ -1085,6 +1085,11 @@ still untested against a real database**, and it is now the cheapest way to ship
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
 rule about never restarting it without asking is in `CLAUDE.md`. Digest baseline — the Pi
+since the 2026-10-31 02:01 restart (`20f5681`): `records 438f9ec47d93ca8f` / `tuning c0380e692986ba04` / `spawns
+004c138c83fa9d1a` / `quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `231acc72`, COMBINED
+`ea15c16c660f81f2`, **schema v29** — it carried everything built 10-24 → 10-31 (the plot cost, the softer wear and
+its sheet, the repair at ×0.5, the Defend numbers, Велесова ніч with three migrations, the stronger beasts, the
+holiday's 10-31 polish, the autumn road, the coop's banner). Before it, the Pi
 since the 2026-10-23 22:46 restart (`7ac11f0`): `records 68ecc8783252a905` /
 `tuning 799a96eb5f8619df` / `spawns 004c138c83fa9d1a` / `quests 30de20902006e3b9` / `king
 e3a492be1b017e81`, content hash `30b0d499`, **schema v25** (the forest past km 49 moved the schema; the
@@ -1093,12 +1098,8 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`6ac0351`), the warehouse's ℹ️ (`40b52df`), a find that half fits, the road's hint and «Руки майстра»
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
-and clay at 24 / 12 (`34fe88c`). **The tree differs since 2026-10-24** (a plot costs materials, a fight wears
-less, the repair is back at ×0.5 and, since 2026-10-27, the forest's Defend is set by the owner's numbers;
-schema v28, waiting for a restart): `records f1501e3c1c9dc759`, `tuning 6b67472ebbcad035`, content hash
-`a3f69d76`; the other three lines as above.
-Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **478 tests**. Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **504 tests** (2026-10-31). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
