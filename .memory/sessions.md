@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **the prize announcement** — content + uk + en + a test: a `prizes` notice in `events.json`,
+- *(this commit, 11-01)* **`ae663b1`'s hash fill** — records only.
+- `ae663b1` (11-01) **the prize announcement** — content + uk + en + a test: a `prizes` notice in `events.json`,
   Sunday 10:00 → the close, the owner's text verbatim («до %{close}» from the data). No Swift: the Pi needs `git pull` and
   `pm2 restart ROI` before 10:00, no build. Content `231acc72` → `6e734f14`, `records` → `c2e645e984e10916`, COMBINED →
   `f613c07ef73b320b`; 504 tests.
@@ -920,7 +921,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-01, past midnight (the holiday's prizes; the bag's item card begun) — *(this commit)*
+## Session — 2026-11-01, past midnight (the holiday's prizes; the bag's item card begun) — `ae663b1`
 
 **The bag's item card — design only, PAUSED by the owner** («Перед тим як ми продовжимо…»). The owner's idea: the
 bag's food and material lists show names only, no «🍴 Зʼїсти»; a tap opens a card — the description, then «🎒 У сумці:
