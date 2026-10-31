@@ -295,6 +295,7 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | An apostrophe in a name *(live since 2026-10-13 18:54 — built 2026-10-11)* | The nickname and the estate name accept an apostrophe between two letters, whichever the keyboard sends (' ʼ ’), and store it as '. At an edge, beside a space or a digit, or doubled it is still refused with «Лише літери, цифри та одиничні пробіли…». Only registration sets a name, so an account already named keeps its name. Ready reply: «Тепер в імені й назві маєтку можна писати апостроф усередині слова: «Дар'я», «Солов'їний гай».» | `PlayerNameRules` |
 | The 🪙 Багатство board *(live since 2026-10-17 17:40)* | The silver in the purse right now — not the guild's treasury, items, market lots or zlatnyks; an empty purse is not listed. Other players show a place and a name only, on purpose (the owner's call, so a purse is not read at the market); your own row shows your sum, and spending drops you at once. Equal purses share a place, ordered by level | `LeaderboardService` (`.wealth`, `showsOthersValues`) |
 | «Руки майстра» — «🔨 Виготовити річ», how? *(asked 2026-10-22; the line reads «🔨 Викувати щось у Майстерні» since the 2026-10-23 22:46 restart, the owner's pick)* | Only a WORKSHOP craft counts (estate T3, which the decree before it demands): a kitchen dish is the other decree's event, and the weapon or bag upgrade and salvage are not crafts. Today the one craftable workshop recipe is 🔳 Залізний злиток from 10 🔩 — 🏰 Маєток → 🏠 Дім → 🛠 Майстерня → 🔳 Залізний злиток → 🔨 Створити, iron drawn from bag + warehouse. Counts only from when the decree opens; 100 🪙. The ingot is the weapon ladder's from tier 3. Iron: the row «Where iron drops» | `KingService.record(.crafted)` from `CraftingService.craft`; `recipes.json`; `king.json` |
+| Велесова ніч's prizes — when and how? *(announced Sunday 10:00, decided 2026-11-01)* | By the board's place at the 18:00 close, ties sharing: 🟡 100 / 60 / 40 for 1–3, 🪙 1,000 / 800 / 600 / 500 / 400 / 300 / 250 / 200 / 150 / 100 for 1–10 — each place its own sum, nothing is split — and 5 × «Бенкет Намісника» for everyone with at least 1 🩸 (a flask alone is not enough). Handed out in person at the palace after the close, with no expiry — NOT built yet, so no date can be promised. Reply: «Нагороди вручатиме сам Король у палаці після 18:00 — бот покличе вас окремим повідомленням, щойно все буде готово. Нагорода чекатиме вас без строку, а кожне місце отримує свою суму, ділити нічого не треба.» | `content/spec/event-veles-night.md` §4.8 |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.
 
@@ -303,15 +304,17 @@ The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.
 The design: `content/spec/event-veles-night.md`. Live since the 2026-10-31 02:01 restart. **What shows when:** the
 09:00 / 14:00 / 16:00 decrees are pushed, nothing else changes before noon; from 12:00 the capital wears the holiday
 (its pictures, the palace's empty throne, the square's welcome — `artFrom`); from 18:00 the summons, the manor at km 5,
-the scribe's story and the flask, the innkeeper's and the fortune teller's lines; Sunday 18:00 the finale and the close.
+the scribe's story and the flask, the innkeeper's and the fortune teller's lines; Sunday 10:00 the prize announcement
+(`prizes`, added 2026-11-01 — it needs the restart that ships it); Sunday 18:00 the finale and the close. The prizes
+themselves (spec §4.8) are handed out at the palace once that is built — not by hand.
 **The owner's 17:30 copy edits** (the story and the scribe rewritten, the entrance question in three lines, «За цей
 спуск» → «За цей похід», a pumpkin with no room's line over it) are text + one Swift change: they reach players only
 with the Pi build and `pm2 restart ROI` that follows them — before that the 02:01 copy is what shows.
 Run these the way the snapshot SQL runs (scp the file to
 `/tmp`, `sudo -n -u postgres psql -p 5433 -d ArtaniaDB -f - < /tmp/file.sql`). All read-only.
 
-The board as the finale reads it — competition rank, so ties share a place (the top three get zlatnyks by
-hand, `## Crediting zlatnyks` above; the watchman announces the credit as usual):
+The board as the finale reads it — competition rank, so ties share a place (the prizes of spec §4.8 are paid
+by place on this ranking, ties sharing — at the palace, not by hand):
 
 ```sql
 SELECT u.nickname, u.telegram_id, b.total,

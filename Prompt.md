@@ -23,15 +23,15 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-10-31 02:04)
+### Where things stand right now (the Pi and git as read 2026-11-01 00:55)
 
 | | |
 |---|---|
-| HEAD | **this commit** (the holiday's copy, the owner's 17:30 rewrite). Under it, unpushed: **`4f72f34`** (the test bot recorded), **`bbbfd81`** (`006ad51`'s hash fill), **`006ad51`** (the 2026-10-31 02:01 deploy record, the docs brought in sync after it, and one Swift line: the digest names the holiday's `artFrom`). Under them everything is pushed: `origin/main` = the Pi = **`20f5681`** (the 10-31 hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`20f5681`** (the owner pushed 2026-10-31, just before the 02:01 deploy), the commit the Pi runs. Push is the owner's |
-| running on the Pi | **`20f5681`**, online since **2026-10-31 02:01:39** (pm2 restarts 9 — the deploy; `pm2 save` done). Content schema **v29**, content hash **`231acc72`** — the digest matched the Mac byte for byte before the restart. The holiday's three migrations ran and were verified on the TABLES (`event_blood`, `event_notices`, `exploration_state.manor_*`; unique keys, cascade, 0 rows). 11 × 403 from the restart notice (players who blocked the bot; 8 last time), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53), `Code: 400` still 922. The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the prize announcement — content + locales + a test, no Swift). Under it everything is pushed: `origin/main` = the Pi = **`c77a25b`** (the holiday's copy). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`c77a25b`** (the owner pushed it with the 17:56 restart on 2026-10-31), the commit the Pi runs. Push is the owner's |
+| running on the Pi | **`c77a25b`**, online since **2026-10-31 17:56:45** (a Pi build at 17:56:23, pm2 restarts 10 — the owner's restart for the holiday's 17:30 copy, recorded nowhere until 11-01 00:55). Content schema **v29**, content hash **`231acc72`**. Under it the 02:01 deploy's checks still hold (the holiday's three migrations verified on the TABLES). Still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The holiday's copy (this commit)** — five `uk.json` / `en.json` lines (the scribe's story and words, the entrance question, «За цей похід» on the manor card and the death screen) and one Swift change (a pumpkin on a room's first depth prints no room line): a Pi BUILD, then `pm2 restart ROI`. Content untouched, so the digest below stands. **And `006ad51`'s digest line — no gameplay.** `ContentDigest` now names `artFrom`, so the tree's digest differs from the running binary's on the SAME content: here `records 64bfea4db5bdbee8` · COMBINED `40b3160c7a2fab15`, on the Pi `records 438f9ec47d93ca8f` · COMBINED `ea15c16c660f81f2`; the content hash is `231acc72` on both. The next deploy's pre-flight compares the new numbers. Everything else committed went live at the 2026-10-31 02:01 restart (`.memory/sessions.md` → "Deploy — 2026-10-31 02:01") |
+| waiting for a restart | **The prize announcement (this commit) — BEFORE Sunday 10:00.** `events.json` gains the `prizes` notice and both locales its text; no Swift, so on the Pi `git pull --ff-only`, then the pre-flight digest (it must read content `6e734f14`, `records c2e645e984e10916`, COMBINED `f613c07ef73b320b` — the Pi's binary is `c77a25b`'s, the same Swift as the tree), then ASK, then `pm2 restart ROI` — a restart with the manor open, so read who is inside first (live-ops SQL). The other four digest lines are unchanged |
 
 ### Where the last sessions stopped (2026-10-24 → 10-31)
 
@@ -115,12 +115,11 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
+**0 — The prize announcement must be live before Sunday 10:00** (the row above), then **the prizes at the palace** — decided, not built, its copy shown as a draft (`content/spec/event-veles-night.md` §4.8, `TODO.md` → Open, 2026-11-01); build on the owner's word. **The bag's item card is paused mid-design** (same TODO block). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
 14:00 / 16:00 decrees (each once: count `event_notices`), the capital wearing the holiday from 12:00, at 18:00 the
 summons, the manor at km 5, the scribe's story and the flasks; the board, the flasks and who is inside are read with the
 SQL in `.memory/live-ops.md` → "Велесова ніч" (and "what shows when"). Walk list: `TODO.md` → "Added 2026-10-29".
-**After the finale (Sun 18:00) the top three's zlatnyks are the owner's, by hand** (`.memory/live-ops.md` →
-"Crediting zlatnyks"). Then the two after-holiday questions in Open: the «Принесено» undercount and the 90-minute
+**After the finale (Sun 18:00) the prizes are paid at the palace** (spec §4.8 — not by hand any more, 2026-11-01). Then the two after-holiday questions in Open: the «Принесено» undercount and the 90-minute
 🏕 run for L1–5.
 
 **1 — Walk the blocks live since 10-31 02:01** — `TODO.md` → "Walk list", the top blocks: a first plot on a fresh
@@ -128,7 +127,7 @@ account (no 🧱 / 🔩 asked) and a second with one material short (the modal, 
 «закладений»; a few fights — the kit loses a point in about half the wins, a flee one, a death two; «🔧 Як зношується»
 on «🛡 Спорядження»; at the Master a hood missing 10 points costs 10 🪙; in a forest fight «🛡 Парирувати» strikes ~40%
 of a clean hit, «💨 Ухилитися» ~45%, «🌀 Магічний бар'єр» lets 70% of a blow through and sparks ~30%; the moose on a T1
-estate shows ❤️ 102; the road card is the autumn forest; `/content` reads schema v29 and hash `231acc72`. Under them the
+estate shows ❤️ 102; the road card is the autumn forest; `/content` reads schema v29 and hash `231acc72` (`6e734f14` after the prize announcement's restart). Under them the
 twelve blocks live since 10-23 22:46, the four since 10-17 17:40, the five since 10-13 18:54, the six since 10-11 13:21
 and the 10-09 ones. For the Chancellery, credit a test account in DBeaver first (`.memory/live-ops.md` → "Crediting
 zlatnyks"). No human has seen the whole King's chain, and `/reload` has never run against a real database. The
@@ -204,17 +203,18 @@ match the Mac BEFORE the restart is ordered — then **ASK before `pm2 restart R
 schema change ships `content/data` and the binary TOGETHER (the handshake — **v29** on the Pi and in the tree since
 10-31 02:01 — refuses a mismatch, a `/reload` included). After a migration, verify the TABLE, not the log line. Recipe and
 traps: auto-memory `linux-build-gap`, `project-pi-deploy-swiftenv`, `reference-deploy-rehearsal`. The next
-pre-flight expects the tree's numbers (`records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`), not the 10-31 ones.
+pre-flight expects the tree's numbers (`records c2e645e984e10916`, COMBINED `f613c07ef73b320b`, content `6e734f14`);
+the Pi's binary (`c77a25b`) already reads `64bfea4db5bdbee8` / `40b3160c7a2fab15` on its current content (checked
+2026-11-01 01:40) — the tree's digest code — so a content-only change there needs no build.
 
 ### The baseline and the simulator
 
-**The current baseline — on the Pi since 2026-10-31 02:01 (`20f5681`, schema v29):** `records
-438f9ec47d93ca8f` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests
-30de20902006e3b9` · `king e3a492be1b017e81`, content hash `231acc72` (COMBINED `ea15c16c660f81f2`). **This
-is the one place the current baseline is kept**; the superseded ones are in `.memory/sessions.md` →
-"Digest baselines — superseded", and the tree's steps between 10-24 and 10-31 in the Commit index. **The tree differs
-since `006ad51`** — the same content, but the digest now names `artFrom`: `records 64bfea4db5bdbee8`, COMBINED
-`40b3160c7a2fab15`; `tuning`, `spawns`, `quests`, `king` and the content hash as above.
+**The current baseline — on the Pi since 2026-10-31 17:56:45 (`c77a25b`, schema v29; read on the Pi 2026-11-01 01:40):**
+`records 64bfea4db5bdbee8` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` ·
+`king e3a492be1b017e81`, content hash `231acc72` (COMBINED `40b3160c7a2fab15`). **This is the one place the current
+baseline is kept**; the superseded ones are in `.memory/sessions.md` → "Digest baselines — superseded", and the tree's
+steps in the Commit index. **The tree differs since the prize announcement (11-01)**: `records c2e645e984e10916`,
+content hash `6e734f14`, COMBINED `f613c07ef73b320b`; `tuning`, `spawns`, `quests` and `king` as above.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
 `simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate

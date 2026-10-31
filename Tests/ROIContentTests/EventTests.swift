@@ -101,7 +101,11 @@ final class EventTests: XCTestCase {
         XCTAssertEqual(opens, try XCTUnwrap(EventClock.date("2026-10-31T16:00:00Z")))
         XCTAssertEqual(ends.timeIntervalSince(opens), 24 * 3600)
         XCTAssertEqual(event.entranceKm, 5)
-        XCTAssertEqual(event.notices.map(\.id), ["decree_1", "decree_2", "decree_3", "summons", "finale"])
+        // «prizes» (2026-11-01, the owner): the prize announcement, Sunday 10:00 until the close.
+        XCTAssertEqual(event.notices.map(\.id), ["decree_1", "decree_2", "decree_3", "summons", "prizes", "finale"])
+        let prizes = try XCTUnwrap(event.notices.first { $0.id == "prizes" })
+        XCTAssertEqual(try XCTUnwrap(EventClock.date(prizes.at)), try XCTUnwrap(EventClock.date("2026-11-01T08:00:00Z")))
+        XCTAssertEqual(prizes.until, event.endsAt)
         XCTAssertEqual(event.creatures.map(\.id), ["bat", "rat"])
         XCTAssertEqual(event.creatures.map(\.xpReward), [38, 57])
         XCTAssertEqual(event.creatures.map(\.bloodDivisor), [2, 1])

@@ -60,6 +60,7 @@ falls there wakes at home.
 | Sat 31.10, 14:00 | 📜 decree 2 |
 | Sat 31.10, 16:00 | 📜 decree 3 |
 | Sat 31.10, 18:00 | 🕯 the summons to the palace (one message); the manor opens — the story and the flask wait in the palace (§4.3) |
+| Sun 01.11, 10:00 | 📜 the prize announcement (added 2026-11-01, the owner's text, §4.8) |
 | Sun 01.11, 12:00 | 🌑 the daily notice, themed again |
 | Sun 01.11, 18:00 | 👑 the finale; the manor closes |
 
@@ -238,8 +239,8 @@ An old entrance button after the close:
 > 🏚 На п'ятому кілометрі — лише порожня руїна і стара верба над ставком. Ворожка казала — до наступної осені.
 
 The board — the journal's «🏆 Рейтинги» gains «🩸 Кров для Короля», «Хто приніс найбільше крові
-Його Величності»; a player with none reads «Ви ще не заходили до маєтку Велеса». The owner
-credits the top three with zlatnyks by hand; the watchman announces it as usual.
+Його Величності»; a player with none reads «Ви ще не заходили до маєтку Велеса». *Superseded 2026-11-01:* the
+top three's zlatnyks by hand gave way to the prizes of §4.8, handed out at the palace.
 
 ### 4.7 The capital while the King is ill (`artFrom` to close — 12:00 Saturday since 2026-10-31; the decrees alone go out from 09:00)
 
@@ -247,6 +248,48 @@ credits the top three with zlatnyks by hand; the watchman announces it as usual.
 - 🏛 the capital's welcome, from 12:00 Saturday with the square's picture (2026-10-31, the owner), ends «А з вікон палацу долинає марення.» instead of «…пильно спостерігає сам Король.» («ночами» struck 2026-10-31: at Saturday noon one night has passed)
 - 🍺 the innkeeper (open to close): «Чули, наміснику? На п'ятому кілометрі у вікнах мертвого маєтку світиться. Кажуть, звідти не повертаються. Брешуть: повертаються — на порозі власного дому. Ха!»
 - 🔮 the fortune teller (open to close): «Велесова ніч, наміснику. Мертві йдуть додому — а ви йдете до них.»
+
+### 4.8 The prizes (added 2026-11-01, past midnight — the owner)
+
+Read off the Pi at 00:53 Sunday: 12 flasks, 11 with blood, the most 666 🩸, median 42.
+
+**The announcement** — the notice `prizes` (📜), Sunday 10:00 until the close, to every registered player. The
+owner's own text, verbatim (an edit was offered and declined, but for the Druid, who became the fortune teller);
+«18:00» is `%{close}`, the decrees' value, so it renders the same and moves with the data. **The numbers are typed
+into it** (the owner's pick): the reward table must agree with it.
+> 📜 **Оголошення Палацу**
+>
+> Життя нашого Короля висить на волосині — Король уже однією ногою за столом Велеса, і лише відданість та старання Намісників тримають його серед живих.
+>
+> Збір крові продовжується до 18:00, адже наявних запасів усе ще недостатньо для виготовлення ліків. Ворожка вже чаклує над відваром із крові Скажених створінь, а Палац оголошує про щедрі нагороди для всіх рятівників Корони:
+>
+> 🍽 Дарунок Короля: Кожен Намісник, який принесе бодай краплю крові скажених істот, отримає 5 Бенкетів Намісника.
+> 🪙 Срібний фонд (Топ-10): Десятка найактивніших збирачів розділить між собою щедру королівську нагороду — від 100 до 1000 срібників.
+> 👑 Королівська заслога (Топ-3): Трійці найвідданіших героїв буде вручено особливу валюту — Златники. Застосувати їх можна буде в Канцелярії, де вже готуються унікальні та достойні пропозиції.
+>
+> Поспішайте! Доля королівства у ваших руках!
+
+**The rewards** (decided; ties share a place, the board's competition rank; a participant is a flask with blood > 0,
+the board's and the finale's own definition):
+
+| place | 🟡 zlatnyks | 🪙 silver | 🍽 «Бенкет Намісника» |
+|---|---|---|---|
+| 1 | 100 | 1,000 | 5 |
+| 2 | 60 | 800 | 5 |
+| 3 | 40 | 600 | 5 |
+| 4 · 5 · 6 | — | 500 · 400 · 300 | 5 |
+| 7 · 8 · 9 · 10 | — | 250 · 200 · 150 · 100 | 5 |
+| 11 and below, with blood | — | — | 5 |
+
+**Handed out in person at the palace after the close, with no expiry** (decided; NOT built — the owner: «Спершу текст
+анонсу»). The sample shown, its copy a draft, not approved: a one-time «👑 Король кличе до палацу…» to the
+participants; under the palace card the King's words, the place and blood («🥇 1-ше місце · 666 🩸») and a «💰» line;
+«🎁 Отримати нагороду» pays in ONE transaction — a claimed marker on `event_blood` (a migration), the zlatnyks and
+their announced marker together (the receipt names them, the watchman stays quiet), the silver through the player's
+own cached `User`, the feasts into the bag after a fit check in units (the capital has no warehouse: no room → a modal,
+nothing paid, the reward waits). Not by SQL: `users.silver` is a cached field a player's next silver tap would write
+back, and a hand-inserted bag row skips the cap and is never announced. The table belongs in `events.json`, printed by
+`spec events` and hashed by the digest.
 
 ## 5. The creatures and the numbers
 

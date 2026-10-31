@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 10-31)
+## Commit index — live-play polish and after (2026-09-09 → 11-01)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,8 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 10-31)* **the holiday's copy, the owner's 17:30 rewrite** — uk + en + one Swift change, NOT deployed
-  (a Pi build and `pm2 restart ROI`): the scribe's story and words, the entrance question, «За цей спуск» → «За цей
+- *(this commit, 11-01)* **the prize announcement** — content + uk + en + a test: a `prizes` notice in `events.json`,
+  Sunday 10:00 → the close, the owner's text verbatim («до %{close}» from the data). No Swift: the Pi needs `git pull` and
+  `pm2 restart ROI` before 10:00, no build. Content `231acc72` → `6e734f14`, `records` → `c2e645e984e10916`, COMBINED →
+  `f613c07ef73b320b`; 504 tests.
+- `c77a25b` (10-31) **the holiday's copy, the owner's 17:30 rewrite** — uk + en + one Swift change, LIVE since the
+  2026-10-31 17:56:45 restart (a Pi build at 17:56:23; read off the Pi 11-01 00:55, nowhere recorded before): the scribe's story and words, the entrance question, «За цей спуск» → «За цей
   похід»; `findLead` prints no room's line over a find. Content and digest unchanged; 504 tests.
 - `4f72f34` (10-31) **the test bot** — records only: the Mac runs `@artania_gamebot` on its own database
   `roi_test`; `CLAUDE.md`, `Prompt.md`, README, `tech-stack.md`, `status.md` drop the Mac-shares-the-token exception.
@@ -808,6 +812,11 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-31 02:01 to 17:56 (`20f5681`, schema v29):** `records 438f9ec47d93ca8f` ·
+`tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content
+hash `231acc72` (COMBINED `ea15c16c660f81f2`). The content did not move at 17:56; `006ad51`'s digest naming `artFrom`
+did — `c77a25b` reads the same content as `records 64bfea4db5bdbee8` (COMBINED `40b3160c7a2fab15`).
+
 **The baseline the Pi ran from 2026-10-23 22:46 to 2026-10-31 02:01 (`7ac11f0`, schema v25):** `records
 68ecc8783252a905` · `tuning 799a96eb5f8619df` · `spawns 004c138c83fa9d1a` · `quests
 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `30b0d499` (COMBINED `c1d4f62d7aed7d8b`). The plot cost
@@ -911,7 +920,62 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-10-31, before the opening (the owner rewrites the holiday's copy) — *(this commit)*
+## Session — 2026-11-01, past midnight (the holiday's prizes; the bag's item card begun) — *(this commit)*
+
+**The bag's item card — design only, PAUSED by the owner** («Перед тим як ми продовжимо…»). The owner's idea: the
+bag's food and material lists show names only, no «🍴 Зʼїсти»; a tap opens a card — the description, then «🎒 У сумці:
+N», then «🍴 Зʼїсти» + «🗑 Викинути» (food) or «🗑 Викинути» alone (material). Decided: a dish's card prints what it
+restores under the description («🍖 +42 Снаги · ❤️ +11 ОЗ»); raw food (🥔 potato, 🥩 raw meat) gets no eat button,
+only «🗑 Викинути» and «🔥 Це інгредієнт: спершу на кухню». OPEN (the owner asked to clarify, then switched to the
+prizes): the list's shape (name × N one per row / names only two per row / names only one per row) and how a
+discard picks its count (buttons 1 / 5 / «Усі (N)» · a typed number · one per tap + «Усі»). Nothing built.
+Found while reading: NOTHING in the game destroys a food or a material today — «Викинути» is a new sink; in the
+trail bag it would change the forest (drop clay to pick up iron), so it is the bag's only for now. `TODO.md` → Open.
+
+**The prizes for Велесова ніч.** Read off the Pi at 00:53 (the owner granted read access to the production database
+this session): 12 flasks, 11 with blood, 1,882 🩸 in all, the most 666 (Inokentiy), median 42; 544 manor fights by
+11 players; nobody holds a zlatnyk (one class change ever bought). The owner's decisions, in quiz rounds:
+- **what**: 🟡 zlatnyks for places 1–3 — 100 / 60 / 40; 🪙 silver for places 1–10 — 1,000 / 800 / 600 / 500 / 400 /
+  300 / 250 / 200 / 150 / 100; 🍽 5 × «Бенкет Намісника» to everyone who brought at least 1 🩸 (the board's own
+  definition — a flask alone is not a participant). Ties share a place (`EventStandings.rank`, the board's rule).
+- **how**: in person at the palace AFTER the close, no expiry — the King's summons to the participants, his words with
+  the place and a «💰» line, «🎁 Отримати нагороду», one transaction (the marker, the zlatnyks with their announced
+  marker, the silver through the player's own session, the feasts into the BAG with a fit check: the capital has no
+  warehouse). Why not SQL: zlatnyks would be safe, but `users.silver` is a cached `User` field (a player's next
+  silver tap writes the stale value back) and food inserted by hand skips the bag's cap and is never announced.
+  The sample was shown (copy drafted, NOT approved); **nothing of the claim is built** — «Спершу текст анонсу».
+- **the announcement** (the owner's addition): «📜 Оголошення Палацу», Sunday 10:00 → 18:00, every registered player,
+  the owner's own text — the numbers TYPED into it (the owner's pick (а) of two: no build before 10:00; the reward
+  table, when it lands in `events.json`, must agree with «5», «від 100 до 1000» and the top three). My edit was
+  shown (a волхв for the Druid, «Кожен, хто…» for «Кожен Намісник», no «Топ», «розділить між собою» is not how the
+  places pay, «заслога» looks like a typo, a line on where the prizes are handed out); the owner kept their text,
+  the Druid replaced by «Ворожка», and the line on the Chancellery's «унікальні та достойні пропозиції» (today it
+  sells only the class change). «до 18:00» is `%{close}`, the decrees' own value — the same output, bound to the data.
+
+**Built:** `events.json` → `notices` gains `prizes` (📜, 10:00 → the close); `event.veles_night_2026.notice.prizes` in
+uk (verbatim) and en (same pattern, not approved); `EventTests.testShippedScheduleIsTheApprovedOne` pins the new
+schedule (it failed first, as it should). Checked: no multi-UTF-16 character before `%{close}` in either locale (the
+Lingo bug), 884 / 955 UTF-16 rendered; `validate --strict` clean; 504 tests; `spec events` block unchanged; digest:
+content `6e734f14`, `records c2e645e984e10916`, COMBINED `f613c07ef73b320b`, the other four lines unchanged.
+
+**Read off the Pi:** HEAD `c77a25b`, the binary built 2026-10-31 17:56:23 and booted 17:56:45 (pm2 restarts 10) — the
+owner's 17:30 copy went live before the opening, which no record said; still one `[WATCHDOG]` line.
+
+**The owner's audit («перевір всі зміни… зроби коміт»).** Both locales rendered through the real Lingo (a scratch package
+on `.build/checkouts/Lingo` over `Localizations/`): no raw `%{…}`, «до 18:00», uk identical to the owner's paste character
+by character once the `<b>` tags are set aside, one `<b>` pair and no other `<`/`&`; 887 / 958 UTF-16 with the icon. A
+forced recompile of `EventTests.swift` under bash, its output captured whole: 0 diagnostics. No Swift, `Modules` or
+`Package.*` change since `c77a25b`. The Pi's binary on its current content reads `records 64bfea4db5bdbee8`, COMBINED
+`40b3160c7a2fab15` — the tree's digest code — so the pull needs no build. Mutation: the notice at 11:00 moves `records`
+(→ `93a228173039934b`), so the digest guards its time. The manor keeps no state in process memory (no
+`EphemeralChatState`, static or actor state in its controller, service or the flask), so a restart with it open is
+safe. Records the first pass missed, fixed: `Prompt.md`'s baseline and pre-flight numbers (still `20f5681`'s and
+`006ad51`'s), `status.md`'s baseline and two missing paragraphs (this change, and `c77a25b`), the 17:56 restart had no
+`## Deploy —` entry (reconstructed) and `20f5681`'s baseline went to "superseded", the TODO footer, a player-FAQ row with
+a ready reply on the prizes, the file map's test line, and the top three's by-hand zlatnyks closed in `TODO.md` and the
+auto-memory.
+
+## Session — 2026-10-31, before the opening (the owner rewrites the holiday's copy) — `c77a25b`
 
 **Tried on the test bot first.** The owner asked to run the holiday there NOW: a copy of `content/data` in the
 scratchpad with `opensAt` and the summons at 15:00 and the three decrees closed at 15:00 (`validate --strict`
@@ -938,7 +1002,7 @@ digest unchanged (`records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`, conte
 string rendered with its values, HTML balanced, compared with the paste character by character (identical but
 for the two typos). The spec's quoted copy, TODO's checklist, live-ops, the file map and `Prompt.md` updated.
 
-## Session — 2026-10-31, afternoon (the test bot) — *(this commit)*
+## Session — 2026-10-31, afternoon (the test bot) — `4f72f34`
 
 **Asked for** a test version of the bot, to check updates before they reach the Pi; then, mid-answer, the
 owner's call: **it runs only from the Mac**, never as a second app on the Pi. Then "I create the bot, give you
@@ -995,6 +1059,14 @@ dead code and for what was forgotten, then commit.
 
 **Dead code:** `EventCatalog.running()` / `GameEvent.isRunning` were removed in `97a2be9` once their last reader moved;
 nothing else this night's work left unread. The scratch harness (`probe3`) lives outside the repo.
+
+## Deploy — 2026-10-31 17:56 (`20f5681` → `c77a25b`) — reconstructed 2026-11-01 from the machine
+
+Nowhere recorded at the time; read off the Pi on 2026-11-01 00:55–01:40. HEAD `c77a25b` (the owner's 17:30 copy of the
+holiday), the debug binary built 17:56:23, `Content loaded: schema v29 … hash 231acc72` at 17:56:45 — four minutes before
+the manor opened; pm2 restarts 10. `origin/main` = `c77a25b`. Who ran it and its pre-flight are not known. The binary's
+digest on that content: `records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15` (the tree's since `006ad51`).
+Still one `[WATCHDOG]` line.
 
 ## Deploy — 2026-10-31 02:01 (`7ac11f0` → `20f5681`)
 

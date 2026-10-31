@@ -2159,6 +2159,13 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-01 — the prize announcement (NOT LIVE: `git pull` on the Pi and `pm2 restart ROI` before 10:00, no build):**
+- [ ] At 10:00 Sunday every registered player gets «📜 <b>Оголошення Палацу</b> …» once, «до 18:00» in it; count it:
+      `SELECT count(*) FROM event_notices WHERE event_id = 'veles_night_2026' AND notice_id = 'prizes';`
+- [ ] A player who first turns up after 18:00 is not sent it (its `until` is the close).
+- [ ] `/content` reads hash `6e734f14` after the restart (the older blocks' `231acc72` is the hash from the 10-31 02:01
+      restart until this one).
+
 **Added 2026-10-31 — the autumn road (LIVE since the 2026-10-31 02:01 restart; a picture only):**
 - [ ] A trip between the estate and the capital, both ways, shows the autumn forest from the saddle (setting out,
       «↩️ Розвернутись», «how long is left»). The owner: for the whole autumn, not just the holiday. **When autumn is
@@ -3207,6 +3214,17 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-11-01 session (past midnight):**
+- **Велесова ніч's prizes, handed out at the palace — decided, NOT built** (`content/spec/event-veles-night.md` §4.8):
+  🟡 100 / 60 / 40 for places 1–3, 🪙 1,000 … 100 for places 1–10, 🍽 5 × «Бенкет Намісника» for everyone with blood;
+  in person after the close, no expiry, one transaction, the feasts into the bag after a fit check. The copy of the
+  summons, the King's words, the button, the receipt and the bag-full modal was SHOWN as a draft and not approved —
+  the owner wanted the announcement's text first. Build only on the owner's word; the table goes into `events.json`
+  and must agree with the announcement's typed numbers.
+- **The bag's item card — PAUSED mid-design** (the session entry has every decision): two questions open — the
+  list's shape and how «🗑 Викинути» picks its count. Decided: a dish's card prints what it restores; raw food gets
+  «🗑 Викинути» alone with «🔥 Це інгредієнт: спершу на кухню». A discard is a new sink — the bag's only, not the trail bag.
+
 **From the 2026-10-30 session — AFTER THE HOLIDAY (the owner: «Цей баг запиши в туду лист після івенту»):**
 - **«Принесено:» undercounted a walk — cause NOT found.** Ліліт (mage L5, tg `429654667`), 2026-10-30 21:46–21:47:
   left with an empty bag, found 🌰 ×2 (km 2, a step forward) and 🫐 ×2 (km 3, a step back) and 🪙 2 (km 2, back),
@@ -3229,8 +3247,8 @@ unrelated commit on purpose.
   is open, hunger before the pumpkin, the meal's «… повна» markers under it. The manor picture shows the approach
   while its screen speaks of the yard — told to the owner, not changed.
 - **The English copy is unapproved** — written to the uk pattern («Veles's Night», «the clerk», «the Lower Town»).
-- **The top three's zlatnyks** are the owner's to credit in DBeaver after Sun 18:00 (the board SQL is in
-  `.memory/live-ops.md`); the amount was never fixed.
+- ~~**The top three's zlatnyks** are the owner's to credit in DBeaver after Sun 18:00~~ — *superseded 2026-11-01*: the
+  prizes of spec §4.8 (🟡 100 / 60 / 40 among them), handed out at the palace — the 2026-11-01 block above.
 - **Four small lines the flow needed were written, not approved** (the spec's §7): the entrance tapped away from
   km 5, the gate's question with an empty bag, the manor's death with an empty bag, and «7-ме місце».
 - **The km lives in the copy as a word** («на п'ятому кілометрі»); moving `entranceKm` needs the copy and a restart.
@@ -3685,6 +3703,10 @@ fixes are `f2ae7ea`; these were found, verified and left:
   reported by every `simulate` run and all deliberate.
 
 ---
+
+*Last updated: 2026-11-01 01:45 — the prize announcement (`prizes`, Sunday 10:00, NOT live until the restart before it)
+and Велесова ніч's prizes decided (spec §4.8, not built); the bag's item card paused mid-design. The 10-31 02:01 footer
+follows.*
 
 *Last updated: 2026-10-31 02:01 — the deploy: `20f5681` on the Pi (schema v29, content hash `231acc72`), and with it
 every block built since 10-23 — the plot cost, the softer wear and its sheet, the repair at ×0.5, the Defend

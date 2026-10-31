@@ -21,6 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-01 — the prize announcement** (content + uk/en + a test, NOT live: on the Pi `git pull` and `pm2 restart ROI`
+before Sunday 10:00 — no build, the Swift is `c77a25b`'s). `events.json` → `notices` gains `prizes` (📜, Sunday 10:00 → the
+close), the owner's text verbatim. The prizes themselves are decided and NOT built (`content/spec/event-veles-night.md`
+§4.8). Content hash → `6e734f14`, `records` → `c2e645e984e10916` (COMBINED `f613c07ef73b320b`); 504 tests.
+
+**2026-10-31, 17:30 — the holiday's copy, the owner's rewrite** (`c77a25b`, LIVE since the 2026-10-31 17:56:45 restart):
+the scribe's story and words, the entrance question in three lines, «За цей похід», no room's line over a pumpkin.
+Content untouched.
+
 **2026-10-31 — the holiday's last polish, the autumn road, the coop** (LIVE since the 2026-10-31 02:01 restart). The capital
 wears Велесова ніч from Saturday 12:00 (`events.json` → `artFrom`: its pictures, the palace's empty throne, the square's
 welcome), only the 09:00 decree before it; Saturday's noon line no longer says the fortune teller deals no cards; the
@@ -1084,7 +1093,10 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi
+rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi since
+the 2026-10-31 17:56:45 restart (`c77a25b`, the 02:01 content; its digest names `artFrom`, read on the Pi 2026-11-01
+01:40): `records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`, the other four lines and the content hash `231acc72`
+as below. Before it, the Pi
 since the 2026-10-31 02:01 restart (`20f5681`): `records 438f9ec47d93ca8f` / `tuning c0380e692986ba04` / `spawns
 004c138c83fa9d1a` / `quests 30de20902006e3b9` / `king e3a492be1b017e81`, content hash `231acc72`, COMBINED
 `ea15c16c660f81f2`, **schema v29** — it carried everything built 10-24 → 10-31 (the plot cost, the softer wear and
