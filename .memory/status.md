@@ -33,8 +33,8 @@ both bags), discard included in the forest; every unit a card takes out is nette
 no discard; «Усі» moves what fits), and a gear card's «🛡 Одягнути» trades places with what is worn
 (`WarehouseService.wear`, one transaction); the warehouse's buttons refuse during an expedition. 517 tests.
 
-**2026-11-01 — Велесова ніч's prizes at the palace** (Swift + content + uk/en + a migration + tests, NOT live: a Pi
-build, `AddEventBloodRewardedAt`, then the restart — before 18:00). `events.json` → `rewards` (5 × «Бенкет Намісника» to
+**2026-11-01 — Велесова ніч's prizes at the palace** (Swift + content + uk/en + a migration + tests, LIVE since the
+2026-11-01 17:21:25 restart, `b04bef3`; `AddEventBloodRewardedAt` verified on the table). `events.json` → `rewards` (5 × «Бенкет Намісника» to
 every flask with blood, 🪙 for places 1–10, 🟡 for 1–3) and the `rewards_call` summons at the close; `EventRewardService`
 pays in one transaction at the palace (`CapitalController+Rewards`); `event_blood.rewarded_at`. Checked end to end on
 the test bot. Content hash → `1ac5a7bc` (`records` → `207c959cf4807072`, COMBINED `0f31c3b586671117`); 508 tests. Spec §4.8.

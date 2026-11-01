@@ -27,11 +27,11 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the bag's item card, all three steps). Under it, unpushed: **`b04bef3`** (`96973ba`'s hash fill) and **`96973ba`** (Велесова ніч's prizes at the palace, with the 2026-11-01 09:56 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`b0c0d9c`** (`ae663b1`'s hash fill; `ae663b1` the prize announcement). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`b0c0d9c`** (the owner pushed 2026-11-01 09:55), the commit the Pi runs. Push is the owner's |
-| running on the Pi | **`b0c0d9c`**, online since **2026-11-01 09:56:33** (pm2 restarts 11; no build — the binary is `c77a25b`'s, built 2026-10-31 17:56:23, the same Swift). Content schema **v29**, content hash **`6e734f14`** — the digest matched the Mac in every line before the restart. The prize announcement went to 44 players at 10:00:36–41. 11 × 403 per mass notice (players who blocked the bot), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (`266d28e`'s hash fill and the 17:21 deploy record), unpushed. Under it, unpushed: **`266d28e`** (the bag's item card, all three steps — kept off the Pi by the owner's choice). Under them everything is pushed: `origin/main` = the Pi = **`b04bef3`** (`96973ba`'s hash fill; `96973ba` Велесова ніч's prizes at the palace). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`b04bef3`** (the owner pushed 2026-11-01 ~17:18, `! git push origin b04bef3:main`, after the session's permissions refused mine), the commit the Pi runs. Push is the owner's |
+| running on the Pi | **`b04bef3`**, online since **2026-11-01 17:21:25** (pm2 restarts 12; the binary built on the Pi 17:20:42). Content schema **v29**, content hash **`1ac5a7bc`** — the digest matched the Mac in every line before the restart; `AddEventBloodRewardedAt` verified on the table (16 flasks, all `rewarded_at` NULL, 15 with blood). The finale and the King's summons go out at 18:00. 11 × 403 per mass notice (players who blocked the bot), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Велесова ніч's prizes at the palace — BEFORE Sunday 18:00**, so the summons goes out with the finale. Swift changed: on the Pi `git pull --ff-only`, a detached debug BUILD, the pre-flight digest (it must read content `1ac5a7bc`, `records 207c959cf4807072`, COMBINED `0f31c3b586671117`), read who is in the manor, ASK, `pm2 restart ROI`; then verify `event_blood.rewarded_at` on the TABLE. The other four digest lines are unchanged. **The bag's item card (this commit) rides the same build if it is pushed** — Swift + locales only, the digest is the same; to ship the prizes without it, push `b04bef3` |
+| waiting for a restart | **The bag's item card (`266d28e`)** — Swift + locales, no migration, the digest unchanged; a push, a Pi build and `pm2 restart ROI`. **The next big deploy also removes the 🩸 blood board's tab** (the owner, 2026-11-01; `TODO.md` → Open, the 11-01 evening block — not built yet). Its warehouse swap (`WarehouseService.wear`) has NOT run on a real database: check it on the test bot first (`TODO.md` → its walk block) |
 
 ### Where the last sessions stopped (2026-10-24 → 10-31)
 
@@ -208,9 +208,9 @@ was a pull and a restart. Restart with plain `pm2 restart ROI` (no `--update-env
 
 ### The baseline and the simulator
 
-**The current baseline — on the Pi since 2026-11-01 09:56 (`b0c0d9c`, schema v29):** `records c2e645e984e10916` ·
+**The current baseline — on the Pi since 2026-11-01 17:21 (`b04bef3`, schema v29):** `records 207c959cf4807072` ·
 `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content
-hash `6e734f14` (COMBINED `f613c07ef73b320b`). **This is the one place the current baseline is kept**; the superseded
+hash `1ac5a7bc` (COMBINED `0f31c3b586671117`). **This is the one place the current baseline is kept**; the superseded
 ones are in `.memory/sessions.md` → "Digest baselines — superseded", and the tree's steps in the Commit index.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 

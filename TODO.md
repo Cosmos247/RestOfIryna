@@ -2219,11 +2219,14 @@ no migration — a walk in progress across the restart keeps its «Принес�
 - [ ] During a passive run a card opens, and every button on it answers «🏕 Сумка з намісником у поході…».
 - [ ] A bag message from before the restart: its «🍴 Зʼїсти» still eats one, a name opens the card.
 
-**Added 2026-11-01 — the prizes at the palace (NOT LIVE: a Pi BUILD, the migration `AddEventBloodRewardedAt`, then
-`pm2 restart ROI` — before Sunday 18:00, so the summons goes out with the finale; spec §4.8):**
-- [ ] After the restart, the TABLE: `\d event_blood` shows `rewarded_at timestamptz` nullable, every row NULL.
-- [ ] At 18:00 the finale, then in the same sweep «👑 Король кличе до палацу…» to the participants ONLY (not Leyfor,
+**Added 2026-11-01 — the prizes at the palace (LIVE since the 2026-11-01 17:21:25 restart, `b04bef3`; spec §4.8):**
+- [x] After the restart, the TABLE: `rewarded_at` is `timestamp with time zone`, nullable; 16 flasks, all NULL, 15 with
+      blood (read 17:21:47).
+- [x] At 18:00 the finale, then in the same sweep «👑 Король кличе до палацу…» to the participants ONLY (not Leyfor,
       flask without blood; not a player who never went in): `event_notices` → `rewards_call` = the flasks with blood.
+      Read 18:02: `finale` 44 markers 18:00:43–:50, `rewards_call` 15 at 18:00:51–:53 = the 15 flasks with blood; 22 × 403
+      in the log since the restart (the restart notice's 11 and the finale's 11 — players who blocked the bot), no
+      409 / 429 / 5xx, no `[WATCHDOG]`.
 - [ ] In the palace a participant sees, under the palace card, the King's words, «🥇 1-ше місце · N 🩸» (a medal for
       1–3 only) and «💰 …» with «🎁 Отримати нагороду»; a non-participant sees nothing new.
 - [ ] The tap: 🟡 / 🪙 / 5 × 🍽 as the place pays (spec §4.8 table), the button goes, the receipt banner names each
@@ -3287,6 +3290,14 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-11-01 session (evening):**
+- **Remove the blood board — with the NEXT BIG DEPLOY** (the owner, 2026-11-01, after asking whether it outlives the
+  close: «Внеси в туду лист видалення рейтингу крові на наступний великий деплой»). Today the «🩸» tab in 👤 Профіль →
+  📓 Нотатник → 🏆 Рейтинги stays after a holiday's close on purpose: `EventCatalog.latestOpened` ("kept after its close so
+  the result stays readable"), drawn by `MainController`'s board keyboard and `LeaderboardService.bloodView`. Remove the
+  TAB, never the data: `event_blood` is what the palace pays the prizes against, with no expiry. Ask before building
+  whether a future holiday shows the tab while it is open (`EventCatalog.open`) or never again.
 
 **From the 2026-11-01 session (past midnight):**
 - ~~**Велесова ніч's prizes, handed out at the palace — decided, NOT built**~~ — BUILT 2026-11-01 on «Давай зробимо фінал

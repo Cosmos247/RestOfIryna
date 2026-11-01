@@ -11,20 +11,23 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **the bag's item card, all three steps** — Swift + uk/en + tests, NOT deployed (a Pi build and
+- *(this commit, 11-01)* **`266d28e`'s hash fill and the 17:21 deploy record** — records only: the prizes went live alone
+  (`b04bef3`, pushed by the owner), the 18:00 finale and the King's summons read off the Pi, the blood board's removal
+  filed in `TODO.md` for the next big deploy.
+- `266d28e` (11-01) **the bag's item card, all three steps** — Swift + uk/en + tests, NOT deployed (a Pi build and
   `pm2 restart ROI`; no content change, the digest unchanged, no migration): the bag's lists are names, every action is
   on the item's card (`BagCard`, one for both bags) — «🍴 Зʼїсти» and «До повної снаги (N)» / «Зʼїсти всі (N)»
   (`MealMath`), «🗑 Викинути 1» / «Викинути всі (N)»; gear's card drawn in place with its own Одягнути / Зняти, the worn
   ✔️, «(рівень N)»; the trail bag ONE list with the same card, discards netted out of «Принесено»
   (`ExpeditionHaul.dropped`); the warehouse list → card too — «1 / Усі / ✏️» each way, «🛡 Одягнути» that trades places
   (`WarehouseService.wear`), its buttons refused during an expedition; `QuestWarning` shared with the trader. 517 tests.
-- `b04bef3` (11-01) **`96973ba`'s hash fill** — records only.
+- `b04bef3` (11-01) **`96973ba`'s hash fill** — records only. The commit the Pi runs since 17:21.
 - `96973ba` (11-01) **Велесова ніч's prizes at the palace, and the 09:56 deploy record** — Swift + content + uk/en +
   a migration + tests, NOT deployed (a Pi build, `AddEventBloodRewardedAt`, `pm2 restart ROI` before 18:00):
   `events.json` → `rewards` and the `rewards_call` summons; `EventRewardService` (one transaction),
   `CapitalController+Rewards`, the `rewards` notice kind, eight validator rules, `spec events` prints the table, the
   digest hashes it. Content → `1ac5a7bc`, `records` → `207c959cf4807072`, COMBINED → `0f31c3b586671117`; 508 tests.
-- `b0c0d9c` (11-01) **`ae663b1`'s hash fill** — records only. The commit the Pi runs since 09:56.
+- `b0c0d9c` (11-01) **`ae663b1`'s hash fill** — records only. The commit the Pi ran 09:56–17:21.
 - `ae663b1` (11-01) **the prize announcement** — content + uk + en + a test: a `prizes` notice in `events.json`,
   Sunday 10:00 → the close, the owner's text verbatim («до %{close}» from the data). No Swift: the Pi needs `git pull` and
   `pm2 restart ROI` before 10:00, no build. Content `231acc72` → `6e734f14`, `records` → `c2e645e984e10916`, COMBINED →
@@ -826,6 +829,11 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-11-01 09:56 to 17:21 (`b0c0d9c`, schema v29):** `records
+c2e645e984e10916` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
+e3a492be1b017e81`, content hash `6e734f14` (COMBINED `f613c07ef73b320b`). The prizes at the palace (`96973ba`) moved
+`records` and the content hash.
+
 **The baseline the Pi ran from 2026-10-31 17:56 to 2026-11-01 09:56 (`c77a25b`, schema v29):** `records
 64bfea4db5bdbee8` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
 e3a492be1b017e81`, content hash `231acc72` (COMBINED `40b3160c7a2fab15`). The prize announcement (`ae663b1`) moved
@@ -939,7 +947,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-01, midday → evening (the bag's item card: designed in full, all three steps built) — *(this commit)*
+## Session — 2026-11-01, midday → evening (the bag's item card: designed in full, all three steps built) — `266d28e`
 
 **Resumed** from the past-midnight pause («на чому я зупинився?»): the record matched the transcript (`f418be1d`) — two
 of four questions open, nothing built. The owner's words then were «переробити логіку демонстрації інвентарю в різних
@@ -1201,6 +1209,24 @@ dead code and for what was forgotten, then commit.
 
 **Dead code:** `EventCatalog.running()` / `GameEvent.isRunning` were removed in `97a2be9` once their last reader moved;
 nothing else this night's work left unread. The scratch harness (`probe3`) lives outside the repo.
+
+## Deploy — 2026-11-01 17:21 (`b0c0d9c` → `b04bef3`) — Велесова ніч's prizes, the event alone
+
+On the owner's word, as an exception («Зараз, як виключення, запуш до b04bef3, задеплой та перезапусти бота лише з
+івентовим оновленням»). **The push** was mine to make and the session's permissions refused `git push`; the owner ran
+`! git push origin b04bef3:main` (`b0c0d9c..b04bef3`, a fast-forward). The bag's item card (`266d28e`) stayed local, by
+the owner's choice — its warehouse swap had not run on a real database. On the Pi: `git pull --ff-only` to `b04bef3`, a
+detached debug build (`setsid nohup … swift build`, polled from a second connection with `pgrep -x swift-build`): 124 s,
+the binary 17:20:42. **Pre-flight**, the new binary on the new content, matched the Mac in every line: schema v29, hash
+`1ac5a7bc`, `records 207c959cf4807072`, `tuning c0380e692986ba04`, `spawns 004c138c83fa9d1a`, `quests 30de20902006e3b9`,
+`king e3a492be1b017e81`, COMBINED `0f31c3b586671117`. **Before the restart** (17:19): Нястюшка inside the manor at depth
+3, not in a fight (last step 16:10); nobody on the road; KQ's and xeuzo's stale rows. **Restart** at 17:21:25 — plain
+`pm2 restart ROI`, then `pm2 save`; pm2 restarts 12. The boot: `Content loaded: schema v29 … hash 1ac5a7bc`,
+`AddEventBloodRewardedAt` prepared, `Bot identified as @ROfIr_bot`, `[ACCESS] OPEN DOOR`, Hummingbird listening at
+17:21:34; the error log holds only the swift-backtrace notice. **The TABLE**: `event_blood.rewarded_at` is `timestamp with
+time zone`, nullable; 16 flasks, all 16 NULL, 15 with blood; `_fluent_migrations` records the migration at 17:21:26. **At 18:00** (read 18:02): the finale to 44 (markers
+18:00:43–:50; 11 of them 403 — blocked the bot), the King's summons `rewards_call` to 15 at 18:00:51–:53 — exactly the
+flasks with blood; no 409 / 429 / 5xx, no `[WATCHDOG]`.
 
 ## Deploy — 2026-11-01 09:56 (`c77a25b` → `b0c0d9c`) — the prize announcement
 
