@@ -13,8 +13,10 @@
 //  can never quote a number the card no longer asks for. Three fields say what:
 //
 //    • `kind`   — which card it was pinned on (`RecipeNote.Kind`);
-//    • `ref`    — the item or recipe it is about, "" when the kind has only one;
-//    • `target` — the tier, level or enchant it aims at, 0 for a recipe.
+//    • `ref`    — the item, recipe or plot type it is about, "" when the kind
+//                 has only one;
+//    • `target` — the tier, level or enchant it aims at, 0 for a recipe, and for
+//                 a plot how many of its type the player owns once it stands.
 //
 //  The enchant is keyed by the ITEM and the level, not by the inventory row the
 //  card was opened on: a warehouse deposit deletes the row and creates another,
@@ -48,6 +50,10 @@ public final class RecipeNote: Model, @unchecked Sendable {
         case training
         /// A workshop craft or a kitchen dish — `ref` the recipe.
         case recipe
+        /// A plot to build (2026-11-01) — `ref` the plot type, `target` how many
+        /// plots of that type the player owns once it stands. The type, never
+        /// the slot: a slot is a row, and the same farm can be built on any.
+        case plot
     }
 
     /// What a note is about: the identity a card asks "am I pinned?" with, and
@@ -72,6 +78,9 @@ public final class RecipeNote: Model, @unchecked Sendable {
         public static func estate(toTier tier: Int) -> Key { Key(kind: .estate, ref: "", target: tier) }
         public static func training(toLevel level: Int) -> Key { Key(kind: .training, ref: "", target: level) }
         public static func recipe(_ recipeId: String) -> Key { Key(kind: .recipe, ref: recipeId, target: 0) }
+        /// `count` is the plots of `type` the player will own once this one is
+        /// built — what `PlotService.noteKey` reads off their estate.
+        public static func plot(_ type: String, count: Int) -> Key { Key(kind: .plot, ref: type, target: count) }
     }
 
     @ID(key: .id)

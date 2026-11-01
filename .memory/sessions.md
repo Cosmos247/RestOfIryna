@@ -11,7 +11,13 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **`29f38c5`'s hash fill** — records only.
+- *(this commit, 11-02)* **the plot's «📌 У нотатник» and «ємність»** — Swift + uk/en, NOT deployed (no migration, the
+  digest unchanged; the hazel's restart carries it): `RecipeNote.Kind.plot` (the type + how many of it the estate will
+  hold, `PlotService.noteKey`), done once the type's count reaches it (`RecipeNoteService.isOpen`), the journal entry
+  like a recipe («🌾 Ферма · Ділянка, маєток», the NEXT plot's materials via `PlotService.nextPlotNumber`), the build
+  card's three buttons each on a row, `estate:plot:pin:<slot>:<type>`; `estate.plot.capacity_label` «єм» → «ємність»,
+  "cap" → "capacity"; `notes.place.plot`. 526 tests (none new: the logic is app-level, checked in the harness).
+- `17e1e73` (11-01) **`29f38c5`'s hash fill** — records only.
 - `29f38c5` (11-01) **the hazel every estate starts with** (`content/spec/spec-progression.md` §8) — Swift + content
   **schema v30** + uk/en + **the `PlantHazel` migration, which rewrites rows** + tests, NOT deployed: `plots.json` gains
   `hazel` (`"granted" : true`, 🌳, 🌰 1/h holding 5, no `buildCost`), `plotSlotsByTier` 0…6 → 1…7; the picker and the
@@ -955,6 +961,47 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-01, late night (the plot's «📌 У нотатник»; «ємність») — *(this commit)*
+
+**Asked** (the owner): «Треба додати можливість додавати список матеріалів для створення ділянки в рецепти нотатника» —
+the 10-24 open item (a «📌 У нотатник» on the build card, never asked until now).
+
+**Decided:** shown the mechanism and a played sample (a T3 estate: hazel, farm, a coop as the second built plot, ×2), then
+a quiz — the owner picked both recommended options, then rejected the quiz to add two things:
+- **the note goes when that TYPE is built** (on any slot); building another type first keeps it, repriced at the new N —
+  over "any plot clears every plot note" and "only by ❌";
+- **it reads like a recipe**: «🐔 Курник · Ділянка, маєток» and the materials — over adding the yield line;
+- **the card's buttons**: first «put «У нотатник» beside «Будувати», «Назад» below», then, shown that «📌 Прибрати з
+  нотатника» might be cut on a phone beside «✅ Будувати», **«Постав усі кнопки окремим рядком»** — three rows;
+- **«єм» → «ємність»**, shown first where it appears (the picker's lines and the mine's iron line, the build card's
+  yield line — one key, two screens), and **"cap" → "capacity"** in English («аннглійський варіант міняй»).
+
+**Built:** `RecipeNote.Kind.plot` + `Key.plot(_:count:)`; `PlotService.nextPlotNumber(for:on:)` (now the one reading
+for the card, the claim and the journal) and `noteKey(for:user:on:)`; `RecipeNoteService.live` loads the plots for a
+plot note, `isOpen` counts the type (a type no longer buildable, the hazel included, is dropped); `RecipeNoteDisplay`
+gains the `.plot` entry and `screen(plotNumber:)`; `MainController.showRecipeNotes` reads N only when a plot note is
+open; `EstateController`: `plotBuildConfirmKeyboard(pinned:)` in three rows, `handlePlotPin` (`estate:plot:pin:<slot>:
+<type>`, through `plotChoice`, so a stale card is refused and pins nothing), the route; locales `notes.place.plot`,
+`estate.plot.capacity_label`. No migration — `kind` is a string, and an older binary drops a `plot` note as finished.
+
+**Checked:** a clean build, 526 tests, `validate --strict` 0/0, the digest unchanged (`records 4f4dcf860af8605f`), `git
+diff --check` clean. In the rehearsal harness (the scratch Postgres, after a fresh run of the hazel's migration and
+scenarios, both still clean) 19 checks through the real services and the real renderers (made internal in the copy):
+the key, the pin and the lookup, the card's «ємність» and its three rows in both locales, the picker's «ємність» and no
+hazel, the journal at ×3, a coop built first keeping the farm note at ×4, the farm built clearing it, a hazel note
+dropped. Two mutants (done off by one, the key counting every plot) failed five of them.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… зроби коміт», 11-02 00:13): the six touched Swift files
+force-recompiled under bash, 0 warnings; 526 tests; `validate --strict` 0/0; the digest unchanged (`records
+4f4dcf860af8605f`, COMBINED `d0b897ae80619502`); `git diff --check` clean; both locales parse with no duplicate key.
+The estate's screens are CAPTIONS over its art, so the longer word was measured in UTF-16: the picker 591 in Ukrainian
+(601 in English), the worst build card (a mine at N = 6, five-digit stock) 387 — against 1,024; the journal has no art.
+**Found and fixed:** the picker's comment still named «єм» / "cap" as the label; the pin's route stood between the
+`type:`/`build:` comment and the `build:` it explains — moved below it. **Corrected in the report:** "a rollback is safe"
+holds for the notes alone — the same restart carries `PlantHazel`, so a rollback past `29f38c5` stays unsafe. **An edge
+the owner's rule leaves as it is:** at T7 with every slot built, a note for a type not built stays until its ❌, priced
+at the last multiplier (×6).
 
 ## Session — 2026-11-01, night (the hazel every estate starts with: proposed, specified, built) — `29f38c5`
 

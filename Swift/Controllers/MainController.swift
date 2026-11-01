@@ -395,7 +395,10 @@ final class MainController: TGControllerBase, @unchecked Sendable {
     func showRecipeNotes(context: Context, editMessageId: Int) async throws {
         let notes = try await RecipeNoteService.live(for: context.session, on: context.db)
         let stock = notes.isEmpty ? [:] : try await CraftingService.stock(for: context.session, on: context.db)
-        let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock,
+        // A plot note is priced at the player's next plot; read only when one is open.
+        let plotNumber = notes.contains { $0.kind == .plot }
+            ? try await PlotService.nextPlotNumber(for: context.session, on: context.db) : 1
+        let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock, plotNumber: plotNumber,
                                               lingo: context.lingo, locale: context.session.locale)
         await editScreen(
             chatId: .chat(context.session.telegramId),

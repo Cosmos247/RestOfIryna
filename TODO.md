@@ -2159,6 +2159,20 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-01, late night — the plot's «📌 У нотатник» and «ємність» (NOT LIVE: Swift + uk/en, the same
+restart as the hazel; no migration, the digest unchanged):**
+- [ ] «➕ Слот N» → a type → the build card: three buttons, each on its own row — «✅ Будувати», «📌 У нотатник»,
+      «🔙 Назад»; the yield line reads «— 2/год, ємність 10» (no «єм»), the picker's lines too, the mine's iron line
+      included.
+- [ ] «📌 У нотатник» → «📌 Записано в нотатник (1/3)», the button turns «📌 Прибрати з нотатника» (does it fit
+      its row on a phone?). 📓 Нотатник → 📌 Рецепти: «🌾 Ферма · Ділянка, маєток» and the card's materials,
+      counted bag + warehouse, «❌ Ферма» under them.
+- [ ] Build ANOTHER type first: the farm stays in the journal at the next plot's price (×N+1). Then build the farm on
+      any slot: the note is gone from 📌 Рецепти, silently.
+- [ ] With three notes already, «📌 У нотатник» on a plot: the modal «У нотатнику вже 3 рецепти…», the card unchanged.
+- [ ] A build card left in chat for a slot since built on: «📌» answers «🚧 Цей слот вже зайнятий.» and pins nothing.
+- [ ] English: "capacity" for "cap", "Plot, estate" in the journal.
+
 **Added 2026-11-01, night — the hazel every estate starts with (NOT LIVE: Swift + content schema v30 + uk/en and the
 `PlantHazel` migration, which REWRITES ROWS; `content/spec/spec-progression.md` §8):**
 - [ ] Before the restart, on the Pi: `SELECT slot_index, plot_type, count(*) FROM plots GROUP BY 1, 2 ORDER BY 1, 2`
@@ -3210,7 +3224,7 @@ in the capital, one challenging the other.
   numbers must tick down in place.
 - **a recipe you cannot afford.** The ❌ lines must match what the shortage modal says if
   you tap Cook anyway — they are the same reading now, so a disagreement is a real bug.
-- **the ladders from `dc5f037`** — a farm at 2/год, єм 10 filling in 5 h, and the bag
+- **the ladders from `dc5f037`** — a farm at 2/год, єм 10 (ємність 10 since the 11-01 build) filling in 5 h, and the bag
   upgrade screen quoting **+15** at both of the top two steps (T6 now 90).
 - **turn back from inside the bag.** Travel to the capital, open 🎒 Сумка, tap
   «↩️ Розвернутись». It must turn you around, not redraw the bag.
@@ -3218,7 +3232,7 @@ in the capital, one challenging the other.
 **Added 2026-09-15 part 5 — LIVE since the 09-16 00:32 deploy, never walked:**
 - **claim a slot and read the Mine's line.** It must now be two lines: «Річкова галька,
   8/год, єм 40» and «і 🔩 Шматок заліза, 2/год, єм 10» — «єм», not «cap», and «8/год»
-  with no space.
+  with no space. (From the restart after 2026-11-01 the word is «ємність», in English "capacity".)
 - **let a Mine fill (5 h).** Both numbers must cap together now, `40/40 🪨 · 10/10 🔩`,
   and the notification must name both.
 - **let a Курник fill.** It must read «Курник (слот N) заповнений» — masculine. Three of
@@ -3400,8 +3414,8 @@ found while building it, NOT raised with the owner yet — build nothing unasked
   word («Виправ курник»): `estate.plot.alert.claimed.m` / `.f` read through `Lingo.localize(_:agreeingWith:locale:)`
   with `plot.type.<type>.gender`, as the ready notification does — «🐔 Курник закладений на слоті N.» Only `.m` and
   `.f` exist, like `plot.ready.notification`: no plot is `n` or `pl`; a new one that is needs its variant.
-- **No «📌 У нотатник» on the plot's build card.** It lists materials now, like the eight cards that have one;
-  not asked, so not built.
+- ~~**No «📌 У нотатник» on the plot's build card.**~~ **BUILT 2026-11-01** — the owner asked for it («Треба
+  додати можливість…»); see the walk block «the plot's «📌 У нотатник»».
 
 **From the 2026-10-23 night session** — the clay price raised to 24 / 12 and «Мʼясо в глині» re-cut to
 2 🥩 + 1 🥔 + 🧱 + 🪵 = 54 Vigor (built, `spec-bestiary.md` §13.5; it closes the clay price the forage session

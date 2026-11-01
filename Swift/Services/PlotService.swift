@@ -255,9 +255,24 @@ public enum PlotService {
     /// granted hazel, which they did not build. The build card and `claim` both
     /// ask here, so the card cannot quote a price the claim then disagrees with.
     public static func buildCost(of type: PlotType, for user: User, on db: any Database) async throws -> [MaterialCostDTO] {
+        PlotCatalog.buildCost(for: type, plotNumber: try await nextPlotNumber(for: user, on: db))
+    }
+
+    /// N for the player's next plot — the plots they built, plus one. The one
+    /// reading for the build card, the claim and the journal's plot notes.
+    public static func nextPlotNumber(for user: User, on db: any Database) async throws -> Int {
         let owned = try await Plot.list(for: user, on: db).map(\.plotType)
-        let number = PlotBuildCost.nextPlotNumber(ownedTypes: owned, granted: PlotCatalog.grantedRawValues)
-        return PlotCatalog.buildCost(for: type, plotNumber: number)
+        return PlotBuildCost.nextPlotNumber(ownedTypes: owned, granted: PlotCatalog.grantedRawValues)
+    }
+
+    /// The journal note for building a plot of `type` (2026-11-01): the type
+    /// and how many of it the player owns once it stands. The build card asks
+    /// "am I pinned?" with it and the «📌» writes it; the note is done once the
+    /// estate holds that many (`RecipeNoteService.isOpen`), whichever slot it
+    /// went to — and it stays open, repriced, when another type is built first.
+    public static func noteKey(for type: PlotType, user: User, on db: any Database) async throws -> RecipeNote.Key {
+        let owned = try await Plot.list(for: user, on: db).filter { $0.plotType == type.rawValue }.count
+        return .plot(type.rawValue, count: owned + 1)
     }
 
     /// Claim an empty slot for `type`, paying its build cost from the bag first

@@ -20,6 +20,8 @@
 //  craft: nothing records that a dish was ever cooked, so the craft funnel
 //  calls `recipeMade` where it succeeds.
 //
+//  A plot note (2026-11-01) is a state too: the estate's plots of its type.
+//
 //  Every reader goes through `live` — the journal's count, its screen and the
 //  cap a pin checks — so a finished note is never shown and never takes a
 //  place. A card's own "is this pinned?" can stay a plain lookup: a card always
@@ -58,11 +60,12 @@ public enum RecipeNoteService {
         let bag = kinds.isDisjoint(with: [.lesson, .weapon, .enchant])
             ? [] : try await InventoryEntry.list(for: user, on: db)
         let stored = kinds.contains(.enchant) ? try await WarehouseEntry.list(for: user, on: db) : []
+        let plots = kinds.contains(.plot) ? try await Plot.list(for: user, on: db) : []
 
         var open: [RecipeNote] = []
         var finished: [UUID] = []
         for note in notes {
-            if isOpen(note, user: user, bag: bag, stored: stored) {
+            if isOpen(note, user: user, bag: bag, stored: stored, plots: plots) {
                 open.append(note)
             } else if let id = note.id {
                 finished.append(id)
@@ -78,8 +81,10 @@ public enum RecipeNoteService {
     /// main hand, as for both doors that reforge it (`WeaponUpgradeService`) —
     /// a spare of the same kind answers only while the hand holds something
     /// else. The armour piece counts wherever it lies: worn, in the bag or in
-    /// the warehouse.
-    static func isOpen(_ note: RecipeNote, user: User, bag: [InventoryEntry], stored: [WarehouseEntry]) -> Bool {
+    /// the warehouse. A plot note counts the estate's plots of its type, on any
+    /// slot (2026-11-01).
+    static func isOpen(_ note: RecipeNote, user: User, bag: [InventoryEntry], stored: [WarehouseEntry],
+                       plots: [Plot]) -> Bool {
         guard let kind = note.kind else { return false }
         switch kind {
         case .lesson, .weapon:
@@ -102,6 +107,12 @@ public enum RecipeNoteService {
             return TrainingGroundCatalog.level(note.target) != nil && user.trainingGroundLevel < note.target
         case .recipe:
             return RecipeCatalog.find(note.ref)?.category.isCraftable == true
+        case .plot:
+            // A type the content no longer offers for building (or one the
+            // estate grants) has nothing left to wait on.
+            guard let type = PlotType(rawValue: note.ref), PlotCatalog.buildableTypes.contains(type),
+                  !PlotCatalog.buildCost(for: type, plotNumber: 1).isEmpty else { return false }
+            return plots.filter { $0.plotType == note.ref }.count < note.target
         }
     }
 

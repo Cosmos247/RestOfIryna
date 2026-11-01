@@ -783,7 +783,8 @@ disagrees with.
 
 **A recipe note names a THING, never a row, and "done" is read, not announced** (2026-10-10).
 `RecipeNote` stores kind · ref · target (the enchant's is the piece + the level: a warehouse trip
-re-creates the row), priced afresh on every draw. `RecipeNoteService.live` deletes every finished
+re-creates the row; a plot's, 2026-11-01, the type + how many of it the estate will hold — never the
+slot), priced afresh on every draw. `RecipeNoteService.live` deletes every finished
 note on each read — the journal's count, its screen and the pin's cap all go through it — so no
 upgrade path remembers the journal; only a craft, an event, is cleared in the craft funnel
 (`recipeMade`). `recipe_notes.ref` is deliberately NOT in `LiveReferenceQuery`: a note the

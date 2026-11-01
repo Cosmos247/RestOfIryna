@@ -365,6 +365,13 @@ pays from — and lists the materials under «📜 Матеріали» through 
 «📌 У нотатник» on the build card, and a line on the card saying why the price grew — the
 approved sample had neither.
 
+> *Amended 2026-11-01.* The owner asked for the «📌 У нотатник»: it is built. The card's three
+> buttons stand each on a row of their own — «✅ Будувати», «📌 У нотатник», «🔙 Назад». The note
+> is the plot type and how many of it the estate will hold (`PlotService.noteKey`); the journal
+> prices it as the player's NEXT plot, so building another type first keeps it and raises its
+> price, and building the type ends it (auto-memory `project-recipe-notebook`). The line saying
+> why the price grew is still not built. The plot screens now read «ємність» for «єм».
+
 ---
 
 ## 8. The hazel — the plot every estate starts with (2026-11-01)

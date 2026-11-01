@@ -309,6 +309,13 @@ cards priced afresh, each with its «❌». The design is the owner's, approved 
   82 checks drove the real services and passed, twice: the eight cards' notes, both approved
   screens to the line, the bag-only count at the Master, the warehouse round trip, done through
   the real upgrades, the cascade and the unique index. Two planted mutants were caught.
+- **2026-11-01 — the ninth card: a plot's build card** (asked by the owner, built, not deployed). Its three
+  buttons each on a row of its own — «✅ Будувати» / «📌 У нотатник» / «🔙 Назад» (the owner's layout). The
+  note is the plot TYPE + how many of it the estate will hold (`PlotService.noteKey`); it reads like a
+  recipe («🐔 Курник · Ділянка, маєток» and the materials of the player's NEXT plot, bag + warehouse) and is
+  done once the estate holds that many of the type — building another type first keeps it, repriced. With
+  it the plot screens say «ємність» / "capacity" for «єм» / "cap". No migration: an older binary drops a
+  `plot` note as finished.
 
 **2026-10-09 — «тир» is «рівень» on every screen** (`33551dd`, deployed 2026-10-09 01:30; locale only):
 the owner had asked before. 27 uk lines — the bag and estate upgrades, the full warehouse, a

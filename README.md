@@ -764,6 +764,10 @@ card, `266d28e`, waits for the same restart):
   many as before; the plots already built move down one (the farm in «Слот 1» reads «Слот 2»), and every
   existing estate finds its hazel ripe. The first plot a player builds still costs the light first price, and
   «Перша ділянка» still asks for a plot of their own. The welcome after registration says where it stands.
+- a plot's build card can be pinned to the journal: «📌 У нотатник» between «✅ Будувати» and «🔙 Назад», each button
+  on a row of its own. The note reads «🌾 Ферма · Ділянка, маєток» with the materials of the player's next plot, and
+  goes once a farm is built; building another type first keeps it, at the new price. The plot screens say «ємність»
+  (was «єм»), and "capacity" in English.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

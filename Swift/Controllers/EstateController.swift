@@ -652,8 +652,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 let perHour = PlotCatalog.intervalSeconds >= 3600
                 let intervalLabel = lingo.localize(perHour ? "estate.plot.rate.per_hour" : "estate.plot.rate.per_minute", locale: locale)
                 // "cap" was an English literal in a Ukrainian sentence until
-                // 2026-09-15; the label is a locale key now («єм» / "cap"), and
-                // the rate reads as one token — «8/год», not «8 /год».
+                // 2026-09-15; the label is a locale key now («ємність» /
+                // "capacity" since 2026-11-01, «єм» / "cap" before), and the
+                // rate reads as one token — «8/год», not «8 /год».
                 let capLabel = lingo.localize("estate.plot.capacity_label", locale: locale)
                 lines.append("\(icon) <b>\(typeName)</b> — \(itemName), \(tuning.ratePerInterval)\(intervalLabel), \(capLabel) \(tuning.capacity)")
                 // A second stream gets its own line, built from `bonusOutput`
@@ -820,15 +821,21 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
-    /// Confirm keyboard. Back goes to the PICKER, not the plot list: the player
-    /// who lands here by mistake wants a different type, not a different screen.
-    fileprivate func plotBuildConfirmKeyboard(slot: Int, type: PlotType, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
-        TGInlineKeyboardMarkup(inlineKeyboard: [[
-            TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.confirm", locale: locale),
-                                   callbackData: "estate:plot:build:\(slot):\(type.rawValue)"),
-            TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.back", locale: locale),
-                                   callbackData: "estate:plot:claim:\(slot)")
-        ]])
+    /// Confirm keyboard: «✅ Будувати», the journal's «📌», «🔙 Назад» — each on a
+    /// row of its own (the owner's layout, 2026-11-01; Build and Back shared a
+    /// row before the pin came). Back goes to the PICKER, not the plot list: the
+    /// player who lands here by mistake wants a different type, not a different
+    /// screen.
+    fileprivate func plotBuildConfirmKeyboard(slot: Int, type: PlotType, pinned: Bool,
+                                              lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        TGInlineKeyboardMarkup(inlineKeyboard: [
+            [TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.confirm", locale: locale),
+                                    callbackData: "estate:plot:build:\(slot):\(type.rawValue)")],
+            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "estate:plot:pin:\(slot):\(type.rawValue)",
+                                     lingo: lingo, locale: locale),
+            [TGInlineKeyboardButton(text: lingo.localize("estate.plot.build.button.back", locale: locale),
+                                    callbackData: "estate:plot:claim:\(slot)")]
+        ])
     }
 
     /// Picker keyboard — one button per plot type + Back to plot list. Phase
@@ -1210,6 +1217,10 @@ extension EstateController {
         // never be rebuilt. A stale button should land on the safe path.
         if data.hasPrefix("estate:plot:build:") {
             return try await handlePlotBuildConfirmed(data: data, query: query, message: message, context: context)
+        }
+        // The build card's «📌» (2026-11-01) — it writes a journal note, never a plot.
+        if data.hasPrefix("estate:plot:pin:") {
+            return try await handlePlotPin(data: data, query: query, message: message, context: context)
         }
         if data.hasPrefix("estate:plot:harvest:") {
             return try await handlePlotHarvest(data: data, query: query, message: message, context: context)
@@ -2257,8 +2268,35 @@ extension EstateController {
         let stock = try await CraftingService.stock(for: context.session, on: context.db)
         let body = ctrl.renderPlotBuildConfirm(slot: slot, type: type, inputs: inputs, stock: stock,
                                                lingo: context.lingo, locale: locale)
-        let inline = ctrl.plotBuildConfirmKeyboard(slot: slot, type: type, lingo: context.lingo, locale: locale)
+        let key = try await PlotService.noteKey(for: type, user: context.session, on: context.db)
+        let pinned = try await RecipeNoteService.isPinned(key, for: context.session, on: context.db)
+        let inline = ctrl.plotBuildConfirmKeyboard(slot: slot, type: type, pinned: pinned,
+                                                   lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
+    }
+
+    /// `estate:plot:pin:<slot>:<typeRaw>` — the build card's «📌» (2026-11-01).
+    /// The note is the TYPE and how many of it the estate will hold
+    /// (`PlotService.noteKey`), never the slot; the slot rides in the callback
+    /// only to redraw the same card. A card whose slot is no longer free (a
+    /// stale one in chat) is refused with the build's own words and pins
+    /// nothing; a full journal answers with its modal and leaves the card as
+    /// it is. Every path answers its tap.
+    static func handlePlotPin(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage,
+                              context: Context) async throws -> Bool {
+        guard let (slot, type) = try await plotChoice(prefix: "estate:plot:pin:", data: data, query: query, context: context) else {
+            return true
+        }
+        let key: RecipeNote.Key
+        do {
+            key = try await PlotService.noteKey(for: type, user: context.session, on: context.db)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
+        guard try await RecipeNoteDisplay.toggle(key, query: query, context: context) else { return true }
+        try await showPlotBuildConfirm(slot: slot, type: type, message: message, context: context)
+        return true
     }
 
     /// `estate:plot:build:<slot>:<typeRaw>` — the second tap, and the only path

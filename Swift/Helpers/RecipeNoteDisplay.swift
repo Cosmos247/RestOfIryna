@@ -88,13 +88,16 @@ enum RecipeNoteDisplay {
     }
 
     /// The «📌 Рецепти» screen: every note, its «❌» two to a row in the order
-    /// the notes stand, and the way back to the journal.
+    /// the notes stand, and the way back to the journal. `plotNumber` is N for
+    /// the player's next plot (`PlotService.nextPlotNumber`), which a plot note
+    /// is priced at; the caller reads it only when such a note is open.
     static func screen(notes: [RecipeNote], user: User, stock: [String: CraftingService.StockLine],
-                       lingo: Lingo, locale: String) -> (text: String, keyboard: TGInlineKeyboardMarkup) {
+                       plotNumber: Int, lingo: Lingo, locale: String) -> (text: String, keyboard: TGInlineKeyboardMarkup) {
         var blocks: [String] = []
         var removeButtons: [TGInlineKeyboardButton] = []
         for note in notes {
-            guard let id = note.id, let entry = entry(note, user: user, stock: stock, lingo: lingo, locale: locale) else { continue }
+            guard let id = note.id, let entry = entry(note, user: user, stock: stock, plotNumber: plotNumber,
+                                                      lingo: lingo, locale: locale) else { continue }
             blocks.append(entry.lines.joined(separator: "\n"))
             removeButtons.append(TGInlineKeyboardButton(text: "❌ " + entry.removeLabel, callbackData: "notes:del:\(id.uuidString)"))
         }
@@ -112,7 +115,7 @@ enum RecipeNoteDisplay {
     /// One note as the screen prints it, or nil when it can no longer be priced
     /// — which `RecipeNoteService.live` has already dropped by the time this runs.
     static func entry(_ note: RecipeNote, user: User, stock: [String: CraftingService.StockLine],
-                      lingo: Lingo, locale: String) -> Entry? {
+                      plotNumber: Int, lingo: Lingo, locale: String) -> Entry? {
         guard let kind = note.kind else { return nil }
         let master = lingo.localize("notes.place.master", locale: locale)
         let workshop = lingo.localize("notes.place.workshop", locale: locale)
@@ -190,6 +193,20 @@ enum RecipeNoteDisplay {
             let place = lingo.localize(recipe.category == .kitchen ? "notes.place.kitchen" : "notes.place.workshop", locale: locale)
             var lines = ["\(icon)<b>\(name)</b> · \(place)"]
             lines += recipe.inputs.map { material($0.itemId, $0.quantity, have: held($0.itemId)) }
+            return Entry(lines: lines, removeLabel: name)
+
+        case .plot:
+            // Read like a recipe (the owner's pick, 2026-11-01): the plot's name
+            // and where it is built on one line, then what its build card asks
+            // today — the player's NEXT plot, counted in bag + warehouse as the
+            // claim pays. The ❌ names the type.
+            guard let type = PlotType(rawValue: note.ref) else { return nil }
+            let inputs = PlotCatalog.buildCost(for: type, plotNumber: plotNumber)
+            guard !inputs.isEmpty else { return nil }
+            let name = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+            let place = lingo.localize("notes.place.plot", locale: locale)
+            var lines = ["\(PlotCatalog.icon(for: type)) <b>\(name)</b> · \(place)"]
+            lines += inputs.map { material($0.itemId, $0.quantity, have: held($0.itemId)) }
             return Entry(lines: lines, removeLabel: name)
 
         case .estate:
