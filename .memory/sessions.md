@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **Велесова ніч's prizes at the palace, and the 09:56 deploy record** — Swift + content + uk/en +
+- *(this commit, 11-01)* **`96973ba`'s hash fill** — records only.
+- `96973ba` (11-01) **Велесова ніч's prizes at the palace, and the 09:56 deploy record** — Swift + content + uk/en +
   a migration + tests, NOT deployed (a Pi build, `AddEventBloodRewardedAt`, `pm2 restart ROI` before 18:00):
   `events.json` → `rewards` and the `rewards_call` summons; `EventRewardService` (one transaction),
   `CapitalController+Rewards`, the `rewards` notice kind, eight validator rules, `spec events` prints the table, the
@@ -931,7 +932,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-01, morning (the prize announcement deployed; the prizes at the palace built) — *(this commit)*
+## Session — 2026-11-01, morning (the prize announcement deployed; the prizes at the palace built) — `96973ba`
 
 **09:53 — the announcement deployed.** The owner asked what was unpushed («Нагадай що ми вчора робили»), then «Став
 оголошення на 10:00, пушу зараз»: the pull, the pre-flight, the restart on «Так, перезапускай зараз»; sent to 44 players
