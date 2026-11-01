@@ -602,6 +602,12 @@ recipe × `gear.salvageFraction` × max / the item's own starting durability, fl
 back but still leaves the bag. It predicts the fit in units for both stores, like `craft`, and
 names the row it destroys. Auto-memory `project-salvage-and-gear-rows`.
 
+**Food and materials leave by «🗑 Викинути» on the item's card** (2026-11-01: both bags, ONE `BagCard`, which tells the
+walk's haul every unit it takes out) — never from the warehouse, never gear. «До повної снаги (N)» / «Зʼїсти всі (N)»
+is `MealMath.bulk`, asked again on the tap; every portion goes through `VigorService.consume`. The warehouse card's
+«🛡 Одягнути» TRADES PLACES with what is worn (`WarehouseService.wear`, one transaction), and every `estate:wh:` button
+refuses while an expedition row stands. Auto-memory `project-bag-item-card`.
+
 **Armour is not crafted** — the Master is the only source. The four Forester recipes stay in
 `recipes.json` as PATTERNS (`RecipeCategory.isCraftable` is false for the tannery, so no list
 shows them and `CraftingService.craft` refuses them) because salvage reads them to know what a

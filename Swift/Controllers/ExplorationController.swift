@@ -588,9 +588,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
 
     /// What a step put in the bag goes on the walk's haul, which the manor door
     /// names (2026-10-23). Both step handlers call it before they save the row;
-    /// a fight's drops are counted at victory (`CombatController.finishVictory`)
-    /// and the trail bag's meals at `explore:eat:`. A new way for the walk to
-    /// fill the bag must feed `state.recordHaul` too, or the door undercounts it.
+    /// a fight's drops are counted at victory (`CombatController.finishVictory`),
+    /// and what an item's card eats or throws away (`BagCard.recordDeparture`,
+    /// 2026-11-01) leaves it again. A new way for the walk to fill the bag must
+    /// feed `state.recordHaul` too, or the door undercounts it — and a new way
+    /// to empty it, or the door lists what is no longer there.
     private static func recordFinds(_ outcome: StepOutcome, on state: ExplorationState) {
         state.recordHaul { haul in
             switch outcome {
@@ -694,24 +696,39 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         return true
     }
 
-    /// Build the "scoped consumables" view shown during an expedition. Only food and
-    /// potions are listed — other categories are managed back at the estate.
+    /// The trail bag (2026-11-01, the owner's design): ONE list — the food
+    /// first, potions with it, then the materials — one «Name × N» button per
+    /// item and no action in the list; a name opens the item's card
+    /// (`BagCard`, route `.trail`), where it is eaten or thrown away. The
+    /// materials joined the list so a walk can throw them away, the owner's
+    /// pick knowing that a full bag then stops being a limit. Gear stays the
+    /// home bag's business.
     fileprivate func renderBag(context: Context) async throws -> (text: String, markup: TGInlineKeyboardMarkup) {
         let lingo = context.lingo
         let locale = context.session.locale
         let entries = try await InventoryEntry.list(for: context.session, on: context.db)
 
+        func rank(_ type: ItemType) -> Int? {
+            switch type {
+            case .food:     return 0
+            case .potion:   return 1
+            case .material: return 2
+            case .gear, .artifact: return nil
+            }
+        }
         var byId: [String: (item: Item, quantity: Int)] = [:]
         for entry in entries {
-            guard let item = ItemCatalog.find(entry.itemId),
-                  item.type == .food || item.type == .potion else { continue }
+            guard let item = ItemCatalog.find(entry.itemId), rank(item.type) != nil else { continue }
             if let existing = byId[item.id] {
                 byId[item.id] = (existing.item, existing.quantity + entry.quantity)
             } else {
                 byId[item.id] = (item, entry.quantity)
             }
         }
-        let sorted = byId.values.sorted { $0.item.id < $1.item.id }
+        let sorted = byId.values.sorted { lhs, rhs in
+            let left = rank(lhs.item.type) ?? .max, right = rank(rhs.item.type) ?? .max
+            return left != right ? left < right : lhs.item.id < rhs.item.id
+        }
 
         let title = lingo.localize("exploration.bag.title", locale: locale)
         let backLabel = lingo.localize("exploration.bag.back", locale: locale)
@@ -735,16 +752,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             return (text, markup)
         }
 
-        var rows: [[TGInlineKeyboardButton]] = []
-        for row in sorted {
+        var rows: [[TGInlineKeyboardButton]] = sorted.map { row in
             let name = lingo.localize(row.item.nameKey, locale: locale)
             let iconPrefix = row.item.icon.map { "\($0) " } ?? ""
-            let actionKey = row.item.type == .food ? "inventory.action.food" : "inventory.action.potion"
-            let actionLabel = lingo.localize(actionKey, locale: locale)
-            rows.append([
-                TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(row.quantity)", callbackData: "explore:info:\(row.item.id)"),
-                TGInlineKeyboardButton(text: actionLabel, callbackData: "explore:eat:\(row.item.id)")
-            ])
+            return [TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(row.quantity)",
+                                           callbackData: "explore:info:\(row.item.id)")]
         }
         rows.append([TGInlineKeyboardButton(text: backLabel, callbackData: "explore:back")])
 
@@ -1263,108 +1275,29 @@ extension ExplorationController {
             return true
         }
 
-        // Item info — lore modal if the item has a description, placeholder
-        // toast otherwise. Same convention as InventoryController.
+        // The trail bag (2026-11-01): a name opens the item's card over the
+        // list — the bag's card, `BagCard` with the `explore:` prefix — and
+        // «🔙 До списку» (`explore:items`) draws the list again. The card's
+        // five verbs (`explore:eat:` was the list's own «🍴 Зʼїсти», so a bag
+        // message from before eats one and lands on the card) ask the
+        // governor's lock and tell the walk's haul what left the bag.
         if data.hasPrefix("explore:info:") {
             let itemId = String(data.dropFirst("explore:info:".count))
-            guard let item = ItemCatalog.find(itemId) else {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                return true
-            }
-            let answer: TGAnswerCallbackQueryParams
-            if let descKey = item.descriptionKey {
-                let description = context.lingo.localize(descKey, locale: locale)
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
-            } else {
-                let itemName = context.lingo.localize(item.nameKey, locale: locale)
-                let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
-            }
-            _ = try? await context.bot.answerCallbackQuery(params: answer)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let item = ItemCatalog.find(itemId) else { return true }
+            try await BagCard.redraw(item, route: .trail, message: message, context: context,
+                                     list: { _ in try await ctrl.renderBag(context: context) })
             return true
         }
-
-        // Consume one food/potion and refresh the bag view in place.
-        if data.hasPrefix("explore:eat:") {
-            // A trail-bag message outlives its walk, and the main router hands
-            // its taps here. While a passive run holds the bag (2026-10-12) the
-            // player does not eat for the governor — the same modal as the bag.
-            if let run = try await InventoryController.passiveRun(holding: context.session, on: context.db) {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
-                    callbackQueryId: query.id, text: InventoryController.passiveLockAlert(run, context: context),
-                    showAlert: true))
-                return true
-            }
-            let itemId = String(data.dropFirst("explore:eat:".count))
-            guard let item = ItemCatalog.find(itemId), VigorService.isConsumable(item) else {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                return true
-            }
-            // Raw-only ingredient (e.g. potato) — consumable type but no
-            // vigor/HP effects until cooked. Surface a clearer toast than
-            // the generic "no effect" fallback below.
-            if item.effects.isEmpty {
-                let itemName = context.lingo.localize(item.nameKey, locale: locale)
-                let toast = context.lingo.localize("consume.not_raw_edible", locale: locale, interpolations: ["name": itemName])
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-                return true
-            }
-            guard try await InventoryEntry.has(itemId, user: context.session, on: context.db) else {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                return true
-            }
-            guard let result = VigorService.consume(item, user: context.session) else {
-                let toast = context.lingo.localize("consume.no_effect", locale: locale)
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-                return true
-            }
-            try await InventoryEntry.remove(itemId, quantity: 1, from: context.session, on: context.db)
-            try await context.session.saveAndCache(in: context.db)
-            // Eaten on the walk is not brought home: the door nets it out of
-            // «Принесено». A stale trail bag tapped at home finds no row.
-            // Best-effort: the meal is already eaten, and a throw here would
-            // leave the tap unanswered — a spinning button.
-            if let state = try? await ExplorationState.current(for: context.session, on: context.db),
-               state.haul != nil {
-                state.recordHaul { $0.eat(itemId) }
-                try? await state.save(on: context.db)
-            }
-
+        if data == "explore:items" {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-
-            // Build the inline status line shown atop the refreshed bag.
-            // Each restored stat shows the new (current/max) total in parens
-            // so the player sees both the gain and the pool state at a glance.
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
-            var parts: [String] = []
-            if result.vigorRestored > 0 {
-                parts.append(context.lingo.localize("vigor.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.vigorRestored)",
-                    "current": "\(context.session.vigor)",
-                    "max":     "\(context.session.maxVigor)"
-                ]))
-            }
-            if result.hpRestored > 0 {
-                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.hpRestored)",
-                    "current": "\(context.session.hp)",
-                    "max":     "\(context.session.effectiveMaxHp)"
-                ]))
-            }
-            // Same two lines as the bag screen — a pool that just topped out
-            // is the thing this screen exists to tell you.
-            if context.session.vigor >= context.session.maxVigor {
-                parts.append("🍖 " + context.lingo.localize("vigor.full", locale: locale))
-            }
-            if context.session.hp >= context.session.effectiveMaxHp {
-                parts.append("❤️ " + context.lingo.localize("hp.full", locale: locale))
-            }
-            let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
-
             let (body, inline) = try await ctrl.renderBag(context: context)
             await editScreen(message, text: body, replyMarkup: inline, bot: context.bot)
-            await ctrl.postStatusBanner(statusLine, context: context)
             return true
+        }
+        if BagCard.isAction(data, route: .trail) {
+            return try await BagCard.handle(data, query: query, message: message, context: context,
+                                            route: .trail, list: { _ in try await ctrl.renderBag(context: context) })
         }
 
         return false

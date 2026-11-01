@@ -2159,6 +2159,66 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (NOT LIVE: Swift + uk/en, the same build as
+steps 1–2; no migration):**
+- [ ] 🏰 Маєток → 📦 Склад → 🍖 Їжа / 🪨 Матеріали: one button per item, «🫐 Лісові ягоди · 🎒4 / 📦12», no
+      «⬆️ +1 / ⬇️ +1 / ✏️ N» under it; «📦 Викласти все» still under the list.
+- [ ] A name: the card in place — description, «🎒 У сумці: 4 · 📦 На складі: 12», «⬆️ На склад 1» «⬆️ Усі (4)» «⬆️ ✏️»,
+      «⬇️ У сумку 1» «⬇️ Усі (12)» «⬇️ ✏️», «🔙 До списку». A side with none has no row, a side with one only its «1».
+      No «Викинути».
+- [ ] «⬇️ Усі (40)» with 10 free places in the bag: 10 move, «🎒 … ×10 — забрано зі складу. Решта (30) не вмістилась:
+      сумка повна (25/25).»; with the bag full: the modal «🎒 Сумка повна…», nothing moves. The same way up, full
+      warehouse.
+- [ ] «⬇️ ✏️»: «Скільки бажаєте взяти в сумку?» at once (no «Куди?»); type 3 → the card redraws with the new counts.
+- [ ] 🗡 Спорядження: copies end in 🎒 or 📦; a tap opens the copy's card (stats, wear) with «🛡 Одягнути» and «⬆️ На
+      склад» / «⬇️ У сумку» (a class weapon has no «⬆️ На склад»).
+- [ ] «🛡 Одягнути» on a 📦 hood while a hood is worn: the list shows the old hood 📦 (its own wear and «+N»), the new
+      one is worn (the profile's 🛡 Спорядження), the bag's count unchanged. On a 🎒 copy: the old one goes to the bag.
+      **The 11-01 test-bot run never reached the 📦 case** (read on `roi_test`: no hood went to the warehouse) — give the
+      two hoods different wear first, so the swap shows which kept what.
+- [ ] A warehouse screen left in chat, tapped during a walk or a passive run: the modal «🏕 Ваш намісник у дикій пущі…»,
+      nothing moves.
+- [ ] An old warehouse message from before the restart: «⬆️ +1» / «⬇️ +1» still move one, «✏️ N» still asks «Куди?»
+      and lands on the card.
+
+**Added 2026-11-01, afternoon — the bag's item card, step 2: the trail bag (NOT LIVE: Swift, the same build as step 1;
+no migration — a walk in progress across the restart keeps its «Принесено»):**
+- [ ] On a walk, «🎒 Сумка»: ONE list — the food first, then the materials — «🫐 Лісові ягоди × 9», no «🍴 Зʼїсти»
+      in it; «🔙 Назад» still closes the bag.
+- [ ] A name: the same card as at home, in place; «🔙 До списку» draws the list again.
+- [ ] «🍴 Зʼїсти» / «До повної снаги (N)» / «Зʼїсти всі (N)» on the walk as at home; raw food has no «Зʼїсти».
+- [ ] «🗑 Викинути 1» and «🗑 Викинути всі (N)» on the walk: a material leaves the bag, the title's «(N/25)» drops,
+      and the next find that would not have fit now fits.
+- [ ] The door: find 5 pebbles, throw 3 away, eat 2 of 9 berries found → «Принесено:» lists 🪨 × 2 and 🫐 × 7, never
+      the thrown or eaten ones.
+- [ ] A trail-bag message from before the restart: its «🍴 Зʼїсти» eats one and lands on that item's card.
+- [ ] In the holiday manor the bag works the same; a passive run's bag still refuses every card button.
+
+**Added 2026-11-01, midday — the bag's item card, step 1 of 3 (NOT LIVE: Swift + uk/en, a Pi BUILD and
+`pm2 restart ROI`; no content change, the digest unchanged; the design: `.memory/sessions.md` → the 11-01 midday entry):**
+- [ ] 🎒 Сумка → 🍖 Їжа: one button per item («🍲 Юшка мисливця × 3»), no «🍴 Зʼїсти» in the list, «🔙 До категорій».
+- [ ] A dish's name: its card in the SAME message — name, description, «🍖 +42 Снаги · ❤️ +11 ОЗ», «🎒 У сумці: 3»,
+      «🍴 Зʼїсти», «🗑 Викинути 1» «🗑 Викинути всі (3)», «🔙 До списку».
+- [ ] «🍴 Зʼїсти»: the usual banner, the card stays with «У сумці: 2»; the last portion lands on the list (the root if
+      the category emptied).
+- [ ] The many-portion button, on a level-5 account (pool 125): at 🍖 20/125 with 5 × 🍽 «🍴 До повної снаги (2)» →
+      «✅ Бенкет Намісника × 2 — +105 снаги (125/125), +36 ОЗ (…), 🍖 снага повна», then no such button; 4 berries at
+      20/125 → «🍴 Зʼїсти всі (4)»; at 122/125 none (one berry fills it).
+- [ ] A stale card: eat in another bag message, then tap the old card's «До повної снаги (N)» — the card redraws with
+      the new N and nothing is eaten.
+- [ ] 🥔 Картопля / 🥩 Сире м'ясо: «🔥 Це інгредієнт: спершу на кухню.», no «Зʼїсти».
+- [ ] «🗑 Викинути 1»: at once, «🗑 Викинуто: 🥔 Картопля × 1»; a lone unit's single «🗑 Викинути» at once too.
+- [ ] «🗑 Викинути всі (6)»: «🥔 Картопля — викинути всі 6? Повернути не вийде.» → «🗑 Так, викинути» → «🗑 Викинуто:
+      🥔 Картопля × 6» and the list; «🔙 Назад» returns to the card.
+- [ ] A taken delivery job (the innkeeper's «Солодке до столу», 6 berries): the berries' card and the discard question
+      carry «⚠️ Взяте замовлення: Солодке до столу — N/6»; the trader's sell prompt still carries it (`QuestWarning`).
+- [ ] 🪨 Матеріали: the card with the description, «🎒 У сумці: N» and the two discard buttons only.
+- [ ] 🗡 Спорядження: worn rows end in ✔️; a tap draws the card IN PLACE (it used to be a new message) with «❌ Зняти»
+      or «🛡 Одягнути»; the tap flips it and the banner says so; spare boots put on → the worn pair goes back to the bag
+      and the ✔️ moves. A sword's card reads «(рівень 2)», not «(T2)». No «Викинути» on gear.
+- [ ] During a passive run a card opens, and every button on it answers «🏕 Сумка з намісником у поході…».
+- [ ] A bag message from before the restart: its «🍴 Зʼїсти» still eats one, a name opens the card.
+
 **Added 2026-11-01 — the prizes at the palace (NOT LIVE: a Pi BUILD, the migration `AddEventBloodRewardedAt`, then
 `pm2 restart ROI` — before Sunday 18:00, so the summons goes out with the finale; spec §4.8):**
 - [ ] After the restart, the TABLE: `\d event_blood` shows `rewarded_at timestamptz` nullable, every row NULL.
@@ -3232,9 +3292,23 @@ unrelated commit on purpose.
 - ~~**Велесова ніч's prizes, handed out at the palace — decided, NOT built**~~ — BUILT 2026-11-01 on «Давай зробимо фінал
   івенту» (spec §4.8; the walk block «the prizes at the palace» above). The table in `events.json` agrees with the
   announcement's typed numbers (`EventTests.testShippedPrizesAreTheOwners`).
-- **The bag's item card — PAUSED mid-design** (the session entry has every decision): two questions open — the
-  list's shape and how «🗑 Викинути» picks its count. Decided: a dish's card prints what it restores; raw food gets
-  «🗑 Викинути» alone with «🔥 Це інгредієнт: спершу на кухню». A discard is a new sink — the bag's only, not the trail bag.
+- ~~**The bag's item card — PAUSED mid-design**~~ — DESIGNED in full and **step 1 (the bag) BUILT** 2026-11-01, midday
+  (the walk block «the bag's item card, step 1»; every decision in `.memory/sessions.md` → the 11-01 midday entry).
+  **Step 2 (the trail bag) BUILT 2026-11-01, afternoon** (its walk block; `BagCard` is now the one card of both bags,
+  and every unit it takes out is netted out of «Принесено» through `ExpeditionHaul.dropped`). **Step 3 (the warehouse)
+  BUILT 2026-11-01, evening** (its walk block) — «✏️» in each row (the owner's pick: no «Куди?»), as decided:
+  - **3 — the warehouse** (`EstateController`, `estate:wh:*`): one row per item «Name · 🎒N / 📦M»; the card «⬆️ На склад
+    1 / Усі (N)», «⬇️ У сумку 1 / Усі (M)», «✏️ Інша кількість» (the typed prompt, the direction from the button — no
+    «Куди?»); **no discard from the warehouse** («Ні, лише зі сумки»); «Усі» moves what fits and the banner names the
+    rest, as «📦 Викласти все» does; gear: a row per copy ending in 🎒 or 📦 (the owner's pick over words), the bag's gear card with
+    «🛡 Одягнути» + the move button — putting on from the warehouse SWAPS places: the worn piece lies down on the
+    warehouse in its stead (armour only — the class weapon never reaches the warehouse). Stale warehouse buttons during
+    an expedition must refuse, as the estate's door does.
+  - Offered, not answered (so nothing built): hiding the empty «🧪 Зілля» / «💎 Артефакти» categories — nobody can
+    obtain either.
+  - Found 11-01, told, not changed: a holiday's finale picks the reader's line by blood > 0, so a flask-holder who went
+    into the manor and brought nothing reads «Цього разу ви до маєтку не ходили» — reword it before the next holiday. Found and told, nothing changed: «❌ Зняти» with a full bag takes the piece off anyway and the bag
+    reads e.g. 26/25 — so it is today.
 
 **From the 2026-10-30 session — AFTER THE HOLIDAY (the owner: «Цей баг запиши в туду лист після івенту»):**
 - **«Принесено:» undercounted a walk — cause NOT found.** Ліліт (mage L5, tg `429654667`), 2026-10-30 21:46–21:47:
@@ -3714,6 +3788,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
   reported by every `simulate` run and all deliberate.
 
 ---
+
+*Last updated: 2026-11-01 evening — the bag's item card: all three steps (the bag, the trail bag, the warehouse) built,
+NOT deployed. The 10:01 footer follows.*
 
 *Last updated: 2026-11-01 10:01 — the prize announcement LIVE (the 09:56 restart, sent 10:00:36 to 44 players)
 and Велесова ніч's prizes decided (spec §4.8, not built); the bag's item card paused mid-design. The 10-31 02:01 footer

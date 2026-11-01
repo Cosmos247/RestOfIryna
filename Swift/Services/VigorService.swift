@@ -198,6 +198,34 @@ public enum VigorService {
         return ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored)
     }
 
+    /// Eat up to `portions` units, one at a time through `consume` — the single
+    /// tap's own arithmetic — stopping at the first unit that would restore
+    /// nothing. Returns how many were eaten and what they restored together, or
+    /// nil when not even the first one would restore anything. Mutates `user`;
+    /// the caller removes `eaten` units from the bag and saves (2026-11-01, the
+    /// bag card's «До повної снаги» / «Зʼїсти всі», counted by `MealMath`).
+    public static func consume(_ item: Item, portions: Int, user: User) -> (eaten: Int, result: ConsumeResult)? {
+        var eaten = 0
+        var vigorRestored = 0
+        var hpRestored = 0
+        while eaten < portions, let one = consume(item, user: user) {
+            eaten += 1
+            vigorRestored += one.vigorRestored
+            hpRestored += one.hpRestored
+        }
+        guard eaten > 0 else { return nil }
+        return (eaten, ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored))
+    }
+
+    /// What one portion restores to the Vigor pool before the pool's clamp —
+    /// the `vigorPerPortion` that `MealMath.bulk` divides the gap by.
+    public static func vigorPerPortion(of item: Item) -> Int {
+        item.effects.reduce(0) { total, effect in
+            if case .restoreVigor(let amount) = effect { return total + amount }
+            return total
+        }
+    }
+
     /// True if this item type can be used by the player via "Use" buttons.
     public static func isConsumable(_ item: Item) -> Bool {
         return item.type == .food || item.type == .potion

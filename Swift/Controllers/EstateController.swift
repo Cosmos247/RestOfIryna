@@ -423,10 +423,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return header
     }
 
-    /// Gear (non-stackable): one button row per physical unit, single-direction action.
-    /// Everything else (stackable): two rows per item — an info row showing the name
-    /// + bag/warehouse counters, then an action row `[⬆️ +1] [⬇️ +1] [✏️ N]` where
-    /// `✏️ N` opens a chat prompt for a custom withdraw quantity.
+    /// One button per item — or, for gear, per copy — and no actions in the list
+    /// (2026-11-01, the owner's design): a name opens the item's card
+    /// (`handleWarehouseCard`), where the moves live. A stackable reads «Name ·
+    /// 🎒N / 📦M»; a gear copy its tier-aware name, enchant and wear, ending in
+    /// 🎒 (in the bag) or 📦 (in the warehouse) — the owner's pick over words.
+    /// Until then a stackable carried `[⬆️ +1] [⬇️ +1] [✏️ N]` under its name and
+    /// a gear row its one move; those buttons, still in chat, keep working.
     fileprivate func warehouseCategoryKeyboard(type: ItemType, invEntries: [InventoryEntry], whEntries: [WarehouseEntry], lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var keyboard: [[TGInlineKeyboardButton]] = []
 
@@ -469,15 +472,13 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             for pair in invGear {
                 let target = pair.entry.id?.uuidString ?? pair.item.id
                 keyboard.append([
-                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState), callbackData: "estate:wh:info:\(target)"),
-                    TGInlineKeyboardButton(text: "🎒 ⬆️", callbackData: "estate:wh:deposit:\(target)")
+                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState) + " 🎒", callbackData: "estate:wh:info:\(target)")
                 ])
             }
             for pair in whGear {
                 let target = pair.entry.id?.uuidString ?? pair.item.id
                 keyboard.append([
-                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState), callbackData: "estate:wh:info:\(target)"),
-                    TGInlineKeyboardButton(text: "📦 ⬇️", callbackData: "estate:wh:withdraw:\(target)")
+                    TGInlineKeyboardButton(text: label(pair.item, pair.entry.gearState) + " 📦", callbackData: "estate:wh:info:\(target)")
                 ])
             }
         } else {
@@ -488,11 +489,6 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                 let infoLabel = "\(iconPrefix)\(name) · 🎒\(row.inventoryCount) / 📦\(row.warehouseCount)"
                 keyboard.append([
                     TGInlineKeyboardButton(text: infoLabel, callbackData: "estate:wh:info:\(row.item.id)")
-                ])
-                keyboard.append([
-                    TGInlineKeyboardButton(text: "⬆️ +1", callbackData: "estate:wh:deposit:\(row.item.id)"),
-                    TGInlineKeyboardButton(text: "⬇️ +1", callbackData: "estate:wh:withdraw:\(row.item.id)"),
-                    TGInlineKeyboardButton(text: "✏️ N", callbackData: "estate:wh:transferN:\(row.item.id)")
                 ])
             }
         }
@@ -1140,8 +1136,34 @@ extension EstateController {
         let text: String
         let inline: TGInlineKeyboardMarkup
 
+        // The warehouse's buttons outlive the warehouse (2026-11-01): a screen
+        // left in chat moved the bag the governor carries — a find put away
+        // from the forest is a find a death cannot take. The estate's door
+        // refuses while an expedition row stands, so its warehouse does too.
+        // Only the typed prompt's Cancel stays open, to close what is open.
+        if data.hasPrefix("estate:wh:"), data != "estate:wh:cancelN",
+           try await ExplorationState.current(for: context.session, on: context.db) != nil {
+            let notice = context.lingo.localize("estate.blocked_by_expedition", gender: context.session.gender, locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                callbackQueryId: query.id, text: notice, showAlert: true))
+            return true
+        }
+
+        // The warehouse as list → card (2026-11-01, the owner's design): a
+        // name opens the item's card, where the moves, «✏️» and — for gear —
+        // «🛡 Одягнути» live.
         if data.hasPrefix("estate:wh:info:") {
-            return try await handleWarehouseInfo(data: data, query: query, message: message, context: context)
+            return try await handleWarehouseCard(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:wh:put1:") || data.hasPrefix("estate:wh:putall:")
+            || data.hasPrefix("estate:wh:take1:") || data.hasPrefix("estate:wh:takeall:") {
+            return try await handleWarehouseCardMove(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:wh:typeput:") || data.hasPrefix("estate:wh:typetake:") {
+            return try await handleWarehouseTypedEntry(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("estate:wh:wear:") {
+            return try await handleWarehouseWear(data: data, query: query, message: message, context: context)
         }
 
         // Bulk deposit — must be matched before the per-item `deposit:` /
@@ -1269,99 +1291,370 @@ extension EstateController {
         return true
     }
 
-    /// `estate:wh:info:<target>` — the lore modal, or the placeholder toast for
-    /// an item with no description. The target is a gear ROW's id (2026-10-21)
-    /// or, for stackables and gear buttons left in chat from before, an item
-    /// id. A laddered weapon is described per tier (`.desc.t1…t9`), and the
-    /// bare key printed itself raw: the tier is the copy's, so only the row
-    /// can name it.
-    static func handleWarehouseInfo(
+    // MARK: - The warehouse's cards (2026-11-01)
+
+    /// `estate:wh:info:<target>` — the item's card, drawn over the list (it
+    /// used to answer with the description in a modal). A gear ROW's id opens
+    /// that copy's card wherever it lies; a stackable's item id its card; a
+    /// gear item id — a button from before rows had ids — the gear list, which
+    /// names every copy. A target that is gone redraws its list.
+    static func handleWarehouseCard(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let target = String(data.dropFirst("estate:wh:info:".count))
+        if let rowId = UUID(uuidString: target) {
+            if let card = try await warehouseGearCard(rowId: rowId, context: context) {
+                await editScreen(message, text: card.text, replyMarkup: card.markup, bot: context.bot)
+            } else {
+                try await redrawWarehouseGear(message: message, context: context)
+            }
+            return true
+        }
+        guard let item = ItemCatalog.find(target) else { return true }
+        if item.type == .gear {
+            try await redrawWarehouseGear(message: message, context: context)
+            return true
+        }
+        try await redrawWarehouseItem(item, message: message, context: context)
+        return true
+    }
+
+    /// A stackable's card: its description, «🎒 У сумці: N · 📦 На складі: M»,
+    /// then a row each way — «⬆️ На склад 1» «⬆️ Усі (N)» «⬆️ ✏️» and «⬇️ У сумку 1»
+    /// «⬇️ Усі (M)» «⬇️ ✏️» — the ✏️ in each row asking straight for a number,
+    /// its direction already chosen (the owner's pick: no «Куди?»). A side that
+    /// holds none has no row; a side holding one has only its «1». Nothing is
+    /// thrown away here — the owner: only from a bag. Nil when neither side
+    /// holds any.
+    fileprivate static func warehouseCard(for item: Item, context: Context) async throws
+    -> (text: String, markup: TGInlineKeyboardMarkup)? {
+        guard let userId = context.session.id else { return nil }
+        let inBag = try await InventoryEntry.totalQuantity(of: item.id, for: userId, on: context.db)
+        let inWarehouse = try await WarehouseEntry.totalQuantity(of: item.id, for: userId, on: context.db)
+        guard inBag + inWarehouse > 0 else { return nil }
+        let lingo = context.lingo, locale = context.session.locale
+
+        let icon = item.icon.map { "\($0) " } ?? ""
+        var lines = ["\(icon)<b>\(lingo.localize(item.nameKey, locale: locale))</b>"]
+        if let descKey = item.descriptionKey {
+            lines.append("")
+            lines.append("<i>\(lingo.localize(descKey, locale: locale))</i>")
+        }
+        lines.append("")
+        lines.append("🎒 " + lingo.localize("inventory.card.in_bag", locale: locale, interpolations: ["count": "\(inBag)"])
+                     + " · 📦 " + lingo.localize("estate.warehouse.card.in_wh", locale: locale,
+                                                interpolations: ["count": "\(inWarehouse)"]))
+
+        func row(held: Int, oneKey: String, arrow: String, verb: String) -> [TGInlineKeyboardButton] {
+            var buttons = [TGInlineKeyboardButton(text: lingo.localize(oneKey, locale: locale),
+                                                  callbackData: "estate:wh:\(verb)1:\(item.id)")]
+            if held >= 2 {
+                buttons.append(TGInlineKeyboardButton(
+                    text: "\(arrow) " + lingo.localize("estate.warehouse.card.all", locale: locale,
+                                                       interpolations: ["count": "\(held)"]),
+                    callbackData: "estate:wh:\(verb)all:\(item.id)"))
+                buttons.append(TGInlineKeyboardButton(text: "\(arrow) ✏️", callbackData: "estate:wh:type\(verb):\(item.id)"))
+            }
+            return buttons
+        }
+        var rows: [[TGInlineKeyboardButton]] = []
+        if inBag > 0 {
+            rows.append(row(held: inBag, oneKey: "estate.warehouse.card.put_one", arrow: "⬆️", verb: "put"))
+        }
+        if inWarehouse > 0 {
+            rows.append(row(held: inWarehouse, oneKey: "estate.warehouse.card.take_one", arrow: "⬇️", verb: "take"))
+        }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("inventory.card.back", locale: locale),
+                                            callbackData: "estate:wh:\(item.type.rawValue)")])
+        return (lines.joined(separator: "\n"), TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    /// A gear copy's card — the bag's own text (`BagCard.gearText`) — with
+    /// «🛡 Одягнути» and its one move: «⬆️ На склад» for a copy in the bag
+    /// (none for a class weapon, which never goes to the warehouse), «⬇️ У
+    /// сумку» for one in the warehouse. Nil when the row is gone or worn.
+    fileprivate static func warehouseGearCard(rowId: UUID, context: Context) async throws
+    -> (text: String, markup: TGInlineKeyboardMarkup)? {
+        guard let userId = context.session.id else { return nil }
+        let lingo = context.lingo, locale = context.session.locale
+        let state: GearState
+        let item: Item
+        let move: TGInlineKeyboardButton?
+        if let row = try await InventoryEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$id, .equal, rowId)
+            .first() {
+            guard row.equippedSlot == nil, let found = ItemCatalog.find(row.itemId) else { return nil }
+            state = row.gearState
+            item = found
+            move = WeaponUpgradeCatalog.isUpgradable(found.id) ? nil : TGInlineKeyboardButton(
+                text: lingo.localize("estate.warehouse.transfer_n.dir_put", locale: locale),
+                callbackData: "estate:wh:deposit:\(rowId.uuidString)")
+        } else if let row = try await WarehouseEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$id, .equal, rowId)
+            .first(), let found = ItemCatalog.find(row.itemId) {
+            state = row.gearState
+            item = found
+            move = TGInlineKeyboardButton(
+                text: lingo.localize("estate.warehouse.transfer_n.dir_take", locale: locale),
+                callbackData: "estate:wh:withdraw:\(rowId.uuidString)")
+        } else {
+            return nil
+        }
+
+        var actions: [TGInlineKeyboardButton] = []
+        if item.slot != nil {
+            actions.append(TGInlineKeyboardButton(text: lingo.localize("inventory.action.gear", locale: locale),
+                                                  callbackData: "estate:wh:wear:\(rowId.uuidString)"))
+        }
+        if let move { actions.append(move) }
+        var rows: [[TGInlineKeyboardButton]] = []
+        if !actions.isEmpty { rows.append(actions) }
+        rows.append([TGInlineKeyboardButton(text: lingo.localize("inventory.card.back", locale: locale),
+                                            callbackData: "estate:wh:\(ItemType.gear.rawValue)")])
+        return (BagCard.gearText(item: item, state: state, lingo: lingo, locale: locale),
+                TGInlineKeyboardMarkup(inlineKeyboard: rows))
+    }
+
+    /// The category's list, as the drill-down draws it.
+    fileprivate static func warehouseList(type: ItemType, context: Context) async throws
+    -> (text: String, markup: TGInlineKeyboardMarkup) {
+        let ctrl = Controllers.estateController
+        let locale = context.session.locale
+        let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
+        let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
+        return (ctrl.renderWarehouseCategory(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale),
+                ctrl.warehouseCategoryKeyboard(type: type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale))
+    }
+
+    /// The stackable's card while either side holds any, else its list;
+    /// `statusLine` goes out as the banner under it.
+    fileprivate static func redrawWarehouseItem(_ item: Item, message: TGMaybeInaccessibleMessage,
+                                                context: Context, statusLine: String? = nil) async throws {
+        let screen: (text: String, markup: TGInlineKeyboardMarkup)
+        if let card = try await warehouseCard(for: item, context: context) {
+            screen = card
+        } else {
+            screen = try await warehouseList(type: item.type, context: context)
+        }
+        await editScreen(message, text: screen.text, replyMarkup: screen.markup, bot: context.bot)
+        if let statusLine {
+            await Controllers.estateController.postStatusBanner(statusLine, context: context)
+        }
+    }
+
+    /// `estate:wh:put1|putall|take1|takeall:<itemId>` — the card's moves. «1»
+    /// moves one; «Усі» moves the whole side, or as much as the other side
+    /// takes: the writer's own refusal names the room left (`depositN` /
+    /// `withdrawN` → `.warehouseFull(free)` / `.inventoryFull(free)`), and that
+    /// much moves — the same arithmetic as the writer, never a second copy of
+    /// it — with the banner naming what stayed. No room at all is a modal, as
+    /// a full store always was.
+    static func handleWarehouseCardMove(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        let lingo = context.lingo, locale = context.session.locale
+        let isPut = data.hasPrefix("estate:wh:put")
+        let isAll = data.hasPrefix("estate:wh:putall:") || data.hasPrefix("estate:wh:takeall:")
+        let prefix = isPut ? (isAll ? "estate:wh:putall:" : "estate:wh:put1:")
+                           : (isAll ? "estate:wh:takeall:" : "estate:wh:take1:")
+        let itemId = String(data.dropFirst(prefix.count))
+        func refuse(_ text: String) async {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
+                callbackQueryId: query.id, text: text, showAlert: true))
+        }
+        guard let item = ItemCatalog.find(itemId), item.type != .gear, let userId = context.session.id else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return true
+        }
+        let itemName = lingo.localize(item.nameKey, locale: locale)
+
+        do {
+            var banner: String?
+            if !isAll {
+                if isPut {
+                    switch try await WarehouseService.deposit(itemId: itemId, for: context.session, on: context.db) {
+                    case .success:
+                        banner = "✅ " + lingo.localize("estate.warehouse.deposited", locale: locale, interpolations: ["item": itemName])
+                    case .warehouseFull:
+                        await refuse(lingo.localize("estate.warehouse.full", locale: locale)); return true
+                    case .notTransferable:
+                        await refuse(lingo.localize("estate.warehouse.not_transferable", locale: locale)); return true
+                    case .nothingToDeposit:
+                        break
+                    }
+                } else {
+                    switch try await WarehouseService.withdraw(itemId: itemId, for: context.session, on: context.db) {
+                    case .success:
+                        banner = "✅ " + lingo.localize("estate.warehouse.withdrawn", locale: locale, interpolations: ["item": itemName])
+                    case .inventoryFull:
+                        await refuse(lingo.localize("inventory.full", locale: locale)); return true
+                    case .nothingToWithdraw:
+                        break
+                    }
+                }
+            } else if isPut {
+                let held = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: context.db)
+                var moved = 0
+                if held > 0 {
+                    switch try await WarehouseService.depositN(itemId: itemId, quantity: held, for: context.session, on: context.db) {
+                    case .success:
+                        moved = held
+                    case .warehouseFull(let free) where free > 0:
+                        if case .success = try await WarehouseService.depositN(itemId: itemId, quantity: free,
+                                                                               for: context.session, on: context.db) {
+                            moved = free
+                        }
+                    case .warehouseFull:
+                        await refuse(lingo.localize("estate.warehouse.full", locale: locale)); return true
+                    case .notTransferable:
+                        await refuse(lingo.localize("estate.warehouse.not_transferable", locale: locale)); return true
+                    case .notEnoughInBag:
+                        break
+                    }
+                }
+                if moved == held, moved > 0 {
+                    banner = "✅ " + lingo.localize("estate.warehouse.deposit_n.success", locale: locale,
+                                                   interpolations: ["item": itemName, "n": "\(moved)"]) + " ⬆️"
+                } else if moved > 0 {
+                    let used = try await WarehouseService.slotsUsed(for: context.session, on: context.db)
+                    banner = "📦 " + lingo.localize("estate.warehouse.card.put_partial", locale: locale, interpolations: [
+                        "item": itemName, "n": "\(moved)", "left": "\(held - moved)",
+                        "used": "\(used)", "cap": "\(WarehouseService.capForLevel(context.session.estateLevel))"
+                    ])
+                }
+            } else {
+                let held = try await WarehouseEntry.totalQuantity(of: itemId, for: userId, on: context.db)
+                var moved = 0
+                if held > 0 {
+                    switch try await WarehouseService.withdrawN(itemId: itemId, quantity: held, for: context.session, on: context.db) {
+                    case .success:
+                        moved = held
+                    case .inventoryFull(let free) where free > 0:
+                        if case .success = try await WarehouseService.withdrawN(itemId: itemId, quantity: free,
+                                                                                for: context.session, on: context.db) {
+                            moved = free
+                        }
+                    case .inventoryFull:
+                        await refuse(lingo.localize("inventory.full", locale: locale)); return true
+                    case .notEnoughInWarehouse:
+                        break
+                    }
+                }
+                if moved == held, moved > 0 {
+                    banner = "✅ " + lingo.localize("estate.warehouse.withdraw_n.success", locale: locale,
+                                                   interpolations: ["item": itemName, "n": "\(moved)"]) + " ⬇️"
+                } else if moved > 0 {
+                    let used = try await InventoryEntry.slotsUsed(for: context.session, on: context.db)
+                    banner = "🎒 " + lingo.localize("estate.warehouse.card.take_partial", locale: locale, interpolations: [
+                        "item": itemName, "n": "\(moved)", "left": "\(held - moved)",
+                        "used": "\(used)", "cap": "\(InventoryEntry.slotCap(for: context.session))"
+                    ])
+                }
+            }
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            try await redrawWarehouseItem(item, message: message, context: context, statusLine: banner)
+            return true
+        } catch {
+            // A refusal is the tap's modal, so the tap is answered late — and a
+            // throw before it must not leave the button spinning.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
+    }
+
+    /// `estate:wh:typeput|typetake:<itemId>` — the card's «⬆️ ✏️» / «⬇️ ✏️»:
+    /// the quantity question at once, its direction the row's (the owner's
+    /// pick 2026-11-01: no «Куди?»). The prompt is a message of its own, as the
+    /// «✏️ N» flow's always was, and the typed number lands in the same
+    /// `handleWarehouseTransferNText`, which redraws the card.
+    static func handleWarehouseTypedEntry(
         data: String,
         query: TGCallbackQuery,
         message: TGMaybeInaccessibleMessage,
         context: Context
     ) async throws -> Bool {
         let locale = context.session.locale
-        let target = String(data.dropFirst("estate:wh:info:".count))
-        guard let userId = context.session.id else {
+        let isPut = data.hasPrefix("estate:wh:typeput:")
+        let itemId = String(data.dropFirst((isPut ? "estate:wh:typeput:" : "estate:wh:typetake:").count))
+        guard ItemCatalog.find(itemId) != nil else {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
         }
-
-        // Every outcome below answers the tap itself (the description is an
-        // alert), so a throw before them would leave it spinning — answered on
-        // the way out, as the weapon upgrade does.
-        let subject: (itemId: String, tier: Int?)?
-        do {
-            subject = try await warehouseInfoSubject(target, userId: userId, on: context.db)
-        } catch {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            throw error
-        }
-        guard let subject else {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            try await redrawWarehouseGear(message: message, context: context)
-            return true
-        }
-        guard let item = ItemCatalog.find(subject.itemId) else {
-            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            return true
-        }
-
-        // Anything but a laddered weapon ignores the tier.
-        let tier = subject.tier ?? 1
-        let answer: TGAnswerCallbackQueryParams
-        if let descKey = ItemDisplay.descriptionKey(for: item, tier: tier) {
-            let description = context.lingo.localize(descKey, locale: locale)
-            answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
-        } else {
-            let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: tier), locale: locale)
-            let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-            answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
-        }
-        _ = try? await context.bot.answerCallbackQuery(params: answer)
+        let promptKey = isPut ? "estate.warehouse.deposit_n.prompt" : "estate.warehouse.withdraw_n.prompt"
+        let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
+        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(message.chat.id),
+            text: context.lingo.localize(promptKey, locale: locale),
+            parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[
+                TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
+            ]]))
+        ))
+        await EphemeralChatState.shared.setPendingWarehouseTransfer(
+            telegramId: context.session.telegramId,
+            itemId: itemId,
+            promptMessageId: sent.messageId,
+            warehouseMessageId: message.messageId,
+            warehouseIsPhoto: message.getMessage()?.photo != nil,
+            direction: isPut ? .put : .take
+        )
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
     }
 
-    /// What an info button names: the item and, for a gear row, the row's tier.
-    /// Nil when the gear list is the better answer — the row is gone, or an
-    /// item-id button left in chat names a laddered weapon whose listed copies
-    /// do not share one tier (or are gone), so the list is redrawn with a button
-    /// per copy instead of a guess.
-    fileprivate static func warehouseInfoSubject(_ target: String, userId: UUID, on db: any Database) async throws -> (itemId: String, tier: Int?)? {
-        // The row sits in the bag or in the warehouse, and the button does not
-        // say which.
-        if let rowId = UUID(uuidString: target) {
-            if let row = try await InventoryEntry.query(on: db)
-                .filter(\.$user.$id, .equal, userId)
-                .filter(\.$id, .equal, rowId)
-                .first() {
-                return (row.itemId, row.tier)
+    /// `estate:wh:wear:<rowId>` — «🛡 Одягнути» on a gear card in the
+    /// warehouse. A copy in the bag goes on as it does from the bag (what it
+    /// replaces goes into the bag); a copy in the warehouse TRADES PLACES with
+    /// what it replaces (`WarehouseService.wear`, the owner's pick: the piece
+    /// taken off lies down on the warehouse in its stead). Either way the
+    /// gear list is the answer — the piece now worn leaves it, the one taken
+    /// off appears in it.
+    static func handleWarehouseWear(
+        data: String,
+        query: TGCallbackQuery,
+        message: TGMaybeInaccessibleMessage,
+        context: Context
+    ) async throws -> Bool {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        let locale = context.session.locale
+        guard let rowId = UUID(uuidString: String(data.dropFirst("estate:wh:wear:".count))),
+              let userId = context.session.id else { return true }
+        var worn: (itemId: String, tier: Int)?
+        if let row = try await InventoryEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$id, .equal, rowId)
+            .first() {
+            if row.equippedSlot == nil, ItemCatalog.find(row.itemId)?.slot != nil {
+                try await EquipmentService.equip(row, for: context.session, on: context.db)
+                worn = (row.itemId, row.tier)
             }
-            if let row = try await WarehouseEntry.query(on: db)
-                .filter(\.$user.$id, .equal, userId)
-                .filter(\.$id, .equal, rowId)
-                .first() {
-                return (row.itemId, row.tier)
+        } else if let row = try await WarehouseEntry.query(on: context.db)
+            .filter(\.$user.$id, .equal, userId)
+            .filter(\.$id, .equal, rowId)
+            .first() {
+            let tier = row.tier
+            let itemId = row.itemId
+            if case .worn = try await WarehouseService.wear(warehouseRowId: rowId, for: context.session, on: context.db) {
+                worn = (itemId, tier)
             }
-            return nil
         }
-
-        // An item id. Only a laddered weapon is described per tier; the copies
-        // the gear list shows are unambiguous when they share one.
-        guard WeaponUpgradeCatalog.isUpgradable(target) else { return (target, nil) }
-        let bag = try await InventoryEntry.query(on: db)
-            .filter(\.$user.$id, .equal, userId)
-            .filter(\.$itemId, .equal, target)
-            .all()
-            .filter { $0.equippedSlot == nil }
-        let warehouse = try await WarehouseEntry.query(on: db)
-            .filter(\.$user.$id, .equal, userId)
-            .filter(\.$itemId, .equal, target)
-            .all()
-        let tiers = Set(bag.map(\.tier) + warehouse.map(\.tier))
-        guard tiers.count == 1, let tier = tiers.first else { return nil }
-        return (target, tier)
+        try await redrawWarehouseGear(message: message, context: context)
+        if let worn, let item = ItemCatalog.find(worn.itemId) {
+            let name = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: worn.tier), locale: locale)
+            await Controllers.estateController.postStatusBanner(
+                "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": name]),
+                context: context)
+        }
+        return true
     }
 
     /// Redraws the warehouse's gear list in place — the answer to a gear button
@@ -1841,14 +2134,17 @@ extension EstateController {
         let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: pending.promptMessageId)
         _ = try? await context.bot.deleteMessage(params: deleteParams)
 
-        // Refresh the warehouse view in place — same category the player
-        // started from — and emit the outcome as a standalone banner under
-        // the inline keyboard so it can't be missed.
+        // Refresh the warehouse screen in place — the item's card since
+        // 2026-11-01, or its list once neither side holds any (a «✏️ N» from
+        // an old list lands on the card too) — and emit the outcome as a
+        // standalone banner under the inline keyboard so it can't be missed.
         let ctrl = Controllers.estateController
-        let invEntries = try await InventoryEntry.list(for: context.session, on: context.db)
-        let whEntries = try await WarehouseEntry.list(for: context.session, on: context.db)
-        let body = ctrl.renderWarehouseCategory(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
-        let inline = ctrl.warehouseCategoryKeyboard(type: item.type, invEntries: invEntries, whEntries: whEntries, lingo: context.lingo, locale: locale)
+        let screen: (text: String, markup: TGInlineKeyboardMarkup)
+        if let card = try await warehouseCard(for: item, context: context) {
+            screen = card
+        } else {
+            screen = try await warehouseList(type: item.type, context: context)
+        }
 
         // The estate root is artwork, so this refresh was an `editMessageText`
         // against a caption for as long as it has existed: the warehouse list
@@ -1857,8 +2153,8 @@ extension EstateController {
             chatId: chatId,
             messageId: pending.warehouseMessageId,
             isPhoto: pending.warehouseIsPhoto,
-            text: body,
-            replyMarkup: inline,
+            text: screen.text,
+            replyMarkup: screen.markup,
             bot: context.bot
         )
         await ctrl.postStatusBanner(banner, context: context)

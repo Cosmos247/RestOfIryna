@@ -15,6 +15,9 @@
 //  - silver found on the steps gets its own 🪙 line under the list;
 //  - what stayed in the forest (a full bag) is NOT listed — every step already
 //    said so, and the passive report keeps its own wording.
+//  - (2026-11-01) what was thrown away on the walk was not brought home either —
+//    the trail bag's card can discard, on the owner's word, and the door nets it
+//    out by item exactly as it nets out a meal.
 //
 //  Pure Foundation, so the arithmetic is pinned by tests; the expedition row
 //  carries it as JSON (`exploration_state.haul`).
@@ -32,13 +35,32 @@ public struct ExpeditionHaul: Codable, Sendable, Equatable {
     /// walk or carried from home.
     public private(set) var eaten: [String: Int]
 
+    /// Units thrown away from the trail bag on the walk, by item id (2026-11-01).
+    /// Absent from a haul written before it — decoded as none.
+    public private(set) var dropped: [String: Int]
+
     /// Silver found on the steps.
     public private(set) var silver: Int
 
     public init() {
         taken = [:]
         eaten = [:]
+        dropped = [:]
         silver = 0
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case taken, eaten, dropped, silver
+    }
+
+    /// A walk begun before 2026-11-01 carries a haul with no `dropped`, and a
+    /// restart must not strand it: the key is optional on the way in.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        taken = try container.decode([String: Int].self, forKey: .taken)
+        eaten = try container.decode([String: Int].self, forKey: .eaten)
+        dropped = try container.decodeIfPresent([String: Int].self, forKey: .dropped) ?? [:]
+        silver = try container.decode(Int.self, forKey: .silver)
     }
 
     /// Units of `itemId` that went into the bag. Zero and below are ignored —
@@ -48,9 +70,17 @@ public struct ExpeditionHaul: Codable, Sendable, Equatable {
         taken[itemId, default: 0] += quantity
     }
 
-    /// One unit of `itemId` eaten on the walk.
-    public mutating func eat(_ itemId: String) {
-        eaten[itemId, default: 0] += 1
+    /// Units of `itemId` eaten on the walk — one per tap of «🍴 Зʼїсти», N for
+    /// the card's «До повної снаги (N)» / «Зʼїсти всі (N)».
+    public mutating func eat(_ itemId: String, quantity: Int = 1) {
+        guard quantity > 0 else { return }
+        eaten[itemId, default: 0] += quantity
+    }
+
+    /// Units of `itemId` thrown away from the trail bag on the walk.
+    public mutating func drop(_ itemId: String, quantity: Int) {
+        guard quantity > 0 else { return }
+        dropped[itemId, default: 0] += quantity
     }
 
     public mutating func findSilver(_ amount: Int) {
@@ -58,12 +88,12 @@ public struct ExpeditionHaul: Codable, Sendable, Equatable {
         silver += amount
     }
 
-    /// What came home: every item taken, less what was eaten of it, in item-id
-    /// order — the passive report's order. An item eaten down to nothing is
-    /// left out.
+    /// What came home: every item taken, less what was eaten or thrown away of
+    /// it, in item-id order — the passive report's order. An item eaten or
+    /// thrown down to nothing is left out.
     public var brought: [(itemId: String, quantity: Int)] {
         taken.keys.sorted().compactMap { id in
-            let net = taken[id, default: 0] - eaten[id, default: 0]
+            let net = taken[id, default: 0] - eaten[id, default: 0] - dropped[id, default: 0]
             return net > 0 ? (id, net) : nil
         }
     }

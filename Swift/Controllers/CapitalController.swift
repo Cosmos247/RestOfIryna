@@ -2381,18 +2381,13 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// back does not undo: the day rolls at 12:00, and what a hide fetches is a
     /// fraction of what the job pays. It rides prompts the player is already
     /// looking at rather than a screen of its own, so the routine "dump the
-    /// loot" path costs no extra tap. Advisory, so a failed read stays silent
-    /// rather than blocking a sale.
+    /// loot" path costs no extra tap. The lines are `QuestWarning`'s, which the
+    /// bag's item card prints too (2026-11-01).
     fileprivate func questWarningSuffix(itemId: String, context: Context) async -> String {
-        let lingo = context.lingo, locale = context.session.locale
-        let jobs = (try? await QuestService.acceptedDeliveries(of: itemId, for: context.session, on: context.db)) ?? []
-        return jobs.map { job in
-            "\n⚠️ " + lingo.localize("capital.trader.bulkN.quest_warning", locale: locale, interpolations: [
-                "job": lingo.localize(job.def.titleKey, locale: locale),
-                "done": "\(job.done)",
-                "target": "\(job.target)"
-            ])
-        }.joined()
+        await QuestWarning.lines(itemId: itemId, for: context.session, on: context.db,
+                                 lingo: context.lingo, locale: context.session.locale)
+            .map { "\n" + $0 }
+            .joined()
     }
 
     // MARK: - Trader bulk-N prompt flow

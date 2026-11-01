@@ -7,10 +7,18 @@
 //  Inventory viewer with tree navigation.
 //
 //  UI is a single message whose text and inline keyboard are edited as the player
-//  drills in and out:
-//    Root view      — category buttons with counts (only non-empty types), + [Close]
-//    Category view  — food/potion: row per item [Item × N] [🍽 Use]; others: list in body; + [Back]
-//  The message is sent fresh on entry and deleted on [Close], which transitions to main.
+//  drills in and out (the list → card shape since 2026-11-01, the owner's design):
+//    Root view      — category buttons with counts.
+//    Category view  — one button per item, «Name × N»; gear one per ROW, its wear
+//                     and a ✔️ at the end of what is worn. No action buttons here.
+//    Card           — the item's own screen, drawn over the list: description,
+//                     what a dish restores, «🎒 У сумці: N», a taken job's ⚠️,
+//                     then the actions — «🍴 Зʼїсти» and the many-portion button
+//                     (`MealMath`), «🗑 Викинути 1» / «🗑 Викинути всі (N)»; for
+//                     gear its stats and condition with «🛡 Одягнути» / «❌ Зняти».
+//                     Gear is never thrown away: the workshop's «Розібрати» is
+//                     the one place a piece is destroyed.
+//  The message is sent fresh on entry.
 //
 //  Main-menu reply keyboard stays visible while the player is in inventory. The router
 //  registers handlers for each main-nav button text so those presses navigate correctly
@@ -176,8 +184,9 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
     }
 
     /// The modal a refused tap answers with while `run` holds the bag — here,
-    /// and on a stale trail-bag message (`explore:eat:`), which reaches the bag
-    /// through the main router.
+    /// and on every item card's buttons in either bag (`BagCard.handle`), a
+    /// stale trail-bag message included, which reaches the bag through the
+    /// main router.
     static func passiveLockAlert(_ run: ExplorationState, context: Context) -> String {
         let locale = context.session.locale
         return "🏕 " + context.lingo.localize("exploration.passive.bag_locked_alert",
@@ -280,8 +289,11 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             return (lhs.entry.id?.uuidString ?? "") < (rhs.entry.id?.uuidString ?? "")
         }
 
-        let equipLabel = lingo.localize("inventory.action.gear", locale: locale)
-        let unequipLabel = lingo.localize("inventory.action.gear.unequip", locale: locale)
+        // The list says what is worn (2026-11-01): the Одягнути / Зняти button
+        // that used to say it moved onto the card. A ✔️ at the end of the row —
+        // the owner's pick over «· на вас», 🟢, 👤 and 📍; an emoji, so no locale
+        // carries it. Free in the game, unlike the green ✅ of a banner or a price.
+        let wornMarker = "✔️"
 
         return sorted.map { pair in
             // Tier-aware name, rarity glyph above the baseline only, the
@@ -289,108 +301,57 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
             // was kept out of the label on 2026-05-21 so the name would not
             // truncate; it came back on 2026-09-27 because without it two
             // copies cannot be told apart.
-            let itemLabel = ItemDisplay.gearRowLabel(item: pair.item, state: pair.entry.gearState,
+            var itemLabel = ItemDisplay.gearRowLabel(item: pair.item, state: pair.entry.gearState,
                                                      lingo: lingo, locale: locale)
-            let isEquipped = pair.entry.equippedSlot != nil
-            let actionLabel = isEquipped ? unequipLabel : equipLabel
-            let actionPrefix = isEquipped ? "inv:unequip:" : "inv:equip:"
+            if pair.entry.equippedSlot != nil {
+                itemLabel += " \(wornMarker)"
+            }
             // The row's id; the item id only for a row that has none yet, which
             // a row read back from the database never is.
             let target = pair.entry.id?.uuidString ?? pair.item.id
-            return [
-                TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(target)"),
-                TGInlineKeyboardButton(text: actionLabel, callbackData: "\(actionPrefix)\(target)")
-            ]
+            return [TGInlineKeyboardButton(text: itemLabel, callbackData: "inv:info:\(target)")]
         }
     }
 
-    /// Full HTML detail card for one owned gear row — name (+tier for weapons),
-    /// lore, the stats it grants at full condition (tier-aware; armour at its
-    /// enchant level), and a condition block (durability, broken /
-    /// dulled warning, enchant level). Mirrors the workshop recipe-detail layout.
-    private static func gearDetailCard(row: InventoryEntry, item: Item, user: User, lingo: Lingo, locale: String) -> String {
-        let name = lingo.localize(ItemDisplay.nameKey(for: item, tier: row.tier), locale: locale)
-        let icon = ItemDisplay.rarityPrefix(for: item) + (item.icon.map { "\($0) " } ?? "")
-        var header = "\(icon)<b>\(name)</b>"
-        if WeaponUpgradeCatalog.isUpgradable(item.id) { header += " <i>(T\(row.tier))</i>" }
-        var lines: [String] = [header]
-
-        if let descKey = ItemDisplay.descriptionKey(for: item, tier: row.tier) {
-            lines.append("")
-            lines.append("<i>\(lingo.localize(descKey, locale: locale))</i>")
-        }
-
-        // Stats at full condition (so the player sees the piece's real value).
-        let s = EquipmentService.nominalStats(of: row, for: user)
-        var statLines: [String] = []
-        // Same six stats, in the same order, as `ItemCard` and `GearStats`
-        // itself. HP was missing here until 2026-09-11, which hid the whole
-        // Forester set's HP everywhere except the shop card the player saw
-        // once before buying. `profile.health` rather than a new
-        // `workshop.stats.hp`: a sixth duplicated pair is what produced the
-        // Влучність / Точність split. Crit carries NO `%` — it is a rating
-        // converted through a curve, so "+5%" is 4.2% at level 1 and 1.35% at
-        // the cap.
-        if s.attack   != 0 { statLines.append("   +\(s.attack) ⚔️ \(lingo.localize("workshop.stats.attack", locale: locale))") }
-        if s.defense  != 0 { statLines.append("   +\(s.defense) 🛡 \(lingo.localize("workshop.stats.defense", locale: locale))") }
-        if s.hp       != 0 { statLines.append("   +\(s.hp) ❤️ \(lingo.localize("profile.health", locale: locale))") }
-        if s.crit     != 0 { statLines.append("   +\(s.crit) 💥 \(lingo.localize("workshop.stats.crit", locale: locale))") }
-        if s.dodge    != 0 { statLines.append("   +\(s.dodge) 💨 \(lingo.localize("workshop.stats.dodge", locale: locale))") }
-        if s.accuracy != 0 { statLines.append("   +\(s.accuracy) 🎯 \(lingo.localize("workshop.stats.accuracy", locale: locale))") }
-        if !statLines.isEmpty {
-            lines.append("")
-            lines.append("<b>\(lingo.localize("workshop.detail.stats", locale: locale))</b>")
-            lines.append(contentsOf: statLines)
-        }
-
-        // Condition — only durable gear (armor / weapon).
-        let isArmor  = item.slot.map { GearConditionService.armorSlots.contains($0.rawValue) } == true
-        let isWeapon = item.slot.map { GearConditionService.weaponSlots.contains($0.rawValue) } == true
-        if isArmor || isWeapon {
-            lines.append("")
-            lines.append("<b>\(lingo.localize("inventory.detail.condition", locale: locale))</b>")
-            lines.append("   ⚙️ \(lingo.localize("inventory.detail.durability", locale: locale)): \(row.durability)/\(row.maxDurability)")
-            if row.durability <= 0 {
-                lines.append("   \(lingo.localize(isWeapon ? "inventory.detail.weapon_dulled" : "inventory.detail.broken", locale: locale))")
-            }
-            if isArmor && row.enchantLevel > 0 {
-                lines.append("   ✨ \(lingo.localize("inventory.detail.enchant", locale: locale)): +\(row.enchantLevel)")
-            }
-        }
-        return lines.joined(separator: "\n")
+    /// The gear card's buttons: what this copy can do — put on, or take off —
+    /// and the way back to the list. One button for the copy's own state, so a
+    /// tap flips it and the card redraws with the other.
+    fileprivate static func gearCardKeyboard(row: InventoryEntry, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+        let target = row.id?.uuidString ?? row.itemId
+        let action = row.equippedSlot != nil
+            ? TGInlineKeyboardButton(text: lingo.localize("inventory.action.gear.unequip", locale: locale),
+                                     callbackData: "inv:unequip:\(target)")
+            : TGInlineKeyboardButton(text: lingo.localize("inventory.action.gear", locale: locale),
+                                     callbackData: "inv:equip:\(target)")
+        let back = TGInlineKeyboardButton(text: lingo.localize("inventory.card.back", locale: locale),
+                                          callbackData: "inv:cat:\(ItemType.gear.rawValue)")
+        return TGInlineKeyboardMarkup(inlineKeyboard: [[action], [back]])
     }
 
-    /// Non-gear rows (food / material / potion / artifact). Materials have no action
-    /// button; the others get a type-specific Use button wired to `inv:use:<item_id>`.
-    /// Recipe-scroll artifacts (`item.teachesRecipe != nil`) override the type label
-    /// with "📖 Learn" — same `inv:use:` callback, the handler branches on the field.
+    // A gear row's card text is `BagCard.gearText` (2026-11-01): the warehouse's
+    // gear card prints the same one.
+
+    /// Non-gear rows (food / material / potion / artifact): one button per item,
+    /// «Name × N», which opens the item's card (2026-11-01, the owner's design —
+    /// «лише назви … без кнопки зʼїсти»). Every action lives on the card.
+    /// `inv:info:` is the name button's old callback, so a bag message left in
+    /// chat from before opens the card too; its old «🍴 Зʼїсти» buttons
+    /// (`inv:use:`) still eat one portion.
     private func genericRows(type: ItemType, entries: [InventoryEntry], lingo: Lingo, locale: String) -> [[TGInlineKeyboardButton]] {
         var items: [(item: Item, quantity: Int)] = []
         for entry in entries {
             guard let item = ItemCatalog.find(entry.itemId), item.type == type else { continue }
             items.append((item, entry.quantity))
         }
-        let merged = mergeForDisplay(items)
-        let defaultActionLabel = type.actionKey.map { lingo.localize($0, locale: locale) }
-
-        return merged.map { (item, qty) in
+        return mergeForDisplay(items).map { (item, qty) in
             let name = lingo.localize(item.nameKey, locale: locale)
             let iconPrefix = item.icon.map { "\($0) " } ?? ""
-            let itemButton = TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(qty)", callbackData: "inv:info:\(item.id)")
-            let actionLabel: String?
-            if item.teachesRecipe != nil {
-                actionLabel = lingo.localize("inventory.action.learn", locale: locale)
-            } else {
-                actionLabel = defaultActionLabel
-            }
-            if let actionLabel = actionLabel {
-                let actionButton = TGInlineKeyboardButton(text: actionLabel, callbackData: "inv:use:\(item.id)")
-                return [itemButton, actionButton]
-            } else {
-                return [itemButton]
-            }
+            return [TGInlineKeyboardButton(text: "\(iconPrefix)\(name) × \(qty)", callbackData: "inv:info:\(item.id)")]
         }
     }
+
+    // The item's card and its five actions live in `BagCard` (2026-11-01), which the
+    // trail bag shares; this controller keeps gear's card and the lists.
 
     private func mergeForDisplay(_ items: [(item: Item, quantity: Int)]) -> [(item: Item, quantity: Int)] {
         var byId: [String: (item: Item, quantity: Int)] = [:]
@@ -466,8 +427,9 @@ extension InventoryController {
         }
 
         // A gear ROW (2026-09-27): the card of that copy, not of whichever one
-        // is worn. A row that is gone by now redraws the list, which is the
-        // screen that knows what the bag holds.
+        // is worn — drawn over the list since 2026-11-01, with the copy's own
+        // Одягнути / Зняти. A row that is gone by now redraws the list, which
+        // is the screen that knows what the bag holds.
         if data.starts(with: "inv:info:"),
            let rowId = UUID(uuidString: String(data.dropFirst("inv:info:".count))) {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
@@ -476,66 +438,49 @@ extension InventoryController {
                 try await refreshCategory(type: .gear, message: message, context: context)
                 return true
             }
-            let card = Self.gearDetailCard(row: row, item: item, user: context.session, lingo: context.lingo, locale: locale)
-            try await context.bot.sendMessage(session: context.session, text: card, parseMode: .html, replyMarkup: nil)
+            await showGearCard(row: row, item: item, message: message, context: context)
             return true
         }
 
-        // Item info — if the item has a lore description, show it as a modal
-        // alert (readable, dismissable). Otherwise fall back to the generic
-        // "description coming soon" toast.
+        // An item's name: its card, drawn over the list (2026-11-01). It used
+        // to answer with the description in a modal; the card carries the
+        // description and the actions the list no longer does.
         if data.starts(with: "inv:info:") {
             let itemId = String(data.dropFirst("inv:info:".count))
-            guard let item = ItemCatalog.find(itemId) else {
-                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                return true
-            }
-            // Gear → a full HTML detail card sent as its own message (stats +
-            // durability + enchant/tier), so the player can review owned gear.
-            if item.type == .gear, let userId = context.session.id {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            guard let item = ItemCatalog.find(itemId) else { return true }
+            // Gear by item id — a button left in chat from before rows had ids:
+            // the worn copy's card, or the first one's.
+            if item.type == .gear {
+                guard let userId = context.session.id else { return true }
                 let rows = try await InventoryEntry.query(on: context.db)
                     .filter(\.$user.$id, .equal, userId)
                     .filter(\.$itemId, .equal, item.id)
                     .all()
-                // Prefer the equipped copy if the player owns more than one.
                 if let row = rows.first(where: { $0.equippedSlot != nil }) ?? rows.first {
-                    _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-                    let card = Self.gearDetailCard(row: row, item: item, user: context.session, lingo: context.lingo, locale: locale)
-                    try await context.bot.sendMessage(session: context.session, text: card, parseMode: .html, replyMarkup: nil)
-                    return true
+                    await showGearCard(row: row, item: item, message: message, context: context)
+                } else {
+                    try await refreshCategory(type: .gear, message: message, context: context)
                 }
+                return true
             }
-            // For tiered weapons (3 starter weapons in WeaponUpgradeCatalog) the
-            // lore changes per tier — fetch the player's row to know which tier
-            // description to render. Non-tiered items just use their static key.
-            var resolvedDescKey: String? = item.descriptionKey
-            var resolvedNameKey: String = item.nameKey
-            if WeaponUpgradeCatalog.isUpgradable(item.id), let userId = context.session.id {
-                let row = try await InventoryEntry.query(on: context.db)
-                    .filter(\.$user.$id, .equal, userId)
-                    .filter(\.$itemId, .equal, item.id)
-                    .first()
-                let tier = row?.tier ?? 1
-                resolvedDescKey = ItemDisplay.descriptionKey(for: item, tier: tier)
-                resolvedNameKey = ItemDisplay.nameKey(for: item, tier: tier)
-            }
-            let answer: TGAnswerCallbackQueryParams
-            if let descKey = resolvedDescKey {
-                let description = context.lingo.localize(descKey, locale: locale)
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: description, showAlert: true)
-            } else {
-                let itemName = context.lingo.localize(resolvedNameKey, locale: locale)
-                let toast = context.lingo.localize("inventory.info.placeholder", locale: locale, interpolations: ["name": itemName])
-                answer = TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true)
-            }
-            _ = try? await context.bot.answerCallbackQuery(params: answer)
+            try await BagCard.redraw(item, route: .bag, message: message, context: context,
+                                     list: { try await bagList(after: $0, context: context) })
             return true
         }
 
-        // The governor has the bag (2026-10-12): eating, learning a scroll,
-        // equipping and unequipping all wait for him. A modal, so the screen
-        // the tap came from stays as it was.
-        if data.starts(with: "inv:use:") || data.starts(with: "inv:equip:") || data.starts(with: "inv:unequip:"),
+        // The item card's five verbs — eat, eat many, throw away one, all, and
+        // the question's yes — one implementation with the trail bag's.
+        if BagCard.isAction(data, route: .bag) {
+            return try await BagCard.handle(data, query: query, message: message, context: context,
+                                            route: .bag, list: { try await bagList(after: $0, context: context) })
+        }
+
+        // The governor has the bag (2026-10-12): learning a scroll, equipping
+        // and unequipping wait for him (the card's own verbs ask in `BagCard`).
+        // A modal, so the screen the tap came from stays as it was. Opening a
+        // card is looking, and stays open to him.
+        if changingPrefixes.contains(where: { data.starts(with: $0) }),
            let run = try await passiveRun(holding: context.session, on: context.db) {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                 callbackQueryId: query.id, text: passiveLockAlert(run, context: context), showAlert: true))
@@ -587,35 +532,9 @@ extension InventoryController {
 
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
-            // Build the inline status line shown atop the refreshed view.
-            // Each restored stat shows the new (current/max) total in parens
-            // so the player sees both the gain and the pool state at a glance.
-            let itemName = context.lingo.localize(item.nameKey, locale: locale)
-            var parts: [String] = []
-            if result.vigorRestored > 0 {
-                parts.append(context.lingo.localize("vigor.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.vigorRestored)",
-                    "current": "\(context.session.vigor)",
-                    "max":     "\(context.session.maxVigor)"
-                ]))
-            }
-            if result.hpRestored > 0 {
-                parts.append(context.lingo.localize("hp.restored", locale: locale, interpolations: [
-                    "amount":  "\(result.hpRestored)",
-                    "current": "\(context.session.hp)",
-                    "max":     "\(context.session.effectiveMaxHp)"
-                ]))
-            }
-            // Topping out is worth naming: Vigor has no passive regeneration,
-            // so "full" is a ceiling the player just paid food for and every
-            // point past it is wasted.
-            if context.session.vigor >= context.session.maxVigor {
-                parts.append("🍖 " + context.lingo.localize("vigor.full", locale: locale))
-            }
-            if context.session.hp >= context.session.effectiveMaxHp {
-                parts.append("❤️ " + context.lingo.localize("hp.full", locale: locale))
-            }
-            let statusLine = "✅ \(itemName) — " + parts.joined(separator: ", ")
+            // The «🍴 Зʼїсти» of a bag list left in chat from before the card
+            // (2026-11-01): it still eats one portion, and redraws the list.
+            let statusLine = BagCard.mealBanner(item: item, eaten: 1, result: result, context: context)
 
             // Refresh: stay in category if items remain, else pop back to root.
             let entries = try await InventoryEntry.list(for: context.session, on: context.db)
@@ -638,16 +557,24 @@ extension InventoryController {
         if data.starts(with: "inv:equip:"),
            let rowId = UUID(uuidString: String(data.dropFirst("inv:equip:".count))) {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            guard let target = try await ownedRow(rowId, context: context), target.equippedSlot == nil,
+            guard let target = try await ownedRow(rowId, context: context),
                   let item = ItemCatalog.find(target.itemId), item.slot != nil else {
-                // Gone, already worn, or not wearable — the list is the answer.
+                // Gone, or not wearable — the list is the answer.
                 try await refreshCategory(type: .gear, message: message, context: context)
+                return true
+            }
+            // Already worn (a second tap, or a card left in chat): the card,
+            // which now says «❌ Зняти», is the answer.
+            guard target.equippedSlot == nil else {
+                await showGearCard(row: target, item: item, message: message, context: context)
                 return true
             }
             try await EquipmentService.equip(target, for: context.session, on: context.db)
             let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
             let statusLine = "✅ " + context.lingo.localize("equip.success", locale: locale, interpolations: ["item": itemName])
-            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
+            // The card stays, its button flipped (2026-11-01): the tap came
+            // from the card, and the card is what changed.
+            await showGearCard(row: target, item: item, message: message, context: context, statusLine: statusLine)
             return true
         }
 
@@ -691,15 +618,20 @@ extension InventoryController {
         if data.starts(with: "inv:unequip:"),
            let rowId = UUID(uuidString: String(data.dropFirst("inv:unequip:".count))) {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
-            guard let target = try await ownedRow(rowId, context: context), target.equippedSlot != nil,
+            guard let target = try await ownedRow(rowId, context: context),
                   let item = ItemCatalog.find(target.itemId) else {
                 try await refreshCategory(type: .gear, message: message, context: context)
+                return true
+            }
+            // Already off: the card, which now says «🛡 Одягнути».
+            guard target.equippedSlot != nil else {
+                await showGearCard(row: target, item: item, message: message, context: context)
                 return true
             }
             try await EquipmentService.unequip(target, for: context.session, on: context.db)
             let itemName = context.lingo.localize(ItemDisplay.nameKey(for: item, tier: target.tier), locale: locale)
             let statusLine = "✅ " + context.lingo.localize("unequip.success", locale: locale, interpolations: ["item": itemName])
-            try await refreshCategory(type: .gear, message: message, context: context, statusLine: statusLine)
+            await showGearCard(row: target, item: item, message: message, context: context, statusLine: statusLine)
             return true
         }
 
@@ -837,5 +769,39 @@ extension InventoryController {
         if let statusLine {
             await ctrl.postStatusBanner(statusLine, context: context)
         }
+    }
+
+    // MARK: - Gear's card and the lists (2026-11-01)
+
+    /// The verbs the governor's lock refuses here; the item card's own five
+    /// ask the same lock in `BagCard.handle`.
+    private static let changingPrefixes = ["inv:use:", "inv:equip:", "inv:unequip:"]
+
+    /// A gear row's card, drawn over the message the tap came from, with the
+    /// copy's own Одягнути / Зняти; `statusLine` goes out as the banner under it.
+    private static func showGearCard(row: InventoryEntry, item: Item, message: TGMaybeInaccessibleMessage,
+                                     context: Context, statusLine: String? = nil) async {
+        let locale = context.session.locale
+        let card = BagCard.gearText(item: item, state: row.gearState, lingo: context.lingo, locale: locale)
+        let markup = gearCardKeyboard(row: row, lingo: context.lingo, locale: locale)
+        await editScreen(message, text: card, replyMarkup: markup, bot: context.bot)
+        if let statusLine {
+            await Controllers.inventoryController.postStatusBanner(statusLine, context: context)
+        }
+    }
+
+    /// Where a card lands once nothing of `item` is left: the list it was
+    /// opened from, or — that category emptied — the bag's root.
+    private static func bagList(after item: Item, context: Context) async throws -> BagCard.Screen {
+        let ctrl = Controllers.inventoryController
+        let lingo = context.lingo, locale = context.session.locale
+        let entries = try await InventoryEntry.list(for: context.session, on: context.db)
+        if entries.contains(where: { ItemCatalog.find($0.itemId)?.type == item.type }) {
+            return (ctrl.renderCategory(type: item.type, lingo: lingo, locale: locale),
+                    ctrl.categoryKeyboard(type: item.type, entries: entries, lingo: lingo, locale: locale))
+        }
+        let locked = try await passiveRun(holding: context.session, on: context.db) != nil
+        return (ctrl.renderRoot(entries: entries, session: context.session, lingo: lingo, locale: locale, locked: locked),
+                ctrl.rootKeyboard(entries: entries, lingo: lingo, locale: locale))
     }
 }

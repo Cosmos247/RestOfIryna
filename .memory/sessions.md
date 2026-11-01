@@ -11,7 +11,14 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **`96973ba`'s hash fill** — records only.
+- *(this commit, 11-01)* **the bag's item card, all three steps** — Swift + uk/en + tests, NOT deployed (a Pi build and
+  `pm2 restart ROI`; no content change, the digest unchanged, no migration): the bag's lists are names, every action is
+  on the item's card (`BagCard`, one for both bags) — «🍴 Зʼїсти» and «До повної снаги (N)» / «Зʼїсти всі (N)»
+  (`MealMath`), «🗑 Викинути 1» / «Викинути всі (N)»; gear's card drawn in place with its own Одягнути / Зняти, the worn
+  ✔️, «(рівень N)»; the trail bag ONE list with the same card, discards netted out of «Принесено»
+  (`ExpeditionHaul.dropped`); the warehouse list → card too — «1 / Усі / ✏️» each way, «🛡 Одягнути» that trades places
+  (`WarehouseService.wear`), its buttons refused during an expedition; `QuestWarning` shared with the trader. 517 tests.
+- `b04bef3` (11-01) **`96973ba`'s hash fill** — records only.
 - `96973ba` (11-01) **Велесова ніч's prizes at the palace, and the 09:56 deploy record** — Swift + content + uk/en +
   a migration + tests, NOT deployed (a Pi build, `AddEventBloodRewardedAt`, `pm2 restart ROI` before 18:00):
   `events.json` → `rewards` and the `rewards_call` summons; `EventRewardService` (one transaction),
@@ -931,6 +938,90 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-01, midday → evening (the bag's item card: designed in full, all three steps built) — *(this commit)*
+
+**Resumed** from the past-midnight pause («на чому я зупинився?»): the record matched the transcript (`f418be1d`) — two
+of four questions open, nothing built. The owner's words then were «переробити логіку демонстрації інвентарю в різних
+формах. Почнемо з сумки», so the warehouse had never been discussed; the owner asked to settle every form now.
+
+**Decided, in quiz rounds** (samples on real numbers: a level-5 mage at 🍖 20/125, ❤️ 60/98, the holiday's 5 × 🍽, berries
+at +4, potatoes):
+- **the list**: «Name × N», one per row, no action buttons;
+- **a dish's card**: the description, «🍖 +72 Снаги · ❤️ +18 ОЗ», «🎒 У сумці: N», a taken job's ⚠️; «🍴 Зʼїсти» + ONE
+  many-portion button whose label says what it does — «До повної снаги (N)» when the stack fills the pool, «Зʼїсти всі
+  (N)» when it cannot, none when one portion fills it, at a full pool or for a lone unit. The owner asked whether the
+  button changes on one food with the stack and the pool — yes, shown on a table — and picked it over two buttons
+  (identical for every food without ❤️: a portion that restores nothing is never eaten) and over a constant label. The
+  count rounds UP: the last portion may lose its remainder, as one tap at the top always has;
+- **raw food**: «🔥 Це інгредієнт: спершу на кухню.» and no «Зʼїсти»;
+- **discard**: «🗑 Викинути 1» at once, «🗑 Викинути всі (N)» asks («… — викинути всі N? Повернути не вийде.»); a lone
+  unit gets one «🗑 Викинути», at once. Nothing in the game destroyed food or materials before — a new sink;
+- **gear**: the card in place (it was a separate message), worn rows ending in ✔️ (first built as «· на вас»; the
+  owner asked for an emoji at the end and picked ✔️ over 🟢, 👤 and 📍), the button flipping «🛡 Одягнути» /
+  «❌ Зняти» (asked whether it changes when worn — yes); **no discard for gear** — the workshop's «Розібрати» stays the
+  one exit; the weapon's «(T2)» → «(рівень 2)» (approved);
+- **the trail bag (step 2)**: as the bag, one list (food, then materials), discard IN THE FOREST too («Так, і в лісі» —
+  shown that a full bag stops being a limit and «Принесено» must subtract it);
+- **the warehouse (step 3)**: a gear row ends in 🎒 or 📦 (not «· у сумці» / «· на складі»); the card with 1 / Усі both ways + «✏️ Інша кількість»; **no discard from it** («Ні, лише
+  зі сумки»); gear with «🛡 Одягнути» (asked «чи можна одягнути зі складу?» — not today; offered), which swaps: the worn
+  piece goes onto the warehouse in its stead («куди дівається знята броня?» — there, armour only);
+- **scrolls**: none since 09-18 — nothing to design; potions and the shrine coin are obtainable nowhere (the dev seed
+  only) and get the food card. Hiding their empty categories was offered, not answered — not built.
+Said before building: 10-12's «Скільки … з'їсти?» (a typed number) was rolled back before commit; this is buttons only.
+
+**Built (step 1, the bag):** `MealMath` (ROISim) + `MealMathTests` (six; a floor mutant fails two);
+`VigorService.consume(_:portions:user:)` (the single tap's `consume`, unit by unit) and `vigorPerPortion(of:)`;
+`QuestWarning` (the trader's `questWarningSuffix` lifted out, its output unchanged); `InventoryController`: the lists,
+`itemCard`, `inv:eat:` / `inv:eatn:<id>:<n>` (N re-asked on the tap; a mismatch redraws the card), `inv:drop:`,
+`inv:dropall:<id>:<n>` → `inv:dropok:<id>:<n>` (a count that moved asks again), the gear card in place
+(`gearCardKeyboard`), equip / unequip redrawing the card, every changing callback behind the governor's lock
+(`changingPrefixes`); an old list's `inv:use:` still eats one, its `inv:info:` opens the card. 16 keys in uk + en.
+
+**Checked:** a clean debug build, no diagnostics in the changed files; **514 tests** (508 + 6); every new key and the
+moved warning rendered through the real Lingo in both locales (a scratch package over `.build/checkouts/Lingo`), no raw
+`%{`; `validate --strict` clean; the digest unchanged (content `1ac5a7bc`, `records 207c959cf4807072`, COMBINED
+`0f31c3b586671117`). NOT run on the test bot. Found, told, not changed: «❌ Зняти» with a full bag goes over the cap
+(26/25).
+
+**Step 2, the trail bag (afternoon, on «Одразу робимо крок 2» — step 1 left uncommitted, the owner did not ask):** the
+card moved out of `InventoryController` into `BagCard` (one implementation, `Route.bag` / `Route.trail` — the namespaces
+`inv:` / `explore:`, and where «🔙 До списку» goes); `renderBag` is ONE list (food, potions, materials), «Name × N» only;
+`explore:info:` draws the card, `explore:items` the list, the card's verbs go to `BagCard.handle` (`explore:eat:` was the
+old list's own, so an old message eats one and lands on the card). Every unit a card takes out is told to the walk in
+progress from either bag (`BagCard.recordDeparture`): `ExpeditionHaul` gained `dropped` (decoded as none when absent, so
+a walk across the restart keeps its haul; an old binary ignores the key) and `eat(_:quantity:)`; `brought` = taken −
+eaten − dropped. The empty trail bag still says «Нічого їстівного не лишилось.» — true, though materials are listed
+now; not reworded unasked. **Checked:** a clean build; **517 tests** (+3 in `ExpeditionHaulTests`; a mutant without the
+`dropped` subtraction and one decoding `dropped` as required each fail); `validate --strict` clean; the digest unchanged.
+NOT run on the test bot.
+
+**Step 3, the warehouse (evening, on «Одразу робимо крок 3»):** asked first, because the picked sample had ONE «✏️ Інша
+кількість» while its description promised no «Куди?» — the owner: «✏️» in each row. Built: the lists are names (a
+stackable «Name · 🎒N / 📦M», a gear copy ending in 🎒 / 📦); `estate:wh:info:` opens the card (the lore modal and
+`warehouseInfoSubject` gone): «⬆️ На склад 1 / ⬆️ Усі (N) / ⬆️ ✏️» and the same down, no discard; «Усі» asks the writer
+(`depositN` / `withdrawN`) and moves what its refusal says fits, the banner naming the rest («Решта (N) не вмістилась…»,
+«решта» so no number has to agree); «✏️» opens the quantity prompt with its direction set, and the typed number now
+redraws the card. A gear copy's card is the bag's text (`BagCard.gearText`, moved out of `InventoryController`) with «🛡
+Одягнути» — a bag copy goes on as from the bag, a warehouse copy TRADES PLACES with what is worn
+(`WarehouseService.wear`, one transaction, both keep their state; a class weapon in the slot rolls it back). New: every
+`estate:wh:` button but Cancel refuses while an expedition row stands — a warehouse left in chat used to move the bag a
+walk or the governor carries (put a find away, and a death cannot take it). **Checked:** a clean build; 517 tests (no
+new: the moves and the swap are Fluent, which the test target does not load); the strings through the real Lingo; the
+longest warehouse card 401 UTF-16 units against the 1,024 caption; `validate --strict` clean; the digest unchanged.
+
+**On the test bot** (asked, «Так, запускай тестового бота»): `@artania_gamebot` on `roi_test`, booted 15:24:26 on hash
+`1ac5a7bc`; the owner walked the screens and finished («Тест я закінчив»). Read on `roi_test` after the owner's «step 5»:
+both hoods still the rows `/grant` made at 15:57:37, both in the bag, one worn — a 🎒 copy put on from the warehouse
+screen at 15:58:07 (both rows saved at once, `EquipmentService.equip`'s swap); three feasts moved to the warehouse at
+15:31–15:33. **No hood ever reached the warehouse, so `WarehouseService.wear` — the warehouse copy trading places — has
+NOT run on a real database**; a 37/50 hood to tell the two apart was offered, not answered. The bot exited at 16:31:23
+on its own `[WATCHDOG]` (159 s without a `getUpdates`): the Mac idle-slept 16:28:48–16:31:20 (`pmset -g log`); not
+restarted — the owner had finished. A run under `caffeinate -i` was suggested for next time.
+
+**Answered after the test** (no change): at the close every registered player gets the finale (👑 «Король одужав!», the
+podium, then their own line); the line is picked by blood > 0, so a flask-holder who went in and brought nothing reads
+«Цього разу ви до маєтку не ходили» — told the owner, not changed (`TODO.md` → Open).
 
 ## Session — 2026-11-01, morning (the prize announcement deployed; the prizes at the palace built) — `96973ba`
 

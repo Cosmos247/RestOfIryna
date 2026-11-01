@@ -27,11 +27,11 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (`96973ba`'s hash fill). Under it, unpushed: **`96973ba`** (Велесова ніч's prizes at the palace, with the 2026-11-01 09:56 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`b0c0d9c`** (`ae663b1`'s hash fill; `ae663b1` the prize announcement). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the bag's item card, all three steps). Under it, unpushed: **`b04bef3`** (`96973ba`'s hash fill) and **`96973ba`** (Велесова ніч's prizes at the palace, with the 2026-11-01 09:56 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`b0c0d9c`** (`ae663b1`'s hash fill; `ae663b1` the prize announcement). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`b0c0d9c`** (the owner pushed 2026-11-01 09:55), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`b0c0d9c`**, online since **2026-11-01 09:56:33** (pm2 restarts 11; no build — the binary is `c77a25b`'s, built 2026-10-31 17:56:23, the same Swift). Content schema **v29**, content hash **`6e734f14`** — the digest matched the Mac in every line before the restart. The prize announcement went to 44 players at 10:00:36–41. 11 × 403 per mass notice (players who blocked the bot), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **Велесова ніч's prizes at the palace — BEFORE Sunday 18:00**, so the summons goes out with the finale. Swift changed: on the Pi `git pull --ff-only`, a detached debug BUILD, the pre-flight digest (it must read content `1ac5a7bc`, `records 207c959cf4807072`, COMBINED `0f31c3b586671117`), read who is in the manor, ASK, `pm2 restart ROI`; then verify `event_blood.rewarded_at` on the TABLE. The other four digest lines are unchanged |
+| waiting for a restart | **Велесова ніч's prizes at the palace — BEFORE Sunday 18:00**, so the summons goes out with the finale. Swift changed: on the Pi `git pull --ff-only`, a detached debug BUILD, the pre-flight digest (it must read content `1ac5a7bc`, `records 207c959cf4807072`, COMBINED `0f31c3b586671117`), read who is in the manor, ASK, `pm2 restart ROI`; then verify `event_blood.rewarded_at` on the TABLE. The other four digest lines are unchanged. **The bag's item card (this commit) rides the same build if it is pushed** — Swift + locales only, the digest is the same; to ship the prizes without it, push `b04bef3` |
 
 ### Where the last sessions stopped (2026-10-24 → 10-31)
 
@@ -115,7 +115,7 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card is paused mid-design** (same TODO block). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
+**0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) BUILT, NOT deployed** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
 14:00 / 16:00 decrees (each once: count `event_notices`), the capital wearing the holiday from 12:00, at 18:00 the
 summons, the manor at km 5, the scribe's story and the flasks; the board, the flasks and who is inside are read with the
 SQL in `.memory/live-ops.md` → "Велесова ніч" (and "what shows when"). Walk list: `TODO.md` → "Added 2026-10-29".
@@ -227,7 +227,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 508 tests, ~5s
+swift test                                   # 517 tests, ~5s
 ```
 
 

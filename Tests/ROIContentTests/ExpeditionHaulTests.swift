@@ -73,8 +73,42 @@ final class ExpeditionHaulTests: XCTestCase {
         var haul = ExpeditionHaul()
         haul.take("food.forest_nuts", quantity: 2)
         haul.eat("food.forest_nuts")
+        haul.drop("mat.river_pebble", quantity: 3)
         haul.findSilver(10)
         let data = try JSONEncoder().encode(haul)
         XCTAssertEqual(try JSONDecoder().decode(ExpeditionHaul.self, from: data), haul)
+    }
+
+    /// Thrown away on the walk is not brought home (2026-11-01): it nets out by
+    /// item, like a meal — a pebble carried from home thrown away against a
+    /// pebble found included.
+    func testThrownAwayIsNotBroughtHome() {
+        var haul = ExpeditionHaul()
+        haul.take("mat.river_pebble", quantity: 5)
+        haul.take("mat.iron", quantity: 1)
+        haul.drop("mat.river_pebble", quantity: 3)
+        haul.drop("mat.clay", quantity: 2)
+        XCTAssertEqual(pairs(haul), ["mat.iron×1", "mat.river_pebble×2"])
+        haul.drop("mat.river_pebble", quantity: 4)
+        XCTAssertEqual(pairs(haul), ["mat.iron×1"])
+    }
+
+    /// The card's «До повної снаги (N)» eats N at once and nets out N.
+    func testSeveralEatenAtOnce() {
+        var haul = ExpeditionHaul()
+        haul.take("food.forest_berries", quantity: 9)
+        haul.eat("food.forest_berries", quantity: 5)
+        haul.eat("food.forest_berries", quantity: 0)
+        XCTAssertEqual(pairs(haul), ["food.forest_berries×4"])
+    }
+
+    /// A haul written before `dropped` existed — a walk in progress across the
+    /// restart that ships it — still decodes, with nothing thrown away.
+    func testAHaulFromBeforeTheDiscardStillDecodes() throws {
+        let old = #"{"taken":{"food.forest_nuts":2},"eaten":{"food.forest_nuts":1},"silver":4}"#
+        let haul = try JSONDecoder().decode(ExpeditionHaul.self, from: Data(old.utf8))
+        XCTAssertEqual(pairs(haul), ["food.forest_nuts×1"])
+        XCTAssertEqual(haul.silver, 4)
+        XCTAssertEqual(haul.dropped, [:])
     }
 }

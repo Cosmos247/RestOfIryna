@@ -292,6 +292,78 @@ public enum WarehouseService {
         return .success
     }
 
+    /// What putting a piece on straight from the warehouse did.
+    public enum WearResult: Sendable {
+        /// On. `stored` is the item that was in its slot and now lies on the
+        /// warehouse in its stead — nil when the slot was empty.
+        case worn(stored: String?)
+        /// The row is gone (moved, taken apart) or cannot be worn: the list is
+        /// the answer.
+        case gone
+    }
+
+    /// Thrown inside `wear`'s transaction, which rolls it back.
+    public enum WearError: Error {
+        case notTransferable(String)
+    }
+
+    /// Put a piece on straight from the warehouse (2026-11-01, the owner's
+    /// pick): the piece that was in its slot lies down on the warehouse IN ITS
+    /// STEAD, so neither store needs room — the bag sees neither, and the
+    /// warehouse holds as many units as before (one fewer when the slot was
+    /// empty). One transaction: the two trade places, or nothing moves. Each
+    /// keeps its tier, wear and enchant (`carrying:`), because a row that is
+    /// re-created forgets everything it is not handed. Armour only in practice:
+    /// a class weapon never reaches the warehouse, and a slot holding one is
+    /// refused rather than storing it.
+    public static func wear(warehouseRowId: UUID, for user: User, on db: any Database) async throws -> WearResult {
+        guard let userId = user.id else { return .gone }
+        let result: WearResult
+        do {
+            result = try await db.transaction { tx -> WearResult in
+                guard let source = try await WarehouseEntry.query(on: tx)
+                        .filter(\.$user.$id, .equal, userId)
+                        .filter(\.$id, .equal, warehouseRowId)
+                        .first(),
+                      let item = ItemCatalog.find(source.itemId), let slot = item.slot else { return .gone }
+                let state = source.gearState
+                // Compared in memory, as `EquipmentService.equip` does: the
+                // column is optional, and more than one stray occupant of a
+                // slot is cleared the same way.
+                let replaced = try await InventoryEntry.query(on: tx)
+                    .filter(\.$user.$id, .equal, userId)
+                    .all()
+                    .filter { $0.equippedSlot == slot.rawValue }
+                var stored: String?
+                for row in replaced {
+                    if WeaponUpgradeCatalog.isUpgradable(row.itemId) {
+                        throw WearError.notTransferable(row.itemId)
+                    }
+                    try await WarehouseEntry.add(row.itemId, quantity: 1, to: user, on: tx, carrying: row.gearState)
+                    stored = row.itemId
+                    try await row.delete(on: tx)
+                }
+                if source.quantity > 1 {
+                    source.quantity -= 1
+                    try await source.save(on: tx)
+                } else {
+                    try await source.delete(on: tx)
+                }
+                let worn = InventoryEntry(userID: userId, itemId: item.id, quantity: 1, carrying: state)
+                worn.equippedSlot = slot.rawValue
+                try await worn.save(on: tx)
+                return .worn(stored: stored)
+            }
+        } catch is WearError {
+            return .gone
+        }
+        if case .worn = result {
+            try await EquipmentService.recomputeBonuses(for: user, on: db)
+            try await user.saveAndCache(in: db)
+        }
+        return result
+    }
+
     /// Move `quantity` units of the item from the warehouse to the backpack
     /// in one shot. Fails atomically if the warehouse doesn't have enough or
     /// the backpack can't fit — both failure cases carry the limiting number

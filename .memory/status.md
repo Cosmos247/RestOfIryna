@@ -21,6 +21,18 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-01 — the bag's item card, all three steps** (Swift + uk/en + tests, NOT live: a Pi build and the
+restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every
+action moved onto the item's card, drawn over the list: the description, what a dish restores, «🎒 У сумці: N», a taken
+job's ⚠️ (`QuestWarning`, shared with the trader), «🍴 Зʼїсти» and ONE many-portion button — «До повної снаги (N)» /
+«Зʼїсти всі (N)», counted by `MealMath` and asked again on the tap — then «🗑 Викинути 1» (at once) and «🗑 Викинути всі
+(N)» (asked). Raw food: «🔥 Це інгредієнт», no eat. Gear: the card in place with its own Одягнути / Зняти, «(рівень
+N)», and never a discard. Step 2 (afternoon): the trail bag is ONE list — food, then materials — with the same card (`BagCard`, shared by
+both bags), discard included in the forest; every unit a card takes out is netted out of «Принесено»
+(`ExpeditionHaul.dropped`). Step 3 (evening): the warehouse's lists are names too, and its card moves «1 / Усі / ✏️» each way (no «Куди?»,
+no discard; «Усі» moves what fits), and a gear card's «🛡 Одягнути» trades places with what is worn
+(`WarehouseService.wear`, one transaction); the warehouse's buttons refuse during an expedition. 517 tests.
+
 **2026-11-01 — Велесова ніч's prizes at the palace** (Swift + content + uk/en + a migration + tests, NOT live: a Pi
 build, `AddEventBloodRewardedAt`, then the restart — before 18:00). `events.json` → `rewards` (5 × «Бенкет Намісника» to
 every flask with blood, 🪙 for places 1–10, 🟡 for 1–3) and the `rewards_call` summons at the close; `EventRewardService`
@@ -1118,7 +1130,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **508 tests** (2026-11-01). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **517 tests** (2026-11-01, afternoon). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
