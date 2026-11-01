@@ -514,12 +514,26 @@ public enum BalanceFormatter {
         // project has already agreed to look at first.
         if let opening = OpeningLedger.measure(content: content, runs: run.runsPerCell,
                                                seed: run.seed) {
-            let title = "the opening: levels 1–\(opening.endsAtLevel - 1), before the estate exists"
+            let title = "the opening: levels 1–\(opening.endsAtLevel - 1), before the first estate upgrade"
             out.append("── " + title + " "
                        + String(repeating: "─", count: max(3, 74 - title.count)))
-            out.append("   The pace table below divides kills by what the estate feeds, so it cannot")
-            out.append("   see this stretch at all — at tier 1 there are no plot slots and the")
-            out.append("   divisor is zero. Here it is measured against the only income it has.")
+            // Since 2026-11-01 every estate starts with a granted plot, so tier 1
+            // feeds the pace table too — by the DAY. This section prices the same
+            // stretch by the KILL, which cannot hold an income by the hour, so it
+            // leaves that plot out the way it leaves silver out and stays a floor.
+            let home = FoodBudget.best(slots: FoodBudget.slots(tier: 1, upgrades: content.estateUpgrades),
+                                       harvestsPerDay: FoodBudget.defaultHarvestsPerDay, content: content)
+            if home.vigor > 0 {
+                out.append("   The pace table below divides kills by what the estate feeds in a day; at")
+                out.append(String(format: "   tier 1 that is the plot every estate starts with (%@, %.0f Vigor a day).",
+                                  home.mix.joined(separator: " + "), home.vigor))
+                out.append("   This prices the same stretch per kill, against the trail, and leaves the")
+                out.append("   plot out: an income by the hour is not one by the kill.")
+            } else {
+                out.append("   The pace table below divides kills by what the estate feeds, so it cannot")
+                out.append("   see this stretch at all — at tier 1 there are no plot slots and the")
+                out.append("   divisor is zero. Here it is measured against the only income it has.")
+            }
             out.append(String(format: "   %d XP to reach level %d, against a stock of %.0f Vigor — the starting pool",
                               opening.xpNeeded, opening.endsAtLevel, opening.stock))
             out.append("   plus every level-up grant on the way, and since Phase 8E nothing refills it.")
@@ -554,7 +568,7 @@ public enum BalanceFormatter {
                 if best.net < 0 {
                     findings.append(Finding(
                         severity: .warning, rule: "opening.vigor_bankrupt",
-                        message: String(format: "levels 1–%d end %.0f Vigor short at their cheapest holdable depth (km %d) — %.1f× the entire stock a player has before the estate exists, and no plot has been cleared to make it up",
+                        message: String(format: "levels 1–%d end %.0f Vigor short at their cheapest holdable depth (km %d) — %.1f× the entire stock a player has before the first estate upgrade, and the trail alone does not make it up",
                                         opening.endsAtLevel - 1, -best.net, best.km,
                                         -best.net / max(1, opening.stock))))
                 }
@@ -727,10 +741,12 @@ public enum BalanceFormatter {
                     taps += killsHere * (roundsPerFight * lift.rounds + stepsPerEncounter)
 
                     let food = foodByLevel[level] ?? .none
-                    // Levels before the first plot is cleared have NO estate at
-                    // all. They are lived off the trail, which this model does
-                    // not count — so they are excluded and reported rather than
-                    // divided by zero into an infinite day count.
+                    // A level whose estate feeds nothing is lived off the trail,
+                    // which this model does not count — so it is excluded and
+                    // reported rather than divided by zero into an infinite day
+                    // count. Levels 1–3 were such levels until 2026-11-01, when
+                    // every estate started with the hazel; a bundle with no
+                    // granted plot still has them.
                     guard food.vigor > 0 else { unfed += 1; continue }
                     days += killsHere * vigorPerKill / food.vigor
                     // Every portion is a button: cook it, then eat it.

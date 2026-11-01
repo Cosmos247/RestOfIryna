@@ -155,7 +155,7 @@ RestOfIryna/
 │   │   ├── ExplorationState.swift # one row per expedition — active or passive (user_id unique, stepsDeep, mode, ends_at, report_json, running_report_json, visited_rooms)
 │   │   ├── Enemy.swift           # Enemy types + EnemyCatalog façade (roster in content/data/enemies.json) — 14 wilderness animals numbered by depth (tier 2, 2026-10-02; spec `content/spec/spec-bestiary.md` §10) + 2 non-exploration mobs (training_dummy, rabid_dog tutorial fight); since 2026-10-03 a spawnable creature fights with HP and ATK × the estate tier's strength (`scaled(forEstateTier:)`, §11); since 2026-10-20 the rabid bear and the rabid pack (`beyondHorizon`) also roam every km past the horizon at km 49 (`ForestHorizon`, §12)
 │   │   ├── Plot.swift            # Phase 5.1 — Fluent model for estate plots (user_id, slot_index, plot_type, tier, last_harvested_at, notified_full)
-│   │   ├── PlotCatalog.swift     # Phase 5.1 — code-based plot type config (Farm / Lumberyard / Mine / Coop / TrainingGround), per-tier rate + cap, Mine bonus output (iron)
+│   │   ├── PlotCatalog.swift     # Phase 5.1 — plot type config over `plots.json` (Farm / Lumberyard / Mine / Coop, and since 2026-11-01 the Hazel every estate starts with — granted, never built), per-tier rate + cap, Mine bonus output (iron)
 │   │   ├── WeaponUpgradeCatalog.swift # Phase 5.2.2 — per-weapon tier ladder (3 weapons × 9 tiers since 2026-10-04, each opened by a player level — one every five; stats + materials); ItemDisplay namespace lives in Item.swift. `durabilityByTier` [30 … 180] + `durability(forTier:)` — weapon durability ceiling climbs with tier; `requiredLevel(for:tier:)` and `highestTier(for:atLevel:)` read the gates
 │   │   ├── EstateUpgradeCatalog.swift # Phase 5.3c — estate-tier progression (6 transitions T1→T2 … T6→T7, player-level gates 4/7/10/13/16/19, materials + gold cost for T3+)
 │   │   ├── BagCatalog.swift      # Phase 5.3d — bag tier ladder (6 tiers: 25/35/45/60/75/90 slots — top two steps re-spread to +15 each on 2026-09-16; per-unit since the 2026-05-12 pivot, which replaced 5 tiers of 20/30/40/55/75), estate-tier gates per step, hide + iron materials only
@@ -187,6 +187,7 @@ RestOfIryna/
 │   │   ├── CreateEventNotices.swift # 2026-10-29 — `event_notices`, one row per holiday notice sent; listed in `WipeForRebalance.playerTables`
 │   │   ├── AddManorToExplorationState.swift # 2026-10-29 — four nullable columns for a manor descent on the walk's row
 │   │   ├── AddEventBloodRewardedAt.swift # 2026-11-01 — `event_blood.rewarded_at`, one nullable column: a flask whose prize was collected
+│   │   ├── PlantHazel.swift # 2026-11-01 — the hazel every estate starts with: every plot moves down a slot, then a ripe hazel goes into slot 1 of every registered estate (one transaction)
 │   │   ├── CreateFightLog.swift  # 2026-09-27 — `fight_log`; `enemy_id` is history, not a live reference
 │   │   ├── AddCombatTally.swift  # 2026-09-27 — `combat_tally` on `exploration_state`, the running fight numbers
 │   │   ├── RewalkReorderedDecrees.swift # 2026-09-27 — data: anyone at chain positions 23…25 goes back to 22 after the estate-before-ground reorder
@@ -754,6 +755,15 @@ one database migration, `AddExplorationHaul`):
   (`content/spec/spec-bestiary.md` §14).
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
 - a coop's build banner agrees with its noun: «🐔 Курник закладений на слоті N.» (it said «закладена»).
+
+**Built 2026-11-01, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
+card, `266d28e`, waits for the same restart):
+- every estate starts with **the hazel** («🌳 Ліщина»): a plot in slot 1 that the player never chooses or
+  builds, planted ripe when the estate is named, growing a forest nut an hour and holding five
+  (`content/spec/spec-progression.md` §8). Every tier gains its slot, so the slots a player builds on stay as
+  many as before; the plots already built move down one (the farm in «Слот 1» reads «Слот 2»), and every
+  existing estate finds its hazel ripe. The first plot a player builds still costs the light first price, and
+  «Перша ділянка» still asks for a plot of their own. The welcome after registration says where it stands.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

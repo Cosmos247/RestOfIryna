@@ -2159,6 +2159,27 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-01, night — the hazel every estate starts with (NOT LIVE: Swift + content schema v30 + uk/en and the
+`PlantHazel` migration, which REWRITES ROWS; `content/spec/spec-progression.md` §8):**
+- [ ] Before the restart, on the Pi: `SELECT slot_index, plot_type, count(*) FROM plots GROUP BY 1, 2 ORDER BY 1, 2`
+      and `SELECT count(*) FROM users WHERE registration_step >= 7`. After it, the same: slot 0 is `hazel` alone, one
+      per registered account, and every built plot one slot higher. Verify the TABLE, not the log line.
+- [ ] A new account: the welcome ends «🌳 Біля хати ростуть кущі ліщини, і горіхи вже стиглі. Зберіть їх: 🏰 Маєток →
+      🌾 Ділянка.»; 🏰 Маєток → 🌾 Ділянка reads «Слотів зайнято: 1 / 1» and «🌳 Слот 1 · Ліщина — 5/5 🌰»; no push came
+      for that first fill.
+- [ ] «🚜 Слот 1»: «🌳 Ділянка 1 · Ліщина», the description, «🌰 Лісові горіхи — 5/5 · 1/год»; «🎒 До сумки» → «✅ Слот 1 —
+      +5 🌰 Лісові горіхи, додано в Сумку 🎒», the list at 0/5. Five hours later the push «🌳 Ліщина (слот 1)
+      заповнена. Готово до збору: 5 🌰 Лісові горіхи».
+- [ ] An estate that existed (T3, a farm and a coop): «Слотів зайнято: 3 / 3», the hazel ripe on top, the farm and the
+      coop in slots 2 and 3 with what they held; no push for the hazel.
+- [ ] Estate T2: «➕ Слот 2 · вільний»; the picker lists four types, no hazel; the farm asks 10 🪵 2 🟫 3 🥔 — still the
+      light first price, no 🧱 or 🔩.
+- [ ] «Перша ділянка» (L4): «🌾 Зайняти ділянку» stays ❌ with the hazel alone, ✅ after «✅ Будувати»; «Урожай»
+      closes on a harvest of nuts.
+- [ ] An old plot list from before the restart: its «Слот 1» opens the hazel's card (harmless); an old «➕ Слот N» for
+      a slot that is now built says «🚧 Цей слот вже зайнятий.»
+- [ ] `/content` reads schema v30, hash `95421568`.
+
 **Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (NOT LIVE: Swift + uk/en, the same build as
 steps 1–2; no migration):**
 - [ ] 🏰 Маєток → 📦 Склад → 🍖 Їжа / 🪨 Матеріали: one button per item, «🫐 Лісові ягоди · 🎒4 / 📦12», no
@@ -3793,12 +3814,16 @@ fixes are `f2ae7ea`; these were found, verified and left:
   required DTO field, the content and the `tuning` digest, so it is a standalone cleanup, not
   part of any feature. Left on 2026-10-12 when the dead functions went: the restart waiting
   then is checked against that digest.
-- **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, no
-  estate at levels 1–3, thirteen `roster_off_curve` warnings (since tier 2, every line is solved
+- **The standing deferrals below** — flat food portions, the level 21–40 unlock gap, thirteen
+  `roster_off_curve` warnings (since tier 2, every line is solved
   against the real kit) and `opening.shallow_is_bankrupt` (back since tier 2) — are all
-  reported by every `simulate` run and all deliberate.
+  reported by every `simulate` run and all deliberate. ("No estate at levels 1–3" left this list with the hazel,
+  2026-11-01: `pace.levels_without_an_estate` no longer fires in the tree.)
 
 ---
+
+*Last updated: 2026-11-01 night — the hazel every estate starts with (`spec-progression.md` §8): built and rehearsed,
+NOT deployed (schema v30 + `PlantHazel`). The evening footer follows.*
 
 *Last updated: 2026-11-01 evening — the bag's item card: all three steps (the bag, the trail bag, the warehouse) built,
 NOT deployed. The 10:01 footer follows.*

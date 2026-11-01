@@ -170,5 +170,13 @@ public enum ContentSchema {
     /// `missingFile("events.json")`; a v28 binary would never read the file and
     /// run no holiday the operator believes is scheduled. The handshake names
     /// the cause either way.
-    public static let current: Int = 29
+    /// v30 (2026-11-01): the plot every estate starts with — `plots.json` gains
+    /// the `hazel` row marked `"granted" : true` (no `buildCost`), and
+    /// `estate_upgrades.json` → `plotSlotsByTier` counts its slot (1…7). The
+    /// field decodes as optional, so a v29 binary would take the hazel for a
+    /// buildable plot with no price and its validator would refuse the bundle
+    /// with a bare `plot.build_cost_missing`; the handshake names the cause. A
+    /// v29 bundle on a v30 binary would install an estate with no hazel and a
+    /// slot table that hands slot 1 out to be built on — refused the same way.
+    public static let current: Int = 30
 }

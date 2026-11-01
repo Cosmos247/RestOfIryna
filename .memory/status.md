@@ -1130,8 +1130,9 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **517 tests** (2026-11-01, afternoon). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
-since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **526 tests** (2026-11-01, night — the hazel). Pace is **136–151 days** to level 40 in the tree since the hazel
+(2026-11-01, built, not deployed — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
+estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
 three times and nothing else had moved at all — the watchman cadence and the passive daily
@@ -1158,7 +1159,9 @@ taps/day since the farm went back to 2/h cap 10 on 2026-09-16**, which returned 
 that original cut). The foraging pools left Swift for `zones.json` at the same time.
 **What the report still flags:** the shipped bestiary carries ~60% of what its archetypes ask
 (Phase 10's), food portions restore a flat amount against a pool that grows (deferred with
-batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature).
+batch cooking to after the rebalance), and levels 1–3 have no estate at all (a feature — until
+2026-11-01, when every estate started with the hazel, a granted plot of nuts in slot 1; the report
+feeds levels 1–3 from it since, and `pace.levels_without_an_estate` is gone).
 
 Sections below describe the shipped FEATURE SET. Where they quote numbers (XP curves,
 stat growth, enemy stats, enchant bonuses) treat `content/data/` as the truth — several
@@ -1234,6 +1237,7 @@ were superseded by Phases 4–6.
 - [ ] 5.2 EstateController grid view + plot management + production timers
 - [ ] 5.3 Crafting (Recipe model, workshop/kitchen flows, blueprint learning) — will also raise backpack slot cap via upgrade
 - [ ] 5.4 Global estate placement + adjacency
+- [x] **2026-11-01 — the hazel** (`spec-progression.md` §8, BUILT, not deployed): every estate starts with «🌳 Ліщина» in slot 1 — granted, never chosen or built, planted RIPE when the estate is named, 🌰 1 an hour holding 5. Slots by tier 1…7 (the hazel's + 0…6 built); the price's N and `claim_plot` count built plots only; `PlantHazel` moved every built plot down a slot and planted the estates that existed.
 
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — was flat 50 rows; now per-user `InventoryEntry.slotCap(for:User)` reading `BagCatalog.capForTier(user.bagTier)` (T1=25 → T6=90 since the 2026-09-16 re-spread; per-unit since the 2026-05-12 pivot — slots count units, not stack rows). `add` throws `inventoryFull`; `canAccept` preflight; both bypass the cap when `user.isDeveloper`. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/Y slots`.

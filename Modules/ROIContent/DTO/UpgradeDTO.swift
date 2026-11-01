@@ -102,9 +102,11 @@ public struct EstateUpgradeFileDTO: Codable, Sendable {
     ///
     /// Data since Phase 8E, and not for tidiness: with Vigor no longer
     /// regenerating, these slots ARE the daily budget, so the balance report
-    /// has to read the same ladder the game grants from. Tier 1 has none — the
-    /// wooden hut has cleared no land — which is why the first days are lived
-    /// off the trail rather than off the estate.
+    /// has to read the same ladder the game grants from. Tier 1 has one, and it
+    /// is not the player's: the wooden hut has cleared no land, but the hazel
+    /// that grew there first stands in slot 1 of every estate (2026-11-01,
+    /// `spec-progression.md` §8). The table counts that slot at every tier, so
+    /// the slots a player builds on are each entry less the granted plots.
     public let plotSlotsByTier: [Int]
     public let progression: [EstateUpgradeStepDTO]
 

@@ -43,6 +43,13 @@ in front of them.
 and 40, so there is nothing for a decree to point at; the chain is extended when
 that stops being true, not before.
 
+**`claim_plot` counts a plot the player BUILT** (2026-11-01). Every estate starts
+with the hazel in slot 1 (`spec-progression.md` §8), so «Перша ділянка»
+(`king.first_ground`) would otherwise be done the moment it opened; a decree that
+names a type counts that type, and the validator refuses one naming the hazel
+(`king.plot_type_granted`). `harvest_plot` («Урожай») counts a harvest of nuts like
+any other.
+
 ## 2. What it pays, and the two rules the numbers obey
 
 **The currency follows the level.** Vigor and food up to 16, silver and XP after

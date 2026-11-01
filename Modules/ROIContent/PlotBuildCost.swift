@@ -18,10 +18,11 @@
 //    (`build.firstPlotLeavesOut`): a newcomer at estate T2 has no mine yet and
 //    forages less than a clay a day.
 //
-//  N counts the plot being built — the player's plots plus one — never the slot
-//  index: a slot can be claimed out of order, and the price is about how much
-//  land the estate already works. The plots built before the rule stay as they
-//  are; nobody is charged for them.
+//  N counts the plot being built — the plots the player built, plus one — never
+//  the slot index: a slot can be claimed out of order, and the price is about
+//  how much land the player has already put to work. The plot the estate
+//  grants (2026-11-01, the hazel in slot 1) is not one of them. The plots built
+//  before the rule stay as they are; nobody is charged for them.
 //
 //  The one reading of the rule, for the build card, `PlotService.claim`, the
 //  validator and `roi-content spec`, so the card cannot quote a price the
@@ -31,6 +32,15 @@
 import Foundation
 
 public enum PlotBuildCost {
+
+    /// N for the plot about to be built: the plots the player BUILT, plus one.
+    /// `ownedTypes` is every plot row the player owns, by type. A granted plot
+    /// (2026-11-01, `spec-progression.md` §8) is not one the player built, so
+    /// it never makes the next plot dearer — the first plot a player builds
+    /// stays the light one that leaves out clay and iron.
+    public static func nextPlotNumber(ownedTypes: [String], granted: Set<String>) -> Int {
+        ownedTypes.filter { !granted.contains($0) }.count + 1
+    }
 
     /// What the player's `plotNumber`-th plot of a type with this `recipe`
     /// costs. A number below 1 is the first plot; past the multiplier table the

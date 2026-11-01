@@ -13,10 +13,12 @@
 //
 //  So this file answers a different question — how much Vigor a TENDED estate
 //  can put into the player's hands in a day — and it answers it by brute force
-//  rather than by an assumed layout. With at most six slots and four producing
-//  plot types there are 84 possible estates; enumerating them and cooking each
-//  one out is cheaper than arguing about which mix is representative, and it
-//  removes the last hand-picked constant from the pace number. What comes out
+//  rather than by an assumed layout. With at most six slots to build and four
+//  plot types to build on them there are 84 possible estates (the hazel every
+//  estate starts with, 2026-11-01, is added to each and never chosen).
+//  Enumerating them and cooking each one out is cheaper than arguing about
+//  which mix is representative, and it removes the last hand-picked constant
+//  from the pace number. What comes out
 //  is the CEILING of a well-run estate, which is the right shape for a floor on
 //  the day count.
 //
@@ -95,6 +97,12 @@ public enum FoodBudget {
     /// Enumerates every multiset of plot types, converts each one's output into
     /// Vigor — cooking through any recipe whose inputs the estate produces,
     /// richest dish first, then eating what is left raw — and keeps the best.
+    ///
+    /// The plot the estate GRANTS (2026-11-01, the hazel, `spec-progression.md`
+    /// §8) takes its slot whatever the player builds, so it is part of every
+    /// mix rather than one of the choices: enumerated, the search would happily
+    /// build an estate of seven hazels nobody can have. `slots` counts its slot,
+    /// as `plotSlotsByTier` does.
     public static func best(slots: Int, harvestsPerDay: Double, content: GameContent) -> DailyFood {
         guard slots > 0,
               let plotFile = content.plots,
@@ -104,9 +112,14 @@ public enum FoodBudget {
 
         let producing = plotFile.types.filter { $0.tuning != nil }
         guard !producing.isEmpty else { return .none }
+        let granted = producing.filter(\.granted).prefix(slots).map(\.type)
+        let choices = producing.filter { !$0.granted }.map(\.type)
+        // Zero slots left to build is one mix, the granted plot alone; slots
+        // with nothing to build on them are none — `multisets` answers both.
+        let built = multisets(of: choices, size: slots - granted.count)
 
         var bestFood = DailyFood.none
-        for mix in multisets(of: producing.map(\.type), size: slots) {
+        for mix in built.map({ granted + $0 }) {
             var stock: [String: Double] = [:]
             for type in mix {
                 guard let tuning = producing.first(where: { $0.type == type })?.tuning else { continue }

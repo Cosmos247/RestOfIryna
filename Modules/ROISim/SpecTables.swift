@@ -118,6 +118,18 @@ public enum SpecTables {
             out.append("| T\(tier) | \(gate.map(String.init) ?? "start") | \(slot) | \(cap) | "
                        + String(format: "×%g", creatures) + " |")
         }
+        // Whose slot 1 is (2026-11-01, `spec-progression.md` §8): the column
+        // above counts it, and what it yields is printed here so the owner's
+        // numbers are the file's, not typed into the spec.
+        for row in content.plots?.types ?? [] where row.granted {
+            guard let yield = row.tuning else { continue }
+            let seconds = tuning.time.gameTime.plotIntervalSeconds / tuning.time.scale
+            let interval = seconds == 3600 ? "an hour" : String(format: "every %gs", seconds)
+            out.append("")
+            out.append("Slot 1 is granted at every tier: `\(row.type)` yields \(yield.ratePerInterval) "
+                       + "`\(yield.producedItemId)` \(interval), holding \(yield.capacity) — never built, never "
+                       + "counted as a plot the player built, planted ripe when the estate is named")
+        }
         out.append("")
 
         out.append("**Bag** (`bags.json`) — gated on the ESTATE, not the player level")
@@ -168,7 +180,10 @@ public enum SpecTables {
     /// table is the game's arithmetic rather than a typed copy of it.
     private static func plotCosts(content: GameContent) -> [String] {
         guard let plots = content.plots, let rule = plots.build else { return [] }
-        let ownable = content.estateUpgrades.plotSlotsByTier.max() ?? 0
+        // The plots a player BUILDS: a granted plot (2026-11-01) is never priced,
+        // and its slot is one of those `plotSlotsByTier` counts.
+        let buildable = plots.buildableTypes
+        let ownable = (content.estateUpgrades.plotSlotsByTier.max() ?? 0) - plots.grantedTypes.count
         guard ownable > 0 else { return [] }
         let icons = Dictionary(content.items.map { ($0.id, $0.icon) }, uniquingKeysWith: { first, _ in first })
         func cell(_ inputs: [MaterialCostDTO]) -> String {
@@ -177,22 +192,24 @@ public enum SpecTables {
         }
         var out: [String] = [""]
         let leftOut = rule.firstPlotLeavesOut.map { "`\($0)`" }.joined(separator: " ")
+        let granted = plots.grantedTypes.map { "`\($0)`" }.joined(separator: " ")
         out.append("**Plots** (`plots.json`) — the player's Nth plot costs its type's recipe × N's multiplier;")
-        out.append("the first plot leaves out \(leftOut.isEmpty ? "nothing" : leftOut)")
+        out.append("the first plot leaves out \(leftOut.isEmpty ? "nothing" : leftOut)"
+                   + (granted.isEmpty ? "" : "; \(granted) is granted, never built, and N never counts it"))
         out.append("")
-        out.append("| plot | × | " + plots.types.map { "`\($0.type)`" }.joined(separator: " | ") + " |")
-        out.append("|---|---|" + plots.types.map { _ in "---|" }.joined())
+        out.append("| plot | × | " + buildable.map { "`\($0.type)`" }.joined(separator: " | ") + " |")
+        out.append("|---|---|" + buildable.map { _ in "---|" }.joined())
         let table = rule.multiplierByPlotNumber
         for number in 1...ownable {
             let multiplier = number - 1 < table.count ? table[number - 1] : (table.last ?? 1)
-            let cells = plots.types.map { row in
+            let cells = buildable.map { row in
                 cell(PlotBuildCost.inputs(recipe: row.buildCost, plotNumber: number, rule: rule))
             }
             out.append("| \(number) | \(multiplier) | " + cells.joined(separator: " | ") + " |")
         }
         // The icons, named once: the cells use them to stay readable.
         var named: [String] = []
-        for row in plots.types {
+        for row in buildable {
             for cost in row.buildCost where !named.contains(cost.itemId) { named.append(cost.itemId) }
         }
         out.append("")
@@ -767,15 +784,19 @@ public enum SpecTables {
         // the cheapest and the dearest type for every plot number.
         var allPlots = 0.0, plotsCheapest = 0.0, plotsDearest = 0.0
         if let plots = content.plots, plots.build != nil {
-            let numbers = 1...max(1, content.estateUpgrades.plotSlotsByTier.max() ?? 0)
+            // The plots a player builds — the granted hazel (2026-11-01) is
+            // free and stands in a slot of its own, so it is not a sink.
+            let buildable = plots.buildableTypes
+            let ownable = (content.estateUpgrades.plotSlotsByTier.max() ?? 0) - plots.grantedTypes.count
+            let numbers = 1...max(1, ownable)
             let price = { (type: String, number: Int) in priced(plots.buildCost(for: type, plotNumber: number) ?? []) }
-            for row in plots.types {
+            for row in buildable {
                 let six = numbers.reduce(0.0) { $0 + price(row.type, $1) }
                 allPlots += six
                 out.append(String(format: "| plots, %d × `%@` | %.0f | 0 |", numbers.count, row.type, six))
             }
             for number in numbers {
-                let prices = plots.types.map { price($0.type, number) }
+                let prices = buildable.map { price($0.type, number) }
                 plotsCheapest += prices.min() ?? 0
                 plotsDearest += prices.max() ?? 0
             }
@@ -878,7 +899,7 @@ public enum SpecTables {
                        + perDay.map { String(format: "**%.0f**", $0) }.joined(separator: " | ") + " |")
         }
 
-        // The opening, which is the only stretch with no estate behind it and the
+        // The opening — the levels before the first estate upgrade — and the
         // one this spec exists to correct. Generated because the number that was
         // wrong for two weeks — "about eleven kills to reach level 4" — was typed
         // into prose beside a table that was right.
@@ -910,7 +931,7 @@ public enum SpecTables {
             let kills = shallowXP > 0 ? Double(toFour) / shallowXP : 0
             let pool = ProgressionMath.maxVigor(at: 1, pool: tuning.vigorPool)
             out.append("")
-            out.append("**The opening** — levels 1–3, the only stretch with no estate behind it")
+            out.append("**The opening** — levels 1–3, before the first estate upgrade")
             out.append("")
             out.append("| | |")
             out.append("|---|---|")
@@ -989,7 +1010,7 @@ public enum SpecTables {
         guard let result = OpeningLedger.measure(content: content, runs: runs, seed: seed)
         else { return "nothing to price — the bundle has no estate ladder, zones or tuning" }
         var out: [String] = []
-        out.append("**The opening** — levels 1–\(result.endsAtLevel - 1), the only stretch with no estate behind it")
+        out.append("**The opening** — levels 1–\(result.endsAtLevel - 1), before the first estate upgrade")
         out.append("")
         out.append(String(format: "%d XP to reach level %d against a stock of %.0f Vigor — the starting pool plus",
                           result.xpNeeded, result.endsAtLevel, result.stock))
@@ -1000,6 +1021,15 @@ public enum SpecTables {
         out.append("kitchen recipe, and the kitchen is a room of the estate this stretch ends by")
         out.append("unlocking — `if cooked` is the size of what that gate holds back. Silver is")
         out.append("never spent here either, so every row is a floor and not an estimate.")
+        // The plot every estate starts with (2026-11-01) feeds this stretch by
+        // the hour, which a table by the kill cannot hold — named, left out.
+        let home = FoodBudget.best(slots: FoodBudget.slots(tier: 1, upgrades: content.estateUpgrades),
+                                   harvestsPerDay: FoodBudget.defaultHarvestsPerDay, content: content)
+        if home.vigor > 0 {
+            out.append(String(format: "Nor is the plot every estate starts with (`%@`): %.0f Vigor a day at %.0f harvests,",
+                              home.mix.joined(separator: "` + `"), home.vigor, FoodBudget.defaultHarvestsPerDay))
+            out.append("an income by the hour that a table by the kill cannot hold.")
+        }
         out.append("")
         out.append("| km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |")
         out.append("|---|---|---|---|---|---|---|---|---|---|---|")

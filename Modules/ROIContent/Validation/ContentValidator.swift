@@ -891,8 +891,10 @@ public enum ContentValidator {
     }
 
     // `training_ground` left this list on 2026-09-27: the Training Ground is a
-    // building of the house now (`training_ground.json`), not a plot.
-    private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop"]
+    // building of the house now (`training_ground.json`), not a plot. `hazel`
+    // joined it on 2026-11-01 — the plot every estate starts with, granted
+    // rather than built (`spec-progression.md` §8).
+    private static let plotTypes: Set<String> = ["farm", "forest", "mine", "coop", "hazel"]
     private static let questNPCs: Set<String> = ["trader", "master", "tavern"]
     private static let questCounters: Set<String> = ["beastKill", "ironIngotForged", "gambleWin", "traderSilver"]
 
@@ -1075,7 +1077,9 @@ public enum ContentValidator {
             let obtainable = obtainableItemIds(bundle)
             for (index, row) in plots.types.enumerated() {
                 let path = "types[\(index)].buildCost"
-                require(!row.buildCost.isEmpty, file: file, path: path, id: row.type,
+                // A granted plot is never built, so it has no price to forget —
+                // the rules for it are below.
+                require(row.granted || !row.buildCost.isEmpty, file: file, path: path, id: row.type,
                         rule: "plot.build_cost_missing", "no build cost — the plot would be free")
                 var listed: Set<String> = []
                 for (i, cost) in row.buildCost.enumerated() {
@@ -1100,13 +1104,42 @@ public enum ContentValidator {
                             rule: "plot.build_cost_duplicate", "\"\(cost.itemId)\" is listed twice")
                 }
             }
+            // The plot every estate starts with (2026-11-01, `spec-progression.md`
+            // §8). It stands in one slot, it is never built and it is there to
+            // be harvested, so each of those is refused rather than warned: a
+            // second one would have no slot, a price would never be charged,
+            // and a granted plot growing nothing is a slot taken for nothing.
+            let granted = plots.types.enumerated().filter { $0.element.granted }
+            if granted.count > 1 {
+                issues.append(.init(severity: .error, file: file, path: "types", id: nil,
+                                    rule: "plot.granted_more_than_one",
+                                    message: "\(granted.count) types are granted (\(granted.map(\.element.type).joined(separator: ", "))) — there is one slot for a granted plot"))
+            }
+            for (index, row) in granted {
+                require(row.buildCost.isEmpty, file: file, path: "types[\(index)].buildCost", id: row.type,
+                        rule: "plot.granted_has_build_cost",
+                        "a granted plot is never built, so its build cost would never be charged")
+                require(row.tuning != nil, file: file, path: "types[\(index)].tuning", id: row.type,
+                        rule: "plot.granted_produces_nothing",
+                        "a granted plot takes slot 1 from every estate, so it must yield something")
+            }
+            // `plotSlotsByTier` counts the granted plot's slot, so tier 1 must
+            // hold it — or the plot list, which draws only the slots a tier
+            // has, would never show the plot the estate was planted with.
+            if let firstTier = bundle.estateUpgrades.plotSlotsByTier.first, firstTier < granted.count {
+                issues.append(.init(severity: .error, file: "estate_upgrades.json", path: "plotSlotsByTier[0]", id: nil,
+                                    rule: "plot.granted_without_a_slot",
+                                    message: "tier 1 has \(firstTier) slot(s) for \(granted.count) granted plot(s) — the plot the estate starts with would stand outside the list"))
+            }
             if let rule = plots.build {
                 let rulePath = "build.multiplierByPlotNumber"
                 let table = rule.multiplierByPlotNumber
-                let ownable = bundle.estateUpgrades.plotSlotsByTier.max() ?? 0
+                // The slots a player builds on: the table counts the granted
+                // plot's slot as well, and that plot is never priced.
+                let ownable = (bundle.estateUpgrades.plotSlotsByTier.max() ?? 0) - granted.count
                 require(table.count >= max(1, ownable), file: file, path: rulePath,
                         rule: "plot.build_multiplier_short",
-                        "prices \(table.count) plot(s), but an estate owns up to \(ownable) — past the end the last multiplier repeats")
+                        "prices \(table.count) plot(s), but a player builds up to \(ownable) — past the end the last multiplier repeats")
                 for (i, multiplier) in table.enumerated() {
                     require(multiplier >= 1, file: file, path: "\(rulePath)[\(i)]",
                             rule: "plot.build_multiplier_non_positive", "a multiplier must be >= 1, found \(multiplier)")
@@ -2965,6 +2998,7 @@ public enum ContentValidator {
 
         let itemsById = Dictionary(bundle.items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let plotTypes = Set(bundle.plots?.types.map(\.type) ?? [])
+        let grantedPlotTypes = Set(bundle.plots?.grantedTypes ?? [])
         let estateGates = Dictionary(
             bundle.estateUpgrades.progression.map { ($0.toTier, $0.requiredPlayerLevel) },
             uniquingKeysWith: { first, _ in first })
@@ -3137,6 +3171,13 @@ public enum ContentValidator {
                         issues.append(.init(severity: .error, file: file, path: "\(conditionPath).plotType", id: decree.id,
                                             rule: "king.plot_type_unknown",
                                             message: "no plot type \"\(type)\" — known: \(sorted(plotTypes))"))
+                    }
+                    // Every estate starts with its granted plot (2026-11-01), so
+                    // a decree that asks for one is done the moment it opens.
+                    if let type = condition.plotType, grantedPlotTypes.contains(type) {
+                        issues.append(.init(severity: .error, file: file, path: "\(conditionPath).plotType", id: decree.id,
+                                            rule: "king.plot_type_granted",
+                                            message: "\"\(type)\" is granted to every estate — the decree would complete itself"))
                     }
                 default:
                     if condition.plotType != nil {

@@ -578,11 +578,19 @@ workshop, the kitchen, the Training Ground and the estate and bag upgrades stand
 and draw bag + warehouse. **A card counts in the same place its service draws from.**
 Auto-memory `project-master-draws-from-bag`.
 
-**A plot costs materials** (2026-10-24, the owner's pick): the player's Nth plot — their plots plus
-one, never the slot index — pays N of its type's `plots.json` → `buildCost`, the first without
-`build.firstPlotLeavesOut` (clay, iron). `PlotBuildCost` is the one reading for the card, the claim,
-the validator and `spec gates`, and `PlotService.claim` pays bag-first in ONE transaction with the
-plot row. Plots built before stay free. Auto-memory `project-plot-build-cost`.
+**A plot costs materials** (2026-10-24, the owner's pick): the player's Nth plot — the plots they
+BUILT plus one (`PlotBuildCost.nextPlotNumber`), never the slot index — pays N of its type's
+`plots.json` → `buildCost`, the first without `build.firstPlotLeavesOut` (clay, iron). `PlotBuildCost`
+is the one reading for the card, the claim, the validator and `spec gates`, and `PlotService.claim`
+pays bag-first in ONE transaction with the plot row. Plots built before stay free. Auto-memory
+`project-plot-build-cost`.
+
+**Every estate starts with the hazel** (2026-11-01, `spec-progression.md` §8): `plots.json` →
+`"granted" : true`, slot index 0, planted RIPE when the estate is named (`PlotService.plantGranted`;
+`estatePlots` re-plants an empty slot 0). The picker never offers it, the claim refuses its slot and its
+type, and **nothing that counts "plots the player owns" may count it** — ask `PlotCatalog.isGranted`
+(the price's N, `claim_plot`; in the simulator `PlotTypeDTO.granted`, as `FoodBudget` does). `plotSlotsByTier` counts its slot (1…7). `PlantHazel` moved
+every built plot down a slot, so a rollback past it is unsafe. Auto-memory `project-hazel-plot`.
 
 **A transfer that RE-CREATES a row resets everything the row knew.** Tier, wear and enchant
 are per-instance (`GearState`), carried by both `InventoryEntry` and `WarehouseEntry`; every
@@ -729,7 +737,8 @@ with a wordless `… +N`. **Measure an alert in UTF-16 and measure it in Ukraini
 overflowed were all under in English. Auto-memory `project-requirement-line-one-format`.
 
 **A choice that cannot be undone is asked, not just tapped.** Nothing a player can do deletes
-a `Plot` row or changes its type (`PlotService` has `claim` and `harvest` and no third verb), so
+a `Plot` row or changes its type (`PlotService` writes a plot only by `claim` and the hazel's grant,
+and has no verb that deletes or retypes one), so
 `estate:plot:type:` draws the picked type's card and asks; only `estate:plot:build:` writes.
 **Which callback keeps its old name is part of the fix**: the QUESTION inherited it, so a stale
 picker message in chat history lands on the safe path. This is the shape every buildable thing

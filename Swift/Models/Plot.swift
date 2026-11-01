@@ -25,11 +25,14 @@ public final class Plot: Model, @unchecked Sendable {
     public var user: User
 
     /// Stable per-user index. Slot count is gated on `User.estateLevel` —
-    /// see `PlotService.slotsForLevel(_:)`. Slots are addressed 0-based.
+    /// see `PlotService.slotsForLevel(_:)`. Slots are addressed 0-based, and
+    /// slot 0 is the hazel's every estate starts with (2026-11-01,
+    /// `GrantedPlot.slotIndex`).
     @Field(key: "slot_index")
     public var slotIndex: Int
 
-    /// Maps to a `PlotType` enum raw value (`farm` / `forest` / `mine` / `coop`).
+    /// Maps to a `PlotType` enum raw value (`farm` / `forest` / `mine` / `coop`,
+    /// and the granted `hazel`).
     @Field(key: "plot_type")
     public var plotType: String
 

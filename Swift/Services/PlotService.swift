@@ -10,8 +10,10 @@
 //  the player's inventory, resets the timestamp, and clears the
 //  `notifiedFull` flag so the background ticker can pick the plot up again.
 //
-//  `slotsForLevel(_:)` reads the ladder from `estate_upgrades.json` — 0 slots
-//  at T1, then one more per tier to 6 at T7. (This header described a
+//  `slotsForLevel(_:)` reads the ladder from `estate_upgrades.json` — 1 slot
+//  at T1, then one more per tier to 7 at T7; slot 1 is the hazel every estate
+//  starts with since 2026-11-01, so the slots a player builds on are still
+//  0 … 6 (it read 0 … 6 itself until then). (This header described a
 //  pre-5.3c design of "2 / 3 / 4 / 5 / 5 / 6 / 6, +1 every 4 levels" and a
 //  "flat 5 override" for three phases after the code stopped doing any of
 //  that; it was corrected in 8E, when the ladder became the daily Vigor
@@ -27,8 +29,10 @@ public enum PlotService {
 
     /// How many plot slots are unlocked at the given estate level.
     ///
-    /// T1 has zero plots — the wooden hut has cleared no land yet — and the
-    /// first opens at T2 (player level 4), one more per tier to 6 at T7. The
+    /// T1 has one, and it is not the player's: the wooden hut has cleared no
+    /// land yet, but the hazel that grew there before it (2026-11-01) stands in
+    /// slot 1 of every estate. The first slot a player builds on opens at T2
+    /// (player level 4), one more per tier to 7 slots — 6 built — at T7. The
     /// table lives in `estate_upgrades.json` since Phase 8E: with Vigor no
     /// longer regenerating these slots are the player's daily budget, and a
     /// balance number that important cannot sit in a Swift literal the
@@ -188,11 +192,57 @@ public enum PlotService {
         return .success(primary: primaryYield, bonus: bonusYield, destination: destination)
     }
 
+    // MARK: - The plot the estate grants (2026-11-01)
+
+    /// True for the slot the granted plot stands in, while the content grants
+    /// one. The claim refuses it whatever stands there: a built plot in it
+    /// would leave the hazel with nowhere to stand.
+    public static func isReserved(slot: Int) -> Bool {
+        slot == GrantedPlot.slotIndex && PlotCatalog.grantedType != nil
+    }
+
+    /// Plant the granted plot in its slot if the slot is empty — the hazel every
+    /// estate starts with, `spec-progression.md` §8. It is planted RIPE: its
+    /// harvest clock is one full fill back, and `notifiedFull` is set, so the
+    /// gift waits for the player instead of sending a push. Returns the plot it
+    /// planted, or nil when there was nothing to plant (no granted type, a slot
+    /// already standing, an account still registering).
+    ///
+    /// Idempotent, and called from two places: `completeRegistration`, where
+    /// the estate is named, and `estatePlots`, which repairs an estate that
+    /// lost it. `PlantHazel` planted every estate that existed on 2026-11-01.
+    @discardableResult
+    public static func plantGranted(for user: User, on db: any Database) async throws -> Plot? {
+        guard let type = PlotCatalog.grantedType, let userId = user.id,
+              user.registrationStep >= User.registrationDoneStep else { return nil }
+        if try await Plot.find(slot: GrantedPlot.slotIndex, for: user, on: db) != nil { return nil }
+        let ripeSince = Date().addingTimeInterval(-(PlotCatalog.secondsToFill(type) ?? 0))
+        let plot = Plot(userID: userId, slotIndex: GrantedPlot.slotIndex, plotType: type.rawValue,
+                        tier: 1, lastHarvestedAt: ripeSince)
+        plot.notifiedFull = true
+        try await plot.save(on: db)
+        return plot
+    }
+
+    /// The estate's plots for a screen that lists them, the granted plot planted
+    /// first if its slot is empty — so a player never meets a «➕ Слот 1» the
+    /// claim refuses. The planting is best-effort: a failure leaves the list as
+    /// it stands rather than throwing out of a callback, which would spin it.
+    public static func estatePlots(for user: User, on db: any Database) async throws -> [Plot] {
+        _ = try? await plantGranted(for: user, on: db)
+        return try await Plot.list(for: user, on: db)
+    }
+
     // MARK: - Claim
 
     public enum ClaimResult: Sendable {
         case slotOutOfRange    // slot >= slotsForLevel(user.estateLevel)
         case slotTaken         // user already has a plot at that slot
+        /// The slot the granted plot stands in (`isReserved`) — never built on.
+        case slotReserved
+        /// A granted type — never built. No screen offers one; only a forged or
+        /// stale callback can ask.
+        case typeNotBuildable
         /// The bag and the warehouse together hold less than the plot costs —
         /// every short input named, for `RequirementLine.shortageModal`.
         case missingMaterials(shortages: [CraftingService.Shortage])
@@ -200,23 +250,28 @@ public enum PlotService {
     }
 
     /// What the player's NEXT plot of `type` costs (2026-10-24). Its number is
-    /// the plots they own plus one — never the slot index, since a slot can be
-    /// claimed out of order. The build card and `claim` both ask here, so the
-    /// card cannot quote a price the claim then disagrees with.
+    /// the plots they BUILT plus one (`PlotBuildCost.nextPlotNumber`) — never
+    /// the slot index, since a slot can be claimed out of order, and never the
+    /// granted hazel, which they did not build. The build card and `claim` both
+    /// ask here, so the card cannot quote a price the claim then disagrees with.
     public static func buildCost(of type: PlotType, for user: User, on db: any Database) async throws -> [MaterialCostDTO] {
-        let owned = try await Plot.list(for: user, on: db).count
-        return PlotCatalog.buildCost(for: type, plotNumber: owned + 1)
+        let owned = try await Plot.list(for: user, on: db).map(\.plotType)
+        let number = PlotBuildCost.nextPlotNumber(ownedTypes: owned, granted: PlotCatalog.grantedRawValues)
+        return PlotCatalog.buildCost(for: type, plotNumber: number)
     }
 
     /// Claim an empty slot for `type`, paying its build cost from the bag first
     /// and the warehouse for the rest — the estate's policy, read from the same
     /// `CraftingService.stock` the card quotes. Slot index must be within the
-    /// user's estate-level allowance (`slotsForLevel`). Tier defaults to 1.
+    /// user's estate-level allowance (`slotsForLevel`) and not the granted
+    /// plot's; the type must be one a player builds. Tier defaults to 1.
     @discardableResult
     public static func claim(slot: Int, type: PlotType, for user: User, on db: any Database) async throws -> ClaimResult {
         let allowance = slotsForLevel(user.estateLevel)
         guard slot >= 0, slot < allowance else { return .slotOutOfRange }
         guard let userId = user.id else { return .slotOutOfRange }
+        guard !PlotCatalog.isGranted(type) else { return .typeNotBuildable }
+        guard !isReserved(slot: slot) else { return .slotReserved }
         if let _ = try await Plot.find(slot: slot, for: user, on: db) {
             return .slotTaken
         }

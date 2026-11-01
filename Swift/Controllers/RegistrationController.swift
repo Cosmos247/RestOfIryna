@@ -289,17 +289,35 @@ final class Registration: TGControllerBase, @unchecked Sendable {
         context.session.registrationStep = User.registrationDoneStep
         try await context.session.saveAndCache(in: context.db)
 
-        // Phase 5.3c: no starter farm grant — T1 estate has zero plot slots
-        // (the wooden hut hasn't cleared any land yet). The first slot opens
-        // when the player reaches estate T2 (player L4) and they choose what
-        // to plant for themselves. Lore-wise: a fresh-from-the-King noble
-        // forages in the wilderness before they own farmland.
+        // Phase 5.3c: no starter farm grant — the wooden hut has cleared no
+        // land yet, and the first slot a player builds on opens at estate T2
+        // (player L4), where they choose what to plant for themselves.
+        //
+        // What does stand is the hazel (2026-11-01, `spec-progression.md` §8):
+        // the plot every estate starts with, in slot 1, planted the moment the
+        // estate is named — and ripe, so the first visit has nuts to gather.
+        // Best-effort: the plot list plants it whenever its slot is empty, so a
+        // failure here costs only the moment and must not undo a registration
+        // that is already saved.
+        _ = try? await PlotService.plantGranted(for: context.session, on: context.db)
+
+        // The welcome says where it stands, in the buttons' own words, so the
+        // line cannot drift from the buttons it names. 🌳 is the plot's icon,
+        // prepended in Swift — the house rule for a leading emoji.
+        var welcome = complete
+        if PlotCatalog.isGranted(.hazel) {
+            let line = context.lingo.localize("registration.hazel", locale: locale, interpolations: [
+                "estate": context.lingo.localize("commands.estate", locale: locale),
+                "plot":   context.lingo.localize("estate.plot", locale: locale)
+            ])
+            welcome += "\n\n\(PlotCatalog.icon(for: .hazel)) \(line)"
+        }
 
         // Phase 5.2.1: starter Kitchen recipes (Baked Potato + Roasted Meat)
         // are always-available — gated through `RecipeCatalog.starterRecipeIds`
         // rather than via a `LearnedRecipe` row, so no per-player setup needed.
 
-        try await mainController.showMainMenu(context: context, text: complete)
+        try await mainController.showMainMenu(context: context, text: welcome)
         await sendRoyalCharter(context: context)
     }
 

@@ -95,15 +95,23 @@ public struct PlotTypeDTO: Codable, Sendable, Equatable {
     /// Absent on the wire decodes as empty, which the validator refuses: a
     /// forgotten recipe must not become a free plot.
     public let buildCost: [MaterialCostDTO]
+    /// The estate GRANTS this plot (2026-11-01, `spec-progression.md` §8): it
+    /// stands in slot 1 (`GrantedPlot.slotIndex`) from the moment the estate is
+    /// named, the player never chooses or builds it, and it never counts as a
+    /// plot the player built. Absent decodes as false: every other type is
+    /// built. The validator holds a granted type to no `buildCost` and a yield.
+    public let granted: Bool
 
-    public init(type: String, icon: String, tuning: PlotTuningDTO? = nil, buildCost: [MaterialCostDTO] = []) {
+    public init(type: String, icon: String, tuning: PlotTuningDTO? = nil, buildCost: [MaterialCostDTO] = [],
+                granted: Bool = false) {
         self.type = type
         self.icon = icon
         self.tuning = tuning
         self.buildCost = buildCost
+        self.granted = granted
     }
 
-    private enum CodingKeys: String, CodingKey { case type, icon, tuning, buildCost }
+    private enum CodingKeys: String, CodingKey { case type, icon, tuning, buildCost, granted }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -111,6 +119,7 @@ public struct PlotTypeDTO: Codable, Sendable, Equatable {
         icon      = try c.decode(String.self, forKey: .icon)
         tuning    = try c.decodeIfPresent(PlotTuningDTO.self, forKey: .tuning)
         buildCost = try c.decodeIfPresent([MaterialCostDTO].self, forKey: .buildCost) ?? []
+        granted   = try c.decodeIfPresent(Bool.self, forKey: .granted) ?? false
     }
 }
 

@@ -342,6 +342,14 @@ enum ContentDigest {
                     .map { "\($0.itemId)x\($0.quantity)" }.joined(separator: ","))
             }
         }
+        // The plot every estate starts with (2026-11-01): which type is granted
+        // and how far back a ripe one's clock is set — both replayed through the
+        // accessors the claim, the picker and the planting read, so a bundle
+        // that moved either reads as a different `records` line.
+        for type in PlotType.allCases {
+            digest.combine("\(type.rawValue):\(PlotCatalog.isGranted(type) ? "granted" : "built")")
+            digest.combine(PlotCatalog.secondsToFill(type).map { "\($0)" } ?? "-")
+        }
 
         digest.combine(FortuneCatalog.drawPrice)
         digest.combine(FortuneCatalog.dispelPrice)

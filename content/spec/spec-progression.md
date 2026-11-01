@@ -110,13 +110,15 @@ the creatures column is the forest's HP and ATK at that tier (`tuning/combat.jso
 
 | tier | player level | plot slots | warehouse cap | creatures |
 |---|---|---|---|---|
-| T1 | start | 0 | 200 | ×1 |
-| T2 | 4 | 1 | 400 | ×1.1 |
-| T3 | 7 | 2 | 600 | ×1.2 |
-| T4 | 10 | 3 | 800 | ×1.3 |
-| T5 | 13 | 4 | 1200 | ×1.4 |
-| T6 | 16 | 5 | 1600 | ×1.5 |
-| T7 | 19 | 6 | 2000 | ×1.6 |
+| T1 | start | 1 | 200 | ×1 |
+| T2 | 4 | 2 | 400 | ×1.1 |
+| T3 | 7 | 3 | 600 | ×1.2 |
+| T4 | 10 | 4 | 800 | ×1.3 |
+| T5 | 13 | 5 | 1200 | ×1.4 |
+| T6 | 16 | 6 | 1600 | ×1.5 |
+| T7 | 19 | 7 | 2000 | ×1.6 |
+
+Slot 1 is granted at every tier: `hazel` yields 1 `food.forest_nuts` an hour, holding 5 — never built, never counted as a plot the player built, planted ripe when the estate is named
 
 **Bag** (`bags.json`) — gated on the ESTATE, not the player level
 
@@ -180,6 +182,11 @@ the estate a reason to exist.
 > nets −335 and km 4 nets +44, so walking deeper is not merely faster, it is what
 > makes the opening solvent at all. Measured table in `spec-economy.md` §2,
 > printed by `roi-content spec opening`.
+>
+> **Amended 2026-11-01 — §8.** Tier 1 has one slot now: the hazel's. Every estate starts
+> with a plot of nuts in slot 1 that the player never chooses, so levels 1–3 have a small
+> income at home — and still no plot of their own choosing. The slots column above counts
+> the hazel's slot at every tier, and the line under the table names it.
 
 **The bag is gated on the ESTATE, not on the player.** Bag T2 needs estate T3,
 which needs player level 7 — so a player carries 25 slots for the first seven
@@ -310,7 +317,7 @@ the price is paid once for the life of the account.
 
 <!-- generated: roi-content spec gates -->
 **Plots** (`plots.json`) — the player's Nth plot costs its type's recipe × N's multiplier;
-the first plot leaves out `mat.clay` `mat.iron`
+the first plot leaves out `mat.clay` `mat.iron`; `hazel` is granted, never built, and N never counts it
 
 | plot | × | `farm` | `forest` | `mine` | `coop` |
 |---|---|---|---|---|---|
@@ -357,3 +364,210 @@ pays from — and lists the materials under «📜 Матеріали» through 
 «✅ Будувати» answers with the shortage modal and redraws the card under it. Not built: a
 «📌 У нотатник» on the build card, and a line on the card saying why the price grew — the
 approved sample had neither.
+
+---
+
+## 8. The hazel — the plot every estate starts with (2026-11-01)
+
+**Status: APPROVED 2026-11-01** (the owner's «так» on the section as written) **and BUILT the
+same day — not deployed.** The owner's idea and picks, written down before any of it reached
+JSON. It needs code, content schema v30 and a migration, so it ships with a restart, never a
+`/reload`. What the build measured is §8.8.
+
+### 8.1 What was asked
+
+The owner, 2026-11-01: a plot that opens together with the estate and that the player cannot
+choose. It takes the first slot by itself, holds hazel bushes and yields forest nuts. It has two
+jobs: to help the first explorations, and to show the plot loop before the player builds a plot
+of their own.
+
+Both jobs have a measured reason. Levels 1–3 have no estate at all (§3): tier 1 clears no land,
+so the trail is the only income, and the `spec opening` block in `spec-economy.md` ends the
+shallow opening short of Vigor (`opening.shallow_is_bankrupt`). The first plot a player can build
+opens at estate tier 2, player level 4; until then nothing in the game shows what a plot does.
+
+### 8.2 Decided 2026-11-01 (the owner)
+
+One quiz, after a played sample of the screens a newcomer would see. The recommended option won
+all three questions:
+
+1. **The hazel is slot 1, and every other plot moves down one.** The alternative was a row of its
+   own, unnumbered, above the slots: nothing would have been renumbered, but the hazel would have
+   needed its own button, its own push and a new line at tier 1 in place of «Слотів зайнято: 0 / 0».
+2. **It grows one nut an hour and holds five** — the five-hour fill every plot already has. The
+   alternatives were holding three (a coop's day of Vigor), holding ten (a morning and an evening
+   visit), and two an hour holding ten.
+3. **It is ripe from the first minute, and the welcome says where it is.** The alternatives were
+   growing from zero, so that the first «заповнена» push would teach it, and the chosen option
+   plus a King's decree to harvest it. An insert into the chain moves every player's position
+   (`king.md`), so that would have needed a migration of its own.
+
+Settled in the same exchange, stated to the owner and not objected to:
+
+4. **Every estate has one, including the estates that already exist,** and those find it ripe.
+   An estate without it would have a free slot that a newer estate does not.
+5. **No slot is taken from anyone.** Every tier gains one, so the number of slots a player builds
+   on stays as it is. Giving one of today's slots to the hazel was not an option: those slots
+   are built on, and nothing in the game removes a plot.
+6. **It never counts as a plot the player built.** The price's N (§7.3) does not count it, and
+   neither does `claim_plot` («Перша ділянка», level 4). For `harvest_plot` («Урожай») a harvest
+   of nuts is a harvest like any other.
+
+### 8.3 The rule
+
+- **`hazel` is a plot type the estate grants.** `plots.json` marks it `"granted" : true`. It has
+  no `buildCost`, the picker never offers it, and the claim refuses it, including a stale or
+  forged `estate:plot:type:` / `estate:plot:build:` callback. Nothing removes or retypes it:
+  `PlotService` gains a grant and still has no verb that deletes or changes a plot.
+- **Slot index 0 is the hazel's.** `estate_upgrades.json` → `plotSlotsByTier` becomes 1 / 2 / 3
+  / 4 / 5 / 6 / 7: the hazel's slot plus the 0 / 1 / 2 / 3 / 4 / 5 / 6 a player builds on, as
+  today. The claim refuses slot 0 whatever stands there.
+- **It is planted when the estate is named** (`completeRegistration`), and planted ripe:
+  `lastHarvestedAt` is one full fill back (capacity ÷ rate intervals, read from the content, never
+  typed), with `notifiedFull` set so the gift sends no push. The plot list plants it whenever slot
+  0 is empty, idempotently, so a player never meets a «➕ Слот 1» that the claim refuses.
+- **From its first harvest it lives like every plot.** It grows, fills, sends «🌳 Ліщина (слот 1)
+  заповнена», and is harvested into the bag or the warehouse under the same caps. Like every plot
+  it reads the tier-1 row, so it does not grow with the estate.
+- **It yields `food.forest_nuts`**, one stream with no bonus. The nut (5 Vigor raw), its price at
+  the trader and every recipe that uses it are untouched.
+- **N counts the plots the player built** (§7.3, amended by this section). The hazel never makes a
+  plot dearer, and `build.multiplierByPlotNumber` still prices the six a player can build.
+- **`claim_plot` without a `plotType` counts built plots.** A decree that names a type counts that
+  type. `harvest_plot` counts every harvest, nuts included.
+- **The estates that exist get it from one migration, in one transaction:**
+  - Every plot's `slot_index` moves up by one. That takes two statements — up by a large offset,
+    then back down to +1 — because `unique(user_id, slot_index)` is checked row by row as a row
+    moves.
+  - Every account past registration then gets a ripe hazel in slot 0. An account still
+    registering is planted when it finishes.
+  - Before the migration is written, read the plot counts off the Pi. Before the restart,
+    rehearse it on a scratch Postgres (auto-memory `reference-deploy-rehearsal`).
+  - A stale «Слот 1» button left in a chat will then open the hazel. That is harmless: it can
+    only show or harvest the player's own plot.
+
+### 8.4 The copy
+
+Drafts in «ви»; the owner may still change any of them.
+
+| key | uk | en |
+|---|---|---|
+| `plot.type.hazel.name` | Ліщина | Hazel |
+| `plot.type.hazel.desc` | Кущі ліщини, що росли тут задовго до вас. Садити їх не треба — лише не забувайте збирати горіхи. | Hazel bushes that grew here long before you. There is nothing to plant — just remember to gather the nuts. |
+| `plot.type.hazel.gender` | f | — |
+| `registration.hazel` | Біля хати ростуть кущі ліщини, і горіхи вже стиглі. Зберіть їх: %{estate} → %{plot}. | Hazel bushes grow by the hut, and the nuts are already ripe. Gather them: %{estate} → %{plot}. |
+
+- `registration.hazel` closes the welcome message (`registration.complete`), on a line of its
+  own behind a 🌳 added in Swift (the house rule for a leading emoji).
+- `%{estate}` and `%{plot}` are the buttons' own labels (`commands.estate`, `estate.plot`),
+  interpolated, so the line cannot drift from the buttons it names.
+- The plot's icon is 🌳 (`plots.json`); the nut keeps its 🌰.
+- Everything else the hazel shows is the plots' shared copy — the list row, the card, the
+  harvest banner and the ready push — agreeing with «Ліщина» as feminine: «заповнена».
+
+### 8.5 What it gives
+
+At the decided numbers:
+
+- **A harvest** is five nuts, 25 Vigor.
+- **A day** at the three harvests `simulate` assumes is fifteen nuts, 75 Vigor.
+- **The ceiling** is one nut an hour: 24 nuts and 120 Vigor a day, for a player who comes back
+  every five hours.
+
+Against `simulate`'s estate table as read on 2026-11-01, before the change (Vigor a day, three
+harvests):
+
+- **Tier 1** goes from nothing to the hazel's 75.
+- **Tier 2** feeds 45 from its one built plot (a coop, the model's best), so the hazel more than
+  doubles its day, to 120.
+- **From tier 3 on** the hazel is a small share: 300 → 375 at tier 3, 1200 → 1275 at tier 7.
+
+Three things it touches:
+
+- **The innkeeper's job** «Закуска до пива» (`tavern.nuts`, 6 nuts, from level 1) can be paid
+  from the hazel.
+- **At tier 2 the free hazel feeds more Vigor than the coop a player paid for.** A harvest is
+  worth a third of the coop's at the trader (5 nuts against 5 eggs), and its nuts cook into
+  nothing the plots alone can make: every nut recipe also needs meat or berries.
+- **Selling the nuts is a small new faucet**: one silver a nut.
+
+### 8.6 What moves when it is authored
+
+- **`simulate`.**
+  - `FoodBudget` takes the hazel as one fixed plot on top of the built ones. It must never
+    enumerate it as a choice: an estate of seven hazels is not one anybody can have.
+  - Tier 1's row is fed, so `pace.levels_without_an_estate` stops firing for all three classes.
+    Levels 1–3 enter the pace, and every later tier gains the hazel's day.
+  - The days to level 40 shorten. Re-measure with `simulate --strict` and record them.
+  - Watch `pace.food_taps_dominate`: the hazel adds fifteen raw portions a day.
+- **The opening** (`OpeningLedger`, the `spec opening` block in `spec-economy.md`).
+  - It prices levels 1–3 per kill and cannot price an income that arrives by the hour, so it
+    stays the trail-only floor.
+  - Its text stops saying the stretch has no estate and names the hazel as an exclusion beside
+    silver.
+  - `opening.shallow_is_bankrupt` keeps firing: it is about how deep a newcomer walks, not about
+    food at home.
+- **`spec gates`.**
+  - The estate table's slots read 1…7: refresh this spec's §3 block and the excerpt in
+    `spec-bestiary.md` §11.2.
+  - The plots table leaves the hazel out of the build prices.
+  - A new line names the granted plot with what it produces, so the decided rate and capacity
+    are printed rather than typed here.
+- **The validator** gains these errors:
+  - more than one granted type;
+  - a granted type that produces nothing or has a `buildCost` (`plot.build_cost_missing`
+    exempts it);
+  - tier 1 with fewer slots than there are granted types.
+
+  `plot.build_multiplier_short` measures the largest slot count less the granted.
+- **The digest.** `records` hashes the granted flag beside the plot rows it already replays, and
+  the content hash moves (auto-memory `feedback-digest-names-constants`).
+- **Content schema v30.**
+  - The binary and `content/data` ship together.
+  - A rollback after the migration is not safe. An older binary cannot read the hazel's rows, so
+    its list would draw slot 1 as free and its claim would refuse it — and with its own slot table
+    (0…6) it would not draw the highest built plot at all. Roll forward; a rollback needs
+    `PlantHazel.revert`'s two steps (delete the hazels, move every plot back up) done by hand
+    first, since nothing wires the revert to a command.
+- **The tests:**
+  - the price's N ignores the hazel;
+  - the picker and the claim refuse it;
+  - `FoodBudget` adds it exactly once;
+  - each new validator rule fires on a broken bundle.
+- **The records.**
+  - `CLAUDE.md` gets the rule: granted, never chosen, never counted as built, slot 0 reserved,
+    planted at registration.
+  - `king.md` gets a line on `claim_plot`.
+  - `spec-economy.md` gets a dated note on the opening and the faucet.
+  - README, `.memory/` and a walk block in `TODO.md` follow, as for every change.
+
+### 8.7 Left as it is
+
+- The hazel does not grow with the estate. It has no upgrade, no second stream and no decree of
+  its own.
+- The nut's price, `tavern.nuts` and every recipe with nuts are untouched.
+
+### 8.8 What moved (measured 2026-11-01, the build)
+
+- **`simulate --strict`**: 0 broken bands, **15 warnings** (was 18) — the three
+  `pace.levels_without_an_estate` are gone and nothing new fires; `pace.food_taps_dominate`
+  stays quiet. The estate's day (three harvests): T1 75 · T2 120 · T3 375 · T4 675 · T5 975 ·
+  T6 1065 · T7 1275, the hazel in every mix and never twice. **The pace to level 40 is 136–151
+  days** (warrior 151.1 / archer 144.3 / mage 136.4; was 167.0 / 159.6 / 150.9), the spread
+  still 10%, taps a day ~801 (was ~711). Inside the 72–200 band.
+- **The spec blocks**: §3's and §7.3's `spec gates` blocks here, the estate excerpt in
+  `spec-bestiary.md` §11.2, and in `spec-economy.md` the opening's heading in both the
+  `spec economy` and `spec opening` blocks. The `plots, 6 × …` rows and every other table held.
+- **The digest**: only `records` (207c959cf4807072 → 4f4dcf860af8605f) and the content hash
+  (1ac5a7bc → 95421568) moved; `tuning`, `spawns`, `quests` and `king` held.
+- **The tests**: nine new; each was mutation-checked by breaking the rule it guards — N counting
+  the hazel, `FoodBudget` choosing it, the price exemption, the tier-1 slot, the decree rule, the
+  three granted-plot rules, the ripe clock's rounding and the shipped pick (the last three in the
+  pre-commit audit).
+- **The migration, rehearsed** on a scratch Postgres 15 with synthetic estates (neighbouring
+  slots, a gap, a full T7, an account mid-registration): every plot one slot down, a ripe hazel
+  for each registered account and none mid-registration, a second boot changing nothing, and the
+  real services checked on the result (the price's N, the reserved slot, the refused type,
+  `claim_plot`). It caught one defect before it shipped: the first version decoded whole accounts
+  and would have stopped the boot on a row missing a column the model requires; it reads the
+  ids alone now.

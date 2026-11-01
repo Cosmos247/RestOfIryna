@@ -87,7 +87,7 @@ final class PlotBuildCostTests: XCTestCase {
         let rule = try XCTUnwrap(plots.build)
         XCTAssertEqual(rule.firstPlotLeavesOut, ["mat.clay", "mat.iron"])
         XCTAssertEqual(rule.multiplierByPlotNumber, [1, 2, 3, 4, 5, 6])
-        let recipes = Dictionary(uniqueKeysWithValues: plots.types.map { ($0.type, line($0.buildCost)) })
+        let recipes = Dictionary(uniqueKeysWithValues: plots.buildableTypes.map { ($0.type, line($0.buildCost)) })
         XCTAssertEqual(recipes, [
             "farm":   "10 mat.pine_lumber, 2 mat.hide, 1 mat.iron, 3 food.potato",
             "forest": "8 mat.pine_lumber, 10 mat.river_pebble, 2 mat.iron, 1 mat.clay",
@@ -102,14 +102,56 @@ final class PlotBuildCostTests: XCTestCase {
     func testTheShippedRecipesAreDiverseAndTheFirstPlotIsLight() throws {
         let plots = try XCTUnwrap(ContentLoader.load(from: Self.contentRoot).plots)
         let rule = try XCTUnwrap(plots.build)
-        let sets = plots.types.map { Set($0.buildCost.map(\.itemId)) }
-        XCTAssertEqual(Set(sets).count, plots.types.count, "every type has a recipe of its own")
-        XCTAssertEqual(plots.types.filter { !$0.buildCost.contains { $0.itemId == "mat.clay" } }.map(\.type), ["farm"])
-        XCTAssertEqual(plots.types.filter { !$0.buildCost.contains { $0.itemId == "mat.iron" } }.map(\.type), ["coop"])
-        for row in plots.types {
+        let built = plots.buildableTypes
+        let sets = built.map { Set($0.buildCost.map(\.itemId)) }
+        XCTAssertEqual(Set(sets).count, built.count, "every type has a recipe of its own")
+        XCTAssertEqual(built.filter { !$0.buildCost.contains { $0.itemId == "mat.clay" } }.map(\.type), ["farm"])
+        XCTAssertEqual(built.filter { !$0.buildCost.contains { $0.itemId == "mat.iron" } }.map(\.type), ["coop"])
+        for row in built {
             let first = Set(PlotBuildCost.inputs(recipe: row.buildCost, plotNumber: 1, rule: rule).map(\.itemId))
             XCTAssertTrue(first.isDisjoint(with: ["mat.clay", "mat.iron"]), row.type)
             XCTAssertFalse(first.isEmpty, row.type)
         }
+    }
+
+    // MARK: - The plot the estate grants (2026-11-01)
+
+    /// N counts the plots the player BUILT: the hazel every estate starts with
+    /// never makes the next plot dearer, so the first plot a player builds is
+    /// still the light one.
+    func testTheNextPlotNumberCountsOnlyBuiltPlots() {
+        let granted: Set<String> = ["hazel"]
+        XCTAssertEqual(PlotBuildCost.nextPlotNumber(ownedTypes: [], granted: granted), 1)
+        XCTAssertEqual(PlotBuildCost.nextPlotNumber(ownedTypes: ["hazel"], granted: granted), 1)
+        XCTAssertEqual(PlotBuildCost.nextPlotNumber(ownedTypes: ["hazel", "farm"], granted: granted), 2)
+        XCTAssertEqual(PlotBuildCost.nextPlotNumber(ownedTypes: ["hazel", "farm", "coop", "farm"], granted: granted), 4)
+        // Without a granted type every plot counts, as before 2026-11-01.
+        XCTAssertEqual(PlotBuildCost.nextPlotNumber(ownedTypes: ["farm", "coop"], granted: []), 3)
+    }
+
+    /// Ripe means a full fill back, rounded up to a whole interval — it can only
+    /// overshoot, and the yield is capped at the capacity.
+    func testARipePlotIsAFullFillBack() {
+        XCTAssertEqual(GrantedPlot.intervalsToFill(capacity: 5, ratePerInterval: 1), 5)
+        XCTAssertEqual(GrantedPlot.intervalsToFill(capacity: 5, ratePerInterval: 2), 3)
+        XCTAssertEqual(GrantedPlot.intervalsToFill(capacity: 10, ratePerInterval: 2), 5)
+        XCTAssertEqual(GrantedPlot.intervalsToFill(capacity: 5, ratePerInterval: 0), 0)
+    }
+
+    /// The owner's picks (`spec-progression.md` §8): one granted type, the hazel,
+    /// one nut an hour holding five, nothing to build — and a slot for it at
+    /// every tier on top of the 0…6 a player builds on.
+    func testTheShippedHazelIsTheOwnersPick() throws {
+        let bundle = try ContentLoader.load(from: Self.contentRoot)
+        let plots = try XCTUnwrap(bundle.plots)
+        XCTAssertEqual(plots.grantedTypes, ["hazel"])
+        let hazel = try XCTUnwrap(plots.types.first { $0.type == "hazel" })
+        XCTAssertEqual(hazel.tuning?.producedItemId, "food.forest_nuts")
+        XCTAssertEqual(hazel.tuning?.ratePerInterval, 1)
+        XCTAssertEqual(hazel.tuning?.capacity, 5)
+        XCTAssertNil(hazel.tuning?.bonusOutput)
+        XCTAssertTrue(hazel.buildCost.isEmpty)
+        XCTAssertEqual(bundle.estateUpgrades.plotSlotsByTier, [1, 2, 3, 4, 5, 6, 7])
+        XCTAssertFalse(plots.buildableTypes.contains { $0.type == "hazel" })
     }
 }

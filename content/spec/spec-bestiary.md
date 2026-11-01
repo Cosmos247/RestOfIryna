@@ -801,13 +801,13 @@ the creatures column is the forest's HP and ATK at that tier (`tuning/combat.jso
 
 | tier | player level | plot slots | warehouse cap | creatures |
 |---|---|---|---|---|
-| T1 | start | 0 | 200 | ×1 |
-| T2 | 4 | 1 | 400 | ×1.1 |
-| T3 | 7 | 2 | 600 | ×1.2 |
-| T4 | 10 | 3 | 800 | ×1.3 |
-| T5 | 13 | 4 | 1200 | ×1.4 |
-| T6 | 16 | 5 | 1600 | ×1.5 |
-| T7 | 19 | 6 | 2000 | ×1.6 |
+| T1 | start | 1 | 200 | ×1 |
+| T2 | 4 | 2 | 400 | ×1.1 |
+| T3 | 7 | 3 | 600 | ×1.2 |
+| T4 | 10 | 4 | 800 | ×1.3 |
+| T5 | 13 | 5 | 1200 | ×1.4 |
+| T6 | 16 | 6 | 1600 | ×1.5 |
+| T7 | 19 | 7 | 2000 | ×1.6 |
 <!-- /generated -->
 
 ### 11.3 Why this is not the runtime-scaling trap

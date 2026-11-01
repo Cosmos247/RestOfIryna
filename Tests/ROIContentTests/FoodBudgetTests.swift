@@ -43,13 +43,23 @@ final class FoodBudgetTests: XCTestCase {
                 effects: vigor > 0 ? [ItemEffectDTO(kind: .restoreVigor, amount: vigor)] : [])
     }
 
-    private func content(harvestInterval: Double = 3600) -> GameContent {
+    /// `nutVigor` plants a granted hazel (2026-11-01) yielding nuts worth that
+    /// much each — one an hour, holding five, like the shipped one.
+    private func content(harvestInterval: Double = 3600, nutVigor: Int? = nil) -> GameContent {
+        var file = plots()
+        if let nutVigor, nutVigor > 0 {
+            file = PlotFileDTO(types: [PlotTypeDTO(type: "hazel", icon: "🌳",
+                                                   tuning: PlotTuningDTO(producedItemId: "food.nut",
+                                                                         ratePerInterval: 1, capacity: 5),
+                                                   granted: true)] + file.types)
+        }
         let bundle = ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [item("food.potato"),              // raw potato feeds nobody
                     item("mat.lumber"),
                     item("food.egg", vigor: 7),       // edible as it comes
-                    item("food.baked_potato", vigor: 9)],
+                    item("food.baked_potato", vigor: 9),
+                    item("food.nut", vigor: nutVigor ?? 0)],
             enemies: [], enemyArchetypes: [],
             recipes: [RecipeDTO(id: "recipe.baked_potato", category: "kitchen",
                                 inputs: [RecipeIngredientDTO(itemId: "food.potato", quantity: 1),
@@ -60,7 +70,7 @@ final class FoodBudgetTests: XCTestCase {
                 maxTier: 3, plotSlotsByTier: [0, 1, 2],
                 progression: [EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4),
                               EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)]),
-            plots: plots(),
+            plots: file,
             tuning: tuning(plotIntervalSeconds: harvestInterval),
             contentHash: "test")
         return GameContent(bundle)
@@ -210,5 +220,33 @@ final class FoodBudgetTests: XCTestCase {
     func testPortionsCountBitesRatherThanVigor() {
         let two = FoodBudget.best(slots: 2, harvestsPerDay: 3, content: content())
         XCTAssertEqual(two.portions, 60, accuracy: 0.001)
+    }
+
+    // MARK: - The plot the estate grants (2026-11-01)
+
+    /// The hazel stands in its slot whatever the player builds, so it is part
+    /// of every mix — the slot count includes its slot — and the rest of the
+    /// estate is searched exactly as before.
+    func testTheGrantedPlotIsAddedToEveryEstate() {
+        let c = content(nutVigor: 5)
+        // Three harvests of five nuts at five Vigor — the shipped hazel's day.
+        let alone = FoodBudget.best(slots: 1, harvestsPerDay: 3, content: c)
+        XCTAssertEqual(alone.mix, ["hazel"])
+        XCTAssertEqual(alone.vigor, 15 * 5, accuracy: 0.001)
+
+        let two = FoodBudget.best(slots: 2, harvestsPerDay: 3, content: c)
+        XCTAssertEqual(two.mix, ["hazel", "coop"])
+        XCTAssertEqual(two.vigor, 15 * 5 + 36 * 7, accuracy: 0.001)
+
+        XCTAssertEqual(FoodBudget.best(slots: 0, harvestsPerDay: 3, content: c).vigor, 0)
+    }
+
+    /// Enumerated as a choice, a hazel richer than anything else would be
+    /// "built" in every slot. It is granted once, so it appears once.
+    func testTheGrantedPlotIsNeverChosenTwice() {
+        let c = content(nutVigor: 100)
+        let three = FoodBudget.best(slots: 3, harvestsPerDay: 3, content: c)
+        XCTAssertEqual(three.mix.filter { $0 == "hazel" }.count, 1, "\(three.mix)")
+        XCTAssertEqual(three.mix.count, 3)
     }
 }

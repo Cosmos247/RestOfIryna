@@ -222,6 +222,15 @@ The verification has four parts:
   `plot.build_rule_missing`), so a forgotten recipe is an error, never a free plot; the
   schema bump is what keeps the bundle off an older binary. The digest's `records` replays
   `PlotCatalog.buildCost` over plot numbers −1…8 (`spec-progression.md` §7).
+- **A plot the estate grants (2026-11-01, schema v30).** A `plots.json` row marked
+  `"granted" : true` — the hazel — stands in slot index 0 of every estate, is never offered or
+  built, and has no `buildCost` (`plot.build_cost_missing` exempts it). New errors:
+  `plot.granted_more_than_one`, `plot.granted_has_build_cost`, `plot.granted_produces_nothing`,
+  `plot.granted_without_a_slot` (tier 1 of `plotSlotsByTier` must hold it — the table counts its
+  slot, 1…7) and `king.plot_type_granted`; `plot.build_multiplier_short` measures the slots less
+  the granted. N is `PlotBuildCost.nextPlotNumber` (built plots only), `FoodBudget` adds the
+  granted plot to every mix rather than choosing it, and `spec gates` prints its yield under the
+  estate table. The digest's `records` names the flag (`spec-progression.md` §8).
 - **A fight wears less (2026-10-24, schema v27).** `economy.gear.wearBudget` is a win ½, a flee 1, a
   death 2, decoded as `Double`. A fraction is a chance per FIGHT: `WearMath.points` (ROISim) lands the
   whole part always and the rest with its probability, and `GearConditionService.WearEvent.points

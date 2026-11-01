@@ -44,7 +44,9 @@ final class KingChainTests: XCTestCase {
     /// it teaches at (10 and 11, the shipped pair) — everything else leaves both
     /// out, so the ground's rule stays silent.
     private func bundle(_ decrees: [KingDecreeDTO], withTuning: Bool = true,
-                        withGround: Bool = false, weaponGate: Int? = nil) -> ContentBundle {
+                        withGround: Bool = false, weaponGate: Int? = nil,
+                        plots: PlotFileDTO = PlotFileDTO(types: [PlotTypeDTO(type: "farm", icon: "🌾")]))
+        -> ContentBundle {
         ContentBundle(
             manifest: ManifestDTO(schemaVersion: ContentSchema.current),
             items: [roast(), lumber()],
@@ -59,7 +61,7 @@ final class KingChainTests: XCTestCase {
                 maxTier: 3, plotSlotsByTier: [0, 1, 2],
                 progression: [EstateUpgradeStepDTO(toTier: 2, requiredPlayerLevel: 4),
                               EstateUpgradeStepDTO(toTier: 3, requiredPlayerLevel: 7)]),
-            plots: PlotFileDTO(types: [PlotTypeDTO(type: "farm", icon: "🌾")]),
+            plots: plots,
             king: KingFileDTO(decrees: decrees),
             trainingGround: withGround ? TrainingGroundFileDTO(levels: [
                 TrainingGroundLevelDTO(level: 1, technique: "special_atk", silverCost: 150, inputs: []),
@@ -119,6 +121,23 @@ final class KingChainTests: XCTestCase {
     func testUnknownPlotTypeIsAnError() {
         assertRule("king.plot_type_unknown",
                    [decree(conditions: [KingConditionDTO(kind: .claimPlot, plotType: "training")])])
+    }
+
+    /// Every estate starts with its granted plot (2026-11-01), so a decree
+    /// that asks for it is done the moment it opens.
+    func testADecreeAskingForTheGrantedPlotIsAnError() {
+        let plots = PlotFileDTO(types: [
+            PlotTypeDTO(type: "hazel", icon: "🌳",
+                        tuning: PlotTuningDTO(producedItemId: "mat.pine_lumber", ratePerInterval: 1, capacity: 5),
+                        granted: true),
+            PlotTypeDTO(type: "farm", icon: "🌾")
+        ])
+        let asksForHazel = [decree(conditions: [KingConditionDTO(kind: .claimPlot, plotType: "hazel")])]
+        XCTAssertTrue(ContentValidator.validate(bundle(asksForHazel, plots: plots)).errors
+            .contains { $0.rule == "king.plot_type_granted" })
+        let asksForFarm = [decree(conditions: [KingConditionDTO(kind: .claimPlot, plotType: "farm")])]
+        XCTAssertFalse(ContentValidator.validate(bundle(asksForFarm, plots: plots)).errors
+            .contains { $0.rule == "king.plot_type_granted" })
     }
 
     /// The grant clamps to the pool, so anything above it is a number the

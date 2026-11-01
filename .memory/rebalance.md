@@ -2247,6 +2247,11 @@ Three findings, all acted on except the one deliberately deferred:
   days are lived off the trail, XP requirements there are tiny (~11 kills to
   reach level 4), and it gives the estate a reason to exist. The report says so
   every run rather than dividing by zero.
+  *Superseded 2026-11-01 (`spec-progression.md` §8): every estate starts with the
+  hazel, a granted plot of nuts in slot 1 (75 Vigor a day at three harvests), so
+  levels 1–3 are fed in the pace table and `pace.levels_without_an_estate` no
+  longer fires; still no plot of the player's own choosing before tier 2. The
+  pace to level 40 went 151–167 → 136–151 days.*
 
 #### `zones.json` — the last content in Swift
 

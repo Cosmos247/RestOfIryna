@@ -309,7 +309,15 @@ enum KingService {
 
         case .claimPlot:
             let query = Plot.query(on: db).filter(\.$user.$id, .equal, user.id ?? UUID())
-            if let type = condition.plotType { query.filter(\.$plotType, .equal, type) }
+            if let type = condition.plotType {
+                query.filter(\.$plotType, .equal, type)
+            } else {
+                // A plot the player BUILT: the hazel every estate starts with
+                // (2026-11-01) would complete «Перша ділянка» the moment it
+                // opened. The validator refuses a decree naming a granted type.
+                let granted = Array(PlotCatalog.grantedRawValues)
+                if !granted.isEmpty { query.filter(\.$plotType !~ granted) }
+            }
             let claimed = try await query.count()
             // A typed plot names itself, so the line can say which one.
             let typedKey = condition.plotType.map { "king.cond.claim_plot.\($0)" } ?? key

@@ -636,7 +636,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
             "slot": "\(slot + 1)"
         ])
         var lines: [String] = ["<b>\(header)</b>", ""]
-        for type in PlotType.allCases {
+        // The types a player builds — never the hazel the estate grants
+        // (2026-11-01), which stands in slot 1 of every estate already.
+        for type in PlotCatalog.buildableTypes {
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             if let tuning = PlotCatalog.tuning(for: type) {
@@ -834,7 +836,7 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     fileprivate func plotPickerKeyboard(slot: Int, estateLevel: Int, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         var rows: [[TGInlineKeyboardButton]] = []
         var pair: [TGInlineKeyboardButton] = []
-        for type in PlotType.allCases {
+        for type in PlotCatalog.buildableTypes {
             let icon = PlotCatalog.icon(for: type)
             let typeName = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
             let label = "\(icon) \(typeName)"
@@ -1258,7 +1260,7 @@ extension EstateController {
                 ))
                 return true
             case "estate:plot":
-                let plots = try await Plot.list(for: context.session, on: context.db)
+                let plots = try await PlotService.estatePlots(for: context.session, on: context.db)
                 text = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
                 inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             case "estate:home:workshop":
@@ -2174,7 +2176,10 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
         }
-        if let _ = try await Plot.find(slot: slot, for: context.session, on: context.db) {
+        // The hazel's slot (2026-11-01) is never built on — the list plants it
+        // whenever it is empty, so only a stale button can ask.
+        if try await Plot.find(slot: slot, for: context.session, on: context.db) != nil
+            || PlotService.isReserved(slot: slot) {
             let toast = context.lingo.localize("estate.plot.alert.slot_taken", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
@@ -2210,11 +2215,20 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(
                 params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: text, showAlert: true))
         }
+        // A granted type (the hazel, 2026-11-01) is never built and no screen
+        // offers it: only a forged or stale callback asks, and it gets a bare
+        // answer rather than a reason.
+        guard !PlotCatalog.isGranted(type) else {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            return nil
+        }
         guard slot >= 0, slot < PlotService.slotsForLevel(context.session.estateLevel) else {
             await refuse("estate.plot.alert.slot_out_of_range")
             return nil
         }
-        if try await Plot.find(slot: slot, for: context.session, on: context.db) != nil {
+        // The hazel's slot reads as taken: it is, once the list has drawn.
+        if try await Plot.find(slot: slot, for: context.session, on: context.db) != nil
+            || PlotService.isReserved(slot: slot) {
             await refuse("estate.plot.alert.slot_taken")
             return nil
         }
@@ -2272,9 +2286,13 @@ extension EstateController {
             let toast = context.lingo.localize("estate.plot.alert.slot_out_of_range", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
             return true
-        case .slotTaken:
+        case .slotTaken, .slotReserved:
             let toast = context.lingo.localize("estate.plot.alert.slot_taken", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
+        case .typeNotBuildable:
+            // `plotChoice` refused it already; this answers a race nobody can run.
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
         case .missingMaterials(let shortages):
             let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
@@ -2297,7 +2315,7 @@ extension EstateController {
                 "type": typeName,
                 "slot": "\(slot + 1)"
             ])
-            let plots = try await Plot.list(for: context.session, on: context.db)
+            let plots = try await PlotService.estatePlots(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             try await editEstateMessage(message: message, text: body, inline: inline, context: context)
@@ -2409,7 +2427,7 @@ extension EstateController {
                 "slot":   "\(slot + 1)",
                 "yields": yieldsText
             ])
-            let plots = try await Plot.list(for: context.session, on: context.db)
+            let plots = try await PlotService.estatePlots(for: context.session, on: context.db)
             let body = ctrl.renderPlotList(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             let inline = ctrl.plotListKeyboard(plots: plots, session: context.session, lingo: context.lingo, locale: locale)
             try await editEstateMessage(message: message, text: body, inline: inline, context: context)

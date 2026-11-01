@@ -11,7 +11,15 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **`266d28e`'s hash fill and the 17:21 deploy record** — records only: the prizes went live alone
+- *(this commit, 11-01)* **the hazel every estate starts with** (`content/spec/spec-progression.md` §8) — Swift + content
+  **schema v30** + uk/en + **the `PlantHazel` migration, which rewrites rows** + tests, NOT deployed: `plots.json` gains
+  `hazel` (`"granted" : true`, 🌳, 🌰 1/h holding 5, no `buildCost`), `plotSlotsByTier` 0…6 → 1…7; the picker and the
+  claim refuse it, slot 0 is reserved, `PlotService.plantGranted` plants it ripe (registration; `estatePlots` re-plants
+  an empty slot 0); the price's N (`PlotBuildCost.nextPlotNumber`) and `claim_plot` count built plots only; the welcome
+  gains «🌳 Біля хати ростуть кущі ліщини…»; `FoodBudget` adds it to every mix; five validator rules; the digest names
+  the flag. Content `1ac5a7bc` → `95421568`, `records` → `4f4dcf860af8605f`, COMBINED → `d0b897ae80619502`;
+  `simulate --strict` 15 warnings (was 18), pace to L40 136–151 days (was 151–167); 526 tests.
+- `ff6433e` (11-01) **`266d28e`'s hash fill and the 17:21 deploy record** — records only: the prizes went live alone
   (`b04bef3`, pushed by the owner), the 18:00 finale and the King's summons read off the Pi, the blood board's removal
   filed in `TODO.md` for the next big deploy.
 - `266d28e` (11-01) **the bag's item card, all three steps** — Swift + uk/en + tests, NOT deployed (a Pi build and
@@ -946,6 +954,72 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-01, night (the hazel every estate starts with: proposed, specified, built) — *(this commit)*
+
+**Asked** (the owner): «Хочу додати важливу зміну, яка допоможе гравцям з дослідженнями на початку та ознайомить з
+механікою ділянок… ділянку, яка відкривається одразу з відкриттям маєтку… гравець не може обрати, вона автоматично
+займає перший слот… кусти ліщини… лісові горіхи» — and to see how it would look, with variants.
+
+**Shown first:** how plots work today (0 slots at T1, the first at T2 / L4, ×N prices, the 5-hour fill), the measured
+opening (`spec opening`: km 5 −87, km 1 −286), a played newcomer's sample (the welcome, the list, the card, the
+banner, the push, the T2 picker and the unchanged first price) and an existing estate's before/after. The fresh
+`simulate` read the estate's day as T1 0 · T2 45 (coop) · T3 300 · T7 1200.
+
+**Decided in one quiz — the recommended option each time:** slot 1 with every other plot moving down one (over an
+unnumbered row above the slots); 1 nut an hour holding 5 (over 3, 10, and 2/h holding 10); ripe at once with a line in the
+welcome (over growing from zero, and over a King's decree — an insert re-seats the chain). Stated and not objected
+to: every estate gets it, existing ones ripe; no slot is taken from anyone; it never counts as a built plot (N,
+`claim_plot`), while `harvest_plot` counts nuts. The owner said «Пиши» → `spec-progression.md` §8 (+ a note in §3);
+three additions over the quiz, called out: the list re-plants an empty slot 0, the welcome interpolates the buttons'
+labels, a rollback past the migration is unsafe. «так» → built.
+
+**Built:** `PlotTypeDTO.granted`; `GrantedPlot` (slot 0, `intervalsToFill`, `grantedTypes` / `buildableTypes`);
+`PlotBuildCost.nextPlotNumber`; the validator's `plot.granted_more_than_one` / `_has_build_cost` / `_produces_nothing`
+/ `_without_a_slot` and `king.plot_type_granted`, `plot.build_cost_missing` exempting it and
+`plot.build_multiplier_short` measuring the slots less the granted; `FoodBudget` (granted in every mix, never chosen),
+the opening texts in `simulate` / `spec opening` / `spec economy`, `spec gates`' granted line and the plot tables
+without it; `PlotType.hazel`, `PlotCatalog.isGranted` / `grantedType` / `grantedRawValues` / `buildableTypes` /
+`secondsToFill`, `Catalogs.plotGranted`; `PlotService.isReserved` / `plantGranted` / `estatePlots`, the claim's
+`.slotReserved` / `.typeNotBuildable`, `buildCost` through N; `EstateController`'s picker, claim picker, `plotChoice`
+and the three list draws; `KingService` `claim_plot` without the granted type; `completeRegistration` plants it and
+appends `registration.hazel`; the digest; `PlantHazel` (registered before `WipeForRebalance`); schema v30.
+
+**Measured:** `validate --strict` clean (0 warnings); 526 tests (9 new), each new one mutation-checked by breaking the
+rule it guards (5 mutations in the build, all caught; the other three tests' rules in the audit below); `simulate --strict` 0 broken bands, 15 warnings, the estate's day T1–T7
+75 / 120 / 375 / 675 / 975 / 1065 / 1275, pace 151.1 / 144.3 / 136.4 days, taps ~801/day; the digest moved `records`
+and the content hash only. Spec blocks refreshed: `spec-progression.md` §3 and §7.3, `spec-bestiary.md` §11.2,
+`spec-economy.md`'s opening (heading + the hazel's line); every other block held.
+
+**The migration rehearsal** (auto-memory `reference-deploy-rehearsal`): a scratch Postgres 15.19 (zonky's embedded
+binaries) and a harness copy of the tree that exits after the migrations. Run 1 on an empty database applied every
+migration; `PlantHazel` was then forgotten and seven synthetic accounts seeded — twelve plots in slots 0–5 (neighbours,
+a gap, a full T7), one account mid-registration, one registered with no `locale`. Run 2: 12 plots moved, 6 hazels
+planted, the verifier 0 failures (fed the pre-state, it reports 19). Run 3 applied nothing and left the table identical.
+Mode 2 ran the real services: 17 checks PASS (planted ripe with no push and idempotent, nothing mid-registration, N ×4 and
+the light first price, slot 0 reserved, the hazel not buildable, the picker's four, `claim_plot` 0 with the hazel alone
+and 1 with a built plot, every migrated hazel ripe); three code mutations (the decree counting the hazel, N counting
+every plot, the gift pushing) failed four of them. **Found by it:** the first version loaded whole `User` models and
+stopped the boot on the row with no `locale`; it reads the ids by SQL now, and that probe row stays in the seed.
+
+**Not done:** the Pi's plot counts — a read-only query over ssh was refused by the permissions classifier
+(«Production Reads»); it is the first line of the walk block, for the owner or a permitted session. Nothing pushed,
+nothing restarted.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… зроби коміт»): the 23 touched Swift files force-recompiled
+under `bash` with 0 warnings, the four test files too; 526 tests, `validate --strict` 0/0, `git diff --check` clean, the
+digest re-read (`records` and the hash only). Every hazel line rendered through the real Lingo in both locales (the
+welcome, the list, the card, the banner, the push «заповнена»), no raw `%{`, no `Optional(`. **Found and fixed:**
+- the report to the owner claimed every new test was mutation-checked — three were not; they are now (the three
+  granted-plot rules, the ripe clock without rounding up, the shipped capacity 5 → 6 — each failed its test), and
+  the owner was told;
+- stale current-state lines: `status.md`'s baseline paragraph and `file-map.md`'s test count (517 → 526, the pace),
+  `Prompt.md`'s simulate baseline (the tree's 15 warnings and 136–151 days added), `Prompt.md`'s «/content reads …
+  `6e734f14`» (stale since the 17:21 restart; `1ac5a7bc`), `TODO.md`'s standing deferrals (no estate at levels 1–3
+  is gone) and its footer;
+- the player FAQ: the plot-cost row's N, and a new row for the hazel with a ready reply («my farm moved to slot 2»);
+- the report's «a rollback is impossible» was too strong: a rollback needs `PlantHazel`'s two steps undone by hand
+  first (nothing wires the revert to a command).
 
 ## Session — 2026-11-01, midday → evening (the bag's item card: designed in full, all three steps built) — `266d28e`
 

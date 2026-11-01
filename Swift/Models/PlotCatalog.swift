@@ -29,6 +29,12 @@ public enum PlotType: String, CaseIterable, Sendable {
     case forest         = "forest"
     case mine           = "mine"
     case coop           = "coop"
+    /// The plot every estate starts with (2026-11-01, `spec-progression.md` §8):
+    /// hazel bushes in slot 1 yielding forest nuts. `plots.json` marks it
+    /// granted, so the player never chooses or builds it — ask that through
+    /// `PlotCatalog.isGranted`, never by naming this case. Only copy that is
+    /// about the hazel itself (the welcome's line) names it.
+    case hazel          = "hazel"
     // `training_ground` was a fifth, non-producing type until 2026-09-27;
     // it is a building of the house now (`TrainingGroundCatalog`).
 }
@@ -92,6 +98,43 @@ public enum PlotCatalog {
     public static func tuning(forRaw raw: String, tier: Int = 1) -> PlotTuning? {
         guard let type = PlotType(rawValue: raw) else { return nil }
         return tuning(for: type, tier: tier)
+    }
+
+    // MARK: - The plot the estate grants (2026-11-01)
+
+    /// True for the plot every estate starts with — `plots.json` →
+    /// `"granted" : true`. Such a plot stands in `GrantedPlot.slotIndex`, is
+    /// never offered by the picker or accepted by the claim, and never counts
+    /// as a plot the player built.
+    public static func isGranted(_ type: PlotType) -> Bool {
+        Catalogs.current.plotGranted.contains(type)
+    }
+
+    /// The granted type, if the content has one. The validator allows at most
+    /// one, since there is one slot for it.
+    public static var grantedType: PlotType? {
+        PlotType.allCases.first { isGranted($0) }
+    }
+
+    /// Raw values of every granted type — for a query that must leave them
+    /// out (the King's `claim_plot`) and for `PlotBuildCost.nextPlotNumber`.
+    public static var grantedRawValues: Set<String> {
+        Set(PlotType.allCases.filter { isGranted($0) }.map(\.rawValue))
+    }
+
+    /// The types a player can build, in the enum's order — the picker's list.
+    public static var buildableTypes: [PlotType] {
+        PlotType.allCases.filter { !isGranted($0) }
+    }
+
+    /// How far back a RIPE plot's harvest clock is set: whole intervals to fill
+    /// from empty (`GrantedPlot.intervalsToFill`) at the live interval. Nil for
+    /// a type that grows nothing.
+    public static func secondsToFill(_ type: PlotType) -> TimeInterval? {
+        guard let tuning = tuning(for: type) else { return nil }
+        let intervals = GrantedPlot.intervalsToFill(capacity: tuning.capacity,
+                                                    ratePerInterval: tuning.ratePerInterval)
+        return Double(intervals) * intervalSeconds
     }
 
     /// What the player's `plotNumber`-th plot of `type` costs to build

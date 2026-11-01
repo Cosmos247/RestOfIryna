@@ -53,7 +53,7 @@ boar, and both are unambiguous:
 | **to reach 4** | **788** | **79** |
 
 <!-- generated: roi-content spec economy -->
-**The opening** — levels 1–3, the only stretch with no estate behind it
+**The opening** — levels 1–3, before the first estate upgrade
 
 | | |
 |---|---|
@@ -114,8 +114,17 @@ before the estate exists the trail is the whole income. It rolls the same
 `FightSimulator` the balance report rolls, so `roi-content spec opening` and
 `simulate`'s own opening section are the same numbers in two formats.
 
+> *Amended 2026-11-01 (`spec-progression.md` §8).* The estate now has a plot from the
+> first minute: the hazel, granted in slot 1 of every estate, planted ripe, yielding
+> forest nuts. The ledger still prices this stretch per kill against the trail and
+> leaves the hazel's day out, as it leaves silver out — an income by the hour does not
+> divide into kills — so every row below is still a floor, and the block names the
+> exclusion in its own words. `simulate`'s pace table, which reads by the day, counts
+> the hazel from level 1. The nuts are also a small new faucet: the trader buys them
+> at one silver each.
+
 <!-- generated: roi-content spec opening -->
-**The opening** — levels 1–3, the only stretch with no estate behind it
+**The opening** — levels 1–3, before the first estate upgrade
 
 788 XP to reach level 4 against a stock of 115 Vigor — the starting pool plus
 every level-up grant, with a kill costing 2.5 rooms of walking plus the fight.
@@ -124,6 +133,8 @@ edible AS FOUND. A kill's raw meat is not that — every recipe for it is a
 kitchen recipe, and the kitchen is a room of the estate this stretch ends by
 unlocking — `if cooked` is the size of what that gate holds back. Silver is
 never spent here either, so every row is a floor and not an estimate.
+Nor is the plot every estate starts with (`hazel`): 75 Vigor a day at 3 harvests,
+an income by the hour that a table by the kill cannot hold.
 
 | km | mob levels | XP/kill | vigor/kill | win | kills | trail | spent | walk in | **net** | if cooked |
 |---|---|---|---|---|---|---|---|---|---|---|

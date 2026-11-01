@@ -149,13 +149,15 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     }
 
     /// Every type built from the fixture's two obtainable items (a plot's own
-    /// output counts); the first plot leaves out the potato.
+    /// output counts); the first plot leaves out the potato. The hazel stands
+    /// first, granted rather than built, as in the shipped file (2026-11-01).
     private func allPlots(build: PlotBuildRuleDTO? = PlotBuildRuleDTO(firstPlotLeavesOut: ["food.potato"],
                                                                        multiplierByPlotNumber: [1, 2, 3]),
                           buildCost: [MaterialCostDTO] = [MaterialCostDTO(itemId: "mat.hide", quantity: 4),
                                                           MaterialCostDTO(itemId: "food.potato", quantity: 2)])
         -> PlotFileDTO {
         PlotFileDTO(types: [
+            hazel(),
             PlotTypeDTO(type: "farm", icon: "🌾",
                         tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20),
                         buildCost: buildCost),
@@ -169,6 +171,13 @@ final class EstateAndNPCCatalogTests: XCTestCase {
                         tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 2, capacity: 12),
                         buildCost: buildCost)
         ], build: build)
+    }
+
+    /// The plot every estate starts with, as the shipped file writes it.
+    private func hazel(granted: Bool = true, buildCost: [MaterialCostDTO] = [],
+                       tuning: PlotTuningDTO? = PlotTuningDTO(producedItemId: "food.potato",
+                                                              ratePerInterval: 1, capacity: 5)) -> PlotTypeDTO {
+        PlotTypeDTO(type: "hazel", icon: "🌳", tuning: tuning, buildCost: buildCost, granted: granted)
     }
 
     private func rules(_ bundle: ContentBundle) -> Set<String> {
@@ -269,7 +278,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
 
     func testWellFormedPlotsAreClean() {
         XCTAssertTrue(rules(bundle(plots: allPlots())).isEmpty)
-        XCTAssertTrue(rules(bundle(plots: allPlots(), plotSlotsByTier: [0, 1, 2])).isEmpty)
+        XCTAssertTrue(rules(bundle(plots: allPlots(), plotSlotsByTier: [1, 2, 3])).isEmpty)
     }
 
     // MARK: - What a plot costs to build (2026-10-24)
@@ -302,11 +311,12 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// The table must price every plot an estate can own, never at nothing,
     /// and a later plot never cheaper than an earlier one.
     func testAMultiplierTableThatCannotPriceTheLadderIsRefused() {
-        // Three slots at the top tier, two prices: the third plot would repeat ×2.
+        // Three slots to build at the top tier — four, less the hazel's — and
+        // two prices: the third plot would repeat ×2.
         let short = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [1, 2])
-        XCTAssertTrue(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [0, 1, 2, 3]))
+        XCTAssertTrue(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [1, 2, 3, 4]))
             .contains("plot.build_multiplier_short"))
-        XCTAssertFalse(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [0, 1, 2]))
+        XCTAssertFalse(rules(bundle(plots: allPlots(build: short), plotSlotsByTier: [1, 2, 3]))
             .contains("plot.build_multiplier_short"))
         let zero = PlotBuildRuleDTO(firstPlotLeavesOut: [], multiplierByPlotNumber: [0, 1, 2])
         XCTAssertTrue(rules(bundle(plots: allPlots(build: zero))).contains("plot.build_multiplier_non_positive"))
@@ -327,6 +337,50 @@ final class EstateAndNPCCatalogTests: XCTestCase {
         let report = ContentValidator.validate(bundle(plots: allPlots(build: unused)))
         XCTAssertTrue(report.warnings.contains { $0.rule == "plot.build_leaves_out_nothing" })
         XCTAssertTrue(report.errors.isEmpty, "\(report.errors.map(\.rule))")
+    }
+
+    // MARK: - The plot the estate grants (2026-11-01)
+
+    /// The hazel is never built, so it has no price to forget — and the rule
+    /// that refuses a free plot must not refuse it.
+    func testAGrantedPlotNeedsNoBuildCost() {
+        let report = ContentValidator.validate(bundle(plots: allPlots(), plotSlotsByTier: [1, 2, 3]))
+        XCTAssertFalse(report.issues.contains { $0.rule == "plot.build_cost_missing" && $0.id == "hazel" })
+        // Built, the same row is a free plot.
+        var types = allPlots().types
+        types[0] = hazel(granted: false)
+        XCTAssertTrue(ContentValidator.validate(bundle(plots: PlotFileDTO(types: types, build: allPlots().build)))
+            .issues.contains { $0.rule == "plot.build_cost_missing" && $0.id == "hazel" })
+    }
+
+    /// One slot for it; a price it would never be charged; a slot taken from
+    /// every estate for nothing — each refused.
+    func testAGrantedPlotIsHeldToItsRules() {
+        var two = allPlots().types
+        two[1] = PlotTypeDTO(type: "farm", icon: "🌾",
+                             tuning: PlotTuningDTO(producedItemId: "food.potato", ratePerInterval: 4, capacity: 20),
+                             granted: true)
+        XCTAssertTrue(rules(bundle(plots: PlotFileDTO(types: two, build: allPlots().build), plotSlotsByTier: [2, 3, 4]))
+            .contains("plot.granted_more_than_one"))
+
+        var priced = allPlots().types
+        priced[0] = hazel(buildCost: [MaterialCostDTO(itemId: "mat.hide", quantity: 1)])
+        XCTAssertTrue(rules(bundle(plots: PlotFileDTO(types: priced, build: allPlots().build)))
+            .contains("plot.granted_has_build_cost"))
+
+        var barren = allPlots().types
+        barren[0] = hazel(tuning: nil)
+        XCTAssertTrue(rules(bundle(plots: PlotFileDTO(types: barren, build: allPlots().build)))
+            .contains("plot.granted_produces_nothing"))
+    }
+
+    /// The slot table counts the granted plot's slot, so tier 1 must hold it —
+    /// the plot list draws only the slots a tier has.
+    func testTierOneMustHoldTheGrantedPlot() {
+        XCTAssertTrue(rules(bundle(plots: allPlots(), plotSlotsByTier: [0, 1, 2]))
+            .contains("plot.granted_without_a_slot"))
+        XCTAssertFalse(rules(bundle(plots: allPlots(), plotSlotsByTier: [1, 2, 3]))
+            .contains("plot.granted_without_a_slot"))
     }
 
     /// Ukrainian agrees with the plot's own noun — «Шахта заповнена» but
@@ -357,7 +411,7 @@ final class EstateAndNPCCatalogTests: XCTestCase {
     /// Name + desc in both locales (so the plain key check stays quiet), and
     /// whichever genders the caller wants declared, uk only.
     private func plotLocales(genders: [String: String]) -> LocaleIndex {
-        let types = ["farm", "forest", "mine", "coop"]
+        let types = ["hazel", "farm", "forest", "mine", "coop"]
         var en: [String: String] = [:]
         var uk: [String: String] = [:]
         for t in types {

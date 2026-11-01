@@ -308,6 +308,11 @@ public func configure(logger: Logger) async throws {
     // 2026-11-01: the holiday's prizes, collected at the palace — one nullable
     // column on `event_blood`, no rows touched.
     migrations.add(AddEventBloodRewardedAt())
+    // 2026-11-01, `spec-progression.md` §8: the hazel every estate starts with.
+    // REWRITES ROWS — every plot moves down a slot, then a ripe hazel goes into
+    // slot 1 of every estate past registration, in one transaction. Reads the
+    // content loaded above, so boot with the new `content/data`.
+    migrations.add(PlantHazel())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.

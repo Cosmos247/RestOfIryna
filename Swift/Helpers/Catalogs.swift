@@ -100,6 +100,9 @@ final class DomainContent: Sendable {
     /// only through `PlotCatalog.buildCost`, which asks `PlotBuildCost`.
     let plotBuildRecipes: [PlotType: [MaterialCostDTO]]
     let plotBuildRule: PlotBuildRuleDTO
+    /// The types the estate grants rather than the player builds (2026-11-01,
+    /// the hazel); read only through `PlotCatalog.isGranted`.
+    let plotGranted: Set<PlotType>
     let zones: [Zone]
 
     let fortuneDrawPrice: Int
@@ -288,6 +291,7 @@ final class DomainContent: Sendable {
         var icons: [PlotType: String] = [:]
         var tunings: [PlotType: PlotTuning] = [:]
         var recipes: [PlotType: [MaterialCostDTO]] = [:]
+        var granted: Set<PlotType> = []
         for row in plots.types {
             let type = try row.toPlotType()
             icons[type] = row.icon
@@ -296,10 +300,12 @@ final class DomainContent: Sendable {
             // tuning is still legal content and must not invent a yield.
             if let tuning = row.tuning { tunings[type] = tuning.domain }
             recipes[type] = row.buildCost
+            if row.granted { granted.insert(type) }
         }
         self.plotIcons = icons
         self.plotTunings = tunings
         self.plotBuildRecipes = recipes
+        self.plotGranted = granted
         // A missing rule is a validator error, so this default is never
         // installed; it prices every plot at one recipe rather than trapping.
         self.plotBuildRule = plots.build ?? PlotBuildRuleDTO()

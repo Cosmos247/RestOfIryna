@@ -31,9 +31,16 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 | pushed | `origin/main` is at **`b04bef3`** (the owner pushed 2026-11-01 ~17:18, `! git push origin b04bef3:main`, after the session's permissions refused mine), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`b04bef3`**, online since **2026-11-01 17:21:25** (pm2 restarts 12; the binary built on the Pi 17:20:42). Content schema **v29**, content hash **`1ac5a7bc`** — the digest matched the Mac in every line before the restart; `AddEventBloodRewardedAt` verified on the table (16 flasks, all `rewarded_at` NULL, 15 with blood). The finale and the King's summons go out at 18:00. 11 × 403 per mass notice (players who blocked the bot), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The bag's item card (`266d28e`)** — Swift + locales, no migration, the digest unchanged; a push, a Pi build and `pm2 restart ROI`. **The next big deploy also removes the 🩸 blood board's tab** (the owner, 2026-11-01; `TODO.md` → Open, the 11-01 evening block — not built yet). Its warehouse swap (`WarehouseService.wear`) has NOT run on a real database: check it on the test bot first (`TODO.md` → its walk block) |
+| waiting for a restart | **The hazel every estate starts with (this session, `spec-progression.md` §8)** — Swift + content **schema v30** + uk/en + the **`PlantHazel` migration, which REWRITES ROWS** (every plot moves down a slot, a ripe hazel goes into slot 1 of every registered estate). Content and binary ship TOGETHER; the tree's digest is `records 4f4dcf860af8605f`, content `95421568`, COMBINED `d0b897ae80619502` (only `records` and the hash moved). Read the plot counts off the Pi BEFORE the restart and the table AFTER it (`TODO.md` → its walk block); a rollback past it is unsafe. **The bag's item card (`266d28e`)** — Swift + locales, no migration, the digest unchanged; a push, a Pi build and `pm2 restart ROI`. **The next big deploy also removes the 🩸 blood board's tab** (the owner, 2026-11-01; `TODO.md` → Open, the 11-01 evening block — not built yet). Its warehouse swap (`WarehouseService.wear`) has NOT run on a real database: check it on the test bot first (`TODO.md` → its walk block) |
 
-### Where the last sessions stopped (2026-10-24 → 10-31)
+### Where the last sessions stopped (2026-10-24 → 11-01)
+
+**11-01, night — the hazel every estate starts with (this commit, NOT deployed).** The owner's idea: a plot that opens with
+the estate, never chosen, in slot 1, hazel bushes yielding forest nuts — to help the first explorations and to show the
+plot loop from day one. Shown as a played sample and three questions; the owner took every recommended option (slot 1 with
+the rest shifting, 1 nut an hour holding 5, ripe at once + a line in the welcome), approved the spec («так», §8) and it was
+built the same night. `simulate --strict`: 15 warnings (was 18 — `pace.levels_without_an_estate` gone), the pace to L40
+136–151 days (was 151–167). `.memory/sessions.md` → the entry.
 
 **10-31, after the deploy — the records synced, the digest names `artFrom` (`006ad51`).** The owner's long-form
 audit: every doc and both memory banks brought to "live since 02:01"; stale lines fixed (README's art window, the
@@ -115,7 +122,7 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) BUILT, NOT deployed** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
+**0 — The hazel every estate starts with is BUILT, NOT deployed** (`spec-progression.md` §8; schema v30 and `PlantHazel`, which rewrites rows: the Pi's plot counts BEFORE the restart, the table AFTER — `TODO.md` → its walk block; rehearsed on a scratch Postgres, `.memory/sessions.md` → the 11-01 night entry). **0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) BUILT, NOT deployed** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
 14:00 / 16:00 decrees (each once: count `event_notices`), the capital wearing the holiday from 12:00, at 18:00 the
 summons, the manor at km 5, the scribe's story and the flasks; the board, the flasks and who is inside are read with the
 SQL in `.memory/live-ops.md` → "Велесова ніч" (and "what shows when"). Walk list: `TODO.md` → "Added 2026-10-29".
@@ -127,7 +134,7 @@ account (no 🧱 / 🔩 asked) and a second with one material short (the modal, 
 «закладений»; a few fights — the kit loses a point in about half the wins, a flee one, a death two; «🔧 Як зношується»
 on «🛡 Спорядження»; at the Master a hood missing 10 points costs 10 🪙; in a forest fight «🛡 Парирувати» strikes ~40%
 of a clean hit, «💨 Ухилитися» ~45%, «🌀 Магічний бар'єр» lets 70% of a blow through and sparks ~30%; the moose on a T1
-estate shows ❤️ 102; the road card is the autumn forest; `/content` reads schema v29 and hash `6e734f14` (since the 2026-11-01 09:56 restart). Under them the
+estate shows ❤️ 102; the road card is the autumn forest; `/content` reads schema v29 and hash `1ac5a7bc` (since the 2026-11-01 17:21 restart; v30 and `95421568` once the hazel deploys). Under them the
 twelve blocks live since 10-23 22:46, the four since 10-17 17:40, the five since 10-13 18:54, the six since 10-11 13:21
 and the 10-09 ones. For the Chancellery, credit a test account in DBeaver first (`.memory/live-ops.md` → "Crediting
 zlatnyks"). No human has seen the whole King's chain, and `/reload` has never run against a real database. The
@@ -214,9 +221,10 @@ hash `1ac5a7bc` (COMBINED `0f31c3b586671117`). **This is the one place the curre
 ones are in `.memory/sessions.md` → "Digest baselines — superseded", and the tree's steps in the Commit index.
 A knob is invisible to the digest until it is hashed (auto-memory `feedback-digest-names-constants`).
 
-`simulate --strict`: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
+`simulate --strict` on the Pi's content: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
 (`TODO.md` → the standing deferrals). Pace to L40: 151–167 days (warrior 167.0 / archer 159.6 /
-mage 150.9; band 72–200; taps/day ~711). The pace cannot see depth: the expedition model puts real
+mage 150.9; band 72–200; taps/day ~711). **The tree since the hazel (11-01 night, not deployed): 15 warnings** —
+`pace.levels_without_an_estate` gone — and **136–151 days** (151.1 / 144.3 / 136.4; taps/day ~801). The pace cannot see depth: the expedition model puts real
 play at ~600–640 days (auto-memory `project-expedition-model`, `.memory/rebalance.md`).
 
 ### Commands
@@ -227,7 +235,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 517 tests, ~5s
+swift test                                   # 526 tests, ~5s
 ```
 
 

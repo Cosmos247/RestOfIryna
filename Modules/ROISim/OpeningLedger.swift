@@ -8,10 +8,12 @@
 //
 //  `FoodBudget` answers "how much Vigor can a tended estate put in a player's
 //  hands in a day", and the pace section divides kills by it. Before the first
-//  upgrade there is no estate to divide by: `plotSlotsByTier` opens at 0, so
-//  those levels are excluded and reported as `pace.levels_without_an_estate`.
-//  This file is the other half of that warning — the same stretch measured
-//  against the only income it actually has, which is the trail.
+//  upgrade there was no estate to divide by: `plotSlotsByTier` opened at 0, so
+//  those levels were excluded and reported as `pace.levels_without_an_estate`.
+//  Since 2026-11-01 tier 1 holds the hazel every estate starts with, and the
+//  pace section feeds levels 1–3 from it by the DAY. This file prices the same
+//  stretch by the KILL, against the trail, and leaves the hazel out the way it
+//  leaves silver out — an income by the hour does not divide into kills.
 //
 //  `spec-economy.md` §7 asked for exactly one thing: **can these levels be
 //  completed, and at what depth.** Depth is the variable because depth is the
