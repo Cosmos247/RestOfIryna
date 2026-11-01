@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **the hazel every estate starts with** (`content/spec/spec-progression.md` §8) — Swift + content
+- *(this commit, 11-01)* **`29f38c5`'s hash fill** — records only.
+- `29f38c5` (11-01) **the hazel every estate starts with** (`content/spec/spec-progression.md` §8) — Swift + content
   **schema v30** + uk/en + **the `PlantHazel` migration, which rewrites rows** + tests, NOT deployed: `plots.json` gains
   `hazel` (`"granted" : true`, 🌳, 🌰 1/h holding 5, no `buildCost`), `plotSlotsByTier` 0…6 → 1…7; the picker and the
   claim refuse it, slot 0 is reserved, `PlotService.plantGranted` plants it ripe (registration; `estatePlots` re-plants
@@ -955,7 +956,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-01, night (the hazel every estate starts with: proposed, specified, built) — *(this commit)*
+## Session — 2026-11-01, night (the hazel every estate starts with: proposed, specified, built) — `29f38c5`
 
 **Asked** (the owner): «Хочу додати важливу зміну, яка допоможе гравцям з дослідженнями на початку та ознайомить з
 механікою ділянок… ділянку, яка відкривається одразу з відкриттям маєтку… гравець не може обрати, вона автоматично
