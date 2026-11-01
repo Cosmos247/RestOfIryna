@@ -431,6 +431,9 @@ once — its `event_notices` marker is written BEFORE the push. Every line a hol
 wears a holiday from `artFrom`** (2026-10-31: its pictures, the palace's line, the square's welcome — a line that
 describes a picture shares its window); only the decrees go out from `preludeAt`. **Copy read across a window names
 days, never «учора», and never claims a mechanic the game does not run** (the fortune teller still deals).
+**A holiday's prizes are collected in person at the palace, never credited by SQL** (2026-11-01, `events.json` → `rewards`,
+`EventRewardService.claim`): ONE transaction — `event_blood.rewarded_at` set only where still nil, the zlatnyks with their
+announced marker, the items into the bag after a fit check, the silver on a fresh row adopted into the session.
 
 ### Combat
 

@@ -79,10 +79,77 @@
           "id" : "finale",
           "kind" : "finale",
           "until" : "2026-11-02T18:00:00+02:00"
+        },
+        {
+          "at" : "2026-11-01T18:00:00+02:00",
+          "icon" : "👑",
+          "id" : "rewards_call",
+          "kind" : "rewards",
+          "until" : "2026-11-08T18:00:00+02:00"
         }
       ],
       "opensAt" : "2026-10-31T18:00:00+02:00",
       "preludeAt" : "2026-10-31T09:00:00+02:00",
+      "rewards" : {
+        "everyone" : [
+          {
+            "count" : 5,
+            "itemId" : "food.governors_feast"
+          }
+        ],
+        "places" : [
+          {
+            "place" : 1,
+            "silver" : 1000,
+            "zlatnyks" : 100
+          },
+          {
+            "place" : 2,
+            "silver" : 800,
+            "zlatnyks" : 60
+          },
+          {
+            "place" : 3,
+            "silver" : 600,
+            "zlatnyks" : 40
+          },
+          {
+            "place" : 4,
+            "silver" : 500,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 5,
+            "silver" : 400,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 6,
+            "silver" : 300,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 7,
+            "silver" : 250,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 8,
+            "silver" : 200,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 9,
+            "silver" : 150,
+            "zlatnyks" : 0
+          },
+          {
+            "place" : 10,
+            "silver" : 100,
+            "zlatnyks" : 0
+          }
+        ]
+      },
       "rollovers" : [
         {
           "day" : "2026-10-31",

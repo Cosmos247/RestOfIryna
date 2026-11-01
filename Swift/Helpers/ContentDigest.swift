@@ -178,6 +178,12 @@ enum ContentDigest {
                 digest.combine("notice \(notice.dto.id) \(notice.dto.kind) \(notice.dto.icon) \(notice.at.timeIntervalSince1970)-\(notice.until.timeIntervalSince1970)")
             }
             for day in dto.rollovers { digest.combine("rollover \(day.day) \(day.id) \(day.icon)") }
+            // The prizes (2026-11-01): what every participant gets, and each
+            // place's silver and zlatnyks.
+            if let rewards = dto.rewards {
+                for item in rewards.everyone { digest.combine("reward all \(item.itemId)×\(item.count)") }
+                for row in rewards.places { digest.combine("reward #\(row.place) s\(row.silver) z\(row.zlatnyks)") }
+            }
         }
 
         for listing in TraderCatalog.all {

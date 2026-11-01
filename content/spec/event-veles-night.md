@@ -281,15 +281,38 @@ the board's and the finale's own definition):
 | 7 · 8 · 9 · 10 | — | 250 · 200 · 150 · 100 | 5 |
 | 11 and below, with blood | — | — | 5 |
 
-**Handed out in person at the palace after the close, with no expiry** (decided; NOT built — the owner: «Спершу текст
-анонсу»). The sample shown, its copy a draft, not approved: a one-time «👑 Король кличе до палацу…» to the
-participants; under the palace card the King's words, the place and blood («🥇 1-ше місце · 666 🩸») and a «💰» line;
-«🎁 Отримати нагороду» pays in ONE transaction — a claimed marker on `event_blood` (a migration), the zlatnyks and
-their announced marker together (the receipt names them, the watchman stays quiet), the silver through the player's
-own cached `User`, the feasts into the bag after a fit check in units (the capital has no warehouse: no room → a modal,
-nothing paid, the reward waits). Not by SQL: `users.silver` is a cached field a player's next silver tap would write
-back, and a hand-inserted bag row skips the cap and is never announced. The table belongs in `events.json`, printed by
-`spec events` and hashed by the digest.
+**Handed out in person at the palace after the close, with no expiry** — built 2026-11-01 on the owner's «Давай
+зробимо фінал івенту», as the sample showed; checked end to end on the test bot (11:10–11:13: the migration on PG15,
+the finale and the summons in one sweep, the offer, the claim, the bag). Not by SQL: `users.silver` is a cached field a
+player's next silver tap would write back, and a hand-inserted bag row skips the cap and is never announced. The table
+is `events.json` → `rewards` (printed by `spec events` below, hashed by the digest, eight validator rules).
+
+The summons (`rewards_call`, kind `rewards`, at the close until 2026-11-08 18:00), only to a reader still owed a prize,
+in the same sweep right after the finale:
+> 👑 **Король кличе до палацу.** Його Величність хоче власноруч подякувати тим, хто носив кров із маєтку Велеса.
+
+Under the palace card, for each prize owed (repeated on every visit until collected):
+> 👑 Король підводиться з трону: «Я памʼятаю кожну краплю. Корона не лишається в боргу.»
+> 🥇 1-ше місце · 666 🩸
+> 💰 🟡 100 златників · 🪙 1000 срібників · 🍽 Бенкет Намісника ×5
+> **[🎁 Отримати нагороду]**
+
+A medal for places 1–3 only («4-те місце · 251 🩸»); place 11 and below reads «💰 🍽 Бенкет Намісника ×5». The tap pays
+in ONE transaction (`EventRewardService.claim`): `event_blood.rewarded_at` set only where still nil, the zlatnyks with
+`zlatnyks_announced` (the receipt names them, the watchman stays quiet), the feasts into the bag, the silver on a fresh
+row adopted into the session. The King's words stay, the button goes, and the banner is the receipt:
+> ✅ Нагороду отримано: 🟡 +100 (тепер 100) · 🪙 +1000 (тепер 7150) · 🍽 Бенкет Намісника ×5 — у сумці
+
+Refusals, each a modal, the button kept: the bag too full (the capital has no warehouse) —
+> 🎒 У сумці бракує місця: нагорода займає 5, а вільно 2. Звільніть місце — нагорода почекає.
+
+away from the capital or on the road — «👑 Король вручає нагороди в палаці — приходьте до столиці.»; the governor out
+with the bag — the bag's own lock alert. A second tap strips the button and pays nothing.
+
+*Decided in the build, not asked:* the bag-full line does not name the item («Бенкетам потрібно…» in the sample — code
+cannot decline an item's name); the away-from-the-capital alert is new; the summons leads in bold like every notice
+and runs a week; numbers print as the profile prints them («1000», not «1 000»); English is written to the same pattern
+and not approved.
 
 ## 5. The creatures and the numbers
 
@@ -346,6 +369,20 @@ ratings):
 | find (in a creature's place) | chance a step | ❤️ back, of the maximum | 🍖 back, of the pool |
 |---|---|---|---|
 | 🎃 pumpkin | 10% | 25% | 25% |
+
+| place | 🟡 zlatnyks | 🪙 silver | to every flask with blood |
+|---|---|---|---|
+| 1 | 100 | 1000 | 5× `food.governors_feast` |
+| 2 | 60 | 800 | 5× `food.governors_feast` |
+| 3 | 40 | 600 | 5× `food.governors_feast` |
+| 4 | — | 500 | 5× `food.governors_feast` |
+| 5 | — | 400 | 5× `food.governors_feast` |
+| 6 | — | 300 | 5× `food.governors_feast` |
+| 7 | — | 250 | 5× `food.governors_feast` |
+| 8 | — | 200 | 5× `food.governors_feast` |
+| 9 | — | 150 | 5× `food.governors_feast` |
+| 10 | — | 100 | 5× `food.governors_feast` |
+| 11 and below | — | — | 5× `food.governors_feast` |
 <!-- /generated -->
 
 A rat costs about twice a bat's HP per fight and half as many taps again (Надійка L13 against an

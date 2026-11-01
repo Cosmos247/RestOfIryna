@@ -15,7 +15,8 @@
 //  record would repeat every minute.
 //
 //  The finale is the one notice that differs per reader — the podium of the
-//  blood board, and the reader's own line under it.
+//  blood board, and the reader's own line under it. The King's summons to
+//  collect a prize (2026-11-01, kind `rewards`) goes only to a reader owed one.
 //
 
 import Fluent
@@ -40,8 +41,14 @@ extension RestNotificationService {
             .filter(\.$noticeId == notice.dto.id)
             .all(\.$user.$id) else { return }
         let already = Set(sent)
+        // The King's summons (2026-11-01) goes only to a reader still owed a
+        // prize; the others get no marker, so a prize owed later is still told.
+        let owed: Set<UUID>? = notice.kind == .rewards
+            ? ((try? await EventRewardService.owedUserIds(event, on: db)) ?? [])
+            : nil
         let due = users.filter { user in
             guard let id = user.id else { return false }
+            if let owed, !owed.contains(id) { return false }
             return user.registrationStep == User.registrationDoneStep && !already.contains(id)
         }
         guard !due.isEmpty else { return }
@@ -57,7 +64,7 @@ extension RestNotificationService {
             }
             let body: String
             switch notice.kind {
-            case .plain:
+            case .plain, .rewards:
                 body = lingo.localize(event.keys.notice(notice.dto.id), locale: user.locale,
                                       interpolations: EventNoticeText.timeValues(event, lingo: lingo, locale: user.locale))
             case .finale:

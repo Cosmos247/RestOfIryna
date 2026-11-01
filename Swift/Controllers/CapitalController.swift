@@ -2585,6 +2585,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         // While a holiday's manor is open, the scribe tells its story under the
         // card and hands the flask over (2026-10-30, `CapitalController+Flask`).
         try await sendFlaskRevealIfDue(context: context)
+        // Once a holiday is over, the King hands its prizes out here
+        // (2026-11-01, `CapitalController+Rewards`).
+        try await sendRewardOffersIfDue(context: context)
     }
 
     /// «✅ Доповісти Королю» once the decree is done, and «🟡 Канцелярія» always

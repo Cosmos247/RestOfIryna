@@ -308,6 +308,18 @@ public enum SpecTables {
                 }
                 out.append("")
             }
+            // The prizes (2026-11-01): collected at the palace after the close,
+            // by the board's place with ties sharing it.
+            if let rewards = event.rewards {
+                let items = rewards.everyone.map { "\($0.count)× `\($0.itemId)`" }.joined(separator: ", ")
+                out.append("| place | 🟡 zlatnyks | 🪙 silver | to every flask with blood |")
+                out.append("|---|---|---|---|")
+                for row in rewards.places {
+                    out.append("| \(row.place) | \(row.zlatnyks == 0 ? "—" : String(row.zlatnyks)) | \(row.silver == 0 ? "—" : String(row.silver)) | \(items) |")
+                }
+                out.append("| \(rewards.places.count + 1) and below | — | — | \(items) |")
+                out.append("")
+            }
         }
         return out.joined(separator: "\n")
     }

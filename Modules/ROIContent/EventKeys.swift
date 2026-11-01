@@ -100,6 +100,23 @@ public struct EventKeys: Sendable {
     public var deathLoss: String { "\(stem).death.loss" }
     public var deathLossNone: String { "\(stem).death.loss_none" }
 
+    // MARK: The prizes — the palace after the close (`CapitalController+Rewards`)
+
+    /// The King's words over a reader's prize (2026-11-01); 👑 is prepended in code.
+    public var rewardKing: String { "\(stem).reward.king" }
+    /// The rest of the prize screen is the same for every holiday, so its keys
+    /// are not the event's own: the place line (`%{place}`, `%{blood}`), the
+    /// button, the receipt (`%{parts}`) and its balance part (`%{amount}`,
+    /// `%{balance}`), where the items went, and the two refusals (an alert:
+    /// `%{need}`, `%{free}`; the button tapped away from the capital).
+    public static let rewardPlace = "event.reward.place"
+    public static let rewardButton = "event.reward.button"
+    public static let rewardReceived = "event.reward.received"
+    public static let rewardBalance = "event.reward.balance"
+    public static let rewardInBag = "event.reward.in_bag"
+    public static let rewardBagFull = "event.reward.bag_full"
+    public static let rewardElsewhere = "event.reward.elsewhere"
+
     // MARK: The capital while the King is ill (`CapitalController`)
 
     public var palace: String { "\(stem).capital.palace" }
@@ -143,6 +160,13 @@ public struct EventKeys: Sendable {
         }
         for (i, find) in event.findList.enumerated() {
             out.append((keys.findText(find.id), "\(base).finds[\(i)]"))
+        }
+        // The prize screen (2026-11-01), only for a holiday that pays one.
+        if event.rewards != nil {
+            for key in [keys.rewardKing, rewardPlace, rewardButton, rewardReceived, rewardBalance, rewardInBag,
+                        rewardBagFull, rewardElsewhere] {
+                out.append((key, "\(base).rewards"))
+            }
         }
         for (i, creature) in event.creatures.enumerated() {
             let path = "\(base).creatures[\(i)]"

@@ -2883,9 +2883,55 @@ public enum ContentValidator {
                              "the finale goes out before the manor closes — its podium would not be the last word", id: notice.id)
                     }
                 }
+                if kind == .rewards {
+                    // The King's summons (2026-11-01) goes to a reader owed a
+                    // prize, and nobody is owed one before the close.
+                    if event.rewards == nil {
+                        fail(npath + ".kind", "event.rewards_notice_without_rewards",
+                             "a summons to collect a prize in a holiday that pays none — nobody could ever be sent it", id: notice.id)
+                    }
+                    if let at, let ends, at < ends {
+                        fail(npath + ".at", "event.rewards_before_close",
+                             "the summons goes out before the manor closes — no prize is owed yet", id: notice.id)
+                    }
+                }
             }
             if finales > 1 {
                 fail(path + ".notices", "event.finale_twice", "\(finales) finales — the podium is announced once", id: id)
+            }
+
+            // The prizes (2026-11-01): paid into the bag and the purse at the
+            // palace, so every item must exist and every number must give.
+            if let rewards = event.rewards {
+                let rpath = path + ".rewards"
+                let itemIds = Set(bundle.items.map(\.id))
+                issues += duplicates(rewards.everyone.map(\.itemId), file: name, collection: rpath + ".everyone")
+                for (i, item) in rewards.everyone.enumerated() {
+                    if !itemIds.contains(item.itemId) {
+                        fail("\(rpath).everyone[\(i)].itemId", "event.reward_unknown_item",
+                             "no item \"\(item.itemId)\" — the prize would put nothing in the bag", id: item.itemId)
+                    }
+                    if item.count < 1 {
+                        fail("\(rpath).everyone[\(i)].count", "event.reward_count",
+                             "count \(item.count) — a prize gives at least one", id: item.itemId)
+                    }
+                }
+                for (i, row) in rewards.places.enumerated() {
+                    let ppath = "\(rpath).places[\(i)]"
+                    if row.place != i + 1 {
+                        fail(ppath + ".place", "event.reward_places_order",
+                             "place \(row.place) stands \(i + 1)-th — the places run 1, 2, 3… with no gap", id: id)
+                    }
+                    if row.silver < 0 || row.zlatnyks < 0 {
+                        fail(ppath, "event.reward_negative", "a prize cannot take silver or zlatnyks away", id: id)
+                    } else if row.silver == 0 && row.zlatnyks == 0 {
+                        fail(ppath, "event.reward_place_pays_nothing",
+                             "place \(row.place) pays no silver and no zlatnyks — leave it out of the list", id: id)
+                    }
+                }
+                if rewards.everyone.isEmpty && rewards.places.isEmpty {
+                    fail(rpath, "event.rewards_empty", "a prize list that pays nobody anything", id: id)
+                }
             }
 
             issues += duplicates(event.rollovers.map(\.id), file: name, collection: path + ".rollovers")

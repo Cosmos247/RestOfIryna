@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-01)* **`ae663b1`'s hash fill** — records only.
+- *(this commit, 11-01)* **Велесова ніч's prizes at the palace, and the 09:56 deploy record** — Swift + content + uk/en +
+  a migration + tests, NOT deployed (a Pi build, `AddEventBloodRewardedAt`, `pm2 restart ROI` before 18:00):
+  `events.json` → `rewards` and the `rewards_call` summons; `EventRewardService` (one transaction),
+  `CapitalController+Rewards`, the `rewards` notice kind, eight validator rules, `spec events` prints the table, the
+  digest hashes it. Content → `1ac5a7bc`, `records` → `207c959cf4807072`, COMBINED → `0f31c3b586671117`; 508 tests.
+- `b0c0d9c` (11-01) **`ae663b1`'s hash fill** — records only. The commit the Pi runs since 09:56.
 - `ae663b1` (11-01) **the prize announcement** — content + uk + en + a test: a `prizes` notice in `events.json`,
   Sunday 10:00 → the close, the owner's text verbatim («до %{close}» from the data). No Swift: the Pi needs `git pull` and
   `pm2 restart ROI` before 10:00, no build. Content `231acc72` → `6e734f14`, `records` → `c2e645e984e10916`, COMBINED →
@@ -813,6 +818,11 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-10-31 17:56 to 2026-11-01 09:56 (`c77a25b`, schema v29):** `records
+64bfea4db5bdbee8` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
+e3a492be1b017e81`, content hash `231acc72` (COMBINED `40b3160c7a2fab15`). The prize announcement (`ae663b1`) moved
+`records` and the content hash.
+
 **The baseline the Pi ran from 2026-10-31 02:01 to 17:56 (`20f5681`, schema v29):** `records 438f9ec47d93ca8f` ·
 `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content
 hash `231acc72` (COMBINED `ea15c16c660f81f2`). The content did not move at 17:56; `006ad51`'s digest naming `artFrom`
@@ -920,6 +930,45 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-01, morning (the prize announcement deployed; the prizes at the palace built) — *(this commit)*
+
+**09:53 — the announcement deployed.** The owner asked what was unpushed («Нагадай що ми вчора робили»), then «Став
+оголошення на 10:00, пушу зараз»: the pull, the pre-flight, the restart on «Так, перезапускай зараз»; sent to 44 players
+at 10:00:36 (`## Deploy — 2026-11-01 09:56`). My slip: `pm2 restart ROI --update-env` — checked harmless, recorded.
+
+**«Давай зробимо фінал івенту» — the prizes at the palace, built as the sample showed** (spec §4.8):
+- **Data:** `events.json` → `rewards` — `everyone` (5 × `food.governors_feast`) and `places` 1–10 (silver, zlatnyks);
+  the notice `rewards_call` (👑, kind `rewards`, at the close until 2026-11-08 18:00). Optional in the file, so no schema
+  bump: an older binary refuses the file anyway (`event.unknown_notice_kind`), at boot and at `/reload`.
+- **Rules** (`ContentValidator.validateEvents`), each failing on its mistake in `EventTests.testPrizeRules` and three of
+  them mutation-checked: `event.reward_unknown_item`, `reward_count`, `reward_places_order`, `reward_negative`,
+  `reward_place_pays_nothing`, `rewards_empty`, `rewards_notice_without_rewards`, `rewards_before_close`.
+- **The maths:** `EventRewardsDTO.prize(place:blood:)` (ROIContent) — the place at the board's competition rank
+  (`EventStandings.rank`), ties sharing; an empty flask is owed nothing.
+- **The claim:** `EventRewardService` — `owed`, `allOwed`, `owedUserIds`, `claim`: the fit check in units with the
+  writer's developer bypass, then ONE transaction — `rewarded_at` set only where still nil (`UPDATE … RETURNING`), the
+  zlatnyks with `zlatnyks_announced`, `InventoryEntry.add`, the silver on a fresh `User` row adopted into the session
+  after the commit (the `ClassChangeService` shape). Migration `AddEventBloodRewardedAt` (one nullable column),
+  registered before `WipeForRebalance`.
+- **Screens:** `CapitalController+Rewards` — `sendRewardOffersIfDue` after the flask in `showPalace`; `onRewardCallback`
+  (`event:reward:<event>`, claimed in `MainController` beside the flask) refuses with a modal while the governor holds
+  the bag or away from the capital (or on the road), answers late in a `catch`, strips only the button.
+- **The summons:** the watchman's `send` gives a `rewards` notice only to `owedUserIds`; the others get no marker.
+- **Keys:** `event.<id>.reward.king` and the generic `event.reward.{place,button,received,balance,in_bag,bag_full,
+  elsewhere}`, required by `EventKeys.required` only for a holiday with prizes; no emoji before a placeholder (the icons
+  are prepended in code); the two alerts 92 / 58 UTF-16 in uk (101 / 70 en) with the icon.
+- **Decided in the build, not asked** (said in the spec): the bag-full line names no item (the sample's «Бенкетам
+  потрібно…» needs a declined item name), the away-from-the-capital alert, the summons in bold and for a week, «1000»
+  as the profile prints numbers.
+
+**End to end on the test bot** (asked, «Так, запускай»): a scratch `content/data` with the close at 11:00; 11:10:30 boot
+on hash `c201f4f3`, `AddEventBloodRewardedAt` ran on `roi_test` (PG15: `rewarded_at timestamptz`, nullable); at 11:10:33
+the finale and, 0.14 s later, `rewards_call` to `jj` (24 🩸, 1st); the owner went to the palace and collected at 11:13:31 —
+🟡 100 with `zlatnyks_announced` 100 (no second notice), 🪙 1000, 5 × `food.governors_feast` in the bag, `rewarded_at`
+set; the owner: «Виклик короля надійшов, все добре». My first read said the summons had NOT gone: `ORDER BY created_at`
+after `created_at::time(0)` sorted by the output column (the time of day) and the `LIMIT` cut the newest row — recorded
+in live-ops as a reading trap.
 
 ## Session — 2026-11-01, past midnight (the holiday's prizes; the bag's item card begun) — `ae663b1`
 
@@ -1060,6 +1109,22 @@ dead code and for what was forgotten, then commit.
 
 **Dead code:** `EventCatalog.running()` / `GameEvent.isRunning` were removed in `97a2be9` once their last reader moved;
 nothing else this night's work left unread. The scratch harness (`probe3`) lives outside the repo.
+
+## Deploy — 2026-11-01 09:56 (`c77a25b` → `b0c0d9c`) — the prize announcement
+
+On the owner's word («Став оголошення на 10:00, пушу зараз», then «Так, перезапускай зараз» to the restart question).
+The owner pushed at 09:55:19; on the Pi `git pull --ff-only` to `b0c0d9c` — content, locales, a test and records, no
+Swift, so no build. **Pre-flight**, the free digest with the running binary on the new content, matched the Mac in every
+line: schema v29, hash `6e734f14`, `records c2e645e984e10916`, `tuning c0380e692986ba04`, `spawns 004c138c83fa9d1a`,
+`quests 30de20902006e3b9`, `king e3a492be1b017e81`, COMBINED `f613c07ef73b320b`. **Before the restart** (09:55:42):
+Надійка inside the manor at depth 10, not in a fight; one player on the road; KQ's and xeuzo's stale rows.
+**Restart** at 09:56:32 — `pm2 restart ROI --update-env`: the flag was NOT the recipe's and should not have been there
+(it rewrites the app's env from the ssh shell); checked at once and harmless — `pm2 env` still holds
+`ROI_PROJECT_PATH=/home/rpi5/RestOfIryna`, the boot read `Content loaded: schema v29 … hash 6e734f14`, `[ACCESS] OPEN
+DOOR … (ROI_OPEN_ACCESS=1)`, the bot identified, Hummingbird listening. pm2 restarts 11. 11 × 403 from the restart notice
+(the same 11 as at 02:01), no 409 / 429 / 502, still one `[WATCHDOG]` line. **The announcement** went out on the first
+sweep after 10:00: `event_notices` → `prizes` 44 rows, 10:00:36–10:00:41 (the decrees and the summons have 44 each),
+another 11 × 403 with it. `pm2 save` not run (the process list did not change).
 
 ## Deploy — 2026-10-31 17:56 (`20f5681` → `c77a25b`) — reconstructed 2026-11-01 from the machine
 

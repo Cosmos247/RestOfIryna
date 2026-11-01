@@ -2159,8 +2159,22 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-11-01 — the prize announcement (NOT LIVE: `git pull` on the Pi and `pm2 restart ROI` before 10:00, no build):**
-- [ ] At 10:00 Sunday every registered player gets «📜 <b>Оголошення Палацу</b> …» once, «до 18:00» in it; count it:
+**Added 2026-11-01 — the prizes at the palace (NOT LIVE: a Pi BUILD, the migration `AddEventBloodRewardedAt`, then
+`pm2 restart ROI` — before Sunday 18:00, so the summons goes out with the finale; spec §4.8):**
+- [ ] After the restart, the TABLE: `\d event_blood` shows `rewarded_at timestamptz` nullable, every row NULL.
+- [ ] At 18:00 the finale, then in the same sweep «👑 Король кличе до палацу…» to the participants ONLY (not Leyfor,
+      flask without blood; not a player who never went in): `event_notices` → `rewards_call` = the flasks with blood.
+- [ ] In the palace a participant sees, under the palace card, the King's words, «🥇 1-ше місце · N 🩸» (a medal for
+      1–3 only) and «💰 …» with «🎁 Отримати нагороду»; a non-participant sees nothing new.
+- [ ] The tap: 🟡 / 🪙 / 5 × 🍽 as the place pays (spec §4.8 table), the button goes, the receipt banner names each
+      part with its balance; NO separate «🟡 Вам нараховано…» from the watchman afterwards.
+- [ ] A second tap (or the offer on a second palace visit, tapped twice) pays nothing; the offer is gone on the next visit.
+- [ ] A full bag: the modal «🎒 У сумці бракує місця…», nothing paid, the offer still there.
+- [ ] Who has collected: `SELECT u.nickname, b.total, b.rewarded_at FROM event_blood b JOIN users u ON u.id = b.user_id
+      WHERE b.event_id = 'veles_night_2026' AND b.total > 0 ORDER BY b.total DESC;`
+
+**Added 2026-11-01 — the prize announcement (LIVE since the 2026-11-01 09:56 restart; sent to 44 players at 10:00:36):**
+- [x] At 10:00 Sunday every registered player gets «📜 <b>Оголошення Палацу</b> …» once, «до 18:00» in it; count it:
       `SELECT count(*) FROM event_notices WHERE event_id = 'veles_night_2026' AND notice_id = 'prizes';`
 - [ ] A player who first turns up after 18:00 is not sent it (its `until` is the close).
 - [ ] `/content` reads hash `6e734f14` after the restart (the older blocks' `231acc72` is the hash from the 10-31 02:01
@@ -3215,12 +3229,9 @@ Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept
 unrelated commit on purpose.
 
 **From the 2026-11-01 session (past midnight):**
-- **Велесова ніч's prizes, handed out at the palace — decided, NOT built** (`content/spec/event-veles-night.md` §4.8):
-  🟡 100 / 60 / 40 for places 1–3, 🪙 1,000 … 100 for places 1–10, 🍽 5 × «Бенкет Намісника» for everyone with blood;
-  in person after the close, no expiry, one transaction, the feasts into the bag after a fit check. The copy of the
-  summons, the King's words, the button, the receipt and the bag-full modal was SHOWN as a draft and not approved —
-  the owner wanted the announcement's text first. Build only on the owner's word; the table goes into `events.json`
-  and must agree with the announcement's typed numbers.
+- ~~**Велесова ніч's prizes, handed out at the palace — decided, NOT built**~~ — BUILT 2026-11-01 on «Давай зробимо фінал
+  івенту» (spec §4.8; the walk block «the prizes at the palace» above). The table in `events.json` agrees with the
+  announcement's typed numbers (`EventTests.testShippedPrizesAreTheOwners`).
 - **The bag's item card — PAUSED mid-design** (the session entry has every decision): two questions open — the
   list's shape and how «🗑 Викинути» picks its count. Decided: a dish's card prints what it restores; raw food gets
   «🗑 Викинути» alone with «🔥 Це інгредієнт: спершу на кухню». A discard is a new sink — the bag's only, not the trail bag.
@@ -3704,7 +3715,7 @@ fixes are `f2ae7ea`; these were found, verified and left:
 
 ---
 
-*Last updated: 2026-11-01 01:45 — the prize announcement (`prizes`, Sunday 10:00, NOT live until the restart before it)
+*Last updated: 2026-11-01 10:01 — the prize announcement LIVE (the 09:56 restart, sent 10:00:36 to 44 players)
 and Велесова ніч's prizes decided (spec §4.8, not built); the bag's item card paused mid-design. The 10-31 02:01 footer
 follows.*
 

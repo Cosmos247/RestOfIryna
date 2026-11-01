@@ -847,6 +847,12 @@ extension MainController {
             try await CapitalController.onFlaskCallback(data, query: query, message: message, context: context)
             return true
         }
+        // A holiday's prize (2026-11-01): claimed here for the same reason —
+        // the King's words must not be deleted by the default below.
+        if data.hasPrefix(CapitalController.rewardCallbackPrefix) {
+            try await CapitalController.onRewardCallback(data, query: query, message: message, context: context)
+            return true
+        }
 
         // Default: delete inline message
         let chatId = TGChatId.chat(message.chat.id)

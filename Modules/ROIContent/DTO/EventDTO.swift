@@ -58,10 +58,14 @@ public struct EventDTO: Codable, Sendable, Equatable {
     /// What a step deeper can turn up in place of a creature (2026-10-30: the
     /// pumpkin). Optional in the file, so a holiday without one says nothing.
     public let finds: [EventFindDTO]?
+    /// What the holiday pays once it is over (2026-11-01, the owner), collected
+    /// in person at the palace. Optional in the file: absent, it pays nothing.
+    public let rewards: EventRewardsDTO?
 
     public init(id: String, preludeAt: String, opensAt: String, endsAt: String, artFrom: String? = nil,
                 entranceKm: Int, creatureLevelOffset: Int, creatures: [EventCreatureDTO], rooms: [EventRoomDTO],
-                notices: [EventNoticeDTO], rollovers: [EventRolloverDTO], finds: [EventFindDTO]? = nil) {
+                notices: [EventNoticeDTO], rollovers: [EventRolloverDTO], finds: [EventFindDTO]? = nil,
+                rewards: EventRewardsDTO? = nil) {
         self.id = id
         self.preludeAt = preludeAt
         self.opensAt = opensAt
@@ -74,6 +78,7 @@ public struct EventDTO: Codable, Sendable, Equatable {
         self.notices = notices
         self.rollovers = rollovers
         self.finds = finds
+        self.rewards = rewards
     }
 
     /// The finds, none when the file names none.
@@ -184,6 +189,76 @@ public enum EventNoticeKind: String, CaseIterable, Sendable {
     case plain
     /// The podium of the blood board and the reader's own line.
     case finale
+    /// One locale string, sent only to a reader owed a prize not yet collected
+    /// (2026-11-01: the King's summons to the palace).
+    case rewards
+}
+
+// MARK: - The prizes
+
+/// A holiday's prizes (2026-11-01, Велесова ніч — `content/spec/event-veles-night.md`
+/// §4.8). Owed to every flask with blood once the manor is closed, and handed
+/// out in person at the palace (`EventRewardService`): the same items to every
+/// participant, and silver and zlatnyks by the board's place, ties sharing it.
+public struct EventRewardsDTO: Codable, Sendable, Equatable {
+    /// To every reader who brought at least one drop.
+    public let everyone: [EventRewardItemDTO]
+    /// By place, the first first: `places[i].place` is `i + 1`. A place past
+    /// the end of the list is paid `everyone` alone.
+    public let places: [EventPlaceRewardDTO]
+
+    public init(everyone: [EventRewardItemDTO], places: [EventPlaceRewardDTO]) {
+        self.everyone = everyone
+        self.places = places
+    }
+
+    /// What a flask of `blood` standing at `place` (competition rank, so ties
+    /// share it) is owed — nil for an empty flask, which is not a participant.
+    public func prize(place: Int, blood: Int) -> EventPrize? {
+        guard blood > 0, place >= 1 else { return nil }
+        let row = places.first { $0.place == place }
+        return EventPrize(place: place, silver: row?.silver ?? 0, zlatnyks: row?.zlatnyks ?? 0, items: everyone)
+    }
+}
+
+public struct EventRewardItemDTO: Codable, Sendable, Equatable {
+    public let itemId: String
+    public let count: Int
+
+    public init(itemId: String, count: Int) {
+        self.itemId = itemId
+        self.count = count
+    }
+}
+
+public struct EventPlaceRewardDTO: Codable, Sendable, Equatable {
+    public let place: Int
+    public let silver: Int
+    public let zlatnyks: Int
+
+    public init(place: Int, silver: Int, zlatnyks: Int) {
+        self.place = place
+        self.silver = silver
+        self.zlatnyks = zlatnyks
+    }
+}
+
+/// One reader's prize, as `EventRewardsDTO.prize` resolves it.
+public struct EventPrize: Sendable, Equatable {
+    public let place: Int
+    public let silver: Int
+    public let zlatnyks: Int
+    public let items: [EventRewardItemDTO]
+
+    public init(place: Int, silver: Int, zlatnyks: Int, items: [EventRewardItemDTO]) {
+        self.place = place
+        self.silver = silver
+        self.zlatnyks = zlatnyks
+        self.items = items
+    }
+
+    /// The bag units the items take — what the fit check counts.
+    public var units: Int { items.reduce(0) { $0 + Swift.max(0, $1.count) } }
 }
 
 public struct EventRolloverDTO: Codable, Sendable, Equatable {

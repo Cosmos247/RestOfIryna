@@ -62,12 +62,13 @@ final class EventTests: XCTestCase {
                          endsAt: String? = nil, artFrom: String?? = .none, entranceKm: Int? = nil,
                          creatures: [EventCreatureDTO]? = nil,
                          rooms: [EventRoomDTO]? = nil, notices: [EventNoticeDTO]? = nil,
-                         rollovers: [EventRolloverDTO]? = nil, finds: [EventFindDTO]? = nil) -> EventDTO {
+                         rollovers: [EventRolloverDTO]? = nil, finds: [EventFindDTO]? = nil,
+                         rewards: EventRewardsDTO?? = .none) -> EventDTO {
         EventDTO(id: id ?? base.id, preludeAt: preludeAt ?? base.preludeAt, opensAt: opensAt ?? base.opensAt,
                  endsAt: endsAt ?? base.endsAt, artFrom: artFrom ?? base.artFrom, entranceKm: entranceKm ?? base.entranceKm,
                  creatureLevelOffset: base.creatureLevelOffset, creatures: creatures ?? base.creatures,
                  rooms: rooms ?? base.rooms, notices: notices ?? base.notices, rollovers: rollovers ?? base.rollovers,
-                 finds: finds ?? base.finds)
+                 finds: finds ?? base.finds, rewards: rewards ?? base.rewards)
     }
 
     private func creature(_ base: EventCreatureDTO, archetype: String? = nil, xpReward: Int? = nil,
@@ -102,7 +103,8 @@ final class EventTests: XCTestCase {
         XCTAssertEqual(ends.timeIntervalSince(opens), 24 * 3600)
         XCTAssertEqual(event.entranceKm, 5)
         // «prizes» (2026-11-01, the owner): the prize announcement, Sunday 10:00 until the close.
-        XCTAssertEqual(event.notices.map(\.id), ["decree_1", "decree_2", "decree_3", "summons", "prizes", "finale"])
+        // «rewards_call» (2026-11-01): the King's summons to collect the prizes, at the close.
+        XCTAssertEqual(event.notices.map(\.id), ["decree_1", "decree_2", "decree_3", "summons", "prizes", "finale", "rewards_call"])
         let prizes = try XCTUnwrap(event.notices.first { $0.id == "prizes" })
         XCTAssertEqual(try XCTUnwrap(EventClock.date(prizes.at)), try XCTUnwrap(EventClock.date("2026-11-01T08:00:00Z")))
         XCTAssertEqual(prizes.until, event.endsAt)
@@ -227,7 +229,8 @@ final class EventTests: XCTestCase {
         // A finale before the close would announce a podium still moving.
         let early = EventNoticeDTO(id: "finale", at: event.opensAt, until: event.endsAt, kind: "finale", icon: "👑")
         XCTAssertTrue(try rules([variant(event, notices: [early])]).contains("event.finale_before_close"))
-        let finale = try XCTUnwrap(event.notices.last)
+        // By its kind: the King's summons (2026-11-01) stands after it.
+        let finale = try XCTUnwrap(event.notices.first { $0.kind == EventNoticeKind.finale.rawValue })
         let twice = EventNoticeDTO(id: "finale_2", at: finale.at, until: finale.until, kind: "finale", icon: "👑")
         XCTAssertTrue(try rules([variant(event, notices: [finale, twice])]).contains("event.finale_twice"))
     }
@@ -387,5 +390,78 @@ final class EventTests: XCTestCase {
                        ["11-те", "12-те", "13-те", "21-ше", "23-тє", "27-ме", "40-ве", "42-ге", "100-те"])
         XCTAssertEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 111].map(PlaceOrdinal.english),
                        ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd", "111th"])
+    }
+
+    // MARK: - The prizes (2026-11-01, spec §4.8)
+
+    /// The owner's table: 🟡 for the first three, 🪙 for the first ten, five
+    /// feasts to every flask with blood — and the King's summons at the close.
+    func testShippedPrizesAreTheOwners() throws {
+        let event = try veles()
+        let rewards = try XCTUnwrap(event.rewards)
+        XCTAssertEqual(rewards.everyone, [EventRewardItemDTO(itemId: "food.governors_feast", count: 5)])
+        XCTAssertEqual(rewards.places.map(\.place), Array(1...10))
+        XCTAssertEqual(rewards.places.map(\.zlatnyks), [100, 60, 40, 0, 0, 0, 0, 0, 0, 0])
+        XCTAssertEqual(rewards.places.map(\.silver), [1000, 800, 600, 500, 400, 300, 250, 200, 150, 100])
+        let call = try XCTUnwrap(event.notices.first { $0.id == "rewards_call" })
+        XCTAssertEqual(call.kind, EventNoticeKind.rewards.rawValue)
+        XCTAssertEqual(call.at, event.endsAt)
+    }
+
+    /// What a flask is owed at a place: a place the list names adds its silver
+    /// and zlatnyks, a place past it the items alone, an empty flask nothing.
+    /// Ties share a place (the board's competition rank), so two flasks at
+    /// place 3 are both paid the third prize.
+    func testAPrizeIsResolvedByPlace() throws {
+        let rewards = try XCTUnwrap(try veles().rewards)
+        let feasts = [EventRewardItemDTO(itemId: "food.governors_feast", count: 5)]
+        XCTAssertEqual(rewards.prize(place: 1, blood: 666), EventPrize(place: 1, silver: 1000, zlatnyks: 100, items: feasts))
+        XCTAssertEqual(rewards.prize(place: 3, blood: 300), EventPrize(place: 3, silver: 600, zlatnyks: 40, items: feasts))
+        XCTAssertEqual(rewards.prize(place: 10, blood: 12), EventPrize(place: 10, silver: 100, zlatnyks: 0, items: feasts))
+        XCTAssertEqual(rewards.prize(place: 11, blood: 1), EventPrize(place: 11, silver: 0, zlatnyks: 0, items: feasts))
+        XCTAssertNil(rewards.prize(place: 1, blood: 0))
+        XCTAssertEqual(rewards.prize(place: 1, blood: 1)?.units, 5)
+    }
+
+    /// Every prize rule fails on the one mistake it exists for, and the shipped
+    /// table passes them all.
+    func testPrizeRules() throws {
+        let base = try veles()
+        let good = try XCTUnwrap(base.rewards)
+        XCTAssertEqual(try rules([base]), [])
+        func with(_ rewards: EventRewardsDTO) throws -> [String] { try rules([variant(base, rewards: .some(rewards))]) }
+        func place(_ p: Int, _ silver: Int, _ zlatnyks: Int) -> EventPlaceRewardDTO {
+            EventPlaceRewardDTO(place: p, silver: silver, zlatnyks: zlatnyks)
+        }
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: [EventRewardItemDTO(itemId: "food.nope", count: 5)],
+                                                places: good.places)), ["event.reward_unknown_item"])
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: [EventRewardItemDTO(itemId: "food.governors_feast", count: 0)],
+                                                places: good.places)), ["event.reward_count"])
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: good.everyone, places: [place(1, 10, 0), place(3, 5, 0)])),
+                       ["event.reward_places_order"])
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: good.everyone, places: [place(1, -1, 0)])),
+                       ["event.reward_negative"])
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: good.everyone, places: [place(1, 0, 0)])),
+                       ["event.reward_place_pays_nothing"])
+        XCTAssertEqual(try with(EventRewardsDTO(everyone: [], places: [])), ["event.rewards_empty"])
+        // The summons with nothing to collect, and the summons before the close.
+        XCTAssertEqual(try rules([variant(base, rewards: .some(nil))]), ["event.rewards_notice_without_rewards"])
+        let early = base.notices.map { n in
+            n.id == "rewards_call" ? EventNoticeDTO(id: n.id, at: base.opensAt, until: n.until, kind: n.kind, icon: n.icon) : n
+        }
+        XCTAssertEqual(try rules([variant(base, notices: early)]), ["event.rewards_before_close"])
+    }
+
+    /// The prize screen's keys are required exactly when the holiday pays one.
+    func testPrizeKeysAreRequiredWithThePrizes() throws {
+        let base = try veles()
+        let keys = EventKeys(base.id)
+        let prizeKeys = [keys.rewardKing, EventKeys.rewardPlace, EventKeys.rewardButton, EventKeys.rewardReceived,
+                         EventKeys.rewardBalance, EventKeys.rewardInBag, EventKeys.rewardBagFull, EventKeys.rewardElsewhere]
+        let with = Set(EventKeys.required(for: base, at: 0).map(\.key))
+        for key in prizeKeys { XCTAssertTrue(with.contains(key), key) }
+        XCTAssertTrue(with.contains(keys.notice("rewards_call")))
+        let without = Set(EventKeys.required(for: variant(base, rewards: .some(nil)), at: 0).map(\.key))
+        for key in prizeKeys { XCTAssertFalse(without.contains(key), key) }
     }
 }

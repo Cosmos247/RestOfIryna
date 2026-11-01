@@ -12,6 +12,9 @@
 //  board (`LeaderboardBoard.blood`) and the finale read it, and both skip an
 //  empty flask.
 //
+//  Since 2026-11-01 the row also remembers whether its holiday's prize was
+//  collected (`rewarded_at`, `EventRewardService`).
+//
 //  `event_id` is history, like `fight_log.enemy_id`: deliberately NOT in
 //  `LiveReferenceQuery`, so a holiday dropped from `events.json` never blocks a
 //  `/reload` with its old board.
@@ -34,6 +37,12 @@ public final class EventBlood: Model, @unchecked Sendable {
 
     @Field(key: "total")
     public var total: Int
+
+    /// When the holiday's prize was collected at the palace (2026-11-01,
+    /// `EventRewardService`) — nil while it is owed. Written in the claim's own
+    /// transaction, and only where it is still nil, so a second tap pays nothing.
+    @OptionalField(key: "rewarded_at")
+    public var rewardedAt: Date?
 
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?

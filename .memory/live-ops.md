@@ -295,7 +295,7 @@ Every answer was read off the code and data, not recalled. Re-check the source a
 | An apostrophe in a name *(live since 2026-10-13 18:54 — built 2026-10-11)* | The nickname and the estate name accept an apostrophe between two letters, whichever the keyboard sends (' ʼ ’), and store it as '. At an edge, beside a space or a digit, or doubled it is still refused with «Лише літери, цифри та одиничні пробіли…». Only registration sets a name, so an account already named keeps its name. Ready reply: «Тепер в імені й назві маєтку можна писати апостроф усередині слова: «Дар'я», «Солов'їний гай».» | `PlayerNameRules` |
 | The 🪙 Багатство board *(live since 2026-10-17 17:40)* | The silver in the purse right now — not the guild's treasury, items, market lots or zlatnyks; an empty purse is not listed. Other players show a place and a name only, on purpose (the owner's call, so a purse is not read at the market); your own row shows your sum, and spending drops you at once. Equal purses share a place, ordered by level | `LeaderboardService` (`.wealth`, `showsOthersValues`) |
 | «Руки майстра» — «🔨 Виготовити річ», how? *(asked 2026-10-22; the line reads «🔨 Викувати щось у Майстерні» since the 2026-10-23 22:46 restart, the owner's pick)* | Only a WORKSHOP craft counts (estate T3, which the decree before it demands): a kitchen dish is the other decree's event, and the weapon or bag upgrade and salvage are not crafts. Today the one craftable workshop recipe is 🔳 Залізний злиток from 10 🔩 — 🏰 Маєток → 🏠 Дім → 🛠 Майстерня → 🔳 Залізний злиток → 🔨 Створити, iron drawn from bag + warehouse. Counts only from when the decree opens; 100 🪙. The ingot is the weapon ladder's from tier 3. Iron: the row «Where iron drops» | `KingService.record(.crafted)` from `CraftingService.craft`; `recipes.json`; `king.json` |
-| Велесова ніч's prizes — when and how? *(announced Sunday 10:00, decided 2026-11-01)* | By the board's place at the 18:00 close, ties sharing: 🟡 100 / 60 / 40 for 1–3, 🪙 1,000 / 800 / 600 / 500 / 400 / 300 / 250 / 200 / 150 / 100 for 1–10 — each place its own sum, nothing is split — and 5 × «Бенкет Намісника» for everyone with at least 1 🩸 (a flask alone is not enough). Handed out in person at the palace after the close, with no expiry — NOT built yet, so no date can be promised. Reply: «Нагороди вручатиме сам Король у палаці після 18:00 — бот покличе вас окремим повідомленням, щойно все буде готово. Нагорода чекатиме вас без строку, а кожне місце отримує свою суму, ділити нічого не треба.» | `content/spec/event-veles-night.md` §4.8 |
+| Велесова ніч's prizes — when and how? *(announced Sunday 10:00, decided 2026-11-01)* | By the board's place at the 18:00 close, ties sharing: 🟡 100 / 60 / 40 for 1–3, 🪙 1,000 / 800 / 600 / 500 / 400 / 300 / 250 / 200 / 150 / 100 for 1–10 — each place its own sum, nothing is split — and 5 × «Бенкет Намісника» for everyone with at least 1 🩸 (a flask alone is not enough). Handed out in person at the palace after the close, with no expiry: at 18:00 the participants get «👑 Король кличе до палацу», and under the palace card the King names the place and the prize with «🎁 Отримати нагороду»; the feasts need 5 free places in the bag (the capital has no warehouse) — a full bag is told so and the prize waits. Reply: «Після 18:00 зайдіть до палацу — Король сам вручить нагороду, кнопка «🎁 Отримати нагороду» під його словами. Бенкетам потрібно 5 вільних місць у сумці; якщо місця нема — звільніть його, нагорода чекатиме без строку. Кожне місце отримує свою суму, ділити нічого не треба.» | `content/spec/event-veles-night.md` §4.8 |
 
 The game emblem candidates proposed on 2026-10-08 are in `content/lore.md` §14.
 
@@ -324,6 +324,19 @@ WHERE b.event_id = 'veles_night_2026' AND b.total > 0
 ORDER BY b.total DESC, b.id
 LIMIT 10;
 ```
+
+Who has collected the prize (2026-11-01, `event_blood.rewarded_at`; NULL = still owed):
+
+```sql
+SELECT u.nickname, b.total, rank() OVER (ORDER BY b.total DESC) AS place, b.rewarded_at
+FROM event_blood b JOIN users u ON u.id = b.user_id
+WHERE b.event_id = 'veles_night_2026' AND b.total > 0
+ORDER BY b.total DESC;
+```
+
+**A reading trap (2026-11-01):** `ORDER BY created_at` after `SELECT created_at::time(0)` sorts by the OUTPUT column of
+that name — the time of day — so a `LIMIT` cut off the newest row and a sent notice read as unsent. Order by the
+table's column (`ORDER BY event_notices.created_at`) or do not cast a column you order by.
 
 Who has been sent what (a marker is written before the push, so a blocked chat counts as sent):
 

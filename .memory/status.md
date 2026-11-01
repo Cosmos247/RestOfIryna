@@ -21,8 +21,14 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-11-01 — the prize announcement** (content + uk/en + a test, NOT live: on the Pi `git pull` and `pm2 restart ROI`
-before Sunday 10:00 — no build, the Swift is `c77a25b`'s). `events.json` → `notices` gains `prizes` (📜, Sunday 10:00 → the
+**2026-11-01 — Велесова ніч's prizes at the palace** (Swift + content + uk/en + a migration + tests, NOT live: a Pi
+build, `AddEventBloodRewardedAt`, then the restart — before 18:00). `events.json` → `rewards` (5 × «Бенкет Намісника» to
+every flask with blood, 🪙 for places 1–10, 🟡 for 1–3) and the `rewards_call` summons at the close; `EventRewardService`
+pays in one transaction at the palace (`CapitalController+Rewards`); `event_blood.rewarded_at`. Checked end to end on
+the test bot. Content hash → `1ac5a7bc` (`records` → `207c959cf4807072`, COMBINED `0f31c3b586671117`); 508 tests. Spec §4.8.
+
+**2026-11-01 — the prize announcement** (content + uk/en + a test, LIVE since the 2026-11-01 09:56 restart — a pull, no
+build; sent to 44 players at 10:00:36). `events.json` → `notices` gains `prizes` (📜, Sunday 10:00 → the
 close), the owner's text verbatim. The prizes themselves are decided and NOT built (`content/spec/event-veles-night.md`
 §4.8). Content hash → `6e734f14`, `records` → `c2e645e984e10916` (COMBINED `f613c07ef73b320b`); 504 tests.
 
@@ -1093,7 +1099,8 @@ the player touches changed in Phase 5 and every item's stats in Phase 6; **`/rel
 still untested against a real database**, and it is now the cheapest way to ship a content
 edit. **The bot runs on the Raspberry Pi** under pm2 (app `ROI`, debug build, `pm2 save`
 so it survives a reboot); deployment steps are in README's Deployment section, and the
-rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi since
+rule about never restarting it without asking is in `CLAUDE.md`. **Changes are checked first on the TEST bot** (2026-10-31): `@artania_gamebot`, run from the Mac only, on its own database `roi_test` — auto-memory `project-test-bot`. Digest baseline — the Pi since the 2026-11-01 09:56 restart (`b0c0d9c`): `records c2e645e984e10916`, content hash
+`6e734f14`, COMBINED `f613c07ef73b320b`, the other four lines as below. Before it, the Pi since
 the 2026-10-31 17:56:45 restart (`c77a25b`, the 02:01 content; its digest names `artFrom`, read on the Pi 2026-11-01
 01:40): `records 64bfea4db5bdbee8`, COMBINED `40b3160c7a2fab15`, the other four lines and the content hash `231acc72`
 as below. Before it, the Pi
@@ -1111,7 +1118,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **504 tests** (2026-10-31). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **508 tests** (2026-11-01). Pace is **151–167 days** to level 40, re-read 2026-10-05 and unchanged
 since the estate scaling priced it in on 2026-10-03; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
