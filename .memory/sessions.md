@@ -11,7 +11,8 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-02)* **the plot's «📌 У нотатник» and «ємність»** — Swift + uk/en, NOT deployed (no migration, the
+- *(this commit, 11-02)* **`f62175e`'s hash fill** — records only.
+- `f62175e` (11-02) **the plot's «📌 У нотатник» and «ємність»** — Swift + uk/en, NOT deployed (no migration, the
   digest unchanged; the hazel's restart carries it): `RecipeNote.Kind.plot` (the type + how many of it the estate will
   hold, `PlotService.noteKey`), done once the type's count reaches it (`RecipeNoteService.isOpen`), the journal entry
   like a recipe («🌾 Ферма · Ділянка, маєток», the NEXT plot's materials via `PlotService.nextPlotNumber`), the build
@@ -962,7 +963,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-01, late night (the plot's «📌 У нотатник»; «ємність») — *(this commit)*
+## Session — 2026-11-01, late night (the plot's «📌 У нотатник»; «ємність») — `f62175e`
 
 **Asked** (the owner): «Треба додати можливість додавати список матеріалів для створення ділянки в рецепти нотатника» —
 the 10-24 open item (a «📌 У нотатник» on the build card, never asked until now).
