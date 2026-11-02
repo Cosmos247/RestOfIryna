@@ -4,9 +4,10 @@
 //
 //  Created by Dmytro Ihnatyuhin on 12.09.2026.
 //
-//  The five boards behind the journal's 🏆 screen: level, arena honor, the
-//  deepest km ever reached, every km ever walked, and (2026-10-17) the silver
-//  in the purse.
+//  The boards behind the journal's 🏆 screen: level, arena honor, the deepest
+//  km ever reached, every km ever walked, (2026-10-17) the silver in the
+//  purse, and (2026-10-29) a holiday's blood — that one only while the holiday
+//  is open (2026-11-02).
 //
 //  NAMING — these are LEADERBOARDS, never "ratings". `rating` is already taken
 //  in this codebase for crit / dodge / accuracy, which are converted through a
@@ -57,8 +58,8 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
     case distance
     case wealth
     /// A holiday's flask (2026-10-29): the blood carried out of its manor,
-    /// for the latest holiday that has opened (`EventCatalog.latestOpened`).
-    /// Its tab shows only once one has.
+    /// for the holiday open now (`EventCatalog.open`). Its tab shows only
+    /// while one is (`isShown`).
     case blood
 
     /// Short, stable callback token. Kept separate from `rawValue` so a board
@@ -77,6 +78,14 @@ public enum LeaderboardBoard: String, CaseIterable, Sendable {
 
     public static func from(slug: String) -> LeaderboardBoard? {
         LeaderboardBoard.allCases.first { $0.slug == slug }
+    }
+
+    /// Whether the board has a tab now. The blood board lives only while a
+    /// holiday is open (2026-11-02, the owner): until then it stayed after the
+    /// close, the latest holiday's result. The keyboard draws the tab by this
+    /// rule, and a «🩸» left in chat after the close falls back by it.
+    public func isShown(at now: Date = Date()) -> Bool {
+        self != .blood || EventCatalog.open(at: now) != nil
     }
 
     public var icon: String {
@@ -249,11 +258,12 @@ public enum LeaderboardService {
 
     // MARK: - Blood (a holiday's flask)
 
-    /// The latest opened holiday's `event_blood`, most blood first. A player
-    /// with none has no standing, like a walk never taken. Shaped like honor:
-    /// its own table, `.with` for the name.
+    /// The open holiday's `event_blood`, most blood first. A player with none
+    /// has no standing, like a walk never taken. Shaped like honor: its own
+    /// table, `.with` for the name. The rows outlive the close — the palace
+    /// pays the prizes against them — only the board does not.
     private static func bloodView(page requested: Int, for user: User, on db: any Database) async throws -> LeaderboardView {
-        guard let event = EventCatalog.latestOpened() else {
+        guard let event = EventCatalog.open() else {
             return LeaderboardView(rows: [], viewer: nil, page: 1, pageCount: 1)
         }
         func board() -> QueryBuilder<EventBlood> {

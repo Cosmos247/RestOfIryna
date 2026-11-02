@@ -239,7 +239,8 @@ An old entrance button after the close:
 > 🏚 На п'ятому кілометрі — лише порожня руїна і стара верба над ставком. Ворожка казала — до наступної осені.
 
 The board — the journal's «🏆 Рейтинги» gains «🩸 Кров для Короля», «Хто приніс найбільше крові
-Його Величності»; a player with none reads «Ви ще не заходили до маєтку Велеса». *Superseded 2026-11-01:* the
+Його Величності»; a player with none reads «Ви ще не заходили до маєтку Велеса». The tab shows only while the manor
+is open (2026-11-02, the owner); it stayed after the close until then. *Superseded 2026-11-01:* the
 top three's zlatnyks by hand gave way to the prizes of §4.8, handed out at the palace.
 
 ### 4.7 The capital while the King is ill (`artFrom` to close — 12:00 Saturday since 2026-10-31; the decrees alone go out from 09:00)
@@ -435,7 +436,8 @@ Sources: [Veles (god) — Wikipedia](https://en.wikipedia.org/wiki/Veles_(god)) 
 - **Screens:** `ExplorationController+Manor` (the entrance, the gate's question, the step, the
   refusal, the close), `CombatController` (no flee button and a typed flee refused, the room's intro,
   the kill, the manor's death), the watchman (`RestNotificationService+Events`), the blood board
-  (`LeaderboardBoard.blood`, its tab once a holiday has opened), the capital's four lines.
+  (`LeaderboardBoard.blood`, its tab while a holiday is open — until 2026-11-02 it stayed after the close), the
+  capital's four lines.
 
 Decided in the build, not asked — each is small and reversible:
 - **A room's line is said when a step enters the room,** above the creature's entrance, not under

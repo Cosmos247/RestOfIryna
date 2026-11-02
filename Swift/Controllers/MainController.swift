@@ -464,9 +464,9 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             [tab(.depth), tab(.distance)],
             [tab(.wealth)]
         ]
-        // A holiday's flask (2026-10-29), once one has opened — on a row of its
-        // own under the five, so none of them moves under the thumb.
-        if EventCatalog.latestOpened() != nil {
+        // A holiday's flask (2026-10-29), while one is open (2026-11-02) — on a
+        // row of its own under the five, so none of them moves under the thumb.
+        if LeaderboardBoard.blood.isShown() {
             rows.append([tab(.blood)])
         }
         if pageCount > 1 {
@@ -780,10 +780,13 @@ extension MainController {
         if data.hasPrefix("lb:") {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             let parts = data.dropFirst(3).split(separator: ":", maxSplits: 1)
-            if let slug = parts.first, let board = LeaderboardBoard.from(slug: String(slug)) {
+            if let slug = parts.first, let asked = LeaderboardBoard.from(slug: String(slug)) {
+                // A board without a tab now — the «🩸» of a closed holiday —
+                // opens the first board instead of an empty one.
+                let board = asked.isShown() ? asked : .level
                 // A tab carries no page and opens page 1; the service clamps a
                 // page the board no longer has.
-                let page = parts.count > 1 ? Int(parts[1]) ?? 1 : 1
+                let page = board == asked && parts.count > 1 ? Int(parts[1]) ?? 1 : 1
                 try await Controllers.mainController.showLeaderboard(context: context, board: board, page: page,
                                                                      editMessageId: message.messageId)
             } else {

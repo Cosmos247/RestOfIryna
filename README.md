@@ -756,7 +756,7 @@ one database migration, `AddExplorationHaul`):
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
 - a coop's build banner agrees with its noun: «🐔 Курник закладений на слоті N.» (it said «закладена»).
 
-**Built 2026-11-01, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
+**Built 2026-11-01 → 11-02, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
 card, `266d28e`, waits for the same restart):
 - every estate starts with **the hazel** («🌳 Ліщина»): a plot in slot 1 that the player never chooses or
   builds, planted ripe when the estate is named, growing a forest nut an hour and holding five
@@ -768,6 +768,8 @@ card, `266d28e`, waits for the same restart):
   on a row of its own. The note reads «🌾 Ферма · Ділянка, маєток» with the materials of the player's next plot, and
   goes once a farm is built; building another type first keeps it, at the new price. The plot screens say «ємність»
   (was «єм»), and "capacity" in English.
+- the «🩸 Кров для Короля» tab leaves 🏆 Рейтинги: a holiday's blood board shows only while the holiday is open
+  (it stayed after Велесова ніч closed). The flasks and the palace's prizes are untouched.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

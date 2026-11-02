@@ -2159,6 +2159,14 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-02 — the blood board only while a holiday is open (NOT LIVE: Swift, the same restart as the hazel;
+no migration, the digest unchanged):**
+- [ ] 👤 Профіль → 📓 Нотатник → 🏆 Рейтинги: the five tabs and «🔙», no «🩸 Кров для Короля» row.
+- [ ] A 🏆 screen left in chat from before the restart: its «🩸 Кров для Короля» tab (and its ◀️ / ▶️, if the board
+      had pages) opens «⚔️ Рівень», page 1 — not an empty blood board.
+- [ ] At the palace a flask-holder who has not collected still reads the place under the King's words («🥇 1-ше
+      місце · N 🩸», «7-ме місце · N 🩸») and can collect: the prize ranks by `EventStandings`, never by the board.
+
 **Added 2026-11-01, late night — the plot's «📌 У нотатник» and «ємність» (NOT LIVE: Swift + uk/en, the same
 restart as the hazel; no migration, the digest unchanged):**
 - [ ] «➕ Слот N» → a type → the build card: three buttons, each on its own row — «✅ Будувати», «📌 У нотатник»,
@@ -3326,14 +3334,6 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
-**From the 2026-11-01 session (evening):**
-- **Remove the blood board — with the NEXT BIG DEPLOY** (the owner, 2026-11-01, after asking whether it outlives the
-  close: «Внеси в туду лист видалення рейтингу крові на наступний великий деплой»). Today the «🩸» tab in 👤 Профіль →
-  📓 Нотатник → 🏆 Рейтинги stays after a holiday's close on purpose: `EventCatalog.latestOpened` ("kept after its close so
-  the result stays readable"), drawn by `MainController`'s board keyboard and `LeaderboardService.bloodView`. Remove the
-  TAB, never the data: `event_blood` is what the palace pays the prizes against, with no expiry. Ask before building
-  whether a future holiday shows the tab while it is open (`EventCatalog.open`) or never again.
-
 **From the 2026-11-01 session (past midnight):**
 - ~~**Велесова ніч's prizes, handed out at the palace — decided, NOT built**~~ — BUILT 2026-11-01 on «Давай зробимо фінал
   івенту» (spec §4.8; the walk block «the prizes at the palace» above). The table in `events.json` agrees with the
@@ -3383,8 +3383,11 @@ unrelated commit on purpose.
 - **Four small lines the flow needed were written, not approved** (the spec's §7): the entrance tapped away from
   km 5, the gate's question with an empty bag, the manor's death with an empty bag, and «7-ме місце».
 - **The km lives in the copy as a word** («на п'ятому кілометрі»); moving `entranceKm` needs the copy and a restart.
-- **After the holiday:** the blood board's tab stays (the latest opened holiday's); a next holiday is a new
-  `events.json` row with its own `event.<id>.*` text — the finale promised «Наступна Велесова ніч — восени».
+- **After the holiday:** the blood board's tab shows only while a holiday is open (2026-11-02, the owner — it used to
+  stay after the close); a next holiday is a new `events.json` row with its own `event.<id>.*` text — the finale
+  promised «Наступна Велесова ніч — восени», but the owner does not plan this one again (11-02). The board's own words
+  are this holiday's and sit in shared keys: «Кров для Короля», «Ви ще не заходили до маєтку Велеса»
+  (`leaderboard.board.blood*`, `leaderboard.unranked.blood`) — a different holiday rewrites them.
 
 **From the 2026-10-27 session** — the forest's Defend set by the owner's numbers (built, live since 2026-10-31 02:01;
 `.memory/rebalance.md` → "The forest's Defend, set by numbers"):

@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-02 — the 🩸 blood board only while a holiday is open** (Swift, NOT live, the same restart as the hazel; no
+content change, no migration). `LeaderboardBoard.isShown`: the «🩸 Кров для Короля» tab is drawn while
+`EventCatalog.open` answers and a stale `lb:bld` opens `.level` (the owner — it used to stay after the close,
+`latestOpened`, now removed); `event_blood`, the finale and the prizes untouched. 526 tests.
+
 **2026-11-01 — the bag's item card, all three steps** (Swift + uk/en + tests, NOT live: a Pi build and the
 restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every
 action moved onto the item's card, drawn over the list: the description, what a dish restores, «🎒 У сумці: N», a taken

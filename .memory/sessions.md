@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 11-01)
+## Commit index — live-play polish and after (2026-09-09 → 11-02)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-02)* **`f62175e`'s hash fill** — records only.
+- *(this commit, 11-02)* **the 🩸 blood board only while a holiday is open** — Swift, NOT deployed (no migration, the
+  digest unchanged; the hazel's restart carries it): `LeaderboardBoard.isShown` (the one rule — the tab, and a stale
+  `lb:bld` falling back to `.level`), `bloodView` reads `EventCatalog.open`, `EventCatalog.latestOpened` removed (no
+  reader left). `event_blood`, the finale and the palace's prizes untouched (`EventStandings`). 526 tests.
+- `6b68cb8` (11-02) **`f62175e`'s hash fill** — records only.
 - `f62175e` (11-02) **the plot's «📌 У нотатник» and «ємність»** — Swift + uk/en, NOT deployed (no migration, the
   digest unchanged; the hazel's restart carries it): `RecipeNote.Kind.plot` (the type + how many of it the estate will
   hold, `PlotService.noteKey`), done once the type's count reaches it (`RecipeNoteService.isOpen`), the journal entry
@@ -962,6 +966,36 @@ innkeeper's unlock rungs) and has not moved since. **The CURRENT baseline is kep
 alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures are a Phase-11
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
+
+## Session — 2026-11-02 (the 🩸 blood board only while a holiday is open) — *(this commit)*
+
+**Asked** (the owner): «Я хотів прибрати до наступного великого патчу рейтинг крові. Зроби це і видали запис з туду
+листа» — the 11-01 evening Open item, which said to ask first whether a future holiday shows the tab while it is open or
+never again.
+
+**Decided:** asked as one question (while open, recommended / remove for good). The owner: «Лише поки свято йде, але я
+поки не планую робити саме цей івент знову. Тому до сб та нд привʼязувати не треба» — the tab follows whatever holiday
+`events.json` has open (`opensAt` ..< `endsAt`), nothing typed against Saturday or Sunday.
+
+**Built:** `LeaderboardBoard.isShown(at:)` — `.blood` only while `EventCatalog.open` answers; `MainController`'s board
+keyboard draws the tab by it, and the `lb:` callback sends a board without a tab to `.level`, page 1 (a «🩸» or its
+◀️ / ▶️ left in chat from the holiday). `bloodView` reads the open holiday. `EventCatalog.latestOpened` removed — the
+board was its one reader. **Not touched:** `event_blood` (the palace pays the prizes against it, no expiry), the
+finale and the prize card, which rank through `EventStandings`, never through the board. The board's own words
+(«Кров для Короля», «…до маєтку Велеса») stay in shared `leaderboard.*` keys — a different holiday rewrites them
+(`TODO.md` → the 10-29 block's «After the holiday»).
+
+**Checked:** a clean build, 526 tests (none new: the board is app-level, out of the test graph's reach), `git diff
+--check` clean; no content change, so the digest is unchanged. The Open item deleted from `TODO.md`, a walk block added;
+the spec (§4.6, the screens line), the file map and `Prompt.md` updated.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… зроби 2 коміти», 11-02): the three Swift files
+force-recompiled under bash, 0 warnings; 526 tests; `validate --strict` 0/0; the digest as the tree's (`records
+4f4dcf860af8605f`, COMBINED `d0b897ae80619502`); `git diff --check` clean. Checked in the code: no other `lb:` button or
+`.blood` reader reaches the board; the prizes have no expiry (`isOver` has no upper bound). **Found and fixed:** the
+walk line promised «🥇 1-ше місце» to every flask-holder — only the first place has a medal («7-ме місце · N 🩸»);
+the service's header still said «five boards» and never named the blood one; README's not-deployed list and
+`status.md` did not have the change; the auto-memory (`project-veles-night-event`) now does.
 
 ## Session — 2026-11-01, late night (the plot's «📌 У нотатник»; «ємність») — `f62175e`
 

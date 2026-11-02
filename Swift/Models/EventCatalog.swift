@@ -177,14 +177,10 @@ public enum EventCatalog {
         all.first { $0.showsArt(at: now) }
     }
 
+    /// The holiday open now (`opensAt` ..< `endsAt`) — also the one whose
+    /// blood board the journal shows, and only while it is (2026-11-02).
     public static func open(at now: Date = Date()) -> GameEvent? {
         all.first { $0.isOpen(at: now) }
-    }
-
-    /// The holiday whose blood board the journal shows: the latest one that
-    /// has opened, kept after its close so the result stays readable.
-    public static func latestOpened(at now: Date = Date()) -> GameEvent? {
-        all.filter { $0.opens <= now }.max { $0.opens < $1.opens }
     }
 
     /// The holiday whose `day` is this game day, with the day's row — the 12:00
