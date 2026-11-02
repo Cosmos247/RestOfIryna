@@ -2159,7 +2159,14 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-11-02 — the blood board only while a holiday is open (NOT LIVE: Swift, the same restart as the hazel;
+**Added 2026-11-02, evening — the autumn capital map (NOT LIVE: a picture only, the same restart as the hazel):**
+- [ ] 🏛 Столиця (the square), «👑 Замкова» and «🏘 Поділ» each show the autumn map with pumpkins, the castle labelled
+      «Палац» (the green map said «Корона») — the owner's picture, one file in three slots (`welcome`, `street_castle`,
+      `street_lower`), as the green one was. The owner did not call it seasonal; the green map, if wanted back:
+      `git show 873e426:Assets/capital/welcome.jpg` into all three, then a restart (the bot caches a picture's Telegram
+      id in memory until it restarts).
+
+**Added 2026-11-02 — the blood board only while a holiday is open (NOT LIVE: Swift, `3384600`, the same restart as the hazel;
 no migration, the digest unchanged):**
 - [ ] 👤 Профіль → 📓 Нотатник → 🏆 Рейтинги: the five tabs and «🔙», no «🩸 Кров для Короля» row.
 - [ ] A 🏆 screen left in chat from before the restart: its «🩸 Кров для Короля» tab (and its ◀️ / ▶️, if the board

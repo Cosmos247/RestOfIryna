@@ -24,7 +24,11 @@ numbers below. Current state:
 **2026-11-02 — the 🩸 blood board only while a holiday is open** (Swift, NOT live, the same restart as the hazel; no
 content change, no migration). `LeaderboardBoard.isShown`: the «🩸 Кров для Короля» tab is drawn while
 `EventCatalog.open` answers and a stale `lb:bld` opens `.level` (the owner — it used to stay after the close,
-`latestOpened`, now removed); `event_blood`, the finale and the prizes untouched. 526 tests.
+`latestOpened`, now removed); `event_blood`, the finale and the prizes untouched. 526 tests (`3384600`).
+
+**2026-11-02 — the autumn capital map** (a picture, NOT live, the same restart). The square and both streets' one map
+in three files (`welcome`, `street_castle`, `street_lower`) is the owner's autumn picture, «Палац» over the castle;
+the green one is `873e426`.
 
 **2026-11-01 — the bag's item card, all three steps** (Swift + uk/en + tests, NOT live: a Pi build and the
 restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every

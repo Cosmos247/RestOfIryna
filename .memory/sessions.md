@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-02)* **the 🩸 blood board only while a holiday is open** — Swift, NOT deployed (no migration, the
+- *(this commit, 11-02)* **the autumn capital map, and `3384600`'s hash fill** — a picture, NOT deployed (no build
+  needed for it alone; the hazel's restart carries it): the owner's autumn map in `Assets/capital/welcome.jpg`,
+  `street_castle.jpg`, `street_lower.jpg` (one file, md5 `35a245b4…`, 1024×680), «Палац» over the castle.
+- `3384600` (11-02) **the 🩸 blood board only while a holiday is open** — Swift, NOT deployed (no migration, the
   digest unchanged; the hazel's restart carries it): `LeaderboardBoard.isShown` (the one rule — the tab, and a stale
   `lb:bld` falling back to `.level`), `bloodView` reads `EventCatalog.open`, `EventCatalog.latestOpened` removed (no
   reader left). `event_blood`, the finale and the palace's prizes untouched (`EventStandings`). 526 tests.
@@ -967,7 +970,7 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-02 (the 🩸 blood board only while a holiday is open) — *(this commit)*
+## Session — 2026-11-02 (the 🩸 blood board only while a holiday is open; the autumn capital map) — `3384600` · *(this commit)*
 
 **Asked** (the owner): «Я хотів прибрати до наступного великого патчу рейтинг крові. Зроби це і видали запис з туду
 листа» — the 11-01 evening Open item, which said to ask first whether a future holiday shows the tab while it is open or
@@ -996,6 +999,18 @@ force-recompiled under bash, 0 warnings; 526 tests; `validate --strict` 0/0; the
 walk line promised «🥇 1-ше місце» to every flask-holder — only the first place has a medal («7-ме місце · N 🩸»);
 the service's header still said «five boards» and never named the blood one; README's not-deployed list and
 `status.md` did not have the change; the auto-memory (`project-veles-night-event`) now does.
+
+**Later, the evening — the autumn capital map** *(this commit)*. The owner: «Онови зображення на екранах столиці та
+вулиць на цю картинку» — the same map with its labels, dressed for autumn (orange trees, pumpkins at the gate). The
+square and the two streets share ONE file in three slots (`Assets/capital/welcome.jpg`, `street_castle.jpg`,
+`street_lower.jpg`, all md5 `6512aa79…` before), so all three were replaced (now `35a245b4…`, 1024×680 against
+1280×851). The owner's first file still read «Корона» over the palace, as the green map does; a second one minutes
+later reads «Палац», like the button «👑 Палац», and is the one shipped. Every other label matches its button and its
+street. Captions unchanged, so the 1,024 cap is untouched; the art is read from the checkout at run time, so no build.
+Not called seasonal by the owner; the green map is `git show 873e426:Assets/capital/welcome.jpg`. Live only after a
+restart: `PhotoCache` keeps each path's Telegram id in memory. **Audited** with the blood board: the three files
+byte-identical to the owner's second picture; `welcome` and `street.assetName` are their only readers, and a holiday's
+`Assets/events/<id>/capital.jpg` overrides all three only between its `artFrom` and its close.
 
 ## Session — 2026-11-01, late night (the plot's «📌 У нотатник»; «ємність») — `f62175e`
 

@@ -343,9 +343,9 @@ RestOfIryna/
 │   ├── estate/                      # Per-tier estate artwork — level_<N>.jpg, N = estateLevel 1…7 (all tiers present)
 │   │   └── level_1.jpg … level_7.jpg
 │   └── capital/                     # Phase 6 — capital + per-location art; each place sends its own through sendCachedPhoto, text while the file is missing (market.jpg not supplied)
-│       ├── welcome.jpg              # The capital map (2026-10-06) — shown on arrival in capital + on re-entry
-│       ├── street_castle.jpg        # 👑 Замкова — the same map (2026-10-06); its own file so the street can get its own art
-│       ├── street_lower.jpg         # 🏘 Поділ — the same map (2026-10-06)
+│       ├── welcome.jpg              # The capital map (2026-10-06; the autumn one since 2026-11-02) — shown on arrival in capital + on re-entry
+│       ├── street_castle.jpg        # 👑 Замкова — the same map (2026-10-06, 11-02); its own file so the street can get its own art
+│       ├── street_lower.jpg         # 🏘 Поділ — the same map (2026-10-06, 11-02)
 │       ├── palace.jpg               # 👑 Палац — the throne room (2026-10-06); the decree card and the report question edit its caption, ≈500 of 1024
 │       ├── trader.jpg               # Crамар (Trader) screen photo
 │       ├── tavern.jpg               # Шинок (Tavern) screen photo
@@ -770,6 +770,8 @@ card, `266d28e`, waits for the same restart):
   (was «єм»), and "capacity" in English.
 - the «🩸 Кров для Короля» tab leaves 🏆 Рейтинги: a holiday's blood board shows only while the holiday is open
   (it stayed after Велесова ніч closed). The flasks and the palace's prizes are untouched.
+- the capital's map on the square and both streets is the autumn one — orange trees, pumpkins at the gate, the
+  castle labelled «Палац» (2026-11-02).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).
