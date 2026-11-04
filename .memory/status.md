@@ -21,6 +21,9 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-05 — the warehouse's move buttons as 📦 / 🎒** (locales only, NOT live, the same restart): «⬆️ 📦 1» /
+«⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in the old «Куди?» (the owner's picks).
+
 **2026-11-04, night — `/news`** (Swift + uk/en, NOT live, the same restart; no migration). A developer sends one message
 to every registered player at a moment of their choosing, with no restart: `/news` → the message (anything Telegram
 can copy, a photo with a caption included) → its copy as the preview → «Надіслати N гравцям?» → a paced send and a

@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-04)* **`/news`, a developer's message to every registered player, and `35e1e97`'s hash fill** —
+- *(this commit, 11-05)* **the warehouse's move buttons say 📦 / 🎒, and `c4682da`'s hash fill** — locales only (and
+  two comments), NOT deployed: «⬆️ 📦 1» / «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in
+  the old «Куди?». 543 tests.
+- `c4682da` (11-04) **`/news`, a developer's message to every registered player, and `35e1e97`'s hash fill** —
   Swift + uk/en, NOT deployed (no migration, the digest unchanged): `NewsBroadcast`, answered in `TGDispatcher`'s
   catch-all ahead of routing — prompt, the message copied back as its preview, «Надіслати N гравцям?», the copies
   paced, a report. Also: three docs still quoting «слот», and the hazel's no-in-game-notice decision recorded.
@@ -988,7 +991,27 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-04, night (the testers' list; the hazel's notice; `/news`) — *(this commit)*
+## Session — 2026-11-05, past midnight (the test bot up; the warehouse's buttons as emoji) — *(this commit)*
+
+**The test bot** («Запусти тестового бота»): no other instance, no `debugserver`; `.env` names `roi_test`; the tunnel
+was down — opened with the keep-alive options and probed (Postgres answered `S`); `c4682da` built and started in
+the background (`ROI_PROJECT_PATH=… ./.build/debug/RestOfIryna`, log in the session scratchpad). The boot: content
+schema v30, hash `95421568`; **`PlantHazel` ran on `roi_test`: 0 plots moved, 2 hazels planted** (two registered
+accounts, no plots); invite-only; two `400 chat not found` (the restart notice to roster accounts that never opened
+the test bot — expected); Hummingbird listening; no error after. Rebuilding the debug binary while it ran left it
+running (the old process keeps its image) — but a locale change needs its restart to show.
+
+**The warehouse's move buttons** (the owner, a screenshot of the test bot: «На цих кнопках слова "склад" і "сумку" можна замінити на емодзі відповідні»). Offered arrow + icon «⬆️ 📦 1» (recommended) or word for
+word «⬆️ На 📦 1», and whether the gear card's «⬆️ На склад» / «⬇️ У сумку» and the old «Куди?» (the same two keys)
+follow. **The owner:** arrow + icon, everywhere alike. **Built:** `estate.warehouse.card.put_one` / `take_one` →
+«⬆️ 📦 1» / «⬇️ 🎒 1», `estate.warehouse.transfer_n.dir_put` / `dir_take` → «⬆️ 📦» / «⬇️ 🎒», in both locales (an
+icon needs no translation); inline buttons only, so nothing matches on their text. **Checked:** a clean build,
+543 tests, `validate --strict` 0/0, `git diff --check` clean; the walk blocks follow.
+Then «Онови тестового бота»: the instance stopped on SIGTERM (exit 143), the tunnel still answering, the same
+build started again (00:25) — content v30 / `95421568`, no migration left to run, the same two `400 chat not
+found`, listening; the new buttons are on the test bot.
+
+## Session — 2026-11-04, night (the testers' list; the hazel's notice; `/news`) — `c4682da`
 
 **The testers' list** («Напиши мені список незадеплоєних оновлень для тестувальників»): read off `b04bef3..HEAD` and the
 Pi (its checkout and binary at `b04bef3`), written as a Telegram-ready text and published as a private page with a

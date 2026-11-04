@@ -2190,7 +2190,7 @@ the digest unchanged):**
       gear not counted.
 - [ ] On the forest trail the bag reads «🎒 Сумка (5/35, вільно 30)»; it moves with every find and meal.
 - [ ] Склад → a stack's card → «⬇️ ✏️»: «Скільки бажаєте взяти в сумку? (вільно 30)»; type more than fits → «❌ Не
-      вміститься, у сумці місця на 30.» — the same number. An old «✏️ N» → «Куди?» → «⬇️ У сумку» left in chat asks
+      вміститься, у сумці місця на 30.» — the same number. An old «✏️ N» → «Куди?» → «⬇️ 🎒» left in chat asks
       the same. «⬆️ ✏️» still reads «Скільки покласти на склад?».
 - [ ] Крамар → buy: «Скільки «Лісові ягоди» купити? (у 🎒 вільно 30)» (the 🎒 drawn, no raw `%{…}`); type a letter → the
       question again, number and all, with «❌ Введіть додатне число». Sell: «Скільки «Лісові ягоди» продати?».
@@ -2267,15 +2267,15 @@ restart as the hazel; no migration, the digest unchanged):**
 steps 1–2; no migration):**
 - [ ] 🏰 Маєток → 📦 Склад → 🍖 Їжа / 🪨 Матеріали: one button per item, «🫐 Лісові ягоди · 🎒4 / 📦12», no
       «⬆️ +1 / ⬇️ +1 / ✏️ N» under it; «📦 Викласти все» still under the list.
-- [ ] A name: the card in place — description, «🎒 У сумці: 4 · 📦 На складі: 12», «⬆️ На склад 1» «⬆️ Усі (4)» «⬆️ ✏️»,
-      «⬇️ У сумку 1» «⬇️ Усі (12)» «⬇️ ✏️», «🔙 До списку». A side with none has no row, a side with one only its «1».
+- [ ] A name: the card in place — description, «🎒 У сумці: 4 · 📦 На складі: 12», «⬆️ 📦 1» «⬆️ Усі (4)» «⬆️ ✏️»,
+      «⬇️ 🎒 1» «⬇️ Усі (12)» «⬇️ ✏️», «🔙 До списку» (the words «На склад 1» / «У сумку 1» became 📦 / 🎒 on 2026-11-05). A side with none has no row, a side with one only its «1».
       No «Викинути».
 - [ ] «⬇️ Усі (40)» with 10 free places in the bag: 10 move, «🎒 … ×10 — забрано зі складу. Решта (30) не вмістилась:
       сумка повна (25/25).»; with the bag full: the modal «🎒 Сумка повна…», nothing moves. The same way up, full
       warehouse.
 - [ ] «⬇️ ✏️»: «Скільки бажаєте взяти в сумку?» at once (no «Куди?»); type 3 → the card redraws with the new counts.
 - [ ] 🗡 Спорядження: copies end in 🎒 or 📦; a tap opens the copy's card (stats, wear) with «🛡 Одягнути» and «⬆️ На
-      склад» / «⬇️ У сумку» (a class weapon has no «⬆️ На склад»).
+      склад» / «⬇️ У сумку» — since 2026-11-05 «⬆️ 📦» / «⬇️ 🎒» (a class weapon has no «⬆️ 📦»).
 - [ ] «🛡 Одягнути» on a 📦 hood while a hood is worn: the list shows the old hood 📦 (its own wear and «+N»), the new
       one is worn (the profile's 🛡 Спорядження), the bag's count unchanged. On a 🎒 copy: the old one goes to the bag.
       **The 11-01 test-bot run never reached the 📦 case** (read on `roi_test`: no hood went to the warehouse) — give the
@@ -2645,7 +2645,7 @@ account holding exactly one unit of something.
   …)?»); the lot appears after the price.
 - 🤝 Обмін: a lone stackable joins the offer on the tap; a second tap takes it back out.
 - 🏰 Гільдії → 🏦 Сховище: a lone unit deposits or withdraws on the tap.
-- 📦 Склад → ✏️ N → «⬆️ На склад» / «⬇️ У сумку»: with one unit on that side it moves at once, the
+- 📦 Склад → ✏️ N → «⬆️ 📦» / «⬇️ 🎒» («⬆️ На склад» / «⬇️ У сумку» until 2026-11-05): with one unit on that side it moves at once, the
   prompt is gone and the banner says «×1».
 - 💼 Крамар → 💰 Купити asks «Скільки … купити?» as before.
 

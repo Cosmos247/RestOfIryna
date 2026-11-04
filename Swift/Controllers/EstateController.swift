@@ -1366,7 +1366,7 @@ extension EstateController {
     }
 
     /// A stackable's card: its description, «🎒 У сумці: N · 📦 На складі: M»,
-    /// then a row each way — «⬆️ На склад 1» «⬆️ Усі (N)» «⬆️ ✏️» and «⬇️ У сумку 1»
+    /// then a row each way — «⬆️ 📦 1» «⬆️ Усі (N)» «⬆️ ✏️» and «⬇️ 🎒 1»
     /// «⬇️ Усі (M)» «⬇️ ✏️» — the ✏️ in each row asking straight for a number,
     /// its direction already chosen (the owner's pick: no «Куди?»). A side that
     /// holds none has no row; a side holding one has only its «1». Nothing is
@@ -1416,9 +1416,9 @@ extension EstateController {
     }
 
     /// A gear copy's card — the bag's own text (`BagCard.gearText`) — with
-    /// «🛡 Одягнути» and its one move: «⬆️ На склад» for a copy in the bag
-    /// (none for a class weapon, which never goes to the warehouse), «⬇️ У
-    /// сумку» for one in the warehouse. Nil when the row is gone or worn.
+    /// «🛡 Одягнути» and its one move: «⬆️ 📦» for a copy in the bag
+    /// (none for a class weapon, which never goes to the warehouse), «⬇️ 🎒»
+    /// for one in the warehouse (the words went on 2026-11-05, the owner). Nil when the row is gone or worn.
     fileprivate static func warehouseGearCard(rowId: UUID, context: Context) async throws
     -> (text: String, markup: TGInlineKeyboardMarkup)? {
         guard let userId = context.session.id else { return nil }
