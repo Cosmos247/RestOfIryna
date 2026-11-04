@@ -83,9 +83,8 @@ public enum TraderService {
 
         let canFit = try await InventoryEntry.canAccept(itemId, quantity: quantity, for: user, on: db)
         if !canFit {
-            let used = try await InventoryEntry.slotsUsed(for: user, on: db)
-            let cap = InventoryEntry.slotCap(for: user)
-            let free = max(0, cap - used)
+            // The number «(у 🎒 вільно N)» quoted in the question (2026-11-04).
+            let free = try await InventoryEntry.freeSlots(for: user, on: db)
             return .inventoryFull(free: free, need: quantity)
         }
 

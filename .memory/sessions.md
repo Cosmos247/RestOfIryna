@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-04)* **the kitchen cooks several at once, and `f49a6f1`'s hash fill** — Swift + uk/en + tests,
+- *(this commit, 11-04)* **the bag's free room, and `2f78915`'s hash fill** — Swift + uk/en, NOT deployed (no
+  migration, the digest unchanged; the hazel's restart carries it): «(вільно N)» on the bag screen, «(5/35, вільно 30)»
+  on the trail bag, «Скільки бажаєте взяти в сумку? (вільно N)» at the warehouse, «Скільки «…» купити? (у 🎒 вільно
+  N)» at the trader, the name quoted in «купити» and «продати»; `InventoryEntry.freeSlots` is the one reading, the
+  warehouse's and the trader's refusals included. 539 tests.
+- `2f78915` (11-04) **the kitchen cooks several at once, and `f49a6f1`'s hash fill** — Swift + uk/en + tests,
   NOT deployed (no migration, the digest unchanged; the hazel's restart carries it): «🍳 ×5» and «🍳 Усі (N)» on a
   kitchen card (`CraftMath` in ROISim, `CraftingService.craft(_:times:)` in ONE transaction, `batchOffer`,
   `handleCraftBatch`), `kitchen.alert.cooked_split`; the Vigor-cost variants recorded, not built. 539 tests.
@@ -974,7 +979,44 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-03 → 11-04 (cheaper Vigor computed and put off; the kitchen cooks several at once) — *(this commit)*
+## Session — 2026-11-04, later (the bag's free room, the players' ask) — *(this commit)*
+
+**Asked** (the owner, relaying players): «Гравці просять додати кількість вільного місця в сумці в двох випадках» —
+«🎒 Сумка 5/35 слотів» should end «(вільно 30)», and «Скільки бажаєте взяти в сумку?» should carry the same number.
+«Покажи як ти бачиш вирішення перед тим як робити.» Shown the two places, then asked: the trail bag's own header
+«🎒 Сумка (5/35)» too (recommended) and the warehouse's «Скільки покласти на склад?» (recommended: leave it). The
+owner answered «так, і на стежці» / «не чіпати» and added the trader's buy question, «(в 🎒 вільно ..), або
+запропонуй інший варіант». Offered «(у 🎒 вільно 30)» — «у», not «в», after a bracket before a consonant — and, since
+the trader's question was «Скільки Лісові ягоди купити?» (one stored form of a name), the name in quotes as the
+market, the exchange and the guild vault already have it. **The owner:** «(у 🎒 вільно 30)», quotes in «купити» and
+«продати» both.
+
+**Built:** `InventoryEntry.freeSlots(used:for:)` / `freeSlots(for:on:)` — the cap less what is used, never below
+zero — and `inventory.free` («вільно %{free}» / "%{free} free"), one phrase passed as a value everywhere it shows:
+the bag screen «5/35 слотів (вільно 30)» (`InventoryController.renderRoot`, town and estate alike), the trail bag
+«(5/35, вільно 30)» (`ExplorationController`), the warehouse's take question through one helper for both ways in
+(`EstateController.warehousePrompt` — the card's «⬇️ ✏️» and the older «✏️ N» → «Куди?»), and the trader's
+`traderPromptText` for the prompt and its redraw after a bad number, 🎒 passed as `%{bag_icon}` (written ahead of
+`%{free}` it breaks Lingo). The warehouse's «Не вміститься, у сумці місця на N» and the trader's «Сумка повна —
+вільно N комірок» read the same helper (the warehouse's preflight and its per-unit path both); nine other places —
+refusals and fit checks elsewhere — still compute the bag's `max(0, cap − used)` by hand, the same arithmetic, left
+alone. Both warehouse handlers answer the tap in a `catch` around the new query.
+
+**Checked:** the seven Swift files force-recompiled, 0 warnings; 539 tests; `validate --strict` 0/0 — it runs the
+emoji-before-placeholder rule over every key of both locales (the tests only pin the rule on fixtures); the new and
+changed keys are in both files, checked by hand — no check covers a static key's parity; the digest unchanged; every reader of the three changed keys passes the new
+placeholders; `git diff --check` clean. **Found, not changed:** the trader's refusal says «комірок» where the bag
+screen says «слотів», and «вільно 1 комірок» does not agree with its number.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… репорт і зроби коміт», 11-04): the seven Swift files
+force-recompiled under bash (7 of 7 recompiled), 0 warnings; 539 tests; `validate --strict` 0/0; the digest as
+the tree's; `git diff --check` clean; every new line rendered from both locale files. **Found and fixed:** this
+entry credited the tests with the locale emoji and parity checks (the validator runs the emoji rule on the shipped
+files; nothing checks a static key's parity), and `CLAUDE.md` said every refusal reads `freeSlots` — eight older
+refusals and `unitsThatFit` do not. Before the audit, while building: the warehouse's preflight (the refusal a
+typed number actually meets) still had its own formula — moved onto `freeSlots` too.
+
+## Session — 2026-11-03 → 11-04 (cheaper Vigor computed and put off; the kitchen cooks several at once) — `2f78915`
 
 **Asked, 11-03** (the owner): «Хочу зменшити витрату снаги. Покажи як зараз витрачається снага.» Shown the prices, the
 pool and the fights off the Pi, then «Порахуй варіанти: крок 1 і атака 1, втеча і прийоми 2 для всіх». **Computed** on

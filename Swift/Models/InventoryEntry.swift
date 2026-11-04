@@ -156,6 +156,21 @@ extension InventoryEntry {
         return rows.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
     }
 
+    /// The bag's free room in units — the cap less what is used, never below
+    /// zero. The one reading behind every «вільно N» (2026-11-04, the players'
+    /// ask: the bag screen, the trail bag, the warehouse's «взяти в сумку» and
+    /// the trader's «купити» questions) and behind the two refusals that answer
+    /// those questions, so a prompt and the refusal under it quote one number.
+    /// A developer's bag has no real ceiling; this still reads the cap.
+    public static func freeSlots(used: Int, for user: User) -> Int {
+        max(0, slotCap(for: user) - used)
+    }
+
+    /// `freeSlots(used:for:)` for a screen that has not counted the bag itself.
+    public static func freeSlots(for user: User, on db: any Database) async throws -> Int {
+        freeSlots(used: try await slotsUsed(for: user, on: db), for: user)
+    }
+
     /// True if adding `quantity` units of the item would fit. Per-unit
     /// counting means stackable and non-stackable items follow the same
     /// rule: `used + quantity <= cap`. Developer accounts always accept.

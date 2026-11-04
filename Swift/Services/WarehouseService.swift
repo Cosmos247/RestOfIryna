@@ -383,10 +383,9 @@ public enum WarehouseService {
         }
 
         // Destination preflight — refuse if backpack can't fit. Dev accounts
-        // bypass the cap, mirroring `InventoryEntry.add` semantics.
-        let cap = InventoryEntry.slotCap(for: user)
-        let used = try await InventoryEntry.slotsUsed(for: user, on: db)
-        let free = user.isDeveloper ? Int.max : max(0, cap - used)
+        // bypass the cap, mirroring `InventoryEntry.add` semantics. Anyone else
+        // is told the number the take question quoted, «(вільно N)» (2026-11-04).
+        let free = user.isDeveloper ? Int.max : try await InventoryEntry.freeSlots(for: user, on: db)
         guard free >= quantity else {
             return .inventoryFull(free: free)
         }
@@ -405,8 +404,8 @@ public enum WarehouseService {
                     let left = try await WarehouseEntry.totalQuantity(of: itemId, for: userId, on: db)
                     return .notEnoughInWarehouse(available: left)
                 case .inventoryFull:
-                    let usedNow = try await InventoryEntry.slotsUsed(for: user, on: db)
-                    return .inventoryFull(free: max(0, InventoryEntry.slotCap(for: user) - usedNow))
+                    // The number «(вільно N)» quoted in the question (2026-11-04).
+                    return .inventoryFull(free: try await InventoryEntry.freeSlots(for: user, on: db))
                 }
             }
             return .success

@@ -21,6 +21,12 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-04, later — the bag's free room** (Swift + uk/en, NOT live, the same restart; no content change, no
+migration). The players' ask: «(вільно N)» on the bag screen («5/35 слотів (вільно 30)»), the trail bag and the
+warehouse's «Скільки бажаєте взяти в сумку?», and «(у 🎒 вільно N)» in the trader's «Скільки «…» купити?» — the name
+quoted in «купити» and «продати» (the owner's picks; «покласти на склад» untouched). `InventoryEntry.freeSlots` is
+the one reading, the warehouse's and the trader's refusals included.
+
 **2026-11-04 — the kitchen cooks several at once** (Swift + uk/en + tests, NOT live, the same restart as the hazel; no
 content change, no migration). A dish's card offers «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати» (the owner's pick: no
 ×10, the workshop one at a time); `CraftMath` (ROISim) is the one arithmetic for the buttons, the tap's re-check and the

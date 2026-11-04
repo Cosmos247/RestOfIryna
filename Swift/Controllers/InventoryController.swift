@@ -205,7 +205,12 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
         let slotsLabel = lingo.localize("inventory.slots_label", locale: locale)
         let cap = InventoryEntry.slotCap(for: session)
-        var header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel)</i>"
+        // «(вільно 30)» after the count (2026-11-04, the players' ask) — the
+        // trail bag's header says the same, from the same reading.
+        let free = lingo.localize("inventory.free", locale: locale, interpolations: [
+            "free": "\(InventoryEntry.freeSlots(used: slotsUsed, for: session))"
+        ])
+        var header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel) (\(free))</i>"
         // Said on the screen before a tap is refused (`passiveRun(holding:)`).
         if locked {
             header += "\n\n🏕 " + lingo.localize("exploration.passive.bag_locked", gender: session.gender, locale: locale)

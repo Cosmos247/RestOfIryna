@@ -731,7 +731,9 @@ modal go through it, so a screen and the modal that refuses the same tap cannot 
 number two ways. **Every question that spends silver ends with `RequirementLine.silver`**
 (2026-10-11): the question replaces the caption that held the balance. **⛔ is retired.** **Current-against-maximum is a DIFFERENT sentence** —
 durability `0/100`, the bag `18/25`, a plot `40/40` — and must not grow a ✅/❌: a full bag is
-not a failed requirement. Auto-memory `project-requirement-line-one-format`.
+not a failed requirement. A screen or refusal that quotes the bag's room left reads
+`InventoryEntry.freeSlots` («вільно N», 2026-11-04); eight older refusals and `unitsThatFit` still hand-roll it. Auto-memory `project-requirement-line-one-format`,
+`project-bag-free-room`.
 
 **And the shortage modal is CAPPED at 200 UTF-16 units, because Telegram refuses a longer
 `answerCallbackQuery` outright and every call site swallows that with `try?`** — an overflow

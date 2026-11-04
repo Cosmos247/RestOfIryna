@@ -2160,6 +2160,17 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-04, later — the bag's free room (NOT LIVE: Swift + uk/en, the same restart as the hazel; no migration,
+the digest unchanged):**
+- [ ] 🎒 Сумка, at the estate and in town: «🎒 Сумка  5/35 слотів (вільно 30)» — the cap less what is carried, worn
+      gear not counted.
+- [ ] On the forest trail the bag reads «🎒 Сумка (5/35, вільно 30)»; it moves with every find and meal.
+- [ ] Склад → a stack's card → «⬇️ ✏️»: «Скільки бажаєте взяти в сумку? (вільно 30)»; type more than fits → «❌ Не
+      вміститься, у сумці місця на 30.» — the same number. An old «✏️ N» → «Куди?» → «⬇️ У сумку» left in chat asks
+      the same. «⬆️ ✏️» still reads «Скільки покласти на склад?».
+- [ ] Крамар → buy: «Скільки «Лісові ягоди» купити? (у 🎒 вільно 30)» (the 🎒 drawn, no raw `%{…}`); type a letter → the
+      question again, number and all, with «❌ Введіть додатне число». Sell: «Скільки «Лісові ягоди» продати?».
+
 **Added 2026-11-04 — the kitchen cooks several at once (NOT LIVE: Swift + uk/en, the same restart as the hazel; no
 migration, the digest unchanged):**
 - [ ] 🍳 Кухня → «🍠 Печена картопля» with 7 🥔 and 12 🪵 between the bag and the warehouse: a column, a button a

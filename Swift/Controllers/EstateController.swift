@@ -1624,26 +1624,47 @@ extension EstateController {
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
             return true
         }
-        let promptKey = isPut ? "estate.warehouse.deposit_n.prompt" : "estate.warehouse.withdraw_n.prompt"
         let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
-        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
-            chatId: .chat(message.chat.id),
-            text: context.lingo.localize(promptKey, locale: locale),
-            parseMode: .html,
-            replyMarkup: .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[
-                TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
-            ]]))
-        ))
-        await EphemeralChatState.shared.setPendingWarehouseTransfer(
-            telegramId: context.session.telegramId,
-            itemId: itemId,
-            promptMessageId: sent.messageId,
-            warehouseMessageId: message.messageId,
-            warehouseIsPhoto: message.getMessage()?.photo != nil,
-            direction: isPut ? .put : .take
-        )
+        // The silent ack comes last, so a throw on the way is answered here.
+        do {
+            let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+                chatId: .chat(message.chat.id),
+                text: try await warehousePrompt(isPut: isPut, context: context),
+                parseMode: .html,
+                replyMarkup: .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: [[
+                    TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")
+                ]]))
+            ))
+            await EphemeralChatState.shared.setPendingWarehouseTransfer(
+                telegramId: context.session.telegramId,
+                itemId: itemId,
+                promptMessageId: sent.messageId,
+                warehouseMessageId: message.messageId,
+                warehouseIsPhoto: message.getMessage()?.photo != nil,
+                direction: isPut ? .put : .take
+            )
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
         _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
         return true
+    }
+
+    /// The warehouse's quantity question, phrased once for both ways in — the
+    /// card's «⬇️ ✏️» / «⬆️ ✏️» and the older «✏️ N» → «Куди?». Taking says how
+    /// much room the bag has, «(вільно 30)» (2026-11-04, the players' ask), read
+    /// by the same `InventoryEntry.freeSlots` as the refusal «Не вміститься, у
+    /// сумці місця на N»; putting away is unchanged (the owner: «Не чіпати»).
+    private static func warehousePrompt(isPut: Bool, context: Context) async throws -> String {
+        let locale = context.session.locale
+        guard !isPut else {
+            return context.lingo.localize("estate.warehouse.deposit_n.prompt", locale: locale)
+        }
+        let free = try await InventoryEntry.freeSlots(for: context.session, on: context.db)
+        return context.lingo.localize("estate.warehouse.withdraw_n.prompt", locale: locale, interpolations: [
+            "free": context.lingo.localize("inventory.free", locale: locale, interpolations: ["free": "\(free)"])
+        ])
     }
 
     /// `estate:wh:wear:<rowId>` — «🛡 Одягнути» on a gear card in the
@@ -1969,15 +1990,8 @@ extension EstateController {
         let locale = context.session.locale
         let telegramId = context.session.telegramId
 
-        let direction: EphemeralChatState.PendingWarehouseTransfer.Direction
-        let promptKey: String
-        if data.hasPrefix("estate:wh:transferPut:") {
-            direction = .put
-            promptKey = "estate.warehouse.deposit_n.prompt"
-        } else {
-            direction = .take
-            promptKey = "estate.warehouse.withdraw_n.prompt"
-        }
+        let direction: EphemeralChatState.PendingWarehouseTransfer.Direction =
+            data.hasPrefix("estate:wh:transferPut:") ? .put : .take
 
         // Guard against a stale tap on a cancelled prompt — the pending entry
         // may already be gone if the player double-cancelled or the state
@@ -2005,7 +2019,13 @@ extension EstateController {
             return true
         }
 
-        let promptText = context.lingo.localize(promptKey, locale: locale)
+        let promptText: String
+        do {
+            promptText = try await warehousePrompt(isPut: direction == .put, context: context)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
         let cancelLabel = "❌ " + context.lingo.localize("estate.warehouse.withdraw_n.cancel_button", locale: locale)
         let inline = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: cancelLabel, callbackData: "estate:wh:cancelN")

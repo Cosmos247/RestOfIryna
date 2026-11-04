@@ -2417,6 +2417,31 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         try await editToSellItems(category: category, messageId: traderScreenMessageId, isPhoto: isPhoto, context: context)
     }
 
+    /// The trader's quantity question, phrased once for the prompt and for its
+    /// redraw after a bad number (2026-11-04, the owner's picks). The name sits
+    /// in quotes — «Скільки «Лісові ягоди» купити?» — because content stores one
+    /// form of it, as the market, the exchange and the guild vault already
+    /// quote theirs. Buying says how much room the bag has, «(у 🎒 вільно 30)»
+    /// (the players' ask), from the same `InventoryEntry.freeSlots` as the
+    /// trader's «bag full» refusal.
+    fileprivate func traderPromptText(direction: EphemeralChatState.PendingTraderTransfer.Direction,
+                                      itemId: String, context: Context) async throws -> String {
+        let lingo = context.lingo
+        let locale = context.session.locale
+        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
+        guard direction == .buy else {
+            return lingo.localize("capital.trader.bulkN.sell_prompt", locale: locale, interpolations: ["item": itemName])
+        }
+        let free = try await InventoryEntry.freeSlots(for: context.session, on: context.db)
+        return lingo.localize("capital.trader.bulkN.buy_prompt", locale: locale, interpolations: [
+            "item": itemName,
+            // The icon rides in as a value: 🎒 written ahead of `%{free}` breaks
+            // Lingo's interpolation.
+            "bag_icon": "🎒",
+            "free": lingo.localize("inventory.free", locale: locale, interpolations: ["free": "\(free)"])
+        ])
+    }
+
     /// Send the "Скільки X?" prompt + cancel button, stash pending state
     /// so the next text update from this user is treated as the typed
     /// quantity. Direction (sell/buy) controls both the prompt wording
@@ -2424,9 +2449,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     fileprivate func openTraderBulkPrompt(direction: EphemeralChatState.PendingTraderTransfer.Direction, itemId: String, traderScreenMessageId: Int, isPhoto: Bool, context: Context) async throws {
         let lingo = context.lingo
         let locale = context.session.locale
-        let itemName = ItemCatalog.find(itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? itemId
-        let promptKey = direction == .sell ? "capital.trader.bulkN.sell_prompt" : "capital.trader.bulkN.buy_prompt"
-        var promptText = lingo.localize(promptKey, locale: locale, interpolations: ["item": itemName])
+        var promptText = try await traderPromptText(direction: direction, itemId: itemId, context: context)
 
         if direction == .sell {
             promptText += await questWarningSuffix(itemId: itemId, context: context)
@@ -2483,9 +2506,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         guard let quantity = Int(trimmed), quantity > 0 else {
             // Invalid — edit prompt with error, keep pending so the
             // next typed message retries.
-            let itemName = ItemCatalog.find(pending.itemId).map { lingo.localize($0.nameKey, locale: locale) } ?? pending.itemId
-            let promptKey = pending.direction == .sell ? "capital.trader.bulkN.sell_prompt" : "capital.trader.bulkN.buy_prompt"
-            let promptText = lingo.localize(promptKey, locale: locale, interpolations: ["item": itemName])
+            let promptText = try await traderPromptText(direction: pending.direction, itemId: pending.itemId, context: context)
             let invalidText = lingo.localize("capital.trader.bulkN.invalid_number", locale: locale)
             let cancelLabel = lingo.localize("capital.trader.bulkN.cancel", locale: locale)
             let kb = TGInlineKeyboardMarkup(inlineKeyboard: [[

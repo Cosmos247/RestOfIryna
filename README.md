@@ -775,6 +775,9 @@ card, `266d28e`, waits for the same restart):
 - the kitchen cooks several at once: a dish's card carries «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати», counted
   from the ingredients and the room in the bag and the warehouse; a bag that fills mid-batch sends the rest to the
   warehouse and the banner says how many went where. The workshop still makes one at a time (2026-11-04).
+- the bag says how much room is left: «🎒 Сумка  5/35 слотів (вільно 30)», «(5/35, вільно 30)» on the forest trail,
+  «(вільно 30)» when the warehouse asks how many to take, and «(у 🎒 вільно 30)» when the trader asks how many to
+  buy — the trader's questions quote the item's name (2026-11-04, the players' ask).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

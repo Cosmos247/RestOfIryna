@@ -741,7 +741,11 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         // here to eat and make room with.
         let slotsUsed = entries.filter { $0.equippedSlot == nil }.reduce(0) { $0 + $1.quantity }
         let cap = InventoryEntry.slotCap(for: context.session)
-        let header = "🎒 <b>\(title)</b> (\(slotsUsed)/\(cap))"
+        // And the room left, as the bag screen says it (2026-11-04).
+        let free = lingo.localize("inventory.free", locale: locale, interpolations: [
+            "free": "\(InventoryEntry.freeSlots(used: slotsUsed, for: context.session))"
+        ])
+        let header = "🎒 <b>\(title)</b> (\(slotsUsed)/\(cap), \(free))"
 
         if sorted.isEmpty {
             let empty = lingo.localize("exploration.bag.empty", locale: locale)
