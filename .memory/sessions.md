@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 11-02)
+## Commit index — live-play polish and after (2026-09-09 → 11-04)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-02)* **the autumn capital map, and `3384600`'s hash fill** — a picture, NOT deployed (no build
+- *(this commit, 11-04)* **the kitchen cooks several at once, and `f49a6f1`'s hash fill** — Swift + uk/en + tests,
+  NOT deployed (no migration, the digest unchanged; the hazel's restart carries it): «🍳 ×5» and «🍳 Усі (N)» on a
+  kitchen card (`CraftMath` in ROISim, `CraftingService.craft(_:times:)` in ONE transaction, `batchOffer`,
+  `handleCraftBatch`), `kitchen.alert.cooked_split`; the Vigor-cost variants recorded, not built. 539 tests.
+- `f49a6f1` (11-02) **the autumn capital map, and `3384600`'s hash fill** — a picture, NOT deployed (no build
   needed for it alone; the hazel's restart carries it): the owner's autumn map in `Assets/capital/welcome.jpg`,
   `street_castle.jpg`, `street_lower.jpg` (one file, md5 `35a245b4…`, 1024×680), «Палац» over the castle.
 - `3384600` (11-02) **the 🩸 blood board only while a holiday is open** — Swift, NOT deployed (no migration, the
@@ -970,7 +974,52 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-02 (the 🩸 blood board only while a holiday is open; the autumn capital map) — `3384600` · *(this commit)*
+## Session — 2026-11-03 → 11-04 (cheaper Vigor computed and put off; the kitchen cooks several at once) — *(this commit)*
+
+**Asked, 11-03** (the owner): «Хочу зменшити витрату снаги. Покажи як зараз витрачається снага.» Shown the prices, the
+pool and the fights off the Pi, then «Порахуй варіанти: крок 1 і атака 1, втеча і прийоми 2 для всіх». **Computed** on
+scratch copies of `content/data` (`simulate` / `spec opening --content`) and on the logged fights re-priced from their
+taps and techniques; nothing changed in the tree. The owner's variant: L1 to km 5 and back 45 → 27 Vigor, L10–14 to
+km 10 89 → 47, the pace 136–151 → 68–76 days (`pace.too_fast` for the mage), taps a day ~800 → ~1,360, the opening at
+km 1 −286 → +47. **Found:** at a step of 1 finds pay for the walk — a km entered a third time has no fights and finds
+on 23% of steps (≈0.84 Vigor raw, ≈1.2 cooked per step), so pacing refills the pool; and the Chariot's / Hanged Man's
+×0.5 rounds a base of 1 back to 1. The quiz (the owner's prices + that tier's finds 23% → 10% / as is / step kept 2)
+was rejected with «Поки відкладемо це і перейдемо до більш маленьких задач». Recorded in `TODO.md` → Open and
+auto-memory `project-vigor-cost-variants`.
+
+**Asked, 11-04:** «Як зараз виглядає приготування їжі на кухні? Хочу додати можливість робити декілька страв за раз,
+як це можна реалізувати?» Shown the card and the one-dish tap (seven baked potatoes = seven taps), then asked: the
+shape (one «Готувати всі (N)» — recommended, the bag's «Зʼїсти всі (N)»; the same with a confirmation; ×5 / ×10 /
+Усі (N)) and where (the kitchen — recommended; or the workshop's ingot too). **The owner:** «Кнопки х5 та Усі (),
+кнопка х10 не потрібна» and «Лише кухня». A typed number was not offered (the eat prompt's 10-12 rollback).
+
+**Built:** `Modules/ROISim/CraftMath.swift` — the craft arithmetic made N times larger (bag first, the room after the
+whole drain in units, whole dishes to the bag while they fit and the rest to the warehouse, a developer's bag
+unbounded); one dish is N = 1 and keeps the old rule. «×5» is offered only when five plan on their own AND more fit —
+never a twin of «Усі (5)», and over-full stores can fit seven where five do not. `CraftingService.craft(_:times:)`
+writes the drains and the output in ONE transaction (none until now; a batch would lose N of each), counts `times`
+for the King's `dishCooked`; `batchOffer` serves the card and the tap's re-check. `EstateController`: the kitchen card's
+«🍳 Готувати», «🍳 ×5», «🍳 Усі (N)» a row each — first built in one row, then «Постав кнопки в стовпчик
+одразу» (the owner) — `craft:n:` / `craft:all:` ahead of the bare `craft:`, a count no longer
+offered redraws the card (the bag's rule), `finishCraft` the one answer with the split banner «— K у сумку 🎒, M на
+склад 📦» (the icons passed as values — 🎒 before `%{warehouse}` breaks Lingo), both handlers answering in a `catch`.
+
+**Checked:** the three Swift files force-recompiled, 0 warnings; 539 tests (13 new in `CraftMathTests`; a «≥ preset»
+and a warehouse-first mutant fail three); `validate --strict` 0/0; the digest unchanged (`records 4f4dcf860af8605f`,
+COMBINED `d0b897ae80619502`); the new templates carry no two-unit character ahead of a placeholder; `git diff
+--check` clean. **Not touched, said:** `simulate` still counts two taps per portion (cook, eat) — `TODO.md` → Open.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… репорт і зроби коміт», 11-04): the four Swift files
+(`CraftMath`, `CraftingService`, `EstateController`, `CraftMathTests`) force-recompiled under bash, 0 warnings; 539
+tests; `validate --strict` 0/0; the digest as the tree's (`records 4f4dcf860af8605f`, COMBINED `d0b897ae80619502`);
+`git diff --check` clean; `main` 8 ahead of `origin/main` = `b04bef3`. Checked in the code: `InventoryEntry.add` asks
+the bag's room on the transaction after the drains, with the same developer bypass the plan has; `WarehouseEntry.add`
+checks no ceiling, so the plan is the warehouse's one guard, as the old check was; the King's counter is `min(target,
+counter + N)`; `recipeDetailKeyboard` has one caller and the workshop's recipe gets `.none`. **Found and fixed:** the
+service's header and `CraftDestination`'s doc still said a craft reports one destination (only salvage uses the
+enum now), and the file map said the same.
+
+## Session — 2026-11-02 (the 🩸 blood board only while a holiday is open; the autumn capital map) — `3384600` · `f49a6f1`
 
 **Asked** (the owner): «Я хотів прибрати до наступного великого патчу рейтинг крові. Зроби це і видали запис з туду
 листа» — the 11-01 evening Open item, which said to ask first whether a future holiday shows the tab while it is open or
@@ -1000,7 +1049,7 @@ walk line promised «🥇 1-ше місце» to every flask-holder — only the
 the service's header still said «five boards» and never named the blood one; README's not-deployed list and
 `status.md` did not have the change; the auto-memory (`project-veles-night-event`) now does.
 
-**Later, the evening — the autumn capital map** *(this commit)*. The owner: «Онови зображення на екранах столиці та
+**Later, the evening — the autumn capital map** (`f49a6f1`). The owner: «Онови зображення на екранах столиці та
 вулиць на цю картинку» — the same map with its labels, dressed for autumn (orange trees, pumpkins at the gate). The
 square and the two streets share ONE file in three slots (`Assets/capital/welcome.jpg`, `street_castle.jpg`,
 `street_lower.jpg`, all md5 `6512aa79…` before), so all three were replaced (now `35a245b4…`, 1024×680 against

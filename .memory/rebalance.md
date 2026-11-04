@@ -2239,7 +2239,9 @@ Three findings, all acted on except the one deliberately deferred:
   a pool that grows: the best dish in the game is 33% of a level-1 pool and 12%
   of a level-40 one — the same defect Phase 6 removed from items and 8C and 8D
   from techniques, now sitting in the whole economy. Left alone on purpose:
-  batch cooking is the alternative fix and both are post-rebalance decisions.
+  batch cooking is the alternative fix and both are post-rebalance decisions. *(Batch
+  cooking BUILT 2026-11-04 — the kitchen's «🍳 ×5» / «🍳 Усі (N)», a tap saver; the flat
+  restore itself is unchanged.)*
   (Since the 09-18 repricing the best dish, the Feast, is 69% of a level-1 pool and
   24% of a level-40 one.)
   The report warns every run (`balance.portion_rots`) so it cannot be forgotten.

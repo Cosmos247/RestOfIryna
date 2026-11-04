@@ -566,11 +566,14 @@ four warehouse checks (it remains on the BAG, a different ceiling). Auto-memory
 
 **A fit check must be the SAME arithmetic as the writer it is predicting, in the same
 units, for EVERY store the write could land in.** `InventoryEntry.add` counts UNITS and throws
-when it will not fit, and a craft drains before it adds, with no transaction — so a wrong
-prediction eats the ingredients. Copy `TradeService`: `used − outgoing + incoming ≤ cap`, in
-units, with the dev bypass matching the writer's. A full bag is not a refusal to craft — the
-output goes to the warehouse and the banner names where it landed. Auto-memory
-`project-fit-check-matches-the-writer`.
+when it will not fit, and a craft drains before it adds — so a wrong prediction ate the
+ingredients until 2026-11-04, and inside today's one transaction it throws the tap away
+instead. Copy `TradeService`: `used − outgoing + incoming ≤ cap`, in units, with the dev
+bypass matching the writer's. A full bag is not a refusal to craft — the output goes to the
+warehouse and the banner names where it landed. **The kitchen cooks several at once**
+(«🍳 ×5» / «🍳 Усі (N)», the owner's pick; the workshop one at a time): `CraftMath` is the
+one arithmetic for the card's buttons, the tap's re-check and the write, and one dish is
+N = 1 of it. Auto-memory `project-fit-check-matches-the-writer`, `project-kitchen-batch-cook`.
 
 **What a place can draw on is where it stands.** The Master is in the capital, which has no
 warehouse, so his lesson and his enchant count and take materials from the BAG alone; the

@@ -906,7 +906,8 @@ Full plan: `~/.claude/plans/roi-session-primer-eventual-wirth.md`
       grows (the best dish is 33% of a level-1 pool and 12% of a level-40 one; the Feast is 69% and
       24% since the 09-18 repricing) — the same
       defect as the stances, now in the whole economy; deferred with batch cooking to after the
-      rebalance, and warned about every run. And levels 1–3 have no estate at all, which is a
+      rebalance, and warned about every run. *(Batch cooking BUILT 2026-11-04 as the kitchen's «🍳 ×5» /
+      «🍳 Усі (N)» — it saves taps; the flat restore still stands.)* And levels 1–3 have no estate at all, which is a
       feature: the first days are lived off the trail, and it gives the estate a reason to exist.
       · **`zones.json`** — the foraging pools left `ExplorationService.rollLoot` (two arrays and
       a nested ternary), the last content in Swift. **Proved equivalent by replaying the shipped
@@ -2159,6 +2160,20 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-04 — the kitchen cooks several at once (NOT LIVE: Swift + uk/en, the same restart as the hazel; no
+migration, the digest unchanged):**
+- [ ] 🍳 Кухня → «🍠 Печена картопля» with 7 🥔 and 12 🪵 between the bag and the warehouse: a column, a button a
+      row — «🍳 Готувати», «🍳 ×5», «🍳 Усі (7)», then «📌 У нотатник» and «🔙 Назад». Five possible: only «🍳 Усі (5)»
+      under «🍳 Готувати»; one possible: «🍳 Готувати» alone.
+- [ ] «🍳 Усі (7)» → «✅ Приготовано 7× 🍠 Печена картопля — у сумку 🎒», the card redrawn at «❌ 1× 🥔 Картопля
+      (0/1)» with no batch buttons. «🍳 ×5» cooks five and the card offers what is left.
+- [ ] A bag that fills during a batch: «✅ Приготовано N× … — K у сумку 🎒, M на склад 📦», every icon drawn (no raw
+      `%{…}`).
+- [ ] Eat a potato with the card still open, then tap its old «🍳 Усі (N)»: the card redraws with the new count and
+      nothing is cooked.
+- [ ] 🛠 Майстерня → «🔳 Залізний злиток»: «🔨 Створити» alone, one at a time (the owner's «Лише кухня»).
+- [ ] At level 4 «Вогонь у печі» (cook a dish) is answered by a batch as by one dish.
+
 **Added 2026-11-02, evening — the autumn capital map (NOT LIVE: a picture only, the same restart as the hazel):**
 - [ ] 🏛 Столиця (the square), «👑 Замкова» and «🏘 Поділ» each show the autumn map with pumpkins, the castle labelled
       «Палац» (the green map said «Корона») — the owner's picture, one file in three slots (`welcome`, `street_castle`,
@@ -3340,6 +3355,22 @@ in the capital, one challenging the other.
 
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
+
+**From the 2026-11-03 → 11-04 sessions:**
+- **Cheaper Vigor — computed, then PUT OFF by the owner** («Поки відкладемо це», 11-04, before answering which to
+  build). The owner's variant: step 1, attack 1, flee 2 (the mage's +2 gone), every technique 2, the autobattle round 1
+  (parity with the attack). Measured on scratch copies, nothing changed in the tree: an L1 walk to km 5 and back 45 → 27
+  Vigor, L10–14 to km 10 89 → 47; `simulate`'s pace 136–151 → 68–76 days (`pace.too_fast` fires for the mage at 68),
+  taps a day ~800 → ~1,360, and `opening.shallow_is_bankrupt` goes (km 1 −286 → +47). **The finding to carry: at a
+  step of 1 the walk pays for itself in finds** — a km entered a third time has no fights and finds on 23% of steps,
+  ≈0.84 Vigor raw / ≈1.2 cooked per step, so pacing over cleared ground refills the pool (the trickle Phase 8E
+  removed); the offered fix was that tier's find rate 23% → 10%. The step-2 alternative (fights cheap only): 45 → 36,
+  89 → 66, 82–89 days, the opening still −106 at km 1. Also: with base costs of 1 the Chariot's and the Hanged Man's
+  ×0.5 rounds back to 1, so the cards would save nothing on a step or an attack. Full numbers: auto-memory
+  `project-vigor-cost-variants`.
+- **`simulate` still counts two taps per portion** («cook it, then eat it», `BalanceFormatter`'s pace), stale since the
+  bag's «Зʼїсти всі (N)» (11-01) and the kitchen's «🍳 Усі (N)» (11-04): `taps/day` and `pace.food_taps_dominate`
+  overstate the food loop. Not changed — the pace table's numbers sit in the spec blocks.
 
 **From the 2026-11-01 session (past midnight):**
 - ~~**Велесова ніч's prizes, handed out at the palace — decided, NOT built**~~ — BUILT 2026-11-01 on «Давай зробимо фінал

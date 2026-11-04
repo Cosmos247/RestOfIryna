@@ -267,7 +267,7 @@ RestOfIryna/
 │   │   ├── KingService.swift    # 2026-09-21 — the King's decree chain engine. 11 of the 18 condition kinds are LIVE STATE READS (`build_training_ground` joined them 2026-09-27) (depth, level, estate/weapon/bag tier, warehouse shelf, plot claimed, technique learned, duel won), so a decree cannot drift out of step with the thing it is about; the other 7 are events nothing records and tick `KingProgress.counter` through `record`, which fires ONLY when the open decree is the one asking. A harvest is an event, not a state — `Plot.lastHarvestedAt` starts at claim time and resets on every harvest. Turn-in is all-or-nothing and predicts the food's bag fit in the WRITER's units before mutating anything; the counter tick is a targeted guarded UPDATE, because it also runs from the passive expedition's detached sweep Since 2026-10-04 `Payout.vigorLost`, and `readyUnannounced` / `markAnnounced` for the watchman's task-ready notice.
 │   │   ├── TrainingGroundService.swift # 2026-09-27 — build/raise the house's Training Ground: T4 gate → level → player floor → silver → materials → teach → catch up
 │   │   ├── PlotProductionService.swift # Phase 5.1 — single Task.detached ticker; pushes "ready to harvest" notifications when plot caps are reached
-│   │   ├── CraftingService.swift # Phase 5.2 — pure: craft(_:for:on:) drains inputs from combined inventory+warehouse pool (inventory first), deposits output into inventory; CraftResult enum + Shortage struct for the modal alert
+│   │   ├── CraftingService.swift # Phase 5.2 — craft(_:times:for:on:) drains inputs from combined inventory+warehouse pool (inventory first) and puts the output in the bag, the warehouse once the bag is full — one transaction, the arithmetic `CraftMath` (2026-11-04: the kitchen's batches, `batchOffer`); CraftResult enum + Shortage struct for the modal alert
 │   │   ├── RecipeNoteService.swift # 2026-10-10 — the journal's recipe notes: `toggle` (pin / unpin, 3 at most → `.full`), `remove` (the «❌»), `isPinned` (a card's button), and `live` — every reader's door, which asks the player's rows and DELETES what is finished (a reached tier/level, an enchanted or gone piece, content a reload removed). The one event, a craft, is cleared by `recipeMade` from `CraftingService.craft`
 │   │   ├── ZlatnykService.swift # 2026-10-11 — the zlatnyk balance, read from the database on every screen and deliberately NOT a field of `User`: the owner credits it by hand in DBeaver, and the session cache would show a stale number. `balance(of:on:)` (the profile), `unannounced(on:)` + `markAnnounced(_:on:)` (the watchman: the marker moves BY the difference read). `spend` is ONE statement taking from both columns, run inside the purchase's transaction
 │   │   ├── ClassChangeService.swift # 2026-10-11 — the Treasury's class change: `apply` (the one transformation: class, stat line, the weapon reforged at its tier and wear, bonuses), `preview` (that, on a stand-in) and `perform` (ONE transaction: class asked, spend, rows, notes, log; refused in an arena duel)
@@ -756,7 +756,7 @@ one database migration, `AddExplorationHaul`):
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
 - a coop's build banner agrees with its noun: «🐔 Курник закладений на слоті N.» (it said «закладена»).
 
-**Built 2026-11-01 → 11-02, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
+**Built 2026-11-01 → 11-04, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
 card, `266d28e`, waits for the same restart):
 - every estate starts with **the hazel** («🌳 Ліщина»): a plot in slot 1 that the player never chooses or
   builds, planted ripe when the estate is named, growing a forest nut an hour and holding five
@@ -772,6 +772,9 @@ card, `266d28e`, waits for the same restart):
   (it stayed after Велесова ніч closed). The flasks and the palace's prizes are untouched.
 - the capital's map on the square and both streets is the autumn one — orange trees, pumpkins at the gate, the
   castle labelled «Палац» (2026-11-02).
+- the kitchen cooks several at once: a dish's card carries «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати», counted
+  from the ingredients and the room in the bag and the warehouse; a bag that fills mid-batch sends the rest to the
+  warehouse and the banner says how many went where. The workshop still makes one at a time (2026-11-04).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

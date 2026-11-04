@@ -21,6 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-04 — the kitchen cooks several at once** (Swift + uk/en + tests, NOT live, the same restart as the hazel; no
+content change, no migration). A dish's card offers «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати» (the owner's pick: no
+×10, the workshop one at a time); `CraftMath` (ROISim) is the one arithmetic for the buttons, the tap's re-check and the
+write, and `CraftingService.craft(_:times:)` writes in ONE transaction. A batch that fills the bag puts the rest on the
+warehouse and the banner names both. 539 tests (`CraftMathTests`). **Cheaper Vigor** was computed 11-03 and put off by
+the owner on 11-04 (`TODO.md` → Open).
+
 **2026-11-02 — the 🩸 blood board only while a holiday is open** (Swift, NOT live, the same restart as the hazel; no
 content change, no migration). `LeaderboardBoard.isShown`: the «🩸 Кров для Короля» tab is drawn while
 `EventCatalog.open` answers and a stale `lb:bld` opens `.level` (the owner — it used to stay after the close,

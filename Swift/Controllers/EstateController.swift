@@ -1005,17 +1005,33 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 
-    /// Detail-screen keyboard — primary action (Craft / Cook), the journal's
-    /// «📌», Back-to-room. Action verb and back target both come from
-    /// `recipe.category` so the same keyboard works for Workshop and Kitchen.
-    fileprivate func recipeDetailKeyboard(recipe: Recipe, pinned: Bool, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
+    /// Detail-screen keyboard — primary action (Craft / Cook), the kitchen's
+    /// batches beside it, the journal's «📌», Back-to-room. Action verb and back
+    /// target both come from `recipe.category` so the same keyboard works for
+    /// Workshop and Kitchen; `offer` is `.none` for the workshop.
+    fileprivate func recipeDetailKeyboard(recipe: Recipe, pinned: Bool, offer: CraftMath.Offer,
+                                          lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let action = lingo.localize(recipe.category.actionButtonKey, locale: locale)
         let back = lingo.localize("workshop.detail.button.back", locale: locale)
-        return TGInlineKeyboardMarkup(inlineKeyboard: [
-            [TGInlineKeyboardButton(text: action, callbackData: "craft:\(recipe.id)")],
-            RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "craft:pin:\(recipe.id)", lingo: lingo, locale: locale),
-            [TGInlineKeyboardButton(text: back,   callbackData: recipe.category.backCallbackData)]
-        ])
+        var rows = [[TGInlineKeyboardButton(text: action, callbackData: "craft:\(recipe.id)")]]
+        // «🍳 ×5» and «🍳 Усі (N)» (2026-11-04, the owner's pick), each on a row
+        // of its own under the plain button — a column, on the owner's word
+        // («Постав кнопки в стовпчик»), not the bag's one row. The 🍳 is
+        // prepended here: a two-unit emoji ahead of `%{count}` breaks Lingo's
+        // interpolation.
+        if let preset = offer.preset {
+            let label = lingo.localize("kitchen.detail.button.cook_n", locale: locale,
+                                       interpolations: ["count": "\(preset)"])
+            rows.append([TGInlineKeyboardButton(text: "🍳 \(label)", callbackData: "craft:n:\(recipe.id):\(preset)")])
+        }
+        if let all = offer.all {
+            let label = lingo.localize("kitchen.detail.button.cook_all", locale: locale,
+                                       interpolations: ["count": "\(all)"])
+            rows.append([TGInlineKeyboardButton(text: "🍳 \(label)", callbackData: "craft:all:\(recipe.id):\(all)")])
+        }
+        rows.append(RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "craft:pin:\(recipe.id)", lingo: lingo, locale: locale))
+        rows.append([TGInlineKeyboardButton(text: back, callbackData: recipe.category.backCallbackData)])
+        return TGInlineKeyboardMarkup(inlineKeyboard: rows)
     }
 
     // MARK: - Kitchen (Phase 5.2.1)
@@ -1075,13 +1091,16 @@ extension EstateController {
         if data.hasPrefix("combat:") {
             return try await CombatController.onCallbackQuery(context: context)
         }
-        // Phase 5.2 Workshop crafting. Two callbacks live outside the `estate:`
+        // Phase 5.2 Workshop crafting. These callbacks live outside the `estate:`
         // namespace so they must be matched BEFORE the prefix guard below:
-        //   craft:detail:<recipe.id>  — opens the recipe's detail screen
-        //   craft:<recipe.id>         — performs the craft (issued from the
-        //                               detail screen's [🔨 Craft] button)
+        //   craft:detail:<recipe.id>        — opens the recipe's detail screen
+        //   craft:n:<recipe.id>:<count>     — the kitchen's «🍳 ×5» (2026-11-04)
+        //   craft:all:<recipe.id>:<count>   — the kitchen's «🍳 Усі (N)»
+        //   craft:<recipe.id>               — performs one craft (issued from the
+        //                                     detail screen's [🔨 Craft] button)
         // The journal's «📌» on the estate's price cards (2026-10-10) — each in
-        // its card's namespace, so `craft:pin:` goes ahead of the bare `craft:`.
+        // its card's namespace, so `craft:pin:` goes ahead of the bare `craft:`,
+        // and so do the two batches.
         if data.hasPrefix("craft:pin:") {
             return try await handleCraftPin(data: data, query: query, message: message, context: context)
         }
@@ -1090,6 +1109,9 @@ extension EstateController {
         }
         if data.hasPrefix("craft:detail:") {
             return try await handleCraftDetail(data: data, query: query, message: message, context: context)
+        }
+        if data.hasPrefix("craft:n:") || data.hasPrefix("craft:all:") {
+            return try await handleCraftBatch(data: data, query: query, message: message, context: context)
         }
         if data.hasPrefix("craft:") {
             return try await handleCraft(data: data, query: query, message: message, context: context)
@@ -2778,8 +2800,14 @@ extension EstateController {
         let locale = context.session.locale
         let stock = try await CraftingService.stock(for: context.session, on: context.db)
         let pinned = try await RecipeNoteService.isPinned(.recipe(recipe.id), for: context.session, on: context.db)
+        // Only the kitchen cooks several at once (2026-11-04, the owner's pick),
+        // and its count is read off the same stock the ingredient lines quote.
+        let offer = recipe.category == .kitchen
+            ? try await CraftingService.batchOffer(recipe, stock: stock, for: context.session, on: context.db)
+            : .none
         let body = ctrl.renderRecipeDetail(recipe: recipe, stock: stock, lingo: context.lingo, locale: locale)
-        let inline = ctrl.recipeDetailKeyboard(recipe: recipe, pinned: pinned, lingo: context.lingo, locale: locale)
+        let inline = ctrl.recipeDetailKeyboard(recipe: recipe, pinned: pinned, offer: offer,
+                                               lingo: context.lingo, locale: locale)
         try await editEstateMessage(message: message, text: body, inline: inline, context: context)
     }
 
@@ -2814,6 +2842,13 @@ extension EstateController {
         return true
     }
 
+    /// Whether `recipe` is a dish the player has not learned yet — the kitchen's
+    /// gate, refused before anything is drawn. Starters are always known.
+    private static func isUnlearned(_ recipe: Recipe, context: Context) async throws -> Bool {
+        guard recipe.category.requiresLearning, !RecipeCatalog.starterRecipeIds.contains(recipe.id) else { return false }
+        return try await !LearnedRecipe.has(recipe.id, for: context.session, on: context.db)
+    }
+
     /// `craft:<recipe.id>` — performs the craft and refreshes the detail screen
     /// with a status banner at the BOTTOM of the body (so the player sees the
     /// "✅ Crafted ..." line without scrolling past the recipe + stats).
@@ -2823,7 +2858,6 @@ extension EstateController {
     static func handleCraft(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
         let recipeId = String(data.dropFirst("craft:".count))
         let locale = context.session.locale
-        let ctrl = Controllers.estateController
 
         guard let recipe = RecipeCatalog.find(recipeId) else {
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
@@ -2831,62 +2865,121 @@ extension EstateController {
             return true
         }
 
-        // Kitchen-recipe gate: refuse if the recipe hasn't been learned and
-        // isn't an always-available starter. Defense against stale callbacks
-        // left in chat after a wipe.
-        if recipe.category.requiresLearning, !RecipeCatalog.starterRecipeIds.contains(recipeId) {
-            let known = try await LearnedRecipe.has(recipeId, for: context.session, on: context.db)
-            if !known {
+        // A refusal here is a modal, so the tap is answered late — and answered
+        // in the `catch` too, or a throw ahead of the answer spins the button.
+        do {
+            // Kitchen-recipe gate: refuse if the recipe hasn't been learned and
+            // isn't an always-available starter. Defense against stale callbacks
+            // left in chat after a wipe.
+            if try await isUnlearned(recipe, context: context) {
                 let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
                 return true
             }
+            let result = try await CraftingService.craft(recipe, for: context.session, on: context.db)
+            try await finishCraft(result, recipe: recipe, query: query, message: message, context: context)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
+        return true
+    }
+
+    /// `craft:n:<recipe.id>:<count>` («🍳 ×5») and `craft:all:<recipe.id>:<count>`
+    /// («🍳 Усі (N)») — the kitchen's batches (2026-11-04, the owner's pick; the
+    /// workshop makes one at a time). The tap asks the card's own question again
+    /// (`CraftingService.batchOffer`), as the bag's «Зʼїсти всі (N)» does: the
+    /// button cooks only while the card drawn now would carry it with the same
+    /// count. Anything else — the pantry changed since the card was drawn —
+    /// redraws the card and cooks nothing.
+    static func handleCraftBatch(data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage, context: Context) async throws -> Bool {
+        let all = data.hasPrefix("craft:all:")
+        let parts = data.dropFirst(all ? "craft:all:".count : "craft:n:".count).split(separator: ":")
+        let locale = context.session.locale
+
+        guard parts.count == 2, let expected = Int(parts[1]),
+              let recipe = RecipeCatalog.find(String(parts[0])), recipe.category == .kitchen else {
+            let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+            return true
         }
 
-        let result = try await CraftingService.craft(recipe, for: context.session, on: context.db)
+        do {
+            if try await isUnlearned(recipe, context: context) {
+                let toast = context.lingo.localize("kitchen.alert.not_learned", locale: locale)
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
+                return true
+            }
+            let stock = try await CraftingService.stock(for: context.session, on: context.db)
+            let offer = try await CraftingService.batchOffer(recipe, stock: stock, for: context.session, on: context.db)
+            guard (all ? offer.all : offer.preset) == expected else {
+                _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+                try await showRecipeDetail(recipe, message: message, context: context)
+                return true
+            }
+            let result = try await CraftingService.craft(recipe, times: expected, for: context.session, on: context.db)
+            try await finishCraft(result, recipe: recipe, query: query, message: message, context: context)
+        } catch {
+            _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+            throw error
+        }
+        return true
+    }
 
+    /// The answer to a craft, one dish or a batch: the refusal's modal, or the
+    /// card redrawn with the pantry it left and the banner under it naming
+    /// where the output went.
+    private static func finishCraft(_ result: CraftingService.CraftResult, recipe: Recipe, query: TGCallbackQuery,
+                                    message: TGMaybeInaccessibleMessage, context: Context) async throws {
+        let locale = context.session.locale
         switch result {
         case .unknownRecipe, .unknownItem:
             let toast = context.lingo.localize("workshop.alert.unknown_recipe", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-            return true
 
         case .missingMaterials(let shortages):
             let toast = RequirementLine.shortageModal(shortages, lingo: context.lingo, locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-            return true
 
         case .noRoom:
             let toast = context.lingo.localize("workshop.alert.no_room", locale: locale)
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))
-            return true
 
-        case .success(let outputItemId, let qty, let destination):
+        case .success(let outputItemId, let qty, let toBag, let toWarehouse):
             let item = ItemCatalog.find(outputItemId)
             let icon = item?.icon ?? ""
             let name = item.map { context.lingo.localize($0.nameKey, locale: locale) } ?? outputItemId
+            var interpolations = ["qty": "\(qty)", "icon": icon, "name": name]
             // A bag with no room sends the craft to the warehouse instead of
             // refusing it; the banner is the whole notice, because it already
-            // named a destination on every craft the player has ever made.
-            let alertKey = destination == .warehouse
-                ? recipe.category.craftedToWarehouseAlertKey
-                : recipe.category.craftedAlertKey
-            let statusLine = "✅ " + context.lingo.localize(alertKey, locale: locale, interpolations: [
-                "qty":  "\(qty)",
-                "icon": icon,
-                "name": name
-            ])
+            // named a destination on every craft the player has ever made. Only
+            // a batch can split between the two, and only the kitchen batches.
+            let alertKey: String
+            if toWarehouse == 0 {
+                alertKey = recipe.category.craftedAlertKey
+            } else if toBag == 0 {
+                alertKey = recipe.category.craftedToWarehouseAlertKey
+            } else {
+                alertKey = "kitchen.alert.cooked_split"
+                // The icons ride in as values: written into the template ahead
+                // of `%{warehouse}`, a two-unit emoji breaks the interpolation.
+                interpolations["bag"] = "\(toBag)"
+                interpolations["bag_icon"] = "🎒"
+                interpolations["warehouse"] = "\(toWarehouse)"
+                interpolations["warehouse_icon"] = "📦"
+            }
+            let statusLine = "✅ " + context.lingo.localize(alertKey, locale: locale, interpolations: interpolations)
             // Silent ack — the inline banner carries the message.
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
 
             // Stay on the detail screen; banner published as a standalone
             // message under the inline keyboard so it can't be missed.
             // `showRecipeDetail` re-reads the stock AFTER the craft: this redraw
-            // is the one that has to show the ingredients going down. It also
-            // turns the «📌» back, since the craft cleared the recipe's note.
+            // is the one that has to show the ingredients going down — and the
+            // batch buttons the pantry still pays for. It also turns the «📌»
+            // back, since the craft cleared the recipe's note.
             try await showRecipeDetail(recipe, message: message, context: context)
-            await ctrl.postStatusBanner(statusLine, context: context)
-            return true
+            await Controllers.estateController.postStatusBanner(statusLine, context: context)
         }
     }
 
