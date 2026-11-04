@@ -754,14 +754,14 @@ one database migration, `AddExplorationHaul`):
   5–10% more HP and attack; the first four, the XP, the bands and the holiday's creatures unchanged
   (`content/spec/spec-bestiary.md` §14).
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
-- a coop's build banner agrees with its noun: «🐔 Курник закладений на слоті N.» (it said «закладена»).
+- a coop's build banner agrees with its noun: «🐔 Курник закладений на ділянці N.» (it said «закладена»; «на слоті» until 2026-11-04).
 
 **Built 2026-11-01 → 11-04, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
 card, `266d28e`, waits for the same restart):
 - every estate starts with **the hazel** («🌳 Ліщина»): a plot in slot 1 that the player never chooses or
   builds, planted ripe when the estate is named, growing a forest nut an hour and holding five
   (`content/spec/spec-progression.md` §8). Every tier gains its slot, so the slots a player builds on stay as
-  many as before; the plots already built move down one (the farm in «Слот 1» reads «Слот 2»), and every
+  many as before; the plots already built move down one (the farm in «Ділянка 1» reads «Ділянка 2»), and every
   existing estate finds its hazel ripe. The first plot a player builds still costs the light first price, and
   «Перша ділянка» still asks for a plot of their own. The welcome after registration says where it stands.
 - a plot's build card can be pinned to the journal: «📌 У нотатник» between «✅ Будувати» and «🔙 Назад», each button
@@ -775,9 +775,12 @@ card, `266d28e`, waits for the same restart):
 - the kitchen cooks several at once: a dish's card carries «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати», counted
   from the ingredients and the room in the bag and the warehouse; a bag that fills mid-batch sends the rest to the
   warehouse and the banner says how many went where. The workshop still makes one at a time (2026-11-04).
-- the bag says how much room is left: «🎒 Сумка  5/35 слотів (вільно 30)», «(5/35, вільно 30)» on the forest trail,
+- the bag says how much room is left: «🎒 Сумка  5/35 місць (вільно 30)», «(5/35, вільно 30)» on the forest trail,
   «(вільно 30)» when the warehouse asks how many to take, and «(у 🎒 вільно 30)» when the trader asks how many to
   buy — the trader's questions quote the item's name (2026-11-04, the players' ask).
+- «слот» is gone from the Ukrainian copy: a place for a plot is «Ділянка N» («➕ Ділянка 3 · вільна», «Ферма закладена на
+  ділянці 3»), the bag's room is «місць», and a full bag says «вільно 1 місце / 3 місця / 5 місць» (2026-11-04). A built
+  plot's button is its own icon and name — «🌳 Ліщина», and «🌾 Ферма (1)» / «🌾 Ферма (2)» when a type repeats.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

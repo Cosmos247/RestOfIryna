@@ -607,14 +607,21 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
     fileprivate func plotListKeyboard(plots: [Plot], session: User, lingo: Lingo, locale: String) -> TGInlineKeyboardMarkup {
         let slotsAllowance = PlotService.slotsForLevel(session.estateLevel)
         let plotsBySlot = Dictionary(uniqueKeysWithValues: plots.map { ($0.slotIndex, $0) })
+        // A built plot's button is its own icon and name (2026-11-04, the
+        // owner: «🌳 Ліщина», not «🚜 Ділянка 1»); a type standing more than
+        // once adds its ordinal within the type, «🌾 Ферма (1)», «🌾 Ферма (2)».
+        let types: [PlotType?] = (0..<slotsAllowance).map { slot in
+            plotsBySlot[slot].flatMap { PlotType(rawValue: $0.plotType) }
+        }
+        let ordinals = PlotOrdinal.of(types)
         var buttons: [TGInlineKeyboardButton] = []
         for slot in 0..<slotsAllowance {
-            if let plot = plotsBySlot[slot], PlotType(rawValue: plot.plotType) != nil {
+            if let type = types[slot] {
                 // Every plot type produces since the Training Ground moved
-                // into the house (2026-09-27). Emoji prepended in Swift —
-                // Lingo's `%{var}` parser breaks on leading supplementary-
-                // plane emoji (🚜 is U+1F69C).
-                let label = "🚜 " + lingo.localize("estate.plot.button.harvest", locale: locale, interpolations: ["slot": "\(slot + 1)"])
+                // into the house (2026-09-27).
+                let icon = PlotCatalog.icon(for: type)
+                let name = lingo.localize(PlotCatalog.nameKey(for: type), locale: locale)
+                let label = (icon.isEmpty ? "" : "\(icon) ") + name + (ordinals[slot].map { " (\($0))" } ?? "")
                 buttons.append(TGInlineKeyboardButton(text: label, callbackData: "estate:plot:harvest:\(slot)"))
             } else {
                 let label = lingo.localize("estate.plot.button.claim", locale: locale, interpolations: ["slot": "\(slot + 1)"])
@@ -2493,7 +2500,7 @@ extension EstateController {
         case .bagFull(_, _, let free, let need):
             // The slot card stays on screen — the player can switch to the
             // warehouse with one more tap instead of restarting from the list.
-            let toast = context.lingo.localize("estate.plot.alert.bag_full", locale: locale, interpolations: [
+            let toast = context.lingo.localize("estate.plot.alert.bag_full", count: free, locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])
             _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id, text: toast, showAlert: true))

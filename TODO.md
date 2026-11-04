@@ -2160,9 +2160,19 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-04, evening — «слот» retired from the Ukrainian copy (NOT LIVE: uk.json + four call sites, the same
+restart as the hazel; no migration, the digest unchanged):**
+- [ ] 🏰 Маєток → 🌾 Ділянка: «Ділянок зайнято: 2 / 3. Тапніть ділянку…», «🌳 Ділянка 1 · Ліщина — 5/5 🌰», «➕ Ділянка 3 ·
+      вільна»; the buttons are the plot's own icon and name — «🌳 Ліщина», «🪚 Лісопилка», a repeated type numbered within itself in
+      place order («🌾 Ферма (1)», «🌾 Ферма (2)»), an empty place «➕ Ділянка 3» (do two to a row fit a phone?); the picker «Що збудувати на ділянці 3?»; the build banner
+      «✅ 🌾 Ферма закладена на ділянці 3.» (a coop «…закладений…»); a harvest «✅ Ділянка 2 — …, додано на Склад 📦».
+- [ ] A full plot's push: «Ферма (ділянка 2) заповнена.»; an estate upgrade's banner line «🌾 Ділянки: 4 (+1)».
+- [ ] 🎒 Сумка: «5/35 місць (вільно 30)». A full bag at the trader, the tavern and a plot harvested to the bag: «Сумка
+      повна — вільно 1 місце / 3 місця / 5 місць…» (try 1, 3 and 11 free: «11 місць»).
+
 **Added 2026-11-04, later — the bag's free room (NOT LIVE: Swift + uk/en, the same restart as the hazel; no migration,
 the digest unchanged):**
-- [ ] 🎒 Сумка, at the estate and in town: «🎒 Сумка  5/35 слотів (вільно 30)» — the cap less what is carried, worn
+- [ ] 🎒 Сумка, at the estate and in town: «🎒 Сумка  5/35 місць (вільно 30)» — the cap less what is carried, worn
       gear not counted.
 - [ ] On the forest trail the bag reads «🎒 Сумка (5/35, вільно 30)»; it moves with every find and meal.
 - [ ] Склад → a stack's card → «⬇️ ✏️»: «Скільки бажаєте взяти в сумку? (вільно 30)»; type more than fits → «❌ Не
@@ -2202,7 +2212,7 @@ no migration, the digest unchanged):**
 
 **Added 2026-11-01, late night — the plot's «📌 У нотатник» and «ємність» (NOT LIVE: Swift + uk/en, the same
 restart as the hazel; no migration, the digest unchanged):**
-- [ ] «➕ Слот N» → a type → the build card: three buttons, each on its own row — «✅ Будувати», «📌 У нотатник»,
+- [ ] «➕ Ділянка N» → a type → the build card: three buttons, each on its own row — «✅ Будувати», «📌 У нотатник»,
       «🔙 Назад»; the yield line reads «— 2/год, ємність 10» (no «єм»), the picker's lines too, the mine's iron line
       included.
 - [ ] «📌 У нотатник» → «📌 Записано в нотатник (1/3)», the button turns «📌 Прибрати з нотатника» (does it fit
@@ -2220,19 +2230,19 @@ restart as the hazel; no migration, the digest unchanged):**
       and `SELECT count(*) FROM users WHERE registration_step >= 7`. After it, the same: slot 0 is `hazel` alone, one
       per registered account, and every built plot one slot higher. Verify the TABLE, not the log line.
 - [ ] A new account: the welcome ends «🌳 Біля хати ростуть кущі ліщини, і горіхи вже стиглі. Зберіть їх: 🏰 Маєток →
-      🌾 Ділянка.»; 🏰 Маєток → 🌾 Ділянка reads «Слотів зайнято: 1 / 1» and «🌳 Слот 1 · Ліщина — 5/5 🌰»; no push came
+      🌾 Ділянка.»; 🏰 Маєток → 🌾 Ділянка reads «Ділянок зайнято: 1 / 1» and «🌳 Ділянка 1 · Ліщина — 5/5 🌰»; no push came
       for that first fill.
-- [ ] «🚜 Слот 1»: «🌳 Ділянка 1 · Ліщина», the description, «🌰 Лісові горіхи — 5/5 · 1/год»; «🎒 До сумки» → «✅ Слот 1 —
-      +5 🌰 Лісові горіхи, додано в Сумку 🎒», the list at 0/5. Five hours later the push «🌳 Ліщина (слот 1)
+- [ ] «🌳 Ліщина» (the button): «🌳 Ділянка 1 · Ліщина», the description, «🌰 Лісові горіхи — 5/5 · 1/год»; «🎒 До сумки» → «✅ Ділянка 1 —
+      +5 🌰 Лісові горіхи, додано в Сумку 🎒», the list at 0/5. Five hours later the push «🌳 Ліщина (ділянка 1)
       заповнена. Готово до збору: 5 🌰 Лісові горіхи».
-- [ ] An estate that existed (T3, a farm and a coop): «Слотів зайнято: 3 / 3», the hazel ripe on top, the farm and the
+- [ ] An estate that existed (T3, a farm and a coop): «Ділянок зайнято: 3 / 3», the hazel ripe on top, the farm and the
       coop in slots 2 and 3 with what they held; no push for the hazel.
-- [ ] Estate T2: «➕ Слот 2 · вільний»; the picker lists four types, no hazel; the farm asks 10 🪵 2 🟫 3 🥔 — still the
+- [ ] Estate T2: «➕ Ділянка 2 · вільна»; the picker lists four types, no hazel; the farm asks 10 🪵 2 🟫 3 🥔 — still the
       light first price, no 🧱 or 🔩.
 - [ ] «Перша ділянка» (L4): «🌾 Зайняти ділянку» stays ❌ with the hazel alone, ✅ after «✅ Будувати»; «Урожай»
       closes on a harvest of nuts.
 - [ ] An old plot list from before the restart: its «Слот 1» opens the hazel's card (harmless); an old «➕ Слот N» for
-      a slot that is now built says «🚧 Цей слот вже зайнятий.»
+      a slot that is now built says «🚧 Ця ділянка вже зайнята.» (old buttons keep the old word)
 - [ ] `/content` reads schema v30, hash `95421568`.
 
 **Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (NOT LIVE: Swift + uk/en, the same build as
@@ -2410,11 +2420,11 @@ an account wearing the Forester set and its weapon, the durability of each piece
 
 **Added 2026-10-24 — a plot costs materials (`bac1a70`, LIVE since the 2026-10-31 02:01 restart; schema v26):** an
 account with an empty slot and no plots yet (a first plot), and one that has plots (a later one).
-- 🏰 Маєток → «🌾 Ділянка» → «➕ Слот N» → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
+- 🏰 Маєток → «🌾 Ділянка» → «➕ Ділянка N» (it said «➕ Слот N» until 2026-11-04) → the picker (unchanged) → «⛏ Шахта»: the card as before, then «📜 Матеріали»
   with «12× 🪵 Сосновий брус» and «3× 🟫 Шкура» — a FIRST plot asks no 🧱 and no 🔩 — each line ✅ / ❌ with
   «(have/need)» counted over the bag and the warehouse together, then «⚠️ Ділянку не можна перебудувати.»
 - One short: «✅ Будувати» → the modal «🚧 Не вистачає матеріалів:» and the ❌ row; the card stays, redrawn.
-- Enough: «✅ Будувати» → the plot list and «✅ ⛏ Шахта закладена на слоті N.» («🐔 Курник закладений…» since 2026-10-31); what was in the bag is taken first, the
+- Enough: «✅ Будувати» → the plot list and «✅ ⛏ Шахта закладена на ділянці N.» («🐔 Курник закладений…» since 2026-10-31); what was in the bag is taken first, the
   warehouse gives the rest.
 - A second plot, a coop: «16× 🪵 · 10× 🪨 · 2× 🧱 · 6× 🥚»; a third farm «30× 🪵 · 6× 🟫 · 3× 🔩 · 9× 🥔»; a sixth
   mine «72× 🪵 · 18× 🟫 · 12× 🔩 · 6× 🧱».
@@ -2517,7 +2527,7 @@ spare class weapon — e.g. a «Простий лук» and an «Обточен�
 
 **Added 2026-10-21 — the keyboard stays (`6ac0351`, live since 2026-10-23 22:46):** an account at estate level 4+.
 - 🥋 Тренувальний майданчик → a fight with the dummy → 🚪 Вийти → harvest a plot: the menu buttons stay
-  under «✅ Слот N — …», and «🥋 Ви відходите від манекена…» stays in the chat above it.
+  under «✅ Ділянка N — …» («✅ Слот N — …» until 2026-11-04), and «🥋 Ви відходите від манекена…» stays in the chat above it.
 - On a trader card, type «5» before «🪙 Купити» → «🔢 Спершу оберіть дію…» → buy: the buttons stay.
 - At the estate (any screen of it), type a word: «👇 Оберіть, куди далі» with the menu buttons, no new
   estate photo; the estate screen above still answers its buttons. A fight button left on the keyboard
@@ -3840,7 +3850,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
   wait. There were eight — the technique rework the same day rewrote the three
   `combat.special_def.*.activate` lines and deleted `combat.special_def.mage.no_damage`. The
   rule and the sweep: `.memory/localization.md`.
-- **The estate calls one place two words.** ~~«наділ»~~ went on 2026-09-21: all three keys
+- ~~**The estate calls one place two words.**~~ — **DONE 2026-11-04** («Продивись де взагалі використовується "слот"… Зараз ми будемо міняти це слово в усіх місцях», the owner's picks): every «Слот N» is «Ділянка N», the
+  bag's «слотів» is «місць», and the bag-full refusals' «комірок» went with them, their form following the number
+  («вільно 1 місце / 3 місця / 5 місць»). The record: ~~«наділ»~~ went on 2026-09-21: all three keys
   that carried it (`estate.plot.picker.header`, `.picker.back`, `.alert.slot_empty`) now say
   «ділянка», on the owner's call. What is left is **«Слот» in 18 keys** against «Ділянка» in
   the titles and cards — `estate.plot.row.claimed`, `.button.claim`, `.list.header` and the
@@ -4100,8 +4112,8 @@ the whole kitchen and the entire King's chain among them, and every defect this 
 found came from someone glancing at a screen. The walk list, grouped by what shipped when, is
 the "Walk list" section above.
 
-Left open on purpose: the estate calling one place two words now that «наділ» is
-gone but «Слот» still stands in 18 keys, the Master's blade trial naming Пуща while any kill
+Left open on purpose: ~~the estate calling one place two words now that «наділ» is
+gone but «Слот» still stands in 18 keys~~ (done 2026-11-04: «Ділянка» everywhere), the Master's blade trial naming Пуща while any kill
 counts, and six functions dead since April (removed 2026-10-12). All of them are in "Open, decided but not done"
 above. (The "three innkeeper lines missing from `uk.json`" that led this list on 09-22 were a
 false alarm, corrected 2026-09-27: `.m`/`.f` pairs since `536fbf6`, read through a gendered

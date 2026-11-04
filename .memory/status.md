@@ -21,8 +21,15 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-04, evening — «слот» retired from the Ukrainian copy** (uk.json + four call sites, NOT live, the same
+restart; no migration). A place for a plot is «Ділянка N» in all 17 estate keys, the bag's room is «місць», and the
+three bag-full refusals (trader, tavern, a plot harvested to the bag) say «вільно 1 місце / 3 місця / 5 місць» through
+`localize(_:count:)` — «комірок» went too. Closes the 2026-09-16 «one place, two words» item. English keeps «slot».
+A built plot's button is its own icon and name («🌳 Ліщина»), a repeated type numbered within itself in place order
+(«🌾 Ферма (1)», «🌾 Ферма (2)»; `PlotOrdinal`, the owner's rule). 543 tests.
+
 **2026-11-04, later — the bag's free room** (Swift + uk/en, NOT live, the same restart; no content change, no
-migration). The players' ask: «(вільно N)» on the bag screen («5/35 слотів (вільно 30)»), the trail bag and the
+migration). The players' ask: «(вільно N)» on the bag screen («5/35 місць (вільно 30)» since the «слот» rename), the trail bag and the
 warehouse's «Скільки бажаєте взяти в сумку?», and «(у 🎒 вільно N)» in the trader's «Скільки «…» купити?» — the name
 quoted in «купити» and «продати» (the owner's picks; «покласти на склад» untouched). `InventoryEntry.freeSlots` is
 the one reading, the warehouse's and the trader's refusals included.

@@ -959,7 +959,7 @@ Optional:
 - Update `TODO.md` progress markers when tasks complete
 - Add new localization keys to both `en.json` and `uk.json` simultaneously
 - Write new uk player-facing copy in «ви» (see Localization above); add `.m`/`.f` + the `gender:` overload only when the string names the player with a gendered noun
-- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`, and `рівень` for the estate's, bag's and weapon's tier — **never «тир»**, auto-memory `feedback-tier-is-riven`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`, and code and docs keep saying `tier`. Full table in `.memory/localization.md`.
+- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`, and `рівень` for the estate's, bag's and weapon's tier — **never «тир»**, auto-memory `feedback-tier-is-riven`; the bag's room is «місць» and a place for a plot «Ділянка N» — **never «слот»**, `feedback-slot-is-dilyanka`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`, and code and docs keep saying `tier`. Full table in `.memory/localization.md`.
 - If adding new controllers/models, update the file map in README.md's Project Structure section
 
 ### Git Workflow

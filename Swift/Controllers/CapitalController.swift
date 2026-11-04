@@ -1279,7 +1279,9 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             let text = lingo.localize("capital.trader.not_enough_silver", locale: locale, interpolations: ["have": "\(have)", "need": "\(need)"])
             await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free):
-            let text = lingo.localize("capital.trader.bag_full", locale: locale, interpolations: ["free": "\(free)", "need": "1"])
+            // «вільно 1 місце / 3 місця / 5 місць» — the form follows the number (2026-11-04).
+            let text = lingo.localize("capital.trader.bag_full", count: free, locale: locale,
+                                      interpolations: ["free": "\(free)", "need": "1"])
             await postStatusBanner("❌ \(text)", context: context)
         case .unknownItem:
             break
@@ -2365,7 +2367,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             ])
             await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free, let need):
-            let text = lingo.localize("capital.trader.bag_full", locale: locale, interpolations: [
+            let text = lingo.localize("capital.trader.bag_full", count: free, locale: locale, interpolations: [
                 "free": "\(free)", "need": "\(need)"
             ])
             await postStatusBanner("❌ \(text)", context: context)
@@ -4456,7 +4458,7 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             ])
             await postStatusBanner("❌ \(text)", context: context)
         case .inventoryFull(let free, _):
-            let text = lingo.localize("capital.tavern.bag_full", locale: locale, interpolations: [
+            let text = lingo.localize("capital.tavern.bag_full", count: free, locale: locale, interpolations: [
                 "free": "\(free)"
             ])
             await postStatusBanner("❌ \(text)", context: context)

@@ -917,7 +917,6 @@
   "estate.plot.row.empty": "➕ <b>Slot %{slot}</b> · empty",
   "estate.plot.row.training": "%{icon} <b>Slot %{slot}</b> · %{type} — ready to spar",
   "estate.plot.ready_mark": "",
-  "estate.plot.button.harvest": "Slot %{slot}",
   "estate.plot.button.claim": "➕ Slot %{slot}",
   "estate.plot.picker.header": "Pick a plot type for slot %{slot}:",
   "estate.plot.picker.back": "🔙 Back to plots",

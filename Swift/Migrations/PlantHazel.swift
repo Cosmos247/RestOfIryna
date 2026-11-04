@@ -10,7 +10,8 @@
 //  every estate that existed before.
 //
 //  Slot 1 belongs to a built plot on most of them, so every plot moves down one
-//  first: a farm in «Слот 1» reads «Слот 2». The content's `plotSlotsByTier`
+//  first: a farm in «Ділянка 1» reads «Ділянка 2» (the screens said «Слот» until
+//  2026-11-04). The content's `plotSlotsByTier`
 //  gained the same one slot at every tier (1…7), so no estate loses a slot it
 //  builds on. Two statements, because `unique(user_id, slot_index)` is checked
 //  row by row as a row moves and a plain `+ 1` collides with the neighbour that

@@ -225,7 +225,7 @@ public enum PlotService {
     }
 
     /// The estate's plots for a screen that lists them, the granted plot planted
-    /// first if its slot is empty — so a player never meets a «➕ Слот 1» the
+    /// first if its slot is empty — so a player never meets a «➕ Ділянка 1» the
     /// claim refuses. The planting is best-effort: a failure leaves the list as
     /// it stands rather than throwing out of a callback, which would spin it.
     public static func estatePlots(for user: User, on db: any Database) async throws -> [Plot] {

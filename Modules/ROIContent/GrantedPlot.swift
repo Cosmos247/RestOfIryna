@@ -28,7 +28,7 @@ import Foundation
 
 public enum GrantedPlot {
 
-    /// The slot a granted plot stands in — «Слот 1» on every screen.
+    /// The slot a granted plot stands in — «Ділянка 1» on every screen.
     public static let slotIndex = 0
 
     /// Intervals a plot takes to fill from empty, rounded UP to a whole one —

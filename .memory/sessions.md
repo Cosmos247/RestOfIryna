@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-04)* **the bag's free room, and `2f78915`'s hash fill** — Swift + uk/en, NOT deployed (no
+- *(this commit, 11-04)* **«слот» retired from the Ukrainian copy, and `661a083`'s hash fill** — uk.json + four call
+  sites, NOT deployed (no migration, the digest unchanged; the hazel's restart carries it): «Ділянка N» in the 17
+  estate keys, «місць» for the bag, the three bag-full refusals pluralised («вільно 1 місце / 3 місця / 5 місць»,
+  «комірок» gone); a built plot's button is its icon and name, a repeated type numbered within itself («🌾 Ферма (1)»,
+  `PlotOrdinal`). Closes the 2026-09-16 «one place, two words» item. 543 tests.
+- `661a083` (11-04) **the bag's free room, and `2f78915`'s hash fill** — Swift + uk/en, NOT deployed (no
   migration, the digest unchanged; the hazel's restart carries it): «(вільно N)» on the bag screen, «(5/35, вільно 30)»
   on the trail bag, «Скільки бажаєте взяти в сумку? (вільно N)» at the warehouse, «Скільки «…» купити? (у 🎒 вільно
   N)» at the trader, the name quoted in «купити» and «продати»; `InventoryEntry.freeSlots` is the one reading, the
@@ -979,7 +984,53 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-04, later (the bag's free room, the players' ask) — *(this commit)*
+## Session — 2026-11-04, evening («слот» retired from the Ukrainian copy) — *(this commit)*
+
+**Asked** (the owner): «Продивись де взагалі використовується "слот" і покажи мені. Зараз ми будемо міняти це слово
+в усіх місцях.» **Found:** only in `uk.json`, 18 lines — the bag's unit («5/35 слотів», one line; the same room was
+already «місць» on the bag upgrade and the warehouse and «комірок» in three refusals) and a place for a plot («Слот N»,
+17 lines, while the plot's own card said «Ділянка N»); nowhere in the content data, in code only three comments
+quoting a screen. One of the 17, `estate.plot.row.training`, cannot render: it is for a plot that produces nothing,
+and none has existed since the Training Ground moved into the house. The 2026-09-16 Open item «the estate calls one
+place two words» was exactly this. **Asked, answered:** the bag «місць» (recommended), the estate «Ділянка N» (over
+the recommended «Місце N»), and the refusals' «комірок» brought to the same word with its form by the number
+(recommended). English keeps «slot» (said, not asked).
+
+**Built:** the 18 keys — «Ділянок зайнято: 2 / 3. Тапніть ділянку…», «➕ Ділянка 3 · вільна», «🚜 Ділянка 2» (renamed again below), «Що
+збудувати на ділянці 3?» (the picker, reworded: «тип ділянки для ділянки» would not read), «🚧 Цю ділянку ще не
+розблоковано», «🚧 Ця ділянка вже зайнята.», «Ділянка 2 ще нічого не виростила», «… закладена на ділянці 3», «Ферма
+(ділянка 2) заповнена.», «🌾 Ділянки: 4 (+1)», «5/35 місць»; the three refusals as `.one/.few/.many` in uk (English
+keeps one key) read through `localize(_:count:)` at their four call sites. Comments in `PlantHazel`, `PlotService`
+and `GrantedPlot`, the walk blocks, README, the spec's §8 line, the file map and the players' FAQ reply
+(`.memory/live-ops.md`) follow the new words; old buttons left in chat keep the old one. The glossary row in
+`.memory/localization.md` and the CLAUDE.md glossary line say **never «слот»**.
+
+**Checked:** the five Swift files force-recompiled, 0 warnings; 539 tests; `validate --strict` 0/0 (its emoji rule
+over every key); the digest unchanged; no `uk.json` value says «слот» or «комір»; every new line rendered, the plural
+at 0 / 1 / 3 / 5 / 11 / 21 / 22; the plot modal's worst case 90 UTF-16 units of 200; `git diff --check` clean.
+**Left, said:** the estate's button and the list's title read «🌾 Ділянка», singular, over «Ділянка 1 / 2 / 3».
+
+**Then the plot buttons** — the owner: «Чи можемо ми замінити назву кнопки 🚜 Ділянка 2 одразу на емодзі і назву
+ділянки? покажи як перед тим як робити». Shown the list before and after, with the catch that a type repeats (two or
+three farms are common) and two «🌾 Ферма» could not be told apart; offered the place number for repeats
+(recommended), always, or never. **The owner:** «Номер для повторів, але порядковий саме для цього типу ділянки
+(1,2..)». **Built:** `PlotOrdinal.of` (ROIContent) — per place, the ordinal within its type in place order, nil for an
+empty place or a type standing once — and `plotListKeyboard` labels a built plot «<icon> <name>» plus « (N)» from it:
+«🌳 Ліщина», «🌾 Ферма (1)», «🪚 Лісопилка», «🌾 Ферма (2)»; an empty place stays «➕ Ділянка N»; the callbacks are
+unchanged, so an old button still opens its plot. `estate.plot.button.harvest` («Ділянка %{slot}» / «Slot %{slot}»)
+had no reader left and went from both locales. **Checked:** the three files recompiled, 0 warnings (the build's six
+lines are `BudgetTests.swift:169`, older than this); 543 tests (4 new in `PlotOrdinalTests`); `validate --strict` 0/0;
+the digest unchanged; `git diff --check` clean.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… репорт і зроби коміт», 11-04, both changes in one
+commit): the seven files (`CapitalController`, `EstateController`, `PlantHazel`, `PlotService`, `GrantedPlot`,
+`PlotOrdinal`, `PlotOrdinalTests`) force-recompiled under bash, each compiled, 0 warnings; 543 tests; a mutant that
+numbers every type fails two of `PlotOrdinalTests`; `validate --strict` 0/0; the digest as the tree's; no `uk.json`
+value says «слот» or «комір»; every en key still has its uk counterpart, the three refusals plain in en and
+`.one/.few/.many` in uk; `estate.plot.row.training` confirmed unreachable (all five shipped types have a tuning, so
+the non-producing branch never runs); `git diff --check` clean. Nothing needed changing.
+
+## Session — 2026-11-04, later (the bag's free room, the players' ask) — `661a083`
 
 **Asked** (the owner, relaying players): «Гравці просять додати кількість вільного місця в сумці в двох випадках» —
 «🎒 Сумка 5/35 слотів» should end «(вільно 30)», and «Скільки бажаєте взяти в сумку?» should carry the same number.
