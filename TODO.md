@@ -2160,6 +2160,20 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-04, night — `/news`, a developer's message to every player (NOT LIVE: Swift + uk/en, the same restart as
+the hazel; no migration, the digest unchanged). Try it on the test bot first:**
+- [ ] From a developer account: `/news` → «📣 Надішліть повідомлення для гравців… Його отримають N гравців.» with
+      «❌ Скасувати»; N is the registered players less the sender. From any other account `/news` does nothing new.
+- [ ] Send a text with bold and a link: the bot shows its copy, then «Вище — так його побачать гравці. Надіслати N
+      гравцям?» [✅ Надіслати] [❌ Скасувати]; the screen you stood on did NOT redraw at your message.
+- [ ] ✅ → «📣 Надсилаю…» → «📣 Надіслано S з N.» (+ «Не доставлено F…» if anyone blocked the bot); a second account
+      receives the copy with its formatting, no «переслано», its keyboard unchanged. A second ✅ on the same question
+      answers «Ця чернетка вже неактуальна…» and sends nothing.
+- [ ] A photo with a caption goes out as a photo with that caption. ❌ at either step: «Скасовано. Нічого не
+      надіслано.» A command (`/menu`) typed while the draft waits works as usual and is not taken as the news.
+- [ ] An album of two photos after `/news`: ONE preview and one question (the first photo); delete your message, then ✅:
+      «Не доставлено жодному. Можливо, ваше повідомлення видалено…».
+
 **Added 2026-11-04, evening — «слот» retired from the Ukrainian copy (NOT LIVE: uk.json + four call sites, the same
 restart as the hazel; no migration, the digest unchanged):**
 - [ ] 🏰 Маєток → 🌾 Ділянка: «Ділянок зайнято: 2 / 3. Тапніть ділянку…», «🌳 Ділянка 1 · Ліщина — 5/5 🌰», «➕ Ділянка 3 ·
@@ -2221,7 +2235,7 @@ restart as the hazel; no migration, the digest unchanged):**
 - [ ] Build ANOTHER type first: the farm stays in the journal at the next plot's price (×N+1). Then build the farm on
       any slot: the note is gone from 📌 Рецепти, silently.
 - [ ] With three notes already, «📌 У нотатник» on a plot: the modal «У нотатнику вже 3 рецепти…», the card unchanged.
-- [ ] A build card left in chat for a slot since built on: «📌» answers «🚧 Цей слот вже зайнятий.» and pins nothing.
+- [ ] A build card left in chat for a slot since built on: «📌» answers «🚧 Ця ділянка вже зайнята.» and pins nothing.
 - [ ] English: "capacity" for "cap", "Plot, estate" in the journal.
 
 **Added 2026-11-01, night — the hazel every estate starts with (NOT LIVE: Swift + content schema v30 + uk/en and the
@@ -2244,6 +2258,10 @@ restart as the hazel; no migration, the digest unchanged):**
 - [ ] An old plot list from before the restart: its «Слот 1» opens the hazel's card (harmless); an old «➕ Слот N» for
       a slot that is now built says «🚧 Ця ділянка вже зайнята.» (old buttons keep the old word)
 - [ ] `/content` reads schema v30, hash `95421568`.
+- Existing players are NOT told in the game (2026-11-04, the owner: «Нічого в грі» — offered a line in «📟 Артанія
+  прокидається…» or the first-fill push): their hazel is planted ripe with no push, and the welcome reaches new accounts
+  only. The chat announcement (the testers' list) carries it; the ready reply for «my farm moved» is in
+  `.memory/live-ops.md`.
 
 **Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (NOT LIVE: Swift + uk/en, the same build as
 steps 1–2; no migration):**
@@ -3286,7 +3304,7 @@ in the capital, one challenging the other.
   with no space. (From the restart after 2026-11-01 the word is «ємність», in English "capacity".)
 - **let a Mine fill (5 h).** Both numbers must cap together now, `40/40 🪨 · 10/10 🔩`,
   and the notification must name both.
-- **let a Курник fill.** It must read «Курник (слот N) заповнений» — masculine. Three of
+- **let a Курник fill.** It must read «Курник (ділянка N) заповнений» — masculine. Three of
   the four plots are feminine, which is why this read wrong for months without anyone
   noticing.
 - **collect 10 iron and check the forge** — a full Mine should be exactly one Залізний

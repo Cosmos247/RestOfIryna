@@ -433,7 +433,7 @@ Settled in the same exchange, stated to the owner and not objected to:
   `lastHarvestedAt` is one full fill back (capacity ÷ rate intervals, read from the content, never
   typed), with `notifiedFull` set so the gift sends no push. The plot list plants it whenever slot
   0 is empty, idempotently, so a player never meets a «➕ Ділянка 1» (it read «➕ Слот 1» until 2026-11-04) that the claim refuses.
-- **From its first harvest it lives like every plot.** It grows, fills, sends «🌳 Ліщина (слот 1)
+- **From its first harvest it lives like every plot.** It grows, fills, sends «🌳 Ліщина (ділянка 1)
   заповнена», and is harvested into the bag or the warehouse under the same caps. Like every plot
   it reads the tier-1 row, so it does not grow with the estate.
 - **It yields `food.forest_nuts`**, one stream with no bonus. The nut (5 Vigor raw), its price at

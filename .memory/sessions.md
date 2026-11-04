@@ -11,7 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-04)* **«слот» retired from the Ukrainian copy, and `661a083`'s hash fill** — uk.json + four call
+- *(this commit, 11-04)* **`/news`, a developer's message to every registered player, and `35e1e97`'s hash fill** —
+  Swift + uk/en, NOT deployed (no migration, the digest unchanged): `NewsBroadcast`, answered in `TGDispatcher`'s
+  catch-all ahead of routing — prompt, the message copied back as its preview, «Надіслати N гравцям?», the copies
+  paced, a report. Also: three docs still quoting «слот», and the hazel's no-in-game-notice decision recorded.
+- `35e1e97` (11-04) **«слот» retired from the Ukrainian copy, and `661a083`'s hash fill** — uk.json + four call
   sites, NOT deployed (no migration, the digest unchanged; the hazel's restart carries it): «Ділянка N» in the 17
   estate keys, «місць» for the bag, the three bag-full refusals pluralised («вільно 1 місце / 3 місця / 5 місць»,
   «комірок» gone); a built plot's button is its icon and name, a repeated type numbered within itself («🌾 Ферма (1)»,
@@ -984,7 +988,44 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-04, evening («слот» retired from the Ukrainian copy) — *(this commit)*
+## Session — 2026-11-04, night (the testers' list; the hazel's notice; `/news`) — *(this commit)*
+
+**The testers' list** («Напиши мені список незадеплоєних оновлень для тестувальників»): read off `b04bef3..HEAD` and the
+Pi (its checkout and binary at `b04bef3`), written as a Telegram-ready text and published as a private page with a
+copy button (https://claude.ai/artifact/HraELWcm4E71aLWGerAzaY). Nothing in the tree.
+
+**The hazel's notice** («Чи знає гравець про ліщину на початку гри?»): a new account reads it at the end of the
+welcome; an existing one is told nothing — the migration plants it ripe with `notified_full` set, so no push comes
+until a first harvest, and the restart's «📟 Артанія прокидається…» says nothing of it. Offered a line in that restart
+message (recommended) or the first-fill push. **The owner: «Нічого в грі»** — the chat announcement carries it;
+recorded in the hazel walk block. Three docs still quoting «слот» in lowercase fixed on the way (the spec's push, two
+walk lines).
+
+**`/news`** (the owner: «чи можу я, як розробник, писати повідомлення гравцям через бот, але без ребуту… не хочу робити
+це одразу після оновлення»). There was no way: the restart message and a holiday's notices are the only mass
+messages. Shown the flow, asked who and what. **The owner:** every registered player (recommended), any message
+copied as is (recommended). **Built:** `Swift/Helpers/NewsBroadcast.swift` — an actor holding one draft per developer
+(awaiting the message for half an hour, then awaiting ✅ with a token), the recipients (past registration, still
+allowed, the sender excepted), `copyMessage` for the preview and every copy (paced 50 ms, off the tap), the report
+edited into the question. It is called at the top of `TGDispatcher`'s catch-all, after the session loads and before
+`store.process`, because the SDK runs every matching handler at once — a `GlobalCommandsController` handler could not
+stop the developer's screen from reading the news as stray text, nor a `news:` callback from reaching the router.
+**Checked:** the two files compiled, 0 warnings; 543 tests; `validate --strict` 0/0; the digest unchanged; every new
+uk line rendered at 1 / 3 / 11 / 21 / 44 («отримає 21 гравець», «Надіслати 21 гравцю?»); `git diff --check` clean.
+Not run against Telegram: its walk block asks for the test bot first.
+
+**The pre-commit audit** (the owner's «перевір всі зміни… репорт і зроби коміт», 11-04): **found and fixed** — (1) two
+messages arriving together (an album's photos) could each be captured, each with its own preview and question
+(safe — only the last token sends — but confusing): the first message now TAKES the draft (`takePrompt`), the
+rest route, and an uncopyable one puts the draft back; (2) a send where not one copy landed reported «ці гравці
+заблокували бота» — now «Не доставлено жодному. Можливо, ваше повідомлення видалено…» (`news.failed_all`); (3) the
+report to the owner said a forgotten draft lapses in half an hour — only a `/news` still waiting for its message
+does; a shown question waits for ✅/❌ until a restart (the header, live-ops and the memory say so). Then: the two
+files force-recompiled, 0 warnings in the whole build; 543 tests; `validate --strict` 0/0; the digest as the
+tree's; every `news.*` key the code asks for present in both locales (uk's two plural keys as `.one/.few/.many`);
+`git diff --check` clean.
+
+## Session — 2026-11-04, evening («слот» retired from the Ukrainian copy) — `35e1e97`
 
 **Asked** (the owner): «Продивись де взагалі використовується "слот" і покажи мені. Зараз ми будемо міняти це слово
 в усіх місцях.» **Found:** only in `uk.json`, 18 lines — the bag's unit («5/35 слотів», one line; the same room was

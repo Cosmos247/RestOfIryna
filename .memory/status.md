@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-04, night — `/news`** (Swift + uk/en, NOT live, the same restart; no migration). A developer sends one message
+to every registered player at a moment of their choosing, with no restart: `/news` → the message (anything Telegram
+can copy, a photo with a caption included) → its copy as the preview → «Надіслати N гравцям?» → a paced send and a
+report. `NewsBroadcast`, answered in `TGDispatcher` ahead of routing. The procedure: `.memory/live-ops.md`.
+
 **2026-11-04, evening — «слот» retired from the Ukrainian copy** (uk.json + four call sites, NOT live, the same
 restart; no migration). A place for a plot is «Ділянка N» in all 17 estate keys, the bag's room is «місць», and the
 three bag-full refusals (trader, tavern, a plot harvested to the bag) say «вільно 1 місце / 3 місця / 5 місць» through

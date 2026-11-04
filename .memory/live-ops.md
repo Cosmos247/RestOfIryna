@@ -97,6 +97,23 @@ seeding script was not kept). One player sat in each case:
 
 A bystander kept all 16 of its rows.
 
+## Telling every player something — `/news` (built 2026-11-04, live after its restart)
+
+No restart, any moment. In the bot, from a developer account (`developerUsers`):
+1. `/news` → «📣 Надішліть повідомлення для гравців — текст або фото з підписом. Його отримають N гравців.»
+2. Send the message itself — formatting, links, emoji, or a photo with a caption. The bot shows a copy of it exactly as
+   players will get it and asks «Вище — так його побачать гравці. Надіслати N гравцям?» [✅ Надіслати] [❌ Скасувати].
+3. ✅ → «📣 Надсилаю…», then «📣 Надіслано 33 з 44. Не доставлено 11: ці гравці заблокували бота або видалили чат.»
+
+Who gets it: every account past registration that the gate still lets in, the sender excepted. It arrives as the bot's
+own message (a copy, not «forwarded»), and nothing about the player's screen or keyboard changes. A command typed
+while the draft waits is not taken as the news; a `/news` left half an hour without its message lapses, while a
+question already shown waits for ✅ or ❌ until a restart; ✅ sends once (a second tap answers «Ця чернетка вже
+неактуальна»). **One message is one news**: of an album only the first photo is taken — send one photo with a caption.
+Do not delete your message before ✅: the copies are made from it (nobody reached → «Не доставлено жодному…»).
+The log line is `[NEWS] <developer> sent message <id>: S of N delivered, F not`.
+Try it on the test bot first (`roi_test` has its own players).
+
 ## Is the bot alive?
 
 - **The freeze signature:** `getWebhookInfo` → `pending_update_count` rising AND

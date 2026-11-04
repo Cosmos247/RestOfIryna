@@ -174,7 +174,8 @@ printed and priced into the pace, never banded.
 **Access is invite-only and lives in the database.** The `allowed_users` table
 (`AllowedUser` / `AccessControl`) replaced the hardcoded `allowedUsers` array; `foundingUsers`
 in `configure.swift` is now only the migration's seed list. **To let a new tester in use
-`/link`** (developer-only), never a code edit. The gate lives in `TGDispatcher` **ahead of
+`/link`** (developer-only), never a code edit. **To tell every registered player something, `/news`** (developer-only,
+2026-11-04: any message, copied as sent; answered in `TGDispatcher` ahead of routing — `NewsBroadcast`). The gate lives in `TGDispatcher` **ahead of
 routing**, so a refused stranger never gets a `User` row. `allowed_users` is in
 `WipeForRebalance.preserved` — a wipe resets the game, not the guest list — and
 `developerUsers` stays hardcoded and allowed before the table is read: the brake against

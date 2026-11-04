@@ -781,6 +781,8 @@ card, `266d28e`, waits for the same restart):
 - «слот» is gone from the Ukrainian copy: a place for a plot is «Ділянка N» («➕ Ділянка 3 · вільна», «Ферма закладена на
   ділянці 3»), the bag's room is «місць», and a full bag says «вільно 1 місце / 3 місця / 5 місць» (2026-11-04). A built
   plot's button is its own icon and name — «🌳 Ліщина», and «🌾 Ферма (1)» / «🌾 Ферма (2)» when a type repeats.
+- for the developer: `/news` sends one message — text or a photo, copied as written — to every registered player, any
+  time and without a restart, after showing it back and asking «Надіслати N гравцям?» (2026-11-04).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

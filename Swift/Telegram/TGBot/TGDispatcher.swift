@@ -66,6 +66,12 @@ final class TGDispatcher: TGDefaultDispatcher, @unchecked Sendable {
             // Get user session with caching
             let session = try await User.cachedSession(for: entity, db: self.db)
 
+            // A developer's `/news` is answered here, ahead of routing, so the
+            // screen they stand on never reads the news as a stray message
+            // (2026-11-04, `NewsBroadcast`).
+            if await NewsBroadcast.intercept(update: update, from: entity, session: session,
+                                             bot: self.bot, db: self.db, lingo: self.lingo) { return }
+
             // Route to appropriate controller
             let props: [String: Int64] = ["session": session.telegramId]
             let key = session.routerName
