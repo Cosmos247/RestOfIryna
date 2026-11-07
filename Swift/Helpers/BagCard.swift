@@ -4,19 +4,24 @@
 //
 //  Created by Dmytro Ihnatyuhin on 01.11.2026.
 //
-//  An item's card, and the five things its buttons do — ONE implementation for
+//  An item's card, and the six things its buttons do — ONE implementation for
 //  both bags (2026-11-01, the owner's design): the bag at home, in town and on
 //  the road (`InventoryController`, callbacks `inv:`), and the trail bag on a
 //  walk (`ExplorationController`, callbacks `explore:`).
 //
 //  The card, drawn over the list it was opened from: the description, what a
 //  dish restores — or that a raw one is an ingredient — then «🎒 У сумці: N» and
-//  a taken job's ⚠️, BEFORE any tap, because the many-portion and the one-unit
-//  discard act without a question. Then the buttons:
+//  a taken job's ⚠️, BEFORE any tap, because the many-portion meal acts without
+//  a question. Then the buttons:
 //    `eat:<id>`              «🍴 Зʼїсти» — one portion;
 //    `eatn:<id>:<n>`         «До повної снаги (N)» / «Зʼїсти всі (N)» — `MealMath`,
 //                            N asked again on the tap (a moved stack redraws);
-//    `drop:<id>`             «🗑 Викинути 1» — at once, the owner's pick;
+//    `drop:<id>`             «🗑 Викинути 1» — the question first (2026-11-07, the
+//                            players' ask; it acted at once until then, and the
+//                            QUESTION inherited the name, so a card left in chat
+//                            lands on the safe path);
+//    `drop1ok:<id>:<held>`   its «🗑 Так, викинути» — one unit, and only while the
+//                            bag holds what the question saw;
 //    `dropall:<id>:<n>`      «🗑 Викинути всі (N)» — the question first;
 //    `dropok:<id>:<n>`       its «🗑 Так, викинути» — only the count it named.
 //  Gear never comes here: the workshop's «Розібрати» is the one place a piece is
@@ -119,8 +124,8 @@ enum BagCard {
             rows.append([TGInlineKeyboardButton(text: lingo.localize("inventory.action.learn", locale: locale),
                                                 callbackData: "inv:use:\(item.id)")])
         }
-        // «Викинути 1» acts at once, «Викинути всі (N)» asks first (the
-        // owner's pick); a lone unit gets one «Викинути», which acts at once.
+        // Every discard asks first; a lone unit gets one «Викинути», the same
+        // question as «Викинути 1».
         if held >= 2 {
             rows.append([
                 TGInlineKeyboardButton(text: lingo.localize("inventory.action.drop_one", locale: locale),
@@ -189,17 +194,32 @@ enum BagCard {
     /// bag's as it stands now. Nil under two: there is no «all» to ask about.
     static func dropAllQuestion(_ item: Item, route: Route, context: Context) async throws -> Screen? {
         guard let userId = context.session.id else { return nil }
-        let lingo = context.lingo, locale = context.session.locale
         let held = try await InventoryEntry.totalQuantity(of: item.id, for: userId, on: context.db)
         guard held >= 2 else { return nil }
+        return await dropQuestion(item, key: "inventory.drop_all.question", held: held,
+                                  yes: "dropok:\(item.id):\(held)", route: route, context: context)
+    }
+
+    /// «🥔 Картопля — викинути 1? Повернути не вийде.», the same screen for one
+    /// unit, its yes carrying what the bag holds now. Nil when it holds none.
+    static func dropOneQuestion(_ item: Item, route: Route, context: Context) async throws -> Screen? {
+        guard let userId = context.session.id else { return nil }
+        let held = try await InventoryEntry.totalQuantity(of: item.id, for: userId, on: context.db)
+        guard held >= 1 else { return nil }
+        return await dropQuestion(item, key: "inventory.drop_one.question", held: held,
+                                  yes: "drop1ok:\(item.id):\(held)", route: route, context: context)
+    }
+
+    private static func dropQuestion(_ item: Item, key: String, held: Int, yes: String,
+                                     route: Route, context: Context) async -> Screen {
+        let lingo = context.lingo, locale = context.session.locale
         let name = (item.icon.map { "\($0) " } ?? "") + lingo.localize(item.nameKey, locale: locale)
-        var lines = [lingo.localize("inventory.drop_all.question", locale: locale,
-                                    interpolations: ["item": name, "count": "\(held)"])]
+        var lines = [lingo.localize(key, locale: locale, interpolations: ["item": name, "count": "\(held)"])]
         lines.append(contentsOf: await QuestWarning.lines(itemId: item.id, for: context.session, on: context.db,
                                                           lingo: lingo, locale: locale))
         let markup = TGInlineKeyboardMarkup(inlineKeyboard: [[
             TGInlineKeyboardButton(text: lingo.localize("inventory.drop_all.confirm", locale: locale),
-                                   callbackData: "\(route.prefix)dropok:\(item.id):\(held)"),
+                                   callbackData: route.prefix + yes),
             TGInlineKeyboardButton(text: lingo.localize("inventory.drop_all.cancel", locale: locale),
                                    callbackData: "\(route.prefix)info:\(item.id)")
         ]])
@@ -325,9 +345,9 @@ enum BagCard {
 
     // MARK: - The actions
 
-    private static let verbs = ["eat:", "eatn:", "drop:", "dropall:", "dropok:"]
+    private static let verbs = ["eat:", "eatn:", "drop:", "drop1ok:", "dropall:", "dropok:"]
 
-    /// True when `data` is one of the card's five verbs under `route`.
+    /// True when `data` is one of the card's six verbs under `route`.
     static func isAction(_ data: String, route: Route) -> Bool {
         verbs.contains { data.hasPrefix(route.prefix + $0) }
     }
@@ -349,7 +369,7 @@ enum BagCard {
         }
     }
 
-    /// A tap on one of the card's five verbs (`isAction`). Refused while the
+    /// A tap on one of the card's six verbs (`isAction`). Refused while the
     /// governor holds the bag — the same modal as every other bag button.
     static func handle(_ data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage,
                        context: Context, route: Route,
@@ -377,13 +397,14 @@ enum BagCard {
                                  context: context, route: route, list: list)
         }
 
-        // The three discards answer first: none of them refuses with a modal.
+        // The discards answer first: none of them refuses with a modal.
         _ = try? await context.bot.answerCallbackQuery(params: ack)
 
         if data.hasPrefix(prefix + "dropall:") {
             guard case let (itemId, _)? = idAndCount(data, prefix: prefix + "dropall:"),
                   let item = ItemCatalog.find(itemId), item.type != .gear else { return true }
-            try await askDropAll(item, route: route, message: message, context: context, list: list)
+            try await ask(dropAllQuestion(item, route: route, context: context),
+                          item, route: route, message: message, context: context, list: list)
             return true
         }
         if data.hasPrefix(prefix + "dropok:") {
@@ -394,16 +415,34 @@ enum BagCard {
             // number by now gets the question again, with that number.
             let held = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: context.db)
             guard held == count else {
-                try await askDropAll(item, route: route, message: message, context: context, list: list)
+                try await ask(dropAllQuestion(item, route: route, context: context),
+                              item, route: route, message: message, context: context, list: list)
                 return true
             }
             try await drop(item, count: count, route: route, message: message, context: context, list: list)
             return true
         }
+        if data.hasPrefix(prefix + "drop1ok:") {
+            guard case let (itemId, seen)? = idAndCount(data, prefix: prefix + "drop1ok:"),
+                  let item = ItemCatalog.find(itemId), item.type != .gear,
+                  let userId = context.session.id else { return true }
+            // One unit, out of the stack the question saw. A second quick tap on
+            // «Так» finds the bag moved and takes nothing more, and so does a
+            // question left in chat: the card, not the question, because a double
+            // tap has already had what it asked for.
+            let held = try await InventoryEntry.totalQuantity(of: itemId, for: userId, on: context.db)
+            guard held == seen else {
+                try await redraw(item, route: route, message: message, context: context, list: list)
+                return true
+            }
+            try await drop(item, count: 1, route: route, message: message, context: context, list: list)
+            return true
+        }
         if data.hasPrefix(prefix + "drop:") {
             let itemId = String(data.dropFirst((prefix + "drop:").count))
             guard let item = ItemCatalog.find(itemId), item.type != .gear else { return true }
-            try await drop(item, count: 1, route: route, message: message, context: context, list: list)
+            try await ask(dropOneQuestion(item, route: route, context: context),
+                          item, route: route, message: message, context: context, list: list)
             return true
         }
         return true
@@ -508,9 +547,11 @@ enum BagCard {
         try await redraw(item, route: route, message: message, context: context, statusLine: banner, list: list)
     }
 
-    private static func askDropAll(_ item: Item, route: Route, message: TGMaybeInaccessibleMessage,
-                                   context: Context, list: (Item) async throws -> Screen) async throws {
-        if let question = try await dropAllQuestion(item, route: route, context: context) {
+    /// Draws a discard question over the card; nil, nothing to ask about, the
+    /// card or the list as they stand.
+    private static func ask(_ question: Screen?, _ item: Item, route: Route, message: TGMaybeInaccessibleMessage,
+                            context: Context, list: (Item) async throws -> Screen) async throws {
+        if let question {
             await editScreen(message, text: question.text, replyMarkup: question.markup, bot: context.bot)
         } else {
             try await redraw(item, route: route, message: message, context: context, list: list)

@@ -298,6 +298,7 @@
   "inventory.action.drop_one": "🗑 Викинути 1",
   "inventory.action.drop": "🗑 Викинути",
   "inventory.action.drop_all": "Викинути всі (%{count})",
+  "inventory.drop_one.question": "%{item} — викинути 1? Повернути не вийде.",
   "inventory.drop_all.question": "%{item} — викинути всі %{count}? Повернути не вийде.",
   "inventory.drop_all.confirm": "🗑 Так, викинути",
   "inventory.drop_all.cancel": "🔙 Назад",

@@ -12,7 +12,8 @@
 //  and a discard of the job's berries are the same loss, so they are phrased
 //  by one function rather than two. The trader and the market append the lines
 //  to their prompts; the bag prints them on the card, before the tap, because
-//  its many-portion and discard buttons act without a question of their own.
+//  its many-portion button acts without a question of its own, and in both
+//  discard questions.
 //
 //  Advisory: a failed read prints nothing rather than blocking the screen.
 //  The count is what the bag holds (`QuestService.acceptedDeliveries`), so it

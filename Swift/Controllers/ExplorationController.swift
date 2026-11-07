@@ -1306,7 +1306,7 @@ extension ExplorationController {
         // The trail bag (2026-11-01): a name opens the item's card over the
         // list — the bag's card, `BagCard` with the `explore:` prefix — and
         // «🔙 До списку» (`explore:items`) draws the list again. The card's
-        // five verbs (`explore:eat:` was the list's own «🍴 Зʼїсти», so a bag
+        // six verbs (`explore:eat:` was the list's own «🍴 Зʼїсти», so a bag
         // message from before eats one and lands on the card) ask the
         // governor's lock and tell the walk's haul what left the bag.
         if data.hasPrefix("explore:info:") {

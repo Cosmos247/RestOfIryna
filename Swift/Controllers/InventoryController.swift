@@ -474,8 +474,8 @@ extension InventoryController {
             return true
         }
 
-        // The item card's five verbs — eat, eat many, throw away one, all, and
-        // the question's yes — one implementation with the trail bag's.
+        // The item card's six verbs — eat, eat many, throw away one, all, and
+        // each question's yes — one implementation with the trail bag's.
         if BagCard.isAction(data, route: .bag) {
             return try await BagCard.handle(data, query: query, message: message, context: context,
                                             route: .bag, list: { try await bagList(after: $0, context: context) })

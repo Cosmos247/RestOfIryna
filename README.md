@@ -798,6 +798,8 @@ card, `266d28e`, went with it):
   and every Vigor cost halved for an hour) and the sleep tincture, which saves the bag from one death on the way home
   (`content/spec/spec-tinctures.md`).
 - the Ukrainian copy says «настоянка», never «зілля», on the bag's 🧪 category and everywhere else.
+- every discard asks first, one unit and a lone unit included: «🥔 Картопля — викинути 1? Повернути не вийде.» (2026-11-07, the
+  players' ask).
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

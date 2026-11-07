@@ -248,6 +248,7 @@
   "inventory.action.drop_one": "🗑 Throw away 1",
   "inventory.action.drop": "🗑 Throw away",
   "inventory.action.drop_all": "Throw away all (%{count})",
+  "inventory.drop_one.question": "%{item} — throw away 1? There is no getting it back.",
   "inventory.drop_all.question": "%{item} — throw away all %{count}? There is no getting them back.",
   "inventory.drop_all.confirm": "🗑 Yes, throw away",
   "inventory.drop_all.cancel": "🔙 Back",

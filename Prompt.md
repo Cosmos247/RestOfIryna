@@ -15,8 +15,8 @@ snapshots, reading traps and a verified FAQ: `.memory/live-ops.md`.
 
 The pre-release rebalance is done and deployed (Phases 3–11). What is in flight is **fixing what
 playing the deployed build reveals**, plus the small features the play asks for — every defect so
-far came from someone PLAYING, none from a test. The newest work, committed and not deployed, is the **fortune teller's
-tinctures** on the kill trophies and the plants (`content/spec/spec-tinctures.md`). The premium currency is
+far came from someone PLAYING, none from a test. The newest work, committed and not deployed, is **every discard asked**, on the **fortune teller's
+tinctures**, on the kill trophies and the plants (`content/spec/spec-tinctures.md`). The premium currency is
 the zlatnyk («златник» 🟡), credited by the owner by hand in DBeaver and spent in the palace's
 Chancellery («🟡 Канцелярія», code `treasury`) on a class change. Gear work so far: durability as
 each item's own (`bf15669`) and the armour's ladder through the Master's enchant (`bad142b`,
@@ -28,13 +28,17 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the records synced after the tinctures, and `4bdfb78`'s hash fill), unpushed. Under it, unpushed: **`4bdfb78`** (the fortune teller's tinctures, «зілля» retired), **`6661229`** (the plants), **`7285cec`** (the kill trophies), **`75eb348`** (the 11-05 13:28 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`46437bf`** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (every discard is asked, and `d545af9`'s hash fill), unpushed. Under it, unpushed: **`d545af9`** (the records synced after the tinctures), **`4bdfb78`** (the fortune teller's tinctures, «зілля» retired), **`6661229`** (the plants), **`7285cec`** (the kill trophies), **`75eb348`** (the 11-05 13:28 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`46437bf`** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`46437bf`** (the owner pushed 2026-11-05 by 13:24, thirteen commits past `b04bef3`), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`46437bf`**, online since **2026-11-05 13:28:03** (pm2 restarts 2; the binary built on the Pi in 147 s). Content schema **v30**, content hash **`95421568`**, COMBINED `d0b897ae80619502` — the digest matched the Mac in every line before the restart; `PlantHazel` verified on the table (60 plots moved down a slot, 45 hazels in slot 0, 105 plots, none missing, no slot held twice). 12 × 403 per mass notice (players who blocked the bot; 11 on 11-01), still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. **The host rebooted itself 2026-11-04 ~17:57** (DNS late at boot, one failed start, pm2 brought the build up; `.memory/sessions.md` → the 11-05 deploy entry): the untracked `core` in the Pi's checkout is that boot's dump (124 MB), `pgweb/` is old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The kill trophies and the plants** (2026-11-05, `spec-bestiary.md` §15–§16 — Swift + content + uk/en, no migration) and **the fortune teller's tinctures** (2026-11-07, `spec-tinctures.md` — Swift + content + uk/en + `AddSleepWard` + `AddVigorThrift`): together content schema **v32**, content hash `b6cb33a2`, COMBINED `c725c286799bc344`: a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI` — NEVER a `/reload` first (Lingo is not reloaded, and the v30 binary refuses v32 content); `TODO.md` → their three walk blocks. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
+| waiting for a restart | **Every discard asked** (2026-11-07 — Swift + uk/en, no migration, the digest unchanged), and **the kill trophies and the plants** (2026-11-05, `spec-bestiary.md` §15–§16 — Swift + content + uk/en, no migration) and **the fortune teller's tinctures** (2026-11-07, `spec-tinctures.md` — Swift + content + uk/en + `AddSleepWard` + `AddVigorThrift`): together content schema **v32**, content hash `b6cb33a2`, COMBINED `c725c286799bc344`: a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI` — NEVER a `/reload` first (Lingo is not reloaded, and the v30 binary refuses v32 content); `TODO.md` → their four walk blocks. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
 
 ### Where the last sessions stopped (2026-10-24 → 11-07)
+
+**11-07, after the sync — every discard is asked (NOT live).** The players' ask, the owner's pick of three: every item in both bags. «🗑 Викинути 1»
+and a lone «🗑 Викинути» draw «🥔 Картопля — викинути 1? Повернути не вийде.» (`drop:`), its yes `drop1ok:<id>:<held>` takes one unit only
+while the bag holds what the question saw, so a double tap costs nothing. `TODO.md` → its walk block; `.memory/sessions.md` → the entry.
 
 **11-07 — the fortune teller's tinctures; «зілля» retired (NOT live, schema v32).** The owner's ask: a separate screen at the
 fortune teller, then the recipes. «🧪 Настоянки» on her screen: Мала 1× 🌼 + 1× 💧, ❤️ +25%, 10 🪙; Середня 2× 🌼 + 1× 💧, ❤️ +50%, 30 🪙;
@@ -175,9 +179,9 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — The tinctures are committed (`4bdfb78`), not fully walked and not deployed.** The test bot is STOPPED (its last run 19:03, stopped by
+**0 — The tinctures (`4bdfb78`) and every discard's question are committed, not fully walked and not deployed.** The test bot is STOPPED (its last run 19:03, stopped by
 the owner; ask before starting it, the tunnel on 5433 is up); both migrations ran on `roi_test`; the developer account `jj` holds all five.
-Finish `TODO.md`'s top block, Міцна above all, then the owner pushes and the deploy below runs: a BUILD on the Pi, the digest pre-flight,
+The discard's question needs a fresh build of the test bot. Finish `TODO.md`'s two top blocks, the discard's and the tinctures', Міцна above all, then the owner pushes and the deploy below runs: a BUILD on the Pi, the digest pre-flight,
 the restart on the owner's word, the two migrations verified on the table. The testers' list for it has not been written.
 
 **1 — Walk the blocks live since 10-31 02:01** — `TODO.md` → "Walk list", the top blocks: a first plot on a fresh

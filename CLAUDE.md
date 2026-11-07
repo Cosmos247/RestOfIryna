@@ -624,7 +624,8 @@ back but still leaves the bag. It predicts the fit in units for both stores, lik
 names the row it destroys. Auto-memory `project-salvage-and-gear-rows`.
 
 **Food and materials leave by «🗑 Викинути» on the item's card** (2026-11-01: both bags, ONE `BagCard`, which tells the
-walk's haul every unit it takes out) — never from the warehouse, never gear. «До повної снаги (N)» / «Зʼїсти всі (N)»
+walk's haul every unit it takes out) — never from the warehouse, never gear. **Every discard is asked** (2026-11-07, the players), a lone unit too:
+a confirmation, not the quantity prompt the lone-unit rule removes. `drop:` is the question, and its `drop1ok:` carries what the bag held, so a second tap takes nothing. «До повної снаги (N)» / «Зʼїсти всі (N)»
 is `MealMath.bulk`, asked again on the tap; every portion goes through `VigorService.consume`. The warehouse card's
 «🛡 Одягнути» TRADES PLACES with what is worn (`WarehouseService.wear`, one transaction), and every `estate:wh:` button
 refuses while an expedition row stands. Auto-memory `project-bag-item-card`.

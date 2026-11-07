@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-07)* **the records synced after the tinctures, and `4bdfb78`'s hash fill** — docs, both memory banks and two small
+- *(this commit, 11-07)* **every discard is asked, and `d545af9`'s hash fill** — Swift + uk/en, NOT deployed (no migration, the digest
+  unchanged; ships with the tinctures' build and restart): `drop:` became the question, `drop1ok:<id>:<held>` its yes, one key
+  `inventory.drop_one.question`; the 11-01 «at once» retired on the players' ask. 585 tests.
+- `d545af9` (11-07) **the records synced after the tinctures, and `4bdfb78`'s hash fill** — docs, both memory banks and two small
   code cleanups, no behaviour: `Prompt.md` reoriented, every stale record found by the long-form pass, the walk and supply numbers
   recomputed with the real `spawnWeight`, `rebalance.md`'s tinctures section, the four extra drops kept as ideas for future events.
 - `4bdfb78` (11-07) **the fortune teller's tinctures, and «зілля» retired** — Swift + content + uk/en + lore + two migrations,
@@ -1017,7 +1020,33 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-07, night (the long-form sync after the tinctures) — *(this commit)*
+## Session — 2026-11-07, after the sync (every discard is asked) — *(this commit)*
+
+**Asked:** «Гравці просять додаати підтвердження при викиданні одного предмета. Покажи як ти бачиш реалізацію». Shown as a played sample;
+the owner's pick of three (every item · the last unit only · dishes and tinctures only): **every item, both bags.** It revises the
+owner's 11-01 pick («Викинути 1» at once).
+
+**Built.** `BagCard`: `drop:<id>` draws «🥔 Картопля — викинути 1? Повернути не вийде.» with a taken job's ⚠️, «🗑 Так, викинути» and
+«🔙 Назад», the keys «all» already used. The QUESTION inherited `drop:`, so a card left in chat lands on the safe path. The yes is a new
+verb, `drop1ok:<id>:<held>`: `dropok` demands the bag hold exactly the count it names, which would refuse one of six. `<held>` is the
+double-tap guard: a second «Так» finds the bag moved, takes nothing and redraws the card, not the question, since the player already
+got what they asked for. `drop` itself did not change, so the banner and «Принесено» did not either. The longest callback is 42 bytes.
+
+**Cost, accepted:** a unit takes two taps, seven of twenty 14 instead of 7. A typed discard count was turned down on 11-01 and was not
+offered again.
+
+**Verified:** build clean, `validate --strict` 0 warnings, 585 tests, the digest unchanged (COMBINED `c725c286799bc344`). `BagCard` is
+outside the test graph, so `TODO.md`'s new block is the only proof; the test bot was not started.
+
+**The audit before the commit** (the short form) changed no behaviour. Read rather than assumed: the double-tap guard stands on
+`RouterStore`'s per-user chain, and a redraw of an unchanged screen is `editScreen`'s `isNotModified`, so it sends nothing. Rendered
+through the real Lingo. A lone unit asked does not contradict the lone-unit rule, which removes a QUANTITY prompt; `CLAUDE.md` says so.
+Found in the first record pass: README's not-deployed list and `status.md`'s top without this change, `status.md`'s LIVE paragraph
+claiming the question already runs, `Prompt.md`'s «the newest work», «three walk blocks» and «`TODO.md`'s top block» (which my new block
+had turned into a wrong pointer), no FAQ row, and this entry labelled «evening» above an earlier «night». All fixed; so were a redundant
+inner `try await` at three call sites and a comment that named only the double tap.
+
+## Session — 2026-11-07, night (the long-form sync after the tinctures) — `d545af9`
 
 **Asked** (the long-form prompt, «Analyse all current changes and uncomitted progress…»; the owner had first to ask for its text, which
 lived only in `~/.claude/history.jsonl` and the transcripts: it is verbatim in auto-memory `feedback-commit-protocol` now).

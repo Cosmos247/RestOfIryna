@@ -2160,6 +2160,17 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-07 — every discard is asked (NOT live — Swift + uk/en, no migration, the digest unchanged; ships with the
+tinctures' build and restart). The players' ask, the owner's pick: every item, both bags. `swift test` does not reach `BagCard`,
+so this block is the only proof:**
+- [ ] A stack of 6: «🗑 Викинути 1» → «🥔 Картопля — викинути 1? Повернути не вийде.», nothing gone yet; «🔙 Назад» → the card, still
+      6; «🗑 Так, викинути» → the card reading 5, «🗑 Викинути всі (5)», and the banner «🗑 Викинуто: 🥔 Картопля × 1».
+- [ ] A lone unit: the single «🗑 Викинути» asks the same; «Так» lands on the list, with the banner.
+- [ ] A double tap on «🗑 Так, викинути»: one unit goes, the card stands, one banner.
+- [ ] The same on a walk: the trail bag's card asks, «🔙 Назад» returns to it, and «Принесено» at the door nets the unit out.
+- [ ] A taken job's berries: the ⚠️ under the question. While the governor is out: the bag's modal, no question.
+- [ ] A card left in chat from before the restart: its «🗑 Викинути 1» asks, it does not throw away.
+
 **Added 2026-11-07 — the fortune teller's tinctures (NOT live — Swift + content schema v32 + uk/en + `AddSleepWard`; the same
 build and restart as the plants below). `content/spec/spec-tinctures.md`. `swift test` reaches none of the brew, the drink or the
 wipe, so this block is the only proof. The test bot is up on `4bdfb78` since 2026-11-07 19:03, both migrations ran on `roi_test`,
@@ -2373,7 +2384,7 @@ no migration — a walk in progress across the restart keeps its «Принес�
 - [ ] A stale card: eat in another bag message, then tap the old card's «До повної снаги (N)» — the card redraws with
       the new N and nothing is eaten.
 - [ ] 🥔 Картопля / 🥩 Сире м'ясо: «🔥 Це інгредієнт: спершу на кухню.», no «Зʼїсти».
-- [ ] «🗑 Викинути 1»: at once, «🗑 Викинуто: 🥔 Картопля × 1»; a lone unit's single «🗑 Викинути» at once too.
+- [ ] «🗑 Викинути 1» and a lone unit's single «🗑 Викинути»: asked since 2026-11-07 — the block of that date.
 - [ ] «🗑 Викинути всі (6)»: «🥔 Картопля — викинути всі 6? Повернути не вийде.» → «🗑 Так, викинути» → «🗑 Викинуто:
       🥔 Картопля × 6» and the list; «🔙 Назад» returns to the card.
 - [ ] A taken delivery job (the innkeeper's «Солодке до столу», 6 berries): the berries' card and the discard question

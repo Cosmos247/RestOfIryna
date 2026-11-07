@@ -21,6 +21,11 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-07 — every discard is asked** (Swift + uk/en, NOT live — the tinctures' build and restart; no migration, the digest
+unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
+викинути 1? Повернути не вийде.» with a taken job's ⚠️; the yes, `drop1ok:<id>:<held>`, takes one unit only while the bag holds what
+the question saw, so a double tap costs nothing. `BagCard`, its one implementation.
+
 **2026-11-07 — the fortune teller's tinctures, and «зілля» retired** (Swift + content schema **v32** + uk/en + lore +
 `AddSleepWard`, NOT live — the same build and restart as the plants; `spec-tinctures.md`). «🧪 Настоянки» on her screen, in both
 its states, opens five recipes in the same message: Мала 1× 🌼 + 1× 💧, ❤️ +25%, 10 🪙; Середня 2× 🌼 + 1× 💧, ❤️ +50%, 30 🪙; Чебрецю
@@ -84,7 +89,7 @@ the green one is `873e426`.
 restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every
 action moved onto the item's card, drawn over the list: the description, what a dish restores, «🎒 У сумці: N», a taken
 job's ⚠️ (`QuestWarning`, shared with the trader), «🍴 Зʼїсти» and ONE many-portion button — «До повної снаги (N)» /
-«Зʼїсти всі (N)», counted by `MealMath` and asked again on the tap — then «🗑 Викинути 1» (at once) and «🗑 Викинути всі
+«Зʼїсти всі (N)», counted by `MealMath` and asked again on the tap — then «🗑 Викинути 1» (at once; asked once the 2026-11-07 change goes live) and «🗑 Викинути всі
 (N)» (asked). Raw food: «🔥 Це інгредієнт», no eat. Gear: the card in place with its own Одягнути / Зняти, «(рівень
 N)», and never a discard. Step 2 (afternoon): the trail bag is ONE list — food, then materials — with the same card (`BagCard`, shared by
 both bags), discard included in the forest; every unit a card takes out is netted out of «Принесено»
