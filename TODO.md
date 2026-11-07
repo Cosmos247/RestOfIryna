@@ -2162,8 +2162,8 @@ barrier) went live at the 2026-10-17 17:40 restart.
 
 **Added 2026-11-07 — the fortune teller's tinctures (NOT live — Swift + content schema v32 + uk/en + `AddSleepWard`; the same
 build and restart as the plants below). `content/spec/spec-tinctures.md`. `swift test` reaches none of the brew, the drink or the
-wipe, so this block is the only proof. `AddSleepWard` ran on `roi_test` and the developer account holds 5 of each of the first
-four; Міцна настоянка and `AddVigorThrift` came after, and need a start of the test bot on this tree. Try it there first:**
+wipe, so this block is the only proof. The test bot is up on `4bdfb78` since 2026-11-07 19:03, both migrations ran on `roi_test`,
+and the developer account holds all five tinctures. Try it there first:**
 - [ ] `/content` reads schema v32, hash `b6cb33a2`, 42 items, 19 recipes; `users.sleep_ward` and `users.vigor_thrift_percent` exist
       after the boot.
 - [ ] The capital → «🏘 Поділ»: the caption ends «…за таємничим пророцтвом або настоянкою.»
@@ -3464,10 +3464,13 @@ unrelated commit on purpose.
   A loot-raising tincture would hit the same cap, so none was offered.
 - **The tinctures left open** (`spec-tinctures.md` §5): 🐾 Кіготь has no recipe; the wormwood's card promises appetite and a cure for a poison the game does not have. A holiday's gate still lists the bag under the ward (`deathPreview`),
   harmless until a holiday is scheduled.
+- **A dead key:** `capital.location.fortune.body` («Тьмяний намет… у планах») is read by no screen, in either locale. Left alone, a
+  mention written there reaches nobody; deleting it is one line each if the owner wants it gone.
 - **A 🏕 governor plans at the full step cost** under Міцна настоянка and the Chariot alike (`walkCost`), so he eats and turns earlier
   than he must. On the safe side; asking the charged cost instead would change a live card's behaviour, so it was not done unasked.
-- **Still waiting for the owner's word, reminded at the 11-07 commits:** the four extra drops of 11-05 (Blight foam, the wild bear's fat,
-  sinew, rare second trophies).
+- **Ideas for future events** (the owner, 2026-11-07: the four extra drops offered on 11-05, kept for holidays, not for the forest's
+  everyday loot): foam of the Blight from every rabid creature, the wild bear's fat, sinew from the big wild grazers, rare second
+  trophies (the eagle's talon, the viper's shed skin). Nothing built; `spec-bestiary.md` §15.2.
 
 **From the 2026-11-03 → 11-04 sessions:**
 - **Cheaper Vigor — computed, then PUT OFF by the owner** («Поки відкладемо це», 11-04, before answering which to
@@ -3991,6 +3994,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
   2026-11-01: `pace.levels_without_an_estate` no longer fires in the tree.)
 
 ---
+
+*Last updated: 2026-11-07, night — the kill trophies, the plants and the fortune teller's tinctures committed (`7285cec`, `6661229`,
+`4bdfb78`), schema v32, not deployed; the test bot stopped. The 11-05 footer follows.*
 
 *Last updated: 2026-11-05 13:28 — everything from `266d28e` to `46437bf` LIVE (the restart 13:28:03; schema v30, the
 digest matched the Mac in every line before it; `PlantHazel` verified on the table). The 11-01 night footer follows.*

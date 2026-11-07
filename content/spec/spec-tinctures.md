@@ -1,7 +1,7 @@
 # Tinctures — the fortune teller's cauldron (2026-11-07)
 
-**Status: DECIDED and BUILT 2026-11-07.** Swift, content, locales and two migrations (`AddSleepWard`, `AddVigorThrift`), content
-schema **v32**, not deployed. It ships with a build and a restart, never a `/reload` first: a v31 binary refuses v32
+**Status: DECIDED and BUILT 2026-11-07, `4bdfb78`.** Swift, content, locales and two migrations (`AddSleepWard`, `AddVigorThrift`),
+content schema **v32**, not deployed; the owner walked part of it on the test bot the same day. It ships with a build and a restart, never a `/reload` first: a v31 binary refuses v32
 content, and names are Lingo's.
 
 ## 1. What was asked
@@ -29,8 +29,8 @@ Mid-design: the game's word is «настоянка», never «зілля». At 
 3. **Healing is a share of the bar, not a number.** The two items shipped at 30 and 60 HP, obtainable nowhere: 30 HP is
    18–26% of a level-5 bar and 8–11% of a level-30 one. 25% is about one hard fight at any level (§4).
 4. **The two heals are alike** («на середню просто треба більше»): the same two ingredients, more of the plant, one drop
-   of venom. A medium of two venoms was shown (once every 14 walks at any depth) and not taken. Venom comes only from
-   the viper, about 0.14 a walk however deep it goes, while plants grow with the steps.
+   of venom. A medium of two venoms was shown (about once every 13 walks at any depth, 14 as quoted on the day) and not taken. Venom comes only from
+   the viper, about 0.16 a walk however deep it goes, while plants grow with the steps.
 5. **Thyme is Vigor alone**: «Тільки 30% снаги», the owner's number. Shown and not taken: +20% with beasts' blows −15%,
    +40% with Vigor drain −50% for 30 min, +40% with XP +15%, +40% with attack +10%, and +60% alone. No timer. Its plant's
    card lost «Посилює захист».
@@ -83,11 +83,11 @@ characters, not live players: the weapon at its level's rung, the Master's armou
 | L10 | 209 · 52 · 105 | 164 · 41 · 82 | 149 · 37 · 75 | 20–26% (rabid wolf) |
 | L20 | 304 · 76 · 152 | 242 · 61 · 121 | 221 · 55 · 111 | 26–33% (rabid bear) |
 
-Thyme at 30%: +38 at L5, +45 at L10, +60 at L20, +75 at L30. A walk costs 104–111 Vigor at L5 to km 10, 191–209 at L10 to km 20,
-239–251 at L20 to km 30; under the thrift 52–56, 96–104 and 119–125.
+Thyme at 30%: +38 at L5, +45 at L10, +60 at L20, +75 at L30. A walk costs 103–111 Vigor at L5 to km 10, 190–208 at L10 to km 20,
+237–249 at L20 to km 30; under the thrift 52–55, 95–104 and 119–124.
 
 **The thrift's cost, stated once.** At a step of 1 pacing over cleared km nearly pays for itself in finds (0.84–1.2 Vigor a step,
-`.memory/rebalance.md`'s reading of 2026-11-03). What holds it back is the hour, the bag's room and a recipe that needs a trophy from a
+the reading of 2026-11-03 in `TODO.md` → Open). What holds it back is the hour, the bag's room and a recipe that needs a trophy from a
 fight. The Chariot gives the same for six hours, by chance. Its effect on the pace to L40 was not measured: `simulate` sees no
 tincture.
 
@@ -95,7 +95,9 @@ tincture.
 is why the −15% that was offered cut the blow itself. Any later defensive tincture has to do the same.
 
 **Supply**, computed from the data with no 🏕 runs: a walk to km 10 and back is 20 steps and 9.2 fights, 0.6 plants and 0.46
-trophies. That brews about 0.4 tinctures a walk: about one a day at 25 fights, 4–14 a day at the busiest 105–350.
+trophies. That brews about 0.3 tinctures a walk, a heal and a thyme: about three in four days at 25 fights, 3–10 a day at the busiest
+105–350. One tincture of a kind takes 6 walks (Small), 11 (Medium, 6 from km 20), 8 (thyme, 3 at km 30), 12–13 (strong thyme, 9 from km 20,
+where its feather is the bottleneck) and, from km 12, 8 at km 20 and 6 at km 30 (sleep).
 
 `simulate --strict`: 0 broken bands, 15 warnings, as before. `spec opening` unchanged: both read flat restores.
 

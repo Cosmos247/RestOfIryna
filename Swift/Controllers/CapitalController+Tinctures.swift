@@ -109,7 +109,7 @@ extension CapitalController {
                                     callbackData: "tincture:brew:\(recipe.id)")],
             RecipeNoteDisplay.pinRow(pinned: pinned, callbackData: "tincture:pin:\(recipe.id)", lingo: lingo, locale: locale),
             [TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.back", locale: locale),
-                                    callbackData: "tincture:open")]
+                                    callbackData: recipe.category.backCallbackData)]
         ]
         return (lines.joined(separator: "\n"), rows)
     }

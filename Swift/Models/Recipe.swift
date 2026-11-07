@@ -7,15 +7,17 @@
 //  Static crafting catalog used by the Workshop (Phase 5.2). Recipes live in
 //  code, not the DB — same convention as `ItemCatalog` and `EnemyCatalog`.
 //
-//  Three categories:
+//  Four categories:
 //    🔥 Forge   — smelting / metalwork (Iron Lump → Iron Ingot)
 //    🧵 Tannery — the Forester armour's PATTERNS: what each piece is made of.
 //                 Nobody crafts armour since 2026-09-28 (the Master is the only
 //                 source); salvage still reads these to know what a piece
 //                 gives back, which is the whole reason they are kept.
 //    🍳 Kitchen — cooked food (Phase 5.2.1, gated by per-user learned set)
+//    🧪 Tincture — the fortune teller's: she brews them for a fee, from the bag
+//                 alone, through `TinctureService`, never `CraftingService`.
 //
-//  All recipes pull inputs from the player's inventory + warehouse pool
+//  All the others pull inputs from the player's inventory + warehouse pool
 //  (inventory drained first to free slots) and deposit the output into the
 //  inventory. See `CraftingService`.
 //

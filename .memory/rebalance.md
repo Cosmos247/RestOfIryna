@@ -1586,6 +1586,55 @@ the 10-27 numbers again, then to recompute them on fresh data.
   Also fixed: §14.3's share range (67–80% of the ATK now), stale `/content` hash lines in the walk list, README's
   NOT-live list (the holiday was missing, schema v28), the file map's test count.
 
+### The tinctures, measured and decided (2026-11-07, `4bdfb78`)
+
+What was decided is `content/spec/spec-tinctures.md`; this is the research behind it and how to rebuild it.
+
+**The harness.** A scratch SwiftPM package copying `Modules/ROIContent` and `Modules/ROISim`, loading `content/data` through
+`ContentLoader`, running the game's own `FightSimulator` (profile `.basic`, 40,000 fights a row, 6,000 a creature for a walk). The
+kit is the class line (`ProgressionMath.baseStats`) + the weapon's highest rung for the level + the Forester set through
+`EnchantLadderRules.scale` at `master.enchantSteps`: +0 at L5, +1 at L10, +3 at L20, +4 at L30, against the estate at 2 / 3 / 5 / 6
+(`CombatMath.scaled`). `ReferenceCharacter` was not used: its full on-curve kit overstates what players wear. A walk to km D sums
+0.40 + 0.52 encounters a km over the creatures whose band covers it, weighted by `spawnWeight` (the archetype's: 100 trash, 60 normal,
+40 skirmisher, 25 brute, 8 elite), plus 2·D steps. Model characters, not live ones. **The first pass weighted them equally** and told
+the owner a feather came as often as a venom and the strong thyme took 7 walks at km 30; the audit caught it (9), and the numbers
+below are the weighted ones.
+
+**A multiplier on DEF barely registers.** Mitigation is `DEF / (DEF + 46.65 + 8.017·L)`, and the real kit absorbs 19–24%:
+
+| damage a fight | base | DEF ×1.2 | DEF ×1.5 | blows −15% |
+|---|---|---|---|---|
+| L5 warrior, wild moose | 42.9 | 40.8 | 38.4 | 36.3 |
+| L10 warrior, rabid wolf | 41.8 | 40.1 | 37.4 | 36.7 |
+| L20 warrior, rabid bear | 80.4 | 76.8 | 71.5 | 68.6 |
+
+So a defensive tincture has to cut the blow; ×1.2 is −3–5% and ×1.5 −9–11% across the classes. The option was declined, the finding
+stands for the next one.
+
+**A hard fight is about a quarter of the bar at every level** (26–33% L5 moose, 20–26% L10 wolf, 26–33% L20 rabid bear), which is what
+set the heal at 25% and 50%. A flat 30 HP was 18–26% of a level-5 bar and 8–11% of a level-30 one.
+
+**What a walk costs** (Vigor; HP): L5 to km 10: 103–111; 118–128, 427 XP. L10 to km 20: 190–208; 228–266, 2,134 XP. L20 to km 30: 237–249;
+132–149, 5,668 XP. Halving: 52–55, 95–104, 119–124. Attack ×1.10, shown and not taken: HP −9–12%, Vigor −3–5%.
+
+**Supply**, from the data, without 🏕 runs:
+
+| a walk to | steps | fights | 🌿 | 🌼 | 🌱 | 🌸 | 💧 | 🪶 | 🦷 | 📯 | 🐾 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| km 10 | 20 | 9.2 | .24 | .18 | .12 | .06 | .16 | .11 | .19 | – | – |
+| km 20 | 40 | 18.4 | .48 | .36 | .24 | .12 | .16 | .11 | .28 | 1.13 | – |
+| km 30 | 60 | 27.6 | .72 | .54 | .36 | .18 | .16 | .11 | 1.06 | 1.24 | .49 |
+
+Venom and feather do not grow with depth: the viper and the eagle live on km 1–7. That is why the medium heal asks one venom, not two,
+and why the strong thyme's bottleneck past km 20 is its feather (9 walks). A walk to km 10 brews about 0.3 tinctures, a heal and a thyme,
+so about three in four days at the model's 25 fights and 3–10 a day at the busiest 105–350. (The 0.4 told to the owner on the day counted
+the bitter tincture, which was not picked.)
+
+**The thrift's rounding.** Costs are 1–5 and round half up, so ×0.75 leaves 2 at 2, and anything from ×0.74 to ×0.26 turns a 2 into a 1:
+−50% is the only honest number, the Chariot's finding (the section above on the tarot). Under the Chariot a 1-point Defend would be
+0.25 and free, hence the floor of 1 in `MealMath.thriftedCost`. Stacked, a flee falls 3 → 1 and a technique 4–5 → 1, a step and a blow stay
+at 1. `simulate` sees no tincture; the effect on the pace to L40 is unmeasured.
+
 ### The 2026-09-07 quest rebalance (the balance half of the pre-push pass)
 
 Two faults with one cause — a flat reward and an unfiltered pool.

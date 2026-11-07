@@ -68,7 +68,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
 ### Vigor
 - 0 to VigorMax (`100 + 5·L`)
 - Drains (`tuning/vigor.json` → `drain`): a step 2, an attack 2, a defend 1, a flee 3, a
-  passive round 2. `walkRoomDoubleSpeed` (4) is a dead knob — no double-speed walk exists
+  passive round 2. `walkRoomDoubleSpeed` (4) is a dead knob — no double-speed walk exists.
+  Міцна настоянка чебрецю halves every cost for an hour, on top of the stance and the card and
+  never below 1 (2026-11-07, `MealMath.thriftedCost`)
 - Starvation (Vigor 0): stats −25% and an HP drain per step (5% of max HP,
   `tuning/vigor.json` → `starvation.hpDrainPercent`); the GDD's "travel time doubles" was never
   built, and since 2026-10-08 the road does not refuse 0 Vigor either. It is charged on EVERY
@@ -98,8 +100,8 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   row (in the forest), a `TravelState` row (on the road) and `location == capital`.
   Only the first was ever checked, so the manor's bed worked from anywhere in the
   kingdom. Away from the estate the clock is CLEARED, not merely skipped. A cooked dish is
-  the away-from-home heal (a quarter of its silver price in HP; the two potions are obtainable
-  nowhere); nothing in the capital can take a player to 0 HP (the arena
+  the away-from-home heal (a quarter of its silver price in HP), and since 2026-11-07 the fortune
+  teller's tincture (25% or 50% of the bar, `spec-tinctures.md`); nothing in the capital can take a player to 0 HP (the arena
   clamps both duellists to `max(1, …)`), so refusing to heal there strands nobody.
 - **A trip can be turned around** (2026-09-10). While one is in flight the nav keyboard
   lends the Explore slot to `↩️ Розвернутись`; walking back costs exactly what has been

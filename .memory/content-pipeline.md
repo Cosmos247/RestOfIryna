@@ -40,7 +40,7 @@ containment check reports that block as drifted forever and teaches everyone to
 ignore the checker. (`spec opening` is also the one table that needs `-c release`
 — it rolls 8000 fights per cell.)
 
-**`roi-content spec <progression|gates|bestiary|items|sets|economy|opening>`** prints the
+**`roi-content spec <progression|gates|bestiary|items|sets|economy|opening|king|tinctures|events>`** prints the
 tables a content specification quotes, from the code that owns the maths —
 `ProgressionMath`, `EnemyGenerator`, `BudgetMath`, `BudgetCurve`. A spec full of
 hand-typed numbers would be a fourth transcription of the same curves; this way
@@ -305,6 +305,11 @@ so its base `.desc` is never used and must not exist.
 - `starterRecipeIds` — cookable from day one, no DB row.
 - `unlocks` — `{recipeId, npc, minEstateTier}` rungs an NPC teaches through its daily job,
   resolved by `RecipeUnlockDTO.next` (`project-npcs-teach-recipes`).
+
+**The fortune teller's recipes** (2026-11-07, schema v32, `spec-tinctures.md`) sit in the same `recipes` block, category `tincture`,
+each with a `silverFee`. The category is not `isCraftable`: `TinctureService.brew` is their funnel, not `CraftingService`. Their
+outputs are `potion`s, whose `effects` gained `restore_vigor_percent`, `restore_hp_percent`, `sleep_ward` and `vigor_thrift` (with
+`seconds`); the validator keeps those four off every other item type. The digest names the fee, the kinds and the seconds.
 
 Every rung also needs **its own line of copy** in both locales, keyed `<recipeId>.taught`,
 because the innkeeper says something different about each dish. In uk a line may instead be a

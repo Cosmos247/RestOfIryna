@@ -1196,7 +1196,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **526 tests** (2026-11-01, night — the hazel). Pace is **136–151 days** to level 40 in the tree since the hazel
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **585 tests** (2026-11-07, the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
 (2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

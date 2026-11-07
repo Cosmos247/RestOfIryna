@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 478 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 585 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -760,8 +760,8 @@ one database migration, `AddExplorationHaul`):
 - the road between the estate and the capital shows an autumn forest from the saddle (2026-10-31, for the autumn).
 - a coop's build banner agrees with its noun: «🐔 Курник закладений на ділянці N.» (it said «закладена»; «на слоті» until 2026-11-04).
 
-**Built 2026-11-01 → 11-04, not deployed yet** (content schema v30 with the binary and a migration; the bag's item
-card, `266d28e`, waits for the same restart):
+**Live since 2026-11-05 13:28** (`46437bf`, content schema v30 with the binary and `PlantHazel`; the bag's item
+card, `266d28e`, went with it):
 - every estate starts with **the hazel** («🌳 Ліщина»): a plot in slot 1 that the player never chooses or
   builds, planted ripe when the estate is named, growing a forest nut an hour and holding five
   (`content/spec/spec-progression.md` §8). Every tier gains its slot, so the slots a player builds on stay as
@@ -787,6 +787,17 @@ card, `266d28e`, waits for the same restart):
   plot's button is its own icon and name — «🌳 Ліщина», and «🌾 Ферма (1)» / «🌾 Ферма (2)» when a type repeats.
 - for the developer: `/news` sends one message — text or a photo, copied as written — to every registered player, any
   time and without a restart, after showing it back and asking «Надіслати N гравцям?» (2026-11-04).
+
+**Built 2026-11-05 → 11-07, not deployed yet** (content schema v32 with the binary and two migrations):
+- every creature the forest spawns drops one of five shared trophies beside its meat and hide: 💧 venom, 🪶 feather, 🦷 fang,
+  📯 horn, 🐾 claw, 5% from the four nearest creatures and 15% deeper (`content/spec/spec-bestiary.md` §15).
+- a step can turn up a plant, 3 steps in 100 anywhere in the forest: 🌿 thyme, 🌼 St John's wort, 🌱 wormwood, 🌸 pasque
+  flower at 4 : 3 : 2 : 1 (`spec-bestiary.md` §16).
+- the fortune teller brews **tinctures** from them for 10–40 silver: «🧪 Настоянки» on her screen, five recipes, a card that
+  counts the bag and pins to the notebook. Two heals (+25% and +50% of the bar), thyme (+30% of the pool), strong thyme (the same,
+  and every Vigor cost halved for an hour) and the sleep tincture, which saves the bag from one death on the way home
+  (`content/spec/spec-tinctures.md`).
+- the Ukrainian copy says «настоянка», never «зілля», on the bag's 🧪 category and everywhere else.
 
 A concept for class sets is parked, nothing built (`.memory/class-sets-concept.md`). The deployed
 commit, the digest baseline and the next step are kept in [Prompt.md](./Prompt.md).

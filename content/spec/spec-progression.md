@@ -377,7 +377,7 @@ approved sample had neither.
 ## 8. The hazel — the plot every estate starts with (2026-11-01)
 
 **Status: APPROVED 2026-11-01** (the owner's «так» on the section as written) **and BUILT the
-same day — not deployed.** The owner's idea and picks, written down before any of it reached
+same day, live since the 2026-11-05 13:28:03 restart.** The owner's idea and picks, written down before any of it reached
 JSON. It needs code, content schema v30 and a migration, so it ships with a restart, never a
 `/reload`. What the build measured is §8.8.
 

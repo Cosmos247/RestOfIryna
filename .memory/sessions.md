@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-07)* **the fortune teller's tinctures, and «зілля» retired** — Swift + content + uk/en + lore + two migrations,
+- *(this commit, 11-07)* **the records synced after the tinctures, and `4bdfb78`'s hash fill** — docs, both memory banks and two small
+  code cleanups, no behaviour: `Prompt.md` reoriented, every stale record found by the long-form pass, the walk and supply numbers
+  recomputed with the real `spawnWeight`, `rebalance.md`'s tinctures section, the four extra drops kept as ideas for future events.
+- `4bdfb78` (11-07) **the fortune teller's tinctures, and «зілля» retired** — Swift + content + uk/en + lore + two migrations,
   content schema v32, NOT deployed (the plants' build and restart): «🧪 Настоянки» on her screen, five recipes of plants and a
   trophy with her fee, a share of the bar (`MealMath.share`), `TinctureService.brew` in one transaction, the Sleep Tincture's
   `User.sleepWard` (`AddSleepWard`), Міцна настоянка чебрецю's hour of half-price Vigor (`AddVigorThrift`), «📌 У нотатник»; her intro and Podil's caption name them; the bag's 🧪 category reads
@@ -891,6 +894,11 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-11-01 17:21 to 2026-11-05 13:28 (`b04bef3`, schema v29):** `records
+207c959cf4807072` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
+e3a492be1b017e81`, content hash `1ac5a7bc` (COMBINED `0f31c3b586671117`). The hazel (`29f38c5`, schema v30) moved `records` and the
+content hash.
+
 **The baseline the Pi ran from 2026-11-01 09:56 to 17:21 (`b0c0d9c`, schema v29):** `records
 c2e645e984e10916` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
 e3a492be1b017e81`, content hash `6e734f14` (COMBINED `f613c07ef73b320b`). The prizes at the palace (`96973ba`) moved
@@ -1009,7 +1017,37 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-07 (the fortune teller's tinctures; «зілля» retired) — *(this commit)*
+## Session — 2026-11-07, night (the long-form sync after the tinctures) — *(this commit)*
+
+**Asked** (the long-form prompt, «Analyse all current changes and uncomitted progress…»; the owner had first to ask for its text, which
+lived only in `~/.claude/history.jsonl` and the transcripts: it is verbatim in auto-memory `feedback-commit-protocol` now).
+
+**What the test bot showed.** Three runs (16:57, 17:15, 19:03) and not one error in any log but the two `chat not found` at boot, which are
+roster accounts that never opened it. The bag at the end: Мала 2, Середня 2, Чебрецю 2, Міцна 4, Сонна 1, so the owner drank from all
+five. Міцна's stamp on the real table: `vigor_thrift_percent` 50, until 20:04:00. What a step cost under it was not read from anything,
+and the owner stopped the bot. No note is left on that account, and a brew clears one, so the journal's tincture row was not read either.
+
+**Found by this pass:**
+- **The first walk and supply numbers ignored `spawnWeight`.** They weighted overlapping creatures equally, and `spawnWeight` is the
+  archetype's. Feather .14 → .11 and venom .14 → .16 a walk; the strong thyme at km 30 takes 9 walks, not the 7 shown when the owner picked
+  it, and the medium heal 6, not 7. Vigor and HP a walk moved by 1–3%. The harness was rerun; `spec-tinctures.md` §4 and `rebalance.md`
+  carry the weighted numbers. The «0.4 tinctures a walk» also counted the bitter tincture, which was not picked: it is 0.3.
+- `Prompt.md`: «the newest feature» was the zlatnyk; the HEAD row one commit behind; the holiday's «runs today» and the prizes' «before
+  18:00» still in Next action; «nothing of the brew has run yet»; the baseline at v29 (`b04bef3`) and the handshake's v29, the Pi's binary
+  named as `c77a25b`; the simulator paragraph leading with the pre-hazel 18 warnings.
+- `README.md`: 478 tests; the 11-01 → 11-04 block still «not deployed»; no block for what is built now.
+- `CLAUDE.md`: Vigor's «only sources» without the tinctures.
+- `.memory`: `INDEX.md` (the hazel not live, the specs' count), `content-pipeline.md` (the spec list, the tincture recipes), `game-core.md`
+  («the two potions are obtainable nowhere»), `live-ops.md` (`/news` and the hazel «after the restart»), `status.md` and `file-map.md`
+  (526 and 561 tests), `localization.md` (no key families). `spec-progression.md` §8 still «not deployed».
+- A reference in `spec-tinctures.md` to a reading in `rebalance.md` that lives in `TODO.md`.
+- Code: `RecipeCategory.backCallbackData`'s tincture arm was read by nothing while the card typed the same string; `Recipe.swift`'s header
+  still said three categories and that every recipe drains the warehouse.
+
+**Persisted:** `rebalance.md` → "The tinctures, measured and decided", with the harness; the v29 baseline in the superseded list; auto-memory
+as listed in this commit's `MEMORY.md`. **Dead code:** none new; `capital.location.fortune.body` is an old dead key, in `TODO.md` → Open.
+
+## Session — 2026-11-07 (the fortune teller's tinctures; «зілля» retired) — `4bdfb78`
 
 **The place first** («Перш за все я хочу створити місце… щоб настоянки зʼявились окремим екраном у ворожки. Про це треба додати
 інформацію у згадках про ворожку. Покажи, як ти бачиш реалізацію.»). **Shown:** a played sample — Podil's caption, her
@@ -1078,6 +1116,11 @@ line was written twice and the estate carried unreachable arms (`BagCard.thriftL
 of 2. **Kept, with the reason:** the holiday gate's `deathPreview` and the governor's `walkCost` (`TODO.md` → Open), the Fool's cap
 (raised); `inv:use:` is emitted for scrolls alone, so no tincture reaches it; the profile finds its bottle by effect, and one exists.
 Also found: two FAQ replies still said nothing uses the trophies and the plants.
+
+**After the commits** the owner asked what Міцна настоянка does under the Chariot (answered from `VigorService.drain`: a step and a blow
+stay at 1, a flee and a technique fall further), had the test bot started on `4bdfb78` at 19:03 (`AddVigorThrift` prepared on `roi_test`,
+5 Міцні for the developer account by SQL), and kept the four extra drops as ideas for future events: «Це додай в туду, використаю як
+ідею для майбутніх івентів».
 
 **Not live:** a pull, a build on the Pi, the digest pre-flight, then a restart, never a `/reload` first.
 

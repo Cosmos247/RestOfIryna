@@ -259,7 +259,7 @@ auto-memory `project-king-decrees-deferred`.
 
 ### Vigor, rest and background work
 
-**Vigor does not regenerate** (Phase 8E). Food, quests and the level-up grant are the only
+**Vigor does not regenerate** (Phase 8E). Food, the fortune teller's tinctures, quests and the level-up grant are the only
 sources and the estate's plots the intended income, so the pool plus the food in the bag is
 what limits how deep the wilderness can be walked and still walked out of. **Never reintroduce
 a trickle**: one that runs during an expedition lets a player wait out a full pool at km 25.

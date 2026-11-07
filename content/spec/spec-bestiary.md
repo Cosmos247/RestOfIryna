@@ -1373,8 +1373,8 @@ only, and the viper and the eagle nothing at all (§3's amendment of 2026-09-14,
 4. **The trader buys none of them until they have a use.** Selling would be the only thing
    to do with one, and a sale that is the only thing to do with a drop is silver paid for a
    kill — the faucet Phase 8C removed (`spec-economy.md` §4b's test).
-5. **Not in this step.** Offered and left for later, the owner asking to come back to them
-   at the commit: foam of the Blight from every rabid creature, the wild bear's fat, sinew
+5. **Not in this step.** Offered and left for later, kept on 2026-11-07 as ideas for future
+   events (`TODO.md` → Open): foam of the Blight from every rabid creature, the wild bear's fat, sinew
    from the big wild grazers, and rare second trophies (the eagle's talon, the viper's shed
    skin). The uses come later. A bag category of their own was asked for the same evening and
    then dropped by the owner («Нехай все таки йдуть у Матеріали»): the trophies stay in «🪨 Матеріали».
