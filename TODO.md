@@ -2160,7 +2160,7 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-11-04, night — `/news`, a developer's message to every player (NOT LIVE: Swift + uk/en, the same restart as
+**Added 2026-11-04, night — `/news`, a developer's message to every player (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same restart as
 the hazel; no migration, the digest unchanged). Try it on the test bot first:**
 - [ ] From a developer account: `/news` → «📣 Надішліть повідомлення для гравців… Його отримають N гравців.» with
       «❌ Скасувати»; N is the registered players less the sender. From any other account `/news` does nothing new.
@@ -2174,7 +2174,7 @@ the hazel; no migration, the digest unchanged). Try it on the test bot first:**
 - [ ] An album of two photos after `/news`: ONE preview and one question (the first photo); delete your message, then ✅:
       «Не доставлено жодному. Можливо, ваше повідомлення видалено…».
 
-**Added 2026-11-04, evening — «слот» retired from the Ukrainian copy (NOT LIVE: uk.json + four call sites, the same
+**Added 2026-11-04, evening — «слот» retired from the Ukrainian copy (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — uk.json + four call sites, the same
 restart as the hazel; no migration, the digest unchanged):**
 - [ ] 🏰 Маєток → 🌾 Ділянка: «Ділянок зайнято: 2 / 3. Тапніть ділянку…», «🌳 Ділянка 1 · Ліщина — 5/5 🌰», «➕ Ділянка 3 ·
       вільна»; the buttons are the plot's own icon and name — «🌳 Ліщина», «🪚 Лісопилка», a repeated type numbered within itself in
@@ -2184,7 +2184,7 @@ restart as the hazel; no migration, the digest unchanged):**
 - [ ] 🎒 Сумка: «5/35 місць (вільно 30)». A full bag at the trader, the tavern and a plot harvested to the bag: «Сумка
       повна — вільно 1 місце / 3 місця / 5 місць…» (try 1, 3 and 11 free: «11 місць»).
 
-**Added 2026-11-04, later — the bag's free room (NOT LIVE: Swift + uk/en, the same restart as the hazel; no migration,
+**Added 2026-11-04, later — the bag's free room (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same restart as the hazel; no migration,
 the digest unchanged):**
 - [ ] 🎒 Сумка, at the estate and in town: «🎒 Сумка  5/35 місць (вільно 30)» — the cap less what is carried, worn
       gear not counted.
@@ -2195,7 +2195,7 @@ the digest unchanged):**
 - [ ] Крамар → buy: «Скільки «Лісові ягоди» купити? (у 🎒 вільно 30)» (the 🎒 drawn, no raw `%{…}`); type a letter → the
       question again, number and all, with «❌ Введіть додатне число». Sell: «Скільки «Лісові ягоди» продати?».
 
-**Added 2026-11-04 — the kitchen cooks several at once (NOT LIVE: Swift + uk/en, the same restart as the hazel; no
+**Added 2026-11-04 — the kitchen cooks several at once (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same restart as the hazel; no
 migration, the digest unchanged):**
 - [ ] 🍳 Кухня → «🍠 Печена картопля» with 7 🥔 and 12 🪵 between the bag and the warehouse: a column, a button a
       row — «🍳 Готувати», «🍳 ×5», «🍳 Усі (7)», then «📌 У нотатник» and «🔙 Назад». Five possible: only «🍳 Усі (5)»
@@ -2209,14 +2209,14 @@ migration, the digest unchanged):**
 - [ ] 🛠 Майстерня → «🔳 Залізний злиток»: «🔨 Створити» alone, one at a time (the owner's «Лише кухня»).
 - [ ] At level 4 «Вогонь у печі» (cook a dish) is answered by a batch as by one dish.
 
-**Added 2026-11-02, evening — the autumn capital map (NOT LIVE: a picture only, the same restart as the hazel):**
+**Added 2026-11-02, evening — the autumn capital map (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — a picture only, the same restart as the hazel):**
 - [ ] 🏛 Столиця (the square), «👑 Замкова» and «🏘 Поділ» each show the autumn map with pumpkins, the castle labelled
       «Палац» (the green map said «Корона») — the owner's picture, one file in three slots (`welcome`, `street_castle`,
       `street_lower`), as the green one was. The owner did not call it seasonal; the green map, if wanted back:
       `git show 873e426:Assets/capital/welcome.jpg` into all three, then a restart (the bot caches a picture's Telegram
       id in memory until it restarts).
 
-**Added 2026-11-02 — the blood board only while a holiday is open (NOT LIVE: Swift, `3384600`, the same restart as the hazel;
+**Added 2026-11-02 — the blood board only while a holiday is open (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift, `3384600`, the same restart as the hazel;
 no migration, the digest unchanged):**
 - [ ] 👤 Профіль → 📓 Нотатник → 🏆 Рейтинги: the five tabs and «🔙», no «🩸 Кров для Короля» row.
 - [ ] A 🏆 screen left in chat from before the restart: its «🩸 Кров для Короля» tab (and its ◀️ / ▶️, if the board
@@ -2224,7 +2224,7 @@ no migration, the digest unchanged):**
 - [ ] At the palace a flask-holder who has not collected still reads the place under the King's words («🥇 1-ше
       місце · N 🩸», «7-ме місце · N 🩸») and can collect: the prize ranks by `EventStandings`, never by the board.
 
-**Added 2026-11-01, late night — the plot's «📌 У нотатник» and «ємність» (NOT LIVE: Swift + uk/en, the same
+**Added 2026-11-01, late night — the plot's «📌 У нотатник» and «ємність» (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same
 restart as the hazel; no migration, the digest unchanged):**
 - [ ] «➕ Ділянка N» → a type → the build card: three buttons, each on its own row — «✅ Будувати», «📌 У нотатник»,
       «🔙 Назад»; the yield line reads «— 2/год, ємність 10» (no «єм»), the picker's lines too, the mine's iron line
@@ -2238,11 +2238,14 @@ restart as the hazel; no migration, the digest unchanged):**
 - [ ] A build card left in chat for a slot since built on: «📌» answers «🚧 Ця ділянка вже зайнята.» and pins nothing.
 - [ ] English: "capacity" for "cap", "Plot, estate" in the journal.
 
-**Added 2026-11-01, night — the hazel every estate starts with (NOT LIVE: Swift + content schema v30 + uk/en and the
+**Added 2026-11-01, night — the hazel every estate starts with (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + content schema v30 + uk/en and the
 `PlantHazel` migration, which REWRITES ROWS; `content/spec/spec-progression.md` §8):**
-- [ ] Before the restart, on the Pi: `SELECT slot_index, plot_type, count(*) FROM plots GROUP BY 1, 2 ORDER BY 1, 2`
+- [x] Before the restart, on the Pi: `SELECT slot_index, plot_type, count(*) FROM plots GROUP BY 1, 2 ORDER BY 1, 2`
       and `SELECT count(*) FROM users WHERE registration_step >= 7`. After it, the same: slot 0 is `hazel` alone, one
       per registered account, and every built plot one slot higher. Verify the TABLE, not the log line.
+      **Done 2026-11-05 13:28:** before, 60 plots in slots 0…5 and 45 accounts at step ≥ 7; after, slot 0 is `hazel` ×45
+      alone, every type's count one slot higher, 105 plots, no registered account without its hazel, no slot held twice;
+      the log: «60 plot(s) moved down a slot, 45 hazel(s) planted».
 - [ ] A new account: the welcome ends «🌳 Біля хати ростуть кущі ліщини, і горіхи вже стиглі. Зберіть їх: 🏰 Маєток →
       🌾 Ділянка.»; 🏰 Маєток → 🌾 Ділянка reads «Ділянок зайнято: 1 / 1» and «🌳 Ділянка 1 · Ліщина — 5/5 🌰»; no push came
       for that first fill.
@@ -2263,7 +2266,7 @@ restart as the hazel; no migration, the digest unchanged):**
   only. The chat announcement (the testers' list) carries it; the ready reply for «my farm moved» is in
   `.memory/live-ops.md`.
 
-**Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (NOT LIVE: Swift + uk/en, the same build as
+**Added 2026-11-01, evening — the bag's item card, step 3: the warehouse (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same build as
 steps 1–2; no migration):**
 - [ ] 🏰 Маєток → 📦 Склад → 🍖 Їжа / 🪨 Матеріали: one button per item, «🫐 Лісові ягоди · 🎒4 / 📦12», no
       «⬆️ +1 / ⬇️ +1 / ✏️ N» under it; «📦 Викласти все» still under the list.
@@ -2285,7 +2288,7 @@ steps 1–2; no migration):**
 - [ ] An old warehouse message from before the restart: «⬆️ +1» / «⬇️ +1» still move one, «✏️ N» still asks «Куди?»
       and lands on the card.
 
-**Added 2026-11-01, afternoon — the bag's item card, step 2: the trail bag (NOT LIVE: Swift, the same build as step 1;
+**Added 2026-11-01, afternoon — the bag's item card, step 2: the trail bag (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift, the same build as step 1;
 no migration — a walk in progress across the restart keeps its «Принесено»):**
 - [ ] On a walk, «🎒 Сумка»: ONE list — the food first, then the materials — «🫐 Лісові ягоди × 9», no «🍴 Зʼїсти»
       in it; «🔙 Назад» still closes the bag.
@@ -2298,7 +2301,7 @@ no migration — a walk in progress across the restart keeps its «Принес�
 - [ ] A trail-bag message from before the restart: its «🍴 Зʼїсти» eats one and lands on that item's card.
 - [ ] In the holiday manor the bag works the same; a passive run's bag still refuses every card button.
 
-**Added 2026-11-01, midday — the bag's item card, step 1 of 3 (NOT LIVE: Swift + uk/en, a Pi BUILD and
+**Added 2026-11-01, midday — the bag's item card, step 1 of 3 (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, a Pi BUILD and
 `pm2 restart ROI`; no content change, the digest unchanged; the design: `.memory/sessions.md` → the 11-01 midday entry):**
 - [ ] 🎒 Сумка → 🍖 Їжа: one button per item («🍲 Юшка мисливця × 3»), no «🍴 Зʼїсти» in the list, «🔙 До категорій».
 - [ ] A dish's name: its card in the SAME message — name, description, «🍖 +42 Снаги · ❤️ +11 ОЗ», «🎒 У сумці: 3»,
@@ -3917,6 +3920,9 @@ fixes are `f2ae7ea`; these were found, verified and left:
   2026-11-01: `pace.levels_without_an_estate` no longer fires in the tree.)
 
 ---
+
+*Last updated: 2026-11-05 13:28 — everything from `266d28e` to `46437bf` LIVE (the restart 13:28:03; schema v30, the
+digest matched the Mac in every line before it; `PlantHazel` verified on the table). The 11-01 night footer follows.*
 
 *Last updated: 2026-11-01 night — the hazel every estate starts with (`spec-progression.md` §8): built and rehearsed,
 NOT deployed (schema v30 + `PlantHazel`). The evening footer follows.*

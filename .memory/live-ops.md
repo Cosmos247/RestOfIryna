@@ -154,6 +154,14 @@ Try it on the test bot first (`roi_test` has its own players).
   migration, `AddExplorationHaul`, verified on the table). pm2's count reads 2. The restart notice drew
   eight `403 bot was blocked by the user`. At 22:48:45, past the watchdog's window: still one
   `[WATCHDOG]`, `Code: 400` at 922.
+- The restarts of 10-24 (a host reboot), 10-31, 11-01 09:56 and 11-01 17:21 are in `.memory/sessions.md`'s
+  `## Deploy —` entries and the 10-26 Pi read.
+- 2026-11-04 ~17:57: the Pi rebooted itself (not a deploy; found 11-05). DNS was not up at boot, the first
+  start died on `getMe` with a core dump (`~/RestOfIryna/core`), pm2 brought the same build up; polling
+  from 17:57:41. Last line before it 12:00:56 — when the bot went quiet is not known.
+- Restart on 2026-11-05: 13:28:03 (`46437bf`, the deploy of everything since 11-01 — the hazel, schema v30,
+  `PlantHazel` verified on the table; asked). pm2's count reads 2. The restart notice drew twelve `403 bot
+  was blocked by the user`.
 
 ## What are the players doing — the activity snapshot
 

@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 11-04)
+## Commit index — live-play polish and after (2026-09-09 → 11-05)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,8 +11,11 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-05)* **the warehouse's move buttons say 📦 / 🎒, and `c4682da`'s hash fill** — locales only (and
-  two comments), NOT deployed: «⬆️ 📦 1» / «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in
+- *(this commit, 11-05)* **the 13:28 deploy record, and `46437bf`'s hash fill** — records only: everything from
+  `266d28e` to `46437bf` went live at the 2026-11-05 13:28:03 restart (the `## Deploy —` entry below); the Pi's own
+  reboot of 11-04 ~17:57, which nothing had recorded.
+- `46437bf` (11-05) **the warehouse's move buttons say 📦 / 🎒, and `c4682da`'s hash fill** — locales only (and
+  two comments), LIVE 11-05 13:28: «⬆️ 📦 1» / «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in
   the old «Куди?». 543 tests.
 - `c4682da` (11-04) **`/news`, a developer's message to every registered player, and `35e1e97`'s hash fill** —
   Swift + uk/en, NOT deployed (no migration, the digest unchanged): `NewsBroadcast`, answered in `TGDispatcher`'s
@@ -991,7 +994,33 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-05, past midnight (the test bot up; the warehouse's buttons as emoji) — *(this commit)*
+## Deploy — 2026-11-05 13:28 (`b04bef3` → `46437bf`) — the hazel and everything built since 11-01
+
+On the owner's word («Запушив, задеплой на пайй та перезапусти бота»), after the check that everything was committed
+and the testers' list (the owner fixed its warehouse line himself). **The push** was the owner's: `origin/main` =
+`46437bf`, 13 commits past `b04bef3`. **The Mac**: a clean build, the digest at HEAD. **Before the restart**, on the Pi
+(small `SELECT`s, credentials from its `.env`): 60 plots in slots 0…5 (coop 2/2/2/3/–/2, farm 7/2/3/–/1, forest
+4/4/2/2, mine 8/9/5/–/2), 45 accounts at `registration_step >= 7`, the newest migration `AddEventBloodRewardedAt`. Who
+was in the forest or a fight was not read. On the Pi: `git pull --ff-only` to `46437bf`, a detached debug build polled
+from a second connection (`pgrep -x swift-build`): 147 s, no `error:`. **Pre-flight**, the new binary on the new
+content, matched the Mac in all 68 lines: schema v30, hash `95421568`, `records 4f4dcf860af8605f`, `tuning
+c0380e692986ba04`, `spawns 004c138c83fa9d1a`, `quests 30de20902006e3b9`, `king e3a492be1b017e81`, COMBINED
+`d0b897ae80619502`. **Restart** at 13:28:03 — plain `pm2 restart ROI`, then `pm2 save`; `pm2 env 0` still holds
+`ROI_PROJECT_PATH`; pm2 restarts 2. The boot: `Content loaded: schema v30 … hash 95421568`, `PlantHazel` prepared —
+«60 plot(s) moved down a slot, 45 hazel(s) planted» — `Bot identified as @ROfIr_bot`, Hummingbird listening at
+13:28:10; the error log holds only the swift-backtrace notice. 12 × `403 bot was blocked by the user` from the restart
+notice (11 at 11-01: one more player has blocked the bot). **The TABLE**: slot 0 is `hazel` ×45 alone, every type's
+count exactly one slot higher than before, 105 plots, no registered account without its hazel in slot 0, no
+(user, slot) held twice; `_fluent_migrations` ends with `PlantHazel`.
+
+**Found on the way, unrecorded until now — the Pi rebooted itself on 11-04.** `uptime -s` reads 2026-11-04 17:57:05;
+the bot's last line before it is 12:00:56, so when it went quiet is not known. The host booted with its clock behind
+(the journal's first entry and pm2's `pm_uptime` both read 13:17–13:27, before NTP), DNS was not up, the first start
+died on `getMe` («Temporary failure in name resolution … api.telegram.org») with a core dump — `~/RestOfIryna/core`,
+124 MB, which replaced the 09-25 dump, left in place — and pm2 started the same build again; `Bot identified` at
+17:57:41 by the synced clock. The same boot-time DNS shape as the 10-24 reboot.
+
+## Session — 2026-11-05, past midnight (the test bot up; the warehouse's buttons as emoji) — `46437bf`
 
 **The test bot** («Запусти тестового бота»): no other instance, no `debugserver`; `.env` names `roi_test`; the tunnel
 was down — opened with the keep-alive options and probed (Postgres answered `S`); `c4682da` built and started in

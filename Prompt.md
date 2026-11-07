@@ -23,51 +23,51 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-11-01 11:16)
+### Where things stand right now (the Pi and git as read 2026-11-05 13:30)
 
 | | |
 |---|---|
-| HEAD | **this commit** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill), unpushed. Under it, unpushed: **`c4682da`** (`/news`, and `35e1e97`'s hash fill), **`35e1e97`** («слот» retired from the Ukrainian copy, and `661a083`'s hash fill), **`661a083`** (the bag's free room, and `2f78915`'s hash fill), **`2f78915`** (the kitchen cooks several at once, and `f49a6f1`'s hash fill), **`f49a6f1`** (the autumn capital map, and `3384600`'s hash fill), **`3384600`** (the 🩸 blood board only while a holiday is open), **`6b68cb8`** (`f62175e`'s hash fill), **`f62175e`** (the plot's «📌 У нотатник» and «ємність»), **`17e1e73`** (`29f38c5`'s hash fill), **`29f38c5`** (the hazel every estate starts with — schema v30 and the `PlantHazel` migration), **`ff6433e`** (`266d28e`'s hash fill and the 17:21 deploy record) and **`266d28e`** (the bag's item card, all three steps — kept off the Pi by the owner's choice). Under them everything is pushed: `origin/main` = the Pi = **`b04bef3`** (`96973ba`'s hash fill; `96973ba` Велесова ніч's prizes at the palace). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
-| pushed | `origin/main` is at **`b04bef3`** (the owner pushed 2026-11-01 ~17:18, `! git push origin b04bef3:main`, after the session's permissions refused mine), the commit the Pi runs. Push is the owner's |
-| running on the Pi | **`b04bef3`**, online since **2026-11-01 17:21:25** (pm2 restarts 12; the binary built on the Pi 17:20:42). Content schema **v29**, content hash **`1ac5a7bc`** — the digest matched the Mac in every line before the restart; `AddEventBloodRewardedAt` verified on the table (16 flasks, all `rewarded_at` NULL, 15 with blood). The finale and the King's summons go out at 18:00. 11 × 403 per mass notice (players who blocked the bot), no 409 / 429 / 502; still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. The untracked `core` (a 09-25 dump) and `pgweb/` in the Pi's checkout are old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
+| HEAD | **this commit** (the 11-05 13:28 deploy record, and `46437bf`'s hash fill), unpushed. Under it everything is pushed: `origin/main` = the Pi = **`46437bf`** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| pushed | `origin/main` is at **`46437bf`** (the owner pushed 2026-11-05 by 13:24, thirteen commits past `b04bef3`), the commit the Pi runs. Push is the owner's |
+| running on the Pi | **`46437bf`**, online since **2026-11-05 13:28:03** (pm2 restarts 2; the binary built on the Pi in 147 s). Content schema **v30**, content hash **`95421568`**, COMBINED `d0b897ae80619502` — the digest matched the Mac in every line before the restart; `PlantHazel` verified on the table (60 plots moved down a slot, 45 hazels in slot 0, 105 plots, none missing, no slot held twice). 12 × 403 per mass notice (players who blocked the bot; 11 on 11-01), still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. **The host rebooted itself 2026-11-04 ~17:57** (DNS late at boot, one failed start, pm2 brought the build up; `.memory/sessions.md` → the 11-05 deploy entry): the untracked `core` in the Pi's checkout is that boot's dump (124 MB), `pgweb/` is old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The warehouse's buttons as 📦 / 🎒 (this commit)** — locales only: «⬆️ 📦 1» / «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear card and in the old «Куди?». **`/news` (`c4682da`)** — Swift + uk/en, no migration, the digest unchanged: a developer's message to every registered player, any time, no restart (`.memory/live-ops.md` → «Telling every player something»; try it on the test bot first). **«Слот» retired (`35e1e97`)** — uk.json + four call sites, no migration, the digest unchanged: «Ділянка N» on every estate screen, «місць» for the bag, «вільно 1 місце / 3 місця / 5 місць» in the bag-full refusals, and a built plot's button is its icon and name («🌾 Ферма (1)» when a type repeats; `TODO.md` → its walk block). **The bag's free room (`661a083`)** — Swift + uk/en, no migration, the digest unchanged; «(вільно N)» on the bag screen and the trail bag, in the warehouse's «взяти в сумку» and the trader's «купити» («(у 🎒 вільно N)», the name quoted in «купити» and «продати»; `TODO.md` → its walk block). **The kitchen cooks several at once (`2f78915`)** — Swift + uk/en, no migration, the digest unchanged; «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати», the workshop one at a time (`TODO.md` → its walk block). **The plot's «📌 У нотатник» and «ємність» (`f62175e`)** — Swift + uk/en, no migration, the digest unchanged; the same restart as the hazel. **The hazel every estate starts with (`29f38c5`, `spec-progression.md` §8)** — Swift + content **schema v30** + uk/en + the **`PlantHazel` migration, which REWRITES ROWS** (every plot moves down a slot, a ripe hazel goes into slot 1 of every registered estate). Content and binary ship TOGETHER; the tree's digest is `records 4f4dcf860af8605f`, content `95421568`, COMBINED `d0b897ae80619502` (only `records` and the hash moved). Read the plot counts off the Pi BEFORE the restart and the table AFTER it (`TODO.md` → its walk block); a rollback past it is unsafe. **The bag's item card (`266d28e`)** — Swift + locales, no migration, the digest unchanged; a push, a Pi build and `pm2 restart ROI`. **The autumn capital map (`f49a6f1`)** — the owner's picture in the square's and both streets' three slots, «Палац» over the castle; a picture only (no build needed for it alone; the green one is at `873e426`). **The 🩸 blood board only while a holiday is open (`3384600`)** — Swift only, no migration, the digest unchanged; the tab is gone until a holiday opens, a stale «🩸» opens «⚔️ Рівень» (the owner, 11-02: «лише поки свято йде»; `TODO.md` → its walk block). Its warehouse swap (`WarehouseService.wear`) has NOT run on a real database: check it on the test bot first (`TODO.md` → its walk block) |
+| waiting for a restart | Nothing. Everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
 
-### Where the last sessions stopped (2026-10-24 → 11-04)
+### Where the last sessions stopped (2026-10-24 → 11-05)
 
 **11-05 — the test bot up on `c4682da` (`PlantHazel` rehearsed on `roi_test`: 2 hazels); the warehouse's move buttons
-as 📦 / 🎒 (this commit, NOT deployed).**
+as 📦 / 🎒 (`46437bf`). All of it LIVE since the 11-05 13:28:03 restart.**
 
-**11-04, night — `/news` (`c4682da`, NOT deployed).** A developer's message to every registered player, copied as
+**11-04, night — `/news` (`c4682da`, LIVE 11-05 13:28).** A developer's message to every registered player, copied as
 sent, at any time without a restart (the owner's picks); also the testers' list (a page) and the hazel's no-notice
 decision («Нічого в грі»).
 
-**11-04, evening — «слот» retired from the Ukrainian copy (`35e1e97`, NOT deployed).** «Ділянка N» for a place on
+**11-04, evening — «слот» retired from the Ukrainian copy (`35e1e97`, LIVE 11-05 13:28).** «Ділянка N» for a place on
 the estate, «місць» for the bag, the bag-full refusals by number (the owner's picks); closes the 09-16 «one place, two
 words» item; **never «слот»** is in the glossary.
 
-**11-04, later — the bag's free room (`661a083`, NOT deployed).** The players' ask: «(вільно N)» on the bag screen,
+**11-04, later — the bag's free room (`661a083`, LIVE 11-05 13:28).** The players' ask: «(вільно N)» on the bag screen,
 the trail bag and the warehouse's «взяти в сумку», «(у 🎒 вільно N)» at the trader (the owner's picks; «покласти на
 склад» left alone); `InventoryEntry.freeSlots` is the one reading.
 
-**11-04 — the kitchen cooks several at once (`2f78915`, NOT deployed).** «🍳 ×5» and «🍳 Усі (N)» in a column on a dish's
+**11-04 — the kitchen cooks several at once (`2f78915`, LIVE 11-05 13:28).** «🍳 ×5» and «🍳 Усі (N)» in a column on a dish's
 card (the owner's pick: no ×10, «Лише кухня»); `CraftMath` is the one arithmetic for the buttons, the tap's re-check and the
 write, which is one transaction now. **11-03 → 11-04: cheaper Vigor computed and PUT OFF** by the owner — at a step
 of 1 pacing over cleared km refills the pool; `TODO.md` → Open, auto-memory `project-vigor-cost-variants`.
 
-**11-02, evening — the autumn capital map (`f49a6f1`, NOT deployed).** The owner's picture on the square and both streets
+**11-02, evening — the autumn capital map (`f49a6f1`, LIVE 11-05 13:28).** The owner's picture on the square and both streets
 (one file in three slots), the castle labelled «Палац»; not called seasonal. `.memory/sessions.md` → the 11-02 entry.
 
-**11-02 — the 🩸 blood board only while a holiday is open (`3384600`, NOT deployed).** The owner's 11-01 TODO item
+**11-02 — the 🩸 blood board only while a holiday is open (`3384600`, LIVE 11-05 13:28).** The owner's 11-01 TODO item
 («прибрати… рейтинг крові») asked its one question: the tab shows while a holiday is open, never after its close —
 the owner does not plan Велесова ніч again, so nothing is tied to its days. `.memory/sessions.md` → the entry.
 
-**11-01, late night — the plot's «📌 У нотатник» (`f62175e`, NOT deployed).** The owner asked for the build card to pin its
+**11-01, late night — the plot's «📌 У нотатник» (`f62175e`, LIVE 11-05 13:28).** The owner asked for the build card to pin its
 materials; the note is the plot type + how many of it the estate will hold, read like a recipe, done when that type
 is built (the owner's picks); the card's three buttons each on a row (the owner's layout); «єм» → «ємність»,
 "cap" → "capacity". `.memory/sessions.md` → the entry.
 
-**11-01, night — the hazel every estate starts with (`29f38c5`, NOT deployed).** The owner's idea: a plot that opens with
+**11-01, night — the hazel every estate starts with (`29f38c5`, LIVE 11-05 13:28).** The owner's idea: a plot that opens with
 the estate, never chosen, in slot 1, hazel bushes yielding forest nuts — to help the first explorations and to show the
 plot loop from day one. Shown as a played sample and three questions; the owner took every recommended option (slot 1 with
 the rest shifting, 1 nut an hour holding 5, ripe at once + a line in the welcome), approved the spec («так», §8) and it was
@@ -154,7 +154,7 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
-**0 — The hazel every estate starts with is BUILT, NOT deployed** (`spec-progression.md` §8; schema v30 and `PlantHazel`, which rewrites rows: the Pi's plot counts BEFORE the restart, the table AFTER — `TODO.md` → its walk block; rehearsed on a scratch Postgres, `.memory/sessions.md` → the 11-01 night entry). **0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) BUILT, NOT deployed** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
+**0 — The hazel every estate starts with is LIVE since 2026-11-05 13:28** (`spec-progression.md` §8; schema v30 and `PlantHazel`, verified on the table — `TODO.md` → its walk block; rehearsed on a scratch Postgres, `.memory/sessions.md` → the 11-01 night entry). **0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) LIVE since 2026-11-05 13:28** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
 14:00 / 16:00 decrees (each once: count `event_notices`), the capital wearing the holiday from 12:00, at 18:00 the
 summons, the manor at km 5, the scribe's story and the flasks; the board, the flasks and who is inside are read with the
 SQL in `.memory/live-ops.md` → "Велесова ніч" (and "what shows when"). Walk list: `TODO.md` → "Added 2026-10-29".
@@ -253,7 +253,7 @@ A knob is invisible to the digest until it is hashed (auto-memory `feedback-dige
 
 `simulate --strict` on the Pi's content: 18 of 18 invariance rows, 0 broken bands, 18 warnings, all deliberate
 (`TODO.md` → the standing deferrals). Pace to L40: 151–167 days (warrior 167.0 / archer 159.6 /
-mage 150.9; band 72–200; taps/day ~711). **The tree since the hazel (11-01 night, not deployed): 15 warnings** —
+mage 150.9; band 72–200; taps/day ~711). **The tree since the hazel (11-01 night; the Pi's since 11-05 13:28): 15 warnings** —
 `pace.levels_without_an_estate` gone — and **136–151 days** (151.1 / 144.3 / 136.4; taps/day ~801). The pace cannot see depth: the expedition model puts real
 play at ~600–640 days (auto-memory `project-expedition-model`, `.memory/rebalance.md`).
 

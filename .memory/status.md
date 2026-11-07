@@ -21,44 +21,44 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-11-05 — the warehouse's move buttons as 📦 / 🎒** (locales only, NOT live, the same restart): «⬆️ 📦 1» /
+**2026-11-05 — the warehouse's move buttons as 📦 / 🎒** (locales only, LIVE since the 2026-11-05 13:28:03 restart, the same restart): «⬆️ 📦 1» /
 «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in the old «Куди?» (the owner's picks).
 
-**2026-11-04, night — `/news`** (Swift + uk/en, NOT live, the same restart; no migration). A developer sends one message
+**2026-11-04, night — `/news`** (Swift + uk/en, LIVE since the 2026-11-05 13:28:03 restart, the same restart; no migration). A developer sends one message
 to every registered player at a moment of their choosing, with no restart: `/news` → the message (anything Telegram
 can copy, a photo with a caption included) → its copy as the preview → «Надіслати N гравцям?» → a paced send and a
 report. `NewsBroadcast`, answered in `TGDispatcher` ahead of routing. The procedure: `.memory/live-ops.md`.
 
-**2026-11-04, evening — «слот» retired from the Ukrainian copy** (uk.json + four call sites, NOT live, the same
+**2026-11-04, evening — «слот» retired from the Ukrainian copy** (uk.json + four call sites, LIVE since the 2026-11-05 13:28:03 restart, the same
 restart; no migration). A place for a plot is «Ділянка N» in all 17 estate keys, the bag's room is «місць», and the
 three bag-full refusals (trader, tavern, a plot harvested to the bag) say «вільно 1 місце / 3 місця / 5 місць» through
 `localize(_:count:)` — «комірок» went too. Closes the 2026-09-16 «one place, two words» item. English keeps «slot».
 A built plot's button is its own icon and name («🌳 Ліщина»), a repeated type numbered within itself in place order
 («🌾 Ферма (1)», «🌾 Ферма (2)»; `PlotOrdinal`, the owner's rule). 543 tests.
 
-**2026-11-04, later — the bag's free room** (Swift + uk/en, NOT live, the same restart; no content change, no
+**2026-11-04, later — the bag's free room** (Swift + uk/en, LIVE since the 2026-11-05 13:28:03 restart, the same restart; no content change, no
 migration). The players' ask: «(вільно N)» on the bag screen («5/35 місць (вільно 30)» since the «слот» rename), the trail bag and the
 warehouse's «Скільки бажаєте взяти в сумку?», and «(у 🎒 вільно N)» in the trader's «Скільки «…» купити?» — the name
 quoted in «купити» and «продати» (the owner's picks; «покласти на склад» untouched). `InventoryEntry.freeSlots` is
 the one reading, the warehouse's and the trader's refusals included.
 
-**2026-11-04 — the kitchen cooks several at once** (Swift + uk/en + tests, NOT live, the same restart as the hazel; no
+**2026-11-04 — the kitchen cooks several at once** (Swift + uk/en + tests, LIVE since the 2026-11-05 13:28:03 restart, the same restart as the hazel; no
 content change, no migration). A dish's card offers «🍳 ×5» and «🍳 Усі (N)» in a column under «🍳 Готувати» (the owner's pick: no
 ×10, the workshop one at a time); `CraftMath` (ROISim) is the one arithmetic for the buttons, the tap's re-check and the
 write, and `CraftingService.craft(_:times:)` writes in ONE transaction. A batch that fills the bag puts the rest on the
 warehouse and the banner names both. 539 tests (`CraftMathTests`). **Cheaper Vigor** was computed 11-03 and put off by
 the owner on 11-04 (`TODO.md` → Open).
 
-**2026-11-02 — the 🩸 blood board only while a holiday is open** (Swift, NOT live, the same restart as the hazel; no
+**2026-11-02 — the 🩸 blood board only while a holiday is open** (Swift, LIVE since the 2026-11-05 13:28:03 restart, the same restart as the hazel; no
 content change, no migration). `LeaderboardBoard.isShown`: the «🩸 Кров для Короля» tab is drawn while
 `EventCatalog.open` answers and a stale `lb:bld` opens `.level` (the owner — it used to stay after the close,
 `latestOpened`, now removed); `event_blood`, the finale and the prizes untouched. 526 tests (`3384600`).
 
-**2026-11-02 — the autumn capital map** (a picture, NOT live, the same restart). The square and both streets' one map
+**2026-11-02 — the autumn capital map** (a picture, LIVE since the 2026-11-05 13:28:03 restart, the same restart). The square and both streets' one map
 in three files (`welcome`, `street_castle`, `street_lower`) is the owner's autumn picture, «Палац» over the castle;
 the green one is `873e426`.
 
-**2026-11-01 — the bag's item card, all three steps** (Swift + uk/en + tests, NOT live: a Pi build and the
+**2026-11-01 — the bag's item card, all three steps** (Swift + uk/en + tests, LIVE since the 2026-11-05 13:28:03 restart: a Pi build and the
 restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every
 action moved onto the item's card, drawn over the list: the description, what a dish restores, «🎒 У сумці: N», a taken
 job's ⚠️ (`QuestWarning`, shared with the trader), «🍴 Зʼїсти» and ONE many-portion button — «До повної снаги (N)» /
@@ -346,7 +346,7 @@ cards priced afresh, each with its «❌». The design is the owner's, approved 
   82 checks drove the real services and passed, twice: the eight cards' notes, both approved
   screens to the line, the bag-only count at the Master, the warehouse round trip, done through
   the real upgrades, the cascade and the unique index. Two planted mutants were caught.
-- **2026-11-01 — the ninth card: a plot's build card** (asked by the owner, built, not deployed). Its three
+- **2026-11-01 — the ninth card: a plot's build card** (asked by the owner, LIVE since 2026-11-05 13:28). Its three
   buttons each on a row of its own — «✅ Будувати» / «📌 У нотатник» / «🔙 Назад» (the owner's layout). The
   note is the plot TYPE + how many of it the estate will hold (`PlotService.noteKey`); it reads like a
   recipe («🐔 Курник · Ділянка, маєток» and the materials of the player's NEXT plot, bag + warehouse) and is
@@ -1175,7 +1175,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
 baselines — superseded", and what each restart carried in its `## Deploy —` entry. **526 tests** (2026-11-01, night — the hazel). Pace is **136–151 days** to level 40 in the tree since the hazel
-(2026-11-01, built, not deployed — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
+(2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first
 time that half had moved since the roster re-solve; before 2026-09-14 `tuning` had moved
@@ -1281,7 +1281,7 @@ were superseded by Phases 4–6.
 - [ ] 5.2 EstateController grid view + plot management + production timers
 - [ ] 5.3 Crafting (Recipe model, workshop/kitchen flows, blueprint learning) — will also raise backpack slot cap via upgrade
 - [ ] 5.4 Global estate placement + adjacency
-- [x] **2026-11-01 — the hazel** (`spec-progression.md` §8, BUILT, not deployed): every estate starts with «🌳 Ліщина» in slot 1 — granted, never chosen or built, planted RIPE when the estate is named, 🌰 1 an hour holding 5. Slots by tier 1…7 (the hazel's + 0…6 built); the price's N and `claim_plot` count built plots only; `PlantHazel` moved every built plot down a slot and planted the estates that existed.
+- [x] **2026-11-01 — the hazel** (`spec-progression.md` §8, LIVE since 2026-11-05 13:28:03, `PlantHazel` verified on the table): every estate starts with «🌳 Ліщина» in slot 1 — granted, never chosen or built, planted RIPE when the estate is named, 🌰 1 an hour holding 5. Slots by tier 1…7 (the hazel's + 0…6 built); the price's N and `claim_plot` count built plots only; `PlantHazel` moved every built plot down a slot and planted the estates that existed.
 
 ### Exploration (Phase 3 — started)
 - [x] 3.0 Backpack slot cap — was flat 50 rows; now per-user `InventoryEntry.slotCap(for:User)` reading `BagCatalog.capForTier(user.bagTier)` (T1=25 → T6=90 since the 2026-09-16 re-spread; per-unit since the 2026-05-12 pivot — slots count units, not stack rows). `add` throws `inventoryFull`; `canAccept` preflight; both bypass the cap when `user.isDeveloper`. `WarehouseService.withdraw` returns typed enum so UI can show precise "backpack full" toast. `/grant` catches the error. Inventory root shows `X/Y slots`.
