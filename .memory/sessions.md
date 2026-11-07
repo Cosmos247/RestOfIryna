@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-05)* **the 13:28 deploy record, and `46437bf`'s hash fill** — records only: everything from
+- *(this commit, 11-05)* **the kill trophies: five shared kinds beside meat and hide** — content + uk/en + one spec
+  table + tests, NOT deployed (no schema bump, no migration; a restart, not a `/reload`): `mat.trophy_venom` 💧 ·
+  `feather` 🪶 · `fang` 🦷 · `horn` 📯 · `claw` 🐾, one last loot row on each of the fourteen creatures, 5% from №1–4
+  and 15% deeper, the rabid bear two; the trader buys none; `spec economy`'s `trophy` column; `spec-bestiary.md` §15.
+  550 tests.
+- `75eb348` (11-05) **the 13:28 deploy record, and `46437bf`'s hash fill** — records only: everything from
   `266d28e` to `46437bf` went live at the 2026-11-05 13:28:03 restart (the `## Deploy —` entry below); the Pi's own
   reboot of 11-04 ~17:57, which nothing had recorded.
 - `46437bf` (11-05) **the warehouse's move buttons say 📦 / 🎒, and `c4682da`'s hash fill** — locales only (and
@@ -1019,6 +1024,66 @@ the bot's last line before it is 12:00:56, so when it went quiet is not known. T
 died on `getMe` («Temporary failure in name resolution … api.telegram.org») with a core dump — `~/RestOfIryna/core`,
 124 MB, which replaced the 09-25 dump, left in place — and pm2 started the same build again; `Bot identified` at
 17:57:41 by the synced clock. The same boot-time DNS shape as the 10-24 reboot.
+
+## Session — 2026-11-05, evening (the kill trophies: five shared kinds beside meat and hide) — *(this commit)*
+
+**Asked** («Я хочу додати дроп з мобів окрім шкіри та мʼяса… яд змії, перо беркута та ріг і клик… Рішення для
+предметів… пізніше, поки головне додати дроп»): more drop ideas, and which creature drops what.
+
+**Offered:** a trophy per SPECIES — eleven («Зміїна отрута», «Перо беркута», «Кабанячий клик», «Лисяче ікло», «Лосиний
+ріг», «Оленячий ріг», «Зубряча вовна», «Рисячий кіготь», «Вовче ікло», «Ведмежий кіготь», «Турій ріг»; one animal one
+item: the boar and the tusker, the wolf and the pack, both bears) — against six shared kinds like the hide; a lore rule
+(the Blight rots soft tissue, not teeth, so the rabid drop fangs and claws); the trophy as the LAST loot row; four
+extras (Blight foam from every rabid creature, the wild bear's fat, sinew from the big grazers, rare second trophies —
+the eagle's talon, the viper's shed skin); a recipe scroll from the rabid bear (the 📖 «Вивчити» flow still exists).
+The first quiz was rejected to clarify, one answer kept: **the trader buys none until they have a use** — a sale
+that is the only thing to do with a drop is silver paid for a kill (8C).
+
+**The owner:** five, no split by creature — «отрута, перо, ікло, ріг, кіготь» (the tusk folded into the fang) — and
+«Покажи як ти бачиш реалізацію». Shown: who drops what, 30% everywhere with the rabid bear at two, a played sample
+(the victory screen, the door, the bag card), the names. **The owner:** «Шанс занадто великий… Ти сам писав про те що
+тоді отрути і пірʼя буде багато» — I had written that venom and feathers would dominate, then proposed one chance for
+all. Shown four with the week to 10-30 (3,972 fights, 81.5% with №1–4; `spec-bestiary.md` §14.5): **10% from №1–4,
+20% deeper, the rabid bear two** (recommended, picked); once it was built the owner asked «а хіба не 5-15, а не 10-20
+шанс?» — the quiz had recorded 10/20 — and, asked again, moved to **5% / 15%**. Asked mid-build «Куди будуть йти ці трофеї?» — answered: into
+the bag's «🪨 Матеріали» and from there the warehouse or «🗑 Викинути», lost with the bag on a death, no trader; the
+uses later, anywhere a material is a price, by data alone; a bag tab of their own mentioned, not asked for. **The four
+extras: the owner asked to be reminded of them at the commit.**
+
+**Then a category of their own, asked and dropped.** The owner: «Мені не подобається що цей дроп падає в
+матеріали… створити окремий розділ у сумці та на складі. Також мені не дуже подобається емодзі отрути». Shown: a
+sixth category after «🪨 Матеріали» (a new item type, a code change and content schema v31), named «🦴 Трофеї» /
+«🏆 Трофеї» (🏆 already victory, «Честь» and the boards) / «🦴 Мисливські трофеї» (cut in a two-column grid) /
+«🦌 Трофеї» (the stag's icon); the venom as 🐍 / 💧 / ☠️ (close to the game's 💀) / ⚗️ — 🧪 being the bag's
+«🧪 Настоянки» category; and whether the hide's description («…можна здобути як трофей…») should lose «як трофей».
+**The owner:** the venom 💧, the hide's description kept, the category skipped to clarify — then «Нехай все таки
+йдуть у Матеріали». Nothing of the category was built; the icon moved the digest once more.
+
+**Built** (content, locales, one spec table, tests — no game code):
+- `items.json`: `mat.trophy_venom` 💧 · `mat.trophy_feather` 🪶 · `mat.trophy_fang` 🦷 · `mat.trophy_horn` 📯 ·
+  `mat.trophy_claw` 🐾, stackable materials after the hide; the shared prefix puts the five together at the end of
+  the bag's and the warehouse's materials, both sorted by id.
+- `enemies.json`: one LAST loot row on each of the fourteen spawnable creatures (`awardEncounterDrops` takes rows in
+  order as far as the bag has room, so a full bag drops the trophy, never the meat or the hide).
+- uk / en: «Отрута / Перо / Ікло / Ріг / Кіготь», descriptions that name the creatures and promise no use, the uk
+  genders f / n / n / m / m.
+- `SpecTables.economy`: "What a kill returns" gains the `trophy` column; `spec-economy.md` §3 regenerated with a dated
+  amendment (neither currency moves).
+- `TrophyTests` (7): the owner's five and no other; one per spawnable creature, as its last row; never less often
+  deeper; none on the trader's list; each a stackable material — every rule failing on a copy built to break it.
+  Tests, not validator rules: a retune by `/reload` stays the owner's call.
+- Docs: `spec-bestiary.md` §15 (notes in §2 and §6), `content/lore.md` §8 / §9, `.memory/game-core.md`, `INDEX.md`,
+  `file-map.md`.
+
+**Checked:** `validate --strict` 0 warnings; 550 tests; `spec opening` byte-identical; `simulate --strict`
+0 broken bands, 15 warnings, the pace to L40 151.1 / 144.3 / 136.4 days — as before; every `spec economy` block in `spec-economy.md` a current excerpt; the digest — `records
+4f4dcf860af8605f → 15714e2d229a3bd0`, content hash `95421568 → b8d95888`, COMBINED `d0b897ae80619502 →
+5bd9e0c91fe8770d`; `tuning`, `spawns`, `quests`, `king` held; the live lookups resolve every loot id. A read-only
+`fight_log` query for the fights since the holiday was refused by the session's permission classifier and not worked
+around; the numbers shown came from §14.5.
+
+**Not live:** a pull and a restart ship it (a build only for `SpecTables`, which the game never calls). Not a
+`/reload`: Lingo is not reloaded, so the five would show by their raw keys until a restart.
 
 ## Session — 2026-11-05, past midnight (the test bot up; the warehouse's buttons as emoji) — `46437bf`
 

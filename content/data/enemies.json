@@ -83,7 +83,13 @@
       "icon" : "🐍",
       "id" : "enemy.wild_viper",
       "level" : 1,
-      "loot" : [],
+      "loot" : [
+        {
+          "chance" : 0.05,
+          "itemId" : "mat.trophy_venom",
+          "quantity" : 1
+        }
+      ],
       "stats" : {
         "accuracy" : 0,
         "attack" : 5,
@@ -104,7 +110,13 @@
       "icon" : "🦅",
       "id" : "enemy.wild_eagle",
       "level" : 2,
-      "loot" : [],
+      "loot" : [
+        {
+          "chance" : 0.05,
+          "itemId" : "mat.trophy_feather",
+          "quantity" : 1
+        }
+      ],
       "stats" : {
         "accuracy" : 0,
         "attack" : 10,
@@ -135,6 +147,11 @@
           "chance" : 0.8,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.05,
+          "itemId" : "mat.trophy_fang",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -161,6 +178,11 @@
         {
           "chance" : 0.7,
           "itemId" : "mat.hide",
+          "quantity" : 1
+        },
+        {
+          "chance" : 0.05,
+          "itemId" : "mat.trophy_fang",
           "quantity" : 1
         }
       ],
@@ -194,6 +216,11 @@
           "chance" : 0.7,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_horn",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -225,6 +252,11 @@
         {
           "chance" : 0.7,
           "itemId" : "mat.hide",
+          "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_horn",
           "quantity" : 1
         }
       ],
@@ -258,6 +290,11 @@
           "chance" : 0.9,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_horn",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -285,6 +322,11 @@
           "chance" : 0.7,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_claw",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -311,6 +353,11 @@
         {
           "chance" : 0.8,
           "itemId" : "mat.hide",
+          "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_fang",
           "quantity" : 1
         }
       ],
@@ -344,6 +391,11 @@
           "chance" : 0.9,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_fang",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -375,6 +427,11 @@
         {
           "chance" : 0.9,
           "itemId" : "mat.hide",
+          "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_claw",
           "quantity" : 1
         }
       ],
@@ -408,6 +465,11 @@
           "chance" : 0.9,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_horn",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -436,6 +498,11 @@
           "chance" : 0.8,
           "itemId" : "mat.hide",
           "quantity" : 1
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_fang",
+          "quantity" : 1
         }
       ],
       "stats" : {
@@ -463,6 +530,11 @@
         {
           "chance" : 0.9,
           "itemId" : "mat.hide",
+          "quantity" : 2
+        },
+        {
+          "chance" : 0.15,
+          "itemId" : "mat.trophy_claw",
           "quantity" : 2
         }
       ],

@@ -960,8 +960,8 @@ public enum SpecTables {
             out.append("")
             out.append("**What a kill returns** — cooked meat is \(meatVigor) Vigor a portion")
             out.append("")
-            out.append("| enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |")
-            out.append("|---|---|---|---|---|---|---|---|---|")
+            out.append("| enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult | trophy |")
+            out.append("|---|---|---|---|---|---|---|---|---|---|")
             for enemy in content.enemies.sorted(by: { $0.level < $1.level })
             where (enemy.depth?.max ?? 0) > 0 {
                 func expected(_ id: String) -> Double {
@@ -970,10 +970,20 @@ public enum SpecTables {
                 }
                 let meat = expected("food.raw_meat"), hide = expected("mat.hide")
                 let mult = archetypes[enemy.archetype]?.lootMultiplier ?? 1
-                out.append(String(format: "| `%@` | %d | %@ | ×%.1f | %.2f | %.1f | %.2f | %.1f | %.2f |",
+                // Every other row is a trophy (spec-bestiary.md §15), named in
+                // the table's own order with what a kill returns on average.
+                var trophyIds: [String] = []
+                for row in enemy.loot where row.itemId != "food.raw_meat" && row.itemId != "mat.hide"
+                    && !trophyIds.contains(row.itemId) {
+                    trophyIds.append(row.itemId)
+                }
+                let trophy = trophyIds.isEmpty ? "—" : trophyIds
+                    .map { String(format: "`%@` %.2f", $0, expected($0)) }
+                    .joined(separator: ", ")
+                out.append(String(format: "| `%@` | %d | %@ | ×%.1f | %.2f | %.1f | %.2f | %.1f | %.2f | %@ |",
                                   enemy.id, enemy.level, enemy.archetype, mult,
                                   meat, meat * Double(meatVigor),
-                                  hide, hide * (sell["mat.hide"] ?? 0), hide * mult))
+                                  hide, hide * (sell["mat.hide"] ?? 0), hide * mult, trophy))
             }
             out.append("")
             out.append("`lootMult` does not apply today — no award site reads it, so `hide`")
@@ -981,6 +991,8 @@ public enum SpecTables {
             out.append("the same row would yield if the multiplier scaled QUANTITY, which is")
             out.append("the only factor that survives: scaling `chance` saturates at 1.0, and")
             out.append("rounding a quantity of 1 collapses ×0.5/×1.0/×1.2/×1.7 into 1 or 2.")
+            out.append("`trophy` is every other row (`spec-bestiary.md` §15) with what a kill")
+            out.append("returns of it on average.")
         }
 
         // The Treasury (2026-10-11): the second currency's only sink. Zlatnyks

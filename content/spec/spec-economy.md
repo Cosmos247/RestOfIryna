@@ -292,28 +292,30 @@ fails a build on a number the project has agreed to look at first.
 <!-- generated: roi-content spec economy -->
 **What a kill returns** — cooked meat is 14 Vigor a portion
 
-| enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult |
-|---|---|---|---|---|---|---|---|---|
-| `enemy.wild_viper` | 1 | trash | ×0.5 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
-| `enemy.wild_eagle` | 2 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 |
-| `enemy.wild_boar` | 3 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 |
-| `enemy.rabid_fox` | 4 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.wild_moose` | 6 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_stag` | 7 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 |
-| `enemy.wild_buffalo` | 8 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_lynx` | 9 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 |
-| `enemy.rabid_wolf` | 10 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 |
-| `enemy.wild_tusker` | 11 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 |
-| `enemy.wild_bear` | 12 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
-| `enemy.wild_aurochs` | 13 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 |
-| `enemy.rabid_pack` | 14 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.80 | 2.4 | 0.96 |
-| `enemy.rabid_bear` | 15 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 |
+| enemy | L | archetype | lootMult | meat | as Vigor | hide | as silver | hide ×mult | trophy |
+|---|---|---|---|---|---|---|---|---|---|
+| `enemy.wild_viper` | 1 | trash | ×0.5 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 | `mat.trophy_venom` 0.05 |
+| `enemy.wild_eagle` | 2 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.00 | 0.0 | 0.00 | `mat.trophy_feather` 0.05 |
+| `enemy.wild_boar` | 3 | normal | ×1.0 | 0.70 | 9.8 | 0.80 | 2.4 | 0.80 | `mat.trophy_fang` 0.05 |
+| `enemy.rabid_fox` | 4 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 | `mat.trophy_fang` 0.05 |
+| `enemy.wild_moose` | 6 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 | `mat.trophy_horn` 0.15 |
+| `enemy.wild_stag` | 7 | normal | ×1.0 | 1.60 | 22.4 | 0.70 | 2.1 | 0.70 | `mat.trophy_horn` 0.15 |
+| `enemy.wild_buffalo` | 8 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 | `mat.trophy_horn` 0.15 |
+| `enemy.rabid_lynx` | 9 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.70 | 2.1 | 0.84 | `mat.trophy_claw` 0.15 |
+| `enemy.rabid_wolf` | 10 | normal | ×1.0 | 0.00 | 0.0 | 0.80 | 2.4 | 0.80 | `mat.trophy_fang` 0.15 |
+| `enemy.wild_tusker` | 11 | brute | ×1.7 | 1.60 | 22.4 | 0.90 | 2.7 | 1.53 | `mat.trophy_fang` 0.15 |
+| `enemy.wild_bear` | 12 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 | `mat.trophy_claw` 0.15 |
+| `enemy.wild_aurochs` | 13 | brute | ×1.7 | 1.70 | 23.8 | 0.90 | 2.7 | 1.53 | `mat.trophy_horn` 0.15 |
+| `enemy.rabid_pack` | 14 | skirmisher | ×1.2 | 0.00 | 0.0 | 0.80 | 2.4 | 0.96 | `mat.trophy_fang` 0.15 |
+| `enemy.rabid_bear` | 15 | elite | ×3.0 | 0.00 | 0.0 | 1.80 | 5.4 | 5.40 | `mat.trophy_claw` 0.30 |
 
 `lootMult` does not apply today — no award site reads it, so `hide`
 is what the table says regardless of archetype. `hide ×mult` is what
 the same row would yield if the multiplier scaled QUANTITY, which is
 the only factor that survives: scaling `chance` saturates at 1.0, and
 rounding a quantity of 1 collapses ×0.5/×1.0/×1.2/×1.7 into 1 or 2.
+`trophy` is every other row (`spec-bestiary.md` §15) with what a kill
+returns of it on average.
 <!-- /generated -->
 
 Against a cost the simulator prints. **This block is a QUOTE from `roi-content
@@ -345,6 +347,16 @@ a loss is not; it is §2.
 > and now meets the player at km 2 instead of km 1; its `lootMultiplier` rose
 > ×0.5 → ×1.0 with the archetype, which changes nothing until §5 wires that
 > multiplier to quantity.
+
+> *Amended 2026-11-05, with the trophies (`spec-bestiary.md` §15).* The viper and
+> the eagle return something now — a venom and a feather, one kill in twenty — and
+> every creature gains the table's `trophy` column. It changes neither currency:
+> a trophy restores no Vigor, cooks into nothing, and the trader buys none until it
+> has a use, because a sale that is the only thing to do with a drop is silver
+> paid for a kill (§4b). So the Vigor and silver columns, and the conclusion
+> below, stand as they were. The trophy rows are authored like the hide's — by
+> hand, the rabid bear's at ×2 — so §5's re-normalisation takes them in with the
+> rest.
 
 **Past km 31 nothing edible spawns at all.** Only the rabid bear reaches that
 deep in the approved roster, and foraging nets −0.5 Vigor per fresh room in every

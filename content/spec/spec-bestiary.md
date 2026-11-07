@@ -64,7 +64,8 @@ Three fields decide everything else:
   `skirmisher`, `brute`, `elite`, `boss`.
 - **family** — `wild` or `rabid`, from `content/lore.md` §8. Wild animals are
   clean: they drop meat and hide. Rabid ones carry Beastfever, their meat is
-  poison, and they drop hide only.
+  poison, and they drop hide only. *(Since 2026-11-05 every creature the forest
+  spawns also drops one trophy — §15.)*
 
 Nothing else about a creature is a number a person chooses. Name, icon and
 flavour are authored; HP, ATK, DEF, crit, dodge and XP are solved.
@@ -316,6 +317,10 @@ The family decides the table; the archetype's `lootMultiplier` decides how much.
 | rabid | `mat.hide` only — the meat carries Beastfever |
 
 That rule is from `content/lore.md` §8 and the shipped tables already obey it.
+
+> *Amended 2026-11-05:* every creature the forest spawns also drops one of five
+> trophies — venom, feather, fang, horn or claw — as the last row of its table (§15).
+
 Two things this spec deliberately does **not** decide:
 
 - whether elites and the boss drop something a trash mob cannot (a trophy, a
@@ -1330,3 +1335,98 @@ which wardrobe.
 - The digest: `records` and the content hash; `tuning`, `spawns`, `quests` and `king` held.
 - `fight_log.enemy_level` records the new levels from the restart on; a read across the
   deploy must split on it.
+
+## 15. Trophies — a kill drop beside meat and hide (2026-11-05)
+
+**Status: DECIDED and APPLIED 2026-11-05.** Content and locales only — no schema bump, no
+migration. It ships with a restart, not a `/reload`: the names are Lingo's, which a reload
+does not touch.
+
+### 15.1 What was asked
+
+The owner: a drop from the creatures beyond hide and meat — to begin with snake venom, an
+eagle's feather, horn and fang. What the drops are FOR is decided later; the drop comes
+first. Until now §6's family rule stood alone: the wild drop meat and hide, the rabid hide
+only, and the viper and the eagle nothing at all (§3's amendment of 2026-09-14,
+`spec-economy.md` §3).
+
+### 15.2 Decided 2026-11-05 (the owner)
+
+1. **Five shared kinds — venom, feather, fang, horn, claw — never one item per creature.**
+   Each is dropped by every creature of its kind, as the hide is. One trophy per species
+   (eleven items: a moose's horn, an aurochs' horn, a wolf's fang…) was offered first and
+   not taken, nor the tusk as a kind of its own: the boars drop a fang.
+2. **Who drops what.** Every creature the forest spawns drops exactly one; the
+   registration dog and the dummy drop none.
+   - venom — the viper;
+   - feather — the golden eagle;
+   - fang — the wild boar, the rabid fox, the rabid wolf, the old tusker, the rabid pack;
+   - horn — the moose, the red stag, the bison, the aurochs;
+   - claw — the rabid lynx, the wild bear, the rabid bear.
+3. **The chance: 5% from the four nearest creatures (№1–4), 15% from №5–14, one at a
+   time; the rabid bear two at a time, as with its hide.** 30% everywhere was proposed
+   first and turned down: the four nearest creatures fought 81.5% of the forest's fights in
+   the week to 2026-10-30 (§14.5), so venom and feathers would have piled up. Of four shown
+   (10/20 · 10 everywhere · 5/15 · 15 everywhere) the owner picked 10/20, then, once it was
+   built, moved to 5/15 («а хіба не 5-15, а не 10-20 шанс?»). The numbers as shipped are printed by `spec economy` — the `trophy` column of "What a kill returns",
+   quoted in `spec-economy.md` §3.
+4. **The trader buys none of them until they have a use.** Selling would be the only thing
+   to do with one, and a sale that is the only thing to do with a drop is silver paid for a
+   kill — the faucet Phase 8C removed (`spec-economy.md` §4b's test).
+5. **Not in this step.** Offered and left for later, the owner asking to come back to them
+   at the commit: foam of the Blight from every rabid creature, the wild bear's fat, sinew
+   from the big wild grazers, and rare second trophies (the eagle's talon, the viper's shed
+   skin). The uses come later. A bag category of their own was asked for the same evening and
+   then dropped by the owner («Нехай все таки йдуть у Матеріали»): the trophies stay in «🪨 Матеріали».
+
+### 15.3 How it plays
+
+- **The trophy is the LAST row of each loot table.** `ExplorationService.awardEncounterDrops`
+  takes the rows in order as far as the bag has room, so a full bag leaves the trophy on the
+  ground («✨ Ви помічаєте … але сумка повна»), never the meat or the hide.
+- **A trophy is an ordinary stackable material**, and nothing in the game's code changed for
+  it: the victory screen names it, the manor door's «Принесено:» and the 🏕 report count it,
+  it lies in «🪨 Матеріали» in the bag and in the warehouse, its card offers «🗑 Викинути»,
+  and a death takes it with the bag. The ids share the prefix `mat.trophy_`, so the five
+  sit together at the end of both lists, which sort by id.
+- **Nothing in the trader's list, and nothing cooks or crafts from them yet** — until the
+  uses arrive a trophy is kept, stored or thrown away.
+
+### 15.4 Names
+
+| id | icon | uk | en | uk gender |
+|---|---|---|---|---|
+| `mat.trophy_venom` | 💧 | Отрута | Venom | f |
+| `mat.trophy_feather` | 🪶 | Перо | Feather | n |
+| `mat.trophy_fang` | 🦷 | Ікло | Fang | n |
+| `mat.trophy_horn` | 📯 | Ріг | Horn | m |
+| `mat.trophy_claw` | 🐾 | Кіготь | Claw | m |
+
+The descriptions are flavour and promise no use; each names the creatures it comes from,
+so a new creature of a kind is a description edit as well. The venom was 🧪 at first; the owner
+moved it to 💧 the same evening, 🧪 being the bag's «🧪 Зілля» category. 🪶 also heads a job on
+the NPC board.
+
+### 15.5 What checks it
+
+`TrophyTests` pins the decisions on the shipped bundle: the five kinds and no other; every
+spawnable creature exactly one trophy, as its last loot row; a creature whose band starts
+deeper never dropping its trophy less often than a shallower one; the trader listing none;
+each a stackable material. Each rule is shown failing on a copy of the bundle built to break
+it — the boar's fang ahead of its hide, the viper bare, the eagle at 30%, the fang on the
+trader's list, the horn not stackable. These are tests, not validator rules, on purpose: a
+deliberate retune by `/reload` is the owner's call, and the tests move with the decision.
+
+### 15.6 What moved
+
+- `items.json` (five materials after the hide), `enemies.json` (a last loot row on each of the
+  fourteen), both locales (name and description; the gender in `uk.json`).
+- `spec economy`: "What a kill returns" gains the `trophy` column
+  (`Modules/ROISim/SpecTables.swift`); its block in `spec-economy.md` §3 regenerated. `spec
+  opening` is unchanged — a trophy restores nothing and cooks into nothing.
+- `simulate --strict`: 0 broken bands, 15 warnings, the pace to L40 151.1 / 144.3 / 136.4 days — as before
+- `validate --strict`: 0 warnings. `swift test`: 550, the seven of `TrophyTests` new.
+- The digest: `records` and the content hash; `tuning`, `spawns`, `quests` and `king` held.
+- Nothing is migrated: what is in bags and warehouses stays, and the first fight won after the
+  restart rolls the new rows. A `/reload` before that restart would show the five by their
+  raw keys.

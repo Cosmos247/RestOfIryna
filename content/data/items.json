@@ -257,6 +257,46 @@
       "type" : "material"
     },
     {
+      "icon" : "💧",
+      "id" : "mat.trophy_venom",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🪶",
+      "id" : "mat.trophy_feather",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🦷",
+      "id" : "mat.trophy_fang",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "📯",
+      "id" : "mat.trophy_horn",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "material"
+    },
+    {
+      "icon" : "🐾",
+      "id" : "mat.trophy_claw",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "material"
+    },
+    {
       "descriptionKey" : null,
       "effects" : [
         {
