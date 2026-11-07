@@ -185,5 +185,12 @@ public enum ContentSchema {
     /// refuse every row with a bare `weights_dont_sum` (97 without the herb's
     /// 3); the handshake names the cause instead. A v30 bundle on a v31 binary
     /// is refused the same way; were it read, no plant would ever be found.
-    public static let current: Int = 31
+    /// v32 (2026-11-07): the fortune teller's tinctures — items gain new
+    /// effect kinds (`restore_vigor_percent`, `restore_hp_percent`,
+    /// `sleep_ward`, `vigor_thrift` with its `seconds`, so four) and
+    /// `recipes.json` a `tincture` category with a `silverFee`. A v31 binary
+    /// would stop on the first unknown kind with a
+    /// coding path; a v31 bundle on a v32 binary would install a teller with
+    /// nothing to brew. The handshake names the cause either way.
+    public static let current: Int = 32
 }

@@ -200,6 +200,18 @@ oak table by candlelight. For a few silvers she will let you draw
 one card; it will shape the next six hours of your fate. She is older
 than she should be. The cards know your name before you sit down.
 
+Further back in the same room bundles of herbs dry under the ceiling and
+a copper cauldron stands on a tripod: she also brews **tinctures** from
+forest herbs (§7) and hunters' trophies (§8), for a few silvers more. The
+small and the medium healing tincture are St John's wort with a drop of
+viper's venom, since medicine and poison differ only in the dose; the
+thyme tincture gives back the strength a long walk takes; and the sleep
+tincture, pasque flower steeped in a horn, turns one death in the forest
+into a heavy dream that leaves the bag alone. The strong thyme tincture
+adds wormwood and a crushed eagle feather, and for an hour the road costs
+half.
+(`content/spec/spec-tinctures.md`.)
+
 ### 🛠 The Master / Майстер (live)
 A workshop louder than a forge — wood, iron, leather and glass all
 under one roof. The Master is grey-bearded, soot-streaked, blunt. The
@@ -264,13 +276,23 @@ sheets, sap running black, the air faintly hot and damp. Streams
 foul. Atmosphere: oppressive, beautiful, fundamentally not a place
 humans should be.
 
+### Plants in the grass (2026-11-05)
+
+Now and then a step turns up a plant worth picking, anywhere in the forest
+and as often near the manor as in the Deep Wood: **thyme** 🌿 from the shaded
+glades, the commonest; **St John's wort** 🌼 with its bright yellow flowers;
+bitter **wormwood** 🌱, said to keep poison and worse away; and, rarest of the
+four, **pasque flower** 🌸 of the pine woods, an old charm. The Fortune Teller
+(§6) brews tinctures from them with the beasts' trophies (§8).
+(`content/spec/spec-bestiary.md` §16.)
+
 ---
 
 ## 8. The Beasts
 
 Two families of wildlife, and one stand-in.
 
-### The Wild Family (uninfected, drop meat + hide)
+### The Wild Family (uninfected, drop meat + hide, and now and then a trophy)
 - **Viper** 🐍 — Гадюка. A short thick adder of the sunlit edges, zigzag
   down the back, coiled in leaf-litter and bracken. Slow to leave and
   quicker than it looks. The shallowest thing that will still bite.
@@ -304,14 +326,15 @@ Killing them is a hunter's pride, not a crusade.
 *(The viper and the eagle carry no loot table at all as of 2026-09-14 —
 neither is butchered for the table, and neither has a hide. They are the
 one place the family rule above does not hold, and it is deliberate: see
-`content/spec/spec-bestiary.md` §3.)*
+`content/spec/spec-bestiary.md` §3. Since 2026-11-05 they drop a trophy —
+the viper its venom, the eagle a feather — and still no meat or hide.)*
 
 *(The stag, the old tusker and the aurochs joined on 2026-10-02 — tier 2,
 `spec-bestiary.md` §10. Three of the hunt's dangers Volodymyr Monomakh
 lists in his «Повчання»: aurochs that tossed him and his horse, a stag
 that gored him, a boar that tore the sword from his thigh.)*
 
-### The Rabid Family (Blight-infected, drop hide only — meat is poisoned)
+### The Rabid Family (Blight-infected, drop hide and now and then a fang or a claw — never meat, it is poisoned)
 - **Rabid Fox** 🦊 — Скажена лисиця. The Blight's first messenger: a
   vixen that walks up to people in broad daylight, tail low, jaw slack,
   and bites. The first rabid thing a Governor meets, at the thicket's edge.
@@ -331,6 +354,18 @@ that gored him, a boar that tore the sword from his thigh.)*
 These creatures are not enemies in the heroic sense — they are
 *patients past saving*. The Governor kills them out of mercy and
 necessity, never glory.
+
+### Trophies (2026-11-05)
+
+Now and then a beast leaves a trophy beside its meat and hide, one of five
+kinds shared across the bestiary: the viper its **venom** 💧, the golden eagle
+a **feather** 🪶, the boars, the fox and the wolves a **fang** 🦷, the moose,
+the stag, the bison and the aurochs a **horn** 📯, the lynx and both bears a
+**claw** 🐾. The Blight rots the meat, not the teeth: in a rabid beast fangs
+and claws grow longer than they should, so the rabid family leaves them as the
+wild one does. The Fortune Teller (§6) brews tinctures with the venom, the
+feather, the fang and the horn; what a craftsman may make of the claw is not yet
+written. (`content/spec/spec-bestiary.md` §15.)
 
 ### The Training Dummy
 A man-sized figure of straw, burlap and lashed pine staves, set up at
@@ -368,6 +403,8 @@ so far only to enter a Governor under another class.
 - 🦴 **Hide** — tanned beast skin, ready for the leather workbench
 - 🔩 **Iron Lump** — raw iron, fist-sized, dull grey with rust streaks
 - 🔳 **Iron Ingot** — refined iron, hand-length, hammered smooth (10 lumps → 1 ingot at the forge)
+- 💧 🪶 🦷 📯 🐾 **Trophies** — venom, feather, fang, horn and claw, taken from a kill now and then (§8); the Fortune Teller brews with some of them (§6)
+- 🌿 🌼 🌱 🌸 **Plants** — thyme, St John's wort, wormwood and pasque flower, picked on a step (§7); for the Fortune Teller's tinctures (§6)
 
 ### Workshops
 - **🔥 Forge** — open-hearth smithy. Bellows, anvil, glowing iron, sparks. Smelts ingots, will eventually upgrade weapons. Smell: hot iron and pine smoke.

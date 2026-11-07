@@ -2160,6 +2160,65 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-07 — the fortune teller's tinctures (NOT live — Swift + content schema v32 + uk/en + `AddSleepWard`; the same
+build and restart as the plants below). `content/spec/spec-tinctures.md`. `swift test` reaches none of the brew, the drink or the
+wipe, so this block is the only proof. `AddSleepWard` ran on `roi_test` and the developer account holds 5 of each of the first
+four; Міцна настоянка and `AddVigorThrift` came after, and need a start of the test bot on this tree. Try it there first:**
+- [ ] `/content` reads schema v32, hash `b6cb33a2`, 42 items, 19 recipes; `users.sleep_ward` and `users.vigor_thrift_percent` exist
+      after the boot.
+- [ ] The capital → «🏘 Поділ»: the caption ends «…за таємничим пророцтвом або настоянкою.»
+- [ ] «🔮 Ворожка»: the description ends «…вона вміє варити настоянки.», on a male and a female account; «🧪 Настоянки»
+      sits under «🔮 Тягнути карту», and while a card runs under «🕯 Відчарувати» / «🔮 Друга карта»; a card's reveal
+      does not carry it.
+- [ ] «🧪 Настоянки»: the same photo, the room, her words, five buttons, «🔙 Назад» redrawing her screen in the same message.
+      Each tincture reads its own icon on every screen: 🧪🌼 both heals, 🧪🌿 both thymes, 🧪🌸 sleep; the bag's category stays 🧪.
+- [ ] A card: the description, the effect, the rows counted in the BAG (a plant on the warehouse reads 0), the silver line;
+      «🧪 Зварити», «📌 У нотатник», «🔙 Назад».
+- [ ] Short of an input: the modal, the card stands. Short of silver: the silver modal. Neither takes anything.
+- [ ] A brew: «✅ Ворожка зварила: 🧪 … × 1 · −🪙 N», the card redrawn with less, the tincture in the bag's «🧪 Настоянки», the
+      purse down by the fee, a note on that recipe gone.
+- [ ] «📌 У нотатник»: the note reads «🧪 Name · Ворожка, Поділ», the rows from the bag, the silver; a fourth pin is refused.
+- [ ] Drinking, at home and on a walk: a heal +25% / +50% of max HP, thyme +30% of the pool, the usual banner; at full pools
+      «Без ефекту», nothing spent; no «До повної снаги» on a tincture; no way to drink in a fight.
+- [ ] Сонна: the banner; the profile's «🌸 Сонна настоянка: смерть не забирає сумку до повернення додому» while it works and not
+      after; a second one refused in its own words and kept; a death on a walk prints the 🌸 line and «Принесено:» under the
+      screen, and takes nothing;
+      the next death wipes. Drink, walk, come home, die on the next walk: the bag goes. Drink, open a walk, turn back at the
+      gate: still up.
+- [ ] Міцна: +30% of the pool and the banner «— +N снаги (…), витрата снаги −50% на 1год»; a step and a blow cost 1, a flee 2, a
+      Defend still 1; the profile reads «🌿 Міцна настоянка чебрецю · 59хв / 🍖 Витрата снаги: −50%»; a second is refused with the time
+      left and kept; at a full pool the hour still starts; after the hour a step costs 2 again and the lines are gone.
+- [ ] A 🏕 run: the governor drinks no tincture; dying under the ward the report prints its line and «Принесено»; home alive, the
+      ward is gone.
+- [ ] The forest edge shows no armour warning under the ward. The market takes a tincture and its card prints the share.
+
+**Added 2026-11-05, late evening — plants in the grass (NOT live — Swift + content schema v31 + uk/en + tests, no
+migration; a BUILD and a restart on the Pi, shipped with the trophies below). `spec-bestiary.md` §16. Try it on the test
+bot first:**
+- [ ] `/content`: see the tinctures block above (they ship together).
+- [ ] Walk fresh km: about one step in 33 reads «🍃 Знахідка в траві — 🌿 Чебрець × 1.» — thyme the commonest, pasque
+      flower about one plant in ten; «🕊 Лише тиша» is rarer on fresh ground than before.
+- [ ] With a full bag: «🍃 Знахідка в траві — 🌼 Звіробій × 1, але сумка повна — доводиться лишити.»
+- [ ] The manor door's «Принесено:» lists the plants; a 🏕 report's events row shows «🍃 рослина × N» and its haul the
+      plants.
+- [ ] The bag → «🪨 Матеріали»: the four plants, each card with the owner's description and «🗑 Викинути»; the trader's
+      sell list does not show them; the warehouse takes them.
+- [ ] The bag and the warehouse read «🧪 Настоянки», not «Зілля» (2026-11-07, uk/en, the same restart).
+
+**Added 2026-11-05, evening — the kill trophies (NOT live — content + uk/en + tests, no migration; it ships with a
+restart, never a `/reload` first: Lingo is not reloaded, so the five would show by their raw keys). `spec-bestiary.md`
+§15. Try it on the test bot first:**
+- [ ] `/content`: see the plants block above (they ship together).
+- [ ] Win fights at km 1–7: about one viper in twenty leaves «✨ Знайдено 💧 Отрута × 1.», about one eagle in twenty «✨ Знайдено
+      🪶 Перо × 1.»; a boar's «🦷 Ікло» line comes after its meat and hide.
+- [ ] With one free place a boar takes its meat; the hide and the fang go to the ground («✨ Ви помічаєте … але сумка
+      повна…»), never the meat for the fang.
+- [ ] The manor door's «Принесено:» and the 🏕 report list the trophies («• 💧 Отрута × N»).
+- [ ] The bag → «🪨 Матеріали»: the five sit together at the end. A trophy's card: its name and description, «🎒 У сумці:
+      N», «🗑 Викинути 1» / «🗑 Викинути всі (N)», «🔙 До списку» — no «Зʼїсти», no ingredient line.
+- [ ] The warehouse takes them and gives them back; the trader's sell list does not show them.
+- [ ] Deeper (km 12+): «📯 Ріг» and «🐾 Кіготь» at about one fight in seven; the rabid bear's claws come two at a time.
+
 **Added 2026-11-04, night — `/news`, a developer's message to every player (LIVE since the 2026-11-05 13:28:03 restart, `46437bf` — Swift + uk/en, the same restart as
 the hazel; no migration, the digest unchanged). Try it on the test bot first:**
 - [ ] From a developer account: `/news` → «📣 Надішліть повідомлення для гравців… Його отримають N гравців.» with
@@ -3398,6 +3457,18 @@ in the capital, one challenging the other.
 Moved here from `Prompt.md` on 2026-09-20. Each was raised deliberately and kept out of an
 unrelated commit on purpose.
 
+**From the 2026-11-07 session:**
+- **The plants thinned the Fool's +20% loot** — found while pricing the tinctures, not decided. `lootChanceMultiplier` takes
+  its rise from `nothing` and is capped by it, and `spec-bestiary.md` §16 cut `nothing` 5 → 2 and 8 → 5: under the card a fresh
+  km's loot is 50 (+4%, was 53, +10%), a second visit's 38 (+15%, was 40, +21%). A third visit and the 🏕 run are unchanged.
+  A loot-raising tincture would hit the same cap, so none was offered.
+- **The tinctures left open** (`spec-tinctures.md` §5): 🐾 Кіготь has no recipe; the wormwood's card promises appetite and a cure for a poison the game does not have. A holiday's gate still lists the bag under the ward (`deathPreview`),
+  harmless until a holiday is scheduled.
+- **A 🏕 governor plans at the full step cost** under Міцна настоянка and the Chariot alike (`walkCost`), so he eats and turns earlier
+  than he must. On the safe side; asking the charged cost instead would change a live card's behaviour, so it was not done unasked.
+- **Still waiting for the owner's word, reminded at the 11-07 commits:** the four extra drops of 11-05 (Blight foam, the wild bear's fat,
+  sinew, rare second trophies).
+
 **From the 2026-11-03 → 11-04 sessions:**
 - **Cheaper Vigor — computed, then PUT OFF by the owner** («Поки відкладемо це», 11-04, before answering which to
   build). The owner's variant: step 1, attack 1, flee 2 (the mage's +2 gone), every technique 2, the autobattle round 1
@@ -3430,7 +3501,7 @@ unrelated commit on purpose.
     «🛡 Одягнути» + the move button — putting on from the warehouse SWAPS places: the worn piece lies down on the
     warehouse in its stead (armour only — the class weapon never reaches the warehouse). Stale warehouse buttons during
     an expedition must refuse, as the estate's door does.
-  - Offered, not answered (so nothing built): hiding the empty «🧪 Зілля» / «💎 Артефакти» categories — nobody can
+  - Offered, not answered (so nothing built): hiding the empty «🧪 Настоянки» / «💎 Артефакти» categories — nobody can
     obtain either.
   - Found 11-01, told, not changed: a holiday's finale picks the reader's line by blood > 0, so a flask-holder who went
     into the manor and brought nothing reads «Цього разу ви до маєтку не ходили» — reword it before the next holiday. Found and told, nothing changed: «❌ Зняти» with a full bag takes the piece off anyway and the bag

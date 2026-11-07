@@ -21,6 +21,28 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
+**2026-11-07 — the fortune teller's tinctures, and «зілля» retired** (Swift + content schema **v32** + uk/en + lore +
+`AddSleepWard`, NOT live — the same build and restart as the plants; `spec-tinctures.md`). «🧪 Настоянки» on her screen, in both
+its states, opens five recipes in the same message: Мала 1× 🌼 + 1× 💧, ❤️ +25%, 10 🪙; Середня 2× 🌼 + 1× 💧, ❤️ +50%, 30 🪙; Чебрецю
+2× 🌿 + 1× 🦷, 🍖 +30%, 15 🪙; Міцна 3× 🌿 + 1× 🌱 + 1× 🪶, 🍖 +30% and every Vigor cost halved for an hour, 30 🪙 (`AddVigorThrift`); Сонна
+1× 🌸 + 1× 📯, a death leaves the bag, to the door or the first death, 40 🪙. A card counts the
+bag alone and offers «📌 У нотатник»; `TinctureService.brew` is one transaction; a share is `MealMath.share`; the governor drinks
+none. Her intro and Podil's caption name them. The bag's and the warehouse's 🧪 category reads «Настоянки» (en Tinctures); the
+code keeps `potion`. 585 tests, none of which reach the brew, the drink or the wipe.
+
+**2026-11-05, late evening — plants in the grass** (Swift + content + uk/en + tests, content schema **v31**, NOT live —
+a build and a restart; `spec-bestiary.md` §16). A sixth step event: 3 steps of 100 in every weight row, taken from
+«тиша», so materials, food and fights are unchanged; one pool for the whole forest — 🌿 Чебрець, 🌼 Звіробій, 🌱 Полин,
+🌸 Сон-трава at 4 : 3 : 2 : 1, one at a time. «🍃 Знахідка в траві — 🌿 Чебрець × 1.»; «🪨 Матеріали»; the trader buys
+none; the cards describe what the tinctures do (the owner's pick); the fortune teller brews them since 2026-11-07. `HerbTests`.
+
+**2026-11-05, evening — the kill trophies** (content + uk/en + tests, NOT live — a restart ships it, not a `/reload`;
+`spec-bestiary.md` §15). Every creature the forest spawns drops one of five shared trophies beside its meat and hide —
+💧 Отрута (viper), 🪶 Перо (eagle), 🦷 Ікло (boars, fox, wolves), 📯 Ріг (moose, stag, bison, aurochs), 🐾 Кіготь (lynx,
+both bears) — 5% from №1–4, 15% deeper, the rabid bear two, as the LAST loot row. Ordinary stackable materials: the
+bag's and the warehouse's «🪨 Матеріали», «🗑 Викинути», lost with the bag on a death. The trader buys none and
+the fortune teller brews with four of them since 2026-11-07, the claw still waits. `TrophyTests` pins the decisions.
+
 **2026-11-05 — the warehouse's move buttons as 📦 / 🎒** (locales only, LIVE since the 2026-11-05 13:28:03 restart, the same restart): «⬆️ 📦 1» /
 «⬇️ 🎒 1» on a stack's card, «⬆️ 📦» / «⬇️ 🎒» on a gear copy's card and in the old «Куди?» (the owner's picks).
 

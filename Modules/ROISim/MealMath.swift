@@ -28,6 +28,24 @@ import Foundation
 
 public enum MealMath {
 
+    /// A tincture's share of one of the drinker's pools (2026-11-07): `percent`
+    /// of `pool`, rounded half up, and at least a point — the card promises
+    /// something, so a tiny pool still gets it. What fits is the pool's own
+    /// clamp, as for every meal (`VigorService.consume`).
+    public static func share(percent: Int, of pool: Int) -> Int {
+        guard percent > 0, pool > 0 else { return 0 }
+        return Swift.max(1, Int((Double(pool) * Double(percent) / 100).rounded()))
+    }
+
+    /// A Vigor cost under Міцна настоянка чебрецю: `percent` off a cost already
+    /// multiplied by the stance and the card, rounded half up as every cost is.
+    /// A cost stays a cost: with the Chariot on top, a 1-point Defend would
+    /// otherwise round to nothing and be free.
+    public static func thriftedCost(_ cost: Double, percent: Int) -> Int {
+        guard cost > 0 else { return 0 }
+        return Swift.max(1, Int((cost * Double(100 - percent) / 100).rounded()))
+    }
+
     /// The many-portion button, and how many portions it eats.
     public enum Bulk: Equatable, Sendable {
         /// «🍴 До повної снаги (N)» — N portions fill the pool.

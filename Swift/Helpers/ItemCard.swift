@@ -64,6 +64,19 @@ enum ItemCard {
                 parts.append("❤️ " + lingo.localize("item.card.hp_gain", locale: locale, interpolations: [
                     "amount": "\(amount)"
                 ]))
+            // A tincture on the market (2026-11-07): the same sentence, its share.
+            case .restoreVigorPercent(let percent):
+                parts.append("🍖 " + lingo.localize("item.card.vigor_gain", locale: locale, interpolations: [
+                    "amount": "\(percent)%"
+                ]))
+            case .restoreHPPercent(let percent):
+                parts.append("❤️ " + lingo.localize("item.card.hp_gain", locale: locale, interpolations: [
+                    "amount": "\(percent)%"
+                ]))
+            case .sleepWard:
+                parts.append("🌸 " + lingo.localize("inventory.card.sleep_ward", locale: locale))
+            case .vigorThrift(let percent, let seconds):
+                parts.append(BagCard.thriftLine(percent: percent, seconds: seconds, lingo: lingo, locale: locale))
             }
         }
 

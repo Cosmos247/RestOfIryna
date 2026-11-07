@@ -104,7 +104,7 @@ rules of their own:
 |---|---|
 | `combat.json` | hit/crit/variance, technique gates, 3 stances, 3 special attacks, 3 special defenses, flee (per-class chance + the per-fight `maxFailures` ceiling), per-class Defend, the training-dummy id |
 | `vigor.json` | 7 action costs, starvation, idle HP regen |
-| `exploration.json` | the three-tier revisit weight table, trip damage, loose silver's denominations, and the passive block: its weights, XP and loot multipliers, the daily budget and (2026-10-12) the HP share the governor turns at |
+| `exploration.json` | the three-tier revisit weight table (six buckets since the plants' `herb`, 2026-11-05 — its pool is `zones.json` → `herbs`, schema v31), trip damage, loose silver's denominations, and the passive block: its weights, XP and loot multipliers, the daily budget and (2026-10-12) the HP share the governor turns at |
 | `progression.json` | `maxLevel`, XP curve, stat-growth levels, per-class starting stats + starter weapon, warehouse caps |
 | `economy.json` | repair shave, salvage share (2026-09-27), per-fight wear budget — fractions since 2026-10-24 (schema v27), a fraction being a chance per fight (`WearMath`). The durability start left on 2026-10-05 (schema v18): a piece's durability is its item's `maxDurability`, a laddered weapon's its `durabilityByTier` — `GearConditionService.startingDurability(for:)` |
 | `time.json` | `scale` + `gameTime` (scaled) + `realTime` (never scaled) |

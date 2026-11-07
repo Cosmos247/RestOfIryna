@@ -38,6 +38,20 @@ public enum VigorAction: String, CaseIterable, Sendable {
 public struct ConsumeResult: Sendable {
     public let vigorRestored: Int
     public let hpRestored: Int
+    /// Сонна настоянка went to work (`User.sleepWard`).
+    public let wardRaised: Bool
+    /// Міцна настоянка чебрецю went to work: its percent and seconds, 0 otherwise.
+    public let thriftPercent: Int
+    public let thriftSeconds: Int
+
+    public init(vigorRestored: Int, hpRestored: Int, wardRaised: Bool = false,
+                thriftPercent: Int = 0, thriftSeconds: Int = 0) {
+        self.vigorRestored = vigorRestored
+        self.hpRestored = hpRestored
+        self.wardRaised = wardRaised
+        self.thriftPercent = thriftPercent
+        self.thriftSeconds = thriftSeconds
+    }
 }
 
 // MARK: - Service
@@ -122,6 +136,10 @@ public enum VigorService {
     public static func drain(_ user: User, base: Int, multiplier: Double = 1.0) -> Int {
         let fortuneMult = user.activeFortuneEffect?.vigorDrainMultiplier ?? 1.0
         let scaled = Double(base) * max(0.0, multiplier) * max(0.0, fortuneMult)
+        // Міцна настоянка чебрецю, last and on top of both (2026-11-07).
+        if user.vigorThriftSecondsRemaining() != nil {
+            return drain(user, amount: MealMath.thriftedCost(scaled, percent: user.vigorThriftPercent))
+        }
         return drain(user, amount: Int(scaled.rounded()))
     }
 
@@ -168,34 +186,56 @@ public enum VigorService {
     /// fully wasted (user already at cap for each restore type). Mutates user; caller
     /// must remove the item from inventory and save.
     public static func consume(_ item: Item, user: User) -> ConsumeResult? {
+        // A tincture's share is read off the pool as it stands now, once, so the
+        // prediction and the write cannot quote two numbers.
+        func vigorAmount(_ effect: ItemEffect) -> Int {
+            switch effect {
+            case .restoreVigor(let amount):         return amount
+            case .restoreVigorPercent(let percent): return MealMath.share(percent: percent, of: user.maxVigor)
+            case .restoreHP, .restoreHPPercent, .sleepWard, .vigorThrift: return 0
+            }
+        }
+        func hpAmount(_ effect: ItemEffect) -> Int {
+            switch effect {
+            case .restoreHP(let amount):         return amount
+            case .restoreHPPercent(let percent): return MealMath.share(percent: percent, of: user.effectiveMaxHp)
+            case .restoreVigor, .restoreVigorPercent, .sleepWard, .vigorThrift: return 0
+            }
+        }
+        let wardWouldRise = item.raisesSleepWard && !user.sleepWard
+        // One bottle at a time, whatever its Vigor half could still restore: a
+        // second neither stacks nor restarts the hour (the owner's sample).
+        let thrift = item.vigorThrift
+        if thrift != nil, user.vigorThriftSecondsRemaining() != nil { return nil }
+
         // Predict to reject fully wasted consumption
         var predictedVigor = 0
         var predictedHP = 0
         for effect in item.effects {
-            switch effect {
-            case .restoreVigor(let amount):
-                predictedVigor += min(amount, max(0, user.maxVigor - user.vigor))
-            case .restoreHP(let amount):
-                predictedHP += min(amount, max(0, user.effectiveMaxHp - user.hp))
-            }
+            predictedVigor += min(vigorAmount(effect), max(0, user.maxVigor - user.vigor))
+            predictedHP += min(hpAmount(effect), max(0, user.effectiveMaxHp - user.hp))
         }
-        guard predictedVigor > 0 || predictedHP > 0 else { return nil }
+        guard predictedVigor > 0 || predictedHP > 0 || wardWouldRise || thrift != nil else { return nil }
 
         var vigorRestored = 0
         var hpRestored = 0
         for effect in item.effects {
-            switch effect {
-            case .restoreVigor(let amount):
-                let before = user.vigor
-                user.vigor = min(user.maxVigor, user.vigor + amount)
-                vigorRestored += user.vigor - before
-            case .restoreHP(let amount):
-                let before = user.hp
-                user.hp = min(user.effectiveMaxHp, user.hp + amount)
-                hpRestored += user.hp - before
-            }
+            let vigorBefore = user.vigor
+            user.vigor = min(user.maxVigor, user.vigor + vigorAmount(effect))
+            vigorRestored += user.vigor - vigorBefore
+            let hpBefore = user.hp
+            user.hp = min(user.effectiveMaxHp, user.hp + hpAmount(effect))
+            hpRestored += user.hp - hpBefore
         }
-        return ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored)
+        if wardWouldRise { user.sleepWard = true }
+        if let thrift {
+            user.vigorThriftPercent = thrift.percent
+            // Not divided by `time.scale`: the hour is what every screen prints,
+            // like a tarot card's window.
+            user.vigorThriftUntil = Date().addingTimeInterval(TimeInterval(thrift.seconds))
+        }
+        return ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored, wardRaised: wardWouldRise,
+                             thriftPercent: thrift?.percent ?? 0, thriftSeconds: thrift?.seconds ?? 0)
     }
 
     /// Eat up to `portions` units, one at a time through `consume` — the single
@@ -208,13 +248,21 @@ public enum VigorService {
         var eaten = 0
         var vigorRestored = 0
         var hpRestored = 0
+        var wardRaised = false
+        var thriftPercent = 0, thriftSeconds = 0
         while eaten < portions, let one = consume(item, user: user) {
             eaten += 1
             vigorRestored += one.vigorRestored
             hpRestored += one.hpRestored
+            wardRaised = wardRaised || one.wardRaised
+            if one.thriftPercent > 0 {
+                thriftPercent = one.thriftPercent
+                thriftSeconds = one.thriftSeconds
+            }
         }
         guard eaten > 0 else { return nil }
-        return (eaten, ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored))
+        return (eaten, ConsumeResult(vigorRestored: vigorRestored, hpRestored: hpRestored, wardRaised: wardRaised,
+                                     thriftPercent: thriftPercent, thriftSeconds: thriftSeconds))
     }
 
     /// What one portion restores to the Vigor pool before the pool's clamp —

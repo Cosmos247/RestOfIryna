@@ -239,6 +239,23 @@ final public class User: Model, @unchecked Sendable {
     @Field(key: "fortune_stage")
     var fortuneStageRaw: String
 
+    /// Сонна настоянка is working (2026-11-07): the next death leaves the bag.
+    /// Raised by the drink (`VigorService.consume`), spent by that death
+    /// (`InventoryEntry.wipeOnDeath`), and let go at the manor door, on foot or
+    /// from a 🏕 run. No clock: drunk at home it waits for the next walk.
+    @Field(key: "sleep_ward")
+    var sleepWard: Bool
+
+    /// Міцна настоянка чебрецю (2026-11-07): every Vigor cost is this percent
+    /// lower until `vigorThriftUntil`. Both stamped at the drink, as a tarot
+    /// card's window is, so a `/reload` cannot change a running bottle. Read
+    /// through `vigorThriftSecondsRemaining`.
+    @Field(key: "vigor_thrift_percent")
+    var vigorThriftPercent: Int
+
+    @OptionalField(key: "vigor_thrift_until")
+    var vigorThriftUntil: Date?
+
     /// Guards for `RestNotificationService`. The draw cooldown, once elapsed,
     /// stays elapsed — so "the cards are ready" needs a flag or it would be
     /// said every minute; `questRolloverStamp` holds the `GameDay` key of the
@@ -351,6 +368,9 @@ final public class User: Model, @unchecked Sendable {
         self.lastFortuneHpRestored = false
         self.lastFortuneVigorRestored = false
         self.fortuneStageRaw = FortuneStage.free.rawValue
+        self.sleepWard = false
+        self.vigorThriftPercent = 0
+        self.vigorThriftUntil = nil
         self.fortuneReadyNotified = false
         self.questRolloverStamp = nil
         self.passiveMinutesToday = 0
@@ -673,6 +693,12 @@ extension User {
     func fortuneSecondsRemaining(now: Date = Date()) -> Int? {
         guard let expiresAt = activeFortuneExpiresAt, now < expiresAt else { return nil }
         return Int(expiresAt.timeIntervalSince(now).rounded())
+    }
+
+    /// Seconds left of Міцна настоянка чебрецю, nil when none is working.
+    func vigorThriftSecondsRemaining(now: Date = Date()) -> Int? {
+        guard vigorThriftPercent > 0, let until = vigorThriftUntil, now < until else { return nil }
+        return Int(until.timeIntervalSince(now).rounded())
     }
 
     /// When the player may draw the next card: the LATER of the drawn card's

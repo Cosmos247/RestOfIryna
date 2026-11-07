@@ -738,11 +738,25 @@ final class MainController: TGControllerBase, @unchecked Sendable {
         """
 
         // Append the fortune line last, so the cosmetic "today's card"
-        // stands out from the structural stats.
+        // stands out from the structural stats. Сонна настоянка sits under it
+        // (2026-11-07, the owner): no clock runs on it and nothing else on the
+        // screen would say that it is working.
+        var text = body
         if let fl = fortuneLine {
-            return body + "\n\(fl)"
+            text += "\n\(fl)"
         }
-        return body
+        // Міцна настоянка чебрецю reads like a card: its name and clock, then
+        // what it does, in the card's own words.
+        if let left = session.vigorThriftSecondsRemaining(),
+           let item = ItemCatalog.all.first(where: { $0.vigorThrift != nil }) {
+            text += "\n🌿 \(l.localize(item.nameKey, locale: loc)) · "
+                + Countdown.format(left, lingo: l, locale: loc)
+                + "\n🍖 \(l.localize("fortune.effect.vigor_drain", locale: loc)): −\(session.vigorThriftPercent)%"
+        }
+        if session.sleepWard {
+            text += "\n🌸 " + l.localize("profile.sleep_ward", locale: loc)
+        }
+        return text
     }
 
     // MARK: - Bar Helper

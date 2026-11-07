@@ -147,8 +147,24 @@ enum BagCard {
                 return "🍖 " + lingo.localize("inventory.card.vigor", locale: locale, interpolations: ["amount": "\(amount)"])
             case .restoreHP(let amount):
                 return "❤️ " + lingo.localize("inventory.card.hp", locale: locale, interpolations: ["amount": "\(amount)"])
+            // A tincture's share, in the dish's own sentence: «🍖 +30% Снаги».
+            case .restoreVigorPercent(let percent):
+                return "🍖 " + lingo.localize("inventory.card.vigor", locale: locale, interpolations: ["amount": "\(percent)%"])
+            case .restoreHPPercent(let percent):
+                return "❤️ " + lingo.localize("inventory.card.hp", locale: locale, interpolations: ["amount": "\(percent)%"])
+            case .sleepWard:
+                return "🌸 " + lingo.localize("inventory.card.sleep_ward", locale: locale)
+            case .vigorThrift(let percent, let seconds):
+                return thriftLine(percent: percent, seconds: seconds, lingo: lingo, locale: locale)
             }
         }.joined(separator: " · ")
+    }
+
+    /// «🍖 Витрата снаги: −50% · 1год» — the one phrasing of Міцна настоянка
+    /// чебрецю on a card, the card's own label for a drain.
+    static func thriftLine(percent: Int, seconds: Int, lingo: Lingo, locale: String) -> String {
+        "🍖 " + lingo.localize("fortune.effect.vigor_drain", locale: locale)
+            + ": −\(percent)% · " + Countdown.format(seconds, lingo: lingo, locale: locale)
     }
 
     /// The many-portion button for this player and this stack, or nil.
@@ -277,11 +293,23 @@ enum BagCard {
                 "max":     "\(user.effectiveMaxHp)"
             ]))
         }
-        if user.vigor >= user.maxVigor {
-            parts.append("🍖 " + lingo.localize("vigor.full", locale: locale))
+        if result.thriftPercent > 0 {
+            parts.append(lingo.localize("tincture.thrift.raised", locale: locale, interpolations: [
+                "amount": "−\(result.thriftPercent)%",
+                "time": Countdown.format(result.thriftSeconds, lingo: lingo, locale: locale)
+            ]))
         }
-        if user.hp >= user.effectiveMaxHp {
-            parts.append("❤️ " + lingo.localize("hp.full", locale: locale))
+        if result.wardRaised {
+            // Сонна настоянка restores nothing, so whether the pools are full
+            // has nothing to do with it.
+            parts.append(lingo.localize("tincture.sleep.raised", locale: locale))
+        } else {
+            if user.vigor >= user.maxVigor {
+                parts.append("🍖 " + lingo.localize("vigor.full", locale: locale))
+            }
+            if user.hp >= user.effectiveMaxHp {
+                parts.append("❤️ " + lingo.localize("hp.full", locale: locale))
+            }
         }
         let count = eaten > 1 ? " × \(eaten)" : ""
         return "✅ \(lingo.localize(item.nameKey, locale: locale))\(count) — " + parts.joined(separator: ", ")
@@ -426,9 +454,19 @@ enum BagCard {
                 portions = 1
             }
 
-            let before = (vigor: user.vigor, hp: user.hp)
+            let before = (vigor: user.vigor, hp: user.hp, ward: user.sleepWard,
+                          thriftPercent: user.vigorThriftPercent, thriftUntil: user.vigorThriftUntil)
             guard let meal = VigorService.consume(item, portions: portions, user: user) else {
-                let text = context.lingo.localize("consume.no_effect", locale: user.locale)
+                // A ward already up is the one refusal that is not about full
+                // pools: «усе вже відновлено» would not be what happened.
+                let wardUp = item.raisesSleepWard && user.sleepWard
+                var text = context.lingo.localize(wardUp ? "tincture.sleep.already" : "consume.no_effect", locale: user.locale)
+                if item.vigorThrift != nil, let left = user.vigorThriftSecondsRemaining() {
+                    text = context.lingo.localize("tincture.thrift.already", locale: user.locale, interpolations: [
+                        "name": context.lingo.localize(item.nameKey, locale: user.locale),
+                        "time": Countdown.format(left, lingo: context.lingo, locale: user.locale)
+                    ])
+                }
                 _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(
                     callbackQueryId: query.id, text: text, showAlert: true))
                 return true
@@ -438,6 +476,9 @@ enum BagCard {
             guard try await InventoryEntry.remove(itemId, quantity: meal.eaten, from: user, on: context.db) else {
                 user.vigor = before.vigor
                 user.hp = before.hp
+                user.sleepWard = before.ward
+                user.vigorThriftPercent = before.thriftPercent
+                user.vigorThriftUntil = before.thriftUntil
                 _ = try? await context.bot.answerCallbackQuery(params: ack)
                 try await redraw(item, route: route, message: message, context: context, list: list)
                 return true

@@ -1181,8 +1181,12 @@ enum ContentDigest {
     private static func fingerprint(_ item: Item) -> String {
         let effects = item.effects.map { effect -> String in
             switch effect {
-            case .restoreVigor(let amount): return "vigor:\(amount)"
-            case .restoreHP(let amount):    return "hp:\(amount)"
+            case .restoreVigor(let amount):         return "vigor:\(amount)"
+            case .restoreHP(let amount):            return "hp:\(amount)"
+            case .restoreVigorPercent(let percent): return "vigor%:\(percent)"
+            case .restoreHPPercent(let percent):    return "hp%:\(percent)"
+            case .sleepWard:                        return "sleepWard"
+            case .vigorThrift(let percent, let seconds): return "thrift:\(percent)/\(seconds)"
             }
         }.joined(separator: "|")
         let gear = item.gearStats.map {
@@ -1215,7 +1219,8 @@ enum ContentDigest {
         let inputs = recipe.inputs.map { "\($0.itemId)x\($0.quantity)" }.joined(separator: "|")
         return [
             recipe.id, recipe.category.rawValue, inputs,
-            "\(recipe.output.itemId)x\(recipe.output.quantity)"
+            "\(recipe.output.itemId)x\(recipe.output.quantity)",
+            "fee\(recipe.silverFee)"
         ].joined(separator: " · ")
     }
 }

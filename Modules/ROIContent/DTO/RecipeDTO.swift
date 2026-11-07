@@ -28,12 +28,17 @@ public struct RecipeDTO: Codable, Sendable, Equatable {
     public let category: String
     public let inputs: [RecipeIngredientDTO]
     public let output: RecipeIngredientDTO
+    /// What the fortune teller charges to brew it (2026-11-07), read for a
+    /// `tincture` alone: the estate's own rooms cost nothing to use.
+    public let silverFee: Int?
 
-    public init(id: String, category: String, inputs: [RecipeIngredientDTO], output: RecipeIngredientDTO) {
+    public init(id: String, category: String, inputs: [RecipeIngredientDTO], output: RecipeIngredientDTO,
+                silverFee: Int? = nil) {
         self.id = id
         self.category = category
         self.inputs = inputs
         self.output = output
+        self.silverFee = silverFee
     }
 }
 

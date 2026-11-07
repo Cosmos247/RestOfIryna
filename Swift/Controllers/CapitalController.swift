@@ -2023,6 +2023,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
             await ctrl.editToFortune(messageId: message.messageId, isPhoto: isPhoto, context: context)
             return true
         }
+        // The fortune teller's tinctures (2026-11-07,
+        // `CapitalController+Tinctures`). Only here: a stale button tapped off
+        // the capital never reaches a brew.
+        if data.hasPrefix("tincture:") {
+            try await Self.onTinctureCallback(data, query: query, messageId: message.messageId, isPhoto: isPhoto,
+                                              context: context)
+            return true
+        }
         // Universal "back to capital" — used by fortune, trader, tavern
         // entry screens. `fortune:back` kept as alias for stale messages
         // sent before the rename.
@@ -3862,6 +3870,10 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         let locale = session.locale
         let backLabel = lingo.localize("capital.button.back_to_capital", locale: locale)
         let backRow = [TGInlineKeyboardButton(text: backLabel, callbackData: "fortune:back")]
+        // The tinctures' place (2026-11-07), in both states of this screen and
+        // on this screen alone — not the reveal, whose photo stays in chat.
+        let tincturesRow = [TGInlineKeyboardButton(text: lingo.localize("tincture.button.open", locale: locale),
+                                                   callbackData: "tincture:open")]
 
         // No draw button while on cooldown — but the [🔙 Back] button is
         // always present so the player can never be stuck on the fortune
@@ -3878,12 +3890,14 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
                 rows.append([TGInlineKeyboardButton(text: lingo.localize("capital.fortune.button.second", locale: locale),
                                                     callbackData: "fortune:second")])
             }
+            rows.append(tincturesRow)
             rows.append(backRow)
             return TGInlineKeyboardMarkup(inlineKeyboard: rows)
         }
         let drawLabel = lingo.localize("capital.fortune.button.draw", locale: locale)
         return TGInlineKeyboardMarkup(inlineKeyboard: [
             [TGInlineKeyboardButton(text: drawLabel, callbackData: "fortune:draw")],
+            tincturesRow,
             backRow
         ])
     }

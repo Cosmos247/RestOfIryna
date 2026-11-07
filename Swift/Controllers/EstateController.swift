@@ -1000,6 +1000,9 @@ final class EstateController: TGControllerBase, @unchecked Sendable {
                     effectLines.append("   +\(n) 🍖 \(lingo.localize("workshop.effect.vigor", locale: locale))")
                 case .restoreHP(let n):
                     effectLines.append("   +\(n) ❤️ \(lingo.localize("workshop.effect.hp", locale: locale))")
+                // The fortune teller brews these; no recipe of the estate's makes one.
+                case .restoreVigorPercent, .restoreHPPercent, .sleepWard, .vigorThrift:
+                    break
                 }
             }
             if !effectLines.isEmpty {

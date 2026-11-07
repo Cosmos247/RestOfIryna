@@ -34,7 +34,7 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
     road home and nothing is left to eat; he eats from the bag only when he must, the smallest
     portion first and a taken job's food last; while he is out the player cannot change the
     bag. Auto-memory `project-passive-expedition-rework`.
-- Events: four buckets (nothing / loot / encounter / trip) on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and the passive expedition rolls none of the tiers past its first stride: it has its own `passive.weights` row since 2026-09-10 (it used to borrow tier 1), the road home included. Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
+- Events: four buckets (nothing / loot / encounter / trip) — six since the coins under a root (2026-09-15) and the plants (2026-11-05, `spec-bestiary.md` §16: 3 of 100 in every row, taken from `nothing`, one pool for the forest in `zones.json` → `herbs`) — on a three-tier decay keyed on how many times THIS expedition has entered that km. **The live weights are `content/data/tuning/exploration.json` — never restated here; every copy of them in a doc has gone stale at least twice.** The shape is what matters: tier 0 is fresh ground, tier 1 is a km walked once, tier 2+ is picked clean (encounter and trip go to zero — the anti-farm brake on pacing between two km). Two consequences that are easy to miss: **the walk home is ALWAYS tier 1** by construction, since every km on it was walked once on the way out; and the passive expedition rolls none of the tiers past its first stride: it has its own `passive.weights` row since 2026-09-10 (it used to borrow tier 1), the road home included. Re-tuned 2026-09-10 so the decay favours encounters over forage — beasts wander back onto a km you passed an hour ago, a stripped berry bush does not regrow.
 - Dungeons: guaranteed every 7th room, party-based, instanced
 - Death: respawn in town, lose expedition loot, keep gear
 
@@ -49,7 +49,9 @@ Prepare (eat/equip) -> Explore (timed room chain) -> Fight (rabid animals) -> De
   the number is the level (from №5 the number + 1 since 2026-10-30, `spec-bestiary.md` §14), and the band is km 3N−3…3N+1, with the rabid bear stretched to km
   49. XP depends on the number alone, and there is no XP penalty for out-levelling a creature;
   damage still shifts by the level gap. Wild creatures drop meat and hide, rabid ones hide
-  only, and the viper and the eagle drop nothing. The boss archetype has no members.
+  only, and the viper and the eagle drop nothing — and since 2026-11-05 every one of the
+  fourteen also drops one of five shared trophies (venom · feather · fang · horn · claw),
+  5% from №1–4 and 15% deeper, the last row of its table (`spec-bestiary.md` §15). The boss archetype has no members.
   `content/spec/spec-bestiary.md` §10. **Since 2026-10-03 (§11, committed, not yet deployed
   at the time of writing) the forest grows with the manor:** a creature fights with HP and ATK × (1 + 0.1·(estate
   tier − 1)), so ×1.6 at T7. XP and loot are unchanged, and no screen announces it.

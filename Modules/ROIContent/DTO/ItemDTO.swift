@@ -28,14 +28,28 @@ public struct ItemEffectDTO: Codable, Sendable, Equatable {
     public enum Kind: String, Codable, Sendable {
         case restoreVigor = "restore_vigor"
         case restoreHP    = "restore_hp"
+        /// A share of the drinker's own pool, `amount` in percent (the fortune
+        /// teller's tinctures, 2026-11-07): a flat heal is a quarter of the bar
+        /// at level 5 and a tenth of it at level 30, so a tincture is a share.
+        case restoreVigorPercent = "restore_vigor_percent"
+        case restoreHPPercent    = "restore_hp_percent"
+        /// Сонна настоянка: the next death leaves the bag. `amount` is 1 and
+        /// reads nothing; the envelope has no shape without one.
+        case sleepWard = "sleep_ward"
+        /// Міцна настоянка чебрецю: every Vigor cost is `amount` percent lower
+        /// for `seconds`, stamped on the player at the drink.
+        case vigorThrift = "vigor_thrift"
     }
 
     public let kind: Kind
     public let amount: Int
+    /// How long a timed effect runs. Read for `vigor_thrift` alone.
+    public let seconds: Int?
 
-    public init(kind: Kind, amount: Int) {
+    public init(kind: Kind, amount: Int, seconds: Int? = nil) {
         self.kind = kind
         self.amount = amount
+        self.seconds = seconds
     }
 }
 
@@ -115,13 +129,12 @@ public struct ItemDTO: Codable, Sendable, Equatable {
     public let descriptionKeyOverride: String?
 
     /// Set by an explicit `"descriptionKey": null`. The domain
-    /// `Item.descriptionKey` is `String?` and three shipped items really do
-    /// carry nil (`potion.heal_small`, `potion.heal_medium`,
-    /// `artifact.shrine_coin`) — `ItemDisplay.descriptionKey` returns nil for
-    /// them and the caller shows a placeholder modal instead. Without this
-    /// flag the DTO could not express "no lore key", the export would invent
-    /// one, and the validator would demand three locale keys that are absent
-    /// on purpose.
+    /// `Item.descriptionKey` is `String?` and one shipped item really does
+    /// carry nil (`artifact.shrine_coin`; the two healing tinctures did until
+    /// 2026-11-07) — `ItemDisplay.descriptionKey` returns nil for it and the
+    /// caller shows a placeholder modal instead. Without this flag the DTO
+    /// could not express "no lore key", the export would invent one, and the
+    /// validator would demand a locale key that is absent on purpose.
     public let suppressesDescription: Bool
 
     /// Phase 6 fields — accepted by the schema from day one so adding rarity

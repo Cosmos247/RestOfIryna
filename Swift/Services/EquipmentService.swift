@@ -99,7 +99,9 @@ public enum EquipmentService {
                                           enchantLevel: row.enchantLevel, durability: row.durability,
                                           maxDurability: row.maxDurability))
         }
-        return ArmorAtRisk(rows: DeathWipe.ranked(pieces).compactMap { byId[$0.id] },
+        // Under Сонна настоянка a death takes nothing, so the edge warns of
+        // nothing; «🛡 Одягнути» stays, an empty slot is empty either way.
+        return ArmorAtRisk(rows: user.sleepWard ? [] : DeathWipe.ranked(pieces).compactMap { byId[$0.id] },
                            toWear: DeathWipe.wearPlan(pieces, wornSlots: worn).compactMap { byId[$0.id] })
     }
 

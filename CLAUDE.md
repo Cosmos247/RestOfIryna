@@ -17,7 +17,7 @@
 | `README.md` | Stack overview, architecture diagram, setup guide, dev notes |
 | `TODO.md` | Phased implementation tracker with progress markers |
 | `Prompt.md` | Compact session primer — read this at session start |
-| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
+| `content/spec/*.md` | The five approved content specifications (Phase 9) plus `king.md` (the decree chain), `spec-tinctures.md` (the fortune teller's cauldron) and `event-veles-night.md` (the 2026 holiday) — the rules are below, under "Content and tuning are data" |
 | `.memory/INDEX.md` | Project memory system index |
 | `.memory/status.md` | What's implemented vs planned |
 
@@ -148,7 +148,7 @@ a thing it must describe ALL of it: both lines are built from the data (`bonusOu
 list — what creatures exist, at what level and archetype, what items fill which slot, what a
 set bonus may cost and where silver enters and leaves — and content work follows it, never
 goes around it. Every number in a spec is printed by `swift run roi-content spec
-<progression|gates|bestiary|items|sets|economy|opening|king|events>`, never typed, so a specification
+<progression|gates|bestiary|items|sets|economy|opening|king|tinctures|events>`, never typed, so a specification
 cannot drift from the generator it feeds. `opening` ROLLS rather than solves, so give it
 `-c release`.
 
@@ -275,7 +275,7 @@ road; auto-memory `project-starvation-tick-on-the-paying-step`.
 
 **Every Vigor spend goes through `VigorService.drain(_:base:multiplier:)` or its `action:`
 form**, which applies the active tarot card's `vigorDrainMultiplier` on top of the stance's and
-rounds half up. `drain(_:amount:)` is only for a number already final (the dev `/drain`) — a
+rounds half up, then Міцна настоянка чебрецю's thrift (`MealMath.thriftedCost`; only half moves a step, and a cost never rounds to nothing). `drain(_:amount:)` is only for a number already final (the dev `/drain`) — a
 spend routed there escapes the card. Base costs are 1–5, so a card multiplier must move a 2 by
 a whole point after rounding. Auto-memory `project-tarot-phrased-once`.
 
@@ -303,8 +303,7 @@ arrival) and `location == capital`. Callers query the rows and pass the answer; 
 lookups of its own, and away from the estate the clock is CLEARED, not merely skipped. Regen is
 **computed lazily on interaction**, so both ends of an absence are stamped explicitly:
 `suspendResting` when an expedition or trip begins, `beginResting` when the player lands home.
-The away-from-home heal is a **cooked dish**; `potion.heal_small` and `potion.heal_medium` are
-obtainable nowhere (auto-memory `feedback-a-checker-that-cannot-fail`).
+The away-from-home heal is a **cooked dish** or the fortune teller's tincture.
 
 **What finishes while nobody is looking needs a watchman.** `RestNotificationService` (one
 `Task.detached` on `realTime.restSweepInterval`) answers four questions per player, and a fifth
@@ -408,7 +407,7 @@ each holding all eight, the weights shifting with depth; clay is the rarest ever
 lock a material out of a band again — `ZoneTests` pins it. `spec-bestiary.md` §13, auto-memory
 `project-forage-without-zones`.
 
-**The manor door names what an active walk brought** (2026-10-23): «Принесено:» — what went into the bag less
+**The manor door names what an active walk brought** (2026-10-23; a death under Сонна настоянка prints it too): «Принесено:» — what went into the bag less
 what was eaten of it (`ExpeditionHaul`), then 🪙 silver; what the bag refused is not listed (the passive report
 keeps its own). **A new way for a walk to fill the bag must feed `state.recordHaul`**, or the door undercounts
 it. Auto-memory `project-active-walk-brought`.
@@ -542,7 +541,8 @@ that answers. «Скасувати» strips the picker. Auto-memory `project-are
 implementation both death paths call — `ExplorationController.handleDeath` and
 `PassiveExpeditionService.applyDeath`; worn gear and a bound starter weapon carried in the bag
 survive. **Put the next wipe in that function too**: a rule each caller filters for itself is a
-rule one caller forgets. Auto-memory `project-death-spares-the-class-weapon`. **The forest edge names
+rule one caller forgets. Сонна настоянка lives there too (`User.sleepWard`: the first death under it takes nothing;
+the door lets it go). Auto-memory `project-death-spares-the-class-weapon`. **The forest edge names
 what it would take** (2026-10-22): the wipe and the edge's armour block ask one rule, `DeathWipe.takes`
 (via `isTakenByDeath`), and «🛡 Одягнути» fills EMPTY slots only — a spare is listed, never swapped in
 (the owner's pick). Auto-memory `project-armour-warning-at-forest-edge`.
@@ -576,11 +576,20 @@ warehouse and the banner names where it landed. **The kitchen cooks several at o
 one arithmetic for the card's buttons, the tap's re-check and the write, and one dish is
 N = 1 of it. Auto-memory `project-fit-check-matches-the-writer`, `project-kitchen-batch-cook`.
 
-**What a place can draw on is where it stands.** The Master is in the capital, which has no
-warehouse, so his lesson and his enchant count and take materials from the BAG alone; the
+**What a place can draw on is where it stands.** The Master and the fortune teller are in the
+capital, which has no warehouse, so his lesson, his enchant and her tinctures count and take
+materials from the BAG alone; the
 workshop, the kitchen, the Training Ground and the estate and bag upgrades stand at the estate
 and draw bag + warehouse. **A card counts in the same place its service draws from.**
 Auto-memory `project-master-draws-from-bag`.
+
+**The fortune teller brews** (2026-11-07, `spec-tinctures.md`): «🧪 Настоянки» on her screen, five recipes of plants and a
+trophy in `recipes.json`, category `tincture`, each with a `silverFee`. **A tincture is not a craft**: `isCraftable` is false, so
+`CraftingService.craft` refuses it and `TinctureService.brew` is its one funnel (bag alone, `CraftMath`, one transaction). A heal or
+a Vigor tincture is a SHARE of the drinker's own pool (`MealMath.share`), never a flat number, and only a `potion` may carry a
+share or a ward: the many-portion button and the 🏕 governor read a food's flat restores, and **the governor never drinks one**.
+**The list stays in buttons** — it is a caption under her photo, and her worst state is already 805 of 1,024. A tincture's icon is
+🧪 + its plant's (`TinctureTests`). Never «зілля» in copy. Auto-memory `project-tinctures-at-the-teller`.
 
 **A plot costs materials** (2026-10-24, the owner's pick): the player's Nth plot — the plots they
 BUILT plus one (`PlotBuildCost.nextPlotNumber`), never the slot index — pays N of its type's
@@ -960,7 +969,7 @@ Optional:
 - Update `TODO.md` progress markers when tasks complete
 - Add new localization keys to both `en.json` and `uk.json` simultaneously
 - Write new uk player-facing copy in «ви» (see Localization above); add `.m`/`.f` + the `gender:` overload only when the string names the player with a gendered noun
-- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`, and `рівень` for the estate's, bag's and weapon's tier — **never «тир»**, auto-memory `feedback-tier-is-riven`; the bag's room is «місць» and a place for a plot «Ділянка N» — **never «слот»**, `feedback-slot-is-dilyanka`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`, and code and docs keep saying `tier`. Full table in `.memory/localization.md`.
+- Keep `uk.json` free of English game-stat tokens / loot slang — use the UA glossary (`ОЗ`, `Досвід`/`досвіду`, `Снага`, `АТК`, `ЗАХ`, `здобич`, and `рівень` for the estate's, bag's and weapon's tier — **never «тир»**, auto-memory `feedback-tier-is-riven`; the bag's room is «місць» and a place for a plot «Ділянка N» — **never «слот»**, `feedback-slot-is-dilyanka`; a potion is «настоянка» — **never «зілля»**, `feedback-potion-is-nastoyanka`, while the code keeps `potion`); English tokens (HP/XP/ATK/DEF/Vigor) stay only in `en.json`, and code and docs keep saying `tier`. Full table in `.memory/localization.md`.
 - If adding new controllers/models, update the file map in README.md's Project Structure section
 
 ### Git Workflow

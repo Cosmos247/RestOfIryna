@@ -313,6 +313,10 @@ public func configure(logger: Logger) async throws {
     // slot 1 of every estate past registration, in one transaction. Reads the
     // content loaded above, so boot with the new `content/data`.
     migrations.add(PlantHazel())
+    // 2026-11-07: Сонна настоянка — one column with a default, no rows touched.
+    migrations.add(AddSleepWard())
+    // 2026-11-07: Міцна настоянка чебрецю — two columns, no rows touched.
+    migrations.add(AddVigorThrift())
     // LAST on purpose: it truncates every table the migrations above create, so
     // anything registered after it would be wiped before it existed. Phase 11's
     // full wipe — a no-op on a fresh database, since it runs in the same batch.
@@ -440,6 +444,9 @@ public func configure(logger: Logger) async throws {
                 user.activeFortuneCardId = nil
                 user.activeFortuneExpiresAt = nil
                 user.fortuneStage = .free
+                user.sleepWard = false
+                user.vigorThriftPercent = 0
+                user.vigorThriftUntil = nil
                 // Dev convenience: keep the trader-hint flag set so the tutorial
                 // line doesn't pop up on every reset cycle. Flip to false in
                 // Postico to retest the hint flow.

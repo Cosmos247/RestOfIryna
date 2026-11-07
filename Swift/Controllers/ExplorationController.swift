@@ -797,9 +797,12 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         // The door is the ONLY place an active run banks its depth. Everything
         // above this line is a walk; only this line is a return.
         context.session.bankDepth(state.maxDepthKm)
+        // Сонна настоянка lasts to the door (2026-11-07). Turning round at the
+        // gate without leaving was no walk, so it waits for the next one.
+        if state.maxDepthKm >= 1 { context.session.sleepWard = false }
         try await state.delete(on: context.db)
         var text = context.lingo.localize("exploration.returned", locale: context.session.locale)
-        if let brought = renderBrought(state: state, lingo: context.lingo, locale: context.session.locale) {
+        if let brought = Self.renderBrought(state: state, lingo: context.lingo, locale: context.session.locale) {
             text += "\n\n" + brought
         }
         // `goToMainMenu` saves the session, which is what persists the km above.
@@ -812,8 +815,9 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     /// report's rows, then the silver it found. What stayed in the forest is
     /// not listed — every step already said so. Nil — no block at all — for a
     /// player who turned round at the gate without leaving, and for a walk
-    /// begun before the haul was counted, whose list would be partial.
-    fileprivate func renderBrought(state: ExplorationState, lingo: Lingo, locale: String) -> String? {
+    /// begun before the haul was counted, whose list would be partial. A death
+    /// under Сонна настоянка brings the bag home, so it prints this too.
+    fileprivate static func renderBrought(state: ExplorationState, lingo: Lingo, locale: String) -> String? {
         guard state.maxDepthKm >= 1, let haul = state.haul else { return nil }
         var lines = [lingo.localize("exploration.passive.report.loot_header", locale: locale)]
         if haul.isEmptyHanded {
@@ -871,7 +875,13 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         let lingo = context.lingo
         let locale = context.session.locale
 
-        let lost = try await InventoryEntry.wipeOnDeath(for: context.session, on: context.db)
+        let wipe = try await InventoryEntry.wipeOnDeath(for: context.session, on: context.db)
+        // The ward kept the bag, so the walk's haul reached home with it (the
+        // owner, 2026-11-07): the door's own list, read before the row goes.
+        var brought: String?
+        if wipe.warded, let state = try await ExplorationState.current(for: context.session, on: context.db) {
+            brought = renderBrought(state: state, lingo: lingo, locale: locale)
+        }
 
         context.session.hp = 1
         try await ExplorationState.end(for: context.session, on: context.db)
@@ -879,12 +889,14 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
         // What the forest took, by name (2026-09-27) — it used to say only
         // "everything you carried", which a player cannot check against a bag
         // they no longer have. The row's tier names the row.
-        let lostLines = lost.map { loss -> String in
+        let lostLines = wipe.lost.map { loss -> String in
             let item = ItemCatalog.find(loss.itemId)
             let icon = item?.icon.map { "\($0) " } ?? ""
             let name = item.map { lingo.localize(ItemDisplay.nameKey(for: $0, tier: loss.tier), locale: locale) } ?? loss.itemId
             return "   \(icon)\(name) ×\(loss.quantity)"
         }
+        // Сонна настоянка took the place of the list, on any death screen.
+        let warded = wipe.warded ? lingo.localize("exploration.death.loss_warded", locale: locale) : nil
         let deathText: String
         if let manor {
             // A holiday's manor (2026-10-29): the flask is named before the bag,
@@ -894,25 +906,25 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             let blood = "🩸 " + lingo.localize(keys.deathBlood, locale: locale, interpolations: [
                 "run": "\(manor.run)", "total": "\(total)"
             ])
-            let loss = lostLines.isEmpty
+            let loss = warded ?? (lostLines.isEmpty
                 ? lingo.localize(keys.deathLossNone, locale: locale)
-                : lingo.localize(keys.deathLoss, locale: locale) + "\n" + lostLines.joined(separator: "\n")
+                : lingo.localize(keys.deathLoss, locale: locale) + "\n" + lostLines.joined(separator: "\n"))
             deathText = "💀 " + lingo.localize(keys.death, locale: locale, interpolations: [
                 "cause": causeNarrative,
                 "blood": blood,
                 "loss": loss
             ])
         } else {
-            let loss = lostLines.isEmpty
+            let loss = warded ?? (lostLines.isEmpty
                 ? lingo.localize("exploration.death.loss_none", locale: locale)
-                : lingo.localize("exploration.death.loss", locale: locale) + "\n" + lostLines.joined(separator: "\n")
+                : lingo.localize("exploration.death.loss", locale: locale) + "\n" + lostLines.joined(separator: "\n"))
             deathText = "💀 " + lingo.localize("exploration.death", locale: locale, interpolations: [
                 "cause": causeNarrative,
                 "loss": loss
             ])
         }
         let mainCtrl = Controllers.mainController
-        try await mainCtrl.showMainMenu(context: context, text: deathText)
+        try await mainCtrl.showMainMenu(context: context, text: brought.map { deathText + "\n\n" + $0 } ?? deathText)
         context.session.routerName = mainCtrl.routerName
         try await context.session.saveAndCache(in: context.db)
     }

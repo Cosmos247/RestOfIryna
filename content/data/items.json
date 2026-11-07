@@ -329,13 +329,13 @@
       "type" : "material"
     },
     {
-      "descriptionKey" : null,
       "effects" : [
         {
-          "amount" : 30,
-          "kind" : "restore_hp"
+          "amount" : 25,
+          "kind" : "restore_hp_percent"
         }
       ],
+      "icon" : "🧪🌼",
       "id" : "potion.heal_small",
       "rarity" : "common",
       "stackable" : true,
@@ -343,14 +343,61 @@
       "type" : "potion"
     },
     {
-      "descriptionKey" : null,
       "effects" : [
         {
-          "amount" : 60,
-          "kind" : "restore_hp"
+          "amount" : 50,
+          "kind" : "restore_hp_percent"
         }
       ],
+      "icon" : "🧪🌼",
       "id" : "potion.heal_medium",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "potion"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 30,
+          "kind" : "restore_vigor_percent"
+        }
+      ],
+      "icon" : "🧪🌿",
+      "id" : "potion.thyme",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "potion"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 30,
+          "kind" : "restore_vigor_percent"
+        },
+        {
+          "amount" : 50,
+          "kind" : "vigor_thrift",
+          "seconds" : 3600
+        }
+      ],
+      "icon" : "🧪🌿",
+      "id" : "potion.thyme_strong",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 2,
+      "type" : "potion"
+    },
+    {
+      "effects" : [
+        {
+          "amount" : 1,
+          "kind" : "sleep_ward"
+        }
+      ],
+      "icon" : "🧪🌸",
+      "id" : "potion.sleep",
       "rarity" : "common",
       "stackable" : true,
       "tier" : 2,

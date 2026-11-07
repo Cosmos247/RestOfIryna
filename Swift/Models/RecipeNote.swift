@@ -50,6 +50,10 @@ public final class RecipeNote: Model, @unchecked Sendable {
         case training
         /// A workshop craft or a kitchen dish — `ref` the recipe.
         case recipe
+        /// A fortune teller's tincture (2026-11-07) — `ref` the recipe. Its own
+        /// kind because she counts the BAG and charges a fee, where a `recipe`
+        /// counts bag + warehouse and costs nothing.
+        case tincture
         /// A plot to build (2026-11-01) — `ref` the plot type, `target` how many
         /// plots of that type the player owns once it stands. The type, never
         /// the slot: a slot is a row, and the same farm can be built on any.
@@ -78,6 +82,7 @@ public final class RecipeNote: Model, @unchecked Sendable {
         public static func estate(toTier tier: Int) -> Key { Key(kind: .estate, ref: "", target: tier) }
         public static func training(toLevel level: Int) -> Key { Key(kind: .training, ref: "", target: level) }
         public static func recipe(_ recipeId: String) -> Key { Key(kind: .recipe, ref: recipeId, target: 0) }
+        public static func tincture(_ recipeId: String) -> Key { Key(kind: .tincture, ref: recipeId, target: 0) }
         /// `count` is the plots of `type` the player will own once this one is
         /// built — what `PlotService.noteKey` reads off their estate.
         public static func plot(_ type: String, count: Int) -> Key { Key(kind: .plot, ref: type, target: count) }

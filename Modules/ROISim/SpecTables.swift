@@ -346,6 +346,27 @@ public enum SpecTables {
         format(share * 100) + "%"
     }
 
+    /// The fortune teller's tinctures (`content/spec/spec-tinctures.md`), in the
+    /// order her list shows them.
+    public static func tinctures(content: GameContent) -> String {
+        var out = ["| recipe | makes | inputs | brew 🪙 | effect |", "|---|---|---|---|---|"]
+        for recipe in content.recipes where recipe.category == "tincture" {
+            let inputs = recipe.inputs.map { "\($0.quantity)× `\($0.itemId)`" }.joined(separator: " + ")
+            let effects = (content.itemsById[recipe.output.itemId]?.effects ?? []).map { effect -> String in
+                switch effect.kind {
+                case .restoreVigor:        return "+\(effect.amount) Vigor"
+                case .restoreHP:           return "+\(effect.amount) HP"
+                case .restoreVigorPercent: return "+\(effect.amount)% of the Vigor pool"
+                case .restoreHPPercent:    return "+\(effect.amount)% of max HP"
+                case .sleepWard:           return "the next death leaves the bag"
+                case .vigorThrift:         return "every Vigor cost −\(effect.amount)% for \((effect.seconds ?? 0) / 60) min"
+                }
+            }.joined(separator: " · ")
+            out.append("| `\(recipe.id)` | `\(recipe.output.itemId)` | \(inputs) | \(recipe.silverFee ?? 0) | \(effects) |")
+        }
+        return out.joined(separator: "\n")
+    }
+
     public static func king(content: GameContent) -> String {
         guard let tuning = content.tuning else { return "" }
         let pool = tuning.progression.vigorPool
@@ -857,6 +878,10 @@ public enum SpecTables {
         if let f = content.fortune {
             // The dispel and the second card are one road (2026-10-10): only a
             // dispelled free card opens the second, and the second is final.
+            let fees = content.recipes.filter { $0.category == "tincture" }.compactMap(\.silverFee)
+            if let low = fees.min(), let high = fees.max() {
+                out.append("| the fortune teller's tinctures | \(low)–\(high) | per tincture, the plants and the trophy on top |")
+            }
             out.append("| the fortune teller's card | \(f.drawPrice) | at most one a game day; a dispel \(f.dispelPrice), then one final second card \(f.secondDrawPrice) |")
         }
 

@@ -184,6 +184,7 @@ If you must keep the emoji in the template for some reason:
 | tier (estate / bag / weapon) | `рівень` / `рівня` / `рівні` (e.g. "Рівень маєтку", "до третього рівня") — **never «тир»** (2026-10-09, the owner's call; 27 lines replaced) | — | tier |
 | slot (the bag's unit of room) | `місць` after a fraction («5/35 місць»), by the number after one (`count:` — «вільно 1 місце / 3 місця / 5 місць») — **never «слот»** (2026-11-04, the owner's call; «комірок» went too) | — | slot(s) |
 | slot (a place for a plot) | `Ділянка N` («➕ Ділянка 3 · вільна», «закладена на ділянці 3», «Ділянок зайнято: 2 / 3») — **never «слот»** (2026-11-04, the owner's call; 18 keys with the bag's) | — | Slot N |
+| tincture (the bag's 🧪 category and its items; the code keeps `potion`) | — | `Настоянки`, «Мала настоянка зцілення» (the noun is feminine) — **never «зілля»** (2026-11-07, the owner's call; 3 uk values, the two items' gender n → f) | Tinctures, Small Healing Tincture |
 | accuracy | `влучність` | `Влучність` | Accuracy |
 | dodge | `ухилення` | `Ухилення` | Dodge |
 | crit | `крит` | `Крит` | Crit |

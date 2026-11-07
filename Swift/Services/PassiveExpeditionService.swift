@@ -98,6 +98,9 @@ public struct PassiveReport: Codable, Sendable {
     public let lost: [LostEntry]
     /// He fell on the road home rather than on the way out.
     public let diedOnWayBack: Bool
+    /// He fell with Сонна настоянка working, so the forest took nothing and
+    /// `loot` is what he carried (2026-11-07).
+    public let warded: Bool
 
     public struct LootEntry: Codable, Sendable {
         public let itemId: String
@@ -137,7 +140,8 @@ public struct PassiveReport: Codable, Sendable {
         turnKm: Int? = nil,
         turnReason: String? = nil,
         lost: [LostEntry] = [],
-        diedOnWayBack: Bool = false
+        diedOnWayBack: Bool = false,
+        warded: Bool = false
     ) {
         self.stepsTaken = stepsTaken
         self.finalDepth = finalDepth
@@ -161,13 +165,14 @@ public struct PassiveReport: Codable, Sendable {
         self.turnReason = turnReason
         self.lost = lost
         self.diedOnWayBack = diedOnWayBack
+        self.warded = warded
     }
 
     enum CodingKeys: String, CodingKey {
         case stepsTaken, finalDepth, hpBefore, hpAfter, vigorBefore, vigorAfter
         case died, deathDepth, outcomeCounts, loot, xpEarned, levelsGained, newLevel
         case growth, starvationSteps, starvationHpLost, silverFound
-        case eaten, turnKm, turnReason, lost, diedOnWayBack
+        case eaten, turnKm, turnReason, lost, diedOnWayBack, warded
     }
 
     public init(from decoder: any Decoder) throws {
@@ -194,6 +199,7 @@ public struct PassiveReport: Codable, Sendable {
         turnReason = try? c.decodeIfPresent(String.self, forKey: .turnReason)
         lost = (try? c.decode([LostEntry].self, forKey: .lost)) ?? []
         diedOnWayBack = (try? c.decode(Bool.self, forKey: .diedOnWayBack)) ?? false
+        warded = (try? c.decode(Bool.self, forKey: .warded)) ?? false
     }
 }
 
@@ -582,12 +588,15 @@ public enum PassiveExpeditionService {
             held[entry.itemId, default: 0] += entry.quantity
         }
         let rations = held.compactMap { itemId, quantity -> PassiveRoute.Ration? in
-            guard quantity > 0, let item = ItemCatalog.find(itemId), VigorService.isConsumable(item) else { return nil }
+            // He eats the player's food; a tincture is the player's own to
+            // drink (2026-11-07, every recipe costs a rare plant and a trophy).
+            guard quantity > 0, let item = ItemCatalog.find(itemId), item.type == .food else { return nil }
             var vigor = 0, hp = 0
             for effect in item.effects {
                 switch effect {
                 case .restoreVigor(let amount): vigor += amount
                 case .restoreHP(let amount): hp += amount
+                case .restoreVigorPercent, .restoreHPPercent, .sleepWard, .vigorThrift: break
                 }
             }
             return PassiveRoute.Ration(itemId: itemId, vigor: vigor, hp: hp, wanted: wanted.contains(itemId))
@@ -724,15 +733,15 @@ public enum PassiveExpeditionService {
                 run.diedOnWayBack = run.returning
                 state.runningReportJSON = encodeRunningReport(run)
                 try? await state.save(on: db)
-                var lost: [InventoryEntry.DeathLoss] = []
+                var wipe = InventoryEntry.DeathWipeResult(lost: [], warded: false)
                 do {
-                    lost = try await applyDeath(to: user, on: db)
+                    wipe = try await applyDeath(to: user, on: db)
                     try await user.saveAndCache(in: db)
                 } catch {
                     appState?.logger.warning("applyDeath threw: \(error)")
                 }
                 await finalizeAndPush(state: state, user: user, run: run, died: true, deathDepth: km,
-                                      lost: lost, on: db, bot: bot, lingo: lingo)
+                                      lost: wipe.lost, warded: wipe.warded, on: db, bot: bot, lingo: lingo)
                 return
             }
 
@@ -778,6 +787,7 @@ public enum PassiveExpeditionService {
         died: Bool,
         deathDepth: Int?,
         lost: [InventoryEntry.DeathLoss],
+        warded: Bool = false,
         on db: any Database,
         bot: TGBot,
         lingo: Lingo
@@ -794,6 +804,8 @@ public enum PassiveExpeditionService {
         // explicit save in `spend`.
         if !died {
             user.bankDepth(state.maxDepthKm)
+            // Сонна настоянка lasts to the door (2026-11-07).
+            user.sleepWard = false
             try? await user.saveAndCache(in: db)
         }
 
@@ -802,7 +814,7 @@ public enum PassiveExpeditionService {
         // Otherwise «Принесено» is net of what he ate: a berry found and then
         // eaten was not brought back.
         let loot: [PassiveReport.LootEntry]
-        if died {
+        if died && !warded {
             loot = []
         } else {
             loot = Set(run.lootPicked.keys).union(run.lootDropped.keys).sorted().compactMap { id in
@@ -864,7 +876,8 @@ public enum PassiveExpeditionService {
             turnKm: run.turnKm,
             turnReason: run.turnReason,
             lost: lost.map { PassiveReport.LostEntry(itemId: $0.itemId, tier: $0.tier, quantity: $0.quantity) },
-            diedOnWayBack: died && run.diedOnWayBack
+            diedOnWayBack: died && run.diedOnWayBack,
+            warded: warded
         )
 
         do {
@@ -950,10 +963,10 @@ public enum PassiveExpeditionService {
     /// gear and the bound class weapon survive), respawn at HP = 1, same rules
     /// as active-mode death. Vigor is preserved per design. Returns what the
     /// wipe took, which the report names.
-    private static func applyDeath(to user: User, on db: any Database) async throws -> [InventoryEntry.DeathLoss] {
-        let lost = try await InventoryEntry.wipeOnDeath(for: user, on: db)
+    private static func applyDeath(to user: User, on db: any Database) async throws -> InventoryEntry.DeathWipeResult {
+        let wipe = try await InventoryEntry.wipeOnDeath(for: user, on: db)
         user.hp = 1
-        return lost
+        return wipe
     }
 
     // MARK: Notification push
@@ -1048,6 +1061,8 @@ public enum PassiveExpeditionService {
             // the active death screen does (2026-10-12).
             let key: String
             switch (report.diedOnWayBack, report.lost.isEmpty) {
+            case (false, _) where report.warded: key = "exploration.passive.report.death.warded"
+            case (true, _) where report.warded:  key = "exploration.passive.report.death.back_warded"
             case (false, true):  key = "exploration.passive.report.death"
             case (false, false): key = "exploration.passive.report.death.lost"
             case (true, true):   key = "exploration.passive.report.death.back"
@@ -1143,8 +1158,9 @@ public enum PassiveExpeditionService {
 
         // Loot section is skipped entirely when the governor died — the
         // death line at the top already names what was lost, and repeating
-        // "empty-handed" below would be noise.
-        if !report.died {
+        // "empty-handed" below would be noise. Under Сонна настоянка nothing was
+        // lost, so what he carried home is named as on any return.
+        if !report.died || report.warded {
             lines.append("")
             lines.append(lingo.localize("exploration.passive.report.loot_header", locale: locale))
             if report.loot.isEmpty {

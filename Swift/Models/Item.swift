@@ -44,6 +44,13 @@ public enum ItemType: String, Codable, CaseIterable, Sendable {
 public enum ItemEffect: Sendable {
     case restoreVigor(Int)
     case restoreHP(Int)
+    /// A share of the drinker's own pool, in percent (`MealMath.share`).
+    case restoreVigorPercent(Int)
+    case restoreHPPercent(Int)
+    /// Сонна настоянка: `User.sleepWard`.
+    case sleepWard
+    /// Міцна настоянка чебрецю: `User.vigorThriftPercent` for `seconds`.
+    case vigorThrift(percent: Int, seconds: Int)
 }
 
 // MARK: - Equipment Slot
@@ -98,6 +105,19 @@ public struct GearStats: Sendable {
 // MARK: - Item
 
 public struct Item: Sendable {
+    /// Сонна настоянка: drinking it raises `User.sleepWard`.
+    public var raisesSleepWard: Bool {
+        effects.contains { if case .sleepWard = $0 { true } else { false } }
+    }
+
+    /// Міцна настоянка чебрецю's timed half, when this item carries it.
+    public var vigorThrift: (percent: Int, seconds: Int)? {
+        for effect in effects {
+            if case .vigorThrift(let percent, let seconds) = effect { return (percent, seconds) }
+        }
+        return nil
+    }
+
     public let id: String
     public let nameKey: String
     public let type: ItemType

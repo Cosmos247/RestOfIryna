@@ -73,8 +73,12 @@ enum ContentMappingError: Error, CustomStringConvertible {
 extension ItemEffectDTO {
     var domain: ItemEffect {
         switch kind {
-        case .restoreVigor: return .restoreVigor(amount)
-        case .restoreHP:    return .restoreHP(amount)
+        case .restoreVigor:        return .restoreVigor(amount)
+        case .restoreHP:           return .restoreHP(amount)
+        case .restoreVigorPercent: return .restoreVigorPercent(amount)
+        case .restoreHPPercent:    return .restoreHPPercent(amount)
+        case .sleepWard:           return .sleepWard
+        case .vigorThrift:         return .vigorThrift(percent: amount, seconds: seconds ?? 0)
         }
     }
 }
@@ -167,7 +171,8 @@ extension RecipeDTO {
             id: id,
             category: category,
             inputs: inputs.map { RecipeIngredient($0.itemId, $0.quantity) },
-            output: RecipeOutput(output.itemId, output.quantity)
+            output: RecipeOutput(output.itemId, output.quantity),
+            silverFee: silverFee ?? 0
         )
     }
 }

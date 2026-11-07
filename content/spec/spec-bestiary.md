@@ -1390,7 +1390,9 @@ only, and the viper and the eagle nothing at all (§3's amendment of 2026-09-14,
   and a death takes it with the bag. The ids share the prefix `mat.trophy_`, so the five
   sit together at the end of both lists, which sort by id.
 - **Nothing in the trader's list, and nothing cooks or crafts from them yet** — until the
-  uses arrive a trophy is kept, stored or thrown away.
+  uses arrive a trophy is kept, stored or thrown away. *Amended 2026-11-07:* the fortune teller
+  brews with the venom, the feather, the fang and the horn (`spec-tinctures.md`); the claw
+  still waits.
 
 ### 15.4 Names
 
@@ -1404,7 +1406,7 @@ only, and the viper and the eagle nothing at all (§3's amendment of 2026-09-14,
 
 The descriptions are flavour and promise no use; each names the creatures it comes from,
 so a new creature of a kind is a description edit as well. The venom was 🧪 at first; the owner
-moved it to 💧 the same evening, 🧪 being the bag's «🧪 Зілля» category. 🪶 also heads a job on
+moved it to 💧 the same evening, 🧪 being the bag's «🧪 Настоянки» category. 🪶 also heads a job on
 the NPC board.
 
 ### 15.5 What checks it
@@ -1458,6 +1460,8 @@ St John's wort, wormwood, pasque flower.
    A plant is found one at a time.
 4. **The cards describe the tinctures' effects** («Посилює захист і відновлює Снагу», «Очищає від
    отрути…») before any tincture exists — the owner's pick over a plant-only text, knowing it.
+   *Amended 2026-11-07:* the thyme tincture restores Vigor alone (`spec-tinctures.md`), so its
+   card lost «Посилює захист»; wormwood goes into the strong thyme tincture, and its card stands.
    Two of the owner's words were taken into the game's glossary: «буст» → «посилює захист»,
    «витривалість» → «Снага».
 5. **Stackable materials, «🪨 Матеріали»; the trader buys none** until they have a use, as §15.
@@ -1471,7 +1475,10 @@ St John's wort, wormwood, pasque flower.
   («🍃 рослина») in the 🏕 report's events row. The bag (`pickUp`), the manor door's «Принесено:»
   (`recordFinds` → `recordHaul`) and the 🏕 report's haul take it exactly as they take a find.
 - The fortune teller's `lootChanceMultiplier` moves the `loot` bucket against `nothing`, as
-  before; it does not reach the plants.
+  before; it does not reach the plants. *Amended 2026-11-07:* the rise is capped by what `nothing`
+  holds, so taking the plants' weight from it thinned the Fool's +20%: a fresh km's loot under the
+  card is 50 of 100 (+4%; 53, +10%, before the plants), a second visit's 38 (+15%; 40, +21%). A third
+  visit and the 🏕 run are unchanged. Raised with the owner, not decided.
 
 ### 16.4 Names
 

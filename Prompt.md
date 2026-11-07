@@ -23,17 +23,35 @@ each item's own (`bf15669`) and the armour's ladder through the Master's enchant
 shipped WITHOUT the bestiary re-solve, which holds only at its price — a cheaper enchant or
 anything stronger still needs the re-solve (auto-memory `project-post-rebalance-package`).
 
-### Where things stand right now (the Pi and git as read 2026-11-05 13:30)
+### Where things stand right now (the Pi and git as read 2026-11-07)
 
 | | |
 |---|---|
-| HEAD | **this commit** (the 11-05 13:28 deploy record, and `46437bf`'s hash fill), unpushed. Under it everything is pushed: `origin/main` = the Pi = **`46437bf`** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the fortune teller's tinctures, «зілля» retired, and `6661229`'s hash fill), unpushed. Under it, unpushed: **`6661229`** (the plants), **`7285cec`** (the kill trophies), **`75eb348`** (the 11-05 13:28 deploy record). Under them everything is pushed: `origin/main` = the Pi = **`46437bf`** (the warehouse's buttons as 📦 / 🎒, and `c4682da`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`46437bf`** (the owner pushed 2026-11-05 by 13:24, thirteen commits past `b04bef3`), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`46437bf`**, online since **2026-11-05 13:28:03** (pm2 restarts 2; the binary built on the Pi in 147 s). Content schema **v30**, content hash **`95421568`**, COMBINED `d0b897ae80619502` — the digest matched the Mac in every line before the restart; `PlantHazel` verified on the table (60 plots moved down a slot, 45 hazels in slot 0, 105 plots, none missing, no slot held twice). 12 × 403 per mass notice (players who blocked the bot; 11 on 11-01), still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. **The host rebooted itself 2026-11-04 ~17:57** (DNS late at boot, one failed start, pm2 brought the build up; `.memory/sessions.md` → the 11-05 deploy entry): the untracked `core` in the Pi's checkout is that boot's dump (124 MB), `pgweb/` is old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | Nothing. Everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
+| waiting for a restart | **The kill trophies and the plants** (2026-11-05, `spec-bestiary.md` §15–§16 — Swift + content + uk/en, no migration) and **the fortune teller's tinctures** (2026-11-07, `spec-tinctures.md` — Swift + content + uk/en + `AddSleepWard` + `AddVigorThrift`): together content schema **v32**, content hash `b6cb33a2`, COMBINED `c725c286799bc344`: a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI` — NEVER a `/reload` first (Lingo is not reloaded, and the v30 binary refuses v32 content); `TODO.md` → their three walk blocks. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
 
-### Where the last sessions stopped (2026-10-24 → 11-05)
+### Where the last sessions stopped (2026-10-24 → 11-07)
+
+**11-07 — the fortune teller's tinctures; «зілля» retired (NOT live, schema v32).** The owner's ask: a separate screen at the
+fortune teller, then the recipes. «🧪 Настоянки» on her screen: Мала 1× 🌼 + 1× 💧, ❤️ +25%, 10 🪙; Середня 2× 🌼 + 1× 💧, ❤️ +50%, 30 🪙;
+Чебрецю 2× 🌿 + 1× 🦷, 🍖 +30%, 15 🪙; Міцна 3× 🌿 + 1× 🌱 + 1× 🪶, 🍖 +30% and Vigor costs halved for an hour, 30 🪙; Сонна 1× 🌸 + 1× 📯, a
+death leaves the bag, to the door or the first death, 40 🪙. She counts the
+bag alone, a card pins to the notebook. The game's word is «настоянка», the code keeps `potion`. `spec-tinctures.md`; **nothing of
+the brew, the drink or the ward has run yet**: `TODO.md` → the walk block, on the test bot first.
+
+**11-05, late evening — plants in the grass (NOT live, schema v31).** The owner's ask: a plant to find, for tinctures
+with the trophies later. A sixth step event, 3 steps of 100 taken from «тиша»; one pool — 🌿 Чебрець, 🌼 Звіробій,
+🌱 Полин, 🌸 Сон-трава at 4 : 3 : 2 : 1; «🍃 Знахідка в траві — …»; the cards describe the tinctures' effects before
+they exist, the owner's pick (`spec-bestiary.md` §16). Ships with the trophies in one build and restart.
+
+**11-05, evening — the kill trophies (NOT live).** The owner's ask: a drop beside meat and hide. Five shared kinds — 💧 Отрута,
+🪶 Перо, 🦷 Ікло, 📯 Ріг, 🐾 Кіготь — one per spawnable creature as its last loot row, 5% from №1–4 and 15% deeper, the
+rabid bear two; the trader buys none until they have a use; what they are FOR is decided later (`spec-bestiary.md`
+§15). Four extras were offered and left for later (Blight foam, the bear's fat, sinew, rare second trophies) — **the
+owner asked to be reminded of them at the commit.**
 
 **11-05 — the test bot up on `c4682da` (`PlantHazel` rehearsed on `roi_test`: 2 hazels); the warehouse's move buttons
 as 📦 / 🎒 (`46437bf`). All of it LIVE since the 11-05 13:28:03 restart.**
@@ -154,6 +172,10 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 
 ### Next action
 
+**0 — The tinctures are built (11-07), not fully walked:** the first four ran on the test bot, Міцна настоянка has not; the test bot
+is stopped, and `AddVigorThrift` runs at its next start, on the owner's word. Walk `TODO.md`'s block before the deploy. **Four extra
+drops are still waiting for the owner's word** (`TODO.md` → Open, the 11-07 block).
+
 **0 — The hazel every estate starts with is LIVE since 2026-11-05 13:28** (`spec-progression.md` §8; schema v30 and `PlantHazel`, verified on the table — `TODO.md` → its walk block; rehearsed on a scratch Postgres, `.memory/sessions.md` → the 11-01 night entry). **0 — The prize announcement is LIVE** (sent 10:00:36, 44 players); **the prizes at the palace are BUILT** and must be live before 18:00 (the row above; spec §4.8, `TODO.md` → the walk block). **The bag's item card: all three steps (the bag, the trail bag, the warehouse) LIVE since 2026-11-05 13:28** (`TODO.md` → Open and the walk block; every decision in `.memory/sessions.md` → the 11-01 midday entry). **0 — Велесова ніч runs today and once (Sat 31.10 09:00 → Sun 01.11 18:00) — watch it as it happens.** The 09:00 /
 14:00 / 16:00 decrees (each once: count `event_notices`), the capital wearing the holiday from 12:00, at 18:00 the
 summons, the manor at km 5, the scribe's story and the flasks; the board, the flasks and who is inside are read with the
@@ -263,9 +285,9 @@ play at ~600–640 days (auto-memory `project-expedition-model`, `.memory/rebala
 /content   /reload                           # dev-only, in Telegram: inspect and hot-swap
 swift run roi-content validate --strict      # content integrity; exit 1 on any error
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
-swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king
+swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king · tinctures
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 526 tests, ~5s
+swift test                                   # 585 tests, ~5s
 ```
 
 

@@ -301,9 +301,17 @@ extension InventoryEntry {
     ///
     /// Which rows go is `isTakenByDeath`, which the forest edge asks too
     /// (2026-10-22): the armour it warns about is exactly the armour this takes.
+    ///
+    /// Сонна настоянка (2026-11-07): under its ward a death takes nothing and
+    /// spends the ward. It lives here for the same reason the wipe does, so no
+    /// caller can forget it; the caller saves `user`, as it does for the HP.
     @discardableResult
-    public static func wipeOnDeath(for user: User, on db: any Database) async throws -> [DeathLoss] {
-        guard let userId = user.id else { return [] }
+    public static func wipeOnDeath(for user: User, on db: any Database) async throws -> DeathWipeResult {
+        if user.sleepWard {
+            user.sleepWard = false
+            return DeathWipeResult(lost: [], warded: true)
+        }
+        guard let userId = user.id else { return DeathWipeResult(lost: [], warded: false) }
         let rows = try await InventoryEntry.query(on: db)
             .filter(\.$user.$id, .equal, userId)
             .all()
@@ -311,7 +319,13 @@ extension InventoryEntry {
         for row in taken {
             try await row.delete(on: db)
         }
-        return losses(of: taken)
+        return DeathWipeResult(lost: losses(of: taken), warded: false)
+    }
+
+    /// What a death did to the bag: what it took, and whether the ward stopped it.
+    public struct DeathWipeResult: Sendable {
+        public let lost: [DeathLoss]
+        public let warded: Bool
     }
 
     /// What a death would take right now, named the way the death screen will

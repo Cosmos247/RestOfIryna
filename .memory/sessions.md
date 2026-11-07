@@ -1,6 +1,6 @@
 # Session History
 
-## Commit index — live-play polish and after (2026-09-09 → 11-05)
+## Commit index — live-play polish and after (2026-09-09 → 11-07)
 
 Hash → what it did, newest first. **Moved here from `Prompt.md` on 2026-09-15**, when that
 file stopped carrying a changelog: six of these hashes (`9a774ae`, `1e99198`, `4766947`,
@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-05)* **plants in the grass: a sixth step event** — Swift + content + uk/en + tests, content
+- *(this commit, 11-07)* **the fortune teller's tinctures, and «зілля» retired** — Swift + content + uk/en + lore + two migrations,
+  content schema v32, NOT deployed (the plants' build and restart): «🧪 Настоянки» on her screen, five recipes of plants and a
+  trophy with her fee, a share of the bar (`MealMath.share`), `TinctureService.brew` in one transaction, the Sleep Tincture's
+  `User.sleepWard` (`AddSleepWard`), Міцна настоянка чебрецю's hour of half-price Vigor (`AddVigorThrift`), «📌 У нотатник»; her intro and Podil's caption name them; the bag's 🧪 category reads
+  «Настоянки», en «Tinctures»; the code keeps `potion`. `spec-tinctures.md`. 585 tests.
+- `6661229` (11-05) **plants in the grass: a sixth step event** — Swift + content + uk/en + tests, content
   schema v31, NOT deployed (a build and a restart; no migration): `StepOutcome.herb`, 3 of 100 in every weight row
   taken from `nothing`, `zones.json` → `herbs` (🌿 Чебрець · 🌼 Звіробій · 🌱 Полин · 🌸 Сон-трава at 4:3:2:1),
   «🍃 Знахідка в траві — …», the 🏕 report's «🍃 рослина»; `ZoneCatalog.rollHerb` through the forage roll's own
@@ -1004,6 +1009,88 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
+## Session — 2026-11-07 (the fortune teller's tinctures; «зілля» retired) — *(this commit)*
+
+**The place first** («Перш за все я хочу створити місце… щоб настоянки зʼявились окремим екраном у ворожки. Про це треба додати
+інформацію у згадках про ворожку. Покажи, як ти бачиш реалізацію.»). **Shown:** a played sample — Podil's caption, her
+screen with a card ready and with one running, «🧪 Настоянки», back — and what each mention becomes. **The owner:** an
+announcement now, with the trophies and the plants (over «together with the first recipes»), and «Так, будуй» on the copy.
+`CapitalController+Tinctures.swift`, the row in `fortuneEntryKeyboard` on both its paths, `tincture:` in `onCallbackQuery`; back
+is her own `fortune:show`. A sentence in `capital.fortune.intro` («вміє варити», true before and after the recipes), «або
+настоянкою» in Podil's caption, lore §6–§9. Her worst state (a holiday's line, a running card, the dispel) 738 → 805 of 1,024 in
+uk, 805 in en. **Not touched:** the capital's welcome (it only lists rooms), the cards' notice, the holiday's lines, and
+`capital.location.fortune.body`, which no screen renders.
+
+**The recipes** («Закомітимо потім, переходимо до рецептів настоянок. Покажи мені рецепти які ти вигадав.»). Shown: five, each a
+plant and a trophy so every drop has a use, measured on a scratch copy of `ROIContent` + `ROISim`. **Found:** a multiplier on DEF
+barely registers (armour absorbs 19–24%), so the −15% shown cut the blow itself. **The owner:** the two heals, thyme and sleep, not
+the bitter one; her fee, 10–40 🪙. Then, rejecting the quiz to say so: the two heals alike, «на середню просто треба більше», and
+more Vigor with other effects on thyme. Shown: a medium of 2× 🌼 + 1× 💧 or + 2× 💧, and thyme at +40% with drain −50%, XP +15% or
+attack +10%, or +60% alone. **The owner:** 2× 🌼 + 1× 💧, and **«Тільки 30% снаги»**, a number of their own. Then the sample (list,
+card, banner, drink, death), the Sleep Tincture to the door over one hour, «посилює захист» off the thyme's card, «Так, будуй», and
+one thing more: «Також додай можливість записати рецепти настоянок у нотатник.»
+
+**Built:** `spec-tinctures.md` and `spec tinctures`; three effect kinds and `silverFee` (schema v32); `recipes.json` category
+`tincture`, not `isCraftable`, so `CraftingService.craft` refuses it; `TinctureService` (bag alone through `CraftMath`, one
+transaction, the row adopted after the commit); the card with `RequirementLine`s and `RecipeNote.Kind.tincture`; `MealMath.share`;
+`User.sleepWard` and `AddSleepWard`, spent in `wipeOnDeath` for both death paths, let go at the door, not at a turn-back at the
+gate; `PassiveReport.warded`; the governor rations `food` alone; the edge's armour warning silent under the ward; five validator
+rules; `fee` and the effect kinds in the digest; a sink row in `spec economy`. `tincture.cold` went before it reached anyone.
+
+**Checked:** a clean build; `validate --strict` 0 warnings; 579 tests, the eighteen of `TinctureTests` new, none reaching the bot
+target; `simulate --strict` 0 broken bands, 15 warnings; all 16 generated spec blocks current. The digest at that point — `records
+a61d17b50d9b965c → 596c76e1ac9e3ca9`, content hash `7d66e65b → 52774973`, COMBINED `8a65aa3e7d303208 → f480de6d6bcc050d`; `tuning`,
+`spawns`, `quests` and `king` held. **Not done at this point:** no screen had been seen in Telegram, and neither the brew, the drink nor the ward had
+run against a database.
+
+**Then, the same evening** («Додай рядок в профілі, запусти тестового бота і додай мені на тестовий аккаунт всі типи настоянок.»):
+`profile.sleep_ward` under the fortune line in `MainController`, the offer from the report taken. The test bot up from the Mac on the
+tree at 16:57:25 (`@artania_gamebot`, schema v32, hash `52774973`); `AddSleepWard` prepared on `roi_test`, the column read back; the
+two `400 chat not found` at boot are roster accounts that never opened it. Five of each tincture inserted for the developer account
+(`jj`, 398698463) by SQL on `roi_test`, durability 0/0 as `InventoryEntry.add` writes a stackable; «Ребекка» left alone. `psql` is
+not on the Mac: run it on the Pi with the `roi_test` role, the password piped from the Mac's `.env`, never on the command line.
+
+**Found by the owner on the test bot:** «При смерті під сонною настоянкою не відображається список принесеного з подорожі.» The
+🏕 report named the haul under the ward and the active death screen did not, because `ExplorationState.end` had taken the row
+with it. `handleDeath` now reads the row ahead of that and prints the door's own `renderBrought` under the death text.
+
+**Then, on the test bot:** «Зараз усі настоянки означаються одним емодзі 🧪. Додай після 🧪 емодзі з травою… Сонна настоянка матиме
+на початку 🧪🌸.» `items.json` only: 🧪🌼 both heals, 🧪🌿 thyme, 🧪🌸 sleep, pinned by `TinctureTests` against the plant that leads
+each recipe; no code, so a `/reload` carries it.
+
+**The last change** («Хочу все ж таки додати покращену настоянку чебрецю, яка буде зменшувати витрату снаги на годину.»). Shown: why
+only −50% moves a step (costs round half up, so ×0.75 leaves a 2 at 2), what a walk costs under it, three recipes, a card, the
+profile's line, the refusal, and the cost of it: a step of 1 nearly pays for itself over cleared km. **The owner:** 3× 🌿 + 1× 🌱 + 1× 🪶,
+30 🪙, «Міцна настоянка чебрецю», and +30% Vigor beside the hour, over the recommended drain alone; «Так, будуй». Built: `vigor_thrift`
+with `seconds`, `potion.thyme_strong`, `recipe.tincture_thyme_strong`, `AddVigorThrift`, the multiplier last in `VigorService.drain`
+through `MealMath.thriftedCost`, the card's line, the banner, the refusal with the time left, the profile's two lines, two validator
+rules. 585 tests. The tree's digest: `records 0b18fadaface5fa8`, content hash `b6cb33a2`, COMBINED `c725c286799bc344`; `tuning`,
+`spawns`, `quests` and `king` held. The test bot was stopped by the owner before this build, so `AddVigorThrift` has not run anywhere
+and nobody has seen the card.
+
+**The audit** («Перед тим як ми продовжимо перевір всі зміни…», the four commits at once): a forced recompile of all 38 touched Swift
+files under bash, 0 warnings; 585 tests; `validate --strict` and `simulate --strict` as above; all 17 generated blocks contiguous; the
+digest names the fee and the seconds (mutation-checked on a copy: each moves `records`, `tuning` held); no emoji ahead of a placeholder
+and every placeholder matched across the locales in the 68 changed uk keys. An independent review raised ten points. **Fixed:**
+`armorAtRisk` took «🛡 Одягнути» away with the warning under the ward; the hour was divided by `time.scale` while every screen printed it
+undivided, and is now plain, like a tarot card's window; the dev reset left the ward and the bottle on a reset character; the thrift's
+line was written twice and the estate carried unreachable arms (`BagCard.thriftLine`); `tincture.thrift_moves_nothing` hard-coded a step
+of 2. **Kept, with the reason:** the holiday gate's `deathPreview` and the governor's `walkCost` (`TODO.md` → Open), the Fool's cap
+(raised); `inv:use:` is emitted for scrolls alone, so no tincture reaches it; the profile finds its bottle by effect, and one exists.
+Also found: two FAQ replies still said nothing uses the trophies and the plants.
+
+**Not live:** a pull, a build on the Pi, the digest pre-flight, then a restart, never a `/reload` first.
+
+### «зілля» retired: the game's word is «настоянки»
+
+**Asked** («Зміни усюду згадки про слово "зілля". В грі це називаються "настоянки".»), mid-way through the design of
+the tinctures' place at the fortune teller. **Done:** `inventory.type.potion` «Зілля» → «Настоянки» (one key: the bag and the
+warehouse), «Мала настоянка зцілення», «Середня настоянка зцілення», their `.gender` n → f; en «Tinctures», «Small / Medium
+Healing Tincture» so the two locales do not name one thing two ways (not literally asked, said in the report); the
+four docs and memories quoting «🧪 Зілля». The glossary row, `CLAUDE.md`'s glossary line, auto-memory
+`feedback-potion-is-nastoyanka`. **Kept:** the type `potion`, the ids `potion.heal_*` (rows hold them), the action key;
+the owner's own «настоїв» on the pasque flower's card, a different word. No content hash moved: Lingo is not hashed.
+
 ## Deploy — 2026-11-05 13:28 (`b04bef3` → `46437bf`) — the hazel and everything built since 11-01
 
 On the owner's word («Запушив, задеплой на пайй та перезапусти бота»), after the check that everything was committed
@@ -1030,7 +1117,7 @@ died on `getMe` («Temporary failure in name resolution … api.telegram.org») 
 124 MB, which replaced the 09-25 dump, left in place — and pm2 started the same build again; `Bot identified` at
 17:57:41 by the synced clock. The same boot-time DNS shape as the 10-24 reboot.
 
-## Session — 2026-11-05, late evening (plants in the grass: a sixth step event) — *(this commit)*
+## Session — 2026-11-05, late evening (plants in the grass: a sixth step event) — `6661229`
 
 **Asked** («Закомітимо потім. Зараз я хочу також додати подію знахідки рослини. Ці рослини будуть для варіння
 настоянок разом з трофеями… Запропонуй мені варіант реалізації»). **Offered:** its own step event, as the coins under a

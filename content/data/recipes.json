@@ -295,6 +295,105 @@
         "itemId" : "food.governors_feast",
         "quantity" : 1
       }
+    },
+    {
+      "category" : "tincture",
+      "id" : "recipe.tincture_small",
+      "inputs" : [
+        {
+          "itemId" : "mat.herb_st_johns_wort",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.trophy_venom",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "potion.heal_small",
+        "quantity" : 1
+      },
+      "silverFee" : 10
+    },
+    {
+      "category" : "tincture",
+      "id" : "recipe.tincture_medium",
+      "inputs" : [
+        {
+          "itemId" : "mat.herb_st_johns_wort",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.trophy_venom",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "potion.heal_medium",
+        "quantity" : 1
+      },
+      "silverFee" : 30
+    },
+    {
+      "category" : "tincture",
+      "id" : "recipe.tincture_thyme",
+      "inputs" : [
+        {
+          "itemId" : "mat.herb_thyme",
+          "quantity" : 2
+        },
+        {
+          "itemId" : "mat.trophy_fang",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "potion.thyme",
+        "quantity" : 1
+      },
+      "silverFee" : 15
+    },
+    {
+      "category" : "tincture",
+      "id" : "recipe.tincture_thyme_strong",
+      "inputs" : [
+        {
+          "itemId" : "mat.herb_thyme",
+          "quantity" : 3
+        },
+        {
+          "itemId" : "mat.herb_wormwood",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.trophy_feather",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "potion.thyme_strong",
+        "quantity" : 1
+      },
+      "silverFee" : 30
+    },
+    {
+      "category" : "tincture",
+      "id" : "recipe.tincture_sleep",
+      "inputs" : [
+        {
+          "itemId" : "mat.herb_pasque_flower",
+          "quantity" : 1
+        },
+        {
+          "itemId" : "mat.trophy_horn",
+          "quantity" : 1
+        }
+      ],
+      "output" : {
+        "itemId" : "potion.sleep",
+        "quantity" : 1
+      },
+      "silverFee" : 40
     }
   ],
   "starterRecipeIds" : [

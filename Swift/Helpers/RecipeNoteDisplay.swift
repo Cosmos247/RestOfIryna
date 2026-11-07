@@ -195,6 +195,19 @@ enum RecipeNoteDisplay {
             lines += recipe.inputs.map { material($0.itemId, $0.quantity, have: held($0.itemId)) }
             return Entry(lines: lines, removeLabel: name)
 
+        case .tincture:
+            // Read like a recipe, and counted like her card: the bag alone, then
+            // her fee (2026-11-07).
+            guard let recipe = TinctureService.find(note.ref),
+                  let output = ItemCatalog.find(recipe.output.itemId) else { return nil }
+            let name = lingo.localize(output.nameKey, locale: locale)
+            let icon = output.icon.map { "\($0) " } ?? ""
+            let place = lingo.localize("notes.place.fortune", locale: locale)
+            var lines = ["\(icon)<b>\(name)</b> · \(place)"]
+            lines += recipe.inputs.map { material($0.itemId, $0.quantity, have: inBag($0.itemId)) }
+            lines.append(silver(recipe.silverFee))
+            return Entry(lines: lines, removeLabel: name)
+
         case .plot:
             // Read like a recipe (the owner's pick, 2026-11-01): the plot's name
             // and where it is built on one line, then what its build card asks

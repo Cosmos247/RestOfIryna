@@ -97,6 +97,41 @@ public enum ContentValidator {
                                     rule: "identity.effect.non_positive",
                                     message: "\(effect.kind.rawValue) amount is \(effect.amount)"))
             }
+            // A tincture's effects (2026-11-07). The bag's many-portion button
+            // and the 🏕 governor read a food's flat numbers alone, so a share or
+            // a ward on a dish would be a meal only half the game can see.
+            for (effectIndex, effect) in item.effects.enumerated() {
+                let tinctureOnly = effect.kind == .restoreVigorPercent || effect.kind == .restoreHPPercent
+                    || effect.kind == .sleepWard || effect.kind == .vigorThrift
+                if tinctureOnly && item.type != "potion" {
+                    issues.append(.init(severity: .error, file: "items.json", path: "\(path).effects[\(effectIndex)]", id: item.id,
+                                        rule: "tincture.effect_off_a_tincture",
+                                        message: "\(effect.kind.rawValue) is a tincture's effect, and this item's type is \"\(item.type)\""))
+                }
+                if (effect.kind == .restoreVigorPercent || effect.kind == .restoreHPPercent),
+                   !(1...100).contains(effect.amount) {
+                    issues.append(.init(severity: .error, file: "items.json", path: "\(path).effects[\(effectIndex)]", id: item.id,
+                                        rule: "tincture.percent_range",
+                                        message: "\(effect.kind.rawValue) is a percentage of a pool, found \(effect.amount)"))
+                }
+                if effect.kind == .vigorThrift {
+                    // Costs are small whole numbers: too gentle a share rounds
+                    // a step straight back, and the bottle does nothing on what
+                    // a walk is made of. `MealMath.thriftedCost` is the writer.
+                    let step = bundle.tuning?.vigor.drain.walkRoom ?? 2
+                    if !(1...99).contains(effect.amount)
+                        || Int((Double(step) * Double(100 - effect.amount) / 100).rounded()) >= step {
+                        issues.append(.init(severity: .error, file: "items.json", path: "\(path).effects[\(effectIndex)]", id: item.id,
+                                            rule: "tincture.thrift_moves_nothing",
+                                            message: "\(effect.amount)% off leaves a \(step)-point step at \(step) after rounding"))
+                    }
+                    if (effect.seconds ?? 0) <= 0 {
+                        issues.append(.init(severity: .error, file: "items.json", path: "\(path).effects[\(effectIndex)]", id: item.id,
+                                            rule: "tincture.thrift_no_duration",
+                                            message: "vigor_thrift names how long it runs in seconds"))
+                    }
+                }
+            }
         }
 
         for (index, enemy) in bundle.enemies.enumerated() {
@@ -142,6 +177,25 @@ public enum ContentValidator {
                                     rule: "identity.recipe.quantity",
                                     message: "output quantity must be >= 1, found \(recipe.output.quantity)"))
             }
+            // The fortune teller's recipes (2026-11-07): she alone charges, so a
+            // fee anywhere else is a number nothing reads, and a tincture with
+            // none would be brewed for free by an omission.
+            if recipe.category == "tincture" {
+                if recipe.silverFee == nil || (recipe.silverFee ?? 0) < 0 {
+                    issues.append(.init(severity: .error, file: "recipes.json", path: path, id: recipe.id,
+                                        rule: "tincture.fee_missing",
+                                        message: "a tincture names what the fortune teller charges in silverFee"))
+                }
+                if let output = bundle.items.first(where: { $0.id == recipe.output.itemId }), output.type != "potion" {
+                    issues.append(.init(severity: .error, file: "recipes.json", path: "\(path).output", id: recipe.id,
+                                        rule: "tincture.output_not_a_tincture",
+                                        message: "\(output.id) is a \(output.type); the bag lists tinctures under potion"))
+                }
+            } else if recipe.silverFee != nil {
+                issues.append(.init(severity: .warning, file: "recipes.json", path: path, id: recipe.id,
+                                    rule: "tincture.fee_unread",
+                                    message: "only a tincture reads silverFee; the \(recipe.category) charges nothing"))
+            }
         }
 
         return issues
@@ -180,7 +234,7 @@ public enum ContentValidator {
     /// keep them in step with `ItemType` / `RecipeCategory` in `Swift/Models/`.
     private static let itemTypes: Set<String> = ["food", "material", "gear", "potion", "artifact"]
     private static let equipmentSlots: Set<String> = Set(EquipmentSlot.allCases.map(\.rawValue))
-    private static let recipeCategories: Set<String> = ["forge", "tannery", "kitchen"]
+    private static let recipeCategories: Set<String> = ["forge", "tannery", "kitchen", "tincture"]
 
     private static func validateEnums(_ bundle: ContentBundle) -> [ContentIssue] {
         var issues: [ContentIssue] = []

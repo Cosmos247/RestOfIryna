@@ -35,6 +35,7 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     case forge      // Smelting and metalwork
     case tannery    // Leather and hide
     case kitchen    // Cooked food: starter set ∪ what an NPC has taught
+    case tincture   // The fortune teller's: she brews, in the capital (`TinctureService`)
 
     /// Whether the player can MAKE this. False for the tannery since
     /// 2026-09-28, on the owner's call: armour comes from the Master alone, and
@@ -44,8 +45,10 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     /// `CraftingService.craft` itself, which is what the [Craft] callback reaches.
     public var isCraftable: Bool {
         switch self {
-        case .forge, .kitchen: return true
-        case .tannery:         return false
+        case .forge, .kitchen:    return true
+        // She brews them, from the bag, for a fee: `CraftingService.craft`
+        // draws on the warehouse and charges nothing, so it refuses them.
+        case .tannery, .tincture: return false
         }
     }
 
@@ -53,8 +56,8 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
     /// the starter set or from an NPC — before they show up in the cooking UI.
     public var requiresLearning: Bool {
         switch self {
-        case .forge, .tannery: return false
-        case .kitchen:         return true
+        case .forge, .tannery, .tincture: return false
+        case .kitchen:                    return true
         }
     }
 
@@ -64,6 +67,7 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         switch self {
         case .forge, .tannery: return "estate:home:workshop"
         case .kitchen:         return "estate:home:kitchen"
+        case .tincture:        return "tincture:open"
         }
     }
 
@@ -73,6 +77,7 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         switch self {
         case .forge, .tannery: return "workshop.detail.button.craft"
         case .kitchen:         return "kitchen.detail.button.cook"
+        case .tincture:        return "tincture.button.brew"
         }
     }
 
@@ -83,6 +88,7 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         switch self {
         case .forge, .tannery: return "workshop.alert.crafted"
         case .kitchen:         return "kitchen.alert.cooked"
+        case .tincture:        return "tincture.brewed"
         }
     }
 
@@ -94,6 +100,8 @@ public enum RecipeCategory: String, Codable, CaseIterable, Sendable {
         switch self {
         case .forge, .tannery: return "workshop.alert.crafted_warehouse"
         case .kitchen:         return "kitchen.alert.cooked_warehouse"
+        // The capital has no warehouse: a tincture goes to the bag or not at all.
+        case .tincture:        return "tincture.brewed"
         }
     }
 }
@@ -127,12 +135,16 @@ public struct Recipe: Sendable {
     public let category: RecipeCategory
     public let inputs: [RecipeIngredient]
     public let output: RecipeOutput
+    /// What the fortune teller charges; 0 everywhere else.
+    public let silverFee: Int
 
-    public init(id: String, category: RecipeCategory, inputs: [RecipeIngredient], output: RecipeOutput) {
+    public init(id: String, category: RecipeCategory, inputs: [RecipeIngredient], output: RecipeOutput,
+                silverFee: Int = 0) {
         self.id = id
         self.category = category
         self.inputs = inputs
         self.output = output
+        self.silverFee = silverFee
     }
 }
 

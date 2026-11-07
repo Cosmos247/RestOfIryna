@@ -107,6 +107,8 @@ public enum RecipeNoteService {
             return TrainingGroundCatalog.level(note.target) != nil && user.trainingGroundLevel < note.target
         case .recipe:
             return RecipeCatalog.find(note.ref)?.category.isCraftable == true
+        case .tincture:
+            return TinctureService.find(note.ref) != nil
         case .plot:
             // A type the content no longer offers for building (or one the
             // estate grants) has nothing left to wait on.
@@ -150,14 +152,14 @@ public enum RecipeNoteService {
         return true
     }
 
-    /// The craft funnel's hook. A recipe note is done the first time the recipe
-    /// is made (the owner's pick, 2026-10-09) — an event no row remembers, so it
-    /// is cleared here, where the craft succeeded.
+    /// The craft funnel's hook, and the fortune teller's. A recipe note is done
+    /// the first time the recipe is made (the owner's pick, 2026-10-09) — an
+    /// event no row remembers, so it is cleared here, where the craft succeeded.
     public static func recipeMade(_ recipeId: String, for user: User, on db: any Database) async throws {
         guard let userId = user.id else { return }
         try await RecipeNote.query(on: db)
             .filter(\.$user.$id, .equal, userId)
-            .filter(\.$kindRaw, .equal, RecipeNote.Kind.recipe.rawValue)
+            .filter(\.$kindRaw ~~ [RecipeNote.Kind.recipe.rawValue, RecipeNote.Kind.tincture.rawValue])
             .filter(\.$ref, .equal, recipeId)
             .delete()
     }
