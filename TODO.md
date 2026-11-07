@@ -2189,15 +2189,15 @@ and the developer account holds all five tinctures. Try it there first:**
 - [ ] A brew: «✅ Ворожка зварила: 🧪 … × 1 · −🪙 N», the card redrawn with less, the tincture in the bag's «🧪 Настоянки», the
       purse down by the fee, a note on that recipe gone.
 - [ ] «📌 У нотатник»: the note reads «🧪 Name · Ворожка, Поділ», the rows from the bag, the silver; a fourth pin is refused.
-- [ ] Drinking, at home and on a walk: a heal +25% / +50% of max HP, thyme +30% of the pool, the usual banner; at full pools
+- [ ] Drinking, at home and on a walk, by the card's «🧪 Випити» (2026-11-07, it read «🍷 Використати»): a heal +25% / +50% of max HP, thyme +30% of the pool, the usual banner; at full pools
       «Без ефекту», nothing spent; no «До повної снаги» on a tincture; no way to drink in a fight.
 - [ ] Сонна: the banner; the profile's «🌸 Сонна настоянка: смерть не забирає сумку до повернення додому» while it works and not
       after; a second one refused in its own words and kept; a death on a walk prints the 🌸 line and «Принесено:» under the
       screen, and takes nothing;
       the next death wipes. Drink, walk, come home, die on the next walk: the bag goes. Drink, open a walk, turn back at the
       gate: still up.
-- [ ] Міцна: +30% of the pool and the banner «— +N снаги (…), витрата снаги −50% на 1год»; a step and a blow cost 1, a flee 2, a
-      Defend still 1; the profile reads «🌿 Міцна настоянка чебрецю · 59хв / 🍖 Витрата снаги: −50%»; a second is refused with the time
+- [ ] Міцна: +30% of the pool and the banner «— +N снаги (…), витрата снаги −50% на 1год»; a step and a blow cost 1, a flee 2 (a mage's 3: the
+      tax of 2 rounds on its own, 5 → 3), a Defend still 1; the profile reads «🌿 Міцна настоянка чебрецю · 59хв / 🍖 Витрата снаги: −50%»; a second is refused with the time
       left and kept; at a full pool the hour still starts; after the hour a step costs 2 again and the lines are gone.
 - [ ] A 🏕 run: the governor drinks no tincture; dying under the ward the report prints its line and «Принесено»; home alive, the
       ward is gone.

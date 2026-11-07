@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-07)* **every discard is asked, and `d545af9`'s hash fill** — Swift + uk/en, NOT deployed (no migration, the digest
+- *(this commit, 11-07)* **the tinctures' button reads «🧪 Випити», and `ee5d45b`'s hash fill** — uk/en, one key, NOT deployed (no migration,
+  the digest unchanged): `inventory.action.potion`. «Відвар» shown and declined, «настоянка» and «варить» stand. Records: the testers' list, how
+  Міцна's −50% lands after rounding (`spec-tinctures.md`). 585 tests.
+- `ee5d45b` (11-07) **every discard is asked, and `d545af9`'s hash fill** — Swift + uk/en, NOT deployed (no migration, the digest
   unchanged; ships with the tinctures' build and restart): `drop:` became the question, `drop1ok:<id>:<held>` its yes, one key
   `inventory.drop_one.question`; the 11-01 «at once» retired on the players' ask. 585 tests.
 - `d545af9` (11-07) **the records synced after the tinctures, and `4bdfb78`'s hash fill** — docs, both memory banks and two small
@@ -1020,7 +1023,34 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-07, after the sync (every discard is asked) — *(this commit)*
+## Session — 2026-11-07, late (the testers' list; Міцна's real costs; the drink button) — *(this commit)*
+
+**The testers' list** («Напише мені список незадеплоєних змін дл тесувальників»): read off `46437bf..ee5d45b` and the Pi (its checkout at
+`46437bf`, online since 11-05 13:28), written as one Telegram-ready message of 3,581 UTF-16 units and published as a private page with a
+copy button (https://claude.ai/artifact/RdfvcU1YykuRHtfNwiipQb). Nothing else in the tree. Checked while writing it: only Мала, Середня and Чебрецю refuse at a full pool, Міцна
+starts its hour at a full pool and Сонна restores nothing; the old heal potions had no source in content, so no player holds one.
+
+**How Міцна's −50% really lands** (asked «А як зараз працює зменшення витрати снаги на 50%?», answered from the code, not walked): `VigorService.drain`
+multiplies base × stance × card unrounded, then `MealMath.thriftedCost` halves, rounds half up and floors at 1. So 2 → 1 and 4 → 2, but 3 → 2,
+5 → 3 and 1 → 1; a mage's flee is two drains, 3 + 2 → 2 + 1. Under the Chariot or the Hanged Man a step and a blow stay at 1: the bottle adds
+nothing there. Nothing reads a cost before the drain, so no gate disagrees. The hour runs by the clock through a death and at home. The
+🏕 governor's strides and autobattle rounds are thrifted, but his decisions read `cost(of: .walkRoom)` unthrifted (2), so he eats and turns
+for home earlier than the hour requires. The list and the walk line had said «flee 2» for everyone; both corrected.
+
+**The drink button and the word** («Як можна змінити назву кнопки "Використати" для настоянок. І як можна змінити назви "настоянки", бо
+фактично Ворожка варить, а не настоює?»): shown a sample with «відвар» (24 keys, 5 genders, four descriptions, `TinctureTests`), against
+«трунок» and new verbs. The owner: the button «🧪 Випити» (en «🧪 Drink»), the one key `inventory.action.potion`; the word: «Нічого не
+міняти», neither noun nor verbs. The testers' page republished with the new label.
+
+**The audit before the commit** (the short form) changed no behaviour. Fixed: my chat answer named the warrior's stance «Жага крові», and the
+game says «🩸 Кровна жага»; the list's «Стійка … змінюють ці числа» was too wide, since `bloodlust` is the only stance with a Vigor multiplier;
+these notes sat inside `ee5d45b`'s entry; `Prompt.md` still called that commit HEAD. Read rather than assumed: no comparison sets the pool
+against an action's cost outside `PassiveRoute`, so no gate disagrees with the thrift; only the dev reset clears the hour; the market's picker
+filters on `stackable` alone. A bag card left in chat cannot drink in a fight: the router is `combat`, and `CombatController.onCallbackQuery`
+takes every callback and redraws the fight. Three of this audit's greps first ran under zsh, where an unquoted `--include=*.swift` fails with
+«no matches found» and reads like an empty result; re-run under bash.
+
+## Session — 2026-11-07, after the sync (every discard is asked) — `ee5d45b`
 
 **Asked:** «Гравці просять додаати підтвердження при викиданні одного предмета. Покажи як ти бачиш реалізацію». Shown as a played sample;
 the owner's pick of three (every item · the last unit only · dishes and tinctures only): **every item, both bags.** It revises the

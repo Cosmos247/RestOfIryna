@@ -232,7 +232,7 @@
   "inventory.choose_category": "<i>Choose a category:</i>",
   "inventory.back_root": "🔙 Back to categories",
   "inventory.action.food": "🍴 Eat",
-  "inventory.action.potion": "🍷 Use",
+  "inventory.action.potion": "🧪 Drink",
   "inventory.action.gear": "🛡 Equip",
   "inventory.action.gear.unequip": "❌ Unequip",
   "inventory.action.artifact": "✨ Use",

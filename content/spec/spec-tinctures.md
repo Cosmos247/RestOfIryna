@@ -53,8 +53,8 @@ Mid-design: the game's word is «настоянка», never «зілля». At 
 - **The brew** is `TinctureService.brew`: `CraftMath` with the warehouse left out of both sides, then the drains, the
   output and the fee in ONE transaction, on a row loaded inside it and copied onto the session after the commit. It feeds
   no decree and no job: she made it.
-- **Drinking** is the dish's flow: the card's «🍷 Використати», at home, in town or on a walk; never in a fight, which has no
-  bag. A share is read off the pool as it stands (`MealMath.share`, half up, at least a point) and clamped by the pool. No
+- **Drinking** is the dish's flow: the card's «🧪 Випити», at home, in town or on a walk; never in a fight, which has no
+  bag (a card left in chat lands on the fight: `CombatController.onCallbackQuery` takes every callback). A share is read off the pool as it stands (`MealMath.share`, half up, at least a point) and clamped by the pool. No
   many-portion button: `vigorPerPortion` reads flat restores alone. A tincture that would restore nothing is refused like a
   dish, and a ward already up answers in its own words.
 - **The ward** is `User.sleepWard`. `InventoryEntry.wipeOnDeath` spends it and takes nothing, for both death paths; the death
@@ -65,7 +65,8 @@ Mid-design: the game's word is «настоянка», never «зілля». At 
   would say so). A holiday's gate still lists the bag (`deathPreview`); no holiday is scheduled.
 - **The thrift** is stamped on the player at the drink (`vigorThriftPercent`, `vigorThriftUntil`), so a `/reload` cannot change a
   running bottle. `VigorService.drain` applies it last, on top of the stance and the card, through `MealMath.thriftedCost`, and it
-  reaches a 🏕 run while the hour lasts. **Half is the only honest number:** costs are 1–5 and round half up, so ×0.75 leaves a step
+  reaches a 🏕 run while the hour lasts. So 2 → 1 and 4 → 2, but 3 → 2, 5 → 3 and 1 → 1; a mage's flee is two drains (3 + 2 → 2 + 1); and under the Chariot or the Hanged Man a step and a
+  blow stay at 1, so the bottle adds nothing there. **Half is the only honest number:** costs are 1–5 and round half up, so ×0.75 leaves a step
   and a blow at 2 (`tincture.thrift_moves_nothing` refuses it). A cost never rounds to nothing, or the Chariot would make a Defend
   free; under the Chariot or the Hanged Man it adds nothing on a step or a blow. A second bottle is refused while one runs, whatever
   its Vigor half could restore: it neither stacks nor restarts the hour. The profile prints the name, the clock and the line.
