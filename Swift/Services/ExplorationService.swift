@@ -7,7 +7,7 @@
 //  Per-step logic for the active exploration loop.
 //
 //  Responsibilities:
-//    - Roll the outcome of a step (nothing / loot / encounter / trip).
+//    - Roll the outcome of a step (nothing / loot / silver / herb / encounter / trip).
 //    - Resolve combat via autobattle (passive expeditions) on top of
 //      `CombatService.applyAttack` — the active CombatController shares the
 //      same primitives so a fight resolves with the same odds in either mode.
@@ -29,6 +29,11 @@ public enum StepOutcome: Sendable {
     /// `quantity` found, `taken` of them put in the bag (0…quantity); the rest
     /// stays on the ground because the bag is full.
     case loot(itemId: String, quantity: Int, taken: Int)
+    /// A plant in the grass (2026-11-05, `spec-bestiary.md` §16): the herb
+    /// event, rolled from `zones.json` → `herbs`, one at a time. Its own case,
+    /// not a `.loot`, because it is its own line on the step and its own count
+    /// in the 🏕 report; the bag and the haul take it exactly as they take a find.
+    case herb(itemId: String, quantity: Int, taken: Int)
     /// Coins found on the ground, already added to `user.silver`.
     ///
     /// Credited inside `rollStep` rather than accumulated and granted at the
@@ -140,6 +145,9 @@ public enum ExplorationService {
         /// table, because that is what a find IS — the bucket is a second kind
         /// of loot, not a second kind of nothing.
         let silver: Int
+        /// A plant (2026-11-05). Its weight came out of `nothing`, so the
+        /// materials and the food the trail gives are unchanged.
+        let herb: Int
     }
 
     /// What a passive step past `freshStepCount` rolls. Its own row since
@@ -150,7 +158,7 @@ public enum ExplorationService {
     static var passiveWeights: EventWeights {
         let w = Catalogs.current.tuningExploration.passive.weights
         return EventWeights(nothing: w.nothing, loot: w.loot,
-                            encounter: w.encounter, trip: w.trip, silver: w.silver)
+                            encounter: w.encounter, trip: w.trip, silver: w.silver, herb: w.herb)
     }
 
     static func weights(forPriorVisits priorVisits: Int,
@@ -169,7 +177,7 @@ public enum ExplorationService {
         // the rows to a contiguous 0,1,2,… run so "last" cannot drift.
         let row = tiers.first { $0.priorVisits == priorVisits } ?? tiers[tiers.count - 1]
         return EventWeights(nothing: row.nothing, loot: row.loot,
-                            encounter: row.encounter, trip: row.trip, silver: row.silver)
+                            encounter: row.encounter, trip: row.trip, silver: row.silver, herb: row.herb)
     }
 
     /// What the silver bucket can pay, straight from the tuning table.
@@ -222,6 +230,7 @@ public enum ExplorationService {
         let wEncounter = tier.encounter
         let wTrip = tier.trip
         let wSilver = tier.silver
+        let wHerb = tier.herb
 
         // Phase 6.4 — Fortune Teller hook. The active card's
         // `lootChanceMultiplier` (default 1.0) reweights the `loot`
@@ -265,7 +274,10 @@ public enum ExplorationService {
         if roll < wNothing + wLoot + wSilver {
             return step(rollSilver(for: user))
         }
-        if roll < wNothing + wLoot + wSilver + wEncounter {
+        if roll < wNothing + wLoot + wSilver + wHerb {
+            return step(try await rollHerb(for: user, on: db))
+        }
+        if roll < wNothing + wLoot + wSilver + wHerb + wEncounter {
             return step(try await rollEncounter(for: user, kmDepth: kmDepth, mode: mode, on: db))
         }
         _ = wTrip
@@ -303,6 +315,16 @@ public enum ExplorationService {
         let quantity = Int.random(in: 1...2)
         let taken = try await pickUp(itemId, quantity: quantity, for: user, on: db)
         return .loot(itemId: itemId, quantity: quantity, taken: taken)
+    }
+
+    /// One plant from the forest's herb pool (`ZoneCatalog.rollHerb`), into the
+    /// bag if it fits — the same `pickUp` as a find. One at a time, the owner's
+    /// sample. An empty pool finds nothing rather than a stand-in: the
+    /// validator refuses weights that roll the event with no pool behind them.
+    private static func rollHerb(for user: User, on db: any Database) async throws -> StepOutcome {
+        guard let itemId = ZoneCatalog.rollHerb() else { return .nothing }
+        let taken = try await pickUp(itemId, quantity: 1, for: user, on: db)
+        return .herb(itemId: itemId, quantity: 1, taken: taken)
     }
 
     /// Put as many of a find in the bag as still fit and return that count;

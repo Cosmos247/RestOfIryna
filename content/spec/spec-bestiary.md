@@ -1430,3 +1430,85 @@ deliberate retune by `/reload` is the owner's call, and the tests move with the 
 - Nothing is migrated: what is in bags and warehouses stays, and the first fight won after the
   restart rolls the new rows. A `/reload` before that restart would show the five by their
   raw keys.
+
+## 16. Plants — a sixth step event (2026-11-05)
+
+**Status: DECIDED and APPLIED 2026-11-05.** Code, content and locales — content schema **v31**,
+no migration. It ships with a build and a restart.
+
+### 16.1 What was asked
+
+The owner: an event of finding a plant, the plants to be brewed into tinctures together with
+the trophies of §15 later. The owner's list, most common first, with its descriptions: thyme,
+St John's wort, wormwood, pasque flower.
+
+### 16.2 Decided 2026-11-05 (the owner)
+
+1. **Its own event, not the forage pool.** A plant put into `zones.json` → `forage` would take
+   its place from a material or a food find (berries, nuts, potato and egg are foraged too), and
+   §13's rule that clay is the rarest find at every depth would bound how rare a plant could be.
+   The step gains a sixth bucket instead, as the coins under a root did (`spec-economy.md` §4b).
+2. **3 steps in 100, taken from `nothing`, in every weight row** — the fresh km, the second
+   visit, the picked-over km and the 🏕 run alike. The materials, the food and the fights a
+   step gives are therefore unchanged; only the empty steps thin (on a fresh km to 2 of 100).
+   5 of 100 (no silence left on a fresh km) and 3 of 100 taken from the finds (the trail feeding
+   6–13% less) were shown and not taken.
+3. **One pool for the whole forest, 4 : 3 : 2 : 1** — thyme, St John's wort, wormwood, pasque
+   flower; the depth does not enter. 8 : 4 : 2 : 1 (recommended) and 27 : 9 : 3 : 1 were shown.
+   A plant is found one at a time.
+4. **The cards describe the tinctures' effects** («Посилює захист і відновлює Снагу», «Очищає від
+   отрути…») before any tincture exists — the owner's pick over a plant-only text, knowing it.
+   Two of the owner's words were taken into the game's glossary: «буст» → «посилює захист»,
+   «витривалість» → «Снага».
+5. **Stackable materials, «🪨 Матеріали»; the trader buys none** until they have a use, as §15.
+
+### 16.3 How it plays
+
+- The step's line, the owner's sample: «🍃 Знахідка в траві — 🌿 Чебрець × 1.», and with a full
+  bag «… × 1, але сумка повна — доводиться лишити.» The plant is named after a dash because a
+  name is stored in the nominative only; 🍃 is prepended in Swift, never in the template.
+- It is its own `StepOutcome.herb`, not a `.loot`: its own line on the walk and its own count
+  («🍃 рослина») in the 🏕 report's events row. The bag (`pickUp`), the manor door's «Принесено:»
+  (`recordFinds` → `recordHaul`) and the 🏕 report's haul take it exactly as they take a find.
+- The fortune teller's `lootChanceMultiplier` moves the `loot` bucket against `nothing`, as
+  before; it does not reach the plants.
+
+### 16.4 Names
+
+| id | icon | uk | en | uk gender |
+|---|---|---|---|---|
+| `mat.herb_thyme` | 🌿 | Чебрець | Thyme | m |
+| `mat.herb_st_johns_wort` | 🌼 | Звіробій | St John's Wort | m |
+| `mat.herb_wormwood` | 🌱 | Полин | Wormwood | m |
+| `mat.herb_pasque_flower` | 🌸 | Сон-трава | Pasque Flower | f |
+
+### 16.5 The data and what checks it
+
+- `tuning/exploration.json`: `herb` in each of the three `weightTiers` rows and in
+  `passive.weights`. Optional in the DTO with a default of 0, like `silver`.
+- `zones.json`: a top-level `herbs` pool, weighted and ordered like a zone's `forage`; the weights
+  are the file's, not this document's. Optional too, an empty pool by default.
+- `ZoneCatalog.rollHerb` walks the pool through the same weighted pick as `rollForage` (one
+  function, `pick`); the forage replay was proven unchanged by it before the herb draws were
+  added (`spawns` held at `004c138c83fa9d1a`).
+- The validator: the herb weight counts in every row's sum to `eventWeightTotal`;
+  `zone.herb_unknown_item`, `zone.herb_weight_range`, a plant listed twice; `zone.herb_pool_empty`
+  (an error — a row rolls the event with nothing to find) and `zone.herb_unreachable` (a warning —
+  a pool no row can reach); the step's two lines and the report's label required in both
+  locales once the pool holds a plant.
+- `HerbTests` pins the owner's numbers on the shipped bundle and shows each rule failing on a
+  copy of the content broken on purpose, read back through the real loader.
+- The digest names both halves: the herb weight in `tuning` (mutation-checked: a fresh row at 4
+  moves `tuning` alone) and the pool in `spawns`, replayed once rather than per km (swapping two
+  weights moves `spawns` alone).
+
+### 16.6 What moved
+
+- Swift: `StepOutcome.herb`, the bucket in `rollStep`, `rollHerb`; the walk's line, the haul and
+  the 🏕 report's count; the DTOs, the snapshot, `ZoneCatalog`, the validator, the digest; schema
+  v31.
+- `spec opening` and `spec economy` unchanged byte for byte: the herb weight came out of
+  `nothing`, which neither reads. `simulate --strict`: 0 broken bands, 15 warnings, the pace to L40 151.1 / 144.3 / 136.4 days — the report byte-identical below its content line.
+- The digest: `records`, `tuning`, `spawns` and the content hash; `quests` and `king` held.
+- `validate --strict` 0 warnings; `swift test` 561, the eleven of `HerbTests` new.
+- Nothing is migrated. A v30 binary refuses the bundle at the handshake, so the Pi needs a build.

@@ -1317,6 +1317,21 @@ public enum ContentValidator {
             }
         }
 
+        // The herb event's lines (2026-11-05): the walk's step line
+        // (`ExplorationController.narrateOutcome`, picked and bag-full) and the
+        // 🏕 report's events row (`PassiveExpeditionService`, «🍃 рослина»).
+        // Required only once a plant can be found.
+        if !(bundle.zones?.herbs ?? []).isEmpty {
+            for key in ["exploration.outcome.herb.picked", "exploration.outcome.herb.full",
+                        "exploration.passive.outcome.herb"] {
+                for locale in locales.missing(key) {
+                    issues.append(.init(severity: .error, file: "\(locale).json", path: "herbs", id: nil,
+                                        rule: "locale.key.missing",
+                                        message: "missing key \"\(key)\""))
+                }
+            }
+        }
+
         // The palace card prints both of these for the ONE decree the player
         // is carrying (`CapitalController.renderPalaceBody`), so a missing key
         // is a raw `king.first_blood.name` shown to the player. Required only
@@ -1873,6 +1888,37 @@ public enum ContentValidator {
                                  collection: "\(path).forage")
         }
 
+        // The herb event's pool (2026-11-05, `spec-bestiary.md` §16) — one for
+        // the whole forest. Its weight lives in `tuning/exploration.json`, so
+        // the two halves are checked together, like silver and its table: a
+        // weight with no pool rolls an event that finds nothing, and a pool no
+        // row can reach is content nobody will ever see.
+        for (index, entry) in file.herbs.enumerated() {
+            let entryPath = "herbs[\(index)]"
+            if !knownItems.contains(entry.itemId) {
+                fail("\(entryPath).itemId", "zone.herb_unknown_item",
+                     "unknown item \"\(entry.itemId)\"")
+            }
+            if entry.weight <= 0 {
+                fail("\(entryPath).weight", "zone.herb_weight_range",
+                     "weight must be positive, found \(entry.weight) — a zero-weight plant can never be found")
+            }
+        }
+        issues += duplicates(file.herbs.map(\.itemId), file: name, collection: "herbs")
+        if let exploration = bundle.tuning?.exploration {
+            let herbWeighted = exploration.weightTiers.contains { $0.herb > 0 }
+                || exploration.passive.weights.herb > 0
+            if herbWeighted && file.herbs.allSatisfy({ $0.weight <= 0 }) {
+                fail("herbs", "zone.herb_pool_empty",
+                     "a weight row in exploration.json rolls the herb event, but the herb pool is empty — every such step would find nothing")
+            }
+            if !herbWeighted && !file.herbs.isEmpty {
+                fail("herbs", "zone.herb_unreachable",
+                     "the herb pool is filled but every weight row gives the herb event 0 — no plant can ever be found",
+                     .warning)
+            }
+        }
+
         // Coverage, walked to the deepest km any enemy can spawn at — the two
         // tables describe the same wilderness, so a band one covers and the
         // other does not is a hole in exactly one of them.
@@ -2392,10 +2438,10 @@ public enum ContentValidator {
                 require(row.priorVisits == index, file, path,
                         "tuning.exploration.tier_not_contiguous",
                         "expected priorVisits \(index), found \(row.priorVisits) — the tail row is the fallback for every higher and every negative count, so the run must be contiguous from 0")
-                checkWeights([row.nothing, row.loot, row.encounter, row.trip, row.silver], path)
+                checkWeights([row.nothing, row.loot, row.encounter, row.trip, row.silver, row.herb], path)
             }
             let pw = exploration.passive.weights
-            checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip, pw.silver], "passive.weights")
+            checkWeights([pw.nothing, pw.loot, pw.encounter, pw.trip, pw.silver, pw.herb], "passive.weights")
             // The governor turns for home below this share of his HP. At 0 he
             // never turns on wounds and walks on to his death; at 1 he turns on
             // the first scratch. Both are the rule switched off, not tuned.

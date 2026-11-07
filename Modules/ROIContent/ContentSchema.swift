@@ -178,5 +178,12 @@ public enum ContentSchema {
     /// with a bare `plot.build_cost_missing`; the handshake names the cause. A
     /// v29 bundle on a v30 binary would install an estate with no hazel and a
     /// slot table that hands slot 1 out to be built on — refused the same way.
-    public static let current: Int = 30
+    /// v31 (2026-11-05): a plant in the grass — the step gains a sixth event,
+    /// `herb`, weighted in every `weightTiers` row and in `passive.weights`,
+    /// and `zones.json` gains the pool it rolls from (`herbs`). Both decode as
+    /// optional, so a v30 binary would drop both keys, and its validator would
+    /// refuse every row with a bare `weights_dont_sum` (97 without the herb's
+    /// 3); the handshake names the cause instead. A v30 bundle on a v31 binary
+    /// is refused the same way; were it read, no plant would ever be found.
+    public static let current: Int = 31
 }

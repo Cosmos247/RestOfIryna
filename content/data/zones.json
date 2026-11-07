@@ -1,4 +1,22 @@
 {
+  "herbs" : [
+    {
+      "itemId" : "mat.herb_thyme",
+      "weight" : 4
+    },
+    {
+      "itemId" : "mat.herb_st_johns_wort",
+      "weight" : 3
+    },
+    {
+      "itemId" : "mat.herb_wormwood",
+      "weight" : 2
+    },
+    {
+      "itemId" : "mat.herb_pasque_flower",
+      "weight" : 1
+    }
+  ],
   "zones" : [
     {
       "depth" : {

@@ -919,6 +919,10 @@ public enum PassiveExpeditionService {
         case .loot(let itemId, let quantity, let taken):
             run.outcomeCounts["loot", default: 0] += 1
             tallyLoot(itemId, found: quantity, taken: taken, into: &run)
+        case .herb(let itemId, let quantity, let taken):
+            // Its own count in the events row, the same bag as a find.
+            run.outcomeCounts["herb", default: 0] += 1
+            tallyLoot(itemId, found: quantity, taken: taken, into: &run)
         case .encounterWon(let enemy, _, _, _, let drops):
             run.outcomeCounts["encounter_won", default: 0] += 1
             run.xpEarned += User.xpFromKill(enemy, playerLevel: playerLevel)
@@ -1099,7 +1103,7 @@ public enum PassiveExpeditionService {
             // "starvation" is a LEGACY bucket, kept only so reports written
             // before hunger got its own totals still render their tally. New
             // runs never write it — see the line below the row.
-            let outcomeOrder = ["nothing", "loot", "silver", "encounter_won", "encounter_lost", "trip", "starvation"]
+            let outcomeOrder = ["nothing", "loot", "herb", "silver", "encounter_won", "encounter_lost", "trip", "starvation"]
             var parts: [String] = []
             for key in outcomeOrder {
                 let count = report.outcomeCounts[key, default: 0]

@@ -11,7 +11,12 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-05)* **the kill trophies: five shared kinds beside meat and hide** — content + uk/en + one spec
+- *(this commit, 11-05)* **plants in the grass: a sixth step event** — Swift + content + uk/en + tests, content
+  schema v31, NOT deployed (a build and a restart; no migration): `StepOutcome.herb`, 3 of 100 in every weight row
+  taken from `nothing`, `zones.json` → `herbs` (🌿 Чебрець · 🌼 Звіробій · 🌱 Полин · 🌸 Сон-трава at 4:3:2:1),
+  «🍃 Знахідка в траві — …», the 🏕 report's «🍃 рослина»; `ZoneCatalog.rollHerb` through the forage roll's own
+  `pick`; five validator rules; the digest names the weight and the pool; `spec-bestiary.md` §16. 561 tests.
+- `7285cec` (11-05) **the kill trophies: five shared kinds beside meat and hide** — content + uk/en + one spec
   table + tests, NOT deployed (no schema bump, no migration; a restart, not a `/reload`): `mat.trophy_venom` 💧 ·
   `feather` 🪶 · `fang` 🦷 · `horn` 📯 · `claw` 🐾, one last loot row on each of the fourteen creatures, 5% from №1–4
   and 15% deeper, the rabid bear two; the trader buys none; `spec economy`'s `trophy` column; `spec-bestiary.md` §15.
@@ -1025,7 +1030,55 @@ died on `getMe` («Temporary failure in name resolution … api.telegram.org») 
 124 MB, which replaced the 09-25 dump, left in place — and pm2 started the same build again; `Bot identified` at
 17:57:41 by the synced clock. The same boot-time DNS shape as the 10-24 reboot.
 
-## Session — 2026-11-05, evening (the kill trophies: five shared kinds beside meat and hide) — *(this commit)*
+## Session — 2026-11-05, late evening (plants in the grass: a sixth step event) — *(this commit)*
+
+**Asked** («Закомітимо потім. Зараз я хочу також додати подію знахідки рослини. Ці рослини будуть для варіння
+настоянок разом з трофеями… Запропонуй мені варіант реалізації»). **Offered:** its own step event, as the coins under a
+root were (a code change, schema v31), against plants inside the forage pools (data only, but each plant takes a
+material's or a food's place — berries, nuts, potato and egg are foraged too — and §13's «clay the rarest» bounds a
+rare plant); the weight 3 of 100 from «тиша» (no material, food or fight moves), 5 from «тиша» (no silence left on a
+fresh km) or 3 from the finds (the trail 6–13% thinner). **The owner:** its own event, 3 of 100 from «тиша».
+
+**The list** (most common first, with descriptions): 🌿 Чебрець, 🌼 Звіробій, 🌱 Полин, 🌸 Сон-трава, and «Запропонуй
+мені вірогідність випадіння кожної». Shown: one pool for the forest at 8:4:2:1 (recommended), 4:3:2:1 or 27:9:3:1, each
+as a share and «once every N steps»; the cards plant-only until the tinctures (recommended) or with the effects; 🍃 for
+the step's line, 🌿 being the thyme's. **The owner:** **4:3:2:1** (≈ once every 83 / 111 / 167 / 333 steps) and **the
+effects on the cards**. Then the plan with the line «🍃 Знахідка в траві — 🌸 Сон-трава × 1.» (the name after a dash,
+nominative only), its bag-full twin, and two of the owner's words taken into the glossary — «буст» → «посилює захист»,
+«витривалість» → «Снагу»: **«Так, починай будувати.»**
+
+**Built:**
+- `StepOutcome.herb(itemId:quantity:taken:)`, the bucket in `rollStep` between silver and the encounter, `rollHerb` —
+  one plant through `pickUp`; the walk's line (`narrateOutcome`, 🍃 prepended in Swift), the haul (`recordFinds`), the
+  🏕 report's count and its «🍃 рослина» label, its haul through `tallyLoot`.
+- The DTOs: `herb` on both weight rows and `herbs` on `ZoneFileDTO`, all optional; the snapshot's `herbs`;
+  `ZoneCatalog.rollHerb(using:)` and the private `pick` both rolls share — proven by `spawns` holding at
+  `004c138c83fa9d1a` after the refactor, before the herb draws were added.
+- The validator: `herb` in every row's sum; `zone.herb_unknown_item`, `zone.herb_weight_range`, the duplicate rule,
+  `zone.herb_pool_empty` (error), `zone.herb_unreachable` (warning); the three lines required in both locales once the
+  pool holds a plant. The digest: `/h` in the weights fingerprint, the pool replayed once in `spawns`, herb ids in the
+  live lookups. Schema v31.
+- Data: `herb` 3 in the three tiers and the passive row (`nothing` 5→2, 8→5, 75→72, 25→22); `zones.json` → `herbs`
+  at 4/3/2/1; four materials `mat.herb_*` after the trophies; uk/en names, descriptions, uk genders (m/m/m/f), the two
+  step lines and the label.
+- `HerbTests` (11): the owner's numbers; an empty pool, an unreachable pool, a row that no longer sums, an unknown, a
+  zero-weight and a twice-listed plant and a missing line each failing on a copy of the content written to a temporary
+  directory and read back through the loader; a row without `herb` decoding as 0.
+- Docs: `spec-bestiary.md` §16, `content/lore.md` §7 / §9, `.memory/game-core.md`, `content-pipeline.md`,
+  `INDEX.md`, `file-map.md`, `status.md`, `live-ops.md` (a FAQ row), `TODO.md` (a walk block), `Prompt.md`.
+
+**Checked:** `validate --strict` 0 warnings (schema v31, 39 items); 561 tests; `spec opening` and `spec economy`
+byte-identical; `simulate --strict` 0 broken bands, 15 warnings, the pace to L40 151.1 / 144.3 / 136.4 days — the report byte-identical below its content line; the templates carry no supplementary-plane emoji before `%{}`.
+The digest — `records 15714e2d229a3bd0 → a61d17b50d9b965c`, `tuning c0380e692986ba04 → 3f1b3b14b94825c9`, `spawns
+004c138c83fa9d1a → fcd0d9e62756e83c`, content hash `b8d95888 → 7d66e65b`, COMBINED `5bd9e0c91fe8770d →
+8a65aa3e7d303208`; `quests` and `king` held. Mutation-checked on a scratch copy of the content: the fresh row's herb at 4
+moves `tuning` alone; two plants' weights swapped move `spawns` alone. The replay's 200 draws: thyme 82, St John's wort
+62, wormwood 32, pasque flower 24.
+
+**Not live:** a pull, a build on the Pi (the v30 binary refuses v31 content at the handshake), the digest pre-flight,
+then a restart — never a `/reload` first.
+
+## Session — 2026-11-05, evening (the kill trophies: five shared kinds beside meat and hide) — `7285cec`
 
 **Asked** («Я хочу додати дроп з мобів окрім шкіри та мʼяса… яд змії, перо беркута та ріг і клик… Рішення для
 предметів… пізніше, поки головне додати дроп»): more drop ideas, and which creature drops what.

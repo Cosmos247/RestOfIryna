@@ -7,8 +7,9 @@
     "retreatBelowHpPercent" : 0.5,
     "weights" : {
       "encounter" : 20,
+      "herb" : 3,
       "loot" : 43,
-      "nothing" : 25,
+      "nothing" : 22,
       "silver" : 2,
       "trip" : 10
     },
@@ -36,24 +37,27 @@
   "weightTiers" : [
     {
       "encounter" : 40,
+      "herb" : 3,
       "loot" : 48,
-      "nothing" : 5,
+      "nothing" : 2,
       "priorVisits" : 0,
       "silver" : 2,
       "trip" : 5
     },
     {
       "encounter" : 52,
+      "herb" : 3,
       "loot" : 33,
-      "nothing" : 8,
+      "nothing" : 5,
       "priorVisits" : 1,
       "silver" : 2,
       "trip" : 5
     },
     {
       "encounter" : 0,
+      "herb" : 3,
       "loot" : 23,
-      "nothing" : 75,
+      "nothing" : 72,
       "priorVisits" : 2,
       "silver" : 2,
       "trip" : 0

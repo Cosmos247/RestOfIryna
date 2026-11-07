@@ -81,7 +81,29 @@ public enum ZoneCatalog {
     /// cannot execute different selection logic.
     public static func rollForage<G: RandomNumberGenerator>(atDepth kmDepth: Int,
                                                             using generator: inout G) -> String? {
-        guard let pool = zone(forDepth: kmDepth)?.forage, !pool.isEmpty else { return nil }
+        guard let pool = zone(forDepth: kmDepth)?.forage else { return nil }
+        return pick(from: pool, using: &generator)
+    }
+
+    /// Weighted plant for a step's herb event (2026-11-05, `spec-bestiary.md`
+    /// §16): one pool for the whole forest, so the depth does not enter. Nil
+    /// when the pool is empty — the validator refuses weights that roll the
+    /// event with nothing to find.
+    public static func rollHerb() -> String? {
+        var generator = SystemRandomNumberGenerator()
+        return rollHerb(using: &generator)
+    }
+
+    /// Seedable variant — the digest replays this one too.
+    public static func rollHerb<G: RandomNumberGenerator>(using generator: inout G) -> String? {
+        pick(from: Catalogs.current.herbs, using: &generator)
+    }
+
+    /// The one weighted walk both pools roll through: declaration order, each
+    /// weight subtracted in turn, so a reordered pool changes every seeded draw.
+    private static func pick<G: RandomNumberGenerator>(from pool: [ForageEntry],
+                                                        using generator: inout G) -> String? {
+        guard !pool.isEmpty else { return nil }
         let total = pool.reduce(0) { $0 + max(0, $1.weight) }
         guard total > 0 else { return nil }
         var roll = Int.random(in: 1...total, using: &generator)

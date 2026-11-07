@@ -596,7 +596,7 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
     private static func recordFinds(_ outcome: StepOutcome, on state: ExplorationState) {
         state.recordHaul { haul in
             switch outcome {
-            case .loot(let itemId, _, let taken):
+            case .loot(let itemId, _, let taken), .herb(let itemId, _, let taken):
                 haul.take(itemId, quantity: taken)
             case .silver(let amount):
                 haul.findSilver(amount)
@@ -1004,6 +1004,18 @@ final class ExplorationController: TGControllerBase, @unchecked Sendable {
             } else {
                 return Self.lootLine(label: label, found: quantity, taken: taken, lingo: lingo, locale: locale)
             }
+
+        case .herb(let itemId, let quantity, let taken):
+            // The owner's line (2026-11-05): «🍃 Знахідка в траві — 🌿 Чебрець × 1.»
+            // The plant is named after a dash because a name is stored in the
+            // nominative only. 🍃 is prepended here, never in the template —
+            // U+1F343 is two UTF-16 units, and Lingo drops every `%{}` after one.
+            let label = itemLabelWithIcon(itemId, lingo: lingo, locale: locale)
+            let key = taken > 0 ? "exploration.outcome.herb.picked" : "exploration.outcome.herb.full"
+            return "🍃 " + lingo.localize(key, locale: locale, interpolations: [
+                "item": label,
+                "qty": "\(taken > 0 ? taken : quantity)"
+            ])
 
         case .trip(let hpLost):
             // Leading 🦵 is prepended here (post-interpolation) because Lingo

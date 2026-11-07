@@ -297,6 +297,38 @@
       "type" : "material"
     },
     {
+      "icon" : "🌿",
+      "id" : "mat.herb_thyme",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🌼",
+      "id" : "mat.herb_st_johns_wort",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🌱",
+      "id" : "mat.herb_wormwood",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
+      "icon" : "🌸",
+      "id" : "mat.herb_pasque_flower",
+      "rarity" : "common",
+      "stackable" : true,
+      "tier" : 1,
+      "type" : "material"
+    },
+    {
       "descriptionKey" : null,
       "effects" : [
         {

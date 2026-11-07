@@ -69,15 +69,22 @@ public struct ZoneDTO: Codable, Sendable, Equatable {
 /// Top-level shape of `zones.json`.
 public struct ZoneFileDTO: Codable, Sendable {
     public let zones: [ZoneDTO]
+    /// The plants a step's herb event picks from (2026-11-05, `spec-bestiary.md`
+    /// §16): one pool for the whole forest, weights relative, the order part of
+    /// the contract exactly as in a zone's `forage`. Absent means none — and
+    /// the validator refuses a bundle whose weights roll the event anyway.
+    public let herbs: [ForageEntryDTO]
 
-    public init(zones: [ZoneDTO] = []) {
+    public init(zones: [ZoneDTO] = [], herbs: [ForageEntryDTO] = []) {
         self.zones = zones
+        self.herbs = herbs
     }
 
-    private enum CodingKeys: String, CodingKey { case zones }
+    private enum CodingKeys: String, CodingKey { case zones, herbs }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         zones = try c.decode([ZoneDTO].self, forKey: .zones)
+        herbs = try c.decodeIfPresent([ForageEntryDTO].self, forKey: .herbs) ?? []
     }
 }

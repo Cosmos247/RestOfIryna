@@ -404,6 +404,14 @@ enum ContentDigest {
                 counts["forage:\(found)", default: 0] += 1
             }
         }
+        // The herb pool on the same principle (2026-11-05): one pool for the
+        // whole forest, so it is replayed once rather than per km — a reordered
+        // or reweighted plant list moves `spawns` like a forage pool does.
+        for _ in 0..<drawsPerDepth {
+            let found = ZoneCatalog.rollHerb(using: &rng) ?? "-"
+            spawns.combine("herb:\(found)")
+            counts["herb:\(found)", default: 0] += 1
+        }
         let spawnDigest = spawns.hexDigest
 
         digest.combine(tuningDigest)
@@ -552,6 +560,9 @@ enum ContentDigest {
                 problems.append("enemy \(enemy.id) loot \(drop.itemId) does not resolve")
             }
         }
+        for entry in Catalogs.current.herbs where ItemCatalog.find(entry.itemId) == nil {
+            problems.append("herb \(entry.itemId) does not resolve")
+        }
         for item in ItemCatalog.all {
             if ItemCatalog.find(item.id) == nil {
                 problems.append("item \(item.id) does not resolve through find()")
@@ -596,7 +607,7 @@ enum ContentDigest {
         }
 
         if problems.isEmpty {
-            print("live lookups: ✅ every recipe input/output, loot id, starter recipe, unlock rung and starter weapon resolves through the façades")
+            print("live lookups: ✅ every recipe input/output, loot id, herb, starter recipe, unlock rung and starter weapon resolves through the façades")
             print("plot sweeper: ✅ derivation reproduces both shipped cadences (60s → 60s, 3600s → 300s)")
         } else {
             print("live lookups: ❌ \(problems.count) problem(s)")
@@ -1093,7 +1104,7 @@ enum ContentDigest {
     }
 
     private static func fingerprint(_ w: ExplorationService.EventWeights) -> String {
-        "n\(w.nothing)/l\(w.loot)/e\(w.encounter)/t\(w.trip)/s\(w.silver)"
+        "n\(w.nothing)/l\(w.loot)/e\(w.encounter)/t\(w.trip)/s\(w.silver)/h\(w.herb)"
     }
 
     // MARK: - Field-complete fingerprints

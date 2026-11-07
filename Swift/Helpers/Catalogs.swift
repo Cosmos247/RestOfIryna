@@ -104,6 +104,9 @@ final class DomainContent: Sendable {
     /// the hazel); read only through `PlotCatalog.isGranted`.
     let plotGranted: Set<PlotType>
     let zones: [Zone]
+    /// The herb event's one pool (`zones.json` → `herbs`), declaration order
+    /// kept — the roll walks it like a zone's forage.
+    let herbs: [ForageEntry]
 
     let fortuneDrawPrice: Int
     let fortuneDispelPrice: Int
@@ -317,6 +320,7 @@ final class DomainContent: Sendable {
                  beyondHorizon: dto.beyondHorizon,
                  forage: dto.forage.map { ForageEntry(itemId: $0.itemId, weight: $0.weight) })
         }
+        self.herbs = (content.zones?.herbs ?? []).map { ForageEntry(itemId: $0.itemId, weight: $0.weight) }
 
         self.fortuneDrawPrice = fortune.drawPrice
         self.fortuneDispelPrice = fortune.dispelPrice

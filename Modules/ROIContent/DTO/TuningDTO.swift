@@ -836,19 +836,25 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
     /// the bucket can be switched off by deleting the key rather than by
     /// editing five rows to zero.
     public let silver: Int
+    /// A plant in the grass (2026-11-05, `spec-bestiary.md` §16) — rolled from
+    /// `zones.json` → `herbs`. Optional with a default of 0 for the same
+    /// reason as `silver`; its shipped weight came out of `nothing`, so the
+    /// trail's materials and food are untouched.
+    public let herb: Int
 
     public init(priorVisits: Int, nothing: Int, loot: Int, encounter: Int, trip: Int,
-                silver: Int = 0) {
+                silver: Int = 0, herb: Int = 0) {
         self.priorVisits = priorVisits
         self.nothing = nothing
         self.loot = loot
         self.encounter = encounter
         self.trip = trip
         self.silver = silver
+        self.herb = herb
     }
 
     private enum CodingKeys: String, CodingKey {
-        case priorVisits, nothing, loot, encounter, trip, silver
+        case priorVisits, nothing, loot, encounter, trip, silver, herb
     }
 
     public init(from decoder: any Decoder) throws {
@@ -859,6 +865,7 @@ public struct EventWeightTierDTO: Codable, Sendable, Equatable {
         encounter   = try c.decode(Int.self, forKey: .encounter)
         trip        = try c.decode(Int.self, forKey: .trip)
         silver      = try c.decodeIfPresent(Int.self, forKey: .silver) ?? 0
+        herb        = try c.decodeIfPresent(Int.self, forKey: .herb) ?? 0
     }
 }
 
@@ -873,16 +880,19 @@ public struct EventWeightsDTO: Codable, Sendable, Equatable {
     public let trip: Int
     /// See `EventWeightTierDTO.silver`.
     public let silver: Int
+    /// See `EventWeightTierDTO.herb`.
+    public let herb: Int
 
-    public init(nothing: Int, loot: Int, encounter: Int, trip: Int, silver: Int = 0) {
+    public init(nothing: Int, loot: Int, encounter: Int, trip: Int, silver: Int = 0, herb: Int = 0) {
         self.nothing = nothing
         self.loot = loot
         self.encounter = encounter
         self.trip = trip
         self.silver = silver
+        self.herb = herb
     }
 
-    private enum CodingKeys: String, CodingKey { case nothing, loot, encounter, trip, silver }
+    private enum CodingKeys: String, CodingKey { case nothing, loot, encounter, trip, silver, herb }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -891,6 +901,7 @@ public struct EventWeightsDTO: Codable, Sendable, Equatable {
         encounter = try c.decode(Int.self, forKey: .encounter)
         trip      = try c.decode(Int.self, forKey: .trip)
         silver    = try c.decodeIfPresent(Int.self, forKey: .silver) ?? 0
+        herb      = try c.decodeIfPresent(Int.self, forKey: .herb) ?? 0
     }
 }
 
