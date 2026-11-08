@@ -2154,14 +2154,14 @@ task-ready, Vigor-reward, tarot and weapon blocks, the 2026-10-03 quest-board bl
 2026-10-03 arena blocks, the estate block and the 2026-10-02 tier-2 block — at the 2026-10-06
 21:39 restart; the six 2026-09-27/28 blocks under them at the 2026-09-28 22:11 restart. Since
 2026-10-07 real newcomers walk the opening every day; their screens are not this list's blocks.
-**The blocks added 2026-10-24 → 10-31 (the autumn road down to a plot's cost) went live at the 2026-10-31 02:01
+**The four blocks added 2026-11-05 → 11-07 went live at the 2026-11-07 21:16 restart** (`11d16bb`, schema v32; `AddSleepWard` and `AddVigorThrift`
+verified on the table). **The blocks added 2026-10-24 → 10-31 (the autumn road down to a plot's cost) went live at the 2026-10-31 02:01
 restart** (`20f5681`, schema v29; the holiday's three migrations verified on the tables). **The twelve
 2026-10-20/23 blocks under them went live at the 2026-10-23 22:46 restart** (`7ac11f0`, schema v25; `AddExplorationHaul` verified on the table). **The four
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
-**Added 2026-11-07 — every discard is asked (NOT live — Swift + uk/en, no migration, the digest unchanged; ships with the
-tinctures' build and restart). The players' ask, the owner's pick: every item, both bags. `swift test` does not reach `BagCard`,
+**Added 2026-11-07 — every discard is asked (LIVE since the 2026-11-07 21:16 restart — Swift + uk/en, no migration, the digest unchanged). The players' ask, the owner's pick: every item, both bags. `swift test` does not reach `BagCard`,
 so this block is the only proof:**
 - [ ] A stack of 6: «🗑 Викинути 1» → «🥔 Картопля — викинути 1? Повернути не вийде.», nothing gone yet; «🔙 Назад» → the card, still
       6; «🗑 Так, викинути» → the card reading 5, «🗑 Викинути всі (5)», and the banner «🗑 Викинуто: 🥔 Картопля × 1».
@@ -2171,10 +2171,9 @@ so this block is the only proof:**
 - [ ] A taken job's berries: the ⚠️ under the question. While the governor is out: the bag's modal, no question.
 - [ ] A card left in chat from before the restart: its «🗑 Викинути 1» asks, it does not throw away.
 
-**Added 2026-11-07 — the fortune teller's tinctures (NOT live — Swift + content schema v32 + uk/en + `AddSleepWard`; the same
-build and restart as the plants below). `content/spec/spec-tinctures.md`. `swift test` reaches none of the brew, the drink or the
-wipe, so this block is the only proof. The test bot is up on `4bdfb78` since 2026-11-07 19:03, both migrations ran on `roi_test`,
-and the developer account holds all five tinctures. Try it there first:**
+**Added 2026-11-07 — the fortune teller's tinctures (LIVE since the 2026-11-07 21:16 restart — Swift + content schema v32 + uk/en + `AddSleepWard`). `content/spec/spec-tinctures.md`. `swift test` reaches none of the brew, the drink or the
+wipe, so this block is the only proof. The test bot last ran `4bdfb78` (stopped since 19:03), both migrations ran on `roi_test`,
+and the developer account holds all five tinctures there:**
 - [ ] `/content` reads schema v32, hash `b6cb33a2`, 42 items, 19 recipes; `users.sleep_ward` and `users.vigor_thrift_percent` exist
       after the boot.
 - [ ] The capital → «🏘 Поділ»: the caption ends «…за таємничим пророцтвом або настоянкою.»
@@ -2203,8 +2202,8 @@ and the developer account holds all five tinctures. Try it there first:**
       ward is gone.
 - [ ] The forest edge shows no armour warning under the ward. The market takes a tincture and its card prints the share.
 
-**Added 2026-11-05, late evening — plants in the grass (NOT live — Swift + content schema v31 + uk/en + tests, no
-migration; a BUILD and a restart on the Pi, shipped with the trophies below). `spec-bestiary.md` §16. Try it on the test
+**Added 2026-11-05, late evening — plants in the grass (LIVE since the 2026-11-07 21:16 restart — Swift + content schema v31 + uk/en + tests, no
+migration). `spec-bestiary.md` §16. Try it on the test
 bot first:**
 - [ ] `/content`: see the tinctures block above (they ship together).
 - [ ] Walk fresh km: about one step in 33 reads «🍃 Знахідка в траві — 🌿 Чебрець × 1.» — thyme the commonest, pasque
@@ -2216,8 +2215,7 @@ bot first:**
       sell list does not show them; the warehouse takes them.
 - [ ] The bag and the warehouse read «🧪 Настоянки», not «Зілля» (2026-11-07, uk/en, the same restart).
 
-**Added 2026-11-05, evening — the kill trophies (NOT live — content + uk/en + tests, no migration; it ships with a
-restart, never a `/reload` first: Lingo is not reloaded, so the five would show by their raw keys). `spec-bestiary.md`
+**Added 2026-11-05, evening — the kill trophies (LIVE since the 2026-11-07 21:16 restart — content + uk/en + tests, no migration). `spec-bestiary.md`
 §15. Try it on the test bot first:**
 - [ ] `/content`: see the plants block above (they ship together).
 - [ ] Win fights at km 1–7: about one viper in twenty leaves «✨ Знайдено 💧 Отрута × 1.», about one eagle in twenty «✨ Знайдено

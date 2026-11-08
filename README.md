@@ -788,7 +788,7 @@ card, `266d28e`, went with it):
 - for the developer: `/news` sends one message — text or a photo, copied as written — to every registered player, any
   time and without a restart, after showing it back and asking «Надіслати N гравцям?» (2026-11-04).
 
-**Built 2026-11-05 → 11-07, not deployed yet** (content schema v32 with the binary and two migrations):
+**Live since 2026-11-07 21:16** (`11d16bb`, content schema v32 with the binary and two migrations):
 - every creature the forest spawns drops one of five shared trophies beside its meat and hide: 💧 venom, 🪶 feather, 🦷 fang,
   📯 horn, 🐾 claw, 5% from the four nearest creatures and 15% deeper (`content/spec/spec-bestiary.md` §15).
 - a step can turn up a plant, 3 steps in 100 anywhere in the forest: 🌿 thyme, 🌼 St John's wort, 🌱 wormwood, 🌸 pasque

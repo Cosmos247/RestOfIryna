@@ -21,13 +21,13 @@ numbers below. Current state:
 | 6 | Item stat budget, rarity ladder, sets with a second `recomputeBonuses` pass, gear HP, enchant as % of the item's own budget *(the armour's ladder since 2026-10-06)*; the 7 shipped items and 3 ladders regenerated |
 | 7 | `/reload` + `/content` hot swap, gated by `LiveReferenceCheck` over ten content-id columns |
 
-**2026-11-07 — every discard is asked** (Swift + uk/en, NOT live — the tinctures' build and restart; no migration, the digest
+**2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
 викинути 1? Повернути не вийде.» with a taken job's ⚠️; the yes, `drop1ok:<id>:<held>`, takes one unit only while the bag holds what
 the question saw, so a double tap costs nothing. `BagCard`, its one implementation.
 
 **2026-11-07 — the fortune teller's tinctures, and «зілля» retired** (Swift + content schema **v32** + uk/en + lore +
-`AddSleepWard`, NOT live — the same build and restart as the plants; `spec-tinctures.md`). «🧪 Настоянки» on her screen, in both
+`AddSleepWard`, LIVE since the 2026-11-07 21:16 restart; `spec-tinctures.md`). «🧪 Настоянки» on her screen, in both
 its states, opens five recipes in the same message: Мала 1× 🌼 + 1× 💧, ❤️ +25%, 10 🪙; Середня 2× 🌼 + 1× 💧, ❤️ +50%, 30 🪙; Чебрецю
 2× 🌿 + 1× 🦷, 🍖 +30%, 15 🪙; Міцна 3× 🌿 + 1× 🌱 + 1× 🪶, 🍖 +30% and every Vigor cost halved for an hour, 30 🪙 (`AddVigorThrift`); Сонна
 1× 🌸 + 1× 📯, a death leaves the bag, to the door or the first death, 40 🪙. A card counts the
@@ -35,13 +35,13 @@ bag alone and offers «📌 У нотатник»; `TinctureService.brew` is one
 none. Her intro and Podil's caption name them. The bag's and the warehouse's 🧪 category reads «Настоянки» (en Tinctures); the
 code keeps `potion`. 585 tests, none of which reach the brew, the drink or the wipe.
 
-**2026-11-05, late evening — plants in the grass** (Swift + content + uk/en + tests, content schema **v31**, NOT live —
-a build and a restart; `spec-bestiary.md` §16). A sixth step event: 3 steps of 100 in every weight row, taken from
+**2026-11-05, late evening — plants in the grass** (Swift + content + uk/en + tests, content schema **v31**, LIVE since the 2026-11-07 21:16 restart;
+`spec-bestiary.md` §16). A sixth step event: 3 steps of 100 in every weight row, taken from
 «тиша», so materials, food and fights are unchanged; one pool for the whole forest — 🌿 Чебрець, 🌼 Звіробій, 🌱 Полин,
 🌸 Сон-трава at 4 : 3 : 2 : 1, one at a time. «🍃 Знахідка в траві — 🌿 Чебрець × 1.»; «🪨 Матеріали»; the trader buys
 none; the cards describe what the tinctures do (the owner's pick); the fortune teller brews them since 2026-11-07. `HerbTests`.
 
-**2026-11-05, evening — the kill trophies** (content + uk/en + tests, NOT live — a restart ships it, not a `/reload`;
+**2026-11-05, evening — the kill trophies** (content + uk/en + tests, LIVE since the 2026-11-07 21:16 restart;
 `spec-bestiary.md` §15). Every creature the forest spawns drops one of five shared trophies beside its meat and hide —
 💧 Отрута (viper), 🪶 Перо (eagle), 🦷 Ікло (boars, fox, wolves), 📯 Ріг (moose, stag, bison, aurochs), 🐾 Кіготь (lynx,
 both bears) — 5% from №1–4, 15% deeper, the rabid bear two, as the LAST loot row. Ordinary stackable materials: the
@@ -89,7 +89,7 @@ the green one is `873e426`.
 restart; no content change, no migration). The bag's lists are names («Name × N»; gear one per row, the worn ending in ✔️), and every
 action moved onto the item's card, drawn over the list: the description, what a dish restores, «🎒 У сумці: N», a taken
 job's ⚠️ (`QuestWarning`, shared with the trader), «🍴 Зʼїсти» and ONE many-portion button — «До повної снаги (N)» /
-«Зʼїсти всі (N)», counted by `MealMath` and asked again on the tap — then «🗑 Викинути 1» (at once; asked once the 2026-11-07 change goes live) and «🗑 Викинути всі
+«Зʼїсти всі (N)», counted by `MealMath` and asked again on the tap — then «🗑 Викинути 1» (at once until the 2026-11-07 21:16 restart, asked since) and «🗑 Викинути всі
 (N)» (asked). Raw food: «🔥 Це інгредієнт», no eat. Gear: the card in place with its own Одягнути / Зняти, «(рівень
 N)», and never a discard. Step 2 (afternoon): the trail bag is ONE list — food, then materials — with the same card (`BagCard`, shared by
 both bags), discard included in the forest; every unit a card takes out is netted out of «Принесено»

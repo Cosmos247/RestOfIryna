@@ -1,8 +1,7 @@
 # Tinctures — the fortune teller's cauldron (2026-11-07)
 
 **Status: DECIDED and BUILT 2026-11-07, `4bdfb78`.** Swift, content, locales and two migrations (`AddSleepWard`, `AddVigorThrift`),
-content schema **v32**, not deployed; the owner walked part of it on the test bot the same day. It ships with a build and a restart, never a `/reload` first: a v31 binary refuses v32
-content, and names are Lingo's.
+content schema **v32**, live since the 2026-11-07 21:16 restart; the owner walked part of it on the test bot the same day.
 
 ## 1. What was asked
 

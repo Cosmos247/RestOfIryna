@@ -11,7 +11,9 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-07)* **the tinctures' button reads «🧪 Випити», and `ee5d45b`'s hash fill** — uk/en, one key, NOT deployed (no migration,
+- *(this commit, 11-07)* **the 21:16 deploy record, and `11d16bb`'s hash fill** — records only: everything from `75eb348` to `11d16bb`
+  went live at the 2026-11-07 21:16:11 restart (the `## Deploy —` entry below).
+- `11d16bb` (11-07) **the tinctures' button reads «🧪 Випити», and `ee5d45b`'s hash fill** — uk/en, one key, LIVE 11-07 21:16 (no migration,
   the digest unchanged): `inventory.action.potion`. «Відвар» shown and declined, «настоянка» and «варить» stand. Records: the testers' list, how
   Міцна's −50% lands after rounding (`spec-tinctures.md`). 585 tests.
 - `ee5d45b` (11-07) **every discard is asked, and `d545af9`'s hash fill** — Swift + uk/en, NOT deployed (no migration, the digest
@@ -900,6 +902,10 @@ Moved here from `Prompt.md` on 2026-10-09, word for word: every superseded `--co
 baseline, newest first, with what moved it. The current baseline is kept in `Prompt.md` alone;
 what each restart carried is its `## Deploy —` entry below.
 
+**The baseline the Pi ran from 2026-11-05 13:28 to 2026-11-07 21:16 (`46437bf`, schema v30):** `records 4f4dcf860af8605f` · `tuning
+c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king e3a492be1b017e81`, content hash `95421568` (COMBINED
+`d0b897ae80619502`). The trophies, the plants and the tinctures moved `records`, `tuning` and `spawns`.
+
 **The baseline the Pi ran from 2026-11-01 17:21 to 2026-11-05 13:28 (`b04bef3`, schema v29):** `records
 207c959cf4807072` · `tuning c0380e692986ba04` · `spawns 004c138c83fa9d1a` · `quests 30de20902006e3b9` · `king
 e3a492be1b017e81`, content hash `1ac5a7bc` (COMBINED `0f31c3b586671117`). The hazel (`29f38c5`, schema v30) moved `records` and the
@@ -1023,10 +1029,30 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-07, late (the testers' list; Міцна's real costs; the drink button) — *(this commit)*
+## Deploy — 2026-11-07 21:16 (`46437bf` → `11d16bb`) — the trophies, the plants, the tinctures, every discard asked
+
+On the owner's word («Запушив, задеплой на Пай і перезапусти бота»). **The push** was the owner's: `origin/main` = `11d16bb`, seven commits past
+`46437bf`. **The Mac:** HEAD = `origin/main`, a clean tree, the digest at HEAD. **Before the restart**, on the Pi (small `SELECT`s, credentials
+from its `.env`): 84 migrations, the newest `PlantHazel`, 50 users, none of the three new columns, 2 walk rows and nobody in a fight, 1 on the road.
+On the Pi: `git pull --ff-only` to `11d16bb`, a detached debug build polled from a second connection (`pgrep -x swift-build`): 146.69 s, no
+`error:`, 42 warnings, none in `BagCard`, `TinctureService` or `VigorService`. **Pre-flight**, the new binary on the new content, matched the Mac in
+all 72 lines: schema v32, hash `b6cb33a2`, `records 0b18fadaface5fa8`, `tuning 3f1b3b14b94825c9`, `spawns fcd0d9e62756e83c`, `quests
+30de20902006e3b9`, `king e3a492be1b017e81`, COMBINED `c725c286799bc344`. **Restart** at 21:16:11, plain `pm2 restart ROI`, then `pm2 save`; `pm2
+env 0` still holds `ROI_PROJECT_PATH`; pm2 restarts 3. The boot: `Content loaded: schema v32 … hash b6cb33a2`, `AddSleepWard` and `AddVigorThrift`
+prepared at 21:16:12, `Bot identified as @ROfIr_bot`, Hummingbird listening at 21:16:20; the error log holds only the swift-backtrace notice. 12 ×
+`403 bot was blocked by the user` from the restart notice, the same count as 11-05. **The TABLE:** `sleep_ward` boolean NOT NULL default false,
+`vigor_thrift_percent` bigint NOT NULL default 0, `vigor_thrift_until` timestamptz nullable; 50 users, no NULL in either required column, no ward
+up, no hour running; `_fluent_migrations` 86, ending `AddVigorThrift`. **Alive:** two `fight_log` rows written after the boot, the last at 21:16:39,
+which only a handled tap can write; no new `[WATCHDOG]` line.
+
+**What the checks taught.** `[ROUTE]` counts races, not updates, so its 0 proves nothing about the poll loop: a new row in a player's table does.
+BSD `sed` on the Mac has no `\|`: a filtered digest comparison came back empty and read as a difference, so the second comparison ran in Python
+over the raw files. `is_passive` is not a column of `exploration_state`, whatever the model's `isPassive` reads.
+
+## Session — 2026-11-07, late (the testers' list; Міцна's real costs; the drink button) — `11d16bb`
 
 **The testers' list** («Напише мені список незадеплоєних змін дл тесувальників»): read off `46437bf..ee5d45b` and the Pi (its checkout at
-`46437bf`, online since 11-05 13:28), written as one Telegram-ready message of 3,581 UTF-16 units and published as a private page with a
+`46437bf`, online since 11-05 13:28), written as one Telegram-ready message of 3,540 UTF-16 units and published as a private page with a
 copy button (https://claude.ai/artifact/RdfvcU1YykuRHtfNwiipQb). Nothing else in the tree. Checked while writing it: only Мала, Середня and Чебрецю refuse at a full pool, Міцна
 starts its hour at a full pool and Сонна restores nothing; the old heal potions had no source in content, so no player holds one.
 
