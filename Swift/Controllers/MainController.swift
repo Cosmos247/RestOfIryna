@@ -403,11 +403,11 @@ final class MainController: TGControllerBase, @unchecked Sendable {
             ? try await PlotService.nextPlotNumber(for: context.session, on: context.db) : 1
         // A hired wagon rides to town with the player (2026-11-08), so the
         // Master's and the fortune teller's notes count its cargo beside the bag
-        // while the hire runs — what their cards will count when the player
+        // while it is with them — what their cards will count when the player
         // gets there.
         var wagon: [String: Int] = [:]
         if let userId = context.session.id,
-           let status = try await WagonService.status(for: context.session, on: context.db), status.running {
+           let status = try await WagonService.status(for: context.session, on: context.db), status.ridesAlong {
             for pile in try await WagonService.cargo(for: userId, on: context.db) { wagon[pile.itemId, default: 0] += pile.quantity }
         }
         let screen = RecipeNoteDisplay.screen(notes: notes, user: context.session, stock: stock, wagon: wagon,
@@ -876,6 +876,12 @@ extension MainController {
         // main hub when they answer — forward to the ArenaController.
         if data.hasPrefix("arena:") {
             return try await ArenaController.onCallbackQuery(context: context)
+        }
+        // «🐎 Верхи» / «🫏 З возом» at the estate's door (2026-11-08): the player
+        // may be on any router when they answer.
+        if data.hasPrefix(CapitalController.roadCallbackPrefix) {
+            try await CapitalController.onRoadCallback(data, query: query, message: message, context: context)
+            return true
         }
         // A holiday's «🩸 Взяти флягу» under the palace's reveal (2026-10-30).
         // Taken wherever it is tapped while the manor is open, so it is claimed

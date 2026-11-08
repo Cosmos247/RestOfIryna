@@ -2161,14 +2161,23 @@ restart** (`20f5681`, schema v29; the holiday's three migrations verified on the
 blocks under them** (the 2026-10-17 wealth board, welcome and leaderboard pages, and the 2026-10-13
 barrier) went live at the 2026-10-17 17:40 restart.
 
+**Added 2026-11-08, later — the estate's door asks «🐎 Верхи» or «🫏 З возом» (NOT LIVE; Swift + uk/en + `AddWagonLeftHome`; `spec-wagon.md` §2.11). `swift test` reaches only `WagonMath`, so this block is the proof:**
+- [ ] Hire running, «Столиця» at the estate: «🐎 Дорога до столиці», «🫏 Віз: N/200 · ще …», the two lines and [🐎 Верхи · 2хв] [🫏 З возом · 3хв], an empty wagon too. Without a hire, or at a hire that ran out: straight on the road, as before.
+- [ ] «🐎 Верхи»: the buttons go, «Прибуття за 2хв», no «Позаду торохтить». In town the trader, the Master, the fortune teller, a delivery job and a trade see the bag alone; the bag and the profile read «… · чекає вдома». Home in 2хв.
+- [ ] «🫏 З возом»: «Прибуття за 3хв» with «🫏 Позаду торохтить віз: N/200.», the cargo counts in town, home in 3хв, no question in town.
+- [ ] A hire bought in town rides home in 3хв. A longer hire bought while the wagon waits at home leaves it there («чекає вдома» stays).
+- [ ] Back home on horseback, «чекає вдома» is gone, the warehouse's wagon screens work, and the next «Столиця» asks again. A turn-back on either road returns as long as was ridden.
+- [ ] A question left in chat: tapped from the road, the forest or town it starts nothing and draws where the player is; «Столиця» twice leaves one question; a button of the main menu removes it (asked from the estate's or the bag's screen it can stay in chat). Opened Settings with the question still there: its button starts the trip.
+- [ ] A running hire ending while the wagon waits at home: the usual notice, the cargo in the warehouse, and a new hire in town starts beside the player.
+
 **Added 2026-11-08 — the stable's wagon «🫏 Віз» (COMMITTED, NOT LIVE; Swift + content schema v33 `stable.json` + uk/en + `CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`). `content/spec/spec-wagon.md`. `swift test` reaches the arithmetic and the validator only — none of the screens, the hire, the moves, the capital's second store or the end of a hire — so this block is the only proof:**
 - [ ] Поділ shows a third row «🐎 Стайня»; the stable reads the carter's line, «🫏 Віз — 200 місць під матеріали…» and four buttons
       «🫏 1 год · 100 🪙» «🫏 3 год · 190 🪙» / «🫏 1 день · 670 🪙» «🫏 7 днів · 2160 🪙», then «🔙 До столиці».
 - [ ] A length asks «🫏 Найняти віз на 1 год за 100 срібників?», the terms and «✅ 🪙 Срібло (have/100)»; «❌ Ні» returns; «✅ Найняти»
       takes 100 🪙, redraws «🫏 Віз ваш ще 59хв · на возі 0/200» and posts «🫏 Віз найнято на 1 год · −100 🪙». Short of silver: the modal.
 - [ ] Hired again while it runs: the buttons read «🫏 +1 год · …», the question «…ще на 1 год…», and the time adds to the end.
-- [ ] Road home and back: «🫏 Позаду торохтить віз: N/200.» under every road card (setting out, «скільки лишилось», a turn-back);
-      the crossing reads «Прибуття за 3хв» while the hire runs (2хв without one); a turn-back after a minute comes back in a minute.
+- [ ] Road home and back with the wagon: «🫏 Позаду торохтить віз: N/200.» under every road card (setting out, «скільки лишилось», a turn-back);
+      the crossing reads «Прибуття за 3хв» while it rides along (2хв without it); a turn-back after a minute comes back in a minute.
 - [ ] Anything the warehouse takes goes on the wagon: food and tinctures through a card like materials; a piece of gear as its own
       button «⬆️ 🫏 🦺 … +1 40/50» / «⬇️ 📦 …», and it comes back as worn and as enchanted as it went; the class weapon never shows.
 - [ ] Home → 🏠 Дім → 📦 Склад: «🫏 Віз: 0/200 · ще …» and «🫏 Віз (0/200)»; its list «🪵 … · 📦 N / 🫏 M»; a card loads with «⬆️ 🫏 1» /
@@ -2177,7 +2186,7 @@ barrier) went live at the 2026-10-17 17:40 restart.
       a purchase past the bag lands on the wagon; past both, «Сумка й віз повні…».
 - [ ] In town: the Master's enchant and lesson cards, the fortune teller's tincture card and a delivery job count bag + wagon and take the
       bag first; the Базар's sell list and the guild vault's deposit list include the wagon's materials; a trade offers them.
-- [ ] The bag: «🫏 Віз: N/200» under the header and «🫏 Віз (N/200)» opening a read-only list; the profile's «🫏 Віз: N/200 · ще …».
+- [ ] The bag: «🫏 Віз: N/200 · ще …» under the header and «🫏 Віз (N/200)» opening a read-only list; the profile's «🫏 Віз: N/200 · ще …».
 - [ ] The forest: the wagon stays home — a death leaves it whole; the warehouse's wagon buttons refuse while the walk or the 🏕 run lasts.
 - [ ] The end of a hire (hire 1 год and wait, or shorten `ends_at` on `roi_test`): «🫏 Оренда воза скінчилась. Візник відвіз на склад N
       одиниць.», with a full warehouse «… N не вмістились — лежать на возі…»; the remainder moves in once room is made; the wagon

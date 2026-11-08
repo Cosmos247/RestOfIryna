@@ -83,7 +83,7 @@ Modules/                          # Content pipeline (Foundation-only — no Flu
                                   #       `swift run -c release roi-content simulate [--strict]`
                                   #       `swift run roi-content spec <table>`  (the spec tables)
 
-Tests/ROIContentTests/            # 597 tests; fast, since Fluent/Postgres/Telegram are out of this graph
+Tests/ROIContentTests/            # 599 tests; fast, since Fluent/Postgres/Telegram are out of this graph
 
 content/data/                     # SOURCE OF TRUTH for game content
 ├── manifest.json                 # schemaVersion · contentVersion
@@ -148,7 +148,7 @@ RestOfIryna/
 │   │   ├── LearnedRecipe.swift   # Phase 5.2.1 — Fluent model: per-user scroll-learned-recipe set (user_id, recipe_id, learned_at). has/add/allIds helpers; always-available starters live in RecipeCatalog.starterRecipeIds, not here
 │   │   ├── RecipeNote.swift      # 2026-10-10 — `recipe_notes`: a price card pinned to the journal, as `kind · ref · target` (the THING, never a row — the enchant's is the piece + the level, since a warehouse trip re-creates the row); `Kind` and `Key` are the card ↔ note identity. Never a copy of the price
 │   │   ├── TrainingGroundCatalog.swift # 2026-09-27 — façade over `training_ground.json`; a level's player-level floor is its technique's `combat.json` row
-│   │   ├── Wagon.swift # 2026-11-08 — the hired wagon (`wagons`) and its cargo (`wagon_cargo`); where it is follows from the player
+│   │   ├── Wagon.swift # 2026-11-08 — the hired wagon (`wagons`) and its cargo (`wagon_cargo`); where it is follows from the player, unless they rode off without it
 │   │   ├── WagonCatalog.swift # 2026-11-08 — façade over `stable.json`'s wagon: its places and its lengths
 │   │   ├── TreasuryCatalog.swift # 2026-10-11 — façade over `treasury.json`: what zlatnyks buy, in list order; a `TreasuryKind` is the code that carries an entry out
 │   │   ├── ZlatnykPurchase.swift # 2026-10-11 — one row per Treasury purchase, written in the purchase's own transaction; history, not in `LiveReferenceQuery`
@@ -189,6 +189,7 @@ RestOfIryna/
 │   │   ├── AddExplorationHaul.swift # 2026-10-23 — nullable `haul` on `exploration_state`: what an active walk put in the bag (`ExpeditionHaul` JSON), named at the manor door; no row touched
 │   │   ├── AddTravelCrossing.swift # 2026-11-08 — each trip stamps its crossing (3 min with a hired wagon), which a turn-back reads
 │   │   ├── AddWagonCargoGear.swift # 2026-11-08 — the wagon's cargo carries a piece's tier, wear and enchant; one row per copy
+│   │   ├── AddWagonLeftHome.swift # 2026-11-08 — the player rode off without the wagon, which waits at home
 │   │   ├── CreateWagons.swift # 2026-11-08 — `wagons` and `wagon_cargo`, two new tables; listed in `WipeForRebalance.playerTables`, the cargo in `LiveReferenceQuery`
 │   │   ├── CreateZlatnykPurchases.swift # 2026-10-11 — `zlatnyk_purchases`, the Treasury's purchase log (who, what, price, what it did, the balance after); a new table, listed in `WipeForRebalance.playerTables`
 │   │   ├── CreateEventBlood.swift # 2026-10-29 — `event_blood`, one row per player per holiday; listed in `WipeForRebalance.playerTables`
@@ -810,10 +811,11 @@ card, `266d28e`, went with it):
 - every discard asks first, one unit and a lone unit included: «🥔 Картопля — викинути 1? Повернути не вийде.» (2026-11-07, the
   players' ask).
 
-**Built, NOT live** (committed 2026-11-08, content schema v33 with the binary and three migrations — a Pi build and a restart):
+**Built, NOT live** (committed 2026-11-08, content schema v33 with the binary and four migrations — a Pi build and a restart):
 - «🐎 Стайня» on Поділ hires a **wagon** («🫏 Віз») for 1 hour / 3 hours / 1 day / 7 days at 100 / 190 / 670 / 2160 silver: 200
-  places for anything the warehouse takes (gear a copy at a time, with its wear; never the class weapon). It rides with the player
-  — a crossing takes 3 minutes with it — and waits in the yard during a walk. At home it is loaded and unloaded at the warehouse; in
+  places for anything the warehouse takes (gear a copy at a time, with its wear; never the class weapon). Leaving the estate the player
+  chooses: on horseback in 2 minutes with the wagon left at home and its cargo out of reach in town, or with it in 3; the answer holds
+  both ways. It waits in the yard during a walk. At home it is loaded and unloaded at the warehouse; in
   town the trader, the Master, the fortune teller, the jobs, the market, the guild vault and a trade take from the bag first and
   the wagon for the rest. An ended hire sends the cargo to the warehouse (`content/spec/spec-wagon.md`).
 

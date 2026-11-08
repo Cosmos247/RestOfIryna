@@ -21,6 +21,19 @@ import Foundation
 
 public enum WagonMath {
 
+    /// The wagon is with the player: its hire runs and they did not ride off
+    /// without it (§2.11). The one test behind the road, the town and a job's
+    /// count, so none of them can disagree about where the wagon is.
+    public static func ridesAlong(running: Bool, leftHome: Bool) -> Bool {
+        running && !leftHome
+    }
+
+    /// A crossing: the wagon's slower road when it rides along, never shorter
+    /// than the road's own (§2.9). Without it the road is the road.
+    public static func crossing(road: TimeInterval, wagon: TimeInterval, ridesAlong: Bool) -> TimeInterval {
+        ridesAlong ? Swift.max(road, wagon) : road
+    }
+
     /// Where a hire of `seconds` ends: a running hire grows by it, one that has
     /// run out starts again from `now`.
     public static func end(after current: Date?, now: Date, adding seconds: TimeInterval) -> Date {

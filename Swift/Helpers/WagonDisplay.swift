@@ -33,17 +33,21 @@ enum WagonDisplay {
         return lingo.localize("wagon.length.minutes", locale: locale, interpolations: ["n": "\(minutes)"])
     }
 
-    /// «🫏 Віз: 150/200 · ще 2год 41хв», or «· оренда скінчилась» once the hire
-    /// has run out with cargo still on it.
+    /// «🫏 Віз: 150/200 · ще 2год 41хв», with «· чекає вдома» while the player
+    /// is away without it, or «· оренда скінчилась» once the hire has run out
+    /// with cargo still on it.
     static func statusLine(_ status: WagonService.Status, lingo: Lingo, locale: String, now: Date = Date()) -> String {
         let load = lingo.localize("wagon.status.line", locale: locale, interpolations: [
             "used": "\(status.used)", "cap": "\(status.capacity)"
         ])
-        let tail = status.running
+        var tail = status.running
             ? lingo.localize("wagon.status.left", locale: locale, interpolations: [
                 "time": Countdown.format(status.secondsLeft(now: now), lingo: lingo, locale: locale)
             ])
             : lingo.localize("wagon.status.ended", locale: locale)
+        if status.running, status.leftHome {
+            tail += " · " + lingo.localize("wagon.status.left_home", locale: locale)
+        }
         return "\(icon) \(load) · \(tail)"
     }
 

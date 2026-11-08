@@ -369,7 +369,15 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
 
     // MARK: - Travel start helpers
 
+    /// A running hire makes the door a question (2026-11-08, `spec-wagon.md`
+    /// §2.11), empty wagon included: an empty one in town takes what the bag
+    /// cannot. Dead players go straight to `beginTrip`, which refuses them.
     private func startTripToCapital(context: Context) async throws {
+        if context.session.hp > 0,
+           let wagon = try await WagonService.status(for: context.session, on: context.db), wagon.running {
+            try await askTheRoad(wagon: wagon, context: context)
+            return
+        }
         try await Self.beginTrip(destination: .capital, context: context)
     }
 
@@ -383,11 +391,12 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
     /// maps every StartFailure to a user-facing banner. Used by
     /// `showCapital`, `onLeave`, and `EstateController.showEstate` (when
     /// the player is in capital and taps Estate).
-    static func beginTrip(destination: TravelDestination, context: Context) async throws {
+    static func beginTrip(destination: TravelDestination, leavingWagon: Bool = false, context: Context) async throws {
         do {
             let state = try await TravelService.start(
                 for: context.session,
                 destination: destination,
+                leavingWagon: leavingWagon,
                 on: context.db,
                 bot: context.bot,
                 lingo: context.lingo
@@ -500,11 +509,11 @@ final class CapitalController: TGControllerBase, @unchecked Sendable {
         try await Self.sendRoadCard(context: context, text: text)
     }
 
-    /// «🫏 Позаду торохтить віз: 150/200.» under every road card while the hire
-    /// runs (2026-11-08, `spec-wagon.md` §4) — the wagon rides with the player.
-    /// Empty when there is none, so a trip without one reads as it always did.
+    /// «🫏 Позаду торохтить віз: 150/200.» under every road card while the
+    /// wagon rides with the player (2026-11-08, `spec-wagon.md` §4). Empty when
+    /// there is none or it stayed at home, so such a trip reads as it always did.
     static func wagonRoadLine(context: Context) async throws -> String {
-        guard let status = try await WagonService.status(for: context.session, on: context.db), status.running else {
+        guard let status = try await WagonService.status(for: context.session, on: context.db), status.ridesAlong else {
             return ""
         }
         return "\n\(WagonDisplay.icon) " + context.lingo.localize("travel.wagon_behind", locale: context.session.locale,

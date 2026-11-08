@@ -305,8 +305,8 @@ public enum QuestService {
         }
     }
 
-    /// The bag, and a hired wagon's cargo while its hire runs (2026-11-08,
-    /// `spec-wagon.md` §3.4): the wagon rides to the NPC with the player, so the
+    /// The bag, and a hired wagon's cargo while it is with the player (2026-11-08,
+    /// `spec-wagon.md` §3.4, §2.11): it rides to the NPC with them, so the
     /// board, the watchman's «ready» and the turn-in count one number.
     private static func carried(_ itemIds: [String], user: User, on db: any Database) async throws -> Int {
         guard let userId = user.id else { return 0 }

@@ -29,7 +29,7 @@ public struct StableFileDTO: Codable, Sendable, Equatable {
 public struct WagonDTO: Codable, Sendable, Equatable {
     /// Places, in units — the bag's own accounting.
     public let capacity: Int
-    /// A crossing between the estate and the capital while the hire runs, in
+    /// A crossing between the estate and the capital while the wagon rides along, in
     /// game minutes — never shorter than the road's own `travelMinutes`.
     public let travelMinutes: Int
     /// The rental lengths, shortest first.

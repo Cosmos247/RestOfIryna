@@ -16,7 +16,7 @@ public enum WagonCatalog {
     /// Places, in units.
     public static var capacity: Int { Catalogs.current.wagonCapacity }
 
-    /// A crossing's game minutes while the hire runs (`stable.json` → `travelMinutes`).
+    /// A crossing's game minutes while the wagon rides along (`stable.json` → `travelMinutes`).
     public static var travelMinutes: Int { Catalogs.current.wagonTravelMinutes }
 
     /// Wall-clock seconds of a crossing with the wagon, compressed by

@@ -20,6 +20,9 @@
 //  `/reload` that moved the length or its price between the question and the
 //  tap redraws the stable and takes nothing.
 //
+//  The question at the estate's door lives here too (§2.11): while a hire runs,
+//  «🐎 Верхи» or «🫏 З возом» decides whether the wagon comes along.
+//
 
 import Fluent
 import Foundation
@@ -27,6 +30,68 @@ import Foundation
 import SwiftTelegramBot
 
 extension CapitalController {
+
+    // MARK: - The road from the estate
+
+    static let roadCallbackPrefix = "road:"
+    private static let roadOnHorseback = "road:horse"
+    private static let roadWithWagon = "road:wagon"
+
+    /// The question at the estate's door (§2.11). It takes the picker's place,
+    /// so asking twice leaves one and the main menu's buttons delete it. Asked
+    /// from the estate's or the bag's screen it can stay in chat, which is why
+    /// `onRoadCallback` asks the state again.
+    func askTheRoad(wagon: WagonService.Status, context: Context) async throws {
+        await dismissPendingPicker(context: context)
+        let screen = roadQuestion(wagon: wagon, lingo: context.lingo, locale: context.session.locale)
+        let sent = try await context.bot.sendMessage(params: TGSendMessageParams(
+            chatId: .chat(context.session.telegramId),
+            text: screen.text,
+            parseMode: .html,
+            replyMarkup: .inlineKeyboardMarkup(TGInlineKeyboardMarkup(inlineKeyboard: screen.rows))
+        ))
+        await EphemeralChatState.shared.setPicker(telegramId: context.session.telegramId, messageId: sent.messageId)
+    }
+
+    /// The question's text and buttons — no database, so a rehearsal reads the
+    /// screen exactly as a player will. Both times are printed from the data.
+    func roadQuestion(wagon: WagonService.Status, lingo: Lingo, locale: String,
+                      now: Date = Date()) -> (text: String, rows: [[TGInlineKeyboardButton]]) {
+        let road = TravelService.travelSeconds
+        let horse = Countdown.format(Int(road), lingo: lingo, locale: locale)
+        let cart = Countdown.format(Int(WagonMath.crossing(road: road, wagon: WagonCatalog.travelSeconds, ridesAlong: true)),
+                                    lingo: lingo, locale: locale)
+        let text = [
+            "🐎 <b>\(lingo.localize("travel.choice.title", locale: locale))</b>",
+            "",
+            WagonDisplay.statusLine(wagon, lingo: lingo, locale: locale, now: now),
+            "",
+            lingo.localize("travel.choice.horse", locale: locale, interpolations: ["time": horse]),
+            lingo.localize("travel.choice.wagon", locale: locale, interpolations: ["time": cart])
+        ].joined(separator: "\n")
+        let horseLabel = "🐎 " + lingo.localize("travel.choice.button.horse", locale: locale, interpolations: ["time": horse])
+        let cartLabel = WagonDisplay.icon + " " + lingo.localize("travel.choice.button.wagon", locale: locale, interpolations: ["time": cart])
+        return (text, [[TGInlineKeyboardButton(text: horseLabel, callbackData: Self.roadOnHorseback),
+                        TGInlineKeyboardButton(text: cartLabel, callbackData: Self.roadWithWagon)]])
+    }
+
+    /// The answer, wherever it is tapped: it arrives through
+    /// `MainController.onCallbackQuery`, by name from Settings, which deletes
+    /// what it does not know. The buttons go first, then the state is asked
+    /// again: a question left in chat can be answered from the road, the forest
+    /// or town, and `showCapital` draws whichever of those it is.
+    static func onRoadCallback(_ data: String, query: TGCallbackQuery, message: TGMaybeInaccessibleMessage,
+                               context: Context) async throws {
+        _ = try? await context.bot.answerCallbackQuery(params: TGAnswerCallbackQueryParams(callbackQueryId: query.id))
+        _ = await EphemeralChatState.shared.takePicker(telegramId: context.session.telegramId)
+        _ = try? await context.bot.editMessageReplyMarkup(params: TGEditMessageReplyMarkupParams(
+            chatId: .chat(message.chat.id), messageId: message.messageId))
+        guard try await WagonService.isHome(context.session, on: context.db) else {
+            try await Controllers.capitalController.showCapital(context: context)
+            return
+        }
+        try await beginTrip(destination: .capital, leavingWagon: data == roadOnHorseback, context: context)
+    }
 
     // MARK: - The place
 

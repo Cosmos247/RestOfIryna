@@ -3,10 +3,11 @@
 **Status: DECIDED and BUILT 2026-11-08 (committed, not deployed).** The owner signed the draft off («Так»)
 the same day. §2 holds the owner's decisions from the session's quizzes; §3 is what the sign-off
 approved; §3.7 is what the build decided on its own. Amended the same evening on the test bot (§2.9,
-§2.10): the road with a wagon takes 3 minutes, and anything the warehouse takes rides on it. Content
-schema **v33** (`stable.json`), three migrations (`CreateWagons` — two new tables; `AddTravelCrossing`
-and `AddWagonCargoGear` — columns only; no row rewritten). Not live until the Pi is rebuilt and
-restarted.
+§2.10): the road with a wagon takes 3 minutes, and anything the warehouse takes rides on it. Amended
+again the same day (§2.11): the estate's door asks whether the wagon comes along. Content
+schema **v33** (`stable.json`), four migrations (`CreateWagons` — two new tables; `AddTravelCrossing`,
+`AddWagonCargoGear` and `AddWagonLeftHome` — columns only; no row rewritten). Not live until the Pi is
+rebuilt and restarted.
 
 ## 1. What was asked
 
@@ -60,7 +61,8 @@ A crossing with the wagon: **3 min** (2 min without it).
    warehouse and never read the wagon. That covers the estate and bag upgrades, plots, workshop,
    kitchen and Training Ground. «Так, як у Столиці» was shown and not taken.
 9. **A crossing with the wagon takes 3 minutes, not 2** (the owner on the test bot: «Віз повинен
-   їхати не 2хвилини, а 3»). Every trip set out while the hire runs, empty or loaded. The crossing is
+   їхати не 2хвилини, а 3»). Every trip the wagon rides on, empty or loaded (*amended by §2.11:* it no
+   longer rides on every trip while the hire runs). The crossing is
    stamped on the trip (`travel_state.crossing_seconds`), so a hire that ends on the way changes
    nothing and a turn-back is measured against the trip's own road — `TravelService.turnBack` read the
    global two minutes until then. `stable.json` → `travelMinutes`; the validator refuses a wagon
@@ -69,6 +71,17 @@ A crossing with the wagon: **3 min** (2 min without it).
    матеріали»): food, tinctures, artifacts and gear as well. The class weapon stays with the player,
    as at the warehouse. A piece of gear carries its own tier, wear and enchant — the cargo has the
    warehouse's four `GearState` columns — and moves one copy at a time.
+11. **The estate's door asks** (the owner, on «Найнятий віз сповільнює кожну поїздку до 3 хвилин навіть
+   порожнім, і повернути його достроково не можна»). While a hire runs, «Столиця» at the estate asks
+   «🐎 Верхи · 2хв» or «🫏 З возом · 3хв», an empty wagon included: an empty one in town takes what the
+   bag cannot.
+   - **On horseback the wagon stays at home** and its cargo is out of reach in town: the trader, the
+     Master, the fortune teller and the jobs see the bag alone (`wagons.left_home`,
+     `WagonMath.ridesAlong`). Shown and not taken: the cargo reachable anyway, which leaves nobody a
+     reason to take 3 minutes.
+   - **The answer holds both ways, and the capital asks nothing.** Rode out → 2 min home; came with
+     the wagon, or hired it in town → 3 min home. Shown and not taken: asking in town too and leaving
+     the wagon by the stable.
 
 ## 3. How it plays (proposed — the sign-off approves this)
 
@@ -85,11 +98,14 @@ A crossing with the wagon: **3 min** (2 min without it).
 
 ### 3.2 Where the wagon is
 
-- **With the player** — on the road, in the capital and at the estate.
+- **With the player** — on the road, in the capital and at the estate, unless they rode off without
+  it (§2.11).
 - **In the yard while the player is in the forest**, on a walk or a 🏕 run. The wagon's screen at
   home refuses while an expedition row stands, like every `estate:wh:` button.
+- **In the yard while the player is away on horseback** (§2.11). A longer hire bought in town leaves it
+  there; a new hire, after the old one ran out, starts beside the player at the stable.
 - **Unreachable on the road.** No place on the road reads it.
-- **It slows the road** to 3 minutes a crossing (§2.9), stamped on the trip.
+- **It slows the road** to 3 minutes a crossing when it rides along (§2.9, §2.11), stamped on the trip.
 
 ### 3.3 At home
 
@@ -137,7 +153,7 @@ One fit check predicts both stores, in units, using the writer's own arithmetic 
 **Counting.** Every number a card shows counts both stores.
 - A `RequirementLine` for 26 hides, with 10 in the bag and 30 on the wagon, reads «(40/26)».
 - The trader's rows show the split: «🪵 Сосновий брус · 🎒 4 · 🫏 100 · 🪙 2».
-- The bag screen's header gains «🫏 Віз: 150/200» and a button to the wagon's list. In town that
+- The bag screen's header gains «🫏 Віз: 150/200 · ще 2год 41хв» (the time since §2.11) and a button to the wagon's list. In town that
   list is read-only.
 
 A sale from the wagon goes through the same funnels as one from the bag, so the jobs, «Оптовий
@@ -171,7 +187,9 @@ place in town:** the Master's repair and enchant and a trade's gear name the bag
 - **The bag's «🫏 Віз» list is read-only at home too**, not only in town. The bag is answered by
   its own router, and the main router deletes a message whose button it does not know, so the
   warehouse's move buttons cannot live on the bag's screen. The moves stay at the warehouse (§3.3).
-- **A delivery job counts a running wagon wherever the player is.** It rides to the NPC with them,
+- **A delivery job counts a running wagon wherever the player is, unless they are away without it**
+  (§2.11: a wagon left at home counts for nothing at the NPC, so a «ready» told at home does not hold
+  for a player who then rides out without it). It rides to the NPC with them,
   so the board, the watchman's «ready» and the turn-in agree; the turn-in drains it in town only.
   The Master's and the fortune teller's journal notes count it the same way.
 - **The capital's refusals name both stores** when the wagon took part: «Сумка й віз повні — вільно
@@ -199,12 +217,12 @@ place in town:** the Master's repair and enchant and a trade's gear name the bag
 | the stable, while hired | «🫏 Віз ваш ще 2год 41хв · на возі 150/200» |
 | the question | «🫏 Найняти віз на 1 день за 670 срібників?» · «Він їздить з вами між маєтком і столицею й везе все, що бере склад, — дорога з ним 3хв замість 2хв. У ліс не йде — чекає на подвір'ї.» *(amended)* · «   ✅ 🪙 Срібло  (2946/670)» · [✅ Найняти] [❌ Ні] |
 | the banner | «🫏 Віз найнято на 1 день · −670 🪙» |
-| the road card, under the 🐎 line | «🫏 Позаду торохтить віз: 150/200.» |
+| the estate's door (§2.11) | «🐎 <b>Дорога до столиці</b>» · «🫏 Віз: 150/200 · ще 2год 41хв» · «Верхи — 2хв. Віз чекатиме вдома, вантаж у столиці буде недоступний.» · «З возом — 3хв. Вантаж їде з вами.» · [🐎 Верхи · 2хв] [🫏 З возом · 3хв] |
+| the road card, under the 🐎 line, when it rides along | «🫏 Позаду торохтить віз: 150/200.» |
 | the warehouse | «🫏 Віз: 150/200 · ще 2год 41хв» · button «🫏 Віз (150/200)» |
 | the wagon's card, at home | «📦 На складі: 110 · 🫏 На возі: 100 (вільно 50)» · «⬆️ 🫏 1» «⬆️ Усі (50)» «⬆️ ✏️» / «⬇️ 📦 1» «⬇️ Усі (100)» «⬇️ ✏️» · «📦 Розвантажити все» |
 | the trader's rows | «🪵 Сосновий брус · 🎒 4 · 🫏 100 · 🪙 2» |
-| the bag's header | «🫏 Віз: 150/200» |
-| the profile | «🫏 Віз: 150/200 · ще 2год 41хв» |
+| the bag's header and the profile | «🫏 Віз: 150/200 · ще 2год 41хв», away without it «… · чекає вдома» (§2.11) |
 | the end of the rental | «🫏 Оренда воза скінчилась. Візник відвіз на склад 120 одиниць.» + «30 не вмістились — лежать на возі, доки на складі не звільниться місце.» |
 
 Grammar notes:
@@ -274,6 +292,8 @@ the last 7 days.
   - The cargo: `item_id`, `quantity` and, since §2.10, the four `GearState` columns
     (`AddWagonCargoGear`, which also drops the one-row-per-item constraint).
   - `travel_state.crossing_seconds` (`AddTravelCrossing`, §2.9).
+  - `wagons.left_home` (`AddWagonLeftHome`, §2.11): written at every departure from the estate,
+    cleared on landing there.
   - `wagon_cargo.item_id` goes into `LiveReferenceQuery`, and both tables into
     `WipeForRebalance.playerTables`.
 - **`WagonService`**: hire and extend, load and unload, and the end. Each capital service named in

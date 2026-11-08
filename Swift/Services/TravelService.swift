@@ -34,11 +34,12 @@ public enum TravelService {
 
     /// The crossing a trip set out now would take: the road's own, or the
     /// slower one while a hired wagon rides along (2026-11-08, the owner:
-    /// three minutes, not two — `stable.json` → `travelMinutes`).
+    /// three minutes, not two — `stable.json` → `travelMinutes`). A wagon left
+    /// at home slows nothing.
     public static func crossingSeconds(for user: User, on db: any Database, now: Date = Date()) async throws -> TimeInterval {
-        guard let userId = user.id, let wagon = try await WagonService.wagon(for: userId, on: db),
-              wagon.isRunning(at: now) else { return travelSeconds }
-        return max(travelSeconds, WagonCatalog.travelSeconds)
+        guard let userId = user.id, let wagon = try await WagonService.wagon(for: userId, on: db) else { return travelSeconds }
+        return WagonMath.crossing(road: travelSeconds, wagon: WagonCatalog.travelSeconds,
+                                  ridesAlong: WagonMath.ridesAlong(running: wagon.isRunning(at: now), leftHome: wagon.leftHome))
     }
 
     // MARK: - Start
@@ -60,10 +61,14 @@ public enum TravelService {
     /// Since Phase 8E it does not, so the guard locked a starving player out of
     /// the capital — the Trader's food, and the jobs and decrees that pay Vigor
     /// — and, once there, kept them from coming home.
+    ///
+    /// `leavingWagon` is the answer at the estate's door («🐎 Верхи», §2.11).
+    /// It decides both legs: the way back from town reads what it wrote.
     @discardableResult
     public static func start(
         for user: User,
         destination: TravelDestination,
+        leavingWagon: Bool = false,
         on db: any Database,
         bot: TGBot,
         lingo: Lingo
@@ -79,7 +84,12 @@ public enum TravelService {
         if user.location == destination.rawValue { throw StartFailure.alreadyAtDestination }
 
         let now = Date()
-        // Stamped on the row: the wagon's slower road while its hire runs.
+        // Written at every departure from the estate, so a mark that outlived
+        // its trip cannot decide this one.
+        if destination == .capital, let userId = user.id {
+            try await WagonService.setLeftHome(leavingWagon, userId: userId, on: db)
+        }
+        // Stamped on the row: the wagon's slower road while it rides along.
         let crossing = try await crossingSeconds(for: user, on: db, now: now)
         let endsAt = now.addingTimeInterval(crossing)
         let state = try await TravelState.begin(for: user, destination: destination, endsAt: endsAt,
@@ -243,6 +253,8 @@ public enum TravelService {
         // whatever it accrued.
         if destination == .estate {
             _ = try? await HealingService.beginResting(user, on: db)
+            // Home, beside a wagon that waited: the mark has done its work.
+            if let userId = user.id { try? await WagonService.setLeftHome(false, userId: userId, on: db) }
         }
 
         // Push the arrival notification — single user-facing message that

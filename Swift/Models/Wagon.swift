@@ -12,9 +12,10 @@
 //  its own `GearState` — a piece that rode on the wagon comes off it as worn and
 //  as enchanted as it went on.
 //
-//  Where the wagon IS is never stored: it rides with the player on the road and
-//  in town and waits in the yard while they are in the forest (§3.2), so the
-//  player's own location answers the question. `WagonService` owns every rule.
+//  Where the wagon IS follows the player, with one exception the player chooses:
+//  it rides with them on the road and in town and waits in the yard while they
+//  are in the forest (§3.2), unless they rode off without it (`leftHome`, §2.11).
+//  `WagonService` owns every rule.
 //
 
 import Fluent
@@ -39,6 +40,12 @@ final public class Wagon: Model, @unchecked Sendable {
     @OptionalField(key: "settled_end")
     public var settledEnd: Date?
 
+    /// The player rode off from the estate without it («🐎 Верхи», §2.11): it
+    /// waits at home, and neither the road nor the town reads it. Written at
+    /// every departure from the estate, cleared on landing there.
+    @Field(key: "left_home")
+    public var leftHome: Bool
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -51,9 +58,10 @@ final public class Wagon: Model, @unchecked Sendable {
         self.$user.id = userID
         self.endsAt = endsAt
         self.settledEnd = nil
+        self.leftHome = false
     }
 
-    /// True while the hire runs: the wagon follows the player and takes cargo.
+    /// True while the hire runs: the wagon takes cargo and may ride along.
     public func isRunning(at now: Date = Date()) -> Bool {
         endsAt > now
     }

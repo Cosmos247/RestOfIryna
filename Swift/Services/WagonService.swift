@@ -12,11 +12,13 @@
 //  moves between the warehouse and the wagon one copy at a time.
 //
 //  Where it is follows from where the player is (§3.2): with them on the road
-//  and in town while the hire runs, in the estate's yard otherwise. So:
+//  and in town while the hire runs, in the estate's yard otherwise — and in the
+//  yard too when they rode off without it («🐎 Верхи», `Wagon.leftHome`, §2.11;
+//  `WagonMath.ridesAlong` is the one test). So:
 //  - in town, every place that takes from the bag also takes from the wagon,
 //    and every place that puts an item into the bag puts the rest onto it —
 //    the bag first, the wagon for the rest, all or nothing (`WagonMath`). That
-//    holds only while the hire runs (`inTown`);
+//    holds only while it is there (`inTown`);
 //  - at home the wagon trades with the warehouse alone (`load` / `unload`), and
 //    no estate service reads it: it is unloaded first (§2.8);
 //  - when the hire ends, the watchman takes the cargo into the warehouse up to
@@ -74,7 +76,11 @@ public enum WagonService {
         public let running: Bool
         public let used: Int
         public let capacity: Int
+        /// The player rode off without it (§2.11).
+        public let leftHome: Bool
 
+        /// The wagon is with the player, wherever that is.
+        public var ridesAlong: Bool { WagonMath.ridesAlong(running: running, leftHome: leftHome) }
         public var free: Int { max(0, capacity - used) }
         public func secondsLeft(now: Date = Date()) -> Int { max(0, Int(endsAt.timeIntervalSince(now).rounded())) }
     }
@@ -84,17 +90,28 @@ public enum WagonService {
         let used = try await used(for: userId, on: db)
         let running = wagon.isRunning(at: now)
         guard running || used > 0 else { return nil }
-        return Status(endsAt: wagon.endsAt, running: running, used: used, capacity: WagonCatalog.capacity)
+        return Status(endsAt: wagon.endsAt, running: running, used: used, capacity: WagonCatalog.capacity,
+                      leftHome: wagon.leftHome)
     }
 
     /// The wagon is in town with the player: they stand in the capital, not on
-    /// the road, and the hire runs. The one condition every capital place asks
-    /// before it counts or touches the wagon.
+    /// the road, the hire runs and they brought it. The one condition every
+    /// capital place asks before it counts or touches the wagon.
     public static func inTown(for user: User, on db: any Database, now: Date = Date()) async throws -> Bool {
         guard user.location == TravelDestination.capital.rawValue, let userId = user.id else { return false }
         guard try await TravelState.current(for: user, on: db) == nil else { return false }
         guard let wagon = try await wagon(for: userId, on: db) else { return false }
-        return wagon.isRunning(at: now)
+        return WagonMath.ridesAlong(running: wagon.isRunning(at: now), leftHome: wagon.leftHome)
+    }
+
+    /// Whether the wagon stays at home. Asked at every departure from the
+    /// estate and cleared on landing there, one column so it cannot undo
+    /// anything the watchman writes to the row.
+    public static func setLeftHome(_ left: Bool, userId: UUID, on db: any Database) async throws {
+        try await Wagon.query(on: db)
+            .filter(\.$user.$id, .equal, userId)
+            .set(\.$leftHome, to: left)
+            .update()
     }
 
     /// The wagon in the estate's yard, for the warehouse's screens: the player
@@ -139,6 +156,9 @@ public enum WagonService {
             guard let row = try await User.find(userId, on: tx), row.silver >= length.silver else { return nil }
             let wagon = try await wagon(for: userId, on: tx) ?? Wagon(userID: userId, endsAt: now)
             let end = WagonMath.end(after: wagon.id == nil ? nil : wagon.endsAt, now: now, adding: seconds)
+            // A new hire starts here at the stable, beside the player. A longer
+            // one changes nothing about where the wagon stands.
+            if !wagon.isRunning(at: now) { wagon.leftHome = false }
             wagon.endsAt = end
             try await wagon.save(on: tx)
             row.silver -= length.silver
@@ -162,13 +182,15 @@ public enum WagonService {
         return (bag, try await quantity(of: itemId, for: userId, on: db))
     }
 
-    /// What the wagon carries of an item while its hire runs, wherever the
-    /// player stands — it rides to town with them, so a job's readiness counts
-    /// it before they arrive. 0 once the hire has run out: that cargo goes home.
+    /// What the wagon carries of an item while it is with the player, wherever
+    /// they stand — it rides to town with them, so a job's readiness counts it
+    /// before they arrive. 0 once the hire has run out (that cargo goes home)
+    /// and while they are away without it.
     public static func runningQuantity(of itemId: String, for user: User, on db: any Database,
                                        now: Date = Date()) async throws -> Int {
         guard carries(itemId), let userId = user.id,
-              let wagon = try await wagon(for: userId, on: db), wagon.isRunning(at: now) else { return 0 }
+              let wagon = try await wagon(for: userId, on: db),
+              WagonMath.ridesAlong(running: wagon.isRunning(at: now), leftHome: wagon.leftHome) else { return 0 }
         return try await quantity(of: itemId, for: userId, on: db)
     }
 

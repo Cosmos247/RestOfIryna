@@ -109,6 +109,19 @@ final class WagonTests: XCTestCase {
 
     // MARK: - WagonMath
 
+    func testTheWagonRidesAlongOnlyWhileHiredAndBroughtWith() {
+        XCTAssertTrue(WagonMath.ridesAlong(running: true, leftHome: false))
+        XCTAssertFalse(WagonMath.ridesAlong(running: true, leftHome: true), "on horseback the wagon stays at home")
+        XCTAssertFalse(WagonMath.ridesAlong(running: false, leftHome: false), "a finished hire rides nowhere")
+        XCTAssertFalse(WagonMath.ridesAlong(running: false, leftHome: true))
+    }
+
+    func testOnlyAWagonThatRidesAlongSlowsTheRoad() {
+        XCTAssertEqual(WagonMath.crossing(road: 120, wagon: 180, ridesAlong: true), 180)
+        XCTAssertEqual(WagonMath.crossing(road: 120, wagon: 180, ridesAlong: false), 120)
+        XCTAssertEqual(WagonMath.crossing(road: 180, wagon: 120, ridesAlong: true), 180, "a wagon is never the faster way")
+    }
+
     func testAHireThatRunsGrowsAndOneThatRanOutStartsAgain() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         XCTAssertEqual(WagonMath.end(after: now.addingTimeInterval(600), now: now, adding: 3600),

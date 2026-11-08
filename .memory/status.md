@@ -29,8 +29,10 @@ the validator holds it). It rides with the player on the road and in town and wa
 place that takes from the bag takes from it too — the trader, the Master's lesson and enchant, the fortune teller's tinctures, the
 jobs, the Базар, the guild's vault, a trade — the bag first, through `WagonService`; at home it trades with the warehouse alone and
 no estate service reads it; an ended hire sends its cargo to the warehouse up to the cap (the watchman), the rest waiting on it. The
-bag, the warehouse, the profile and the road card show «🫏 Віз: N/200»; `Countdown` prints days. 597 tests; the digest moves
-`records` alone.
+bag, the warehouse, the profile and the road card show «🫏 Віз: N/200»; `Countdown` prints days. The digest moves `records` alone.
+**The estate's door asks** (the same day, NOT LIVE, `AddWagonLeftHome`, §2.11): while a hire runs, «🐎 Верхи · 2хв» leaves the wagon at home and
+its cargo out of reach in town, «🫏 З возом · 3хв» brings it; the answer holds both ways. The bag's header prints the full line, «· чекає вдома» while
+the wagon is left behind. 599 tests.
 
 **2026-11-07 — every discard is asked** (Swift + uk/en, LIVE since the 2026-11-07 21:16 restart; no migration, the digest
 unchanged). The players' ask, the owner's pick: every item in both bags. «🗑 Викинути 1» and a lone «🗑 Викинути» draw «🥔 Картопля —
@@ -1216,7 +1218,7 @@ carried twelve changes: the forest past km 49 (`1b99a3f`), the hub's line (`266a
 (`c011f9f`), the forest edge's armour warning (`4ebc80b`), the forage without zones (`8308be6`), the door's
 «Принесено» (`ea52cf6`, with the migration `AddExplorationHaul`), the archer's «💨 Ухилитися» (`e9bdb78`)
 and clay at 24 / 12 (`34fe88c`). Every earlier baseline is in `.memory/sessions.md` → "Digest
-baselines — superseded", and what each restart carried in its `## Deploy —` entry. **597 tests** (2026-11-08, the wagon; 585 at the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
+baselines — superseded", and what each restart carried in its `## Deploy —` entry. **599 tests** (2026-11-08, the wagon and its door; 585 at the tinctures). Pace is **136–151 days** to level 40 in the tree since the hazel
 (2026-11-01, LIVE since 2026-11-05 13:28 — every estate fed from level 1); it read **151–167** from 2026-10-03, when the
 estate scaling priced it in, re-read 2026-10-05; it read 114–126 from 2026-09-18 until then (the 117–129 quoted further down this
 file is a dated record of what the farm doubling did, not a current reading). `records` moved on 2026-09-15 for the Mine's iron rate and cap, the first

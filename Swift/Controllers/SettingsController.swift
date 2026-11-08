@@ -123,6 +123,11 @@ extension SettingsController {
         if data.hasPrefix("combat:") {
             return try await CombatController.onCallbackQuery(context: context)
         }
+        // The question at the estate's door can still be in chat when the player
+        // opens settings; the delete below would swallow the answer.
+        if data.hasPrefix(CapitalController.roadCallbackPrefix) {
+            return try await MainController.onCallbackQuery(context: context)
+        }
 
         let chatId = TGChatId.chat(message.chat.id)
         let deleteParams = TGDeleteMessageParams(chatId: chatId, messageId: message.messageId)

@@ -11,7 +11,10 @@ Every defect in this range came from someone PLAYING; none from a test. The patt
 carrying: each was a place where the code was right and could not say so, or where a number
 was shown in a unit it was not measured in.
 
-- *(this commit, 11-08)* **the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill** — Swift + content schema **v33** (`stable.json`) + uk/en
+- *(this commit, 11-08)* **the estate's door asks «🐎 Верхи» or «🫏 З возом», and `f5f90b6`'s hash fill** — Swift + uk/en + `AddWagonLeftHome` (one column with a default),
+  NOT deployed, content and digest unmoved (COMBINED `647107eb5b3754ab`): on horseback the wagon waits at home and its cargo is out of reach in
+  town; the answer holds both ways (`spec-wagon.md` §2.11). 599 tests.
+- `f5f90b6` (11-08) **the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill** — Swift + content schema **v33** (`stable.json`) + uk/en
   + three migrations (`CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`, no row rewritten), NOT deployed: hired on Поділ for 1 год / 3
   год / 1 день / 7 днів at 100 / 190 / 670 / 2160 🪙, 200 places for anything the warehouse takes, a 3-minute crossing with it, the bag's
   second store in town, unloaded at home, out of the forest (`content/spec/spec-wagon.md`). 597 tests; the digest moved `records` alone
@@ -1034,7 +1037,36 @@ alone** — `.memory/status.md` quotes it, and `.memory/rebalance.md`'s figures 
 record, not a current reading. A knob is invisible to the digest until it is hashed — add the
 line in the same commit that adds the knob (auto-memory `feedback-digest-names-constants`).
 
-## Session — 2026-11-08 (the stable's wagon «🫏 Віз») — *(this commit)*
+## Session — 2026-11-08, later (the estate's door asks: on horseback or with the wagon) — *(this commit)*
+
+**The ask** (the owner, quoting the previous session's finding «Найнятий віз сповільнює кожну поїздку до 3 хвилин навіть порожнім, і
+повернути його достроково не можна»): a screen at the estate's door where a player with a hired wagon chooses how to ride. A played
+sample and two questions, both answered with the recommended option: on horseback the wagon stays at home and its cargo is out of reach
+in town; the answer holds both ways, so the capital asks nothing. `spec-wagon.md` §2.11.
+
+**Why a screen alone was not enough:** the wagon had no place of its own — `inTown` read only the player's location and the hire, so a
+horseback ride would have brought the cargo anyway. `wagons.left_home` (`AddWagonLeftHome`) is written at every departure from the estate,
+so a stale mark cannot decide a trip, and cleared on landing there. A fresh hire resets it; a longer one leaves the wagon where it stands.
+
+**The readers, all through `WagonMath.ridesAlong`:** `inTown`, `runningQuantity` (a job's count), the notebook, the road line and
+`crossingSeconds`. `Status.leftHome` adds «· чекає вдома» to `WagonDisplay.statusLine`, and the bag's header now prints that line in full,
+as the approved sample showed. One funnel for the question (`startTripToCapital`); the answer in `MainController.onCallbackQuery`, and it
+takes the forest edge's picker slot, so asking twice leaves one and the main menu's buttons delete it. Asked from the estate's or the bag's
+screen it can stay in chat, and the tap asks the state again.
+
+**The audit before the commit found:** `SettingsController.onCallbackQuery` DELETES a callback it does not know, so a question still in chat
+vanished with no trip when tapped from Settings — it now forwards `road:` by name, beside `explore:` and `combat:`; the first report's «any
+other button removes it» held only from the main menu; and stale lines in the spec (§2.9, §3.4, §3.7), the README, the file map, the player FAQ and
+the older walk block.
+
+**Verified:** build, 599 tests (the new test fails with `leftHome` removed from the rule), `validate --strict`, the digest unmoved, the six new
+strings scanned for Lingo's emoji-before-`%{}` trap. **Rehearsed on a scratch Postgres 15** (`reference-deploy-rehearsal`, the real services through
+a copy-only hook, nothing sent to Telegram): `AddWagonLeftHome` on a table already holding a row (false through the model, NOT NULL, default false,
+recorded once); the question word for word in both locales; 52 checks over both ways on horseback and with the wagon, a turn-back on either road, a
+longer and a new hire, a stale mark and an ended hire. **Not run:** `askTheRoad` and `onRoadCallback` themselves, which need a Telegram update; the walk
+block in `TODO.md` is the proof. Not done, to offer: the stable's «Віз ваш ще …» line does not say the wagon is at home.
+
+## Session — 2026-11-08 (the stable's wagon «🫏 Віз») — `f5f90b6`
 
 **The ask** («Хочу додати можливість гравцям брати в аренду в Столиці більш швидкого коня а також орендувати обоз»): a first
 proposal (a horse and a wagon at «🐎 Стайня», played sample, six forks) was answered «Поки зупинимось тільки на обозі». The horse is

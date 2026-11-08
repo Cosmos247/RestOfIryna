@@ -29,13 +29,17 @@ anything stronger still needs the re-solve (auto-memory `project-post-rebalance-
 
 | | |
 |---|---|
-| HEAD | **this commit** (the stable's wagon «🫏 Віз», and `5e781b2`'s hash fill), unpushed. Under it, unpushed: **`5e781b2`** (the 11-07 21:16 deploy record, and `11d16bb`'s hash fill). Under them everything is pushed: `origin/main` = the Pi = **`11d16bb`** (the tinctures' button «🧪 Випити», and `ee5d45b`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
+| HEAD | **this commit** (the estate's door asks «🐎 Верхи» or «🫏 З возом», and `f5f90b6`'s hash fill), unpushed. Under it, unpushed: **`f5f90b6`** (the stable's wagon «🫏 Віз») and **`5e781b2`** (the 11-07 21:16 deploy record, and `11d16bb`'s hash fill). Under them everything is pushed: `origin/main` = the Pi = **`11d16bb`** (the tinctures' button «🧪 Випити», and `ee5d45b`'s hash fill). A commit cannot carry its own hash, so read HEAD off the machine; every hash and what it did is the **Commit index** at the top of `.memory/sessions.md` |
 | pushed | `origin/main` is at **`11d16bb`** (the owner pushed on the evening of 2026-11-07, seven commits past `46437bf`), the commit the Pi runs. Push is the owner's |
 | running on the Pi | **`11d16bb`**, online since **2026-11-07 21:16:11** (pm2 restarts 3; the binary built on the Pi in 147 s). Content schema **v32**, content hash **`b6cb33a2`**, COMBINED `c725c286799bc344` — the digest matched the Mac in all 72 lines before the restart; `AddSleepWard` and `AddVigorThrift` verified on the table (50 users, no NULL, no ward up, no hour running, 86 migrations). 12 × 403 per mass notice (players who blocked the bot; 11 on 11-01), still ONE `[WATCHDOG]` line (10-08 11:47:53). The SDK's rate limiter is OFF, `PollWatchdog` runs. **The host rebooted itself 2026-11-04 ~17:57** (DNS late at boot, one failed start, pm2 brought the build up; `.memory/sessions.md` → the 11-05 deploy entry): the untracked `core` in the Pi's checkout is that boot's dump (124 MB), `pgweb/` is old and known. **Read it off the machine before acting on this line** (auto-memory `feedback-ask-the-machine-not-the-record`) |
 | access | **The door is OPEN** since 2026-10-07 18:34 — `ROI_OPEN_ACCESS=1` in the Pi's `.env`. `allowed_users` at 10-11 02:57: open 14 · invite 6 · seed 4 · manual 1 (one new open-door account since 10-09 01:47); 15,605 forest fights in `fight_log` since the door opened (read 10-22: 72% at km 1–10). Close it by removing the line and restarting; nobody already in is locked out |
-| waiting for a restart | **The stable's wagon «🫏 Віз»** (2026-11-08, `spec-wagon.md` — Swift + content schema **v33** `stable.json` + uk/en + `CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`, no row rewritten): content hash `e96dab98`, COMBINED `647107eb5b3754ab` — a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI`, NEVER a `/reload` first (the v32 binary refuses v33 content; Lingo is not reloaded); verify the three migrations on the tables. `TODO.md` → its walk block. Before it, everything from `75eb348` to `11d16bb` went live at the 11-07 21:16:11 restart — the kill trophies and the plants (`spec-bestiary.md` §15–§16), the fortune teller's tinctures with `AddSleepWard` and `AddVigorThrift` (`spec-tinctures.md`), «зілля» retired, every discard asked, «🧪 Випити». Their four walk blocks in `TODO.md` stay open until someone plays them; a brew, a warded death and Міцна's costs had not run against the production database before it. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
+| waiting for a restart | **The stable's wagon «🫏 Віз»** (2026-11-08, `spec-wagon.md` — Swift + content schema **v33** `stable.json` + uk/en + `CreateWagons`, `AddTravelCrossing`, `AddWagonCargoGear`, `AddWagonLeftHome`, no row rewritten): content hash `e96dab98`, COMBINED `647107eb5b3754ab` — a pull, a BUILD on the Pi, the digest pre-flight, then `pm2 restart ROI`, NEVER a `/reload` first (the v32 binary refuses v33 content; Lingo is not reloaded); verify the four migrations on the tables. `TODO.md` → its walk block. Before it, everything from `75eb348` to `11d16bb` went live at the 11-07 21:16:11 restart — the kill trophies and the plants (`spec-bestiary.md` §15–§16), the fortune teller's tinctures with `AddSleepWard` and `AddVigorThrift` (`spec-tinctures.md`), «зілля» retired, every discard asked, «🧪 Випити». Their four walk blocks in `TODO.md` stay open until someone plays them; a brew, a warded death and Міцна's costs had not run against the production database before it. Before them, everything from `266d28e` to `46437bf` went live at the 11-05 13:28:03 restart — the hazel and `PlantHazel`, the bag's item card, the plot's «📌», the blood board, the autumn map, the kitchen's batches, the bag's free room, «слот» retired, `/news`, the warehouse's 📦 / 🎒. Their walk blocks in `TODO.md` stay open until someone plays them; the warehouse swap (`WarehouseService.wear`) and `/news` had not run against the production database before it |
 
 ### Where the last sessions stopped (2026-10-24 → 11-08)
+
+**11-08, later — the estate's door asks (NOT live).** The owner's answer to «a wagon slows every trip, even empty»: while a hire runs, «Столиця» at
+the estate asks «🐎 Верхи · 2хв» or «🫏 З возом · 3хв». On horseback the wagon waits at home and its cargo is out of reach in town; the answer holds
+both ways, so the capital asks nothing (the owner's picks). `AddWagonLeftHome`, `spec-wagon.md` §2.11, `TODO.md`'s top block. Not walked yet.
 
 **11-08 — the stable's wagon «🫏 Віз» (NOT live, schema v33).** The owner asked for a faster horse and a wagon to rent in the capital;
 after the first proposal the horse was parked («Поки зупинимось тільки на обозі»). Decided by quiz, a round at a time: the name «Віз» and
@@ -194,9 +198,9 @@ the dead `walkRoomDoubleSpeed` knob (deleting it moves the digest a restart is c
 ### Next action
 
 **0 — Walk the wagon on the test bot, then deploy it.** `TODO.md`'s top block, on the test bot (STOPPED by the owner on 11-08 during the
-audit; ask before starting it, the tunnel on 5433 may need reopening; `roi_test` has the three migrations). «Ребекка» shows the purchase
+audit; ask before starting it, the tunnel on 5433 may need reopening; `roi_test` has the first three migrations, `AddWagonLeftHome` runs on its next start). «Ребекка» shows the purchase
 spilling onto the wagon — `jj`'s developer bag has no ceiling. The end of a hire: offer to move `wagons.ends_at` on `roi_test` to now.
-Then the deploy (below): v33 content and the binary together, the three migrations verified on the tables.
+Then the deploy (below): v33 content and the binary together, the four migrations verified on the tables.
 
 **0b — Walk what went live on 11-07 21:16.** `TODO.md`'s four blocks under the wagon's, on the live game or the test bot (`jj` holds all five
 tinctures on `roi_test`).
@@ -309,7 +313,7 @@ swift run roi-content validate --strict      # content integrity; exit 1 on any 
 swift run -c release roi-content simulate    # balance sweep; --runs/--seed/--levels, --strict gates
 swift run roi-content spec <table>           # progression · gates · bestiary · items · sets · economy · opening · king · tinctures · wagon · events
 swift run RestOfIryna --content-digest       # confirm ONLY the intended change moved
-swift test                                   # 597 tests, ~5s
+swift test                                   # 599 tests, ~5s
 ```
 
 

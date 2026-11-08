@@ -213,11 +213,9 @@ final class InventoryController: TGControllerBase, @unchecked Sendable {
         ])
         var header = "<b>\(title)</b>  <i>\(slotsUsed)/\(cap) \(slotsLabel) (\(free))</i>"
         // The hired wagon under the bag (2026-11-08, `spec-wagon.md` §4):
-        // «🫏 Віз: 150/200», its list one button away.
+        // «🫏 Віз: 150/200 · ще 2год 38хв», its list one button away.
         if let wagon {
-            header += "\n\(WagonDisplay.icon) " + lingo.localize("wagon.status.line", locale: locale, interpolations: [
-                "used": "\(wagon.used)", "cap": "\(wagon.capacity)"
-            ])
+            header += "\n" + WagonDisplay.statusLine(wagon, lingo: lingo, locale: locale)
         }
         // Said on the screen before a tap is refused (`passiveRun(holding:)`).
         if locked {

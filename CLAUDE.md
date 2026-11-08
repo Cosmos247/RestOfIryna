@@ -590,7 +590,10 @@ capital reader of the bag that skips it hides the cargo there. It carries anythi
 with its own `GearState` and a copy at a time; at home it trades with the warehouse alone and no estate service
 reads it (the owner: unload first); it never enters the forest; an ended hire sends its cargo to the warehouse up
 to the cap. **A trip's crossing is stamped on its row** (`travel_state.crossing_seconds`: 3 min with the wagon, 2
-without) — a turn-back reads it, never the global `travelSeconds`. Auto-memory `project-wagon-rental`.
+without) — a turn-back reads it, never the global `travelSeconds`. **The estate's door asks, while a hire runs:**
+«🐎 Верхи» leaves the wagon at home (`Wagon.leftHome`) and nothing in town or on the road reads it; the answer holds
+both ways and the capital asks nothing. `WagonMath.ridesAlong` is the one test of where it is — never read the hire
+alone. Auto-memory `project-wagon-rental`.
 
 **The fortune teller brews** (2026-11-07, `spec-tinctures.md`): «🧪 Настоянки» on her screen, five recipes of plants and a
 trophy in `recipes.json`, category `tincture`, each with a `silverFee`. **A tincture is not a craft**: `isCraftable` is false, so
